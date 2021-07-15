@@ -19,5 +19,4 @@ tsconfig.tsbuildinfo
 
 **/dist
 /.eslintcache
-/.network.db
 connect
