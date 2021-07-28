@@ -1,0 +1,32 @@
+[submodule "hero"]
+	path = hero
+	url = git@github.com:ulixee/secret-agent.git
+	branch = hero
+[submodule "website"]
+	path = website
+	url = git@github.com:ulixee/website.git
+	branch = main
+[submodule "server"]
+	path = server
+	url = git@github.com:ulixee/server.git
+	branch = main
+[submodule "runner"]
+	path = runner
+	url = git@github.com:ulixee/runner.git
+	branch = main
+[submodule "databox"]
+	path = databox
+	url = git@github.com:ulixee/databox.git
+	branch = main
+[submodule "commons"]
+	path = commons
+	url = git@github.com:ulixee/commons.git
+	branch = main
+[submodule "boss"]
+	path = boss
+	url = git@github.com:ulixee/boss.git
+	branch = main
+[submodule "chrome-alive"]
+	path = chrome-alive
+	url = git@github.com:ulixee/chrome-alive.git
+	branch = main
