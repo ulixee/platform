@@ -3407,6 +3407,15 @@
     progress "^2.0.3"
     tar "^6.1.0"
 
+"@ulixee/commons@1.5.4":
+  version "1.5.4"
+  resolved "https://registry.yarnpkg.com/@ulixee/commons/-/commons-1.5.4.tgz#dd492ed2460119cdd416cc9db9d176c345aec079"
+  integrity sha512-tvPUgUXcu5dyA8DtwbgTfzG+k6ArfTAYOr9YBiAKEbzcks6QsPiUbvRN2bK+qRDlzXSjAOm0d9vIu6oEuI+64Q==
+  dependencies:
+    https-proxy-agent "^5.0.0"
+    source-map-support "^0.5.19"
+    uuid "^8.3.2"
+
 "@vue/babel-helper-vue-jsx-merge-props@^1.2.1":
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/@vue/babel-helper-vue-jsx-merge-props/-/babel-helper-vue-jsx-merge-props-1.2.1.tgz#31624a7a505fb14da1d58023725a4c5f270e6a81"
@@ -9549,6 +9558,11 @@ husky@^4.3.0:
     please-upgrade-node "^3.2.0"
     slash "^3.0.0"
     which-pm-runs "^1.0.0"
+
+husky@^7.0.0:
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/husky/-/husky-7.0.1.tgz#579f4180b5da4520263e8713cc832942b48e1f1c"
+  integrity sha512-gceRaITVZ+cJH9sNHqx5tFwbzlLCVxtVZcusME8JYQ8Edy5mpGDOqD8QBCdMhpyo9a+JXddnujQ4rpY2Ff9SJA==
 
 icon-gen@^2.0.0:
   version "2.1.0"
