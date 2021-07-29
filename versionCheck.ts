@@ -53,9 +53,8 @@ function recursivelyFindPackageFiles(pkgPath: string) {
   const pkgDir = Path.dirname(pkgPath);
   const workspaces = pkg.workspaces?.packages?.filter(x => !x.startsWith('../')) || [];
   for (const workspace of workspaces) {
-    if (workspace.includes('/**')) throw new Error(`workspace package has a recursive wildcard: ${pkgPath}`);
-    if (workspace.includes('/*')) {
-      const workspaceDir = workspace.replace('/*', '');
+    if (workspace.includes('/**')) {
+      const workspaceDir = workspace.replace('/**', '');
       const subWorkspaces = Fs.readdirSync(Path.resolve(pkgDir, workspaceDir));
       for (const subWorkspace of subWorkspaces) {
         const newPkgPath = Path.resolve(pkgDir, workspaceDir, subWorkspace, 'package.json');

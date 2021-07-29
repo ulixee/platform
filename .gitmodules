@@ -1,7 +1,7 @@
 [submodule "hero"]
 	path = hero
-	url = git@github.com:ulixee/secret-agent.git
-	branch = hero
+	url = git@github.com:ulixee/hero.git
+	branch = main
 [submodule "website"]
 	path = website
 	url = git@github.com:ulixee/website.git
