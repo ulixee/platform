@@ -22,11 +22,11 @@
 	path = commons
 	url = git@github.com:ulixee/commons.git
 	branch = main
-[submodule "boss"]
-	path = boss
-	url = git@github.com:ulixee/boss.git
+[submodule "apps"]
+	path = apps
+	url = git@github.com:ulixee/apps.git
 	branch = main
-[submodule "chrome-alive"]
-	path = chrome-alive
-	url = git@github.com:ulixee/chrome-alive.git
+[submodule "admin"]
+	path = admin
+	url = git@github.com:ulixee/admin.git
 	branch = main

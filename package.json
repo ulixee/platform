@@ -57,6 +57,9 @@
   },
   "workspaces": {
     "packages": [
+      "apps/menubar",
+      "apps/menubar-ui",
+
       "commons",
 
       "hero/client",
