@@ -5,4 +5,12 @@ module.exports = {
     project: path.join(__dirname, '/tsconfig.json'),
   },
   extends: '../.eslintrc.js',
+  overrides: [
+    {
+      files: 'cli-commands/**/*.ts',
+      rules: {
+        'no-console': 'off',
+      },
+    },
+  ],
 };

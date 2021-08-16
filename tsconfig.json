@@ -32,7 +32,7 @@
       "path": "commons/tsconfig.json"
     }
   ],
-  "include": ["./*.js", "./*.json"],
+  "include": ["./*.js", "./*.json", "versionCheck.ts", ".eslintrc.js"],
   "exclude": [
     "**/tsconfig*.json",
     "node_modules",

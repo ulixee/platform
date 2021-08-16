@@ -1,4 +1,3 @@
-import * as http from 'http';
 import * as WebSocket from 'ws';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import Log from '@ulixee/commons/lib/Logger';
@@ -22,7 +21,7 @@ export default class HeroCoreConnector extends BaseCoreConnector {
     await Core.shutdown();
   }
 
-  private handleHeroScript(ws: WebSocket, request: http.IncomingMessage) {
+  private handleHeroScript(ws: WebSocket) {
     const connection = Core.addConnection();
     ws.on('message', message => {
       const payload = TypeSerializer.parse(message.toString(), 'CLIENT');

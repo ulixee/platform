@@ -20,14 +20,14 @@ jobs:
 
       - name: Yarn install
         run: yarn install --network-timeout 1000000
-        working-directory: ./chromealive
+        working-directory: ./apps/chromealive
         env:
           HERO_SKIP_CHROME_DOWNLOAD: 1
           ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
 
       - name: Build
         run: yarn dist
-        working-directory: ./chromealive
+        working-directory: ./apps/chromealive
         env:
           HERO_SKIP_CHROME_DOWNLOAD: 1
           ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
@@ -39,7 +39,7 @@ jobs:
         run: |
           set -x
           assets=()
-          for asset in ./build/chromealive/dist/assets/*; do
+          for asset in ./build/apps/chromealive/dist/assets/*; do
             assets+=("-a" "$asset")
           done
           tag_name="${GITHUB_REF##*/}"
@@ -67,7 +67,7 @@ jobs:
 
       - name: Build Webite
         run: yarn build
-        working-directory: ./
+        working-directory: ./build/website
 
       - name: Deploy Website
         uses: peaceiris/actions-gh-pages@v3

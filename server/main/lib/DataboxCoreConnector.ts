@@ -1,9 +1,8 @@
-import * as http from "http";
 import * as WebSocket from 'ws';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import Log from '@ulixee/commons/lib/Logger';
 import Core from '@ulixee/databox-core';
-import { wsSend, isWsOpen } from './WsUtils';
+import { isWsOpen, wsSend } from './WsUtils';
 import Server from '../index';
 import BaseCoreConnector from './BaseCoreConnector';
 
@@ -23,7 +22,7 @@ export default class DataboxCoreConnector extends BaseCoreConnector {
     await Core.shutdown();
   }
 
-  private handleDataboxScript(ws: WebSocket, request: http.IncomingMessage) {
+  private handleDataboxScript(ws: WebSocket) {
     const connection = Core.addConnection();
     ws.on('message', message => {
       const payload = TypeSerializer.parse(message.toString(), 'CLIENT');

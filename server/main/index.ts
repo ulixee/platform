@@ -16,11 +16,7 @@ type IHttpHandleFn = (
   res: Http.ServerResponse,
   params: string[],
 ) => void;
-type IWsHandleFn = (
-  ws: WebSocket,
-  request: Http.IncomingMessage,
-  params: string[],
-) => void;
+type IWsHandleFn = (ws: WebSocket, request: Http.IncomingMessage, params: string[]) => void;
 
 export default class Server {
   public readonly wsServer: WebSocket.Server;
@@ -151,7 +147,6 @@ export default class Server {
         return;
       }
     }
-    console.log(`ws url not found: ${req.url}`);
     ws.close();
   }
 
