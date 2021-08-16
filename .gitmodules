@@ -2,14 +2,6 @@
 	path = hero
 	url = git@github.com:ulixee/hero.git
 	branch = main
-[submodule "website"]
-	path = website
-	url = git@github.com:ulixee/website.git
-	branch = main
-[submodule "server"]
-	path = server
-	url = git@github.com:ulixee/server.git
-	branch = main
 [submodule "runner"]
 	path = runner
 	url = git@github.com:ulixee/runner.git
@@ -17,16 +9,4 @@
 [submodule "databox"]
 	path = databox
 	url = git@github.com:ulixee/databox.git
-	branch = main
-[submodule "commons"]
-	path = commons
-	url = git@github.com:ulixee/commons.git
-	branch = main
-[submodule "apps"]
-	path = apps
-	url = git@github.com:ulixee/apps.git
-	branch = main
-[submodule "admin"]
-	path = admin
-	url = git@github.com:ulixee/admin.git
 	branch = main
