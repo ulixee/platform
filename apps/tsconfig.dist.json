@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.dist.json",
+  "references": [
+    {
+      "path": "./chromealive/tsconfig.dist.json"
+    },
+    {
+      "path": "./chromealive-core/tsconfig.dist.json"
+    },
+    {
+      "path": "./chromealive-interfaces/tsconfig.dist.json"
+    },
+    {
+      "path": "./menubar/tsconfig.dist.json"
+    }
+  ]
+}

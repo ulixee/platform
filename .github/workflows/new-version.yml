@@ -1,0 +1,77 @@
+name: New Version
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  cromeealive:
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14
+
+      - name: Yarn install
+        run: yarn install --network-timeout 1000000
+        working-directory: ./chromealive
+        env:
+          HERO_SKIP_CHROME_DOWNLOAD: 1
+          ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
+
+      - name: Build
+        run: yarn dist
+        working-directory: ./chromealive
+        env:
+          HERO_SKIP_CHROME_DOWNLOAD: 1
+          ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          assets=()
+          for asset in ./build/chromealive/dist/assets/*; do
+            assets+=("-a" "$asset")
+          done
+          tag_name="${GITHUB_REF##*/}"
+          hub release edit "${assets[@]}" -m "" "$tag_name"
+
+  website:
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14
+
+      - name: Yarn install
+        run: yarn install --network-timeout 1000000
+        env:
+          HERO_SKIP_DOWNLOAD: true
+
+      - name: Build
+        run: yarn build
+
+      - name: Build Webite
+        run: yarn build
+        working-directory: ./
+
+      - name: Deploy Website
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build-dist
+          commit_message: "[skip ci] Updates"

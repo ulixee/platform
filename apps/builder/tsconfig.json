@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "outDir": "../../build/boss",
+    "module": "commonjs",
+    "target": "ES2019",
+    "lib": ["ESNext", "ES2019", "DOM", "DOM.Iterable", "ScriptHost"],
+    "moduleResolution": "node",
+    "strict": false,
+    "importHelpers": true,
+    "experimentalDecorators": true,
+    "noImplicitAny": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": false,
+    "sourceMap": true,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "composite": true,
+    "baseUrl": "."
+  },
+  "include": ["**/*.ts", "**/*.js", "**/*.json", ".eslintrc.js"],
+
+  "exclude": ["dist", "node_modules", "**/node_modules"]
+}

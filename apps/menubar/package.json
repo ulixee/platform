@@ -1,0 +1,25 @@
+{
+  "name": "@ulixee/apps-menubar",
+  "version": "1.5.4",
+  "main": "index.js",
+  "scripts": {
+    "build": "yarn build:ui && yarn build:basic && cd ../build/menubar && yarn && electron-builder install-app-deps",
+    "build:basic": "tsc -b tsconfig.json && shx cp -r assets ../build/menubar/assets",
+    "build:ui": "yarn workspace @ulixee/apps-menubar-ui build",
+    "start": "cd ../build/menubar && npx electron ."
+  },
+  "repository": "git@github.com:ulixee/apps.git",
+  "author": "Caleb Clark <calebjclark@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "electron-positioner": "^4.1.0",
+    "node-static": "^0.7.11",
+    "nseventmonitor": "^1.0.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "electron": "^13.1.7",
+    "electron-builder": "^22.11.7",
+    "shx": "^0.3.3"
+  }
+}

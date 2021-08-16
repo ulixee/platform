@@ -1,0 +1,11 @@
+{
+  "name": "@ulixee/server-cli",
+  "version": "1.5.4",
+  "description": "The server CLI",
+  "dependencies": {
+    "@ulixee/commons": "1.5.5",
+    "@ulixee/server": "1.5.4",
+    "yargs-parser": "^20.2.9"
+  },
+  "devDependencies": {}
+}

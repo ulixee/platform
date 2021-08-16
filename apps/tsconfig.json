@@ -1,0 +1,23 @@
+{
+  "extends": "../tsconfig.json",
+  "references": [
+    {
+      "path": "./chromealive/tsconfig.json"
+    },
+    {
+      "path": "./chromealive-ui/tsconfig.json"
+    },
+    {
+      "path": "./chromealive-core/tsconfig.json"
+    },
+    {
+      "path": "./chromealive-interfaces/tsconfig.json"
+    },
+    {
+      "path": "./menubar/tsconfig.json"
+    },
+    {
+      "path": "./menubar-ui/tsconfig.json"
+    }
+  ]
+}

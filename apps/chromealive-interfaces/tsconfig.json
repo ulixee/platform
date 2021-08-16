@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "outDir": "../../build/apps/chromealive-interfaces",
+    "module": "commonjs",
+    "target": "ES2019",
+    "lib": ["ESNext", "ES2019", "DOM", "DOM.Iterable", "ScriptHost"],
+    "moduleResolution": "node",
+    "strict": false,
+    "importHelpers": true,
+    "experimentalDecorators": true,
+    "noImplicitAny": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": false,
+    "sourceMap": true,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "composite": true,
+    "baseUrl": "."
+  },
+  "include": ["**/*.ts", "package.json", ".eslintrc.js"],
+  "exclude": ["node_modules"]
+}

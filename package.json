@@ -2,7 +2,17 @@
   "name": "@ulixee/devenv-monorepo",
   "private": true,
   "description": "The internal developer environment that we use for building and running the Ulixee platform",
-  "scripts": {},
+  "scripts": {
+    "prepare": "husky install",
+    "bump-version": "lerna version --conventional-commits --no-push --exact --force-publish",
+    "build": "yarn tsc && cd build && yarn",
+    "tsc": "tsc -b tsconfig.json && yarn copy:build && node prepare-build.js",
+    "watch": "tsc -b -w tsconfig.json",
+    "copy:build": "cross-env OUT_DIR=build node copyfiles.js",
+    "start": "node build/cli-commands/bin/start",
+    "test:build": "cross-env NODE_ENV=test jest",
+    "test": "yarn copy:build && cd build && yarn test:build && cd ../databox && yarn test && cd ../hero && yarn test"
+  },
   "repository": "git@github.com:ulixee/devenv.git",
   "author": "Data Liberation Foundation",
   "contributors": [
@@ -17,19 +27,14 @@
   "engines": {
     "node": ">=14.16.0"
   },
-  "husky": {
-    "hooks": {
-      "pre-push": "npm test",
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }
-  },
   "devDependencies": {
     "@commitlint/cli": "^12.0.1",
     "@commitlint/config-conventional": "^12.0.1",
     "@types/jest": "^26.0.20",
-    "@types/node": "^13.13.34",
+    "@types/node": "^14.17.9",
     "@typescript-eslint/eslint-plugin": "^4.14.0",
     "@typescript-eslint/parser": "^4.17.0",
+    "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "eslint": "^7.21.0",
     "eslint-config-airbnb-typescript": "^12.0.0",
@@ -47,44 +52,35 @@
     "jest": "^26.6.3",
     "jest-environment-node": "^26.6.2",
     "jest-summary-reporter": "^0.0.2",
-    "husky": "^4.3.0",
+    "husky": "^7.0.1",
     "lerna": "^3.22.1",
     "lint-staged": "^10.5.2",
     "prettier": "^2.2.1",
     "pretty-quick": "^3.1.0",
     "shx": "^0.3.3",
-    "tsc-watch": "^4.2.9",
     "typescript": "~4.3.5"
   },
   "workspaces": {
     "packages": [
-      "apps/menubar",
-      "apps/menubar-ui",
-      "apps/chromealive",
-      "apps/chromealive-core",
-      "apps/chromealive-interfaces",
-      "apps/chromealive-ui",
+      "apps/*",
       "commons",
-      "hero/client",
-      "hero/core",
-      "hero/fullstack",
-      "hero/interfaces",
-      "hero/mitm",
-      "hero/mitm-socket",
-      "hero/plugin-utils",
-      "hero/plugins/**",
-      "hero/puppet",
-      "hero/puppet-chrome",
-      "hero/replay",
-      "hero/testing",
-      "databox/client",
-      "databox/core",
-      "databox/fullstack",
-      "databox/interfaces",
-      "databox/testing",
-      "databox/tools",
-      "server/main",
-      "website"
+      "server/*",
+      "website",
+      "hero/build/*",
+      "hero/build/plugins/*",
+      "databox/build/*"
+    ],
+    "nohoist": [
+      "**/electron-webpack",
+      "**/electron-webpack/**",
+      "**/@typescript-eslint",
+      "**/@typescript-eslint/**",
+      "**/@vue/**",
+      "**/@vue/**/**",
+      "**/vue",
+      "**/vue-loader",
+      "**/vue-template-compiler",
+      "**/vue-class-component"
     ]
   },
   "lint-staged": {
@@ -98,12 +94,5 @@
   "resolutions": {
     "remark-slug": "git://github.com/ulixee/remark-slug.git",
     "tough-cookie": "^4.0.0"
-  },
-  "nohoist": [
-    "**/electron-webpack",
-    "**/electron-webpack/**",
-    "**/@vue/cli-plugin-eslint",
-    "**/@vue/cli-plugin-eslint/**",
-    "**/@typescript-eslint"
-  ]
+  }
 }

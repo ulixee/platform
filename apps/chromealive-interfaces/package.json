@@ -1,0 +1,9 @@
+{
+  "name": "@ulixee/apps-chromealive-interfaces",
+  "version": "1.5.4",
+  "scripts": {},
+  "repository": "git@github.com:ulixee/apps.git",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

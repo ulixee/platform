@@ -1,0 +1,17 @@
+{
+  "name": "@ulixee/boss-builder",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build:menubar": "tsc -b tsconfig.json && cd ../build/boss && yarn && electron-builder install-app-deps"
+  },
+  "repository": "git@github.com:ulixee/boss.git",
+  "author": "Caleb Clark <calebjclark@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "@ulixee/apps-menubar": "1.5.4",
+    "electron-builder": "^22.11.7"
+  }
+}
