@@ -77,6 +77,12 @@
       "hero/puppet-chrome",
       "hero/replay",
       "hero/testing",
+      "databox/client",
+      "databox/core",
+      "databox/fullstack",
+      "databox/interfaces",
+      "databox/testing",
+      "databox/tools",
       "server/main",
       "website"
     ]
