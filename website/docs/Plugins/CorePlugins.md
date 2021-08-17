@@ -90,13 +90,24 @@ Modify any value in the object to change it session-wide.
 
 #### **Returns** `void`
 
+### onBrowserLaunchConfiguration<em>(launchArguments)</em> *optional*
+
+This is called every time a new browser engine is started, which may not be every session. A Core Plugin can add to the launch arguments that will sent to the process creation of the browser:
+- For Chrome, a list can be found (here)[https://peter.sh/experiments/chromium-command-line-switches/]
+
+#### **Arguments**:
+
+- launchArguments `string[]`. The list of arguments to modify
+
+#### **Returns** `Promise` | `void`
+
 ### onClientCommand<em>(meta, ...args)</em> _optional_
 
 This method is called every time a ClientPlugin calls sendToCore to this plugin's ID.
 
 #### **Arguments**:
 
-- meta `OnClientommandMeta`. This object currently has a single property - puppetPage.
+- meta `OnClientCommandMeta`. This object currently has a single property - puppetPage.
 - args: `any[]`. Whatever args the ClientPlugin passed through sendToCore.
 
 #### **Returns** `Promise` | `void`
