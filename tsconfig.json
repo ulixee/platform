@@ -2,9 +2,10 @@
   "compileOnSave": true,
   "compilerOptions": {
     "incremental": true,
-    "target": "ES2019",
+    "target": "ES2020",
+    "composite": true,
     "module": "CommonJS",
-    "lib": ["ES2019", "DOM", "DOM.Iterable"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "noImplicitAny": false,
     "sourceMap": true,
     "esModuleInterop": false,
@@ -20,14 +21,28 @@
     "preserveSymlinks": false,
     "experimentalDecorators": true
   },
-  "references": [],
-  "include": ["**/*.ts", "**/*.js", "**/*.json", ".eslintrc.js"],
+  "references": [
+    {
+      "path": "server/tsconfig.json"
+    },
+    {
+      "path": "apps/tsconfig.json"
+    },
+    {
+      "path": "commons/tsconfig.json"
+    }
+  ],
+  "include": ["./*.js", "./*.json", "versionCheck.ts", ".eslintrc.js"],
   "exclude": [
     "**/tsconfig*.json",
     "node_modules",
     "**/node_modules",
     "**/dist",
     "**/build",
+    "website",
+    "hero/**",
+    "databox/**",
+    "runner/**",
     "build",
     "build-dist"
   ]

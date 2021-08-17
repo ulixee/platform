@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "outDir": "../../build/apps/chromealive-core",
+    "module": "commonjs",
+    "target": "ES2020",
+    "lib": ["ESNext", "ES2019", "DOM", "DOM.Iterable", "ScriptHost"],
+    "moduleResolution": "node",
+    "strict": false,
+    "importHelpers": true,
+    "experimentalDecorators": true,
+    "noImplicitAny": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": false,
+    "sourceMap": true,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "composite": true,
+    "baseUrl": ".",
+    "types": ["chrome"]
+  },
+
+  "include": ["./*.ts", "**/*.ts", "**/*.js", "**/*.json", ".eslintrc.js"],
+
+  "exclude": ["dist", "node_modules", "**/node_modules"]
+}

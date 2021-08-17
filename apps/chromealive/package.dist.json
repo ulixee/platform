@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "postinstall": "node install"
+  },
+  "main": "./index.js"
+}

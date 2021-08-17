@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../build-dist/apps/chromealive"
+  },
+  "include": ["index.ts", "install/*.ts", ".eslintrc.js", "*.json"],
+  "exclude": ["dist", "node_modules", "**/node_modules"]
+}

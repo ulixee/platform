@@ -4,6 +4,8 @@ const pkg = require('./package.json');
 const workspaces = [];
 const workspacesWithModules = ['node_modules'];
 for (const workspaceDir of pkg.workspaces.packages) {
+  if (workspaceDir.includes('/build')) continue;
+
   const workspace = workspaceDir.replace('/*', '');
   workspaces.push(workspace);
   workspacesWithModules.push(workspace);
@@ -60,15 +62,24 @@ module.exports = {
       rules: {
         '@typescript-eslint/no-unused-vars': 'off',
       },
-    }
+    },
   ],
   ignorePatterns: [
     '**/node_modules',
+    '**/databox',
+    '**/hero',
+    'runner/**',
     'node_modules',
     '**/test/assets/**',
     'build',
     'build-dist',
-    'examples/*.js',
+    '**/babel.config.js',
+    '**/vue.config.js',
+    '**/prepare-*.js',
+    '**/copyfiles.js',
+    'versionCheck.ts',
+    './*.js',
+    '**/examples',
     '**/build/**',
     '**/dist/**',
     '**/*.md',
