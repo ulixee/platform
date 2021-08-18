@@ -9,28 +9,29 @@
 
       <button
         class="input app-button"
-        @click.prevent="toggleInput"
+        ref="inputButton"
+        @click.prevent="toggleInput()"
         :class="{ selected: isShowingInput }"
       >
         <span class="label">Input</span>
-        <span class="size">({{ session.inputKb }}kb)</span>
+        <span class="size">({{ inputSize }})</span>
       </button>
 
       <div id="timeline">
         <div id="bar">
           <div id="track">
             <div
-              v-for="(tick, i) in session.ticks"
+              v-for="(url, i) in session.loadedUrls"
               class="tick"
-              :class="{ active: currentTickValue === i }"
-              :key="tick.offsetPercent"
+              :class="{ active: currentUrlIndex === i }"
+              :key="url.offsetPercent"
               :ref="`tick${i}`"
               @mouseout="hideScreenshot()"
               @mouseover="showScreenshot(i)"
-              @click="clickTick(i)"
-              :style="{ left: tick.offsetPercent + '%', width: nextTickWidth(i) }"
+              @click="clickUrlTick(i)"
+              :style="{ left: url.offsetPercent + '%', width: nextUrlTickWidth(i) }"
             >
-              <div v-if="i !== session.ticks.length - 1" class="line-overlay"></div>
+              <div v-if="i !== session.loadedUrls.length - 1" class="line-overlay"></div>
               <div class="icon marker"></div>
             </div>
             <div id="bar-indicator"></div>
@@ -41,11 +42,12 @@
 
       <button
         class="output app-button"
-        @click.prevent="toggleOutput"
+        ref="outputButton"
+        @click.prevent="toggleOutput()"
         :class="{ selected: isShowingOutput }"
       >
         <span class="label">Output</span>
-        <span class="size">({{ session.outputKb }}kb)</span>
+        <span class="size">({{ outputSize }})</span>
       </button>
 
       <button
@@ -81,6 +83,22 @@
         v-if="hoveredScreenshot.imageBase64"
       />
     </div>
+
+    <div id="input-hover" v-if="isShowingInput" :style="{ left: $refs.inputButton.getBoundingClientRect().left + 'px'}">
+      <div class="input-box">
+        <div v-if="inputJson.length" class="Json">
+          <div class="JsonNode" v-for="node of inputJson" :key="node.id">
+            <div class="indent" v-for="i in node.level" :key="i">{{ ' ' }}</div>
+            <span v-if="node.key" class="key">{{ node.key }}: </span>
+            <span>
+              <span :class="{ ['value-' + node.type]: node.isContent, brackets: !node.isContent}">{{ node.content }}</span>
+              <span v-if="node.showComma" class="comma">, </span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div id="input-size" v-if="inputSize">Input size: {{ inputSize }}</div>
+    </div>
   </div>
 </template>
 
@@ -92,6 +110,10 @@ import VueSlider from 'vue-slider-component';
 import 'vue-slider-component/theme/default.css';
 import ISessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionActiveEvent';
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
+import IOutputUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IOutputUpdatedEvent';
+import humanizeBytes from '@/utils/humanizeBytes';
+import flattenJson, { FlatJson } from '@/utils/flattenJson';
+
 
 @Component({
   components: { VueSlider },
@@ -104,17 +126,23 @@ export default class ChromeAliveApp extends Vue {
   private scriptTimeAgo = '';
   private timeAgoTimeout: number;
   private timeAgoDelay = 1e3;
-  private currentTickValue = 1;
+  private currentUrlIndex = 1;
   private lastAppBounds: IBounds;
   private lastToolbarBounds: IBounds;
+  private inputSize = '0kb';
+  private outputSize = '0kb'
+  private outputWindow: Window;
+  private inputJson: FlatJson[] = [];
+
   private session: ISessionActiveEvent = {
-    ticks: [],
+    loadedUrls: [],
     state: 'paused',
     durationSeconds: 0,
-    sessionId: '',
+    heroSessionId: '',
     run: 0,
-    outputKb: 0,
-    inputKb: 0,
+    outputBytes: 0,
+    inputBytes: 0,
+    input: '',
     hasWarning: false,
     scriptEntrypoint: '',
     scriptLastModifiedTime: 0,
@@ -129,23 +157,24 @@ export default class ChromeAliveApp extends Vue {
   private screenshotsByNavigationId = new Map<number, string>();
 
   canPlay(): boolean {
-    if (!this.session.sessionId) return false;
+    if (!this.session.heroSessionId) return false;
     return this.session.state === 'paused';
   }
 
   canPause(): boolean {
-    if (!this.session.sessionId) return false;
+    if (!this.session.heroSessionId) return false;
     return this.session.state === 'play';
   }
 
-  clickTick(tickIdx: number) {
-    this.currentTickValue = tickIdx;
+  clickUrlTick(urlIndex: number) {
+    this.currentUrlIndex = urlIndex;
   }
 
-  nextTickWidth(tickIdx: number) {
-    if (tickIdx === this.session.ticks.length - 1) return '2px';
+  nextUrlTickWidth(urlIndex: number) {
+    if (urlIndex === this.session.loadedUrls.length - 1) return '2px';
     const diff =
-      this.session.ticks[tickIdx + 1].offsetPercent - this.session.ticks[tickIdx].offsetPercent;
+      this.session.loadedUrls[urlIndex + 1].offsetPercent -
+      this.session.loadedUrls[urlIndex].offsetPercent;
     return `${diff}%`;
   }
 
@@ -154,9 +183,9 @@ export default class ChromeAliveApp extends Vue {
     this.hoveredScreenshot.left = 0;
   }
 
-  showScreenshot(tickIdx: number) {
-    const entry = this.session.ticks[tickIdx];
-    this.hoveredScreenshot.left = this.$refs[`tick${tickIdx}`][0].getBoundingClientRect().left;
+  showScreenshot(urlIndex: number) {
+    const entry = this.session.loadedUrls[urlIndex];
+    this.hoveredScreenshot.left = this.$refs[`tick${urlIndex}`][0].getBoundingClientRect().left;
     if (this.hoveredScreenshot.left + 300 > window.innerWidth) {
       this.hoveredScreenshot.left = window.innerWidth - 325;
     }
@@ -194,6 +223,12 @@ export default class ChromeAliveApp extends Vue {
 
   toggleOutput() {
     this.isShowingOutput = !this.isShowingOutput;
+    if (!this.isShowingOutput) this.outputWindow.close();
+    else {
+      const { left,bottom } = (this.$refs.outputButton as HTMLElement).getBoundingClientRect();
+      const features =`top=${bottom + 25},left=${left},width=300,height=500,frame=true,nodeIntegration=no`;
+      this.outputWindow = window.open('/output.html','_blank', features);
+    }
   }
 
   toggleInput() {
@@ -202,13 +237,13 @@ export default class ChromeAliveApp extends Vue {
 
   play() {
     this.client.send('Session.resume', {
-      sessionId: this.session.sessionId,
-      startFromTick: this.currentTickValue,
+      heroSessionId: this.session.heroSessionId,
+      startFromUrlIndex: this.currentUrlIndex,
     });
   }
 
   pause() {
-    this.client.send('Session.step', { sessionId: this.session.sessionId });
+    this.client.send('Session.step', { heroSessionId: this.session.heroSessionId });
   }
 
   async created() {
@@ -222,19 +257,29 @@ export default class ChromeAliveApp extends Vue {
     this.timeAgoTimeout = setTimeout(this.updateScriptTimeAgo, this.timeAgoDelay ?? 1e3) as any;
   }
 
+  onOutputUpdated(message: IOutputUpdatedEvent) {
+    this.session.outputBytes =  message.bytes;
+    this.outputSize = humanizeBytes(message.bytes);
+  }
+
   onSessionActiveEvent(message: ISessionActiveEvent) {
+    if (message.inputBytes !== this.session.inputBytes) {
+      this.inputSize = humanizeBytes(message.inputBytes);
+      this.inputJson = message.input !== undefined ? flattenJson(message.input) : [];
+    }
+    this.outputSize = humanizeBytes(message.outputBytes);
     Object.assign(this.session, message);
-    this.currentTickValue = this.session.ticks.length - 1;
+    this.currentUrlIndex = Math.max(0, this.session.loadedUrls.length - 1);
     this.updateScriptTimeAgo();
 
-    for (const tick of this.session.ticks) {
-      const { navigationId } = tick;
-      if (!navigationId) continue;
+    for (const loadedUrl of this.session.loadedUrls) {
+      const { navigationId, hasScreenshot } = loadedUrl;
+      if (!navigationId || !hasScreenshot) continue;
       if (!this.screenshotsByNavigationId.has(navigationId)) {
         this.client
-          .send('Session.tickScreenshot', {
+          .send('Session.urlScreenshot', {
             navigationId,
-            sessionId: message.sessionId,
+            sessionId: message.heroSessionId,
           })
           .then(x => {
             if (x.imageBase64) this.screenshotsByNavigationId.set(navigationId, x.imageBase64);
@@ -252,6 +297,7 @@ export default class ChromeAliveApp extends Vue {
 
   mounted() {
     this.client.on('Session.active', this.onSessionActiveEvent);
+    this.client.on('Output.updated', this.onOutputUpdated);
   }
 
   private async sendBoundsChanged() {
@@ -296,11 +342,12 @@ export default class ChromeAliveApp extends Vue {
 
 <style lang="scss">
 @import '../../assets/style/resets.scss';
+@import '../../assets/style/flatjson';
 
 :root {
   --toolbarBackgroundColor: #e7eaed;
 
-  --buttonActiveBackgroundColor: rgba(255, 255, 255, 0.12);
+  --buttonActiveBackgroundColor: rgba(176, 173, 173, 0.4);
   --buttonHoverBackgroundColor: rgba(255, 255, 255, 0.08);
 }
 
@@ -354,10 +401,14 @@ body {
     display: flex;
     flex-direction: row;
     line-height: 30px;
+    min-width: 200px;
 
     #entrypoint {
+      overflow: hidden;
+      white-space: nowrap;
       text-align: right;
       text-overflow: ellipsis;
+      direction: rtl;
     }
 
     #status-indicator {
@@ -367,6 +418,7 @@ body {
       position: relative;
       height: 10px;
       width: 10px;
+      min-width: 10px;
       background-color: #11bf11;
       border-radius: 50%;
       display: inline-block;
@@ -375,6 +427,7 @@ body {
     #script-updated {
       font-style: italic;
       margin-left: 5px;
+      white-space: nowrap;
     }
   }
 
@@ -467,6 +520,25 @@ body {
     }
   }
 
+  #input-hover {
+    width: 300px;
+    position: relative;
+    top: -2px;
+    background: white;
+    border-radius: 5px;
+    padding: 10px;
+    overflow: hidden;
+    box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
+    transform: translateY(-5px);
+    transition: opacity 0.3s, transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+
+    #input-size {
+      text-align: center;
+      font-style: italic;
+      color: #3c3c3c;
+    }
+  }
+
   #screenshot-hover {
     display: none;
     width: 300px;
@@ -530,7 +602,7 @@ body {
       }
     }
 
-    &:active {
+    &:active, &.selected {
       background-color: var(--buttonActiveBackgroundColor) !important;
     }
 

@@ -21,27 +21,27 @@ jobs:
           node-version: 14
           cache: 'yarn'
 
-      - name: Yarn install
+      - name: Yarn install Hero
         run: yarn && yarn build
         working-directory: ./hero
         env:
           HERO_SKIP_CHROME_DOWNLOAD: 1
           ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
 
-      - name: Yarn install
+      - name: Yarn install Databox
         run: yarn && yarn build
         working-directory: ./databox
         env:
           HERO_SKIP_CHROME_DOWNLOAD: 1
           ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
 
-      - name: Yarn build
+      - name: Yarn build Monorepo
         run: yarn && yarn build
         env:
           HERO_SKIP_CHROME_DOWNLOAD: 1
           ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
 
-      - name: Build
+      - name: Build App
         run: yarn dist
         working-directory: ./apps/chromealive
         env:

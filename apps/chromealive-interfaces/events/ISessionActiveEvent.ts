@@ -1,18 +1,19 @@
 export default interface ISessionActiveEvent {
   scriptEntrypoint: string;
   scriptLastModifiedTime: number;
-  sessionId: string;
+  heroSessionId: string;
   hasWarning: boolean;
   state: 'play' | 'paused';
   durationSeconds: number;
-  inputKb: number;
-  outputKb: number;
+  input: any;
+  inputBytes: number;
+  outputBytes: number;
   run: number;
-  ticks: {
+  loadedUrls: {
     url: string;
     offsetPercent: number;
     navigationId: number;
     tabId: number;
-    screenshotUrl: string;
+    hasScreenshot: boolean;
   }[];
 }

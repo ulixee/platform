@@ -11,14 +11,16 @@
     "@ulixee/hero-interfaces": "1.5.4",
     "@ulixee/commons": "1.5.5",
     "@ulixee/hero-plugin-utils": "1.5.4",
-    "@ulixee/hero-puppet": "1.5.4",
     "@ulixee/apps-chromealive": "1.5.4",
     "@ulixee/apps-chromealive-interfaces": "1.5.4",
     "debug": "^4.3.2",
     "@types/chrome": "^0.0.154"
   },
   "peerDependencies": {
-    "@ulixee/hero-core": "^1.5.4"
+    "@ulixee/hero-core": "^1.5.4",
+    "@ulixee/databox-core": "^1.5.4"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@ulixee/hero-puppet": "1.5.4"
+  }
 }

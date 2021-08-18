@@ -2,6 +2,10 @@
   "name": "@ulixee/server",
   "version": "1.5.4",
   "description": "The server",
+  "scripts": {
+    "start": "node ../cli-commands/bin/start.js",
+    "start:alive": "node -r @ulixee/apps-chromealive-core/register ../cli-commands/bin/start.js"
+  },
   "dependencies": {
     "@ulixee/commons": "1.5.5",
     "@ulixee/hero-core": "1.5.4",
