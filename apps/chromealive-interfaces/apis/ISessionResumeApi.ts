@@ -6,8 +6,8 @@ export default interface ISessionResumeApi extends IChromeAliveApi {
 }
 
 export interface ISessionResumeArgs {
-  sessionId: string;
-  startFromTick?: number;
+  heroSessionId: string;
+  startFromUrlIndex?: number;
 }
 
 export interface ISessionResumeResult {

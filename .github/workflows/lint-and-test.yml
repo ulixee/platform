@@ -8,48 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  lint:
-    name: Lint
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'true'
-
-      - uses: actions/setup-node@v2
-        with:
-          node-version: 14
-          cache: 'yarn'
-
-      - name: Yarn install
-        run: yarn && yarn build
-        working-directory: ./hero
-        env:
-          HERO_SKIP_CHROME_DOWNLOAD: 1
-          ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
-
-      - name: Yarn install
-        run: yarn && yarn build
-        working-directory: ./databox
-        env:
-          HERO_SKIP_CHROME_DOWNLOAD: 1
-          ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
-
-      - name: Yarn build
-        run: yarn && yarn build
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
-          HERO_SKIP_CHROME_DOWNLOAD: 1
-          ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
-
-      - name: Run  Lint
-        run: NODE_OPTIONS=--max-old-space-size=4096 yarn lint
-
-  test:
+  lint-and-test:
     name: Test Node.js ${{ matrix.node-version }} on ${{ matrix.os }}
-    needs: lint
     timeout-minutes: 30
 
     strategy:
@@ -70,41 +30,37 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'yarn'
 
-      - name: Yarn install
+      - name: Install Hero
         run: yarn && yarn build
         working-directory: ./hero
-        env:
-          HERO_SKIP_CHROME_DOWNLOAD: 1
-          ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
 
-      - name: Yarn install
+      - name: Install Databox
         run: yarn && yarn build
         working-directory: ./databox
-        env:
-          HERO_SKIP_CHROME_DOWNLOAD: 1
-          ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
 
       - name: Yarn build
         run: yarn && yarn build
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
-          HERO_SKIP_CHROME_DOWNLOAD: 1
-          ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
 
       - name: Linux - Apt Install Chrome(s)
         if: ${{ matrix.os == 'ubuntu-latest' }}
         working-directory: ./build
         run: sudo $(npx install-browser-deps)
 
+      - name: Run  Lint
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 14 }}
+        run: NODE_OPTIONS=--max-old-space-size=4096 yarn lint
+
       - name: Run tests
-        run: yarn test:all
+        run: yarn test:all --testTimeout=30000 --maxWorkers=2
         env:
           NODE_ENV: test
           HERO_DATA_DIR: .data
 
       - name: 'Tar files'
         if: ${{ failure() }}
-        run: tar -cvf test-dbs.tar ./build/.data
+        run: tar -cvf test-dbs.tar .data
 
       - name: Upload Databases
         if: ${{ failure() }}

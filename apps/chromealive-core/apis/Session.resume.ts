@@ -7,32 +7,32 @@ import {
 import ChromeAliveCore from '../index';
 
 export default function sessionResumeApi(args: ISessionResumeArgs): ISessionResumeResult {
-  const sessionId = args.sessionId ?? ChromeAliveCore.activeSessionId;
+  const sessionId = args.heroSessionId ?? ChromeAliveCore.activeHeroSessionId;
   if (!sessionId || !ChromeAliveCore.sessionObserversById.has(sessionId))
     throw new Error('No active sessionId found');
 
   const observer = ChromeAliveCore.sessionObserversById.get(sessionId);
-  const { session } = observer;
+  const { heroSession } = observer;
 
   let startUrl = '';
 
   let startLocation: ISessionCreateOptions['sessionResume']['startLocation'] = 'currentLocation';
-  if (args.startFromTick !== undefined) {
-    if (args.startFromTick <= 0) {
+  if (args.startFromUrlIndex !== undefined) {
+    if (args.startFromUrlIndex <= 0) {
       startLocation = 'sessionStart';
-    } else if (args.startFromTick < observer.ticks.length - 1) {
-      startUrl = observer.ticks[args.startFromTick].url;
+    } else if (args.startFromUrlIndex < observer.loadedUrls.length - 1) {
+      startUrl = observer.loadedUrls[args.startFromUrlIndex].url;
 
       startLocation = 'pageStart';
     }
   }
 
-  const script = session.options.scriptInstanceMeta?.entrypoint;
+  const script = heroSession.options.scriptInstanceMeta?.entrypoint;
   const execArgv = [
     `--sessionResume.startLocation`,
     startLocation,
     `--sessionResume.sessionId`,
-    session.id,
+    heroSession.id,
   ];
   if (startUrl) {
     execArgv.push(`--sessionResume.startUrl`, startUrl);
@@ -43,6 +43,7 @@ export default function sessionResumeApi(args: ISessionResumeArgs): ISessionResu
   let success = true;
   let error: Error;
   try {
+    console.log('Resuming session', execArgv);
     fork(script, execArgv, {
       // execArgv,
       stdio: 'inherit',

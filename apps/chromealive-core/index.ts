@@ -1,9 +1,9 @@
-import Core, { GlobalPool, Session } from '@ulixee/hero-core';
+import HeroCore, { GlobalPool as HeroGlobalPool, Session as HeroSession } from '@ulixee/hero-core';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
 import Debug from 'debug';
 import { ChildProcess } from 'child_process';
 import launchChromeAlive from '@ulixee/apps-chromealive/index';
-import Puppet from '@ulixee/hero-puppet';
+import type Puppet from '@ulixee/hero-puppet';
 import IDevtoolsSession from '@ulixee/hero-interfaces/IDevtoolsSession';
 import FocusedWindowCorePlugin from './hero-plugins/FocusedWindowCorePlugin';
 import WindowBoundsCorePlugin from './hero-plugins/WindowBoundsCorePlugin';
@@ -16,7 +16,7 @@ const debug = Debug('ulixee:chromealive');
 
 export default class ChromeAliveCore {
   public static sessionObserversById = new Map<string, SessionObserver>();
-  public static activeSessionId: string;
+  public static activeHeroSessionId: string;
   private static connection: ConnectionToClient;
   private static shouldAutoShowBrowser = false;
   private static app: ChildProcess;
@@ -34,9 +34,9 @@ export default class ChromeAliveCore {
   public static shutdown() {
     debug('Shutting down ChromeAlive!');
     this.closeApp();
-    GlobalPool.events.off('browser-launched', this.launchApp);
-    GlobalPool.events.off('all-browsers-closed', this.closeApp);
-    GlobalPool.events.off('session-created', this.onSessionCreated);
+    HeroGlobalPool.events.off('browser-launched', this.launchApp);
+    HeroGlobalPool.events.off('all-browsers-closed', this.closeApp);
+    HeroGlobalPool.events.off('session-created', this.onHeroSessionCreated);
     FocusedWindowCorePlugin.onVisibilityChange = null;
     AliveBarPositioner.getSessionDevtools = null;
     this.getConnection().close();
@@ -54,68 +54,79 @@ export default class ChromeAliveCore {
 
     this.launchApp = this.launchApp.bind(this);
     this.closeApp = this.closeApp.bind(this);
-    this.onSessionCreated = this.onSessionCreated.bind(this);
+    this.onHeroSessionCreated = this.onHeroSessionCreated.bind(this);
     const connection = this.getConnection();
     connection.on('connected', this.onWsConnected.bind(this));
-    GlobalPool.events.on('browser-launched', this.launchApp);
-    GlobalPool.events.on('all-browsers-closed', this.closeApp);
-    GlobalPool.events.on('session-created', this.onSessionCreated);
+    HeroGlobalPool.events.on('browser-launched', this.launchApp);
+    HeroGlobalPool.events.on('all-browsers-closed', this.closeApp);
+    HeroGlobalPool.events.on('session-created', this.onHeroSessionCreated);
 
     FocusedWindowCorePlugin.onVisibilityChange = this.changeActiveSessions.bind(this);
     AliveBarPositioner.getSessionDevtools = this.getSessionDevtools.bind(this);
 
-    Core.use(FocusedWindowCorePlugin);
-    Core.use(WindowBoundsCorePlugin);
+    HeroCore.use(FocusedWindowCorePlugin);
+    HeroCore.use(WindowBoundsCorePlugin);
   }
 
-  private static onSessionCreated(event: { session: Session }): Promise<any> {
-    const { session } = event;
+  private static onHeroSessionCreated(event: { session: HeroSession }): Promise<any> {
+    const { session: heroSession } = event;
     if (this.shouldAutoShowBrowser) {
-      session.options.showBrowser = true;
-      session.options.showBrowserInteractions = true;
+      heroSession.options.showBrowser = true;
+      heroSession.options.showBrowserInteractions = true;
     }
 
     // if not auto-registered, check if browser is showing
-    if (!session.options.showBrowser) return;
+    if (!heroSession.options.showBrowser) return;
 
-    const script = session.options.scriptInstanceMeta?.entrypoint;
+    const script = heroSession.options.scriptInstanceMeta?.entrypoint;
     if (!script) return;
 
-    debug('New Session Created: %s (%s)', script.split('/').pop(), session.id);
+    debug('New Hero Session Created: %s (%s)', script.split('/').pop(), heroSession.id);
     // keep alive session
-    session.options.sessionKeepAlive = true;
-    const sessionObserver = new SessionObserver(session);
-    this.sessionObserversById.set(session.id, sessionObserver);
-    sessionObserver.on('session:updated', this.updateActiveSession.bind(this, session.id));
-    this.updateActiveSession(session.id);
+    heroSession.options.sessionKeepAlive = true;
+    const sessionObserver = new SessionObserver(heroSession);
+    this.sessionObserversById.set(heroSession.id, sessionObserver);
+    sessionObserver.on('session:updated', this.updateActiveSession.bind(this, heroSession.id));
+    sessionObserver.on('output:updated', this.updateOutput.bind(this, heroSession.id));
+    this.updateActiveSession(heroSession.id);
   }
 
   private static onWsConnected() {
     debug('ChromeAlive! Ws Connected', {
-      activeSessionId: this.activeSessionId,
+      activeSessionId: this.activeHeroSessionId,
     });
-    if (this.activeSessionId) this.updateActiveSession(this.activeSessionId);
+    if (this.activeHeroSessionId) {
+      this.updateActiveSession(this.activeHeroSessionId);
+      this.updateOutput(this.activeHeroSessionId);
+    }
   }
 
-  private static updateActiveSession(sessionId: string) {
-    const sessionObserver = this.sessionObserversById.get(sessionId);
+  private static updateActiveSession(heroSessionId: string) {
+    const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
     this.sendEvent('Session.active', sessionObserver.toEvent());
   }
 
-  private static changeActiveSessions(sessionId: string, pageId: string): void {
-    debug('Changing active session', { sessionId, pageId });
-    this.activeSessionId = sessionId;
-    // hide chrome alive if none are visible
-    this.toggleAppVisibility(!!sessionId);
+  private static updateOutput(heroSessionId: string) {
+    const sessionObserver = this.sessionObserversById.get(heroSessionId);
+    if (!sessionObserver) return;
+    const output = sessionObserver.getOutput();
+    if (output) this.sendEvent('Output.updated', output);
   }
 
-  private static getSessionDevtools(sessionId: string): IDevtoolsSession {
-    const sessionObserver = this.sessionObserversById.get(sessionId);
+  private static changeActiveSessions(heroSessionId: string, pageId: string): void {
+    debug('Changing active session', { heroSessionId, pageId });
+    this.activeHeroSessionId = heroSessionId;
+    // hide chrome alive if none are visible
+    this.toggleAppVisibility(!!heroSessionId);
+  }
+
+  private static getSessionDevtools(heroSessionId: string): IDevtoolsSession {
+    const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
 
-    const { session } = sessionObserver;
-    const page = [...session.tabsById.values()].find(x => !x.isClosing)?.puppetPage;
+    const { heroSession } = sessionObserver;
+    const page = [...heroSession.tabsById.values()].find(x => !x.isClosing)?.puppetPage;
     return page.devtoolsSession;
   }
 

@@ -1,12 +1,12 @@
 import ISessionResumeApi from './ISessionResumeApi';
 import ISessionStepApi from './ISessionStepApi';
-import ISessionTickScreenshotApi from './ISessionTickScreenshotApi';
+import ISessionUrlScreenshotApi from './ISessionUrlScreenshotApi';
 import IAppBoundsChangedApi from './IAppBoundsChangedApi';
 
 export default interface IChromeAliveApis {
   'Session.resume': ISessionResumeApi;
   'Session.step': ISessionStepApi;
-  'Session.tickScreenshot': ISessionTickScreenshotApi;
+  'Session.urlScreenshot': ISessionUrlScreenshotApi;
   'App.boundsChanged': IAppBoundsChangedApi;
 }
 

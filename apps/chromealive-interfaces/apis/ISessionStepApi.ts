@@ -6,7 +6,7 @@ export default interface ISessionStepApi extends IChromeAliveApi {
 }
 
 export interface ISessionStepArgs {
-  sessionId: string;
+  heroSessionId: string;
   continue?: boolean;
 }
 

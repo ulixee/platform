@@ -67,8 +67,10 @@ export default function flattenJson(
     return results;
   }
 
+  const content = type === 'string' ? `"${data}"` : data;
+
   const output: FlatJson = {
-    content: data,
+    content,
     level,
     key,
     index,

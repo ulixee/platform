@@ -1,5 +1,5 @@
 import Debug from 'debug';
-import Puppet from '@ulixee/hero-puppet';
+import type Puppet from '@ulixee/hero-puppet';
 import Log from '@ulixee/commons/lib/Logger';
 import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
