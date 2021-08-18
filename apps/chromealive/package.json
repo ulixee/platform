@@ -1,6 +1,7 @@
 {
   "name": "@ulixee/apps-chromealive",
   "version": "1.5.4",
+  "private": true,
   "license": "MIT",
   "description": "ChromeAlive! powers iterative Ulixee Hero web scraping in the Chrome browser.",
   "repository": "git@github.com:ulixee/apps.git",

@@ -31,10 +31,6 @@ function processPackageJson(packagePath) {
     fs.unlinkSync(`${packagePath}/package.dist.json`);
   }
 
-  if (packageJson.private) {
-    console.log('Private package, skipping', packagePath);
-    return;
-  }
   fs.copyFileSync(licensePath, `${packagePath}/LICENSE.md`);
   if (fs.existsSync(readmePath)) fs.copyFileSync(readmePath, `${packagePath}/README.md`);
 
@@ -52,7 +48,9 @@ function processPackageJson(packagePath) {
     bin: packageJson.bin,
   };
 
-  if (packageJson.private) {
+  if (overridesJson.private === false) {
+    delete finalPackageJson.private;
+  } else if (packageJson.private) {
     if (!packageJson.workspaces) return;
     finalPackageJson.private = true;
     finalPackageJson.publishConfig = undefined;

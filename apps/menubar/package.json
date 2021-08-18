@@ -1,12 +1,13 @@
 {
   "name": "@ulixee/apps-menubar",
   "version": "1.5.4",
+  "private": true,
   "main": "index.js",
   "scripts": {
-    "build": "yarn build:ui && yarn build:basic && cd ../build/menubar && yarn && electron-builder install-app-deps",
-    "build:basic": "tsc -b tsconfig.json && shx cp -r assets ../build/menubar/assets",
+    "build": "yarn build:ui && yarn build:basic && cd ../../build/apps/menubar && yarn && electron-builder install-app-deps",
+    "build:basic": "tsc -b tsconfig.json && shx cp -r assets ../../build/apps/menubar/assets",
     "build:ui": "yarn workspace @ulixee/apps-menubar-ui build",
-    "start": "cd ../build/menubar && npx electron ."
+    "start": "cd ../../build/apps/menubar && npx electron ."
   },
   "repository": "git@github.com:ulixee/apps.git",
   "author": "Caleb Clark <calebjclark@gmail.com>",
@@ -14,12 +15,21 @@
   "dependencies": {
     "electron-positioner": "^4.1.0",
     "node-static": "^0.7.11",
-    "nseventmonitor": "^1.0.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "electron": "^13.1.7",
+    "electron": "13.1.7",
     "electron-builder": "^22.11.7",
     "shx": "^0.3.3"
-  }
+  },
+  "optionalDependencies": {
+    "nseventmonitor": "^1.0.0"
+  },
+  "nohoist": [
+    "**/electron",
+    "**/electron-webpack",
+    "**/electron-webpack/**",
+    "nseventmonitor",
+    "electron-positioner"
+  ]
 }

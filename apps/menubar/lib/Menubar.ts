@@ -1,7 +1,6 @@
-import { app, systemPreferences, BrowserWindow, Tray } from 'electron';
+import { app, BrowserWindow, systemPreferences, Tray } from 'electron';
 import { EventEmitter } from 'events';
 import * as Positioner from 'electron-positioner';
-import { NSEventMonitor, NSEventMask } from 'nseventmonitor';
 import IMenubarOptions from '../interfaces/IMenubarOptions';
 import { getWindowPosition } from './util/getWindowPosition';
 import VueServer from './VueServer';
@@ -15,8 +14,8 @@ export class Menubar extends EventEmitter {
   #isVisible: boolean; // track visibility
   #cachedBounds?: Electron.Rectangle; // _cachedBounds are needed for double-clicked event
   #options: IMenubarOptions;
+  #nsEventMonitor: unknown;
   #positioner: Positioner | undefined;
-  #macEventMonitor = new NSEventMonitor();
   #vueServer: VueServer;
 
   constructor(options?: IMenubarOptions) {
@@ -31,15 +30,12 @@ export class Menubar extends EventEmitter {
       app.on('ready', () => this.appReady());
     }
 
-    this.#macEventMonitor.start(NSEventMask.leftMouseDown | NSEventMask.rightMouseDown, () => {
-      this.hideWindow();
-    });
-
     this.#vueServer = new VueServer(options.vueDistPath);
   }
 
   get tray(): Tray {
-    if (!this.#tray) throw new Error('Please access `this.tray` after the `ready` event has fired.');
+    if (!this.#tray)
+      throw new Error('Please access `this.tray` after the `ready` event has fired.');
     return this.#tray;
   }
 
@@ -122,6 +118,17 @@ export class Menubar extends EventEmitter {
         }
       });
 
+      if (process.platform === 'darwin' && !this.#nsEventMonitor) {
+        // eslint-disable-next-line import/no-unresolved
+        const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
+        const monitor = new NSEventMonitor();
+        this.#nsEventMonitor = monitor;
+        monitor.start(
+          NSEventMask.leftMouseDown | NSEventMask.rightMouseDown,
+          this.hideWindow.bind(this),
+        );
+      }
+
       this.#tray.on('click', this.clicked.bind(this));
       this.#tray.on('right-click', this.clicked.bind(this));
       this.#tray.on('double-click', this.clicked.bind(this));
@@ -133,7 +140,7 @@ export class Menubar extends EventEmitter {
       }
 
       this.emit('ready');
-    } catch(error) {
+    } catch (error) {
       console.log('ERROR in appReady: ', error);
     }
   }
