@@ -1,10 +1,10 @@
-const path = require('path');
+const Path = require('path');
 
 module.exports = {
   parserOptions: {
-    project: path.join(__dirname, '/tsconfig.json'),
+    project: Path.join(__dirname, 'tsconfig.json'),
   },
-  extends: '../.eslintrc.js',
+  extends: '../../.eslintrc.js',
   rules: {
     'no-console': 'off',
     'global-require': 'off',

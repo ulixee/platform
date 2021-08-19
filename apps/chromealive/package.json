@@ -7,15 +7,12 @@
   "repository": "git@github.com:ulixee/apps.git",
   "author": "Data Liberation Foundation",
   "scripts": {
-    "build": "yarn build:ui && yarn build:basic && shx cp *.sh ../build/chromealive/ && cd ../build/chromealive && yarn && electron-builder install-app-deps",
-    "build:basic": "tsc -b tsconfig.json",
+    "build": "yarn build:ui && cd ../../build/apps/chromealive && yarn && electron-builder install-app-deps",
+    "build:basic": "cd ../.. && yarn build:tsc",
     "build:ui": "yarn workspace @ulixee/apps-chromealive-ui build",
-    "watch:basic": "tsc -b -w tsconfig.json",
-    "watch:ui": "yarn workspace @ulixee/apps-chromealive-ui watch",
-    "watch": "concurrently -k -n app,ui \"yarn watch:ui\" \"yarn watch:basic\"",
-    "dist": "yarn build && cd ../build/chromealive && electron-builder -mwl && ./pack.sh",
-    "dist:basic": "yarn build:basic && cd ../build/chromealive && electron-builder && ./sign.sh",
-    "start": "cd ../build/chromealive && npx electron ."
+    "dist": "yarn build && cd ../../build/apps/chromealive && electron-builder -mwl && ./pack.sh",
+    "dist:basic": "yarn build:basic && cd ../../build/apps/chromealive && electron-builder && ./sign.sh",
+    "start": "cd ../../build/apps/chromealive && npx electron ."
   },
   "main": "app.js",
   "files": [
@@ -28,14 +25,16 @@
     "progress": "^2.0.3",
     "tar": "^6.1.7",
     "compare-versions": "^3.6.0",
-    "@ulixee/commons": "^1.5.5"
+    "@ulixee/commons": "^1.5.5",
+    "electron-context-menu": "^3.1.1"
   },
   "devDependencies": {
     "@types/tar": "^4.0.5",
     "@types/progress": "^2.0.5",
     "electron": "13.1.9",
     "electron-builder": "^22.11.7",
-    "shx": "^0.3.3"
+    "shx": "^0.3.3",
+    "cross-env": "^7.0.3"
   },
   "build": {
     "appId": "dev.ulixee.chromealive",

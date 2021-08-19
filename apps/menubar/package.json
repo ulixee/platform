@@ -1,26 +1,61 @@
 {
   "name": "@ulixee/apps-menubar",
   "version": "1.5.4",
-  "private": true,
   "main": "index.js",
   "scripts": {
-    "build": "yarn build:ui && yarn build:basic && cd ../../build/apps/menubar && yarn && electron-builder install-app-deps",
-    "build:basic": "tsc -b tsconfig.json && shx cp -r assets ../../build/apps/menubar/assets",
-    "build:ui": "yarn workspace @ulixee/apps-menubar-ui build",
+    "build": "yarn build:ui && yarn build:basic && cross-env cd ../../build/apps/menubar && yarn copy:build && yarn && electron-builder install-app-deps",
+    "build:basic": "cd ../.. && yarn tsc",
+    "build:ui": "yarn workspace @ulixee/apps-menubar-ui build && yarn workspace @ulixee/apps-chromealive-ui build",
+    "copy:build": "cd ../../build/apps/menubar && node builder/copySources.js ./packages",
     "start": "cd ../../build/apps/menubar && npx electron ."
   },
   "repository": "git@github.com:ulixee/apps.git",
   "author": "Caleb Clark <calebjclark@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "@ulixee/apps-chromealive-core": "1.5.4",
+    "@ulixee/commons": "1.5.5",
+    "@ulixee/server": "1.5.4",
     "electron-positioner": "^4.1.0",
     "node-static": "^0.7.11",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.1"
+  },
+  "build": {
+    "appId": "dev.ulixee.boss",
+    "productName": "Ulixee Boss",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "extendInfo": {
+        "LSUIElement": 1
+      },
+      "target": {
+        "target": "dir",
+        "arch": [
+          "arm64",
+          "x64"
+        ]
+      }
+    },
+    "win": {
+      "target": "dir"
+    },
+    "linux": {
+      "executableName": "boss",
+      "category": "Development",
+      "target": "dir"
+    },
+    "publish": [
+      {
+        "provider": "github"
+      }
+    ]
   },
   "devDependencies": {
     "electron": "13.1.7",
     "electron-builder": "^22.11.7",
-    "shx": "^0.3.3"
+    "shx": "^0.3.3",
+    "cross-env": "^7.0.3"
   },
   "optionalDependencies": {
     "nseventmonitor": "^1.0.0"
@@ -30,6 +65,7 @@
     "**/electron-webpack",
     "**/electron-webpack/**",
     "nseventmonitor",
-    "electron-positioner"
+    "electron-positioner",
+    "better-sqlite3"
   ]
 }

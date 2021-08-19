@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "../../build/apps/menubar-ui",
+    "outDir": "./build",
     "target": "esnext",
     "module": "esnext",
     "composite": true,
@@ -15,6 +15,7 @@
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "baseUrl": ".",
+    "rootDir": ".",
     "types": ["webpack-env"],
     "paths": {
       "@/*": ["src/*"]
@@ -29,5 +30,5 @@
     "tests/**/*.tsx",
     ".eslintrc.js"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["**/node_modules", "**/build", "**/build-dist"]
 }

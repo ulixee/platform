@@ -1,5 +1,0 @@
-{
-  "extends": "../tsconfig.dist.json",
-  "include": ["main/**/*", "cli-commands/**/*", "examples/**/*"],
-  "exclude": ["node_modules"]
-}

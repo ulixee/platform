@@ -11,10 +11,12 @@ import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
   ShutdownHandler.register(() => server.close());
 
   await server.listen({ port: args.port ?? 0 });
-  console.log('\n----------------------------------------');
-  console.log(`Ulixee Server is listening on port ${await server.port}`);
-  console.log(`http://${await server.address}`);
-  console.log('----------------------------------------\n');
+  const startMessage = `Ulixee Server is listening on port ${await server.port}\nhttp://${await server.address}`;
+
+  // eslint-disable-next-line no-console
+  console.log(
+    `\n----------------------------------------${startMessage}----------------------------------------\n`,
+  );
 })().catch(error => {
   console.error('ERROR starting core', { error });
   process.exit(1);

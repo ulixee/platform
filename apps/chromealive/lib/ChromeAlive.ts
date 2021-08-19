@@ -4,6 +4,7 @@ import { Server as StaticServer } from 'node-static';
 import * as Http from 'http';
 import { AddressInfo } from 'net';
 import type { IAppBoundsChangedArgs } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
+import * as Path from 'path';
 
 export class ChromeAlive extends EventEmitter {
   #browserWindow?: BrowserWindow;
@@ -12,7 +13,7 @@ export class ChromeAlive extends EventEmitter {
   #vueAddress: Promise<AddressInfo>;
   #resetAlwaysTopTimeout: NodeJS.Timeout;
 
-  constructor(vueDistPath: string, readonly coreServerAddress?: string) {
+  constructor(readonly coreServerAddress?: string) {
     super();
     this.#isVisible = false;
 
@@ -31,6 +32,7 @@ export class ChromeAlive extends EventEmitter {
     } else {
       app.on('ready', () => this.appReady());
     }
+    const vueDistPath = Path.resolve(__dirname, '..', 'ui');
 
     const staticServer = new StaticServer(vueDistPath);
 
@@ -77,7 +79,7 @@ export class ChromeAlive extends EventEmitter {
       await this.showWindow();
       this.emit('ready');
     } catch (error) {
-      console.log('ERROR in appReady: ', error);
+      console.error('ERROR in appReady: ', error);
     }
   }
 

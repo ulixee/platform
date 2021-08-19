@@ -1,11 +1,17 @@
+import ChromeAliveCore from '@ulixee/apps-chromealive-core';
 import { app, BrowserWindow, systemPreferences, Tray } from 'electron';
 import { EventEmitter } from 'events';
+import UlixeeServer from '@ulixee/server';
 import * as Positioner from 'electron-positioner';
+import * as Path from 'path';
 import IMenubarOptions from '../interfaces/IMenubarOptions';
 import { getWindowPosition } from './util/getWindowPosition';
 import VueServer from './VueServer';
 
 // Forked from https://github.com/maxogden/menubar
+
+const iconPath = Path.resolve(__dirname, '..', 'assets', 'IconTemplate.png');
+const vueDistPath = Path.resolve(__dirname, '..', 'ui');
 
 export class Menubar extends EventEmitter {
   #tray?: Tray;
@@ -17,6 +23,7 @@ export class Menubar extends EventEmitter {
   #nsEventMonitor: unknown;
   #positioner: Positioner | undefined;
   #vueServer: VueServer;
+  #ulixeeServer: UlixeeServer;
 
   constructor(options?: IMenubarOptions) {
     super();
@@ -30,7 +37,15 @@ export class Menubar extends EventEmitter {
       app.on('ready', () => this.appReady());
     }
 
-    this.#vueServer = new VueServer(options.vueDistPath);
+    this.#vueServer = new VueServer(vueDistPath);
+
+    ChromeAliveCore.register();
+    this.#ulixeeServer = new UlixeeServer();
+    // eslint-disable-next-line promise/valid-params
+    this.#ulixeeServer.listen({ port: 1337 }).catch();
+    app.on('before-quit', async () => {
+      await this.#ulixeeServer.close(false);
+    });
   }
 
   get tray(): Tray {
@@ -110,7 +125,7 @@ export class Menubar extends EventEmitter {
 
   private appReady(): void {
     try {
-      this.#tray = new Tray(this.#options.iconPath);
+      this.#tray = new Tray(iconPath);
 
       app.on('activate', (_event, hasVisibleWindows) => {
         if (!hasVisibleWindows) {
@@ -119,7 +134,7 @@ export class Menubar extends EventEmitter {
       });
 
       if (process.platform === 'darwin' && !this.#nsEventMonitor) {
-        // eslint-disable-next-line import/no-unresolved
+        // eslint-disable-next-line import/no-unresolved,global-require
         const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
         const monitor = new NSEventMonitor();
         this.#nsEventMonitor = monitor;
@@ -141,7 +156,7 @@ export class Menubar extends EventEmitter {
 
       this.emit('ready');
     } catch (error) {
-      console.log('ERROR in appReady: ', error);
+      console.error('ERROR in appReady: ', error);
     }
   }
 

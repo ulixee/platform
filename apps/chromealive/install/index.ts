@@ -35,7 +35,7 @@ if (isBinaryInstalled()) {
 
   let lastDownloadedBytes = 0;
   await downloadFile(
-    `https://github.com/ulixee/apps/releases/download/v${version}/chromealive-${version}-${platformNames[platform]}${archAddon}.tar.gz`,
+    `https://github.com/ulixee/ulixee/releases/download/v${version}/chromealive-${version}-${platformNames[platform]}${archAddon}.tar.gz`,
     tmpFile,
     (downloadedBytes, totalBytes) => {
       if (!bar) {
