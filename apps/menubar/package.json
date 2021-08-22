@@ -3,10 +3,12 @@
   "version": "1.5.4",
   "main": "index.js",
   "scripts": {
-    "build": "yarn build:ui && yarn build:basic && cross-env cd ../../build/apps/menubar && yarn copy:build && yarn && electron-builder install-app-deps",
-    "build:basic": "cd ../.. && yarn tsc",
+    "build": "yarn build:ui && yarn build:basic && yarn && electron-builder install-app-deps",
+    "build:basic": "cd ../.. && yarn tsc && cd - && yarn copy:build",
     "build:ui": "yarn workspace @ulixee/apps-menubar-ui build && yarn workspace @ulixee/apps-chromealive-ui build",
-    "copy:build": "cd ../../build/apps/menubar && node builder/copySources.js ./packages",
+    "copy:build": "cd ../../build/apps/menubar && node builder/copySources.js ./packages && cd -",
+    "dist": "yarn build && cd ../../build/apps/menubar && electron-builder -mwl && ./pack.sh",
+    "dist:basic": "yarn build:basic && cd ../../build/apps/menubar && electron-builder && ./sign.sh",
     "start": "cd ../../build/apps/menubar && npx electron ."
   },
   "repository": "git@github.com:ulixee/apps.git",
@@ -23,6 +25,9 @@
   "build": {
     "appId": "dev.ulixee.boss",
     "productName": "Ulixee Boss",
+    "asarUnpack": [
+      "node_modules/@ulixee/apps-chromealive-core"
+    ],
     "mac": {
       "category": "public.app-category.developer-tools",
       "hardenedRuntime": true,
@@ -32,7 +37,6 @@
       "target": {
         "target": "dir",
         "arch": [
-          "arm64",
           "x64"
         ]
       }

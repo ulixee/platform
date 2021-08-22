@@ -10,6 +10,7 @@ const launchPaths = {
   local: getLocalBuildPath(),
   binary: getBinaryPath(),
   workspace: `yarn workspace @ulixee/apps-chromealive start`,
+  boss: process.execPath,
 };
 
 export default function launchChromeAlive(...launchArgs: string[]): ChildProcess {
@@ -47,9 +48,18 @@ export default function launchChromeAlive(...launchArgs: string[]): ChildProcess
   return child;
 }
 
-function getPreferredLaunch(): 'local' | 'workspace' | 'binary' {
+function getPreferredLaunch(): 'local' | 'workspace' | 'binary' | 'boss' {
   if (isLocalBuildPresent()) {
     return 'local';
+  }
+
+  try {
+    require.resolve('./app');
+    // eslint-disable-next-line global-require
+    const isPackaged = require('electron').app.isPackaged;
+    if (isPackaged) return 'boss';
+  } catch (err) {
+    // not installed locally
   }
 
   const forceBinary = JSON.parse(process.env.ULX_USE_CHROMEALIVE_BINARY ?? 'false');

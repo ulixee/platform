@@ -5,6 +5,9 @@ import * as Http from 'http';
 import { AddressInfo } from 'net';
 import type { IAppBoundsChangedArgs } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
 import * as Path from 'path';
+import * as Fs from 'fs';
+import * as ContextMenu from 'electron-context-menu';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 
 export class ChromeAlive extends EventEmitter {
   #browserWindow?: BrowserWindow;
@@ -16,14 +19,21 @@ export class ChromeAlive extends EventEmitter {
   constructor(readonly coreServerAddress?: string) {
     super();
     this.#isVisible = false;
+    this.coreServerAddress ??= process.argv
+      .find(x => x.startsWith('--coreServerAddress='))
+      ?.replace('--coreServerAddress=', '');
 
     // hide the dock icon if it shows
     if (process.platform === 'darwin') {
       app.setActivationPolicy('accessory');
     }
 
+    ContextMenu({
+      showInspectElement: true,
+      showSearchWithGoogle: false,
+      showLookUpSelection: false,
+    });
     app.name = 'ChromeAlive!';
-    app.applicationMenu = null;
 
     app.setAppLogsPath();
 
@@ -32,7 +42,9 @@ export class ChromeAlive extends EventEmitter {
     } else {
       app.on('ready', () => this.appReady());
     }
+
     const vueDistPath = Path.resolve(__dirname, '..', 'ui');
+    if (!Fs.existsSync(vueDistPath)) throw new Error('ChromeAlive UI not installed');
 
     const staticServer = new StaticServer(vueDistPath);
 
@@ -63,8 +75,12 @@ export class ChromeAlive extends EventEmitter {
     if (!this.#browserWindow.isVisible()) {
       this.#browserWindow.show();
     }
+
     if (!this.#browserWindow.isAlwaysOnTop()) {
       this.#browserWindow.setAlwaysOnTop(true, 'floating');
+    }
+
+    if (this.#browserWindow.isAlwaysOnTop()) {
       clearTimeout(this.#resetAlwaysTopTimeout);
       this.#resetAlwaysTopTimeout = setTimeout(
         () => this.#browserWindow.setAlwaysOnTop(false),
@@ -74,9 +90,20 @@ export class ChromeAlive extends EventEmitter {
     this.#isVisible = true;
   }
 
+  private appExit(): void {
+    console.warn('EXITING CHROMEALIVE!');
+    app.exit();
+  }
+
   private async appReady(): Promise<void> {
     try {
       await this.showWindow();
+      ShutdownHandler.register(() => this.appExit());
+      process.on('message', message => {
+        if (message === 'exit') {
+          this.appExit();
+        }
+      });
       this.emit('ready');
     } catch (error) {
       console.error('ERROR in appReady: ', error);

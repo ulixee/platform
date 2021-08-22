@@ -4,6 +4,7 @@ import { EventEmitter } from 'events';
 import UlixeeServer from '@ulixee/server';
 import * as Positioner from 'electron-positioner';
 import * as Path from 'path';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import IMenubarOptions from '../interfaces/IMenubarOptions';
 import { getWindowPosition } from './util/getWindowPosition';
 import VueServer from './VueServer';
@@ -29,6 +30,10 @@ export class Menubar extends EventEmitter {
     super();
     this.#options = options;
     this.#isVisible = false;
+    // hide the dock icon if it shows
+    if (process.platform === 'darwin') {
+      app.setActivationPolicy('accessory');
+    }
 
     if (app.isReady()) {
       // See https://github.com/maxogden/menubar/pull/151
@@ -38,14 +43,6 @@ export class Menubar extends EventEmitter {
     }
 
     this.#vueServer = new VueServer(vueDistPath);
-
-    ChromeAliveCore.register();
-    this.#ulixeeServer = new UlixeeServer();
-    // eslint-disable-next-line promise/valid-params
-    this.#ulixeeServer.listen({ port: 1337 }).catch();
-    app.on('before-quit', async () => {
-      await this.#ulixeeServer.close(false);
-    });
   }
 
   get tray(): Tray {
@@ -54,10 +51,31 @@ export class Menubar extends EventEmitter {
     return this.#tray;
   }
 
+  private async stopServer() {
+    if (!this.#ulixeeServer) return;
+
+    // eslint-disable-next-line no-console
+    console.log(`CLOSING ULIXEE SERVER`, !!this.#ulixeeServer);
+    const server = this.#ulixeeServer;
+    this.#ulixeeServer = null;
+    await server.close();
+  }
+
+  private async startServer() {
+    if (this.#ulixeeServer) return;
+    this.#ulixeeServer = new UlixeeServer();
+    // TODO: read port from common ulixee.json? Or put running port into a file?
+    await this.#ulixeeServer.listen({ port: 1337 });
+    // eslint-disable-next-line no-console
+    console.log(`STARTED ULIXEE SERVER at ws://localhost:${await this.#ulixeeServer.port}`);
+  }
+
   private hideWindow(): void {
     if (!this.#browserWindow || !this.#isVisible) {
       return;
     }
+    (this.#nsEventMonitor as any)?.stop();
+
     this.#browserWindow.hide();
     this.#isVisible = false;
     if (this.#blurTimeout) {
@@ -120,29 +138,33 @@ export class Menubar extends EventEmitter {
     // https://github.com/maxogden/menubar/issues/233
     this.#browserWindow.setPosition(Math.round(x), Math.round(y));
     this.#browserWindow.show();
+    this.listenForMouseDown();
+
     this.#isVisible = true;
   }
 
   private appReady(): void {
     try {
+      app.on('before-quit', async e => {
+        console.warn('Quitting Ulixee');
+        e.preventDefault();
+        await this.stopServer();
+        process.exit(0);
+      });
+      ChromeAliveCore.register();
+      // for now auto-start
+      this.startServer().catch(console.error);
+      ShutdownHandler.exitOnSignal = false;
+      ShutdownHandler.register(() => this.stopServer());
+
       this.#tray = new Tray(iconPath);
 
       app.on('activate', (_event, hasVisibleWindows) => {
         if (!hasVisibleWindows) {
           this.showWindow().catch(console.error);
         }
+        _event.preventDefault();
       });
-
-      if (process.platform === 'darwin' && !this.#nsEventMonitor) {
-        // eslint-disable-next-line import/no-unresolved,global-require
-        const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
-        const monitor = new NSEventMonitor();
-        this.#nsEventMonitor = monitor;
-        monitor.start(
-          NSEventMask.leftMouseDown | NSEventMask.rightMouseDown,
-          this.hideWindow.bind(this),
-        );
-      }
 
       this.#tray.on('click', this.clicked.bind(this));
       this.#tray.on('right-click', this.clicked.bind(this));
@@ -158,6 +180,18 @@ export class Menubar extends EventEmitter {
     } catch (error) {
       console.error('ERROR in appReady: ', error);
     }
+  }
+
+  private listenForMouseDown() {
+    if (process.platform !== 'darwin') return;
+    // eslint-disable-next-line import/no-unresolved,global-require
+    const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
+
+    this.#nsEventMonitor ??= new NSEventMonitor();
+    (this.#nsEventMonitor as any).start(
+      NSEventMask.leftMouseDown | NSEventMask.rightMouseDown,
+      this.hideWindow.bind(this),
+    );
   }
 
   private async clicked(
@@ -192,7 +226,10 @@ export class Menubar extends EventEmitter {
     this.#browserWindow = new BrowserWindow({
       ...defaults,
       roundedCorners: false,
+      skipTaskbar: true,
+      autoHideMenuBar: true,
       transparent: true,
+      alwaysOnTop: true,
     });
 
     this.#positioner = new Positioner(this.#browserWindow);

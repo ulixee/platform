@@ -31,4 +31,5 @@ copyDir(`${baseBuild}/build`, dest);
 copyDir(`${baseBuild}/hero/build`, `${dest}/hero`);
 copyDir(`${baseBuild}/databox/build`, `${dest}/databox`);
 
+// eslint-disable-next-line no-console
 console.log('Copied files to dest', dest);

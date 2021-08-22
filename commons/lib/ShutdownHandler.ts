@@ -11,11 +11,11 @@ export default class ShutdownHandler {
   private static isRegistered = false;
   private static hasRunHandlers = false;
   private static readonly onShutdownFns: {
-    fn: (signal?: ShutdownSignal) => Promise<any>;
+    fn: (signal?: ShutdownSignal) => Promise<any> | void;
     callsite: string;
   }[] = [];
 
-  public static register(onShutdownFn: (signal?: ShutdownSignal) => Promise<any>): void {
+  public static register(onShutdownFn: (signal?: ShutdownSignal) => Promise<any> | void): void {
     this.registerSignals();
     const callsite = new Error().stack.split(/\r?\n/).slice(2, 3).shift().trim();
     this.onShutdownFns.push({ fn: onShutdownFn, callsite });
