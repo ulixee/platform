@@ -225,8 +225,9 @@ export default class ChromeAliveApp extends Vue {
     this.isShowingOutput = !this.isShowingOutput;
     if (!this.isShowingOutput) this.outputWindow.close();
     else {
-      const { left,bottom } = (this.$refs.outputButton as HTMLElement).getBoundingClientRect();
-      const features =`top=${bottom + 25},left=${left},width=300,height=500,frame=true,nodeIntegration=no`;
+      const { left } = (this.$refs.outputButton as HTMLElement).getBoundingClientRect();
+      const { bottom } = (this.$refs.toolbar as HTMLElement).getBoundingClientRect();
+      const features =`top=${bottom},left=${left},width=300,height=500,frame=true,nodeIntegration=no`;
       this.outputWindow = window.open('/output.html','_blank', features);
     }
   }

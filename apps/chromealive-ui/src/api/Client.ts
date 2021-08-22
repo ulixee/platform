@@ -15,7 +15,7 @@ declare global {
   }
 }
 
-window.heroServerUrl = process.env.VUE_APP_BASE_URI ?? '';
+window.heroServerUrl = window.opener?.heroServerUrl ?? process.env.VUE_APP_BASE_URI ?? '';
 
 class Client {
   public onConnect: () => any;

@@ -13,7 +13,9 @@
           <div class="indent" v-for="i in node.level" :key="i">{{ ' ' }}</div>
           <span v-if="node.key" class="key">{{ node.key }}: </span>
           <span>
-            <span :class="{ ['value-' + node.type]: node.isContent, brackets: !node.isContent}">{{ node.content }}</span>
+            <span :class="{ ['value-' + node.type]: node.isContent, brackets: !node.isContent }">{{
+              node.content
+            }}</span>
             <span v-if="node.showComma" class="comma">, </span>
           </span>
         </div>
@@ -23,15 +25,12 @@
         <p>This panel shows output set using "databox.output".</p>
         <p>You can use the "databox.output" object as an array:</p>
         <pre>
-         databox.output.push({
-           text,
-           href,
-         })
-        </pre>
+ databox.output.push({
+   text,
+   href,
+ })     </pre>
         <p>Or as an object:</p>
-        <pre>
-          databox.output.text = text;
-        </pre>
+        <pre>databox.output.text = text;</pre>
         <p>
           As you set each data-entry, it will stream into this panel as the same json you'll get if
           you print databox.output:
@@ -140,6 +139,10 @@ body {
   border: 1px solid #e2ecec;
   background: #eeeeee;
   padding: 10px;
+
+  pre {
+    padding-left: 20px;
+  }
 }
 
 .Datasize {

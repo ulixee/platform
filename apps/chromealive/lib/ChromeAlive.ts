@@ -123,15 +123,31 @@ export class ChromeAlive extends EventEmitter {
       closable: true,
       hasShadow: false,
       skipTaskbar: true,
-      alwaysOnTop: true,
       autoHideMenuBar: true,
       width: workarea.width,
       y: workarea.y,
       x: workarea.x,
       webPreferences: {
         preload: `${__dirname}/preload.js`,
+        nativeWindowOpen: true,
       },
       height: 50,
+    });
+
+    // for output window
+    this.#browserWindow.webContents.setWindowOpenHandler(() => {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          vibrancy: 'popover',
+          alwaysOnTop: false,
+          hasShadow: true,
+          useContentSize: true,
+          webPreferences: {
+            preload: `${__dirname}/preload.js`,
+          },
+        },
+      };
     });
 
     this.#browserWindow.on('close', () => app.exit());
