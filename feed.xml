@@ -4,7 +4,7 @@
         <title>Ulixee Blog</title>
         <link>https://ulixee.org/</link>
         <description>A blog about scraping, features and experiences developing Ulixee</description>
-        <lastBuildDate>Mon, 23 Aug 2021 21:52:33 GMT</lastBuildDate>
+        <lastBuildDate>Mon, 23 Aug 2021 23:36:11 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>Gridsome Feed Plugin</generator>
         <atom:link href="https://ulixee.org/feed.xml" rel="self" type="application/rss+xml"/>
