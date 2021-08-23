@@ -13,7 +13,7 @@ function copyDir(baseDir: string, outDir: string) {
     : { private: false };
 
   for (const dir of Fs.readdirSync(baseDir)) {
-    if (dir === 'node_modules' || dir === 'packages' || dir === 'menubar' || dir.endsWith('-ui'))
+    if (dir === 'node_modules' || dir === 'packages' || dir === 'boss' || dir.endsWith('-ui'))
       continue;
 
     if (Fs.statSync(`${baseDir}/${dir}`).isDirectory()) {

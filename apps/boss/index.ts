@@ -8,7 +8,7 @@ if (process.argv.some(x => x.includes('--chromealive'))) {
   const chromealive = new ChromeAlive();
   chromealive.on('ready', () => {
     // eslint-disable-next-line no-console
-    console.log('RUNNING ULIXEE CHROMEALIVE');
+    console.log('RUNNING CHROMEALIVE');
   });
 } else {
   const menubar = new Menubar({
@@ -20,6 +20,6 @@ if (process.argv.some(x => x.includes('--chromealive'))) {
 
   menubar.on('ready', () => {
     // eslint-disable-next-line no-console
-    console.log('RUNNING ULIXEE MENUBAR');
+    console.log('RUNNING ULIXEE BOSS');
   });
 }

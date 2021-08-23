@@ -1,15 +1,15 @@
 {
-  "name": "@ulixee/apps-menubar",
+  "name": "@ulixee/apps-boss",
   "version": "1.5.4",
   "main": "index.js",
   "scripts": {
-    "build": "yarn build:ui && yarn build:basic && yarn && electron-builder install-app-deps",
+    "build": "yarn build:ui && yarn build:basic && cd ../../build/apps/boss && yarn && electron-builder install-app-deps",
     "build:basic": "cd ../.. && yarn tsc && cd - && yarn copy:build",
     "build:ui": "yarn workspace @ulixee/apps-menubar-ui build && yarn workspace @ulixee/apps-chromealive-ui build",
-    "copy:build": "cd ../../build/apps/menubar && node builder/copySources.js ./packages && cd -",
-    "dist": "yarn build && cd ../../build/apps/menubar && electron-builder -mwl && ./pack.sh",
-    "dist:basic": "yarn build:basic && cd ../../build/apps/menubar && electron-builder && ./sign.sh",
-    "start": "cd ../../build/apps/menubar && npx electron ."
+    "copy:build": "cd ../../build/apps/boss && node builder/copySources.js ./packages && cd -",
+    "dist": "yarn build && cd ../../build/apps/boss && yarn && electron-builder -mwl && ./pack.sh",
+    "dist:basic": "yarn build:basic && cd ../../build/apps/boss && electron-builder",
+    "start": "cd ../../build/apps/boss && npx electron ."
   },
   "repository": "git@github.com:ulixee/apps.git",
   "author": "Caleb Clark <calebjclark@gmail.com>",
@@ -27,6 +27,13 @@
     "productName": "Ulixee Boss",
     "asarUnpack": [
       "node_modules/@ulixee/apps-chromealive-core"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "files": [
+      "**/*",
+      "assets/*"
     ],
     "mac": {
       "category": "public.app-category.developer-tools",

@@ -11,7 +11,7 @@
     "build:basic": "cd ../.. && yarn build:tsc",
     "build:ui": "yarn workspace @ulixee/apps-chromealive-ui build",
     "dist": "yarn build && cd ../../build/apps/chromealive && electron-builder -mwl && ./pack.sh",
-    "dist:basic": "yarn build:basic && cd ../../build/apps/chromealive && electron-builder && ./sign.sh",
+    "dist:basic": "yarn build:basic && cd ../../build/apps/chromealive && electron-builder",
     "start": "cd ../../build/apps/chromealive && npx electron ."
   },
   "main": "app.js",

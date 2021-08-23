@@ -18,13 +18,9 @@ export default function launchChromeAlive(...launchArgs: string[]): ChildProcess
 
   let stdio: StdioOptions;
   if (showDebugLogs) {
-    stdio = ['ignore', 'inherit', 'inherit'];
+    stdio = ['ignore', 'inherit', 'inherit', 'ipc'];
   } else {
-    stdio = ['ignore', 'ignore', 'ignore'];
-  }
-  if (process.platform === 'win32') {
-    // add an ipc pipe to send a close message
-    stdio.push('ipc');
+    stdio = ['ignore', 'ignore', 'ignore', 'ipc'];
   }
 
   const spawnOptions: SpawnOptions = {

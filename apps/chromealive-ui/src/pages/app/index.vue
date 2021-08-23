@@ -84,14 +84,21 @@
       />
     </div>
 
-    <div id="input-hover" v-if="isShowingInput" :style="{ left: $refs.inputButton.getBoundingClientRect().left + 'px'}">
+    <div
+      id="input-hover"
+      v-if="isShowingInput"
+      :style="{ left: $refs.inputButton.getBoundingClientRect().left + 'px' }"
+    >
       <div class="input-box">
         <div v-if="inputJson.length" class="Json">
           <div class="JsonNode" v-for="node of inputJson" :key="node.id">
             <div class="indent" v-for="i in node.level" :key="i">{{ ' ' }}</div>
             <span v-if="node.key" class="key">{{ node.key }}: </span>
             <span>
-              <span :class="{ ['value-' + node.type]: node.isContent, brackets: !node.isContent}">{{ node.content }}</span>
+              <span
+                :class="{ ['value-' + node.type]: node.isContent, brackets: !node.isContent }"
+                >{{ node.content }}</span
+              >
               <span v-if="node.showComma" class="comma">, </span>
             </span>
           </div>
@@ -114,7 +121,6 @@ import IOutputUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IOut
 import humanizeBytes from '@/utils/humanizeBytes';
 import flattenJson, { FlatJson } from '@/utils/flattenJson';
 
-
 @Component({
   components: { VueSlider },
 })
@@ -130,7 +136,7 @@ export default class ChromeAliveApp extends Vue {
   private lastAppBounds: IBounds;
   private lastToolbarBounds: IBounds;
   private inputSize = '0kb';
-  private outputSize = '0kb'
+  private outputSize = '0kb';
   private outputWindow: Window;
   private inputJson: FlatJson[] = [];
 
@@ -223,12 +229,14 @@ export default class ChromeAliveApp extends Vue {
 
   toggleOutput() {
     this.isShowingOutput = !this.isShowingOutput;
-    if (!this.isShowingOutput) this.outputWindow.close();
-    else {
+    if (!this.isShowingOutput) {
+      this.outputWindow.close();
+      this.outputWindow = null;
+    } else {
       const { left } = (this.$refs.outputButton as HTMLElement).getBoundingClientRect();
       const { bottom } = (this.$refs.toolbar as HTMLElement).getBoundingClientRect();
-      const features =`top=${bottom},left=${left},width=300,height=500,frame=true,nodeIntegration=no`;
-      this.outputWindow = window.open('/output.html','_blank', features);
+      const features = `top=${bottom},left=${left},width=300,height=500,frame=true,nodeIntegration=no`;
+      this.outputWindow = window.open('/output.html', '_blank', features);
     }
   }
 
@@ -259,7 +267,7 @@ export default class ChromeAliveApp extends Vue {
   }
 
   onOutputUpdated(message: IOutputUpdatedEvent) {
-    this.session.outputBytes =  message.bytes;
+    this.session.outputBytes = message.bytes;
     this.outputSize = humanizeBytes(message.bytes);
   }
 
@@ -353,24 +361,28 @@ export default class ChromeAliveApp extends Vue {
 }
 
 html {
-  height: 100%;
   padding: 0;
   margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
   font-size: 13px;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 body {
-  height: 100%;
   padding: 0;
   margin: 0;
 }
 
 #ChromeAlivePage {
+  overflow-y: visible;
   -webkit-app-region: drag;
   color: rgba(0, 0, 0, 0.8);
   box-sizing: border-box;
-
+  &::-webkit-scrollbar {
+    display: none;
+  }
   .icon {
     width: 20px;
     height: 20px;
@@ -603,7 +615,8 @@ body {
       }
     }
 
-    &:active, &.selected {
+    &:active,
+    &.selected {
       background-color: var(--buttonActiveBackgroundColor) !important;
     }
 

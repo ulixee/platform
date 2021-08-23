@@ -27,6 +27,11 @@ export class ChromeAlive extends EventEmitter {
     if (process.platform === 'darwin') {
       app.setActivationPolicy('accessory');
     }
+    process.on('message', message => {
+      if (message === 'exit') {
+        this.appExit();
+      }
+    });
 
     ContextMenu({
       showInspectElement: true,
@@ -99,11 +104,7 @@ export class ChromeAlive extends EventEmitter {
     try {
       await this.showWindow();
       ShutdownHandler.register(() => this.appExit());
-      process.on('message', message => {
-        if (message === 'exit') {
-          this.appExit();
-        }
-      });
+
       this.emit('ready');
     } catch (error) {
       console.error('ERROR in appReady: ', error);
@@ -148,6 +149,12 @@ export class ChromeAlive extends EventEmitter {
           },
         },
       };
+    });
+
+    app.on('browser-window-blur', (event, window) => {
+      if (window.getParentWindow()?.id === this.#browserWindow.id) {
+        window.close();
+      }
     });
 
     this.#browserWindow.on('close', () => app.exit());

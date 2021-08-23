@@ -34,6 +34,7 @@ export class Menubar extends EventEmitter {
     if (process.platform === 'darwin') {
       app.setActivationPolicy('accessory');
     }
+    this.#vueServer = new VueServer(vueDistPath);
 
     if (app.isReady()) {
       // See https://github.com/maxogden/menubar/pull/151
@@ -41,33 +42,12 @@ export class Menubar extends EventEmitter {
     } else {
       app.on('ready', () => this.appReady());
     }
-
-    this.#vueServer = new VueServer(vueDistPath);
   }
 
   get tray(): Tray {
     if (!this.#tray)
       throw new Error('Please access `this.tray` after the `ready` event has fired.');
     return this.#tray;
-  }
-
-  private async stopServer() {
-    if (!this.#ulixeeServer) return;
-
-    // eslint-disable-next-line no-console
-    console.log(`CLOSING ULIXEE SERVER`, !!this.#ulixeeServer);
-    const server = this.#ulixeeServer;
-    this.#ulixeeServer = null;
-    await server.close();
-  }
-
-  private async startServer() {
-    if (this.#ulixeeServer) return;
-    this.#ulixeeServer = new UlixeeServer();
-    // TODO: read port from common ulixee.json? Or put running port into a file?
-    await this.#ulixeeServer.listen({ port: 1337 });
-    // eslint-disable-next-line no-console
-    console.log(`STARTED ULIXEE SERVER at ws://localhost:${await this.#ulixeeServer.port}`);
   }
 
   private hideWindow(): void {
@@ -146,10 +126,10 @@ export class Menubar extends EventEmitter {
   private appReady(): void {
     try {
       app.on('before-quit', async e => {
-        console.warn('Quitting Ulixee');
+        console.warn('Quitting Ulixee Menubar');
         e.preventDefault();
         await this.stopServer();
-        process.exit(0);
+        app.exit();
       });
       ChromeAliveCore.register();
       // for now auto-start
@@ -160,10 +140,10 @@ export class Menubar extends EventEmitter {
       this.#tray = new Tray(iconPath);
 
       app.on('activate', (_event, hasVisibleWindows) => {
+        app.dock?.hide();
         if (!hasVisibleWindows) {
           this.showWindow().catch(console.error);
         }
-        _event.preventDefault();
       });
 
       this.#tray.on('click', this.clicked.bind(this));
@@ -176,7 +156,12 @@ export class Menubar extends EventEmitter {
         this.#options.windowPosition = getWindowPosition(this.#tray);
       }
 
-      this.emit('ready');
+      this.createWindow()
+        .then(() => {
+          this.emit('ready');
+          return app.dock?.hide();
+        })
+        .catch(err => console.error('ERROR creating app window', err));
     } catch (error) {
       console.error('ERROR in appReady: ', error);
     }
@@ -230,6 +215,9 @@ export class Menubar extends EventEmitter {
       autoHideMenuBar: true,
       transparent: true,
       alwaysOnTop: true,
+      webPreferences: {
+        preload: `${__dirname}/preload.js`,
+      },
     });
 
     this.#positioner = new Positioner(this.#browserWindow);
@@ -243,14 +231,83 @@ export class Menubar extends EventEmitter {
 
     this.#browserWindow.setVisibleOnAllWorkspaces(true);
     this.#browserWindow.on('close', this.windowClear.bind(this));
+    this.#browserWindow.webContents.on('ipc-message', async (e, message, ...args) => {
+      if (message === 'boss:api') {
+        const [api] = args;
+
+        if (api === 'App.quit') {
+          app.quit();
+        }
+
+        if (api === 'Server.stop' || api === 'Server.restart') {
+          await this.stopServer();
+        }
+
+        if (api === 'Server.start' || api === 'Server.restart') {
+          await this.startServer();
+        }
+
+        if (api === 'Server.getStatus') {
+          await this.updateServerStatus();
+        }
+      }
+    });
 
     const port = await this.#vueServer.port;
     const windowBackground = systemPreferences.getColor('window-background').replace('#', '');
     const url = `http://localhost:${port}/?windowBackground=${windowBackground}`;
     await this.#browserWindow.loadURL(url);
+    if (this.#ulixeeServer) {
+      await this.updateServerStatus();
+    }
   }
 
   private windowClear(): void {
     this.#browserWindow = undefined;
+  }
+
+  /////// SERVER MANAGEMENT ////////////////////////////////////////////////////////////////////////////////////////////
+
+  private async stopServer() {
+    if (!this.#ulixeeServer) return;
+
+    // eslint-disable-next-line no-console
+    console.log(`CLOSING ULIXEE SERVER`);
+    const server = this.#ulixeeServer;
+    this.#ulixeeServer = null;
+    await server.close();
+    await this.updateServerStatus();
+  }
+
+  private async startServer() {
+    if (this.#ulixeeServer) return;
+    this.#ulixeeServer = new UlixeeServer();
+    // TODO: read port from common ulixee.json? Or put running port into a file?
+    await this.#ulixeeServer.listen({ port: 1337 });
+
+    // eslint-disable-next-line no-console
+    console.log(`STARTED ULIXEE SERVER at ${await this.#ulixeeServer.address}`);
+    await this.updateServerStatus();
+  }
+
+  private async updateServerStatus() {
+    let address: string = null;
+    if (this.#ulixeeServer) {
+      address = await this.#ulixeeServer.address;
+    }
+    await this.sendToVueApp('Server.status', {
+      started: !!this.#ulixeeServer,
+      address,
+    });
+  }
+
+  private async sendToVueApp(eventType: string, data: any): Promise<void> {
+    if (this.#browserWindow) {
+      const json = { detail: { eventType, data } };
+      await this.#browserWindow.webContents.executeJavaScript(`(()=>{
+      const evt = ${JSON.stringify(json)};
+      document.dispatchEvent(new CustomEvent('boss:event', evt));
+    })()`);
+    }
   }
 }

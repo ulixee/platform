@@ -26,5 +26,6 @@ export default class CoreConnectors {
     for (const coreConnector of this.coreConnectors) {
       await coreConnector.close();
     }
+    isConnected = false;
   }
 }

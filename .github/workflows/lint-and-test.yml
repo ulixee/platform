@@ -53,14 +53,11 @@ jobs:
         run: NODE_OPTIONS=--max-old-space-size=4096 yarn lint
 
       - name: Run tests
-        run: yarn test:all --testTimeout=30000 --maxWorkers=2
-        env:
-          NODE_ENV: test
-          HERO_DATA_DIR: .data
+        run: yarn test:all --testTimeout=60000 --maxWorkers=2
 
       - name: 'Tar files'
         if: ${{ failure() }}
-        run: tar -cvf test-dbs.tar .data
+        run: tar -cvf test-dbs.tar .data-test
 
       - name: Upload Databases
         if: ${{ failure() }}
