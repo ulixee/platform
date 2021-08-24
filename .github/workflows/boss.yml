@@ -1,0 +1,62 @@
+name: Boss
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  boss:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 14
+          cache: 'yarn'
+
+      - name: Install Hero
+        run: yarn && yarn build
+        working-directory: ./hero
+
+      - name: Install Databox
+        run: yarn && yarn build
+        working-directory: ./databox
+
+      - name: Yarn build
+        run: yarn && yarn build
+
+      - name: Build Boss
+        run: yarn dist
+        working-directory: ./apps/boss
+        env:
+          USE_HARD_LINKS: false
+
+      - name: Upload to Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          assets=()
+          for asset in ./build/apps/boss/dist/assets/*; do
+            assets+=("-a" "$asset")
+          done
+          tag_name="${GITHUB_REF##*/}"
+          hub release edit "${assets[@]}" -m "" "$tag_name"
+
+      - name: Upload Boss
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: 'boss'
+          path: ./build/apps/boss/dist/assets/*
+          retention-days: 1

@@ -1,4 +1,4 @@
-name: New Version
+name: ChromeAlive!
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  apps:
+  chromealive:
     runs-on: macos-latest
 
     steps:
@@ -40,12 +40,6 @@ jobs:
         run: yarn dist
         working-directory: ./apps/chromealive
 
-      - name: Build Boss
-        run: yarn dist
-        working-directory: ./apps/boss
-        env:
-          USE_HARD_LINKS: false
-
       - name: Upload to Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -53,9 +47,6 @@ jobs:
           set -x
           assets=()
           for asset in ./build/apps/chromealive/dist/assets/*; do
-            assets+=("-a" "$asset")
-          done
-          for asset in ./build/apps/boss/dist/assets/*; do
             assets+=("-a" "$asset")
           done
           tag_name="${GITHUB_REF##*/}"
@@ -68,41 +59,3 @@ jobs:
           name: 'chromealive'
           path: ./build/apps/chromealive/dist/assets/*
           retention-days: 1
-
-      - name: Upload Boss
-        if: failure()
-        uses: actions/upload-artifact@v2
-        with:
-          name: 'boss'
-          path: ./build/apps/boss/dist/assets/*
-          retention-days: 1
-
-  website:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v2
-        with:
-          submodules: 'true'
-
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v2
-        with:
-          node-version: 14
-          cache: 'yarn'
-
-      - name: yarn
-        run: yarn install --network-timeout 1000000
-        working-directory: ./website
-
-      - name: Build Webite
-        run: yarn build
-        working-directory: ./website
-
-      - name: Deploy Website
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build-dist/website
-          commit_message: '[skip ci] Updates'
