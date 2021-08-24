@@ -27,6 +27,8 @@ jobs:
       - name: Install Hero
         run: yarn && yarn build
         working-directory: ./hero
+        env:
+          BROWSERS_DIR: /tmp/chromes
 
       - name: Install Databox
         run: yarn && yarn build
@@ -35,28 +37,27 @@ jobs:
       - name: Yarn build
         run: yarn && yarn build
 
+      - name: Zip Chromes
+        run: cd /tmp/chromes && tar -czf chromes.tar.gz ./*
+
+      - name: Copy Chrome
+        run: mkdir ./build/apps/boss/chromes && cp /tmp/chromes/chromes.tar.gz ./build/apps/boss/chromes/
+
       - name: Build Boss
         run: yarn dist
         working-directory: ./apps/boss
         env:
           USE_HARD_LINKS: false
-
-      - name: Upload to Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -x
-          assets=()
-          for asset in ./build/apps/boss/dist/assets/*; do
-            assets+=("-a" "$asset")
-          done
-          tag_name="${GITHUB_REF##*/}"
-          hub release edit "${assets[@]}" -m "" "$tag_name"
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Boss
-        if: failure()
+        if: ${{ github.ref != 'refs/heads/main' || failure() }}
         uses: actions/upload-artifact@v2
         with:
           name: boss-${{ matrix.os }}
-          path: ./build/apps/boss/dist/assets/*
+          path: |
+            ./build/apps/boss/dist/*.zip
+            ./build/apps/boss/dist/*.AppImage
+            ./build/apps/boss/dist/*.dmg
+            ./build/apps/boss/dist/*.exe
           retention-days: 1
