@@ -1,5 +1,12 @@
+import './lib/util/UlixeeLogger';
 import '@ulixee/commons/lib/SourceMapSupport';
+import { app } from 'electron';
+import log from 'electron-log';
 import { Menubar } from './lib/Menubar';
+
+Object.assign(console, log.functions);
+
+if (app.isPackaged) process.env.DEBUG = 'ulixee:*';
 
 if (process.argv.some(x => x.includes('--chromealive'))) {
   // eslint-disable-next-line global-require,import/no-extraneous-dependencies
@@ -14,7 +21,7 @@ if (process.argv.some(x => x.includes('--chromealive'))) {
   const menubar = new Menubar({
     windowPosition: 'trayLeft',
     width: 300,
-    height: 300,
+    height: 325,
     tooltip: 'Ulixee',
   });
 

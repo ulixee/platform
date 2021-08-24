@@ -1,5 +1,6 @@
 import ChromeAliveCore from '@ulixee/apps-chromealive-core';
-import { app, BrowserWindow, systemPreferences, Tray } from 'electron';
+import { app, BrowserWindow, systemPreferences, Tray, shell } from 'electron';
+import log from 'electron-log';
 import { EventEmitter } from 'events';
 import UlixeeServer from '@ulixee/server';
 import * as Positioner from 'electron-positioner';
@@ -237,6 +238,10 @@ export class Menubar extends EventEmitter {
 
         if (api === 'App.quit') {
           app.quit();
+        }
+
+        if (api === 'App.logs') {
+          shell.openPath(Path.dirname(log.transports.file.getFile().path));
         }
 
         if (api === 'Server.stop' || api === 'Server.restart') {

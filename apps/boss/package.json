@@ -4,9 +4,9 @@
   "main": "index.js",
   "scripts": {
     "build": "yarn build:ui && yarn build:basic && cd ../../build/apps/boss && yarn && electron-builder install-app-deps",
-    "build:basic": "cd ../.. && yarn tsc && cd - && yarn copy:build",
+    "build:basic": "cd ../.. && yarn tsc && cd apps/boss && yarn copy:build",
     "build:ui": "yarn workspace @ulixee/apps-menubar-ui build && yarn workspace @ulixee/apps-chromealive-ui build",
-    "copy:build": "cd ../../build/apps/boss && node builder/copySources.js ./packages && cd -",
+    "copy:build": "cd ../../build/apps/boss && node builder/copySources.js ./packages",
     "dist": "yarn build && cd ../../build/apps/boss && yarn && electron-builder && ./pack.sh",
     "dist:basic": "yarn build:basic && cd ../../build/apps/boss && electron-builder",
     "start": "cd ../../build/apps/boss && npx electron ."
@@ -20,7 +20,8 @@
     "@ulixee/server": "1.5.4",
     "electron-positioner": "^4.1.0",
     "node-static": "^0.7.11",
-    "tslib": "^2.3.1"
+    "tslib": "^2.3.1",
+    "electron-log": "^4.4.1"
   },
   "build": {
     "appId": "dev.ulixee.boss",

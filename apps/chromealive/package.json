@@ -25,6 +25,7 @@
     "progress": "^2.0.3",
     "tar": "^6.1.10",
     "compare-versions": "^3.6.0",
+    "electron-log": "^4.4.1",
     "@ulixee/commons": "^1.5.5",
     "electron-context-menu": "^3.1.1"
   },

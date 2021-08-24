@@ -57,6 +57,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: 'boss'
+          name: boss-${{ matrix.os }}
           path: ./build/apps/boss/dist/assets/*
           retention-days: 1

@@ -7,9 +7,12 @@ const hasBeenLoggedSymbol = Symbol.for('hasBeenLogged');
 let logId = 0;
 class Log implements ILog {
   public readonly level: string = process.env.DEBUG ? 'stats' : 'error';
+  public useColors =
+    process.env.NODE_DISABLE_COLORS !== 'true' && process.env.NODE_DISABLE_COLORS !== '1';
+
+  protected readonly boundContext: any = {};
   private readonly module: string;
   private readonly logLevel: number;
-  private readonly boundContext: any = {};
 
   constructor(module: NodeModule, boundContext?: any) {
     this.logLevel = logLevels.indexOf(this.level);
@@ -34,7 +37,9 @@ class Log implements ILog {
   }
 
   public createChild(module, boundContext?: any): ILog {
-    return new Log(module, {
+    const Constructor = this.constructor;
+    // @ts-ignore
+    return new Constructor(module, {
       ...this.boundContext,
       ...boundContext,
     });
@@ -42,6 +47,31 @@ class Log implements ILog {
 
   public flush(): void {
     // no-op
+  }
+
+  protected logToConsole(level: LogLevel, entry: ILogEntry) {
+    const printablePath = entry.module.replace('.js', '').replace('.ts', '').replace('build/', '');
+
+    const { error, printData } = translateToPrintable(entry.data);
+
+    if (level === 'warn' || level === 'error') {
+      printData.sessionId = entry.sessionId;
+      printData.sessionName = loggerSessionIdNames.get(entry.sessionId) ?? undefined;
+    }
+
+    const params = Object.keys(printData).length ? [printData] : [];
+    if (error) params.push(error);
+
+    const useColors =
+      process.env.NODE_DISABLE_COLORS !== 'true' && process.env.NODE_DISABLE_COLORS !== '1';
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `${entry.timestamp.toISOString()} ${entry.level.toUpperCase()} [${printablePath}] ${
+        entry.action
+      }`,
+      ...params.map(x => inspect(x, false, null, useColors)),
+    );
   }
 
   private log(level: LogLevel, action: string, data?: ILogData): number {
@@ -71,31 +101,8 @@ class Log implements ILog {
       level,
       module: this.module,
     };
-    const printToConsole = logLevels.indexOf(level) >= this.logLevel;
-    if (printToConsole) {
-      const printablePath = entry.module
-        .replace('.js', '')
-        .replace('.ts', '')
-        .replace('build/', '');
-
-      const { error, printData } = translateToPrintable(entry.data);
-
-      if (level === 'warn' || level === 'error') {
-        printData.sessionId = sessionId;
-        printData.sessionName = loggerSessionIdNames.get(sessionId) ?? undefined;
-      }
-
-      const params = Object.keys(printData).length ? [printData] : [];
-      if (error) params.push(error);
-      const useColors =
-        process.env.NODE_DISABLE_COLORS !== 'true' && process.env.NODE_DISABLE_COLORS !== '1';
-      // eslint-disable-next-line no-console
-      console.log(
-        `${entry.timestamp.toISOString()} ${entry.level.toUpperCase()} [${printablePath}] ${
-          entry.action
-        }`,
-        ...params.map(x => inspect(x, false, null, useColors)),
-      );
+    if (logLevels.indexOf(level) >= this.logLevel) {
+      this.logToConsole(level, entry);
     }
     LogEvents.broadcast(entry);
     return id;
@@ -128,7 +135,7 @@ function translateValueToPrintable(value: any, depth = 0): any {
   }
 }
 
-function translateToPrintable(
+export function translateToPrintable(
   data: any,
   result?: { error?: Error; printData: any },
 ): { error?: Error; printData: any } {
