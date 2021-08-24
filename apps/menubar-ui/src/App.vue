@@ -18,11 +18,13 @@
     </div>
     <div class="section">
       <div class="server-status">
-        <span class="circle"></span>
-        <span class="text">Ulixee Server is running on localhost</span>
+        <span class="circle" :class="{ stopped: !serverStarted }"></span>
+        <span v-if="serverStarted" class="text">Ulixee Server is running on {{ address }}</span>
+        <span v-else class="text">Server not running</span>
       </div>
-      <button>Stop</button>
-      <button>Restart</button>
+      <button v-if="serverStarted" @click.prevent="stop()">Stop</button>
+      <button v-else @click.prevent="start()">Start</button>
+      <button @click.prevent="restart()">Restart</button>
     </div>
     <div class="section">
       <a>Open Ulixee Desktop</a>
@@ -32,7 +34,7 @@
       <a>About Ulixee</a>
     </div>
     <div class="section">
-      <a>Quit</a>
+      <a @click.prevent="quit()">Quit</a>
     </div>
   </div>
 </template>
@@ -44,6 +46,44 @@ import Component from 'vue-class-component';
 @Component
 export default class Menubar extends Vue {
   private windowBackground = '';
+  private serverStarted = false;
+  private address = '';
+
+  quit() {
+    this.sendEvent('App.quit');
+  }
+
+  restart() {
+    this.sendEvent('Server.restart');
+  }
+
+  start() {
+    this.sendEvent('Server.start');
+  }
+
+  stop() {
+    this.sendEvent('Server.stop');
+  }
+
+  private sendEvent(api: string, ...args: any[]) {
+    document.dispatchEvent(
+      new CustomEvent('boss:api', {
+        detail: { api, args },
+      }),
+    );
+  }
+
+  public created(): void {
+    document.addEventListener('boss:event', evt => {
+      console.log('Boss:event', evt);
+      const { eventType, data } = (evt as CustomEvent).detail;
+      if (eventType === 'Server.status') {
+        this.address = data.address;
+        this.serverStarted = data.started;
+      }
+    });
+    this.sendEvent('Server.getStatus')
+  }
 
   public mounted(): void {
     const params = new URLSearchParams(window.location.search);

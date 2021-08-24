@@ -1,10 +1,11 @@
 const Fs = require('fs');
+const Path = require('path');
 const pkg = require('./package.json');
 
 const workspaces = [];
 const workspacesWithModules = ['node_modules'];
 for (const workspaceDir of pkg.workspaces.packages) {
-  if (workspaceDir.includes('/build')) continue;
+  if (workspaceDir.includes('/build') || workspaceDir.includes('boss/packages')) continue;
 
   const workspace = workspaceDir.replace('/*', '');
   workspaces.push(workspace);
@@ -38,7 +39,7 @@ module.exports = {
   ],
   plugins: ['monorepo-cop'],
   parserOptions: {
-    project: 'tsconfig.json',
+    project: Path.join(__dirname, 'tsconfig.json'),
     extraFileExtensions: ['.mjs'],
   },
   settings: {
@@ -69,6 +70,7 @@ module.exports = {
     '**/databox',
     '**/hero',
     'runner/**',
+    'website',
     'node_modules',
     '**/test/assets/**',
     'build',
@@ -83,8 +85,6 @@ module.exports = {
     '**/build/**',
     '**/dist/**',
     '**/*.md',
-    '**/.temp',
-    '**/DomExtractor.js',
   ],
   rules: {
     'import/no-named-as-default-member': 'off',
@@ -113,6 +113,7 @@ module.exports = {
     'default-case': 'off',
     'no-continue': 'off',
     'no-bitwise': 'off',
+    'no-console': ['warn', { allow: ['warn', 'error'] }],
     'no-async-promise-executor': 'off',
     'no-return-await': 'off',
     'no-return-assign': 'off',

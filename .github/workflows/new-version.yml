@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  cromeealive:
+  apps:
     runs-on: macos-latest
 
     steps:
@@ -21,33 +21,30 @@ jobs:
           node-version: 14
           cache: 'yarn'
 
-      - name: Yarn install Hero
+      - name: Install Hero
         run: yarn && yarn build
         working-directory: ./hero
         env:
           HERO_SKIP_CHROME_DOWNLOAD: 1
-          ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
 
-      - name: Yarn install Databox
+      - name: Install Databox
         run: yarn && yarn build
         working-directory: ./databox
-        env:
-          HERO_SKIP_CHROME_DOWNLOAD: 1
-          ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
 
-      - name: Yarn build Monorepo
+      - name: Yarn build
         run: yarn && yarn build
         env:
-          HERO_SKIP_CHROME_DOWNLOAD: 1
           ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
 
-      - name: Build App
+      - name: Build Chromealive
         run: yarn dist
         working-directory: ./apps/chromealive
+
+      - name: Build Boss
+        run: yarn dist
+        working-directory: ./apps/boss
         env:
-          HERO_SKIP_CHROME_DOWNLOAD: 1
-          ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD: 1
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USE_HARD_LINKS: false
 
       - name: Upload to Release
         env:
@@ -58,8 +55,27 @@ jobs:
           for asset in ./build/apps/chromealive/dist/assets/*; do
             assets+=("-a" "$asset")
           done
+          for asset in ./build/apps/boss/dist/assets/*; do
+            assets+=("-a" "$asset")
+          done
           tag_name="${GITHUB_REF##*/}"
           hub release edit "${assets[@]}" -m "" "$tag_name"
+
+      - name: Upload Chromealive
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: 'chromealive'
+          path: ./build/apps/chromealive/dist/assets/*
+          retention-days: 1
+
+      - name: Upload Boss
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: 'boss'
+          path: ./build/apps/boss/dist/assets/*
+          retention-days: 1
 
   website:
     runs-on: ubuntu-latest
@@ -76,17 +92,17 @@ jobs:
           node-version: 14
           cache: 'yarn'
 
-      - name: npm install
-        run: npm install --network-timeout 1000000
+      - name: yarn
+        run: yarn install --network-timeout 1000000
         working-directory: ./website
 
       - name: Build Webite
-        run: npm run build
+        run: yarn build
         working-directory: ./website
 
       - name: Deploy Website
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./website/build-dist
-          commit_message: "[skip ci] Updates"
+          publish_dir: ./build-dist/website
+          commit_message: '[skip ci] Updates'

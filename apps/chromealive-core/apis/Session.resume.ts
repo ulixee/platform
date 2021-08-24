@@ -4,7 +4,10 @@ import {
   ISessionResumeArgs,
   ISessionResumeResult,
 } from '@ulixee/apps-chromealive-interfaces/apis/ISessionResumeApi';
+import Debug from 'debug';
 import ChromeAliveCore from '../index';
+
+const debug = Debug('ulixee:chromealive');
 
 export default function sessionResumeApi(args: ISessionResumeArgs): ISessionResumeResult {
   const sessionId = args.heroSessionId ?? ChromeAliveCore.activeHeroSessionId;
@@ -43,13 +46,13 @@ export default function sessionResumeApi(args: ISessionResumeArgs): ISessionResu
   let success = true;
   let error: Error;
   try {
-    console.log('Resuming session', execArgv);
+    debug('Resuming session', execArgv);
     fork(script, execArgv, {
       // execArgv,
       stdio: 'inherit',
     });
   } catch (err) {
-    console.log(err);
+    console.error('ERROR resuming session', err);
     success = false;
     error = err;
   }

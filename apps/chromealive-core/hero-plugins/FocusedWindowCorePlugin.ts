@@ -8,7 +8,10 @@ import { waitForChromeExtension } from '../lib/activateChromeExtension';
 const debug = Debug('ulixee:chromealive');
 
 // have to resolve an actual file
-const extensionPath = Path.resolve(__dirname, '..', 'chrome-extension');
+const extensionPath = Path.resolve(__dirname, '..', 'chrome-extension').replace(
+  'app.asar',
+  'app.asar.unpacked',
+); // make electron packaging friendly
 
 export default class FocusedWindowCorePlugin extends CorePlugin {
   public static id = '@ulixee/focused-window-core-plugin';

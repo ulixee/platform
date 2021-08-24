@@ -40,7 +40,7 @@ async function toggleIncognitoAccess(puppet: Puppet): Promise<void> {
       false,
     );
   } catch (error) {
-    console.log(
+    console.error(
       `Failed to enable chrome extension in incognito!!\n\nYou can enable by navigating to the page below and checking "Enable in Incognito":\n
 chrome://extensions?id=${extensionId}\n\n`,
       error,

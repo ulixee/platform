@@ -4,16 +4,5 @@
     "outDir": "./build-dist",
     "sourceMap": true,
     "inlineSourceMap": false
-  },
-  "references": [
-    {
-      "path": "./apps/tsconfig.dist.json"
-    },
-    {
-      "path": "./commons/tsconfig.dist.json"
-    },
-    {
-      "path": "./server/tsconfig.dist.json"
-    }
-  ]
+  }
 }

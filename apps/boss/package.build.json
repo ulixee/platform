@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "copy:build": "node builder/copySources.js ./packages",
+    "start": "npx electron ."
+  },
+  "workspaces": {
+    "packages": ["packages/*", "packages/*/*", "packages/hero/plugins/*"]
+  }
+}

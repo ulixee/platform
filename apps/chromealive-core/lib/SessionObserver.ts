@@ -124,7 +124,6 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.databoxSession = DataboxSession.get(databoxSessionId);
 
     if (this.databoxSession) {
-      console.log(this.databoxSession.options);
       this.databoxInput = this.databoxSession.options.input;
       this.databoxInputBytes = this.databoxInput
         ? Buffer.byteLength(JSON.stringify(this.databoxInput))

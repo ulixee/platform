@@ -1,11 +1,18 @@
+import ChromeAliveCore from '@ulixee/apps-chromealive-core';
 import { app, BrowserWindow, systemPreferences, Tray } from 'electron';
 import { EventEmitter } from 'events';
+import UlixeeServer from '@ulixee/server';
 import * as Positioner from 'electron-positioner';
+import * as Path from 'path';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import IMenubarOptions from '../interfaces/IMenubarOptions';
 import { getWindowPosition } from './util/getWindowPosition';
 import VueServer from './VueServer';
 
 // Forked from https://github.com/maxogden/menubar
+
+const iconPath = Path.resolve(__dirname, '..', 'assets', 'IconTemplate.png');
+const vueDistPath = Path.resolve(__dirname, '..', 'ui');
 
 export class Menubar extends EventEmitter {
   #tray?: Tray;
@@ -17,11 +24,17 @@ export class Menubar extends EventEmitter {
   #nsEventMonitor: unknown;
   #positioner: Positioner | undefined;
   #vueServer: VueServer;
+  #ulixeeServer: UlixeeServer;
 
   constructor(options?: IMenubarOptions) {
     super();
     this.#options = options;
     this.#isVisible = false;
+    // hide the dock icon if it shows
+    if (process.platform === 'darwin') {
+      app.setActivationPolicy('accessory');
+    }
+    this.#vueServer = new VueServer(vueDistPath);
 
     if (app.isReady()) {
       // See https://github.com/maxogden/menubar/pull/151
@@ -29,8 +42,6 @@ export class Menubar extends EventEmitter {
     } else {
       app.on('ready', () => this.appReady());
     }
-
-    this.#vueServer = new VueServer(options.vueDistPath);
   }
 
   get tray(): Tray {
@@ -43,6 +54,8 @@ export class Menubar extends EventEmitter {
     if (!this.#browserWindow || !this.#isVisible) {
       return;
     }
+    (this.#nsEventMonitor as any)?.stop();
+
     this.#browserWindow.hide();
     this.#isVisible = false;
     if (this.#blurTimeout) {
@@ -105,29 +118,33 @@ export class Menubar extends EventEmitter {
     // https://github.com/maxogden/menubar/issues/233
     this.#browserWindow.setPosition(Math.round(x), Math.round(y));
     this.#browserWindow.show();
+    this.listenForMouseDown();
+
     this.#isVisible = true;
   }
 
   private appReady(): void {
     try {
-      this.#tray = new Tray(this.#options.iconPath);
+      app.on('before-quit', async e => {
+        console.warn('Quitting Ulixee Menubar');
+        e.preventDefault();
+        await this.stopServer();
+        app.exit();
+      });
+      ChromeAliveCore.register();
+      // for now auto-start
+      this.startServer().catch(console.error);
+      ShutdownHandler.exitOnSignal = false;
+      ShutdownHandler.register(() => this.stopServer());
+
+      this.#tray = new Tray(iconPath);
 
       app.on('activate', (_event, hasVisibleWindows) => {
+        app.dock?.hide();
         if (!hasVisibleWindows) {
           this.showWindow().catch(console.error);
         }
       });
-
-      if (process.platform === 'darwin' && !this.#nsEventMonitor) {
-        // eslint-disable-next-line import/no-unresolved
-        const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
-        const monitor = new NSEventMonitor();
-        this.#nsEventMonitor = monitor;
-        monitor.start(
-          NSEventMask.leftMouseDown | NSEventMask.rightMouseDown,
-          this.hideWindow.bind(this),
-        );
-      }
 
       this.#tray.on('click', this.clicked.bind(this));
       this.#tray.on('right-click', this.clicked.bind(this));
@@ -139,10 +156,27 @@ export class Menubar extends EventEmitter {
         this.#options.windowPosition = getWindowPosition(this.#tray);
       }
 
-      this.emit('ready');
+      this.createWindow()
+        .then(() => {
+          this.emit('ready');
+          return app.dock?.hide();
+        })
+        .catch(err => console.error('ERROR creating app window', err));
     } catch (error) {
-      console.log('ERROR in appReady: ', error);
+      console.error('ERROR in appReady: ', error);
     }
+  }
+
+  private listenForMouseDown() {
+    if (process.platform !== 'darwin') return;
+    // eslint-disable-next-line import/no-unresolved,global-require
+    const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
+
+    this.#nsEventMonitor ??= new NSEventMonitor();
+    (this.#nsEventMonitor as any).start(
+      NSEventMask.leftMouseDown | NSEventMask.rightMouseDown,
+      this.hideWindow.bind(this),
+    );
   }
 
   private async clicked(
@@ -177,7 +211,13 @@ export class Menubar extends EventEmitter {
     this.#browserWindow = new BrowserWindow({
       ...defaults,
       roundedCorners: false,
+      skipTaskbar: true,
+      autoHideMenuBar: true,
       transparent: true,
+      alwaysOnTop: true,
+      webPreferences: {
+        preload: `${__dirname}/preload.js`,
+      },
     });
 
     this.#positioner = new Positioner(this.#browserWindow);
@@ -191,14 +231,83 @@ export class Menubar extends EventEmitter {
 
     this.#browserWindow.setVisibleOnAllWorkspaces(true);
     this.#browserWindow.on('close', this.windowClear.bind(this));
+    this.#browserWindow.webContents.on('ipc-message', async (e, message, ...args) => {
+      if (message === 'boss:api') {
+        const [api] = args;
+
+        if (api === 'App.quit') {
+          app.quit();
+        }
+
+        if (api === 'Server.stop' || api === 'Server.restart') {
+          await this.stopServer();
+        }
+
+        if (api === 'Server.start' || api === 'Server.restart') {
+          await this.startServer();
+        }
+
+        if (api === 'Server.getStatus') {
+          await this.updateServerStatus();
+        }
+      }
+    });
 
     const port = await this.#vueServer.port;
     const windowBackground = systemPreferences.getColor('window-background').replace('#', '');
     const url = `http://localhost:${port}/?windowBackground=${windowBackground}`;
     await this.#browserWindow.loadURL(url);
+    if (this.#ulixeeServer) {
+      await this.updateServerStatus();
+    }
   }
 
   private windowClear(): void {
     this.#browserWindow = undefined;
+  }
+
+  /////// SERVER MANAGEMENT ////////////////////////////////////////////////////////////////////////////////////////////
+
+  private async stopServer() {
+    if (!this.#ulixeeServer) return;
+
+    // eslint-disable-next-line no-console
+    console.log(`CLOSING ULIXEE SERVER`);
+    const server = this.#ulixeeServer;
+    this.#ulixeeServer = null;
+    await server.close();
+    await this.updateServerStatus();
+  }
+
+  private async startServer() {
+    if (this.#ulixeeServer) return;
+    this.#ulixeeServer = new UlixeeServer();
+    // TODO: read port from common ulixee.json? Or put running port into a file?
+    await this.#ulixeeServer.listen({ port: 1337 });
+
+    // eslint-disable-next-line no-console
+    console.log(`STARTED ULIXEE SERVER at ${await this.#ulixeeServer.address}`);
+    await this.updateServerStatus();
+  }
+
+  private async updateServerStatus() {
+    let address: string = null;
+    if (this.#ulixeeServer) {
+      address = await this.#ulixeeServer.address;
+    }
+    await this.sendToVueApp('Server.status', {
+      started: !!this.#ulixeeServer,
+      address,
+    });
+  }
+
+  private async sendToVueApp(eventType: string, data: any): Promise<void> {
+    if (this.#browserWindow) {
+      const json = { detail: { eventType, data } };
+      await this.#browserWindow.webContents.executeJavaScript(`(()=>{
+      const evt = ${JSON.stringify(json)};
+      document.dispatchEvent(new CustomEvent('boss:event', evt));
+    })()`);
+    }
   }
 }

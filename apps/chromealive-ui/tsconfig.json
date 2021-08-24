@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "../../build/apps/chromealive-ui",
+    "outDir": "./build",
     "target": "esnext",
     "module": "esnext",
     "composite": true,
@@ -17,6 +17,7 @@
     "strictNullChecks": false,
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
+    "rootDir": ".",
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
@@ -31,5 +32,5 @@
     "tests/**/*.tsx",
     ".eslintrc.js"
   ],
-  "exclude": ["node_modules", "**/build", "**/build-dist"]
+  "exclude": ["**/node_modules", "**/build", "**/build-dist"]
 }

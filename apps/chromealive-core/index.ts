@@ -86,28 +86,29 @@ export default class ChromeAliveCore {
     heroSession.options.sessionKeepAlive = true;
     const sessionObserver = new SessionObserver(heroSession);
     this.sessionObserversById.set(heroSession.id, sessionObserver);
-    sessionObserver.on('session:updated', this.updateActiveSession.bind(this, heroSession.id));
-    sessionObserver.on('output:updated', this.updateOutput.bind(this, heroSession.id));
-    this.updateActiveSession(heroSession.id);
+    sessionObserver.on('session:updated', this.sendActiveSession.bind(this, heroSession.id));
+    sessionObserver.on('output:updated', this.sendOutput.bind(this, heroSession.id));
+    this.activeHeroSessionId ??= heroSession.id;
+    this.sendActiveSession(heroSession.id);
   }
 
   private static onWsConnected() {
     debug('ChromeAlive! Ws Connected', {
-      activeSessionId: this.activeHeroSessionId,
+      activeHeroSessionId: this.activeHeroSessionId,
     });
     if (this.activeHeroSessionId) {
-      this.updateActiveSession(this.activeHeroSessionId);
-      this.updateOutput(this.activeHeroSessionId);
+      this.sendActiveSession(this.activeHeroSessionId);
+      this.sendOutput(this.activeHeroSessionId);
     }
   }
 
-  private static updateActiveSession(heroSessionId: string) {
+  private static sendActiveSession(heroSessionId: string) {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
     this.sendEvent('Session.active', sessionObserver.toEvent());
   }
 
-  private static updateOutput(heroSessionId: string) {
+  private static sendOutput(heroSessionId: string) {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
     const output = sessionObserver.getOutput();
@@ -147,7 +148,8 @@ export default class ChromeAliveCore {
   private static closeApp(): void {
     debug('Closing Electron App');
     this.sendEvent('App.quit');
-    this.app?.kill();
+    this.app?.send('exit');
+    this.app?.kill('SIGTERM');
     this.app = null;
   }
 

@@ -19,6 +19,7 @@ function processPackageJson(packagePath) {
     dependencies: overridesJson.dependencies || packageJson.dependencies,
     devDependencies: overridesJson.devDependencies || packageJson.devDependencies,
     workspaces: overridesJson.workspaces || packageJson.workspaces,
+    private: overridesJson.private || packageJson.private,
   };
 
   if (finalPackageJson.workspaces) {

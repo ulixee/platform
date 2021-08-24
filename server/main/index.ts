@@ -64,10 +64,12 @@ export default class Server {
     if (this.serverAddress.isResolved) return this.serverAddress.promise;
 
     this.httpServer.once('error', this.serverAddress.reject);
-    this.httpServer.listen(options, () => {
-      this.httpServer.off('error', this.serverAddress.reject);
-      this.serverAddress.resolve(this.httpServer.address() as AddressInfo);
-    });
+    this.httpServer
+      .listen(options, () => {
+        this.httpServer.off('error', this.serverAddress.reject);
+        this.serverAddress.resolve(this.httpServer.address() as AddressInfo);
+      })
+      .ref();
     return this.serverAddress.promise;
   }
 
@@ -86,8 +88,6 @@ export default class Server {
         sessionId: null,
       });
 
-      this.httpServer.unref();
-
       if (waitForOpenConnections) {
         await this.coreConnectors.close();
       }
@@ -101,7 +101,7 @@ export default class Server {
         socket.destroy();
       }
 
-      if (this.httpServer.listening) this.httpServer.close();
+      if (this.httpServer.listening) this.httpServer.unref().close();
       log.stats('Server.Closed', { parentLogId: logid, sessionId: null });
     } catch (error) {
       log.error('Error closing socket connections', {

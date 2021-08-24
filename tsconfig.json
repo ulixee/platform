@@ -3,7 +3,6 @@
   "compilerOptions": {
     "incremental": true,
     "target": "ES2020",
-    "composite": true,
     "module": "CommonJS",
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "noImplicitAny": false,
@@ -12,38 +11,34 @@
     "declaration": true,
     "moduleResolution": "node",
     "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "downlevelIteration": true,
     "resolveJsonModule": true,
     "strictBindCallApply": true,
     "allowJs": true,
-    "rootDir": ".",
-    "baseUrl": ".",
     "outDir": "./build",
     "preserveSymlinks": false,
     "experimentalDecorators": true
   },
   "references": [
     {
-      "path": "server/tsconfig.json"
-    },
-    {
-      "path": "apps/tsconfig.json"
-    },
-    {
-      "path": "commons/tsconfig.json"
+      "path": "hero/core/injected-scripts"
     }
   ],
-  "include": ["./*.js", "./*.json", "versionCheck.ts", ".eslintrc.js"],
+  "include": ["server", "apps", "commons", "./*.js", "./*.json", ".eslintrc.js"],
   "exclude": [
     "**/tsconfig*.json",
+    "build/**/*",
+    "**/build/**/*",
+    "**/build-dist/**/*",
     "node_modules",
     "**/node_modules",
-    "**/dist",
-    "**/build",
+    "apps/chromealive-ui",
+    "apps/menubar-ui",
+    "hero",
     "website",
-    "hero/**",
-    "databox/**",
-    "runner/**",
-    "build",
-    "build-dist"
+    "databox",
+    "runner",
+    "*.d.ts"
   ]
 }
