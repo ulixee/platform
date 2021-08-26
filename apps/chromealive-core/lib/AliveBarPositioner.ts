@@ -7,12 +7,26 @@ const debug = Debug('ulixee:chromealive');
 export default class AliveBarPositioner {
   public static getSessionDevtools: (sessionId: string) => IDevtoolsSession;
 
-  private static lastToolbarBounds: IBounds;
   private static workarea: IBounds;
+  private static lastToolbarBounds: IBounds;
+  private static isFirstAdjustment = true;
 
   private static lastWindowBoundsBySessionId: {
     [sessionId: string]: IBounds & { windowId: number };
   } = {};
+
+  public static getMaxChromeBounds(): IBounds | null {
+    if (!this.workarea || !this.lastToolbarBounds) return null;
+
+    const { top, height } = this.lastToolbarBounds;
+    const toolbarBottom = top + height + 1;
+    return {
+      top: toolbarBottom,
+      left: this.lastToolbarBounds.left,
+      width: this.lastToolbarBounds.width,
+      height: this.workarea.height - this.lastToolbarBounds.height,
+    };
+  }
 
   public static onChromeWindowBoundsChanged(
     sessionId: string,
@@ -39,19 +53,20 @@ export default class AliveBarPositioner {
     if (!this.lastToolbarBounds) return;
 
     const chromeBounds = this.lastWindowBoundsBySessionId[sessionId];
-    const { top, height } = this.lastToolbarBounds;
-    const toolbarBottom = top + height + 2;
+    let newBounds = this.getMaxChromeBounds();
 
-    if (chromeBounds.top < toolbarBottom) {
+    if (chromeBounds.top < newBounds.top) {
       const devtools = this.getSessionDevtools(sessionId);
       if (!devtools) return;
 
+      if (!this.isFirstAdjustment) {
+        newBounds = { top: newBounds.top } as any;
+      }
+      this.isFirstAdjustment = false;
       devtools
         .send('Browser.setWindowBounds', {
           windowId: chromeBounds.windowId,
-          bounds: {
-            top: toolbarBottom,
-          },
+          bounds: newBounds,
         })
         .catch(() => null);
     }

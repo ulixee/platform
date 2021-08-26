@@ -17,7 +17,7 @@ export function getCallSite(priorToFilename?: string, endFilename?: string): Cal
 
   Error.prepareStackTrace = (_, stack) => stack;
 
-  let stack = (err.stack as unknown) as CallSite[];
+  let stack = err.stack as unknown as CallSite[];
 
   Error.prepareStackTrace = undefined;
   let startIndex = 1;
@@ -53,7 +53,13 @@ export function bindFunctions(self: any): void {
         continue;
       }
       const descriptor = Reflect.getOwnPropertyDescriptor(object, key);
-      if (descriptor && typeof descriptor.value === 'function') {
+      if (
+        descriptor &&
+        typeof descriptor.value === 'function' &&
+        !descriptor.get &&
+        !descriptor.set &&
+        descriptor.writable
+      ) {
         self[key] = self[key].bind(self);
       }
     }
