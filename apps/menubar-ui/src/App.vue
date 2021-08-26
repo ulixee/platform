@@ -31,6 +31,7 @@
     </div>
     <div class="section">
       <a>Preferences</a>
+      <a @click.prevent="showLogs()">Open App Logs</a>
       <a>About Ulixee</a>
     </div>
     <div class="section">
@@ -63,6 +64,10 @@ export default class Menubar extends Vue {
 
   stop() {
     this.sendEvent('Server.stop');
+  }
+
+  showLogs() {
+    this.sendEvent('App.logs')
   }
 
   private sendEvent(api: string, ...args: any[]) {

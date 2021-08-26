@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "description": "ChromeAlive! powers iterative Ulixee Hero web scraping in the Chrome browser.",
-  "repository": "git@github.com:ulixee/apps.git",
+  "repository": "git@github.com:ulixee/ulixee.git",
   "author": "Data Liberation Foundation",
   "scripts": {
     "build": "yarn build:ui && cd ../../build/apps/chromealive && yarn && electron-builder install-app-deps",
@@ -25,6 +25,7 @@
     "progress": "^2.0.3",
     "tar": "^6.1.10",
     "compare-versions": "^3.6.0",
+    "electron-log": "^4.4.1",
     "@ulixee/commons": "^1.5.5",
     "electron-context-menu": "^3.1.1"
   },
@@ -32,7 +33,7 @@
     "@types/tar": "^4.0.5",
     "@types/progress": "^2.0.5",
     "electron": "13.1.9",
-    "electron-builder": "^22.11.7",
+    "electron-builder": "^22.11.11",
     "shx": "^0.3.3",
     "cross-env": "^7.0.3"
   },
@@ -60,12 +61,7 @@
       "executableName": "ChromeAlive!",
       "category": "Development",
       "target": "dir"
-    },
-    "publish": [
-      {
-        "provider": "github"
-      }
-    ]
+    }
   },
   "nohoist": [
     "**/electron",
