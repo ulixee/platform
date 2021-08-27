@@ -52,7 +52,11 @@ export default class SessionObserver extends TypedEventEmitter<{
     const runCommands = this.heroSession.sessionState.commands.filter(
       x => x.run === this.heroSession.resumeCounter,
     );
-    const thisRunUrls = new Set<string>(runCommands.map(x => x.url));
+    const thisRunUrls = new Set<string>();
+    for (const command of runCommands) {
+      thisRunUrls.add(command.url);
+      if (command.result?.url) thisRunUrls.add(command.result.url);
+    }
     const runStart = runCommands[0]?.runStartDate;
 
     const loadedUrls = this.loadedUrls.filter(
@@ -170,7 +174,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     // update url in case it changed
     sessionUrl.url = status.url;
 
-    if (status.newStatus === 'ContentPaint') {
+    if (status.newStatus === 'ContentPaint' || !sessionUrl.screenshotBase64) {
       try {
         const screenshot = await tab.puppetPage.screenshot('jpeg', undefined, 50);
         sessionUrl.screenshotBase64 = screenshot.toString('base64');

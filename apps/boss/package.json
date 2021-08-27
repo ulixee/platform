@@ -47,7 +47,9 @@
       "extendInfo": {
         "LSUIElement": 1
       },
-      "target": "dmg"
+      "target": "dmg",
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist"
     },
     "dmg": {
       "sign": false

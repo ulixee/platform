@@ -44,7 +44,7 @@
         class="output app-button"
         ref="outputButton"
         @click.prevent="toggleOutput()"
-        :class="{ selected: isShowingOutput }"
+        :class="{ selected: !!outputWindow }"
       >
         <span class="label">Output</span>
         <span class="size">({{ outputSize }})</span>
@@ -126,8 +126,6 @@ import flattenJson, { FlatJson } from '@/utils/flattenJson';
 })
 export default class ChromeAliveApp extends Vue {
   private client = Client;
-  private isPlaying = false;
-  private isShowingOutput = false;
   private isShowingInput = false;
   private scriptTimeAgo = '';
   private timeAgoTimeout: number;
@@ -161,6 +159,10 @@ export default class ChromeAliveApp extends Vue {
   };
 
   private screenshotsByNavigationId = new Map<number, string>();
+
+  private get isPlaying() {
+    return this.session?.state === 'play';
+  }
 
   canPlay(): boolean {
     if (!this.session.heroSessionId) return false;
@@ -228,8 +230,7 @@ export default class ChromeAliveApp extends Vue {
   }
 
   toggleOutput() {
-    this.isShowingOutput = !this.isShowingOutput;
-    if (!this.isShowingOutput) {
+    if (this.outputWindow) {
       this.outputWindow.close();
       this.outputWindow = null;
     } else {
@@ -237,6 +238,13 @@ export default class ChromeAliveApp extends Vue {
       const { bottom } = (this.$refs.toolbar as HTMLElement).getBoundingClientRect();
       const features = `top=${bottom},left=${left},width=300,height=500,frame=true,nodeIntegration=no`;
       this.outputWindow = window.open('/output.html', '_blank', features);
+      this.outputWindow.addEventListener('blur', () => {
+        this.outputWindow?.close()
+        this.outputWindow = null;
+      });
+      this.outputWindow.addEventListener('close', () => {
+        this.outputWindow = null;
+      })
     }
   }
 
@@ -334,6 +342,9 @@ export default class ChromeAliveApp extends Vue {
     ) {
       return;
     }
+
+    this.lastAppBounds = appBounds;
+    this.lastToolbarBounds = toolbarBounds
 
     await this.client.connect();
     await this.client.send('App.boundsChanged', {

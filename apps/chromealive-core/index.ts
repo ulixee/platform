@@ -5,12 +5,16 @@ import { ChildProcess } from 'child_process';
 import launchChromeAlive from '@ulixee/apps-chromealive/index';
 import type Puppet from '@ulixee/hero-puppet';
 import IDevtoolsSession from '@ulixee/hero-interfaces/IDevtoolsSession';
+import { bindFunctions } from '@ulixee/commons/lib/utils';
+import * as util from 'util';
 import FocusedWindowCorePlugin from './hero-plugins/FocusedWindowCorePlugin';
 import WindowBoundsCorePlugin from './hero-plugins/WindowBoundsCorePlugin';
 import SessionObserver from './lib/SessionObserver';
 import ConnectionToClient from './lib/ConnectionToClient';
 import activateChromeExtension from './lib/activateChromeExtension';
 import AliveBarPositioner from './lib/AliveBarPositioner';
+
+util.inspect.defaultOptions.depth = 10;
 
 const debug = Debug('ulixee:chromealive');
 
@@ -24,6 +28,9 @@ export default class ChromeAliveCore {
 
   public static setCoreServerAddress(address: Promise<string>) {
     this.coreServerAddress = address;
+    this.launchApp().catch(err => {
+      console.error('Cannot launch ChromeAlive app', err);
+    });
   }
 
   public static getConnection(): ConnectionToClient {
@@ -37,6 +44,7 @@ export default class ChromeAliveCore {
     HeroGlobalPool.events.off('browser-launched', this.launchApp);
     HeroGlobalPool.events.off('all-browsers-closed', this.closeApp);
     HeroGlobalPool.events.off('session-created', this.onHeroSessionCreated);
+    HeroGlobalPool.events.off('browser-has-no-open-windows', this.onBrowserHasNoWindows);
     FocusedWindowCorePlugin.onVisibilityChange = null;
     AliveBarPositioner.getSessionDevtools = null;
     this.getConnection().close();
@@ -52,17 +60,17 @@ export default class ChromeAliveCore {
       this.shouldAutoShowBrowser = true;
     }
 
-    this.launchApp = this.launchApp.bind(this);
-    this.closeApp = this.closeApp.bind(this);
-    this.onHeroSessionCreated = this.onHeroSessionCreated.bind(this);
+    bindFunctions(this);
+
     const connection = this.getConnection();
-    connection.on('connected', this.onWsConnected.bind(this));
-    HeroGlobalPool.events.on('browser-launched', this.launchApp);
+    connection.on('connected', this.onWsConnected);
+    HeroGlobalPool.events.on('browser-launched', this.onNewBrowser);
     HeroGlobalPool.events.on('all-browsers-closed', this.closeApp);
     HeroGlobalPool.events.on('session-created', this.onHeroSessionCreated);
+    HeroGlobalPool.events.on('browser-has-no-open-windows', this.onBrowserHasNoWindows);
 
-    FocusedWindowCorePlugin.onVisibilityChange = this.changeActiveSessions.bind(this);
-    AliveBarPositioner.getSessionDevtools = this.getSessionDevtools.bind(this);
+    FocusedWindowCorePlugin.onVisibilityChange = this.changeActiveSessions;
+    AliveBarPositioner.getSessionDevtools = this.getSessionDevtools;
 
     HeroCore.use(FocusedWindowCorePlugin);
     HeroCore.use(WindowBoundsCorePlugin);
@@ -73,6 +81,7 @@ export default class ChromeAliveCore {
     if (this.shouldAutoShowBrowser) {
       heroSession.options.showBrowser = true;
       heroSession.options.showBrowserInteractions = true;
+      heroSession.options.viewport ??= { width: 0, height: 0 };
     }
 
     // if not auto-registered, check if browser is showing
@@ -88,7 +97,10 @@ export default class ChromeAliveCore {
     this.sessionObserversById.set(heroSession.id, sessionObserver);
     sessionObserver.on('session:updated', this.sendActiveSession.bind(this, heroSession.id));
     sessionObserver.on('output:updated', this.sendOutput.bind(this, heroSession.id));
-    this.activeHeroSessionId ??= heroSession.id;
+    if (!this.activeHeroSessionId) {
+      this.sendEvent('App.show');
+      this.activeHeroSessionId = heroSession.id;
+    }
     this.sendActiveSession(heroSession.id);
   }
 
@@ -131,17 +143,39 @@ export default class ChromeAliveCore {
     return page.devtoolsSession;
   }
 
-  private static async launchApp(event: { puppet: Puppet }): Promise<void> {
-    const args: string[] = [];
+  private static async launchApp(): Promise<void> {
+    if (this.app && !this.app.killed) return;
+
+    const args: string[] = ['--hide'];
     if (this.coreServerAddress) {
       args.push(`--coreServerAddress=${await this.coreServerAddress}`);
     }
 
     this.app = launchChromeAlive(...args);
+    this.app.once('exit', () => (this.app = null));
+    this.app.once('close', () => (this.app = null));
     debug('Launched Electron App', {
       file: this.app?.spawnfile,
       args: this.app?.spawnargs,
     });
+  }
+
+  private static onBrowserHasNoWindows(event: { puppet: Puppet }) {
+    const browserId = event.puppet.browserId;
+    setTimeout(
+      (p: Puppet) => {
+        const sessionsUsingEngine = HeroSession.sessionsWithBrowserId(browserId);
+        const hasWindows = sessionsUsingEngine.some(x => x.tabsById.size > 0);
+        if (!hasWindows) {
+          return event.puppet.close();
+        }
+      },
+      2e3,
+      event.puppet,
+    ).unref();
+  }
+
+  private static async onNewBrowser(event: { puppet: Puppet }): Promise<void> {
     await activateChromeExtension(event.puppet);
   }
 
@@ -165,6 +199,7 @@ export default class ChromeAliveCore {
     eventType: T,
     data: IChromeAliveEvents[T] = null,
   ) {
+    console.log('SendEvent', { eventType, data });
     this.getConnection().sendEvent({ eventType, data });
   }
 }

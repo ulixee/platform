@@ -56,17 +56,16 @@ export class Menubar extends EventEmitter {
   }
 
   private hideWindow(): void {
-    if (!this.#browserWindow || !this.#isVisible) {
-      return;
-    }
-    (this.#nsEventMonitor as any)?.stop();
-
-    this.#browserWindow.hide();
-    this.#isVisible = false;
     if (this.#blurTimeout) {
       clearTimeout(this.#blurTimeout);
       this.#blurTimeout = null;
     }
+    (this.#nsEventMonitor as any)?.stop();
+
+    if (this.#browserWindow?.isVisible()) {
+      this.#browserWindow.hide();
+    }
+    this.#isVisible = false;
   }
 
   private async showWindow(trayPos?: Electron.Rectangle): Promise<void> {
@@ -134,9 +133,10 @@ export class Menubar extends EventEmitter {
         console.warn('Quitting Ulixee Menubar');
         e.preventDefault();
         await this.stopServer();
+        this.hideWindow();
         app.exit();
       });
-      ChromeAliveCore.register();
+      ChromeAliveCore.register(true);
       // for now auto-start
       this.startServer().catch(console.error);
       ShutdownHandler.exitOnSignal = false;

@@ -15,6 +15,7 @@ export class ChromeAlive extends EventEmitter {
   #vueServer: Http.Server;
   #vueAddress: Promise<AddressInfo>;
   #resetAlwaysTopTimeout: NodeJS.Timeout;
+  #hideOnLaunch = false;
 
   constructor(readonly coreServerAddress?: string) {
     super();
@@ -22,6 +23,8 @@ export class ChromeAlive extends EventEmitter {
     this.coreServerAddress ??= process.argv
       .find(x => x.startsWith('--coreServerAddress='))
       ?.replace('--coreServerAddress=', '');
+
+    this.#hideOnLaunch = process.argv.some(x => x === '--hide');
 
     // hide the dock icon if it shows
     if (process.platform === 'darwin') {
@@ -87,10 +90,7 @@ export class ChromeAlive extends EventEmitter {
 
     if (this.#browserWindow.isAlwaysOnTop()) {
       clearTimeout(this.#resetAlwaysTopTimeout);
-      this.#resetAlwaysTopTimeout = setTimeout(
-        () => this.#browserWindow.setAlwaysOnTop(false),
-        1e3,
-      );
+      this.#resetAlwaysTopTimeout = setTimeout(() => this.#browserWindow.setAlwaysOnTop(false), 50);
     }
     this.#isVisible = true;
   }
@@ -102,7 +102,11 @@ export class ChromeAlive extends EventEmitter {
 
   private async appReady(): Promise<void> {
     try {
-      await this.showWindow();
+      await this.createWindow();
+      if (!this.#hideOnLaunch) {
+        await this.showWindow();
+      }
+
       ShutdownHandler.register(() => this.appExit());
 
       this.emit('ready');
@@ -116,12 +120,15 @@ export class ChromeAlive extends EventEmitter {
     const workarea = mainScreen.workArea;
 
     this.#browserWindow = new BrowserWindow({
+      show: false,
       frame: false,
       roundedCorners: false,
       fullscreenable: false,
       transparent: true,
       movable: false,
       closable: true,
+      acceptFirstMouse: true,
+      paintWhenInitiallyHidden: true,
       hasShadow: false,
       skipTaskbar: true,
       autoHideMenuBar: true,
@@ -151,10 +158,12 @@ export class ChromeAlive extends EventEmitter {
       };
     });
 
-    app.on('browser-window-blur', (event, window) => {
-      if (window.getParentWindow()?.id === this.#browserWindow.id) {
-        window.close();
-      }
+    this.#browserWindow.webContents.on('did-create-window', childWindow => {
+      childWindow.on('blur', e => {
+        childWindow.hide();
+        childWindow.close();
+        e.preventDefault();
+      });
     });
 
     this.#browserWindow.on('close', () => app.exit());
