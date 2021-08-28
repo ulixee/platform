@@ -6,12 +6,10 @@ import UlixeeServer from '@ulixee/server';
 import * as Positioner from 'electron-positioner';
 import * as Path from 'path';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
-import * as Fs from 'fs';
-import * as Tar from 'tar';
-import { getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
 import IMenubarOptions from '../interfaces/IMenubarOptions';
 import { getWindowPosition } from './util/getWindowPosition';
 import VueServer from './VueServer';
+import installDefaultChrome from './util/installDefaultChrome';
 
 // Forked from https://github.com/maxogden/menubar
 
@@ -29,7 +27,6 @@ export class Menubar extends EventEmitter {
   #positioner: Positioner | undefined;
   #vueServer: VueServer;
   #ulixeeServer: UlixeeServer;
-  #hasUnpackedChrome = false;
 
   constructor(options?: IMenubarOptions) {
     super();
@@ -292,7 +289,7 @@ export class Menubar extends EventEmitter {
     if (this.#ulixeeServer) return;
     this.#ulixeeServer = new UlixeeServer();
 
-    await this.tryUnpackEmbeddedChrome();
+    await installDefaultChrome();
 
     // TODO: read port from common ulixee.json? Or put running port into a file?
     await this.#ulixeeServer.listen({ port: 1337 });
@@ -320,59 +317,6 @@ export class Menubar extends EventEmitter {
       const evt = ${JSON.stringify(json)};
       document.dispatchEvent(new CustomEvent('boss:event', evt));
     })()`);
-    }
-  }
-
-  private async tryUnpackEmbeddedChrome(): Promise<void> {
-    if (this.#hasUnpackedChrome) return;
-    this.#hasUnpackedChrome = true;
-
-    let packagedChromesDir = `${__dirname}/../chromes`;
-
-    // if first run, need to see if we can unpack chromes
-    const chromeDir =
-      process.env.BROWSERS_DIR ?? Path.join(getCacheDirectory(), 'ulixee', 'chrome');
-
-    if (!Fs.existsSync(chromeDir)) Fs.mkdirSync(chromeDir, { recursive: true });
-
-    if (Fs.readdirSync(chromeDir).filter(x => !x.startsWith('.')).length) {
-      return;
-    }
-
-    // eslint-disable-next-line no-console
-    console.log(
-      'No $cachedir/ulixee/chrome directory exists, seeing if we can unpack from Boss package',
-    );
-
-    if (app.isPackaged) {
-      // app path is Boss.app/Content/Resources/app.asar on mac, boss/resources/app.asar on linux/win
-      let contentDir = Path.normalize(Path.join(app.getAppPath(), '..'));
-      if (Path.basename(contentDir).toLowerCase() === 'resources') {
-        contentDir = Path.normalize(Path.join(contentDir, '..'));
-      }
-
-      packagedChromesDir = `${contentDir}/chromes`;
-    }
-
-    if (!Fs.existsSync(packagedChromesDir)) {
-      // eslint-disable-next-line no-console
-      console.log('No packaged chromes directory exists at:', packagedChromesDir);
-      return;
-    }
-
-    for (const file of Fs.readdirSync(packagedChromesDir)) {
-      if (file.endsWith('.tar.gz')) {
-        // eslint-disable-next-line no-console
-        console.log('Got a Chrome package to unpack', file);
-        // @ts-ignore
-        await Tar.extract({
-          file: `${packagedChromesDir}/${file}`,
-          cwd: chromeDir,
-          sync: true,
-          strict: true,
-          preservePaths: true,
-        });
-      }
     }
   }
 }

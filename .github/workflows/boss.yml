@@ -27,8 +27,6 @@ jobs:
       - name: Install Hero
         run: yarn && yarn build
         working-directory: ./hero
-        env:
-          BROWSERS_DIR: /tmp/chromes
 
       - name: Install Databox
         run: yarn && yarn build
@@ -37,13 +35,7 @@ jobs:
       - name: Yarn build
         run: yarn && yarn build
 
-      - name: Zip Chromes
-        run: cd /tmp/chromes && tar -czf chromes.tar.gz ./*
-
-      - name: Copy Chrome
-        run: mkdir ./build/apps/boss/chromes && cp /tmp/chromes/chromes.tar.gz ./build/apps/boss/chromes/
-
-      - run: mkdir ~/.private-keys && echo "$APPLE_NOTARIZE_KEY" > ~/.private-keys/AuthKey_5VH6PQ3585.p8
+      - run: mkdir ~/.private_keys && echo "$APPLE_NOTARIZE_KEY" > ~/.private_keys/AuthKey_5VH6PQ3585.p8
         if: ${{ matrix.os == 'macos-latest' }}
         shell: bash
         env:

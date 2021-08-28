@@ -3,7 +3,7 @@ import { notarize } from 'electron-notarize';
 export default async function notarizing(context) {
   const { electronPlatformName, appOutDir } = context;
 
-  if (electronPlatformName !== 'darwin' || !process.env.NOTARIZE) {
+  if (electronPlatformName !== 'darwin' || process.env.SKIP_NOTARIZE) {
     return;
   }
 
