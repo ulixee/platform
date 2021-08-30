@@ -79,6 +79,7 @@ export default class ChromeAliveCore {
   private static onHeroSessionCreated(event: { session: HeroSession }): Promise<any> {
     const { session: heroSession } = event;
     if (this.shouldAutoShowBrowser) {
+      heroSession.browserEngine.isHeaded = true;
       heroSession.options.showBrowser = true;
       heroSession.options.showBrowserInteractions = true;
       heroSession.options.viewport ??= { width: 0, height: 0 };
@@ -97,6 +98,7 @@ export default class ChromeAliveCore {
     this.sessionObserversById.set(heroSession.id, sessionObserver);
     sessionObserver.on('session:updated', this.sendActiveSession.bind(this, heroSession.id));
     sessionObserver.on('output:updated', this.sendOutput.bind(this, heroSession.id));
+    sessionObserver.on('closed', this.onHeroSessionClosed.bind(this, heroSession.id));
     if (!this.activeHeroSessionId) {
       this.sendEvent('App.show');
       this.activeHeroSessionId = heroSession.id;
@@ -111,6 +113,17 @@ export default class ChromeAliveCore {
     if (this.activeHeroSessionId) {
       this.sendActiveSession(this.activeHeroSessionId);
       this.sendOutput(this.activeHeroSessionId);
+    }
+  }
+
+  private static onHeroSessionClosed(heroSessionId: string) {
+    const sessionObserver = this.sessionObserversById.get(heroSessionId);
+    if (!sessionObserver) return;
+    this.sessionObserversById.delete(heroSessionId);
+    sessionObserver.close();
+    if (this.activeHeroSessionId === heroSessionId) {
+      this.activeHeroSessionId = null;
+      this.toggleAppVisibility(false);
     }
   }
 

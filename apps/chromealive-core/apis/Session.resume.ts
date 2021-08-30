@@ -50,6 +50,7 @@ export default function sessionResumeApi(args: ISessionResumeArgs): ISessionResu
     fork(script, execArgv, {
       // execArgv,
       stdio: 'inherit',
+      env: { ...process.env, HERO_CLI_NOPROMPT: 'true' },
     });
   } catch (err) {
     console.error('ERROR resuming session', err);

@@ -22,7 +22,8 @@
     "tar": "^6.1.10",
     "node-static": "^0.7.11",
     "tslib": "^2.3.1",
-    "electron-log": "^4.4.1"
+    "electron-log": "^4.4.1",
+    "debug": "^4.3.2"
   },
   "build": {
     "appId": "dev.ulixee.boss",
