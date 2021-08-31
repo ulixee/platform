@@ -12,6 +12,7 @@ import type { IOutputChangeRecord } from '@ulixee/databox-core/models/OutputTabl
 export default class SessionObserver extends TypedEventEmitter<{
   'session:updated': void;
   'output:updated': void;
+  closed: void;
 }> {
   public loadedUrls: ISessionUrl[] = [];
   public playState: ISessionActiveEvent['state'] = 'play';
@@ -30,7 +31,8 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.heroSession.on('tab-created', this.onTabCreated);
     this.heroSession.on('kept-alive', this.onHeroSessionKeptAlive);
     this.heroSession.on('resumed', this.onHeroSessionResumed);
-    this.heroSession.on('closing', () => heroSession.off('tab-created', this.onTabCreated));
+    this.heroSession.on('closing', this.close);
+    this.heroSession.once('closed', () => this.emit('closed'));
     this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint).mtimeMs;
     this.bindDatabox();
     Fs.watchFile(
@@ -60,7 +62,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     const runStart = runCommands[0]?.runStartDate;
 
     const loadedUrls = this.loadedUrls.filter(
-      x => thisRunUrls.has(x.url) && x.timestamp >= runStart,
+      x => thisRunUrls.has(x.url) || x.timestamp >= runStart,
     );
 
     let startDate = Date.now();
@@ -143,8 +145,9 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.emit('output:updated');
   }
 
-  private onHeroSessionKeptAlive(): void {
+  private onHeroSessionKeptAlive(event: { message: string }): void {
     this.playState = 'paused';
+    event.message = `ChromeAlive! has assumed control of your script. You can make changes to your script and re-run from the ChromeAlive interface.`;
   }
 
   private onTabCreated(tabEvent: { tab: Tab }) {
@@ -161,7 +164,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     if (!sessionUrl && ['DomContentLoaded', 'Load', 'ContentPaint'].includes(status.newStatus)) {
       sessionUrl = <ISessionUrl>{
         navigationId: status.id,
-        timestamp: status.stateChanges[status.newStatus].getTime(),
+        timestamp: status.stateChanges[status.newStatus]?.getTime() ?? Date.now(),
         url: status.url,
         tabId: tab.id,
         commandId: tab.lastCommandId,
@@ -174,10 +177,10 @@ export default class SessionObserver extends TypedEventEmitter<{
     // update url in case it changed
     sessionUrl.url = status.url;
 
-    if (status.newStatus === 'ContentPaint' || !sessionUrl.screenshotBase64) {
+    if (status.newStatus === 'ContentPaint' || !sessionUrl.pendingScreenshot) {
       try {
-        const screenshot = await tab.puppetPage.screenshot('jpeg', undefined, 50);
-        sessionUrl.screenshotBase64 = screenshot.toString('base64');
+        sessionUrl.pendingScreenshot = tab.puppetPage.screenshot('jpeg', undefined, 50);
+        sessionUrl.screenshotBase64 = (await sessionUrl.pendingScreenshot).toString('base64');
       } catch (err) {
         // don't do anything
       }
@@ -193,6 +196,7 @@ function round(num: number): number {
 export interface ISessionUrl {
   tabId: number;
   screenshotBase64: string;
+  pendingScreenshot: Promise<Buffer>;
   url: string;
   commandId: number;
   navigationId: number;
