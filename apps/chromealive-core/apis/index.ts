@@ -3,6 +3,8 @@ import sessionResumeApi from './Session.resume';
 import sessionStepApi from './Session.step';
 import sessionUrlScreenshotApi from './Session.urlScreenshot';
 import appBoundsChangedApi from './App.boundsChanged';
+import appReadyApi from './App.ready';
+import mouseStateApi from './Mouse.state';
 
 // README:
 // This wiring makes sure the args/result match the api definitions
@@ -18,6 +20,8 @@ const apiHandlers: ApiHandlers = {
   'Session.step': sessionStepApi,
   'Session.urlScreenshot': sessionUrlScreenshotApi,
   'App.boundsChanged': appBoundsChangedApi,
+  'App.ready': appReadyApi,
+  'Mouse.state': mouseStateApi,
 };
 
 export { apiHandlers };

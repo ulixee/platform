@@ -43,12 +43,20 @@ jobs:
       - name: Copy Chrome
         run: mkdir ./build/apps/boss/chromes && cp /tmp/chromes/chromes.tar.gz ./build/apps/boss/chromes/
 
+      - run: mkdir ~/.private-keys && echo "$APPLE_NOTARIZE_KEY" > ~/.private-keys/AuthKey_5VH6PQ3585.p8
+        if: ${{ matrix.os == 'macos-latest' }}
+        shell: bash
+        env:
+          APPLE_NOTARIZE_KEY: ${{secrets.APPLE_NOTARIZE_KEY}}
+
       - name: Build Boss
         run: yarn dist
         working-directory: ./apps/boss
         env:
           USE_HARD_LINKS: false
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
 
       - name: Upload Boss
         if: ${{ github.ref != 'refs/heads/main' || failure() }}

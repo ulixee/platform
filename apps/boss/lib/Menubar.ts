@@ -221,7 +221,7 @@ export class Menubar extends EventEmitter {
       transparent: true,
       alwaysOnTop: true,
       webPreferences: {
-        preload: `${__dirname}/preload.js`,
+        preload: `${__dirname}/PagePreload.js`,
       },
     });
 

@@ -3,19 +3,24 @@ import { EventEmitter } from 'events';
 import { Server as StaticServer } from 'node-static';
 import * as Http from 'http';
 import { AddressInfo } from 'net';
-import type { IAppBoundsChangedArgs } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
 import * as Path from 'path';
 import * as Fs from 'fs';
 import * as ContextMenu from 'electron-context-menu';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
+import ChromeAliveApi from './ChromeAliveApi';
 
 export class ChromeAlive extends EventEmitter {
-  #browserWindow?: BrowserWindow;
+  readonly #vueServer: Http.Server;
+  #browserWindow: BrowserWindow;
   #isVisible: boolean; // track visibility
-  #vueServer: Http.Server;
   #vueAddress: Promise<AddressInfo>;
   #resetAlwaysTopTimeout: NodeJS.Timeout;
   #hideOnLaunch = false;
+  #nsEventMonitor: any;
+  #mouseDown: boolean;
+
+  #api: ChromeAliveApi;
 
   constructor(readonly coreServerAddress?: string) {
     super();
@@ -30,11 +35,7 @@ export class ChromeAlive extends EventEmitter {
     if (process.platform === 'darwin') {
       app.setActivationPolicy('accessory');
     }
-    process.on('message', message => {
-      if (message === 'exit') {
-        this.appExit();
-      }
-    });
+    this.#api = new ChromeAliveApi(this.coreServerAddress, this.onChromeAliveEvent.bind(this));
 
     ContextMenu({
       showInspectElement: true,
@@ -70,16 +71,14 @@ export class ChromeAlive extends EventEmitter {
   }
 
   private hideWindow(): void {
-    if (!this.#browserWindow || !this.#isVisible) {
+    if (!this.#isVisible) {
       return;
     }
     this.#browserWindow.hide();
     this.#isVisible = false;
   }
 
-  private async showWindow(): Promise<void> {
-    if (!this.#browserWindow) await this.createWindow();
-
+  private showWindow(): void {
     if (!this.#browserWindow.isVisible()) {
       this.#browserWindow.show();
     }
@@ -98,21 +97,50 @@ export class ChromeAlive extends EventEmitter {
   private appExit(): void {
     console.warn('EXITING CHROMEALIVE!');
     app.exit();
+    this.#nsEventMonitor?.stop();
   }
 
   private async appReady(): Promise<void> {
     try {
+      await this.#api.connect();
       await this.createWindow();
       if (!this.#hideOnLaunch) {
         await this.showWindow();
       }
-
+      this.listenForMouseDown();
       ShutdownHandler.register(() => this.appExit());
 
       this.emit('ready');
     } catch (error) {
       console.error('ERROR in appReady: ', error);
     }
+  }
+
+  private listenForMouseDown() {
+    // TODO: add linux/win support
+    // https://github.com/wilix-team/iohook (seems unstable, but possibly look at ideas?)
+    // windows: https://github.com/xanderfrangos/global-mouse-events
+
+    if (process.platform !== 'darwin' || this.#nsEventMonitor) return;
+
+    // eslint-disable-next-line import/no-unresolved,global-require
+    const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
+
+    // https://developer.apple.com/documentation/appkit/nsevent/eventtype/leftmousedown
+    enum NSEventType {
+      LeftMouseDown = 1,
+      LeftMouseUp = 2,
+    }
+
+    const monitor = new NSEventMonitor();
+    monitor.start(
+      NSEventMask.mouseEntered | NSEventMask.leftMouseDown | NSEventMask.leftMouseUp,
+      ev => {
+        this.#mouseDown = ev.type === NSEventType.LeftMouseDown;
+        return this.#api.send('Mouse.state', { isMousedown: this.#mouseDown });
+      },
+    );
+    this.#nsEventMonitor = monitor;
   }
 
   private async createWindow(): Promise<void> {
@@ -136,8 +164,9 @@ export class ChromeAlive extends EventEmitter {
       y: workarea.y,
       x: workarea.x,
       webPreferences: {
-        preload: `${__dirname}/preload.js`,
+        preload: `${__dirname}/PagePreload.js`,
         nativeWindowOpen: true,
+        enableRemoteModule: true,
       },
       height: 50,
     });
@@ -152,7 +181,7 @@ export class ChromeAlive extends EventEmitter {
           hasShadow: true,
           useContentSize: true,
           webPreferences: {
-            preload: `${__dirname}/preload.js`,
+            preload: `${__dirname}/PagePreload.js`,
           },
         },
       };
@@ -168,21 +197,19 @@ export class ChromeAlive extends EventEmitter {
 
     this.#browserWindow.on('close', () => app.exit());
     this.#browserWindow.webContents.on('ipc-message', (e, message, ...args) => {
-      if (message === 'chromealive:event') {
-        const [eventType] = args;
-        if (eventType === 'App.hide') this.hideWindow();
-        if (eventType === 'App.show') this.showWindow();
-        if (eventType === 'App.quit') app.exit();
-      }
-      if (message === 'chromealive:api') {
-        const [api, apiArgs] = args;
-
-        if (api === 'App.boundsChanged') {
-          const appBoundsArgs = apiArgs as IAppBoundsChangedArgs;
-          this.#browserWindow.setBounds({
-            height: appBoundsArgs.appBounds.height,
-          });
+      if (message === 'mousemove') {
+        if (this.#isVisible) {
+          this.#browserWindow.show();
         }
+      }
+      if (message === 'resize-height') {
+        this.#browserWindow.setBounds({
+          height: args[0],
+        });
+      }
+      if (message === 'chromealive:event') {
+        const [eventType, data] = args;
+        this.onChromeAliveEvent(eventType, data);
       }
     });
 
@@ -190,12 +217,26 @@ export class ChromeAlive extends EventEmitter {
     await this.#browserWindow.loadURL(`http://localhost:${port}/app.html`);
 
     await this.#browserWindow.webContents.executeJavaScript(
-      `window.workarea = ${JSON.stringify({ left: workarea.x, top: workarea.y, ...workarea })};`,
-    );
-    if (this.coreServerAddress) {
-      await this.#browserWindow.webContents.executeJavaScript(
-        `'setHeroServerUrl' in window ? window.setHeroServerUrl('${this.coreServerAddress}') : window.heroServerUrl = '${this.coreServerAddress}'`,
-      );
+      `(() => {
+    const coreServerAddress = '${this.coreServerAddress ?? ''}';
+    if (coreServerAddress) {
+      window.heroServerUrl = coreServerAddress;
+      if ('setHeroServerUrl' in window) window.setHeroServerUrl(coreServerAddress);
     }
+})()`,
+    );
+
+    const workareaBounds = { left: workarea.x, top: workarea.y, ...workarea };
+    await this.#api.send('App.ready', { workarea: workareaBounds });
+  }
+
+  private onChromeAliveEvent<T extends keyof IChromeAliveEvents>(
+    eventType: T,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    data: IChromeAliveEvents[T],
+  ): void {
+    if (eventType === 'App.hide') this.hideWindow();
+    if (eventType === 'App.show') this.showWindow();
+    if (eventType === 'App.quit') app.exit();
   }
 }

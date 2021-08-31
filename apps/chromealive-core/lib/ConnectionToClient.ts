@@ -8,7 +8,6 @@ import IChromeAliveApis, {
 import { apiHandlers } from '../apis';
 
 export default class ConnectionToClient extends TypedEventEmitter<{
-  connected: void;
   message: IChromeAliveApiResponse<any> | IChromeAliveEvent<any>;
   close: void;
 }> {

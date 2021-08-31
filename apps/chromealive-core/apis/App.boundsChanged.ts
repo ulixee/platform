@@ -5,6 +5,6 @@ import {
 import AliveBarPositioner from '../lib/AliveBarPositioner';
 
 export default function appBoundsChangedApi(args: IAppBoundsChangedArgs): IAppBoundsChangedResult {
-  AliveBarPositioner.onAppBoundsChanged(args.workarea, args.toolbarBounds);
+  AliveBarPositioner.onAppBoundsChanged(args.bounds);
   return {};
 }

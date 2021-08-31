@@ -1,5 +1,7 @@
+// @ts-ignore
 const { ipcRenderer } = require('electron');
 
+// @ts-ignore
 document.addEventListener('boss:event', e => {
   // eslint-disable-next-line no-console
   console.log('boss:event', e);
@@ -7,6 +9,7 @@ document.addEventListener('boss:event', e => {
   ipcRenderer.send('boss:event', message.eventType, message.data);
 });
 
+// @ts-ignore
 document.addEventListener('boss:api', e => {
   // eslint-disable-next-line no-console
   console.log('boss:api', e);

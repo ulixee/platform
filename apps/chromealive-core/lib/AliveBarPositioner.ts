@@ -10,21 +10,23 @@ export default class AliveBarPositioner {
   private static workarea: IBounds;
   private static lastToolbarBounds: IBounds;
   private static isFirstAdjustment = true;
+  private static isMousedown = false;
+
+  private static pendingWindowRepositionSessionId: string;
 
   private static lastWindowBoundsBySessionId: {
     [sessionId: string]: IBounds & { windowId: number };
   } = {};
 
   public static getMaxChromeBounds(): IBounds | null {
-    if (!this.workarea || !this.lastToolbarBounds) return null;
+    if (!this.workarea) return null;
 
-    const { top, height } = this.lastToolbarBounds;
-    const toolbarBottom = top + height + 1;
+    const toolbarHeight = this.lastToolbarBounds?.height ?? 50;
     return {
-      top: toolbarBottom,
-      left: this.lastToolbarBounds.left,
-      width: this.lastToolbarBounds.width,
-      height: this.workarea.height - this.lastToolbarBounds.height,
+      top: this.workarea.top + toolbarHeight,
+      left: this.workarea.left,
+      width: this.workarea.width,
+      height: this.workarea.height - toolbarHeight,
     };
   }
 
@@ -35,34 +37,53 @@ export default class AliveBarPositioner {
   ): void {
     debug('Chrome window bounds changed', { sessionId, windowId, bounds });
     this.lastWindowBoundsBySessionId[sessionId] = { ...bounds, windowId };
-    if (!this.lastToolbarBounds) return;
 
     this.alignWindowsIfOverlapping(sessionId);
   }
 
-  public static onAppBoundsChanged(workarea: IBounds, toolbarBounds: IBounds): void {
-    debug('App bounds changed', { workarea, toolbarBounds });
-    this.lastToolbarBounds = toolbarBounds;
+  public static setMouseDown(isMousedown: boolean): void {
+    this.isMousedown = isMousedown;
+    if (!this.isMousedown && this.pendingWindowRepositionSessionId) {
+      this.alignWindowsIfOverlapping(this.pendingWindowRepositionSessionId);
+      this.pendingWindowRepositionSessionId = null;
+    }
+  }
+
+  public static onAppReady(workarea: IBounds): void {
+    debug('App workarea setup', { workarea });
     this.workarea = workarea;
+  }
+
+  public static onAppBoundsChanged(bounds: IBounds): void {
+    debug('App bounds changed', { bounds });
+    this.lastToolbarBounds = bounds;
     for (const sessionId of Object.keys(this.lastWindowBoundsBySessionId)) {
       this.alignWindowsIfOverlapping(sessionId);
     }
   }
 
   private static alignWindowsIfOverlapping(sessionId: string): void {
-    if (!this.lastToolbarBounds) return;
-
     const chromeBounds = this.lastWindowBoundsBySessionId[sessionId];
     let newBounds = this.getMaxChromeBounds();
+    if (!newBounds) return;
 
     if (chromeBounds.top < newBounds.top) {
       const devtools = this.getSessionDevtools(sessionId);
       if (!devtools) return;
 
       if (!this.isFirstAdjustment) {
+        if (this.isMousedown) {
+          debug('App bounds changed, but appears to be drag. Ignoring');
+          this.pendingWindowRepositionSessionId = sessionId;
+          return;
+        }
         newBounds = { top: newBounds.top } as any;
       }
       this.isFirstAdjustment = false;
+      if (this.pendingWindowRepositionSessionId === sessionId) {
+        this.pendingWindowRepositionSessionId = null;
+      }
+
       devtools
         .send('Browser.setWindowBounds', {
           windowId: chromeBounds.windowId,
