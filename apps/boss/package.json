@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build": "yarn build:ui && yarn build:basic && cd ../../build/apps/boss && yarn && electron-builder install-app-deps",
-    "build:basic": "cd ../.. && yarn tsc && cd apps/boss && yarn copy:build",
+    "build:basic": "cd ../.. && yarn run tsc && cd apps/boss && yarn copy:build",
     "build:ui": "yarn workspace @ulixee/apps-menubar-ui build && yarn workspace @ulixee/apps-chromealive-ui build",
     "copy:build": "cd ../../build/apps/boss && node builder/copySources.js ./packages",
     "dist": "yarn build && cd ../../build/apps/boss && yarn && electron-builder --publish onTagOrDraft",
@@ -21,13 +21,25 @@
     "electron-positioner": "^4.1.0",
     "tar": "^6.1.10",
     "node-static": "^0.7.11",
+    "debug": "^4.3.2",
     "tslib": "^2.3.1",
     "electron-log": "^4.4.1",
     "debug": "^4.3.2"
   },
+  "devDependencies": {
+    "electron": "13.1.7",
+    "electron-builder": "^22.11.11",
+    "shx": "^0.3.3",
+    "cross-env": "^7.0.3",
+    "electron-notarize": "^1.1.0"
+  },
+  "optionalDependencies": {
+    "nseventmonitor": "^1.0.0"
+  },
   "build": {
     "appId": "dev.ulixee.boss",
     "productName": "Ulixee Boss",
+    "afterSign": "scripts/notarize.js",
     "asarUnpack": [
       "node_modules/@ulixee/apps-chromealive-core"
     ],
@@ -64,16 +76,6 @@
       "provider": "github",
       "releaseType": "release"
     }
-  },
-  "devDependencies": {
-    "electron": "13.1.7",
-    "electron-builder": "^22.11.11",
-    "shx": "^0.3.3",
-    "cross-env": "^7.0.3",
-    "electron-notarize": "^1.1.0"
-  },
-  "optionalDependencies": {
-    "nseventmonitor": "^1.0.0"
   },
   "nohoist": [
     "**/electron",
