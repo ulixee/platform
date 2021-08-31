@@ -27,8 +27,6 @@ jobs:
       - name: Install Hero
         run: yarn && yarn build
         working-directory: ./hero
-        env:
-          BROWSERS_DIR: /tmp/chromes
 
       - name: Install Databox
         run: yarn && yarn build
@@ -37,11 +35,11 @@ jobs:
       - name: Yarn build
         run: yarn && yarn build
 
-      - name: Zip Chromes
-        run: cd /tmp/chromes && tar -czf chromes.tar.gz ./*
-
-      - name: Copy Chrome
-        run: mkdir ./build/apps/boss/chromes && cp /tmp/chromes/chromes.tar.gz ./build/apps/boss/chromes/
+      - run: mkdir ~/.private_keys && echo "$APPLE_NOTARIZE_KEY" > ~/.private_keys/AuthKey_5VH6PQ3585.p8
+        if: ${{ matrix.os == 'macos-latest' }}
+        shell: bash
+        env:
+          APPLE_NOTARIZE_KEY: ${{secrets.APPLE_NOTARIZE_KEY}}
 
       - name: Build Boss
         run: yarn dist
@@ -49,6 +47,8 @@ jobs:
         env:
           USE_HARD_LINKS: false
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
 
       - name: Upload Boss
         if: ${{ github.ref != 'refs/heads/main' || failure() }}

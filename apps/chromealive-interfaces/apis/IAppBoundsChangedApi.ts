@@ -13,9 +13,7 @@ export interface IBounds {
 }
 
 export interface IAppBoundsChangedArgs {
-  workarea: IBounds;
-  appBounds: IBounds;
-  toolbarBounds: IBounds;
+  bounds: IBounds;
 }
 
 export interface IAppBoundsChangedResult {

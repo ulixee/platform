@@ -29,7 +29,7 @@ export default class ChromeAliveCoreConnector extends BaseCoreConnector {
 
   private onConnection(ws: WebSocket) {
     const ChromeAliveCore = ChromeAliveCoreConnector.getChromeAlive();
-    const connection = ChromeAliveCore.getConnection();
+    const connection = ChromeAliveCore.addConnection();
     ws.on('message', message => {
       const payload = TypeSerializer.parse(message.toString(), 'CLIENT');
       return connection.handleRequest(payload);
@@ -45,7 +45,6 @@ export default class ChromeAliveCoreConnector extends BaseCoreConnector {
         sendWsCloseUnexpectedError(ws, error.message);
       }
     });
-    connection.emit('connected');
   }
 
   public static isInstalled(): boolean {

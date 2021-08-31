@@ -27,7 +27,12 @@
     "compare-versions": "^3.6.0",
     "electron-log": "^4.4.1",
     "@ulixee/commons": "^1.5.5",
-    "electron-context-menu": "^3.1.1"
+    "@ulixee/apps-chromealive-interfaces": "^1.5.4",
+    "electron-context-menu": "^3.1.1",
+    "ws": "^7.4.4"
+  },
+  "optionalDependencies": {
+    "nseventmonitor": "^1.0.0"
   },
   "devDependencies": {
     "@types/tar": "^4.0.5",

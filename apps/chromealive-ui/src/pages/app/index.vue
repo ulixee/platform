@@ -120,6 +120,7 @@ import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChan
 import IOutputUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IOutputUpdatedEvent';
 import humanizeBytes from '@/utils/humanizeBytes';
 import flattenJson, { FlatJson } from '@/utils/flattenJson';
+import { doc } from 'prettier';
 
 @Component({
   components: { VueSlider },
@@ -131,7 +132,7 @@ export default class ChromeAliveApp extends Vue {
   private timeAgoTimeout: number;
   private timeAgoDelay = 1e3;
   private currentUrlIndex = 1;
-  private lastAppBounds: IBounds;
+  private lastHeight: IBounds;
   private lastToolbarBounds: IBounds;
   private inputSize = '0kb';
   private outputSize = '0kb';
@@ -239,12 +240,12 @@ export default class ChromeAliveApp extends Vue {
       const features = `top=${bottom},left=${left},width=300,height=500,frame=true,nodeIntegration=no`;
       this.outputWindow = window.open('/output.html', '_blank', features);
       this.outputWindow.addEventListener('blur', () => {
-        this.outputWindow?.close()
+        this.outputWindow?.close();
         this.outputWindow = null;
       });
       this.outputWindow.addEventListener('close', () => {
         this.outputWindow = null;
-      })
+      });
     }
   }
 
@@ -306,52 +307,46 @@ export default class ChromeAliveApp extends Vue {
     }
   }
 
-  updated() {
-    this.$nextTick(function () {
-      this.sendBoundsChanged();
-    });
-  }
-
   mounted() {
     this.client.on('Session.active', this.onSessionActiveEvent);
     this.client.on('Output.updated', this.onOutputUpdated);
+    new ResizeObserver(() => this.sendBoundsChanged()).observe(this.$refs.app as HTMLElement);
+    new ResizeObserver(() => this.sendToolbarHeightChange()).observe(
+      this.$refs.toolbar as HTMLElement,
+    );
   }
 
-  private async sendBoundsChanged() {
-    const elem = this.$refs.app as HTMLElement;
+  private async sendToolbarHeightChange() {
     const toolbar = this.$refs.toolbar as HTMLElement;
-
-    const appBounds = {
-      height: elem.offsetHeight,
-      width: elem.offsetWidth,
-      left: window.screenLeft,
-      top: window.screenTop,
-    };
-    const toolbarBounds = {
+    const bounds = {
       height: toolbar.offsetHeight,
       width: toolbar.offsetWidth,
       left: window.screenLeft,
       top: window.screenTop,
     };
-
     if (
-      appBounds.height === this.lastAppBounds?.height &&
-      appBounds.width === this.lastAppBounds?.width &&
-      toolbarBounds.height === this.lastToolbarBounds?.height &&
-      toolbarBounds.width === this.lastToolbarBounds?.width
+      bounds.height === this.lastToolbarBounds?.height &&
+      bounds.width === this.lastToolbarBounds?.width
     ) {
       return;
     }
-
-    this.lastAppBounds = appBounds;
-    this.lastToolbarBounds = toolbarBounds
+    this.lastToolbarBounds = bounds;
 
     await this.client.connect();
     await this.client.send('App.boundsChanged', {
-      workarea: (window as any).workarea,
-      appBounds,
-      toolbarBounds,
+      bounds,
     });
+  }
+
+  private async sendBoundsChanged() {
+    const elem = this.$refs.app as HTMLElement;
+    document.dispatchEvent(
+      new CustomEvent('app:height-changed', {
+        detail: {
+          height: elem.offsetHeight,
+        },
+      }),
+    );
   }
 
   beforeUnmount() {
