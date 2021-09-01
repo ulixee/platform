@@ -27,7 +27,7 @@ module.exports = {
     {
       use: '@gridsome/vue-remark',
       options: {
-        baseDir: './docs',
+        baseDir: '../hero/docs/main',
         pathPrefix: '/docs',
         typeName: 'Docs',
         template: './src/templates/DocsPage.vue',
@@ -45,7 +45,7 @@ module.exports = {
     {
       use: '@gridsome/vue-remark',
       options: {
-        baseDir: './awaited-dom',
+        baseDir: '../hero/docs/awaited-dom',
         pathPrefix: '/docs/awaited-dom',
         typeName: 'AwaitedDom',
         template: './src/templates/AwaitedDomDocsPage.vue',
