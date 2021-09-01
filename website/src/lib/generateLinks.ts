@@ -1,6 +1,7 @@
 import kebabCase from 'lodash.kebabcase';
 
-const links = require('../../docs/links.yaml');
+// eslint-disable-next-line import/no-dynamic-require
+const links = require(`${__dirname}/../../../hero/docs/main/links.yaml`);
 
 export default function generateLinks() {
   links.forEach((group: any) => {
