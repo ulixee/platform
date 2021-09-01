@@ -7,7 +7,7 @@ import { Menubar } from './lib/Menubar';
 Object.assign(console, log.functions);
 debug.log = log.debug.bind(log);
 debug.enable('ulixee:*');
-debug.formatArgs = function (args) {
+debug.formatArgs = function formatArgs(args) {
   const name = this.namespace;
   args[0] = `[${name}] ${args[0].split('\n').join(`\n                       ${name} `)}`;
   args.push(debug.humanize(this.diff));
