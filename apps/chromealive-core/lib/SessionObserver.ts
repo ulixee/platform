@@ -171,7 +171,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     ) {
       sessionUrl = <ISessionUrl>{
         navigationId: status.id,
-        timestamp: status.statusChanges[status.newStatus]?.getTime() ?? Date.now(),
+        timestamp: status.statusChanges[status.newStatus] ?? Date.now(),
         url: status.url,
         tabId: tab.id,
         commandId: tab.lastCommandId,
