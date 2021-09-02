@@ -195,8 +195,8 @@ export default class ChromeAliveApp extends Vue {
   showScreenshot(urlIndex: number) {
     const entry = this.session.loadedUrls[urlIndex];
     this.hoveredScreenshot.left = this.$refs[`tick${urlIndex}`][0].getBoundingClientRect().left;
-    if (this.hoveredScreenshot.left + 300 > window.innerWidth) {
-      this.hoveredScreenshot.left = window.innerWidth - 325;
+    if (this.hoveredScreenshot.left + 500 > window.innerWidth) {
+      this.hoveredScreenshot.left = window.innerWidth - 525;
     }
     this.hoveredScreenshot.url = entry.url;
     this.hoveredScreenshot.imageBase64 = this.screenshotsByNavigationId.get(entry.navigationId);
@@ -560,7 +560,7 @@ body {
 
   #screenshot-hover {
     display: none;
-    width: 300px;
+    width: 500px;
     position: relative;
     top: -2px;
     background: white;

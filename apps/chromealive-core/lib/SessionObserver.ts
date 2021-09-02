@@ -8,6 +8,8 @@ import { bindFunctions } from '@ulixee/commons/lib/utils';
 import ISessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionActiveEvent';
 import OutputRebuilder, { IOutputSnapshot } from '@ulixee/databox-core/lib/OutputRebuilder';
 import type { IOutputChangeRecord } from '@ulixee/databox-core/models/OutputTable';
+import { LoadStatus } from '@ulixee/hero-interfaces/Location';
+import { ContentPaint } from '@ulixee/hero-interfaces/INavigation';
 
 export default class SessionObserver extends TypedEventEmitter<{
   'session:updated': void;
@@ -161,10 +163,15 @@ export default class SessionObserver extends TypedEventEmitter<{
   ): Promise<void> {
     let sessionUrl = this.loadedUrls.find(x => x.navigationId === status.id);
 
-    if (!sessionUrl && ['DomContentLoaded', 'Load', 'ContentPaint'].includes(status.newStatus)) {
+    if (
+      !sessionUrl &&
+      [LoadStatus.DomContentLoaded, LoadStatus.AllContentLoaded, ContentPaint].includes(
+        status.newStatus,
+      )
+    ) {
       sessionUrl = <ISessionUrl>{
         navigationId: status.id,
-        timestamp: status.stateChanges[status.newStatus]?.getTime() ?? Date.now(),
+        timestamp: status.statusChanges[status.newStatus]?.getTime() ?? Date.now(),
         url: status.url,
         tabId: tab.id,
         commandId: tab.lastCommandId,
