@@ -5,19 +5,20 @@ import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import * as Fs from 'fs';
 import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
-import ISessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionActiveEvent';
+import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import OutputRebuilder, { IOutputSnapshot } from '@ulixee/databox-core/lib/OutputRebuilder';
 import type { IOutputChangeRecord } from '@ulixee/databox-core/models/OutputTable';
 import { LoadStatus } from '@ulixee/hero-interfaces/Location';
 import { ContentPaint } from '@ulixee/hero-interfaces/INavigation';
+import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
 
 export default class SessionObserver extends TypedEventEmitter<{
-  'session:updated': void;
-  'output:updated': void;
+  'hero:updated': void;
+  'databox:updated': void;
   closed: void;
 }> {
   public loadedUrls: ISessionUrl[] = [];
-  public playState: ISessionActiveEvent['state'] = 'play';
+  public playState: IHeroSessionActiveEvent['state'] = 'play';
 
   private scriptLastModifiedTime: number;
   private readonly scriptInstanceMeta: IScriptInstanceMeta;
@@ -52,7 +53,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.heroSession.off('tab-created', this.onTabCreated);
   }
 
-  public toEvent(): ISessionActiveEvent {
+  public toEvent(): IHeroSessionActiveEvent {
     const runCommands = this.heroSession.sessionState.commands.filter(
       x => x.run === this.heroSession.resumeCounter,
     );
@@ -87,13 +88,8 @@ export default class SessionObserver extends TypedEventEmitter<{
 
     const millis = Math.max(endDate - startDate, 1);
 
-    const outputBytes = this.outputRebuilder.getLatestSnapshot()?.bytes ?? 0;
-
     return {
       hasWarning: false,
-      input: this.databoxInput,
-      inputBytes: this.databoxInputBytes,
-      outputBytes,
       run: this.heroSession.resumeCounter,
       scriptEntrypoint: this.scriptInstanceMeta.entrypoint,
       scriptLastModifiedTime: this.scriptLastModifiedTime,
@@ -112,13 +108,21 @@ export default class SessionObserver extends TypedEventEmitter<{
     };
   }
 
-  public getOutput(): IOutputSnapshot {
-    return this.outputRebuilder.getLatestSnapshot();
+  public getDataboxEvent(): IDataboxUpdatedEvent {
+    const output: IOutputSnapshot = this.outputRebuilder.getLatestSnapshot() ?? {
+      bytes: 0,
+      output: null,
+      changes: [],
+    };
+    return {
+      ...output,
+      input: this.databoxInput,
+    };
   }
 
   private onFileUpdated(stats: Fs.Stats): void {
     this.scriptLastModifiedTime = stats.mtimeMs;
-    this.emit('session:updated');
+    this.emit('hero:updated');
   }
 
   private onHeroSessionResumed(): void {
@@ -144,7 +148,7 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   private onOutputUpdated(event: { changes: IOutputChangeRecord[] }): void {
     this.outputRebuilder.applyChanges(event.changes);
-    this.emit('output:updated');
+    this.emit('databox:updated');
   }
 
   private onHeroSessionKeptAlive(event: { message: string }): void {
@@ -192,7 +196,7 @@ export default class SessionObserver extends TypedEventEmitter<{
         // don't do anything
       }
     }
-    this.emit('session:updated');
+    this.emit('hero:updated');
   }
 }
 

@@ -1,6 +1,6 @@
 <template>
   <div id="ChromeAlivePage" :class="{ showingScreenshot: hoveredScreenshot.url }" ref="app">
-    <div id="chrome-alive-bar" ref="toolbar">
+    <div id="chrome-alive-bar" ref="toolbar" :class="{ loading: isLoading }">
       <div id="script">
         <div id="status-indicator" class="icon"></div>
         <div id="entrypoint">Bound to {{ session.scriptEntrypoint }}</div>
@@ -8,13 +8,13 @@
       </div>
 
       <button
-        class="input app-button"
-        ref="inputButton"
-        @click.prevent="toggleInput()"
-        :class="{ selected: isShowingInput }"
+        id="databox-button"
+        class="app-button"
+        @click.prevent="toggleDatabox()"
+        :class="{ selected: !!databoxWindow }"
       >
-        <span class="label">Input</span>
-        <span class="size">({{ inputSize }})</span>
+        <span class="label">{}</span>
+        <div class="icon"></div>
       </button>
 
       <div id="timeline">
@@ -39,16 +39,6 @@
         </div>
         <div id="flow-time">Full flow - ({{ session.durationSeconds }} seconds)</div>
       </div>
-
-      <button
-        class="output app-button"
-        ref="outputButton"
-        @click.prevent="toggleOutput()"
-        :class="{ selected: !!outputWindow }"
-      >
-        <span class="label">Output</span>
-        <span class="size">({{ outputSize }})</span>
-      </button>
 
       <button
         v-if="!isPlaying"
@@ -83,29 +73,6 @@
         v-if="hoveredScreenshot.imageBase64"
       />
     </div>
-
-    <div
-      id="input-hover"
-      v-if="isShowingInput"
-      :style="{ left: $refs.inputButton.getBoundingClientRect().left + 'px' }"
-    >
-      <div class="input-box">
-        <div v-if="inputJson.length" class="Json">
-          <div class="JsonNode" v-for="node of inputJson" :key="node.id">
-            <div class="indent" v-for="i in node.level" :key="i">{{ ' ' }}</div>
-            <span v-if="node.key" class="key">{{ node.key }}: </span>
-            <span>
-              <span
-                :class="{ ['value-' + node.type]: node.isContent, brackets: !node.isContent }"
-                >{{ node.content }}</span
-              >
-              <span v-if="node.showComma" class="comma">, </span>
-            </span>
-          </div>
-        </div>
-      </div>
-      <div id="input-size" v-if="inputSize">Input size: {{ inputSize }}</div>
-    </div>
   </div>
 </template>
 
@@ -115,39 +82,29 @@ import Component from 'vue-class-component';
 import Client from '@/api/Client';
 import VueSlider from 'vue-slider-component';
 import 'vue-slider-component/theme/default.css';
-import ISessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionActiveEvent';
+import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
-import IOutputUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IOutputUpdatedEvent';
-import humanizeBytes from '@/utils/humanizeBytes';
-import flattenJson, { FlatJson } from '@/utils/flattenJson';
-import { doc } from 'prettier';
 
 @Component({
   components: { VueSlider },
 })
 export default class ChromeAliveApp extends Vue {
   private client = Client;
-  private isShowingInput = false;
   private scriptTimeAgo = '';
   private timeAgoTimeout: number;
   private timeAgoDelay = 1e3;
   private currentUrlIndex = 1;
-  private lastHeight: IBounds;
   private lastToolbarBounds: IBounds;
-  private inputSize = '0kb';
-  private outputSize = '0kb';
-  private outputWindow: Window;
-  private inputJson: FlatJson[] = [];
+  private databoxWindow: Window = null;
+  private hasLaunchedDatabox = false;
+  private isLoading = false;
 
-  private session: ISessionActiveEvent = {
+  private session: IHeroSessionActiveEvent = {
     loadedUrls: [],
     state: 'paused',
     durationSeconds: 0,
     heroSessionId: '',
     run: 0,
-    outputBytes: 0,
-    inputBytes: 0,
-    input: '',
     hasWarning: false,
     scriptEntrypoint: '',
     scriptLastModifiedTime: 0,
@@ -230,27 +187,21 @@ export default class ChromeAliveApp extends Vue {
     return `${seconds}s`;
   }
 
-  toggleOutput() {
-    if (this.outputWindow) {
-      this.outputWindow.close();
-      this.outputWindow = null;
+  toggleDatabox() {
+    if (this.databoxWindow) {
+      this.databoxWindow.close();
+      this.databoxWindow = null;
     } else {
-      const { left } = (this.$refs.outputButton as HTMLElement).getBoundingClientRect();
-      const { bottom } = (this.$refs.toolbar as HTMLElement).getBoundingClientRect();
-      const features = `top=${bottom},left=${left},width=300,height=500,frame=true,nodeIntegration=no`;
-      this.outputWindow = window.open('/output.html', '_blank', features);
-      this.outputWindow.addEventListener('blur', () => {
-        this.outputWindow?.close();
-        this.outputWindow = null;
+      const { bottom, right } = (this.$refs.toolbar as HTMLElement).getBoundingClientRect();
+      const features = `top=${bottom + 100},left=${right - 350},width=300,height=600`;
+      this.databoxWindow = window.open('/databox.html', 'DataboxPanel', features);
+      this.databoxWindow.addEventListener('beforeunload', () => {
+        this.databoxWindow = null;
       });
-      this.outputWindow.addEventListener('close', () => {
-        this.outputWindow = null;
+      this.databoxWindow.addEventListener('close', () => {
+        this.databoxWindow = null;
       });
     }
-  }
-
-  toggleInput() {
-    this.isShowingInput = !this.isShowingInput;
   }
 
   play() {
@@ -275,20 +226,15 @@ export default class ChromeAliveApp extends Vue {
     this.timeAgoTimeout = setTimeout(this.updateScriptTimeAgo, this.timeAgoDelay ?? 1e3) as any;
   }
 
-  onOutputUpdated(message: IOutputUpdatedEvent) {
-    this.session.outputBytes = message.bytes;
-    this.outputSize = humanizeBytes(message.bytes);
-  }
-
-  onSessionActiveEvent(message: ISessionActiveEvent) {
-    if (message.inputBytes !== this.session.inputBytes) {
-      this.inputSize = humanizeBytes(message.inputBytes);
-      this.inputJson = message.input !== undefined ? flattenJson(message.input) : [];
-    }
-    this.outputSize = humanizeBytes(message.outputBytes);
+  onSessionActiveEvent(message: IHeroSessionActiveEvent) {
     Object.assign(this.session, message);
     this.currentUrlIndex = Math.max(0, this.session.loadedUrls.length - 1);
     this.updateScriptTimeAgo();
+
+    if (!this.hasLaunchedDatabox) {
+      this.hasLaunchedDatabox = true;
+      this.toggleDatabox();
+    }
 
     for (const loadedUrl of this.session.loadedUrls) {
       const { navigationId, hasScreenshot } = loadedUrl;
@@ -308,8 +254,9 @@ export default class ChromeAliveApp extends Vue {
   }
 
   mounted() {
+    this.client.on('Session.loading', () => (this.isLoading = true));
+    this.client.on('Session.loaded', () => (this.isLoading = false));
     this.client.on('Session.active', this.onSessionActiveEvent);
-    this.client.on('Output.updated', this.onOutputUpdated);
     new ResizeObserver(() => this.sendBoundsChanged()).observe(this.$refs.app as HTMLElement);
     new ResizeObserver(() => this.sendToolbarHeightChange()).observe(
       this.$refs.toolbar as HTMLElement,
@@ -412,8 +359,14 @@ body {
     vertical-align: center;
     justify-content: center;
     -webkit-app-region: no-drag;
+    transition: opacity 20ms ease-in;
     height: 40px;
+    &.loading {
+      opacity: 0.5;
+      border: 1px solid #3c3c3c;
+    }
   }
+
 
   #script {
     flex: 2;
@@ -597,6 +550,7 @@ body {
     }
   }
 
+  #databox-button .label,
   #play-button .label,
   #pause-button .label {
     display: none;
@@ -636,9 +590,14 @@ body {
     }
   }
 
+  #databox-button .icon {
+    background-image: url('~@/assets/icons/brackets.svg');
+  }
+
   #play-button .icon {
     background-image: url('~@/assets/icons/play.svg');
   }
+
   #pause-button .icon {
     background-image: url('~@/assets/icons/pause.svg');
   }

@@ -1,10 +1,12 @@
-import IOutputUpdatedEvent from './IOutputUpdatedEvent';
-import ISessionActiveEvent from './ISessionActiveEvent';
+import IDataboxUpdatedEvent from './IDataboxUpdatedEvent';
+import IHeroSessionActiveEvent from './IHeroSessionActiveEvent';
 
 export default interface IChromeAliveEvents {
   'App.show': null;
   'App.hide': null;
   'App.quit': null;
-  'Session.active': ISessionActiveEvent;
-  'Output.updated': IOutputUpdatedEvent;
+  'Session.loading': void;
+  'Session.loaded': void;
+  'Session.active': IHeroSessionActiveEvent;
+  'Databox.updated': IDataboxUpdatedEvent;
 }

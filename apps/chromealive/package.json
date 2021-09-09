@@ -8,7 +8,7 @@
   "author": "Data Liberation Foundation",
   "scripts": {
     "build": "yarn build:ui && cd ../../build/apps/chromealive && yarn && electron-builder install-app-deps",
-    "build:basic": "cd ../.. && yarn build:tsc",
+    "build:basic": "cd ../.. && yarn run tsc",
     "build:ui": "yarn workspace @ulixee/apps-chromealive-ui build",
     "dist": "yarn build && cd ../../build/apps/chromealive && electron-builder -mwl && ./pack.sh",
     "dist:basic": "yarn build:basic && cd ../../build/apps/chromealive && electron-builder",
