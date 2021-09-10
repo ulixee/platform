@@ -1,13 +1,10 @@
-export default interface ISessionActiveEvent {
+export default interface IHeroSessionActiveEvent {
   scriptEntrypoint: string;
   scriptLastModifiedTime: number;
   heroSessionId: string;
   hasWarning: boolean;
   state: 'play' | 'paused';
   durationSeconds: number;
-  input: any;
-  inputBytes: number;
-  outputBytes: number;
   run: number;
   loadedUrls: {
     url: string;

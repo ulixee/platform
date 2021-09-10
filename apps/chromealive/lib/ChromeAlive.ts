@@ -19,7 +19,7 @@ export class ChromeAlive extends EventEmitter {
   #hideOnLaunch = false;
   #nsEventMonitor: any;
   #mouseDown: boolean;
-
+  #childWindows = new Set<BrowserWindow>();
   #api: ChromeAliveApi;
 
   constructor(readonly coreServerAddress?: string) {
@@ -74,13 +74,20 @@ export class ChromeAlive extends EventEmitter {
     if (!this.#isVisible) {
       return;
     }
+
     this.#browserWindow.hide();
+    for (const window of this.#childWindows) {
+      window.hide();
+    }
     this.#isVisible = false;
   }
 
   private showWindow(): void {
     if (!this.#browserWindow.isVisible()) {
       this.#browserWindow.show();
+      for (const window of this.#childWindows) {
+        window.show();
+      }
     }
 
     if (!this.#browserWindow.isAlwaysOnTop()) {
@@ -151,12 +158,10 @@ export class ChromeAlive extends EventEmitter {
       show: false,
       frame: false,
       roundedCorners: false,
-      fullscreenable: false,
-      transparent: true,
       movable: false,
       closable: true,
+      transparent: true,
       acceptFirstMouse: true,
-      paintWhenInitiallyHidden: true,
       hasShadow: false,
       skipTaskbar: true,
       autoHideMenuBar: true,
@@ -176,8 +181,12 @@ export class ChromeAlive extends EventEmitter {
       return {
         action: 'allow',
         overrideBrowserWindowOptions: {
-          vibrancy: 'popover',
-          alwaysOnTop: false,
+          frame: true,
+          roundedCorners: true,
+          movable: true,
+          transparent: false,
+          titleBarStyle: 'default',
+          alwaysOnTop: true,
           hasShadow: true,
           useContentSize: true,
           webPreferences: {
@@ -188,10 +197,9 @@ export class ChromeAlive extends EventEmitter {
     });
 
     this.#browserWindow.webContents.on('did-create-window', childWindow => {
-      childWindow.on('blur', e => {
-        childWindow.hide();
-        childWindow.close();
-        e.preventDefault();
+      this.#childWindows.add(childWindow);
+      childWindow.on('close', () => {
+        this.#childWindows.delete(childWindow);
       });
     });
 

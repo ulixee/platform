@@ -103,14 +103,18 @@ export default class ChromeAliveCore {
     heroSession.options.sessionKeepAlive = true;
     const sessionObserver = new SessionObserver(heroSession);
     this.sessionObserversById.set(heroSession.id, sessionObserver);
-    sessionObserver.on('session:updated', this.sendActiveSession.bind(this, heroSession.id));
-    sessionObserver.on('output:updated', this.sendOutput.bind(this, heroSession.id));
+    sessionObserver.on('hero:updated', this.sendActiveSession.bind(this, heroSession.id));
+    sessionObserver.on('databox:updated', this.sendDatabox.bind(this, heroSession.id));
     sessionObserver.on('closed', this.onHeroSessionClosed.bind(this, heroSession.id));
+
+    this.sendActiveSession(heroSession.id);
+
     if (!this.activeHeroSessionId) {
+      this.sendEvent('Session.loading');
       this.sendEvent('App.show');
+      sessionObserver.once('hero:updated', () => this.sendEvent('Session.loaded'));
       this.activeHeroSessionId = heroSession.id;
     }
-    this.sendActiveSession(heroSession.id);
   }
 
   private static onWsConnected() {
@@ -119,7 +123,7 @@ export default class ChromeAliveCore {
     });
     if (this.activeHeroSessionId) {
       this.sendActiveSession(this.activeHeroSessionId);
-      this.sendOutput(this.activeHeroSessionId);
+      this.sendDatabox(this.activeHeroSessionId);
     }
   }
 
@@ -130,6 +134,22 @@ export default class ChromeAliveCore {
     sessionObserver.close();
     if (this.activeHeroSessionId === heroSessionId) {
       this.activeHeroSessionId = null;
+      this.sendEvent('Session.active', {
+        run: 0,
+        state: 'play',
+        heroSessionId: null,
+        scriptEntrypoint: null,
+        durationSeconds: 0,
+        hasWarning: false,
+        loadedUrls: [],
+        scriptLastModifiedTime: 0,
+      });
+      this.sendEvent('Databox.updated', {
+        changes: [],
+        output: null,
+        input: null,
+        bytes: 0,
+      });
       this.toggleAppVisibility(false);
     }
   }
@@ -140,11 +160,10 @@ export default class ChromeAliveCore {
     this.sendEvent('Session.active', sessionObserver.toEvent());
   }
 
-  private static sendOutput(heroSessionId: string) {
+  private static sendDatabox(heroSessionId: string) {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
-    const output = sessionObserver.getOutput();
-    if (output) this.sendEvent('Output.updated', output);
+    this.sendEvent('Databox.updated', sessionObserver.getDataboxEvent());
   }
 
   private static changeActiveSessions(heroSessionId: string, pageId: string): void {

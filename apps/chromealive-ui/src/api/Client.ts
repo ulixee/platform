@@ -12,10 +12,9 @@ declare global {
   interface Window {
     setHeroServerUrl(url: string): void;
     heroServerUrl: string | undefined;
+    defaultClient: Client;
   }
 }
-
-window.heroServerUrl = window.opener?.heroServerUrl ?? process.env.VUE_APP_BASE_URI ?? '';
 
 class Client {
   public onConnect: () => any;
@@ -25,6 +24,7 @@ class Client {
   private pendingMessagesById = new Map<string, { resolve: (args: any) => any }>();
   private messageCounter = 0;
   private eventHandlersByEventType: { [event: string]: ((message: any) => any)[] } = {};
+  private lastEventByEventType: { [event: string]: any } = {};
 
   connect(): Promise<void> {
     if (this.connectedPromise) {
@@ -45,6 +45,8 @@ class Client {
   on<T extends EventType>(event: T, handler: (message: IChromeAliveEvents[T]) => any): void {
     this.eventHandlersByEventType[event] ??= [];
     this.eventHandlersByEventType[event].push(handler);
+    const lastEvent = this.lastEventByEventType[event];
+    if (lastEvent) handler(lastEvent);
   }
 
   off<T extends EventType>(event: T, handler: (message: IChromeAliveEvents[T]) => any): void {
@@ -95,10 +97,10 @@ class Client {
     );
 
     if ('eventType' in event) {
+      this.lastEventByEventType[event.eventType] = event.data;
       for (const handler of this.eventHandlersByEventType[event.eventType] ?? []) {
         handler(event.data);
       }
-      console.log('event', event);
       document.dispatchEvent(
         new CustomEvent('chromealive:event', {
           detail: event,
@@ -112,7 +114,16 @@ class Client {
   }
 }
 
-const defaultClient = new Client();
+window.heroServerUrl = process.env.VUE_APP_BASE_URI ?? '';
+
+// eslint-disable-next-line import/no-mutable-exports
+let defaultClient: Client;
+if (window.opener) {
+  defaultClient = window.opener.defaultClient;
+} else {
+  defaultClient = new Client();
+}
+
 window.setHeroServerUrl = function setHeroServerUrl(url: string) {
   window.heroServerUrl = url;
   defaultClient.connect().catch(console.error);
@@ -122,6 +133,6 @@ window.setHeroServerUrl = function setHeroServerUrl(url: string) {
 if (window.heroServerUrl) {
   defaultClient.connect().catch(console.error);
 }
+window.defaultClient = defaultClient;
 
-(window as any).defaultClient = defaultClient;
 export default defaultClient;
