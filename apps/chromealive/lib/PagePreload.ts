@@ -8,7 +8,7 @@ window.addEventListener('mousemove', () => ipcRenderer.send('mousemove'), { capt
 document.addEventListener('chromealive:event', e => {
   // eslint-disable-next-line no-console
   console.log('chromealive:event', e);
-  const message = (e as any).detail;
+  const message = e.detail;
   ipcRenderer.send('chromealive:event', message.eventType, message.data);
 });
 
@@ -16,7 +16,7 @@ document.addEventListener('chromealive:event', e => {
 document.addEventListener('chromealive:api', e => {
   // eslint-disable-next-line no-console
   console.log('chromealive:api', e);
-  const message = (e as any).detail;
+  const message = e.detail;
   ipcRenderer.send('chromealive:api', message.api, message.args);
 });
 
@@ -24,6 +24,6 @@ document.addEventListener('chromealive:api', e => {
 document.addEventListener('app:height-changed', e => {
   // eslint-disable-next-line no-console
   console.log('app:height-changed', e);
-  const message = (e as any).detail;
+  const message = e.detail;
   ipcRenderer.send('resize-height', message.height);
 });

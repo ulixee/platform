@@ -1,4 +1,4 @@
-export interface ITypedEventEmitter<T> {
+export default interface ITypedEventEmitter<T> {
   waitOn<K extends keyof T & (string | symbol)>(
     eventType: K,
     listenerFn?: (this: this, event?: T[K]) => boolean,

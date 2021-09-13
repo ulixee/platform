@@ -1,6 +1,6 @@
 import { IAppReadyArgs } from '@ulixee/apps-chromealive-interfaces/apis/IAppReadyApi';
-import { AliveBarPositioner } from '../lib/AliveBarPositioner';
+import AliveBarPositioner from '../lib/AliveBarPositioner';
 
-export function appReadyApi(args: IAppReadyArgs): void {
+export default function appReadyApi(args: IAppReadyArgs): void {
   AliveBarPositioner.onAppReady(args.workarea);
 }

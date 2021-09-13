@@ -1,11 +1,11 @@
-import { ISessionResumeApi } from './ISessionResumeApi';
-import { ISessionStepApi } from './ISessionStepApi';
-import { ISessionUrlScreenshotApi } from './ISessionUrlScreenshotApi';
-import { IAppBoundsChangedApi } from './IAppBoundsChangedApi';
-import { IAppReadyApi } from './IAppReadyApi';
-import { IMouseStateApi } from './IMouseStateApi';
+import ISessionResumeApi from './ISessionResumeApi';
+import ISessionStepApi from './ISessionStepApi';
+import ISessionUrlScreenshotApi from './ISessionUrlScreenshotApi';
+import IAppBoundsChangedApi from './IAppBoundsChangedApi';
+import IAppReadyApi from './IAppReadyApi';
+import IMouseStateApi from './IMouseStateApi';
 
-export interface IChromeAliveApis {
+export default interface IChromeAliveApis {
   'Session.resume': ISessionResumeApi;
   'Session.step': ISessionStepApi;
   'Session.urlScreenshot': ISessionUrlScreenshotApi;

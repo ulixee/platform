@@ -15,7 +15,7 @@ interface FlattenJsonOptions {
   isContent?: boolean;
 }
 
-export function flattenJson(
+export default function flattenJson(
   data: any,
   path = '',
   level = 0,

@@ -6,7 +6,7 @@ import * as ProgressBar from 'progress';
 import { createGunzip } from 'zlib';
 import * as os from 'os';
 import * as Path from 'path';
-import { downloadFile } from '@ulixee/commons/lib/downloadFile';
+import downloadFile from '@ulixee/commons/lib/downloadFile';
 import { getInstallDirectory, isBinaryInstalled, recordVersion, version } from './Utils';
 
 if (Boolean(JSON.parse(process.env.ULX_CHROMEALIVE_SKIP_BINARY_DOWNLOAD ?? 'false')) === true) {

@@ -1,6 +1,6 @@
-import { IChromeAliveApi } from './IChromeAliveApi';
+import IChromeAliveApi from './IChromeAliveApi';
 
-export interface IMouseStateApi extends IChromeAliveApi {
+export default interface IMouseStateApi extends IChromeAliveApi {
   args: IMouseStateArgs;
   result: void;
 }

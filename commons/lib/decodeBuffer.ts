@@ -6,7 +6,7 @@ const inflateRawAsync = promisify<Buffer, Buffer>(zlib.inflateRaw);
 const brotliDecompressAsync = promisify<Buffer, Buffer>(zlib.brotliDecompress);
 const gunzipAsync = promisify<Buffer, zlib.ZlibOptions, Buffer>(zlib.gunzip);
 
-export function decodeBuffer(buffer: Buffer, encoding: string): Promise<Buffer> {
+export default function decodeBuffer(buffer: Buffer, encoding: string): Promise<Buffer> {
   if (!buffer) return null;
   if (!encoding) return Promise.resolve(buffer);
 

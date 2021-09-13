@@ -1,8 +1,8 @@
-import { IResolvablePromise } from '../interfaces/IResolvablePromise';
+import IResolvablePromise from '../interfaces/IResolvablePromise';
 import { bindFunctions } from './utils';
-import { TimeoutError } from '../interfaces/TimeoutError';
+import TimeoutError from '../interfaces/TimeoutError';
 
-export class Resolvable<T = any> implements IResolvablePromise<T>, PromiseLike<T> {
+export default class Resolvable<T = any> implements IResolvablePromise<T>, PromiseLike<T> {
   public isResolved = false;
   public resolved: T;
   public promise: Promise<T>;

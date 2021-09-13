@@ -1,10 +1,10 @@
 import Debug from 'debug';
-import type { Puppet } from '@ulixee/hero-puppet';
-import { Logger } from '@ulixee/commons/lib/Logger';
-import { IPuppetContext } from '@ulixee/hero-interfaces/IPuppetContext';
+import type Puppet from '@ulixee/hero-puppet';
+import Log from '@ulixee/commons/lib/Logger';
+import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
 
-const { log } = Logger(module);
+const { log } = Log(module);
 
 const debug = Debug('ulixee:chromealive');
 // extension id is fixed by the "key" in the manifest
@@ -16,7 +16,7 @@ export function waitForChromeExtension(browserId: string): Promise<void> {
   return enabledBrowsersById.get(browserId);
 }
 
-export function activateChromeExtension(puppet: Puppet): Promise<void> {
+export default function activateChromeExtension(puppet: Puppet): Promise<void> {
   if (!enabledBrowsersById.has(puppet.browserId)) {
     enabledBrowsersById.set(puppet.browserId, toggleIncognitoAccess(puppet));
   }

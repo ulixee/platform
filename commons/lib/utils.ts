@@ -1,5 +1,5 @@
-import { IResolvablePromise } from '../interfaces/IResolvablePromise';
-import { Resolvable } from './Resolvable';
+import IResolvablePromise from '../interfaces/IResolvablePromise';
+import Resolvable from './Resolvable';
 import CallSite = NodeJS.CallSite;
 
 export function assert(value: unknown, message?: string, reject?): void {

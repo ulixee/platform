@@ -1,4 +1,4 @@
-export interface IDataboxUpdatedEvent {
+export default interface IDataboxUpdatedEvent {
   input: any;
   output: any;
   bytes: number;

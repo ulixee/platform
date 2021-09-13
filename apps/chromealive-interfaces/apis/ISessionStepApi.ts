@@ -1,6 +1,6 @@
-import { IChromeAliveApi } from './IChromeAliveApi';
+import IChromeAliveApi from './IChromeAliveApi';
 
-export interface ISessionStepApi extends IChromeAliveApi {
+export default interface ISessionStepApi extends IChromeAliveApi {
   args: ISessionStepArgs;
   result: ISessionStepResult;
 }

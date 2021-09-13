@@ -1,9 +1,9 @@
 import { EventEmitter } from 'events';
-import { ITypedEventEmitter } from '../interfaces/ITypedEventEmitter';
-import { IRegisteredEventListener } from '../interfaces/IRegisteredEventListener';
+import ITypedEventEmitter from '../interfaces/ITypedEventEmitter';
+import IRegisteredEventListener from '../interfaces/IRegisteredEventListener';
 import { IBoundLog } from '../interfaces/ILog';
 import { createPromise } from './utils';
-import { IPendingWaitEvent, CanceledPromiseError } from '../interfaces/IPendingWaitEvent';
+import IPendingWaitEvent, { CanceledPromiseError } from '../interfaces/IPendingWaitEvent';
 
 export function addEventListener(
   emitter: EventEmitter,

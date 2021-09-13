@@ -4,7 +4,7 @@ import type { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 type SqliteTypes = 'INTEGER' | 'TEXT' | 'BLOB';
 type IRecord = (string | number | Buffer)[];
 
-export abstract class SqliteTable<T> {
+export default abstract class SqliteTable<T> {
   protected readonly insertStatement: Statement;
   protected defaultSortOrder?: string;
   protected insertCallbackFn?: (records: T[]) => void;

@@ -1,6 +1,6 @@
-import { IChromeAliveApi } from './IChromeAliveApi';
+import IChromeAliveApi from './IChromeAliveApi';
 
-export interface ISessionResumeApi extends IChromeAliveApi {
+export default interface ISessionResumeApi extends IChromeAliveApi {
   args: ISessionResumeArgs;
   result: ISessionResumeResult;
 }

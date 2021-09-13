@@ -1,4 +1,4 @@
-export interface IResolvablePromise<T = any> extends PromiseLike<T> {
+export default interface IResolvablePromise<T = any> extends PromiseLike<T> {
   isResolved: boolean;
   stack?: string;
   promise?: Promise<T>;

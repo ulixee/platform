@@ -1,15 +1,15 @@
-import { ISessionCreateOptions } from '@ulixee/hero-interfaces/ISessionCreateOptions';
+import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
 import { fork } from 'child_process';
 import {
   ISessionResumeArgs,
   ISessionResumeResult,
 } from '@ulixee/apps-chromealive-interfaces/apis/ISessionResumeApi';
 import Debug from 'debug';
-import { ChromeAliveCore } from '../index';
+import ChromeAliveCore from '../index';
 
 const debug = Debug('ulixee:chromealive');
 
-export function sessionResumeApi(args: ISessionResumeArgs): ISessionResumeResult {
+export default function sessionResumeApi(args: ISessionResumeArgs): ISessionResumeResult {
   const sessionId = args.heroSessionId ?? ChromeAliveCore.activeHeroSessionId;
   if (!sessionId || !ChromeAliveCore.sessionObserversById.has(sessionId))
     throw new Error('No active sessionId found');

@@ -2,9 +2,9 @@ import {
   ISessionUrlScreenshotArgs,
   ISessionUrlScreenshotResult,
 } from '@ulixee/apps-chromealive-interfaces/apis/ISessionUrlScreenshotApi';
-import { ChromeAliveCore } from '../index';
+import ChromeAliveCore from '../index';
 
-export function sessionUrlScreenshotApi(
+export default function sessionUrlScreenshotApi(
   args: ISessionUrlScreenshotArgs,
 ): ISessionUrlScreenshotResult {
   const sessionObserver = ChromeAliveCore.sessionObserversById.get(args.sessionId);

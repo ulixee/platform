@@ -1,6 +1,5 @@
 import { notarize } from 'electron-notarize';
 
-// eslint-disable-next-line import/no-default-export
 export default async function notarizing(context) {
   const { electronPlatformName, appOutDir } = context;
 

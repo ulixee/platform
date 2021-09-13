@@ -1,12 +1,12 @@
-import { IResolvablePromise } from '../interfaces/IResolvablePromise';
+import IResolvablePromise from '../interfaces/IResolvablePromise';
 import { CanceledPromiseError } from '../interfaces/IPendingWaitEvent';
 import { createPromise } from './utils';
-import { Resolvable } from './Resolvable';
+import Resolvable from './Resolvable';
 import getPrototypeOf = Reflect.getPrototypeOf;
 
 type AsyncCallback<T> = (value?: any) => Promise<T>;
 
-export class Queue {
+export default class Queue {
   public concurrency = 1;
   public idletimeMillis = 500;
   public idlePromise = createPromise();

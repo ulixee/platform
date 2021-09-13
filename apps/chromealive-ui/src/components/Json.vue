@@ -23,7 +23,7 @@
 <script lang="ts">
 import Vue, { PropOptions } from 'vue';
 import Component from 'vue-class-component';
-import { flattenJson, FlatJson } from '@/utils/flattenJson';
+import flattenJson, { FlatJson } from '@/utils/flattenJson';
 
 // Define the props by using Vue's canonical way.
 const JsonProps = Vue.extend({

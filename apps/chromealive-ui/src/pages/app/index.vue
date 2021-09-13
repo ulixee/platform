@@ -79,17 +79,17 @@
 <script lang="ts">
 import Vue from 'vue';
 import Component from 'vue-class-component';
-import { defaultClient } from '@/api/Client';
+import Client from '@/api/Client';
 import VueSlider from 'vue-slider-component';
 import 'vue-slider-component/theme/default.css';
-import { IHeroSessionActiveEvent } from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
+import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
 
 @Component({
   components: { VueSlider },
 })
 export default class ChromeAliveApp extends Vue {
-  private client = defaultClient;
+  private client = Client;
   private scriptTimeAgo = '';
   private timeAgoTimeout: number;
   private timeAgoDelay = 1e3;
@@ -520,6 +520,7 @@ body {
     border-radius: 5px;
     overflow: hidden;
     box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
+    //transform: translateY(-5px);
     transition: opacity 0.3s, transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
 
     .url {

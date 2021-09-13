@@ -1,15 +1,15 @@
-import { ChromeAliveCore } from '@ulixee/apps-chromealive-core';
+import ChromeAliveCore from '@ulixee/apps-chromealive-core';
 import { app, BrowserWindow, shell, systemPreferences, Tray } from 'electron';
 import log from 'electron-log';
 import { EventEmitter } from 'events';
 import UlixeeServer from '@ulixee/server';
 import * as Positioner from 'electron-positioner';
 import * as Path from 'path';
-import { ShutdownHandler } from '@ulixee/commons/lib/ShutdownHandler';
-import { IMenubarOptions } from '../interfaces/IMenubarOptions';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import IMenubarOptions from '../interfaces/IMenubarOptions';
 import { getWindowPosition } from './util/getWindowPosition';
-import { VueServer } from './VueServer';
-import { installDefaultChrome } from './util/installDefaultChrome';
+import VueServer from './VueServer';
+import installDefaultChrome from './util/installDefaultChrome';
 
 // Forked from https://github.com/maxogden/menubar
 

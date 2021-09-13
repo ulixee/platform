@@ -1,10 +1,10 @@
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
 import Debug from 'debug';
-import { IDevtoolsSession } from '@ulixee/hero-interfaces/IDevtoolsSession';
+import IDevtoolsSession from '@ulixee/hero-interfaces/IDevtoolsSession';
 
 const debug = Debug('ulixee:chromealive');
 
-export class AliveBarPositioner {
+export default class AliveBarPositioner {
   public static getSessionDevtools: (sessionId: string) => IDevtoolsSession;
 
   private static workarea: IBounds;

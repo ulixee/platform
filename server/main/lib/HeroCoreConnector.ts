@@ -1,24 +1,20 @@
 import * as WebSocket from 'ws';
-import { TypeSerializer } from '@ulixee/commons/lib/TypeSerializer';
-import { Logger } from '@ulixee/commons/lib/Logger';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
+import Log from '@ulixee/commons/lib/Logger';
 import Core from '@ulixee/hero-core';
 import { sendWsCloseUnexpectedError, wsSend } from './WsUtils';
 import Server from '../index';
-import { BaseCoreConnector } from './BaseCoreConnector';
+import BaseCoreConnector from './BaseCoreConnector';
 
-const { log } = Logger(module);
+const { log } = Log(module);
 
-export class HeroCoreConnector extends BaseCoreConnector {
+export default class HeroCoreConnector extends BaseCoreConnector {
   private readonly server: Server;
 
   constructor(server: Server) {
     super(server);
     server.addWsRoute('/', this.handleHeroScript.bind(this));
     this.server = server;
-  }
-
-  public async start() {
-    await Core.start();
   }
 
   public async close() {

@@ -1,3 +1,3 @@
-import { ChromeAliveCore } from './index';
+import ChromeAliveCore from './index';
 
 ChromeAliveCore.register(true);

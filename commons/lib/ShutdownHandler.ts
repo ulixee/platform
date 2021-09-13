@@ -1,11 +1,11 @@
-import { Logger } from './Logger';
+import logger from './Logger';
 import { CanceledPromiseError } from '../interfaces/IPendingWaitEvent';
 
 type ShutdownSignal = NodeJS.Signals | 'exit';
 
-const { log } = Logger(module);
+const { log } = logger(module);
 
-export class ShutdownHandler {
+export default class ShutdownHandler {
   public static exitOnSignal = false;
 
   private static isRegistered = false;

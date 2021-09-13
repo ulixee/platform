@@ -1,14 +1,13 @@
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import { IChromeAliveEvent } from '@ulixee/apps-chromealive-interfaces/events/IChromeAliveEvent';
-import { IChromeAliveEvents } from '@ulixee/apps-chromealive-interfaces/events';
-import {
-  IChromeAliveApis,
+import IChromeAliveEvent from '@ulixee/apps-chromealive-interfaces/events/IChromeAliveEvent';
+import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
+import IChromeAliveApis, {
   IChromeAliveApiRequest,
   IChromeAliveApiResponse,
 } from '@ulixee/apps-chromealive-interfaces/apis';
 import { apiHandlers } from '../apis';
 
-export class ConnectionToClient extends TypedEventEmitter<{
+export default class ConnectionToClient extends TypedEventEmitter<{
   message: IChromeAliveApiResponse<any> | IChromeAliveEvent<any>;
   close: void;
 }> {

@@ -2,9 +2,9 @@ import {
   ISessionStepArgs,
   ISessionStepResult,
 } from '@ulixee/apps-chromealive-interfaces/apis/ISessionStepApi';
-import { ChromeAliveCore } from '../index';
+import ChromeAliveCore from '../index';
 
-export function sessionStepApi(args: ISessionStepArgs): ISessionStepResult {
+export default function sessionStepApi(args: ISessionStepArgs): ISessionStepResult {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { heroSession } = ChromeAliveCore.sessionObserversById.get(args.heroSessionId);
 

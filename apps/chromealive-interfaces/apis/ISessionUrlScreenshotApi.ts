@@ -1,6 +1,6 @@
-import { IChromeAliveApi } from './IChromeAliveApi';
+import IChromeAliveApi from './IChromeAliveApi';
 
-export interface ISessionUrlScreenshotApi extends IChromeAliveApi {
+export default interface ISessionUrlScreenshotApi extends IChromeAliveApi {
   args: ISessionUrlScreenshotArgs;
   result: ISessionUrlScreenshotResult;
 }

@@ -64,12 +64,6 @@ module.exports = {
         '@typescript-eslint/no-unused-vars': 'off',
       },
     },
-    {
-      files: ['**/index.ts', '*.d.ts'],
-      rules: {
-        'import/no-default-export': 'off',
-      },
-    },
   ],
   ignorePatterns: [
     '**/node_modules',
@@ -97,7 +91,7 @@ module.exports = {
     'import/prefer-default-export': 'off',
     'import/no-cycle': 'off', // TODO:we need to work through this!!
     'import/extensions': 'off',
-    'import/no-default-export': 'error',
+    // 'import/no-default-export': 'error',
     'import/no-extraneous-dependencies': [
       'error',
       {

@@ -2,14 +2,14 @@ import * as WebSocket from 'ws';
 import * as Http from 'http';
 import { IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo, ListenOptions, Socket } from 'net';
-import { Logger } from '@ulixee/commons/lib/Logger';
+import Log from '@ulixee/commons/lib/Logger';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import { isWsOpen } from './lib/WsUtils';
-import { CoreConnectors } from './lib/CoreConnectors';
+import CoreConnectors from './lib/CoreConnectors';
 
 const pkg = require('./package.json');
 
-const { log } = Logger(module);
+const { log } = Log(module);
 
 type IHttpHandleFn = (
   req: Http.IncomingMessage,
@@ -43,7 +43,7 @@ export default class Server {
   private readonly httpServer: Http.Server;
   private readonly coreConnectors: CoreConnectors;
   private readonly httpRoutes: [RegExp | string, IHttpHandleFn][];
-  private readonly wsRoutes: [RegExp | string, IWsHandleFn][connection] = [];
+  private readonly wsRoutes: [RegExp | string, IWsHandleFn][] = [];
 
   constructor(addressHost = 'localhost') {
     this.httpServer = new Http.Server();
@@ -60,7 +60,7 @@ export default class Server {
     this.coreConnectors = new CoreConnectors(this);
   }
 
-  public async listen(options: ListenOptions): Promise<AddressInfo> {
+  public listen(options: ListenOptions): Promise<AddressInfo> {
     if (this.serverAddress.isResolved) return this.serverAddress.promise;
 
     this.httpServer.once('error', this.serverAddress.reject);
@@ -70,7 +70,6 @@ export default class Server {
         this.serverAddress.resolve(this.httpServer.address() as AddressInfo);
       })
       .ref();
-    await this.coreConnectors.start();
     return this.serverAddress.promise;
   }
 
