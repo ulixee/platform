@@ -1,5 +1,5 @@
 import Debug from 'debug';
-import CorePlugin from '@ulixee/hero-plugin-utils/lib/CorePlugin';
+import { CorePlugin } from '@ulixee/hero-plugin-utils/lib/CorePlugin';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import * as Path from 'path';
@@ -13,7 +13,7 @@ const extensionPath = Path.resolve(__dirname, '..', 'chrome-extension').replace(
   'app.asar.unpacked',
 ); // make electron packaging friendly
 
-export default class FocusedWindowCorePlugin extends CorePlugin {
+export class FocusedWindowCorePlugin extends CorePlugin {
   public static id = '@ulixee/focused-window-core-plugin';
   public static onVisibilityChange?: (sessionId: string, puppetPageId: string) => any;
 

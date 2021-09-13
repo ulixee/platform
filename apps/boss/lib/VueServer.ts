@@ -2,7 +2,7 @@ import * as Http from 'http';
 import { Server as StaticServer } from 'node-static';
 import { AddressInfo } from 'net';
 
-export default class VueServer {
+export class VueServer {
   #httpServer: Http.Server;
   #serverAddress: Promise<AddressInfo>;
 

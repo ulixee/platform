@@ -1,13 +1,9 @@
 import log from 'electron-log';
-import {
-  ILogEntry,
-  injectLogger,
-  Log,
-  loggerSessionIdNames,
-  translateToPrintable,
-} from '@ulixee/commons/lib/Logger';
+import { injectLogger, loggerSessionIdNames } from '@ulixee/commons/lib/Logger';
+import { ILogEntry } from '@ulixee/commons/interfaces/ILogEntry';
+import { LogDefault, translateToPrintable } from '@ulixee/commons/lib/LogDefault';
 
-class UlixeeLogger extends Log {
+class UlixeeLogger extends LogDefault {
   protected logToConsole(level: ILogEntry['level'], entry: ILogEntry) {
     const printablePath = entry.module
       .replace('.js', '')

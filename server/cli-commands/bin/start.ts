@@ -1,7 +1,7 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import Server from '@ulixee/server';
 import * as yargsParser from 'yargs-parser';
-import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import { ShutdownHandler } from '@ulixee/commons/lib/ShutdownHandler';
 
 (async () => {
   const args = yargsParser(process.argv);

@@ -1,7 +1,8 @@
-import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
-import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
-import IChromeAliveEvent from '@ulixee/apps-chromealive-interfaces/events/IChromeAliveEvent';
-import IChromeAliveApis, {
+import { TypeSerializer } from '@ulixee/commons/lib/TypeSerializer';
+import { IChromeAliveEvents } from '@ulixee/apps-chromealive-interfaces/events';
+import { IChromeAliveEvent } from '@ulixee/apps-chromealive-interfaces/events/IChromeAliveEvent';
+import {
+  IChromeAliveApis,
   IChromeAliveApiRequest,
   IChromeAliveApiResponse,
 } from '@ulixee/apps-chromealive-interfaces/apis';
@@ -135,4 +136,4 @@ if (window.heroServerUrl) {
 }
 window.defaultClient = defaultClient;
 
-export default defaultClient;
+export { defaultClient };

@@ -1,7 +1,7 @@
-import TimeoutError from '../interfaces/TimeoutError';
-import Resolvable from './Resolvable';
+import { TimeoutError } from '../interfaces/TimeoutError';
+import { Resolvable } from './Resolvable';
 
-export default class Timer {
+export class Timer {
   public readonly [Symbol.toStringTag] = 'Timer';
   public readonly timeout: NodeJS.Timer;
 

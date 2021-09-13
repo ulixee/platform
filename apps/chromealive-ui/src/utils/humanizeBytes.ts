@@ -1,4 +1,4 @@
-export default function humanizeBytes(bytes: number): string {
+export function humanizeBytes(bytes: number): string {
   if (!bytes) return '0kb';
 
   if (bytes < 512) {

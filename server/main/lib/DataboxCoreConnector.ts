@@ -1,15 +1,15 @@
 import * as WebSocket from 'ws';
-import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
-import Log from '@ulixee/commons/lib/Logger';
+import { TypeSerializer } from '@ulixee/commons/lib/TypeSerializer';
+import { Logger } from '@ulixee/commons/lib/Logger';
 import Core from '@ulixee/databox-core';
 import { isWsOpen, wsSend } from './WsUtils';
 import Server from '../index';
-import BaseCoreConnector from './BaseCoreConnector';
+import { BaseCoreConnector } from './BaseCoreConnector';
 
 const CLOSE_UNEXPECTED_ERROR = 1011;
-const { log } = Log(module);
+const { log } = Logger(module);
 
-export default class DataboxCoreConnector extends BaseCoreConnector {
+export class DataboxCoreConnector extends BaseCoreConnector {
   private readonly server: Server;
 
   constructor(server: Server) {

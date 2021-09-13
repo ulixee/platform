@@ -1,4 +1,4 @@
-export default interface IChromeAliveApi {
+export interface IChromeAliveApi {
   args: any;
   result: any;
 }

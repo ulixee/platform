@@ -1,7 +1,7 @@
-import IChromeAliveApi from './IChromeAliveApi';
+import { IChromeAliveApi } from './IChromeAliveApi';
 import { IBounds } from './IAppBoundsChangedApi';
 
-export default interface IAppReadyApi extends IChromeAliveApi {
+export interface IAppReadyApi extends IChromeAliveApi {
   args: IAppReadyArgs;
   result: void;
 }

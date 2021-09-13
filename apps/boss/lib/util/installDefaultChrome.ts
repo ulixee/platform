@@ -1,7 +1,7 @@
 import { latestBrowserEngineId } from '@ulixee/default-browser-emulator';
 
 let hasUnpackedChrome = false;
-export default async function installDefaultChrome(): Promise<void> {
+export async function installDefaultChrome(): Promise<void> {
   if (hasUnpackedChrome) return;
   try {
     // eslint-disable-next-line global-require,import/no-dynamic-require

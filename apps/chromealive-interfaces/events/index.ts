@@ -1,7 +1,7 @@
-import IDataboxUpdatedEvent from './IDataboxUpdatedEvent';
-import IHeroSessionActiveEvent from './IHeroSessionActiveEvent';
+import { IDataboxUpdatedEvent } from './IDataboxUpdatedEvent';
+import { IHeroSessionActiveEvent } from './IHeroSessionActiveEvent';
 
-export default interface IChromeAliveEvents {
+export interface IChromeAliveEvents {
   'App.show': null;
   'App.hide': null;
   'App.quit': null;

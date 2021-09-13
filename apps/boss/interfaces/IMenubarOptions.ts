@@ -1,4 +1,4 @@
-export default interface IMenubarOptions {
+export interface IMenubarOptions {
   tooltip: string;
   width: number;
   height: number;
