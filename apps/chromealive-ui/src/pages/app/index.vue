@@ -307,7 +307,7 @@ export default class ChromeAliveApp extends Vue {
 @import '../../assets/style/flatjson';
 
 :root {
-  --toolbarBackgroundColor: #e7eaed;
+  --toolbarBackgroundColor: #FFFDF4;
 
   --buttonActiveBackgroundColor: rgba(176, 173, 173, 0.4);
   --buttonHoverBackgroundColor: rgba(255, 255, 255, 0.08);
