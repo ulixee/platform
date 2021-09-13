@@ -1,11 +1,11 @@
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
-import CorePlugin from '@ulixee/hero-plugin-utils/lib/CorePlugin';
+import { CorePlugin } from '@ulixee/hero-plugin-utils/lib/CorePlugin';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { IBrowserEmulatorConfig, ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import { waitForChromeExtension } from '../lib/activateChromeExtension';
-import AliveBarPositioner from '../lib/AliveBarPositioner';
+import { AliveBarPositioner } from '../lib/AliveBarPositioner';
 
-export default class WindowBoundsCorePlugin extends CorePlugin {
+export class WindowBoundsCorePlugin extends CorePlugin {
   public static id = '@ulixee/window-bounds-core-plugin';
 
   configure(options: IBrowserEmulatorConfig): Promise<any> | void {

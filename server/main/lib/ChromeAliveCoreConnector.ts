@@ -1,11 +1,11 @@
 import * as WebSocket from 'ws';
-import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
-import type IChromeAliveCore from '@ulixee/apps-chromealive-core';
+import { TypeSerializer } from '@ulixee/commons/lib/TypeSerializer';
+import type { ChromeAliveCore as IChromeAliveCore } from '@ulixee/apps-chromealive-core';
 import { sendWsCloseUnexpectedError, wsSend } from './WsUtils';
 import Server from '../index';
-import BaseCoreConnector from './BaseCoreConnector';
+import { BaseCoreConnector } from './BaseCoreConnector';
 
-export default class ChromeAliveCoreConnector extends BaseCoreConnector {
+export class ChromeAliveCoreConnector extends BaseCoreConnector {
   private readonly server: Server;
 
   constructor(server: Server) {
@@ -58,6 +58,7 @@ export default class ChromeAliveCoreConnector extends BaseCoreConnector {
 
   private static getChromeAlive(): typeof IChromeAliveCore {
     // eslint-disable-next-line global-require
-    return require('@ulixee/apps-chromealive-core').default;
+    const { ChromeAliveCore } = require('@ulixee/apps-chromealive-core');
+    return ChromeAliveCore;
   }
 }

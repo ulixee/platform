@@ -17,8 +17,7 @@
  databox.output.push({
    text,
    href,
- })     </pre
-        >
+ })     </pre>
         <p>Or as an object:</p>
         <pre>databox.output.text = text;</pre>
         <p>
@@ -34,9 +33,9 @@
 <script lang="ts">
 import Vue from 'vue';
 import Component from 'vue-class-component';
-import Client from '@/api/Client';
-import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
-import humanizeBytes from '@/utils/humanizeBytes';
+import { defaultClient } from '@/api/Client';
+import { IDataboxUpdatedEvent } from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
+import { humanizeBytes } from '@/utils/humanizeBytes';
 import Json from '@/components/Json.vue';
 import { FlatJson } from '@/utils/flattenJson';
 
@@ -50,7 +49,7 @@ export default class DataboxPanel extends Vue {
   private output: FlatJson[] = null;
 
   private dataSize: string = null;
-  private client = Client;
+  private client = defaultClient;
 
   private get OutputJson(): Json {
     return this.$refs.output as Json;
@@ -93,7 +92,6 @@ export default class DataboxPanel extends Vue {
 </script>
 
 <style lang="scss">
-@import '../../assets/style/common-mixins';
 @import '../../assets/style/resets';
 @import '../../assets/style/flatjson';
 

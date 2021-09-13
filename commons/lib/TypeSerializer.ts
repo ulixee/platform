@@ -19,7 +19,7 @@ const Types = {
 declare let Buffer;
 declare let global;
 
-export default class TypeSerializer {
+export class TypeSerializer {
   public static errorTypes = new Map<string, { new (message?: string): Error }>();
 
   private static isNodejs =

@@ -3,16 +3,16 @@ import { Session as DataboxSession } from '@ulixee/databox-core';
 import type { IFrameNavigationEvents } from '@ulixee/hero-core/lib/FrameNavigations';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import * as Fs from 'fs';
-import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
+import { IScriptInstanceMeta } from '@ulixee/hero-interfaces/IScriptInstanceMeta';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
-import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
-import OutputRebuilder, { IOutputSnapshot } from '@ulixee/databox-core/lib/OutputRebuilder';
+import { IHeroSessionActiveEvent } from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
+import { OutputRebuilder, IOutputSnapshot } from '@ulixee/databox-core/lib/OutputRebuilder';
 import type { IOutputChangeRecord } from '@ulixee/databox-core/models/OutputTable';
 import { LoadStatus } from '@ulixee/hero-interfaces/Location';
 import { ContentPaint } from '@ulixee/hero-interfaces/INavigation';
-import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
+import { IDataboxUpdatedEvent } from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
 
-export default class SessionObserver extends TypedEventEmitter<{
+export class SessionObserver extends TypedEventEmitter<{
   'hero:updated': void;
   'databox:updated': void;
   closed: void;

@@ -6,4 +6,4 @@ export function isSameSiteContext(type: string): boolean {
   return sameSiteContext.includes(type as any);
 }
 
-export default SameSiteContext;
+export { SameSiteContext };

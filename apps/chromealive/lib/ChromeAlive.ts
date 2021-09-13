@@ -6,9 +6,9 @@ import { AddressInfo } from 'net';
 import * as Path from 'path';
 import * as Fs from 'fs';
 import * as ContextMenu from 'electron-context-menu';
-import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
-import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
-import ChromeAliveApi from './ChromeAliveApi';
+import { ShutdownHandler } from '@ulixee/commons/lib/ShutdownHandler';
+import { IChromeAliveEvents } from '@ulixee/apps-chromealive-interfaces/events';
+import { ChromeAliveApi } from './ChromeAliveApi';
 
 export class ChromeAlive extends EventEmitter {
   readonly #vueServer: Http.Server;

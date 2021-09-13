@@ -4,7 +4,7 @@ const pkg = require('./package.json');
 
 const workspaces = [];
 for (const packageGlob of pkg.workspaces.packages) {
-  if (packageGlob.startsWith('../')) continue;
+  if (packageGlob.startsWith('../') || packageGlob.includes('packages/')) continue;
 
   let workspacePath = packageGlob;
   // if we're not in build already, need to add build
@@ -46,6 +46,7 @@ module.exports = {
     '<rootDir>/.*.d.ts',
     '<rootDir>/.*.json',
   ],
+  modulePathIgnorePatterns: ['build/apps/boss/packages'],
   globalSetup: './jest.setup.js',
   setupFilesAfterEnv: ['./jest.setupPerTest.js'],
   globalTeardown: './jest.teardown.js',

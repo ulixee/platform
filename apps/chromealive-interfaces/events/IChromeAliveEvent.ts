@@ -1,6 +1,6 @@
-import IChromeAliveEvents from './index';
+import { IChromeAliveEvents } from './index';
 
-export default interface IChromeAliveEvent<T extends keyof IChromeAliveEvents> {
+export interface IChromeAliveEvent<T extends keyof IChromeAliveEvents> {
   eventType: T;
   data: IChromeAliveEvents[T];
 }

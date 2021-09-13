@@ -1,15 +1,16 @@
 import { Serializable } from 'child_process';
-import IChromeAliveApis, {
+import {
+  IChromeAliveApis,
   IChromeAliveApiResponse,
 } from '@ulixee/apps-chromealive-interfaces/apis';
-import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
+import { IChromeAliveEvents } from '@ulixee/apps-chromealive-interfaces/events';
 import * as WebSocket from 'ws';
-import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
-import IChromeAliveEvent from '@ulixee/apps-chromealive-interfaces/events/IChromeAliveEvent';
+import { TypeSerializer } from '@ulixee/commons/lib/TypeSerializer';
+import { IChromeAliveEvent } from '@ulixee/apps-chromealive-interfaces/events/IChromeAliveEvent';
 
 type IEvent = keyof IChromeAliveEvents;
 
-export default class ChromeAliveApi {
+export class ChromeAliveApi {
   private pendingMessagesById = new Map<string, (args: any) => any>();
   private messageCounter = 0;
   private webSocket: WebSocket;

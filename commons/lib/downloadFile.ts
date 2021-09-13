@@ -7,7 +7,7 @@ import { createWriteStream } from 'fs';
 import { createPromise } from './utils';
 import { getProxyForUrl } from './getProxyForUrl';
 
-export default function downloadFile(
+export function downloadFile(
   url: string,
   destinationPath: string,
   progressCallback?: (downloadedBytes: number, totalBytes: number) => void,

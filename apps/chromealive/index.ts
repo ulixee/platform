@@ -13,7 +13,7 @@ const launchPaths = {
   boss: process.execPath,
 };
 
-export default function launchChromeAlive(...launchArgs: string[]): ChildProcess {
+export function launchChromeAlive(...launchArgs: string[]): ChildProcess {
   const showDebugLogs = Boolean(JSON.parse(process.env.ULX_CHROMEALIVE_DEBUG ?? 'false'));
 
   let stdio: StdioOptions;

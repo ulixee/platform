@@ -1,4 +1,4 @@
-export default interface ILog extends IBoundLog<ILogData> {
+export interface ILog extends IBoundLog<ILogData> {
   level: string;
   flush();
 }

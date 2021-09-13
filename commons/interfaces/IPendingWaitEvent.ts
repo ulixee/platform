@@ -1,4 +1,4 @@
-import IResolvablePromise from './IResolvablePromise';
+import { IResolvablePromise } from './IResolvablePromise';
 import { registerSerializableErrorType } from '../lib/TypeSerializer';
 
 export class CanceledPromiseError extends Error {
@@ -8,7 +8,7 @@ export class CanceledPromiseError extends Error {
   }
 }
 
-export default interface IPendingWaitEvent {
+export interface IPendingWaitEvent {
   id: number;
   event: string | symbol;
   resolvable: IResolvablePromise;
