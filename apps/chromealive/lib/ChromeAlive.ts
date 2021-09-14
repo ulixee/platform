@@ -198,7 +198,17 @@ export class ChromeAlive extends EventEmitter {
 
     this.#browserWindow.webContents.on('did-create-window', childWindow => {
       this.#childWindows.add(childWindow);
-      childWindow.on('close', () => {
+      let hasHandled = false;
+      childWindow.on('close', async e => {
+        if (!hasHandled) {
+          hasHandled = true;
+          e.preventDefault();
+          await childWindow.webContents.executeJavaScript(
+            'window.dispatchEvent(new CustomEvent("manual-close"))',
+          );
+          childWindow.close();
+          return;
+        }
         this.#childWindows.delete(childWindow);
       });
     });

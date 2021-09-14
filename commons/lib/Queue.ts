@@ -61,7 +61,7 @@ export default class Queue {
   private async next(): Promise<void> {
     clearTimeout(this.idleTimout);
 
-    if (!this.canRunMoreConcurrently() || this.stopDequeuing === true) return;
+    if (!this.canRunMoreConcurrently()) return;
 
     const next = this.queue.shift();
     if (!next) {
@@ -76,6 +76,7 @@ export default class Queue {
       this.idlePromise?.resolve(newPromise.promise);
       this.idlePromise = newPromise;
     }
+    if (this.stopDequeuing) next.promise.resolve(null);
 
     this.activeCount += 1;
     try {

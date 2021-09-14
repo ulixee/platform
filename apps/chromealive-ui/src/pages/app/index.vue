@@ -1,21 +1,19 @@
 <template>
-  <div id="ChromeAlivePage" :class="{ showingScreenshot: hoveredScreenshot.url }" ref="app">
+  <div
+    id="ChromeAlivePage"
+    :class="{ showingScreenshot: hoveredScreenshot.url, showingMenu: isShowingMenu }"
+    ref="app"
+  >
     <div id="chrome-alive-bar" ref="toolbar" :class="{ loading: isLoading }">
       <div id="script">
-        <div id="status-indicator" class="icon"></div>
-        <div id="entrypoint">Bound to {{ session.scriptEntrypoint }}</div>
-        <div id="script-updated">(file updated {{ scriptTimeAgo }} ago)</div>
+        <button @click.prevent="toggleMenu()" id="menu-button" class="app-button" ref="menuButton">
+          <span class="label">Menu</span>
+          <div class="icon"></div>
+        </button>
+        <div id="entrypoint">
+          ChromeAlive bound to <i>{{ session.scriptEntrypoint }}</i>
+        </div>
       </div>
-
-      <button
-        id="databox-button"
-        class="app-button"
-        @click.prevent="toggleDatabox()"
-        :class="{ selected: !!databoxWindow }"
-      >
-        <span class="label">{}</span>
-        <div class="icon"></div>
-      </button>
 
       <div id="timeline">
         <div id="bar">
@@ -32,13 +30,13 @@
               :style="{ left: url.offsetPercent + '%', width: nextUrlTickWidth(i) }"
             >
               <div v-if="i !== session.loadedUrls.length - 1" class="line-overlay"></div>
-              <div class="icon marker"></div>
+              <div class="marker"></div>
             </div>
-            <div id="bar-indicator"></div>
+            <div id="nib" :style="{ left: nibLeftPercent + '%' }"></div>
           </div>
         </div>
-        <div id="flow-time">Full flow - ({{ session.durationSeconds }} seconds)</div>
       </div>
+      <div id="script-updated">(script updated {{ scriptTimeAgo }} ago)</div>
 
       <button
         v-if="!isPlaying"
@@ -73,6 +71,20 @@
         v-if="hoveredScreenshot.imageBase64"
       />
     </div>
+
+    <div id="bar-menu" v-if="isShowingMenu" :style="{ left: menuOffset.left + 'px' }">
+      <div class="wrapper">
+        <ul class="menu-items">
+          <li class="databox-toggle" @click.prevent="toggleDatabox()">
+            {{ databoxWindow !== null ? 'Hide' : 'Show' }} Databox Panel
+          </li>
+          <li class="rerun-script" @click.prevent="playFromTick(0)">Rerun script from beginning</li>
+          <li class="quit-script" @click.prevent="quitScript()">Shutdown Chrome + Script</li>
+          <li class="divider"></li>
+          <li class="about" @click.prevent="showAbout()">About ChromeAlive!</li>
+        </ul>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -98,6 +110,8 @@ export default class ChromeAliveApp extends Vue {
   private databoxWindow: Window = null;
   private hasLaunchedDatabox = false;
   private isLoading = false;
+  private isShowingMenu = false;
+  private nibLeftPercent = 100;
 
   private session: IHeroSessionActiveEvent = {
     loadedUrls: [],
@@ -116,10 +130,27 @@ export default class ChromeAliveApp extends Vue {
     imageBase64: '',
   };
 
+  private menuOffset = {
+    left: 0,
+  };
+
   private screenshotsByNavigationId = new Map<number, string>();
 
   private get isPlaying() {
     return this.session?.state === 'play';
+  }
+
+  quitScript() {
+    this.client.send('Session.quit', {
+      heroSessionId: this.session.heroSessionId,
+    });
+  }
+
+  showAbout(): void {
+    this.isShowingMenu = false;
+    console.log(
+      'ChromeAlive! is your live interface for controlling Ulixee Databoxes using the Hero web scraper',
+    );
   }
 
   canPlay(): boolean {
@@ -132,8 +163,14 @@ export default class ChromeAliveApp extends Vue {
     return this.session.state === 'play';
   }
 
+  playFromTick(tickIndex: number) {
+    this.currentUrlIndex = tickIndex;
+    this.play();
+  }
+
   clickUrlTick(urlIndex: number) {
     this.currentUrlIndex = urlIndex;
+    this.nibLeftPercent = this.session.loadedUrls[urlIndex].offsetPercent;
   }
 
   nextUrlTickWidth(urlIndex: number) {
@@ -157,6 +194,11 @@ export default class ChromeAliveApp extends Vue {
     }
     this.hoveredScreenshot.url = entry.url;
     this.hoveredScreenshot.imageBase64 = this.screenshotsByNavigationId.get(entry.navigationId);
+  }
+
+  toggleMenu() {
+    this.menuOffset.left = (this.$refs.menuButton as HTMLElement).getBoundingClientRect().left;
+    this.isShowingMenu = !this.isShowingMenu;
   }
 
   calculateScriptTimeAgo(): string {
@@ -188,17 +230,19 @@ export default class ChromeAliveApp extends Vue {
   }
 
   toggleDatabox() {
+    if (this.isShowingMenu) this.isShowingMenu = false;
     if (this.databoxWindow) {
       this.databoxWindow.close();
       this.databoxWindow = null;
     } else {
       const { bottom, right } = (this.$refs.toolbar as HTMLElement).getBoundingClientRect();
-      const features = `top=${bottom + 100},left=${right - 350},width=300,height=600`;
+      const features = `top=${bottom + 100},left=${right - 260},width=300,height=400`;
       this.databoxWindow = window.open('/databox.html', 'DataboxPanel', features);
-      this.databoxWindow.addEventListener('beforeunload', () => {
+
+      this.databoxWindow.addEventListener('close', () => {
         this.databoxWindow = null;
       });
-      this.databoxWindow.addEventListener('close', () => {
+      this.databoxWindow.addEventListener('manual-close', () => {
         this.databoxWindow = null;
       });
     }
@@ -231,7 +275,7 @@ export default class ChromeAliveApp extends Vue {
     this.currentUrlIndex = Math.max(0, this.session.loadedUrls.length - 1);
     this.updateScriptTimeAgo();
 
-    if (!this.hasLaunchedDatabox) {
+    if (!this.hasLaunchedDatabox && !this.databoxWindow) {
       this.hasLaunchedDatabox = true;
       this.toggleDatabox();
     }
@@ -257,6 +301,7 @@ export default class ChromeAliveApp extends Vue {
     this.client.on('Session.loading', () => (this.isLoading = true));
     this.client.on('Session.loaded', () => (this.isLoading = false));
     this.client.on('Session.active', this.onSessionActiveEvent);
+    window.addEventListener('blur', () => (this.isShowingMenu = false));
     new ResizeObserver(() => this.sendBoundsChanged()).observe(this.$refs.app as HTMLElement);
     new ResizeObserver(() => this.sendToolbarHeightChange()).observe(
       this.$refs.toolbar as HTMLElement,
@@ -307,7 +352,7 @@ export default class ChromeAliveApp extends Vue {
 @import '../../assets/style/flatjson';
 
 :root {
-  --toolbarBackgroundColor: #FFFDF4;
+  --toolbarBackgroundColor: #fffdf4;
 
   --buttonActiveBackgroundColor: rgba(176, 173, 173, 0.4);
   --buttonHoverBackgroundColor: rgba(255, 255, 255, 0.08);
@@ -360,13 +405,12 @@ body {
     justify-content: center;
     -webkit-app-region: no-drag;
     transition: opacity 20ms ease-in;
-    height: 40px;
+    height: 32px;
     &.loading {
       opacity: 0.5;
       border: 1px solid #3c3c3c;
     }
   }
-
 
   #script {
     flex: 2;
@@ -383,23 +427,10 @@ body {
       direction: rtl;
     }
 
-    #status-indicator {
-      margin: 10px 5px 5px 10px;
-      line-height: 30px;
-      vertical-align: center;
-      position: relative;
-      height: 10px;
-      width: 10px;
-      min-width: 10px;
-      background-color: #11bf11;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    #script-updated {
-      font-style: italic;
-      margin-left: 5px;
-      white-space: nowrap;
+    .app-button {
+      border: 0 none;
+      padding: 0;
+      margin-left: 10px;
     }
   }
 
@@ -413,31 +444,32 @@ body {
 
       #track {
         position: relative;
-        height: 6px;
-        top: 9px;
+        height: 7px;
+        top: 8px;
         background-color: #ccc;
-        border-radius: 5px;
       }
 
       .tick {
-        height: 40px;
-        top: -20px;
+        height: 36px;
+        top: -16px;
         position: absolute;
         min-width: 2px;
 
         .marker {
           position: absolute;
-          top: 5px;
-          left: -9px;
-          height: 18px;
-          width: 18px;
-          background-image: url('~@/assets/icons/location.svg');
+          top: 13px;
+          left: 0;
+          height: 12px;
+          width: 2px;
+          background-color: #2d2d2d;
           opacity: 0.3;
+          border-left: 1px white solid;
+          border-right: 1px white solid;
         }
 
         .line-overlay {
-          height: 6px;
-          top: 20px;
+          height: 7px;
+          top: 16px;
           position: relative;
         }
 
@@ -461,10 +493,7 @@ body {
 
         &.active {
           .marker {
-            opacity: 1;
-            // turn blue
-            filter: invert(41%) sepia(93%) saturate(4467%) hue-rotate(210deg) brightness(95%)
-              contrast(87%);
+            opacity: 0.1;
           }
           .line-overlay {
             background-color: #868686;
@@ -472,15 +501,16 @@ body {
         }
       }
 
-      #bar-indicator {
+      #nib {
         position: absolute;
-        top: 0;
-        right: 0;
-        height: 5px;
-        width: 8px;
-        border-radius: 5px;
-        background-color: #6495ed;
-        opacity: 0.7;
+        top: -4px;
+        margin-left: -4px;
+        height: 12px;
+        width: 12px;
+        border-radius: 14px;
+        background-color: white;
+        border: 1px solid #666;
+        box-shadow: -1px 1px 2px rgba(0, 0, 0, 0.6);
       }
     }
     #flow-time {
@@ -488,8 +518,15 @@ body {
       bottom: -4px;
       width: 100%;
       text-align: center;
-      font-size: 0.9em;
+      font-size: 0.95em;
     }
+  }
+
+  #script-updated {
+    margin: 0 5px;
+    white-space: nowrap;
+    min-width: 175px;
+    text-align: center;
   }
 
   #input-hover {
@@ -520,7 +557,6 @@ body {
     border-radius: 5px;
     overflow: hidden;
     box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
-    //transform: translateY(-5px);
     transition: opacity 0.3s, transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
 
     .url {
@@ -542,15 +578,54 @@ body {
     }
   }
 
-  .output,
-  .input {
-    .size {
-      margin-left: 3px;
-      font-size: 0.85em;
+  #bar-menu {
+    display: none;
+    width: 300px;
+    position: relative;
+    top: 0;
+    padding-bottom: 6px;
+    .wrapper {
+      padding: 8px 0;
+      background: var(--toolbarBackgroundColor);
+      border-radius: 0 0 5px 5px;
+      overflow: hidden;
+      box-shadow: 1px 3px 5px rgba(0, 0, 0, 0.3);
+      transition: opacity 0.3s, transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+
+      ul {
+        margin: 0;
+        padding: 0;
+
+        li {
+          cursor: pointer;
+          list-style: none;
+          text-align: left;
+          font-size: 15px;
+          padding: 5px 10px;
+          margin: 0 5px;
+          line-height: 20px;
+
+          &:hover {
+            background: var(--toolbarBackgroundColor);
+          }
+
+          &.divider {
+            height: 1px;
+            background: #3c3c3c;
+            padding: 0;
+            margin: 10px 0;
+          }
+        }
+      }
+    }
+  }
+  &.showingMenu {
+    #bar-menu {
+      display: block;
     }
   }
 
-  #databox-button .label,
+  #menu-button .label,
   #play-button .label,
   #pause-button .label {
     display: none;
@@ -590,8 +665,16 @@ body {
     }
   }
 
-  #databox-button .icon {
-    background-image: url('~@/assets/icons/brackets.svg');
+  &:hover {
+    #menu-button {
+      border-color: transparent;
+    }
+  }
+
+  #menu-button .icon {
+    background-image: url('~@/assets/icons/menu-logo.svg');
+    width: 30px;
+    height: 18px;
   }
 
   #play-button .icon {

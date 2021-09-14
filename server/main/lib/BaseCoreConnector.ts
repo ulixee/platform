@@ -6,5 +6,9 @@ export default abstract class BaseCoreConnector {
     // whatever
   }
 
+  public start(): Promise<void> {
+    return Promise.resolve();
+  }
+
   public abstract close();
 }
