@@ -11,6 +11,7 @@
     "@ulixee/hero-interfaces": "1.5.4",
     "@ulixee/commons": "1.5.5",
     "@ulixee/hero-plugin-utils": "1.5.4",
+    "@ulixee/hero-puppet-chrome": "1.5.4",
     "@ulixee/apps-chromealive": "1.5.4",
     "@ulixee/apps-chromealive-interfaces": "1.5.4",
     "debug": "^4.3.2",

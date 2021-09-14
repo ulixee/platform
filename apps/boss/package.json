@@ -9,7 +9,7 @@
     "copy:build": "cd ../../build/apps/boss && node builder/copySources.js ./packages",
     "dist": "yarn build && cd ../../build/apps/boss && yarn && electron-builder --publish onTagOrDraft",
     "dist:basic": "yarn build:basic && cd ../../build/apps/boss && electron-builder",
-    "start": "cd ../../build/apps/boss && npx electron ."
+    "start": "yarn copy:build && cd ../../build/apps/boss && npx electron ."
   },
   "repository": "git@github.com:ulixee/ulixee.git",
   "author": "Caleb Clark <calebjclark@gmail.com>",

@@ -11,6 +11,7 @@ import type { IOutputChangeRecord } from '@ulixee/databox-core/models/OutputTabl
 import { LoadStatus } from '@ulixee/hero-interfaces/Location';
 import { ContentPaint } from '@ulixee/hero-interfaces/INavigation';
 import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
+import * as Path from 'path';
 
 export default class SessionObserver extends TypedEventEmitter<{
   'hero:updated': void;
@@ -65,7 +66,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     const runStart = runCommands[0]?.runStartDate;
 
     const loadedUrls = this.loadedUrls.filter(
-      x => thisRunUrls.has(x.url) || x.timestamp >= runStart,
+      x => thisRunUrls.has(x.url) && x.timestamp >= runStart,
     );
 
     let startDate = Date.now();
@@ -91,7 +92,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     return {
       hasWarning: false,
       run: this.heroSession.resumeCounter,
-      scriptEntrypoint: this.scriptInstanceMeta.entrypoint,
+      scriptEntrypoint: this.scriptInstanceMeta.entrypoint.split(Path.sep).slice(-2).join(Path.sep),
       scriptLastModifiedTime: this.scriptLastModifiedTime,
       heroSessionId: this.heroSession.id,
       durationSeconds: Math.floor((endDate - startDate) / 1e3),
@@ -127,6 +128,7 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   private onHeroSessionResumed(): void {
     this.playState = 'play';
+    this.bindDatabox();
   }
 
   private bindDatabox(): void {

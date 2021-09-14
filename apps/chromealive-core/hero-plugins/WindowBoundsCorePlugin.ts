@@ -2,7 +2,6 @@ import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChan
 import CorePlugin from '@ulixee/hero-plugin-utils/lib/CorePlugin';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { IBrowserEmulatorConfig, ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
-import { waitForChromeExtension } from '../lib/activateChromeExtension';
 import AliveBarPositioner from '../lib/AliveBarPositioner';
 
 export default class WindowBoundsCorePlugin extends CorePlugin {
@@ -27,20 +26,27 @@ export default class WindowBoundsCorePlugin extends CorePlugin {
   onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
     if (!sessionSummary.options.showBrowser) return;
     return Promise.all([
-      waitForChromeExtension(page.browserContext.browserId),
       page.addPageCallback(
         '___onBoundsChanged',
         this.onBoundsChanged.bind(this, sessionSummary.id, page.id),
       ),
-      page.devtoolsSession
-        .send('Browser.getWindowForTarget')
-        .then(({ windowId, bounds }) =>
-          AliveBarPositioner.onChromeWindowBoundsChanged(
-            sessionSummary.id,
-            windowId,
-            bounds as IBounds,
-          ),
-        ),
+      page.devtoolsSession.send('Browser.getWindowForTarget').then(({ windowId, bounds }) => {
+        AliveBarPositioner.onChromeWindowBoundsChanged(
+          sessionSummary.id,
+          windowId,
+          bounds as IBounds,
+        );
+        const maxBounds = AliveBarPositioner.getMaxChromeBounds();
+        if (maxBounds.height === bounds.height && maxBounds.width === bounds.width) return;
+
+        return page.devtoolsSession.send('Browser.setWindowBounds', {
+          windowId,
+          bounds: {
+            ...maxBounds,
+            windowState: 'normal',
+          },
+        });
+      }),
     ]);
   }
 

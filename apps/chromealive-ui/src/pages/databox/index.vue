@@ -39,6 +39,7 @@ import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDa
 import humanizeBytes from '@/utils/humanizeBytes';
 import Json from '@/components/Json.vue';
 import { FlatJson } from '@/utils/flattenJson';
+import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 
 const defaultInput = Json.toFlat({ path: '/', params: {} });
 
@@ -51,6 +52,7 @@ export default class DataboxPanel extends Vue {
 
   private dataSize: string = null;
   private client = Client;
+  private lastHeroEntrypoint: string = null;
 
   private get OutputJson(): Json {
     return this.$refs.output as Json;
@@ -63,6 +65,14 @@ export default class DataboxPanel extends Vue {
 
   mounted() {
     this.client.on('Databox.updated', event => this.onDataboxUpdated(event));
+    this.client.on('Session.active', event => this.onSessionActive(event));
+  }
+
+  private onSessionActive(data: IHeroSessionActiveEvent) {
+    if (this.lastHeroEntrypoint && data.scriptEntrypoint !== this.lastHeroEntrypoint) {
+      this.onDataboxUpdated({} as IDataboxUpdatedEvent)
+    }
+    this.lastHeroEntrypoint = data.scriptEntrypoint;
   }
 
   private onDataboxUpdated(data: IDataboxUpdatedEvent) {
@@ -97,6 +107,10 @@ export default class DataboxPanel extends Vue {
 @import '../../assets/style/resets';
 @import '../../assets/style/flatjson';
 
+:root {
+  --toolbarBackgroundColor: #fffdf4;
+}
+
 body {
   height: 100vh;
   margin: 0;
@@ -107,10 +121,9 @@ body {
 .Wrapper {
   box-sizing: border-box;
   background: white;
-  border-left: 1px solid var(--toolbarBorderColor);
-  box-shadow: inset 1px 0 rgba(0, 0, 0, 0.2);
   margin: 0;
 }
+
 .OutputPanel,
 .InputPanel {
   box-sizing: border-box;
@@ -126,7 +139,9 @@ body {
     font-size: 15px;
     text-align: left;
     padding: 5px 15px 5px;
-    background: #eee;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background-color: var(--toolbarBackgroundColor);
+    box-shadow: 0 0 1px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.16);
     margin: 0 -20px 10px;
     color: #2d2d2d;
   }

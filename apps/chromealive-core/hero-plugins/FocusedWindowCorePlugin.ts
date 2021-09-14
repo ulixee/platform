@@ -3,7 +3,6 @@ import CorePlugin from '@ulixee/hero-plugin-utils/lib/CorePlugin';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import * as Path from 'path';
-import { waitForChromeExtension } from '../lib/activateChromeExtension';
 
 const debug = Debug('ulixee:chromealive');
 
@@ -28,12 +27,10 @@ export default class FocusedWindowCorePlugin extends CorePlugin {
 
   onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
     if (!sessionSummary.options.showBrowser) return;
-    const browserId = page.browserContext.browserId;
 
     page.once('close', () => this.onPageClosed(sessionSummary.id, page.id));
 
     return Promise.all([
-      waitForChromeExtension(browserId),
       page.addPageCallback(
         '___onPageVisible',
         this.onPageVisible.bind(this, sessionSummary.id, page.id),

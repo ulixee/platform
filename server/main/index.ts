@@ -60,7 +60,7 @@ export default class Server {
     this.coreConnectors = new CoreConnectors(this);
   }
 
-  public listen(options: ListenOptions): Promise<AddressInfo> {
+  public async listen(options: ListenOptions): Promise<AddressInfo> {
     if (this.serverAddress.isResolved) return this.serverAddress.promise;
 
     this.httpServer.once('error', this.serverAddress.reject);
@@ -70,6 +70,7 @@ export default class Server {
         this.serverAddress.resolve(this.httpServer.address() as AddressInfo);
       })
       .ref();
+    await this.coreConnectors.start();
     return this.serverAddress.promise;
   }
 

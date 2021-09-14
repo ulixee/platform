@@ -14,14 +14,7 @@ const launchPaths = {
 };
 
 export default function launchChromeAlive(...launchArgs: string[]): ChildProcess {
-  const showDebugLogs = Boolean(JSON.parse(process.env.ULX_CHROMEALIVE_DEBUG ?? 'false'));
-
-  let stdio: StdioOptions;
-  if (showDebugLogs) {
-    stdio = ['ignore', 'inherit', 'inherit', 'ipc'];
-  } else {
-    stdio = ['ignore', 'ignore', 'ignore', 'ipc'];
-  }
+  const stdio: StdioOptions = ['ignore', 'inherit', 'inherit', 'ipc'];
 
   const spawnOptions: SpawnOptions = {
     stdio,
@@ -36,7 +29,7 @@ export default function launchChromeAlive(...launchArgs: string[]): ChildProcess
 
   const child = spawn(
     exe,
-    ['--chromealive', `--${preferredLaunch}-launch`, '--enable-logging', ...launchArgs],
+    ['--chromealive', `--${preferredLaunch}-launch`, ...launchArgs],
     spawnOptions,
   );
 

@@ -1,6 +1,7 @@
 import IChromeAliveApis from '@ulixee/apps-chromealive-interfaces/apis';
 import sessionResumeApi from './Session.resume';
 import sessionStepApi from './Session.step';
+import sessionQuitApi from './Session.quit';
 import sessionUrlScreenshotApi from './Session.urlScreenshot';
 import appBoundsChangedApi from './App.boundsChanged';
 import appReadyApi from './App.ready';
@@ -16,6 +17,7 @@ type ApiHandlers = {
 };
 
 const apiHandlers: ApiHandlers = {
+  'Session.quit': sessionQuitApi,
   'Session.resume': sessionResumeApi,
   'Session.step': sessionStepApi,
   'Session.urlScreenshot': sessionUrlScreenshotApi,

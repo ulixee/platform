@@ -13,13 +13,19 @@ export default class CoreConnectors {
     if (isConnected) {
       throw new Error('CoreConnectors already initialized');
     }
-    isConnected = true;
 
     this.coreConnectors.push(new HeroCoreConnector(server));
     this.coreConnectors.push(new DataboxCoreConnector(server));
     if (ChromeAliveCoreConnector.isInstalled()) {
       this.coreConnectors.push(new ChromeAliveCoreConnector(server));
     }
+  }
+
+  public async start() {
+    for (const coreConnector of this.coreConnectors) {
+      await coreConnector.start();
+    }
+    isConnected = true;
   }
 
   public async close() {

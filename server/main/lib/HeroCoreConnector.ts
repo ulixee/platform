@@ -17,6 +17,10 @@ export default class HeroCoreConnector extends BaseCoreConnector {
     this.server = server;
   }
 
+  public async start() {
+    await Core.start();
+  }
+
   public async close() {
     await Core.shutdown();
   }
