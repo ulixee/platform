@@ -14,7 +14,6 @@
     "@ulixee/hero-puppet-chrome": "1.5.4",
     "@ulixee/apps-chromealive": "1.5.4",
     "@ulixee/apps-chromealive-interfaces": "1.5.4",
-    "debug": "^4.3.2",
     "@types/chrome": "^0.0.154"
   },
   "peerDependencies": {

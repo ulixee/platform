@@ -1,10 +1,7 @@
-import Debug from 'debug';
 import CorePlugin from '@ulixee/hero-plugin-utils/lib/CorePlugin';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import * as Path from 'path';
-
-const debug = Debug('ulixee:chromealive');
 
 // have to resolve an actual file
 const extensionPath = Path.resolve(__dirname, '..', 'chrome-extension').replace(
@@ -14,10 +11,6 @@ const extensionPath = Path.resolve(__dirname, '..', 'chrome-extension').replace(
 
 export default class FocusedWindowCorePlugin extends CorePlugin {
   public static id = '@ulixee/focused-window-core-plugin';
-  public static onVisibilityChange?: (sessionId: string, puppetPageId: string) => any;
-
-  private static focusedPage: { sessionId: string; puppetPageId: string };
-
   onBrowserLaunchConfiguration(launchArguments: string[]): void {
     launchArguments.push(
       `--disable-extensions-except=${extensionPath}`,
@@ -31,6 +24,7 @@ export default class FocusedWindowCorePlugin extends CorePlugin {
     page.once('close', () => this.onPageClosed(sessionSummary.id, page.id));
 
     return Promise.all([
+      page.devtoolsSession.send('Emulation.setFocusEmulationEnabled', { enabled: false }),
       page.addPageCallback(
         '___onPageVisible',
         this.onPageVisible.bind(this, sessionSummary.id, page.id),
@@ -46,25 +40,16 @@ export default class FocusedWindowCorePlugin extends CorePlugin {
   }
 
   onPageVisible(sessionId: string, puppetPageId: string) {
-    FocusedWindowCorePlugin.focusedPage = { sessionId, puppetPageId };
-    debug('Page focused', { sessionId, puppetPageId });
-    FocusedWindowCorePlugin.updateVisiblePage();
+    FocusedWindowCorePlugin.onVisibilityChange(true, sessionId, puppetPageId);
   }
 
   onPageClosed(sessionId: string, puppetPageId: string): void {
-    const focused = FocusedWindowCorePlugin.focusedPage;
-    if (!focused?.sessionId) return;
-
-    if (focused.sessionId === sessionId && focused.puppetPageId === puppetPageId) {
-      FocusedWindowCorePlugin.focusedPage = null;
-    }
-
-    FocusedWindowCorePlugin.updateVisiblePage();
+    FocusedWindowCorePlugin.onVisibilityChange(false, sessionId, puppetPageId);
   }
 
-  static updateVisiblePage(): void {
-    if (!this.onVisibilityChange) return;
-
-    this.onVisibilityChange(this.focusedPage?.sessionId, this.focusedPage?.puppetPageId);
-  }
+  public static onVisibilityChange: (
+    isVisible: boolean,
+    sessionId: string,
+    puppetPageId: string,
+  ) => any = () => null;
 }

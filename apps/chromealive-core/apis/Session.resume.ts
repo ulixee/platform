@@ -4,10 +4,10 @@ import {
   ISessionResumeArgs,
   ISessionResumeResult,
 } from '@ulixee/apps-chromealive-interfaces/apis/ISessionResumeApi';
-import Debug from 'debug';
+import Log from '@ulixee/commons/lib/Logger';
 import ChromeAliveCore from '../index';
 
-const debug = Debug('ulixee:chromealive');
+const { log } = Log(module);
 
 export default function sessionResumeApi(args: ISessionResumeArgs): ISessionResumeResult {
   const sessionId = args.heroSessionId ?? ChromeAliveCore.activeHeroSessionId;
@@ -43,17 +43,18 @@ export default function sessionResumeApi(args: ISessionResumeArgs): ISessionResu
   if (script.endsWith('.ts')) {
     execArgv.push('-r', 'ts-node/register');
   }
+
   let success = true;
   let error: Error;
   try {
-    debug('Resuming session', execArgv);
+    log.info('Resuming session', { execArgv, sessionId });
     fork(script, execArgv, {
       // execArgv,
       stdio: 'inherit',
       env: { ...process.env, HERO_CLI_NOPROMPT: 'true' },
     });
   } catch (err) {
-    console.error('ERROR resuming session', err);
+    log.error('ERROR resuming session', { error, sessionId });
     success = false;
     error = err;
   }

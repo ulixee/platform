@@ -5,9 +5,11 @@ import IAppBoundsChangedApi from './IAppBoundsChangedApi';
 import IAppReadyApi from './IAppReadyApi';
 import IMouseStateApi from './IMouseStateApi';
 import ISessionQuitApi from './ISessionQuitApi';
+import ISessionReplayApi from './ISessionReplayApi';
 
 export default interface IChromeAliveApis {
   'Session.resume': ISessionResumeApi;
+  'Session.replay': ISessionReplayApi;
   'Session.step': ISessionStepApi;
   'Session.quit': ISessionQuitApi;
   'Session.urlScreenshot': ISessionUrlScreenshotApi;

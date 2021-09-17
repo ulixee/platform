@@ -1,8 +1,8 @@
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
-import Debug from 'debug';
 import IDevtoolsSession from '@ulixee/hero-interfaces/IDevtoolsSession';
+import Log from '@ulixee/commons/lib/Logger';
 
-const debug = Debug('ulixee:chromealive');
+const { log } = Log(module);
 
 export default class AliveBarPositioner {
   public static getSessionDevtools: (sessionId: string) => IDevtoolsSession;
@@ -35,7 +35,7 @@ export default class AliveBarPositioner {
     windowId: number,
     bounds: IBounds,
   ): void {
-    debug('Chrome window bounds changed', { sessionId, windowId, bounds });
+    log.info('Chrome window bounds changed', { sessionId, windowId, bounds });
     this.lastWindowBoundsBySessionId[sessionId] = { ...bounds, windowId };
 
     this.alignWindowsIfOverlapping(sessionId);
@@ -50,12 +50,12 @@ export default class AliveBarPositioner {
   }
 
   public static onAppReady(workarea: IBounds): void {
-    debug('App workarea setup', { workarea });
+    log.info('App workarea setup', { workarea, sessionId: null });
     this.workarea = workarea;
   }
 
   public static onAppBoundsChanged(bounds: IBounds): void {
-    debug('App bounds changed', { bounds });
+    log.info('App bounds changed', { bounds, sessionId: null });
     this.lastToolbarBounds = bounds;
     for (const sessionId of Object.keys(this.lastWindowBoundsBySessionId)) {
       this.alignWindowsIfOverlapping(sessionId);
@@ -65,7 +65,7 @@ export default class AliveBarPositioner {
   private static alignWindowsIfOverlapping(sessionId: string): void {
     const chromeBounds = this.lastWindowBoundsBySessionId[sessionId];
     let newBounds = this.getMaxChromeBounds();
-    if (!newBounds) return;
+    if (!newBounds || !this.getSessionDevtools) return;
 
     if (chromeBounds.top < newBounds.top) {
       const devtools = this.getSessionDevtools(sessionId);
@@ -73,7 +73,7 @@ export default class AliveBarPositioner {
 
       if (!this.isFirstAdjustment) {
         if (this.isMousedown) {
-          debug('App bounds changed, but appears to be drag. Ignoring');
+          log.info('App bounds changed, but appears to be drag. Ignoring');
           this.pendingWindowRepositionSessionId = sessionId;
           return;
         }

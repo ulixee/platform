@@ -133,7 +133,6 @@ export class Menubar extends EventEmitter {
         this.hideWindow();
         app.exit();
       });
-      ChromeAliveCore.register(true);
       // for now auto-start
       this.startServer().catch(console.error);
       ShutdownHandler.exitOnSignal = false;
@@ -287,6 +286,7 @@ export class Menubar extends EventEmitter {
 
   private async startServer() {
     if (this.#ulixeeServer) return;
+    ChromeAliveCore.register(true);
     this.#ulixeeServer = new UlixeeServer();
 
     await installDefaultChrome();

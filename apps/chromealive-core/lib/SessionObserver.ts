@@ -12,6 +12,7 @@ import { LoadStatus } from '@ulixee/hero-interfaces/Location';
 import { ContentPaint } from '@ulixee/hero-interfaces/INavigation';
 import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
 import * as Path from 'path';
+import HeroReplayManager from './HeroReplayManager';
 
 export default class SessionObserver extends TypedEventEmitter<{
   'hero:updated': void;
@@ -20,6 +21,7 @@ export default class SessionObserver extends TypedEventEmitter<{
 }> {
   public loadedUrls: ISessionUrl[] = [];
   public playState: IHeroSessionActiveEvent['state'] = 'play';
+  public replayManager: HeroReplayManager;
 
   private scriptLastModifiedTime: number;
   private readonly scriptInstanceMeta: IScriptInstanceMeta;
@@ -38,6 +40,8 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.heroSession.on('closing', this.close);
     this.heroSession.once('closed', () => this.emit('closed'));
     this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint).mtimeMs;
+    this.replayManager = new HeroReplayManager(heroSession);
+    this.replayManager.on('close', () => this.emit('hero:updated'));
     this.bindDatabox();
     Fs.watchFile(
       this.scriptInstanceMeta.entrypoint,
@@ -78,7 +82,12 @@ export default class SessionObserver extends TypedEventEmitter<{
 
     const activeTab = this.heroSession.getLastActiveTab();
     if (activeTab) {
-      endDate += 1e3;
+      const closeCommand = runCommands.find(x => x.name === 'close');
+      if (closeCommand) {
+        endDate = closeCommand.endDate;
+      } else {
+        endDate += 1e3;
+      }
       loadedUrls.push({
         tabId: activeTab.id,
         url: activeTab.url,
@@ -97,6 +106,7 @@ export default class SessionObserver extends TypedEventEmitter<{
       heroSessionId: this.heroSession.id,
       durationSeconds: Math.floor((endDate - startDate) / 1e3),
       state: this.playState,
+      isReplaying: this.replayManager.isOpen,
       loadedUrls: loadedUrls.map(x => {
         return {
           tabId: x.tabId,
@@ -129,6 +139,8 @@ export default class SessionObserver extends TypedEventEmitter<{
   private onHeroSessionResumed(): void {
     this.playState = 'play';
     this.bindDatabox();
+    this.emit('hero:updated');
+    this.emit('databox:updated');
   }
 
   private bindDatabox(): void {
@@ -155,6 +167,7 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   private onHeroSessionKeptAlive(event: { message: string }): void {
     this.playState = 'paused';
+    this.emit('hero:updated');
     event.message = `ChromeAlive! has assumed control of your script. You can make changes to your script and re-run from the ChromeAlive interface.`;
   }
 

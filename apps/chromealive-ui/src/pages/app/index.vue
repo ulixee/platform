@@ -17,7 +17,7 @@
 
       <div id="timeline">
         <div id="bar">
-          <div id="track">
+          <div id="track" ref="track">
             <div
               v-for="(url, i) in session.loadedUrls"
               class="tick"
@@ -32,7 +32,13 @@
               <div v-if="i !== session.loadedUrls.length - 1" class="line-overlay"></div>
               <div class="marker"></div>
             </div>
-            <div id="nib" :style="{ left: nibLeftPercent + '%' }"></div>
+            <div
+              @mousedown="startDraggingNib()"
+              @mouseup="stopDraggingNib()"
+              ref="nib"
+              id="nib"
+              :style="{ left: nibLeft }"
+            ></div>
           </div>
         </div>
       </div>
@@ -111,7 +117,10 @@ export default class ChromeAliveApp extends Vue {
   private hasLaunchedDatabox = false;
   private isLoading = false;
   private isShowingMenu = false;
-  private nibLeftPercent = 100;
+  private isDragging = false;
+  private nibLeft = '100%';
+  private trackOffset: DOMRect;
+  private pendingReplayNavigationOffset: number = null;
 
   private session: IHeroSessionActiveEvent = {
     loadedUrls: [],
@@ -122,6 +131,7 @@ export default class ChromeAliveApp extends Vue {
     hasWarning: false,
     scriptEntrypoint: '',
     scriptLastModifiedTime: 0,
+    isReplaying: false,
   };
 
   private hoveredScreenshot = {
@@ -170,7 +180,8 @@ export default class ChromeAliveApp extends Vue {
 
   clickUrlTick(urlIndex: number) {
     this.currentUrlIndex = urlIndex;
-    this.nibLeftPercent = this.session.loadedUrls[urlIndex].offsetPercent;
+    this.nibLeft = this.session.loadedUrls[urlIndex].offsetPercent + '%';
+    this.replay(this.session.loadedUrls[urlIndex].offsetPercent).catch(console.error);
   }
 
   nextUrlTickWidth(urlIndex: number) {
@@ -187,6 +198,7 @@ export default class ChromeAliveApp extends Vue {
   }
 
   showScreenshot(urlIndex: number) {
+    if (this.isDragging) return;
     const entry = this.session.loadedUrls[urlIndex];
     this.hoveredScreenshot.left = this.$refs[`tick${urlIndex}`][0].getBoundingClientRect().left;
     if (this.hoveredScreenshot.left + 500 > window.innerWidth) {
@@ -248,6 +260,41 @@ export default class ChromeAliveApp extends Vue {
     }
   }
 
+  startDraggingNib() {
+    window.addEventListener('mousemove', this.onNibMove);
+    this.isDragging = true;
+  }
+
+  stopDraggingNib() {
+    window.removeEventListener('mousemove', this.onNibMove);
+    this.isDragging = false;
+    this.replay();
+  }
+
+  onNibMove(event) {
+    const start = this.nibLeft;
+    this.trackOffset ??= (this.$refs.track as HTMLElement).getBoundingClientRect();
+    let percentOffset =
+      Math.round((10e3 * (event.pageX - this.trackOffset.x)) / this.trackOffset.width) / 100;
+    if (percentOffset > 100) percentOffset = 100;
+    if (percentOffset < 0) percentOffset = 0;
+
+    this.nibLeft = percentOffset + '%';
+    if (this.session.heroSessionId && start !== this.nibLeft) {
+      this.pendingReplayNavigationOffset = percentOffset;
+    }
+  }
+
+  async replay() {
+    if (this.pendingReplayNavigationOffset === null) return;
+    const percentOffset = this.pendingReplayNavigationOffset;
+    this.pendingReplayNavigationOffset = null;
+    await this.client.send('Session.replay', {
+      heroSessionId: this.session.heroSessionId,
+      percentOffset,
+    });
+  }
+
   play() {
     this.client.send('Session.resume', {
       heroSessionId: this.session.heroSessionId,
@@ -271,8 +318,12 @@ export default class ChromeAliveApp extends Vue {
   }
 
   onSessionActiveEvent(message: IHeroSessionActiveEvent) {
+    const isNewId = message.heroSessionId !== this.session.heroSessionId;
     Object.assign(this.session, message);
     this.currentUrlIndex = Math.max(0, this.session.loadedUrls.length - 1);
+    if (isNewId) {
+      this.nibLeft = '100%';
+    }
     this.updateScriptTimeAgo();
 
     if (!this.hasLaunchedDatabox && !this.databoxWindow) {
@@ -302,6 +353,7 @@ export default class ChromeAliveApp extends Vue {
     this.client.on('Session.loaded', () => (this.isLoading = false));
     this.client.on('Session.active', this.onSessionActiveEvent);
     window.addEventListener('blur', () => (this.isShowingMenu = false));
+    window.addEventListener('mouseup', this.stopDraggingNib);
     new ResizeObserver(() => this.sendBoundsChanged()).observe(this.$refs.app as HTMLElement);
     new ResizeObserver(() => this.sendToolbarHeightChange()).observe(
       this.$refs.toolbar as HTMLElement,

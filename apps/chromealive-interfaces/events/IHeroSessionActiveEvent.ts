@@ -6,6 +6,7 @@ export default interface IHeroSessionActiveEvent {
   state: 'play' | 'paused';
   durationSeconds: number;
   run: number;
+  isReplaying: boolean;
   loadedUrls: {
     url: string;
     offsetPercent: number;
