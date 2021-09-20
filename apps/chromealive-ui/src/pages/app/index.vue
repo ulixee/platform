@@ -1,7 +1,7 @@
 <template>
   <div
     id="ChromeAlivePage"
-    :class="{ showingScreenshot: hoveredScreenshot.url, showingMenu: isShowingMenu }"
+    :class="{ showingScreenshot: timelineHover.show, showingMenu: isShowingMenu, dragging: isDragging }"
     ref="app"
   >
     <div id="chrome-alive-bar" ref="toolbar" :class="{ loading: isLoading }">
@@ -11,32 +11,31 @@
           <div class="icon"></div>
         </button>
         <div id="entrypoint">
-          ChromeAlive bound to <i>{{ session.scriptEntrypoint }}</i>
+          ChromeAlive {{ isHistoryMode ? 'in History Mode for' : 'bound to' }}
+          <i>{{ session.scriptEntrypoint }}</i>
         </div>
       </div>
 
       <div id="timeline">
-        <div id="bar">
+        <div id="bar" @mouseout="trackMouseout" @mouseover="trackMouseover">
           <div id="track" ref="track">
             <div
-              v-for="(url, i) in session.loadedUrls"
+              v-for="(url, i) in session.urls"
               class="tick"
-              :class="{ active: currentUrlIndex === i }"
+              :class="{ active: isActiveUrl(i) }"
               :key="url.offsetPercent"
               :ref="`tick${i}`"
-              @mouseout="hideScreenshot()"
-              @mouseover="showScreenshot(i)"
-              @click="clickUrlTick(i)"
+              @click.prevent="clickUrlTick($event, url.navigationId)"
               :style="{ left: url.offsetPercent + '%', width: nextUrlTickWidth(i) }"
             >
-              <div v-if="i !== session.loadedUrls.length - 1" class="line-overlay"></div>
+              <div v-if="i !== session.urls.length - 1" class="line-overlay"></div>
               <div class="marker"></div>
             </div>
             <div
               @mousedown="startDraggingNib()"
-              @mouseup="stopDraggingNib()"
               ref="nib"
               id="nib"
+              :class="{ 'live-mode': isLive }"
               :style="{ left: nibLeft }"
             ></div>
           </div>
@@ -44,38 +43,55 @@
       </div>
       <div id="script-updated">(script updated {{ scriptTimeAgo }} ago)</div>
 
-      <button
-        v-if="!isPlaying"
-        @click.prevent="play"
-        id="play-button"
-        class="app-button"
-        :disabled="!canPlay()"
-      >
-        <span class="label">Start</span>
-        <div class="icon"></div>
-      </button>
-      <button
-        v-else
-        @click.prevent="pause"
-        id="pause-button"
-        class="app-button"
-        :disabled="!canPause()"
-      >
-        <span class="label">Stop</span>
-        <div class="icon"></div>
-      </button>
+      <div id="buttons-panel">
+        <slot v-if="isHistoryMode">
+          <button @click.prevent="historyBack" id="history-back-button" class="app-button">
+            <span class="label">Step Back</span>
+            <div class="icon"></div>
+          </button>
+          <button @click.prevent="historyForward" id="history-forward-button" class="app-button">
+            <span class="label">Step Forward</span>
+            <div class="icon"></div>
+          </button>
+        </slot>
+        <slot v-else>
+          <button
+            v-if="!isHistoryMode && !isLive"
+            @click.prevent="resume"
+            id="play-button"
+            class="app-button"
+            :disabled="!canPlay()"
+          >
+            <span class="label">Start</span>
+            <div class="icon"></div>
+          </button>
+          <button
+            v-else-if="!isHistoryMode"
+            @click.prevent="pause"
+            id="pause-button"
+            class="app-button"
+            :disabled="!canPause()"
+          >
+            <span class="label">Stop</span>
+            <div class="icon"></div>
+          </button>
+        </slot>
+      </div>
     </div>
 
-    <div
-      id="screenshot-hover"
-      v-if="hoveredScreenshot.url"
-      :style="{ left: hoveredScreenshot.left + 'px' }"
-    >
-      <div class="url">{{ hoveredScreenshot.url }}</div>
-      <img
-        :src="`data:image/jpg;base64,${hoveredScreenshot.imageBase64}`"
-        v-if="hoveredScreenshot.imageBase64"
-      />
+    <div id="timeline-hover" :style="{ left: timelineHover.left + 'px' }" ref="timelineHover">
+      <img :src="ICON_CARET" class="caret" />
+      <div class="url">{{ timelineHover.url || '...' }}</div>
+      <div class="changes">
+        {{ timelineHover.runtime }}; {{ timelineHover.domChanges }} dom changes
+      </div>
+      <div class="screenshot">
+        <img
+          v-if="timelineHover.imageBase64"
+          :src="`data:image/jpg;base64,${timelineHover.imageBase64}`"
+        />
+        <div class="status" v-if="timelineHover.status">{{ timelineHover.status }}</div>
+      </div>
     </div>
 
     <div id="bar-menu" v-if="isShowingMenu" :style="{ left: menuOffset.left + 'px' }">
@@ -84,7 +100,9 @@
           <li class="databox-toggle" @click.prevent="toggleDatabox()">
             {{ databoxWindow !== null ? 'Hide' : 'Show' }} Databox Panel
           </li>
-          <li class="rerun-script" @click.prevent="playFromTick(0)">Rerun script from beginning</li>
+          <li class="rerun-script" @click.prevent="resumeFrom('sessionStart')">
+            Rerun script from beginning
+          </li>
           <li class="quit-script" @click.prevent="quitScript()">Shutdown Chrome + Script</li>
           <li class="divider"></li>
           <li class="about" @click.prevent="showAbout()">About ChromeAlive!</li>
@@ -102,6 +120,14 @@ import VueSlider from 'vue-slider-component';
 import 'vue-slider-component/theme/default.css';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
+import { ISessionResumeArgs } from '@ulixee/apps-chromealive-interfaces/apis/ISessionResumeApi';
+import { LoadStatus } from '@ulixee/hero-interfaces/Location';
+
+const ICON_CARET = require('@/assets/icons/caret.svg');
+
+Vue.config.keyCodes = {
+  'arrow-keys': [37, 38, 39, 40],
+};
 
 @Component({
   components: { VueSlider },
@@ -111,7 +137,7 @@ export default class ChromeAliveApp extends Vue {
   private scriptTimeAgo = '';
   private timeAgoTimeout: number;
   private timeAgoDelay = 1e3;
-  private currentUrlIndex = 1;
+  private selectedNavigationId = null;
   private lastToolbarBounds: IBounds;
   private databoxWindow: Window = null;
   private hasLaunchedDatabox = false;
@@ -120,34 +146,59 @@ export default class ChromeAliveApp extends Vue {
   private isDragging = false;
   private nibLeft = '100%';
   private trackOffset: DOMRect;
+  private isHistoryMode = false;
+  private startLocation: ISessionResumeArgs['startLocation'] = 'currentLocation';
   private pendingReplayNavigationOffset: number = null;
+  private ICON_CARET = ICON_CARET;
 
   private session: IHeroSessionActiveEvent = {
-    loadedUrls: [],
-    state: 'paused',
-    durationSeconds: 0,
+    urls: [],
+    paintEvents: [],
+    screenshots: [],
+    playbackState: 'paused',
+    runtimeMs: 0,
     heroSessionId: '',
     run: 0,
     hasWarning: false,
     scriptEntrypoint: '',
     scriptLastModifiedTime: 0,
-    isReplaying: false,
   };
 
-  private hoveredScreenshot = {
+  private timelineHover = {
     left: 0,
     url: '',
+    domChanges: 0,
+    runtime: '',
+    status: '',
     imageBase64: '',
+    show: false,
   };
 
   private menuOffset = {
     left: 0,
   };
 
-  private screenshotsByNavigationId = new Map<number, string>();
+  private screenshotsByTimestamp = new Map<number, string>();
+  private screenshotTimestampsByOffset = new Map<number, number>();
+  private timelineHoverWidth: number;
 
-  private get isPlaying() {
-    return this.session?.state === 'play';
+  private get isLive() {
+    return this.session?.playbackState === 'live';
+  }
+
+  onKeypress(event: KeyboardEvent): void {
+    // let this trigger history mode
+    if (event.code === 'ArrowLeft') {
+      this.historyBack();
+    }
+    if (event.code === 'ArrowRight' && this.isHistoryMode) {
+      this.historyForward();
+    }
+  }
+
+  toggleMenu() {
+    this.menuOffset.left = (this.$refs.menuButton as HTMLElement).getBoundingClientRect().left;
+    this.isShowingMenu = !this.isShowingMenu;
   }
 
   quitScript() {
@@ -163,54 +214,79 @@ export default class ChromeAliveApp extends Vue {
     );
   }
 
-  canPlay(): boolean {
-    if (!this.session.heroSessionId) return false;
-    return this.session.state === 'paused';
+  isActiveUrl(index: number) {
+    if (index === 0) return this.startLocation === 'sessionStart';
+    if (index === this.session.urls.length - 1) return this.startLocation === 'currentLocation';
+    return this.selectedNavigationId === this.session.urls[index].navigationId;
   }
 
-  canPause(): boolean {
-    if (!this.session.heroSessionId) return false;
-    return this.session.state === 'play';
-  }
-
-  playFromTick(tickIndex: number) {
-    this.currentUrlIndex = tickIndex;
-    this.play();
-  }
-
-  clickUrlTick(urlIndex: number) {
-    this.currentUrlIndex = urlIndex;
-    this.nibLeft = this.session.loadedUrls[urlIndex].offsetPercent + '%';
-    this.replay(this.session.loadedUrls[urlIndex].offsetPercent).catch(console.error);
+  clickUrlTick(event: MouseEvent, navigationId: number) {
+    this.selectedNavigationId = navigationId;
+    this.onNibMove(event);
+    this.replay().catch(console.error);
   }
 
   nextUrlTickWidth(urlIndex: number) {
-    if (urlIndex === this.session.loadedUrls.length - 1) return '2px';
+    if (urlIndex === this.session.urls.length - 1) return '2px';
     const diff =
-      this.session.loadedUrls[urlIndex + 1].offsetPercent -
-      this.session.loadedUrls[urlIndex].offsetPercent;
+      this.session.urls[urlIndex + 1].offsetPercent - this.session.urls[urlIndex].offsetPercent;
     return `${diff}%`;
   }
 
-  hideScreenshot() {
-    this.hoveredScreenshot.url = '';
-    this.hoveredScreenshot.left = 0;
+  trackMouseout() {
+    window.removeEventListener('mousemove', this.trackMousemove);
+    this.timelineHover.show = false;
   }
 
-  showScreenshot(urlIndex: number) {
-    if (this.isDragging) return;
-    const entry = this.session.loadedUrls[urlIndex];
-    this.hoveredScreenshot.left = this.$refs[`tick${urlIndex}`][0].getBoundingClientRect().left;
-    if (this.hoveredScreenshot.left + 500 > window.innerWidth) {
-      this.hoveredScreenshot.left = window.innerWidth - 525;
+  trackMouseover() {
+    if (this.isLive) return;
+    window.addEventListener('mousemove', this.trackMousemove);
+  }
+
+  trackMousemove(event: MouseEvent) {
+    const offset = this.getTrackOffset(event);
+    this.timelineHoverWidth ||= (
+      this.$refs.timelineHover as HTMLElement
+    ).getBoundingClientRect().width;
+
+    this.timelineHover.left = event.pageX - Math.round(this.timelineHoverWidth / 2);
+
+    const runtimeMs = Math.round((offset / 100) * this.session.runtimeMs);
+    this.timelineHover.runtime = `${runtimeMs}ms`;
+    if (runtimeMs > 1e3) {
+      const runtimeSecs = Math.round(10 * (runtimeMs / 1000)) / 10;
+      this.timelineHover.runtime = `${runtimeSecs}s`;
     }
-    this.hoveredScreenshot.url = entry.url;
-    this.hoveredScreenshot.imageBase64 = this.screenshotsByNavigationId.get(entry.navigationId);
-  }
 
-  toggleMenu() {
-    this.menuOffset.left = (this.$refs.menuButton as HTMLElement).getBoundingClientRect().left;
-    this.isShowingMenu = !this.isShowingMenu;
+    let lastChanges = 0;
+    for (const paint of this.session.paintEvents) {
+      // go until this change is after the current offset
+      if (paint.offsetPercent > offset) break;
+      lastChanges = paint.domChanges;
+    }
+    this.timelineHover.domChanges = lastChanges;
+    this.timelineHover.status = 'Loading';
+
+    let loadedUrl: IHeroSessionActiveEvent['urls'][0] = null;
+    for (const url of this.session.urls) {
+      if (url.offsetPercent > offset) break;
+      loadedUrl = url;
+    }
+    if (loadedUrl?.url) {
+      let statusText = 'Navigation Requested';
+      if (offset === 100) statusText = 'Current Location';
+
+      for (const { status, offsetPercent } of loadedUrl.loadStatusOffsets) {
+        if (offsetPercent > offset) break;
+        statusText = status;
+      }
+
+      this.timelineHover.status = statusText;
+    }
+    this.timelineHover.url = loadedUrl?.url;
+    const timestamp = this.screenshotTimestampsByOffset.get(offset);
+    this.timelineHover.imageBase64 = this.screenshotsByTimestamp.get(timestamp);
+    this.timelineHover.show = true;
   }
 
   calculateScriptTimeAgo(): string {
@@ -261,25 +337,26 @@ export default class ChromeAliveApp extends Vue {
   }
 
   startDraggingNib() {
+    if (this.isLive) return;
     window.addEventListener('mousemove', this.onNibMove);
     this.isDragging = true;
   }
 
   stopDraggingNib() {
     window.removeEventListener('mousemove', this.onNibMove);
+    if (!this.isDragging) return;
     this.isDragging = false;
     this.replay();
   }
 
-  onNibMove(event) {
+  onNibMove(e) {
+    e.preventDefault();
+
     const start = this.nibLeft;
-    this.trackOffset ??= (this.$refs.track as HTMLElement).getBoundingClientRect();
-    let percentOffset =
-      Math.round((10e3 * (event.pageX - this.trackOffset.x)) / this.trackOffset.width) / 100;
-    if (percentOffset > 100) percentOffset = 100;
-    if (percentOffset < 0) percentOffset = 0;
+    const percentOffset = this.getTrackOffset(e);
 
     this.nibLeft = percentOffset + '%';
+    this.isHistoryMode = this.nibLeft !== '100%';
     if (this.session.heroSessionId && start !== this.nibLeft) {
       this.pendingReplayNavigationOffset = percentOffset;
     }
@@ -295,10 +372,45 @@ export default class ChromeAliveApp extends Vue {
     });
   }
 
-  play() {
+  async historyForward() {
+    const { timelineOffsetPercent } = await this.client.send('Session.replay', {
+      heroSessionId: this.session.heroSessionId,
+      step: 'forward',
+    });
+    this.nibLeft = `${timelineOffsetPercent}%`;
+    if (timelineOffsetPercent === 100) this.isHistoryMode = false;
+  }
+
+  async historyBack() {
+    if (!this.isHistoryMode) return;
+    const { timelineOffsetPercent } = await this.client.send('Session.replay', {
+      heroSessionId: this.session.heroSessionId,
+      step: 'back',
+    });
+    this.nibLeft = `${timelineOffsetPercent}%`;
+  }
+
+  canPlay(): boolean {
+    if (!this.session.heroSessionId) return false;
+    return this.session.playbackState === 'paused';
+  }
+
+  canPause(): boolean {
+    if (!this.session.heroSessionId) return false;
+    return this.isLive;
+  }
+
+  resumeFrom(startLocation: ChromeAliveApp['startLocation'], navigationId?: number) {
+    this.startLocation = startLocation;
+    this.selectedNavigationId = navigationId;
+    this.resume();
+  }
+
+  resume() {
     this.client.send('Session.resume', {
       heroSessionId: this.session.heroSessionId,
-      startFromUrlIndex: this.currentUrlIndex,
+      startLocation: this.startLocation,
+      startFromNavigationId: this.selectedNavigationId,
     });
   }
 
@@ -318,12 +430,16 @@ export default class ChromeAliveApp extends Vue {
   }
 
   onSessionActiveEvent(message: IHeroSessionActiveEvent) {
-    const isNewId = message.heroSessionId !== this.session.heroSessionId;
+    const isNewId = message.heroSessionId !== this.session.heroSessionId || !message.heroSessionId;
     Object.assign(this.session, message);
-    this.currentUrlIndex = Math.max(0, this.session.loadedUrls.length - 1);
     if (isNewId) {
       this.nibLeft = '100%';
+      this.selectedNavigationId = null;
+      this.timelineHover.show = false;
     }
+
+    this.isHistoryMode = this.session.playbackState === 'history';
+
     this.updateScriptTimeAgo();
 
     if (!this.hasLaunchedDatabox && !this.databoxWindow) {
@@ -331,20 +447,46 @@ export default class ChromeAliveApp extends Vue {
       this.toggleDatabox();
     }
 
-    for (const loadedUrl of this.session.loadedUrls) {
-      const { navigationId, hasScreenshot } = loadedUrl;
-      if (!navigationId || !hasScreenshot) continue;
-      if (!this.screenshotsByNavigationId.has(navigationId)) {
+    let lastOffset: number = null;
+    this.screenshotTimestampsByOffset.clear();
+    if (!this.session.screenshots.length) this.screenshotsByTimestamp.clear();
+
+    for (const screenshot of this.session.screenshots) {
+      if (!this.screenshotsByTimestamp.has(screenshot.timestamp)) {
+        // placeholder while retrieving
+        this.screenshotsByTimestamp.set(screenshot.timestamp, null);
         this.client
-          .send('Session.urlScreenshot', {
-            navigationId,
+          .send('Session.getScreenshot', {
+            timestamp: screenshot.timestamp,
             sessionId: message.heroSessionId,
           })
           .then(x => {
-            if (x.imageBase64) this.screenshotsByNavigationId.set(navigationId, x.imageBase64);
+            if (x.imageBase64) this.screenshotsByTimestamp.set(screenshot.timestamp, x.imageBase64);
+            else this.screenshotsByTimestamp.delete(screenshot.timestamp);
           })
           .catch(console.error);
       }
+
+      let offsetPercent = Math.round(100 * screenshot.offsetPercent) / 100;
+      if (lastOffset !== null) {
+        this.fillScreenshotSlots(lastOffset, offsetPercent);
+      }
+
+      this.screenshotTimestampsByOffset.set(offsetPercent, screenshot.timestamp);
+
+      lastOffset = offsetPercent;
+    }
+    if (lastOffset) this.fillScreenshotSlots(lastOffset, 100);
+    const lastScreenshot = this.session.screenshots[this.session.screenshots.length - 1];
+    if (lastScreenshot) this.screenshotTimestampsByOffset.set(100, lastScreenshot.timestamp);
+  }
+
+  fillScreenshotSlots(startOffset: number, endOffset: number) {
+    let lastOffset = startOffset;
+    const timestampOfPrevious = this.screenshotTimestampsByOffset.get(lastOffset);
+    while (lastOffset + 0.01 < endOffset) {
+      this.screenshotTimestampsByOffset.set(lastOffset, timestampOfPrevious);
+      lastOffset = Math.round(100 * (lastOffset + 0.01)) / 100;
     }
   }
 
@@ -352,12 +494,22 @@ export default class ChromeAliveApp extends Vue {
     this.client.on('Session.loading', () => (this.isLoading = true));
     this.client.on('Session.loaded', () => (this.isLoading = false));
     this.client.on('Session.active', this.onSessionActiveEvent);
+    document.addEventListener("keyup", this.onKeypress);
     window.addEventListener('blur', () => (this.isShowingMenu = false));
     window.addEventListener('mouseup', this.stopDraggingNib);
     new ResizeObserver(() => this.sendBoundsChanged()).observe(this.$refs.app as HTMLElement);
     new ResizeObserver(() => this.sendToolbarHeightChange()).observe(
       this.$refs.toolbar as HTMLElement,
     );
+  }
+
+  private getTrackOffset(event: MouseEvent): number {
+    this.trackOffset ??= (this.$refs.track as HTMLElement).getBoundingClientRect();
+    let percentOffset = (100 * (event.pageX - this.trackOffset.x)) / this.trackOffset.width;
+    percentOffset = Math.round(10 * percentOffset) / 10;
+    if (percentOffset > 100) percentOffset = 100;
+    if (percentOffset < 0) percentOffset = 0;
+    return percentOffset;
   }
 
   private async sendToolbarHeightChange() {
@@ -428,6 +580,7 @@ body {
 #ChromeAlivePage {
   overflow-y: visible;
   -webkit-app-region: drag;
+  vertical-align: top;
   color: rgba(0, 0, 0, 0.8);
   box-sizing: border-box;
   &::-webkit-scrollbar {
@@ -486,24 +639,32 @@ body {
     }
   }
 
+  &.dragging * {
+    user-select: none;
+  }
+
   #timeline {
     flex: 3;
     position: relative;
+    padding: 5px 10px;
+
     #bar {
-      margin: 5px 10px;
       position: relative;
-      height: 20px;
+      height: 40px;
+      padding-top: 17px;
+      -webkit-app-region: no-drag;
 
       #track {
+        user-select: none;
         position: relative;
-        height: 7px;
-        top: 8px;
+        height: 12px;
+        top: 5px;
         background-color: #ccc;
       }
 
       .tick {
-        height: 36px;
-        top: -16px;
+        height: 40px;
+        top: -15px;
         position: absolute;
         min-width: 2px;
 
@@ -511,16 +672,16 @@ body {
           position: absolute;
           top: 13px;
           left: 0;
-          height: 12px;
+          height: 15px;
           width: 2px;
           background-color: #2d2d2d;
-          opacity: 0.3;
+          opacity: 0.5;
           border-left: 1px white solid;
           border-right: 1px white solid;
         }
 
         .line-overlay {
-          height: 7px;
+          height: 10px;
           top: 16px;
           position: relative;
         }
@@ -535,7 +696,7 @@ body {
 
           & + .active {
             .marker {
-              opacity: 0.5;
+              opacity: 0.6;
             }
             .line-overlay {
               background-color: transparent;
@@ -544,9 +705,6 @@ body {
         }
 
         &.active {
-          .marker {
-            opacity: 0.1;
-          }
           .line-overlay {
             background-color: #868686;
           }
@@ -555,14 +713,21 @@ body {
 
       #nib {
         position: absolute;
-        top: -4px;
-        margin-left: -4px;
-        height: 12px;
-        width: 12px;
+        top: -3px;
+        box-sizing: border-box;
+        margin-left: -8px;
+        height: 16px;
+        width: 16px;
         border-radius: 14px;
         background-color: white;
         border: 1px solid #666;
         box-shadow: -1px 1px 2px rgba(0, 0, 0, 0.6);
+        -webkit-app-region: no-drag;
+        user-select: none;
+
+        &.live-mode {
+          opacity: 0.4;
+        }
       }
     }
     #flow-time {
@@ -600,33 +765,92 @@ body {
     }
   }
 
-  #screenshot-hover {
+  #timeline-hover {
+    pointer-events: none;
     display: none;
-    width: 500px;
+    flex: auto;
+    flex-direction: column;
+    box-sizing: border-box;
+    padding: 2px 3px;
+    width: 400px;
+    height: 250px;
     position: relative;
     top: -2px;
     background: white;
     border-radius: 5px;
-    overflow: hidden;
+    border: 1px solid #d9d9d9;
     box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
     transition: opacity 0.3s, transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
 
+    .caret {
+      position: absolute;
+      box-sizing: border-box;
+      top: -16px;
+      left: 190px;
+      width: 20px;
+      height: 20px;
+      filter: drop-shadow(-1px -1px 2px rgba(0, 0, 0, 0.3));
+      pointer-events: none;
+    }
+
     .url {
-      font-size: 13px;
-      width: 95%;
+      margin-top: 5px;
+      padding-bottom: 3px;
+      padding-left: 3px;
       text-overflow: ellipsis;
-      margin: 2px 5px;
       white-space: nowrap;
       overflow: hidden;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+      box-sizing: border-box;
+      margin-bottom: 3px;
     }
-    img {
-      width: 100%;
-      height: auto;
+    .changes {
+      padding-left: 3px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.8);
+      box-sizing: border-box;
+      padding-bottom: 3px;
+    }
+
+    .screenshot {
+      display: flex;
+      text-transform: uppercase;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 0;
+      align-content: center;
+      align-items: center;
+      flex: 3;
+      margin-bottom: 5px;
+      position: relative;
+
+      img {
+        position: absolute;
+        left: 0;
+        top: 0;
+        object-fit: cover;
+        width: 100%;
+        height: 100%;
+      }
+
+      .status {
+        font-weight: bold;
+        color: #aaaaaa;
+        font-size: 1.4em;
+        opacity: 0.5;
+        z-index: 2;
+      }
+
+      img ~ .status {
+        position: absolute;
+        top: 5px;
+        font-size: 1em;
+      }
     }
   }
   &.showingScreenshot {
-    #screenshot-hover {
-      display: block;
+    #timeline-hover {
+      display: flex;
     }
   }
 
@@ -677,10 +901,16 @@ body {
     }
   }
 
+  #history-back-button .label,
+  #history-forward-button .label,
   #menu-button .label,
   #play-button .label,
   #pause-button .label {
     display: none;
+  }
+
+  #buttons-panel {
+    width: 50px;
   }
 
   .app-button {
@@ -715,6 +945,16 @@ body {
       width: 14px;
       height: 14px;
     }
+
+    &#history-forward-button,
+    &#history-back-button {
+      padding: 2px 1px;
+      margin: 2px 1px;
+      .icon {
+        width: 16px;
+        height: 16px;
+      }
+    }
   }
 
   &:hover {
@@ -735,6 +975,13 @@ body {
 
   #pause-button .icon {
     background-image: url('~@/assets/icons/pause.svg');
+  }
+
+  #history-back-button .icon {
+    background-image: url('~@/assets/icons/arrow-left.svg');
+  }
+  #history-forward-button .icon {
+    background-image: url('~@/assets/icons/arrow-right.svg');
   }
 }
 </style>

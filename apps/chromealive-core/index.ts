@@ -138,13 +138,14 @@ export default class ChromeAliveCore {
       this.activeHeroSessionId = null;
       this.sendEvent('Session.active', {
         run: 0,
-        state: 'play',
+        playbackState: 'paused',
         heroSessionId: null,
         scriptEntrypoint: null,
-        durationSeconds: 0,
+        runtimeMs: 0,
         hasWarning: false,
-        loadedUrls: [],
-        isReplaying: false,
+        urls: [],
+        paintEvents: [],
+        screenshots: [],
         scriptLastModifiedTime: 0,
       });
       this.sendEvent('Databox.updated', {
@@ -160,7 +161,7 @@ export default class ChromeAliveCore {
   private static sendActiveSession(heroSessionId: string) {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
-    this.sendEvent('Session.active', sessionObserver.toEvent());
+    this.sendEvent('Session.active', sessionObserver.getHeroSessionEvent());
   }
 
   private static sendDataboxUpdatedEvent(heroSessionId: string) {
@@ -178,7 +179,7 @@ export default class ChromeAliveCore {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
 
-    const isReplayTab = sessionObserver.replayManager.isReplayTab(pageId) ?? false;
+    const isReplayTab = sessionObserver.isReplayTab(pageId) ?? false;
     const isClosedReplayTab = isReplayTab && !isPageVisible;
     const wasReplayActive = this.isReplayActive;
     this.isReplayActive = isReplayTab && isPageVisible;
@@ -192,8 +193,8 @@ export default class ChromeAliveCore {
       if (didCloseLiveTab) this.activeHeroSessionId = null;
 
       // if replay is opened and this tab is not a replay tab, close replay!
-      if (didFocusOnLiveTab && sessionObserver.replayManager.isOpen && wasReplayActive) {
-        await sessionObserver.replayManager.close();
+      if (didFocusOnLiveTab && wasReplayActive) {
+        await sessionObserver.closeReplay();
       }
     } else {
       this.activeHeroSessionId = heroSessionId;

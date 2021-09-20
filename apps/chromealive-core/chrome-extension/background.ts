@@ -32,8 +32,12 @@ chrome.runtime.onConnect.addListener(port => {
   const tabId = port.sender.tab.id;
   logDebug('OnConnect', tabId, port);
   portsByTabId[tabId] = port;
-  port.postMessage({ tabId, windowId: port.sender.tab.windowId });
-  port.onDisconnect.addListener(() => (portsByTabId[tabId] = null));
+  try {
+    port.onDisconnect.addListener(() => (portsByTabId[tabId] = null));
+    port.postMessage({ tabId, windowId: port.sender.tab.windowId });
+  } catch (e) {
+    // nothing to do here
+  }
 });
 
 /////// FOCUSED WINDOW + BOUNDS ////////////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +66,7 @@ async function broadcastBounds(window: chrome.windows.Window) {
         return;
       }
     } catch (e) {
-      logDebug('Error connecting to tab (broadcastBounds)', { tab });
+      logDebug('Error connecting to tab (broadcastBounds)', { tab, e });
     }
   }
 }
@@ -79,7 +83,7 @@ async function broadcastActive(windowId: number) {
       const port = await connectToTab(tab.id);
       port?.postMessage({ active: true });
     } catch (e) {
-      logDebug('Error connecting to tab (broadcastActive)', { tab });
+      logDebug('Error connecting to tab (broadcastActive)', { tab, e });
     }
   }
 }
@@ -153,13 +157,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const fn = RuntimeActions[message.action];
   if (fn) {
     fn(message, sender)
+      .catch(err => sendResponse(err))
       .then(result => {
         logDebug('chrome.runtime.onMessage:Result', { action: message.action, result });
         sendResponse(result);
         return true;
       })
-      .catch(err => sendResponse(err));
+      .catch(() => null);
     return true;
   }
   sendResponse({ success: false, reason: 'Unknown action', message });
+  return true;
 });

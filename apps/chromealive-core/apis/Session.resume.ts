@@ -1,4 +1,3 @@
-import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
 import { fork } from 'child_process';
 import {
   ISessionResumeArgs,
@@ -17,18 +16,8 @@ export default function sessionResumeApi(args: ISessionResumeArgs): ISessionResu
   const observer = ChromeAliveCore.sessionObserversById.get(sessionId);
   const { heroSession } = observer;
 
-  let startUrl = '';
-
-  let startLocation: ISessionCreateOptions['sessionResume']['startLocation'] = 'currentLocation';
-  if (args.startFromUrlIndex !== undefined) {
-    if (args.startFromUrlIndex <= 0) {
-      startLocation = 'sessionStart';
-    } else if (args.startFromUrlIndex < observer.loadedUrls.length - 1) {
-      startUrl = observer.loadedUrls[args.startFromUrlIndex].url;
-
-      startLocation = 'pageStart';
-    }
-  }
+  const startNavigationId = args.startFromNavigationId;
+  const startLocation = args.startLocation;
 
   const script = heroSession.options.scriptInstanceMeta?.entrypoint;
   const execArgv = [
@@ -37,8 +26,8 @@ export default function sessionResumeApi(args: ISessionResumeArgs): ISessionResu
     `--sessionResume.sessionId`,
     heroSession.id,
   ];
-  if (startUrl) {
-    execArgv.push(`--sessionResume.startUrl`, startUrl);
+  if (startNavigationId) {
+    execArgv.push(`--sessionResume.startNavigationId`, String(args.startFromNavigationId));
   }
   if (script.endsWith('.ts')) {
     execArgv.push('-r', 'ts-node/register');

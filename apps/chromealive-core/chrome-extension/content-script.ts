@@ -31,13 +31,28 @@ function onMessage(message) {
   }
 }
 
-function connect() {
-  const port = chrome.runtime.connect();
-  port.onDisconnect.addListener(() => {
-    port.onMessage.removeListener(onMessage);
+let activePort: chrome.runtime.Port;
+chrome.runtime.onConnect.addListener(onConnected);
+
+function onConnected(port: chrome.runtime.Port) {
+  activePort = port;
+  activePort.onDisconnect.addListener(() => {
+    activePort.onMessage.removeListener(onMessage);
+    activePort = null;
     setTimeout(connect, 1e3);
   });
-  port.onMessage.addListener(onMessage);
+  activePort.onMessage.addListener(onMessage);
+}
+
+function connect() {
+  try {
+    if (activePort) return;
+    const port = chrome.runtime.connect();
+    onConnected(port);
+  } catch (err) {
+    console.error('Error connecting to service worker', err);
+    setTimeout(connect, 5e3);
+  }
 }
 
 connect();

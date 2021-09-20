@@ -1,3 +1,4 @@
+import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
 import IChromeAliveApi from './IChromeAliveApi';
 
 export default interface ISessionResumeApi extends IChromeAliveApi {
@@ -7,7 +8,8 @@ export default interface ISessionResumeApi extends IChromeAliveApi {
 
 export interface ISessionResumeArgs {
   heroSessionId: string;
-  startFromUrlIndex?: number;
+  startLocation: ISessionCreateOptions['sessionResume']['startLocation'];
+  startFromNavigationId?: number;
 }
 
 export interface ISessionResumeResult {

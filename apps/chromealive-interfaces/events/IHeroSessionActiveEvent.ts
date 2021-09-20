@@ -3,15 +3,27 @@ export default interface IHeroSessionActiveEvent {
   scriptLastModifiedTime: number;
   heroSessionId: string;
   hasWarning: boolean;
-  state: 'play' | 'paused';
-  durationSeconds: number;
+  playbackState: 'live' | 'paused' | 'history';
+  runtimeMs: number;
   run: number;
-  isReplaying: boolean;
-  loadedUrls: {
+  // don't group by tabid/frameid for now
+  paintEvents: {
+    offsetPercent: number;
+    domChanges: number;
+  }[];
+  urls: {
+    tabId: number;
+    navigationId: number;
     url: string;
     offsetPercent: number;
-    navigationId: number;
+    loadStatusOffsets: {
+      status: string;
+      offsetPercent: number;
+    }[];
+  }[];
+  screenshots: {
+    timestamp: number;
+    offsetPercent: number;
     tabId: number;
-    hasScreenshot: boolean;
   }[];
 }

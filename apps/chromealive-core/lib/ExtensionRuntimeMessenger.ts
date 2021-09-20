@@ -2,6 +2,7 @@ import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import ConsoleMessage from '@ulixee/hero-puppet-chrome/lib/ConsoleMessage';
+import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { extensionId } from '../index';
 
 export default class ExtensionRuntimeMessenger {
@@ -26,17 +27,25 @@ export default class ExtensionRuntimeMessenger {
     const contextId = this.executionContextId;
     if (!contextId) throw new Error('Extension context not loaded for page');
 
-    const result = await this.page.devtoolsSession.send('Runtime.evaluate', {
-      expression: `new Promise((resolve, reject) => chrome.runtime.sendMessage(${JSON.stringify(
-        message,
-      )}, {}, result => {
+    const result = await this.page.devtoolsSession
+      .send('Runtime.evaluate', {
+        expression: `new Promise((resolve, reject) => chrome.runtime.sendMessage(${JSON.stringify(
+          message,
+        )}, {}, result => {
         if (result instanceof Error) reject(result);
         else resolve(result);
       }))`,
-      contextId,
-      awaitPromise: true,
-      returnByValue: true,
-    });
+        contextId,
+        awaitPromise: true,
+        returnByValue: true,
+      })
+      .catch(err => {
+        if (err instanceof CanceledPromiseError) return;
+        throw err;
+      });
+
+    if (!result) return;
+
     if (result.exceptionDetails) {
       throw ConsoleMessage.exceptionToError(result.exceptionDetails);
     }

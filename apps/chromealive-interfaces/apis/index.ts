@@ -1,6 +1,6 @@
 import ISessionResumeApi from './ISessionResumeApi';
 import ISessionStepApi from './ISessionStepApi';
-import ISessionUrlScreenshotApi from './ISessionUrlScreenshotApi';
+import ISessionGetScreenshotApi from './ISessionGetScreenshotApi';
 import IAppBoundsChangedApi from './IAppBoundsChangedApi';
 import IAppReadyApi from './IAppReadyApi';
 import IMouseStateApi from './IMouseStateApi';
@@ -12,7 +12,7 @@ export default interface IChromeAliveApis {
   'Session.replay': ISessionReplayApi;
   'Session.step': ISessionStepApi;
   'Session.quit': ISessionQuitApi;
-  'Session.urlScreenshot': ISessionUrlScreenshotApi;
+  'Session.getScreenshot': ISessionGetScreenshotApi;
   'App.boundsChanged': IAppBoundsChangedApi;
   'App.ready': IAppReadyApi;
   'Mouse.state': IMouseStateApi;
