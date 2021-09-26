@@ -1,67 +1,67 @@
 import CorePlugin from '@ulixee/hero-plugin-utils/lib/CorePlugin';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
-import { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
-import ConsoleMessage from '@ulixee/hero-puppet-chrome/lib/ConsoleMessage';
-import { extensionId } from '../index';
+import ExtensionRuntimeMessenger from '../lib/ExtensionRuntimeMessenger';
 
 export default class TabGroupCorePlugin extends CorePlugin {
   public static id = '@ulixee/tabgroup-core-plugin';
 
-  private puppetPagesById = new Map<string, IPuppetPage>();
+  public static bySessionId = new Map<string, TabGroupCorePlugin>();
 
+  private extensionMessengersByPageId = new Map<string, ExtensionRuntimeMessenger>();
   private identityByPageId = new Map<string, { tabId: number; windowId: number }>();
-  private extensionContextIdByPageId = new Map<string, number>();
+  private sessionId: string;
 
   onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
     if (!sessionSummary.options.showBrowser) return;
 
-    this.puppetPagesById.set(page.id, page);
+    this.sessionId = sessionSummary.id;
+    TabGroupCorePlugin.bySessionId.set(this.sessionId, this);
+    page.on('close', this.pageClosed.bind(this, page));
+    page.browserContext.on('close', this.close.bind(this));
+    this.extensionMessengersByPageId.set(page.id, new ExtensionRuntimeMessenger(page));
 
-    const pageId = page.id;
-    page.on('close', () => this.puppetPagesById.delete(pageId));
-
-    page.devtoolsSession.on(
-      'Runtime.executionContextCreated',
-      this.onContextCreated.bind(this, page.id),
-    );
-    page.devtoolsSession.on(
-      'Runtime.executionContextDestroyed',
-      this.onContextDestroyed.bind(this, page.id),
-    );
-    page.devtoolsSession.on(
-      'Runtime.executionContextsCleared',
-      this.onContextCleared.bind(this, page.id),
-    );
-
-    return Promise.all([
-      page.addPageCallback(
-        '___onTabIdentify',
-        this.onTabIdentified.bind(this, sessionSummary.id, page.id),
-      ),
-    ]);
+    return page.addPageCallback('___onTabIdentify', this.onTabIdentified.bind(this, page.id));
   }
 
-  onTabIdentified(sessionId: string, puppetPageId: string, payload: string): void {
-    const { windowId, tabId } = JSON.parse(payload);
-    this.identityByPageId.set(puppetPageId, { windowId, tabId });
+  close() {
+    TabGroupCorePlugin.bySessionId.delete(this.sessionId);
   }
 
-  async groupAllPages(): Promise<void> {
-    const firstPage = [...this.puppetPagesById.values()][0];
+  async groupTabs(
+    puppetPages: IPuppetPage[],
+    title: string,
+    color: string,
+    collapsed = false,
+  ): Promise<number> {
     const tabIds: number[] = [];
     let windowId: number;
-    for (const id of this.identityByPageId.values()) {
-      windowId = id.windowId;
-      tabIds.push(id.tabId);
+    let pageId: string;
+    for (const page of puppetPages) {
+      pageId ??= page.id;
+      const id = this.identityByPageId.get(page.id);
+      if (id) {
+        windowId = id.windowId;
+        tabIds.push(id.tabId);
+      }
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const groupId = await this.callExtensionAction(firstPage.id, 'groupTabs', {
+    return await this.callExtensionAction<number>(pageId, 'groupTabs', {
       tabIds,
       windowId,
-      title: 'All Tabs',
-      color: 'blue',
+      title,
+      color,
+      collapsed,
+    });
+  }
+
+  async ungroupTabs(puppetPages: IPuppetPage[]): Promise<void> {
+    const tabIds: number[] = [];
+    for (const page of puppetPages) {
+      const id = this.identityByPageId.get(page.id);
+      if (id) tabIds.push(id.tabId);
+    }
+    return await this.callExtensionAction<void>(puppetPages[0].id, 'ungroupTabs', {
+      tabIds,
     });
   }
 
@@ -71,62 +71,25 @@ export default class TabGroupCorePlugin extends CorePlugin {
     this.identityByPageId.set(puppetPageId, { tabId, windowId });
   }
 
+  private onTabIdentified(puppetPageId: string, payload: string): void {
+    const { windowId, tabId } = JSON.parse(payload);
+    this.identityByPageId.set(puppetPageId, { windowId, tabId });
+  }
+
   private async callExtensionAction<T>(
     puppetPageId: string,
     action: string,
     args: object = {},
   ): Promise<T> {
-    const page = this.puppetPagesById.get(puppetPageId);
-    if (!page) throw new Error('Page not found running extension method');
-
-    const contextId = this.extensionContextIdByPageId.get(puppetPageId);
-    if (!contextId) throw new Error('Extension context not loaded for page');
-
+    const messenger = this.extensionMessengersByPageId.get(puppetPageId);
+    if (!messenger)
+      throw new Error(`Extension runtime messenger not found for puppet page ${puppetPageId}`);
     const message = { action, ...args };
-    const result = await page.devtoolsSession.send('Runtime.evaluate', {
-      expression: `new Promise((resolve, reject) => chrome.runtime.sendMessage(${JSON.stringify(
-        message,
-      )}, {}, result => {
-        if (result instanceof Error) reject(result);
-        else resolve(result);
-      }))`,
-      contextId,
-      awaitPromise: true,
-      returnByValue: true,
-    });
-    if (result.exceptionDetails) {
-      throw ConsoleMessage.exceptionToError(result.exceptionDetails);
-    }
-    const remote = result.result;
-    if (remote.objectId) page.devtoolsSession.disposeRemoteObject(remote);
-    return remote.value as T;
+    return await messenger.send(message);
   }
 
-  private onContextCreated(
-    puppetPageId: string,
-    event: Protocol.Runtime.ExecutionContextCreatedEvent,
-  ): void {
-    const { context } = event;
-    const page = this.puppetPagesById.get(puppetPageId);
-    if (!page) return;
-    if (context.origin === `chrome-extension://${extensionId}`) {
-      if (context.auxData?.frameId === page.mainFrame.id) {
-        this.extensionContextIdByPageId.set(puppetPageId, context.id);
-      }
-    }
-  }
-
-  private onContextDestroyed(
-    puppetPageId: string,
-    event: Protocol.Runtime.ExecutionContextDestroyedEvent,
-  ): void {
-    const { executionContextId } = event;
-    if (this.extensionContextIdByPageId.get(puppetPageId) === executionContextId) {
-      this.extensionContextIdByPageId.delete(puppetPageId);
-    }
-  }
-
-  private onContextCleared(puppetPageId: string): void {
-    this.extensionContextIdByPageId.delete(puppetPageId);
+  private pageClosed(page: IPuppetPage) {
+    this.identityByPageId.delete(page.id);
+    this.extensionMessengersByPageId.delete(page.id);
   }
 }

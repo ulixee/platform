@@ -1,12 +1,11 @@
 import HeroCore, { GlobalPool as HeroGlobalPool, Session as HeroSession } from '@ulixee/hero-core';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
-import Debug from 'debug';
+import Log from '@ulixee/commons/lib/Logger';
 import { ChildProcess } from 'child_process';
 import launchChromeAlive from '@ulixee/apps-chromealive/index';
 import type Puppet from '@ulixee/hero-puppet';
 import IDevtoolsSession from '@ulixee/hero-interfaces/IDevtoolsSession';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
-import * as util from 'util';
 import FocusedWindowCorePlugin from './hero-plugins/FocusedWindowCorePlugin';
 import WindowBoundsCorePlugin from './hero-plugins/WindowBoundsCorePlugin';
 import TabGroupCorePlugin from './hero-plugins/TabGroupCorePlugin';
@@ -14,14 +13,14 @@ import SessionObserver from './lib/SessionObserver';
 import ConnectionToClient from './lib/ConnectionToClient';
 import AliveBarPositioner from './lib/AliveBarPositioner';
 
-util.inspect.defaultOptions.depth = 10;
+const { log } = Log(module);
 
 export const extensionId = 'nhchohpofcdodgoddejmfcebjkmdafmk';
-const debug = Debug('ulixee:chromealive');
 
 export default class ChromeAliveCore {
   public static sessionObserversById = new Map<string, SessionObserver>();
   public static activeHeroSessionId: string;
+  private static isReplayActive = false;
   private static connections: ConnectionToClient[] = [];
   private static shouldAutoShowBrowser = false;
   private static app: ChildProcess;
@@ -45,27 +44,8 @@ export default class ChromeAliveCore {
     return connection;
   }
 
-  public static shutdown() {
-    debug('Shutting down ChromeAlive!');
-    this.closeApp();
-    HeroGlobalPool.events.off('browser-launched', this.onNewBrowser);
-    HeroGlobalPool.events.off('all-browsers-closed', this.hideApp);
-    HeroGlobalPool.events.off('session-created', this.onHeroSessionCreated);
-    HeroGlobalPool.events.off('browser-has-no-open-windows', this.onBrowserHasNoWindows);
-    FocusedWindowCorePlugin.onVisibilityChange = null;
-    AliveBarPositioner.getSessionDevtools = null;
-    while (this.connections.length) {
-      const next = this.connections.shift();
-      next.close();
-    }
-    for (const observer of this.sessionObserversById.values()) {
-      observer.close();
-    }
-    this.sessionObserversById.clear();
-  }
-
   public static register(isNodeRegisteredModule = false) {
-    debug('Registering ChromeAlive!');
+    log.info('Registering ChromeAlive!');
     if (isNodeRegisteredModule === true) {
       this.shouldAutoShowBrowser = true;
     }
@@ -85,6 +65,23 @@ export default class ChromeAliveCore {
     HeroCore.use(TabGroupCorePlugin);
   }
 
+  public static shutdown() {
+    log.info('Shutting down ChromeAlive!');
+    this.closeApp();
+    HeroGlobalPool.events.off('browser-launched', this.onNewBrowser);
+    HeroGlobalPool.events.off('all-browsers-closed', this.hideApp);
+    HeroGlobalPool.events.off('session-created', this.onHeroSessionCreated);
+    HeroGlobalPool.events.off('browser-has-no-open-windows', this.onBrowserHasNoWindows);
+    while (this.connections.length) {
+      const next = this.connections.shift();
+      next.close();
+    }
+    for (const observer of this.sessionObserversById.values()) {
+      observer.close();
+    }
+    this.sessionObserversById.clear();
+  }
+
   private static onHeroSessionCreated(event: { session: HeroSession }): Promise<any> {
     const { session: heroSession } = event;
     if (this.shouldAutoShowBrowser) {
@@ -100,7 +97,10 @@ export default class ChromeAliveCore {
     const script = heroSession.options.scriptInstanceMeta?.entrypoint;
     if (!script) return;
 
-    debug('New Hero Session Created: %s (%s)', script.split('/').pop(), heroSession.id);
+    log.info('New Hero Session Created: %s (%s)', {
+      script: script.split('/').pop(),
+      sessionId: heroSession.id,
+    });
     // keep alive session
     heroSession.options.sessionKeepAlive = true;
     const sessionObserver = new SessionObserver(heroSession);
@@ -120,8 +120,8 @@ export default class ChromeAliveCore {
   }
 
   private static onWsConnected() {
-    debug('ChromeAlive! Ws Connected', {
-      activeHeroSessionId: this.activeHeroSessionId,
+    log.info('ChromeAlive! Ws Connected', {
+      sessionId: this.activeHeroSessionId,
     });
     if (this.activeHeroSessionId) {
       this.sendActiveSession(this.activeHeroSessionId);
@@ -138,12 +138,14 @@ export default class ChromeAliveCore {
       this.activeHeroSessionId = null;
       this.sendEvent('Session.active', {
         run: 0,
-        state: 'play',
+        playbackState: 'paused',
         heroSessionId: null,
         scriptEntrypoint: null,
-        durationSeconds: 0,
+        runtimeMs: 0,
         hasWarning: false,
-        loadedUrls: [],
+        urls: [],
+        paintEvents: [],
+        screenshots: [],
         scriptLastModifiedTime: 0,
       });
       this.sendEvent('Databox.updated', {
@@ -159,7 +161,7 @@ export default class ChromeAliveCore {
   private static sendActiveSession(heroSessionId: string) {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
-    this.sendEvent('Session.active', sessionObserver.toEvent());
+    this.sendEvent('Session.active', sessionObserver.getHeroSessionEvent());
   }
 
   private static sendDataboxUpdatedEvent(heroSessionId: string) {
@@ -168,11 +170,37 @@ export default class ChromeAliveCore {
     this.sendEvent('Databox.updated', sessionObserver.getDataboxEvent());
   }
 
-  private static changeActiveSessions(heroSessionId: string, pageId: string): void {
-    debug('Changing active session', { heroSessionId, pageId });
-    this.activeHeroSessionId = heroSessionId;
-    // hide chrome alive if none are visible
-    this.toggleAppVisibility(!!heroSessionId);
+  private static async changeActiveSessions(
+    isPageVisible: boolean,
+    heroSessionId: string,
+    pageId: string,
+  ): Promise<void> {
+    log.info('Changing active session', { isPageVisible, sessionId: heroSessionId, pageId });
+    const sessionObserver = this.sessionObserversById.get(heroSessionId);
+    if (!sessionObserver) return;
+
+    const isReplayTab = sessionObserver.isReplayTab(pageId) ?? false;
+    const isClosedReplayTab = isReplayTab && !isPageVisible;
+    const wasReplayActive = this.isReplayActive;
+    this.isReplayActive = isReplayTab && isPageVisible;
+
+    const didFocusOnLiveTab = !isReplayTab && isPageVisible;
+    const didCloseLiveTab = !isReplayTab && !isPageVisible;
+    const isActiveSession = this.activeHeroSessionId === heroSessionId;
+
+    if (isActiveSession) {
+      if (isClosedReplayTab) return;
+      if (didCloseLiveTab) this.activeHeroSessionId = null;
+
+      // if replay is opened and this tab is not a replay tab, close replay!
+      if (didFocusOnLiveTab && wasReplayActive) {
+        await sessionObserver.closeReplay();
+      }
+    } else {
+      this.activeHeroSessionId = heroSessionId;
+    }
+
+    this.toggleAppVisibility(!!this.activeHeroSessionId);
   }
 
   private static getSessionDevtools(heroSessionId: string): IDevtoolsSession {
@@ -195,9 +223,10 @@ export default class ChromeAliveCore {
     this.app = launchChromeAlive(...args);
     this.app.once('exit', () => (this.app = null));
     this.app.once('close', () => (this.app = null));
-    debug('Launched Electron App', {
+    log.info('Launched Electron App', {
       file: this.app?.spawnfile,
       args: this.app?.spawnargs,
+      sessionId: null,
     });
   }
 
@@ -221,7 +250,7 @@ export default class ChromeAliveCore {
   }
 
   private static closeApp(): void {
-    debug('Closing Electron App');
+    log.stats('Closing Electron App');
     this.sendEvent('App.quit');
     this.app?.send('exit');
     this.app?.kill('SIGTERM');

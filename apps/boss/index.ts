@@ -1,17 +1,9 @@
 import './lib/util/UlixeeLogger';
 import '@ulixee/commons/lib/SourceMapSupport';
-import debug from 'debug';
 import log from 'electron-log';
 import { Menubar } from './lib/Menubar';
 
 Object.assign(console, log.functions);
-debug.log = log.debug.bind(log);
-debug.enable('ulixee:*');
-debug.formatArgs = function formatArgs(args) {
-  const name = this.namespace;
-  args[0] = `[${name}] ${args[0].split('\n').join(`\n                       ${name} `)}`;
-  args.push(debug.humanize(this.diff));
-};
 
 if (process.argv.some(x => x.includes('--chromealive'))) {
   // eslint-disable-next-line global-require,import/no-extraneous-dependencies

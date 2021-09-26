@@ -32,8 +32,12 @@ chrome.runtime.onConnect.addListener(port => {
   const tabId = port.sender.tab.id;
   logDebug('OnConnect', tabId, port);
   portsByTabId[tabId] = port;
-  port.postMessage({ tabId, windowId: port.sender.tab.windowId });
-  port.onDisconnect.addListener(() => (portsByTabId[tabId] = null));
+  try {
+    port.onDisconnect.addListener(() => (portsByTabId[tabId] = null));
+    port.postMessage({ tabId, windowId: port.sender.tab.windowId });
+  } catch (e) {
+    // nothing to do here
+  }
 });
 
 /////// FOCUSED WINDOW + BOUNDS ////////////////////////////////////////////////////////////////////////////////////////
@@ -55,10 +59,14 @@ async function broadcastBounds(window: chrome.windows.Window) {
   logDebug(`Window ${window.id} bounds changed to`, windowBounds);
 
   for (const tab of activeTabs) {
-    const port = await connectToTab(tab.id);
-    if (port) {
-      port.postMessage({ windowBounds });
-      return;
+    try {
+      const port = await connectToTab(tab.id);
+      if (port) {
+        port.postMessage({ windowBounds });
+        return;
+      }
+    } catch (e) {
+      logDebug('Error connecting to tab (broadcastBounds)', { tab, e });
     }
   }
 }
@@ -71,17 +79,24 @@ async function broadcastActive(windowId: number) {
 
   const activeTabs = await getActiveTabs(windowId);
   for (const tab of activeTabs) {
-    const port = await connectToTab(tab.id);
-    port?.postMessage({ active: true });
+    try {
+      const port = await connectToTab(tab.id);
+      port?.postMessage({ active: true });
+    } catch (e) {
+      logDebug('Error connecting to tab (broadcastActive)', { tab, e });
+    }
   }
 }
 
 chrome.windows.onBoundsChanged.addListener(broadcastBounds);
 chrome.windows.onCreated.addListener(broadcastBounds);
+
+// active tab/window
 chrome.windows.onCreated.addListener(async window => {
   if (window.focused) await broadcastActive(window.id);
 });
 chrome.windows.onFocusChanged.addListener(broadcastActive);
+chrome.tabs.onActivated.addListener(tab => broadcastActive(tab.windowId));
 
 /////// DEVTOOLS DRIVER ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -125,6 +140,16 @@ const RuntimeActions = {
 
     return { groupId };
   },
+  async ungroupTabs(message: { tabIds: number[] }): Promise<void> {
+    logDebug(`Ungrouping tabIds=${message.tabIds?.join(',')}`);
+    try {
+      await chrome.tabs.ungroup(message.tabIds);
+    } catch (err) {
+      if (String(err).includes('Tabs cannot be edited right now')) {
+        setTimeout(() => RuntimeActions.ungroupTabs(message), 100);
+      }
+    }
+  },
 };
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -132,13 +157,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const fn = RuntimeActions[message.action];
   if (fn) {
     fn(message, sender)
+      .catch(err => sendResponse(err))
       .then(result => {
         logDebug('chrome.runtime.onMessage:Result', { action: message.action, result });
         sendResponse(result);
         return true;
       })
-      .catch(err => sendResponse(err));
+      .catch(() => null);
     return true;
   }
   sendResponse({ success: false, reason: 'Unknown action', message });
+  return true;
 });

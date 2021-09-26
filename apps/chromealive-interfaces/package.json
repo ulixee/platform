@@ -4,6 +4,8 @@
   "scripts": {},
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "@ulixee/hero-interfaces": "1.5.4"
+  },
   "devDependencies": {}
 }

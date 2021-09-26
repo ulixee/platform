@@ -5,7 +5,10 @@ import IChromeAliveApis, {
   IChromeAliveApiRequest,
   IChromeAliveApiResponse,
 } from '@ulixee/apps-chromealive-interfaces/apis';
+import Log from '@ulixee/commons/lib/Logger';
 import { apiHandlers } from '../apis';
+
+const { log } = Log(module);
 
 export default class ConnectionToClient extends TypedEventEmitter<{
   message: IChromeAliveApiResponse<any> | IChromeAliveEvent<any>;
@@ -22,6 +25,7 @@ export default class ConnectionToClient extends TypedEventEmitter<{
       if (!handler) throw new Error(`Unknown api requested: ${api}`);
       result = await handler(args as any);
     } catch (error) {
+      log.error('Error running api', { error, sessionId: (args as any)?.heroSessionId });
       result = error;
     }
 
