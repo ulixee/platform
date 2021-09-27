@@ -256,7 +256,15 @@ export default class SessionObserver extends TypedEventEmitter<{
 
     const pages = [...this.heroSession.tabsById.values()].map(x => x.puppetPage);
     if (groupLive === false) await tabGroupPlugin.ungroupTabs(pages);
-    else await tabGroupPlugin.groupTabs(pages, 'Reopen Live', 'blue', true);
+    else {
+      await tabGroupPlugin.groupTabs(
+        pages,
+        'Reopen Live',
+        'blue',
+        true,
+        this.closeReplay.bind(this),
+      );
+    }
   }
 
   private onFileUpdated(stats: Fs.Stats): void {

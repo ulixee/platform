@@ -432,13 +432,13 @@ export default class ChromeAliveApp extends Vue {
   onSessionActiveEvent(message: IHeroSessionActiveEvent) {
     const isNewId = message.heroSessionId !== this.session.heroSessionId || !message.heroSessionId;
     Object.assign(this.session, message);
-    if (isNewId) {
+    this.isHistoryMode = this.session.playbackState === 'history';
+
+    if (isNewId || !this.isHistoryMode) {
       this.nibLeft = '100%';
       this.selectedNavigationId = null;
       this.timelineHover.show = false;
     }
-
-    this.isHistoryMode = this.session.playbackState === 'history';
 
     this.updateScriptTimeAgo();
 

@@ -1,8 +1,8 @@
 declare let window: Window;
 
-function onPageVisible(): void {
+function onPageVisible(isFocused = true): void {
   // @ts-ignore
-  if (window.___onPageVisible) window.___onPageVisible('');
+  if (window.___onPageVisible) window.___onPageVisible(JSON.stringify({ focused: isFocused }));
 }
 
 function onBoundsChanged(bounds: {
@@ -21,9 +21,16 @@ function onTabIdentify(id: { tabId: number; windowId: number }): void {
   if (window.___onTabIdentify) window.___onTabIdentify(JSON.stringify(id));
 }
 
+function onTabGroupOpened(): void {
+  // @ts-ignore
+  if (window.___onTabGroupOpened) window.___onTabGroupOpened('');
+}
+
 function onMessage(message) {
   if ('active' in message) {
-    onPageVisible();
+    onPageVisible(message.focused);
+  } else if ('tabGroupOpened' in message) {
+    onTabGroupOpened();
   } else if ('windowBounds' in message) {
     onBoundsChanged(message.windowBounds);
   } else if ('tabId' in message) {

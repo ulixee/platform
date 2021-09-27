@@ -8,6 +8,8 @@ export default class TabGroupCorePlugin extends CorePlugin {
 
   public static bySessionId = new Map<string, TabGroupCorePlugin>();
 
+  private runOnTabGroupOpened: () => void;
+
   private extensionMessengersByPageId = new Map<string, ExtensionRuntimeMessenger>();
   private identityByPageId = new Map<string, { tabId: number; windowId: number }>();
   private sessionId: string;
@@ -21,7 +23,10 @@ export default class TabGroupCorePlugin extends CorePlugin {
     page.browserContext.on('close', this.close.bind(this));
     this.extensionMessengersByPageId.set(page.id, new ExtensionRuntimeMessenger(page));
 
-    return page.addPageCallback('___onTabIdentify', this.onTabIdentified.bind(this, page.id));
+    return Promise.all([
+      page.addPageCallback('___onTabIdentify', this.onTabIdentified.bind(this, page.id)),
+      page.addPageCallback('___onTabGroupOpened', this.onTabGroupOpened.bind(this)),
+    ]);
   }
 
   close() {
@@ -32,7 +37,8 @@ export default class TabGroupCorePlugin extends CorePlugin {
     puppetPages: IPuppetPage[],
     title: string,
     color: string,
-    collapsed = false,
+    collapsed: boolean,
+    onUncollapsed?: () => void,
   ): Promise<number> {
     const tabIds: number[] = [];
     let windowId: number;
@@ -45,13 +51,17 @@ export default class TabGroupCorePlugin extends CorePlugin {
         tabIds.push(id.tabId);
       }
     }
-    return await this.callExtensionAction<number>(pageId, 'groupTabs', {
+    const groupId = await this.callExtensionAction<number>(pageId, 'groupTabs', {
       tabIds,
       windowId,
       title,
       color,
-      collapsed,
+      collapsed: true,
     });
+    // don't register the tab group opened command until after it opens
+    await new Promise(setImmediate);
+    if (collapsed && onUncollapsed) this.runOnTabGroupOpened = onUncollapsed;
+    return groupId;
   }
 
   async ungroupTabs(puppetPages: IPuppetPage[]): Promise<void> {
@@ -60,9 +70,14 @@ export default class TabGroupCorePlugin extends CorePlugin {
       const id = this.identityByPageId.get(page.id);
       if (id) tabIds.push(id.tabId);
     }
+    this.runOnTabGroupOpened = null;
     return await this.callExtensionAction<void>(puppetPages[0].id, 'ungroupTabs', {
       tabIds,
     });
+  }
+
+  private onTabGroupOpened(): void {
+    if (this.runOnTabGroupOpened) this.runOnTabGroupOpened();
   }
 
   private async identifyTab(puppetPageId: string): Promise<void> {
