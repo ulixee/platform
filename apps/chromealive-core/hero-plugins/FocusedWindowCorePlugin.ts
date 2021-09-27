@@ -32,23 +32,32 @@ export default class FocusedWindowCorePlugin extends CorePlugin {
       page.addNewDocumentScript(
         `document.addEventListener('visibilitychange', function() {
     const state = document.visibilityState;
-    if (state === 'visible') ___onPageVisible('');
+    if (state === 'visible') ___onPageVisible('{ "focused": true, "active": true }');
   }, false)`,
         true,
       ),
     ]);
   }
 
-  onPageVisible(sessionId: string, puppetPageId: string) {
-    FocusedWindowCorePlugin.onVisibilityChange(true, sessionId, puppetPageId);
+  onPageVisible(sessionId: string, puppetPageId: string, statusJson: string) {
+    const status = JSON.parse(statusJson ?? '{}');
+    FocusedWindowCorePlugin.onVisibilityChange(
+      { active: true, focused: status.focused },
+      sessionId,
+      puppetPageId,
+    );
   }
 
   onPageClosed(sessionId: string, puppetPageId: string): void {
-    FocusedWindowCorePlugin.onVisibilityChange(false, sessionId, puppetPageId);
+    FocusedWindowCorePlugin.onVisibilityChange(
+      { active: false, focused: false },
+      sessionId,
+      puppetPageId,
+    );
   }
 
   public static onVisibilityChange: (
-    isVisible: boolean,
+    status: { focused: boolean; active: boolean },
     sessionId: string,
     puppetPageId: string,
   ) => any = () => null;

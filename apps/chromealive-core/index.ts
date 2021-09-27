@@ -171,10 +171,11 @@ export default class ChromeAliveCore {
   }
 
   private static async changeActiveSessions(
-    isPageVisible: boolean,
+    status: { focused: boolean; active: boolean },
     heroSessionId: string,
     pageId: string,
   ): Promise<void> {
+    const isPageVisible = status.active;
     log.info('Changing active session', { isPageVisible, sessionId: heroSessionId, pageId });
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
@@ -200,7 +201,11 @@ export default class ChromeAliveCore {
       this.activeHeroSessionId = heroSessionId;
     }
 
-    this.toggleAppVisibility(!!this.activeHeroSessionId);
+    if (status.focused === false) {
+      this.toggleAppTop(status.focused);
+    } else {
+      this.toggleAppVisibility(!!this.activeHeroSessionId);
+    }
   }
 
   private static getSessionDevtools(heroSessionId: string): IDevtoolsSession {
@@ -255,6 +260,10 @@ export default class ChromeAliveCore {
     this.app?.send('exit');
     this.app?.kill('SIGTERM');
     this.app = null;
+  }
+
+  private static toggleAppTop(isFocused: boolean): void {
+    this.sendEvent('App.onTop', isFocused);
   }
 
   private static toggleAppVisibility(show: boolean): void {
