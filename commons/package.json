@@ -9,6 +9,8 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^5.4.1"
+    "@types/better-sqlite3": "^5.4.1",
+    "@ulixee/default-browser-emulator": "1.5.4",
+    "@ulixee/hero-puppet": "1.5.4"
   }
 }

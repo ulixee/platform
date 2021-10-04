@@ -20,11 +20,6 @@
     "preserveSymlinks": false,
     "experimentalDecorators": true
   },
-  "references": [
-    {
-      "path": "hero/core/injected-scripts"
-    }
-  ],
   "include": ["server", "apps", "commons", "./*.js", "./*.json", ".eslintrc.js"],
   "exclude": [
     "**/tsconfig*.json",
