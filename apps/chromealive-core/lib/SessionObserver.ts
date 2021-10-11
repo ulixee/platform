@@ -12,9 +12,9 @@ import { LoadStatus } from '@ulixee/hero-interfaces/Location';
 import { ContentPaint } from '@ulixee/hero-interfaces/INavigation';
 import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
 import * as Path from 'path';
-import CommandTimeline from '@ulixee/hero-core/lib/CommandTimeline';
+import CommandTimeline from '@ulixee/hero-timetravel/lib/CommandTimeline';
 import { IDomChangeRecord } from '@ulixee/hero-core/models/DomChangesTable';
-import HeroSessionReplay from '@ulixee/hero-core/lib/SessionReplay';
+import HeroSessionTimetravel from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import DirectConnectionToCoreApi from '@ulixee/hero-core/connections/DirectConnectionToCoreApi';
 import { PluginTypes } from '@ulixee/hero-interfaces/IPluginTypes';
 import TabGroupCorePlugin from '../hero-plugins/TabGroupCorePlugin';
@@ -32,7 +32,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   >();
 
   private domChangesByTimestamp = new Map<number, number>();
-  private replay: HeroSessionReplay;
+  private timetravelPlayer: HeroSessionTimetravel;
 
   private scriptLastModifiedTime: number;
   private readonly scriptInstanceMeta: IScriptInstanceMeta;
@@ -60,8 +60,12 @@ export default class SessionObserver extends TypedEventEmitter<{
       return Core.pluginMap.corePluginsById[x.id].type === PluginTypes.CorePlugin;
     });
     const connectionToCoreApi = new DirectConnectionToCoreApi();
-    this.replay = new HeroSessionReplay(heroSession.id, connectionToCoreApi, corePlugins);
-    this.replay.on('all-tabs-closed', this.onReplayClosed.bind(this));
+    this.timetravelPlayer = new HeroSessionTimetravel(
+      heroSession.id,
+      connectionToCoreApi,
+      corePlugins,
+    );
+    this.timetravelPlayer.on('all-tabs-closed', this.onReplayClosed.bind(this));
     this.bindDatabox();
     Fs.watchFile(
       this.scriptInstanceMeta.entrypoint,
@@ -161,7 +165,7 @@ export default class SessionObserver extends TypedEventEmitter<{
       heroSessionId: this.heroSession.id,
       runtimeMs: commandTimeline.runtimeMs,
       playbackState: this.playbackState,
-      isHistoryMode: this.replay.isOpen,
+      isHistoryMode: this.timetravelPlayer.isOpen,
       urls,
       screenshots,
       paintEvents,
@@ -171,8 +175,8 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   public getDataboxEvent(): IDataboxUpdatedEvent {
     let commandId: number;
-    if (this.replay.isOpen && this.lastHeroSessionActiveEvent) {
-      commandId = this.replay.activeTab?.currentTick?.commandId;
+    if (this.timetravelPlayer.isOpen && this.lastHeroSessionActiveEvent) {
+      commandId = this.timetravelPlayer.activeTab?.currentTick?.commandId;
     }
 
     const output: IOutputSnapshot = this.outputRebuilder.getLatestSnapshot(commandId) ?? {
@@ -187,42 +191,42 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   public isReplayTab(puppetPageId: string): boolean {
-    return this.replay.isReplayPage(puppetPageId);
+    return this.timetravelPlayer.isReplayPage(puppetPageId);
   }
 
   public async replayStep(direction: 'forward' | 'back'): Promise<number> {
     let percentOffset: number;
-    if (!this.replay.isOpen) {
+    if (!this.timetravelPlayer.isOpen) {
       percentOffset = 99.9;
     } else if (direction === 'forward') {
-      percentOffset = this.replay.activeTab.nextTick?.timelineOffsetPercent ?? 100;
+      percentOffset = this.timetravelPlayer.activeTab.nextTick?.timelineOffsetPercent ?? 100;
     } else {
-      percentOffset = this.replay.activeTab.previousTick?.timelineOffsetPercent ?? 0;
+      percentOffset = this.timetravelPlayer.activeTab.previousTick?.timelineOffsetPercent ?? 0;
     }
     await this.replayGoto(percentOffset);
     return percentOffset;
   }
 
   public async replayGoto(timelineOffsetPercent?: number): Promise<void> {
-    const startTick = this.replay.activeTab?.currentTick;
-    if (this.replay.isOpen) {
+    const startTick = this.timetravelPlayer.activeTab?.currentTick;
+    if (this.timetravelPlayer.isOpen) {
       if (timelineOffsetPercent === 100) {
-        await this.replay.close();
+        await this.timetravelPlayer.close();
       } else {
-        await this.replay.goto(timelineOffsetPercent);
+        await this.timetravelPlayer.goto(timelineOffsetPercent);
       }
     } else {
-      await this.replay.open(this.heroSession.browserContext, timelineOffsetPercent);
+      await this.timetravelPlayer.open(this.heroSession.browserContext, timelineOffsetPercent);
       await this.updateTabGroup(true);
     }
     await this.showLoadStatus(timelineOffsetPercent);
-    if (this.replay.activeTab?.currentTick?.commandId !== startTick?.commandId) {
+    if (this.timetravelPlayer.activeTab?.currentTick?.commandId !== startTick?.commandId) {
       this.emit('databox:updated');
     }
   }
 
   public async closeReplay(): Promise<void> {
-    await this.replay.close(false);
+    await this.timetravelPlayer.close(false);
   }
 
   private async showLoadStatus(timelineOffsetPercent: number): Promise<void> {
@@ -241,7 +245,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     }
 
     if (activeStatus) {
-      await this.replay.showStatusText(activeStatus.status);
+      await this.timetravelPlayer.showStatusText(activeStatus.status);
     }
   }
 
