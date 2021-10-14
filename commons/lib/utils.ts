@@ -39,6 +39,17 @@ export function getCallSite(priorToFilename?: string, endFilename?: string): Cal
   return stack.filter(x => !!x.getFileName() && !x.getFileName()?.startsWith('internal'));
 }
 
+export function escapeUnescapedChar(str: string, char: string): string {
+  let i = str.indexOf(char);
+  while (i !== -1) {
+    if (str[i - 1] !== '\\') {
+      str = `${str.substr(0, i)}\\${str.substr(i)}`;
+    }
+    i = str.indexOf(char, i + 2);
+  }
+  return str;
+}
+
 export function pickRandom<T>(array: T[]): T {
   if (array.length === 1) return array[0];
   if (!array.length) throw new Error('Empty array provided to "pickRandom"');
