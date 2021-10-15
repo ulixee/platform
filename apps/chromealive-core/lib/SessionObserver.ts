@@ -17,7 +17,6 @@ import { IDomChangeRecord } from '@ulixee/hero-core/models/DomChangesTable';
 import HeroSessionTimetravel from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import DirectConnectionToCoreApi from '@ulixee/hero-core/connections/DirectConnectionToCoreApi';
 import { PluginTypes } from '@ulixee/hero-interfaces/IPluginTypes';
-import FrameNavigationsTable from '@ulixee/hero-core/models/FrameNavigationsTable';
 import TabGroupCorePlugin from '../hero-plugins/TabGroupCorePlugin';
 
 export default class SessionObserver extends TypedEventEmitter<{
