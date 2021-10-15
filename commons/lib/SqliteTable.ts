@@ -13,7 +13,7 @@ export default abstract class SqliteTable<T> {
 
   private insertSubscriptionRecords: T[] = [];
   private subscriptionThrottle: NodeJS.Timeout;
-  private lastSubscriptionPublishTime: Date;
+  private lastSubscriptionPublishTime: number;
 
   protected constructor(
     readonly db: SqliteDatabase,
@@ -45,7 +45,7 @@ export default abstract class SqliteTable<T> {
   public subscribe(callbackFn: (records: T[]) => void): void {
     this.insertCallbackFn = callbackFn;
     const pendingRecords = this.pendingInserts.map(x => this.insertToObject(x));
-    this.lastSubscriptionPublishTime = new Date();
+    this.lastSubscriptionPublishTime = Date.now();
     process.nextTick(callbackFn, this.all().concat(pendingRecords));
   }
 
@@ -89,10 +89,12 @@ export default abstract class SqliteTable<T> {
   private addRecordToPublish(record: IRecord): void {
     if (!this.insertCallbackFn) return;
     this.insertSubscriptionRecords.push(this.insertToObject(record));
-    if (Date.now() - this.lastSubscriptionPublishTime.getTime() > 500) {
-      return this.publishPendingRecords();
-    }
     clearTimeout(this.subscriptionThrottle);
+
+    if (Date.now() - this.lastSubscriptionPublishTime > 500) {
+      this.lastSubscriptionPublishTime = Date.now();
+      return process.nextTick(this.publishPendingRecords.bind(this));
+    }
     this.subscriptionThrottle = setTimeout(this.publishPendingRecords.bind(this), 100).unref();
   }
 
@@ -100,7 +102,7 @@ export default abstract class SqliteTable<T> {
     if (!this.insertCallbackFn) return;
     const records = [...this.insertSubscriptionRecords];
     this.insertSubscriptionRecords.length = 0;
-    this.lastSubscriptionPublishTime = new Date();
+    this.lastSubscriptionPublishTime = Date.now();
     this.insertCallbackFn(records);
   }
 

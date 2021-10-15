@@ -1,6 +1,7 @@
 {
   "compileOnSave": true,
   "compilerOptions": {
+    "composite": true,
     "incremental": true,
     "target": "ES2020",
     "module": "CommonJS",
@@ -34,6 +35,6 @@
     "website",
     "databox",
     "runner",
-    "*.d.ts"
+    "**/*.d.ts"
   ]
 }
