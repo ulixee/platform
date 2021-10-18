@@ -9,7 +9,7 @@ import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/
 import OutputRebuilder, { IOutputSnapshot } from '@ulixee/databox-core/lib/OutputRebuilder';
 import type { IOutputChangeRecord } from '@ulixee/databox-core/models/OutputTable';
 import { LoadStatus } from '@ulixee/hero-interfaces/Location';
-import { ContentPaint } from '@ulixee/hero-interfaces/INavigation';
+import INavigation, { ContentPaint } from '@ulixee/hero-interfaces/INavigation';
 import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
 import * as Path from 'path';
 import CommandTimeline from '@ulixee/hero-timetravel/lib/CommandTimeline';
@@ -83,12 +83,17 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   public getHeroSessionEvent(): IHeroSessionActiveEvent {
-    const runId = this.heroSession.resumeCounter;
-
-    const navigations = this.heroSession.sessionState.allNavigations;
+    const runId = this.heroSession.commands.resumeCounter;
+    const navigations: INavigation[] = [];
+    for (const tab of this.heroSession.tabsById.values()) {
+      for (const frame of tab.frameEnvironmentsById.values()) {
+        navigations.push(...frame.navigations.history);
+      }
+    }
+    navigations.sort((a, b) => a.id - b.id);
 
     const commandTimeline = new CommandTimeline(
-      this.heroSession.sessionState.commands,
+      this.heroSession.commands.history,
       runId,
       navigations,
     );
@@ -159,7 +164,7 @@ export default class SessionObserver extends TypedEventEmitter<{
 
     this.lastHeroSessionActiveEvent = <IHeroSessionActiveEvent>{
       hasWarning: false,
-      run: this.heroSession.resumeCounter,
+      run: this.heroSession.commands.resumeCounter,
       scriptEntrypoint: this.scriptInstanceMeta.entrypoint.split(Path.sep).slice(-2).join(Path.sep),
       scriptLastModifiedTime: this.scriptLastModifiedTime,
       heroSessionId: this.heroSession.id,
@@ -321,9 +326,9 @@ export default class SessionObserver extends TypedEventEmitter<{
   private onTabCreated(tabEvent: { tab: Tab }) {
     const tab = tabEvent.tab;
     tab.navigations.on('status-change', this.onStatusChange);
-    tab.sessionState.db.domChanges.subscribe(this.onDomChangeRecords);
+    tab.session.db.domChanges.subscribe(this.onDomChangeRecords);
     tab.once('close', () => {
-      tab.sessionState.db.domChanges.unsubscribe();
+      tab.session.db.domChanges.unsubscribe();
       tab.navigations.off('status-change', this.onStatusChange);
       this.stopRecording(tab);
     });
