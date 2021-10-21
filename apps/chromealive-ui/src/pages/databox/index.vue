@@ -9,7 +9,7 @@
         Output
         <span class="DataSize">{{ dataSize }}</span>
       </h2>
-      <Json v-if="output" :json="output" ref="output" />
+      <Json v-if="output" :json="output" ref="OutputJson" />
       <div v-else class="Explainer">
         <p>This panel shows output set using "databox.output".</p>
         <p>You can use the "databox.output" object as an array:</p>
@@ -32,74 +32,70 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
-import Component from 'vue-class-component';
+import * as Vue from 'vue';
 import Client from '@/api/Client';
 import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
 import humanizeBytes from '@/utils/humanizeBytes';
 import Json from '@/components/Json.vue';
-import { FlatJson } from '@/utils/flattenJson';
+import { FlatJson, convertJsonToFlat } from '@/utils/flattenJson';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 
-const defaultInput = Json.toFlat({ path: '/', params: {} });
+const defaultInput = convertJsonToFlat({ path: '/', params: {} });
 
-@Component({
+export default Vue.defineComponent({
+  name: 'Databox',
   components: { Json },
-})
-export default class DataboxPanel extends Vue {
-  private input: FlatJson[] = defaultInput;
-  private output: FlatJson[] = null;
+  setup() {
+    let dataSize = Vue.ref(null);
+    let input = Vue.ref<FlatJson[]>(defaultInput);
+    let output = Vue.ref<FlatJson[]>(null);
+    let lastHeroEntrypoint: string = null;
 
-  private dataSize: string = null;
-  private client = Client;
-  private lastHeroEntrypoint: string = null;
+    const OutputJson = Vue.ref();
 
-  private get OutputJson(): Json {
-    return this.$refs.output as Json;
-  }
-
-  created() {
-    this.client.connect().catch(err => alert(String(err)));
-    document.title = 'Databox Panel';
-  }
-
-  mounted() {
-    this.client.on('Databox.updated', event => this.onDataboxUpdated(event));
-    this.client.on('Session.active', event => this.onSessionActive(event));
-  }
-
-  private onSessionActive(data: IHeroSessionActiveEvent) {
-    if (this.lastHeroEntrypoint && data.scriptEntrypoint !== this.lastHeroEntrypoint) {
-      this.onDataboxUpdated({} as IDataboxUpdatedEvent)
-    }
-    this.lastHeroEntrypoint = data.scriptEntrypoint;
-  }
-
-  private onDataboxUpdated(data: IDataboxUpdatedEvent) {
-    const { input, output, bytes, changes } = data;
-
-    this.input = input ? Json.toFlat(input) : defaultInput;
-    this.dataSize = humanizeBytes(bytes);
-    if (output) {
-      this.output = Json.toFlat(
-        output,
-        changes?.map(x => x.path),
-      );
-
-      if (this.output.length) {
-        this.$nextTick(() => {
-          const recordToScroll = this.output
-            .filter(x => x.highlighted)
-            .slice(-1)
-            .pop();
-          if (recordToScroll) this.OutputJson.scrollToId(recordToScroll.id);
-        });
+    function onSessionActive(data: IHeroSessionActiveEvent) {
+      if (lastHeroEntrypoint && data.scriptEntrypoint !== lastHeroEntrypoint) {
+        onDataboxUpdated({} as IDataboxUpdatedEvent)
       }
-    } else {
-      this.output = null;
+      lastHeroEntrypoint = data.scriptEntrypoint;
     }
+
+    function onDataboxUpdated(data: IDataboxUpdatedEvent) {
+      const { bytes, changes } = data;
+
+      input.value = data.input ? convertJsonToFlat(data.input) : defaultInput;
+      dataSize.value = humanizeBytes(bytes);
+      if (data.output) {
+        output.value = convertJsonToFlat(
+          data.output,
+          changes?.map(x => x.path),
+        );
+
+        if (output.value.length) {
+          Vue.nextTick(() => {
+            const recordToScroll = output.value
+              .filter(x => x.highlighted)
+              .slice(-1)
+              .pop();
+            if (recordToScroll) OutputJson.value.scrollToId(recordToScroll.id);
+          });
+        }
+      } else {
+        output = null;
+      }
+    }
+
+    Vue.onMounted(() => {
+      Client.on('Databox.updated', event => onDataboxUpdated(event));
+      Client.on('Session.active', event => onSessionActive(event));
+    });
+
+    Client.connect().catch(err => alert(String(err)));
+    document.title = 'Databox Panel';
+
+    return { dataSize, input, output };
   }
-}
+});
 </script>
 
 <style lang="scss">

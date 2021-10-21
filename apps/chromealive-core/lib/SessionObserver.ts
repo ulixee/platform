@@ -17,7 +17,7 @@ import { IDomChangeRecord } from '@ulixee/hero-core/models/DomChangesTable';
 import HeroSessionTimetravel from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import DirectConnectionToCoreApi from '@ulixee/hero-core/connections/DirectConnectionToCoreApi';
 import { PluginTypes } from '@ulixee/hero-interfaces/IPluginTypes';
-import TabGroupCorePlugin from '../hero-plugins/TabGroupCorePlugin';
+import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 
 export default class SessionObserver extends TypedEventEmitter<{
   'hero:updated': void;
@@ -260,13 +260,13 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   private async updateTabGroup(groupLive: boolean): Promise<void> {
-    const tabGroupPlugin = TabGroupCorePlugin.bySessionId.get(this.heroSession.id);
-    if (!tabGroupPlugin) return;
+    const tabGroupModule = TabGroupModule.bySessionId.get(this.heroSession.id);
+    if (!tabGroupModule) return;
 
     const pages = [...this.heroSession.tabsById.values()].map(x => x.puppetPage);
-    if (groupLive === false) await tabGroupPlugin.ungroupTabs(pages);
+    if (groupLive === false) await tabGroupModule.ungroupTabs(pages);
     else {
-      await tabGroupPlugin.groupTabs(
+      await tabGroupModule.groupTabs(
         pages,
         'Reopen Live',
         'blue',

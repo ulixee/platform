@@ -82,3 +82,17 @@ export default function flattenJson(
 
   return [output];
 }
+
+export function convertJsonToFlat(json: any, highlightedPaths: string[] = []): FlatJson[] {
+  const flatJson = flattenJson(json);
+
+  let counter = 0;
+  for (const record of flatJson) {
+    counter += 1
+    record.id = counter;
+    if (highlightedPaths?.some(x => record.path.startsWith(x))) {
+      record.highlighted = true;
+    }
+  }
+  return flatJson;
+}

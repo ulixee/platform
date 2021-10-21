@@ -6,16 +6,14 @@ import launchChromeAlive from '@ulixee/apps-chromealive/index';
 import type Puppet from '@ulixee/hero-puppet';
 import IDevtoolsSession from '@ulixee/hero-interfaces/IDevtoolsSession';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
-import FocusedWindowCorePlugin from './hero-plugins/FocusedWindowCorePlugin';
-import WindowBoundsCorePlugin from './hero-plugins/WindowBoundsCorePlugin';
-import TabGroupCorePlugin from './hero-plugins/TabGroupCorePlugin';
+import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
+import HeroCorePlugin from './lib/HeroCorePlugin';
 import SessionObserver from './lib/SessionObserver';
 import ConnectionToClient from './lib/ConnectionToClient';
 import AliveBarPositioner from './lib/AliveBarPositioner';
+import FocusedWindowModule from './lib/hero-plugin-modules/FocusedWindowModule';
 
 const { log } = Log(module);
-
-export const extensionId = 'nhchohpofcdodgoddejmfcebjkmdafmk';
 
 export default class ChromeAliveCore {
   public static sessionObserversById = new Map<string, SessionObserver>();
@@ -57,12 +55,10 @@ export default class ChromeAliveCore {
     HeroGlobalPool.events.on('session-created', this.onHeroSessionCreated);
     HeroGlobalPool.events.on('browser-has-no-open-windows', this.onBrowserHasNoWindows);
 
-    FocusedWindowCorePlugin.onVisibilityChange = this.changeActiveSessions;
+    FocusedWindowModule.onVisibilityChange = this.changeActiveSessions;
     AliveBarPositioner.getSessionDevtools = this.getSessionDevtools;
 
-    HeroCore.use(FocusedWindowCorePlugin);
-    HeroCore.use(WindowBoundsCorePlugin);
-    HeroCore.use(TabGroupCorePlugin);
+    HeroCore.use(HeroCorePlugin);
   }
 
   public static shutdown() {
@@ -80,6 +76,16 @@ export default class ChromeAliveCore {
       observer.close();
     }
     this.sessionObserversById.clear();
+  }
+
+  public static getActivePuppetPage(): IPuppetPage {
+    if (!this.activeHeroSessionId) return;
+    const sessionObserver = this.sessionObserversById.get(this.activeHeroSessionId);
+    if (!sessionObserver) return;
+
+    const { heroSession } = sessionObserver;
+    const page = [...heroSession.tabsById.values()].find(x => !x.isClosing)?.puppetPage;
+    return page;
   }
 
   private static onHeroSessionCreated(event: { session: HeroSession }): Promise<any> {

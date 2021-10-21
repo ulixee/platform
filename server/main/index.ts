@@ -60,6 +60,10 @@ export default class Server {
     this.coreConnectors = new CoreConnectors(this);
   }
 
+  public get dataDir(): string {
+    return this.coreConnectors.heroConnector.dataDir;
+  }
+
   public async listen(options: ListenOptions): Promise<AddressInfo> {
     if (this.serverAddress.isResolved) return this.serverAddress.promise;
 

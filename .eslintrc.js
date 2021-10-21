@@ -124,7 +124,7 @@ module.exports = {
     'no-underscore-dangle': 'off',
     'class-methods-use-this': 'off',
     'consistent-return': ['off', { treatUndefinedAsUnspecified: true }],
-    'spaced-comment': ['error', 'always', { markers: ['/////'] }],
+    'spaced-comment': ['error', 'always', { markers: ["/", "/////"] }],
     'require-await': 'error',
     'arrow-body-style': 'off',
     'jest/no-conditional-expect': 'off',

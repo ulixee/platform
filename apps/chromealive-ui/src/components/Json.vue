@@ -4,7 +4,7 @@
       class="JsonNode"
       v-for="node of json"
       :key="node.id"
-      :ref="node.id"
+      :ref="el => { jsonNodes[node.id] = el }"
       :id="node.path"
       :class="{ highlighted: node.highlighted }"
     >
@@ -21,44 +21,35 @@
 </template>
 
 <script lang="ts">
-import Vue, { PropOptions } from 'vue';
-import Component from 'vue-class-component';
-import flattenJson, { FlatJson } from '@/utils/flattenJson';
+import { ref, defineComponent, onBeforeUpdate } from 'vue';
 
-// Define the props by using Vue's canonical way.
-const JsonProps = Vue.extend({
+export default defineComponent({
+  name: 'Json',
+  components: {},
   props: {
-    json: <PropOptions<FlatJson[]>>{
+    json: {
       type: Array,
       required: false,
     },
   },
-});
+  setup() {
+    const jsonNodes = ref([]);
 
-@Component
-export default class Json extends JsonProps {
+    onBeforeUpdate(() => {
+      jsonNodes.value = [];
+    });
 
-  public scrollToId(id: number) {
-    const refs = this.$refs[id] as HTMLElement[];
-    if (!refs) return;
-    if (refs.length) {
-      refs[refs.length - 1].scrollIntoView({ block: 'center' });
-    }
-  }
-
-  public static toFlat(json: any, highlightedPaths: string[] = []): FlatJson[] {
-    const flatJson = flattenJson(json);
-
-    let counter = 0;
-    for (const record of flatJson) {
-      record.id = counter += 1;
-      if (highlightedPaths?.some(x => record.path.startsWith(x))) {
-        record.highlighted = true;
+    function scrollToId(id: number) {
+      const refs = jsonNodes.value[id] as HTMLElement[];
+      if (!refs) return;
+      if (refs.length) {
+        refs[refs.length - 1].scrollIntoView({ block: 'center' });
       }
     }
-    return flatJson;
+
+    return { jsonNodes, scrollToId }
   }
-}
+});
 </script>
 
 <style lang="scss">

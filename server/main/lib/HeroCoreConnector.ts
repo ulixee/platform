@@ -17,6 +17,10 @@ export default class HeroCoreConnector extends BaseCoreConnector {
     this.server = server;
   }
 
+  public get dataDir(): string {
+    return Core.dataDir;
+  }
+
   public async start() {
     await Core.start();
   }

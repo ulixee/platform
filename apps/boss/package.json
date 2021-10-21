@@ -6,10 +6,11 @@
     "build": "yarn build:ui && yarn build:basic && cd ../../build/apps/boss && yarn && electron-builder install-app-deps",
     "build:basic": "cd ../.. && yarn run tsc && cd apps/boss && yarn copy:build",
     "build:ui": "yarn workspace @ulixee/apps-menubar-ui build && yarn workspace @ulixee/apps-chromealive-ui build",
+    "build:extension": "yarn workspace @ulixee/apps-chromealive-extension build",
     "copy:build": "cd ../../build/apps/boss && node builder/copySources.js ./packages",
     "dist": "yarn build && cd ../../build/apps/boss && yarn && electron-builder --publish onTagOrDraft",
     "dist:basic": "yarn build:basic && cd ../../build/apps/boss && electron-builder",
-    "start": "yarn copy:build && cd ../../build/apps/boss && npx electron ."
+    "start": "yarn build:extension && yarn copy:build && cd ../../build/apps/boss && npx electron ."
   },
   "repository": "git@github.com:ulixee/ulixee.git",
   "author": "Caleb Clark <calebjclark@gmail.com>",
@@ -40,7 +41,8 @@
     "productName": "Ulixee Boss",
     "afterSign": "scripts/notarize.js",
     "asarUnpack": [
-      "node_modules/@ulixee/apps-chromealive-core"
+      "node_modules/@ulixee/apps-chromealive-core",
+      "node_modules/@ulixee/apps-chromealive-extension"
     ],
     "directories": {
       "buildResources": "assets"

@@ -28,10 +28,11 @@
     </div>
     <div class="section">
       <a>Open Ulixee Desktop</a>
+      <a @click.prevent="openLogsDirectory()">Open App Logs</a>
+      <a @click.prevent="openDataDirectory()">Open Data Directory</a>
     </div>
     <div class="section">
       <a>Preferences</a>
-      <a @click.prevent="showLogs()">Open App Logs</a>
       <a>About Ulixee</a>
     </div>
     <div class="section">
@@ -41,60 +42,57 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
-import Component from 'vue-class-component';
+import * as Vue from 'vue';
 
-@Component
-export default class Menubar extends Vue {
-  private windowBackground = '';
-  private serverStarted = false;
-  private address = '';
+export default Vue.defineComponent({
+  name: 'App',
+  components: {},
+  setup() {
+    let serverStarted = Vue.ref(false);
+    let address = Vue.ref('');
 
-  quit() {
-    this.sendEvent('App.quit');
-  }
-
-  restart() {
-    this.sendEvent('Server.restart');
-  }
-
-  start() {
-    this.sendEvent('Server.start');
-  }
-
-  stop() {
-    this.sendEvent('Server.stop');
-  }
-
-  showLogs() {
-    this.sendEvent('App.logs')
-  }
-
-  private sendEvent(api: string, ...args: any[]) {
-    document.dispatchEvent(
-      new CustomEvent('boss:api', {
-        detail: { api, args },
-      }),
-    );
-  }
-
-  public created(): void {
     document.addEventListener('boss:event', evt => {
       console.log('Boss:event', evt);
       const { eventType, data } = (evt as CustomEvent).detail;
       if (eventType === 'Server.status') {
-        this.address = data.address;
-        this.serverStarted = data.started;
+        address.value = data.address;
+        serverStarted.value = data.started;
       }
     });
-    this.sendEvent('Server.getStatus')
-  }
 
-  public mounted(): void {
-    const params = new URLSearchParams(window.location.search);
-    this.windowBackground = params.get('windowBackground') || '';
+    return { serverStarted, address };
+  },
+  mounted() {
+    this.sendEvent('Server.getStatus');
+  },
+  methods: {
+    quit() {
+      this.sendEvent('App.quit');
+    },
+    restart() {
+      this.sendEvent('Server.restart');
+    },
+    start() {
+      this.sendEvent('Server.start');
+    },
+    stop() {
+      this.sendEvent('Server.stop');
+    },
+    openLogsDirectory() {
+      this.sendEvent('App.openLogsDirectory')
+    },
+    openDataDirectory() {
+      this.sendEvent('App.openDataDirectory')
+    },
+    sendEvent(api: string, ...args: any[]) {
+      document.dispatchEvent(
+        new CustomEvent('boss:api', {
+          detail: { api, args },
+        }),
+      );
+    }
   }
-}
+});
 </script>
 
 <style lang="scss">

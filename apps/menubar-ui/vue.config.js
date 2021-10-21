@@ -1,3 +1,6 @@
+const outputDir = '../../build/apps/boss/ui';
+
 module.exports = {
-  outputDir: '../../build/apps/boss/ui',
-};
+  filenameHashing: false,
+  outputDir: outputDir,
+}
