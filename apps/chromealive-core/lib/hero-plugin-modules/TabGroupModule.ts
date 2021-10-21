@@ -51,9 +51,7 @@ export default class TabGroupModule {
   ): Promise<number> {
     const tabIds: number[] = [];
     let windowId: number;
-    let pageId: string;
     for (const page of puppetPages) {
-      pageId ??= page.id;
       const id = this.identityByPageId.get(page.id);
       if (id) {
         windowId = id.windowId;

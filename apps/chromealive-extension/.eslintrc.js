@@ -10,4 +10,5 @@ module.exports = {
     'global-require': 'off',
     'import/extensions': 'off',
   },
+  ignorePatterns: [".eslintrc.js", "postcss.config.js", "tailwind.config.js", "webpack.config.js"]
 };
