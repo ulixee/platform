@@ -4,7 +4,7 @@ import {
   ResponseCode,
   isResponseMessage,
   messageExpectsResponse,
-  createResponseId, MessageEventType,
+  createResponseId,
 } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
 
 type IResponseFn = (response: any) => void;

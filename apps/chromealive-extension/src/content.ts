@@ -1,7 +1,6 @@
 /// <reference types="chrome"/>
 import '@webcomponents/custom-elements';
 import getCssSelector from 'css-selector-generator';
-import css from 'css-selector-tools';
 import { MessageEventType } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
 import SelectorMenuElement from './lib/SelectorMenuElement';
 import { onMessage, sendToDevtoolsScript } from './lib/content/ContentMessenger';
@@ -45,7 +44,6 @@ onMessage(payload => {
     closeSelectorMenu();
   } else if (event === 'RunSelectorGenerator') {
     const selectors: string[] = [];
-    const elements = elementsBucket.includedElements;
     // ToDo
     sendToDevtoolsScript({ event: 'FinishedSelectorGeneration', selectors });
   } else if (event === 'RunSelectorGenerator') {

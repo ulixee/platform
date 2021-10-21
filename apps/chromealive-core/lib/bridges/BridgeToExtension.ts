@@ -100,6 +100,7 @@ export default class BridgeToExtension extends EventEmitter {
 
   private handleIncomingMessageFromBrowser(event: any) {
     if (event.name !== ___sendToCore) return;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [destLocation, responseCode, stringifiedMessage] =
       extractStringifiedComponentsFromMessage(event.payload);
     if (isResponseMessage(event.payload)) {

@@ -124,11 +124,11 @@ connect();
 // LISTENER TO <-> FROM CORE ///////////////////////////////////////////////////////////////////////
 
 // receive and route messages coming in from core
-window[___receiveFromCore] = function (
+window[___receiveFromCore] = (
   destLocation: IMessageLocation,
   responseCode: IResponseCode,
   restOfMessage: IRestOfMessageObject,
-) {
+) => {
   const message: IMessageObject = {
     destLocation,
     responseCode,
