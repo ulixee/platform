@@ -3,6 +3,6 @@
     "dist": "lerna publish from-package"
   },
   "devDependencies": {
-    "lerna": "^3.4.3"
+    "lerna": "^4.0.0"
   }
 }

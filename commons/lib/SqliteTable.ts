@@ -1,7 +1,7 @@
 // eslint-disable-next-line import/no-unresolved
 import type { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 
-type SqliteTypes = 'INTEGER' | 'TEXT' | 'BLOB';
+type SqliteTypes = 'INTEGER' | 'TEXT' | 'BLOB' | 'DATETIME';
 type IRecord = (string | number | Buffer)[];
 
 export default abstract class SqliteTable<T> {

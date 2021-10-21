@@ -241,11 +241,11 @@ export class Menubar extends EventEmitter {
         }
 
         if (api === 'App.openLogsDirectory') {
-          shell.openPath(Path.dirname(log.transports.file.getFile().path));
+          await shell.openPath(Path.dirname(log.transports.file.getFile().path));
         }
 
         if (api === 'App.openDataDirectory') {
-          shell.openPath(this.#ulixeeServer.dataDir);
+          await shell.openPath(this.#ulixeeServer.dataDir);
         }
 
         if (api === 'Server.stop' || api === 'Server.restart') {

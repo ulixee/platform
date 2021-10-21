@@ -1,5 +1,6 @@
 import * as Path from 'path';
 import { EventEmitter } from 'events';
+import Log from '@ulixee/commons/lib/Logger';
 import ICorePluginCreateOptions from '@ulixee/hero-interfaces/ICorePluginCreateOptions';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { IBrowserEmulatorConfig, ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
@@ -11,6 +12,8 @@ import WindowBoundsModule from './hero-plugin-modules/WindowBoundsModule';
 import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 import FocusedWindowModule from './hero-plugin-modules/FocusedWindowModule';
 import { MessageLocation } from './BridgeHelpers';
+
+const { log } = Log(module);
 
 // have to resolve an actual file
 const extensionPath = Path.resolve(__dirname, '../..', 'chromealive/extension').replace(
@@ -41,7 +44,12 @@ export default class HeroCorePlugin extends CorePlugin {
     this.bridgeToDevtoolsPrivate.on('message', (message, { destLocation }) => {
       const { ContentScript, BackgroundScript } = MessageLocation;
       if ([ContentScript, BackgroundScript].includes(destLocation)) {
-        this.bridgeToExtension.send(message);
+        this.bridgeToExtension.send(message).catch(error => {
+          log.error('BridgeToDevtoolsMessageError', {
+            error,
+            sessionId: null,
+          });
+        });
       }
     });
 
@@ -67,8 +75,10 @@ export default class HeroCorePlugin extends CorePlugin {
 
   onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
     if (!sessionSummary.options.showBrowser) return;
-    this.bridgeToExtension.addPuppetPage(page);
-    this.windowBoundsModule.onNewPuppetPage(page, sessionSummary);
+    return Promise.all([
+      this.bridgeToExtension.addPuppetPage(page),
+      this.windowBoundsModule.onNewPuppetPage(page, sessionSummary),
+    ]);
   }
 
   onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession): Promise<any> {

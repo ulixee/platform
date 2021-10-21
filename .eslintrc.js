@@ -64,6 +64,16 @@ module.exports = {
         '@typescript-eslint/no-unused-vars': 'off',
       },
     },
+    {
+      files: '**/test/*.ts',
+      rules: {
+        'max-classes-per-file': 'off',
+        'promise/valid-params': 'off',
+        '@typescript-eslint/explicit-function-return-type': 'off',
+        'require-await': 'off',
+        '@typescript-eslint/require-await': 'off',
+      },
+    },
   ],
   ignorePatterns: [
     '**/node_modules',
@@ -87,8 +97,9 @@ module.exports = {
     '**/*.md',
   ],
   rules: {
-    'import/no-named-as-default-member': 'off',
+    'import/no-named-as-default': 'off',
     'import/prefer-default-export': 'off',
+    'import/namespace': 'off',
     'import/no-cycle': 'off', // TODO:we need to work through this!!
     'import/extensions': 'off',
     // 'import/no-default-export': 'error',
@@ -101,6 +112,8 @@ module.exports = {
           '**/scripts/**',
           '**/data-scripts/**',
           '**/*.test.ts',
+          '**/webpack.config.js',
+          '**/*.d.ts',
         ],
       },
     ],
@@ -124,7 +137,7 @@ module.exports = {
     'no-underscore-dangle': 'off',
     'class-methods-use-this': 'off',
     'consistent-return': ['off', { treatUndefinedAsUnspecified: true }],
-    'spaced-comment': ['error', 'always', { markers: ["/", "/////"] }],
+    'spaced-comment': ['error', 'always', { markers: ['/', '/////'] }],
     'require-await': 'error',
     'arrow-body-style': 'off',
     'jest/no-conditional-expect': 'off',
@@ -139,6 +152,8 @@ module.exports = {
     '@typescript-eslint/no-namespace': 'off',
     '@typescript-eslint/ordered-imports': 'off',
     '@typescript-eslint/return-await': 'off',
+    '@typescript-eslint/require-await': 'error',
+    '@typescript-eslint/no-floating-promises': 'error',
     '@typescript-eslint/no-shadow': [
       'error',
       { ignoreTypeValueShadow: true, ignoreFunctionTypeParameterNameValueShadow: true },
