@@ -240,8 +240,12 @@ export class Menubar extends EventEmitter {
           app.quit();
         }
 
-        if (api === 'App.logs') {
+        if (api === 'App.openLogsDirectory') {
           shell.openPath(Path.dirname(log.transports.file.getFile().path));
+        }
+
+        if (api === 'App.openDataDirectory') {
+          shell.openPath(this.#ulixeeServer.dataDir);
         }
 
         if (api === 'Server.stop' || api === 'Server.restart') {
@@ -271,7 +275,7 @@ export class Menubar extends EventEmitter {
     this.#browserWindow = undefined;
   }
 
-  /////// SERVER MANAGEMENT ////////////////////////////////////////////////////////////////////////////////////////////
+  /// //// SERVER MANAGEMENT ////////////////////////////////////////////////////////////////////////////////////////////
 
   private async stopServer() {
     if (!this.#ulixeeServer) return;

@@ -44,6 +44,8 @@ for (const workspace of workspaces) {
     `${workspace}/assets/**/*`,
     `${workspace}/package*.json`,
     `${workspace}/*/*.json`,
+    `${workspace}/*/*.html`,
+    `${workspace}/*/*.png`,
     `${workspace}/go/*.*`,
     `${workspace}/*.cjs`,
     `${workspace}/*.mjs`,

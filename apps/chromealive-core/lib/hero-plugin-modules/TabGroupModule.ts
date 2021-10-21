@@ -1,39 +1,48 @@
-import CorePlugin from '@ulixee/hero-plugin-utils/lib/CorePlugin';
+import { EventEmitter } from 'events';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
-import ExtensionRuntimeMessenger from '../lib/ExtensionRuntimeMessenger';
+import BridgeToExtension from '../bridges/BridgeToExtension';
+import {
+  createResponseId,
+  IMessageObject,
+  MessageLocation,
+  ResponseCode,
+} from '../BridgeHelpers';
 
-export default class TabGroupCorePlugin extends CorePlugin {
-  public static id = '@ulixee/tabgroup-core-plugin';
-
-  public static bySessionId = new Map<string, TabGroupCorePlugin>();
+export default class TabGroupModule {
+  public static bySessionId = new Map<string, TabGroupModule>();
 
   private runOnTabGroupOpened: () => void;
 
-  private extensionMessengersByPageId = new Map<string, ExtensionRuntimeMessenger>();
+  private bridgeToExtension: BridgeToExtension;
   private identityByPageId = new Map<string, { tabId: number; windowId: number }>();
   private sessionId: string;
 
-  onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
+  constructor(bridgeToExtension, browserEmitter: EventEmitter) {
+    this.bridgeToExtension = bridgeToExtension;
+    browserEmitter.on('message', (message, { pageId }) => {
+      if (message.event === 'OnTabIdentify') {
+        this.onTabIdentified(pageId, message);
+      } else if (message.event === 'OnTabGroupOpened') {
+        this.onTabGroupOpened();
+      }
+    });
+  }
+
+  public onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
     if (!sessionSummary.options.showBrowser) return;
 
     this.sessionId = sessionSummary.id;
-    TabGroupCorePlugin.bySessionId.set(this.sessionId, this);
+    TabGroupModule.bySessionId.set(this.sessionId, this);
     page.on('close', this.pageClosed.bind(this, page));
     page.browserContext.on('close', this.close.bind(this));
-    this.extensionMessengersByPageId.set(page.id, new ExtensionRuntimeMessenger(page));
-
-    return Promise.all([
-      page.addPageCallback('___onTabIdentify', this.onTabIdentified.bind(this, page.id)),
-      page.addPageCallback('___onTabGroupOpened', this.onTabGroupOpened.bind(this)),
-    ]);
   }
 
-  close() {
-    TabGroupCorePlugin.bySessionId.delete(this.sessionId);
+  public close() {
+    TabGroupModule.bySessionId.delete(this.sessionId);
   }
 
-  async groupTabs(
+  public async groupTabs(
     puppetPages: IPuppetPage[],
     title: string,
     color: string,
@@ -51,39 +60,33 @@ export default class TabGroupCorePlugin extends CorePlugin {
         tabIds.push(id.tabId);
       }
     }
-    const groupId = await this.callExtensionAction<number>(pageId, 'groupTabs', {
+    const args = {
       tabIds,
       windowId,
       title,
       color,
       collapsed: true,
-    });
+    };
+    const groupId = await this.sendToExtensionBackground<number>('groupTabs', args, true);
     // don't register the tab group opened command until after it opens
     await new Promise(setImmediate);
     if (collapsed && onUncollapsed) this.runOnTabGroupOpened = onUncollapsed;
     return groupId;
   }
 
-  async ungroupTabs(puppetPages: IPuppetPage[]): Promise<void> {
+  public async ungroupTabs(puppetPages: IPuppetPage[]): Promise<void> {
     const tabIds: number[] = [];
     for (const page of puppetPages) {
       const id = this.identityByPageId.get(page.id);
       if (id) tabIds.push(id.tabId);
     }
     this.runOnTabGroupOpened = null;
-    return await this.callExtensionAction<void>(puppetPages[0].id, 'ungroupTabs', {
-      tabIds,
-    });
+    const args = { tabIds };
+    await this.sendToExtensionBackground<void>('ungroupTabs', args, false);
   }
 
   private onTabGroupOpened(): void {
     if (this.runOnTabGroupOpened) this.runOnTabGroupOpened();
-  }
-
-  private async identifyTab(puppetPageId: string): Promise<void> {
-    const { tabId, windowId } = await this.callExtensionAction(puppetPageId, 'identify');
-
-    this.identityByPageId.set(puppetPageId, { tabId, windowId });
   }
 
   private onTabIdentified(puppetPageId: string, payload: string): void {
@@ -91,20 +94,24 @@ export default class TabGroupCorePlugin extends CorePlugin {
     this.identityByPageId.set(puppetPageId, { windowId, tabId });
   }
 
-  private async callExtensionAction<T>(
-    puppetPageId: string,
+  private async sendToExtensionBackground<T>(
     action: string,
     args: object = {},
+    waitForResponse = false,
   ): Promise<T> {
-    const messenger = this.extensionMessengersByPageId.get(puppetPageId);
-    if (!messenger)
-      throw new Error(`Extension runtime messenger not found for puppet page ${puppetPageId}`);
-    const message = { action, ...args };
-    return await messenger.send(message);
+    const responseCode = waitForResponse ? ResponseCode.Y : ResponseCode.N;
+    const responseId = responseCode === ResponseCode.Y ? createResponseId() : undefined;
+    const message: IMessageObject = {
+      destLocation: MessageLocation.BackgroundScript,
+      origLocation: MessageLocation.Core,
+      payload: { action, ...args },
+      responseCode,
+      responseId,
+    };
+    return (await this.bridgeToExtension.send(message, null)) as T;
   }
 
   private pageClosed(page: IPuppetPage) {
     this.identityByPageId.delete(page.id);
-    this.extensionMessengersByPageId.delete(page.id);
   }
 }

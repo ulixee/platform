@@ -1,13 +1,20 @@
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
-import CorePlugin from '@ulixee/hero-plugin-utils/lib/CorePlugin';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { IBrowserEmulatorConfig, ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
-import AliveBarPositioner from '../lib/AliveBarPositioner';
+import AliveBarPositioner from '../AliveBarPositioner';
 
-export default class WindowBoundsCorePlugin extends CorePlugin {
-  public static id = '@ulixee/window-bounds-core-plugin';
+export default class WindowBoundsModule {
+  private sessionId: string;
 
-  configure(options: IBrowserEmulatorConfig): Promise<any> | void {
+  constructor(bridgeToExtensionContent) {
+    bridgeToExtensionContent.on('message', message => {
+      if (message.event === 'OnBoundsChanged') {
+        this.onBoundsChanged(message);
+      }
+    });
+  }
+
+  public configure(options: IBrowserEmulatorConfig): Promise<any> | void {
     if ((options.viewport as any)?.isDefault) {
       const maxChromeBounds = AliveBarPositioner.getMaxChromeBounds();
       Object.assign(options.viewport, {
@@ -23,13 +30,11 @@ export default class WindowBoundsCorePlugin extends CorePlugin {
     }
   }
 
-  onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
+  public onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
     if (!sessionSummary.options.showBrowser) return;
+    this.sessionId ??= sessionSummary.id;
+
     return Promise.all([
-      page.addPageCallback(
-        '___onBoundsChanged',
-        this.onBoundsChanged.bind(this, sessionSummary.id, page.id),
-      ),
       page.devtoolsSession.send('Browser.getWindowForTarget').then(({ windowId, bounds }) => {
         AliveBarPositioner.onChromeWindowBoundsChanged(
           sessionSummary.id,
@@ -50,8 +55,8 @@ export default class WindowBoundsCorePlugin extends CorePlugin {
     ]);
   }
 
-  onBoundsChanged(sessionId: string, puppetPageId: string, payload: string): void {
+  private onBoundsChanged(payload: string): void {
     const { windowId, ...bounds } = JSON.parse(payload);
-    AliveBarPositioner.onChromeWindowBoundsChanged(sessionId, windowId, bounds);
+    AliveBarPositioner.onChromeWindowBoundsChanged(this.sessionId, windowId, bounds);
   }
 }

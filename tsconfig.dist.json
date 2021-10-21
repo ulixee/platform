@@ -4,5 +4,6 @@
     "outDir": "./build-dist",
     "sourceMap": true,
     "inlineSourceMap": false
-  }
+  },
+  "exclude": ["apps/chromealive-extension"]
 }

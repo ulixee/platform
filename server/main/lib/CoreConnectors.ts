@@ -7,6 +7,8 @@ import DataboxCoreConnector from './DataboxCoreConnector';
 let isConnected = false;
 
 export default class CoreConnectors {
+  public heroConnector: HeroCoreConnector;
+
   private coreConnectors: BaseCoreConnector[] = [];
 
   constructor(server: Server) {
@@ -14,7 +16,8 @@ export default class CoreConnectors {
       throw new Error('CoreConnectors already initialized');
     }
 
-    this.coreConnectors.push(new HeroCoreConnector(server));
+    this.heroConnector = new HeroCoreConnector(server);
+    this.coreConnectors.push(this.heroConnector);
     this.coreConnectors.push(new DataboxCoreConnector(server));
     if (ChromeAliveCoreConnector.isInstalled()) {
       this.coreConnectors.push(new ChromeAliveCoreConnector(server));

@@ -113,387 +113,430 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
-import Component from 'vue-class-component';
+import * as Vue from 'vue';
 import Client from '@/api/Client';
-import VueSlider from 'vue-slider-component';
 import 'vue-slider-component/theme/default.css';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
 import { ISessionResumeArgs } from '@ulixee/apps-chromealive-interfaces/apis/ISessionResumeApi';
-import { LoadStatus } from '@ulixee/hero-interfaces/Location';
 
 const ICON_CARET = require('@/assets/icons/caret.svg');
 
-Vue.config.keyCodes = {
-  'arrow-keys': [37, 38, 39, 40],
-};
+type IStartLocation = ISessionResumeArgs['startLocation'];
 
-@Component({
-  components: { VueSlider },
-})
-export default class ChromeAliveApp extends Vue {
-  private client = Client;
-  private scriptTimeAgo = '';
-  private timeAgoTimeout: number;
-  private timeAgoDelay = 1e3;
-  private selectedNavigationId = null;
-  private lastToolbarBounds: IBounds;
-  private databoxWindow: Window = null;
-  private hasLaunchedDatabox = false;
-  private isLoading = false;
-  private isShowingMenu = false;
-  private isDragging = false;
-  private nibLeft = '100%';
-  private trackOffset: DOMRect;
-  private isHistoryMode = false;
-  private startLocation: ISessionResumeArgs['startLocation'] = 'currentLocation';
-  private pendingReplayNavigationOffset: number = null;
-  private ICON_CARET = ICON_CARET;
+export default Vue.defineComponent<any>({
+  name: 'App',
+  components: {},
+  setup() {
+    let scriptTimeAgo = Vue.ref('');
+    let timeAgoTimeout: number;
+    let timeAgoDelay = 1e3;
+    let selectedNavigationId = null;
+    let lastToolbarBounds: IBounds;
+    let databoxWindow: Window = Vue.reactive(null);
+    let hasLaunchedDatabox = false;
+    let isLoading = Vue.ref(false);
+    let isShowingMenu = Vue.ref(false);
+    let isDragging = Vue.ref(false);
+    let nibLeft = Vue.ref('100%');
+    let trackOffset: DOMRect;
+    let isHistoryMode = Vue.ref(false);
+    let startLocation: Vue.Ref<IStartLocation> = Vue.ref<IStartLocation>('currentLocation');
+    let pendingReplayNavigationOffset: number = null;
 
-  private session: IHeroSessionActiveEvent = {
-    urls: [],
-    paintEvents: [],
-    screenshots: [],
-    playbackState: 'paused',
-    runtimeMs: 0,
-    heroSessionId: '',
-    run: 0,
-    hasWarning: false,
-    scriptEntrypoint: '',
-    scriptLastModifiedTime: 0,
-  };
+    let session: IHeroSessionActiveEvent = {
+      urls: [],
+      paintEvents: [],
+      screenshots: [],
+      playbackState: 'paused',
+      runtimeMs: 0,
+      heroSessionId: '',
+      run: 0,
+      hasWarning: false,
+      scriptEntrypoint: '',
+      scriptLastModifiedTime: 0,
+    };
 
-  private timelineHover = {
-    left: 0,
-    url: '',
-    domChanges: 0,
-    runtime: '',
-    status: '',
-    imageBase64: '',
-    show: false,
-  };
+    let timelineHover = {
+      left: 0,
+      url: '',
+      domChanges: 0,
+      runtime: '',
+      status: '',
+      imageBase64: '',
+      show: false,
+    };
 
-  private menuOffset = {
-    left: 0,
-  };
+    let menuOffset = {
+      left: 0,
+    };
 
-  private screenshotsByTimestamp = new Map<number, string>();
-  private screenshotTimestampsByOffset = new Map<number, number>();
-  private timelineHoverWidth: number;
+    let screenshotsByTimestamp = new Map<number, string>();
+    let screenshotTimestampsByOffset = new Map<number, number>();
+    let timelineHoverWidth: number;
 
-  private get isLive() {
-    return this.session?.playbackState === 'live';
-  }
-
-  onKeypress(event: KeyboardEvent): void {
-    // let this trigger history mode
-    if (event.code === 'ArrowLeft') {
-      this.historyBack();
-    }
-    if (event.code === 'ArrowRight' && this.isHistoryMode) {
-      this.historyForward();
-    }
-  }
-
-  toggleMenu() {
-    this.menuOffset.left = (this.$refs.menuButton as HTMLElement).getBoundingClientRect().left;
-    this.isShowingMenu = !this.isShowingMenu;
-  }
-
-  quitScript() {
-    this.client.send('Session.quit', {
-      heroSessionId: this.session.heroSessionId,
+    const isLive = Vue.computed(() => {
+      return session?.playbackState === 'live';
     });
-  }
 
-  showAbout(): void {
-    this.isShowingMenu = false;
-    console.log(
-      'ChromeAlive! is your live interface for controlling Ulixee Databoxes using the Hero web scraper',
-    );
-  }
-
-  isActiveUrl(index: number) {
-    if (index === 0) return this.startLocation === 'sessionStart';
-    if (index === this.session.urls.length - 1) return this.startLocation === 'currentLocation';
-    return this.selectedNavigationId === this.session.urls[index].navigationId;
-  }
-
-  clickUrlTick(event: MouseEvent, navigationId: number) {
-    this.selectedNavigationId = navigationId;
-    this.onNibMove(event);
-    this.replay().catch(console.error);
-  }
-
-  nextUrlTickWidth(urlIndex: number) {
-    if (urlIndex === this.session.urls.length - 1) return '2px';
-    const diff =
-      this.session.urls[urlIndex + 1].offsetPercent - this.session.urls[urlIndex].offsetPercent;
-    return `${diff}%`;
-  }
-
-  trackMouseout() {
-    window.removeEventListener('mousemove', this.trackMousemove);
-    this.timelineHover.show = false;
-  }
-
-  trackMouseover() {
-    if (this.isLive) return;
-    window.addEventListener('mousemove', this.trackMousemove);
-  }
-
-  trackMousemove(event: MouseEvent) {
-    const offset = this.getTrackOffset(event);
-    this.timelineHoverWidth ||= (
-      this.$refs.timelineHover as HTMLElement
-    ).getBoundingClientRect().width;
-
-    this.timelineHover.left = event.pageX - Math.round(this.timelineHoverWidth / 2);
-
-    const runtimeMs = Math.round((offset / 100) * this.session.runtimeMs);
-    this.timelineHover.runtime = `${runtimeMs}ms`;
-    if (runtimeMs > 1e3) {
-      const runtimeSecs = Math.round(10 * (runtimeMs / 1000)) / 10;
-      this.timelineHover.runtime = `${runtimeSecs}s`;
-    }
-
-    let lastChanges = 0;
-    for (const paint of this.session.paintEvents) {
-      // go until this change is after the current offset
-      if (paint.offsetPercent > offset) break;
-      lastChanges = paint.domChanges;
-    }
-    this.timelineHover.domChanges = lastChanges;
-    this.timelineHover.status = 'Loading';
-
-    let loadedUrl: IHeroSessionActiveEvent['urls'][0] = null;
-    for (const url of this.session.urls) {
-      if (url.offsetPercent > offset) break;
-      loadedUrl = url;
-    }
-    if (loadedUrl?.url) {
-      let statusText = 'Navigation Requested';
-      if (offset === 100) statusText = 'Current Location';
-
-      for (const { status, offsetPercent } of loadedUrl.loadStatusOffsets) {
-        if (offsetPercent > offset) break;
-        statusText = status;
+    return {
+      ICON_CARET, scriptTimeAgo, timeAgoTimeout, timeAgoDelay, selectedNavigationId, lastToolbarBounds,
+      databoxWindow, hasLaunchedDatabox, isLoading, isShowingMenu, isDragging, nibLeft, trackOffset, isHistoryMode,
+      startLocation, pendingReplayNavigationOffset, session, timelineHover, menuOffset, screenshotsByTimestamp,
+      screenshotTimestampsByOffset, timelineHoverWidth, isLive,
+    };
+  },
+  methods: {
+    onKeypress(event: KeyboardEvent): void {
+      // let this trigger history mode
+      if (event.code === 'ArrowLeft') {
+        this.historyBack();
       }
+      if (event.code === 'ArrowRight' && this.isHistoryMode) {
+        this.historyForward();
+      }
+    },
 
-      this.timelineHover.status = statusText;
-    }
-    this.timelineHover.url = loadedUrl?.url;
-    const timestamp = this.screenshotTimestampsByOffset.get(offset);
-    this.timelineHover.imageBase64 = this.screenshotsByTimestamp.get(timestamp);
-    this.timelineHover.show = true;
-  }
+    toggleMenu() {
+      this.menuOffset.left = (this.$refs.menuButton as HTMLElement).getBoundingClientRect().left;
+      this.isShowingMenu = !this.isShowingMenu;
+    },
 
-  calculateScriptTimeAgo(): string {
-    const lastModifiedTime = this.session.scriptLastModifiedTime;
-    if (!lastModifiedTime) return 'long';
-    const timeAgo = Date.now() - lastModifiedTime;
-    const oneMinute = 60e3;
-    const oneHour = oneMinute * 60;
-    const oneDay = oneHour * 24;
-    if (timeAgo >= oneDay) {
-      const days = Math.floor(timeAgo / oneDay);
-      this.timeAgoDelay = 60e3;
-      if (days > 1) return `${days} days`;
-      return `1 day`;
-    }
-    if (timeAgo >= oneHour) {
-      const hours = Math.floor(timeAgo / oneHour);
-      this.timeAgoDelay = 60e3;
-      return `${hours}h`;
-    }
-    if (timeAgo >= oneMinute) {
-      const minutes = Math.floor(timeAgo / oneMinute);
-      this.timeAgoDelay = 30e3;
-      return `${minutes}m`;
-    }
-    this.timeAgoDelay = 1e3;
-    const seconds = Math.floor(timeAgo / 1e3);
-    return `${seconds}s`;
-  }
-
-  toggleDatabox() {
-    if (this.isShowingMenu) this.isShowingMenu = false;
-    if (this.databoxWindow) {
-      this.databoxWindow.close();
-      this.databoxWindow = null;
-    } else {
-      const { bottom, right } = (this.$refs.toolbar as HTMLElement).getBoundingClientRect();
-      const features = `top=${bottom + 100},left=${right - 260},width=300,height=400`;
-      this.databoxWindow = window.open('/databox.html', 'DataboxPanel', features);
-
-      this.databoxWindow.addEventListener('close', () => {
-        this.databoxWindow = null;
+    quitScript() {
+      Client.send('Session.quit', {
+        heroSessionId: this.session.heroSessionId,
       });
-      this.databoxWindow.addEventListener('manual-close', () => {
-        this.databoxWindow = null;
-      });
-    }
-  }
+    },
 
-  startDraggingNib() {
-    if (this.isLive) return;
-    window.addEventListener('mousemove', this.onNibMove);
-    this.isDragging = true;
-  }
+    showAbout(): void {
+      this.isShowingMenu = false;
+      console.log(
+        'ChromeAlive! is your live interface for controlling Ulixee Databoxes using the Hero web scraper',
+      );
+    },
 
-  stopDraggingNib() {
-    window.removeEventListener('mousemove', this.onNibMove);
-    if (!this.isDragging) return;
-    this.isDragging = false;
-    this.replay();
-  }
+    isActiveUrl(index: number) {
+      if (index === 0) return this.startLocation === 'sessionStart';
+      if (index === this.session.urls.length - 1) return this.startLocation === 'currentLocation';
+      return this.selectedNavigationId === this.session.urls[index].navigationId;
+    },
 
-  onNibMove(e) {
-    e.preventDefault();
+    clickUrlTick(event: MouseEvent, navigationId: number) {
+      this.selectedNavigationId = navigationId;
+      this.onNibMove(event);
+      this.replay().catch(console.error);
+    },
 
-    const start = this.nibLeft;
-    const percentOffset = this.getTrackOffset(e);
+    nextUrlTickWidth(urlIndex: number) {
+      if (urlIndex === this.session.urls.length - 1) return '2px';
+      const diff =
+        this.session.urls[urlIndex + 1].offsetPercent - this.session.urls[urlIndex].offsetPercent;
+      return `${diff}%`;
+    },
 
-    this.nibLeft = percentOffset + '%';
-    this.isHistoryMode = this.nibLeft !== '100%';
-    if (this.session.heroSessionId && start !== this.nibLeft) {
-      this.pendingReplayNavigationOffset = percentOffset;
-    }
-  }
-
-  async replay() {
-    if (this.pendingReplayNavigationOffset === null) return;
-    const percentOffset = this.pendingReplayNavigationOffset;
-    this.pendingReplayNavigationOffset = null;
-    await this.client.send('Session.replay', {
-      heroSessionId: this.session.heroSessionId,
-      percentOffset,
-    });
-  }
-
-  async historyForward() {
-    const { timelineOffsetPercent } = await this.client.send('Session.replay', {
-      heroSessionId: this.session.heroSessionId,
-      step: 'forward',
-    });
-    this.nibLeft = `${timelineOffsetPercent}%`;
-    if (timelineOffsetPercent === 100) this.isHistoryMode = false;
-  }
-
-  async historyBack() {
-    if (!this.isHistoryMode) return;
-    const { timelineOffsetPercent } = await this.client.send('Session.replay', {
-      heroSessionId: this.session.heroSessionId,
-      step: 'back',
-    });
-    this.nibLeft = `${timelineOffsetPercent}%`;
-  }
-
-  canPlay(): boolean {
-    if (!this.session.heroSessionId) return false;
-    return this.session.playbackState === 'paused';
-  }
-
-  canPause(): boolean {
-    if (!this.session.heroSessionId) return false;
-    return this.isLive;
-  }
-
-  resumeFrom(startLocation: ChromeAliveApp['startLocation'], navigationId?: number) {
-    this.startLocation = startLocation;
-    this.selectedNavigationId = navigationId;
-    this.resume();
-  }
-
-  resume() {
-    this.client.send('Session.resume', {
-      heroSessionId: this.session.heroSessionId,
-      startLocation: this.startLocation,
-      startFromNavigationId: this.selectedNavigationId,
-    });
-  }
-
-  pause() {
-    this.client.send('Session.step', { heroSessionId: this.session.heroSessionId });
-  }
-
-  async created() {
-    await this.client.connect();
-    this.client.onConnect = () => this.sendBoundsChanged();
-  }
-
-  updateScriptTimeAgo(): void {
-    this.scriptTimeAgo = this.calculateScriptTimeAgo();
-    clearTimeout(this.timeAgoTimeout);
-    this.timeAgoTimeout = setTimeout(this.updateScriptTimeAgo, this.timeAgoDelay ?? 1e3) as any;
-  }
-
-  onSessionActiveEvent(message: IHeroSessionActiveEvent) {
-    const isNewId = message.heroSessionId !== this.session.heroSessionId || !message.heroSessionId;
-    Object.assign(this.session, message);
-    this.isHistoryMode = this.session.playbackState === 'history';
-
-    if (isNewId || !this.isHistoryMode) {
-      this.nibLeft = '100%';
-      this.selectedNavigationId = null;
+    trackMouseout() {
+      window.removeEventListener('mousemove', this.trackMousemove);
       this.timelineHover.show = false;
-    }
+    },
 
-    this.updateScriptTimeAgo();
+    trackMouseover() {
+      if (this.isLive) return;
+      window.addEventListener('mousemove', this.trackMousemove);
+    },
 
-    if (!this.hasLaunchedDatabox && !this.databoxWindow) {
-      this.hasLaunchedDatabox = true;
-      this.toggleDatabox();
-    }
+    trackMousemove(event: MouseEvent) {
+      const offset = this.getTrackOffset(event);
+      this.timelineHoverWidth ||= (
+        this.$refs.timelineHover as HTMLElement
+      ).getBoundingClientRect().width;
 
-    let lastOffset: number = null;
-    this.screenshotTimestampsByOffset.clear();
-    if (!this.session.screenshots.length) this.screenshotsByTimestamp.clear();
+      this.timelineHover.left = event.pageX - Math.round(this.timelineHoverWidth / 2);
 
-    for (const screenshot of this.session.screenshots) {
-      if (!this.screenshotsByTimestamp.has(screenshot.timestamp)) {
-        // placeholder while retrieving
-        this.screenshotsByTimestamp.set(screenshot.timestamp, null);
-        this.client
-          .send('Session.getScreenshot', {
-            timestamp: screenshot.timestamp,
-            sessionId: message.heroSessionId,
-          })
-          .then(x => {
-            if (x.imageBase64) this.screenshotsByTimestamp.set(screenshot.timestamp, x.imageBase64);
-            else this.screenshotsByTimestamp.delete(screenshot.timestamp);
-          })
-          .catch(console.error);
+      const runtimeMs = Math.round((offset / 100) * this.session.runtimeMs);
+      this.timelineHover.runtime = `${runtimeMs}ms`;
+      if (runtimeMs > 1e3) {
+        const runtimeSecs = Math.round(10 * (runtimeMs / 1000)) / 10;
+        this.timelineHover.runtime = `${runtimeSecs}s`;
       }
 
-      let offsetPercent = Math.round(100 * screenshot.offsetPercent) / 100;
-      if (lastOffset !== null) {
-        this.fillScreenshotSlots(lastOffset, offsetPercent);
+      let lastChanges = 0;
+      for (const paint of this.session.paintEvents) {
+        // go until this change is after the current offset
+        if (paint.offsetPercent > offset) break;
+        lastChanges = paint.domChanges;
+      }
+      this.timelineHover.domChanges = lastChanges;
+      this.timelineHover.status = 'Loading';
+
+      let loadedUrl: IHeroSessionActiveEvent['urls'][0] = null;
+      for (const url of this.session.urls) {
+        if (url.offsetPercent > offset) break;
+        loadedUrl = url;
+      }
+      if (loadedUrl?.url) {
+        let statusText = 'Navigation Requested';
+        if (offset === 100) statusText = 'Current Location';
+
+        for (const { status, offsetPercent } of loadedUrl.loadStatusOffsets) {
+          if (offsetPercent > offset) break;
+          statusText = status;
+        }
+
+        this.timelineHover.status = statusText;
+      }
+      this.timelineHover.url = loadedUrl?.url;
+      const timestamp = this.screenshotTimestampsByOffset.get(offset);
+      this.timelineHover.imageBase64 = this.screenshotsByTimestamp.get(timestamp);
+      this.timelineHover.show = true;
+    },
+
+    calculateScriptTimeAgo(): string {
+      const lastModifiedTime = this.session.scriptLastModifiedTime;
+      if (!lastModifiedTime) return 'long';
+      const timeAgo = Date.now() - lastModifiedTime;
+      const oneMinute = 60e3;
+      const oneHour = oneMinute * 60;
+      const oneDay = oneHour * 24;
+      if (timeAgo >= oneDay) {
+        const days = Math.floor(timeAgo / oneDay);
+        this.timeAgoDelay = 60e3;
+        if (days > 1) return `${days} days`;
+        return `1 day`;
+      }
+      if (timeAgo >= oneHour) {
+        const hours = Math.floor(timeAgo / oneHour);
+        this.timeAgoDelay = 60e3;
+        return `${hours}h`;
+      }
+      if (timeAgo >= oneMinute) {
+        const minutes = Math.floor(timeAgo / oneMinute);
+        this.timeAgoDelay = 30e3;
+        return `${minutes}m`;
+      }
+      this.timeAgoDelay = 1e3;
+      const seconds = Math.floor(timeAgo / 1e3);
+      return `${seconds}s`;
+    },
+
+    toggleDatabox() {
+      if (this.isShowingMenu) this.isShowingMenu = false;
+      if (this.databoxWindow) {
+        this.databoxWindow.close();
+        this.databoxWindow = null;
+      } else {
+        const { bottom, right } = (this.$refs.toolbar as HTMLElement).getBoundingClientRect();
+        const features = `top=${bottom + 100},left=${right - 260},width=300,height=400`;
+        this.databoxWindow = window.open('/databox.html', 'DataboxPanel', features);
+
+        this.databoxWindow.addEventListener('close', () => {
+          this.databoxWindow = null;
+        });
+        this.databoxWindow.addEventListener('manual-close', () => {
+          this.databoxWindow = null;
+        });
+      }
+    },
+
+    startDraggingNib() {
+      if (this.isLive) return;
+      window.addEventListener('mousemove', this.onNibMove);
+      this.isDragging = true;
+    },
+
+    stopDraggingNib() {
+      window.removeEventListener('mousemove', this.onNibMove);
+      if (!this.isDragging) return;
+      this.isDragging = false;
+      this.replay();
+    },
+
+    onNibMove(e) {
+      e.preventDefault();
+
+      const start = this.nibLeft;
+      const percentOffset = this.getTrackOffset(e);
+
+      this.nibLeft = percentOffset + '%';
+      this.isHistoryMode = this.nibLeft !== '100%';
+      if (this.session.heroSessionId && start !== this.nibLeft) {
+        this.pendingReplayNavigationOffset = percentOffset;
+      }
+    },
+
+    async replay() {
+      if (this.pendingReplayNavigationOffset === null) return;
+      const percentOffset = this.pendingReplayNavigationOffset;
+      this.pendingReplayNavigationOffset = null;
+      await Client.send('Session.replay', {
+        heroSessionId: this.session.heroSessionId,
+        percentOffset,
+      });
+    },
+
+    async historyForward() {
+      const { timelineOffsetPercent } = await Client.send('Session.replay', {
+        heroSessionId: this.session.heroSessionId,
+        step: 'forward',
+      });
+      this.nibLeft = `${timelineOffsetPercent}%`;
+      if (timelineOffsetPercent === 100) this.isHistoryMode = false;
+    },
+
+    async historyBack() {
+      if (!this.isHistoryMode) return;
+      const { timelineOffsetPercent } = await Client.send('Session.replay', {
+        heroSessionId: this.session.heroSessionId,
+        step: 'back',
+      });
+      this.nibLeft = `${timelineOffsetPercent}%`;
+    },
+
+    canPlay(): boolean {
+      if (!this.session.heroSessionId) return false;
+      return this.session.playbackState === 'paused';
+    },
+
+    canPause(): boolean {
+      if (!this.session.heroSessionId) return false;
+      return this.isLive;
+    },
+
+    resumeFrom(startLocation: IStartLocation, navigationId?: number) {
+      this.startLocation = startLocation;
+      this.selectedNavigationId = navigationId;
+      this.resume();
+    },
+
+    resume() {
+      Client.send('Session.resume', {
+        heroSessionId: this.session.heroSessionId,
+        startLocation: this.startLocation,
+        startFromNavigationId: this.selectedNavigationId,
+      });
+    },
+
+    pause() {
+      Client.send('Session.step', { heroSessionId: this.session.heroSessionId });
+    },
+
+    async created() {
+      await Client.connect();
+      Client.onConnect = () => this.sendBoundsChanged();
+    },
+
+    updateScriptTimeAgo(): void {
+      this.scriptTimeAgo = this.calculateScriptTimeAgo();
+      clearTimeout(this.timeAgoTimeout);
+      this.timeAgoTimeout = setTimeout(this.updateScriptTimeAgo, this.timeAgoDelay ?? 1e3) as any;
+    },
+
+    onSessionActiveEvent(message: IHeroSessionActiveEvent) {
+      const isNewId = message.heroSessionId !== this.session.heroSessionId || !message.heroSessionId;
+      Object.assign(this.session, message);
+      this.isHistoryMode = this.session.playbackState === 'history';
+
+      if (isNewId || !this.isHistoryMode) {
+        this.nibLeft = '100%';
+        this.selectedNavigationId = null;
+        this.timelineHover.show = false;
       }
 
-      this.screenshotTimestampsByOffset.set(offsetPercent, screenshot.timestamp);
+      this.updateScriptTimeAgo();
 
-      lastOffset = offsetPercent;
-    }
-    if (lastOffset) this.fillScreenshotSlots(lastOffset, 100);
-    const lastScreenshot = this.session.screenshots[this.session.screenshots.length - 1];
-    if (lastScreenshot) this.screenshotTimestampsByOffset.set(100, lastScreenshot.timestamp);
-  }
+      if (!this.hasLaunchedDatabox && !this.databoxWindow) {
+        this.hasLaunchedDatabox = true;
+        this.toggleDatabox();
+      }
 
-  fillScreenshotSlots(startOffset: number, endOffset: number) {
-    let lastOffset = startOffset;
-    const timestampOfPrevious = this.screenshotTimestampsByOffset.get(lastOffset);
-    while (lastOffset + 0.01 < endOffset) {
-      this.screenshotTimestampsByOffset.set(lastOffset, timestampOfPrevious);
-      lastOffset = Math.round(100 * (lastOffset + 0.01)) / 100;
-    }
-  }
+      let lastOffset: number = null;
+      this.screenshotTimestampsByOffset.clear();
+      if (!this.session.screenshots.length) this.screenshotsByTimestamp.clear();
 
+      for (const screenshot of this.session.screenshots) {
+        if (!this.screenshotsByTimestamp.has(screenshot.timestamp)) {
+          // placeholder while retrieving
+          this.screenshotsByTimestamp.set(screenshot.timestamp, null);
+          Client
+            .send('Session.getScreenshot', {
+              timestamp: screenshot.timestamp,
+              sessionId: message.heroSessionId,
+            })
+            .then(x => {
+              if (x.imageBase64) this.screenshotsByTimestamp.set(screenshot.timestamp, x.imageBase64);
+              else this.screenshotsByTimestamp.delete(screenshot.timestamp);
+            })
+            .catch(console.error);
+        }
+
+        let offsetPercent = Math.round(100 * screenshot.offsetPercent) / 100;
+        if (lastOffset !== null) {
+          this.fillScreenshotSlots(lastOffset, offsetPercent);
+        }
+
+        this.screenshotTimestampsByOffset.set(offsetPercent, screenshot.timestamp);
+
+        lastOffset = offsetPercent;
+      }
+      if (lastOffset) this.fillScreenshotSlots(lastOffset, 100);
+      const lastScreenshot = this.session.screenshots[this.session.screenshots.length - 1];
+      if (lastScreenshot) this.screenshotTimestampsByOffset.set(100, lastScreenshot.timestamp);
+    },
+
+    fillScreenshotSlots(startOffset: number, endOffset: number) {
+      let lastOffset = startOffset;
+      const timestampOfPrevious = this.screenshotTimestampsByOffset.get(lastOffset);
+      while (lastOffset + 0.01 < endOffset) {
+        this.screenshotTimestampsByOffset.set(lastOffset, timestampOfPrevious);
+        lastOffset = Math.round(100 * (lastOffset + 0.01)) / 100;
+      }
+    },
+
+    getTrackOffset(event: MouseEvent): number {
+      this.trackOffset ??= (this.$refs.track as HTMLElement).getBoundingClientRect();
+      let percentOffset = (100 * (event.pageX - this.trackOffset.x)) / this.trackOffset.width;
+      percentOffset = Math.round(10 * percentOffset) / 10;
+      if (percentOffset > 100) percentOffset = 100;
+      if (percentOffset < 0) percentOffset = 0;
+      return percentOffset;
+    },
+
+    async sendToolbarHeightChange() {
+      const toolbar = this.$refs.toolbar as HTMLElement;
+      const bounds = {
+        height: toolbar.offsetHeight,
+        width: toolbar.offsetWidth,
+        left: window.screenLeft,
+        top: window.screenTop,
+      };
+      if (
+        bounds.height === this.lastToolbarBounds?.height &&
+        bounds.width === this.lastToolbarBounds?.width
+      ) {
+        return;
+      }
+      this.lastToolbarBounds = bounds;
+
+      await Client.connect();
+      await Client.send('App.boundsChanged', {
+        bounds,
+      });
+    },
+
+    async sendBoundsChanged() {
+      const elem = this.$refs.app as HTMLElement;
+      document.dispatchEvent(
+        new CustomEvent('app:height-changed', {
+          detail: {
+            height: elem.offsetHeight,
+          },
+        }),
+      );
+    },
+  },
   mounted() {
-    this.client.on('Session.loading', () => (this.isLoading = true));
-    this.client.on('Session.loaded', () => (this.isLoading = false));
-    this.client.on('Session.active', this.onSessionActiveEvent);
+    Client.on('Session.loading', () => (this.isLoading = true));
+    Client.on('Session.loaded', () => (this.isLoading = false));
+    Client.on('Session.active', this.onSessionActiveEvent);
     document.addEventListener("keyup", this.onKeypress);
     window.addEventListener('blur', () => (this.isShowingMenu = false));
     window.addEventListener('mouseup', this.stopDraggingNib);
@@ -501,54 +544,12 @@ export default class ChromeAliveApp extends Vue {
     new ResizeObserver(() => this.sendToolbarHeightChange()).observe(
       this.$refs.toolbar as HTMLElement,
     );
-  }
-
-  private getTrackOffset(event: MouseEvent): number {
-    this.trackOffset ??= (this.$refs.track as HTMLElement).getBoundingClientRect();
-    let percentOffset = (100 * (event.pageX - this.trackOffset.x)) / this.trackOffset.width;
-    percentOffset = Math.round(10 * percentOffset) / 10;
-    if (percentOffset > 100) percentOffset = 100;
-    if (percentOffset < 0) percentOffset = 0;
-    return percentOffset;
-  }
-
-  private async sendToolbarHeightChange() {
-    const toolbar = this.$refs.toolbar as HTMLElement;
-    const bounds = {
-      height: toolbar.offsetHeight,
-      width: toolbar.offsetWidth,
-      left: window.screenLeft,
-      top: window.screenTop,
-    };
-    if (
-      bounds.height === this.lastToolbarBounds?.height &&
-      bounds.width === this.lastToolbarBounds?.width
-    ) {
-      return;
-    }
-    this.lastToolbarBounds = bounds;
-
-    await this.client.connect();
-    await this.client.send('App.boundsChanged', {
-      bounds,
-    });
-  }
-
-  private async sendBoundsChanged() {
-    const elem = this.$refs.app as HTMLElement;
-    document.dispatchEvent(
-      new CustomEvent('app:height-changed', {
-        detail: {
-          height: elem.offsetHeight,
-        },
-      }),
-    );
-  }
+  },
 
   beforeUnmount() {
     clearTimeout(this.timeAgoTimeout);
-  }
-}
+  },
+});
 </script>
 
 <style lang="scss">
