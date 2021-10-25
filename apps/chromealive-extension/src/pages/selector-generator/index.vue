@@ -63,7 +63,7 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
-import { onMessage, sendToContentScript } from '../../lib/devtools/DevtoolsMessenger';
+import { onMessagePayload, sendToContentScript } from '../../lib/devtools/DevtoolsMessenger';
 
 const includedNamesByKey = Vue.reactive(new Map());
 const excludedNamesByKey = Vue.reactive(new Map());
@@ -71,7 +71,7 @@ const excludedNamesByKey = Vue.reactive(new Map());
 const runText = Vue.ref('Run');
 const selectors = Vue.reactive([]);
 
-onMessage(payload => {
+onMessagePayload(payload => {
   const { event, name, key } = payload;
   if (event === 'AddIncludedElement') {
     includedNamesByKey.set(key, name);

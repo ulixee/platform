@@ -38,8 +38,8 @@ export default class HeroCorePlugin extends CorePlugin {
 
     const browserEmitter = new EventEmitter();
     this.tabGroupModule = new TabGroupModule(this.bridgeToExtension, browserEmitter);
-    this.windowBoundsModule = new WindowBoundsModule(this.bridgeToExtension);
-    this.focusedWindowModule = new FocusedWindowModule(this.bridgeToExtension);
+    this.windowBoundsModule = new WindowBoundsModule(this.bridgeToExtension, browserEmitter);
+    this.focusedWindowModule = new FocusedWindowModule(this.bridgeToExtension, browserEmitter);
 
     this.bridgeToDevtoolsPrivate.on('message', (message, { destLocation }) => {
       const { ContentScript, BackgroundScript } = MessageLocation;
@@ -53,11 +53,13 @@ export default class HeroCorePlugin extends CorePlugin {
       }
     });
 
-    this.bridgeToExtension.on('message', (message, { destLocation, pageId }) => {
+    this.bridgeToExtension.on('message', (message, messageComponents) => {
+      const { destLocation, stringifiedMessage, puppetPageId } = messageComponents;
       if (destLocation === MessageLocation.DevtoolsPrivate) {
         this.bridgeToDevtoolsPrivate.send(message);
       } else if (destLocation === MessageLocation.Core) {
-        browserEmitter.emit('message', message, { pageId });
+        const { payload } = JSON.parse(stringifiedMessage);
+        browserEmitter.emit('payload', payload, { puppetPageId });
       }
     });
   }
@@ -73,11 +75,13 @@ export default class HeroCorePlugin extends CorePlugin {
     this.windowBoundsModule.configure(options);
   }
 
-  onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
+  async onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
     if (!sessionSummary.options.showBrowser) return;
-    return Promise.all([
+    await Promise.all([
       this.bridgeToExtension.addPuppetPage(page),
       this.windowBoundsModule.onNewPuppetPage(page, sessionSummary),
+      this.focusedWindowModule.onNewPuppetPage(page, sessionSummary),
+      this.tabGroupModule.onNewPuppetPage(page, sessionSummary),
     ]);
   }
 

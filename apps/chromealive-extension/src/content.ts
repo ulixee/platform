@@ -3,8 +3,9 @@ import '@webcomponents/custom-elements';
 import getCssSelector from 'css-selector-generator';
 import { MessageEventType } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
 import SelectorMenuElement from './lib/SelectorMenuElement';
-import { onMessage, sendToDevtoolsScript } from './lib/content/ContentMessenger';
+import { onMessagePayload, sendToDevtoolsScript } from './lib/content/ContentMessenger';
 import ElementsBucket from './lib/ElementsBucket';
+import './lib/content/ContentListeners';
 
 // @ts-ignore
 window.getCssSelector = getCssSelector;
@@ -38,7 +39,7 @@ function closeSelectorMenu() {
   selectorMenuElem.hide();
 }
 
-onMessage(payload => {
+onMessagePayload(payload => {
   const { event } = payload;
   if (event === MessageEventType.OverlayDispatched) {
     closeSelectorMenu();

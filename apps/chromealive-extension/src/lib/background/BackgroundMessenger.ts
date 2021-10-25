@@ -45,7 +45,7 @@ export function sendToCore(payload, responseCallbackFn?: IResponseFn) {
 }
 
 let onMessageFn;
-export function onMessage(fn: (payload: any, responseFn: IResponseFn) => void) {
+export function onMessagePayload(fn: (payload: any, responseFn: IResponseFn) => void) {
   if (onMessageFn) throw new Error('onMessage has already been called');
   onMessageFn = fn;
 }
@@ -75,13 +75,12 @@ chrome.runtime.onConnect.addListener(port => {
 
   if (!portLocation || !tabId) {
     port.disconnect();
-    console.log('Unknown port connection');
+    logDebug('Unknown port connection');
   }
   registerPort(tabId, portLocation as IMessageLocation, port);
 
   try {
     port.onMessage.addListener((message: IMessageObject) => {
-      console.log('chrome.runtime.onMessage', message, port, currentMessengerLocation);
       if (message.destLocation === currentMessengerLocation) {
         if (isResponseMessage(message)) {
           handleIncomingLocalResponse(message);
@@ -96,17 +95,23 @@ chrome.runtime.onConnect.addListener(port => {
       if (tabId) unregisterPort(tabId, portLocation);
     });
     if (portLocation === MessageLocation.ContentScript) {
-      if (!port.sender.tab) {
-        console.log('MISSING tab: ', port.sender);
+      if(!port.sender.tab) {
+        logDebug('MISSING tab: ', port.sender);
       }
-      sendToCore({
-        event: 'OnTabIdentify',
-        tabId,
-        windowId: port.sender.tab.windowId,
-      });
+      const message: IMessageObject = {
+        destLocation: MessageLocation.Core,
+        origLocation: currentMessengerLocation,
+        payload: {
+          event: 'OnTabIdentify',
+          tabId,
+          windowId: port.sender.tab.windowId,
+        },
+        responseCode: ResponseCode.N,
+      };
+      routeInternally(message, { tabId }).catch(error => logDebug(error));
     }
   } catch (e) {
-    console.log('ERROR: ', e);
+    logDebug('ERROR: ', e);
     // nothing to do here
   }
 });
@@ -155,28 +160,26 @@ async function routeInternally(
 ): Promise<void> {
   const { tabId, sendToAllTabs } = options;
 
-  console.log('ROUTING: ', message);
-
   if (tabId) {
-    await routeInternallyToTab(tabId, message);
+    routeInternallyToTab(tabId, message);
     return;
   }
 
   const window = await getActiveWindow();
   const activeTabs = await getActiveTabs(window.id);
   for (const tab of activeTabs) {
-    const didPost = await routeInternallyToTab(tab.id, message);
+    const didPost = routeInternallyToTab(tab.id, message);
     if (didPost && !sendToAllTabs) return;
   }
 }
 
-async function routeInternallyToTab(
+function routeInternallyToTab(
   tabId: number,
   message: IMessageObject,
   isRetry = false,
-): Promise<boolean> {
+): boolean {
   try {
-    const port = await connectToTabContentScript(tabId, message.destLocation);
+    const port = connectToTabContentScript(tabId, message.destLocation);
     if (port) {
       port.postMessage(message);
       return true;
@@ -203,9 +206,11 @@ function unregisterPort(tabId: number, portLocation: IMessageLocation) {
   }
 }
 
+const sendThroughContentScript: IMessageLocation[] = [MessageLocation.ContentScript, MessageLocation.Core, MessageLocation.DevtoolsPrivate ];
 function findPort(tabId: number, portLocation: IMessageLocation) {
+  const nextPortLocation = sendThroughContentScript.includes(portLocation) ? MessageLocation.ContentScript : portLocation;
   if (!portsByTabId[tabId]) return;
-  return portsByTabId[tabId][portLocation];
+  return portsByTabId[tabId][nextPortLocation];
 }
 
 function connectToTabContentScript(

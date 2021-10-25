@@ -1,45 +1,41 @@
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
+import { EventEmitter } from "events";
+import BridgeToExtension from '../bridges/BridgeToExtension';
 
 export default class FocusedWindowModule {
   private sessionId: string;
+  private bridgeToExtension: BridgeToExtension;
 
-  constructor(bridgeToExtensionContent) {
-    bridgeToExtensionContent.on('message', (message, pageId) => {
-      if (message.event === 'OnPageVisible') {
-        this.onPageVisible(pageId, message);
+  constructor(bridgeToExtension: BridgeToExtension, browserEmitter: EventEmitter) {
+    this.bridgeToExtension = bridgeToExtension;
+    browserEmitter.on('payload', (payload, puppetPageId) => {
+      if (payload.event === 'OnPageVisible') {
+        this.handlePageIsVisible(payload, puppetPageId);
       }
     });
   }
 
-  onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
+  public onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
     if (!sessionSummary.options.showBrowser) return;
     this.sessionId ??= sessionSummary.id;
 
-    page.once('close', () => this.onPageClosed(page.id));
+    page.once('close', () => this.handlePageIsClosed(page.id));
 
     return Promise.all([
       page.devtoolsSession.send('Emulation.setFocusEmulationEnabled', { enabled: false }),
-      page.addNewDocumentScript(
-        `document.addEventListener('visibilitychange', function() {
-    const state = document.visibilityState;
-    if (state === 'visible') ___onPageVisible('{ "focused": true, "active": true }');
-  }, false)`,
-        true,
-      ),
     ]);
   }
 
-  onPageVisible(puppetPageId: string, statusJson: string) {
-    const status = JSON.parse(statusJson ?? '{}');
+  private handlePageIsVisible(payload: any, puppetPageId: string) {
     FocusedWindowModule.onVisibilityChange(
-      { active: true, focused: status.focused },
+      { active: true, focused: payload.focused },
       this.sessionId,
       puppetPageId,
     );
   }
 
-  onPageClosed(puppetPageId: string): void {
+  private handlePageIsClosed(puppetPageId: string): void {
     FocusedWindowModule.onVisibilityChange(
       { active: false, focused: false },
       this.sessionId,

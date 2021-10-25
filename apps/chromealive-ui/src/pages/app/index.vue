@@ -115,7 +115,6 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import Client from '@/api/Client';
-import 'vue-slider-component/theme/default.css';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
 import { ISessionResumeArgs } from '@ulixee/apps-chromealive-interfaces/apis/ISessionResumeApi';

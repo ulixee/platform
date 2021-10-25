@@ -18,12 +18,12 @@ export default class TabGroupModule {
   private identityByPageId = new Map<string, { tabId: number; windowId: number }>();
   private sessionId: string;
 
-  constructor(bridgeToExtension, browserEmitter: EventEmitter) {
+  constructor(bridgeToExtension: BridgeToExtension, browserEmitter: EventEmitter) {
     this.bridgeToExtension = bridgeToExtension;
-    browserEmitter.on('message', (message, { pageId }) => {
-      if (message.event === 'OnTabIdentify') {
-        this.onTabIdentified(pageId, message);
-      } else if (message.event === 'OnTabGroupOpened') {
+    browserEmitter.on('payload', (payload, { puppetPageId }) => {
+      if (payload.event === 'OnTabIdentify') {
+        this.onTabIdentified(payload, puppetPageId);
+      } else if (payload.event === 'OnTabGroupOpened') {
         this.onTabGroupOpened();
       }
     });
@@ -52,10 +52,10 @@ export default class TabGroupModule {
     const tabIds: number[] = [];
     let windowId: number;
     for (const page of puppetPages) {
-      const id = this.identityByPageId.get(page.id);
-      if (id) {
-        windowId = id.windowId;
-        tabIds.push(id.tabId);
+      const ids = this.identityByPageId.get(page.id);
+      if (ids) {
+        windowId = ids.windowId;
+        tabIds.push(ids.tabId);
       }
     }
     const args = {
@@ -65,7 +65,7 @@ export default class TabGroupModule {
       color,
       collapsed: true,
     };
-    const groupId = await this.sendToExtensionBackground<number>('groupTabs', args, true);
+    const { groupId } = await this.sendToExtension<{ groupId: number }>(puppetPages[0], 'groupTabs', args, true);
     // don't register the tab group opened command until after it opens
     await new Promise(setImmediate);
     if (collapsed && onUncollapsed) this.runOnTabGroupOpened = onUncollapsed;
@@ -75,24 +75,25 @@ export default class TabGroupModule {
   public async ungroupTabs(puppetPages: IPuppetPage[]): Promise<void> {
     const tabIds: number[] = [];
     for (const page of puppetPages) {
-      const id = this.identityByPageId.get(page.id);
-      if (id) tabIds.push(id.tabId);
+      const ids = this.identityByPageId.get(page.id);
+      if (ids) tabIds.push(ids.tabId);
     }
     this.runOnTabGroupOpened = null;
     const args = { tabIds };
-    await this.sendToExtensionBackground<void>('ungroupTabs', args, false);
+    await this.sendToExtension<void>(puppetPages[0], 'ungroupTabs', args, false);
   }
 
   private onTabGroupOpened(): void {
     if (this.runOnTabGroupOpened) this.runOnTabGroupOpened();
   }
 
-  private onTabIdentified(puppetPageId: string, payload: string): void {
-    const { windowId, tabId } = JSON.parse(payload);
+  private onTabIdentified(payload: any, puppetPageId: string, ): void {
+    const { windowId, tabId } = payload;
     this.identityByPageId.set(puppetPageId, { windowId, tabId });
   }
 
-  private async sendToExtensionBackground<T>(
+  private async sendToExtension<T>(
+    puppetPage: IPuppetPage,
     action: string,
     args: object = {},
     waitForResponse = false,
@@ -106,7 +107,7 @@ export default class TabGroupModule {
       responseCode,
       responseId,
     };
-    return (await this.bridgeToExtension.send(message, null)) as T;
+    return (await this.bridgeToExtension.send(message, puppetPage.id)) as T;
   }
 
   private pageClosed(page: IPuppetPage) {
