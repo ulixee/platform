@@ -35,7 +35,7 @@ export default class Resolvable<T = any> implements IResolvablePromise<T>, Promi
     clearTimeout(this.timeout);
     this.resolveFn(value);
     Promise.resolve(value)
-      // eslint-disable-next-line promise/always-return
+      // eslint-disable-next-line promise/always-return,@typescript-eslint/no-floating-promises
       .then(x => {
         this.resolved = x;
       })

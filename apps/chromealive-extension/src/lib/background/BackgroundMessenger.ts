@@ -13,11 +13,7 @@ type IResponseFn = (response: any) => void;
 
 const currentMessengerLocation = MessageLocation.BackgroundScript;
 
-export function sendToContentScript(
-  tabId: number,
-  payload: any,
-  responseCallbackFn?: IResponseFn,
-) {
+export function sendToContentScript(tabId: number, payload: any, responseCallbackFn?: IResponseFn) {
   const message: IMessageObject = {
     destLocation: MessageLocation.ContentScript,
     origLocation: currentMessengerLocation,
@@ -25,7 +21,7 @@ export function sendToContentScript(
     ...convertResponseFnToCodeAndId(responseCallbackFn),
   };
   const sendToAllTabs = !tabId;
-  routeInternally(message, { sendToAllTabs, tabId });
+  routeInternally(message, { sendToAllTabs, tabId }).catch(console.error);
 }
 
 export function sendToDevtoolsPrivate(payload: any, responseCallbackFn?: IResponseFn) {
@@ -35,7 +31,7 @@ export function sendToDevtoolsPrivate(payload: any, responseCallbackFn?: IRespon
     payload,
     ...convertResponseFnToCodeAndId(responseCallbackFn),
   };
-  routeInternally(message);
+  routeInternally(message).catch(console.error);
 }
 
 export function sendToCore(payload, responseCallbackFn?: IResponseFn) {
@@ -45,7 +41,7 @@ export function sendToCore(payload, responseCallbackFn?: IResponseFn) {
     payload,
     ...convertResponseFnToCodeAndId(responseCallbackFn),
   };
-  routeInternally(message);
+  routeInternally(message).catch(console.error);
 }
 
 let onMessageFn;
@@ -93,14 +89,14 @@ chrome.runtime.onConnect.addListener(port => {
           handleIncomingLocalMessage(message);
         }
       } else {
-        routeInternally(message);
+        routeInternally(message).catch(console.error);
       }
     });
     port.onDisconnect.addListener(() => {
       if (tabId) unregisterPort(tabId, portLocation);
     });
     if (portLocation === MessageLocation.ContentScript) {
-      if(!port.sender.tab) {
+      if (!port.sender.tab) {
         console.log('MISSING tab: ', port.sender);
       }
       sendToCore({
@@ -143,7 +139,7 @@ function sendResponseBack(message: IMessageObject, responsePayload) {
     responseCode,
     payload: responsePayload,
   };
-  routeInternally(response, { tabId });
+  routeInternally(response, { tabId }).catch(console.error);
 }
 
 // INTERNAL ROUTING ////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +149,10 @@ interface IInternalSendOptions {
   sendToAllTabs?: boolean;
 }
 
-async function routeInternally(message: IMessageObject, options: IInternalSendOptions = {}) {
+async function routeInternally(
+  message: IMessageObject,
+  options: IInternalSendOptions = {},
+): Promise<void> {
   const { tabId, sendToAllTabs } = options;
 
   console.log('ROUTING: ', message);
@@ -209,7 +208,10 @@ function findPort(tabId: number, portLocation: IMessageLocation) {
   return portsByTabId[tabId][portLocation];
 }
 
-function connectToTabContentScript(tabId: number, portLocation: IMessageLocation): chrome.runtime.Port {
+function connectToTabContentScript(
+  tabId: number,
+  portLocation: IMessageLocation,
+): chrome.runtime.Port {
   let port = findPort(tabId, portLocation);
   if (port) return port;
   if (portLocation !== MessageLocation.ContentScript) return;
@@ -217,7 +219,9 @@ function connectToTabContentScript(tabId: number, portLocation: IMessageLocation
     port = chrome.tabs.connect(tabId, { name: currentMessengerLocation, frameId: 0 });
     registerPort(tabId, portLocation, port);
     return port;
-  } catch (err) { /* nothing */ }
+  } catch (err) {
+    /* nothing */
+  }
 }
 
 async function getActiveWindow(): Promise<chrome.windows.Window> {

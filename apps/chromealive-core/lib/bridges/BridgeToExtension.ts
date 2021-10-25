@@ -4,21 +4,22 @@ import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
-import { extensionId } from '../ExtensionUtils'
+import { extensionId } from '../ExtensionUtils';
 import ChromeAliveCore from '../../index';
 import {
   ___receiveFromCore,
   ___sendToCore,
   extractStringifiedComponentsFromMessage,
   extractResponseIdFromMessage,
-  messageExpectsResponse, isResponseMessage,
+  messageExpectsResponse,
+  isResponseMessage,
 } from '../BridgeHelpers';
 
 export default class BridgeToExtension extends EventEmitter {
   private pageMap: Map<string, { contextIds: Set<number>; puppetPage: IPuppetPage }> = new Map();
   private pendingByResponseId: { [id: string]: IResolvablePromise<any> } = {};
 
-  public addPuppetPage(page: IPuppetPage) {
+  public addPuppetPage(page: IPuppetPage): Promise<any> {
     this.pageMap.set(page.id, { contextIds: new Set(), puppetPage: page });
     const { devtoolsSession } = page;
 

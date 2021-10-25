@@ -14,7 +14,7 @@ export default class WindowBoundsModule {
     });
   }
 
-  public configure(options: IBrowserEmulatorConfig): Promise<any> | void {
+  public configure(options: IBrowserEmulatorConfig): void {
     if ((options.viewport as any)?.isDefault) {
       const maxChromeBounds = AliveBarPositioner.getMaxChromeBounds();
       Object.assign(options.viewport, {
