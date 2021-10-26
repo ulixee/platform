@@ -62,7 +62,7 @@ export function sendToCore(payload: any, responseCallbackFn?: IResponseFn) {
 }
 
 let onMessageFn;
-export function onMessage(fn: (payload: any, responseFn: IResponseFn) => void) {
+export function onMessagePayload(fn: (payload: any, responseFn: IResponseFn) => void) {
   if (onMessageFn) throw new Error('onMessage has already been called');
   onMessageFn = fn;
 }
@@ -194,7 +194,6 @@ function sendResponseBack(message: IMessageObject, responsePayload) {
 function routeInternally(message: IMessageObject) {
   // @ts-ignore
   if ([MessageLocation.BackgroundScript, MessageLocation.DevtoolsScript].includes(message.destLocation)) {
-    console.log('ROUTING: ', JSON.stringify(message));
     activePort.postMessage(message);
   } else {
     const packedMessage = packMessage(message);

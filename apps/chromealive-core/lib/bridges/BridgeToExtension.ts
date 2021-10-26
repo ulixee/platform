@@ -26,17 +26,18 @@ export default class BridgeToExtension extends EventEmitter {
     page.on('close', () => this.closePuppetPage(page));
     page.browserContext.on('close', () => this.closePuppetPage(page));
 
-    devtoolsSession.on('Runtime.executionContextCreated', event =>
-      this.onContextCreated(page, event),
-    );
-    devtoolsSession.on('Runtime.executionContextDestroyed', event =>
-      this.onContextDestroyed(page, event),
-    );
+    devtoolsSession.on('Runtime.executionContextCreated', event => {
+      this.onContextCreated(page, event);
+    });
+
+    devtoolsSession.on('Runtime.executionContextDestroyed', event => {
+      this.onContextDestroyed(page, event);
+    });
     devtoolsSession.on('Runtime.executionContextsCleared', () => this.onContextCleared(page));
 
-    devtoolsSession.on('Runtime.bindingCalled', event =>
-      this.handleIncomingMessageFromBrowser(event),
-    );
+    devtoolsSession.on('Runtime.bindingCalled', event => {
+      this.handleIncomingMessageFromBrowser(event, page.id);
+    });
 
     return Promise.all([
       devtoolsSession.send('Runtime.enable'),
@@ -53,13 +54,14 @@ export default class BridgeToExtension extends EventEmitter {
       throw new Error(`No active puppet page ${puppetPageId}`);
     }
     const { contextIds, puppetPage } = this.pageMap.get(puppetPageId);
-    const contextId = contextIds[0];
+    const contextId = contextIds.values().next().value;
     this.runInBrowser(
       puppetPage.devtoolsSession,
       contextId,
-      `window.${___receiveFromCore}('${destLocation}', '${responseCode}', ${restOfMessage});`,
+      `
+        window.${___receiveFromCore}('${destLocation}', '${responseCode}', ${restOfMessage});
+      `,
     );
-
     if (messageExpectsResponse(message)) {
       const responseId = extractResponseIdFromMessage(message);
       this.pendingByResponseId[responseId] = createPromise<T>(
@@ -99,9 +101,8 @@ export default class BridgeToExtension extends EventEmitter {
     });
   }
 
-  private handleIncomingMessageFromBrowser(event: any) {
+  private handleIncomingMessageFromBrowser(event: any, puppetPageId: string) {
     if (event.name !== ___sendToCore) return;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [destLocation, responseCode, stringifiedMessage] =
       extractStringifiedComponentsFromMessage(event.payload);
     if (isResponseMessage(event.payload)) {
@@ -109,7 +110,7 @@ export default class BridgeToExtension extends EventEmitter {
       const waitingForResponse = this.pendingByResponseId[responseId];
       waitingForResponse.resolve(payload);
     } else {
-      this.emit('message', event.payload, { destLocation });
+      this.emit('message', event.payload, { destLocation, responseCode, stringifiedMessage, puppetPageId });
     }
   }
 

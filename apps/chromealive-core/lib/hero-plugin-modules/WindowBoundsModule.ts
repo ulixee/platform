@@ -1,15 +1,19 @@
+import { EventEmitter } from "events";
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { IBrowserEmulatorConfig, ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import AliveBarPositioner from '../AliveBarPositioner';
+import BridgeToExtension from '../bridges/BridgeToExtension';
 
 export default class WindowBoundsModule {
   private sessionId: string;
+  private bridgeToExtension: BridgeToExtension;
 
-  constructor(bridgeToExtensionContent) {
-    bridgeToExtensionContent.on('message', message => {
-      if (message.event === 'OnBoundsChanged') {
-        this.onBoundsChanged(message);
+  constructor(bridgeToExtension: BridgeToExtension, browserEmitter: EventEmitter) {
+    this.bridgeToExtension = bridgeToExtension;
+    browserEmitter.on('payload', payload => {
+      if (payload.event === 'OnBoundsChanged') {
+        this.onBoundsChanged(payload);
       }
     });
   }
@@ -55,8 +59,8 @@ export default class WindowBoundsModule {
     ]);
   }
 
-  private onBoundsChanged(payload: string): void {
-    const { windowId, ...bounds } = JSON.parse(payload);
+  private onBoundsChanged(payload: any): void {
+    const { windowId, ...bounds } = payload;
     AliveBarPositioner.onChromeWindowBoundsChanged(this.sessionId, windowId, bounds);
   }
 }

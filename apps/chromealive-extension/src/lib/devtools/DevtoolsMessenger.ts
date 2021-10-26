@@ -62,7 +62,7 @@ export function sendToCore(payload, responseCallbackFn?: IResponseFn) {
 // LISTEN TO MESSAGES //////////////////////////////////////////////////////////////////////////////
 
 let onMessageFn;
-export function onMessage(fn: (payload: any, responseFn: IResponseFn) => void) {
+export function onMessagePayload(fn: (payload: any, responseFn: IResponseFn) => void) {
   if (onMessageFn) throw new Error('onMessage has already been set');
   onMessageFn = fn;
 }

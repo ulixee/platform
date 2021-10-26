@@ -1,5 +1,5 @@
 /// <reference types="chrome"/>
-import { onMessage } from './lib/background/BackgroundMessenger';
+import { onMessagePayload } from './lib/background/BackgroundMessenger';
 import { groupTabs, ungroupTabs } from './lib/background/TabManagement';
 import logDebug from './lib/logDebug';
 
@@ -8,7 +8,7 @@ const RuntimeActions = {
   ungroupTabs,
 };
 
-onMessage((payload, sendResponseFn) => {
+onMessagePayload((payload, sendResponseFn) => {
   if (RuntimeActions[payload.action]) {
     const fn = RuntimeActions[payload.action];
     fn(payload)
@@ -24,6 +24,5 @@ onMessage((payload, sendResponseFn) => {
       .catch(() => null);
     return true;
   }
-    console.log('UNHANDLED MESSAGE: ', payload);
-
+  console.log('UNHANDLED MESSAGE: ', payload);
 });
