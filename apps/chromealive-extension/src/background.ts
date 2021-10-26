@@ -2,6 +2,7 @@
 import { onMessagePayload } from './lib/background/BackgroundMessenger';
 import { groupTabs, ungroupTabs } from './lib/background/TabManagement';
 import logDebug from './lib/logDebug';
+import './lib/background/BackgroundListeners';
 
 const RuntimeActions = {
   groupTabs,
