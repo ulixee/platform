@@ -20,7 +20,7 @@ export default class TabGroupModule {
 
   constructor(bridgeToExtension: BridgeToExtension, browserEmitter: EventEmitter) {
     this.bridgeToExtension = bridgeToExtension;
-    browserEmitter.on('payload', (payload, { puppetPageId }) => {
+    browserEmitter.on('payload', (payload, puppetPageId) => {
       if (payload.event === 'OnTabIdentify') {
         this.onTabIdentified(payload, puppetPageId);
       } else if (payload.event === 'OnTabGroupOpened') {

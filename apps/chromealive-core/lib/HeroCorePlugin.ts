@@ -59,7 +59,7 @@ export default class HeroCorePlugin extends CorePlugin {
         this.bridgeToDevtoolsPrivate.send(message);
       } else if (destLocation === MessageLocation.Core) {
         const { payload } = JSON.parse(stringifiedMessage);
-        browserEmitter.emit('payload', payload, { puppetPageId });
+        browserEmitter.emit('payload', payload, puppetPageId);
       }
     });
   }
