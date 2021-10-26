@@ -47,7 +47,7 @@ async function broadcastOnPageVisible(windowId: number): Promise<void> {
 
 function broadcastGroupOpened(windowId: number): void {
   return sendToCore({
-    event: 'OnGroupOpened',
+    event: 'OnTabGroupOpened',
     windowId,
     tabGroupOpened: true,
   });
