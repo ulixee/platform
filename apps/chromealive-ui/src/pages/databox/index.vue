@@ -101,7 +101,6 @@ export default Vue.defineComponent({
 <style lang="scss">
 @import '../../assets/style/common-mixins';
 @import '../../assets/style/resets';
-@import '../../assets/style/flatjson';
 
 :root {
   --toolbarBackgroundColor: #fffdf4;

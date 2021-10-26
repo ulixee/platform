@@ -1,5 +1,6 @@
 import IDataboxUpdatedEvent from './IDataboxUpdatedEvent';
 import IHeroSessionActiveEvent from './IHeroSessionActiveEvent';
+import IPageStateUpdateEvent from './IPageStateUpdatedEvent';
 
 export default interface IChromeAliveEvents {
   'App.show': null;
@@ -10,4 +11,5 @@ export default interface IChromeAliveEvents {
   'Session.loaded': void;
   'Session.active': IHeroSessionActiveEvent;
   'Databox.updated': IDataboxUpdatedEvent;
+  'PageState.updated': IPageStateUpdateEvent;
 }

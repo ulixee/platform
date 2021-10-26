@@ -1,6 +1,6 @@
-import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
 import IDevtoolsSession from '@ulixee/hero-interfaces/IDevtoolsSession';
 import Log from '@ulixee/commons/lib/Logger';
+import { IBounds } from '@ulixee/apps-chromealive-interfaces/IBounds';
 
 const { log } = Log(module);
 

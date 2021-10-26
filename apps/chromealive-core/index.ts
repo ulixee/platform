@@ -17,8 +17,12 @@ const { log } = Log(module);
 
 export default class ChromeAliveCore {
   public static sessionObserversById = new Map<string, SessionObserver>();
+  public static get activeSessionObserver(): SessionObserver {
+    return this.sessionObserversById.get(this.activeHeroSessionId);
+  }
+
   public static activeHeroSessionId: string;
-  private static isReplayActive = false;
+  private static isTimetravelActive = false;
   private static connections: ConnectionToClient[] = [];
   private static shouldAutoShowBrowser = false;
   private static app: ChildProcess;
@@ -90,18 +94,23 @@ export default class ChromeAliveCore {
 
   private static onHeroSessionCreated(event: { session: HeroSession }): Promise<any> {
     const { session: heroSession } = event;
-    if (this.shouldAutoShowBrowser) {
-      heroSession.browserEngine.isHeaded = true;
-      heroSession.options.showBrowser = true;
-      heroSession.options.showBrowserInteractions = true;
-      heroSession.options.viewport ??= { width: 0, height: 0 };
-    }
-
-    // if not auto-registered, check if browser is showing
-    if (!heroSession.options.showBrowser) return;
 
     const script = heroSession.options.scriptInstanceMeta?.entrypoint;
     if (!script) return;
+
+    if (heroSession.mode === 'multiverse') {
+      const observer = this.sessionObserversById.get(this.activeHeroSessionId);
+      observer?.onMultiverseSession(heroSession);
+      return;
+    }
+
+    if (heroSession.mode === 'development') {
+      heroSession.configureHeaded({ showBrowser: true });
+      heroSession.options.sessionKeepAlive = true;
+      heroSession.options.viewport ??= { width: 0, height: 0 };
+    }
+    // if not auto-registered, check if browser is showing
+    if (!heroSession.options.showBrowser) return;
 
     log.info('New Hero Session Created: %s (%s)', {
       script: script.split('/').pop(),
@@ -142,18 +151,7 @@ export default class ChromeAliveCore {
     sessionObserver.close();
     if (this.activeHeroSessionId === heroSessionId) {
       this.activeHeroSessionId = null;
-      this.sendEvent('Session.active', {
-        run: 0,
-        playbackState: 'paused',
-        heroSessionId: null,
-        scriptEntrypoint: null,
-        runtimeMs: 0,
-        hasWarning: false,
-        urls: [],
-        paintEvents: [],
-        screenshots: [],
-        scriptLastModifiedTime: 0,
-      });
+      this.sendEvent('Session.active', null);
       this.sendEvent('Databox.updated', {
         changes: [],
         output: null,
@@ -186,22 +184,22 @@ export default class ChromeAliveCore {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
 
-    const isReplayTab = sessionObserver.isReplayTab(pageId) ?? false;
-    const isClosedReplayTab = isReplayTab && !isPageVisible;
-    const wasReplayActive = this.isReplayActive;
-    this.isReplayActive = isReplayTab && isPageVisible;
+    const isTimetravelTab = sessionObserver.timeline.isTimetravelTab(pageId) ?? false;
+    const isClosedTimetravelTab = isTimetravelTab && !isPageVisible;
+    const wasTimetravelActive = this.isTimetravelActive;
+    this.isTimetravelActive = isTimetravelTab && isPageVisible;
 
-    const didFocusOnLiveTab = !isReplayTab && isPageVisible;
-    const didCloseLiveTab = !isReplayTab && !isPageVisible;
+    const didFocusOnLiveTab = !isTimetravelTab && isPageVisible;
+    const didCloseLiveTab = !isTimetravelTab && !isPageVisible;
     const isActiveSession = this.activeHeroSessionId === heroSessionId;
 
     if (isActiveSession) {
-      if (isClosedReplayTab) return;
+      if (isClosedTimetravelTab) return;
       if (didCloseLiveTab) this.activeHeroSessionId = null;
 
       // if replay is opened and this tab is not a replay tab, close replay!
-      if (didFocusOnLiveTab && wasReplayActive) {
-        await sessionObserver.closeReplay();
+      if (didFocusOnLiveTab && wasTimetravelActive) {
+        await sessionObserver.closeTimetravel();
       }
     } else {
       this.activeHeroSessionId = heroSessionId;
