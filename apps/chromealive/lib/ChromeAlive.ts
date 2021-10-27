@@ -101,6 +101,12 @@ export class ChromeAlive extends EventEmitter {
     this.#isVisible = true;
   }
 
+  private toggleOnTop(onTop: boolean) {
+    for (const window of this.#childWindows) {
+      window.setAlwaysOnTop(onTop);
+    }
+  }
+
   private appExit(): void {
     console.warn('EXITING CHROMEALIVE!');
     app.exit();
@@ -248,15 +254,8 @@ export class ChromeAlive extends EventEmitter {
     await this.#api.send('App.ready', { workarea: workareaBounds });
   }
 
-  private toggleOnTop(onTop: boolean) {
-    for (const window of this.#childWindows) {
-      window.setAlwaysOnTop(onTop);
-    }
-  }
-
   private onChromeAliveEvent<T extends keyof IChromeAliveEvents>(
     eventType: T,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     data: IChromeAliveEvents[T],
   ): void {
     if (eventType === 'App.hide') this.hideWindow();

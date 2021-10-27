@@ -11,10 +11,14 @@ export type IApiHandlerSpec = {
   'Session.getScreenshot': ISessionApi['getScreenshot'];
   'App.boundsChanged': IAppApi['boundsChanged'];
   'App.ready': IAppApi['ready'];
+  'App.focus': IAppApi['focus'];
   'Mouse.state': IMouseApi['state'];
   'PageState.load': PageStateApi['load'];
   'PageState.addState': PageStateApi['addState'];
+  'PageState.renameState': PageStateApi['renameState'];
   'PageState.removeState': PageStateApi['removeState'];
+  'PageState.spawnSession': PageStateApi['spawnSession'];
+  'PageState.unfocusSession': PageStateApi['unfocusSession'];
   'PageState.openSession': PageStateApi['openSession'];
   'PageState.modifySessionTimes': PageStateApi['modifySessionTimes'];
   'PageState.save': PageStateApi['save'];

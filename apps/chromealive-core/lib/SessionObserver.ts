@@ -13,9 +13,11 @@ import { fork } from 'child_process';
 import Log from '@ulixee/commons/lib/Logger';
 import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
 import { ITabEventParams } from '@ulixee/hero-core/lib/Tab';
-import Timeline from '@ulixee/hero-timetravel/player/Timeline';
+import TimelineBuilder from '@ulixee/hero-timetravel/player/TimelineBuilder';
 import PageStateManager from './PageStateManager';
 import TabGroupModule from './hero-plugin-modules/TabGroupModule';
+import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
+import ChromeAliveCore from '../index';
 
 const { log } = Log(module);
 
@@ -23,10 +25,12 @@ export default class SessionObserver extends TypedEventEmitter<{
   'hero:updated': void;
   'databox:updated': void;
   closed: void;
+  'app:mode': string;
 }> {
   public playbackState: IHeroSessionActiveEvent['playbackState'] = 'live';
   public readonly pageStateManager: PageStateManager;
-  public readonly timeline: Timeline;
+  public readonly timelineBuilder: TimelineBuilder;
+  public readonly timetravelPlayer: TimetravelPlayer;
 
   private waitForPageStateEvents: {
     id: string;
@@ -54,20 +58,21 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.heroSession.on('closing', this.close);
     this.heroSession.once('closed', () => this.emit('closed'));
 
-    this.timeline = new Timeline(
-      heroSession.db,
-      heroSession.browserContext,
-      heroSession.plugins.corePlugins,
-      heroSession,
-    );
-    this.timeline.on('updated', () => this.emit('hero:updated'));
-    this.timeline.on('close', this.onTimetravelClosed);
-    this.timeline.on('open', this.onTimetravelOpened);
-    this.timeline.on('new-tick-command', () => this.emit('databox:updated'));
+    this.timelineBuilder = new TimelineBuilder(heroSession.db, heroSession);
+    this.timelineBuilder.on('updated', () => this.emit('hero:updated'));
+
+    this.timetravelPlayer = TimetravelPlayer.create(heroSession.id, heroSession);
+    this.timetravelPlayer.on('all-tabs-closed', this.onTimetravelClosed);
+    this.timetravelPlayer.on('open', this.onTimetravelOpened);
+    this.timetravelPlayer.on('new-tick-command', () => this.emit('databox:updated'));
 
     this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint).mtimeMs;
 
-    this.pageStateManager = new PageStateManager(this);
+    this.pageStateManager = new PageStateManager(this, this.timelineBuilder);
+    this.pageStateManager.on('enter', () =>
+      ChromeAliveCore.sendAppEvent('App.mode', 'pagestate-generator'),
+    );
+    this.pageStateManager.on('exit', () => ChromeAliveCore.sendAppEvent('App.mode', 'live'));
     this.bindDatabox();
     Fs.watchFile(
       this.scriptInstanceMeta.entrypoint,
@@ -117,13 +122,14 @@ export default class SessionObserver extends TypedEventEmitter<{
   public close(): void {
     Fs.unwatchFile(this.scriptInstanceMeta.entrypoint, this.onFileUpdated);
     this.heroSession.off('tab-created', this.onTabCreated);
-    this.pageStateManager.close().catch(console.error);
+    this.timetravelPlayer?.close();
+    this.pageStateManager.close(true).catch(console.error);
   }
 
   public getHeroSessionEvent(): IHeroSessionActiveEvent {
     const pageStates: IHeroSessionActiveEvent['pageStates'] = [];
-    const timeline = this.timeline.getMetadata();
-    const commandTimeline = this.timeline.commandTimeline;
+    const timeline = this.timelineBuilder.refreshMetadata();
+    const commandTimeline = this.timelineBuilder.commandTimeline;
 
     for (const state of this.waitForPageStateEvents) {
       let offsetPercent = commandTimeline.getTimelineOffsetForTimestamp(state.timestamp);
@@ -163,7 +169,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   public getDataboxEvent(): IDataboxUpdatedEvent {
-    const commandId = this.timeline.activeCommandId;
+    const commandId = this.timetravelPlayer.activeCommandId;
 
     const output: IOutputSnapshot = this.outputRebuilder.getLatestSnapshot(commandId) ?? {
       bytes: 0,
@@ -176,32 +182,63 @@ export default class SessionObserver extends TypedEventEmitter<{
     };
   }
 
-  public async updateTabGroup(groupLive: boolean, onUngroupTabs?: () => any): Promise<void> {
-    const tabGroupModule = TabGroupModule.bySessionId.get(this.heroSession.id);
+  public get tabGroupModule(): TabGroupModule {
+    return TabGroupModule.bySessionId.get(this.heroSession.id);
+  }
+
+  public async updateTabGroup(groupLive: boolean): Promise<void> {
+    const tabGroupModule = this.tabGroupModule;
     if (!tabGroupModule) return;
 
     const pages = [...this.heroSession.tabsById.values()].map(x => x.puppetPage);
-    if (groupLive === false) await tabGroupModule.ungroupTabs(pages);
-    else {
-      await tabGroupModule.groupTabs(pages, 'Reopen Live', 'blue', true, onUngroupTabs);
+    if (!pages.length) return;
+
+    if (groupLive === false) {
+      await tabGroupModule.ungroupTabs(pages);
+    } else {
+      await tabGroupModule.groupTabs(pages, 'Reopen Live', 'blue', true);
+    }
+  }
+
+  public async didFocusOnPage(pageId: string, didFocus: boolean): Promise<void> {
+    const isLiveTab = this.isLivePage(pageId);
+    const isTimetravelTab = this.timetravelPlayer.isOwnPage(pageId) ?? false;
+    // if closing time travel tab, leave
+    if (isTimetravelTab && !didFocus) return;
+
+    if (isLiveTab) ChromeAliveCore.toggleAppTop(didFocus);
+
+    const didFocusOnLiveTab = isLiveTab && didFocus;
+    // if time travel is opened and we focused on a live page, close it
+    if (didFocusOnLiveTab && this.timetravelPlayer.isOpen) {
+      await this.closeTimetravel();
     }
   }
 
   public async closeTimetravel(): Promise<void> {
-    await this.timeline.timetravelPlayer.close(false);
+    await this.timetravelPlayer.close();
   }
 
   public async onTimetravelOpened(): Promise<void> {
     this.playbackState = 'timetravel';
-    await this.updateTabGroup(true, this.closeTimetravel);
-    this.timeline.once('timetravel-to-end', this.closeTimetravel);
+    this.tabGroupModule.once('tab-group-opened', this.closeTimetravel);
+    await this.updateTabGroup(true);
+    this.timetravelPlayer.once('timetravel-to-end', this.closeTimetravel);
   }
 
   private async onTimetravelClosed(): Promise<void> {
-    await this.updateTabGroup(false);
     this.playbackState = 'paused';
-    this.timeline.off('timetravel-to-end', this.closeTimetravel);
+    this.tabGroupModule.off('tab-group-opened', this.closeTimetravel);
+    await this.updateTabGroup(false);
+    this.timetravelPlayer.off('timetravel-to-end', this.closeTimetravel);
     this.emit('hero:updated');
+  }
+
+  private isLivePage(pageId: string): boolean {
+    for (const tab of this.heroSession.tabsById.values()) {
+      if (tab.puppetPage.id === pageId) return true;
+    }
+    return false;
   }
 
   private onFileUpdated(stats: Fs.Stats): void {
@@ -220,6 +257,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.playbackState = 'paused';
     this.emit('hero:updated');
     event.message = `ChromeAlive! has assumed control of your script. You can make changes to your script and re-run from the ChromeAlive interface.`;
+    ChromeAliveCore.toggleAppTop(true);
   }
 
   private bindDatabox(): void {

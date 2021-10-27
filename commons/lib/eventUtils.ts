@@ -59,6 +59,7 @@ export function addTypedEventListeners<T, K extends keyof T & (string | symbol)>
 
 export class TypedEventEmitter<T> extends EventEmitter implements ITypedEventEmitter<T> {
   public storeEventsWithoutListeners = false;
+  public EventTypes: T;
 
   protected logger?: IBoundLog;
 

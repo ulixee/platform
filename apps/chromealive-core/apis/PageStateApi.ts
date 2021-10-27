@@ -9,6 +9,10 @@ export default class PageStateApi {
     // TODO: need to tell app to load page?
   }
 
+  static async spawnSession(): Promise<void> {
+    await getPageStateManager().addMultiverse();
+  }
+
   static async exit(): Promise<void> {
     await getPageStateManager().close();
   }
@@ -17,8 +21,16 @@ export default class PageStateApi {
     getPageStateManager().addState(args.state, ...args.heroSessionIds);
   }
 
+  static renameState(args: { state: string; oldValue: string }): void {
+    getPageStateManager().renameState(args.state, args.oldValue);
+  }
+
   static removeState(args: { state: string }): void {
     getPageStateManager().removeState(args.state);
+  }
+
+  static unfocusSession(): void {
+    getPageStateManager().unfocusSession();
   }
 
   static async openSession(args: { heroSessionId: string }): Promise<void> {

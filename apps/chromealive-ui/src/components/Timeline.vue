@@ -3,23 +3,17 @@
     <div id="bar" @mouseout="trackMouseout" @mouseover="trackMouseover">
       <div id="track" ref="trackDiv">
         <div
-          v-for="(url, i) in timeline.urls"
+          v-for="(tick, i) in ticks"
           class="tick"
-          :class="{ active: isActiveUrl(i) }"
-          :key="url.offsetPercent"
-          @click.prevent="clickUrlTick($event, url.navigationId)"
-          :style="{ left: url.offsetPercent + '%', width: nextUrlTickWidth(i) }"
+          :class="{ active: isActiveTick(i), [tick.class]: true }"
+          :key="tick.offsetPercent"
+          @click.prevent="clickTick($event, tick)"
+          :style="{ left: tick.offsetPercent + '%', width: nextTickWidth(i) }"
         >
-          <div v-if="i !== timeline.urls.length - 1" class="line-overlay"></div>
+          <div v-if="i !== tick.length - 1" class="line-overlay"></div>
           <div class="marker"></div>
         </div>
-        <div
-          @mousedown="startDraggingNib()"
-          ref="nibDiv"
-          id="nib"
-          :class="{ 'live-mode': isLive }"
-          :style="{ left: value + '%' }"
-        ></div>
+        <slot></slot>
       </div>
     </div>
   </div>
@@ -29,7 +23,7 @@
 import * as Vue from 'vue';
 import { defineComponent, PropType, toRef } from 'vue';
 import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
-import Client from '@/api/Client';
+import * as screenshotCache from '@/utils/screenshotCache';
 
 export interface ITimelineHoverEvent {
   offset: number;
@@ -38,11 +32,18 @@ export interface ITimelineHoverEvent {
   imageBase64: string;
   status: string;
   domChanges: number;
+  closestTick: ITimelineTick;
 }
 export interface ITimelineChangeEvent {
   offset: string;
   oldValue: string;
   value: number;
+}
+
+export interface ITimelineTick {
+  offsetPercent: number;
+  class: string;
+  id?: string | number;
 }
 
 export default defineComponent({
@@ -53,29 +54,24 @@ export default defineComponent({
       type: Object as PropType<ITimelineMetadata>,
       required: true,
     },
-    value: {
-      type: Number,
+    ticks: {
+      type: Array as PropType<ITimelineTick[]>,
       required: true,
     },
-    activeUrlIndex: Number,
+    activeTickIndex: Number,
     heroSessionId: String,
-    isLive: Boolean,
-    isHistoryMode: Boolean,
+    tabId: Number,
   },
-  emits: ['hover', 'click', 'update:value', 'dragstart', 'dragend', 'mouseout'],
+  emits: ['hover', 'click', 'mouseout'],
   setup(props) {
     let trackDiv = Vue.ref<HTMLDivElement>();
-    let nibDiv = Vue.ref<HTMLDivElement>();
     let trackOffset: DOMRect;
-    let screenshotsByTimestamp = new Map<number, string>();
     let screenshotTimestampsByOffset = new Map<number, number>();
     let timelineRef = toRef(props, 'timeline');
 
     return {
-      screenshotsByTimestamp,
       screenshotTimestampsByOffset,
       trackDiv,
-      nibDiv,
       trackOffset,
       timelineRef,
     };
@@ -98,15 +94,16 @@ export default defineComponent({
       const hoverEvent = {
         offset,
         pageX: event.pageX,
+        domChanges: 0,
       } as ITimelineHoverEvent;
 
-      let lastChanges = 0;
       for (const paint of this.timeline.paintEvents) {
-        // go until this change is after the current offset
-        if (paint.offsetPercent > offset) break;
-        lastChanges = paint.domChanges;
+        // find a close event
+        if (Math.abs(paint.offsetPercent - offset) < 0.05) {
+          hoverEvent.domChanges = paint.domChanges;
+          break;
+        }
       }
-      hoverEvent.domChanges = lastChanges;
       hoverEvent.status = 'Loading';
 
       let loadedUrl: ITimelineMetadata['urls'][0] = null;
@@ -126,48 +123,44 @@ export default defineComponent({
         hoverEvent.status = statusText;
       }
       hoverEvent.url = loadedUrl?.url;
+      for (const tick of this.ticks) {
+        if (tick.offsetPercent > offset) break;
+        hoverEvent.closestTick = tick;
+      }
+
       const timestamp = this.screenshotTimestampsByOffset.get(offset);
-      hoverEvent.imageBase64 = this.screenshotsByTimestamp.get(timestamp);
+      hoverEvent.imageBase64 = screenshotCache.get(this.heroSessionId, this.tabId, timestamp);
       this.$emit('hover', hoverEvent);
     },
 
-    isActiveUrl(index: number) {
-      return this.activeUrlIndex === index;
+    isActiveTick(index: number) {
+      return this.activeTickIndex === index;
     },
 
-    clickUrlTick(event: MouseEvent, navigationId: number) {
-      this.onNibMove(event);
-      this.$emit('click', navigationId);
+    clickTick(event: MouseEvent, tick: any) {
+      this.$emit('click', event, tick);
     },
 
-    nextUrlTickWidth(urlIndex: number) {
-      if (urlIndex === this.timeline.urls.length - 1) return '2px';
-      const diff =
-        this.timeline.urls[urlIndex + 1].offsetPercent - this.timeline.urls[urlIndex].offsetPercent;
+    nextTickWidth(urlIndex: number) {
+      if (urlIndex === this.ticks.length - 1) return '2px';
+      const diff = this.ticks[urlIndex + 1].offsetPercent - this.ticks[urlIndex].offsetPercent;
       return `${diff}%`;
     },
 
-    startDraggingNib() {
-      if (this.isLive) return;
-      window.addEventListener('mousemove', this.onNibMove);
-      this.$emit('dragstart');
+    getTrackBoundingRect(): DOMRect {
+      this.trackOffset ??= this.trackDiv.getBoundingClientRect();
+      return this.trackOffset;
     },
 
-    stopDraggingNib() {
-      window.removeEventListener('mousemove', this.onNibMove);
-      this.$emit('dragend');
-    },
-
-    onNibMove(e) {
-      e.preventDefault();
-
-      const percentOffset = this.getTrackOffset(e);
-      this.$emit('update:value', percentOffset);
+    getTrackOffsetPercent(percent = 100): number {
+      const rect = this.getTrackBoundingRect();
+      const width = Math.floor(percent * rect.width) / 100;
+      return width + rect.x;
     },
 
     getTrackOffset(event: MouseEvent): number {
-      this.trackOffset ??= this.trackDiv.getBoundingClientRect();
-      let percentOffset = (100 * (event.pageX - this.trackOffset.x)) / this.trackOffset.width;
+      const trackRect = this.getTrackBoundingRect();
+      let percentOffset = (100 * (event.pageX - trackRect.x)) / trackRect.width;
       percentOffset = Math.round(10 * percentOffset) / 10;
       if (percentOffset > 100) percentOffset = 100;
       if (percentOffset < 0) percentOffset = 0;
@@ -176,27 +169,10 @@ export default defineComponent({
 
     onTimelineUpdated() {
       let lastOffset: number = null;
-      console.log('processing new screenshots');
       this.screenshotTimestampsByOffset.clear();
-      if (!this.timeline.screenshots.length) this.screenshotsByTimestamp.clear();
 
       for (const screenshot of this.timeline.screenshots) {
-        if (!this.screenshotsByTimestamp.has(screenshot.timestamp)) {
-          // placeholder while retrieving
-          this.screenshotsByTimestamp.set(screenshot.timestamp, null);
-          Client.send('Session.getScreenshot', {
-            timestamp: screenshot.timestamp,
-            heroSessionId: this.heroSessionId,
-            tabId: screenshot.tabId,
-          })
-            .then(x => {
-              if (x.imageBase64)
-                this.screenshotsByTimestamp.set(screenshot.timestamp, x.imageBase64);
-              else this.screenshotsByTimestamp.delete(screenshot.timestamp);
-            })
-            .catch(console.error);
-        }
-
+        screenshotCache.process(this.heroSessionId, screenshot);
         let offsetPercent = Math.round(100 * screenshot.offsetPercent) / 100;
         if (lastOffset !== null) {
           this.fillScreenshotSlots(lastOffset, offsetPercent);
@@ -225,10 +201,11 @@ export default defineComponent({
       () => this.timelineRef.screenshots,
       () => this.onTimelineUpdated(),
     );
+    this.onTimelineUpdated();
   },
-  mounted() {
-    window.addEventListener('mouseup', this.stopDraggingNib);
-  },
+  beforeUnmount() {
+    window.removeEventListener('mousemove', this.trackMousemove);
+  }
 });
 </script>
 
@@ -300,25 +277,6 @@ export default defineComponent({
         .line-overlay {
           background-color: #868686;
         }
-      }
-    }
-
-    #nib {
-      position: absolute;
-      top: -3px;
-      box-sizing: border-box;
-      margin-left: -8px;
-      height: 16px;
-      width: 16px;
-      border-radius: 14px;
-      background-color: white;
-      border: 1px solid #666;
-      box-shadow: -1px 1px 2px rgba(0, 0, 0, 0.6);
-      -webkit-app-region: no-drag;
-      user-select: none;
-
-      &.live-mode {
-        opacity: 0.4;
       }
     }
   }

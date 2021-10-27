@@ -7,6 +7,7 @@ export default interface IChromeAliveEvents {
   'App.hide': null;
   'App.quit': null;
   'App.onTop': boolean;
+  'App.mode': 'live' | 'pagestate-generator';
   'Session.loading': void;
   'Session.loaded': void;
   'Session.active': IHeroSessionActiveEvent;

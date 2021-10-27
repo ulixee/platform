@@ -35,7 +35,6 @@ export default class WindowBoundsModule {
   }
 
   public onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
-    if (!sessionSummary.options.showBrowser) return;
     this.sessionId ??= sessionSummary.id;
 
     return Promise.all([

@@ -12,6 +12,7 @@ import WindowBoundsModule from './hero-plugin-modules/WindowBoundsModule';
 import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 import FocusedWindowModule from './hero-plugin-modules/FocusedWindowModule';
 import { MessageLocation } from './BridgeHelpers';
+import { extensionId } from './ExtensionUtils';
 
 const { log } = Log(module);
 
@@ -76,7 +77,7 @@ export default class HeroCorePlugin extends CorePlugin {
   }
 
   async onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
-    if (!sessionSummary.options.showBrowser) return;
+    if (!sessionSummary.options.showBrowser && sessionSummary.options.mode !== 'timetravel') return;
     await Promise.all([
       this.bridgeToExtension.addPuppetPage(page),
       this.windowBoundsModule.onNewPuppetPage(page, sessionSummary),
@@ -89,9 +90,9 @@ export default class HeroCorePlugin extends CorePlugin {
     return this.bridgeToDevtoolsPrivate.addDevtoolsSession(devtoolsSession);
   }
 
-  // onServiceWorkerAttached(devtoolsSession: IDevtoolsSession, event): Promise<any> {
-  //   const { targetInfo } = event;
-  //   if (targetInfo.url !== `chrome-extension://${extensionId}/background.js`) return;
-  //   return this.bridgeToExtensionBackground.addDevtoolsSession(devtoolsSession);
-  // }
+  onServiceWorkerAttached(devtoolsSession: IDevtoolsSession, event): Promise<any> {
+    const { targetInfo } = event;
+    if (targetInfo.url !== `chrome-extension://${extensionId}/background.js`) return;
+    return devtoolsSession.send('Target.detachFromTarget').catch(null);
+  }
 }

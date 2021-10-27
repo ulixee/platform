@@ -9,7 +9,7 @@
         Output
         <span class="DataSize">{{ dataSize }}</span>
       </h2>
-      <Json v-if="output" :json="output" ref="OutputJson" />
+      <Json v-if="output" :json="output" :scrollToRecordId="scrollToRecordId" />
       <div v-else class="Explainer">
         <p>This panel shows output set using "databox.output".</p>
         <p>You can use the "databox.output" object as an array:</p>
@@ -49,9 +49,8 @@ export default Vue.defineComponent({
     let dataSize = Vue.ref(null);
     let input = Vue.ref<FlatJson[]>(defaultInput);
     let output = Vue.ref<FlatJson[]>(null);
+    let scrollToRecordId = Vue.ref<number>(null);
     let lastHeroEntrypoint: string = null;
-
-    const OutputJson = Vue.ref();
 
     function onSessionActive(data: IHeroSessionActiveEvent) {
       if (lastHeroEntrypoint && data.scriptEntrypoint !== lastHeroEntrypoint) {
@@ -77,7 +76,7 @@ export default Vue.defineComponent({
               .filter(x => x.highlighted)
               .slice(-1)
               .pop();
-            if (recordToScroll) OutputJson.value.scrollToId(recordToScroll.id);
+            scrollToRecordId.value = recordToScroll ? recordToScroll.id : null;
           });
         }
       } else {
@@ -93,7 +92,7 @@ export default Vue.defineComponent({
     Client.connect().catch(err => alert(String(err)));
     document.title = 'Databox Panel';
 
-    return { dataSize, input, output };
+    return { dataSize, input, output, scrollToRecordId };
   }
 });
 </script>

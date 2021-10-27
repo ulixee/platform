@@ -60,7 +60,7 @@ class Client {
   onClose() {
     this.connectedPromise = null;
     setTimeout(() => {
-      this.connect().catch(err => console.log(err));
+      this.connect().catch(err => console.log('Client Connect Error', err));
     }, 1e3);
   }
 

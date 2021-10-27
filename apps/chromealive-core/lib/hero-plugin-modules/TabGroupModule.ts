@@ -2,40 +2,34 @@ import { EventEmitter } from 'events';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import BridgeToExtension from '../bridges/BridgeToExtension';
-import {
-  createResponseId,
-  IMessageObject,
-  MessageLocation,
-  ResponseCode,
-} from '../BridgeHelpers';
+import { createResponseId, IMessageObject, MessageLocation, ResponseCode } from '../BridgeHelpers';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 
-export default class TabGroupModule {
+export default class TabGroupModule extends TypedEventEmitter<{ 'tab-group-opened': void }> {
   public static bySessionId = new Map<string, TabGroupModule>();
-
-  private runOnTabGroupOpened: () => void;
 
   private bridgeToExtension: BridgeToExtension;
   private identityByPageId = new Map<string, { tabId: number; windowId: number }>();
   private sessionId: string;
 
   constructor(bridgeToExtension: BridgeToExtension, browserEmitter: EventEmitter) {
+    super();
     this.bridgeToExtension = bridgeToExtension;
     browserEmitter.on('payload', (payload, puppetPageId) => {
       if (payload.event === 'OnTabIdentify') {
         this.onTabIdentified(payload, puppetPageId);
       } else if (payload.event === 'OnTabGroupOpened') {
-        this.onTabGroupOpened();
+        this.emit('tab-group-opened');
       }
     });
   }
 
   public onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
-    if (!sessionSummary.options.showBrowser) return;
-
     this.sessionId = sessionSummary.id;
     TabGroupModule.bySessionId.set(this.sessionId, this);
     page.on('close', this.pageClosed.bind(this, page));
     page.browserContext.on('close', this.close.bind(this));
+    return Promise.resolve();
   }
 
   public close() {
@@ -47,8 +41,9 @@ export default class TabGroupModule {
     title: string,
     color: string,
     collapsed: boolean,
-    onUncollapsed?: () => void,
   ): Promise<number> {
+    if (!puppetPages.length) return;
+
     const tabIds: number[] = [];
     let windowId: number;
     for (const page of puppetPages) {
@@ -63,12 +58,14 @@ export default class TabGroupModule {
       windowId,
       title,
       color,
-      collapsed: true,
+      collapsed,
     };
-    const { groupId } = await this.sendToExtension<{ groupId: number }>(puppetPages[0], 'groupTabs', args, true);
-    // don't register the tab group opened command until after it opens
-    await new Promise(setImmediate);
-    if (collapsed && onUncollapsed) this.runOnTabGroupOpened = onUncollapsed;
+    const { groupId } = await this.sendToExtension<{ groupId: number }>(
+      puppetPages[0],
+      'groupTabs',
+      args,
+      true,
+    );
     return groupId;
   }
 
@@ -78,16 +75,11 @@ export default class TabGroupModule {
       const ids = this.identityByPageId.get(page.id);
       if (ids) tabIds.push(ids.tabId);
     }
-    this.runOnTabGroupOpened = null;
     const args = { tabIds };
     await this.sendToExtension<void>(puppetPages[0], 'ungroupTabs', args, false);
   }
 
-  private onTabGroupOpened(): void {
-    if (this.runOnTabGroupOpened) this.runOnTabGroupOpened();
-  }
-
-  private onTabIdentified(payload: any, puppetPageId: string, ): void {
+  private onTabIdentified(payload: any, puppetPageId: string): void {
     const { windowId, tabId } = payload;
     this.identityByPageId.set(puppetPageId, { windowId, tabId });
   }
@@ -98,6 +90,8 @@ export default class TabGroupModule {
     args: object = {},
     waitForResponse = false,
   ): Promise<T> {
+    if (!puppetPage) return;
+
     const responseCode = waitForResponse ? ResponseCode.Y : ResponseCode.N;
     const responseId = responseCode === ResponseCode.Y ? createResponseId() : undefined;
     const message: IMessageObject = {

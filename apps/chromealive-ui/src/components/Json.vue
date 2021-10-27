@@ -4,7 +4,11 @@
       class="JsonNode"
       v-for="node of json"
       :key="node.id"
-      :ref="el => { jsonNodes[node.id] = el }"
+      :ref="
+        el => {
+          jsonNodes[node.id] = el;
+        }
+      "
       :id="node.path"
       :class="{ highlighted: node.highlighted }"
     >
@@ -22,7 +26,7 @@
 
 <script lang="ts">
 import { FlatJson } from '@/utils/flattenJson';
-import { ref, defineComponent, onBeforeUpdate, PropType } from 'vue';
+import { ref, defineComponent, onBeforeUpdate, onUpdated, PropType } from 'vue';
 
 export default defineComponent({
   name: 'Json',
@@ -32,24 +36,27 @@ export default defineComponent({
       type: Array as PropType<FlatJson[]>,
       required: true,
     },
+    scrollToRecordId: Number,
   },
-  setup() {
-    const jsonNodes = ref([]);
+  setup(props) {
+    const jsonNodes = ref<{ [id: number]: HTMLDivElement }>({});
 
     onBeforeUpdate(() => {
-      jsonNodes.value = [];
+      jsonNodes.value = {};
+    });
+
+    onUpdated(() => {
+      if (props.scrollToRecordId) scrollToId(props.scrollToRecordId);
     });
 
     function scrollToId(id: number) {
-      const refs = jsonNodes.value[id] as HTMLElement[];
+      const refs = jsonNodes.value[id];
       if (!refs) return;
-      if (refs.length) {
-        refs[refs.length - 1].scrollIntoView({ block: 'center' });
-      }
+      refs.scrollIntoView({ block: 'center' });
     }
 
-    return { jsonNodes, scrollToId }
-  }
+    return { jsonNodes, scrollToId };
+  },
 });
 </script>
 
@@ -104,5 +111,4 @@ export default defineComponent({
     }
   }
 }
-
 </style>

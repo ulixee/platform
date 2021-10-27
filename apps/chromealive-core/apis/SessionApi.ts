@@ -3,7 +3,7 @@ import {
   ISessionApiStatics,
   ISessionResumeArgs,
 } from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
-import Timeline from '@ulixee/hero-timetravel/player/Timeline';
+import TimelineBuilder from '@ulixee/hero-timetravel/player/TimelineBuilder';
 import SessionObserver from '../lib/SessionObserver';
 import ChromeAliveCore from '../index';
 
@@ -12,8 +12,8 @@ export default class SessionApi {
   static getScreenshot(args: IHeroSessionArgs & { tabId: number; timestamp: number }): {
     imageBase64: string;
   } {
-    const timeline = Timeline.timelineByHeroSessionId.get(args.heroSessionId);
-    return { imageBase64: timeline.getScreenshot(args.tabId, args.timestamp) };
+    const timelineBuilder = TimelineBuilder.bySessionId.get(args.heroSessionId);
+    return { imageBase64: timelineBuilder.getScreenshot(args.tabId, args.timestamp) };
   }
 
   static async quit(args: IHeroSessionArgs): Promise<void> {
@@ -32,10 +32,13 @@ export default class SessionApi {
     const sessionObserver = getObserver(args);
     let timelineOffsetPercent = args.percentOffset ?? 100;
     if (args.step) {
-      timelineOffsetPercent = await sessionObserver.timeline.step(args.step);
+      timelineOffsetPercent = await sessionObserver.timetravelPlayer.step(args.step);
     } else {
-      await sessionObserver.timeline.goto(timelineOffsetPercent);
+      await sessionObserver.timetravelPlayer.goto(timelineOffsetPercent);
     }
+    await sessionObserver.timetravelPlayer.showLoadStatus(
+      sessionObserver.timelineBuilder.lastMetadata,
+    );
     return { timelineOffsetPercent };
   }
 
