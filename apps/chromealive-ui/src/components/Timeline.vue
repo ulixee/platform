@@ -98,11 +98,9 @@ export default defineComponent({
       } as ITimelineHoverEvent;
 
       for (const paint of this.timeline.paintEvents) {
-        // find a close event
-        if (Math.abs(paint.offsetPercent - offset) < 0.05) {
-          hoverEvent.domChanges = paint.domChanges;
-          break;
-        }
+        // go until this change is after the current offset
+        if (paint.offsetPercent > offset) break;
+        hoverEvent.domChanges = paint.domChanges;
       }
       hoverEvent.status = 'Loading';
 
