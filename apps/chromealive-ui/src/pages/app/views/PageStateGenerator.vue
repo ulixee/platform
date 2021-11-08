@@ -416,6 +416,7 @@ export default Vue.defineComponent({
             break;
           }
         }
+        this.focusedTimelineHandle = 'end';
         this.timelineOffsetLeft = focusedSession.timelineOffsetPercents[0];
         this.timelineOffsetRight = focusedSession.timelineOffsetPercents[1];
         this.showTimelineHover = false;
@@ -511,7 +512,6 @@ export default Vue.defineComponent({
     timelineHandleDragend(): void {
       if (!this.isDraggingTimelineHandle) return;
       this.isDraggingTimelineHandle = false;
-      this.focusedTimelineHandle = null;
       this.updateSessionTimes().catch(console.error);
     },
 
