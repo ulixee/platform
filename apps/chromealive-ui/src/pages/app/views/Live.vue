@@ -83,21 +83,6 @@
       :toolbarRect="() => toolbarRect"
       :session="session"
     ></Menu>
-
-    <div
-      id="pagestate-popup"
-      :style="{
-        left: focusedPageState.offset - 320 + 'px',
-        display: showPageStatePopup ? 'block' : 'none',
-      }"
-    >
-      <img :src="ICON_CARET" class="caret" />
-      <div class="wrapper">
-        <h5>New Page State Found</h5>
-
-        <button @click.prevent="openPageState()">Open Generator</button>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -110,7 +95,6 @@ import TimelineHandle from '@/components/TimelineHandle.vue';
 import TimelineHover from '@/components/TimelineHover.vue';
 import Menu from '@/components/Menu.vue';
 
-const ICON_CARET = require('@/assets/icons/caret.svg');
 type IStartLocation = 'currentLocation' | 'sessionStart';
 
 function createDefaultSession(): IHeroSessionActiveEvent {
@@ -165,16 +149,11 @@ export default Vue.defineComponent({
       showTimelineHover: Vue.ref(false),
       isDragging: Vue.ref(false),
 
-      ICON_CARET,
-      focusedPageState: Vue.reactive({} as { offset: number; id: string; show: boolean }),
+      focusedPageState: Vue.reactive({} as { offset: number; id: string; window: Window }),
     };
   },
   emits: ['bounds-changed', 'open-generator'],
   computed: {
-    showPageStatePopup(): boolean {
-      if (this.showMenu || this.showTimelineHover) return false;
-      return this.focusedPageState.show;
-    },
     toolbarRect() {
       return this.toolbarDiv?.getBoundingClientRect();
     },
@@ -183,6 +162,37 @@ export default Vue.defineComponent({
     toggleMenu() {
       this.menuOffsetLeft = this.menuButton.getBoundingClientRect().left;
       this.showMenu = !this.showMenu;
+    },
+
+    showPageStatePopup(tick?: ITimelineTick) {
+      this.showTimelineHover = false;
+      if (this.focusedPageState.window) return;
+      this.focusedPageState.id = tick?.id as any;
+      this.focusedPageState.offset = this.timelineRef.getTrackOffsetPercent(
+        tick?.offsetPercent ?? 100,
+      );
+      const width = 400;
+      const height = 150;
+      const { bottom } = this.timelineRef.getTrackBoundingRect();
+      const left = window.screenLeft + this.focusedPageState.offset - width + 80;
+      const top = window.screenTop + bottom + 4;
+      const features = `top=${top},left=${left},width=${width},height=${height}`;
+      this.focusedPageState.window = window.open(
+        '/pagestate-popup.html',
+        'PageStatePopup',
+        features,
+      );
+      (this.focusedPageState.window as any).openPageState = this.openPageState.bind(this);
+      this.focusedPageState.window.addEventListener('close', () => {
+        this.focusedPageState.window = null;
+      });
+      this.focusedPageState.window.addEventListener('manual-close', () => {
+        this.focusedPageState.window = null;
+      });
+    },
+
+    closePageStatePopup() {
+      if (this.focusedPageState.window) this.focusedPageState.window.close();
     },
 
     calculateScriptTimeAgo(): string {
@@ -214,8 +224,10 @@ export default Vue.defineComponent({
     },
 
     onTimelineHover(hoverEvent: ITimelineHoverEvent): void {
+      if (this.session.needsPageStateResolution && this.timelineOffset >= 99.9) return;
+
       if (hoverEvent.closestTick?.class === 'pagestate') {
-        this.showPageState(hoverEvent.closestTick);
+        this.showPageStatePopup(hoverEvent.closestTick);
         return;
       }
       Object.assign(this.timelineHover, hoverEvent);
@@ -224,27 +236,20 @@ export default Vue.defineComponent({
 
     onTimelineMouseout(): void {
       this.showTimelineHover = false;
-      this.focusedPageState = {
-        show: false,
+      Object.assign(this.focusedPageState, {
+        show: this.session.needsPageStateResolution && !this.isTimetravelMode,
         offset: this.timelineRef.getTrackOffsetPercent(100),
         id: null,
-      };
+      });
     },
 
     onTimelineClick(event: MouseEvent, tick: ITimelineTick): void {
       if (tick.class === 'pagestate') {
-        this.showPageState(tick);
+        this.showPageStatePopup(tick);
         return;
       }
       this.timetravelDrag(event);
       this.doTimetravel();
-    },
-
-    showPageState(tick: ITimelineTick): void {
-      this.showTimelineHover = false;
-      this.focusedPageState.show = true;
-      this.focusedPageState.id = tick.id as string;
-      this.focusedPageState.offset = this.timelineRef.getTrackOffsetPercent(tick.offsetPercent);
     },
 
     timetravelDrag(event: MouseEvent): void {
@@ -259,6 +264,7 @@ export default Vue.defineComponent({
 
     timetravelDragstart(): void {
       this.isDragging = true;
+      this.closePageStatePopup();
     },
 
     timetravelDragend(): void {
@@ -345,6 +351,7 @@ export default Vue.defineComponent({
 
       const timelineTicks: ITimelineTick[] = [];
       for (const url of message.timeline.urls) {
+        if (url.offsetPercent < 0) continue;
         timelineTicks.push({
           id: url.navigationId,
           offsetPercent: url.offsetPercent,
@@ -353,6 +360,7 @@ export default Vue.defineComponent({
       }
 
       for (const ps of message.pageStates) {
+        if (ps.offsetPercent < 0) continue;
         const match = timelineTicks.findIndex(x => x.offsetPercent === ps.offsetPercent);
         if (match >= 0) timelineTicks.splice(match, 1);
         timelineTicks.push({
@@ -364,19 +372,19 @@ export default Vue.defineComponent({
       timelineTicks.sort((a, b) => a.offsetPercent - b.offsetPercent);
       this.timelineTicks = timelineTicks;
 
-      if (message.needsPageStateResolution) {
-        this.focusedPageState.offset = this.timelineRef.getTrackOffsetPercent(100);
-      }
-      this.focusedPageState.show = message.needsPageStateResolution;
-
       this.isTimetravelMode = this.session.playbackState === 'timetravel';
       this.isLive = this.session.playbackState === 'live';
       this.timelineUrlIndex =
         this.startLocation === 'sessionStart' ? 0 : message.timeline.urls.length - 1;
 
+      if (message.needsPageStateResolution && !this.isTimetravelMode && !this.isDragging) {
+        this.showPageStatePopup();
+      }
+
       if (isNewId || !this.isTimetravelMode) {
         this.timelineOffset = 100;
         this.showTimelineHover = false;
+        if (!message.heroSessionId) this.closePageStatePopup();
       }
 
       this.updateScriptTimeAgo();
@@ -404,6 +412,7 @@ export default Vue.defineComponent({
     Client.off('Session.active', this.onSessionActiveEvent);
     window.removeEventListener('blur', this.hideMenu);
     document.removeEventListener('keyup', this.onKeypress);
+    this.focusedPageState.window?.close();
     this.boundsMonitor.unobserve(this.toolbarDiv);
   },
 });
@@ -463,54 +472,6 @@ export default Vue.defineComponent({
     white-space: nowrap;
     min-width: 175px;
     text-align: center;
-  }
-
-  #pagestate-popup {
-    flex: auto;
-    flex-direction: column;
-    box-sizing: border-box;
-    padding: 2px 3px;
-    width: 400px;
-    height: 150px;
-    position: relative;
-    z-index: 3;
-    top: -2px;
-    background: #f5faff;
-    border-radius: 5px;
-    border: 1px solid #eaeef3;
-    box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
-    transition: opacity 0.3s, transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
-
-    .caret {
-      position: absolute;
-      box-sizing: border-box;
-      top: -16px;
-      right: 70px;
-      width: 20px;
-      height: 20px;
-      filter: drop-shadow(-1px -1px 2px rgba(0, 0, 0, 0.3));
-      pointer-events: none;
-    }
-
-    h5 {
-      font-size: 23px;
-      text-align: center;
-      text-transform: uppercase;
-      margin-top: 20px;
-    }
-
-    button {
-      line-height: 25px;
-      display: block;
-      float: right;
-      margin-right: 50px;
-    }
-  }
-
-  &.showingPageStatePopup {
-    #pagestate-popup {
-      display: block;
-    }
   }
 
   #history-back-button .label,
@@ -597,21 +558,29 @@ export default Vue.defineComponent({
     background-image: url('~@/assets/icons/arrow-right.svg');
   }
 
-  #timeline #bar .tick.pagestate .marker {
-    width: 20px;
-    height: 20px;
-    left: -11px;
-    top: 10px;
-    opacity: 0.9;
-    border-radius: 2px;
-    z-index: 2;
-    border: 0 none;
-    box-shadow: -1px 1px 2px rgba(0, 0, 0, 0.6);
-    display: inline-block;
-    background-image: url('~@/assets/icons/pagestate.svg');
-    backface-visibility: hidden;
-    background-size: contain;
-    background-repeat: no-repeat;
+  #timeline {
+    #bar .tick.pagestate .marker {
+      width: 20px;
+      height: 20px;
+      left: -11px;
+      top: 10px;
+      opacity: 0.9;
+      border-radius: 2px;
+      z-index: 2;
+      border: 0 none;
+      box-shadow: -1px 1px 2px rgba(0, 0, 0, 0.6);
+      display: inline-block;
+      background-image: url('~@/assets/icons/pagestate.svg');
+      backface-visibility: hidden;
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+    &:hover {
+      #bar .tick.pagestate .marker {
+        z-index: 0;
+        opacity: 0.1;
+      }
+    }
   }
 }
 </style>

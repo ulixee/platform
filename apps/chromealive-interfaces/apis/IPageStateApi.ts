@@ -12,6 +12,7 @@ export default interface IPageStateApi {
     timelineOffset: number;
     isStartTime: boolean;
   }): Promise<void>;
+  focusSessionTime(args: { heroSessionId: string; isStartTime: boolean }): Promise<void>;
   save(): Promise<{
     needsCodeChange: boolean;
     code: string;

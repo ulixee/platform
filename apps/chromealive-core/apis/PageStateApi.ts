@@ -49,6 +49,17 @@ export default class PageStateApi {
     await pageStateManager.changeSessionTimeBoundary(args.timelineOffset, args.isStartTime);
   }
 
+  static async focusSessionTime(args: {
+    heroSessionId: string;
+    isStartTime: boolean;
+  }): Promise<void> {
+    const pageStateManager = getPageStateManager();
+    if (!pageStateManager.isShowingSession(args.heroSessionId)) {
+      await pageStateManager.openTimetravel(args.heroSessionId);
+    }
+    await pageStateManager.focusSessionTimeBoundary(args.isStartTime);
+  }
+
   static save(): Promise<{ needsCodeChange: boolean; code: string }> {
     return getPageStateManager().save();
   }

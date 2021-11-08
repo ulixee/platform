@@ -3,7 +3,7 @@
     :id="id"
     class="handle"
     :class="{ disabled: !isDraggable }"
-    @mousedown="startDragging()"
+    @mousedown="startDragging($event)"
   ></div>
 </template>
 
@@ -23,7 +23,8 @@ export default defineComponent({
   emits: ['drag', 'dragstart', 'dragend'],
   setup() {},
   methods: {
-    startDragging() {
+    startDragging(event: MouseEvent) {
+      if (event.button !== 0) return;
       if (!this.isDraggable) return;
       window.addEventListener('mousemove', this.onDrag);
       this.$emit('dragstart');

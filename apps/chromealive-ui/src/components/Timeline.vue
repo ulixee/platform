@@ -33,6 +33,7 @@ export interface ITimelineHoverEvent {
   status: string;
   domChanges: number;
   closestTick: ITimelineTick;
+  closestTickBelow: ITimelineTick;
 }
 export interface ITimelineChangeEvent {
   offset: string;
@@ -121,9 +122,16 @@ export default defineComponent({
         hoverEvent.status = statusText;
       }
       hoverEvent.url = loadedUrl?.url;
+      let i = 0;
       for (const tick of this.ticks) {
         if (tick.offsetPercent > offset) break;
+        i += 1;
         hoverEvent.closestTick = tick;
+      }
+      for (let j = this.ticks.length - 1; j >= i; j -= 1) {
+        const tick = this.ticks[j];
+        if (!tick || tick.offsetPercent < offset) break;
+        hoverEvent.closestTickBelow = tick;
       }
 
       const timestamp = this.screenshotTimestampsByOffset.get(offset);
@@ -154,6 +162,23 @@ export default defineComponent({
       const rect = this.getTrackBoundingRect();
       const width = Math.floor(percent * rect.width) / 100;
       return width + rect.x;
+    },
+
+    getClosestTick(event: MouseEvent, closestAbove = true): ITimelineTick {
+      const trackRect = this.getTrackBoundingRect();
+      let percentOffset = (100 * (event.pageX - trackRect.x)) / trackRect.width;
+      if (closestAbove) {
+        for (const tick of this.ticks) {
+          if (tick.offsetPercent >= percentOffset) return tick;
+        }
+        return this.ticks[0];
+      } else {
+        let tick: ITimelineTick;
+        for (let j = this.ticks.length - 1; j >= 0; j -= 1) {
+          tick = this.ticks[j];
+          if (!tick || tick.offsetPercent < percentOffset) return tick;
+        }
+      }
     },
 
     getTrackOffset(event: MouseEvent): number {
@@ -203,7 +228,7 @@ export default defineComponent({
   },
   beforeUnmount() {
     window.removeEventListener('mousemove', this.trackMousemove);
-  }
+  },
 });
 </script>
 
@@ -257,25 +282,14 @@ export default defineComponent({
         .marker {
           opacity: 0.8;
         }
-        .line-overlay {
-          background-color: #aeadad;
-        }
 
         & + .active {
           .marker {
             opacity: 0.6;
           }
-          .line-overlay {
-            background-color: transparent;
-          }
         }
       }
 
-      &.active {
-        .line-overlay {
-          background-color: #868686;
-        }
-      }
     }
   }
 }

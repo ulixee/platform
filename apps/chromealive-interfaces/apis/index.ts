@@ -21,7 +21,9 @@ export type IApiHandlerSpec = {
   'PageState.unfocusSession': PageStateApi['unfocusSession'];
   'PageState.openSession': PageStateApi['openSession'];
   'PageState.modifySessionTimes': PageStateApi['modifySessionTimes'];
+  'PageState.focusSessionTime': PageStateApi['focusSessionTime'];
   'PageState.save': PageStateApi['save'];
+  'PageState.exit': PageStateApi['exit'];
 };
 
 type IPromiseType<T> = T extends PromiseLike<infer U> ? U : T;

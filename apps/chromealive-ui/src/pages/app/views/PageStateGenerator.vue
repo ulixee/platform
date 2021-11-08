@@ -112,20 +112,24 @@
             <div
               id="drag-range"
               :style="{
-                left: timelineOffsetLeft + '%',
-                width: timelineOffsetRight - timelineOffsetLeft + '%',
+                left: `calc(${timelineOffsetLeft}% - 27px)`,
+                width: `calc(${timelineOffsetRight - timelineOffsetLeft}% + 57px)`,
               }"
             >
               <TimelineHandle
                 id="dragLeft"
-                @dragstart="timelineHandleDragstart"
+                :class="{ focused: focusedTimelineHandle === 'start' }"
+                @click="focusSessionTimeHandle(true)"
+                @dragstart="timelineHandleDragstart(true)"
                 @dragend="timelineHandleDragend"
                 @drag="leftTimelineHandleDrag"
               ></TimelineHandle>
 
               <TimelineHandle
                 id="dragRight"
-                @dragstart="timelineHandleDragstart"
+                :class="{ focused: focusedTimelineHandle === 'end' }"
+                @click="focusSessionTimeHandle(false)"
+                @dragstart="timelineHandleDragstart(false)"
                 @dragend="timelineHandleDragend"
                 @drag="rightTimelineHandleDrag"
               ></TimelineHandle>
@@ -179,6 +183,7 @@ import IPageStateUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/I
 import * as screenshotCache from '@/utils/screenshotCache';
 import TimelineHandle from '@/components/TimelineHandle.vue';
 import TimelineHover from '@/components/TimelineHover.vue';
+import { LoadStatus } from '@ulixee/hero-interfaces/Location';
 
 function defaultData(): IPageStateUpdatedEvent {
   return {
@@ -226,7 +231,8 @@ export default Vue.defineComponent({
       timelineOffsetLeft: Vue.ref<Number>(0),
       timelineOffsetRight: Vue.ref<Number>(100),
       timelineRef: Vue.ref<typeof Timeline>(),
-      isDraggingTimelineHandle: Vue.ref(false),
+      isDraggingTimelineHandle: Vue.ref<boolean>(false),
+      focusedTimelineHandle: Vue.ref<'start' | 'end'>(null),
 
       latestScreenshotsBySessionId: Vue.reactive<Record<string, string>>({}),
 
@@ -272,13 +278,43 @@ export default Vue.defineComponent({
     timelineTicks(): ITimelineTick[] {
       const focusedSession = this.focusedSession;
       if (!focusedSession) return [];
-      return focusedSession.timeline.urls.map(x => {
-        return {
-          id: x.navigationId,
-          offsetPercent: x.offsetPercent,
-          class: 'url',
-        };
-      });
+      const ticks: ITimelineTick[] = [];
+      for (const url of focusedSession.timeline.urls) {
+        if (url.offsetPercent !== -1) {
+          ticks.push({
+            id: url.navigationId,
+            offsetPercent: url.offsetPercent,
+            class: 'url',
+          });
+        }
+        for (const status of url.loadStatusOffsets) {
+          if (status.offsetPercent < 0) continue;
+
+          if (status.loadStatus === LoadStatus.DomContentLoaded) {
+            ticks.push({
+              offsetPercent: status.offsetPercent,
+              class: 'domcontentloaded',
+            });
+          }
+          if (status.loadStatus === LoadStatus.AllContentLoaded) {
+            ticks.push({
+              offsetPercent: status.offsetPercent,
+              class: 'load',
+            });
+          }
+        }
+      }
+
+      for (let i = 0; i <= 100; i += 1) {
+        ticks.push({
+          offsetPercent: i,
+          class: 'default',
+        });
+      }
+
+      ticks.sort((a,b) => a.offsetPercent - b.offsetPercent);
+
+      return ticks;
     },
   },
   methods: {
@@ -304,6 +340,7 @@ export default Vue.defineComponent({
 
     exit(): void {
       this.$emit('exit');
+      Client.send('PageState.exit').catch(console.error)
     },
 
     focusOnUnresolved(): void {
@@ -326,6 +363,7 @@ export default Vue.defineComponent({
     },
 
     blurStateEditor(): void {
+      this.editingState = null;
       this.editingStateValue = null;
     },
 
@@ -355,6 +393,7 @@ export default Vue.defineComponent({
       }
       this.data.states.push({ state, heroSessionIds: [], assertionCounts: { total: 0 } });
       this.editingStateValue = state;
+      this.editingState = state;
       Client.send('PageState.addState', { state, heroSessionIds: [] }).catch(alert);
     },
 
@@ -368,10 +407,15 @@ export default Vue.defineComponent({
 
     focusOnSession(focusedSession: IPageStateUpdatedEvent['heroSessions'][0]): void {
       if (focusedSession.id === 'placeholder') return;
-
       const isChangingSession = this.focusedSessionId !== focusedSession.id;
       this.focusedSessionId = focusedSession.id;
       if (isChangingSession) {
+        for (const state of this.data.states) {
+          if (state.heroSessionIds.includes(this.focusedSessionId)) {
+            this.focusedState = state.state;
+            break;
+          }
+        }
         this.timelineOffsetLeft = focusedSession.timelineOffsetPercents[0];
         this.timelineOffsetRight = focusedSession.timelineOffsetPercents[1];
         this.showTimelineHover = false;
@@ -459,38 +503,41 @@ export default Vue.defineComponent({
       return 0;
     },
 
-    timelineHandleDragstart(): void {
+    timelineHandleDragstart(isStartHandle: boolean): void {
       this.isDraggingTimelineHandle = true;
+      this.focusedTimelineHandle = isStartHandle ? 'start' : 'end';
     },
 
     timelineHandleDragend(): void {
       if (!this.isDraggingTimelineHandle) return;
       this.isDraggingTimelineHandle = false;
+      this.focusedTimelineHandle = null;
       this.updateSessionTimes().catch(console.error);
     },
 
     leftTimelineHandleDrag(event: MouseEvent): void {
-      const value = this.timelineRef.getTrackOffset(event);
+      const closestTick = this.timelineRef.getClosestTick(event, true);
       // don't allow overlap
-      if (value + 1 >= this.timelineOffsetRight) return;
+      if (closestTick.offsetPercent + 1 >= this.timelineOffsetRight) return;
 
-      if (this.focusedSessionId && value !== this.timelineOffsetLeft) {
-        this.pendingTimetravelOffset = value;
+      if (this.focusedSessionId && closestTick.offsetPercent !== this.timelineOffsetLeft) {
+        console.log('changing offset', this.timelineOffsetLeft, closestTick.offsetPercent)
+        this.pendingTimetravelOffset = closestTick.offsetPercent;
         this.pendingTimetravelIsStart = true;
       }
-      this.timelineOffsetLeft = value;
+      this.timelineOffsetLeft = closestTick.offsetPercent;
     },
 
     rightTimelineHandleDrag(event: MouseEvent): void {
-      const value = this.timelineRef.getTrackOffset(event);
+      const closestTick = this.timelineRef.getClosestTick(event, false);
       // don't allow overlap
-      if (value - 1 <= this.timelineOffsetLeft) return;
+      if (closestTick.offsetPercent - 1 <= this.timelineOffsetLeft) return;
 
-      if (this.focusedSessionId && value !== this.timelineOffsetRight) {
-        this.pendingTimetravelOffset = value;
+      if (this.focusedSessionId && closestTick.offsetPercent !== this.timelineOffsetRight) {
+        this.pendingTimetravelOffset = closestTick.offsetPercent;
         this.pendingTimetravelIsStart = false;
       }
-      this.timelineOffsetRight = value;
+      this.timelineOffsetRight = closestTick.offsetPercent;
     },
 
     onTimelineHover(hoverEvent: ITimelineHoverEvent): void {
@@ -506,12 +553,21 @@ export default Vue.defineComponent({
     async updateSessionTimes() {
       if (this.pendingTimetravelOffset === null) return;
       const percentOffset = this.pendingTimetravelOffset;
-      this.pendingTimetravelOffset = null;
       await Client.send('PageState.modifySessionTimes', {
         heroSessionId: this.focusedSessionId,
         isStartTime: this.pendingTimetravelIsStart,
         timelineOffset: percentOffset,
-      });
+      }).catch(console.error);
+      this.pendingTimetravelOffset = null;
+    },
+
+    async focusSessionTimeHandle(isStartTime: boolean): Promise<void> {
+      if (this.pendingTimetravelOffset) return;
+      this.focusedTimelineHandle = isStartTime ? 'start' : 'end';
+      await Client.send('PageState.focusSessionTime', {
+        heroSessionId: this.focusedSessionId,
+        isStartTime,
+      }).catch(console.error);
     },
 
     onPageStateUpdatedEvent(message: IPageStateUpdatedEvent) {
@@ -665,7 +721,7 @@ export default Vue.defineComponent({
       border: 1px solid darkgrey;
       border-bottom: 0;
       position: relative;
-      &.focused {
+      &.focused, &:hover {
         background: white;
         box-shadow: 1px -1px 5px #ddd;
         .remove-state {
@@ -706,7 +762,8 @@ export default Vue.defineComponent({
         font-size: 0.9em;
         cursor: pointer;
       }
-      &.focused:focus-within .remove-state {
+      &:focus-within .remove-state,
+      &.drop-target .remove-state {
         display: none;
       }
     }
@@ -890,9 +947,31 @@ export default Vue.defineComponent({
       #timeline {
         #bar {
           padding-top: 0;
+          padding-left: 27px;
+          padding-right: 27px;
           #track {
             top: 14px;
             position: relative;
+          }
+          .tick.default .marker {
+            width:1px;
+          }
+          .tick.domcontentloaded .marker,.tick.load .marker  {
+            height: 8px;
+            width: 8px;
+            background-color: #1d8ce0;
+            border: 0 none;
+            border-radius: 15px;
+            overflow: hidden;
+            top: 16.5px;
+            left: calc(50% - 4px);
+            opacity: 0.7;
+            margin: 0 auto;
+            box-sizing: border-box;
+            z-index: 1;
+          }
+          .tick.load .marker {
+            background-color: #318f62;
           }
         }
       }
@@ -907,10 +986,11 @@ export default Vue.defineComponent({
         border-radius: 14px;
         overflow: hidden;
         min-width: 41px;
+        z-index: 2;
 
         #dragLeft,
         #dragRight {
-          cursor: grab;
+          cursor: ew-resize;
           position: absolute;
           top: 0;
           width: 20px;
@@ -918,7 +998,10 @@ export default Vue.defineComponent({
           height: 100%;
 
           &:active {
-            cursor: grabbing;
+            cursor: ew-resize;
+          }
+          &.focused {
+            opacity:0.85;
           }
         }
         #dragLeft {
@@ -945,6 +1028,12 @@ export default Vue.defineComponent({
         }
       }
     }
+  }
+
+}
+.dragging {
+  #timeline:hover {
+    cursor: ew-resize;
   }
 }
 </style>
