@@ -30,6 +30,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   public playbackState: IHeroSessionActiveEvent['playbackState'] = 'live';
   public readonly pageStateManager: PageStateManager;
   public readonly timelineBuilder: TimelineBuilder;
+
   public readonly timetravelPlayer: TimetravelPlayer;
 
   private waitForPageStateEvents: {
@@ -186,6 +187,15 @@ export default class SessionObserver extends TypedEventEmitter<{
     return TabGroupModule.bySessionId.get(this.heroSession.id);
   }
 
+  public async groupTabs(name: string, color: string, collapse: boolean): Promise<number> {
+    const tabGroupModule = this.tabGroupModule;
+    if (!tabGroupModule) return;
+
+    const pages = [...this.heroSession.tabsById.values()].map(x => x.puppetPage);
+    if (!pages.length) return;
+    return await tabGroupModule.groupTabs(pages, name, color, collapse);
+  }
+
   public async updateTabGroup(groupLive: boolean): Promise<void> {
     const tabGroupModule = this.tabGroupModule;
     if (!tabGroupModule) return;
@@ -196,17 +206,16 @@ export default class SessionObserver extends TypedEventEmitter<{
     if (groupLive === false) {
       await tabGroupModule.ungroupTabs(pages);
     } else {
-      await tabGroupModule.groupTabs(pages, 'Reopen Live', 'blue', true);
+      await this.groupTabs('Reopen Live', 'blue', true);
     }
   }
 
   public async didFocusOnPage(pageId: string, didFocus: boolean): Promise<void> {
     const isLiveTab = this.isLivePage(pageId);
     const isTimetravelTab = this.timetravelPlayer.isOwnPage(pageId) ?? false;
+
     // if closing time travel tab, leave
     if (isTimetravelTab && !didFocus) return;
-
-    if (isLiveTab) ChromeAliveCore.toggleAppTop(didFocus);
 
     const didFocusOnLiveTab = isLiveTab && didFocus;
     // if time travel is opened and we focused on a live page, close it

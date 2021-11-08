@@ -1,4 +1,4 @@
-import { nanoid } from 'nanoid'
+import { nanoid } from 'nanoid';
 
 /* Packed messages start with a colon and have two fixed length fields followed by one variable field:
   - colon (length: 1)
@@ -16,11 +16,14 @@ const lengthOfFieldDivider = fieldDivider.length;
 const lengthOfResponseCodeField = 1;
 
 const startOfDestLocationField = 1;
-const startOfResponseCodeField = startOfDestLocationField + lengthOfDestLocationField + lengthOfFieldDivider;
-const startOfStringifiedMessageField = startOfResponseCodeField + lengthOfResponseCodeField + lengthOfFieldDivider;
+const startOfResponseCodeField =
+  startOfDestLocationField + lengthOfDestLocationField + lengthOfFieldDivider;
+const startOfStringifiedMessageField =
+  startOfResponseCodeField + lengthOfResponseCodeField + lengthOfFieldDivider;
 
 export enum MessageEventType {
   OpenSelectorGeneratorPanel = 'OpenSelectorGeneratorPanel',
+  CloseDevtoolsPanel = 'CloseDevtoolsPanel',
   OverlayDispatched = 'OverlayDispatched',
   InitializingDevtoolsScript = 'InitializingDevtoolsScript',
 }
@@ -38,12 +41,12 @@ export enum MessageLocation {
 export type IMessageLocation = keyof typeof MessageLocation;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const ___sendToCore = '___sendToCore'
+export const ___sendToCore = '___sendToCore';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const ___receiveFromCore = '___receiveFromCore';
 
-export const sendMessageFromBrowserToCoreFnName = 'sendMessageFromBrowserToUlixeeCore'
+export const sendMessageFromBrowserToCoreFnName = 'sendMessageFromBrowserToUlixeeCore';
 export const eventEmitterNameInBrowser = 'eventEmitterFromUlixeeCore';
 
 export enum ResponseCode {
@@ -113,15 +116,12 @@ export function extractStringifiedComponentsFromMessage(message: IMessageObject 
   if (typeof message === 'string' && isPackedMessage(message)) {
     const destLocation = message.substr(startOfDestLocationField, lengthOfDestLocationField);
     const responseCode = message.substr(startOfResponseCodeField, lengthOfResponseCodeField);
-    const stringifiedMessage = message.substr(startOfStringifiedMessageField)
+    const stringifiedMessage = message.substr(startOfStringifiedMessageField);
     return [destLocation.trim(), responseCode, stringifiedMessage];
   }
   if (typeof message === 'string') throw new Error('Unknown message format');
 
-  const { destLocation, responseCode } = message;
-  const messageToStringify = { ...message };
-  delete messageToStringify.destLocation;
-  delete messageToStringify.responseCode;
+  const { destLocation, responseCode, ...messageToStringify } = message;
   const stringifiedMessage = JSON.stringify(messageToStringify);
   return [destLocation, responseCode || ResponseCode.N, stringifiedMessage];
 }

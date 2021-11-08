@@ -5,11 +5,11 @@ import BridgeToExtension from '../bridges/BridgeToExtension';
 import { createResponseId, IMessageObject, MessageLocation, ResponseCode } from '../BridgeHelpers';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 
-export default class TabGroupModule extends TypedEventEmitter<{ 'tab-group-opened': void }> {
+export default class TabGroupModule extends TypedEventEmitter<{ 'tab-group-opened': number }> {
   public static bySessionId = new Map<string, TabGroupModule>();
 
+  public identityByPageId = new Map<string, { tabId: number; windowId: number }>();
   private bridgeToExtension: BridgeToExtension;
-  private identityByPageId = new Map<string, { tabId: number; windowId: number }>();
   private sessionId: string;
 
   constructor(bridgeToExtension: BridgeToExtension, browserEmitter: EventEmitter) {
@@ -19,7 +19,7 @@ export default class TabGroupModule extends TypedEventEmitter<{ 'tab-group-opene
       if (payload.event === 'OnTabIdentify') {
         this.onTabIdentified(payload, puppetPageId);
       } else if (payload.event === 'OnTabGroupOpened') {
-        this.emit('tab-group-opened');
+        this.emit('tab-group-opened', payload.groupId);
       }
     });
   }
@@ -79,7 +79,14 @@ export default class TabGroupModule extends TypedEventEmitter<{ 'tab-group-opene
     await this.sendToExtension<void>(puppetPages[0], 'ungroupTabs', args, false);
   }
 
-  private onTabIdentified(payload: any, puppetPageId: string): void {
+  public async collapseGroup(puppetPage: IPuppetPage, groupId: number): Promise<void> {
+    await this.sendToExtension<void>(puppetPage, 'collapseGroup', { groupId }, false);
+  }
+
+  private onTabIdentified(
+    payload: { windowId: number; tabId: number },
+    puppetPageId: string,
+  ): void {
     const { windowId, tabId } = payload;
     this.identityByPageId.set(puppetPageId, { windowId, tabId });
   }

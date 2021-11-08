@@ -4,7 +4,7 @@ import Log from '@ulixee/commons/lib/Logger';
 import ICorePluginCreateOptions from '@ulixee/hero-interfaces/ICorePluginCreateOptions';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { IBrowserEmulatorConfig, ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
-import IDevtoolsSession from '@ulixee/hero-interfaces/IDevtoolsSession';
+import IDevtoolsSession, { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
 import CorePlugin from '@ulixee/hero-plugin-utils/lib/CorePlugin';
 import BridgeToDevtoolsPrivate from './bridges/BridgeToDevtoolsPrivate';
 import BridgeToExtension from './bridges/BridgeToExtension';
@@ -13,6 +13,7 @@ import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 import FocusedWindowModule from './hero-plugin-modules/FocusedWindowModule';
 import { MessageLocation } from './BridgeHelpers';
 import { extensionId } from './ExtensionUtils';
+import DevtoolsPanelModule from './hero-plugin-modules/DevtoolsPanelModule';
 
 const { log } = Log(module);
 
@@ -31,6 +32,7 @@ export default class HeroCorePlugin extends CorePlugin {
   private tabGroupModule: TabGroupModule;
   private windowBoundsModule: WindowBoundsModule;
   private focusedWindowModule: FocusedWindowModule;
+  private devtoolsPanelModule: DevtoolsPanelModule;
 
   constructor(createOptions: ICorePluginCreateOptions) {
     super(createOptions);
@@ -41,6 +43,10 @@ export default class HeroCorePlugin extends CorePlugin {
     this.tabGroupModule = new TabGroupModule(this.bridgeToExtension, browserEmitter);
     this.windowBoundsModule = new WindowBoundsModule(this.bridgeToExtension, browserEmitter);
     this.focusedWindowModule = new FocusedWindowModule(this.bridgeToExtension, browserEmitter);
+    this.devtoolsPanelModule = new DevtoolsPanelModule(
+      this.bridgeToDevtoolsPrivate,
+      this.tabGroupModule.identityByPageId,
+    );
 
     this.bridgeToDevtoolsPrivate.on('message', (message, { destLocation }) => {
       const { ContentScript, BackgroundScript } = MessageLocation;
@@ -57,7 +63,12 @@ export default class HeroCorePlugin extends CorePlugin {
     this.bridgeToExtension.on('message', (message, messageComponents) => {
       const { destLocation, stringifiedMessage, puppetPageId } = messageComponents;
       if (destLocation === MessageLocation.DevtoolsPrivate) {
-        this.bridgeToDevtoolsPrivate.send(message);
+        this.bridgeToDevtoolsPrivate.send(message).catch(error =>
+          this.logger.error('Error sending message to DevtoolsPrivate', {
+            error,
+            message,
+          }),
+        );
       } else if (destLocation === MessageLocation.Core) {
         const { payload } = JSON.parse(stringifiedMessage);
         browserEmitter.emit('payload', payload, puppetPageId);
@@ -83,6 +94,7 @@ export default class HeroCorePlugin extends CorePlugin {
       this.windowBoundsModule.onNewPuppetPage(page, sessionSummary),
       this.focusedWindowModule.onNewPuppetPage(page, sessionSummary),
       this.tabGroupModule.onNewPuppetPage(page, sessionSummary),
+      this.devtoolsPanelModule.onNewPuppetPage(page, sessionSummary),
     ]);
   }
 
@@ -90,9 +102,15 @@ export default class HeroCorePlugin extends CorePlugin {
     return this.bridgeToDevtoolsPrivate.addDevtoolsSession(devtoolsSession);
   }
 
-  onServiceWorkerAttached(devtoolsSession: IDevtoolsSession, event): Promise<any> {
+  onServiceWorkerAttached(
+    devtoolsSession: IDevtoolsSession,
+    event: Protocol.Target.AttachedToTargetEvent,
+  ): Promise<any> {
     const { targetInfo } = event;
     if (targetInfo.url !== `chrome-extension://${extensionId}/background.js`) return;
-    return devtoolsSession.send('Target.detachFromTarget').catch(null);
+    devtoolsSession.on('Runtime.consoleAPICalled', ev =>
+      this.logger.stats('ServiceWorker.Console', { args: ev.args }),
+    );
+    return Promise.all([devtoolsSession.send('Runtime.enable').catch(console.error)]);
   }
 }

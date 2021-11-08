@@ -168,7 +168,7 @@ export default Vue.defineComponent({
       this.showTimelineHover = false;
       if (this.focusedPageState.window) return;
       this.focusedPageState.id = tick?.id as any;
-      this.focusedPageState.offset = this.timelineRef.getTrackOffsetPercent(
+      this.focusedPageState.offset = this.timelineRef.getPageXByOffsetPercent(
         tick?.offsetPercent ?? 100,
       );
       const width = 400;
@@ -226,11 +226,13 @@ export default Vue.defineComponent({
     onTimelineHover(hoverEvent: ITimelineHoverEvent): void {
       if (this.session.needsPageStateResolution && this.timelineOffset >= 99.9) return;
 
-      if (hoverEvent.closestTick?.class === 'pagestate') {
-        this.showPageStatePopup(hoverEvent.closestTick);
+      if (hoverEvent.closestTickAbove?.class === 'pagestate') {
+        this.showPageStatePopup(hoverEvent.closestTickAbove);
         return;
       }
-      Object.assign(this.timelineHover, hoverEvent);
+
+      const stats = this.timelineRef.getTimelineStats(hoverEvent.offset);
+      Object.assign(this.timelineHover, hoverEvent, stats);
       this.showTimelineHover = true;
     },
 
@@ -238,7 +240,7 @@ export default Vue.defineComponent({
       this.showTimelineHover = false;
       Object.assign(this.focusedPageState, {
         show: this.session.needsPageStateResolution && !this.isTimetravelMode,
-        offset: this.timelineRef.getTrackOffsetPercent(100),
+        offset: this.timelineRef.getPageXByOffsetPercent(100),
         id: null,
       });
     },

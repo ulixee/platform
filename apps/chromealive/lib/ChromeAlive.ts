@@ -89,19 +89,19 @@ export class ChromeAlive extends EventEmitter {
         window.show();
       }
     }
+    this.toggleOnTop(true);
+    this.#isVisible = true;
+  }
 
-    if (!this.#browserWindow.isAlwaysOnTop()) {
-      this.#browserWindow.setAlwaysOnTop(true, 'floating');
+  private toggleOnTop(onTop: boolean) {
+    if (this.#browserWindow.isAlwaysOnTop() !== onTop) {
+      this.#browserWindow.setAlwaysOnTop(onTop, 'floating');
     }
 
     if (this.#browserWindow.isAlwaysOnTop()) {
       clearTimeout(this.#resetAlwaysTopTimeout);
       this.#resetAlwaysTopTimeout = setTimeout(() => this.#browserWindow.setAlwaysOnTop(false), 50);
     }
-    this.#isVisible = true;
-  }
-
-  private toggleOnTop(onTop: boolean) {
     for (const window of this.#childWindows) {
       window.setAlwaysOnTop(onTop);
     }
@@ -183,14 +183,15 @@ export class ChromeAlive extends EventEmitter {
     });
 
     // for output window
-    this.#browserWindow.webContents.setWindowOpenHandler(() => {
+    this.#browserWindow.webContents.setWindowOpenHandler(details => {
+      const isPopup = details.url.includes('popup');
       return {
         action: 'allow',
         overrideBrowserWindowOptions: {
-          frame: true,
+          frame: !isPopup,
           roundedCorners: true,
-          movable: true,
-          transparent: false,
+          movable: !isPopup,
+          transparent: isPopup,
           titleBarStyle: 'default',
           alwaysOnTop: true,
           hasShadow: true,
@@ -259,10 +260,7 @@ export class ChromeAlive extends EventEmitter {
     data: IChromeAliveEvents[T],
   ): void {
     if (eventType === 'App.hide') this.hideWindow();
-    if (eventType === 'App.show') {
-      this.showWindow();
-      this.toggleOnTop(true);
-    }
+    if (eventType === 'App.show' && !this.#isVisible) this.showWindow();
     if (eventType === 'App.onTop') this.toggleOnTop(data as boolean);
     if (eventType === 'App.quit') app.exit();
   }

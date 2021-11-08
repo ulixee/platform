@@ -17,7 +17,9 @@ export default class FocusedWindowModule {
   }
 
   public onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
-    this.sessionId ??= sessionSummary.id;
+    if (!this.sessionId) {
+      this.sessionId ??= sessionSummary.id;
+    }
 
     page.once('close', () => this.handlePageIsClosed(page.id));
 

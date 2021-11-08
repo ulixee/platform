@@ -13,6 +13,7 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import { defineComponent, PropType } from 'vue';
+import { ITimelineStats } from '@/components/Timeline.vue';
 
 const ICON_CARET = require('@/assets/icons/caret.svg');
 
@@ -36,13 +37,13 @@ export default defineComponent({
   props: {
     runtimeMs: Number,
     hoverEvent: {
-      type: Object as PropType<ITimelineHoverEvent>,
+      type: Object as PropType<ITimelineStats & { offset: number; pageX: number }>,
     },
   },
   setup() {
     let containerElement = Vue.ref<HTMLDivElement>(null);
     let containerMiddle: number;
-    let boxWidth = 400
+    let boxWidth = 400;
     let cssVars = Vue.ref({
       '--box-width': `${boxWidth}px`,
     });
@@ -59,13 +60,13 @@ export default defineComponent({
     runtime(): string {
       const millis = Math.round((this.hoverEvent.offset / 100) * this.runtimeMs);
       if (millis > 1e3) {
-        const runtimeSecs = Math.round(10 * (millis / 1000)) / 10;
+        const runtimeSecs = Math.round(100 * (millis / 1000)) / 100;
         return `${runtimeSecs}s`;
       }
       return `${millis}ms`;
     },
     left(): number {
-      return this.hoverEvent.pageX - (this.boxWidth /2);
+      return this.hoverEvent.pageX - this.boxWidth / 2;
     },
   },
 });

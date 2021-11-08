@@ -17,6 +17,7 @@ import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import { LoadStatus } from '@ulixee/hero-interfaces/Location';
 import PageStateCodeBlock from '@ulixee/hero-timetravel/lib/PageStateCodeBlock';
 import PageStateAssertions from '@ulixee/hero-timetravel/lib/PageStateAssertions';
+import DevtoolsPanelModule from './hero-plugin-modules/DevtoolsPanelModule';
 
 const { log } = Log(module);
 
@@ -54,6 +55,7 @@ export default class PageStateManager extends TypedEventEmitter<{
   private activePageStateId: string;
   private isHeroSessionFocused = false;
   private activeTimelineHeroSessionId: string;
+  private tabGroupId: number;
 
   private placeholderSessions = 0;
 
@@ -92,6 +94,7 @@ export default class PageStateManager extends TypedEventEmitter<{
       this.heroSessionsById.clear();
     }
 
+    this.sessionObserver.tabGroupModule.off('tab-group-opened', this.listenForTabGroupOpened);
     await this.closeTimetravel();
 
     await this.sessionObserver.updateTabGroup(false);
@@ -135,10 +138,24 @@ export default class PageStateManager extends TypedEventEmitter<{
     const unresolvedHeroSessionIds = this.getUnresolvedHeroSessionIds();
     const sessionIdToOpen =
       unresolvedHeroSessionIds[0] ??
-      this.autoAssignedHeroSessionIds[0] ??
+      this.autoAssignedHeroSessionIds.values().next()?.value ??
       this.heroSessionsById.keys().next().value;
     await this.openTimetravel(sessionIdToOpen);
+    await DevtoolsPanelModule.bySessionId
+      .get(sessionIdToOpen)
+      .closeDevtoolsPanelForPage(this.timetravelPlayer.activeTab.mirrorPage.page);
+    await this.timetravelPlayer.activeTab.mirrorPage.page.bringToFront();
     this.publish();
+  }
+
+  public async focusSessionTimeBoundary(isStartTime: boolean): Promise<void> {
+    const timelineBuilder = this.activeTimelineBuilder;
+    const focusedSessionId = this.activeTimelineHeroSessionId;
+    const session = this.generator.sessionsById.get(focusedSessionId);
+    const percentOffset = timelineBuilder.commandTimeline.getTimelineOffsetForTimestamp(
+      isStartTime ? session.loadingRange[0] : session.loadingRange[1],
+    );
+    await this.timetravelPlayer.goto(percentOffset, timelineBuilder.lastMetadata);
   }
 
   public async changeSessionTimeBoundary(
@@ -216,13 +233,26 @@ export default class PageStateManager extends TypedEventEmitter<{
       this.sessionObserver.heroSession,
       this.generator.sessionsById.get(heroSessionId).timelineRange,
     );
-    // TODO: very fragile - timing of closing seems to hit wrong listener
-    // this.sessionObserver.tabGroupModule.once('tab-group-opened', this.close);
-    await this.sessionObserver.updateTabGroup(true);
+    this.tabGroupId = await this.sessionObserver.groupTabs('', 'grey', true);
+    this.sessionObserver.tabGroupModule.on('tab-group-opened', this.listenForTabGroupOpened);
     this.activeTimelineBuilder.refreshMetadata();
 
     await this.gotoActiveSessionEnd();
     this.timetravelPlayer.once('all-tabs-closed', this.onTimetravelTabsClosed);
+  }
+
+  private listenForTabGroupOpened(openedGroupId: number) {
+    const groupId = this.tabGroupId;
+    // if still open, re-collapse
+    if (groupId === openedGroupId && this.pageStateById.size) {
+      this.sessionObserver.tabGroupModule
+        .collapseGroup(this.sessionObserver.heroSession.getLastActiveTab().puppetPage, groupId)
+        .catch(error => {
+          this.logger.error('Error keeping live tabGroup collapsed', {
+            error,
+          });
+        });
+    }
   }
 
   private async gotoActiveSessionEnd(): Promise<void> {
@@ -267,11 +297,41 @@ export default class PageStateManager extends TypedEventEmitter<{
     }
 
     timeline ??= new TimelineBuilder(heroSession.db, heroSession);
-    timeline.on('updated', () => {
-      timeline.refreshMetadata();
-      this.publish();
-    });
+    timeline.on('updated', this.onTimelineUpdated.bind(this, timeline, heroSession.id));
     this.timelineBuildersByHeroSessionId.set(id, timeline);
+    this.onTimelineUpdated(timeline, heroSession.id);
+  }
+
+  private onTimelineUpdated(timelineBuilder: TimelineBuilder, sessionId: string) {
+    timelineBuilder.refreshMetadata();
+    const generatorSession = this.generator?.sessionsById?.get(sessionId);
+    if (generatorSession && this.autoAssignedHeroSessionIds.has(sessionId)) {
+      let hasChanges = false;
+      for (const url of timelineBuilder.lastMetadata?.urls ?? []) {
+        for (const loadEvent of url.loadStatusOffsets) {
+          if (loadEvent.offsetPercent === -1) continue;
+          if (loadEvent.loadStatus === LoadStatus.HttpResponded) {
+            if (loadEvent.timestamp > generatorSession.loadingRange[0]) {
+              generatorSession.loadingRange[0] = loadEvent.timestamp;
+              hasChanges = true;
+            }
+          }
+          if (loadEvent.loadStatus === LoadStatus.DomContentLoaded) {
+            if (
+              // before complete
+              loadEvent.timestamp < generatorSession.timelineRange[1] &&
+              // after load event
+              loadEvent.timestamp > generatorSession.loadingRange[0]
+            ) {
+              generatorSession.loadingRange[1] = loadEvent.timestamp;
+              hasChanges = true;
+            }
+          }
+        }
+      }
+      if (hasChanges) this.updateState();
+    }
+    this.publish();
   }
 
   private publish(): void {
@@ -312,6 +372,7 @@ export default class PageStateManager extends TypedEventEmitter<{
     const timeRange: [number, number] = [startTime, endTime];
 
     generator.addSession(tab.session.db, tab.id, timeRange, timeRange);
+    this.autoAssignedHeroSessionIds.add(tab.sessionId);
 
     const timelineBuilder = this.timelineBuildersByHeroSessionId.get(tab.sessionId);
     timelineBuilder?.setTimeRange(...timeRange);

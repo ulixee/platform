@@ -312,7 +312,7 @@ export default Vue.defineComponent({
         });
       }
 
-      ticks.sort((a,b) => a.offsetPercent - b.offsetPercent);
+      ticks.sort((a, b) => a.offsetPercent - b.offsetPercent);
 
       return ticks;
     },
@@ -340,7 +340,7 @@ export default Vue.defineComponent({
 
     exit(): void {
       this.$emit('exit');
-      Client.send('PageState.exit').catch(console.error)
+      Client.send('PageState.exit').catch(console.error);
     },
 
     focusOnUnresolved(): void {
@@ -518,10 +518,10 @@ export default Vue.defineComponent({
     leftTimelineHandleDrag(event: MouseEvent): void {
       const closestTick = this.timelineRef.getClosestTick(event, true);
       // don't allow overlap
-      if (closestTick.offsetPercent + 1 >= this.timelineOffsetRight) return;
+      if (closestTick.offsetPercent >= this.timelineOffsetRight) return;
 
       if (this.focusedSessionId && closestTick.offsetPercent !== this.timelineOffsetLeft) {
-        console.log('changing offset', this.timelineOffsetLeft, closestTick.offsetPercent)
+        console.log('changing offset', this.timelineOffsetLeft, closestTick.offsetPercent);
         this.pendingTimetravelOffset = closestTick.offsetPercent;
         this.pendingTimetravelIsStart = true;
       }
@@ -531,7 +531,7 @@ export default Vue.defineComponent({
     rightTimelineHandleDrag(event: MouseEvent): void {
       const closestTick = this.timelineRef.getClosestTick(event, false);
       // don't allow overlap
-      if (closestTick.offsetPercent - 1 <= this.timelineOffsetLeft) return;
+      if (closestTick.offsetPercent <= this.timelineOffsetLeft) return;
 
       if (this.focusedSessionId && closestTick.offsetPercent !== this.timelineOffsetRight) {
         this.pendingTimetravelOffset = closestTick.offsetPercent;
@@ -541,7 +541,22 @@ export default Vue.defineComponent({
     },
 
     onTimelineHover(hoverEvent: ITimelineHoverEvent): void {
-      Object.assign(this.timelineHover, hoverEvent);
+      if (!hoverEvent.closestTickAbove && !hoverEvent.closestTickBelow) return;
+      let offset = hoverEvent.closestTickAbove?.offsetPercent;
+      if (this.focusedTimelineHandle !== 'start') {
+        offset = hoverEvent.closestTickBelow?.offsetPercent;
+      }
+
+      const stats = this.timelineRef.getTimelineStats(offset);
+      const pageX = this.timelineRef.getPageXByOffsetPercent(offset);
+      Object.assign(
+        this.timelineHover,
+        {
+          pageX,
+          offset,
+        },
+        stats,
+      );
       this.showTimelineHover = true;
     },
 
@@ -721,7 +736,8 @@ export default Vue.defineComponent({
       border: 1px solid darkgrey;
       border-bottom: 0;
       position: relative;
-      &.focused, &:hover {
+      &.focused,
+      &:hover {
         background: white;
         box-shadow: 1px -1px 5px #ddd;
         .remove-state {
@@ -954,9 +970,10 @@ export default Vue.defineComponent({
             position: relative;
           }
           .tick.default .marker {
-            width:1px;
+            width: 1px;
           }
-          .tick.domcontentloaded .marker,.tick.load .marker  {
+          .tick.domcontentloaded .marker,
+          .tick.load .marker {
             height: 8px;
             width: 8px;
             background-color: #1d8ce0;
@@ -964,7 +981,7 @@ export default Vue.defineComponent({
             border-radius: 15px;
             overflow: hidden;
             top: 16.5px;
-            left: calc(50% - 4px);
+            left: -4px;
             opacity: 0.7;
             margin: 0 auto;
             box-sizing: border-box;
@@ -1001,7 +1018,7 @@ export default Vue.defineComponent({
             cursor: ew-resize;
           }
           &.focused {
-            opacity:0.85;
+            opacity: 0.85;
           }
         }
         #dragLeft {
@@ -1029,7 +1046,6 @@ export default Vue.defineComponent({
       }
     }
   }
-
 }
 .dragging {
   #timeline:hover {

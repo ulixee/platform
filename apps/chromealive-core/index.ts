@@ -201,6 +201,7 @@ export default class ChromeAliveCore {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
     this.activeHeroSessionId = heroSessionId;
+    this.toggleAppTop(status.focused);
 
     await sessionObserver.didFocusOnPage(pageId, isPageVisible);
     this.toggleAppVisibility(!!this.activeHeroSessionId);

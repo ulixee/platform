@@ -28,13 +28,17 @@ import * as screenshotCache from '@/utils/screenshotCache';
 export interface ITimelineHoverEvent {
   offset: number;
   pageX: number;
+  closestTickAbove: ITimelineTick;
+  closestTickBelow: ITimelineTick;
+}
+
+export interface ITimelineStats {
   url: string;
   imageBase64: string;
   status: string;
   domChanges: number;
-  closestTick: ITimelineTick;
-  closestTickBelow: ITimelineTick;
 }
+
 export interface ITimelineChangeEvent {
   offset: string;
   oldValue: string;
@@ -89,21 +93,16 @@ export default defineComponent({
       window.addEventListener('mousemove', this.trackMousemove);
     },
 
-    trackMousemove(event: MouseEvent) {
-      const offset = this.getTrackOffset(event);
-
-      const hoverEvent = {
-        offset,
-        pageX: event.pageX,
+    getTimelineStats(offset: number): ITimelineStats {
+      const stats = <ITimelineStats>{
         domChanges: 0,
-      } as ITimelineHoverEvent;
-
+        status: 'Loading'
+      }
       for (const paint of this.timeline.paintEvents) {
         // go until this change is after the current offset
         if (paint.offsetPercent > offset) break;
-        hoverEvent.domChanges = paint.domChanges;
+        stats.domChanges = paint.domChanges;
       }
-      hoverEvent.status = 'Loading';
 
       let loadedUrl: ITimelineMetadata['urls'][0] = null;
       for (const url of this.timeline.urls) {
@@ -119,23 +118,30 @@ export default defineComponent({
           statusText = status;
         }
 
-        hoverEvent.status = statusText;
+        stats.status = statusText;
+        stats.url = loadedUrl.url;
       }
-      hoverEvent.url = loadedUrl?.url;
-      let i = 0;
+      const timestamp = this.screenshotTimestampsByOffset.get(offset);
+      stats.imageBase64 = screenshotCache.get(this.heroSessionId, this.tabId, timestamp);
+      return stats;
+    },
+
+    trackMousemove(event: MouseEvent) {
+      const offset = this.getTrackOffset(event);
+
+      const hoverEvent = {
+        offset,
+        pageX: event.pageX,
+      } as ITimelineHoverEvent;
+
       for (const tick of this.ticks) {
+        hoverEvent.closestTickAbove = tick;
+        if (tick.offsetPercent < offset) {
+          hoverEvent.closestTickBelow = tick;
+        }
         if (tick.offsetPercent > offset) break;
-        i += 1;
-        hoverEvent.closestTick = tick;
-      }
-      for (let j = this.ticks.length - 1; j >= i; j -= 1) {
-        const tick = this.ticks[j];
-        if (!tick || tick.offsetPercent < offset) break;
-        hoverEvent.closestTickBelow = tick;
       }
 
-      const timestamp = this.screenshotTimestampsByOffset.get(offset);
-      hoverEvent.imageBase64 = screenshotCache.get(this.heroSessionId, this.tabId, timestamp);
       this.$emit('hover', hoverEvent);
     },
 
@@ -158,7 +164,7 @@ export default defineComponent({
       return this.trackOffset;
     },
 
-    getTrackOffsetPercent(percent = 100): number {
+    getPageXByOffsetPercent(percent = 100): number {
       const rect = this.getTrackBoundingRect();
       const width = Math.floor(percent * rect.width) / 100;
       return width + rect.x;
@@ -184,7 +190,7 @@ export default defineComponent({
     getTrackOffset(event: MouseEvent): number {
       const trackRect = this.getTrackBoundingRect();
       let percentOffset = (100 * (event.pageX - trackRect.x)) / trackRect.width;
-      percentOffset = Math.round(10 * percentOffset) / 10;
+      percentOffset = Math.round(100 * percentOffset) / 100;
       if (percentOffset > 100) percentOffset = 100;
       if (percentOffset < 0) percentOffset = 0;
       return percentOffset;
