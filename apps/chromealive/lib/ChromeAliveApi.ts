@@ -1,5 +1,6 @@
 import { Serializable } from 'child_process';
-import IChromeAliveApis, {
+import {
+  IChromeAliveApis,
   IChromeAliveApiResponse,
 } from '@ulixee/apps-chromealive-interfaces/apis';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';

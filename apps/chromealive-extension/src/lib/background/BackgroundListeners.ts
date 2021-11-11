@@ -45,15 +45,16 @@ async function broadcastOnPageVisible(windowId: number): Promise<void> {
 
 // GROUP OPENED //////////////////////////////////////////////////////////////////////////////
 
-function broadcastGroupOpened(windowId: number): void {
+function broadcastGroupOpened(windowId: number, groupId: number): void {
   return sendToCore({
     event: 'OnTabGroupOpened',
     windowId,
+    groupId,
     tabGroupOpened: true,
   });
 }
 
 chrome.tabGroups.onUpdated.addListener(group => {
   if (isCreatingTabGroup()) return;
-  if (group.collapsed === false) return broadcastGroupOpened(group.windowId);
+  if (group.collapsed === false) return broadcastGroupOpened(group.windowId, group.id);
 });

@@ -1,6 +1,5 @@
-import Core, { Session as HeroSession, Tab } from '@ulixee/hero-core';
+import { Session as HeroSession, Tab } from '@ulixee/hero-core';
 import { Session as DataboxSession } from '@ulixee/databox-core';
-import type { IFrameNavigationEvents } from '@ulixee/hero-core/lib/FrameNavigations';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import * as Fs from 'fs';
 import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
@@ -8,31 +7,38 @@ import { bindFunctions } from '@ulixee/commons/lib/utils';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import OutputRebuilder, { IOutputSnapshot } from '@ulixee/databox-core/lib/OutputRebuilder';
 import type { IOutputChangeRecord } from '@ulixee/databox-core/models/OutputTable';
-import { LoadStatus } from '@ulixee/hero-interfaces/Location';
-import INavigation, { ContentPaint } from '@ulixee/hero-interfaces/INavigation';
 import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
 import * as Path from 'path';
-import CommandTimeline from '@ulixee/hero-timetravel/lib/CommandTimeline';
-import { IDomChangeRecord } from '@ulixee/hero-core/models/DomChangesTable';
-import HeroSessionTimetravel from '@ulixee/hero-timetravel/player/TimetravelPlayer';
-import DirectConnectionToCoreApi from '@ulixee/hero-core/connections/DirectConnectionToCoreApi';
-import { PluginTypes } from '@ulixee/hero-interfaces/IPluginTypes';
+import { fork } from 'child_process';
+import Log from '@ulixee/commons/lib/Logger';
+import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
+import { ITabEventParams } from '@ulixee/hero-core/lib/Tab';
+import TimelineBuilder from '@ulixee/hero-timetravel/player/TimelineBuilder';
+import PageStateManager from './PageStateManager';
 import TabGroupModule from './hero-plugin-modules/TabGroupModule';
+import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
+import ChromeAliveCore from '../index';
+
+const { log } = Log(module);
 
 export default class SessionObserver extends TypedEventEmitter<{
   'hero:updated': void;
   'databox:updated': void;
   closed: void;
+  'app:mode': string;
 }> {
-  public loadedNavigationIds = new Set<number>();
   public playbackState: IHeroSessionActiveEvent['playbackState'] = 'live';
-  public screenshotsByTimestamp = new Map<
-    number,
-    { timestamp: number; imageBase64: string; tabId: number }
-  >();
+  public readonly pageStateManager: PageStateManager;
+  public readonly timelineBuilder: TimelineBuilder;
 
-  private domChangesByTimestamp = new Map<number, number>();
-  private timetravelPlayer: HeroSessionTimetravel;
+  public readonly timetravelPlayer: TimetravelPlayer;
+
+  private waitForPageStateEvents: {
+    id: string;
+    startingCommandId: number;
+    timestamp: number;
+    isUnresolved: boolean;
+  }[] = [];
 
   private scriptLastModifiedTime: number;
   private readonly scriptInstanceMeta: IScriptInstanceMeta;
@@ -40,11 +46,11 @@ export default class SessionObserver extends TypedEventEmitter<{
   private outputRebuilder = new OutputRebuilder();
   private databoxInput: any = null;
   private databoxInputBytes = 0;
-  private lastHeroSessionActiveEvent: IHeroSessionActiveEvent;
 
   constructor(public readonly heroSession: HeroSession) {
     super();
     bindFunctions(this);
+    this.logger = log.createChild(module, { sessionId: heroSession.id });
     this.scriptInstanceMeta = heroSession.options.scriptInstanceMeta;
 
     this.heroSession.on('tab-created', this.onTabCreated);
@@ -52,20 +58,22 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.heroSession.on('resumed', this.onHeroSessionResumed);
     this.heroSession.on('closing', this.close);
     this.heroSession.once('closed', () => this.emit('closed'));
+
+    this.timelineBuilder = new TimelineBuilder(heroSession.db, heroSession);
+    this.timelineBuilder.on('updated', () => this.emit('hero:updated'));
+
+    this.timetravelPlayer = TimetravelPlayer.create(heroSession.id, heroSession);
+    this.timetravelPlayer.on('all-tabs-closed', this.onTimetravelClosed);
+    this.timetravelPlayer.on('open', this.onTimetravelOpened);
+    this.timetravelPlayer.on('new-tick-command', () => this.emit('databox:updated'));
+
     this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint).mtimeMs;
 
-    const corePlugins = heroSession.plugins.instances.filter(x => {
-      // only use core plugins - no emulators
-      if (x.id === 'default-human-emulator' || x.id === 'default-browser-emulator') return false;
-      return Core.pluginMap.corePluginsById[x.id].type === PluginTypes.CorePlugin;
-    });
-    const connectionToCoreApi = new DirectConnectionToCoreApi();
-    this.timetravelPlayer = new HeroSessionTimetravel(
-      heroSession.id,
-      connectionToCoreApi,
-      corePlugins,
+    this.pageStateManager = new PageStateManager(this, this.timelineBuilder);
+    this.pageStateManager.on('enter', () =>
+      ChromeAliveCore.sendAppEvent('App.mode', 'pagestate-generator'),
     );
-    this.timetravelPlayer.on('all-tabs-closed', this.onReplayClosed.bind(this));
+    this.pageStateManager.on('exit', () => ChromeAliveCore.sendAppEvent('App.mode', 'live'));
     this.bindDatabox();
     Fs.watchFile(
       this.scriptInstanceMeta.entrypoint,
@@ -77,63 +85,68 @@ export default class SessionObserver extends TypedEventEmitter<{
     );
   }
 
+  public onMultiverseSession(session: HeroSession): void {
+    this.pageStateManager.onMultiverseSession(session);
+  }
+
+  public relaunchSession(
+    startLocation: ISessionCreateOptions['sessionResume']['startLocation'],
+    startNavigationId?: number,
+  ): Error | undefined {
+    const script = this.scriptInstanceMeta.entrypoint;
+    const execArgv = [
+      `--sessionResume.startLocation`,
+      startLocation,
+      `--sessionResume.sessionId`,
+      this.heroSession.id,
+    ];
+    if (startNavigationId) {
+      execArgv.push(`--sessionResume.startNavigationId`, String(startNavigationId));
+    }
+    if (script.endsWith('.ts')) {
+      execArgv.push('-r', 'ts-node/register');
+    }
+
+    try {
+      this.logger.info('Resuming session', { execArgv });
+      fork(script, execArgv, {
+        // execArgv,
+        stdio: 'inherit',
+        env: { ...process.env, HERO_CLI_NOPROMPT: 'true' },
+      });
+    } catch (error) {
+      this.logger.error('ERROR resuming session', { error });
+      return error;
+    }
+  }
+
   public close(): void {
     Fs.unwatchFile(this.scriptInstanceMeta.entrypoint, this.onFileUpdated);
     this.heroSession.off('tab-created', this.onTabCreated);
+    this.timetravelPlayer?.close();
+    this.pageStateManager.close(true).catch(console.error);
   }
 
   public getHeroSessionEvent(): IHeroSessionActiveEvent {
-    const runId = this.heroSession.commands.resumeCounter;
-    const navigations: INavigation[] = [];
-    for (const tab of this.heroSession.tabsById.values()) {
-      for (const frame of tab.frameEnvironmentsById.values()) {
-        navigations.push(...frame.navigations.history);
-      }
-    }
-    navigations.sort((a, b) => a.id - b.id);
+    const pageStates: IHeroSessionActiveEvent['pageStates'] = [];
+    const timeline = this.timelineBuilder.refreshMetadata();
+    const commandTimeline = this.timelineBuilder.commandTimeline;
 
-    const commandTimeline = new CommandTimeline(
-      this.heroSession.commands.history,
-      runId,
-      navigations,
-    );
+    for (const state of this.waitForPageStateEvents) {
+      let offsetPercent = commandTimeline.getTimelineOffsetForTimestamp(state.timestamp);
+      if (offsetPercent === -1) continue;
+      if (state.isUnresolved === true) offsetPercent = 100;
 
-    const urls: IHeroSessionActiveEvent['urls'] = [];
-
-    const loadStatusLookups = [
-      [LoadStatus.HttpRequested, 'Http Requested'],
-      [LoadStatus.HttpResponded, 'Http Received'],
-      [LoadStatus.DomContentLoaded, 'DOM Content Loaded'],
-    ];
-
-    for (const nav of commandTimeline.navigationsById.values()) {
-      if (!this.loadedNavigationIds.has(nav.id)) continue;
-
-      urls.push({
-        tabId: nav.tabId,
-        url: nav.finalUrl ?? nav.requestedUrl,
-        offsetPercent:
-          urls.length === 0 ? 0 : commandTimeline.getTimelineOffsetForTimestamp(nav.initiatedTime),
-        navigationId: nav.id,
-        loadStatusOffsets: [],
+      pageStates.push({
+        id: state.id,
+        offsetPercent,
+        isUnresolved: state.isUnresolved,
       });
-      const lastUrl = urls[urls.length - 1];
-
-      for (const [loadStatus, name] of loadStatusLookups) {
-        const timestamp = nav.statusChanges.get(loadStatus as LoadStatus);
-        const offsetPercent = commandTimeline.getTimelineOffsetForTimestamp(timestamp);
-        if (offsetPercent !== -1) {
-          lastUrl.loadStatusOffsets.push({
-            status: name,
-            offsetPercent,
-          });
-        }
-      }
     }
 
     const currentTab = this.heroSession.getLastActiveTab();
 
-    urls.push({
+    timeline.urls.push({
       url: currentTab?.url,
       tabId: currentTab?.id,
       navigationId: null, // don't include nav id since we want to resume session at current
@@ -141,28 +154,7 @@ export default class SessionObserver extends TypedEventEmitter<{
       loadStatusOffsets: [],
     });
 
-    const screenshots: IHeroSessionActiveEvent['screenshots'] = [];
-    for (const screenshot of this.screenshotsByTimestamp.values()) {
-      const offsetPercent = commandTimeline.getTimelineOffsetForTimestamp(screenshot.timestamp);
-      if (offsetPercent === -1) continue;
-      screenshots.push({
-        tabId: screenshot.tabId,
-        offsetPercent,
-        timestamp: screenshot.timestamp,
-      });
-    }
-
-    const paintEvents: IHeroSessionActiveEvent['paintEvents'] = [];
-    for (const [timestamp, domChanges] of this.domChangesByTimestamp) {
-      const offsetPercent = commandTimeline.getTimelineOffsetForTimestamp(timestamp);
-      if (offsetPercent === -1) continue;
-      paintEvents.push({
-        domChanges,
-        offsetPercent,
-      });
-    }
-
-    this.lastHeroSessionActiveEvent = <IHeroSessionActiveEvent>{
+    return {
       hasWarning: false,
       run: this.heroSession.commands.resumeCounter,
       scriptEntrypoint: this.scriptInstanceMeta.entrypoint.split(Path.sep).slice(-2).join(Path.sep),
@@ -170,19 +162,15 @@ export default class SessionObserver extends TypedEventEmitter<{
       heroSessionId: this.heroSession.id,
       runtimeMs: commandTimeline.runtimeMs,
       playbackState: this.playbackState,
-      isHistoryMode: this.timetravelPlayer.isOpen,
-      urls,
-      screenshots,
-      paintEvents,
+      needsPageStateResolution:
+        pageStates.length && pageStates[pageStates.length - 1].isUnresolved === true,
+      pageStates,
+      timeline,
     };
-    return this.lastHeroSessionActiveEvent;
   }
 
   public getDataboxEvent(): IDataboxUpdatedEvent {
-    let commandId: number;
-    if (this.timetravelPlayer.isOpen && this.lastHeroSessionActiveEvent) {
-      commandId = this.timetravelPlayer.activeTab?.currentTick?.commandId;
-    }
+    const commandId = this.timetravelPlayer.activeCommandId;
 
     const output: IOutputSnapshot = this.outputRebuilder.getLatestSnapshot(commandId) ?? {
       bytes: 0,
@@ -195,85 +183,71 @@ export default class SessionObserver extends TypedEventEmitter<{
     };
   }
 
-  public isReplayTab(puppetPageId: string): boolean {
-    return this.timetravelPlayer.isReplayPage(puppetPageId);
+  public get tabGroupModule(): TabGroupModule {
+    return TabGroupModule.bySessionId.get(this.heroSession.id);
   }
 
-  public async replayStep(direction: 'forward' | 'back'): Promise<number> {
-    let percentOffset: number;
-    if (!this.timetravelPlayer.isOpen) {
-      percentOffset = 99.9;
-    } else if (direction === 'forward') {
-      percentOffset = this.timetravelPlayer.activeTab.nextTick?.timelineOffsetPercent ?? 100;
-    } else {
-      percentOffset = this.timetravelPlayer.activeTab.previousTick?.timelineOffsetPercent ?? 0;
-    }
-    await this.replayGoto(percentOffset);
-    return percentOffset;
-  }
-
-  public async replayGoto(timelineOffsetPercent?: number): Promise<void> {
-    const startTick = this.timetravelPlayer.activeTab?.currentTick;
-    if (this.timetravelPlayer.isOpen) {
-      if (timelineOffsetPercent === 100) {
-        await this.timetravelPlayer.close();
-      } else {
-        await this.timetravelPlayer.goto(timelineOffsetPercent);
-      }
-    } else {
-      await this.timetravelPlayer.open(this.heroSession.browserContext, timelineOffsetPercent);
-      await this.updateTabGroup(true);
-    }
-    await this.showLoadStatus(timelineOffsetPercent);
-    if (this.timetravelPlayer.activeTab?.currentTick?.commandId !== startTick?.commandId) {
-      this.emit('databox:updated');
-    }
-  }
-
-  public async closeReplay(): Promise<void> {
-    await this.timetravelPlayer.close(false);
-  }
-
-  private async showLoadStatus(timelineOffsetPercent: number): Promise<void> {
-    if (!this.lastHeroSessionActiveEvent || timelineOffsetPercent === 100) return;
-
-    let currentUrl: IHeroSessionActiveEvent['urls'][0];
-    let activeStatus: IHeroSessionActiveEvent['urls'][0]['loadStatusOffsets'][0];
-    for (const url of this.lastHeroSessionActiveEvent.urls) {
-      if (url.offsetPercent > timelineOffsetPercent) break;
-      currentUrl = url;
-    }
-
-    for (const status of currentUrl?.loadStatusOffsets ?? []) {
-      if (status.offsetPercent > timelineOffsetPercent) break;
-      activeStatus = status;
-    }
-
-    if (activeStatus) {
-      await this.timetravelPlayer.showStatusText(activeStatus.status);
-    }
-  }
-
-  private async onReplayClosed(): Promise<void> {
-    await this.updateTabGroup(false);
-    this.emit('hero:updated');
-  }
-
-  private async updateTabGroup(groupLive: boolean): Promise<void> {
-    const tabGroupModule = TabGroupModule.bySessionId.get(this.heroSession.id);
+  public async groupTabs(name: string, color: string, collapse: boolean): Promise<number> {
+    const tabGroupModule = this.tabGroupModule;
     if (!tabGroupModule) return;
 
     const pages = [...this.heroSession.tabsById.values()].map(x => x.puppetPage);
-    if (groupLive === false) await tabGroupModule.ungroupTabs(pages);
-    else {
-      await tabGroupModule.groupTabs(
-        pages,
-        'Reopen Live',
-        'blue',
-        true,
-        this.closeReplay.bind(this),
-      );
+    if (!pages.length) return;
+    return await tabGroupModule.groupTabs(pages, name, color, collapse);
+  }
+
+  public async updateTabGroup(groupLive: boolean): Promise<void> {
+    const tabGroupModule = this.tabGroupModule;
+    if (!tabGroupModule) return;
+
+    const pages = [...this.heroSession.tabsById.values()].map(x => x.puppetPage);
+    if (!pages.length) return;
+
+    if (groupLive === false) {
+      await tabGroupModule.ungroupTabs(pages);
+    } else {
+      await this.groupTabs('Reopen Live', 'blue', true);
     }
+  }
+
+  public async didFocusOnPage(pageId: string, didFocus: boolean): Promise<void> {
+    const isLiveTab = this.isLivePage(pageId);
+    const isTimetravelTab = this.timetravelPlayer.isOwnPage(pageId) ?? false;
+
+    // if closing time travel tab, leave
+    if (isTimetravelTab && !didFocus) return;
+
+    const didFocusOnLiveTab = isLiveTab && didFocus;
+    // if time travel is opened and we focused on a live page, close it
+    if (didFocusOnLiveTab && this.timetravelPlayer.isOpen) {
+      await this.closeTimetravel();
+    }
+  }
+
+  public async closeTimetravel(): Promise<void> {
+    await this.timetravelPlayer.close();
+  }
+
+  public async onTimetravelOpened(): Promise<void> {
+    this.playbackState = 'timetravel';
+    this.tabGroupModule.once('tab-group-opened', this.closeTimetravel);
+    await this.updateTabGroup(true);
+    this.timetravelPlayer.once('timetravel-to-end', this.closeTimetravel);
+  }
+
+  private async onTimetravelClosed(): Promise<void> {
+    this.playbackState = 'paused';
+    this.tabGroupModule.off('tab-group-opened', this.closeTimetravel);
+    await this.updateTabGroup(false);
+    this.timetravelPlayer.off('timetravel-to-end', this.closeTimetravel);
+    this.emit('hero:updated');
+  }
+
+  private isLivePage(pageId: string): boolean {
+    for (const tab of this.heroSession.tabsById.values()) {
+      if (tab.puppetPage.id === pageId) return true;
+    }
+    return false;
   }
 
   private onFileUpdated(stats: Fs.Stats): void {
@@ -284,11 +258,15 @@ export default class SessionObserver extends TypedEventEmitter<{
   private onHeroSessionResumed(): void {
     this.playbackState = 'live';
     this.bindDatabox();
-    for (const tab of this.heroSession.tabsById.values()) {
-      this.startRecording(tab);
-    }
     this.emit('hero:updated');
     this.emit('databox:updated');
+  }
+
+  private onHeroSessionKeptAlive(event: { message: string }): void {
+    if (this.playbackState === 'live') this.playbackState = 'paused';
+    this.emit('hero:updated');
+    event.message = `ChromeAlive! has assumed control of your script. You can make changes to your script and re-run from the ChromeAlive interface.`;
+    ChromeAliveCore.toggleAppTop(true);
   }
 
   private bindDatabox(): void {
@@ -313,99 +291,25 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.emit('databox:updated');
   }
 
-  private onHeroSessionKeptAlive(event: { message: string }): void {
-    this.playbackState = 'paused';
-    for (const tab of this.heroSession.tabsById.values()) {
-      this.stopRecording(tab);
-    }
-
-    this.emit('hero:updated');
-    event.message = `ChromeAlive! has assumed control of your script. You can make changes to your script and re-run from the ChromeAlive interface.`;
-  }
-
   private onTabCreated(tabEvent: { tab: Tab }) {
     const tab = tabEvent.tab;
-    tab.navigations.on('status-change', this.onStatusChange);
-    tab.session.db.domChanges.subscribe(this.onDomChangeRecords);
-    tab.once('close', () => {
-      tab.session.db.domChanges.unsubscribe();
-      tab.navigations.off('status-change', this.onStatusChange);
-      this.stopRecording(tab);
-    });
+    tab.on('wait-for-pagestate', this.onWaitForPageState);
 
-    const tabId = tab.id;
-    const devtools = tab.puppetPage.devtoolsSession;
-    let lastScreenshot: string;
-    devtools.on('Page.screencastFrame', event => {
-      devtools.send('Page.screencastFrameAck', { sessionId: event.sessionId }).catch(() => null);
-      if (event.data === lastScreenshot) return;
-      lastScreenshot = event.data;
-
-      const nonBlankCharsNeeded = event.data.length * 0.1;
-      let nonBlankChars = 0;
-      for (const char of event.data) {
-        if (char !== 'A') {
-          nonBlankChars += 1;
-          if (nonBlankChars >= nonBlankCharsNeeded) break;
-        }
-      }
-      if (nonBlankChars < nonBlankCharsNeeded) return;
-
-      const timestamp = event.metadata.timestamp * 1000;
-
-      this.screenshotsByTimestamp.set(timestamp, {
-        timestamp,
-        imageBase64: event.data,
-        tabId,
-      });
-    });
     // don't start screencast if we're just poking around
     if (this.playbackState === 'paused') return;
-
-    this.startRecording(tab);
   }
 
-  private stopRecording(tab: Tab): void {
-    const timestamp = Date.now();
-    tab.puppetPage.devtoolsSession
-      .send('Page.captureScreenshot')
-      .then(x => {
-        this.screenshotsByTimestamp.set(timestamp, {
-          timestamp,
-          tabId: tab.id,
-          imageBase64: x.data,
-        });
-        this.emit('hero:updated');
-        return null;
-      })
-      .catch(() => null);
-    tab.puppetPage.devtoolsSession.send('Page.stopScreencast').catch(() => null);
-  }
+  private onWaitForPageState(event: ITabEventParams['wait-for-pagestate']): void {
+    const { listener } = event;
 
-  private startRecording(tab: Tab): void {
-    tab.puppetPage.devtoolsSession
-      .send('Page.startScreencast', {
-        format: 'jpeg',
-        quality: 30,
-      })
-      .catch(() => null);
-  }
-
-  private onDomChangeRecords(records: IDomChangeRecord[]): void {
-    for (const record of records) {
-      const count = this.domChangesByTimestamp.get(record.timestamp) ?? 0;
-      this.domChangesByTimestamp.set(record.timestamp, count + 1);
-    }
-  }
-
-  private onStatusChange(status: IFrameNavigationEvents['status-change']): void {
-    if (
-      [LoadStatus.DomContentLoaded, LoadStatus.AllContentLoaded, ContentPaint].includes(
-        status.newStatus,
-      )
-    ) {
-      this.loadedNavigationIds.add(status.id);
-    }
-    this.emit('hero:updated');
+    const id = listener.id;
+    const startingCommandId = listener.startingCommandId;
+    const timestamp = listener.commandStartTime;
+    const pageState = { id, startingCommandId, timestamp, isUnresolved: null };
+    this.waitForPageStateEvents.push(pageState);
+    listener.on('resolved', state => {
+      if (!state.state) pageState.isUnresolved = true;
+      this.emit('hero:updated');
+    });
   }
 }

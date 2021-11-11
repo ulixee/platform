@@ -1,6 +1,6 @@
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
-import { EventEmitter } from "events";
+import { EventEmitter } from 'events';
 import BridgeToExtension from '../bridges/BridgeToExtension';
 
 export default class FocusedWindowModule {
@@ -17,8 +17,9 @@ export default class FocusedWindowModule {
   }
 
   public onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
-    if (!sessionSummary.options.showBrowser) return;
-    this.sessionId ??= sessionSummary.id;
+    if (!this.sessionId) {
+      this.sessionId ??= sessionSummary.id;
+    }
 
     page.once('close', () => this.handlePageIsClosed(page.id));
 

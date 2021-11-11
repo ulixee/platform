@@ -17,8 +17,11 @@ const { log } = Log(module);
 
 export default class ChromeAliveCore {
   public static sessionObserversById = new Map<string, SessionObserver>();
+  public static get activeSessionObserver(): SessionObserver {
+    return this.sessionObserversById.get(this.activeHeroSessionId);
+  }
+
   public static activeHeroSessionId: string;
-  private static isReplayActive = false;
   private static connections: ConnectionToClient[] = [];
   private static shouldAutoShowBrowser = false;
   private static app: ChildProcess;
@@ -88,20 +91,42 @@ export default class ChromeAliveCore {
     return page;
   }
 
+  public static toggleAppTop(isFocused: boolean): void {
+    this.sendAppEvent('App.onTop', isFocused);
+  }
+
+  public static sendAppEvent<T extends keyof IChromeAliveEvents>(
+    eventType: T,
+    data: IChromeAliveEvents[T] = null,
+  ) {
+    for (const connection of this.connections) {
+      connection.sendEvent({ eventType, data });
+    }
+  }
+
   private static onHeroSessionCreated(event: { session: HeroSession }): Promise<any> {
     const { session: heroSession } = event;
-    if (this.shouldAutoShowBrowser) {
-      heroSession.browserEngine.isHeaded = true;
-      heroSession.options.showBrowser = true;
-      heroSession.options.showBrowserInteractions = true;
-      heroSession.options.viewport ??= { width: 0, height: 0 };
-    }
-
-    // if not auto-registered, check if browser is showing
-    if (!heroSession.options.showBrowser) return;
 
     const script = heroSession.options.scriptInstanceMeta?.entrypoint;
     if (!script) return;
+
+    if (heroSession.mode === 'timetravel') {
+      return;
+    }
+
+    if (heroSession.mode === 'multiverse') {
+      const observer = this.sessionObserversById.get(this.activeHeroSessionId);
+      observer?.onMultiverseSession(heroSession);
+      return;
+    }
+
+    if (heroSession.mode === 'development') {
+      heroSession.configureHeaded({ showBrowser: true });
+      heroSession.options.sessionKeepAlive = true;
+      heroSession.options.viewport ??= { width: 0, height: 0 };
+    }
+    // if not auto-registered, check if browser is showing
+    if (!heroSession.options.showBrowser) return;
 
     log.info('New Hero Session Created: %s (%s)', {
       script: script.split('/').pop(),
@@ -113,14 +138,15 @@ export default class ChromeAliveCore {
     this.sessionObserversById.set(heroSession.id, sessionObserver);
     sessionObserver.on('hero:updated', this.sendActiveSession.bind(this, heroSession.id));
     sessionObserver.on('databox:updated', this.sendDataboxUpdatedEvent.bind(this, heroSession.id));
+    sessionObserver.pageStateManager.on('updated', x => this.sendAppEvent('PageState.updated', x));
     sessionObserver.on('closed', this.onHeroSessionClosed.bind(this, heroSession.id));
 
     this.sendActiveSession(heroSession.id);
 
     if (!this.activeHeroSessionId) {
-      this.sendEvent('Session.loading');
-      this.sendEvent('App.show');
-      sessionObserver.once('hero:updated', () => this.sendEvent('Session.loaded'));
+      this.sendAppEvent('Session.loading');
+      this.sendAppEvent('App.show');
+      sessionObserver.once('hero:updated', () => this.sendAppEvent('Session.loaded'));
       this.activeHeroSessionId = heroSession.id;
     }
   }
@@ -142,19 +168,8 @@ export default class ChromeAliveCore {
     sessionObserver.close();
     if (this.activeHeroSessionId === heroSessionId) {
       this.activeHeroSessionId = null;
-      this.sendEvent('Session.active', {
-        run: 0,
-        playbackState: 'paused',
-        heroSessionId: null,
-        scriptEntrypoint: null,
-        runtimeMs: 0,
-        hasWarning: false,
-        urls: [],
-        paintEvents: [],
-        screenshots: [],
-        scriptLastModifiedTime: 0,
-      });
-      this.sendEvent('Databox.updated', {
+      this.sendAppEvent('Session.active', null);
+      this.sendAppEvent('Databox.updated', {
         changes: [],
         output: null,
         input: null,
@@ -167,13 +182,13 @@ export default class ChromeAliveCore {
   private static sendActiveSession(heroSessionId: string) {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
-    this.sendEvent('Session.active', sessionObserver.getHeroSessionEvent());
+    this.sendAppEvent('Session.active', sessionObserver.getHeroSessionEvent());
   }
 
   private static sendDataboxUpdatedEvent(heroSessionId: string) {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
-    this.sendEvent('Databox.updated', sessionObserver.getDataboxEvent());
+    this.sendAppEvent('Databox.updated', sessionObserver.getDataboxEvent());
   }
 
   private static async changeActiveSessions(
@@ -185,33 +200,11 @@ export default class ChromeAliveCore {
     log.info('Changing active session', { isPageVisible, sessionId: heroSessionId, pageId });
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
+    this.activeHeroSessionId = heroSessionId;
+    this.toggleAppTop(status.focused);
 
-    const isReplayTab = sessionObserver.isReplayTab(pageId) ?? false;
-    const isClosedReplayTab = isReplayTab && !isPageVisible;
-    const wasReplayActive = this.isReplayActive;
-    this.isReplayActive = isReplayTab && isPageVisible;
-
-    const didFocusOnLiveTab = !isReplayTab && isPageVisible;
-    const didCloseLiveTab = !isReplayTab && !isPageVisible;
-    const isActiveSession = this.activeHeroSessionId === heroSessionId;
-
-    if (isActiveSession) {
-      if (isClosedReplayTab) return;
-      if (didCloseLiveTab) this.activeHeroSessionId = null;
-
-      // if replay is opened and this tab is not a replay tab, close replay!
-      if (didFocusOnLiveTab && wasReplayActive) {
-        await sessionObserver.closeReplay();
-      }
-    } else {
-      this.activeHeroSessionId = heroSessionId;
-    }
-
-    if (status.focused === false) {
-      this.toggleAppTop(status.focused);
-    } else {
-      this.toggleAppVisibility(!!this.activeHeroSessionId);
-    }
+    await sessionObserver.didFocusOnPage(pageId, isPageVisible);
+    this.toggleAppVisibility(!!this.activeHeroSessionId);
   }
 
   private static getSessionDevtools(heroSessionId: string): IDevtoolsSession {
@@ -242,6 +235,9 @@ export default class ChromeAliveCore {
   }
 
   private static onBrowserHasNoWindows(event: { puppet: Puppet }) {
+    // only check for headed
+    if (!event.puppet.browserEngine.isHeaded) return;
+
     const browserId = event.puppet.browserId;
     setTimeout(() => {
       const sessionsUsingEngine = HeroSession.sessionsWithBrowserId(browserId);
@@ -262,30 +258,17 @@ export default class ChromeAliveCore {
 
   private static closeApp(): void {
     log.stats('Closing Electron App');
-    this.sendEvent('App.quit');
+    this.sendAppEvent('App.quit');
     this.app?.send('exit');
     this.app?.kill('SIGTERM');
     this.app = null;
   }
 
-  private static toggleAppTop(isFocused: boolean): void {
-    this.sendEvent('App.onTop', isFocused);
-  }
-
   private static toggleAppVisibility(show: boolean): void {
     if (show) {
-      this.sendEvent('App.show');
+      this.sendAppEvent('App.show');
     } else {
-      this.sendEvent('App.hide');
-    }
-  }
-
-  private static sendEvent<T extends keyof IChromeAliveEvents>(
-    eventType: T,
-    data: IChromeAliveEvents[T] = null,
-  ) {
-    for (const connection of this.connections) {
-      connection.sendEvent({ eventType, data });
+      this.sendAppEvent('App.hide');
     }
   }
 }

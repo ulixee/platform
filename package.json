@@ -17,7 +17,7 @@
     "tsc:hero": "cd hero && yarn tsc",
     "tsc:databox": "cd databox && yarn tsc",
     "tsc:all": "yarn tsc:hero && yarn tsc:databox && yarn tsc",
-    "watch": "yarn tsc && tsc -b -i -w tsconfig.json",
+    "watch": "yarn tsc && tsc -b -w tsconfig.json",
     "watch:all": "concurrently -n hero,databox,devenv \"cd hero && yarn watch\" \"cd databox && yarn watch\" \"yarn watch\"",
     "start": "yarn workspace @ulixee/server start",
     "test": "yarn copy:build && yarn test:build",

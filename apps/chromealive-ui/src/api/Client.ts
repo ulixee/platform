@@ -1,10 +1,11 @@
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
-import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
-import IChromeAliveEvent from '@ulixee/apps-chromealive-interfaces/events/IChromeAliveEvent';
-import IChromeAliveApis, {
+import type {
+  IChromeAliveApis,
   IChromeAliveApiRequest,
   IChromeAliveApiResponse,
 } from '@ulixee/apps-chromealive-interfaces/apis';
+import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
+import IChromeAliveEvent from '@ulixee/apps-chromealive-interfaces/events/IChromeAliveEvent';
 
 type EventType = keyof IChromeAliveEvents;
 
@@ -59,7 +60,7 @@ class Client {
   onClose() {
     this.connectedPromise = null;
     setTimeout(() => {
-      this.connect().catch(err => console.log(err));
+      this.connect().catch(err => console.log('Client Connect Error', err));
     }, 1e3);
   }
 

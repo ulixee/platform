@@ -24,7 +24,6 @@ export default class BridgeToExtension extends EventEmitter {
     const { devtoolsSession } = page;
 
     page.on('close', () => this.closePuppetPage(page));
-    page.browserContext.on('close', () => this.closePuppetPage(page));
 
     devtoolsSession.on('Runtime.executionContextCreated', event => {
       this.onContextCreated(page, event);
@@ -110,7 +109,12 @@ export default class BridgeToExtension extends EventEmitter {
       const waitingForResponse = this.pendingByResponseId[responseId];
       waitingForResponse.resolve(payload);
     } else {
-      this.emit('message', event.payload, { destLocation, responseCode, stringifiedMessage, puppetPageId });
+      this.emit('message', event.payload, {
+        destLocation,
+        responseCode,
+        stringifiedMessage,
+        puppetPageId,
+      });
     }
   }
 

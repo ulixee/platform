@@ -1,12 +1,13 @@
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import IChromeAliveEvent from '@ulixee/apps-chromealive-interfaces/events/IChromeAliveEvent';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
-import IChromeAliveApis, {
+import {
+  IChromeAliveApis,
   IChromeAliveApiRequest,
   IChromeAliveApiResponse,
 } from '@ulixee/apps-chromealive-interfaces/apis';
 import Log from '@ulixee/commons/lib/Logger';
-import { apiHandlers } from '../apis';
+import Apis from '../apis';
 
 const { log } = Log(module);
 
@@ -21,7 +22,7 @@ export default class ConnectionToClient extends TypedEventEmitter<{
 
     let result: any;
     try {
-      const handler = apiHandlers[api];
+      const handler = Apis[api];
       if (!handler) throw new Error(`Unknown api requested: ${api}`);
       result = await handler(args as any);
     } catch (error) {

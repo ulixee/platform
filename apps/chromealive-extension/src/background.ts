@@ -1,12 +1,13 @@
 /// <reference types="chrome"/>
 import { onMessagePayload } from './lib/background/BackgroundMessenger';
-import { groupTabs, ungroupTabs } from './lib/background/TabManagement';
+import { groupTabs, ungroupTabs, collapseGroup } from './lib/background/TabManagement';
 import logDebug from './lib/logDebug';
 import './lib/background/BackgroundListeners';
 
 const RuntimeActions = {
   groupTabs,
   ungroupTabs,
+  collapseGroup,
 };
 
 onMessagePayload((payload, sendResponseFn) => {

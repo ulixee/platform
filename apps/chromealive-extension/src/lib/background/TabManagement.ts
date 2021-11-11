@@ -6,6 +6,10 @@ export function isCreatingTabGroup() {
   return creatingTabGroup;
 }
 
+export async function collapseGroup(payload: { groupId: number }): Promise<void> {
+  await chrome.tabGroups.update(payload.groupId, { collapsed: true });
+}
+
 export async function groupTabs(payload: {
   tabIds: number[];
   collapsed: boolean;

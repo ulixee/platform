@@ -1,9 +1,9 @@
-import { EventEmitter } from "events";
-import { IBounds } from '@ulixee/apps-chromealive-interfaces/apis/IAppBoundsChangedApi';
+import { EventEmitter } from 'events';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { IBrowserEmulatorConfig, ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import AliveBarPositioner from '../AliveBarPositioner';
 import BridgeToExtension from '../bridges/BridgeToExtension';
+import { IBounds } from '@ulixee/apps-chromealive-interfaces/IBounds';
 
 export default class WindowBoundsModule {
   private sessionId: string;
@@ -35,7 +35,6 @@ export default class WindowBoundsModule {
   }
 
   public onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
-    if (!sessionSummary.options.showBrowser) return;
     this.sessionId ??= sessionSummary.id;
 
     return Promise.all([

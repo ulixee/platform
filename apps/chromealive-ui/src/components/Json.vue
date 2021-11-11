@@ -4,7 +4,11 @@
       class="JsonNode"
       v-for="node of json"
       :key="node.id"
-      :ref="el => { jsonNodes[node.id] = el }"
+      :ref="
+        el => {
+          jsonNodes[node.id] = el;
+        }
+      "
       :id="node.path"
       :class="{ highlighted: node.highlighted }"
     >
@@ -21,38 +25,90 @@
 </template>
 
 <script lang="ts">
-import { ref, defineComponent, onBeforeUpdate } from 'vue';
+import { FlatJson } from '@/utils/flattenJson';
+import { ref, defineComponent, onBeforeUpdate, onUpdated, PropType } from 'vue';
 
 export default defineComponent({
   name: 'Json',
   components: {},
   props: {
     json: {
-      type: Array,
-      required: false,
+      type: Array as PropType<FlatJson[]>,
+      required: true,
     },
+    scrollToRecordId: Number,
   },
-  setup() {
-    const jsonNodes = ref([]);
+  setup(props) {
+    const jsonNodes = ref<{ [id: number]: HTMLDivElement }>({});
 
     onBeforeUpdate(() => {
-      jsonNodes.value = [];
+      jsonNodes.value = {};
+    });
+
+    onUpdated(() => {
+      if (props.scrollToRecordId) scrollToId(props.scrollToRecordId);
     });
 
     function scrollToId(id: number) {
-      const refs = jsonNodes.value[id] as HTMLElement[];
+      const refs = jsonNodes.value[id];
       if (!refs) return;
-      if (refs.length) {
-        refs[refs.length - 1].scrollIntoView({ block: 'center' });
-      }
+      refs.scrollIntoView({ block: 'center' });
     }
 
-    return { jsonNodes, scrollToId }
-  }
+    return { jsonNodes, scrollToId };
+  },
 });
 </script>
 
 <style lang="scss">
 @import '../assets/style/resets';
-@import '../assets/style/flatjson';
+
+.Json {
+  font-family: 'Monaco', 'Menlo', 'Consolas', 'Bitstream Vera Sans Mono', monospace;
+  font-size: 12px;
+  text-align: left;
+
+  .JsonNode {
+    display: flex;
+    position: relative;
+
+    &.highlighted {
+      background-color: #f3fbff;
+    }
+
+    .key {
+      padding-right: 5px;
+    }
+
+    .brackets,
+    .comma {
+      color: #949494;
+    }
+
+    .indent {
+      flex: 0 0 1em;
+      border-left: 1px dashed #d9d9d9;
+    }
+
+    .comment {
+      color: #bfcbd9;
+    }
+
+    .value-null {
+      color: #ff4949;
+    }
+
+    .value-number {
+      color: #1d8ce0;
+    }
+
+    .value-boolean {
+      color: #1d8ce0;
+    }
+
+    .value-string {
+      color: #13ce66;
+    }
+  }
+}
 </style>

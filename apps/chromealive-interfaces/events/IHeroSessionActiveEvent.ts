@@ -1,29 +1,18 @@
+import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
+
 export default interface IHeroSessionActiveEvent {
   scriptEntrypoint: string;
   scriptLastModifiedTime: number;
   heroSessionId: string;
   hasWarning: boolean;
-  playbackState: 'live' | 'paused' | 'history';
-  runtimeMs: number;
+  playbackState: 'live' | 'paused' | 'timetravel';
   run: number;
-  // don't group by tabid/frameid for now
-  paintEvents: {
+  runtimeMs: number;
+  needsPageStateResolution: boolean;
+  pageStates: {
+    id: string;
     offsetPercent: number;
-    domChanges: number;
+    isUnresolved: boolean;
   }[];
-  urls: {
-    tabId: number;
-    navigationId: number;
-    url: string;
-    offsetPercent: number;
-    loadStatusOffsets: {
-      status: string;
-      offsetPercent: number;
-    }[];
-  }[];
-  screenshots: {
-    timestamp: number;
-    offsetPercent: number;
-    tabId: number;
-  }[];
+  timeline: ITimelineMetadata;
 }

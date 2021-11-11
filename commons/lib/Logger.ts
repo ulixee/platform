@@ -111,6 +111,9 @@ function translateValueToPrintable(value: any, depth = 0): any {
   if (value instanceof Error) {
     return value.toString();
   }
+  if (value instanceof RegExp) {
+    return `/${value.source}/${value.flags}`;
+  }
   if ((value as any).toJSON) {
     return (value as any).toJSON();
   }
@@ -215,5 +218,5 @@ interface ILogBuilder {
 
 function extractPathFromModule(module: NodeModule): string {
   const fullPath = typeof module === 'string' ? module : module.filename || module.id || '';
-  return fullPath.replace(/^(.*)\/ulixee\/(.*)$/, '$2');
+  return fullPath.replace(/^(.*)\/ulixee\/(.*)$/, '$2').replace(/^.*\/packages\/(.*)$/, '$2');
 }
