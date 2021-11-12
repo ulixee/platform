@@ -16,13 +16,27 @@ import {
 } from '../BridgeHelpers';
 
 export default class BridgeToExtension extends EventEmitter {
-  private pageMap: Map<string, { contextIds: Set<number>; puppetPage: IPuppetPage }> = new Map();
+  private puppetDetailsByPageId: Map<string, { contextId: number; puppetPage: IPuppetPage }> = new Map();
+  private devtoolsSessionsByPageId: { [pageId: string]: IDevtoolsSession } = {};
   private pendingByResponseId: { [id: string]: IResolvablePromise<any> } = {};
 
-  public addPuppetPage(page: IPuppetPage): Promise<any> {
-    this.pageMap.set(page.id, { contextIds: new Set(), puppetPage: page });
-    const { devtoolsSession } = page;
+  public getContextIdByPuppetPageId(puppetPageId: string) {
+    const puppetDetails = this.puppetDetailsByPageId.get(puppetPageId);
+    return puppetDetails ? puppetDetails.contextId : null;
+  }
 
+  public getDevtoolsSessionByPuppetPageId(puppetPageId: string) {
+    return this.devtoolsSessionsByPageId[puppetPageId];
+  }
+
+  public addPuppetPage(page: IPuppetPage): Promise<any> {
+    const { devtoolsSession } = page;
+    this.devtoolsSessionsByPageId[page.id] = devtoolsSession;
+
+    page.on('close', () => {
+      this.closePuppetPage(page)
+      delete this.devtoolsSessionsByPageId[page.id];
+    });
     page.on('close', () => this.closePuppetPage(page));
 
     devtoolsSession.on('Runtime.executionContextCreated', event => {
@@ -52,14 +66,15 @@ export default class BridgeToExtension extends EventEmitter {
     if (!puppetPageId) {
       throw new Error(`No active puppet page ${puppetPageId}`);
     }
-    const { contextIds, puppetPage } = this.pageMap.get(puppetPageId);
-    const contextId = contextIds.values().next().value;
+    const puppetContext = this.puppetDetailsByPageId.get(puppetPageId);
+    if (!puppetContext) {
+      console.log(`No puppet details for ${puppetPageId}`);
+      return Promise.resolve();
+    }
     this.runInBrowser(
-      puppetPage.devtoolsSession,
-      contextId,
-      `
-        window.${___receiveFromCore}('${destLocation}', '${responseCode}', ${restOfMessage});
-      `,
+      puppetContext.puppetPage.devtoolsSession,
+      puppetContext.contextId,
+      `window.${___receiveFromCore}('${destLocation}', '${responseCode}', ${restOfMessage});`,
     );
     if (messageExpectsResponse(message)) {
       const responseId = extractResponseIdFromMessage(message);
@@ -74,11 +89,11 @@ export default class BridgeToExtension extends EventEmitter {
   }
 
   public closePuppetPage(page: IPuppetPage) {
-    this.pageMap.delete(page.id);
+    this.puppetDetailsByPageId.delete(page.id);
   }
 
   public close() {
-    for (const { puppetPage } of this.pageMap.values()) {
+    for (const { puppetPage } of this.puppetDetailsByPageId.values()) {
       this.closePuppetPage(puppetPage);
     }
   }
@@ -119,30 +134,24 @@ export default class BridgeToExtension extends EventEmitter {
   }
 
   private onContextCreated(
-    page: IPuppetPage,
+    puppetPage: IPuppetPage,
     event: Protocol.Runtime.ExecutionContextCreatedEvent,
   ): void {
     if (!event.context.origin.startsWith(`chrome-extension://${extensionId}`)) return;
-    if (!this.pageMap.has(page.id)) {
-      this.pageMap.set(page.id, { contextIds: new Set(), puppetPage: page });
-    }
-    this.pageMap.get(page.id).contextIds.add(event.context.id);
+    this.puppetDetailsByPageId.set(puppetPage.id, { contextId: event.context.id, puppetPage: puppetPage });
   }
 
   private onContextDestroyed(
     page: IPuppetPage,
     event: Protocol.Runtime.ExecutionContextDestroyedEvent,
   ): void {
-    const { contextIds } = this.pageMap.get(page.id) || {};
-    if (!contextIds) return;
-
-    contextIds.delete(event.executionContextId);
-    if (!contextIds.size) {
-      this.pageMap.delete(page.id);
+    const pageDetails = this.puppetDetailsByPageId.get(page.id);
+    if (pageDetails && pageDetails.contextId === event.executionContextId) {
+      this.puppetDetailsByPageId.delete(page.id)
     }
   }
 
   private onContextCleared(page: IPuppetPage): void {
-    this.pageMap.delete(page.id);
+    this.puppetDetailsByPageId.delete(page.id);
   }
 }

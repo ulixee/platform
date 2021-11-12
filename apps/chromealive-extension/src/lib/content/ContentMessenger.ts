@@ -61,10 +61,10 @@ export function sendToCore(payload: any, responseCallbackFn?: IResponseFn) {
   routeInternally(message);
 }
 
-let onMessageFn;
+let onMessagePayloadFn;
 export function onMessagePayload(fn: (payload: any, responseFn: IResponseFn) => void) {
-  if (onMessageFn) throw new Error('onMessage has already been called');
-  onMessageFn = fn;
+  if (onMessagePayloadFn) throw new Error('onMessage has already been called');
+  onMessagePayloadFn = fn;
 }
 
 // LISTENER TO <-> FROM BACKGROUND /////////////////////////////////////////////////////////////////
@@ -152,7 +152,7 @@ window[___receiveFromCore] = (
 const pendingByResponseId: {
   [id: string]: {
     responseFn: IResponseFn,
-    timeoutId: number,
+    timeoutId: any,
   }
 } = {};
 
@@ -163,7 +163,7 @@ function handleIncomingLocalMessage(message: IMessageObject) {
   const responseFn = needsResponse
     ? response => sendResponseBack(message, response)
     : undefined;
-  onMessageFn(message.payload, responseFn);
+  onMessagePayloadFn(message.payload, responseFn);
 }
 
 function handleIncomingLocalResponse(response: IMessageObject) {

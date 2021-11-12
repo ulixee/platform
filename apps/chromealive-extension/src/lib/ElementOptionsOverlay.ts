@@ -6,13 +6,18 @@ import {
   packMessage,
   ResponseCode
 } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
-import { sendToDevtoolsScript } from './content/ContentMessenger';
 import ElementsBucket from './ElementsBucket';
 
-export default class SelectorMenuElement extends HTMLElement {
+export default class ElementOptionsOverlay extends HTMLElement {
+  public hasStartedInitialization = false;
+  public hasFinishedInitialization = false;
   public elementsBucket: ElementsBucket;
 
-  private selectedElem: Element;
+  private isOpen = false;
+  private isTmpHidden = false;
+
+  private selectedElem: HTMLElement;
+  private selectedBackendNodeId: number;
 
   private titleNameElem: HTMLElement;
   private positionElem: HTMLElement;
@@ -23,14 +28,30 @@ export default class SelectorMenuElement extends HTMLElement {
   private mustIncludeToggle: HTMLElement;
   private mustExcludeToggle: HTMLElement;
 
-  private isInitialized = false;
-
   public attachElementsBucket(elementsBucket: ElementsBucket) {
     this.elementsBucket = elementsBucket;
   }
 
-  public show(element: HTMLElement) {
+  public openByBackendNodeId(backendNodeId: number) {
+    this.elementsBucket.getByBackendNodeId(backendNodeId)
+      .then(element => this.open(backendNodeId, element))
+      .catch(error => {
+        console.log(`ERROR: Could not fetch element for backendNodeId: ${backendNodeId}`, error);
+      });
+  }
+
+  public open(backendNodeId: number, element: HTMLElement) {
+    if (!this.hasFinishedInitialization) {
+      this.hasFinishedInitialization = true;
+      return setTimeout(() => {
+        this.open(backendNodeId, element);
+      });
+    }
+
+    this.selectedElem = element;
+    this.selectedBackendNodeId = backendNodeId;
     if (!element) return;
+
     const tagName = element.localName;
     const classes = Array.from(element.classList);
     const titleText = [`<span class="tag">${tagName}</span>`, ...classes].join('.');
@@ -41,83 +62,102 @@ export default class SelectorMenuElement extends HTMLElement {
 
     const positionText = `${Math.round(width * 100)/100} x ${Math.round(height * 100)/100}`;
 
-    this.selectedElem = element;
+    this.isOpen = true;
     this.style.left = `${absLeft}px`;
     this.style.top = `${absTop}px`;
     this.style.width = `${width}px`;
     this.style.height = `${height}px`;
 
-    this.overlayElem.classList.add('top');
-
     this.titleNameElem.innerHTML = titleText;
     this.positionElem.textContent = positionText;
     this.style.display = 'block';
 
-    if (this.elementsBucket.isIncludedElement(this.selectedElem)) {
-      this.toggleMustIncludeOff();
+    const overlayHeight = this.overlayElem.offsetHeight;
+
+    if (top - overlayHeight < 0) {
+      this.overlayElem.classList.remove('top');
+      this.overlayElem.classList.add('bottom');
     } else {
-      this.toggleMustIncludeOn();
+      this.overlayElem.classList.remove('bottom');
+      this.overlayElem.classList.add('top');
     }
 
-    if (this.elementsBucket.isExcludedElement(this.selectedElem)) {
-      this.toggleMustExcludeOff();
+    if (this.elementsBucket.isIncludedBackendNodeId(this.selectedBackendNodeId)) {
+      this.addOnClassToIncludeToggle();
     } else {
-      this.toggleMustExcludeOn();
+      this.addOffClassToIncludeToggle();
+    }
+
+    if (this.elementsBucket.isExcludedBackendNodeId(this.selectedBackendNodeId)) {
+      this.addOnClassToExcludeToggle();
+    } else {
+      this.addOffClassToExcludeToggle();
     }
   }
 
-  public hide() {
+  public tmpHide(value: boolean) {
+    if (!this.isOpen) return;
+    if (value === true) {
+      this.isTmpHidden = true;
+      this.style.display = 'none';
+    } else if (this.isTmpHidden) {
+      this.isTmpHidden = false;
+      this.style.display = 'block';
+    }
+  }
+
+  public close() {
+    this.isOpen = false;
+    this.isTmpHidden = false;
     this.style.display = 'none';
   }
 
   // PRIVATE ///////////////////////////////////////////////////////////////////
 
-  private toggleMustIncludeOff() {
+  private addOffClassToIncludeToggle() {
     this.mustIncludeToggle.classList.remove('on');
     this.mustIncludeToggle.classList.add('off');
   }
 
-  private toggleMustIncludeOn() {
+  private addOnClassToIncludeToggle() {
     this.mustIncludeToggle.classList.remove('off');
     this.mustIncludeToggle.classList.add('on');
+    this.addOffClassToExcludeToggle();
   }
 
-  private toggleMustExcludeOn() {
+  private addOnClassToExcludeToggle() {
     this.mustExcludeToggle.classList.add('on');
     this.mustExcludeToggle.classList.remove('off');
+    this.addOffClassToIncludeToggle();
   }
 
-  private toggleMustExcludeOff() {
+  private addOffClassToExcludeToggle() {
     this.mustExcludeToggle.classList.add('off');
     this.mustExcludeToggle.classList.remove('on');
 
   }
 
-  private toggleMustInclude() {
+  private toggleIncluded() {
     openSelectorGeneratorPanel();
-    const isIncludedElement = this.elementsBucket.isIncludedElement(this.selectedElem);
-    if (isIncludedElement) {
-      const key = this.elementsBucket.removeIncludedElement(this.selectedElem);
-      sendToDevtoolsScript({ event: 'RemoveIncludedElement', name: this.titleNameElem.textContent, key });
-      this.toggleMustIncludeOff();
+    const isIncluded = this.elementsBucket.isIncludedBackendNodeId(this.selectedBackendNodeId);
+    if (isIncluded) {
+      this.elementsBucket.removeIncludedElement(this.selectedBackendNodeId);
+      this.addOffClassToIncludeToggle();
     } else {
-      const key = this.elementsBucket.addIncludedElement(this.selectedElem);
-      sendToDevtoolsScript({ event: 'AddIncludedElement', name: this.titleNameElem.textContent, key });
-      this.toggleMustIncludeOn();
+      this.elementsBucket.addIncludedElement(this.selectedBackendNodeId, this.selectedElem);
+      this.addOnClassToIncludeToggle();
     }
   }
 
   private toggleMustExclude() {
     openSelectorGeneratorPanel();
-    const isExcludedElement = this.elementsBucket.isExcludedElement(this.selectedElem);
-    if (isExcludedElement) {
-      const key = this.elementsBucket.removeExcludedElement(this.selectedElem);
-      sendToDevtoolsScript({ event: 'RemoveExcludedElement', name: this.titleNameElem.textContent, key });
-      this.toggleMustExcludeOff();
+    const isExcluded = this.elementsBucket.isExcludedBackendNodeId(this.selectedBackendNodeId);
+    if (isExcluded) {
+      this.elementsBucket.removeExcludedElement(this.selectedBackendNodeId);
+      this.addOffClassToExcludeToggle();
     } else {
-      const key = this.elementsBucket.addExcludedElement(this.selectedElem);
-      sendToDevtoolsScript({ event: 'AddExcludedElement', name: this.titleNameElem.textContent, key });
-      this.toggleMustExcludeOn();
+      this.elementsBucket.addExcludedElement(this.selectedBackendNodeId, this.selectedElem);
+      this.addOnClassToExcludeToggle();
     }
   }
 
@@ -174,7 +214,7 @@ export default class SelectorMenuElement extends HTMLElement {
 
     this.mustIncludeToggle = overlayElem.querySelector('div#must-include');
     this.mustIncludeToggle.addEventListener('click', event => {
-      this.toggleMustInclude();
+      this.toggleIncluded();
       event.cancelBubble = true;
     });
 
@@ -214,7 +254,7 @@ export default class SelectorMenuElement extends HTMLElement {
         z-index: 2;
       }      
       .overlay-panel {
-        position: absolute;
+        position: relative;
         left: 0;
         bottom: 0;
         z-index: 2;
@@ -251,6 +291,20 @@ export default class SelectorMenuElement extends HTMLElement {
       }
       .overlay.top .overlay-triangle div {
         top: -7px;
+        left: 5px;
+      }
+      
+      .overlay.bottom {
+        left: 0;
+        top: calc(100% + 8px);
+      }
+      .overlay.bottom .overlay-triangle {
+        left: 15px;
+        top: -15px;
+        z-index: 2;
+      }
+      .overlay.bottom .overlay-triangle div {
+        top: 7px;
         left: 5px;
       }
       
@@ -344,6 +398,7 @@ export default class SelectorMenuElement extends HTMLElement {
         position: relative;
         color: silver;
         text-shadow: 1px 1px white;
+        cursor: default;
       }
       .toggle-component .label {
         width: 40px;
@@ -383,10 +438,9 @@ export default class SelectorMenuElement extends HTMLElement {
   }
 
   private connectedCallback() {
-    if (!this.isInitialized) {
-      this.initialize();
-      this.isInitialized = true;
-    }
+    if (this.hasStartedInitialization) return;
+    this.hasStartedInitialization = true;
+    this.initialize();
   }
 }
 

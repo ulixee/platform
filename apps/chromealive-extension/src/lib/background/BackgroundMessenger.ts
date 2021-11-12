@@ -62,7 +62,7 @@ const portsByTabId: {
 const pendingByResponseId: {
   [id: string]: {
     responseFn: IResponseFn;
-    timeoutId: number;
+    timeoutId: any;
   };
 } = {};
 

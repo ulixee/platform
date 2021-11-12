@@ -39,27 +39,40 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
       devtoolsSession.send('Runtime.enable'),
       devtoolsSession.send('Runtime.addBinding', { name: ___sendToCore }),
       devtoolsSession.send('Page.enable'),
-
       devtoolsSession.send('Page.addScriptToEvaluateOnNewDocument', {
         source: `(function run() {
+          window.___includedBackendNodeIds = new Set();
+          window.___excludedBackendNodeIds = new Set();
           window.${___receiveFromCore} = function ${___receiveFromCore}(destLocation, responseCode, restOfMessage) {
             const payload = restOfMessage.payload;
-            if (payload.event === '${MessageEventType.OpenSelectorGeneratorPanel}') {
+            const { event, backendNodeId } = payload;
+            if (event === '${MessageEventType.OpenSelectorGeneratorPanel}') {
               (${openSelectorGeneratorPanel.toString()})(DevToolsAPI, '${extensionId}');
             } else if (payload.event === '${MessageEventType.CloseDevtoolsPanel}'){
               InspectorFrontendHost.closeWindow();
+            } else if (event === '${MessageEventType.AddIncludedElement}') {
+              window.___includedBackendNodeIds.add(backendNodeId);
+            } else if (event === '${MessageEventType.RemoveIncludedElement}') {
+              window.___includedBackendNodeIds.delete(backendNodeId);
+            } else if (event === '${MessageEventType.AddExcludedElement}') {
+              window.___excludedBackendNodeIds.add(backendNodeId);
+            } else if (event === '${MessageEventType.RemoveExcludedElement}') {
+              window.___excludedBackendNodeIds.delete(backendNodeId);
             } else {
               console.log('UNHANDLED MESSAGE FROM CORE: ', destLocation, responseCode, payload);
             }
           };
-          (${interceptElementOverlayDispatches.toString()})('${___sendToCore}', '${
-          MessageEventType.OverlayDispatched
-        }');
+          (${interceptElementWasSelected.toString()})('${___sendToCore}', '${MessageEventType.OpenElementOptionsOverlay}');
+          (${interceptInspectElementMode.toString()})('${___sendToCore}', '${MessageEventType.InspectElementModeChanged}');
+          (${interceptElementPanelOnHighlight.toString()})('${___sendToCore}', '${MessageEventType.HideElementOptionsOverlay}');
+          (${interceptElementPanelOnRemoveHighlight.toString()})('${___sendToCore}', '${MessageEventType.RemoveHideFromElementOptionsOverlay}');
+          (${injectContextMenu.toString()})('${___sendToCore}', '${MessageEventType.UpdateElementOptions}');
         })();`,
       }),
       this.getDevtoolsTabId.bind(this, devtoolsSession),
       devtoolsSession.send('Runtime.runIfWaitingForDebugger'),
     ]).catch(() => null);
+    // (${interceptElementOverlayDispatches.toString()})('${___sendToCore}', '${MessageEventType.CloseElementOptionsOverlay}');
   }
 
   public close() {
@@ -89,7 +102,6 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
 
     devtoolsSession ??= this.devtoolsSessionMap.keys().next().value;
     const contextId = this.devtoolsSessionMap.get(devtoolsSession).contextIds[0];
-
     await this.runInBrowser(
       devtoolsSession,
       contextId,
@@ -185,25 +197,107 @@ function openSelectorGeneratorPanel(DevToolsAPI: any, extensionId: string) {
   DevToolsAPI.showPanel(`chrome-extension://${extensionId}SelectorGenerator`);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-shadow
-function interceptElementOverlayDispatches(__sendToCore: string, eventType: string) {
+const interceptInspectElementMode = `
+async function interceptInspectElementMode(sendToCoreFnName, eventType) {
+  const globalWindow = window;
+  const elements = await import('./elements/elements.js');
+  const InspectElementModeController = elements.InspectElementModeController.InspectElementModeController;
+  const setMode = InspectElementModeController.prototype._setMode;
+  function override(mode) {
+    const isOn = mode === 'searchForNode'; // ToDo: we may need to expand this
+    const payload = '{"event":"' + eventType +'","isOn": ' + isOn.toString() + '}';
+    const packedMessage = ':ContentScript       :N:{"origLocation":"DevtoolsPrivate","payload":'+ payload + '}';
+    globalWindow[sendToCoreFnName](packedMessage);
+    setMode.call(this, mode);
+  }
+  InspectElementModeController.prototype._setMode = override;
+}
+`;
+
+const interceptElementPanelOnHighlight = `
+async function interceptElementPanelOnHighlight(sendToCoreFnName, eventType) {
+  const globalWindow = window;
+  const elements = await import('./elements/elements.js');
+  const ElementsTreeOutline = elements.ElementsTreeOutline.ElementsTreeOutline;
+  const highlightTreeElement = ElementsTreeOutline.prototype._highlightTreeElement;
+  ElementsTreeOutline.prototype._highlightTreeElement = function(element, showInfo) {
+    const payload = '{"event":"' + eventType + '"}';
+    const packedMessage = ':ContentScript       :N:{"origLocation":"DevtoolsPrivate","payload":'+ payload + '}';
+    globalWindow[sendToCoreFnName](packedMessage);
+    highlightTreeElement.call(this, element, showInfo);
+  }
+}
+`;
+
+const interceptElementPanelOnRemoveHighlight = `
+async function interceptElementPanelWasHovered(sendToCoreFnName, eventType) {
+  const globalWindow = window;
+  const elements = await import('./elements/elements.js');
+  const ElementsTreeOutline = elements.ElementsTreeOutline.ElementsTreeOutline;
+  const setHoverEffect = ElementsTreeOutline.prototype.setHoverEffect;
+  ElementsTreeOutline.prototype.setHoverEffect = function(treeElement) {
+    if (!treeElement) {
+      const payload = '{"event":"' + eventType + '"}';
+      const packedMessage = ':ContentScript       :N:{"origLocation":"DevtoolsPrivate","payload":'+ payload + '}';
+      globalWindow[sendToCoreFnName](packedMessage);
+    }
+    setHoverEffect.call(this, treeElement);
+  }
+}
+`;
+
+// Every time an element in page is selected for inspection
+function interceptElementWasSelected(sendToCoreFnName, eventType) {
   // @ts-ignore
   const globalWindow = window;
   // @ts-ignore
-  let globalDevToolsAPI = DevToolsAPI;
-  const dispatchMessage = globalDevToolsAPI.dispatchMessage.bind(globalDevToolsAPI);
-  function dispatchMessageOverride(message) {
-    if (message.includes('"method":"Overlay.')) {
-      const payload = `{"event":"${eventType}"}`;
-      const packedMessage = `:ContentScript       :N:{"origLocation":"DevtoolsPrivate","payload":${payload}`;
-      globalWindow[__sendToCore](packedMessage);
-    }
-    return dispatchMessage(message);
+  const globalSDK = window.SDK;
+  if (!globalSDK) return setTimeout(() => interceptElementWasSelected(sendToCoreFnName, eventType), 1);
+
+  const inspectNodeRequested = globalSDK.OverlayModel.prototype.inspectNodeRequested;
+  globalSDK.OverlayModel.prototype.inspectNodeRequested = function({ backendNodeId }) {
+    const payload = '{"event":"' + eventType + '","backendNodeId": ' + backendNodeId + '}';
+    const packedMessage = ':ContentScript       :N:{"origLocation":"DevtoolsPrivate","payload":' + payload + '}';
+    globalWindow[sendToCoreFnName](packedMessage);
+    inspectNodeRequested.call(this, { backendNodeId });
   }
-  globalDevToolsAPI.dispatchMessage = dispatchMessageOverride;
-  setTimeout(() => {
-    // @ts-ignore
-    globalDevToolsAPI = DevToolsAPI;
-    globalDevToolsAPI.dispatchMessage = dispatchMessageOverride;
-  }, 1);
 }
+
+// THIS CREATES CONTEXT MENU
+const injectContextMenu = `
+async function injectContextMenu(sendToCoreFnName, eventType) {
+  const elements = await import('./elements/elements.js');
+  const ElementsTreeElement = elements.ElementsTreeElement.ElementsTreeElement;
+  const populateNodeContextMenu = ElementsTreeElement.prototype.populateNodeContextMenu;
+    
+  ElementsTreeElement.prototype.populateNodeContextMenu = function(contextMenu) {
+    populateNodeContextMenu.call(this, contextMenu);
+    const backendNodeId = this._node._backendNodeId;
+    const sgMenu = contextMenu.clipboardSection().appendSubMenuItem('Selector Generator');
+    const section = sgMenu.section();
+    
+    const isIncluded = window.___includedBackendNodeIds.has(backendNodeId);
+    const mustIncludeItem = section.appendCheckboxItem('Must Include', () => {
+      const payload = { event: eventType, backendNodeId, isIncluded: !isIncluded };
+      const packedMessage = ':ContentScript       :N:{"origLocation":"DevtoolsPrivate","payload":'+ JSON.stringify(payload) + '}';
+      window[sendToCoreFnName](packedMessage);
+    }, isIncluded);
+    
+    const isExcluded = window.___excludedBackendNodeIds.has(backendNodeId);
+    const mustExcludeItem = section.appendCheckboxItem('Must Exclude', () => { 
+      const payload = { event: eventType, backendNodeId, isExcluded: !isExcluded };
+      const packedMessage = ':ContentScript       :N:{"origLocation":"DevtoolsPrivate","payload":'+ JSON.stringify(payload) + '}';
+      window[sendToCoreFnName](packedMessage);
+    }, isExcluded);
+  }
+}
+`;
+
+
+// Every time a node element is highlighted using Inspector in page (not devtools panel)
+// SDK.OverlayModel.prototype.nodeHighlightRequested = function({nodeId}) {
+//   console.log('nodeHighlightRequested', nodeId);
+//   nodeHighlightRequested.call(this, {nodeId});
+// }
+
+
