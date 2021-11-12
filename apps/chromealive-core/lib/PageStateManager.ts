@@ -66,7 +66,7 @@ export default class PageStateManager extends TypedEventEmitter<{
   private lastPublish: number;
   private publishTimeout: NodeJS.Timeout;
 
-  constructor(readonly sessionObserver: SessionObserver, timeline: TimelineBuilder) {
+  constructor(readonly sessionObserver: SessionObserver) {
     super();
 
     bindFunctions(this);
@@ -75,7 +75,11 @@ export default class PageStateManager extends TypedEventEmitter<{
     this.logger = log.createChild(module, {
       sessionId: sourceHeroSession.id,
     });
-    this.trackHeroSession(sourceHeroSession, timeline);
+    this.trackHeroSession(sourceHeroSession, false);
+  }
+
+  public getHeroSessionTimeline(heroSessionId: string): PageStateSessionTimeline {
+    return this.heroSessionTimelinesById.get(heroSessionId);
   }
 
   public async save(): Promise<{ code: string; needsCodeChange: boolean }> {
@@ -93,18 +97,26 @@ export default class PageStateManager extends TypedEventEmitter<{
     }
     // don't clear generators or sessions in case we re-open
     if (destroy) {
-      this.pageStateById.clear();
-      for (const session of this.heroSessionTimelinesById.values()) {
-        session.close();
-      }
+      this.clear();
+      // delete the session observer also
       this.heroSessionTimelinesById.clear();
     }
 
-    this.sessionObserver.tabGroupModule.off('tab-group-opened', this.listenForTabGroupOpened);
+    this.sessionObserver.tabGroupModule?.off('tab-group-opened', this.listenForTabGroupOpened);
     await this.closeTimetravel();
-    this.tabGroupId = null;
+    if (this.tabGroupId) {
+      this.tabGroupId = null;
+      await this.sessionObserver.updateTabGroup(false);
+    }
+  }
 
-    await this.sessionObserver.updateTabGroup(false);
+  public clear(): void {
+    this.pageStateById.clear();
+    for (const [id, sessionTimeline] of this.heroSessionTimelinesById) {
+      if (id === this.sessionObserver.heroSession.id) continue;
+      sessionTimeline.close();
+      this.heroSessionTimelinesById.delete(id);
+    }
   }
 
   public addMultiverse(): void {
@@ -302,20 +314,24 @@ export default class PageStateManager extends TypedEventEmitter<{
     await closePromise;
   }
 
-  private trackHeroSession(heroSession: HeroSession, timeline?: TimelineBuilder): void {
-    const pageStateSessionTimeline = this.trackPageStateTimeline(heroSession.db, timeline);
-    pageStateSessionTimeline.trackSession(heroSession);
+  private trackHeroSession(heroSession: HeroSession, recordTimeline?: boolean): void {
+    const pageStateSessionTimeline = this.trackPageStateTimeline(heroSession.db);
+    pageStateSessionTimeline.trackSession(heroSession, recordTimeline);
     heroSession.on('tab-created', this.onTab);
   }
 
   private trackPageStateTimeline(
     db: SessionDb,
-    timeline?: TimelineBuilder,
+    timelineRange?: TimelineBuilder['timelineRange'],
   ): PageStateSessionTimeline {
-    const pageStateSessionTimeline = new PageStateSessionTimeline(db, this.pageStateById, timeline);
+    const pageStateSessionTimeline = new PageStateSessionTimeline(
+      db,
+      this.pageStateById,
+      timelineRange,
+    );
     pageStateSessionTimeline.on('updated-generator', this.updateStateForGenerator);
     pageStateSessionTimeline.on('timeline-change', this.onTimelineChange.bind(this, db.sessionId));
-    pageStateSessionTimeline.timelineBuilder.on('updated', this.publish);
+    pageStateSessionTimeline.on('new-screenshot', this.publish);
     this.heroSessionTimelinesById.set(db.sessionId, pageStateSessionTimeline);
     return pageStateSessionTimeline;
   }
@@ -402,11 +418,12 @@ export default class PageStateManager extends TypedEventEmitter<{
     generator.createBrowserContext(tab.sessionId);
     for (const [id, rawAssertionsData] of listener.rawBatchAssertionsById) {
       if (id.startsWith('@')) {
-        generator.import(rawAssertionsData as IPageStateGeneratorAssertionBatch);
+        const state = listener.getStateUsingBatchAssertion(id);
+        generator.import(state, rawAssertionsData as IPageStateGeneratorAssertionBatch);
         for (const [sessionId, session] of generator.sessionsById) {
           this.manuallyAssignedHeroSessionIds.add(sessionId);
           if (session.db) {
-            this.trackPageStateTimeline(session.db, new TimelineBuilder(session.db, session.timelineRange));
+            this.trackPageStateTimeline(session.db, session.timelineRange);
           }
         }
       }

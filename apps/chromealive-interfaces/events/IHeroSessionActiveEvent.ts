@@ -8,11 +8,12 @@ export default interface IHeroSessionActiveEvent {
   playbackState: 'live' | 'paused' | 'timetravel';
   run: number;
   runtimeMs: number;
-  needsPageStateResolution: boolean;
+  needsPageStateResolutionId: string;
   pageStates: {
     id: string;
     offsetPercent: number;
     isUnresolved: boolean;
+    resolvedState: string;
   }[];
   timeline: ITimelineMetadata;
 }

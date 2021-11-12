@@ -3,7 +3,6 @@ import {
   ISessionApiStatics,
   ISessionResumeArgs,
 } from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
-import TimelineBuilder from '@ulixee/hero-timetravel/player/TimelineBuilder';
 import SessionObserver from '../lib/SessionObserver';
 import ChromeAliveCore from '../index';
 
@@ -12,7 +11,7 @@ export default class SessionApi {
   static getScreenshot(args: IHeroSessionArgs & { tabId: number; timestamp: number }): {
     imageBase64: string;
   } {
-    const timelineBuilder = TimelineBuilder.bySessionId.get(args.heroSessionId);
+    const timelineBuilder = getObserver().getTimelineBuilder(args.heroSessionId);
     return { imageBase64: timelineBuilder.getScreenshot(args.tabId, args.timestamp) };
   }
 
@@ -65,8 +64,8 @@ export default class SessionApi {
   }
 }
 
-function getObserver(args: IHeroSessionArgs): SessionObserver {
-  const sessionId = args.heroSessionId ?? ChromeAliveCore.activeHeroSessionId;
+function getObserver(args?: IHeroSessionArgs): SessionObserver {
+  const sessionId = args?.heroSessionId ?? ChromeAliveCore.activeHeroSessionId;
   if (!sessionId || !ChromeAliveCore.sessionObserversById.has(sessionId))
     throw new Error(`No active session found - sessionId: "${sessionId}"`);
 

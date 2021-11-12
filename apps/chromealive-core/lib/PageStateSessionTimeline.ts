@@ -8,9 +8,16 @@ import PageStateGenerator, {
 } from '@ulixee/hero-timetravel/lib/PageStateGenerator';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import PageStateListener, { IPageStateEvents } from '@ulixee/hero-core/lib/PageStateListener';
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import {
+  addEventListener,
+  removeEventListeners,
+  TypedEventEmitter,
+} from '@ulixee/commons/lib/eventUtils';
+import IRegisteredEventListener from '@ulixee/commons/interfaces/IRegisteredEventListener';
+import TimelineRecorder from '@ulixee/hero-timetravel/player/TimelineRecorder';
 
 export default class PageStateSessionTimeline extends TypedEventEmitter<{
+  'new-screenshot': void;
   'updated-generator': { pageStateId: string };
   'timeline-change': { pageStateId: string; timelineRange: [number, number] };
 }> {
@@ -25,19 +32,27 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
   }
 
   public heroSession?: HeroSession;
+  public timelineBuilder: TimelineBuilder;
+
+  private eventRegistrations: IRegisteredEventListener[] = [];
+  private timelineRecorder: TimelineRecorder;
 
   constructor(
     readonly db: SessionDb,
     private readonly generatorsByPageStateId: Map<string, { generator: PageStateGenerator }>,
-    public readonly timelineBuilder?: TimelineBuilder,
+    timelineRange?: TimelineBuilder['timelineRange'],
   ) {
     super();
-    this.timelineBuilder ??= new TimelineBuilder(db);
+    this.timelineBuilder = new TimelineBuilder({ db, timelineRange });
   }
 
-  public trackSession(heroSession: HeroSession): void {
+  public trackSession(heroSession: HeroSession, shouldRecord: boolean): void {
     this.heroSession = heroSession;
-    this.timelineBuilder.trackLiveSession(heroSession);
+    this.timelineBuilder = new TimelineBuilder({ liveSession: heroSession });
+    if (shouldRecord) {
+      this.timelineRecorder = new TimelineRecorder(heroSession);
+      this.timelineRecorder.on('updated', () => this.emit('new-screenshot'));
+    }
   }
 
   public changeLoadingRangeBoundary(
@@ -45,12 +60,6 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
     offsetPercent: number,
     isStartTime: boolean,
   ): number {
-    console.log(
-      'changing loading range',
-      offsetPercent,
-      this.timelineBuilder.commandTimeline.getTimestampForOffset(offsetPercent),
-      this.timelineBuilder.timelineRange,
-    );
     const timestamp = this.getTimestampForOffset(offsetPercent);
     const generatorSession = this.getGeneratorSession(pageStateId);
 
@@ -71,10 +80,19 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
 
   public onNewPageState(tab: Tab, listener: PageStateListener): void {
     const pageStateId = listener.id;
-    const statusChangeCb = this.onTabNavigationStatusChange.bind(this, tab, pageStateId);
-    tab.navigations.on('status-change', statusChangeCb);
-    listener.on('resolved', this.onPageStateResolved.bind(this, tab, statusChangeCb));
-    this.timelineBuilder.recordScreenUntilLoad = true;
+    const statusChangeRegistration = addEventListener(
+      tab.navigations,
+      'status-change',
+      this.onTabNavigationStatusChange.bind(this, tab, pageStateId),
+    );
+    const pageStateResolvedRegistration = addEventListener(
+      listener,
+      'resolved',
+      this.onPageStateResolved.bind(this, tab, statusChangeRegistration.handler),
+    );
+    this.eventRegistrations.push(statusChangeRegistration, pageStateResolvedRegistration);
+
+    if (this.timelineRecorder) this.timelineRecorder.recordScreenUntilLoad = true;
 
     const generatorSession = this.getGeneratorSession(pageStateId);
     let endTime = generatorSession.loadingRange[1];
@@ -109,7 +127,9 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
   }
 
   public close(): void {
-    if (!this.heroSession) TimelineBuilder.bySessionId.delete(this.sessionId);
+    removeEventListeners(this.eventRegistrations);
+    this.eventRegistrations.length = 0;
+    if (this.timelineRecorder) this.timelineRecorder.stop();
   }
 
   public getTimestampForOffset(offset: number): number {
@@ -143,7 +163,7 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
     // keep going if we run into an error?
     if (resolution.error) return;
     tab.navigations.off('status-change', statusChangeListener);
-    this.timelineBuilder.recordScreenUntilLoad = false;
+    if (this.timelineRecorder) this.timelineRecorder.recordScreenUntilLoad = false;
   }
 
   private changeTimelineRange(pageStateId: string, timeRange: [number, number]) {
@@ -156,7 +176,7 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
 
     const endTime = timeRange[1];
     if (endTime > Date.now()) {
-      this.timelineBuilder.recordScreenUntilTime = endTime;
+      if (this.timelineRecorder) this.timelineRecorder.recordScreenUntilTime = endTime;
     }
     this.emit('timeline-change', {
       pageStateId,
