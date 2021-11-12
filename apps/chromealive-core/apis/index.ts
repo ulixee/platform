@@ -16,6 +16,7 @@ const ApiHandlers: IApiHandlerSpec = {
   'PageState.spawnSession': PageStateApi.spawnSession,
   'PageState.modifySessionTimes': PageStateApi.modifySessionTimes,
   'PageState.focusSessionTime': PageStateApi.focusSessionTime,
+  'PageState.extendSessionTime': PageStateApi.extendSessionTime,
   'PageState.unfocusSession': PageStateApi.unfocusSession,
   'PageState.openSession': PageStateApi.openSession,
   'PageState.save': PageStateApi.save,

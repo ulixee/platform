@@ -136,6 +136,13 @@
             </div>
           </Timeline>
           <div class="button-panel">
+            <a
+              href="javascript:void(0)"
+              @click.prevent="extendSession()"
+              id="extend-session"
+              :class="{ loading: extendingSession }"
+              >Add 5 seconds</a
+            >
             <button @click.prevent="unfocusSession()" id="unfocus-session" class="app-button">
               <div class="icon"></div>
             </button>
@@ -225,6 +232,7 @@ export default Vue.defineComponent({
       data: Vue.reactive(defaultData()),
       focusedState: Vue.ref<string>(null),
       editingState: Vue.ref<string>(null),
+      extendingSession: Vue.ref<boolean>(false),
       editingStateValue: Vue.ref<string>(null),
       focusedSessionId: Vue.ref<string>(null),
       timelineUrlIndex: Vue.ref<Number>(null),
@@ -232,6 +240,7 @@ export default Vue.defineComponent({
       timelineOffsetRight: Vue.ref<Number>(100),
       timelineRef: Vue.ref<typeof Timeline>(),
       isDraggingTimelineHandle: Vue.ref<boolean>(false),
+      isAwaitingDragUpdate: Vue.ref<boolean>(false),
       focusedTimelineHandle: Vue.ref<'start' | 'end'>(null),
 
       latestScreenshotsBySessionId: Vue.reactive<Record<string, string>>({}),
@@ -240,6 +249,7 @@ export default Vue.defineComponent({
 
       saving: Vue.ref(false),
       copiedToClipboard: Vue.ref(false),
+      autoFocusedSessionsIds: new Set<string>(),
     };
   },
   watch: {
@@ -402,25 +412,35 @@ export default Vue.defineComponent({
     },
 
     removeState(state: IPageStateUpdatedEvent['states'][0]): void {
-      Client.send('PageState.removeState', state).catch(alert);
+      Client.send('PageState.removeState', { state: state.state }).catch(alert);
     },
 
-    focusOnSession(focusedSession: IPageStateUpdatedEvent['heroSessions'][0]): void {
+    focusOnSession(
+      focusedSession: IPageStateUpdatedEvent['heroSessions'][0],
+      isAutomatedChange = false,
+    ): void {
       if (focusedSession.id === 'placeholder') return;
-      const isChangingSession = this.focusedSessionId !== focusedSession.id;
       this.focusedSessionId = focusedSession.id;
-      if (isChangingSession) {
-        for (const state of this.data.states) {
-          if (state.heroSessionIds.includes(this.focusedSessionId)) {
-            this.focusedState = state.state;
-            break;
-          }
+      this.timelineOffsetLeft = focusedSession.timelineOffsetPercents[0];
+      this.timelineOffsetRight = focusedSession.timelineOffsetPercents[1];
+
+      for (const state of this.data.states) {
+        if (state.heroSessionIds.includes(this.focusedSessionId)) {
+          this.focusedState = state.state;
+          break;
         }
-        this.focusedTimelineHandle = 'end';
-        this.timelineOffsetLeft = focusedSession.timelineOffsetPercents[0];
-        this.timelineOffsetRight = focusedSession.timelineOffsetPercents[1];
-        this.showTimelineHover = false;
-        Client.send('PageState.openSession', { heroSessionId: focusedSession.id }).catch(alert);
+      }
+
+      this.focusedTimelineHandle = 'end';
+      this.showTimelineHover = false;
+
+      if (isAutomatedChange === false) {
+        this.isAwaitingDragUpdate = true;
+        Client.send('PageState.openSession', { heroSessionId: focusedSession.id })
+          .catch(alert)
+          .then(() => {
+            this.isAwaitingDragUpdate = false;
+          });
       }
     },
 
@@ -434,6 +454,19 @@ export default Vue.defineComponent({
         this.focusState(this.data.states[0]);
       }
       Client.send('PageState.unfocusSession').catch(alert);
+    },
+
+    extendSession(): void {
+      if (this.extendingSession) return;
+      this.extendingSession = true;
+      Client.send('PageState.extendSessionTime', {
+        heroSessionId: this.focusedSessionId,
+        addMillis: 5e3,
+      })
+        .catch(alert)
+        .then(() => {
+          this.extendingSession = false;
+        });
     },
 
     onDragSession(event: DragEvent, session: IPageStateUpdatedEvent['heroSessions'][0]): void {
@@ -521,7 +554,6 @@ export default Vue.defineComponent({
       if (closestTick.offsetPercent >= this.timelineOffsetRight) return;
 
       if (this.focusedSessionId && closestTick.offsetPercent !== this.timelineOffsetLeft) {
-        console.log('changing offset', this.timelineOffsetLeft, closestTick.offsetPercent);
         this.pendingTimetravelOffset = closestTick.offsetPercent;
         this.pendingTimetravelIsStart = true;
       }
@@ -568,31 +600,54 @@ export default Vue.defineComponent({
     async updateSessionTimes() {
       if (this.pendingTimetravelOffset === null) return;
       const percentOffset = this.pendingTimetravelOffset;
+      this.isAwaitingDragUpdate = true;
       await Client.send('PageState.modifySessionTimes', {
         heroSessionId: this.focusedSessionId,
         isStartTime: this.pendingTimetravelIsStart,
         timelineOffset: percentOffset,
-      }).catch(console.error);
-      this.pendingTimetravelOffset = null;
+      })
+        .catch(console.error)
+        .then(() => {
+          this.pendingTimetravelOffset = null;
+          this.isAwaitingDragUpdate = false;
+        });
     },
 
     async focusSessionTimeHandle(isStartTime: boolean): Promise<void> {
       if (this.pendingTimetravelOffset) return;
       this.focusedTimelineHandle = isStartTime ? 'start' : 'end';
+      this.isAwaitingDragUpdate = true;
       await Client.send('PageState.focusSessionTime', {
         heroSessionId: this.focusedSessionId,
         isStartTime,
-      }).catch(console.error);
+      })
+        .catch(console.error)
+        .then(() => {
+          this.isAwaitingDragUpdate = false;
+        });
     },
 
     onPageStateUpdatedEvent(message: IPageStateUpdatedEvent) {
       message ??= defaultData();
       Object.assign(this.data, message);
-      if (message.focusedHeroSessionId) {
-        const focusedSession = message.heroSessions.find(
-          x => x.id === message.focusedHeroSessionId,
-        );
-        this.focusOnSession(focusedSession);
+
+      const focusedSession = message.focusedHeroSessionId
+        ? message.heroSessions.find(x => x.id === message.focusedHeroSessionId)
+        : null;
+
+      if (focusedSession && !this.autoFocusedSessionsIds.has(focusedSession.id)) {
+        this.autoFocusedSessionsIds.add(focusedSession.id);
+        this.focusOnSession(focusedSession, true);
+      }
+      // if we're not mid-update of a session drag, update it
+      else if (
+        focusedSession &&
+        message.focusedHeroSessionId === this.focusedSessionId &&
+        !this.isDraggingTimelineHandle &&
+        !this.isAwaitingDragUpdate
+      ) {
+        this.timelineOffsetLeft = focusedSession.timelineOffsetPercents[0];
+        this.timelineOffsetRight = focusedSession.timelineOffsetPercents[1];
       }
 
       for (const session of this.data.heroSessions) {
@@ -1026,6 +1081,21 @@ export default Vue.defineComponent({
         }
         #dragRight {
           right: 0;
+        }
+      }
+
+      #extend-session {
+        font-size: 0.9em;
+        color: #2d2d2d;
+        padding-right: 15px;
+
+        &.loading {
+          opacity: 0.6;
+          cursor: not-allowed;
+          background-image: url('~@/assets/icons/loading-bars.svg');
+          background-position: center right;
+          background-repeat: no-repeat;
+          background-size: 10px;
         }
       }
 

@@ -228,7 +228,7 @@ function connectToTabContentScript(
 ): chrome.runtime.Port {
   let port = findPort(tabId, portLocation);
   if (port) return port;
-  if (portLocation !== MessageLocation.ContentScript) return;
+  if (portLocation !== MessageLocation.ContentScript && !sendThroughContentScript.includes(portLocation)) return;
   try {
     port = chrome.tabs.connect(tabId, { name: currentMessengerLocation, frameId: 0 });
     registerPort(tabId, portLocation, port);

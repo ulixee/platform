@@ -66,6 +66,7 @@ export default Vue.defineComponent({
     let sessionsByState = Vue.reactive<Record<string, IPageStateUpdatedEvent['heroSessions']>>({});
 
     function onPageStateUpdated(data: IPageStateUpdatedEvent) {
+      states.length = 0;
       Object.assign(states, data.states);
       for (const state of data.states) {
         sessionsByState[state.state] = data.heroSessions.filter(x =>

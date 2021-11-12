@@ -165,17 +165,27 @@ export default Vue.defineComponent({
     },
 
     showPageStatePopup(tick?: ITimelineTick) {
-      this.showTimelineHover = false;
-      if (this.focusedPageState.window) return;
-      this.focusedPageState.id = tick?.id as any;
-      this.focusedPageState.offset = this.timelineRef.getPageXByOffsetPercent(
-        tick?.offsetPercent ?? 100,
-      );
       const width = 400;
       const height = 150;
+
       const { bottom } = this.timelineRef.getTrackBoundingRect();
-      const left = window.screenLeft + this.focusedPageState.offset - width + 80;
+      const offset = this.timelineRef.getPageXByOffsetPercent(tick?.offsetPercent ?? 100);
+      const left = window.screenLeft + offset - width + 80;
       const top = window.screenTop + bottom + 4;
+      if (this.focusedPageState.window) {
+        if (tick?.id !== this.focusedPageState.id) {
+          return;
+        }
+        const childWindow = this.focusedPageState.window;
+        if (childWindow.screenTop !== top || childWindow.screenLeft !== left) {
+          childWindow.moveTo(left, top);
+        }
+        return;
+      }
+
+      this.showTimelineHover = false;
+      this.focusedPageState.id = tick?.id as any;
+      this.focusedPageState.offset === offset;
       const features = `top=${top},left=${left},width=${width},height=${height}`;
       this.focusedPageState.window = window.open(
         '/pagestate-popup.html',
@@ -361,15 +371,19 @@ export default Vue.defineComponent({
         });
       }
 
-      for (const ps of message.pageStates) {
-        if (ps.offsetPercent < 0) continue;
-        const match = timelineTicks.findIndex(x => x.offsetPercent === ps.offsetPercent);
+      let unresolvedPageStateTick: ITimelineTick;
+      for (const pageState of message.pageStates) {
+        if (pageState.offsetPercent < 0) continue;
+        const match = timelineTicks.findIndex(x => x.offsetPercent === pageState.offsetPercent);
+        // delete other ticks at this location
         if (match >= 0) timelineTicks.splice(match, 1);
-        timelineTicks.push({
-          id: ps.id,
-          offsetPercent: ps.offsetPercent,
+        const tick: ITimelineTick = {
+          id: pageState.id,
+          offsetPercent: pageState.offsetPercent,
           class: 'pagestate',
-        });
+        };
+        if (pageState.isUnresolved) unresolvedPageStateTick = tick;
+        timelineTicks.push(tick);
       }
       timelineTicks.sort((a, b) => a.offsetPercent - b.offsetPercent);
       this.timelineTicks = timelineTicks;
@@ -380,7 +394,7 @@ export default Vue.defineComponent({
         this.startLocation === 'sessionStart' ? 0 : message.timeline.urls.length - 1;
 
       if (message.needsPageStateResolution && !this.isTimetravelMode && !this.isDragging) {
-        this.showPageStatePopup();
+        this.showPageStatePopup(unresolvedPageStateTick);
       }
 
       if (isNewId || !this.isTimetravelMode) {

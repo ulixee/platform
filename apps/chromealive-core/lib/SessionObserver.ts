@@ -59,7 +59,8 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.heroSession.on('closing', this.close);
     this.heroSession.once('closed', () => this.emit('closed'));
 
-    this.timelineBuilder = new TimelineBuilder(heroSession.db, heroSession);
+    this.timelineBuilder = new TimelineBuilder(heroSession.db);
+    this.timelineBuilder.trackLiveSession(heroSession);
     this.timelineBuilder.on('updated', () => this.emit('hero:updated'));
 
     this.timetravelPlayer = TimetravelPlayer.create(heroSession.id, heroSession);
@@ -111,6 +112,7 @@ export default class SessionObserver extends TypedEventEmitter<{
       this.logger.info('Resuming session', { execArgv });
       fork(script, execArgv, {
         // execArgv,
+        cwd: this.scriptInstanceMeta.workingDirectory,
         stdio: 'inherit',
         env: { ...process.env, HERO_CLI_NOPROMPT: 'true' },
       });
