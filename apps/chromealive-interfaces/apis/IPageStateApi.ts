@@ -13,6 +13,7 @@ export default interface IPageStateApi {
     isStartTime: boolean;
   }): Promise<void>;
   focusSessionTime(args: { heroSessionId: string; isStartTime: boolean }): Promise<void>;
+  extendSessionTime(args: { heroSessionId: string; addMillis: number }): Promise<void>;
   save(): Promise<{
     needsCodeChange: boolean;
     code: string;

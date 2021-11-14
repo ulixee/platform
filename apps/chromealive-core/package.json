@@ -16,7 +16,7 @@
     "@ulixee/apps-chromealive": "1.5.4",
     "@ulixee/apps-chromealive-interfaces": "1.5.4",
     "@types/chrome": "^0.0.154",
-    "nanoid": "^3.1.29"
+    "nanoid": "^3.1.30"
   },
   "peerDependencies": {
     "@ulixee/databox-core": "^1.5.4",

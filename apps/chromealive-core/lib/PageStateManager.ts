@@ -1,6 +1,5 @@
 import PageStateGenerator, {
   IPageStateGeneratorAssertionBatch,
-  IPageStateSession,
 } from '@ulixee/hero-timetravel/lib/PageStateGenerator';
 import { Session as HeroSession, Tab } from '@ulixee/hero-core';
 import { fork } from 'child_process';
@@ -18,6 +17,9 @@ import { LoadStatus } from '@ulixee/hero-interfaces/Location';
 import PageStateCodeBlock from '@ulixee/hero-timetravel/lib/PageStateCodeBlock';
 import PageStateAssertions from '@ulixee/hero-timetravel/lib/PageStateAssertions';
 import DevtoolsPanelModule from './hero-plugin-modules/DevtoolsPanelModule';
+import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
+import PageStateSessionTimeline from './PageStateSessionTimeline';
+import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 
 const { log } = Log(module);
 
@@ -32,11 +34,9 @@ export default class PageStateManager extends TypedEventEmitter<{
     return this.pageStateById.get(this.activePageStateId)?.generator;
   }
 
-  public get activeTimelineBuilder(): TimelineBuilder {
-    return this.timelineBuildersByHeroSessionId.get(this.activeTimelineHeroSessionId);
+  public get activeSessionTimeline(): PageStateSessionTimeline {
+    return this.heroSessionTimelinesById.get(this.activeTimelineHeroSessionId);
   }
-
-  public defaultWaitMilliseconds = 5e3;
 
   private readonly pageStateById = new Map<
     string,
@@ -48,9 +48,8 @@ export default class PageStateManager extends TypedEventEmitter<{
     }
   >();
 
-  private readonly heroSessionsById = new Map<string, HeroSession>();
-  private readonly autoAssignedHeroSessionIds = new Set<string>();
-  private readonly timelineBuildersByHeroSessionId = new Map<string, TimelineBuilder>();
+  private readonly heroSessionTimelinesById = new Map<string, PageStateSessionTimeline>();
+  private readonly manuallyAssignedHeroSessionIds = new Set<string>();
 
   private activePageStateId: string;
   private isHeroSessionFocused = false;
@@ -61,18 +60,26 @@ export default class PageStateManager extends TypedEventEmitter<{
 
   private timetravelPlayer: TimetravelPlayer;
 
-  private readonly scriptEntrypoint: string;
+  private readonly scriptInstanceMeta: IScriptInstanceMeta;
 
-  constructor(readonly sessionObserver: SessionObserver, timeline: TimelineBuilder) {
+  // publishing debounce
+  private lastPublish: number;
+  private publishTimeout: NodeJS.Timeout;
+
+  constructor(readonly sessionObserver: SessionObserver) {
     super();
 
     bindFunctions(this);
     const sourceHeroSession = sessionObserver.heroSession;
-    this.scriptEntrypoint = sourceHeroSession.options.scriptInstanceMeta.entrypoint;
+    this.scriptInstanceMeta = sourceHeroSession.options.scriptInstanceMeta;
     this.logger = log.createChild(module, {
       sessionId: sourceHeroSession.id,
     });
-    this.trackHeroSession(sourceHeroSession, timeline);
+    this.trackHeroSession(sourceHeroSession, false);
+  }
+
+  public getHeroSessionTimeline(heroSessionId: string): PageStateSessionTimeline {
+    return this.heroSessionTimelinesById.get(heroSessionId);
   }
 
   public async save(): Promise<{ code: string; needsCodeChange: boolean }> {
@@ -90,43 +97,62 @@ export default class PageStateManager extends TypedEventEmitter<{
     }
     // don't clear generators or sessions in case we re-open
     if (destroy) {
-      this.pageStateById.clear();
-      this.heroSessionsById.clear();
+      this.clear();
+      // delete the session observer also
+      this.heroSessionTimelinesById.clear();
     }
 
-    this.sessionObserver.tabGroupModule.off('tab-group-opened', this.listenForTabGroupOpened);
+    this.sessionObserver.tabGroupModule?.off('tab-group-opened', this.listenForTabGroupOpened);
     await this.closeTimetravel();
+    if (this.tabGroupId) {
+      this.tabGroupId = null;
+      await this.sessionObserver.updateTabGroup(false);
+    }
+  }
 
-    await this.sessionObserver.updateTabGroup(false);
+  public clear(): void {
+    this.pageStateById.clear();
+    for (const [id, sessionTimeline] of this.heroSessionTimelinesById) {
+      if (id === this.sessionObserver.heroSession.id) continue;
+      sessionTimeline.close();
+      this.heroSessionTimelinesById.delete(id);
+    }
   }
 
   public addMultiverse(): void {
     const execArgv = ['--mode', 'multiverse'];
 
-    if (this.scriptEntrypoint.endsWith('.ts')) {
+    const { entrypoint, workingDirectory } = this.scriptInstanceMeta;
+    if (entrypoint.endsWith('.ts')) {
       execArgv.push('-r', 'ts-node/register');
     }
 
     try {
       this.placeholderSessions += 1;
-      fork(this.scriptEntrypoint, execArgv, {
+      fork(entrypoint, execArgv, {
+        cwd: workingDirectory,
         stdio: 'inherit',
         env: { ...process.env, HERO_CLI_NOPROMPT: 'true' },
       });
       if (this.activePageStateId) this.publish();
     } catch (error) {
+      this.placeholderSessions -= 1;
       this.logger.error('ERROR running multiverse', { error });
     }
   }
 
   public onMultiverseSession(heroSession: HeroSession) {
-    // might not be our session
-    if (heroSession.options.scriptInstanceMeta.entrypoint !== this.scriptEntrypoint) {
+    // not be our session
+    if (heroSession.options.scriptInstanceMeta.entrypoint !== this.scriptInstanceMeta.entrypoint) {
       return;
     }
     heroSession.configureHeaded({ showBrowser: false });
     heroSession.options.sessionKeepAlive = false;
     heroSession.options.sessionResume = null;
+
+    if (heroSession.mode === 'multiverse') {
+      heroSession.db.keepAlive = true;
+    }
     this.trackHeroSession(heroSession);
     this.placeholderSessions -= 1;
     if (this.activePageStateId) this.publish();
@@ -135,43 +161,44 @@ export default class PageStateManager extends TypedEventEmitter<{
   public async loadPageState(id: string): Promise<void> {
     this.emit('enter', { pageStateId: id });
     this.activePageStateId = id;
-    const unresolvedHeroSessionIds = this.getUnresolvedHeroSessionIds();
+
     const sessionIdToOpen =
-      unresolvedHeroSessionIds[0] ??
-      this.autoAssignedHeroSessionIds.values().next()?.value ??
-      this.heroSessionsById.keys().next().value;
+      this.generator.sessionsById.keys().next().value ?? this.getUnresolvedHeroSessionIds()[0];
     await this.openTimetravel(sessionIdToOpen);
-    await DevtoolsPanelModule.bySessionId
-      .get(sessionIdToOpen)
-      .closeDevtoolsPanelForPage(this.timetravelPlayer.activeTab.mirrorPage.page);
-    await this.timetravelPlayer.activeTab.mirrorPage.page.bringToFront();
+
+    this.sessionObserver
+      .groupTabs('', 'grey', true)
+      .then(x => {
+        this.tabGroupId = x;
+        this.sessionObserver.tabGroupModule.on('tab-group-opened', this.listenForTabGroupOpened);
+        return null;
+      })
+      .catch(console.error);
+
+    await this.closeDevtoolsPanel(sessionIdToOpen);
+
     this.publish();
   }
 
-  public async focusSessionTimeBoundary(isStartTime: boolean): Promise<void> {
-    const timelineBuilder = this.activeTimelineBuilder;
+  public async focusSessionLoadingTimeBoundary(isStartTime: boolean): Promise<void> {
     const focusedSessionId = this.activeTimelineHeroSessionId;
     const session = this.generator.sessionsById.get(focusedSessionId);
-    const percentOffset = timelineBuilder.commandTimeline.getTimelineOffsetForTimestamp(
-      isStartTime ? session.loadingRange[0] : session.loadingRange[1],
-    );
-    await this.timetravelPlayer.goto(percentOffset, timelineBuilder.lastMetadata);
+    await this.timetravelTo(isStartTime ? session.loadingRange[0] : session.loadingRange[1]);
   }
 
-  public async changeSessionTimeBoundary(
+  public async changeSessionLoadingTimeBoundary(
     percentOffset: number,
     isStartTime: boolean,
   ): Promise<void> {
-    this.autoAssignedHeroSessionIds.delete(this.activeTimelineHeroSessionId);
-    const timelineBuilder = this.activeTimelineBuilder;
-    const timestamp = timelineBuilder.commandTimeline.getTimestampForOffset(percentOffset);
-    await this.timetravelPlayer.goto(percentOffset, timelineBuilder.lastMetadata);
-    const focusedSessionId = this.activeTimelineHeroSessionId;
-    const session = this.generator.sessionsById.get(focusedSessionId);
+    this.manuallyAssignedHeroSessionIds.add(this.activeTimelineHeroSessionId);
+    const timestamp = this.activeSessionTimeline.changeLoadingRangeBoundary(
+      this.activePageStateId,
+      percentOffset,
+      isStartTime,
+    );
+    await this.timetravelTo(timestamp);
 
-    const index = isStartTime ? 0 : 1;
-    session.loadingRange[index] = timestamp;
-    session.needsResultsVerification = true;
+    const focusedSessionId = this.activeTimelineHeroSessionId;
     const modifiedState = this.generator.getStateForSessionId(focusedSessionId);
     if (modifiedState) {
       this.didMakeStateChanges(this.activePageStateId, modifiedState);
@@ -179,8 +206,18 @@ export default class PageStateManager extends TypedEventEmitter<{
     this.updateState();
   }
 
+  public extendSessionTime(sessionId: string, millis: number): Promise<void> {
+    this.manuallyAssignedHeroSessionIds.add(sessionId);
+
+    const sessionTimeline = this.heroSessionTimelinesById.get(sessionId);
+    sessionTimeline.extendTimelineRange(this.activePageStateId, millis);
+    // will update time in event from sessionTimeline
+
+    return Promise.resolve();
+  }
+
   public addState(name: string, ...heroSessionIds: string[]): void {
-    for (const id of heroSessionIds) this.autoAssignedHeroSessionIds.delete(id);
+    for (const id of heroSessionIds) this.manuallyAssignedHeroSessionIds.add(id);
     this.generator.addState(name, ...heroSessionIds);
     this.didMakeStateChanges(this.activePageStateId, name);
     this.updateState();
@@ -204,7 +241,7 @@ export default class PageStateManager extends TypedEventEmitter<{
   }
 
   public isShowingSession(heroSessionId: string): boolean {
-    return this.activeTimelineBuilder?.sessionId === heroSessionId;
+    return this.activeSessionTimeline?.sessionId === heroSessionId;
   }
 
   public unfocusSession(): void {
@@ -221,8 +258,6 @@ export default class PageStateManager extends TypedEventEmitter<{
       return;
     }
 
-    this.sessionObserver.tabGroupModule.off('tab-group-opened', this.close as any);
-
     if (this.timetravelPlayer) await this.closeTimetravel();
 
     this.activeTimelineHeroSessionId = heroSessionId;
@@ -233,9 +268,7 @@ export default class PageStateManager extends TypedEventEmitter<{
       this.sessionObserver.heroSession,
       this.generator.sessionsById.get(heroSessionId).timelineRange,
     );
-    this.tabGroupId = await this.sessionObserver.groupTabs('', 'grey', true);
-    this.sessionObserver.tabGroupModule.on('tab-group-opened', this.listenForTabGroupOpened);
-    this.activeTimelineBuilder.refreshMetadata();
+    this.activeSessionTimeline.refreshMetadata();
 
     await this.gotoActiveSessionEnd();
     this.timetravelPlayer.once('all-tabs-closed', this.onTimetravelTabsClosed);
@@ -255,10 +288,14 @@ export default class PageStateManager extends TypedEventEmitter<{
     }
   }
 
+  private async timetravelTo(timestamp: number): Promise<void> {
+    const offset = this.activeSessionTimeline.getTimelineOffset(timestamp);
+    await this.timetravelPlayer.goto(offset, this.activeSessionTimeline.lastMetadata);
+  }
+
   private async gotoActiveSessionEnd(): Promise<void> {
     const sessionDetails = this.generator.sessionsById.get(this.activeTimelineHeroSessionId);
-    const offsets = this.getTimelineOffsets(sessionDetails);
-    await this.timetravelPlayer.goto(offsets[1], this.activeTimelineBuilder.lastMetadata);
+    await this.timetravelTo(sessionDetails.loadingRange[1]);
   }
 
   private async onTimetravelTabsClosed(): Promise<void> {
@@ -277,74 +314,35 @@ export default class PageStateManager extends TypedEventEmitter<{
     await closePromise;
   }
 
-  private getTimelineOffsets(pageStateSession: IPageStateSession): [number, number] {
-    const timelineBuilder = this.timelineBuildersByHeroSessionId.get(
-      pageStateSession.sessionId,
-    ).commandTimeline;
-    const [loadStart, loadEnd] = pageStateSession.loadingRange;
-    const offsetLeft = timelineBuilder.getTimelineOffsetForTimestamp(loadStart);
-    const offsetRight = timelineBuilder.getTimelineOffsetForTimestamp(loadEnd);
-    return [offsetLeft, offsetRight];
-  }
-
-  private trackHeroSession(heroSession: HeroSession, timeline?: TimelineBuilder): void {
-    const id = heroSession.id;
-    this.heroSessionsById.set(id, heroSession);
+  private trackHeroSession(heroSession: HeroSession, recordTimeline?: boolean): void {
+    const pageStateSessionTimeline = this.trackPageStateTimeline(heroSession.db);
+    pageStateSessionTimeline.trackSession(heroSession, recordTimeline);
     heroSession.on('tab-created', this.onTab);
+  }
 
-    if (heroSession.mode === 'multiverse') {
-      heroSession.db.keepAlive = true;
+  private trackPageStateTimeline(
+    db: SessionDb,
+    timelineRange?: TimelineBuilder['timelineRange'],
+  ): PageStateSessionTimeline {
+    const pageStateSessionTimeline = new PageStateSessionTimeline(
+      db,
+      this.pageStateById,
+      timelineRange,
+    );
+    pageStateSessionTimeline.on('updated-generator', this.updateStateForGenerator);
+    pageStateSessionTimeline.on('timeline-change', this.onTimelineChange.bind(this, db.sessionId));
+    pageStateSessionTimeline.on('new-screenshot', this.publish);
+    this.heroSessionTimelinesById.set(db.sessionId, pageStateSessionTimeline);
+    return pageStateSessionTimeline;
+  }
+
+  private onTimelineChange(
+    heroSessionId: string,
+    event: { timelineRange: [number, number] },
+  ): void {
+    if (this.timetravelPlayer?.sessionId === heroSessionId) {
+      this.timetravelPlayer.refreshTicks(event.timelineRange).catch(console.error);
     }
-
-    timeline ??= new TimelineBuilder(heroSession.db, heroSession);
-    timeline.on('updated', this.onTimelineUpdated.bind(this, timeline, heroSession.id));
-    this.timelineBuildersByHeroSessionId.set(id, timeline);
-    this.onTimelineUpdated(timeline, heroSession.id);
-  }
-
-  private onTimelineUpdated(timelineBuilder: TimelineBuilder, sessionId: string) {
-    timelineBuilder.refreshMetadata();
-    const generatorSession = this.generator?.sessionsById?.get(sessionId);
-    if (generatorSession && this.autoAssignedHeroSessionIds.has(sessionId)) {
-      let hasChanges = false;
-      for (const url of timelineBuilder.lastMetadata?.urls ?? []) {
-        for (const loadEvent of url.loadStatusOffsets) {
-          if (loadEvent.offsetPercent === -1) continue;
-          if (loadEvent.loadStatus === LoadStatus.HttpResponded) {
-            if (loadEvent.timestamp > generatorSession.loadingRange[0]) {
-              generatorSession.loadingRange[0] = loadEvent.timestamp;
-              hasChanges = true;
-            }
-          }
-          if (loadEvent.loadStatus === LoadStatus.DomContentLoaded) {
-            if (
-              // before complete
-              loadEvent.timestamp < generatorSession.timelineRange[1] &&
-              // after load event
-              loadEvent.timestamp > generatorSession.loadingRange[0]
-            ) {
-              generatorSession.loadingRange[1] = loadEvent.timestamp;
-              hasChanges = true;
-            }
-          }
-        }
-      }
-      if (hasChanges) this.updateState();
-    }
-    this.publish();
-  }
-
-  private publish(): void {
-    this.emit('updated', this.toEvent());
-  }
-
-  private updateState(generator?: PageStateGenerator): void {
-    generator ??= this.generator;
-    if (!generator) return;
-    generator
-      .evaluate()
-      .then(() => this.publish())
-      .catch(error => this.logger.error('Error updating page state', { error }));
   }
 
   private onTab(event: { tab: Tab }) {
@@ -361,29 +359,15 @@ export default class PageStateManager extends TypedEventEmitter<{
       this.bindPageStateListenerToGenerator(listener);
     }
 
+    listener.on('resolved', this.onPageStateResolved.bind(this, tab, pageStateId));
+
+    const sessionTimeline = this.heroSessionTimelinesById.get(tab.sessionId);
+
+    const loadingRange = sessionTimeline.getNewPageStateLoadingRange(tab, listener);
     const generator = this.pageStateById.get(pageStateId).generator;
+    generator.addSession(tab.session.db, tab.id, loadingRange);
+    sessionTimeline.onNewPageState(tab, listener);
 
-    if (listener.states.length) {
-      listener.on('resolved', this.onPageStateResolved.bind(this, tab, pageStateId));
-    }
-
-    const startTime = listener.startTime;
-    const endTime = startTime + this.defaultWaitMilliseconds;
-    const timeRange: [number, number] = [startTime, endTime];
-
-    generator.addSession(tab.session.db, tab.id, timeRange, timeRange);
-    this.autoAssignedHeroSessionIds.add(tab.sessionId);
-
-    const timelineBuilder = this.timelineBuildersByHeroSessionId.get(tab.sessionId);
-    timelineBuilder?.setTimeRange(...timeRange);
-    if (timelineBuilder && endTime > Date.now()) {
-      timelineBuilder.recordScreenUntilTime = endTime;
-    }
-    if (this.timetravelPlayer && this.activeTimelineHeroSessionId === tab.sessionId) {
-      this.timetravelPlayer.refreshTicks(timeRange).catch(error => {
-        this.logger.error('Error refreshing Timetravel ticks', { error });
-      });
-    }
     this.updateState(generator);
   }
 
@@ -401,13 +385,47 @@ export default class PageStateManager extends TypedEventEmitter<{
     this.updateState(generator);
   }
 
+  private publish(): void {
+    const now = Date.now();
+    const lastPublish = this.lastPublish ?? now - 201;
+    const millisSincePublish = now - lastPublish;
+    if (millisSincePublish < 200) {
+      this.publishTimeout = setTimeout(this.publish, 200 - millisSincePublish);
+      return;
+    }
+    clearTimeout(this.publishTimeout);
+    this.lastPublish = now;
+    this.emit('updated', this.toEvent());
+  }
+
+  private updateStateForGenerator(event: { pageStateId: string }): void {
+    const pageState = this.pageStateById.get(event.pageStateId);
+    this.updateState(pageState.generator);
+  }
+
+  private updateState(generator?: PageStateGenerator): void {
+    generator ??= this.generator;
+    if (!generator) return;
+    generator
+      .evaluate()
+      .then(() => this.publish())
+      .catch(error => this.logger.error('Error updating page state', { error }));
+  }
+
   private recordPageState(tab: Tab, listener: PageStateListener): void {
     const pageStateId = listener.id;
     const generator = new PageStateGenerator(pageStateId);
     generator.createBrowserContext(tab.sessionId);
     for (const [id, rawAssertionsData] of listener.rawBatchAssertionsById) {
       if (id.startsWith('@')) {
-        generator.import(rawAssertionsData as IPageStateGeneratorAssertionBatch);
+        const state = listener.getStateUsingBatchAssertion(id);
+        generator.import(state, rawAssertionsData as IPageStateGeneratorAssertionBatch);
+        for (const [sessionId, session] of generator.sessionsById) {
+          this.manuallyAssignedHeroSessionIds.add(sessionId);
+          if (session.db) {
+            this.trackPageStateTimeline(session.db, session.timelineRange);
+          }
+        }
       }
     }
 
@@ -461,9 +479,17 @@ export default class PageStateManager extends TypedEventEmitter<{
     }
   }
 
+  private async closeDevtoolsPanel(sessionId: string) {
+    // close
+    await DevtoolsPanelModule.bySessionId
+      .get(sessionId)
+      .closeDevtoolsPanelForPage(this.timetravelPlayer.activeTab.mirrorPage.page);
+    await this.timetravelPlayer.activeTab.mirrorPage.page.bringToFront();
+  }
+
   private getUnresolvedHeroSessionIds(pageStateId?: string): string[] {
     const generator = this.pageStateById.get(pageStateId ?? this.activePageStateId).generator;
-    const unassignedSessionIds = new Set(this.heroSessionsById.keys());
+    const unassignedSessionIds = new Set(this.heroSessionTimelinesById.keys());
     for (const details of generator.statesByName.values()) {
       for (const sessionId of details.sessionIds) unassignedSessionIds.delete(sessionId);
     }
@@ -471,7 +497,7 @@ export default class PageStateManager extends TypedEventEmitter<{
   }
 
   private toEvent(): IPageStateUpdateEvent {
-    if (!this.activePageStateId) return;
+    if (!this.activePageStateId) return null;
     const { needsCodeChange } = this.pageStateById.get(this.activePageStateId);
 
     const result: IPageStateUpdateEvent = {
@@ -496,11 +522,13 @@ export default class PageStateManager extends TypedEventEmitter<{
     }
 
     for (const [id, generatorSession] of generator.sessionsById) {
-      const timeline = CommandTimeline.fromDb(generatorSession.db, generatorSession.timelineRange);
-      const data = TimelineBuilder.createTimelineMetadata(timeline, generatorSession.db);
+      const sessionTimeline = this.heroSessionTimelinesById.get(id);
+      const data = sessionTimeline.refreshMetadata();
       const assertionCounts = generator.sessionAssertions.sessionAssertionsCount(id);
 
-      const timelineOffsetPercents = this.getTimelineOffsets(generatorSession);
+      const timelineOffsetPercents = sessionTimeline.getTimelineOffsets(
+        generatorSession.loadingRange,
+      );
       result.heroSessions.push({
         id,
         timelineRange: generatorSession.timelineRange,
@@ -514,15 +542,19 @@ export default class PageStateManager extends TypedEventEmitter<{
     for (const id of result.unresolvedHeroSessionIds) {
       // if created, but not in generator yet, add now
       if (!generator.sessionsById.has(id)) {
-        const db = this.heroSessionsById.get(id)?.db;
+        const heroSession = this.heroSessionTimelinesById.get(id).heroSession;
+        const db = heroSession?.db;
         if (!db) continue;
 
         const navigations = db.frameNavigations.getAllNavigations();
-        let startTime = db.commands.all()[0]?.runStartDate ?? Date.now();
-        if (navigations.length)
-          startTime = navigations
-            .map(x => x.statusChanges.get(LoadStatus.DomContentLoaded))
-            .find(x => x);
+        let startTime = heroSession.createdTime;
+        for (const nav of navigations) {
+          const domContentLoaded = nav.statusChanges.get(LoadStatus.DomContentLoaded);
+          if (domContentLoaded) {
+            startTime = domContentLoaded;
+            break;
+          }
+        }
         const timelineRange: [number, number] = [startTime, Date.now()];
         const timeline = CommandTimeline.fromDb(db, timelineRange);
         const data = TimelineBuilder.createTimelineMetadata(timeline, db);

@@ -45,6 +45,7 @@ export default class WindowBoundsModule {
           bounds as IBounds,
         );
         const maxBounds = AliveBarPositioner.getMaxChromeBounds();
+        if (!maxBounds) return;
         if (maxBounds.height === bounds.height && maxBounds.width === bounds.width) return;
 
         return page.devtoolsSession.send('Browser.setWindowBounds', {

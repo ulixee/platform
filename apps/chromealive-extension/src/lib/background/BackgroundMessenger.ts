@@ -95,7 +95,7 @@ chrome.runtime.onConnect.addListener(port => {
       if (tabId) unregisterPort(tabId, portLocation);
     });
     if (portLocation === MessageLocation.ContentScript) {
-      if(!port.sender.tab) {
+      if (!port.sender.tab) {
         logDebug('MISSING tab: ', port.sender);
       }
       const message: IMessageObject = {
@@ -113,6 +113,13 @@ chrome.runtime.onConnect.addListener(port => {
   } catch (e) {
     logDebug('ERROR: ', e);
     // nothing to do here
+  }
+});
+
+chrome.runtime.onSuspend.addListener(() => {
+  for (const port of Object.values(portsByTabId)) {
+    port.devtoolsVue?.disconnect();
+    port.contentScript?.disconnect();
   }
 });
 
@@ -173,11 +180,7 @@ async function routeInternally(
   }
 }
 
-function routeInternallyToTab(
-  tabId: number,
-  message: IMessageObject,
-  isRetry = false,
-): boolean {
+function routeInternallyToTab(tabId: number, message: IMessageObject, isRetry = false): boolean {
   try {
     const port = connectToTabContentScript(tabId, message.destLocation);
     if (port) {
@@ -206,9 +209,15 @@ function unregisterPort(tabId: number, portLocation: IMessageLocation) {
   }
 }
 
-const sendThroughContentScript: IMessageLocation[] = [MessageLocation.ContentScript, MessageLocation.Core, MessageLocation.DevtoolsPrivate ];
+const sendThroughContentScript: IMessageLocation[] = [
+  MessageLocation.ContentScript,
+  MessageLocation.Core,
+  MessageLocation.DevtoolsPrivate,
+];
 function findPort(tabId: number, portLocation: IMessageLocation) {
-  const nextPortLocation = sendThroughContentScript.includes(portLocation) ? MessageLocation.ContentScript : portLocation;
+  const nextPortLocation = sendThroughContentScript.includes(portLocation)
+    ? MessageLocation.ContentScript
+    : portLocation;
   if (!portsByTabId[tabId]) return;
   return portsByTabId[tabId][nextPortLocation];
 }
@@ -219,7 +228,7 @@ function connectToTabContentScript(
 ): chrome.runtime.Port {
   let port = findPort(tabId, portLocation);
   if (port) return port;
-  if (portLocation !== MessageLocation.ContentScript) return;
+  if (portLocation !== MessageLocation.ContentScript && !sendThroughContentScript.includes(portLocation)) return;
   try {
     port = chrome.tabs.connect(tabId, { name: currentMessengerLocation, frameId: 0 });
     registerPort(tabId, portLocation, port);

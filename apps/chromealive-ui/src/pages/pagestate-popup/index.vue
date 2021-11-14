@@ -2,7 +2,7 @@
   <img :src="ICON_CARET" class="caret" />
   <div id="pagestate-popup">
     <div class="wrapper">
-      <h5>New Page State Found</h5>
+      <h5>{{pageStateMessage()}}</h5>
 
       <button @click.prevent="openPageState()">Open Generator</button>
     </div>
@@ -26,6 +26,9 @@ export default Vue.defineComponent({
     openPageState() {
       (window as any).openPageState();
     },
+    pageStateMessage(): string {
+      return (window as any).pageStateMessage() ?? 'New Page State Found';
+    }
   },
 });
 </script>

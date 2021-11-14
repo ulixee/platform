@@ -108,9 +108,5 @@ export default class HeroCorePlugin extends CorePlugin {
   ): Promise<any> {
     const { targetInfo } = event;
     if (targetInfo.url !== `chrome-extension://${extensionId}/background.js`) return;
-    devtoolsSession.on('Runtime.consoleAPICalled', ev =>
-      this.logger.stats('ServiceWorker.Console', { args: ev.args }),
-    );
-    return Promise.all([devtoolsSession.send('Runtime.enable').catch(console.error)]);
   }
 }

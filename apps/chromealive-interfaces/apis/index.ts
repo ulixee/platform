@@ -22,6 +22,7 @@ export type IApiHandlerSpec = {
   'PageState.openSession': PageStateApi['openSession'];
   'PageState.modifySessionTimes': PageStateApi['modifySessionTimes'];
   'PageState.focusSessionTime': PageStateApi['focusSessionTime'];
+  'PageState.extendSessionTime': PageStateApi['extendSessionTime'];
   'PageState.save': PageStateApi['save'];
   'PageState.exit': PageStateApi['exit'];
 };

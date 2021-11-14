@@ -46,7 +46,12 @@ export default class PageStateApi {
     if (!pageStateManager.isShowingSession(args.heroSessionId)) {
       await pageStateManager.openTimetravel(args.heroSessionId);
     }
-    await pageStateManager.changeSessionTimeBoundary(args.timelineOffset, args.isStartTime);
+    await pageStateManager.changeSessionLoadingTimeBoundary(args.timelineOffset, args.isStartTime);
+  }
+
+  static async extendSessionTime(args: { heroSessionId: string; addMillis: number }): Promise<void> {
+    const pageStateManager = getPageStateManager();
+    await pageStateManager.extendSessionTime(args.heroSessionId, args.addMillis);
   }
 
   static async focusSessionTime(args: {
@@ -57,7 +62,7 @@ export default class PageStateApi {
     if (!pageStateManager.isShowingSession(args.heroSessionId)) {
       await pageStateManager.openTimetravel(args.heroSessionId);
     }
-    await pageStateManager.focusSessionTimeBoundary(args.isStartTime);
+    await pageStateManager.focusSessionLoadingTimeBoundary(args.isStartTime);
   }
 
   static save(): Promise<{ needsCodeChange: boolean; code: string }> {
