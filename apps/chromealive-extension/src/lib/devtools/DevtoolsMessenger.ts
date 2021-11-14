@@ -7,6 +7,8 @@ import {
   createResponseId,
 } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
 
+
+type IPort = chrome.runtime.Port;
 type IResponseFn = (response: any) => void;
 
 const currentTabId = chrome.devtools.inspectedWindow.tabId;
@@ -76,13 +78,13 @@ export function offMessage() {
 const pendingByResponseId: {
   [id: string]: {
     responseFn: IResponseFn,
-    timeoutId: number,
+    timeoutId: any,
   }
 } = {};
 
 // LISTENER TO <-> FROM BACKGROUND /////////////////////////////////////////////////////////////////
 
-let activePort: chrome.runtime.Port;
+let activePort: IPort;
 
 function connect() {
   try {
@@ -95,8 +97,7 @@ function connect() {
   }
 }
 
-function handleConnectedToBackgroundScript(port: chrome.runtime.Port) {
-  console.log('CONNECTED to BackgroundScript', port);
+function handleConnectedToBackgroundScript(port: IPort) {
   activePort = port;
   activePort.onDisconnect.addListener(() => {
     console.log('DISCONNECTED from BackgroundScript');

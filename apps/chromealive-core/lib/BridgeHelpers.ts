@@ -23,9 +23,21 @@ const startOfStringifiedMessageField =
 
 export enum MessageEventType {
   OpenSelectorGeneratorPanel = 'OpenSelectorGeneratorPanel',
+  CloseElementOptionsOverlay = 'CloseElementOptionsOverlay',
+  InspectElementModeChanged = 'InspectElementModeChanged',
+  OpenElementOptionsOverlay = 'OpenElementOptionsOverlay',
+  HideElementOptionsOverlay = 'HideElementOptionsOverlay',
+  RemoveHideFromElementOptionsOverlay = 'RemoveHideFromElementOptionsOverlay',
+  ContentScriptNeedsElement = 'ContentScriptNeedsElement',
+  RunSelectorGenerator = 'RunSelectorGenerator',
+  ResetSelectorGenerator = 'ResetSelectorGenerator',
+  AddIncludedElement = 'AddIncludedElement',
+  RemoveIncludedElement = 'RemoveIncludedElement',
+  AddExcludedElement = 'AddExcludedElement',
+  RemoveExcludedElement = 'RemoveExcludedElement',
+  FinishedSelectorGeneration = 'FinishedSelectorGeneration',
+  UpdateElementOptions = 'UpdateElementOptions',
   CloseDevtoolsPanel = 'CloseDevtoolsPanel',
-  OverlayDispatched = 'OverlayDispatched',
-  InitializingDevtoolsScript = 'InitializingDevtoolsScript',
 }
 
 export type IMessageEventType = keyof typeof MessageEventType;

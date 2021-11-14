@@ -1,57 +1,96 @@
-import { nanoid } from 'nanoid';
+import { MessageEventType } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
+import { sendToCore, sendToDevtoolsPrivate, sendToDevtoolsScript } from './content/ContentMessenger';
+import { createPromise } from '@ulixee/commons/lib/utils';
+import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
+
+const elementPromisesById: { [id: string]: IResolvablePromise<HTMLElement> } = {};
 
 export default class ElementsBucket {
-  private includedElementsByKey: Map<string, Element> = new Map();
-  private includedKeysByElement: Map<Element, string> = new Map();
+  private includedElementsById: Map<number, HTMLElement> = new Map();
+  private excludedElementsById: Map<number, HTMLElement> = new Map();
 
-  private excludedElementsByKey: Map<string, Element> = new Map();
-  private excludedKeysByElement: Map<Element, string> = new Map();
+  public get includedElements(): HTMLElement[] {
+    return Array.from(this.includedElementsById.values());
+  }
 
-  public get includedElements(): Element[] {
-    return Array.from(this.includedElementsByKey.values());
+  public async getByBackendNodeId(backendNodeId: number): Promise<HTMLElement> {
+    // @ts-ignore
+    const callbackFnName = window.onElementFromCore.name;
+    elementPromisesById[backendNodeId] = createPromise<HTMLElement>();
+    sendToCore({ event: MessageEventType.ContentScriptNeedsElement, backendNodeId, callbackFnName });
+    const element = await elementPromisesById[backendNodeId].promise;
+    delete elementPromisesById[backendNodeId];
+    return element;
   }
 
   public reset() {
-    this.includedElementsByKey = new Map();
-    this.includedKeysByElement = new Map();
-    this.excludedElementsByKey = new Map();
-    this.excludedKeysByElement = new Map();
+    this.includedElementsById = new Map();
+    this.excludedElementsById = new Map();
   }
 
-  isIncludedElement(element: Element): boolean {
-    return this.includedKeysByElement.has(element);
+  public isIncludedBackendNodeId(backendNodeId: number): boolean {
+    return this.includedElementsById.has(backendNodeId);
   }
 
-  addIncludedElement(element: Element): string {
-    const key = nanoid();
-    this.includedElementsByKey.set(key, element);
-    this.includedKeysByElement.set(element, key);
-    return key;
+  public addIncludedElement(backendNodeId: number, element: HTMLElement): void {
+    const tagText = extractTagText(element);
+    this.includedElementsById.set(backendNodeId, element);
+    this.removeExcludedElement(backendNodeId);
+
+    const payload = { event: MessageEventType.AddIncludedElement, name: tagText, backendNodeId };
+    sendToDevtoolsScript(payload);
+    sendToDevtoolsPrivate(payload);
   }
 
-  removeIncludedElement(element: Element): string {
-    const key = this.includedKeysByElement.get(element);
-    this.includedElementsByKey.delete(key);
-    this.includedKeysByElement.delete(element);
-    return key;
+  public removeIncludedElement(backendNodeId: number): void {
+    this.includedElementsById.delete(backendNodeId);
+
+    const payload = { event: MessageEventType.RemoveIncludedElement, backendNodeId };
+    sendToDevtoolsScript(payload);
+    sendToDevtoolsPrivate(payload);
   }
 
-  isExcludedElement(element: Element): boolean {
-    return this.excludedKeysByElement.has(element);
+  public isExcludedBackendNodeId(backendNodeId: number): boolean {
+    return this.excludedElementsById.has(backendNodeId);
   }
 
-  addExcludedElement(element: Element): string {
-    const key = nanoid();
-    this.excludedElementsByKey.set(key, element);
-    this.excludedKeysByElement.set(element, key);
-    return key;
+  public addExcludedElement(backendNodeId: number, element: HTMLElement): void {
+    const tagText = extractTagText(element);
+    this.excludedElementsById.set(backendNodeId, element);
+    this.removeIncludedElement(backendNodeId);
+
+    const payload = { event: MessageEventType.AddExcludedElement, backendNodeId, name: tagText }
+    sendToDevtoolsScript(payload);
+    sendToDevtoolsPrivate(payload);
   }
 
-  removeExcludedElement(element: Element): string {
-    const key = this.excludedKeysByElement.get(element);
-    this.excludedElementsByKey.delete(key);
-    this.excludedKeysByElement.delete(element);
-    return key;
+  public removeExcludedElement(backendNodeId: number): void {
+    this.excludedElementsById.delete(backendNodeId);
+
+    const payload = { event: MessageEventType.RemoveExcludedElement, backendNodeId };
+    sendToDevtoolsScript(payload);
+    sendToDevtoolsPrivate(payload);
   }
 
+  public getByKey(backendNodeId: number): HTMLElement {
+    return this.includedElementsById.get(backendNodeId) || this.excludedElementsById.get(backendNodeId);
+  }
+}
+
+function extractTagText(element: HTMLElement): string {
+  const outerHtml = element.outerHTML;
+  const len = outerHtml.length;
+
+  const openTagLength = outerHtml[len - 2] === '/' ? // Is self-closing tag?
+    len :
+    len - element.innerHTML.length - (element.tagName.length + 3);
+
+  return outerHtml.slice(0, openTagLength);
+}
+
+// @ts-ignore
+window.onElementFromCore = function onElementFromCore(backendNodeId: number, element: HTMLElement) {
+  if (!elementPromisesById[backendNodeId]) return;
+  elementPromisesById[backendNodeId].resolve(element);
+  delete elementPromisesById[backendNodeId];
 }

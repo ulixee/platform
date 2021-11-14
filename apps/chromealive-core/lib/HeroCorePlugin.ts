@@ -14,6 +14,7 @@ import FocusedWindowModule from './hero-plugin-modules/FocusedWindowModule';
 import { MessageLocation } from './BridgeHelpers';
 import { extensionId } from './ExtensionUtils';
 import DevtoolsPanelModule from './hero-plugin-modules/DevtoolsPanelModule';
+import ElementsModule from './hero-plugin-modules/ElementsModule';
 
 const { log } = Log(module);
 
@@ -33,6 +34,7 @@ export default class HeroCorePlugin extends CorePlugin {
   private windowBoundsModule: WindowBoundsModule;
   private focusedWindowModule: FocusedWindowModule;
   private devtoolsPanelModule: DevtoolsPanelModule;
+  private elementsModule: ElementsModule;
 
   constructor(createOptions: ICorePluginCreateOptions) {
     super(createOptions);
@@ -47,6 +49,7 @@ export default class HeroCorePlugin extends CorePlugin {
       this.bridgeToDevtoolsPrivate,
       this.tabGroupModule.identityByPageId,
     );
+    this.elementsModule = new ElementsModule(this.bridgeToExtension, browserEmitter);
 
     this.bridgeToDevtoolsPrivate.on('message', (message, { destLocation }) => {
       const { ContentScript, BackgroundScript } = MessageLocation;

@@ -2,60 +2,92 @@
 import '@webcomponents/custom-elements';
 import getCssSelector from 'css-selector-generator';
 import { MessageEventType } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
-import SelectorMenuElement from './lib/SelectorMenuElement';
+import ElementOptionsOverlay from './lib/ElementOptionsOverlay';
 import { onMessagePayload, sendToDevtoolsScript } from './lib/content/ContentMessenger';
 import ElementsBucket from './lib/ElementsBucket';
 import './lib/content/ContentListeners';
+import findSelectors from './lib/content/findSelectors';
 
 // @ts-ignore
 window.getCssSelector = getCssSelector;
 
 // Define the new element
-customElements.define('chromealive-selector-menu', SelectorMenuElement);
+customElements.define('chromealive-element-options-overlay', ElementOptionsOverlay);
 
-let selectorMenuElem;
-let selectorMenuIsOpen = false;
-
+let elementOptionsOverlay: ElementOptionsOverlay;
 const elementsBucket = new ElementsBucket()
 
-function openSelectorMenu(element) {
-  selectorMenuIsOpen = true;
-  if (!selectorMenuElem) {
-    selectorMenuElem = document.createElement('chromealive-selector-menu');
-    selectorMenuElem.attachElementsBucket(elementsBucket);
-    document.body.appendChild(selectorMenuElem);
-    document.body.addEventListener('click', closeSelectorMenu)
+function openSelectorMenu({ backendNodeId, element }: { backendNodeId?: number, element?: HTMLElement }) {
+  if (!elementOptionsOverlay) {
+    elementOptionsOverlay = document.createElement('chromealive-element-options-overlay') as ElementOptionsOverlay;
+    elementOptionsOverlay.attachElementsBucket(elementsBucket);
+    document.body.appendChild(elementOptionsOverlay);
+    document.body.addEventListener('click', closeSelectorMenu);
   }
-  setTimeout(() => {
-    if (selectorMenuIsOpen) {
-      selectorMenuElem.show(element)
-    }
-  }, 0);
+  element ??= elementsBucket.getByKey(backendNodeId);
+  if (element && backendNodeId) {
+    elementOptionsOverlay.open(backendNodeId, element)
+  } else if (backendNodeId) {
+    elementOptionsOverlay.openByBackendNodeId(backendNodeId);
+  }
 }
 
 function closeSelectorMenu() {
-  if (!selectorMenuElem || !selectorMenuIsOpen) return;
-  selectorMenuIsOpen = false;
-  selectorMenuElem.hide();
+  if (!elementOptionsOverlay) return;
+  elementOptionsOverlay.close();
 }
 
-onMessagePayload(payload => {
-  const { event } = payload;
-  if (event === MessageEventType.OverlayDispatched) {
+function tmpHideSelectorMenu(value: boolean) {
+  if (!elementOptionsOverlay) return;
+  elementOptionsOverlay.tmpHide(value);
+}
+
+onMessagePayload(async payload => {
+  const { event, backendNodeId } = payload;
+  if (event === MessageEventType.InspectElementModeChanged) {
+    if (payload.isOn) {
+      closeSelectorMenu();
+    }
+
+  } else if (event === MessageEventType.OpenElementOptionsOverlay) {
+    console.log(payload);
+    openSelectorMenu({ backendNodeId });
+
+  } else if (event === MessageEventType.HideElementOptionsOverlay) {
+    tmpHideSelectorMenu(true);
+
+  } else if (event === MessageEventType.RemoveHideFromElementOptionsOverlay) {
+    tmpHideSelectorMenu(false);
+
+  } else if (event === MessageEventType.CloseElementOptionsOverlay) {
     closeSelectorMenu();
-  } else if (event === 'RunSelectorGenerator') {
-    const selectors: string[] = [];
-    // ToDo
-    sendToDevtoolsScript({ event: 'FinishedSelectorGeneration', selectors });
-  } else if (event === 'RunSelectorGenerator') {
+
+  } else if (event === MessageEventType.UpdateElementOptions) {
+    if ('isIncluded' in payload) {
+      if (payload.isIncluded) {
+        const element = await elementsBucket.getByBackendNodeId(backendNodeId)
+        elementsBucket.addIncludedElement(backendNodeId, element);
+      } else {
+        elementsBucket.removeIncludedElement(backendNodeId);
+      }
+    } else if ('isExcluded' in payload) {
+      if (payload.isExcluded) {
+        const element = await elementsBucket.getByBackendNodeId(backendNodeId)
+        elementsBucket.addExcludedElement(backendNodeId, element);
+      } else {
+        elementsBucket.removeExcludedElement(backendNodeId);
+      }
+    }
+  } else if (event === MessageEventType.RunSelectorGenerator) {
+    // const selectors: string[] = [];
+    const element = elementsBucket.includedElements[0];
+    const selectors: string[][] = findSelectors(element).map(x => x.split(' '));
+    sendToDevtoolsScript({ event: MessageEventType.FinishedSelectorGeneration, selectors });
+
+  } else if (event === MessageEventType.ResetSelectorGenerator) {
     elementsBucket.reset();
+
   } else {
     console.log('UNHANDLED MESSAGE: ', payload);
   }
 });
-
-// @ts-ignore
-window.openSelectorMenu = openSelectorMenu;
-// @ts-ignore
-window.onOverlayWasDispatched = closeSelectorMenu;
-
