@@ -55,6 +55,7 @@ html {
 body {
   padding: 0;
   margin: 10px 0 0;
+  pointer-events: none;
 }
 #app {
   position: relative;

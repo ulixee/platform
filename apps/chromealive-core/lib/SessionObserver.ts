@@ -13,12 +13,12 @@ import { fork } from 'child_process';
 import Log from '@ulixee/commons/lib/Logger';
 import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
 import { ITabEventParams } from '@ulixee/hero-core/lib/Tab';
-import TimelineBuilder from '@ulixee/hero-timetravel/player/TimelineBuilder';
+import TimelineBuilder from '@ulixee/hero-timetravel/lib/TimelineBuilder';
 import PageStateManager from './PageStateManager';
 import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import ChromeAliveCore from '../index';
-import TimelineRecorder from '@ulixee/hero-timetravel/player/TimelineRecorder';
+import TimelineRecorder from '@ulixee/hero-timetravel/lib/TimelineRecorder';
 
 const { log } = Log(module);
 
@@ -33,6 +33,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   public readonly timelineBuilder: TimelineBuilder;
 
   public readonly timetravelPlayer: TimetravelPlayer;
+  public readonly timelineRecorder: TimelineRecorder;
 
   private waitForPageStateEvents: {
     id: string;
@@ -48,7 +49,6 @@ export default class SessionObserver extends TypedEventEmitter<{
   private outputRebuilder = new OutputRebuilder();
   private databoxInput: any = null;
   private databoxInputBytes = 0;
-  private readonly timelineRecorder: TimelineRecorder;
   private hasScriptUpdatesSinceLastRun = false;
 
   constructor(public readonly heroSession: HeroSession) {
@@ -91,9 +91,11 @@ export default class SessionObserver extends TypedEventEmitter<{
     );
   }
 
-  public getTimelineBuilder(heroSessionId: string): TimelineBuilder {
-    if (heroSessionId === this.heroSession.id) return this.timelineBuilder;
-    return this.pageStateManager.getHeroSessionTimeline(heroSessionId)?.timelineBuilder;
+  public getScreenshot(heroSessionId: string, tabId: number, timestamp: number): string {
+    if (heroSessionId === this.heroSession.id) {
+      return this.timelineBuilder.getScreenshot(tabId, timestamp);
+    }
+    return this.pageStateManager.getScreenshot(heroSessionId, tabId, timestamp);
   }
 
   public onMultiverseSession(session: HeroSession): void {
@@ -104,6 +106,9 @@ export default class SessionObserver extends TypedEventEmitter<{
     startLocation: ISessionCreateOptions['sessionResume']['startLocation'],
     startNavigationId?: number,
   ): Error | undefined {
+    if (startLocation === 'sessionStart') {
+      ChromeAliveCore.restartingHeroSessionId = this.heroSession.id;
+    }
     const script = this.scriptInstanceMeta.entrypoint;
     const execArgv = [
       `--sessionResume.startLocation`,
@@ -120,11 +125,17 @@ export default class SessionObserver extends TypedEventEmitter<{
 
     try {
       this.logger.info('Resuming session', { execArgv });
-      fork(script, execArgv, {
+      const child = fork(script, execArgv, {
         // execArgv,
         cwd: this.scriptInstanceMeta.workingDirectory,
-        stdio: 'inherit',
+        stdio: ['ignore', 'inherit', 'pipe', 'ipc'],
         env: { ...process.env, HERO_CLI_NOPROMPT: 'true' },
+      });
+      child.stderr.setEncoding('utf-8');
+      child.stderr.on('data', x => {
+        if (x.includes('ScriptChangedNeedsRestartError')) {
+          this.relaunchSession('sessionStart');
+        }
       });
     } catch (error) {
       this.logger.error('ERROR resuming session', { error });
@@ -143,12 +154,22 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.pageStateManager.close(true).catch(console.error);
   }
 
+  public getScriptDetails(): Pick<
+    IHeroSessionActiveEvent,
+    'scriptEntrypoint' | 'scriptLastModifiedTime'
+  > {
+    return {
+      scriptEntrypoint: this.scriptInstanceMeta.entrypoint.split(Path.sep).slice(-2).join(Path.sep),
+      scriptLastModifiedTime: this.scriptLastModifiedTime,
+    };
+  }
+
   public getHeroSessionEvent(): IHeroSessionActiveEvent {
     const pageStates: IHeroSessionActiveEvent['pageStates'] = [];
     const timeline = this.timelineBuilder.refreshMetadata();
     const commandTimeline = this.timelineBuilder.commandTimeline;
 
-    let needsPageStateResolutionId: string = null;
+    let pageStateIdNeedsResolution: string = null;
     for (const state of this.waitForPageStateEvents) {
       const offsetPercent = commandTimeline.getTimelineOffsetForTimestamp(state.timestamp);
       if (offsetPercent === -1) continue;
@@ -164,7 +185,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     if (lastPageState) {
       if (lastPageState.isUnresolved === true) {
         if (!this.hasScriptUpdatesSinceLastRun) {
-          needsPageStateResolutionId = lastPageState.id;
+          pageStateIdNeedsResolution = lastPageState.id;
         }
         lastPageState.offsetPercent = 100;
       }
@@ -183,12 +204,11 @@ export default class SessionObserver extends TypedEventEmitter<{
     return {
       hasWarning: false,
       run: this.heroSession.commands.resumeCounter,
-      scriptEntrypoint: this.scriptInstanceMeta.entrypoint.split(Path.sep).slice(-2).join(Path.sep),
-      scriptLastModifiedTime: this.scriptLastModifiedTime,
       heroSessionId: this.heroSession.id,
       runtimeMs: commandTimeline.runtimeMs,
       playbackState: this.playbackState,
-      needsPageStateResolutionId,
+      ...this.getScriptDetails(),
+      pageStateIdNeedsResolution,
       pageStates,
       timeline,
     };
@@ -286,8 +306,6 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.playbackState = 'live';
     this.bindDatabox();
     this.hasScriptUpdatesSinceLastRun = false;
-    this.waitForPageStateEvents.length = 0;
-    this.pageStateManager.clear();
     this.emit('hero:updated');
     this.emit('databox:updated');
   }
@@ -332,7 +350,16 @@ export default class SessionObserver extends TypedEventEmitter<{
     const startingCommandId = listener.startingCommandId;
     const timestamp = listener.commandStartTime;
     const pageState = { id, startingCommandId, timestamp, isUnresolved: null, resolvedState: null };
-    this.waitForPageStateEvents.push(pageState);
+
+    const existing = this.waitForPageStateEvents.find(x => x.id === id);
+    if (existing) {
+      existing.isUnresolved = null;
+      existing.resolvedState = null;
+      existing.timestamp = timestamp;
+      existing.startingCommandId = startingCommandId;
+    } else {
+      this.waitForPageStateEvents.push(pageState);
+    }
     this.emit('hero:updated');
     listener.on('resolved', state => {
       pageState.isUnresolved = !state.state;

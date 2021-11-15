@@ -31,9 +31,14 @@ export function getCallSite(priorToFilename?: string, endFilename?: string): Cal
   stack = stack.slice(startIndex);
 
   if (endFilename) {
-    const lastIdx = stack.findIndex(
-      x => x.getFileName() === endFilename || x.getFileName()?.endsWith(endFilename),
-    );
+    let lastIdx = -1;
+    for (let i = stack.length - 1; i >= 0; i -= 1) {
+      const x = stack[i];
+      if (x.getFileName() === endFilename || x.getFileName()?.endsWith(endFilename)) {
+        lastIdx = i;
+        break;
+      }
+    }
     if (lastIdx >= 0) stack = stack.slice(0, lastIdx + 1);
   }
   return stack.filter(x => !!x.getFileName() && !x.getFileName()?.startsWith('internal'));

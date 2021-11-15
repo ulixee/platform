@@ -4,13 +4,11 @@ import Log from '@ulixee/commons/lib/Logger';
 import { ChildProcess } from 'child_process';
 import launchChromeAlive from '@ulixee/apps-chromealive/index';
 import type Puppet from '@ulixee/hero-puppet';
-import IDevtoolsSession from '@ulixee/hero-interfaces/IDevtoolsSession';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import HeroCorePlugin from './lib/HeroCorePlugin';
 import SessionObserver from './lib/SessionObserver';
 import ConnectionToClient from './lib/ConnectionToClient';
-import AliveBarPositioner from './lib/AliveBarPositioner';
 import FocusedWindowModule from './lib/hero-plugin-modules/FocusedWindowModule';
 
 const { log } = Log(module);
@@ -21,6 +19,7 @@ export default class ChromeAliveCore {
     return this.sessionObserversById.get(this.activeHeroSessionId);
   }
 
+  public static restartingHeroSessionId: string;
   public static activeHeroSessionId: string;
   private static connections: ConnectionToClient[] = [];
   private static shouldAutoShowBrowser = false;
@@ -59,7 +58,6 @@ export default class ChromeAliveCore {
     HeroGlobalPool.events.on('browser-has-no-open-windows', this.onBrowserHasNoWindows);
 
     FocusedWindowModule.onVisibilityChange = this.changeActiveSessions;
-    AliveBarPositioner.getSessionDevtools = this.getSessionDevtools;
 
     HeroCore.use(HeroCorePlugin);
   }
@@ -143,7 +141,11 @@ export default class ChromeAliveCore {
 
     this.sendActiveSession(heroSession.id);
 
-    if (!this.activeHeroSessionId) {
+    const isRestartedSessionId =
+      this.restartingHeroSessionId === heroSession.options.sessionResume?.sessionId;
+
+    if (!this.activeHeroSessionId || isRestartedSessionId) {
+      this.restartingHeroSessionId = null;
       this.sendAppEvent('Session.loading');
       this.sendAppEvent('App.show');
       sessionObserver.once('hero:updated', () => this.sendAppEvent('Session.loaded'));
@@ -168,14 +170,29 @@ export default class ChromeAliveCore {
     sessionObserver.close();
     if (this.activeHeroSessionId === heroSessionId) {
       this.activeHeroSessionId = null;
-      this.sendAppEvent('Session.active', null);
+      if (this.restartingHeroSessionId === heroSessionId) {
+        this.sendAppEvent('Session.active', {
+          heroSessionId: null,
+          pageStates: [],
+          pageStateIdNeedsResolution: null,
+          timeline: { urls: [], screenshots: [], paintEvents: [] },
+          run: 0,
+          hasWarning: false,
+          playbackState: 'live',
+          runtimeMs: 0,
+          ...sessionObserver.getScriptDetails(),
+        });
+      } else {
+        this.toggleAppVisibility(false);
+        this.sendAppEvent('Session.active', null);
+      }
+
       this.sendAppEvent('Databox.updated', {
         changes: [],
         output: null,
         input: null,
         bytes: 0,
       });
-      this.toggleAppVisibility(false);
     }
   }
 
@@ -205,15 +222,6 @@ export default class ChromeAliveCore {
 
     await sessionObserver.didFocusOnPage(pageId, isPageVisible);
     this.toggleAppVisibility(!!this.activeHeroSessionId);
-  }
-
-  private static getSessionDevtools(heroSessionId: string): IDevtoolsSession {
-    const sessionObserver = this.sessionObserversById.get(heroSessionId);
-    if (!sessionObserver) return;
-
-    const { heroSession } = sessionObserver;
-    const page = [...heroSession.tabsById.values()].find(x => !x.isClosing)?.puppetPage;
-    return page?.devtoolsSession;
   }
 
   private static async launchApp(hideOnLaunch = false): Promise<void> {

@@ -12,7 +12,7 @@ export default class WindowBoundsModule {
   constructor(bridgeToExtension: BridgeToExtension, browserEmitter: EventEmitter) {
     this.bridgeToExtension = bridgeToExtension;
     browserEmitter.on('payload', payload => {
-      if (payload.event === 'OnBoundsChanged') {
+      if (payload.event === 'OnWindowBounds') {
         this.onBoundsChanged(payload);
       }
     });

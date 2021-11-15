@@ -9,14 +9,17 @@ import ChromeAliveCore from '../../index';
 import {
   ___receiveFromCore,
   ___sendToCore,
-  extractStringifiedComponentsFromMessage,
   extractResponseIdFromMessage,
-  messageExpectsResponse,
+  extractStringifiedComponentsFromMessage,
   isResponseMessage,
+  messageExpectsResponse,
 } from '../BridgeHelpers';
+import Log from '@ulixee/commons/lib/Logger';
+
+const { log } = Log(module);
 
 export default class BridgeToExtension extends EventEmitter {
-  private puppetDetailsByPageId: Map<string, { contextId: number; puppetPage: IPuppetPage }> = new Map();
+  private puppetDetailsByPageId = new Map<string, { contextId: number; puppetPage: IPuppetPage }>();
   private devtoolsSessionsByPageId: { [pageId: string]: IDevtoolsSession } = {};
   private pendingByResponseId: { [id: string]: IResolvablePromise<any> } = {};
 
@@ -34,7 +37,7 @@ export default class BridgeToExtension extends EventEmitter {
     this.devtoolsSessionsByPageId[page.id] = devtoolsSession;
 
     page.on('close', () => {
-      this.closePuppetPage(page)
+      this.closePuppetPage(page);
       delete this.devtoolsSessionsByPageId[page.id];
     });
     page.on('close', () => this.closePuppetPage(page));
@@ -68,7 +71,7 @@ export default class BridgeToExtension extends EventEmitter {
     }
     const puppetContext = this.puppetDetailsByPageId.get(puppetPageId);
     if (!puppetContext) {
-      console.log(`No puppet details for ${puppetPageId}`);
+      log.warn(`No puppet details for ${puppetPageId}`, { sessionId: null, puppetPageId });
       return Promise.resolve();
     }
     this.runInBrowser(
@@ -138,7 +141,10 @@ export default class BridgeToExtension extends EventEmitter {
     event: Protocol.Runtime.ExecutionContextCreatedEvent,
   ): void {
     if (!event.context.origin.startsWith(`chrome-extension://${extensionId}`)) return;
-    this.puppetDetailsByPageId.set(puppetPage.id, { contextId: event.context.id, puppetPage: puppetPage });
+    this.puppetDetailsByPageId.set(puppetPage.id, {
+      contextId: event.context.id,
+      puppetPage: puppetPage,
+    });
   }
 
   private onContextDestroyed(
@@ -147,7 +153,7 @@ export default class BridgeToExtension extends EventEmitter {
   ): void {
     const pageDetails = this.puppetDetailsByPageId.get(page.id);
     if (pageDetails && pageDetails.contextId === event.executionContextId) {
-      this.puppetDetailsByPageId.delete(page.id)
+      this.puppetDetailsByPageId.delete(page.id);
     }
   }
 

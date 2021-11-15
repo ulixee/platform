@@ -180,8 +180,8 @@ export class TypedEventEmitter<T> extends EventEmitter implements ITypedEventEmi
       return false;
     }
     this.logEvent(eventType, event);
-
-    return super.emit(eventType, event, sendInitiator);
+    if (sendInitiator) return super.emit(eventType, event, sendInitiator);
+    else return super.emit(eventType, event);
   }
 
   public addListener<K extends keyof T & (string | symbol)>(
