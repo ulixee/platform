@@ -1,8 +1,11 @@
 import { EventEmitter } from 'events';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
-import IDevtoolsSession from '@ulixee/hero-interfaces/IDevtoolsSession';
 import BridgeToExtension from '../bridges/BridgeToExtension';
 import { MessageEventType } from '../BridgeHelpers';
+
+import Log from '@ulixee/commons/lib/Logger';
+
+const { log } = Log(module);
 
 export default class FocusedWindowModule {
   private bridgeToExtension: BridgeToExtension;
@@ -19,7 +22,7 @@ export default class FocusedWindowModule {
     browserEmitter.on('payload', (payload, puppetPageId) => {
       if (payload.event === MessageEventType.ContentScriptNeedsElement) {
         this.sendElementToContentScript(payload, puppetPageId).catch(error => {
-          console.log('ERROR SENDING TO ELEMENT: ', error);
+          log.error('ERROR SENDING TO ELEMENT: ', { error, sessionId: null });
         });
       }
     });
@@ -30,10 +33,7 @@ export default class FocusedWindowModule {
     await this.sendToContentScript(backendNodeId, remoteObjectId, callbackFnName, puppetPageId);
   }
 
-  private async resolveBackendNodeId(
-    backendNodeId: number,
-    puppetPageId: string,
-  ): Promise<string> {
+  private async resolveBackendNodeId(backendNodeId: number, puppetPageId: string): Promise<string> {
     const contextId = this.bridgeToExtension.getContextIdByPuppetPageId(puppetPageId);
     this.bNodeIdToObjectIdMap[puppetPageId] ??= {};
     this.bNodeIdToObjectIdMap[puppetPageId][contextId] ??= {};

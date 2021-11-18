@@ -11,8 +11,8 @@ export default class SessionApi {
   static getScreenshot(args: IHeroSessionArgs & { tabId: number; timestamp: number }): {
     imageBase64: string;
   } {
-    const timelineBuilder = getObserver().getTimelineBuilder(args.heroSessionId);
-    return { imageBase64: timelineBuilder.getScreenshot(args.tabId, args.timestamp) };
+    const imageBase64 = getObserver().getScreenshot(args.heroSessionId, args.tabId, args.timestamp);
+    return { imageBase64 };
   }
 
   static async quit(args: IHeroSessionArgs): Promise<void> {

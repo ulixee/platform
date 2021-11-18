@@ -104,7 +104,7 @@ function createDefaultSession(): IHeroSessionActiveEvent {
     runtimeMs: 0,
     heroSessionId: '',
     run: 0,
-    needsPageStateResolutionId: null,
+    pageStateIdNeedsResolution: null,
     pageStates: [],
     hasWarning: false,
     scriptEntrypoint: '',
@@ -175,6 +175,7 @@ export default Vue.defineComponent({
       }
       const { bottom } = this.timelineRef.getTrackBoundingRect();
       const offset = this.timelineRef.getPageXByOffsetPercent(tick?.offsetPercent ?? 100);
+      this.focusedPageState.offset = offset;
       const left = window.screenLeft + offset - width + 80;
       const top = window.screenTop + bottom + 4;
       if (this.focusedPageState.window) {
@@ -190,15 +191,20 @@ export default Vue.defineComponent({
 
       this.showTimelineHover = false;
       this.focusedPageState.id = tick?.id as any;
-      this.focusedPageState.offset === offset;
       const features = `top=${top},left=${left},width=${width},height=${height}`;
       this.focusedPageState.window = window.open(
         '/pagestate-popup.html',
         'PageStatePopup',
         features,
       );
-      (this.focusedPageState.window as any).openPageState = this.openPageState.bind(this, tick?.id as string);
-      (this.focusedPageState.window as any).pageStateMessage = this.pageStateMessage.bind(this, tick?.id as string);
+      (this.focusedPageState.window as any).openPageState = this.openPageState.bind(
+        this,
+        tick?.id as string,
+      );
+      (this.focusedPageState.window as any).pageStateMessage = this.pageStateMessage.bind(
+        this,
+        tick?.id as string,
+      );
       this.focusedPageState.window.addEventListener('close', () => {
         this.focusedPageState.window = null;
       });
@@ -248,8 +254,16 @@ export default Vue.defineComponent({
       if (this.autoshownPageStateId && this.timelineOffset >= 99.9) return;
 
       let pageStateTick: ITimelineTick;
-      if (hoverEvent.closestTickAbove?.class === 'pagestate')
+      if (
+        hoverEvent.closestTickAbove?.class === 'pagestate' &&
+        hoverEvent.closestTickAbove.offsetPercent - hoverEvent.offset < 2
+      )
         pageStateTick = hoverEvent.closestTickAbove;
+      else if (
+        hoverEvent.closestTickBelow?.class === 'pagestate' &&
+        hoverEvent.offset - hoverEvent.closestTickBelow.offsetPercent < 2
+      )
+        pageStateTick = hoverEvent.closestTickBelow;
 
       if (pageStateTick) this.showPageStatePopup(pageStateTick);
       else this.closePageStatePopup();
@@ -267,10 +281,6 @@ export default Vue.defineComponent({
     },
 
     onTimelineClick(event: MouseEvent, tick: ITimelineTick): void {
-      if (tick.class === 'pagestate') {
-        this.showPageStatePopup(tick);
-        return;
-      }
       this.timetravelDrag(event);
       this.doTimetravel();
     },
@@ -355,9 +365,13 @@ export default Vue.defineComponent({
       Client.send('Session.step', { heroSessionId: this.session.heroSessionId });
     },
 
-    pageStateMessage(pageStateId?: string):string {
-        const pageState = this.session.pageStates.find(x => x.id === pageStateId) ?? this.session.pageStates[this.session.pageStates.length - 1];
-        return pageState.isUnresolved ? 'New Page State Found' : `Page State: ${pageState.resolvedState}`
+    pageStateMessage(pageStateId?: string): string {
+      const pageState =
+        this.session.pageStates.find(x => x.id === pageStateId) ??
+        this.session.pageStates[this.session.pageStates.length - 1];
+      return pageState.isUnresolved
+        ? 'New Page State Found'
+        : `Page State: ${pageState.resolvedState ?? '...'}`;
     },
 
     openPageState(pageStateId?: string) {
@@ -398,7 +412,7 @@ export default Vue.defineComponent({
           offsetPercent: pageState.offsetPercent,
           class: 'pagestate',
         };
-        if (pageState.id === message.needsPageStateResolutionId) unresolvedPageStateTick = tick;
+        if (pageState.id === message.pageStateIdNeedsResolution) unresolvedPageStateTick = tick;
         timelineTicks.push(tick);
       }
       timelineTicks.sort((a, b) => a.offsetPercent - b.offsetPercent);
@@ -409,12 +423,15 @@ export default Vue.defineComponent({
       this.timelineUrlIndex =
         this.startLocation === 'sessionStart' ? 0 : message.timeline.urls.length - 1;
 
-      if (message.needsPageStateResolutionId && !this.isTimetravelMode && !this.isDragging) {
+      if (message.pageStateIdNeedsResolution && !this.isTimetravelMode && !this.isDragging) {
         this.showPageStatePopup(unresolvedPageStateTick);
-        this.autoshownPageStateId = message.needsPageStateResolutionId;
+        this.autoshownPageStateId = message.pageStateIdNeedsResolution;
       }
-      if (!message.needsPageStateResolutionId && this.focusedPageState.id === this.autoshownPageStateId) {
-        this.closePageStatePopup();
+      if (!message.pageStateIdNeedsResolution) {
+        if (this.focusedPageState.id === this.autoshownPageStateId) {
+          this.closePageStatePopup();
+        }
+        this.autoshownPageStateId = null;
       }
 
       if (this.isTimetravelMode) {

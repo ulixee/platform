@@ -49,8 +49,8 @@ export default defineComponent({
       if (wasDataboxClosed) return;
       this.openDataboxWindow();
     },
-    'session.needsPageStateResolution'(needsResolution: boolean) {
-      if (needsResolution) {
+    'session.pageStateIdNeedsResolution'(value: string) {
+      if (value) {
         this.closeDataboxWindow();
       }
     },
@@ -87,7 +87,7 @@ export default defineComponent({
     },
 
     openDataboxWindow() {
-      if (!this.databoxWindow) return;
+      if (this.databoxWindow) return;
 
       this.$emit('navigated');
       this.hasLaunchedDatabox = true;

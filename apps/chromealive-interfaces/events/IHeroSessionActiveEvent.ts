@@ -8,7 +8,7 @@ export default interface IHeroSessionActiveEvent {
   playbackState: 'live' | 'paused' | 'timetravel';
   run: number;
   runtimeMs: number;
-  needsPageStateResolutionId: string;
+  pageStateIdNeedsResolution: string;
   pageStates: {
     id: string;
     offsetPercent: number;

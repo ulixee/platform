@@ -4,11 +4,9 @@
       <h2>
         {{ state.state }}
         <span class="assertions"
-          >{{
-            sessionsByState[state.state]?.length || 0
-          }}
-          page{{sessionsByState[state.state]?.length !== 1 ?'s':''}},
-          {{ state.assertionCounts.total }} asserts</span
+          >{{ sessionsByState[state.state]?.length || 0 }} page{{
+            sessionsByState[state.state]?.length !== 1 ? 's' : ''
+          }}, {{ state.assertionCounts.total }} asserts</span
         >
       </h2>
       <table>
@@ -67,6 +65,10 @@ export default Vue.defineComponent({
 
     function onPageStateUpdated(data: IPageStateUpdatedEvent) {
       states.length = 0;
+      for (const key of Object.keys(sessionsByState)) {
+        delete sessionsByState[key];
+      }
+      if (!data) return;
       Object.assign(states, data.states);
       for (const state of data.states) {
         sessionsByState[state.state] = data.heroSessions.filter(x =>

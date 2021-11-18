@@ -1,16 +1,15 @@
-import IDevtoolsSession from '@ulixee/hero-interfaces/IDevtoolsSession';
 import Log from '@ulixee/commons/lib/Logger';
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/IBounds';
+import { defaultScreen } from '@ulixee/default-browser-emulator/lib/Viewports';
+import ChromeAliveCore from '../index';
 
 const { log } = Log(module);
 
 export default class AliveBarPositioner {
-  public static getSessionDevtools: (sessionId: string) => IDevtoolsSession;
-
-  private static workarea: IBounds;
+  public static workarea: IBounds;
   private static lastToolbarBounds: IBounds;
   private static loadedPage: string;
-  private static hasPageChange = false;
+  private static hasChromeAliveModeChange = false;
   private static isFirstAdjustment = true;
   private static isMousedown = false;
 
@@ -55,13 +54,16 @@ export default class AliveBarPositioner {
   public static onAppReady(workarea: IBounds): void {
     log.info('App workarea setup', { workarea, sessionId: null });
     this.workarea = workarea;
+    const maxbounds = this.getMaxChromeBounds();
+    defaultScreen.width = maxbounds.width;
+    defaultScreen.height = maxbounds.height;
   }
 
   public static onAppBoundsChanged(bounds: IBounds, page: string): void {
     log.info('App bounds changed', { bounds, sessionId: null });
     this.lastToolbarBounds = bounds;
     if (this.loadedPage !== page) {
-      this.hasPageChange = true;
+      this.hasChromeAliveModeChange = true;
     }
     this.loadedPage = page;
     for (const sessionId of Object.keys(this.lastWindowBoundsBySessionId)) {
@@ -72,15 +74,21 @@ export default class AliveBarPositioner {
   private static alignWindowsIfOverlapping(sessionId: string): void {
     const chromeBounds = this.lastWindowBoundsBySessionId[sessionId];
     let newBounds = this.getMaxChromeBounds();
-    if (!newBounds || !this.getSessionDevtools) return;
+    const heroSession = ChromeAliveCore.sessionObserversById.get(sessionId)?.heroSession;
+    if (!newBounds || !heroSession) return;
 
-    if (chromeBounds.top < newBounds.top || this.hasPageChange) {
-      const devtools = this.getSessionDevtools(sessionId);
-      if (!devtools) return;
+    if (chromeBounds.top < newBounds.top || this.hasChromeAliveModeChange) {
+      const devtools = [...heroSession.tabsById.values()].find(x => !x.isClosing)?.puppetPage
+        ?.devtoolsSession;
+      if (!devtools) {
+        if (this.isFirstAdjustment) {
+          heroSession.once('tab-created', this.alignWindowsIfOverlapping.bind(this, sessionId));
+        }
+        return;
+      }
 
-      if (!this.isFirstAdjustment && !this.hasPageChange) {
+      if (!this.isFirstAdjustment && !this.hasChromeAliveModeChange) {
         if (this.isMousedown) {
-          log.info('App bounds changed, but appears to be drag. Ignoring');
           this.pendingWindowRepositionSessionId = sessionId;
           return;
         }
@@ -90,7 +98,7 @@ export default class AliveBarPositioner {
       if (this.pendingWindowRepositionSessionId === sessionId) {
         this.pendingWindowRepositionSessionId = null;
       }
-      this.hasPageChange = false;
+      this.hasChromeAliveModeChange = false;
 
       devtools
         .send('Browser.setWindowBounds', {
