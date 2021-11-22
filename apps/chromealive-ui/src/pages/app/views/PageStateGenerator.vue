@@ -289,6 +289,7 @@ export default Vue.defineComponent({
       const focusedSession = this.focusedSession;
       if (!focusedSession) return [];
       const ticks: ITimelineTick[] = [];
+      const offsets = new Set<number>();
       for (const url of focusedSession.timeline.urls) {
         if (url.offsetPercent !== -1) {
           ticks.push({
@@ -296,31 +297,56 @@ export default Vue.defineComponent({
             offsetPercent: url.offsetPercent,
             class: 'url',
           });
+          offsets.add(url.offsetPercent);
         }
         for (const status of url.loadStatusOffsets) {
           if (status.offsetPercent < 0) continue;
 
-          if (status.loadStatus === LoadStatus.DomContentLoaded) {
+          if (
+            status.loadStatus === LoadStatus.DomContentLoaded ||
+            status.loadStatus === LoadStatus.AllContentLoaded
+          ) {
+            offsets.add(status.offsetPercent);
             ticks.push({
               offsetPercent: status.offsetPercent,
-              class: 'domcontentloaded',
-            });
-          }
-          if (status.loadStatus === LoadStatus.AllContentLoaded) {
-            ticks.push({
-              offsetPercent: status.offsetPercent,
-              class: 'load',
+              class: status.loadStatus.toLowerCase(),
             });
           }
         }
       }
 
-      for (let i = 0; i <= 100; i += 1) {
+      for (const paintEvent of focusedSession.timeline.paintEvents) {
+        if (offsets.has(paintEvent.offsetPercent)) continue;
+        offsets.add(paintEvent.offsetPercent);
+
         ticks.push({
-          offsetPercent: i,
+          offsetPercent: paintEvent.offsetPercent,
           class: 'default',
         });
       }
+
+      for (const storageEvent of focusedSession.timeline.storageEvents) {
+        if (offsets.has(storageEvent.offsetPercent)) continue;
+        offsets.add(storageEvent.offsetPercent);
+
+        ticks.push({
+          offsetPercent: storageEvent.offsetPercent,
+          class: 'default',
+        });
+      }
+
+      for (const offsetPercent of focusedSession.timelineOffsetPercents) {
+        if (offsets.has(offsetPercent)) continue;
+        ticks.push({
+          offsetPercent,
+          class: 'default',
+        });
+      }
+
+      ticks.push({
+        offsetPercent: 100,
+        class: 'default',
+      });
 
       ticks.sort((a, b) => a.offsetPercent - b.offsetPercent);
 
@@ -574,8 +600,20 @@ export default Vue.defineComponent({
 
     onTimelineHover(hoverEvent: ITimelineHoverEvent): void {
       if (!hoverEvent.closestTickAbove && !hoverEvent.closestTickBelow) return;
-      let offset = hoverEvent.closestTickAbove?.offsetPercent;
-      if (this.focusedTimelineHandle !== 'start') {
+      let offset =
+        hoverEvent.closestTickAbove?.offsetPercent ?? hoverEvent.closestTickBelow?.offsetPercent;
+
+      // if not dragging, hover on closest overall
+      if (
+        !this.isDraggingTimelineHandle &&
+        hoverEvent.closestTickAbove &&
+        hoverEvent.closestTickBelow
+      ) {
+        const diffAbove = Math.abs(hoverEvent.closestTickAbove.offsetPercent - hoverEvent.offset);
+        const diffBelow = Math.abs(hoverEvent.closestTickBelow.offsetPercent - hoverEvent.offset);
+        if (diffAbove < diffBelow) offset = hoverEvent.closestTickAbove.offsetPercent;
+        else offset = hoverEvent.closestTickBelow.offsetPercent;
+      } else if (this.focusedTimelineHandle !== 'start') {
         offset = hoverEvent.closestTickBelow?.offsetPercent;
       }
 
@@ -1028,7 +1066,7 @@ export default Vue.defineComponent({
             width: 1px;
           }
           .tick.domcontentloaded .marker,
-          .tick.load .marker {
+          .tick.allcontentloaded .marker {
             height: 8px;
             width: 8px;
             background-color: #1d8ce0;
@@ -1042,7 +1080,7 @@ export default Vue.defineComponent({
             box-sizing: border-box;
             z-index: 1;
           }
-          .tick.load .marker {
+          .tick.allcontentloaded .marker {
             background-color: #318f62;
           }
         }
@@ -1088,6 +1126,7 @@ export default Vue.defineComponent({
         font-size: 0.9em;
         color: #2d2d2d;
         padding-right: 15px;
+        vertical-align: middle;
 
         &.loading {
           opacity: 0.6;

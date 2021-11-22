@@ -123,6 +123,9 @@ export default defineComponent({
       }
     },
   },
+  beforeUnmount() {
+    this.closeDataboxWindow();
+  },
 });
 </script>
 

@@ -59,6 +59,7 @@ body {
 }
 #app {
   position: relative;
+  pointer-events: auto;
 }
 .caret {
   position: absolute;
@@ -87,11 +88,21 @@ body {
     margin-top: 20px;
   }
 
+
   button {
+    cursor: pointer;
+    position: relative;
+    transition: 0.2s background-color;
+    backface-visibility: hidden;
+    background-color: transparent;
+    border-radius: 4px;
+    border-width: 1px;
+    padding: 2px 5px;
     line-height: 25px;
     display: block;
     float: right;
     margin-right: 50px;
   }
 }
+
 </style>

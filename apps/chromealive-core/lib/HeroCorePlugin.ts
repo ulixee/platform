@@ -47,7 +47,7 @@ export default class HeroCorePlugin extends CorePlugin {
     this.focusedWindowModule = new FocusedWindowModule(this.bridgeToExtension, browserEmitter);
     this.devtoolsPanelModule = new DevtoolsPanelModule(
       this.bridgeToDevtoolsPrivate,
-      this.tabGroupModule.identityByPageId,
+      this.tabGroupModule,
     );
     this.elementsModule = new ElementsModule(this.bridgeToExtension, browserEmitter);
 
