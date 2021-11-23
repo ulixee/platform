@@ -181,8 +181,12 @@ body {
     }
   }
   .icon {
+    cursor: pointer;
     width: 14px;
     height: 14px;
+  }
+  div, span, label {
+    cursor: pointer;
   }
 }
 </style>

@@ -37,6 +37,7 @@ export interface ITimelineStats {
   imageBase64: string;
   status: string;
   domChanges: number;
+  storageChanges: number;
 }
 
 export interface ITimelineChangeEvent {
@@ -96,12 +97,20 @@ export default defineComponent({
     getTimelineStats(offset: number): ITimelineStats {
       const stats = <ITimelineStats>{
         domChanges: 0,
+        storageChanges: 0,
         status: 'Loading'
       }
+
       for (const paint of this.timeline.paintEvents) {
         // go until this change is after the current offset
         if (paint.offsetPercent > offset) break;
         stats.domChanges = paint.domChanges;
+      }
+
+      for (const event of this.timeline.storageEvents) {
+        // go until this change is after the current offset
+        if (event.offsetPercent > offset) break;
+        stats.storageChanges = event.count;
       }
 
       let loadedUrl: ITimelineMetadata['urls'][0] = null;

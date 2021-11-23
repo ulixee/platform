@@ -2,7 +2,12 @@
   <div id="timeline-hover" :style="{ left: left() + 'px', ...cssVars }" ref="containerElement">
     <img :src="ICON_CARET" class="caret" />
     <div class="url">{{ hoverEvent.url || '...' }}</div>
-    <div class="changes">{{ runtime() }}; {{ hoverEvent.domChanges }} dom changes</div>
+    <div class="changes">
+      {{ runtime() }}; {{ hoverEvent.domChanges }} dom changes, {{
+        hoverEvent.storageChanges
+      }}
+      storage changes
+    </div>
     <div class="screenshot">
       <img v-if="hoverEvent.imageBase64" :src="`data:image/jpg;base64,${hoverEvent.imageBase64}`" />
       <div class="status" v-if="hoverEvent.status">{{ hoverEvent.status }}</div>
@@ -24,6 +29,7 @@ export interface ITimelineHoverEvent {
   imageBase64: string;
   status: string;
   domChanges: number;
+  storageChanges:number;
 }
 export interface ITimelineChangeEvent {
   offset: string;

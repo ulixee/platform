@@ -5,7 +5,10 @@ import BridgeToExtension from '../bridges/BridgeToExtension';
 import { createResponseId, IMessageObject, MessageLocation, ResponseCode } from '../BridgeHelpers';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 
-export default class TabGroupModule extends TypedEventEmitter<{ 'tab-group-opened': number }> {
+export default class TabGroupModule extends TypedEventEmitter<{
+  'tab-group-opened': number;
+  'tab-identified': { puppetPageId: string; tabId: number };
+}> {
   public static bySessionId = new Map<string, TabGroupModule>();
 
   public identityByPageId = new Map<string, { tabId: number; windowId: number }>();
@@ -89,6 +92,7 @@ export default class TabGroupModule extends TypedEventEmitter<{ 'tab-group-opene
   ): void {
     const { windowId, tabId } = payload;
     this.identityByPageId.set(puppetPageId, { windowId, tabId });
+    this.emit('tab-identified', { puppetPageId, tabId });
   }
 
   private async sendToExtension<T>(

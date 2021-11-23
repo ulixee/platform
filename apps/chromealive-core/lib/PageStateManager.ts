@@ -1,4 +1,6 @@
-import PageStateGenerator, { IPageStateGeneratorAssertionBatch } from '@ulixee/hero-timetravel/lib/PageStateGenerator';
+import PageStateGenerator, {
+  IPageStateGeneratorAssertionBatch,
+} from '@ulixee/hero-timetravel/lib/PageStateGenerator';
 import { Session as HeroSession, Tab } from '@ulixee/hero-core';
 import { fork } from 'child_process';
 import Log from '@ulixee/commons/lib/Logger';
@@ -178,8 +180,7 @@ export default class PageStateManager extends TypedEventEmitter<{
     this.emit('enter', { pageStateId: id });
     this.activePageStateId = id;
 
-    const sessionIdToOpen =
-      this.generator.sessionsById.keys().next().value ?? this.getUnresolvedHeroSessionIds()[0];
+    const sessionIdToOpen = this.getUnresolvedHeroSessionIds()[0] ?? this.sessionObserver.heroSession.id;
     await this.openTimetravel(sessionIdToOpen);
 
     this.sessionObserver
@@ -376,7 +377,7 @@ export default class PageStateManager extends TypedEventEmitter<{
     const { loadingRange, timelineRange } = sessionTimeline.onNewPageState(tab, listener);
 
     generator.addSession(heroSession.db, tab.id, loadingRange, timelineRange);
-    this.onTimelineChange(sessionId, { timelineRange, pageStateId })
+    this.onTimelineChange(sessionId, { timelineRange, pageStateId });
 
     this.updateState(generator);
   }
@@ -529,7 +530,8 @@ export default class PageStateManager extends TypedEventEmitter<{
     // close
     await DevtoolsPanelModule.bySessionId
       .get(sessionId)
-      .closeDevtoolsPanelForPage(this.timetravelPlayer.activeTab.mirrorPage.page);
+      .closeDevtoolsPanelForPage(this.timetravelPlayer.activeTab.mirrorPage.page)
+      .catch(console.error);
     await this.timetravelPlayer.activeTab.mirrorPage.page.bringToFront();
   }
 
@@ -571,6 +573,7 @@ export default class PageStateManager extends TypedEventEmitter<{
     }
 
     for (const [id, generatorSession] of generator.sessionsById) {
+      if (!generatorSession.db) continue;
       const sessionTimeline = this.getHeroSessionTimeline(id);
       const data = sessionTimeline.refreshMetadata();
       const assertionCounts = generator.sessionAssertions.sessionAssertionsCount(id);
@@ -625,7 +628,7 @@ export default class PageStateManager extends TypedEventEmitter<{
         loadingRange: [0, 0],
         timelineOffsetPercents: [0, 100],
         assertionCounts: { total: 0 },
-        timeline: { urls: [], paintEvents: [], screenshots: [] },
+        timeline: { urls: [], paintEvents: [], screenshots: [], storageEvents: [] },
       });
     }
     return result;

@@ -99,7 +99,7 @@ type IStartLocation = 'currentLocation' | 'sessionStart';
 
 function createDefaultSession(): IHeroSessionActiveEvent {
   return {
-    timeline: { urls: [], paintEvents: [], screenshots: [] },
+    timeline: { urls: [], paintEvents: [], screenshots: [], storageEvents:[] },
     playbackState: 'paused',
     runtimeMs: 0,
     heroSessionId: '',
@@ -265,8 +265,12 @@ export default Vue.defineComponent({
       )
         pageStateTick = hoverEvent.closestTickBelow;
 
-      if (pageStateTick) this.showPageStatePopup(pageStateTick);
-      else this.closePageStatePopup();
+      if (pageStateTick) {
+        this.showPageStatePopup(pageStateTick);
+        return;
+      }
+
+      this.closePageStatePopup();
 
       const stats = this.timelineRef.getTimelineStats(hoverEvent.offset);
       Object.assign(this.timelineHover, hoverEvent, stats);

@@ -148,6 +148,7 @@ export function translateToPrintable(
         value: true,
       });
       result.error = value;
+      continue;
     }
     const printable = translateValueToPrintable(value);
     if (printable === null || printable === undefined) continue;

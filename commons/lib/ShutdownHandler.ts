@@ -39,7 +39,9 @@ export default class ShutdownHandler {
       sessionId: null,
     });
 
-    for (const entry of this.onShutdownFns) {
+    while (this.onShutdownFns.length) {
+      const entry = this.onShutdownFns.shift();
+
       log.stats('ShutdownHandler.execute', {
         signal,
         fn: entry.fn.toString(),

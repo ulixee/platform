@@ -175,7 +175,7 @@ export default class ChromeAliveCore {
           heroSessionId: null,
           pageStates: [],
           pageStateIdNeedsResolution: null,
-          timeline: { urls: [], screenshots: [], paintEvents: [] },
+          timeline: { urls: [], screenshots: [], paintEvents: [], storageEvents:[] },
           run: 0,
           hasWarning: false,
           playbackState: 'live',
