@@ -23,13 +23,13 @@
     "node-static": "^0.7.11",
     "tslib": "^2.3.1",
     "progress": "^2.0.3",
-    "tar": "^6.1.10",
+    "tar": "^6.1.11",
     "compare-versions": "^3.6.0",
     "electron-log": "^4.4.1",
     "@ulixee/commons": "^1.5.5",
     "@ulixee/apps-chromealive-interfaces": "^1.5.4",
     "electron-context-menu": "^3.1.1",
-    "ws": "^7.4.4"
+    "ws": "^7.4.6"
   },
   "optionalDependencies": {
     "nseventmonitor": "^1.0.0"
