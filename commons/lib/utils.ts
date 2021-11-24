@@ -61,26 +61,63 @@ export function pickRandom<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-export function bindFunctions(self: any): void {
+const prototypeFunctionMap = new WeakMap<any, Set<PropertyKey>>();
+export function getObjectFunctionProperties(object: any): Set<PropertyKey> {
+  if (prototypeFunctionMap.has(object)) return prototypeFunctionMap.get(object);
+
+  const functionKeys = new Set<PropertyKey>();
+  for (const key of Reflect.ownKeys(object)) {
+    if (key === 'constructor') {
+      continue;
+    }
+    const descriptor = Reflect.getOwnPropertyDescriptor(object, key);
+    if (
+      descriptor &&
+      typeof descriptor.value === 'function' &&
+      !descriptor.get &&
+      !descriptor.set &&
+      descriptor.writable
+    ) {
+      functionKeys.add(key);
+    }
+  }
+
+  prototypeFunctionMap.set(object, functionKeys);
+  return functionKeys;
+}
+
+const prototypeHierarchyCache = new WeakMap<object, any[]>();
+export function getPrototypeHierarchy(self: any): object[] {
+  const hierarchy: object[] = [];
   let object = self;
   do {
-    for (const key of Reflect.ownKeys(object)) {
-      if (key === 'constructor') {
-        continue;
-      }
-      const descriptor = Reflect.getOwnPropertyDescriptor(object, key);
-      if (
-        descriptor &&
-        typeof descriptor.value === 'function' &&
-        !descriptor.get &&
-        !descriptor.set &&
-        descriptor.writable
-      ) {
-        self[key] = self[key].bind(self);
-      }
+    hierarchy.unshift(object);
+
+    if (prototypeHierarchyCache.has(object)) {
+      return prototypeHierarchyCache.get(object).concat(hierarchy);
     }
+
     object = Reflect.getPrototypeOf(object);
   } while (object && object !== Object.prototype);
+
+  // don't put in the last item
+  for (let i = 0; i < hierarchy.length - 1; i += 1) {
+    const entry = hierarchy[i];
+    const ancestors = i > 0 ? hierarchy.slice(0, i) : [];
+    prototypeHierarchyCache.set(entry, ancestors);
+  }
+
+  return hierarchy;
+}
+
+export function bindFunctions(self: any): void {
+  const hierarchy = getPrototypeHierarchy(self);
+  for (const tier of hierarchy) {
+    const keys = getObjectFunctionProperties(tier);
+    for (const key of keys) {
+      self[key] = self[key].bind(self);
+    }
+  }
 }
 
 export function createPromise<T = any>(

@@ -18,6 +18,10 @@ export default class DataboxCoreConnector extends BaseCoreConnector {
     this.server = server;
   }
 
+  public async start() {
+    await Core.start();
+  }
+
   public async close() {
     await Core.shutdown();
   }

@@ -205,6 +205,10 @@ export default Vue.defineComponent({
         this,
         tick?.id as string,
       );
+      (this.focusedPageState.window as any).pageStateIsResolving = this.pageStateIsResolving.bind(
+        this,
+        tick?.id as string,
+      );
       this.focusedPageState.window.addEventListener('close', () => {
         this.focusedPageState.window = null;
       });
@@ -376,6 +380,13 @@ export default Vue.defineComponent({
       return pageState.isUnresolved
         ? 'New Page State Found'
         : `Page State: ${pageState.resolvedState ?? '...'}`;
+    },
+
+    pageStateIsResolving(pageStateId?: string): boolean {
+      const pageState =
+        this.session.pageStates.find(x => x.id === pageStateId) ??
+        this.session.pageStates[this.session.pageStates.length - 1];
+      return !pageState.isUnresolved && !pageState.resolvedState;
     },
 
     openPageState(pageStateId?: string) {

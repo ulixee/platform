@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/commons",
-  "version": "1.5.7",
+  "version": "1.5.8",
   "description": "Common utilities for Ulixee",
   "scripts": {},
   "dependencies": {

@@ -19,6 +19,7 @@ import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import ChromeAliveCore from '../index';
 import TimelineRecorder from '@ulixee/hero-timetravel/lib/TimelineRecorder';
+import AliveBarPositioner from './AliveBarPositioner';
 
 const { log } = Log(module);
 
@@ -34,6 +35,7 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   public readonly timetravelPlayer: TimetravelPlayer;
   public readonly timelineRecorder: TimelineRecorder;
+  public readonly scriptInstanceMeta: IScriptInstanceMeta;
 
   private waitForPageStateEvents: {
     id: string;
@@ -44,7 +46,6 @@ export default class SessionObserver extends TypedEventEmitter<{
   }[] = [];
 
   private scriptLastModifiedTime: number;
-  private readonly scriptInstanceMeta: IScriptInstanceMeta;
   private databoxSession: DataboxSession;
   private outputRebuilder = new OutputRebuilder();
   private databoxInput: any = null;
@@ -108,6 +109,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   ): Error | undefined {
     if (startLocation === 'sessionStart') {
       ChromeAliveCore.restartingHeroSessionId = this.heroSession.id;
+      AliveBarPositioner.restartingSession(this.heroSession.id);
     }
     const script = this.scriptInstanceMeta.entrypoint;
     const execArgv = [
