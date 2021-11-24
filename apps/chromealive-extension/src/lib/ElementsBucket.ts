@@ -1,9 +1,12 @@
 import { MessageEventType } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
 import { sendToCore, sendToDevtoolsPrivate, sendToDevtoolsScript } from './content/ContentMessenger';
-import { createPromise } from '@ulixee/commons/lib/utils';
-import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
 
-const elementPromisesById: { [id: string]: IResolvablePromise<HTMLElement> } = {};
+interface IResolvable<T = any> {
+  resolve: (value?: T | PromiseLike<T>) => void;
+  reject: (reason?: any) => void;
+}
+
+const elementPromisesById: { [id: string]: IResolvable<HTMLElement> } = {};
 
 export default class ElementsBucket {
   private includedElementsById: Map<number, HTMLElement> = new Map();
@@ -16,9 +19,11 @@ export default class ElementsBucket {
   public async getByBackendNodeId(backendNodeId: number): Promise<HTMLElement> {
     // @ts-ignore
     const callbackFnName = window.onElementFromCore.name;
-    elementPromisesById[backendNodeId] = createPromise<HTMLElement>();
-    sendToCore({ event: MessageEventType.ContentScriptNeedsElement, backendNodeId, callbackFnName });
-    const element = await elementPromisesById[backendNodeId].promise;
+    const promise = new Promise<HTMLElement>((resolve, reject) => {
+      elementPromisesById[backendNodeId] = { resolve, reject };
+      sendToCore({ event: MessageEventType.ContentScriptNeedsElement, backendNodeId, callbackFnName });
+    });
+    const element = await promise;
     delete elementPromisesById[backendNodeId];
     return element;
   }
