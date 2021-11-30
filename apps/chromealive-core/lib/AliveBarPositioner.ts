@@ -10,7 +10,6 @@ export default class AliveBarPositioner {
   private static lastToolbarBounds: IBounds;
   private static loadedPage: string;
   private static hasChromeAliveModeChange = false;
-  private static isFirstAdjustment = true;
   private static isMousedown = false;
 
   private static pendingWindowRepositionSessionId: string;
@@ -18,6 +17,8 @@ export default class AliveBarPositioner {
   private static lastWindowBoundsBySessionId: {
     [sessionId: string]: IBounds & { windowId: number };
   } = {};
+
+  private static sessionIdsWithBoundsAdjusted = new Set<string>();
 
   public static getMaxChromeBounds(): IBounds | null {
     if (!this.workarea) return null;
@@ -71,6 +72,11 @@ export default class AliveBarPositioner {
     }
   }
 
+  public static restartingSession(sessionId:string) :void {
+    this.sessionIdsWithBoundsAdjusted.delete(sessionId);
+    delete this.lastWindowBoundsBySessionId[sessionId];
+  }
+
   private static alignWindowsIfOverlapping(sessionId: string): void {
     const chromeBounds = this.lastWindowBoundsBySessionId[sessionId];
     let newBounds = this.getMaxChromeBounds();
@@ -78,23 +84,24 @@ export default class AliveBarPositioner {
     if (!newBounds || !heroSession) return;
 
     if (chromeBounds.top < newBounds.top || this.hasChromeAliveModeChange) {
+      const isFirstAdjustment = !this.sessionIdsWithBoundsAdjusted.has(sessionId);
       const devtools = [...heroSession.tabsById.values()].find(x => !x.isClosing)?.puppetPage
         ?.devtoolsSession;
       if (!devtools) {
-        if (this.isFirstAdjustment) {
+        if (isFirstAdjustment) {
           heroSession.once('tab-created', this.alignWindowsIfOverlapping.bind(this, sessionId));
         }
         return;
       }
 
-      if (!this.isFirstAdjustment && !this.hasChromeAliveModeChange) {
+      if (!isFirstAdjustment && !this.hasChromeAliveModeChange) {
         if (this.isMousedown) {
           this.pendingWindowRepositionSessionId = sessionId;
           return;
         }
         newBounds = { top: newBounds.top } as any;
       }
-      this.isFirstAdjustment = false;
+      this.sessionIdsWithBoundsAdjusted.add(sessionId);
       if (this.pendingWindowRepositionSessionId === sessionId) {
         this.pendingWindowRepositionSessionId = null;
       }

@@ -10,6 +10,7 @@ import IMenubarOptions from '../interfaces/IMenubarOptions';
 import { getWindowPosition } from './util/getWindowPosition';
 import VueServer from './VueServer';
 import installDefaultChrome from './util/installDefaultChrome';
+import UlixeeConfig from '@ulixee/commons/config';
 
 // Forked from https://github.com/maxogden/menubar
 
@@ -27,6 +28,7 @@ export class Menubar extends EventEmitter {
   #positioner: Positioner | undefined;
   #vueServer: VueServer;
   #ulixeeServer: UlixeeServer;
+  #ulixeeConfig: UlixeeConfig;
 
   constructor(options?: IMenubarOptions) {
     super();
@@ -37,6 +39,7 @@ export class Menubar extends EventEmitter {
       app.setActivationPolicy('accessory');
     }
     this.#vueServer = new VueServer(vueDistPath);
+    this.#ulixeeConfig = UlixeeConfig.global;
 
     if (app.isReady()) {
       // See https://github.com/maxogden/menubar/pull/151
@@ -292,11 +295,14 @@ export class Menubar extends EventEmitter {
     if (this.#ulixeeServer) return;
     ChromeAliveCore.register(true);
     this.#ulixeeServer = new UlixeeServer();
+    if (!this.#ulixeeConfig.serverHost) {
+      await this.#ulixeeConfig.setGlobalDefaults();
+    }
 
     await installDefaultChrome();
 
-    // TODO: read port from common ulixee.json? Or put running port into a file?
-    await this.#ulixeeServer.listen({ port: 1337 });
+    const [host, port] = this.#ulixeeConfig.serverHost.split(':').slice(-2);
+    await this.#ulixeeServer.listen({ port: Number(port), host });
 
     // eslint-disable-next-line no-console
     console.log(`STARTED ULIXEE SERVER at ${await this.#ulixeeServer.address}`);

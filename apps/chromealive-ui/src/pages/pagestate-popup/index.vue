@@ -2,7 +2,8 @@
   <img :src="ICON_CARET" class="caret" />
   <div id="pagestate-popup">
     <div class="wrapper">
-      <h5>{{pageStateMessage()}}</h5>
+      <h5 v-if="!pageStateIsResolving()">{{pageStateMessage()}}</h5>
+      <h5 class="loading" v-else>Page State</h5>
 
       <button @click.prevent="openPageState()">Open Generator</button>
     </div>
@@ -28,6 +29,9 @@ export default Vue.defineComponent({
     },
     pageStateMessage(): string {
       return (window as any).pageStateMessage() ?? 'New Page State Found';
+    },
+    pageStateIsResolving(): string {
+      return (window as any).pageStateIsResolving() ?? false;
     }
   },
 });
@@ -86,6 +90,16 @@ body {
     text-align: center;
     text-transform: uppercase;
     margin-top: 20px;
+
+    &.loading {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background-image: url('~@/assets/icons/loading-bars.svg');
+      background-position: center right;
+      background-repeat: no-repeat;
+      background-size: 10px;
+      padding-right: 25px;
+    }
   }
 
 
