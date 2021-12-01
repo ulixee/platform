@@ -33,21 +33,36 @@ export default class AliveBarPositioner {
     };
   }
 
-  public static showApp(showApp: boolean, onTop?: boolean): void {
-    if (this.isShowingApp !== showApp) {
-      this.isShowingApp = showApp;
-      if (showApp) {
-        ChromeAliveCore.sendAppEvent('App.show');
-        this.isAppOnTop = true;
-      } else {
-        ChromeAliveCore.sendAppEvent('App.hide');
+  public static isDraggingMouse(isDraggingApp: boolean, onTop?: boolean): void {
+    if (this.isShowingApp !== isDraggingApp) {
+      this.isShowingApp = isDraggingApp;
+      if (isDraggingApp) {
+        ChromeAliveCore.sendAppEvent('App.startedDraggingChrome');
         this.isAppOnTop = false;
+      } else {
+        ChromeAliveCore.sendAppEvent('App.stoppedDraggingChrome');
+        this.isAppOnTop = true;
       }
     }
     if (onTop !== undefined && onTop !== this.isAppOnTop) {
       this.isAppOnTop = onTop;
       ChromeAliveCore.sendAppEvent('App.onTop', onTop);
     }
+  }
+
+  public static showApp(onTop?: boolean): void {
+    this.isAppOnTop = true;
+    ChromeAliveCore.sendAppEvent('App.show');
+    if (onTop !== undefined && onTop !== this.isAppOnTop) {
+      this.isAppOnTop = onTop;
+      ChromeAliveCore.sendAppEvent('App.onTop', onTop);
+    }
+  }
+
+  public static hideApp(): void {
+    this.isShowingApp = false;
+    this.isAppOnTop = false;
+    ChromeAliveCore.sendAppEvent('App.hide');
   }
 
   public static showHeroSessionOnBounds(sessionId: string): void {
@@ -70,7 +85,7 @@ export default class AliveBarPositioner {
     if (this.isMousedown) {
       if (!this.didSendAppHide) {
         this.didSendAppHide = true;
-        this.showApp(false);
+        this.isDraggingMouse(true);
       }
 
       if (hasChanges) this.pendingWindowRepositionSessionId = sessionId;
@@ -80,7 +95,7 @@ export default class AliveBarPositioner {
     if ((!this.isMousedown && this.didSendAppHide) || this.pendingShowSessionId === sessionId) {
       this.didSendAppHide = false;
       this.pendingShowSessionId = null;
-      this.showApp(true);
+      this.isDraggingMouse(false);
     }
 
     if (!hasChanges) return;
