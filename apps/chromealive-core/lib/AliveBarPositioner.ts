@@ -41,7 +41,6 @@ export default class AliveBarPositioner {
         this.isAppOnTop = true;
       } else {
         ChromeAliveCore.sendAppEvent('App.hide');
-        this.isAppOnTop = false;
       }
     }
     if (onTop !== undefined && onTop !== this.isAppOnTop) {
