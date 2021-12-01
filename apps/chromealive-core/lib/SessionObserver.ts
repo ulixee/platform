@@ -316,7 +316,6 @@ export default class SessionObserver extends TypedEventEmitter<{
     if (this.playbackState === 'live') this.playbackState = 'paused';
     this.emit('hero:updated');
     event.message = `ChromeAlive! has assumed control of your script. You can make changes to your script and re-run from the ChromeAlive interface.`;
-    ChromeAliveCore.toggleAppTop(true);
   }
 
   private bindDatabox(): void {

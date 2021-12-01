@@ -100,7 +100,7 @@ export default class PageStateManager extends TypedEventEmitter<{
     const id = this.activePageStateId;
 
     const { needsCodeChange, generator } = this.pageStateById.get(id);
-    const code = await PageStateCodeBlock.generateCodeBlock(generator);
+    const code = await PageStateCodeBlock.generateCodeBlock(generator, this.sessionObserver.scriptInstanceMeta);
     return { needsCodeChange, code };
   }
 

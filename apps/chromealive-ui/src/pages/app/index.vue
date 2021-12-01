@@ -10,7 +10,6 @@
     <Live
       v-if="showLiveView"
       ref="liveView"
-      @bounds-changed="sendBoundsChanged($event, 'live')"
       @open-generator="openGenerator"
     ></Live>
 
@@ -18,7 +17,6 @@
       v-else
       ref="generatorView"
       :page-state-id="pageStateId"
-      @bounds-changed="sendBoundsChanged($event, 'generator')"
       @exit="exitGenerator()"
     ></PageStateGenerator>
   </div>
@@ -59,28 +57,6 @@ export default Vue.defineComponent({
     openGenerator(pageStateId: string) {
       this.showLiveView = false;
       this.pageStateId = pageStateId;
-    },
-
-    async sendBoundsChanged(toolbar: HTMLElement, page: string) {
-      const bounds = {
-        height: toolbar.offsetHeight,
-        width: toolbar.offsetWidth,
-        left: window.screenLeft,
-        top: window.screenTop,
-      };
-      if (
-        bounds.height === this.lastToolbarBounds?.height &&
-        bounds.width === this.lastToolbarBounds?.width
-      ) {
-        return;
-      }
-      this.lastToolbarBounds = bounds;
-
-      await Client.connect();
-      await Client.send('App.boundsChanged', {
-        bounds,
-        page
-      });
     },
 
     async sendAppHeightChanged() {

@@ -5,8 +5,7 @@ import ChromeAliveCore from '../index';
 
 @IAppApiStatics
 export default class AppApi {
-  static boundsChanged(args: { bounds: IBounds; page: string }): { error?: Error } {
-    AliveBarPositioner.onAppBoundsChanged(args.bounds, args.page);
+  static boundsChanged(): { error?: Error } {
     return {};
   }
 

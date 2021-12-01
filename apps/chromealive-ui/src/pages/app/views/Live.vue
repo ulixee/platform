@@ -99,7 +99,7 @@ type IStartLocation = 'currentLocation' | 'sessionStart';
 
 function createDefaultSession(): IHeroSessionActiveEvent {
   return {
-    timeline: { urls: [], paintEvents: [], screenshots: [], storageEvents:[] },
+    timeline: { urls: [], paintEvents: [], screenshots: [], storageEvents: [] },
     playbackState: 'paused',
     runtimeMs: 0,
     heroSessionId: '',
@@ -504,17 +504,14 @@ export default Vue.defineComponent({
   #chrome-alive-bar {
     padding-top: 2px;
     padding-bottom: 2px;
-    background-color: var(--toolbarBackgroundColor);
-    box-shadow: 0 0 1px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.16);
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    background-color: white;
     display: flex;
     align-items: center;
     margin: 0 auto;
     vertical-align: center;
     justify-content: center;
     -webkit-app-region: no-drag;
-    transition: opacity 20ms ease-in;
-    height: 32px;
+    height: 40px;
   }
 
   #script {
