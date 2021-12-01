@@ -10,6 +10,7 @@ import HeroCorePlugin from './lib/HeroCorePlugin';
 import SessionObserver from './lib/SessionObserver';
 import ConnectionToClient from './lib/ConnectionToClient';
 import FocusedWindowModule from './lib/hero-plugin-modules/FocusedWindowModule';
+import AliveBarPositioner from './lib/AliveBarPositioner';
 
 const { log } = Log(module);
 
@@ -147,7 +148,7 @@ export default class ChromeAliveCore {
     if (!this.activeHeroSessionId || isRestartedSessionId) {
       this.restartingHeroSessionId = null;
       this.sendAppEvent('Session.loading');
-      this.sendAppEvent('App.show');
+      AliveBarPositioner.showHeroSessionOnBounds(heroSession.id);
       sessionObserver.once('hero:updated', () => this.sendAppEvent('Session.loaded'));
       this.activeHeroSessionId = heroSession.id;
     }
@@ -183,7 +184,7 @@ export default class ChromeAliveCore {
           ...sessionObserver.getScriptDetails(),
         });
       } else {
-        this.toggleAppVisibility(false);
+        AliveBarPositioner.showApp(false);
         this.sendAppEvent('Session.active', null);
       }
 
@@ -215,13 +216,12 @@ export default class ChromeAliveCore {
   ): Promise<void> {
     const isPageVisible = status.active;
     log.info('Changing active session', { isPageVisible, sessionId: heroSessionId, pageId });
-    const sessionObserver = this.sessionObserversById.get(heroSessionId);
-    if (!sessionObserver) return;
-    this.activeHeroSessionId = heroSessionId;
-    this.toggleAppTop(status.focused);
 
-    await sessionObserver.didFocusOnPage(pageId, isPageVisible);
-    this.toggleAppVisibility(!!this.activeHeroSessionId);
+    this.activeHeroSessionId = heroSessionId;
+    const sessionObserver = this.sessionObserversById.get(heroSessionId);
+    await sessionObserver?.didFocusOnPage(pageId, isPageVisible);
+
+    AliveBarPositioner.showApp(!!this.activeHeroSessionId, status.focused);
   }
 
   private static async launchApp(hideOnLaunch = false): Promise<void> {
@@ -261,22 +261,12 @@ export default class ChromeAliveCore {
   }
 
   private static hideApp(): void {
-    this.toggleAppVisibility(false);
+    AliveBarPositioner.showApp(false)
   }
 
   private static closeApp(): void {
     log.stats('Closing Electron App');
     this.sendAppEvent('App.quit');
-    this.app?.send('exit');
-    this.app?.kill('SIGTERM');
     this.app = null;
-  }
-
-  private static toggleAppVisibility(show: boolean): void {
-    if (show) {
-      this.sendAppEvent('App.show');
-    } else {
-      this.sendAppEvent('App.hide');
-    }
   }
 }

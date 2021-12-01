@@ -13,7 +13,7 @@ export default class WindowBoundsModule {
     this.bridgeToExtension = bridgeToExtension;
     browserEmitter.on('payload', payload => {
       if (payload.event === 'OnWindowBounds') {
-        this.onBoundsChanged(payload);
+        this.onBoundsChanged(payload.windowBounds);
       }
     });
   }
@@ -39,11 +39,7 @@ export default class WindowBoundsModule {
 
     return Promise.all([
       page.devtoolsSession.send('Browser.getWindowForTarget').then(({ windowId, bounds }) => {
-        AliveBarPositioner.onChromeWindowBoundsChanged(
-          sessionSummary.id,
-          windowId,
-          bounds as IBounds,
-        );
+        AliveBarPositioner.onChromeWindowBoundsChanged(sessionSummary.id, bounds as IBounds);
         const maxBounds = AliveBarPositioner.getMaxChromeBounds();
         if (!maxBounds) return;
         if (maxBounds.height === bounds.height && maxBounds.width === bounds.width) return;
@@ -59,8 +55,8 @@ export default class WindowBoundsModule {
     ]);
   }
 
-  private onBoundsChanged(payload: any): void {
+  private onBoundsChanged(payload: IBounds & { windowId: number }): void {
     const { windowId, ...bounds } = payload;
-    AliveBarPositioner.onChromeWindowBoundsChanged(this.sessionId, windowId, bounds);
+    AliveBarPositioner.onChromeWindowBoundsChanged(this.sessionId, bounds);
   }
 }

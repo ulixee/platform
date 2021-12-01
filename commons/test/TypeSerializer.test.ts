@@ -47,6 +47,9 @@ test('should be able to serialize and deserialize in a browser window', async ()
         async onNewPuppetPage(): Promise<any> {
           return null;
         },
+        onNewPuppetContext(): Promise<any> {
+          return null;
+        },
       } as any,
       log as any,
     );

@@ -9,18 +9,19 @@ import * as ContextMenu from 'electron-context-menu';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
 import ChromeAliveApi from './ChromeAliveApi';
+import IAppMoveEvent from '@ulixee/apps-chromealive-interfaces/events/IAppMoveEvent';
 
 export class ChromeAlive extends EventEmitter {
   readonly #vueServer: Http.Server;
   #browserWindow: BrowserWindow;
   #isVisible: boolean; // track visibility
   #vueAddress: Promise<AddressInfo>;
-  #resetAlwaysTopTimeout: NodeJS.Timeout;
   #hideOnLaunch = false;
   #nsEventMonitor: any;
   #mouseDown: boolean;
   #childWindows = new Set<BrowserWindow>();
   #api: ChromeAliveApi;
+  #exited = false;
 
   constructor(readonly coreServerAddress?: string) {
     super();
@@ -94,20 +95,16 @@ export class ChromeAlive extends EventEmitter {
   }
 
   private toggleOnTop(onTop: boolean) {
-    if (this.#browserWindow.isAlwaysOnTop() !== onTop) {
-      this.#browserWindow.setAlwaysOnTop(onTop, 'floating');
-    }
-
-    if (this.#browserWindow.isAlwaysOnTop()) {
-      clearTimeout(this.#resetAlwaysTopTimeout);
-      this.#resetAlwaysTopTimeout = setTimeout(() => this.#browserWindow.setAlwaysOnTop(false), 50);
-    }
+    this.#browserWindow.setAlwaysOnTop(onTop);
     for (const window of this.#childWindows) {
       window.setAlwaysOnTop(onTop);
     }
   }
 
   private appExit(): void {
+    if (this.#exited) return;
+    this.#exited = true;
+
     console.warn('EXITING CHROMEALIVE!');
     app.exit();
     this.#nsEventMonitor?.stop();
@@ -117,9 +114,6 @@ export class ChromeAlive extends EventEmitter {
     try {
       await this.#api.connect();
       await this.createWindow();
-      if (!this.#hideOnLaunch) {
-        await this.showWindow();
-      }
       this.listenForMouseDown();
       ShutdownHandler.register(() => this.appExit());
 
@@ -224,7 +218,7 @@ export class ChromeAlive extends EventEmitter {
     this.#browserWindow.webContents.on('ipc-message', (e, message, ...args) => {
       if (message === 'mousemove') {
         if (this.#isVisible) {
-          this.#browserWindow.show();
+          this.#browserWindow.setAlwaysOnTop(true);
         }
       }
       if (message === 'resize-height') {
@@ -255,6 +249,17 @@ export class ChromeAlive extends EventEmitter {
     await this.#api.send('App.ready', { workarea: workareaBounds });
   }
 
+  private moveWindow(move: IAppMoveEvent): void {
+    const bounds = this.#browserWindow.getBounds();
+    if (bounds.x !== move.bounds.x || bounds.y !== move.bounds.y) {
+      this.#browserWindow.setPosition(move.bounds.x, move.bounds.y);
+    }
+    if (bounds.width !== move.bounds.width) {
+      bounds.width = move.bounds.width
+      this.#browserWindow.setBounds(bounds)
+    }
+  }
+
   private onChromeAliveEvent<T extends keyof IChromeAliveEvents>(
     eventType: T,
     data: IChromeAliveEvents[T],
@@ -262,6 +267,7 @@ export class ChromeAlive extends EventEmitter {
     if (eventType === 'App.hide') this.hideWindow();
     if (eventType === 'App.show' && !this.#isVisible) this.showWindow();
     if (eventType === 'App.onTop') this.toggleOnTop(data as boolean);
-    if (eventType === 'App.quit') app.exit();
+    if (eventType === 'App.quit') this.appExit();
+    if (eventType === 'App.move') this.moveWindow(data as IAppMoveEvent);
   }
 }

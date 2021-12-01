@@ -15,6 +15,7 @@ import { MessageLocation } from './BridgeHelpers';
 import { extensionId } from './ExtensionUtils';
 import DevtoolsPanelModule from './hero-plugin-modules/DevtoolsPanelModule';
 import ElementsModule from './hero-plugin-modules/ElementsModule';
+import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
 
 const { log } = Log(module);
 
@@ -79,11 +80,29 @@ export default class HeroCorePlugin extends CorePlugin {
     });
   }
 
+  async onNewPuppetContext(context: IPuppetContext): Promise<any> {
+    if (context.isIncognito) return;
+
+    const currentTargets = await context.sendWithBrowserDevtoolsSession('Target.getTargets');
+    for (const target of currentTargets.targetInfos) {
+      if (target.type === 'page' && target.url === 'chrome://newtab/') {
+        await context.sendWithBrowserDevtoolsSession('Target.closeTarget', {
+          targetId: target.targetId,
+        });
+      }
+    }
+  }
+
   onBrowserLaunchConfiguration(launchArguments: string[]): void {
+    if (launchArguments.includes('--headless')) return;
+
     launchArguments.push(
       `--disable-extensions-except=${extensionPath}`,
       `--load-extension=${extensionPath}`,
+      '--enable-automation',
     );
+    const noStartupIndex = launchArguments.indexOf('--no-startup-window');
+    if (noStartupIndex >= 0) launchArguments.splice(noStartupIndex, 1);
   }
 
   configure(options: IBrowserEmulatorConfig): Promise<any> | void {
