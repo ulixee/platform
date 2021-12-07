@@ -41,7 +41,6 @@ export default class AliveBarPositioner {
         this.isAppOnTop = false;
       } else {
         ChromeAliveCore.sendAppEvent('App.stoppedDraggingChrome');
-        this.isAppOnTop = true;
       }
     }
     if (onTop !== undefined && onTop !== this.isAppOnTop) {
