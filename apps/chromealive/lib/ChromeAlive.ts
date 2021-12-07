@@ -13,19 +13,25 @@ import IAppMoveEvent from '@ulixee/apps-chromealive-interfaces/events/IAppMoveEv
 
 export class ChromeAlive extends EventEmitter {
   readonly #vueServer: Http.Server;
-  #browserWindow: BrowserWindow;
-  #isVisible: boolean; // track visibility
+  #timelineWindow: BrowserWindow;
+  #timelineIsVisible: boolean; // track visibility
+  #timelineChildWindows = new Set<BrowserWindow>();
+
+  #toolbarWindow: BrowserWindow;
+  #toolbarIsVisible: boolean; // track visibility
+  #toolbarChildWindows = new Set<BrowserWindow>();
+  #resetToolbarAlwaysTopTimeout: NodeJS.Timeout;
+
   #vueAddress: Promise<AddressInfo>;
   #hideOnLaunch = false;
   #nsEventMonitor: any;
   #mouseDown: boolean;
-  #childWindows = new Set<BrowserWindow>();
   #api: ChromeAliveApi;
   #exited = false;
 
   constructor(readonly coreServerAddress?: string) {
     super();
-    this.#isVisible = false;
+    this.#timelineIsVisible = false;
     this.coreServerAddress ??= process.argv
       .find(x => x.startsWith('--coreServerAddress='))
       ?.replace('--coreServerAddress=', '');
@@ -71,32 +77,69 @@ export class ChromeAlive extends EventEmitter {
     });
   }
 
-  private hideWindow(): void {
-    if (!this.#isVisible) {
+  private hideTimelineWindow(): void {
+    if (!this.#timelineIsVisible) {
       return;
     }
 
-    this.#browserWindow.hide();
-    for (const window of this.#childWindows) {
+    this.#timelineWindow.hide();
+    for (const window of this.#timelineChildWindows) {
       window.hide();
     }
-    this.#isVisible = false;
+    this.#timelineIsVisible = false;
   }
 
-  private showWindow(): void {
-    if (!this.#browserWindow.isVisible()) {
-      this.#browserWindow.show();
-      for (const window of this.#childWindows) {
+  private hideToolbarWindow(): void {
+    if (!this.#toolbarIsVisible) {
+      return;
+    }
+
+    this.#toolbarWindow.hide();
+    for (const window of this.#toolbarChildWindows) {
+      window.hide();
+    }
+    this.#toolbarIsVisible = false;
+  }
+
+  private showTimelineWindow(): void {
+    if (!this.#timelineWindow.isVisible()) {
+      this.#timelineWindow.show();
+      for (const window of this.#timelineChildWindows) {
         window.show();
       }
     }
-    this.toggleOnTop(true);
-    this.#isVisible = true;
+    this.toggleTimelineOnTop(true);
+    this.#timelineIsVisible = true;
   }
 
-  private toggleOnTop(onTop: boolean) {
-    this.#browserWindow.setAlwaysOnTop(onTop);
-    for (const window of this.#childWindows) {
+  private showToolbarWindow(): void {
+    if (!this.#toolbarWindow.isVisible()) {
+      this.#toolbarWindow.show();
+      for (const window of this.#toolbarChildWindows) {
+        window.show();
+      }
+    }
+    this.toggleToolbarOnTop(true);
+    this.#toolbarIsVisible = true;
+  }
+
+  private toggleTimelineOnTop(onTop: boolean) {
+    this.#timelineWindow.setAlwaysOnTop(onTop);
+    for (const window of this.#timelineChildWindows) {
+      window.setAlwaysOnTop(onTop);
+    }
+  }
+
+  private toggleToolbarOnTop(onTop: boolean) {
+    if (this.#toolbarWindow.isAlwaysOnTop() !== onTop) {
+      this.#toolbarWindow.setAlwaysOnTop(onTop, 'floating');
+    }
+
+    if (this.#toolbarWindow.isAlwaysOnTop()) {
+      clearTimeout(this.#resetToolbarAlwaysTopTimeout);
+      this.#resetToolbarAlwaysTopTimeout = setTimeout(() => this.#toolbarWindow.setAlwaysOnTop(false), 50);
+    }
+    for (const window of this.#toolbarChildWindows) {
       window.setAlwaysOnTop(onTop);
     }
   }
@@ -113,7 +156,10 @@ export class ChromeAlive extends EventEmitter {
   private async appReady(): Promise<void> {
     try {
       await this.#api.connect();
-      await this.createWindow();
+      await Promise.all([
+        this.createTimelineWindow(),
+        this.createToolbarWindow(),
+      ]);
       this.listenForMouseDown();
       ShutdownHandler.register(() => this.appExit());
 
@@ -150,11 +196,11 @@ export class ChromeAlive extends EventEmitter {
     this.#nsEventMonitor = monitor;
   }
 
-  private async createWindow(): Promise<void> {
+  private async createTimelineWindow(): Promise<void> {
     const mainScreen = screen.getPrimaryDisplay();
     const workarea = mainScreen.workArea;
 
-    this.#browserWindow = new BrowserWindow({
+    this.#timelineWindow = new BrowserWindow({
       show: false,
       frame: false,
       roundedCorners: false,
@@ -177,7 +223,7 @@ export class ChromeAlive extends EventEmitter {
     });
 
     // for output window
-    this.#browserWindow.webContents.setWindowOpenHandler(details => {
+    this.#timelineWindow.webContents.setWindowOpenHandler(details => {
       const isPopup = details.url.includes('popup');
       return {
         action: 'allow',
@@ -197,8 +243,8 @@ export class ChromeAlive extends EventEmitter {
       };
     });
 
-    this.#browserWindow.webContents.on('did-create-window', childWindow => {
-      this.#childWindows.add(childWindow);
+    this.#timelineWindow.webContents.on('did-create-window', childWindow => {
+      this.#timelineChildWindows.add(childWindow);
       let hasHandled = false;
       childWindow.on('close', async e => {
         if (!hasHandled) {
@@ -210,19 +256,19 @@ export class ChromeAlive extends EventEmitter {
           childWindow.close();
           return;
         }
-        this.#childWindows.delete(childWindow);
+        this.#timelineChildWindows.delete(childWindow);
       });
     });
 
-    this.#browserWindow.on('close', () => app.exit());
-    this.#browserWindow.webContents.on('ipc-message', (e, message, ...args) => {
+    this.#timelineWindow.on('close', () => app.exit());
+    this.#timelineWindow.webContents.on('ipc-message', (e, message, ...args) => {
       if (message === 'mousemove') {
-        if (this.#isVisible) {
-          this.#browserWindow.setAlwaysOnTop(true);
+        if (this.#timelineIsVisible) {
+          this.#timelineWindow.setAlwaysOnTop(true);
         }
       }
       if (message === 'resize-height') {
-        this.#browserWindow.setBounds({
+        this.#timelineWindow.setBounds({
           height: args[0],
         });
       }
@@ -233,9 +279,9 @@ export class ChromeAlive extends EventEmitter {
     });
 
     const port = (await this.#vueAddress).port;
-    await this.#browserWindow.loadURL(`http://localhost:${port}/app.html`);
+    await this.#timelineWindow.loadURL(`http://localhost:${port}/app.html`);
 
-    await this.#browserWindow.webContents.executeJavaScript(
+    await this.#timelineWindow.webContents.executeJavaScript(
       `(() => {
     const coreServerAddress = '${this.coreServerAddress ?? ''}';
     if (coreServerAddress) {
@@ -249,14 +295,102 @@ export class ChromeAlive extends EventEmitter {
     await this.#api.send('App.ready', { workarea: workareaBounds });
   }
 
-  private moveWindow(move: IAppMoveEvent): void {
-    const bounds = this.#browserWindow.getBounds();
+  private async createToolbarWindow(): Promise<void> {
+    this.#toolbarWindow = new BrowserWindow({
+      show: false,
+      frame: false,
+      roundedCorners: false,
+      movable: false,
+      closable: true,
+      transparent: true,
+      acceptFirstMouse: true,
+      hasShadow: false,
+      skipTaskbar: true,
+      autoHideMenuBar: true,
+      width: 165,
+      height: 290,
+      y: 200,
+      x: 0,
+      webPreferences: {
+        preload: `${__dirname}/PagePreload.js`,
+        nativeWindowOpen: true,
+        enableRemoteModule: true,
+      },
+    });
+
+    // for output window
+    this.#toolbarWindow.webContents.setWindowOpenHandler(details => {
+      const isPopup = details.url.includes('popup');
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          frame: !isPopup,
+          roundedCorners: true,
+          movable: !isPopup,
+          transparent: isPopup,
+          titleBarStyle: 'default',
+          alwaysOnTop: true,
+          hasShadow: true,
+          useContentSize: true,
+          webPreferences: {
+            preload: `${__dirname}/PagePreload.js`,
+          },
+        },
+      };
+    });
+
+    this.#toolbarWindow.webContents.on('did-create-window', childWindow => {
+      this.#toolbarChildWindows.add(childWindow);
+      let hasHandled = false;
+      childWindow.on('close', async e => {
+        if (!hasHandled) {
+          hasHandled = true;
+          e.preventDefault();
+          await childWindow.webContents.executeJavaScript(
+            'window.dispatchEvent(new CustomEvent("manual-close"))',
+          );
+          childWindow.close();
+          return;
+        }
+        this.#toolbarChildWindows.delete(childWindow);
+      });
+    });
+
+    this.#toolbarWindow.on('close', () => app.exit());
+    this.#toolbarWindow.webContents.on('ipc-message', (e, message, ...args) => {
+      if (message === 'mousemove') {
+        if (this.#toolbarIsVisible) {
+          this.#toolbarWindow.show();
+        }
+      }
+      if (message === 'chromealive:event') {
+        const [eventType, data] = args;
+        this.onChromeAliveEvent(eventType, data);
+      }
+    });
+
+    const port = (await this.#vueAddress).port;
+    await this.#toolbarWindow.loadURL(`http://localhost:${port}/toolbar.html`);
+
+    await this.#toolbarWindow.webContents.executeJavaScript(
+      `(() => {
+    const coreServerAddress = '${this.coreServerAddress ?? ''}';
+    if (coreServerAddress) {
+      window.heroServerUrl = coreServerAddress;
+      if ('setHeroServerUrl' in window) window.setHeroServerUrl(coreServerAddress);
+    }
+})()`,
+    );
+  }
+
+  private moveTimelineWindow(move: IAppMoveEvent): void {
+    const bounds = this.#timelineWindow.getBounds();
     if (bounds.x !== move.bounds.x || bounds.y !== move.bounds.y) {
-      this.#browserWindow.setPosition(move.bounds.x, move.bounds.y);
+      this.#timelineWindow.setPosition(move.bounds.x, move.bounds.y);
     }
     if (bounds.width !== move.bounds.width) {
       bounds.width = move.bounds.width
-      this.#browserWindow.setBounds(bounds)
+      this.#timelineWindow.setBounds(bounds)
     }
   }
 
@@ -264,10 +398,29 @@ export class ChromeAlive extends EventEmitter {
     eventType: T,
     data: IChromeAliveEvents[T],
   ): void {
-    if (eventType === 'App.hide') this.hideWindow();
-    if (eventType === 'App.show' && !this.#isVisible) this.showWindow();
-    if (eventType === 'App.onTop') this.toggleOnTop(data as boolean);
-    if (eventType === 'App.quit') this.appExit();
-    if (eventType === 'App.move') this.moveWindow(data as IAppMoveEvent);
+    if (eventType === 'App.startedDraggingChrome') {
+      this.hideTimelineWindow();
+      this.toggleToolbarOnTop(true);
+    }
+    if (eventType === 'App.stoppedDraggingChrome') {
+      this.showTimelineWindow();
+      this.toggleToolbarOnTop(true);
+    }
+    if (eventType === 'App.show' && !this.#timelineIsVisible) {
+      this.showTimelineWindow();
+    }
+    if (eventType === 'App.show') {
+      this.showToolbarWindow();
+    }
+    if (eventType === 'App.hide') {
+      this.hideTimelineWindow();
+      this.hideToolbarWindow();
+    }
+    if (eventType === 'App.onTop') {
+      this.toggleTimelineOnTop(data as boolean);
+      this.toggleToolbarOnTop(data as boolean);
+    }
+    if (eventType === 'App.quit') app.exit();
+    if (eventType === 'App.move') this.moveTimelineWindow(data as IAppMoveEvent);
   }
 }

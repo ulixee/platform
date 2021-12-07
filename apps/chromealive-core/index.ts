@@ -184,7 +184,7 @@ export default class ChromeAliveCore {
           ...sessionObserver.getScriptDetails(),
         });
       } else {
-        AliveBarPositioner.showApp(false);
+        AliveBarPositioner.hideApp();
         this.sendAppEvent('Session.active', null);
       }
 
@@ -221,7 +221,11 @@ export default class ChromeAliveCore {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     await sessionObserver?.didFocusOnPage(pageId, isPageVisible);
 
-    AliveBarPositioner.showApp(!!this.activeHeroSessionId, status.focused);
+    if (this.activeHeroSessionId) {
+      AliveBarPositioner.showApp(status.focused);
+    } else {
+      AliveBarPositioner.hideApp();
+    }
   }
 
   private static async launchApp(hideOnLaunch = false): Promise<void> {
@@ -261,7 +265,7 @@ export default class ChromeAliveCore {
   }
 
   private static hideApp(): void {
-    AliveBarPositioner.showApp(false)
+    AliveBarPositioner.hideApp()
   }
 
   private static closeApp(): void {

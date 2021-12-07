@@ -12,6 +12,9 @@
     "@babel/core": "^7.0.0",
     "@babel/runtime-corejs3": "^7.13.10",
     "@webcomponents/custom-elements": "^1.5.0",
+    "@headlessui/vue": "^1.4.1",
+    "@heroicons/vue": "^1.0.4",
+    "@tailwindcss/forms": "^0.3.3",
     "core-js": "^3.6.5",
     "vue": "^3.0.0",
     "vue-json-pretty": "^1.7.1",
@@ -20,10 +23,12 @@
     "@ulixee/commons": "1.5.8"
   },
   "devDependencies": {
+    "@tailwindcss/postcss7-compat": "^2.2.7",
     "@vue/cli-plugin-babel": "~4.5.0",
     "@vue/cli-plugin-typescript": "~4.5.0",
     "@vue/cli-service": "~4.5.0",
     "@vue/compiler-sfc": "^3.0.0",
+    "autoprefixer": "^9",
     "babel-loader": "^8.2.2",
     "copy-webpack-plugin": "^9.0.1",
     "glob": "^7.1.6",
@@ -37,8 +42,10 @@
     "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-vue": "^7.0.0",
     "node-sass": "^6.0.1",
+    "postcss": "^7",
     "prettier": "^2.2.1",
-    "sass-loader": "^10.2.0"
+    "sass-loader": "^10.2.0",
+    "tailwindcss": "npm:@tailwindcss/postcss7-compat"
   },
   "nohoist": [
     "**/@typescript-eslint",
