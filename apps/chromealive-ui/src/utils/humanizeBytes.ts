@@ -1,5 +1,5 @@
 export default function humanizeBytes(bytes: number): string {
-  if (!bytes) return '0 kb';
+  if (!bytes) return '0kb';
 
   if (bytes < 512) {
     return `${bytes} bytes`;
@@ -9,7 +9,7 @@ export default function humanizeBytes(bytes: number): string {
 
   if (kb > 1024) {
     const mb = kb / 1024;
-    return `${Math.round(mb * 10) / 10} mb`;
+    return `${Math.round(mb * 10) / 10}mb`;
   }
-  return `${Math.round(kb * 10) / 10} kb`;
+  return `${Math.round(kb * 10) / 10}kb`;
 }

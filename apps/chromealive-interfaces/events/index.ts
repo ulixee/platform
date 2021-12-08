@@ -4,12 +4,11 @@ import IPageStateUpdateEvent from './IPageStateUpdatedEvent';
 import IAppMoveEvent from './IAppMoveEvent';
 
 export default interface IChromeAliveEvents {
-  'App.show': null;
+  'App.show': { onTop: boolean };
   'App.hide': null;
   'App.startedDraggingChrome': null;
   'App.stoppedDraggingChrome': null;
   'App.quit': null;
-  'App.onTop': boolean;
   'App.move': IAppMoveEvent;
   'App.mode': 'live' | 'pagestate-generator';
   'Session.loading': void;

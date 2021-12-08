@@ -90,10 +90,6 @@ export default class ChromeAliveCore {
     return page;
   }
 
-  public static toggleAppTop(isFocused: boolean): void {
-    this.sendAppEvent('App.onTop', isFocused);
-  }
-
   public static sendAppEvent<T extends keyof IChromeAliveEvents>(
     eventType: T,
     data: IChromeAliveEvents[T] = null,
@@ -138,7 +134,7 @@ export default class ChromeAliveCore {
     sessionObserver.on('hero:updated', this.sendActiveSession.bind(this, heroSession.id));
     sessionObserver.on('databox:updated', this.sendDataboxUpdatedEvent.bind(this, heroSession.id));
     sessionObserver.pageStateManager.on('updated', x => this.sendAppEvent('PageState.updated', x));
-    sessionObserver.on('closed', this.onHeroSessionClosed.bind(this, heroSession.id));
+    sessionObserver.on('closed', this.onSessionObserverClosed.bind(this, sessionObserver));
 
     this.sendActiveSession(heroSession.id);
 
@@ -149,7 +145,10 @@ export default class ChromeAliveCore {
       this.restartingHeroSessionId = null;
       this.sendAppEvent('Session.loading');
       AliveBarPositioner.showHeroSessionOnBounds(heroSession.id);
-      sessionObserver.once('hero:updated', () => this.sendAppEvent('Session.loaded'));
+      sessionObserver.once('hero:updated', () => {
+        this.sendAppEvent('Session.loaded');
+        AliveBarPositioner.showApp();
+      });
       this.activeHeroSessionId = heroSession.id;
     }
   }
@@ -164,11 +163,9 @@ export default class ChromeAliveCore {
     }
   }
 
-  private static onHeroSessionClosed(heroSessionId: string) {
-    const sessionObserver = this.sessionObserversById.get(heroSessionId);
-    if (!sessionObserver) return;
+  private static onSessionObserverClosed(sessionObserver: SessionObserver) {
+    const heroSessionId = sessionObserver.heroSession.id;
     this.sessionObserversById.delete(heroSessionId);
-    sessionObserver.close();
     if (this.activeHeroSessionId === heroSessionId) {
       this.activeHeroSessionId = null;
       if (this.restartingHeroSessionId === heroSessionId) {
@@ -176,7 +173,7 @@ export default class ChromeAliveCore {
           heroSessionId: null,
           pageStates: [],
           pageStateIdNeedsResolution: null,
-          timeline: { urls: [], screenshots: [], paintEvents: [], storageEvents:[] },
+          timeline: { urls: [], screenshots: [], paintEvents: [], storageEvents: [] },
           run: 0,
           hasWarning: false,
           playbackState: 'live',
@@ -217,7 +214,6 @@ export default class ChromeAliveCore {
     const isPageVisible = status.active;
     log.info('Changing active session', { isPageVisible, sessionId: heroSessionId, pageId });
 
-    this.activeHeroSessionId = heroSessionId;
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     await sessionObserver?.didFocusOnPage(pageId, isPageVisible);
 
@@ -265,7 +261,7 @@ export default class ChromeAliveCore {
   }
 
   private static hideApp(): void {
-    AliveBarPositioner.hideApp()
+    AliveBarPositioner.hideApp();
   }
 
   private static closeApp(): void {

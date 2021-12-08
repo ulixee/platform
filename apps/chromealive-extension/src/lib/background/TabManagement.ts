@@ -45,6 +45,9 @@ export async function groupTabs(payload: {
     logDebug(`Updated group props=${JSON.stringify({ title, color, collapsed })}`);
 
     return { groupId };
+  } catch (err) {
+    console.error('ERROR updating tab group', err);
+    setTimeout(() => groupTabs(payload), 100);
   } finally {
     setTimeout(() => (creatingTabGroup = false), 200);
   }

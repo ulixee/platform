@@ -11,6 +11,7 @@ export default interface IPageStateUpdatedEvent {
   }[];
   unresolvedHeroSessionIds: string[];
   focusedHeroSessionId?: string;
+  liveHeroSessionId: string;
   heroSessions: {
     id: string;
     assertionCounts: IAssertionCounts;
@@ -18,5 +19,6 @@ export default interface IPageStateUpdatedEvent {
     loadingRange?: [start: number, end: number];
     timelineOffsetPercents?: [start: number, end: number];
     timeline: ITimelineMetadata;
+    isLive: boolean;
   }[];
 }

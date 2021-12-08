@@ -1,5 +1,5 @@
 <template>
-  <div id="timeline-hover" :style="{ left: left() + 'px', ...cssVars }" ref="containerElement">
+  <div class="timeline-hover" :style="{ left: left() + 'px', ...cssVars }" ref="containerElement">
     <img :src="ICON_CARET" class="caret" />
     <div class="url">{{ hoverEvent.url || '...' }}</div>
     <div class="changes">
@@ -81,7 +81,7 @@ export default defineComponent({
 <style lang="scss">
 @import '../assets/style/resets';
 
-#timeline-hover {
+.timeline-hover {
   pointer-events: none;
   display: none;
   flex: auto;

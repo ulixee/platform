@@ -62,7 +62,6 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.heroSession.on('kept-alive', this.onHeroSessionKeptAlive);
     this.heroSession.on('resumed', this.onHeroSessionResumed);
     this.heroSession.on('closing', this.close);
-    this.heroSession.once('closed', () => this.emit('closed'));
 
     this.timelineBuilder = new TimelineBuilder({ liveSession: heroSession });
 
@@ -154,6 +153,8 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.timelineRecorder.stop();
     this.timetravelPlayer?.close();
     this.pageStateManager.close(true).catch(console.error);
+    this.pageStateManager.removeAllListeners('updated');
+    this.emit('closed');
   }
 
   public getScriptDetails(): Pick<
@@ -285,7 +286,7 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   private async onTimetravelClosed(): Promise<void> {
     this.playbackState = 'paused';
-    this.tabGroupModule.off('tab-group-opened', this.closeTimetravel);
+    this.tabGroupModule?.off('tab-group-opened', this.closeTimetravel);
     this.timetravelPlayer.off('timetravel-to-end', this.closeTimetravel);
     await this.updateTabGroup(false).catch(console.error);
     this.emit('hero:updated');

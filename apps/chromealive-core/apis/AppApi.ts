@@ -1,7 +1,6 @@
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/IBounds';
 import { IAppApiStatics } from '@ulixee/apps-chromealive-interfaces/apis/IAppApi';
 import AliveBarPositioner from '../lib/AliveBarPositioner';
-import ChromeAliveCore from '../index';
 
 @IAppApiStatics
 export default class AppApi {
@@ -14,6 +13,6 @@ export default class AppApi {
   }
 
   static focus(): void {
-    ChromeAliveCore.toggleAppTop(true);
+    AliveBarPositioner.showApp(true);
   }
 }

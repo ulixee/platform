@@ -2,20 +2,14 @@
   <div id="bar-menu" :style="{ display: show ? 'block' : 'none' }">
     <div class="wrapper">
       <ul class="menu-items">
-        <li class="databox-toggle" @click.prevent="toggleDatabox(true)">
-          {{ databoxWindow !== null ? 'Hide' : 'Show' }} Databox Panel
-        </li>
         <li class="rerun-script" @click.prevent="restartScript()">Rerun script from beginning</li>
         <li class="quit-script" @click.prevent="quitScript()">Shutdown Chrome + Script</li>
-        <li class="divider"></li>
-        <li class="about" @click.prevent="showAbout()">About ChromeAlive!</li>
       </ul>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import * as Vue from 'vue';
 import { defineComponent, PropType } from 'vue';
 import Client from '@/api/Client';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
@@ -32,29 +26,6 @@ export default defineComponent({
       type: Object as PropType<IHeroSessionActiveEvent>,
     },
   },
-  setup() {
-    return {
-      databoxWindow: Vue.ref<Window>(null),
-      hasLaunchedDatabox: false,
-    };
-  },
-  watch: {
-    'session.heroSessionId'(newSessionId: string) {
-      if (!newSessionId) {
-        this.closeDataboxWindow();
-        return;
-      }
-
-      const wasDataboxClosed = localStorage.getItem('databox.wasClosed') === 'true';
-      if (wasDataboxClosed) return;
-      this.openDataboxWindow();
-    },
-    'session.pageStateIdNeedsResolution'(value: string) {
-      if (value) {
-        this.closeDataboxWindow();
-      }
-    },
-  },
   emits: ['navigated'],
   methods: {
     quitScript() {
@@ -63,68 +34,12 @@ export default defineComponent({
       });
     },
 
-    showAbout(): void {
-      this.$emit('navigated');
-      console.log(
-        'ChromeAlive! is your live interface for controlling Ulixee Databoxes using the Hero web scraper',
-      );
-    },
-
     restartScript() {
       Client.send('Session.resume', {
         heroSessionId: this.session.heroSessionId,
         startLocation: 'sessionStart',
       });
     },
-
-    closeDataboxWindow(isManual = false) {
-      if (this.databoxWindow) {
-        this.$emit('navigated');
-        if (isManual) localStorage.setItem('databox.wasClosed', `true`);
-        this.databoxWindow.close();
-        this.databoxWindow = null;
-      }
-    },
-
-    openDataboxWindow() {
-      if (this.databoxWindow) return;
-
-      this.$emit('navigated');
-      this.hasLaunchedDatabox = true;
-
-      const { bottom, right } = this.toolbarRect();
-      const [width, height] = (localStorage.getItem('databox.lastSize') ?? '300,400')
-        .split(',')
-        .map(Number);
-      const features = `top=${bottom + 100},left=${
-        right - width - 40
-      },width=${width},height=${height}`;
-      this.databoxWindow = window.open('/databox.html', 'DataboxPanel', features);
-      localStorage.setItem('databox.wasClosed', 'false');
-
-      this.databoxWindow.addEventListener('resize', ev => {
-        const width = this.databoxWindow.innerWidth;
-        const height = this.databoxWindow.innerHeight;
-        localStorage.setItem('databox.lastSize', [width, height].join(','));
-      });
-      this.databoxWindow.addEventListener('close', () => {
-        this.databoxWindow = null;
-      });
-      this.databoxWindow.addEventListener('manual-close', () => {
-        this.databoxWindow = null;
-      });
-    },
-
-    toggleDatabox(isManual = false) {
-      if (this.databoxWindow) {
-        this.closeDataboxWindow(isManual);
-      } else {
-        this.openDataboxWindow();
-      }
-    },
-  },
-  beforeUnmount() {
-    this.closeDataboxWindow();
   },
 });
 </script>

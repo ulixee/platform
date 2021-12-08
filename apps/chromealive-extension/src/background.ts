@@ -16,14 +16,14 @@ onMessagePayload((payload, sendResponseFn) => {
     fn(payload)
       .catch(error => {
         if (sendResponseFn) sendResponseFn(error);
-        logDebug('chrome.runtime.onMessage:ERROR', { payload, error });
+        console.error('chrome.runtime.onMessage:ERROR', { payload, error });
       })
       .then(result => {
         if (sendResponseFn) sendResponseFn(result);
         logDebug('chrome.runtime.onMessage:Result', { payload, result });
         return null;
       })
-      .catch(() => null);
+      .catch(error => console.error('chrome.runtime.onMessageResponse:ERROR', { payload, error }));
     return true;
   }
   console.log('UNHANDLED MESSAGE: ', payload);

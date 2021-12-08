@@ -100,7 +100,10 @@ export default class PageStateManager extends TypedEventEmitter<{
     const id = this.activePageStateId;
 
     const { needsCodeChange, generator } = this.pageStateById.get(id);
-    const code = await PageStateCodeBlock.generateCodeBlock(generator, this.sessionObserver.scriptInstanceMeta);
+    const code = await PageStateCodeBlock.generateCodeBlock(
+      generator,
+      this.sessionObserver.scriptInstanceMeta,
+    );
     return { needsCodeChange, code };
   }
 
@@ -120,21 +123,6 @@ export default class PageStateManager extends TypedEventEmitter<{
       this.tabGroupId = null;
       await this.sessionObserver.updateTabGroup(false);
     }
-  }
-
-  public clear(): void {
-    for (const details of this.pageStateById.values()) {
-      for (const sessionTimeline of details.heroSessionTimelinesById.values()) {
-        sessionTimeline.close();
-      }
-    }
-    this.pageStateById.clear();
-    this.openHeroSessionsById.clear();
-    for (const [sessionId, timeline] of this.timelineRecordersBySessionId) {
-      if (sessionId === this.sessionObserver.heroSession?.id) continue;
-      timeline.stop();
-    }
-    this.timelineRecordersBySessionId.clear();
   }
 
   public addMultiverse(): void {
@@ -180,8 +168,10 @@ export default class PageStateManager extends TypedEventEmitter<{
     this.emit('enter', { pageStateId: id });
     this.activePageStateId = id;
 
-    const sessionIdToOpen = this.getUnresolvedHeroSessionIds()[0] ?? this.sessionObserver.heroSession.id;
+    const sessionIdToOpen =
+      this.getUnresolvedHeroSessionIds()[0] ?? this.sessionObserver.heroSession.id;
     await this.openTimetravel(sessionIdToOpen);
+    this.updateState();
 
     this.sessionObserver
       .groupTabs('', 'grey', true)
@@ -193,8 +183,6 @@ export default class PageStateManager extends TypedEventEmitter<{
       .catch(console.error);
 
     await this.closeDevtoolsPanel(sessionIdToOpen);
-
-    this.publish();
   }
 
   public async focusSessionLoadingTimeBoundary(isStartTime: boolean): Promise<void> {
@@ -246,6 +234,7 @@ export default class PageStateManager extends TypedEventEmitter<{
     this.generator.statesByName.delete(oldValue);
     this.didMakeStateChanges(this.activePageStateId, name);
     this.didMakeStateChanges(this.activePageStateId, oldValue);
+    this.updateState();
   }
 
   public removeState(name: string): void {
@@ -277,7 +266,10 @@ export default class PageStateManager extends TypedEventEmitter<{
     // can't open yet
     if (!this.generator.sessionsById.has(heroSessionId)) return;
 
-    if (this.timetravelPlayer) await this.closeTimetravel();
+    const prevTimetravel = this.timetravelPlayer;
+    if (prevTimetravel) {
+      prevTimetravel.off('all-tabs-closed', this.onTimetravelTabsClosed);
+    }
 
     this.activeTimelineHeroSessionId = heroSessionId;
     this.isHeroSessionFocused = true;
@@ -289,7 +281,7 @@ export default class PageStateManager extends TypedEventEmitter<{
     );
     this.activeSessionTimeline.refreshMetadata();
 
-    await this.gotoActiveSessionEnd();
+    await Promise.all([this.gotoActiveSessionEnd(), prevTimetravel?.close()]);
     this.timetravelPlayer.once('all-tabs-closed', this.onTimetravelTabsClosed);
   }
 
@@ -310,6 +302,7 @@ export default class PageStateManager extends TypedEventEmitter<{
   private async timetravelTo(timestamp: number): Promise<void> {
     const offset = this.activeSessionTimeline.getTimelineOffset(timestamp);
     await this.timetravelPlayer.goto(offset, this.activeSessionTimeline.lastMetadata);
+    this.publish();
   }
 
   private async gotoActiveSessionEnd(): Promise<void> {
@@ -319,6 +312,7 @@ export default class PageStateManager extends TypedEventEmitter<{
 
   private async onTimetravelTabsClosed(): Promise<void> {
     await this.closeTimetravel();
+    this.publish();
     // TODO: show a blank explainer page
   }
 
@@ -406,6 +400,8 @@ export default class PageStateManager extends TypedEventEmitter<{
     const generator = this.pageStateById.get(pageStateId)?.generator;
     if (!generator) return;
 
+    generator.sessionsById.get(tab.sessionId).needsProcessing = true;
+
     if (event.state) {
       generator.addState(event.state, tab.sessionId);
     } else {
@@ -459,8 +455,7 @@ export default class PageStateManager extends TypedEventEmitter<{
 
   private recordPageState(heroSessionId: string, listener: PageStateListener): void {
     const pageStateId = listener.id;
-    const generator = new PageStateGenerator(pageStateId);
-    generator.createBrowserContext(heroSessionId);
+    const generator = new PageStateGenerator(pageStateId, heroSessionId);
 
     this.pageStateById.set(pageStateId, {
       startingStates: [...listener.states],
@@ -527,8 +522,8 @@ export default class PageStateManager extends TypedEventEmitter<{
   }
 
   private async closeDevtoolsPanel(sessionId: string) {
-    // close
-    await DevtoolsPanelModule.bySessionId
+    await this.timetravelPlayer.activeTab.mirrorPage.isReady;
+    DevtoolsPanelModule.bySessionId
       .get(sessionId)
       .closeDevtoolsPanelForPage(this.timetravelPlayer.activeTab.mirrorPage.page)
       .catch(console.error);
@@ -547,12 +542,28 @@ export default class PageStateManager extends TypedEventEmitter<{
     return [...unassignedSessionIds];
   }
 
+  private clear(): void {
+    for (const details of this.pageStateById.values()) {
+      for (const sessionTimeline of details.heroSessionTimelinesById.values()) {
+        sessionTimeline.close();
+      }
+    }
+    this.pageStateById.clear();
+    this.openHeroSessionsById.clear();
+    for (const [sessionId, timeline] of this.timelineRecordersBySessionId) {
+      if (sessionId === this.sessionObserver.heroSession?.id) continue;
+      timeline.stop();
+    }
+    this.timelineRecordersBySessionId.clear();
+  }
+
   private toEvent(): IPageStateUpdateEvent {
     if (!this.activePageStateId || !this.pageStateById.has(this.activePageStateId)) return null;
     const { needsCodeChange } = this.pageStateById.get(this.activePageStateId);
 
     const result: IPageStateUpdateEvent = {
       id: this.activePageStateId,
+      liveHeroSessionId: this.sessionObserver.heroSession?.id,
       needsCodeChange,
       focusedHeroSessionId: this.isHeroSessionFocused ? this.activeTimelineHeroSessionId : null,
       states: [],
@@ -588,6 +599,7 @@ export default class PageStateManager extends TypedEventEmitter<{
         timelineOffsetPercents,
         assertionCounts,
         timeline: data,
+        isLive: this.isSessionLive(sessionTimeline.heroSession),
       });
     }
 
@@ -617,6 +629,7 @@ export default class PageStateManager extends TypedEventEmitter<{
           timelineOffsetPercents: [0, 100],
           assertionCounts: { total: 0 },
           timeline: data,
+          isLive: this.isSessionLive(heroSession),
         });
       }
     }
@@ -629,9 +642,16 @@ export default class PageStateManager extends TypedEventEmitter<{
         timelineOffsetPercents: [0, 100],
         assertionCounts: { total: 0 },
         timeline: { urls: [], paintEvents: [], screenshots: [], storageEvents: [] },
+        isLive: true,
       });
     }
     return result;
+  }
+
+  private isSessionLive(heroSession: HeroSession): boolean {
+    if (this.sessionObserver.heroSession === heroSession)
+      return this.sessionObserver.playbackState === 'live';
+    return heroSession.isClosing === false;
   }
 
   private didMakeStateChanges(pageStateId: string, state: string): void {
