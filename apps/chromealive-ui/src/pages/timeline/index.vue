@@ -13,29 +13,29 @@
       @open-generator="openGenerator"
     ></Live>
 
-    <PageStateGenerator
+    <FocusedTimeline
       v-else
       ref="generatorView"
       :page-state-id="pageStateId"
       @exit="exitGenerator()"
-    ></PageStateGenerator>
+    ></FocusedTimeline>
   </div>
 </template>
 
 <script lang="ts">
 import * as Vue from 'vue';
 import Client from '@/api/Client';
-import Live from '@/pages/app/views/Live.vue';
-import PageStateGenerator from '@/pages/app/views/PageStateGenerator.vue';
+import Live from '@/pages/timeline/views/Live.vue';
+import FocusedTimeline from '@/pages/timeline/views/FocusedTimeline.vue';
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/IBounds';
 
 export default Vue.defineComponent({
   name: 'App',
-  components: { Live, PageStateGenerator },
+  components: { Live, FocusedTimeline },
   setup() {
     let lastToolbarBounds: IBounds;
     let liveView = Vue.ref<typeof Live>();
-    let generatorView = Vue.ref<typeof PageStateGenerator>();
+    let generatorView = Vue.ref<typeof FocusedTimeline>();
 
     return {
       lastToolbarBounds,

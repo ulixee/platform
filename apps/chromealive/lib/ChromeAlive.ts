@@ -259,7 +259,7 @@ export class ChromeAlive extends EventEmitter {
     });
 
     const port = (await this.#vueAddress).port;
-    await this.#timelineWindow.loadURL(`http://localhost:${port}/app.html`);
+    await this.#timelineWindow.loadURL(`http://localhost:${port}/timeline.html`);
 
     await this.injectCoreServer(this.#timelineWindow);
 
