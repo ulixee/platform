@@ -7,7 +7,10 @@ import {
   IResponseCode,
   IRestOfMessageObject,
   ResponseCode,
-  ___sendToCore, createResponseId, isResponseMessage, messageExpectsResponse,
+  ___sendToCore,
+  createResponseId,
+  isResponseMessage,
+  messageExpectsResponse,
 } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
 import logDebug from '../logDebug';
 
@@ -16,12 +19,12 @@ type IResponseFn = (response: any) => void;
 const currentMessengerLocation = MessageLocation.ContentScript;
 
 export function sendToBackgroundScript(payload: any, responseCallbackFn?: IResponseFn) {
-  const message: IMessageObject  = {
+  const message: IMessageObject = {
     destLocation: MessageLocation.BackgroundScript,
     origLocation: currentMessengerLocation,
     payload,
     ...convertResponseFnToCodeAndId(responseCallbackFn),
-  }
+  };
   routeInternally(message);
 }
 
@@ -29,12 +32,12 @@ export function sendToBackgroundScript(payload: any, responseCallbackFn?: IRespo
 window.sendToBackgroundScript = sendToBackgroundScript;
 
 export function sendToDevtoolsScript(payload: any, responseCallbackFn?: IResponseFn) {
-  const message: IMessageObject  = {
+  const message: IMessageObject = {
     destLocation: MessageLocation.DevtoolsScript,
     origLocation: currentMessengerLocation,
     payload,
     ...convertResponseFnToCodeAndId(responseCallbackFn),
-  }
+  };
   routeInternally(message);
 }
 
@@ -42,22 +45,22 @@ export function sendToDevtoolsScript(payload: any, responseCallbackFn?: IRespons
 window.sendToDevtoolsScript = sendToDevtoolsScript;
 
 export function sendToDevtoolsPrivate(payload: any, responseCallbackFn?: IResponseFn) {
-  const message: IMessageObject  = {
+  const message: IMessageObject = {
     destLocation: MessageLocation.DevtoolsPrivate,
     origLocation: currentMessengerLocation,
     payload,
     ...convertResponseFnToCodeAndId(responseCallbackFn),
-  }
+  };
   routeInternally(message);
 }
 
 export function sendToCore(payload: any, responseCallbackFn?: IResponseFn) {
-  const message: IMessageObject  = {
+  const message: IMessageObject = {
     destLocation: MessageLocation.Core,
     origLocation: currentMessengerLocation,
     payload,
     ...convertResponseFnToCodeAndId(responseCallbackFn),
-  }
+  };
   routeInternally(message);
 }
 
@@ -85,23 +88,28 @@ function connect() {
 
 function handleConnectFromBackgroundScript(port: chrome.runtime.Port) {
   logDebug(`OnConnect from BackgroundScript`, port);
-  activePort = port;
-  activePort.onDisconnect.addListener(() => {
-    activePort.onMessage.removeListener(handleIncomingMessageFromBackgroundScript);
-    activePort = null;
-    setTimeout(connect, 1e3);
-  });
-  activePort.onMessage.addListener(handleIncomingMessageFromBackgroundScript);
+  registerActivePort(port);
 }
 
 function handleConnectedToBackgroundScript(port: chrome.runtime.Port) {
   logDebug(`OnConnect to BackgroundScript`, port);
+  registerActivePort(port);
+}
+
+function onPortDisconnect(): void {
+  activePort.onMessage.removeListener(handleIncomingMessageFromBackgroundScript);
+  activePort = null;
+  setTimeout(connect, 1e3);
+}
+
+function registerActivePort(port: chrome.runtime.Port): void {
+  if (activePort !== port) {
+    try {
+      activePort.disconnect();
+    } catch (err) {}
+  }
   activePort = port;
-  activePort.onDisconnect.addListener(() => {
-    activePort.onMessage.removeListener(handleIncomingMessageFromBackgroundScript);
-    activePort = null;
-    setTimeout(connect, 1e3);
-  });
+  activePort.onDisconnect.addListener(onPortDisconnect);
   activePort.onMessage.addListener(handleIncomingMessageFromBackgroundScript);
 }
 
@@ -151,18 +159,16 @@ window[___receiveFromCore] = (
 
 const pendingByResponseId: {
   [id: string]: {
-    responseFn: IResponseFn,
-    timeoutId: any,
-  }
+    responseFn: IResponseFn;
+    timeoutId: any;
+  };
 } = {};
 
 // HELPERS ///////////////////////////////////////////////////////////////////////////
 
 function handleIncomingLocalMessage(message: IMessageObject) {
   const needsResponse = messageExpectsResponse(message);
-  const responseFn = needsResponse
-    ? response => sendResponseBack(message, response)
-    : undefined;
+  const responseFn = needsResponse ? response => sendResponseBack(message, response) : undefined;
   onMessagePayloadFn(message.payload, responseFn);
 }
 
@@ -192,8 +198,8 @@ function sendResponseBack(message: IMessageObject, responsePayload) {
 // INTERNAL ROUTING ////////////////////////////////////////////////////////////////////////////////
 
 function routeInternally(message: IMessageObject) {
-  // @ts-ignore
-  if ([MessageLocation.BackgroundScript, MessageLocation.DevtoolsScript].includes(message.destLocation)) {
+  const destination = message.destLocation as MessageLocation;
+  if ([MessageLocation.BackgroundScript, MessageLocation.DevtoolsScript].includes(destination)) {
     activePort.postMessage(message);
   } else {
     const packedMessage = packMessage(message);
@@ -209,7 +215,7 @@ function convertResponseFnToCodeAndId(responseFn: IResponseFn) {
       timeoutId: setTimeout(() => {
         throw new Error(`Response for ${responseId} not received within 10s`);
       }, 10e3),
-    }
+    };
     return {
       responseCode: ResponseCode.Y,
       responseId,

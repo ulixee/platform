@@ -76,24 +76,11 @@ chrome.runtime.onConnect.addListener(port => {
   if (!portLocation || !tabId) {
     port.disconnect();
     logDebug('Unknown port connection');
+    return;
   }
-  registerPort(tabId, portLocation as IMessageLocation, port);
 
   try {
-    port.onMessage.addListener((message: IMessageObject) => {
-      if (message.destLocation === currentMessengerLocation) {
-        if (isResponseMessage(message)) {
-          handleIncomingLocalResponse(message);
-        } else {
-          handleIncomingLocalMessage(message);
-        }
-      } else {
-        routeInternally(message).catch(console.error);
-      }
-    });
-    port.onDisconnect.addListener(() => {
-      if (tabId) unregisterPort(tabId, portLocation);
-    });
+    registerPort(tabId, portLocation as IMessageLocation, port);
     if (portLocation === MessageLocation.ContentScript) {
       if (!port.sender.tab) {
         logDebug('MISSING tab: ', port.sender);
@@ -108,10 +95,12 @@ chrome.runtime.onConnect.addListener(port => {
         },
         responseCode: ResponseCode.N,
       };
-      routeInternally(message, { tabId }).catch(error => logDebug(error));
+      routeInternally(message, { tabId }).catch(error =>
+        console.error('Error registering tab identity', error),
+      );
     }
   } catch (e) {
-    logDebug('ERROR: ', e);
+    console.error('ERROR chrome.runtime.onConnect: ', e);
     // nothing to do here
   }
 });
@@ -192,18 +181,45 @@ function routeInternallyToTab(tabId: number, message: IMessageObject, isRetry = 
       unregisterPort(tabId, message.destLocation);
       if (!isRetry) return routeInternallyToTab(tabId, message, true);
     }
-    logDebug('Error connecting to tab', { tabId, e });
+    console.error('Error connecting to tab', { tabId, e });
   }
   return false;
 }
 
+function onMessage(message: IMessageObject) {
+  if (message.destLocation === currentMessengerLocation) {
+    if (isResponseMessage(message)) {
+      handleIncomingLocalResponse(message);
+    } else {
+      handleIncomingLocalMessage(message);
+    }
+  } else {
+    routeInternally(message).catch(console.error);
+  }
+}
+
 function registerPort(tabId: number, portLocation: IMessageLocation, port: chrome.runtime.Port) {
   portsByTabId[tabId] ??= {};
+  const existing = portsByTabId[tabId][portLocation];
+  if (existing && existing !== port) {
+    try {
+      existing.disconnect();
+    } catch (error) {}
+  }
+
   portsByTabId[tabId][portLocation] = port;
+
+  port.onMessage.addListener(onMessage);
+  port.onDisconnect.addListener(function disconnect() {
+    unregisterPort(tabId, portLocation);
+    port.onDisconnect.removeListener(disconnect);
+  });
 }
 
 function unregisterPort(tabId: number, portLocation: IMessageLocation) {
+  const port: chrome.runtime.Port = portsByTabId[tabId][portLocation];
   delete portsByTabId[tabId][portLocation];
+  if (port) port.onMessage.removeListener(onMessage);
   if (!Object.keys(portsByTabId[tabId]).length) {
     delete portsByTabId[tabId];
   }
@@ -228,10 +244,14 @@ function connectToTabContentScript(
 ): chrome.runtime.Port {
   let port = findPort(tabId, portLocation);
   if (port) return port;
-  if (portLocation !== MessageLocation.ContentScript && !sendThroughContentScript.includes(portLocation)) return;
+  if (
+    portLocation !== MessageLocation.ContentScript &&
+    !sendThroughContentScript.includes(portLocation)
+  )
+    return;
   try {
     port = chrome.tabs.connect(tabId, { name: currentMessengerLocation, frameId: 0 });
-    registerPort(tabId, portLocation, port);
+    registerPort(tabId, MessageLocation.ContentScript, port);
     return port;
   } catch (err) {
     /* nothing */

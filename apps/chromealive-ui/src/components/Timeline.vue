@@ -1,7 +1,7 @@
 <template>
-  <div id="timeline">
-    <div id="bar" @mouseout="trackMouseout" @mouseover="trackMouseover">
-      <div id="track" ref="trackDiv">
+  <div class="timeline">
+    <div class="bar" @mouseout="trackMouseout" @mouseover="trackMouseover">
+      <div class="track" ref="trackDiv">
         <div
           v-for="(tick, i) in ticks"
           class="tick"
@@ -250,18 +250,18 @@ export default defineComponent({
 <style lang="scss">
 @import '../assets/style/resets';
 
-#timeline {
+.timeline {
   flex: 3;
   position: relative;
   padding: 5px 10px;
 
-  #bar {
+  .bar {
     position: relative;
     height: 40px;
     padding-top: 17px;
     -webkit-app-region: no-drag;
 
-    #track {
+    .track {
       user-select: none;
       position: relative;
       height: 12px;

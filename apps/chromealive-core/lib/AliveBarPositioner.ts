@@ -15,7 +15,7 @@ export default class AliveBarPositioner {
   private static pendingWindowRepositionSessionId: string;
   private static pendingShowSessionId: string;
 
-  private static isShowingApp = false;
+  private static isDraggingChrome = false;
   private static isAppOnTop = false;
 
   private static lastWindowBoundsBySessionId: {
@@ -33,34 +33,26 @@ export default class AliveBarPositioner {
     };
   }
 
-  public static isDraggingMouse(isDraggingApp: boolean, onTop?: boolean): void {
-    if (this.isShowingApp !== isDraggingApp) {
-      this.isShowingApp = isDraggingApp;
+  public static isDraggingMouse(isDraggingApp: boolean): void {
+    if (this.isDraggingChrome !== isDraggingApp) {
+      this.isDraggingChrome = isDraggingApp;
       if (isDraggingApp) {
         ChromeAliveCore.sendAppEvent('App.startedDraggingChrome');
-        this.isAppOnTop = false;
       } else {
         ChromeAliveCore.sendAppEvent('App.stoppedDraggingChrome');
         this.isAppOnTop = true;
       }
     }
-    if (onTop !== undefined && onTop !== this.isAppOnTop) {
-      this.isAppOnTop = onTop;
-      ChromeAliveCore.sendAppEvent('App.onTop', onTop);
-    }
   }
 
-  public static showApp(onTop?: boolean): void {
-    this.isAppOnTop = true;
-    ChromeAliveCore.sendAppEvent('App.show');
-    if (onTop !== undefined && onTop !== this.isAppOnTop) {
-      this.isAppOnTop = onTop;
-      ChromeAliveCore.sendAppEvent('App.onTop', onTop);
-    }
+  public static showApp(onTop = true): void {
+    // app show puts app on top
+    ChromeAliveCore.sendAppEvent('App.show', { onTop });
+    this.isAppOnTop = onTop;
   }
 
   public static hideApp(): void {
-    this.isShowingApp = false;
+    this.isDraggingChrome = false;
     this.isAppOnTop = false;
     ChromeAliveCore.sendAppEvent('App.hide');
   }

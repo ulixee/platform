@@ -115,13 +115,9 @@ function createDefaultSession(): IHeroSessionActiveEvent {
 export default Vue.defineComponent({
   name: 'Live',
   components: { Timeline, TimelineHover, TimelineHandle, Menu },
-  setup(props, ctx) {
+  setup() {
     let timeAgoTimeout: number;
     let toolbarDiv = Vue.ref<HTMLDivElement>();
-    let boundsMonitor = new ResizeObserver(ev => {
-      if (!ev.length) return;
-      ctx.emit('bounds-changed', ev[0].target);
-    });
 
     return {
       scriptTimeAgo: Vue.ref(''),
@@ -129,7 +125,6 @@ export default Vue.defineComponent({
       timeAgoDelay: 1e3,
 
       toolbarDiv,
-      boundsMonitor,
 
       isTimetravelMode: Vue.ref(false),
       isLive: Vue.ref(false),
@@ -153,7 +148,7 @@ export default Vue.defineComponent({
       autoshownPageStateId: Vue.ref<string>(null),
     };
   },
-  emits: ['bounds-changed', 'open-generator'],
+  emits: ['open-generator'],
   computed: {
     toolbarRect() {
       return this.toolbarDiv?.getBoundingClientRect();
@@ -168,7 +163,6 @@ export default Vue.defineComponent({
     showPageStatePopup(tick?: ITimelineTick) {
       const width = 400;
       const height = 150;
-
       if (!tick) {
         const unresolvedId = this.session.pageStates.find(x => x.isUnresolved)?.id;
         tick = this.timelineTicks.find(x => x.id === unresolvedId && x.class === 'pagestate');
@@ -178,6 +172,14 @@ export default Vue.defineComponent({
       this.focusedPageState.offset = offset;
       const left = window.screenLeft + offset - width + 80;
       const top = window.screenTop + bottom + 4;
+
+      const pageStateId = tick.id as string;
+
+      const pageState = {
+        message: this.pageStateMessage(pageStateId),
+        isResolving: this.pageStateIsResolving(pageStateId),
+      };
+
       if (this.focusedPageState.window) {
         if (tick?.id !== this.focusedPageState.id) {
           return;
@@ -186,26 +188,24 @@ export default Vue.defineComponent({
         if (childWindow.screenTop !== top || childWindow.screenLeft !== left) {
           childWindow.moveTo(left, top);
         }
+        if ('onPageStateUpdated' in childWindow) {
+          (childWindow as any).onPageStateUpdated(pageState);
+        } else {
+          (childWindow as any).pageState = pageState;
+        }
         return;
       }
 
       this.showTimelineHover = false;
-      this.focusedPageState.id = tick?.id as any;
+      this.focusedPageState.id = pageStateId;
       const features = `top=${top},left=${left},width=${width},height=${height}`;
       this.focusedPageState.window = window.open(
         '/pagestate-popup.html',
         'PageStatePopup',
         features,
       );
+      (this.focusedPageState.window as any).pageState = pageState;
       (this.focusedPageState.window as any).openPageState = this.openPageState.bind(
-        this,
-        tick?.id as string,
-      );
-      (this.focusedPageState.window as any).pageStateMessage = this.pageStateMessage.bind(
-        this,
-        tick?.id as string,
-      );
-      (this.focusedPageState.window as any).pageStateIsResolving = this.pageStateIsResolving.bind(
         this,
         tick?.id as string,
       );
@@ -269,7 +269,7 @@ export default Vue.defineComponent({
       )
         pageStateTick = hoverEvent.closestTickBelow;
 
-      if (pageStateTick) {
+      if (pageStateTick && !this.isTimetravelMode) {
         this.showPageStatePopup(pageStateTick);
         return;
       }
@@ -475,8 +475,6 @@ export default Vue.defineComponent({
     Client.on('Session.active', this.onSessionActiveEvent);
     window.addEventListener('blur', this.hideMenu);
     document.addEventListener('keyup', this.onKeypress);
-    this.boundsMonitor.observe(this.toolbarDiv);
-    this.$emit('bounds-changed', this.toolbarDiv);
   },
 
   beforeUnmount() {
@@ -484,8 +482,7 @@ export default Vue.defineComponent({
     Client.off('Session.active', this.onSessionActiveEvent);
     window.removeEventListener('blur', this.hideMenu);
     document.removeEventListener('keyup', this.onKeypress);
-    this.focusedPageState.window?.close();
-    this.boundsMonitor.unobserve(this.toolbarDiv);
+    this.closePageStatePopup();
   },
 });
 </script>
@@ -627,8 +624,8 @@ export default Vue.defineComponent({
     background-image: url('~@/assets/icons/arrow-right.svg');
   }
 
-  #timeline {
-    #bar .tick.pagestate .marker {
+  .timeline {
+    .bar .tick.pagestate .marker {
       width: 20px;
       height: 20px;
       left: -11px;
@@ -645,7 +642,7 @@ export default Vue.defineComponent({
       background-repeat: no-repeat;
     }
     &:hover {
-      #bar .tick.pagestate .marker {
+      .bar .tick.pagestate .marker {
         z-index: 0;
         opacity: 0.1;
       }

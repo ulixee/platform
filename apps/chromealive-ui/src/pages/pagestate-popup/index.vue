@@ -2,8 +2,8 @@
   <img :src="ICON_CARET" class="caret" />
   <div id="pagestate-popup">
     <div class="wrapper">
-      <h5 v-if="!pageStateIsResolving()">{{pageStateMessage()}}</h5>
-      <h5 class="loading" v-else>Page State</h5>
+      <h5 v-if="!pageState.isResolving">{{ pageState.message }}</h5>
+      <h5 v-else>Page State <span class="loading"> </span></h5>
 
       <button @click.prevent="openPageState()">Open Generator</button>
     </div>
@@ -19,7 +19,16 @@ export default Vue.defineComponent({
   name: 'PageStatePopup',
   components: {},
   setup() {
+    const pageState = Vue.reactive({ message: 'New Page State Found', isResolving: false });
+    function onPageStateUpdated(state) {
+      Object.assign(pageState, state);
+    }
+    (window as any).onPageStateUpdated = onPageStateUpdated;
+    const startstate = (window as any).pageState;
+    if (startstate) onPageStateUpdated(startstate);
+
     return {
+      pageState,
       ICON_CARET,
     };
   },
@@ -27,13 +36,8 @@ export default Vue.defineComponent({
     openPageState() {
       (window as any).openPageState();
     },
-    pageStateMessage(): string {
-      return (window as any).pageStateMessage() ?? 'New Page State Found';
-    },
-    pageStateIsResolving(): string {
-      return (window as any).pageStateIsResolving() ?? false;
-    }
   },
+  computed: {},
 });
 </script>
 
@@ -42,7 +46,7 @@ export default Vue.defineComponent({
 @import '../../assets/style/resets';
 
 :root {
-  --toolbarBackgroundColor: #f5faff;
+  --toolbarBackgroundColor: #faf4ff;
 }
 
 html {
@@ -50,7 +54,7 @@ html {
   margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
   font-size: 13px;
-  background:transparent;
+  background: transparent;
   &::-webkit-scrollbar {
     display: none;
   }
@@ -91,17 +95,18 @@ body {
     text-transform: uppercase;
     margin-top: 20px;
 
-    &.loading {
+    .loading {
       opacity: 0.6;
       cursor: not-allowed;
       background-image: url('~@/assets/icons/loading-bars.svg');
       background-position: center right;
       background-repeat: no-repeat;
-      background-size: 10px;
-      padding-right: 25px;
+      width: 16px;
+      height: 16px;
+      display: inline-block;
+      margin-left: 5px;
     }
   }
-
 
   button {
     cursor: pointer;
@@ -118,5 +123,4 @@ body {
     margin-right: 50px;
   }
 }
-
 </style>
