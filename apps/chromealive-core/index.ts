@@ -132,6 +132,7 @@ export default class ChromeAliveCore {
     const sessionObserver = new SessionObserver(heroSession);
     this.sessionObserversById.set(heroSession.id, sessionObserver);
     sessionObserver.on('hero:updated', this.sendActiveSession.bind(this, heroSession.id));
+    sessionObserver.on('app:mode', this.sendAppModeEvent.bind(this, heroSession.id));
     sessionObserver.on('databox:updated', this.sendDataboxUpdatedEvent.bind(this, heroSession.id));
     sessionObserver.pageStateManager.on('updated', x => this.sendAppEvent('PageState.updated', x));
     sessionObserver.on('closed', this.onSessionObserverClosed.bind(this, sessionObserver));
@@ -176,7 +177,9 @@ export default class ChromeAliveCore {
           timeline: { urls: [], screenshots: [], paintEvents: [], storageEvents: [] },
           run: 0,
           hasWarning: false,
-          playbackState: 'live',
+          playbackState: 'running',
+          mode: 'live',
+          worldHeroSessionIds: [],
           runtimeMs: 0,
           ...sessionObserver.getScriptDetails(),
         });
@@ -197,6 +200,7 @@ export default class ChromeAliveCore {
   private static sendActiveSession(heroSessionId: string) {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
+
     this.sendAppEvent('Session.active', sessionObserver.getHeroSessionEvent());
   }
 
@@ -204,6 +208,12 @@ export default class ChromeAliveCore {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
     this.sendAppEvent('Databox.updated', sessionObserver.getDataboxEvent());
+  }
+
+  private static sendAppModeEvent(heroSessionId: string) {
+    const sessionObserver = this.sessionObserversById.get(heroSessionId);
+    if (!sessionObserver) return;
+    this.sendAppEvent('App.mode', { mode: sessionObserver.mode });
   }
 
   private static async changeActiveSessions(

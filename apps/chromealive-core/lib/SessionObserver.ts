@@ -8,6 +8,7 @@ import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/
 import OutputRebuilder, { IOutputSnapshot } from '@ulixee/databox-core/lib/OutputRebuilder';
 import type { IOutputChangeRecord } from '@ulixee/databox-core/models/OutputTable';
 import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
+import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
 import * as Path from 'path';
 import { fork } from 'child_process';
 import Log from '@ulixee/commons/lib/Logger';
@@ -26,16 +27,18 @@ const { log } = Log(module);
 export default class SessionObserver extends TypedEventEmitter<{
   'hero:updated': void;
   'databox:updated': void;
+  'app:mode': void;
   closed: void;
-  'app:mode': string;
 }> {
-  public playbackState: IHeroSessionActiveEvent['playbackState'] = 'live';
+  public mode: IAppModeEvent['mode'] = 'live';
+  public playbackState: IHeroSessionActiveEvent['playbackState'] = 'running';
   public readonly pageStateManager: PageStateManager;
   public readonly timelineBuilder: TimelineBuilder;
 
   public readonly timetravelPlayer: TimetravelPlayer;
   public readonly timelineRecorder: TimelineRecorder;
   public readonly scriptInstanceMeta: IScriptInstanceMeta;
+  public readonly worldHeroSessionIds = new Set<string>();
 
   private waitForPageStateEvents: {
     id: string;
@@ -51,12 +54,14 @@ export default class SessionObserver extends TypedEventEmitter<{
   private databoxInput: any = null;
   private databoxInputBytes = 0;
   private hasScriptUpdatesSinceLastRun = false;
+  private watchHandle: Fs.FSWatcher;
 
   constructor(public readonly heroSession: HeroSession) {
     super();
     bindFunctions(this);
     this.logger = log.createChild(module, { sessionId: heroSession.id });
     this.scriptInstanceMeta = heroSession.options.scriptInstanceMeta;
+    this.worldHeroSessionIds.add(heroSession.id);
 
     this.heroSession.on('tab-created', this.onTabCreated);
     this.heroSession.on('kept-alive', this.onHeroSessionKeptAlive);
@@ -76,18 +81,22 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint).mtimeMs;
 
     this.pageStateManager = new PageStateManager(this);
-    this.pageStateManager.on('enter', () =>
-      ChromeAliveCore.sendAppEvent('App.mode', 'pagestate-generator'),
-    );
-    this.pageStateManager.on('exit', () => ChromeAliveCore.sendAppEvent('App.mode', 'live'));
+    this.pageStateManager.on('imported', this.onPageStateImported.bind(this));
+    this.pageStateManager.on('enter', () => {
+      this.mode = 'pagestate';
+      this.emit('app:mode');
+    });
+    this.pageStateManager.on('exit', () => {
+      this.mode = 'live';
+      this.emit('app:mode');
+    });
     this.bindDatabox();
-    Fs.watchFile(
+    this.watchHandle = Fs.watch(
       this.scriptInstanceMeta.entrypoint,
       {
         persistent: false,
-        interval: 2e3,
       },
-      this.onFileUpdated,
+      this.onScriptEntrypointUpdated,
     );
   }
 
@@ -100,6 +109,8 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   public onMultiverseSession(session: HeroSession): void {
     this.pageStateManager.onMultiverseSession(session);
+    this.worldHeroSessionIds.add(session.id);
+    this.emit('hero:updated');
   }
 
   public relaunchSession(
@@ -145,7 +156,10 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   public close(): void {
-    Fs.unwatchFile(this.scriptInstanceMeta.entrypoint, this.onFileUpdated);
+    if (this.watchHandle) {
+      this.watchHandle.close();
+      this.watchHandle = null;
+    }
     this.heroSession.off('tab-created', this.onTabCreated);
     this.heroSession.off('kept-alive', this.onHeroSessionKeptAlive);
     this.heroSession.off('resumed', this.onHeroSessionResumed);
@@ -209,7 +223,9 @@ export default class SessionObserver extends TypedEventEmitter<{
       run: this.heroSession.commands.resumeCounter,
       heroSessionId: this.heroSession.id,
       runtimeMs: commandTimeline.runtimeMs,
+      mode: this.mode,
       playbackState: this.playbackState,
+      worldHeroSessionIds: [...this.worldHeroSessionIds],
       ...this.getScriptDetails(),
       pageStateIdNeedsResolution,
       pageStates,
@@ -277,19 +293,19 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   public async onTimetravelOpened(): Promise<void> {
-    this.playbackState = 'timetravel';
+    this.mode = 'timetravel';
     this.tabGroupModule.once('tab-group-opened', this.closeTimetravel);
     await this.updateTabGroup(true).catch(console.error);
     this.timetravelPlayer.once('timetravel-to-end', this.closeTimetravel);
-    this.emit('hero:updated');
+    this.emit('app:mode');
   }
 
   private async onTimetravelClosed(): Promise<void> {
-    this.playbackState = 'paused';
+    this.mode = 'live';
     this.tabGroupModule?.off('tab-group-opened', this.closeTimetravel);
     this.timetravelPlayer.off('timetravel-to-end', this.closeTimetravel);
     await this.updateTabGroup(false).catch(console.error);
-    this.emit('hero:updated');
+    this.emit('app:mode');
   }
 
   private isLivePage(pageId: string): boolean {
@@ -299,14 +315,16 @@ export default class SessionObserver extends TypedEventEmitter<{
     return false;
   }
 
-  private onFileUpdated(stats: Fs.Stats): void {
+  private async onScriptEntrypointUpdated(action: string): Promise<void> {
+    if (action !== 'change') return;
+    const stats = await Fs.promises.stat(this.scriptInstanceMeta.entrypoint);
     this.scriptLastModifiedTime = stats.mtimeMs;
     this.hasScriptUpdatesSinceLastRun = true;
     this.emit('hero:updated');
   }
 
   private onHeroSessionResumed(): void {
-    this.playbackState = 'live';
+    this.playbackState = 'running';
     this.bindDatabox();
     this.hasScriptUpdatesSinceLastRun = false;
     this.emit('hero:updated');
@@ -314,7 +332,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   private onHeroSessionKeptAlive(event: { message: string }): void {
-    if (this.playbackState === 'live') this.playbackState = 'paused';
+    this.playbackState = 'paused';
     this.emit('hero:updated');
     event.message = `ChromeAlive! has assumed control of your script. You can make changes to your script and re-run from the ChromeAlive interface.`;
   }
@@ -339,6 +357,11 @@ export default class SessionObserver extends TypedEventEmitter<{
   private onOutputUpdated(event: { changes: IOutputChangeRecord[] }): void {
     this.outputRebuilder.applyChanges(event.changes);
     this.emit('databox:updated');
+  }
+
+  private onPageStateImported(event: { heroSessionIds: string[] }) {
+    for (const id of event.heroSessionIds) this.worldHeroSessionIds.add(id);
+    this.emit('hero:updated');
   }
 
   private onTabCreated(tabEvent: { tab: Tab }) {

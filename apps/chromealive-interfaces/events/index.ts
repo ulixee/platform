@@ -2,6 +2,7 @@ import IDataboxUpdatedEvent from './IDataboxUpdatedEvent';
 import IHeroSessionActiveEvent from './IHeroSessionActiveEvent';
 import IPageStateUpdateEvent from './IPageStateUpdatedEvent';
 import IAppMoveEvent from './IAppMoveEvent';
+import IAppModeEvent from './IAppModeEvent';
 
 export default interface IChromeAliveEvents {
   'App.show': { onTop: boolean };
@@ -10,7 +11,7 @@ export default interface IChromeAliveEvents {
   'App.stoppedDraggingChrome': null;
   'App.quit': null;
   'App.move': IAppMoveEvent;
-  'App.mode': 'live' | 'pagestate-generator';
+  'App.mode': IAppModeEvent;
   'Session.loading': void;
   'Session.loaded': void;
   'Session.active': IHeroSessionActiveEvent;

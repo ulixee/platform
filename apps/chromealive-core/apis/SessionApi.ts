@@ -30,7 +30,8 @@ export default class SessionApi {
   }> {
     const sessionObserver = getObserver(args);
     let timelineOffsetPercent = args.percentOffset ?? 100;
-    sessionObserver.playbackState = 'timetravel';
+    // set to timetravel mode in advance to prevent jumping out
+    sessionObserver.mode = 'timetravel';
     if (args.step) {
       timelineOffsetPercent = await sessionObserver.timetravelPlayer.step(args.step);
     } else {
