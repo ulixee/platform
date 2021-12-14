@@ -113,13 +113,14 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.emit('hero:updated');
   }
 
-  public relaunchSession(
+  public async relaunchSession(
     startLocation: ISessionCreateOptions['sessionResume']['startLocation'],
     startNavigationId?: number,
-  ): Error | undefined {
+  ): Promise<Error | undefined> {
     if (startLocation === 'sessionStart') {
       ChromeAliveCore.restartingHeroSessionId = this.heroSession.id;
       AliveBarPositioner.restartingSession(this.heroSession.id);
+      await this.heroSession.close(true);
     }
     const script = this.scriptInstanceMeta.entrypoint;
     const execArgv = [
@@ -146,7 +147,7 @@ export default class SessionObserver extends TypedEventEmitter<{
       child.stderr.setEncoding('utf-8');
       child.stderr.on('data', x => {
         if (x.includes('ScriptChangedNeedsRestartError')) {
-          this.relaunchSession('sessionStart');
+          this.relaunchSession('sessionStart').catch(() => null);
         }
       });
     } catch (error) {

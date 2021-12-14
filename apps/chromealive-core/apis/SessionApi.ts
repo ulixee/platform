@@ -50,13 +50,13 @@ export default class SessionApi {
     // observer.heroSession.commands.pause();
   }
 
-  static resume(args: ISessionResumeArgs): {
+  static async resume(args: ISessionResumeArgs): Promise<{
     success: boolean;
     error?: Error;
-  } {
+  }> {
     const observer = getObserver(args);
 
-    const error = observer.relaunchSession(args.startLocation, args.startFromNavigationId);
+    const error = await observer.relaunchSession(args.startLocation, args.startFromNavigationId);
 
     return {
       success: !error,

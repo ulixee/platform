@@ -344,7 +344,7 @@ export default Vue.defineComponent({
         this.states.push(...message.states);
       }
 
-      this.focusedSession = message.heroSessions.find(x => x.id === message.focusedHeroSessionId);
+      this.focusedSession = message.heroSessions.find(x => x.isFocused);
       const focusedSession = this.focusedSession;
 
       if (!focusedSession) return;
