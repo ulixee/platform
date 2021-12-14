@@ -31,8 +31,8 @@ export default interface ISessionApi {
     timelineOffsetPercent: number;
   }>;
   step(args: IHeroSessionArgs): void;
-  resume(args: ISessionResumeArgs): {
+  resume(args: ISessionResumeArgs): Promise<{
     success: boolean;
     error?: Error;
-  };
+  }>;
 }

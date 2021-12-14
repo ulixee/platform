@@ -10,6 +10,53 @@
     >
     </FocusedState>
     <div v-else id="manage-states">
+      <div
+        @click.prevent="focusOnSession(primarySession)"
+        id="primary-session"
+        v-if="primarySession"
+        class="session"
+        :class="{
+          focused: primarySession.isFocused,
+        }"
+      >
+        <div
+          class="session-preview"
+          :class="{
+            loading: !latestScreenshotsBySessionId[primarySession.id] && primarySession.isRunning,
+          }"
+        >
+          <img
+            v-if="latestScreenshotsBySessionId[primarySession.id]"
+            class="screenshot"
+            :src="latestScreenshotsBySessionId[primarySession.id]"
+          />
+          <span class="times">{{ formattedTimeRange(primarySession) }}</span>
+        </div>
+        <div class="session-asserts">
+          <h5 class="session-name">Live World</h5>
+
+          <table class="asserts">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Asserts</th>
+                <th>DOM</th>
+                <th>Resources</th>
+                <th>Storage</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td></td>
+                <td>{{ primarySession.assertionCounts.total }}</td>
+                <td>{{ primarySession.assertionCounts.dom }}</td>
+                <td>{{ primarySession.assertionCounts.resources }}</td>
+                <td>{{ primarySession.assertionCounts.storage }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
       <table id="states" class="asserts">
         <thead>
           <tr>
@@ -75,12 +122,12 @@
         </button>
       </div>
 
-      <div id="session-grid" v-if="unresolvedSessions.length">
-        <h5>Unassigned Worlds</h5>
+      <div id="session-grid" v-if="needsAssignmentSessions.length || spawnedWorlds.length">
+        <h5 v-if="needsAssignmentSessions.length">Unassigned Worlds</h5>
         <div
-          v-for="session of unresolvedSessions"
+          v-for="session of needsAssignmentSessions"
           :class="{
-            'state-session': true,
+            session: true,
             placeholder: session.id === 'placeholder',
             focused: session.id === focusedSessionId,
           }"
@@ -91,7 +138,7 @@
           <div
             class="session-preview"
             @click.prevent="focusOnSession(session)"
-            :class="{ loading: !latestScreenshotsBySessionId[session.id] && session.isLive }"
+            :class="{ loading: !latestScreenshotsBySessionId[session.id] && session.isRunning }"
           >
             <img
               v-if="latestScreenshotsBySessionId[session.id]"
@@ -100,6 +147,42 @@
             />
             <span class="times">{{ formattedTimeRange(session) }}</span>
           </div>
+        </div>
+
+        <h5 v-if="spawnedWorlds.length">Spawned Worlds</h5>
+        <div
+          v-for="session of spawnedWorlds"
+          :class="{
+            session: true,
+            placeholder: session.id === 'placeholder',
+            focused: session.id === focusedSessionId,
+          }"
+          :draggable="session.id !== 'placeholder'"
+          @dragstart="onDragSession($event, session)"
+          @dragend="onDragSessionEnd($event)"
+        >
+          <div
+            class="session-preview"
+            @click.prevent="focusOnSession(session)"
+            :class="{ loading: !latestScreenshotsBySessionId[session.id] && session.isRunning }"
+          >
+            <img
+              v-if="latestScreenshotsBySessionId[session.id]"
+              class="screenshot"
+              :src="latestScreenshotsBySessionId[session.id]"
+            />
+            <span class="times">{{ formattedTimeRange(session) }}</span>
+          </div>
+
+          <select>
+            <option
+              v-for="state of data.states"
+              @click.prevent="moveSessionToState(session, state.state)"
+              :selected="state.heroSessionIds.includes(session.id)"
+            >
+              {{ state.state }}
+            </option>
+          </select>
         </div>
       </div>
 
@@ -136,11 +219,8 @@ import FocusedState from '@/pages/pagestate-panel/views/FocusedState.vue';
 function defaultData(): IPageStateUpdatedEvent {
   return {
     id: '',
-    liveHeroSessionId: '',
-    focusedHeroSessionId: '',
     needsCodeChange: true,
     states: [],
-    unresolvedHeroSessionIds: [],
     heroSessions: [],
   };
 }
@@ -181,23 +261,17 @@ export default Vue.defineComponent({
       }
       return this.data.heroSessions.find(x => x.id === this.focusedSessionId);
     },
-    liveSession(): IPageStateUpdatedEvent['heroSessions'][0] {
-      if (!this.data?.heroSessions) {
-        return null;
-      }
-      return this.data.heroSessions.find(x => x.id === this.data.liveHeroSessionId);
+    primarySession(): IPageStateUpdatedEvent['heroSessions'][0] {
+      return this.data?.heroSessions?.find(x => x.isPrimary);
     },
     focusedState(): IPageStateUpdatedEvent['states'][0] {
       return this.data.states.find(x => x.state === this.focusedStateName);
     },
-    unresolvedSessions(): IPageStateUpdatedEvent['heroSessions'] {
-      if (!this.data?.heroSessions) {
-        return [];
-      }
-
-      const heroSessionIds = this.data.unresolvedHeroSessionIds;
-
-      return this.data.heroSessions.filter(x => heroSessionIds.includes(x.id));
+    needsAssignmentSessions(): IPageStateUpdatedEvent['heroSessions'] {
+      return this.data?.heroSessions?.filter(x => x.needsAssignment) ?? [];
+    },
+    spawnedWorlds(): IPageStateUpdatedEvent['heroSessions'] {
+      return this.data?.heroSessions?.filter(x => x.isSpawnedWorld && !x.needsAssignment) ?? [];
     },
   },
   methods: {
@@ -358,8 +432,8 @@ export default Vue.defineComponent({
         heroSessionIds: [sessionId],
       }).catch(alert);
 
-      const idx = this.data.unresolvedHeroSessionIds.indexOf(sessionId);
-      if (idx >= 0) this.data.unresolvedHeroSessionIds.splice(idx, 1);
+      const heroSession = this.data.heroSessions.find(x => x.id === sessionId);
+      heroSession.needsAssignment = false;
       // update for ui while waiting
       for (const state of this.data.states) {
         const idx = state.heroSessionIds.indexOf(sessionId);
@@ -375,9 +449,7 @@ export default Vue.defineComponent({
       message ??= defaultData();
       Object.assign(this.data, message);
 
-      const focusedSession = message.focusedHeroSessionId
-        ? message.heroSessions.find(x => x.id === message.focusedHeroSessionId)
-        : null;
+      const focusedSession = message.heroSessions.find(x => x.isFocused);
 
       if (focusedSession && !this.autoFocusedSessionsIds.has(focusedSession.id)) {
         this.autoFocusedSessionsIds.add(focusedSession.id);
@@ -481,51 +553,39 @@ body {
   flex: 1;
   flex-basis: 100%;
   justify-content: space-between;
-  padding: 10px;
+  padding: 10px 10px 65px;
+  position: relative;
+  box-sizing: border-box;
 
-  #states {
+  table {
     width: 100%;
     text-align: center;
     border-collapse: collapse;
     margin-top: 15px;
     font-size: 0.9em;
     font-family: ui-sans-serif;
+    line-height: 0.8em;
 
     th {
       font-family: system-ui;
-      font-weight: 500;
+      min-width: 50px;
+      font-weight: 200;
+      font-size: 11px;
+      color: #b5b5b5;
     }
 
     tr {
       text-align: center;
       border-bottom: 1px solid #eee;
 
+      td {
+        min-width: 50px;
+        font-family: system-ui;
+        font-weight: 200;
+      }
       td.text-left {
         text-align: left;
       }
-    }
-  }
-
-  table.asserts {
-    flex-grow: 0;
-    text-align: center;
-    width: 150px;
-    font-size: 0.8em;
-    float: right;
-    line-height: 0.8em;
-    margin: 5px auto;
-
-    th {
-      font-weight: normal;
-      font-size: 11px;
-      color: #b5b5b5;
-    }
-
-    th,
-    td {
-      min-width: 50px;
-      font-family: system-ui;
-      font-weight: 200;
     }
   }
 
@@ -724,55 +784,101 @@ body {
       width: 100%;
     }
 
-    .state-session {
-      display: flex;
-      flex-direction: row;
+    .session {
+      flex-direction: column;
+    }
+  }
 
-      &.focused {
-        .session-preview {
-          border-color: #f1a33a;;
-          box-shadow: 1px 1px 7px 3px #595959;
-        }
+  #primary-session {
+    margin-bottom: 20px;
+    border: 2px dashed #eee;
+    border-radius: 15px;
+    cursor: pointer;
+    &.focused {
+      box-shadow: 1px 1px 7px 3px #f1a33a50;
+      border-color: #f1a33a;
+      .session-preview {
+        border-color: #59595950;
+        box-shadow: none;
+      }
+    }
+    .session-asserts {
+      display: flex;
+      padding: 5px 10px;
+      flex-direction: column;
+      flex: 1;
+    }
+    .session-name {
+      margin: 5px 5px 0;
+      font-weight: normal;
+      display: block;
+      flex: 1;
+    }
+    table {
+      tr  {
+        border-color: transparent;
+      }
+    }
+  }
+
+  .session {
+    display: flex;
+    flex-direction: row;
+
+    select {
+      padding: 2px;
+      margin: 0 auto;
+      width: 110px;
+      border-color: #eee;
+      color: #595959;
+      font-size: 0.7em;
+      display: block;
+    }
+
+    &.focused {
+      .session-preview {
+        border-color: #f1a33a;
+        box-shadow: 1px 1px 7px 3px #f1a33a50;
+      }
+    }
+
+    .session-preview {
+      border: 1px solid #aaa;
+      margin: 5px 10px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 1px 1px 5px #ddd;
+      flex-grow: 0;
+      flex-shrink: 3;
+      position: relative;
+      cursor: pointer;
+      height: 50px;
+      width: 115px;
+
+      .screenshot {
+        -webkit-user-drag: none;
+        display: flex;
+        flex-shrink: 2;
+        object-fit: cover;
+        flex-grow: 0;
+        object-position: top center;
+        height: 100%;
+        width: 100%;
       }
 
-      .session-preview {
-        border: 1px solid #aaa;
-        margin: 5px 10px;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 1px 1px 5px #ddd;
-        flex-grow: 0;
-        flex-shrink: 3;
-        position: relative;
-        cursor: pointer;
-        height: 50px;
-        width: 115px;
+      .times {
+        position: absolute;
+        bottom: 3px;
+        right: 5px;
+        font-size: 11px;
+      }
 
-        .screenshot {
-          -webkit-user-drag: none;
-          display: flex;
-          flex-shrink: 2;
-          object-fit: cover;
-          flex-grow: 0;
-          object-position: top center;
-          height: 100%;
-          width: 100%;
-        }
-
-        .times {
-          position: absolute;
-          bottom: 3px;
-          right: 5px;
-          font-size: 11px;
-        }
-
-        &.loading {
-          background-image: url('~@/assets/icons/loading-bars.svg');
-          background-position: center;
-          background-repeat: no-repeat;
-          background-size: 20px;
-          opacity: 0.5;
-        }
+      &.loading {
+        background-image: url('~@/assets/icons/loading-bars.svg');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 20px;
+        opacity: 0.5;
       }
     }
   }

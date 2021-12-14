@@ -139,12 +139,10 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
     // keep going if we run into an error?
     if (resolution.error) return;
     tab.navigations.off('status-change', statusChangeListener);
-    const now = Date.now();
+
     const generatorSession = this.getGeneratorSession();
-    if (now > generatorSession.loadingRange[1]) {
-      generatorSession.loadingRange[1] = now;
-      generatorSession.needsProcessing = true;
-    }
+    generatorSession.loadingRange[1] = Date.now();
+    generatorSession.needsProcessing = true;
   }
 
   private changeTimelineRange(timeRange: [number, number]) {

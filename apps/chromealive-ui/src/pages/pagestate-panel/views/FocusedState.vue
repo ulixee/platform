@@ -35,7 +35,7 @@
           <div
             class="session-preview"
             @click.prevent="focusOnSession(session)"
-            :class="{ loading: !latestScreenshotsBySessionId[session.id] && session.isLive }"
+            :class="{ loading: !latestScreenshotsBySessionId[session.id] && session.isRunning }"
           >
             <img
               v-if="latestScreenshotsBySessionId[session.id]"
