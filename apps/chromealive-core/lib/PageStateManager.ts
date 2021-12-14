@@ -28,6 +28,7 @@ export default class PageStateManager extends TypedEventEmitter<{
   updated: IPageStateUpdateEvent;
   unresolved: { pageStateId: string; heroSessionId: string; error?: Error };
   close: void;
+  imported: { heroSessionIds: string[] };
   enter: { pageStateId: string };
   exit: void;
 }> {
@@ -475,6 +476,7 @@ export default class PageStateManager extends TypedEventEmitter<{
             this.trackPageStateTimeline(session.db, pageStateId, session.timelineRange);
           }
         }
+        this.emit('imported', { heroSessionIds: [...generator.sessionsById.keys()] });
       }
     }
 
@@ -649,8 +651,9 @@ export default class PageStateManager extends TypedEventEmitter<{
   }
 
   private isSessionLive(heroSession: HeroSession): boolean {
+    if (!heroSession) return false;
     if (this.sessionObserver.heroSession === heroSession)
-      return this.sessionObserver.playbackState === 'live';
+      return this.sessionObserver.playbackState === 'running';
     return heroSession.isClosing === false;
   }
 

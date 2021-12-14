@@ -3,7 +3,7 @@
     <h1>Superhero</h1>
 
     <ul>
-      <li :class="{ focused: mode === 'pagestate-generator' }">
+      <li :class="{ focused: mode === 'pagestate' }">
         <img class="icon" src="/icons/circuits.svg" />
         <div class="label">Circuits</div>
         <div class="count">{{ pageStates.length }}</div>
@@ -48,7 +48,7 @@ import { IBounds } from '@ulixee/apps-chromealive-interfaces/IBounds';
 import Client from '@/api/Client';
 import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
-import IPageStateUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IPageStateUpdatedEvent';
+import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
 import humanizeBytes from '@/utils/humanizeBytes';
 
 enum Panel {
@@ -72,7 +72,7 @@ export default Vue.defineComponent({
       outputSize: Vue.ref<string>(''),
       worldSessionIds: Vue.reactive(new Set<string>()),
       timetravelEvents: Vue.ref<number>(0),
-      mode: Vue.ref<'live' | 'pagestate-generator' | 'timetravel'>('live'),
+      mode: Vue.ref<IAppModeEvent['mode']>('live'),
       loadedPanelName: Vue.ref<Panel>(),
       panelWindow: null as Window,
       activePageStateId: Vue.ref<string>(),
@@ -148,18 +148,24 @@ export default Vue.defineComponent({
       }
       this.timetravelEvents = message.timeline.urls.length + message.timeline.paintEvents.length;
       this.pageStates.length = message.pageStates.length;
-      Object.assign(this.pageStates, message.pageStates)
-      this.worldSessionIds.add(message.heroSessionId);
+      Object.assign(this.pageStates, message.pageStates);
+      for (const worldHeroSessionId of message.worldHeroSessionIds) {
+        this.worldSessionIds.add(worldHeroSessionId);
+      }
     },
     onDataboxUpdated(message: IDataboxUpdatedEvent) {
       this.outputSize = humanizeBytes(message?.output);
     },
-    onPageStateUpdated(message: IPageStateUpdatedEvent) {
-      if (this.pageStates.some(x => x.id === message?.id)) {
-        for (const heroSession of message.heroSessions) {
-          if (heroSession.id === 'placeholder') continue;
-          this.worldSessionIds.add(heroSession.id);
+    onAppModeEvent(message: IAppModeEvent): void {
+      const startingMode = this.mode;
+      this.mode = message.mode;
+
+      if (this.mode === 'live') {
+        if (startingMode === 'pagestate') {
+          this.closePageState();
         }
+      } else if (this.mode === 'pagestate') {
+        this.openPageState();
       }
     },
   },
@@ -170,16 +176,7 @@ export default Vue.defineComponent({
   mounted() {
     Client.on('Session.active', this.onSessionActiveEvent);
     Client.on('Databox.updated', this.onDataboxUpdated);
-    Client.on('PageState.updated', this.onPageStateUpdated);
-    Client.on('App.mode', mode => {
-      if (this.mode === 'pagestate-generator' && mode === 'live') {
-        this.closePageState();
-      }
-      if (mode === 'pagestate-generator') {
-        this.openPageState();
-      }
-      this.mode = mode;
-    });
+    Client.on('App.mode', this.onAppModeEvent);
   },
 });
 </script>
@@ -192,7 +189,7 @@ export default Vue.defineComponent({
   border-radius: 0 5px 5px 0;
 }
 #app {
-  display:flex;
+  display: flex;
 }
 h1 {
   @apply font-bold py-3 px-2 select-none;
@@ -201,6 +198,9 @@ h1 {
 li {
   @apply flex flex-row border-t py-3 pl-3 pr-2 text-sm cursor-pointer;
   text-shadow: 1px 1px 0 white;
+  &.focused {
+    @apply bg-purple-200
+  }
   &:hover {
     @apply bg-purple-100;
   }

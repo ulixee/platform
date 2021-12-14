@@ -8,14 +8,14 @@
     ref="appDiv"
   >
     <Live
-      v-if="showLiveView"
+      v-if="!showFocusedTimeline"
       ref="liveView"
       @open-generator="openGenerator"
     ></Live>
 
     <FocusedTimeline
       v-else
-      ref="generatorView"
+      ref="focusedTimlineRef"
       :page-state-id="pageStateId"
       @exit="exitGenerator()"
     ></FocusedTimeline>
@@ -35,27 +35,27 @@ export default Vue.defineComponent({
   setup() {
     let lastToolbarBounds: IBounds;
     let liveView = Vue.ref<typeof Live>();
-    let generatorView = Vue.ref<typeof FocusedTimeline>();
+    let focusedTimlineRef = Vue.ref<typeof FocusedTimeline>();
 
     return {
       lastToolbarBounds,
       liveView,
-      generatorView,
+      focusedTimlineRef,
       appDiv: Vue.ref<HTMLDivElement>(),
-      isDragging: Vue.computed(() => liveView.value?.isDragging || generatorView.value?.isDragging),
+      isDragging: Vue.computed(() => liveView.value?.isDragging || focusedTimlineRef.value?.isDragging),
       isLoading: Vue.ref(false),
-      showLiveView: Vue.ref(true),
+      showFocusedTimeline: Vue.ref(false),
       pageStateId: Vue.ref<string>(null),
     };
   },
   methods: {
     exitGenerator() {
-      this.showLiveView = true;
+      this.showFocusedTimeline = false;
       this.pageStateId = null;
     },
 
     openGenerator(pageStateId: string) {
-      this.showLiveView = false;
+      this.showFocusedTimeline = true;
       this.pageStateId = pageStateId;
     },
 
@@ -79,10 +79,11 @@ export default Vue.defineComponent({
   mounted() {
     Client.on('Session.loading', () => {
       this.isLoading = true;
-      this.showLiveView = true;
+      this.showFocusedTimeline = false;
     });
-    Client.on('App.mode', mode => {
-      this.showLiveView = mode === 'live';
+    Client.on('App.mode', message => {
+      const { mode } = message;
+      this.showFocusedTimeline = mode === 'pagestate';
     });
     Client.on('Session.loaded', () => (this.isLoading = false));
     new ResizeObserver(() => this.sendAppHeightChanged()).observe(this.appDiv);

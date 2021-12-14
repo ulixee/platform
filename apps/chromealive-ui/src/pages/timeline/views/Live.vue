@@ -24,7 +24,7 @@
       >
         <TimelineHandle
           id="nib"
-          :isDraggable="!isLive"
+          :isDraggable="!isRunning"
           :style="{ left: timelineOffset + '%' }"
           @dragstart="timetravelDragstart"
           @dragend="timetravelDragend"
@@ -47,7 +47,7 @@
         </slot>
         <slot v-else>
           <button
-            v-if="!isTimetravelMode && !isLive"
+            v-if="!isTimetravelMode && !isRunning"
             @click.prevent="resume"
             id="play-button"
             class="app-button"
@@ -90,6 +90,7 @@
 import * as Vue from 'vue';
 import Client from '@/api/Client';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
+import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
 import Timeline, { ITimelineHoverEvent, ITimelineTick } from '@/components/Timeline.vue';
 import TimelineHandle from '@/components/TimelineHandle.vue';
 import TimelineHover from '@/components/TimelineHover.vue';
@@ -101,7 +102,9 @@ function createDefaultSession(): IHeroSessionActiveEvent {
   return {
     timeline: { urls: [], paintEvents: [], screenshots: [], storageEvents: [] },
     playbackState: 'paused',
+    mode: 'live',
     runtimeMs: 0,
+    worldHeroSessionIds: [],
     heroSessionId: '',
     run: 0,
     pageStateIdNeedsResolution: null,
@@ -127,7 +130,7 @@ export default Vue.defineComponent({
       toolbarDiv,
 
       isTimetravelMode: Vue.ref(false),
-      isLive: Vue.ref(false),
+      isRunning: Vue.ref(false),
       startLocation: Vue.ref<IStartLocation>('currentLocation'),
       session: Vue.reactive(createDefaultSession()),
 
@@ -359,7 +362,7 @@ export default Vue.defineComponent({
 
     canPause(): boolean {
       if (!this.session.heroSessionId) return false;
-      return this.isLive;
+      return this.isRunning;
     },
 
     resume() {
@@ -433,15 +436,10 @@ export default Vue.defineComponent({
       timelineTicks.sort((a, b) => a.offsetPercent - b.offsetPercent);
       this.timelineTicks = timelineTicks;
 
-      this.isTimetravelMode = this.session.playbackState === 'timetravel';
-      this.isLive = this.session.playbackState === 'live';
+      this.isRunning = this.session.playbackState === 'running';
       this.timelineUrlIndex =
         this.startLocation === 'sessionStart' ? 0 : message.timeline.urls.length - 1;
 
-      if (message.pageStateIdNeedsResolution && !this.isTimetravelMode && !this.isDragging) {
-        this.showPageStatePopup(unresolvedPageStateTick);
-        this.autoshownPageStateId = message.pageStateIdNeedsResolution;
-      }
       if (!message.pageStateIdNeedsResolution) {
         if (this.focusedPageState.id === this.autoshownPageStateId) {
           this.closePageStatePopup();
@@ -449,9 +447,7 @@ export default Vue.defineComponent({
         this.autoshownPageStateId = null;
       }
 
-      if (this.isTimetravelMode) {
-        this.closePageStatePopup();
-      }
+      this.onAppModeEvent({ mode: message.mode });
 
       if (isNewId || !this.isTimetravelMode) {
         this.timelineOffset = 100;
@@ -460,6 +456,20 @@ export default Vue.defineComponent({
       }
 
       this.updateScriptTimeAgo();
+    },
+
+    onAppModeEvent(message: IAppModeEvent): void {
+      this.isTimetravelMode = message.mode === 'timetravel';
+      if (this.isTimetravelMode) {
+        this.closePageStatePopup();
+      } else if (message.mode === 'live') {
+        if (this.session.pageStateIdNeedsResolution && !this.isDragging) {
+          const unresolvedPageStateTick = this.timelineTicks.find(
+            x => x.class === 'pagestate' && x.id === this.session.pageStateIdNeedsResolution,
+          );
+          this.showPageStatePopup(unresolvedPageStateTick);
+        }
+      }
     },
 
     hideMenu() {
@@ -473,6 +483,7 @@ export default Vue.defineComponent({
 
   mounted() {
     Client.on('Session.active', this.onSessionActiveEvent);
+    Client.on('App.mode', this.onAppModeEvent);
     window.addEventListener('blur', this.hideMenu);
     document.addEventListener('keyup', this.onKeypress);
   },
@@ -480,6 +491,7 @@ export default Vue.defineComponent({
   beforeUnmount() {
     clearTimeout(this.timeAgoTimeout);
     Client.off('Session.active', this.onSessionActiveEvent);
+    Client.off('App.mode', this.onAppModeEvent);
     window.removeEventListener('blur', this.hideMenu);
     document.removeEventListener('keyup', this.onKeypress);
     this.closePageStatePopup();
