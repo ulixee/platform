@@ -62,7 +62,7 @@ export default Vue.defineComponent({
     async sendAppHeightChanged() {
       const elem = this.appDiv;
       document.dispatchEvent(
-        new CustomEvent('app:height-changed', {
+        new CustomEvent('timeline:resize-height', {
           detail: {
             height: elem.offsetHeight,
           },

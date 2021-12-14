@@ -11,7 +11,6 @@
           :style="{ left: tick.offsetPercent + '%', width: nextTickWidth(i) }"
         >
           <div v-if="i !== tick.length - 1" class="line-overlay"></div>
-          <div class="marker"></div>
         </div>
         <slot></slot>
       </div>
@@ -266,7 +265,7 @@ export default defineComponent({
       position: relative;
       height: 12px;
       top: 5px;
-      background-color: #ccc;
+      background-color: #D4B5E1;
     }
 
     .tick {
@@ -275,36 +274,11 @@ export default defineComponent({
       position: absolute;
       min-width: 2px;
 
-      .marker {
-        position: absolute;
-        top: 13px;
-        left: 0;
-        height: 15px;
-        width: 2px;
-        background-color: #2d2d2d;
-        opacity: 0.5;
-        border-left: 1px white solid;
-        border-right: 1px white solid;
-      }
-
       .line-overlay {
         height: 10px;
         top: 16px;
         position: relative;
       }
-
-      &:hover {
-        .marker {
-          opacity: 0.8;
-        }
-
-        & + .active {
-          .marker {
-            opacity: 0.6;
-          }
-        }
-      }
-
     }
   }
 }

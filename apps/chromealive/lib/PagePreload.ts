@@ -21,9 +21,32 @@ document.addEventListener('chromealive:api', e => {
 });
 
 // @ts-ignore
-document.addEventListener('app:height-changed', e => {
+document.addEventListener('timeline:resize-height', e => {
   // eslint-disable-next-line no-console
-  console.log('app:height-changed', e);
+  console.log('timeline:resize-height', e);
   const message = e.detail;
-  ipcRenderer.send('resize-height', message.height);
+  ipcRenderer.send('timeline:resize-height', message.height);
+});
+
+// @ts-ignore
+document.addEventListener('toolbar:resize-width', e => {
+  // eslint-disable-next-line no-console
+  console.log('toolbar:resize-width', e);
+  const message = e.detail;
+  ipcRenderer.send('toolbar:resize-width', message.width);
+});
+
+// @ts-ignore
+document.addEventListener('toolbar:closePopupAlert', e => {
+  // eslint-disable-next-line no-console
+  console.log('toolbar:closePopupAlert', e);
+  ipcRenderer.send('toolbar:closePopupAlert');
+});
+
+// @ts-ignore
+document.addEventListener('toolbar:setAlertContentHeight', e => {
+  // eslint-disable-next-line no-console
+  console.log('toolbar:setAlertContentHeight', e);
+  const message = e.detail;
+  ipcRenderer.send('toolbar:setAlertContentHeight', message.height);
 });

@@ -1,5 +1,26 @@
 <template>
-  <div class="wrapper" :class="{ 'dragging-session': !!draggingSessionId }">
+  <div>
+    <div class="header border-b border-gray-400 flex flex-row p-2">
+      <img src="/icons/circuits.svg" class="h-8 mr-2" />
+      <h2 class="flex-1 text-2xl font-light">after-goto</h2>
+      <div id="buttonbar">
+        <button
+          @click.prevent="copyCode()"
+          id="copy-code-button"
+          class="app-button"
+          :class="{ saving: saving }"
+        >
+          <div class="icon"></div>
+          <label>{{ data.needsCodeChange ? 'Copy code' : 'Apply changes' }}</label>
+        </button>
+        <span id="save-message">{{ copiedToClipboard ? 'copied' : '   ' }}</span>
+
+        <button @click.prevent="exit()" id="exit-button" class="app-button">
+          <div class="icon"></div>
+          <label>Exit</label>
+        </button>
+      </div>
+    </div>
     <FocusedState
       v-if="focusedState"
       :focused-session-id="focusedSessionId"
@@ -185,24 +206,6 @@
           </select>
         </div>
       </div>
-
-      <div id="buttonbar">
-        <button
-          @click.prevent="copyCode()"
-          id="copy-code-button"
-          class="app-button"
-          :class="{ saving: saving }"
-        >
-          <div class="icon"></div>
-          <label>{{ data.needsCodeChange ? 'Copy code' : 'Apply changes' }}</label>
-        </button>
-        <span id="save-message">{{ copiedToClipboard ? 'copied' : '   ' }}</span>
-
-        <button @click.prevent="exit()" id="exit-button" class="app-button">
-          <div class="icon"></div>
-          <label>Exit</label>
-        </button>
-      </div>
     </div>
   </div>
 </template>
@@ -214,7 +217,7 @@ import IPageStateUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/I
 import * as screenshotCache from '@/utils/screenshotCache';
 import Timeline from '@/components/Timeline.vue';
 import TimelineHandle from '@/components/TimelineHandle.vue';
-import FocusedState from '@/pages/pagestate-panel/views/FocusedState.vue';
+import FocusedState from '@/pages/popup-panel/components/FocusedState.vue';
 
 function defaultData(): IPageStateUpdatedEvent {
   return {
@@ -479,11 +482,10 @@ export default Vue.defineComponent({
 </script>
 
 <style lang="scss">
-@import '../../assets/style/common-mixins';
-@import '../../assets/style/resets';
+@import '../../../assets/style/common-mixins';
+@import '../../../assets/style/resets';
 
 :root {
-  --toolbarBackgroundColor: #f5faff;
   --buttonActiveBackgroundColor: rgba(176, 173, 173, 0.4);
   --buttonHoverBackgroundColor: rgba(255, 255, 255, 0.08);
 }
@@ -495,10 +497,11 @@ body {
   width: 100%;
 }
 
-.wrapper {
-  box-sizing: border-box;
-  background: white;
-  margin: 0;
+.header {
+  -webkit-app-region: drag;
+  img {
+    pointer-events: none;
+  }
 }
 
 .app-button {
@@ -540,11 +543,6 @@ body {
     background-size: contain;
     background-repeat: no-repeat;
   }
-}
-
-.dragging-session #states .tab.focused {
-  opacity: 0.6;
-  box-shadow: none;
 }
 
 #manage-states {

@@ -72,10 +72,6 @@ export default defineComponent({
     display: flex;
     position: relative;
 
-    &.highlighted {
-      background-color: #f3fbff;
-    }
-
     .key {
       padding-right: 5px;
     }
