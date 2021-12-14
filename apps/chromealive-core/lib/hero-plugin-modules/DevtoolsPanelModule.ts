@@ -3,6 +3,7 @@ import BridgeToDevtoolsPrivate from '../bridges/BridgeToDevtoolsPrivate';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import TabGroupModule from './TabGroupModule';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
+import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
 
 export default class DevtoolsPanelModule {
   public static bySessionId = new Map<string, DevtoolsPanelModule>();
@@ -15,13 +16,12 @@ export default class DevtoolsPanelModule {
     this.bridgeToDevtoolsPrivate = bridgeToDevtoolsPrivate;
   }
 
-  public onNewPuppetPage(page: IPuppetPage, session: ISessionSummary): Promise<any> {
-    const sessionId = session.id;
-    DevtoolsPanelModule.bySessionId.set(sessionId, this);
+  public onNewPuppetContext(context: IPuppetContext, session: ISessionSummary): void {
+    DevtoolsPanelModule.bySessionId.set(session.id, this);
+  }
 
-    page.browserContext.once('close', () => DevtoolsPanelModule.bySessionId.delete(sessionId));
-
-    return Promise.resolve();
+  public close(session: ISessionSummary): void {
+    DevtoolsPanelModule.bySessionId.delete(session.id);
   }
 
   public async closeDevtoolsPanelForPage(page: IPuppetPage): Promise<void> {

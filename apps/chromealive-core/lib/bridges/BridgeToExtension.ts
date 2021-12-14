@@ -36,11 +36,11 @@ export default class BridgeToExtension extends EventEmitter {
     const { devtoolsSession } = page;
     this.devtoolsSessionsByPageId[page.id] = devtoolsSession;
 
-    page.on('close', () => {
+    page.once('close', () => {
       this.closePuppetPage(page);
       delete this.devtoolsSessionsByPageId[page.id];
     });
-    page.on('close', () => this.closePuppetPage(page));
+    page.once('close', () => this.closePuppetPage(page));
 
     devtoolsSession.on('Runtime.executionContextCreated', event => {
       this.onContextCreated(page, event);

@@ -21,6 +21,7 @@ import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
 import PageStateSessionTimeline from './PageStateSessionTimeline';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import TimelineRecorder from '@ulixee/hero-timetravel/lib/TimelineRecorder';
+import AboutPage from './AboutPage';
 
 const { log } = Log(module);
 
@@ -53,8 +54,8 @@ export default class PageStateManager extends TypedEventEmitter<{
   >();
 
   private activePageStateId: string;
-  private isHeroSessionFocused = false;
   private activeTimelineHeroSessionId: string;
+  private readonly aboutPage: AboutPage;
   private tabGroupId: number;
   private readonly spawnedWorldHeroSessionIds = new Set<string>();
   private readonly openHeroSessionsById = new Map<string, HeroSession>();
@@ -66,6 +67,7 @@ export default class PageStateManager extends TypedEventEmitter<{
 
   private readonly scriptInstanceMeta: IScriptInstanceMeta;
 
+  private isClosing = false;
   // publishing debounce
   private lastPublish: number;
   private publishTimeout: NodeJS.Timeout;
@@ -79,6 +81,7 @@ export default class PageStateManager extends TypedEventEmitter<{
     this.logger = log.createChild(module, {
       sessionId: sourceHeroSession.id,
     });
+    this.aboutPage = new AboutPage(sessionObserver.heroSession);
     this.trackHeroSession(sourceHeroSession, sessionObserver.timelineRecorder);
   }
 
@@ -109,10 +112,12 @@ export default class PageStateManager extends TypedEventEmitter<{
   }
 
   public async close(destroy = false): Promise<void> {
+    this.isClosing = true;
     this.emit(destroy ? 'close' : 'exit');
     for (const { generator } of this.pageStateById.values()) {
       await generator.close();
     }
+    if (this.aboutPage) await this.aboutPage.close();
     // don't clear generators or sessions in case we re-open
     if (destroy) {
       this.clear();
@@ -166,6 +171,7 @@ export default class PageStateManager extends TypedEventEmitter<{
   }
 
   public async loadPageState(id: string): Promise<void> {
+    this.isClosing = false;
     this.emit('enter', { pageStateId: id });
     this.activePageStateId = id;
 
@@ -244,10 +250,13 @@ export default class PageStateManager extends TypedEventEmitter<{
     this.updateState();
   }
 
-  public removeState(name: string): void {
+  public async removeState(name: string): Promise<void> {
     const existing = this.generator.statesByName.get(name);
     if (!existing) return;
 
+    if (existing.sessionIds.has(this.activeTimelineHeroSessionId)) {
+      await this.unfocusSession();
+    }
     this.generator.deleteState(name);
     this.didMakeStateChanges(this.activePageStateId, name);
     this.updateState();
@@ -257,17 +266,16 @@ export default class PageStateManager extends TypedEventEmitter<{
     return this.activeSessionTimeline?.sessionId === heroSessionId;
   }
 
-  public unfocusSession(): void {
-    this.isHeroSessionFocused = false;
+  public async unfocusSession(): Promise<void> {
+    this.activeTimelineHeroSessionId = null;
+    await this.aboutPage.open('circuits');
+    await this.closeTimetravel();
     this.publish();
   }
 
   public async openTimetravel(heroSessionId: string): Promise<void> {
     if (this.activeTimelineHeroSessionId === heroSessionId) {
-      if (this.isHeroSessionFocused === false) {
-        await this.gotoActiveSessionEnd();
-      }
-      this.isHeroSessionFocused = true;
+      await this.gotoActiveSessionEnd();
       return;
     }
 
@@ -280,7 +288,6 @@ export default class PageStateManager extends TypedEventEmitter<{
     }
 
     this.activeTimelineHeroSessionId = heroSessionId;
-    this.isHeroSessionFocused = true;
     this.timetravelPlayer = TimetravelPlayer.create(
       heroSessionId,
       // load into context of source hero
@@ -289,7 +296,11 @@ export default class PageStateManager extends TypedEventEmitter<{
     );
     this.activeSessionTimeline.refreshMetadata();
 
-    await Promise.all([this.gotoActiveSessionEnd(), prevTimetravel?.close()]);
+    await Promise.all([
+      this.gotoActiveSessionEnd(),
+      prevTimetravel?.close(),
+      this.aboutPage.close(),
+    ]);
     this.timetravelPlayer.once('all-tabs-closed', this.onTimetravelTabsClosed);
   }
 
@@ -320,8 +331,11 @@ export default class PageStateManager extends TypedEventEmitter<{
 
   private async onTimetravelTabsClosed(): Promise<void> {
     await this.closeTimetravel();
+    if (!this.isClosing) {
+      await this.aboutPage.open('circuits');
+    }
+
     this.publish();
-    // TODO: show a blank explainer page
   }
 
   private async closeTimetravel(): Promise<void> {
@@ -329,7 +343,6 @@ export default class PageStateManager extends TypedEventEmitter<{
 
     this.timetravelPlayer.off('all-tabs-closed', this.onTimetravelTabsClosed);
     this.activeTimelineHeroSessionId = null;
-    this.isHeroSessionFocused = false;
     const closePromise = this.timetravelPlayer.close();
     this.timetravelPlayer = null;
     await closePromise;
@@ -362,8 +375,9 @@ export default class PageStateManager extends TypedEventEmitter<{
     const listener = event.listener;
     const pageStateId = listener.id;
     const sessionId = tab.sessionId;
+    let didAddToDefaultState = false;
     if (!this.pageStateById.has(pageStateId)) {
-      this.recordPageState(sessionId, listener);
+      didAddToDefaultState = this.recordPageState(sessionId, listener);
     } else if (this.activePageStateId === pageStateId) {
       this.bindPageStateListenerToGenerator(listener);
     }
@@ -375,7 +389,10 @@ export default class PageStateManager extends TypedEventEmitter<{
     const timelineRecorder = this.timelineRecordersBySessionId.get(sessionId);
     sessionTimeline.trackSession(heroSession, timelineRecorder);
 
-    listener.on('resolved', this.onPageStateResolved.bind(this, tab, pageStateId));
+    // If we already have this session, don't wait for a result. It got added to default
+    if (!didAddToDefaultState) {
+      listener.on('resolved', this.onPageStateResolved.bind(this, tab, pageStateId));
+    }
 
     const { loadingRange, timelineRange } = sessionTimeline.onNewPageState(tab, listener);
 
@@ -464,7 +481,7 @@ export default class PageStateManager extends TypedEventEmitter<{
       .catch(error => this.logger.error('Error updating page state', { error }));
   }
 
-  private recordPageState(heroSessionId: string, listener: PageStateListener): void {
+  private recordPageState(heroSessionId: string, listener: PageStateListener): boolean {
     const pageStateId = listener.id;
     const generator = new PageStateGenerator(pageStateId, heroSessionId);
 
@@ -494,7 +511,9 @@ export default class PageStateManager extends TypedEventEmitter<{
     if (!listener.states.length) {
       generator.addState('default', heroSessionId);
       this.didMakeStateChanges(pageStateId, 'default');
+      return true;
     }
+    return false;
   }
 
   private bindPageStateListenerToGenerator(listener: PageStateListener): void {
@@ -600,7 +619,7 @@ export default class PageStateManager extends TypedEventEmitter<{
         assertionCounts,
         timeline: data,
         isPrimary: id === heroAliveId,
-        isFocused: this.isHeroSessionFocused && this.activeTimelineHeroSessionId === id,
+        isFocused: this.activeTimelineHeroSessionId === id,
         isSpawnedWorld: this.spawnedWorldHeroSessionIds.has(id) && id !== heroAliveId,
         needsAssignment: generator.unresolvedSessionIds.has(id),
         isRunning: this.isSessionLive(sessionTimeline.heroSession),

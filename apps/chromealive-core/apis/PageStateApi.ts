@@ -25,12 +25,12 @@ export default class PageStateApi {
     getPageStateManager().renameState(args.state, args.oldValue);
   }
 
-  static removeState(args: { state: string }): void {
-    getPageStateManager().removeState(args.state);
+  static async removeState(args: { state: string }): Promise<void> {
+    await getPageStateManager().removeState(args.state);
   }
 
-  static unfocusSession(): void {
-    getPageStateManager().unfocusSession();
+  static async unfocusSession(): Promise<void> {
+    await getPageStateManager().unfocusSession();
   }
 
   static async openSession(args: { heroSessionId: string }): Promise<void> {
@@ -49,7 +49,10 @@ export default class PageStateApi {
     await pageStateManager.changeSessionLoadingTimeBoundary(args.timelineOffset, args.isStartTime);
   }
 
-  static async extendSessionTime(args: { heroSessionId: string; addMillis: number }): Promise<void> {
+  static async extendSessionTime(args: {
+    heroSessionId: string;
+    addMillis: number;
+  }): Promise<void> {
     const pageStateManager = getPageStateManager();
     await pageStateManager.extendSessionTime(args.heroSessionId, args.addMillis);
   }

@@ -6,5 +6,6 @@ module.exports = {
     databox: './src/pages/databox/index.ts',
     'pagestate-panel': './src/pages/pagestate-panel/index.ts',
     'pagestate-popup': './src/pages/pagestate-popup/index.ts',
+    about: './src/pages/about/index.ts',
   },
 };

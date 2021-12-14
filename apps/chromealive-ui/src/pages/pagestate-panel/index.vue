@@ -122,7 +122,7 @@
         </button>
       </div>
 
-      <div id="session-grid" v-if="needsAssignmentSessions.length || spawnedWorlds.length">
+      <div id="session-grid" v-if="needsAssignmentSessions.length || newWorlds.length">
         <h5 v-if="needsAssignmentSessions.length">Unassigned Worlds</h5>
         <div
           v-for="session of needsAssignmentSessions"
@@ -149,9 +149,9 @@
           </div>
         </div>
 
-        <h5 v-if="spawnedWorlds.length">Spawned Worlds</h5>
+        <h5 v-if="newWorlds.length">New Worlds</h5>
         <div
-          v-for="session of spawnedWorlds"
+          v-for="session of newWorlds"
           :class="{
             session: true,
             placeholder: session.id === 'placeholder',
@@ -270,7 +270,7 @@ export default Vue.defineComponent({
     needsAssignmentSessions(): IPageStateUpdatedEvent['heroSessions'] {
       return this.data?.heroSessions?.filter(x => x.needsAssignment) ?? [];
     },
-    spawnedWorlds(): IPageStateUpdatedEvent['heroSessions'] {
+    newWorlds(): IPageStateUpdatedEvent['heroSessions'] {
       return this.data?.heroSessions?.filter(x => x.isSpawnedWorld && !x.needsAssignment) ?? [];
     },
   },
@@ -337,11 +337,22 @@ export default Vue.defineComponent({
 
     unfocusState(): void {
       this.focusedStateName = null;
+      this.unfocusSession();
     },
 
     focusState(state: IPageStateUpdatedEvent['states'][0]): void {
       if (this.editingStateName || this.draggingSessionId) return;
       this.focusedStateName = state.state;
+
+      console.log('focus on state', state.state, state.heroSessionIds, this.focusedSessionId);
+      if (!state.heroSessionIds.includes(this.focusedSessionId)) {
+        const firstSession = this.data.heroSessions.find(x => x.id === state.heroSessionIds[0]);
+        if (firstSession) {
+          this.focusOnSession(firstSession);
+        } else {
+          this.unfocusSession();
+        }
+      }
     },
 
     addState(state: string): void {
@@ -382,6 +393,7 @@ export default Vue.defineComponent({
     },
 
     unfocusSession(): void {
+      if (!this.focusedSessionId) return;
       this.focusedSessionId = null;
       Client.send('PageState.unfocusSession').catch(alert);
     },
@@ -815,7 +827,7 @@ body {
       flex: 1;
     }
     table {
-      tr  {
+      tr {
         border-color: transparent;
       }
     }

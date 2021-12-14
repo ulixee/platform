@@ -80,8 +80,13 @@ export default class HeroCorePlugin extends CorePlugin {
     });
   }
 
-  async onNewPuppetContext(context: IPuppetContext): Promise<any> {
+  async onNewPuppetContext(context: IPuppetContext, sessionSummary: ISessionSummary): Promise<any> {
     if (context.isIncognito) return;
+
+    context.once('close', this.onContextClosed.bind(this, sessionSummary));
+
+    this.tabGroupModule.onNewPuppetContext(context, sessionSummary);
+    this.devtoolsPanelModule.onNewPuppetContext(context, sessionSummary);
 
     const currentTargets = await context.sendWithBrowserDevtoolsSession('Target.getTargets');
     for (const target of currentTargets.targetInfos) {
@@ -115,8 +120,7 @@ export default class HeroCorePlugin extends CorePlugin {
       this.bridgeToExtension.addPuppetPage(page),
       this.windowBoundsModule.onNewPuppetPage(page, sessionSummary),
       this.focusedWindowModule.onNewPuppetPage(page, sessionSummary),
-      this.tabGroupModule.onNewPuppetPage(page, sessionSummary),
-      this.devtoolsPanelModule.onNewPuppetPage(page, sessionSummary),
+      this.tabGroupModule.onNewPuppetPage(page),
     ]);
   }
 
@@ -130,5 +134,10 @@ export default class HeroCorePlugin extends CorePlugin {
   ): Promise<any> {
     const { targetInfo } = event;
     if (targetInfo.url !== `chrome-extension://${extensionId}/background.js`) return;
+  }
+
+  onContextClosed(sessionSummary: ISessionSummary): void {
+    this.tabGroupModule.close();
+    this.devtoolsPanelModule.close(sessionSummary);
   }
 }
