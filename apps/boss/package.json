@@ -17,7 +17,7 @@
   "dependencies": {
     "@ulixee/apps-chromealive-core": "1.5.4",
     "@ulixee/default-browser-emulator": "1.5.4",
-    "@ulixee/commons": "1.5.8",
+    "@ulixee/commons": "1.5.9",
     "@ulixee/server": "1.5.4",
     "electron-positioner": "^4.1.0",
     "tar": "^6.1.11",

@@ -18,7 +18,7 @@
     "@headlessui/vue": "^1.4.1",
     "@heroicons/vue": "^1.0.4",
     "@tailwindcss/forms": "^0.3.3",
-    "@ulixee/commons": "1.5.8",
+    "@ulixee/commons": "1.5.9",
     "@ulixee/apps-chromealive-core": "1.5.4",
     "@webcomponents/custom-elements": "^1.5.0",
     "core-js": "^3.6.5",
