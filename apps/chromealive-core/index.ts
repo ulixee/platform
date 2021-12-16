@@ -16,6 +16,7 @@ const { log } = Log(module);
 
 export default class ChromeAliveCore {
   public static sessionObserversById = new Map<string, SessionObserver>();
+  public static vueServer: string;
   public static get activeSessionObserver(): SessionObserver {
     return this.sessionObserversById.get(this.activeHeroSessionId);
   }

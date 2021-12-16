@@ -4,8 +4,8 @@ export default interface IPageStateApi {
   renameState(args: { state: string; oldValue: string }): void;
   addState(args: { heroSessionIds: string[]; state: string }): void;
   spawnSession(): Promise<void>;
-  removeState(args: { state: string }): void;
-  unfocusSession(): void;
+  removeState(args: { state: string }): Promise<void>;
+  unfocusSession(): Promise<void>;
   openSession(args: { heroSessionId: string }): Promise<void>;
   modifySessionTimes(args: {
     heroSessionId: string;

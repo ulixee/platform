@@ -61,7 +61,8 @@ export class ChromeAlive extends EventEmitter {
     const vueDistPath = Path.resolve(__dirname, '..', 'ui');
     if (!Fs.existsSync(vueDistPath)) throw new Error('ChromeAlive UI not installed');
 
-    const staticServer = new StaticServer(vueDistPath);
+    const cacheTime = app.isPackaged ? 3600 * 24 : 0;
+    const staticServer = new StaticServer(vueDistPath, { cache: cacheTime });
 
     this.#vueServer = Http.createServer((req, res) => {
       staticServer.serve(req, res);
@@ -258,13 +259,16 @@ export class ChromeAlive extends EventEmitter {
       }
     });
 
-    const port = (await this.#vueAddress).port;
-    await this.#timelineWindow.loadURL(`http://localhost:${port}/timeline.html`);
+    const vueServerAddress = await this.#vueAddress;
+    await this.#timelineWindow.loadURL(`http://localhost:${vueServerAddress.port}/timeline.html`);
 
     await this.injectCoreServer(this.#timelineWindow);
 
     const workareaBounds = { left: workarea.x, top: workarea.y, ...workarea };
-    await this.#api.send('App.ready', { workarea: workareaBounds });
+    await this.#api.send('App.ready', {
+      workarea: workareaBounds,
+      vueServer: `http://localhost:${vueServerAddress.port}`,
+    });
   }
 
   private async createToolbarWindow(): Promise<void> {

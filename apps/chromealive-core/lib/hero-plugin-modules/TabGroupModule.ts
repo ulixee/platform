@@ -4,6 +4,7 @@ import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import BridgeToExtension from '../bridges/BridgeToExtension';
 import { createResponseId, IMessageObject, MessageLocation, ResponseCode } from '../BridgeHelpers';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
 
 export default class TabGroupModule extends TypedEventEmitter<{
   'tab-group-opened': number;
@@ -18,6 +19,7 @@ export default class TabGroupModule extends TypedEventEmitter<{
   constructor(bridgeToExtension: BridgeToExtension, browserEmitter: EventEmitter) {
     super();
     this.bridgeToExtension = bridgeToExtension;
+    this.close = this.close.bind(this);
     browserEmitter.on('payload', (payload, puppetPageId) => {
       if (payload.event === 'OnTabIdentify') {
         this.onTabIdentified(payload, puppetPageId);
@@ -27,11 +29,13 @@ export default class TabGroupModule extends TypedEventEmitter<{
     });
   }
 
-  public onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
+  public onNewPuppetContext(context: IPuppetContext, sessionSummary: ISessionSummary): void {
     this.sessionId = sessionSummary.id;
     TabGroupModule.bySessionId.set(this.sessionId, this);
-    page.on('close', this.pageClosed.bind(this, page));
-    page.browserContext.on('close', this.close.bind(this));
+  }
+
+  public onNewPuppetPage(page: IPuppetPage): Promise<any> {
+    page.once('close', this.pageClosed.bind(this, page));
     return Promise.resolve();
   }
 
