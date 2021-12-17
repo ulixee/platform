@@ -9,7 +9,7 @@
   "license": "MIT",
   "dependencies": {
     "@ulixee/hero-interfaces": "1.5.4",
-    "@ulixee/commons": "1.5.8",
+    "@ulixee/commons": "1.5.9",
     "@ulixee/hero-plugin-utils": "1.5.4",
     "@ulixee/hero-puppet-chrome": "1.5.4",
     "@ulixee/default-browser-emulator": "1.5.4",

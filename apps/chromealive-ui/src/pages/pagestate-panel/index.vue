@@ -344,7 +344,6 @@ export default Vue.defineComponent({
       if (this.editingStateName || this.draggingSessionId) return;
       this.focusedStateName = state.state;
 
-      console.log('focus on state', state.state, state.heroSessionIds, this.focusedSessionId);
       if (!state.heroSessionIds.includes(this.focusedSessionId)) {
         const firstSession = this.data.heroSessions.find(x => x.id === state.heroSessionIds[0]);
         if (firstSession) {

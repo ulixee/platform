@@ -1,4 +1,5 @@
 import IResolvablePromise from '../interfaces/IResolvablePromise';
+import ISourceCodeLocation from '../interfaces/ISourceCodeLocation';
 import Resolvable from './Resolvable';
 import CallSite = NodeJS.CallSite;
 
@@ -12,19 +13,23 @@ export function assert(value: unknown, message?: string, reject?): void {
   }
 }
 
-export function getCallSite(priorToFilename?: string, endFilename?: string): CallSite[] {
+export function getCallSite(priorToFilename?: string, endFilename?: string): ISourceCodeLocation[] {
   const err = new Error();
 
   Error.prepareStackTrace = (_, stack) => stack;
 
-  let stack = err.stack as unknown as CallSite[];
+  let stack = (err.stack as unknown as CallSite[]).map(x => ({
+    filename: x.getFileName(),
+    line: x.getLineNumber(),
+    column: x.getColumnNumber() - 1,
+  }));
 
   Error.prepareStackTrace = undefined;
   let startIndex = 1;
 
   if (priorToFilename) {
     const idx = stack.findIndex(
-      x => x.getFileName() === priorToFilename || x.getFileName()?.endsWith(priorToFilename),
+      x => x.filename === priorToFilename || x.filename?.endsWith(priorToFilename),
     );
     if (idx >= 0) startIndex = idx + 1;
   }
@@ -34,14 +39,14 @@ export function getCallSite(priorToFilename?: string, endFilename?: string): Cal
     let lastIdx = -1;
     for (let i = stack.length - 1; i >= 0; i -= 1) {
       const x = stack[i];
-      if (x.getFileName() === endFilename || x.getFileName()?.endsWith(endFilename)) {
+      if (x.filename === endFilename || x.filename?.endsWith(endFilename)) {
         lastIdx = i;
         break;
       }
     }
     if (lastIdx >= 0) stack = stack.slice(0, lastIdx + 1);
   }
-  return stack.filter(x => !!x.getFileName() && !x.getFileName()?.startsWith('internal'));
+  return stack.filter(x => !!x.filename && !x.filename?.startsWith('internal'));
 }
 
 export function escapeUnescapedChar(str: string, char: string): string {
