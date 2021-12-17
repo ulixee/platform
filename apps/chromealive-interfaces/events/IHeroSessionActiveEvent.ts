@@ -13,6 +13,7 @@ export default interface IHeroSessionActiveEvent {
   pageStateIdNeedsResolution: string;
   pageStates: {
     id: string;
+    name: string;
     offsetPercent: number;
     isUnresolved: boolean;
     resolvedState: string;

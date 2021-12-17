@@ -22,6 +22,7 @@ import PageStateSessionTimeline from './PageStateSessionTimeline';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import TimelineRecorder from '@ulixee/hero-timetravel/lib/TimelineRecorder';
 import AboutPage from './AboutPage';
+import SourceLoader from '@ulixee/commons/lib/SourceLoader';
 
 const { log } = Log(module);
 
@@ -44,6 +45,7 @@ export default class PageStateManager extends TypedEventEmitter<{
   private readonly pageStateById = new Map<
     string,
     {
+      name: string;
       startingStates: string[];
       needsCodeChange: boolean;
       modifiedStates: Set<string>;
@@ -83,6 +85,10 @@ export default class PageStateManager extends TypedEventEmitter<{
     });
     this.aboutPage = new AboutPage(sessionObserver.heroSession);
     this.trackHeroSession(sourceHeroSession, sessionObserver.timelineRecorder);
+  }
+
+  public getPageState(pageStateId: string): ReturnType<PageStateManager['pageStateById']['get']> {
+    return this.pageStateById.get(pageStateId);
   }
 
   public getScreenshot(heroSessionId: string, tabId: number, timestamp: number): string {
@@ -375,9 +381,10 @@ export default class PageStateManager extends TypedEventEmitter<{
     const listener = event.listener;
     const pageStateId = listener.id;
     const sessionId = tab.sessionId;
+
     let didAddToDefaultState = false;
     if (!this.pageStateById.has(pageStateId)) {
-      didAddToDefaultState = this.recordPageState(sessionId, listener);
+      didAddToDefaultState = this.recordPageState(tab, listener);
     } else if (this.activePageStateId === pageStateId) {
       this.bindPageStateListenerToGenerator(listener);
     }
@@ -481,11 +488,22 @@ export default class PageStateManager extends TypedEventEmitter<{
       .catch(error => this.logger.error('Error updating page state', { error }));
   }
 
-  private recordPageState(heroSessionId: string, listener: PageStateListener): boolean {
+  private recordPageState(tab: Tab, listener: PageStateListener): boolean {
     const pageStateId = listener.id;
-    const generator = new PageStateGenerator(pageStateId, heroSessionId);
+    const generator = new PageStateGenerator(pageStateId, tab.sessionId);
+
+    const lastCommand = tab.session.commands.history[tab.session.commands.length - 2];
+    let name = `after "${lastCommand.name}"`;
+    if (lastCommand.callsite) {
+      const callsite = JSON.parse(lastCommand.callsite)[0];
+      const sourceCode = SourceLoader.getSource(callsite);
+      if (sourceCode.code) {
+        name = `after "${sourceCode.code.trim()}"`;
+      }
+    }
 
     this.pageStateById.set(pageStateId, {
+      name,
       startingStates: [...listener.states],
       needsCodeChange: false,
       modifiedStates: new Set(),
@@ -509,7 +527,7 @@ export default class PageStateManager extends TypedEventEmitter<{
     }
 
     if (!listener.states.length) {
-      generator.addState('default', heroSessionId);
+      generator.addState('default', tab.sessionId);
       this.didMakeStateChanges(pageStateId, 'default');
       return true;
     }
@@ -579,10 +597,11 @@ export default class PageStateManager extends TypedEventEmitter<{
 
   private toEvent(): IPageStateUpdateEvent {
     if (!this.activePageStateId || !this.pageStateById.has(this.activePageStateId)) return null;
-    const { needsCodeChange } = this.pageStateById.get(this.activePageStateId);
+    const { needsCodeChange, name } = this.pageStateById.get(this.activePageStateId);
 
     const result: IPageStateUpdateEvent = {
       id: this.activePageStateId,
+      name,
       needsCodeChange,
       states: [],
       heroSessions: [],
