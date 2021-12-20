@@ -219,6 +219,7 @@ import FocusedState from '@/pages/pagestate-panel/views/FocusedState.vue';
 function defaultData(): IPageStateUpdatedEvent {
   return {
     id: '',
+    name: '',
     needsCodeChange: true,
     states: [],
     heroSessions: [],
