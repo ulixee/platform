@@ -3,6 +3,7 @@ import { IAssertionCounts } from '@ulixee/hero-interfaces/IPageStateAssertionBat
 
 export default interface IPageStateUpdatedEvent {
   id: string;
+  name: string;
   needsCodeChange: boolean;
   states: {
     state: string;

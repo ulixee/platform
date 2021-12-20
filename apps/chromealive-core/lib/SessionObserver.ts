@@ -194,6 +194,7 @@ export default class SessionObserver extends TypedEventEmitter<{
 
       pageStates.push({
         id: state.id,
+        name: this.pageStateManager.getPageState(state.id)?.name,
         offsetPercent,
         isUnresolved: state.isUnresolved,
         resolvedState: state.resolvedState,
