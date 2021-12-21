@@ -174,10 +174,10 @@
             <span class="times">{{ formattedTimeRange(session) }}</span>
           </div>
 
-          <select>
+          <select @change="moveSessionToState(session.id, $event.target.value)">
             <option
               v-for="state of data.states"
-              @click.prevent="moveSessionToState(session, state.state)"
+              :value="state.state"
               :selected="state.heroSessionIds.includes(session.id)"
             >
               {{ state.state }}

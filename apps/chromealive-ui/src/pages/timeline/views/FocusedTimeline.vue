@@ -2,11 +2,10 @@
   <div id="FocusedTimelinePage">
     <div id="chrome-alive-bar" ref="toolbarDiv">
       <div id="timeline-bar" v-if="focusedSession">
-        <select class="change-state-select">
+        <select class="change-state-select" @change="moveSessionToState($event.target.value)">
           <option>--Assign this world to a state--</option>
           <option
             v-for="state of states"
-            @click.prevent="moveSessionToState(state.state)"
             :value="state.state"
             :selected="state.heroSessionIds.includes(focusedSession.id)"
           >

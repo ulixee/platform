@@ -45,10 +45,10 @@
             <h5 class="session-name">{{ session.name }}</h5>
           </div>
 
-          <select>
+          <select @change="moveSessionToState(session.id, $event.target.value)">
             <option
               v-for="state of states"
-              @click.prevent="moveSessionToState(session, state.state)"
+              :value="state.state"
               :selected="state.heroSessionIds.includes(session.id)"
             >
               {{ state.state }}
