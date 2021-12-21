@@ -225,7 +225,7 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
   ): { loadingRange: [number, number]; timelineRange: [number, number] } {
     const timelineMillis = this.getDefaultTimelineMillis(sessionId);
     let loadingStartTime = listener.startTime;
-    let loadingEndTime = loadingStartTime + timelineMillis;
+    let loadingEndTime = Date.now() + timelineMillis;
 
     const firstNav = navigations.history
       .find(x => x.statusChanges.get(LoadStatus.HttpRequested) > loadingStartTime)
