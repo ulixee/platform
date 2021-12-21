@@ -109,11 +109,15 @@ export default class PageStateManager extends TypedEventEmitter<{
   public async save(): Promise<{ code: string; needsCodeChange: boolean }> {
     const id = this.activePageStateId;
 
-    const { needsCodeChange, generator } = this.pageStateById.get(id);
+    const pageState = this.pageStateById.get(id);
     const code = await PageStateCodeBlock.generateCodeBlock(
-      generator,
+      pageState.generator,
       this.sessionObserver.scriptInstanceMeta,
     );
+    const needsCodeChange = pageState.needsCodeChange;
+    pageState.needsCodeChange = false;
+    const newState = pageState.generator.getStateForSessionId(this.sessionObserver.heroSession.id);
+    this.sessionObserver.markPageStateResolved(id, newState);
     return { needsCodeChange, code };
   }
 

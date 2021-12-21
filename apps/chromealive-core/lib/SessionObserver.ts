@@ -48,6 +48,8 @@ export default class SessionObserver extends TypedEventEmitter<{
     resolvedState: string;
   }[] = [];
 
+  private sessionHasChangesRequiringRestart = false;
+
   private scriptLastModifiedTime: number;
   private databoxSession: DataboxSession;
   private outputRebuilder = new OutputRebuilder();
@@ -117,7 +119,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     startLocation: ISessionCreateOptions['sessionResume']['startLocation'],
     startNavigationId?: number,
   ): Promise<Error | undefined> {
-    if (startLocation === 'sessionStart') {
+    if (startLocation === 'sessionStart' || this.sessionHasChangesRequiringRestart) {
       ChromeAliveCore.restartingHeroSessionId = this.heroSession.id;
       AliveBarPositioner.restartingSession(this.heroSession.id);
       await this.heroSession.close(true);
@@ -287,6 +289,16 @@ export default class SessionObserver extends TypedEventEmitter<{
     // if time travel is opened and we focused on a live page, close it
     if (didFocusOnLiveTab && this.timetravelPlayer.isOpen) {
       await this.closeTimetravel();
+    }
+  }
+
+  public markPageStateResolved(pageStateId: string, state: string): void {
+    const pageState = this.waitForPageStateEvents.find(x => x.id === pageStateId);
+    if (pageState) {
+      pageState.isUnresolved = !state;
+      pageState.resolvedState = state;
+      this.sessionHasChangesRequiringRestart = true;
+      this.emit('hero:updated');
     }
   }
 
