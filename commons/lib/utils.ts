@@ -15,6 +15,7 @@ export function assert(value: unknown, message?: string, reject?): void {
 
 export function getCallSite(priorToFilename?: string, endFilename?: string): ISourceCodeLocation[] {
   const err = new Error();
+  const startingPrepareStack = Error.prepareStackTrace;
 
   Error.prepareStackTrace = (_, stack) => stack;
 
@@ -24,7 +25,7 @@ export function getCallSite(priorToFilename?: string, endFilename?: string): ISo
     column: x.getColumnNumber() - 1,
   }));
 
-  Error.prepareStackTrace = undefined;
+  Error.prepareStackTrace = startingPrepareStack;
   let startIndex = 1;
 
   if (priorToFilename) {
