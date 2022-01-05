@@ -116,6 +116,10 @@ export default class ChromeAliveCore {
       return;
     }
 
+    if (heroSession.mode === 'production') {
+      return;
+    }
+
     if (heroSession.mode === 'development') {
       heroSession.configureHeaded({ showBrowser: true });
       heroSession.options.sessionKeepAlive = true;
