@@ -143,6 +143,7 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
     const generatorSession = this.getGeneratorSession();
     generatorSession.loadingRange[1] = Date.now();
     generatorSession.needsProcessing = true;
+    this.timelineRecorder.dontExtendSessionPastTime(generatorSession.timelineRange[1]);
   }
 
   private changeTimelineRange(timeRange: [number, number]) {

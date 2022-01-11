@@ -5,12 +5,13 @@ import {
 } from '@ulixee/apps-chromealive-interfaces/apis';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
 import * as WebSocket from 'ws';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import IChromeAliveEvent from '@ulixee/apps-chromealive-interfaces/events/IChromeAliveEvent';
 
 type IEvent = keyof IChromeAliveEvents;
 
-export default class ChromeAliveApi {
+export default class ChromeAliveApi extends TypedEventEmitter<{ close: void }> {
   private pendingMessagesById = new Map<string, (args: any) => any>();
   private messageCounter = 0;
   private webSocket: WebSocket;
@@ -19,6 +20,7 @@ export default class ChromeAliveApi {
     private chromeAliveServerApi: string,
     public onEvent: (event: IEvent, data?: IChromeAliveEvents[IEvent]) => any,
   ) {
+    super();
     process.on('disconnect', () => this.onEvent('App.quit'));
     process.on('message', this.onMessage.bind(this));
   }
@@ -26,7 +28,8 @@ export default class ChromeAliveApi {
   public async connect() {
     const webSocket = new WebSocket(this.chromeAliveServerApi);
     this.webSocket = webSocket;
-    await new Promise<WebSocket | Error>(resolve => {
+    this.webSocket.on('close', () => this.emit('close'));
+    const result = await new Promise<WebSocket | Error>(resolve => {
       function onError(error: Error): void {
         if (error instanceof Error) resolve(error);
         else resolve(new Error(`Error connecting to Websocket host -> ${error}`));
@@ -40,6 +43,7 @@ export default class ChromeAliveApi {
         resolve(webSocket);
       });
     });
+    if (result instanceof Error) throw result;
     webSocket.on('message', message => {
       const payload = TypeSerializer.parse(message.toString(), 'REMOTE CORE');
       this.onMessage(payload);
