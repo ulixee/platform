@@ -42,6 +42,7 @@ export class ChromeAlive extends EventEmitter {
       app.setActivationPolicy('accessory');
     }
     this.#api = new ChromeAliveApi(this.coreServerAddress, this.onChromeAliveEvent.bind(this));
+    this.#api.once('close', () => this.appExit());
 
     ContextMenu({
       showInspectElement: true,
@@ -145,8 +146,8 @@ export class ChromeAlive extends EventEmitter {
     this.#exited = true;
 
     console.warn('EXITING CHROMEALIVE!');
-    app.exit();
     this.#nsEventMonitor?.stop();
+    app.exit();
   }
 
   private async appReady(): Promise<void> {

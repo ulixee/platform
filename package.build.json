@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "start": "yarn workspace @ulixee/server start",
     "test:build": "cross-env NODE_ENV=test jest"
   },
   "devDependencies": {

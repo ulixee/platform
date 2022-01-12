@@ -154,7 +154,7 @@ export default Vue.defineComponent({
       }
     },
     onDataboxUpdated(message: IDataboxUpdatedEvent) {
-      this.outputSize = humanizeBytes(message?.output);
+      this.outputSize = humanizeBytes(message?.bytes);
     },
     onAppModeEvent(message: IAppModeEvent): void {
       const startingMode = this.mode;

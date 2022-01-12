@@ -168,7 +168,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.heroSession.off('resumed', this.onHeroSessionResumed);
     this.heroSession.off('closing', this.close);
     this.timelineRecorder.stop();
-    this.timetravelPlayer?.close();
+    this.timetravelPlayer?.close()?.catch(console.error);
     this.pageStateManager.close(true).catch(console.error);
     this.pageStateManager.removeAllListeners('updated');
     this.emit('closed');
