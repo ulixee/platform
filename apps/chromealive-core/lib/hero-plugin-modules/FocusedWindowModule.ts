@@ -22,12 +22,10 @@ export default class FocusedWindowModule {
       this.sessionId ??= sessionSummary.id;
       if (process.env.HERO_DEBUG_CHROMEALIVE) this.debugServiceWorker(page.devtoolsSession);
     }
+    const pageId = page.id;
+    page.once('close', () => this.handlePageIsClosed(pageId));
 
-    page.once('close', () => this.handlePageIsClosed(page.id));
-
-    return Promise.all([
-      page.devtoolsSession.send('Emulation.setFocusEmulationEnabled', { enabled: false }),
-    ]);
+    return Promise.resolve();
   }
 
   private handlePageIsVisible(payload: any, puppetPageId: string) {

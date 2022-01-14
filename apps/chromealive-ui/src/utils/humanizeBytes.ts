@@ -2,7 +2,7 @@ export default function humanizeBytes(bytes: number): string {
   if (!bytes) return '0kb';
 
   if (bytes < 512) {
-    return `${bytes} bytes`;
+    return `${bytes}b`;
   }
 
   const kb = bytes / 1024;
