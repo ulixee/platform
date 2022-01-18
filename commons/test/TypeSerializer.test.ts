@@ -1,4 +1,7 @@
+// suppressing this error since including it requires puppet to be published
+// eslint-disable-next-line import/no-extraneous-dependencies
 import Puppet from '@ulixee/hero-puppet';
+// eslint-disable-next-line import/no-extraneous-dependencies
 import BrowserEmulator from '@ulixee/default-browser-emulator';
 import TypeSerializer, { stringifiedTypeSerializerClass } from '../lib/TypeSerializer';
 import { CanceledPromiseError } from '../interfaces/IPendingWaitEvent';
