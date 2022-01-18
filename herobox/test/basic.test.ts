@@ -9,6 +9,8 @@ import Herobox from '../index';
 afterAll(Helpers.afterAll);
 
 class MockedConnectionToDataboxCore extends ConnectionToDataboxCore {
+  public hostOrError = Promise.resolve('test1');
+
   public readonly outgoing = jest.fn(
     async ({ command }: ICoreRequestPayload): Promise<ICoreResponsePayload> => {
       if (command === 'Core.createSession') {
