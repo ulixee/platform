@@ -1,5 +1,5 @@
 import IComponents from '@ulixee/databox/interfaces/IComponents';
-import Resource from '@ulixee/hero/lib/Resource';
+import ICollectedResource from '@ulixee/hero-interfaces/ICollectedResource';
 import PackagedDatabox from '@ulixee/databox';
 import RunningHerobox from './RunningHerobox';
 import IExtractParams from '../interfaces/IExtractParams';
@@ -33,25 +33,28 @@ export default class PackagedHerobox extends PackagedDatabox {
       const { hero } = herobox;
       const sessionId = extractSessionId ?? (await hero.sessionId);
       const fragments = await hero.importFragments(sessionId);
+      const resources = await hero.getCollectedResources(sessionId);
       const fragmentsByName: IExtractParams['collectedFragments'] = {
         names: fragments.map(x => x.name),
         get: hero.getFragment,
       };
-      const resourcesByName: IExtractParams['collectedResources'] = {
+
+      const resourcesByName: { [name: string]: ICollectedResource } = {};
+      const collectedResources: IExtractParams['collectedResources'] = {
         names: [],
-        get(): Resource {
-          return null;
+        get(name) {
+          return resourcesByName[name];
         },
       };
-
-      for (const fragment of fragments) {
-        fragmentsByName[fragment.name] = fragment;
+      for (const resource of resources) {
+        resourcesByName[resource.name] = resource.resource;
       }
+
       await this.#extractFn({
         input: herobox.input,
         output: herobox.output,
         collectedFragments: fragmentsByName,
-        collectedResources: resourcesByName,
+        collectedResources,
       });
     }
   }
