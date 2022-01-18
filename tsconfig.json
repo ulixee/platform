@@ -22,7 +22,7 @@
     "preserveSymlinks": false,
     "experimentalDecorators": true
   },
-  "include": ["server", "apps", "commons", "./*.js", "./*.json", ".eslintrc.js"],
+  "include": ["server", "apps", "commons", "herobox", "./*.js", "./*.json", ".eslintrc.js"],
   "exclude": [
     "**/tsconfig*.json",
     "build/**/*",

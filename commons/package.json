@@ -8,8 +8,6 @@
     "source-map-js": "^1.0.1"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^5.4.1",
-    "@ulixee/default-browser-emulator": "1.5.4",
-    "@ulixee/hero-puppet": "1.5.4"
+    "@types/better-sqlite3": "^5.4.1"
   }
 }

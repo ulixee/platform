@@ -1,0 +1,16 @@
+{
+  "name": "@ulixee/herobox",
+  "version": "1.5.4",
+  "description": "A Databox format for Hero",
+  "scripts": {},
+  "dependencies": {
+    "@ulixee/commons": "1.5.9",
+    "@ulixee/databox": "1.5.4",
+    "@ulixee/databox-interfaces": "1.5.4",
+    "@ulixee/hero": "1.5.4",
+    "@ulixee/hero-interfaces": "1.5.4"
+  },
+  "devDependencies": {
+    "@ulixee/databox-testing": "1.5.4"
+  }
+}

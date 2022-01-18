@@ -80,7 +80,8 @@
       "server/*",
       "hero/build/*",
       "hero/build/plugins/*",
-      "databox/build/*"
+      "databox/build/*",
+      "herobox"
     ],
     "nohoist": [
       "**/babel-loader",
