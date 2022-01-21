@@ -47,6 +47,11 @@ class MockedConnectionToHeroCore extends ConnectionToHeroCore {
           data: [],
         };
       }
+      if (command === 'Session.getCollectedResources') {
+        return {
+          data: [],
+        };
+      }
     },
   );
 
@@ -173,6 +178,7 @@ describe('basic Herobox tests', () => {
       'Core.connect',
       'Core.createSession',
       'Session.loadAllFragments',
+      'Session.getCollectedResources',
       'Session.close',
       'Core.disconnect',
     ]);
