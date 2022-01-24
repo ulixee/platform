@@ -3,7 +3,7 @@ import Herobox from '@ulixee/herobox';
 export default new Herobox(async ({ hero }) => {
   await hero.goto('https://news.ycombinator.com/');
   await hero.waitForPaintingStable();
-  await hero.document.querySelector('#hnmain').$extractLater('table');
+  await hero.document.querySelector('#hnmain').$collect('table');
 
   const links = await hero.document.querySelectorAll('.subtext > a');
 
@@ -20,31 +20,28 @@ export default new Herobox(async ({ hero }) => {
     //   move: comments[comments.length - 1],
     // });
   }
-}).extract(async ({ output, collectedFragments }) => {
+}).extract(({ output, collectedFragments }) => {
   const stories = collectedFragments.get('table').querySelectorAll('.athing');
-  for (const story of await stories) {
-    const extraElem = await story.nextElementSibling;
+  for (const story of stories) {
+    const extraElem = story.nextElementSibling;
     output.push({});
     const record = output[output.length - 1];
 
-    const titleElem = await story.querySelector('a.titlelink');
+    const titleElem = story.querySelector('a.titlelink');
 
-    record.score = parseInt(
-      await extraElem.querySelector('.score').textContent.catch(() => '0'),
-      10,
-    );
-    record.id = await story.getAttribute('id');
-    record.age = await extraElem.querySelector('.age a').textContent;
-    record.subject = await titleElem.textContent;
-    const contributor = await extraElem.querySelector('.hnuser').textContent.catch(() => '');
+    record.score = parseInt(extraElem.querySelector('.score')?.textContent ?? '0', 10);
+    record.id = story.getAttribute('id');
+    record.age = extraElem.querySelector('.age a').textContent;
+    record.subject = titleElem.textContent;
+    const contributor = extraElem.querySelector('.hnuser')?.textContent ?? '';
     record.contributor = { id: contributor, username: contributor };
-    const links = [...(await extraElem.querySelectorAll('.subtext > a'))];
+    const links = [...extraElem.querySelectorAll('.subtext > a')];
     const commentsLink = links[links.length - 1];
-    const commentText = await commentsLink.textContent;
+    const commentText = commentsLink.textContent;
     record.commentCount = commentText.includes('comment')
       ? parseInt(commentText.trim().match(/(\d+)\s/)[0], 10)
       : 0;
 
-    record.url = await titleElem.getAttribute('href');
+    record.url = titleElem.getAttribute('href');
   }
 });

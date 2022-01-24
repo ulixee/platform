@@ -5,6 +5,7 @@ export default new Herobox(async herobox => {
   input.url ??= 'https://ulixee.org';
 
   await hero.goto('https://ulixee.org');
+  await hero.waitForPaintingStable();
 
   const { document } = hero;
   await document.querySelector('h1').textContent;

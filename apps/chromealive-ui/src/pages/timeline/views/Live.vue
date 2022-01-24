@@ -129,6 +129,8 @@ export default Vue.defineComponent({
 
       toolbarDiv,
 
+      timetravelTimeout: -1,
+      lastTimetravelTimestamp: -1,
       isTimetravelMode: Vue.ref(false),
       isRunning: Vue.ref(false),
       startLocation: Vue.ref<IStartLocation>('currentLocation'),
@@ -157,6 +159,10 @@ export default Vue.defineComponent({
       return this.toolbarDiv?.getBoundingClientRect();
     },
   },
+  async created() {
+    await Client.connect();
+  },
+
   methods: {
     toggleMenu() {
       this.menuOffsetLeft = this.menuButton.getBoundingClientRect().left;
@@ -304,6 +310,7 @@ export default Vue.defineComponent({
         this.pendingTimetravelOffset = value;
       }
       this.timelineOffset = value;
+      this.doTimetravel().catch(console.error);
     },
 
     timetravelDragstart(): void {
@@ -347,12 +354,23 @@ export default Vue.defineComponent({
 
     async doTimetravel() {
       if (this.pendingTimetravelOffset === null) return;
+
+      if (Date.now() - this.lastTimetravelTimestamp < 250) {
+        if (this.timetravelTimeout) return;
+        this.timetravelTimeout = setTimeout(this.doTimetravel, 100) as any;
+      }
       const percentOffset = this.pendingTimetravelOffset;
-      this.pendingTimetravelOffset = null;
+      this.clearPendingTimetravel();
       await Client.send('Session.timetravel', {
         heroSessionId: this.session.heroSessionId,
         percentOffset,
       });
+    },
+
+    clearPendingTimetravel() {
+      clearTimeout(this.timetravelTimeout);
+      this.timetravelTimeout = null;
+      this.pendingTimetravelOffset = null;
     },
 
     canPlay(): boolean {
@@ -463,6 +481,8 @@ export default Vue.defineComponent({
       if (this.isTimetravelMode) {
         this.closePageStatePopup();
       } else if (message.mode === 'live') {
+        this.timelineOffset = 100;
+        this.clearPendingTimetravel();
         if (this.session.pageStateIdNeedsResolution && !this.isDragging) {
           const unresolvedPageStateTick = this.timelineTicks.find(
             x => x.class === 'pagestate' && x.id === this.session.pageStateIdNeedsResolution,
@@ -475,10 +495,6 @@ export default Vue.defineComponent({
     hideMenu() {
       this.showMenu = false;
     },
-  },
-
-  async created() {
-    await Client.connect();
   },
 
   mounted() {
