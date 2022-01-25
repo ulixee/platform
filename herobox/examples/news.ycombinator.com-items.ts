@@ -3,7 +3,11 @@ import Herobox from '@ulixee/herobox';
 export default new Herobox(async ({ hero }) => {
   await hero.goto('https://news.ycombinator.com/');
   await hero.waitForPaintingStable();
-  await hero.document.querySelector('#hnmain').$collect('table');
+  const records = await hero.document.querySelectorAll('.athing');
+  await records.$collect('titles');
+  for (const record of records) {
+    await record.nextElementSibling.$collect('subtitles');
+  }
 
   const links = await hero.document.querySelectorAll('.subtext > a');
 
@@ -21,17 +25,18 @@ export default new Herobox(async ({ hero }) => {
     // });
   }
 }).extract(async ({ output, collectedFragments }) => {
-  const storyFragment = await collectedFragments.get('table');
-  const stories = storyFragment.querySelectorAll('.athing');
-  for (const story of stories) {
-    const extraElem = story.nextElementSibling;
+  const titles = await collectedFragments.getAll('titles');
+  const subtitles = await collectedFragments.getAll('subtitles');
+  for (let i = 0; i < titles.length; i += 1) {
+    const story = titles[i];
+    const extraElem = subtitles[i];
     output.push({});
     const record = output[output.length - 1];
 
     const titleElem = story.querySelector('a.titlelink');
 
     record.score = parseInt(extraElem.querySelector('.score')?.textContent ?? '0', 10);
-    record.id = story.getAttribute('id');
+    record.id = story.firstElementChild.getAttribute('id');
     record.age = extraElem.querySelector('.age a').textContent;
     record.subject = titleElem.textContent;
     const contributor = extraElem.querySelector('.hnuser')?.textContent ?? '';

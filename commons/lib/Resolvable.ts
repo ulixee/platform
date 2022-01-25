@@ -17,9 +17,8 @@ export default class Resolvable<T = any> implements IResolvablePromise<T>, Promi
     this.stack = new Error('').stack.slice(8);
 
     if (timeoutMillis !== undefined && timeoutMillis !== null) {
-      this.timeout = setTimeout(
-        this.rejectWithTimeout.bind(this, timeoutMessage),
-        timeoutMillis,
+      this.timeout = (
+        setTimeout(this.rejectWithTimeout.bind(this, timeoutMessage), timeoutMillis) as any
       ).unref();
     }
     this.promise = new Promise<T>((resolve, reject) => {

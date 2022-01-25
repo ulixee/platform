@@ -177,8 +177,6 @@ describe('basic Herobox tests', () => {
     expect(outgoingHeroCommands.map(c => c[0].command)).toMatchObject([
       'Core.connect',
       'Core.createSession',
-      'Session.getCollectedFragments',
-      'Session.getCollectedResources',
       'Session.close',
       'Core.disconnect',
     ]);
