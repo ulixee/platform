@@ -6,7 +6,3 @@
 	path = runner
 	url = git@github.com:ulixee/runner.git
 	branch = main
-[submodule "databox"]
-	path = databox
-	url = git@github.com:ulixee/databox.git
-	branch = main
