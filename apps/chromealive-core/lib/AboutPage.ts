@@ -43,7 +43,11 @@ export default class AboutPage extends TypedEventEmitter<{ close: void }> {
     for (const plugin of this.heroSession.plugins.corePlugins) {
       if (plugin.onNewPuppetPage) await plugin.onNewPuppetPage(page, this.sessionSummary());
     }
-    this.heroSession.mitmRequestSession.blockedResources.urls.push('http://ulixee.about/*');
+
+    // prevent dns lookup
+    this.heroSession.mitmRequestSession.interceptorHandlers.push({
+      urls: ['http://ulixee.about/*'],
+    });
     await page.setNetworkRequestInterceptor(
       this.routeNetworkToVueApp.bind(this, 'http://ulixee.about'),
     );

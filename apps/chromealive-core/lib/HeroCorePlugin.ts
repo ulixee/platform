@@ -81,7 +81,7 @@ export default class HeroCorePlugin extends CorePlugin {
   }
 
   async onNewPuppetContext(context: IPuppetContext, sessionSummary: ISessionSummary): Promise<any> {
-    if (context.isIncognito) return;
+    if (context.isIncognito || sessionSummary.options.showBrowser === false) return;
 
     context.once('close', this.onContextClosed.bind(this, sessionSummary));
 
@@ -115,7 +115,7 @@ export default class HeroCorePlugin extends CorePlugin {
   }
 
   async onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
-    if (!sessionSummary.options.showBrowser && sessionSummary.options.mode !== 'timetravel') return;
+    if (page.browserContext.isIncognito || sessionSummary.options.showBrowser === false) return;
     await Promise.all([
       this.bridgeToExtension.addPuppetPage(page),
       this.windowBoundsModule.onNewPuppetPage(page, sessionSummary),

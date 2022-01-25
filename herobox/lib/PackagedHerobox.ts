@@ -3,6 +3,7 @@ import ICollectedResource from '@ulixee/hero-interfaces/ICollectedResource';
 import PackagedDatabox from '@ulixee/databox';
 import RunningHerobox from './RunningHerobox';
 import IExtractParams from '../interfaces/IExtractParams';
+import CollectedFragments from './CollectedFragments';
 
 type IScriptFn = (herobox: RunningHerobox) => void | Promise<void>;
 type IExtractFn = (extract: IExtractParams) => void | Promise<void>;
@@ -32,28 +33,23 @@ export default class PackagedHerobox extends PackagedDatabox {
     if (this.#extractFn) {
       const { hero } = herobox;
       const sessionId = extractSessionId ?? (await hero.sessionId);
-      const fragments = await hero.importFragments(sessionId);
-      const resources = await hero.getCollectedResources(sessionId);
-      const fragmentsByName: IExtractParams['collectedFragments'] = {
-        names: fragments.map(x => x.name),
-        get: hero.getFragment,
-      };
 
-      const resourcesByName: { [name: string]: ICollectedResource } = {};
       const collectedResources: IExtractParams['collectedResources'] = {
-        names: [],
-        get(name) {
-          return resourcesByName[name];
+        async get(name: string): Promise<ICollectedResource> {
+          const resources = await hero.getCollectedResources(sessionId, name);
+          if (resources.length) return resources[0];
+          return null;
+        },
+        getAll(name: string): Promise<ICollectedResource[]> {
+          return hero.getCollectedResources(sessionId, name);
         },
       };
-      for (const resource of resources) {
-        resourcesByName[resource.name] = resource.resource;
-      }
-
       await this.#extractFn({
         input: herobox.input,
         output: herobox.output,
-        collectedFragments: fragmentsByName,
+        collectedFragments: new CollectedFragments(
+          hero.getCollectedFragments.bind(hero, sessionId),
+        ),
         collectedResources,
       });
     }

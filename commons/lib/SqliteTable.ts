@@ -32,17 +32,11 @@ export default abstract class SqliteTable<T> {
   }
 
   public findPendingRecords(cb: (record: IRecord) => boolean): T[] {
-    return this.pendingInserts.filter(cb).map(pending => {
-      const result: any = {};
-      for (let i = 0; i < pending.length; i += 1) {
-        const col = this.columns[i];
-        result[col[0]] = pending[i];
-      }
-      return result;
-    });
+    return this.pendingInserts.filter(cb).map(x => this.insertToObject(x));
   }
 
   public subscribe(callbackFn: (records: T[]) => void): void {
+    if (this.insertCallbackFn) throw new Error('This table already has a subscriber');
     this.insertCallbackFn = callbackFn;
     const pendingRecords = this.pendingInserts.map(x => this.insertToObject(x));
     this.lastSubscriptionPublishTime = Date.now();

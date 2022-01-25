@@ -22,7 +22,12 @@
     "preserveSymlinks": false,
     "experimentalDecorators": true
   },
-  "include": ["server", "apps", "commons", "herobox", "./*.js", "./*.json", ".eslintrc.js"],
+  "references": [
+    {
+      "path": "herobox"
+    }
+  ],
+  "include": ["server", "apps", "commons", "./*.js", "./*.json", ".eslintrc.js"],
   "exclude": [
     "**/tsconfig*.json",
     "build/**/*",
@@ -30,6 +35,7 @@
     "**/build-dist/**/*",
     "node_modules",
     "**/node_modules",
+    "herobox",
     "apps/chromealive-ui",
     "apps/menubar-ui",
     "apps/chromealive-extension",

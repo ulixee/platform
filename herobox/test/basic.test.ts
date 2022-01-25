@@ -42,7 +42,7 @@ class MockedConnectionToHeroCore extends ConnectionToHeroCore {
           data: { sessionId: 'session-id' },
         };
       }
-      if (command === 'Session.loadAllFragments') {
+      if (command === 'Session.getCollectedFragments') {
         return {
           data: [],
         };
@@ -177,8 +177,6 @@ describe('basic Herobox tests', () => {
     expect(outgoingHeroCommands.map(c => c[0].command)).toMatchObject([
       'Core.connect',
       'Core.createSession',
-      'Session.loadAllFragments',
-      'Session.getCollectedResources',
       'Session.close',
       'Core.disconnect',
     ]);
