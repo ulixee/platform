@@ -95,6 +95,7 @@ import Timeline, { ITimelineHoverEvent, ITimelineTick } from '@/components/Timel
 import TimelineHandle from '@/components/TimelineHandle.vue';
 import TimelineHover from '@/components/TimelineHover.vue';
 import Menu from '@/components/Menu.vue';
+import { LoadStatus } from '@ulixee/hero-interfaces/Location';
 
 type IStartLocation = 'currentLocation' | 'sessionStart';
 
@@ -433,8 +434,17 @@ export default Vue.defineComponent({
         timelineTicks.push({
           id: url.navigationId,
           offsetPercent: url.offsetPercent,
-          class: 'url',
+          class: 'urlrequest',
         });
+        for (const status of url.loadStatusOffsets) {
+          if (status.loadStatus === LoadStatus.HttpResponded) {
+            timelineTicks.push({
+              id: url.navigationId,
+              offsetPercent: status.offsetPercent,
+              class: 'url',
+            });
+          }
+        }
       }
 
       let unresolvedPageStateTick: ITimelineTick;
@@ -669,6 +679,23 @@ export default Vue.defineComponent({
       background-size: contain;
       background-repeat: no-repeat;
     }
+    .bar .tick.urlrequest .marker {
+      width: 12px;
+      height: 12px;
+      left: -7px;
+      top: 15px;
+      opacity: 0.9;
+      z-index: 2;
+      border: 0 none;
+      display: inline-block;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-image: url('~@/assets/icons/navigate.svg');
+      background-color: transparent;
+    }
+
     &:hover {
       .bar .tick.pagestate .marker {
         z-index: 0;
