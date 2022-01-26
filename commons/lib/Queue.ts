@@ -66,7 +66,8 @@ export default class Queue {
     const next = this.queue.shift();
     if (!next) {
       if (this.activeCount === 0) {
-        this.idleTimout = setTimeout(() => this.idlePromise.resolve(), this.idletimeMillis).unref();
+        this.idleTimout = setTimeout(() => this.idlePromise.resolve(), this.idletimeMillis) as any;
+        this.idleTimout.unref();
       }
       return;
     }

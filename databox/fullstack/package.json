@@ -1,0 +1,21 @@
+{
+  "name": "@ulixee/databox-fullstack",
+  "version": "1.5.4",
+  "description": "The fullstack Databox (client + core)",
+  "exports": {
+    "import": "./index.mjs",
+    "require": "./index.cjs"
+  },
+  "dependencies": {
+    "@ulixee/commons": "1.5.9",
+    "@ulixee/databox": "1.5.4",
+    "@ulixee/databox-core": "1.5.4",
+    "@ulixee/databox-interfaces": "1.5.4"
+  },
+  "devDependencies": {
+    "@ulixee/databox-testing": "1.5.4",
+    "fpcollect": "^1.0.4",
+    "fpscanner": "^0.1.5",
+    "ws": "^7.4.6"
+  }
+}

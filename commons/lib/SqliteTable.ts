@@ -89,7 +89,7 @@ export default abstract class SqliteTable<T> {
       this.lastSubscriptionPublishTime = Date.now();
       return process.nextTick(this.publishPendingRecords.bind(this));
     }
-    this.subscriptionThrottle = setTimeout(this.publishPendingRecords.bind(this), 100).unref();
+    this.subscriptionThrottle = (setTimeout(this.publishPendingRecords.bind(this), 100) as any).unref();
   }
 
   private publishPendingRecords(): void {

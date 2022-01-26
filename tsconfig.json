@@ -24,7 +24,7 @@
   },
   "references": [
     {
-      "path": "herobox"
+      "path": "databox"
     }
   ],
   "include": ["server", "apps", "commons", "./*.js", "./*.json", ".eslintrc.js"],
@@ -35,7 +35,6 @@
     "**/build-dist/**/*",
     "node_modules",
     "**/node_modules",
-    "herobox",
     "apps/chromealive-ui",
     "apps/menubar-ui",
     "apps/chromealive-extension",

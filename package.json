@@ -77,11 +77,10 @@
     "packages": [
       "apps/*",
       "commons",
+      "databox/*",
       "server/*",
       "hero/build/*",
-      "hero/build/plugins/*",
-      "databox/build/*",
-      "herobox"
+      "hero/build/plugins/*"
     ],
     "nohoist": [
       "**/babel-loader",
