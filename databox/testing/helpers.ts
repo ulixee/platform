@@ -1,8 +1,7 @@
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
-import PackagedDatabox from '@ulixee/databox/lib/PackagedDatabox';
-import DataboxInteracting from '@ulixee/databox/lib/DataboxInteracting';
 import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
-import FullstackPackagedDatabox from '@ulixee/databox-fullstack';
+import FullstackHero, { IHeroCreateOptions } from '@ulixee/hero-fullstack';
+import DataboxInternal from '@ulixee/databox/lib/DataboxInternal';
 
 export const needsClosing: { close: () => Promise<any> | void; onlyCloseOnFinal?: boolean }[] = [];
 
@@ -41,19 +40,22 @@ async function closeAll(isFinal = false): Promise<void> {
   );
 }
 
-export async function createClientDatabox(options: IDataboxRunOptions = {}): Promise<DataboxInteracting> {
-  const databoxInteracting = await PackagedDatabox.createDataboxInteracting(options);
-  needsClosing.push(databoxInteracting);
-  return databoxInteracting;
-}
-
-export async function createFullstackDatabox(options: IDataboxRunOptions = {}): Promise<DataboxInteracting> {
-  const databoxInteracting = await FullstackPackagedDatabox.createDataboxInteracting(options);
-  needsClosing.push(databoxInteracting);
-  return databoxInteracting;
+export function createFullstackDataboxInternal(options: IDataboxRunOptions = {}): FullstackDataboxInternal {
+  const databoxInternal = new FullstackDataboxInternal(options);
+  needsClosing.push(databoxInternal);
+  return databoxInternal;
 }
 
 export function onClose(closeFn: (() => Promise<any>) | (() => any), onlyCloseOnFinal = false) {
   needsClosing.push({ close: closeFn, onlyCloseOnFinal });
 }
 
+class FullstackDataboxInternal extends DataboxInternal {
+  protected initializeHero(): void {
+    const heroOptions: IHeroCreateOptions = {};
+    for (const [key, value] of Object.entries(this.runOptions)) {
+      heroOptions[key] = value;
+    }
+    this.hero = new FullstackHero(heroOptions);
+  }
+}

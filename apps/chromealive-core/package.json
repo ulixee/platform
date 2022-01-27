@@ -16,6 +16,7 @@
     "@ulixee/hero-timetravel": "1.5.4",
     "@ulixee/apps-chromealive": "1.5.4",
     "@ulixee/apps-chromealive-interfaces": "1.5.4",
+    "@ulixee/databox": "1.5.4",
     "@types/chrome": "^0.0.154",
     "nanoid": "^3.1.30"
   },

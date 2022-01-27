@@ -1,12 +1,10 @@
 import { Session as HeroSession, Tab } from '@ulixee/hero-core';
-import { Session as DataboxSession } from '@ulixee/databox-core';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import * as Fs from 'fs';
 import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
-import OutputRebuilder, { IOutputSnapshot } from '@ulixee/databox-core/lib/OutputRebuilder';
-import type { IOutputChangeRecord } from '@ulixee/databox-core/models/OutputTable';
+import type { IOutputChangeRecord } from '@ulixee/hero-core/models/OutputTable';
 import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
 import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
 import * as Path from 'path';
@@ -21,6 +19,7 @@ import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import ChromeAliveCore from '../index';
 import TimelineRecorder from '@ulixee/hero-timetravel/lib/TimelineRecorder';
 import AliveBarPositioner from './AliveBarPositioner';
+import OutputRebuilder, { IOutputSnapshot } from './OutputRebuilder';
 
 const { log } = Log(module);
 
@@ -51,10 +50,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   private sessionHasChangesRequiringRestart = false;
 
   private scriptLastModifiedTime: number;
-  private databoxSession: DataboxSession;
   private outputRebuilder = new OutputRebuilder();
-  private databoxInput: any = null;
-  private databoxInputBytes = 0;
   private hasScriptUpdatesSinceLastRun = false;
   private watchHandle: Fs.FSWatcher;
 
@@ -92,7 +88,7 @@ export default class SessionObserver extends TypedEventEmitter<{
       this.mode = 'live';
       this.emit('app:mode');
     });
-    this.bindDatabox();
+    this.bindOutput();
     this.watchHandle = Fs.watch(
       this.scriptInstanceMeta.entrypoint,
       {
@@ -247,7 +243,6 @@ export default class SessionObserver extends TypedEventEmitter<{
     };
     return {
       ...output,
-      input: this.databoxInput,
     };
   }
 
@@ -339,7 +334,7 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   private onHeroSessionResumed(): void {
     this.playbackState = 'running';
-    this.bindDatabox();
+    this.bindOutput();
     this.hasScriptUpdatesSinceLastRun = false;
     this.emit('hero:updated');
     this.emit('databox:updated');
@@ -351,21 +346,10 @@ export default class SessionObserver extends TypedEventEmitter<{
     event.message = `ChromeAlive! has assumed control of your script. You can make changes to your script and re-run from the ChromeAlive interface.`;
   }
 
-  private bindDatabox(): void {
-    this.databoxSession?.off('output', this.onOutputUpdated);
-
-    const databoxSessionId = this.heroSession.options.externalIds?.databoxSessionId as string;
-    this.databoxSession = DataboxSession.get(databoxSessionId);
-
-    if (this.databoxSession) {
-      this.databoxInput = this.databoxSession.options.input;
-      this.databoxInputBytes = this.databoxInput
-        ? Buffer.byteLength(JSON.stringify(this.databoxInput))
-        : 0;
-
-      this.outputRebuilder = new OutputRebuilder();
-      this.databoxSession.on('output', this.onOutputUpdated);
-    }
+  private bindOutput(): void {
+    this.heroSession?.off('output', this.onOutputUpdated);
+    this.outputRebuilder = new OutputRebuilder();
+    this.heroSession.on('output', this.onOutputUpdated);
   }
 
   private onOutputUpdated(event: { changes: IOutputChangeRecord[] }): void {

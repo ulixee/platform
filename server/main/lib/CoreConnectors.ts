@@ -2,7 +2,6 @@ import Server from '../index';
 import BaseCoreConnector from './BaseCoreConnector';
 import HeroCoreConnector from './HeroCoreConnector';
 import ChromeAliveCoreConnector from './ChromeAliveCoreConnector';
-import DataboxCoreConnector from './DataboxCoreConnector';
 
 let isConnected = false;
 
@@ -18,7 +17,6 @@ export default class CoreConnectors {
 
     this.heroConnector = new HeroCoreConnector(server);
     this.coreConnectors.push(this.heroConnector);
-    this.coreConnectors.push(new DataboxCoreConnector(server));
     if (ChromeAliveCoreConnector.isInstalled()) {
       this.coreConnectors.push(new ChromeAliveCoreConnector(server));
     }

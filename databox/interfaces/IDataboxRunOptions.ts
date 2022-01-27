@@ -1,13 +1,21 @@
-import ISessionCreateOptions from './ISessionCreateOptions';
-import IConnectionToCore from './IConnectionToCore';
-import IConnectionToCoreOptions from './IConnectionToCoreOptions';
+import { IHeroCreateOptions } from '@ulixee/hero';
 
 export default interface IDataboxRunOptions
   extends Partial<
     Omit<ISessionCreateOptions, 'scriptInstanceMeta'>
-  > {
-  connectionToCore?: IConnectionToCoreOptions | IConnectionToCore;
+  >, IHeroCreateOptions {
   action?: string;
   input?: {};
   fields?: {};
+}
+
+export interface ISessionCreateOptions {
+  scriptInstanceMeta?: IScriptInstanceMeta;
+  input?: { command?: string } & any;
+}
+
+export interface IScriptInstanceMeta {
+  id: string;
+  entrypoint: string;
+  startDate: number;
 }

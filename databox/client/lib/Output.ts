@@ -20,7 +20,7 @@ export default class Output<T = any> extends Array<T> {
   }
 }
 
-export function createObservableOutput<T>(coreSession): Output<T> {
+export function createObservableOutput<T>(hero): Output<T> {
   const observable = new ObjectObserver(new Output());
   observable.onChanges = changes => {
     const changesToRecord = changes.map(change => ({
@@ -29,7 +29,8 @@ export function createObservableOutput<T>(coreSession): Output<T> {
       path: JSON.stringify(change.path),
       timestamp: Date.now(),
     }));
-    coreSession.then(x => x.recordOutput(changesToRecord)).catch(() => null);
+
+    hero.recordOutput(changesToRecord).catch(() => null);
   };
   return observable.proxy;
 }

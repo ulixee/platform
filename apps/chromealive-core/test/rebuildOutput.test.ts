@@ -1,10 +1,6 @@
-import { Helpers } from '@ulixee/databox-testing';
 import Output from '@ulixee/databox/lib/Output';
-import OutputRebuilder from '@ulixee/databox-core/lib/OutputRebuilder';
+import OutputRebuilder from '../lib/OutputRebuilder';
 import ObjectObserver from '@ulixee/databox/lib/ObjectObserver';
-
-afterAll(Helpers.afterAll);
-afterEach(Helpers.afterEach);
 
 describe('basic OutputRebuilder tests', () => {
   it('should be able to rebuild an output with snapshots at every external id', async () => {
@@ -18,7 +14,6 @@ describe('basic OutputRebuilder tests', () => {
         type: change.type,
         value: JSON.stringify(change.value),
         path: JSON.stringify(change.path),
-        lastExternalId: id,
         lastCommandId: id,
         timestamp: Date.now(),
       }));
@@ -68,7 +63,6 @@ describe('basic OutputRebuilder tests', () => {
         type: change.type,
         value: JSON.stringify(change.value),
         path: JSON.stringify(change.path),
-        lastExternalId: id,
         lastCommandId: id,
         timestamp: Date.now(),
       }));

@@ -3,6 +3,7 @@
   "version": "1.5.4",
   "description": "Core interfaces used by Databox",
   "dependencies": {
-    "@ulixee/commons": "1.5.9"
+    "@ulixee/commons": "1.5.9",
+    "@ulixee/hero": "1.5.4"
   }
 }

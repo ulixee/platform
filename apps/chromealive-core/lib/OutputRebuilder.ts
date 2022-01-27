@@ -1,4 +1,4 @@
-import { IOutputChangeRecord } from '../models/OutputTable';
+import { IOutputChangeRecord } from '@ulixee/hero-core/models/OutputTable';
 
 export interface IOutputSnapshot {
   output: any;
@@ -7,15 +7,15 @@ export interface IOutputSnapshot {
 }
 
 export default class OutputRebuilder {
-  private snapshotsByExternalId = new Map<number, IOutputSnapshot>();
-  private latestExternalId = -1;
+  private snapshotsByCommandId = new Map<number, IOutputSnapshot>();
+  private latestCommandId = -1;
 
-  public getLatestSnapshot(externalId?: number): IOutputSnapshot {
-    externalId ??= this.latestExternalId;
+  public getLatestSnapshot(commandId?: number): IOutputSnapshot {
+    commandId ??= this.latestCommandId;
 
-    for (let id = externalId; id >= 0; id -= 1) {
-      if (this.snapshotsByExternalId.has(id)) {
-        return this.snapshotsByExternalId.get(id);
+    for (let id = commandId; id >= 0; id -= 1) {
+      if (this.snapshotsByCommandId.has(id)) {
+        return this.snapshotsByCommandId.get(id);
       }
     }
   }
@@ -23,10 +23,10 @@ export default class OutputRebuilder {
   public applyChanges(changes: IOutputChangeRecord[]): void {
     for (const output of changes) {
       const path = parseIfNeeded(output.path) as PropertyKey[];
-      if (output.lastExternalId > this.latestExternalId)
-        this.latestExternalId = output.lastExternalId;
+      if (output.lastCommandId > this.latestCommandId)
+        this.latestCommandId = output.lastCommandId;
 
-      const snapshot = this.getSnapshotAtPoint(output.lastExternalId, path);
+      const snapshot = this.getSnapshotAtPoint(output.lastCommandId, path);
 
       let propertyOwner = snapshot.output;
       const property = path.pop();
@@ -74,18 +74,18 @@ export default class OutputRebuilder {
   }
 
   private getSnapshotAtPoint(
-    lastExternalId: number,
+    lastCommandId: number,
     firstPathEntry: PropertyKey[],
   ): IOutputSnapshot {
-    let prevExternalId = lastExternalId;
-    while (prevExternalId >= 0) {
-      if (this.snapshotsByExternalId.has(prevExternalId)) {
+    let prevCommandId = lastCommandId;
+    while (prevCommandId >= 0) {
+      if (this.snapshotsByCommandId.has(prevCommandId)) {
         break;
       }
-      prevExternalId -= 1;
+      prevCommandId -= 1;
     }
 
-    let startOutput = this.snapshotsByExternalId.get(prevExternalId)?.output;
+    let startOutput = this.snapshotsByCommandId.get(prevCommandId)?.output;
 
     if (!startOutput) {
       if (typeof firstPathEntry[0] === 'number') startOutput = [];
@@ -96,14 +96,14 @@ export default class OutputRebuilder {
       startOutput = { ...startOutput };
     }
 
-    if (!this.snapshotsByExternalId.has(lastExternalId)) {
-      this.snapshotsByExternalId.set(lastExternalId, {
+    if (!this.snapshotsByCommandId.has(lastCommandId)) {
+      this.snapshotsByCommandId.set(lastCommandId, {
         output: null,
         changes: [],
         bytes: 0,
       });
     }
-    const changeEntry = this.snapshotsByExternalId.get(lastExternalId);
+    const changeEntry = this.snapshotsByCommandId.get(lastCommandId);
     changeEntry.output = startOutput;
     return changeEntry;
   }

@@ -196,7 +196,6 @@ export default class ChromeAliveCore {
       this.sendAppEvent('Databox.updated', {
         changes: [],
         output: null,
-        input: null,
         bytes: 0,
       });
     }

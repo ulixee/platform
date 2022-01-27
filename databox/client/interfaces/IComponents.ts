@@ -1,5 +1,5 @@
-import DataboxInteracting from '../lib/DataboxInteracting';
-import IExtractParams from './IExtractParams';
+import Interactor from '../lib/Interactor';
+import Extractor from '../lib/Extractor';
 
 export default interface IComponents {
   interact?: IInteractFn;
@@ -7,5 +7,5 @@ export default interface IComponents {
   schema?: any;
 }
 
-export type IInteractFn = (databox: DataboxInteracting) => void | Promise<void>;
-export type IExtractFn = (extract: IExtractParams) => void | Promise<void>;
+export type IInteractFn = (databox: Interactor) => void | Promise<void>;
+export type IExtractFn = (extract: Extractor) => void | Promise<void>;

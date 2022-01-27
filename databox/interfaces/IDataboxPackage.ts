@@ -1,5 +1,5 @@
 import IDataboxRunOptions from './IDataboxRunOptions';
 
-export default interface IPackagedDatabox {
+export default interface IDataboxPackage {
   run(options?: IDataboxRunOptions): Promise<void>
 }

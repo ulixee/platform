@@ -1,10 +1,8 @@
 import '@ulixee/commons/lib/SourceMapSupport';
-import IConnectionToCoreOptions from '@ulixee/databox-interfaces/IConnectionToCoreOptions';
+import IHeroCreateOptions from '@ulixee/hero/interfaces/IHeroCreateOptions';
 import { Observable } from './lib/ObjectObserver';
-import PackagedDatabox from './lib/PackagedDatabox';
-import ConnectionToCore from './connections/ConnectionToCore';
-import DataboxInteracting from './lib/DataboxInteracting';
+import DataboxPackage from './lib/DataboxPackage';
 
-export { Observable, IConnectionToCoreOptions, ConnectionToCore, DataboxInteracting };
+export { Observable, IHeroCreateOptions };
 
-export default PackagedDatabox;
+export default DataboxPackage;
