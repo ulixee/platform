@@ -1,9 +1,5 @@
 <template>
   <div class="Wrapper">
-    <div class="InputPanel">
-      <h2>Input</h2>
-      <Json :json="input" />
-    </div>
     <div class="OutputPanel">
       <h2>
         Output
@@ -47,7 +43,6 @@ export default Vue.defineComponent({
   components: { Json },
   setup() {
     let dataSize = Vue.ref(null);
-    let input = Vue.ref<FlatJson[]>(defaultInput);
     let output = Vue.ref<FlatJson[]>(null);
     let scrollToRecordId = Vue.ref<number>(null);
     let lastHeroEntrypoint: string = null;
@@ -62,7 +57,6 @@ export default Vue.defineComponent({
     function onDataboxUpdated(data: IDataboxUpdatedEvent) {
       const { bytes, changes } = data;
 
-      input.value = data.input ? convertJsonToFlat(data.input) : defaultInput;
       dataSize.value = humanizeBytes(bytes);
       if (data.output) {
         output.value = convertJsonToFlat(
@@ -92,7 +86,7 @@ export default Vue.defineComponent({
     Client.connect().catch(err => alert(String(err)));
     document.title = 'Databox Panel';
 
-    return { dataSize, input, output, scrollToRecordId };
+    return { dataSize, output, scrollToRecordId };
   }
 });
 </script>
