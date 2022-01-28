@@ -3,10 +3,10 @@
     <h1>Superhero</h1>
 
     <ul>
-      <li :class="{ focused: mode === 'pagestate' }">
+      <li :class="{ focused: mode === 'domstate' }">
         <img class="icon" src="/icons/circuits.svg" />
         <div class="label">Circuits</div>
-        <div class="count">{{ pageStates.length }}</div>
+        <div class="count">{{ domStates.length }}</div>
         <ChevronRightIcon class="arrow" />
       </li>
 
@@ -52,13 +52,13 @@ import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEv
 import humanizeBytes from '@/utils/humanizeBytes';
 
 enum Panel {
-  pagestate = 'pagestate',
+  domstate = 'domstate',
   output = 'output',
 }
 
 const PanelPaths = {
   [Panel.output]: '/databox.html',
-  [Panel.pagestate]: '/pagestate-panel.html',
+  [Panel.domstate]: '/domstate-panel.html',
 };
 
 export default Vue.defineComponent({
@@ -68,14 +68,14 @@ export default Vue.defineComponent({
     let toolbarRef = Vue.ref<HTMLDivElement>();
     return {
       toolbarRef,
-      pageStates: Vue.ref<IHeroSessionActiveEvent['pageStates']>([]),
+      domStates: Vue.ref<IHeroSessionActiveEvent['domStates']>([]),
       outputSize: Vue.ref<string>(''),
       worldSessionIds: Vue.reactive(new Set<string>()),
       timetravelEvents: Vue.ref<number>(0),
       mode: Vue.ref<IAppModeEvent['mode']>('live'),
       loadedPanelName: Vue.ref<Panel>(),
       panelWindow: null as Window,
-      activePageStateId: Vue.ref<string>(),
+      activeDomStateId: Vue.ref<string>(),
     };
   },
   methods: {
@@ -130,25 +130,25 @@ export default Vue.defineComponent({
         this.openPanel(Panel.output, { width: 300, height: 400 });
       }
     },
-    closePageState() {
-      if (this.isPanelOpen(Panel.pagestate)) {
+    closeDomState() {
+      if (this.isPanelOpen(Panel.domstate)) {
         this.panelWindow.close();
       }
     },
-    openPageState() {
-      this.openPanel(Panel.pagestate, { width: 500, height: 400 });
+    openDomState() {
+      this.openPanel(Panel.domstate, { width: 500, height: 400 });
     },
     onSessionActiveEvent(message: IHeroSessionActiveEvent) {
       if (!message) {
         this.timetravelEvents = 0;
-        this.pageStates.length = 0;
+        this.domStates.length = 0;
         this.worldSessionIds.clear();
         this.outputSize = '';
         return;
       }
       this.timetravelEvents = message.timeline.urls.length + message.timeline.paintEvents.length;
-      this.pageStates.length = message.pageStates.length;
-      Object.assign(this.pageStates, message.pageStates);
+      this.domStates.length = message.domStates.length;
+      Object.assign(this.domStates, message.domStates);
       for (const worldHeroSessionId of message.worldHeroSessionIds) {
         this.worldSessionIds.add(worldHeroSessionId);
       }
@@ -161,11 +161,11 @@ export default Vue.defineComponent({
       this.mode = message.mode;
 
       if (this.mode === 'live') {
-        if (startingMode === 'pagestate') {
-          this.closePageState();
+        if (startingMode === 'domstate') {
+          this.closeDomState();
         }
-      } else if (this.mode === 'pagestate') {
-        this.openPageState();
+      } else if (this.mode === 'domstate') {
+        this.openDomState();
       }
     },
   },

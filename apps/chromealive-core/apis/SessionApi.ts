@@ -37,6 +37,7 @@ export default class SessionApi {
     } else {
       await sessionObserver.timetravelPlayer.goto(timelineOffsetPercent);
     }
+
     await sessionObserver.timetravelPlayer.showLoadStatus(
       sessionObserver.timelineBuilder.lastMetadata,
     );

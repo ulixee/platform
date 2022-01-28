@@ -2,17 +2,6 @@
   <div id="FocusedTimelinePage">
     <div id="chrome-alive-bar" ref="toolbarDiv">
       <div id="timeline-bar" v-if="focusedSession">
-        <select class="change-state-select" @change="moveSessionToState($event.target.value)">
-          <option>--Assign this world to a state--</option>
-          <option
-            v-for="state of states"
-            :value="state.state"
-            :selected="state.heroSessionIds.includes(focusedSession.id)"
-          >
-            {{ state.state }}
-          </option>
-        </select>
-
         <div class="session-preview">
           <span class="times">{{ formattedTimeRange(focusedSession) }}</span>
         </div>
@@ -73,7 +62,7 @@
 import * as Vue from 'vue';
 import Client from '@/api/Client';
 import Timeline, { ITimelineHoverEvent, ITimelineTick } from '@/components/Timeline.vue';
-import IPageStateUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IPageStateUpdatedEvent';
+import IDomStateUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDomStateUpdatedEvent';
 import * as screenshotCache from '@/utils/screenshotCache';
 import TimelineHandle from '@/components/TimelineHandle.vue';
 import TimelineHover from '@/components/TimelineHover.vue';
@@ -83,7 +72,7 @@ export default Vue.defineComponent({
   name: 'FocusedTimeline',
   components: { Timeline, TimelineHover, TimelineHandle },
   props: {
-    pageStateId: String,
+    domStateId: String,
   },
   setup() {
     return {
@@ -97,8 +86,6 @@ export default Vue.defineComponent({
       pendingTimetravelOffset: null as number,
       pendingTimetravelIsStart: false,
 
-      activePageStateId: null as string,
-
       extendingSession: Vue.ref<boolean>(false),
       focusedTimelineHandle: Vue.ref<'start' | 'end'>(null),
 
@@ -108,9 +95,7 @@ export default Vue.defineComponent({
       isDragging: Vue.ref<boolean>(false),
       isAwaitingDragUpdate: Vue.ref<boolean>(false),
 
-      states: Vue.ref<IPageStateUpdatedEvent['states']>([]),
-
-      focusedSession: Vue.ref<IPageStateUpdatedEvent['heroSessions'][0]>(),
+      focusedSession: Vue.ref<IDomStateUpdatedEvent['heroSessions'][0]>(),
     };
   },
   computed: {
@@ -183,7 +168,7 @@ export default Vue.defineComponent({
     },
   },
   methods: {
-    formattedTimeRange(session: IPageStateUpdatedEvent['heroSessions'][0]): string {
+    formattedTimeRange(session: IDomStateUpdatedEvent['heroSessions'][0]): string {
       const begin = session.timelineRange[0];
       const [start, end] = session.loadingRange;
       let startSecs = String(Math.floor((10 * (start - begin)) / 1e3) / 10);
@@ -197,7 +182,7 @@ export default Vue.defineComponent({
     extendSession(): void {
       if (this.extendingSession) return;
       this.extendingSession = true;
-      Client.send('PageState.extendSessionTime', {
+      Client.send('DomState.extendSessionTime', {
         heroSessionId: this.focusedSession?.id,
         addMillis: 5e3,
       })
@@ -282,27 +267,11 @@ export default Vue.defineComponent({
       this.showTimelineHover = false;
     },
 
-    moveSessionToState(stateName: string): void {
-      const sessionId = this.focusedSession.id;
-      Client.send('PageState.addState', {
-        state: stateName,
-        heroSessionIds: [sessionId],
-      }).catch(alert);
-      for (const state of this.states) {
-        const idx = state.heroSessionIds.indexOf(sessionId);
-        if (idx >= 0) state.heroSessionIds.splice(idx, 1);
-
-        if (idx === -1 && state.state === stateName) {
-          state.heroSessionIds.push(sessionId);
-        }
-      }
-    },
-
     async updateSessionTimes() {
       if (this.pendingTimetravelOffset === null) return;
       const percentOffset = this.pendingTimetravelOffset;
       this.isAwaitingDragUpdate = true;
-      await Client.send('PageState.modifySessionTimes', {
+      await Client.send('DomState.modifySessionTimes', {
         heroSessionId: this.focusedSession.id,
         isStartTime: this.pendingTimetravelIsStart,
         timelineOffset: percentOffset,
@@ -318,7 +287,7 @@ export default Vue.defineComponent({
       if (this.pendingTimetravelOffset) return;
       this.focusedTimelineHandle = isStartTime ? 'start' : 'end';
       this.isAwaitingDragUpdate = true;
-      await Client.send('PageState.focusSessionTime', {
+      await Client.send('DomState.focusSessionTime', {
         heroSessionId: this.focusedSession.id,
         isStartTime,
       })
@@ -328,19 +297,10 @@ export default Vue.defineComponent({
         });
     },
 
-    onPageStateUpdatedEvent(message: IPageStateUpdatedEvent) {
+    onDomStateUpdatedEvent(message: IDomStateUpdatedEvent) {
       if (message === null) {
-        this.activePageStateId = null;
-        this.states.length = 0;
         this.focusedSession = null;
         return;
-      }
-
-      this.activePageStateId = message.id;
-
-      this.states.length = 0;
-      if (message.states) {
-        this.states.push(...message.states);
       }
 
       this.focusedSession = message.heroSessions.find(x => x.isFocused);
@@ -360,14 +320,14 @@ export default Vue.defineComponent({
   },
 
   mounted() {
-    Client.on('PageState.updated', this.onPageStateUpdatedEvent);
-    Client.send('PageState.load', {
-      pageStateId: this.pageStateId,
+    Client.on('DomState.updated', this.onDomStateUpdatedEvent);
+    Client.send('DomState.load', {
+      domStateId: this.domStateId,
     });
   },
 
   beforeUnmount() {
-    Client.off('PageState.updated', this.onPageStateUpdatedEvent);
+    Client.off('DomState.updated', this.onDomStateUpdatedEvent);
   },
 });
 </script>

@@ -1,7 +1,7 @@
 import ISessionApi from './ISessionApi';
 import IAppApi from './IAppApi';
 import IMouseApi from './IMouseApi';
-import PageStateApi from './IPageStateApi';
+import DomStateApi from './IDomStateApi';
 
 export type IApiHandlerSpec = {
   'Session.quit': ISessionApi['quit'];
@@ -13,18 +13,14 @@ export type IApiHandlerSpec = {
   'App.ready': IAppApi['ready'];
   'App.focus': IAppApi['focus'];
   'Mouse.state': IMouseApi['state'];
-  'PageState.load': PageStateApi['load'];
-  'PageState.addState': PageStateApi['addState'];
-  'PageState.renameState': PageStateApi['renameState'];
-  'PageState.removeState': PageStateApi['removeState'];
-  'PageState.spawnSession': PageStateApi['spawnSession'];
-  'PageState.unfocusSession': PageStateApi['unfocusSession'];
-  'PageState.openSession': PageStateApi['openSession'];
-  'PageState.modifySessionTimes': PageStateApi['modifySessionTimes'];
-  'PageState.focusSessionTime': PageStateApi['focusSessionTime'];
-  'PageState.extendSessionTime': PageStateApi['extendSessionTime'];
-  'PageState.save': PageStateApi['save'];
-  'PageState.exit': PageStateApi['exit'];
+  'DomState.load': DomStateApi['load'];
+  'DomState.spawnSession': DomStateApi['spawnSession'];
+  'DomState.unfocusSession': DomStateApi['unfocusSession'];
+  'DomState.openSession': DomStateApi['openSession'];
+  'DomState.modifySessionTimes': DomStateApi['modifySessionTimes'];
+  'DomState.focusSessionTime': DomStateApi['focusSessionTime'];
+  'DomState.extendSessionTime': DomStateApi['extendSessionTime'];
+  'DomState.exit': DomStateApi['exit'];
 };
 
 type IPromiseType<T> = T extends PromiseLike<infer U> ? U : T;

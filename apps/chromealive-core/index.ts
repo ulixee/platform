@@ -139,7 +139,7 @@ export default class ChromeAliveCore {
     sessionObserver.on('hero:updated', this.sendActiveSession.bind(this, heroSession.id));
     sessionObserver.on('app:mode', this.sendAppModeEvent.bind(this, heroSession.id));
     sessionObserver.on('databox:updated', this.sendDataboxUpdatedEvent.bind(this, heroSession.id));
-    sessionObserver.pageStateManager.on('updated', x => this.sendAppEvent('PageState.updated', x));
+    sessionObserver.domStateManager.on('updated', x => this.sendAppEvent('DomState.updated', x));
     sessionObserver.on('closed', this.onSessionObserverClosed.bind(this, sessionObserver));
 
     this.sendActiveSession(heroSession.id);
@@ -177,8 +177,7 @@ export default class ChromeAliveCore {
       if (this.restartingHeroSessionId === heroSessionId) {
         this.sendAppEvent('Session.active', {
           heroSessionId: null,
-          pageStates: [],
-          pageStateIdNeedsResolution: null,
+          domStates: [],
           timeline: { urls: [], screenshots: [], paintEvents: [], storageEvents: [] },
           run: 0,
           hasWarning: false,

@@ -4,8 +4,8 @@ module.exports = {
     timeline: './src/pages/timeline/index.ts',
     toolbar: './src/pages/toolbar/index.ts',
     databox: './src/pages/databox/index.ts',
-    'pagestate-panel': './src/pages/pagestate-panel/index.ts',
-    'pagestate-popup': './src/pages/pagestate-popup/index.ts',
+    'domstate-panel': './src/pages/domstate-panel/index.ts',
+    'domstate-popup': './src/pages/domstate-popup/index.ts',
     about: './src/pages/about/index.ts',
   },
 };

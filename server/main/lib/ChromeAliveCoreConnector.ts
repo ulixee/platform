@@ -49,6 +49,7 @@ export default class ChromeAliveCoreConnector extends BaseCoreConnector {
 
   public static isInstalled(): boolean {
     try {
+      if (process.env.NODE_ENV === 'test') return false;
       this.getChromeAlive();
       return true;
     } catch (err) {

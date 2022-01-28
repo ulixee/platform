@@ -1,11 +1,11 @@
 <template>
   <img :src="ICON_CARET" class="caret" />
-  <div id="pagestate-popup">
+  <div id="domstate-popup">
     <div class="wrapper">
-      <h5 v-if="!pageState.isResolving">{{ pageState.message }}</h5>
+      <h5 v-if="!domState.isResolving">{{ domState.message }}</h5>
       <h5 v-else>Page State <span class="loading"> </span></h5>
 
-      <button @click.prevent="openPageState()">Open Generator</button>
+      <button @click.prevent="openDomState()">Open Generator</button>
     </div>
   </div>
 </template>
@@ -16,25 +16,25 @@ import * as Vue from 'vue';
 const ICON_CARET = require('@/assets/icons/caret.svg');
 
 export default Vue.defineComponent({
-  name: 'PageStatePopup',
+  name: 'DomStatePopup',
   components: {},
   setup() {
-    const pageState = Vue.reactive({ message: 'New Page State Found', isResolving: false });
-    function onPageStateUpdated(state) {
-      Object.assign(pageState, state);
+    const domState = Vue.reactive({ message: 'New Dom State Found', isResolving: false });
+    function onDomStateUpdated(state) {
+      Object.assign(domState, state);
     }
-    (window as any).onPageStateUpdated = onPageStateUpdated;
-    const startstate = (window as any).pageState;
-    if (startstate) onPageStateUpdated(startstate);
+    (window as any).onDomStateUpdated = onDomStateUpdated;
+    const startstate = (window as any).domState;
+    if (startstate) onDomStateUpdated(startstate);
 
     return {
-      pageState,
+      domState,
       ICON_CARET,
     };
   },
   methods: {
-    openPageState() {
-      (window as any).openPageState();
+    openDomState() {
+      (window as any).openDomState();
     },
   },
   computed: {},
@@ -79,7 +79,7 @@ body {
   pointer-events: none;
 }
 
-#pagestate-popup {
+#domstate-popup {
   flex: auto;
   flex-direction: column;
   box-sizing: border-box;
