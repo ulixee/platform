@@ -16,8 +16,13 @@ export default new Databox(async databox => {
     const title = await dataset.textContent;
     await hero.click(dataset);
     await hero.waitForLocation('change');
-    const frozenTab = await hero.detach(hero.activeTab);
-    const cost = await frozenTab.document.querySelector('.cost .large-text').innerText;
+    await hero.waitForState({
+      allTrue({ assert }) {
+        assert(hero.querySelector('.DatasetHeader .dataset').$isVisible);
+        assert(hero.querySelector('.cost .large-text').$isVisible);
+      },
+    });
+    const cost = await hero.querySelector('.cost .large-text').innerText;
     output.push({ cost, title });
     await hero.goBack();
     await hero.waitForLocation('change');

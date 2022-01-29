@@ -1,24 +1,23 @@
-import PageStateGenerator, {
-  IPageStateGeneratorAssertionBatch,
-} from '@ulixee/hero-timetravel/lib/PageStateGenerator';
+import DomStateGenerator, {
+  IDomStateGeneratorAssertionBatch,
+} from '@ulixee/hero-timetravel/lib/DomStateGenerator';
 import { Session as HeroSession, Tab } from '@ulixee/hero-core';
 import { fork } from 'child_process';
 import Log from '@ulixee/commons/lib/Logger';
 import { ITabEventParams } from '@ulixee/hero-core/lib/Tab';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import PageStateListener, { IPageStateEvents } from '@ulixee/hero-core/lib/PageStateListener';
+import DomStateListener, { IDomStateEvents } from '@ulixee/hero-core/lib/DomStateListener';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import SessionObserver from './SessionObserver';
 import CommandTimeline from '@ulixee/hero-timetravel/lib/CommandTimeline';
-import IPageStateUpdateEvent from '@ulixee/apps-chromealive-interfaces/events/IPageStateUpdatedEvent';
+import IDomStateUpdateEvent from '@ulixee/apps-chromealive-interfaces/events/IDomStateUpdatedEvent';
 import TimelineBuilder from '@ulixee/hero-timetravel/lib/TimelineBuilder';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import { LoadStatus } from '@ulixee/hero-interfaces/Location';
-import PageStateCodeBlock from '@ulixee/hero-timetravel/lib/PageStateCodeBlock';
-import PageStateAssertions from '@ulixee/hero-timetravel/lib/PageStateAssertions';
+import DomStateAssertions from '@ulixee/hero-timetravel/lib/DomStateAssertions';
 import DevtoolsPanelModule from './hero-plugin-modules/DevtoolsPanelModule';
 import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
-import PageStateSessionTimeline from './PageStateSessionTimeline';
+import DomStateSessionTimeline from './DomStateSessionTimeline';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import TimelineRecorder from '@ulixee/hero-timetravel/lib/TimelineRecorder';
 import AboutPage from './AboutPage';
@@ -26,36 +25,33 @@ import SourceLoader from '@ulixee/commons/lib/SourceLoader';
 
 const { log } = Log(module);
 
-export default class PageStateManager extends TypedEventEmitter<{
-  updated: IPageStateUpdateEvent;
-  unresolved: { pageStateId: string; heroSessionId: string; error?: Error };
+export default class DomStateManager extends TypedEventEmitter<{
+  updated: IDomStateUpdateEvent;
+  unresolved: { domStateId: string; heroSessionId: string; error?: Error };
   close: void;
   imported: { heroSessionIds: string[] };
-  enter: { pageStateId: string };
+  enter: { domStateId: string };
   exit: void;
 }> {
-  public get generator(): PageStateGenerator {
-    return this.pageStateById.get(this.activePageStateId)?.generator;
+  public get generator(): DomStateGenerator {
+    return this.domStateById.get(this.activeDomStateId)?.generator;
   }
 
-  public get activeSessionTimeline(): PageStateSessionTimeline {
+  public get activeSessionTimeline(): DomStateSessionTimeline {
     return this.getHeroSessionTimeline(this.activeTimelineHeroSessionId);
   }
 
-  private readonly pageStateById = new Map<
+  private readonly domStateById = new Map<
     string,
     {
       name: string;
-      startingStates: string[];
-      needsCodeChange: boolean;
-      modifiedStates: Set<string>;
-      generator: PageStateGenerator;
+      generator: DomStateGenerator;
       manuallyAssignedHeroSessionIds: Set<string>;
-      heroSessionTimelinesById: Map<string, PageStateSessionTimeline>;
+      heroSessionTimelinesById: Map<string, DomStateSessionTimeline>;
     }
   >();
 
-  private activePageStateId: string;
+  private activeDomStateId: string;
   private activeTimelineHeroSessionId: string;
   private readonly aboutPage: AboutPage;
   private tabGroupId: number;
@@ -87,8 +83,8 @@ export default class PageStateManager extends TypedEventEmitter<{
     this.trackHeroSession(sourceHeroSession, sessionObserver.timelineRecorder);
   }
 
-  public getPageState(pageStateId: string): ReturnType<PageStateManager['pageStateById']['get']> {
-    return this.pageStateById.get(pageStateId);
+  public getDomState(domStateId: string): ReturnType<DomStateManager['domStateById']['get']> {
+    return this.domStateById.get(domStateId);
   }
 
   public getScreenshot(heroSessionId: string, tabId: number, timestamp: number): string {
@@ -100,31 +96,16 @@ export default class PageStateManager extends TypedEventEmitter<{
     }
   }
 
-  public getHeroSessionTimeline(heroSessionId: string): PageStateSessionTimeline {
-    return this.pageStateById
-      .get(this.activePageStateId)
+  public getHeroSessionTimeline(heroSessionId: string): DomStateSessionTimeline {
+    return this.domStateById
+      .get(this.activeDomStateId)
       ?.heroSessionTimelinesById?.get(heroSessionId);
-  }
-
-  public async save(): Promise<{ code: string; needsCodeChange: boolean }> {
-    const id = this.activePageStateId;
-
-    const pageState = this.pageStateById.get(id);
-    const code = await PageStateCodeBlock.generateCodeBlock(
-      pageState.generator,
-      this.sessionObserver.scriptInstanceMeta,
-    );
-    const needsCodeChange = pageState.needsCodeChange;
-    pageState.needsCodeChange = false;
-    const newState = pageState.generator.getStateForSessionId(this.sessionObserver.heroSession.id);
-    this.sessionObserver.markPageStateResolved(id, newState);
-    return { needsCodeChange, code };
   }
 
   public async close(destroy = false): Promise<void> {
     this.isClosing = true;
     this.emit(destroy ? 'close' : 'exit');
-    for (const { generator } of this.pageStateById.values()) {
+    for (const { generator } of this.domStateById.values()) {
       await generator.close();
     }
     if (this.aboutPage) await this.aboutPage.close();
@@ -156,7 +137,7 @@ export default class PageStateManager extends TypedEventEmitter<{
         stdio: 'inherit',
         env: { ...process.env, HERO_CLI_NOPROMPT: 'true' },
       });
-      if (this.activePageStateId) this.publish();
+      if (this.activeDomStateId) this.publish();
     } catch (error) {
       this.placeholderSessions -= 1;
       this.logger.error('ERROR running multiverse', { error });
@@ -177,13 +158,13 @@ export default class PageStateManager extends TypedEventEmitter<{
     }
     this.trackHeroSession(heroSession);
     this.placeholderSessions -= 1;
-    if (this.activePageStateId) this.publish();
+    if (this.activeDomStateId) this.publish();
   }
 
-  public async loadPageState(id: string): Promise<void> {
+  public async loadDomState(id: string): Promise<void> {
     this.isClosing = false;
-    this.emit('enter', { pageStateId: id });
-    this.activePageStateId = id;
+    this.emit('enter', { domStateId: id });
+    this.activeDomStateId = id;
 
     const sessionIdToOpen = this.sessionObserver.heroSession.id;
     await this.openTimetravel(sessionIdToOpen);
@@ -211,8 +192,8 @@ export default class PageStateManager extends TypedEventEmitter<{
     percentOffset: number,
     isStartTime: boolean,
   ): Promise<void> {
-    this.pageStateById
-      .get(this.activePageStateId)
+    this.domStateById
+      .get(this.activeDomStateId)
       .manuallyAssignedHeroSessionIds.add(this.activeTimelineHeroSessionId);
     const timestamp = this.activeSessionTimeline.changeLoadingRangeBoundary(
       percentOffset,
@@ -220,17 +201,12 @@ export default class PageStateManager extends TypedEventEmitter<{
     );
     await this.timetravelTo(timestamp);
 
-    const focusedSessionId = this.activeTimelineHeroSessionId;
-    const modifiedState = this.generator.getStateForSessionId(focusedSessionId);
-    if (modifiedState) {
-      this.didMakeStateChanges(this.activePageStateId, modifiedState);
-    }
     this.updateState();
   }
 
   public extendSessionTime(sessionId: string, millis: number): Promise<void> {
-    this.pageStateById
-      .get(this.activePageStateId)
+    this.domStateById
+      .get(this.activeDomStateId)
       .manuallyAssignedHeroSessionIds.add(this.activeTimelineHeroSessionId);
 
     const sessionTimeline = this.getHeroSessionTimeline(sessionId);
@@ -238,38 +214,6 @@ export default class PageStateManager extends TypedEventEmitter<{
     // will update time in event from sessionTimeline
 
     return Promise.resolve();
-  }
-
-  public addState(name: string, ...heroSessionIds: string[]): void {
-    const activePageState = this.pageStateById.get(this.activePageStateId);
-    for (const id of heroSessionIds) {
-      activePageState.manuallyAssignedHeroSessionIds.add(id);
-    }
-    this.generator.addState(name, ...heroSessionIds);
-    this.didMakeStateChanges(this.activePageStateId, name);
-    this.updateState();
-  }
-
-  public renameState(name: string, oldValue: string): void {
-    const existing = this.generator.statesByName.get(oldValue);
-    if (!existing) return;
-    this.generator.statesByName.set(name, existing);
-    this.generator.statesByName.delete(oldValue);
-    this.didMakeStateChanges(this.activePageStateId, name);
-    this.didMakeStateChanges(this.activePageStateId, oldValue);
-    this.updateState();
-  }
-
-  public async removeState(name: string): Promise<void> {
-    const existing = this.generator.statesByName.get(name);
-    if (!existing) return;
-
-    if (existing.sessionIds.has(this.activeTimelineHeroSessionId)) {
-      await this.unfocusSession();
-    }
-    this.generator.deleteState(name);
-    this.didMakeStateChanges(this.activePageStateId, name);
-    this.updateState();
   }
 
   public isShowingSession(heroSessionId: string): boolean {
@@ -317,7 +261,7 @@ export default class PageStateManager extends TypedEventEmitter<{
   private listenForTabGroupOpened(openedGroupId: number) {
     const groupId = this.tabGroupId;
     // if still open, re-collapse
-    if (groupId === openedGroupId && this.pageStateById.size) {
+    if (groupId === openedGroupId && this.domStateById.size) {
       this.sessionObserver.tabGroupModule
         .collapseGroup(this.sessionObserver.heroSession.getLastActiveTab().puppetPage, groupId)
         .catch(error => {
@@ -378,75 +322,68 @@ export default class PageStateManager extends TypedEventEmitter<{
 
   private onTab(event: { tab: Tab }) {
     const { tab } = event;
-    tab.on('wait-for-pagestate', this.onWaitForPageState.bind(this, tab));
+    tab.on('wait-for-domstate', this.onWaitForDomState.bind(this, tab));
   }
 
-  private onWaitForPageState(tab: Tab, event: ITabEventParams['wait-for-pagestate']) {
+  private onWaitForDomState(tab: Tab, event: ITabEventParams['wait-for-domstate']) {
     const listener = event.listener;
-    const pageStateId = listener.id;
+    const domStateId = listener.id;
     const sessionId = tab.sessionId;
 
     let didAddToDefaultState = false;
-    if (!this.pageStateById.has(pageStateId)) {
-      didAddToDefaultState = this.recordPageState(tab, listener);
-    } else if (this.activePageStateId === pageStateId) {
-      this.bindPageStateListenerToGenerator(listener);
+    if (!this.domStateById.has(domStateId)) {
+      didAddToDefaultState = this.recordDomState(tab, listener);
     }
 
-    const { generator } = this.pageStateById.get(pageStateId);
+    const { generator } = this.domStateById.get(domStateId);
     const heroSession = tab.session;
 
-    const sessionTimeline = this.trackPageStateTimeline(heroSession.db, pageStateId);
+    const sessionTimeline = this.trackDomStateTimeline(heroSession.db, domStateId);
     const timelineRecorder = this.timelineRecordersBySessionId.get(sessionId);
     sessionTimeline.trackSession(heroSession, timelineRecorder);
 
     // If we already have this session, don't wait for a result. It got added to default
     if (!didAddToDefaultState) {
-      listener.on('resolved', this.onPageStateResolved.bind(this, tab, pageStateId));
+      listener.on('resolved', this.onDomStateResolved.bind(this, tab, domStateId));
     }
 
-    const { loadingRange, timelineRange } = sessionTimeline.onNewPageState(tab, listener);
+    const { loadingRange, timelineRange } = sessionTimeline.onNewDomState(tab, listener);
 
     generator.addSession(heroSession.db, tab.id, loadingRange, timelineRange);
-    this.onTimelineChange(sessionId, { timelineRange, pageStateId });
+    this.onTimelineChange(sessionId, { timelineRange, domStateId });
 
     this.updateState(generator);
   }
 
-  private trackPageStateTimeline(
+  private trackDomStateTimeline(
     db: SessionDb,
-    pageStateId: string,
+    domStateId: string,
     timelineRange?: TimelineBuilder['timelineRange'],
-  ): PageStateSessionTimeline {
-    const pageStateTimeline = new PageStateSessionTimeline(
+  ): DomStateSessionTimeline {
+    const domStateTimeline = new DomStateSessionTimeline(
       db,
-      pageStateId,
-      this.pageStateById.get(pageStateId).generator,
+      domStateId,
+      this.domStateById.get(domStateId).generator,
       timelineRange,
     );
-    pageStateTimeline.on('updated-generator', this.updateStateForGenerator);
-    pageStateTimeline.on('timeline-change', this.onTimelineChange.bind(this, db.sessionId));
+    domStateTimeline.on('updated-generator', this.updateStateForGenerator);
+    domStateTimeline.on('timeline-change', this.onTimelineChange.bind(this, db.sessionId));
 
-    this.pageStateById
-      .get(pageStateId)
-      .heroSessionTimelinesById.set(db.sessionId, pageStateTimeline);
-    return pageStateTimeline;
+    this.domStateById.get(domStateId).heroSessionTimelinesById.set(db.sessionId, domStateTimeline);
+    return domStateTimeline;
   }
 
-  private onPageStateResolved(tab: Tab, pageStateId: string, event: IPageStateEvents['resolved']) {
-    const activePageState = this.pageStateById.get(pageStateId);
-    const generator = activePageState?.generator;
+  private onDomStateResolved(tab: Tab, domStateId: string, event: IDomStateEvents['resolved']) {
+    const activeDomState = this.domStateById.get(domStateId);
+    const generator = activeDomState?.generator;
     if (!generator) return;
 
     generator.sessionsById.get(tab.sessionId).needsProcessing = true;
 
-    if (event.state) {
-      generator.addState(event.state, tab.sessionId);
-    } else {
-      generator.unresolvedSessionIds.add(tab.sessionId);
+    if (!event.didMatch) {
       this.emit('unresolved', {
         heroSessionId: tab.sessionId,
-        pageStateId,
+        domStateId,
         error: event.error,
       });
     }
@@ -455,11 +392,11 @@ export default class PageStateManager extends TypedEventEmitter<{
 
   private onTimelineChange(
     heroSessionId: string,
-    event: { timelineRange: [number, number]; pageStateId: string },
+    event: { timelineRange: [number, number]; domStateId: string },
   ): void {
     if (
       this.timetravelPlayer?.sessionId === heroSessionId &&
-      this.activePageStateId === event.pageStateId
+      this.activeDomStateId === event.domStateId
     ) {
       this.timetravelPlayer.refreshTicks(event.timelineRange).catch(console.error);
     }
@@ -478,23 +415,23 @@ export default class PageStateManager extends TypedEventEmitter<{
     this.emit('updated', this.toEvent());
   }
 
-  private updateStateForGenerator(event: { pageStateId: string }): void {
-    const pageState = this.pageStateById.get(event.pageStateId);
-    this.updateState(pageState.generator);
+  private updateStateForGenerator(event: { domStateId: string }): void {
+    const domState = this.domStateById.get(event.domStateId);
+    this.updateState(domState.generator);
   }
 
-  private updateState(generator?: PageStateGenerator): void {
+  private updateState(generator?: DomStateGenerator): void {
     generator ??= this.generator;
     if (!generator) return;
     generator
       .evaluate()
       .then(() => this.publish())
-      .catch(error => this.logger.error('Error updating page state', { error }));
+      .catch(error => this.logger.error('Error updating dom state', { error }));
   }
 
-  private recordPageState(tab: Tab, listener: PageStateListener): boolean {
-    const pageStateId = listener.id;
-    const generator = new PageStateGenerator(pageStateId, tab.sessionId);
+  private recordDomState(tab: Tab, listener: DomStateListener): boolean {
+    const domStateId = listener.id;
+    const generator = new DomStateGenerator(domStateId, tab.sessionId);
 
     const lastCommand = tab.session.commands.history[tab.session.commands.length - 2];
     let name = `after "${lastCommand.name}"`;
@@ -506,11 +443,8 @@ export default class PageStateManager extends TypedEventEmitter<{
       }
     }
 
-    this.pageStateById.set(pageStateId, {
+    this.domStateById.set(domStateId, {
       name,
-      startingStates: [...listener.states],
-      needsCodeChange: false,
-      modifiedStates: new Set(),
       generator,
       manuallyAssignedHeroSessionIds: new Set(),
       heroSessionTimelinesById: new Map(),
@@ -518,61 +452,18 @@ export default class PageStateManager extends TypedEventEmitter<{
 
     for (const [id, rawAssertionsData] of listener.rawBatchAssertionsById) {
       if (id.startsWith('@')) {
-        const state = listener.stateThatImportedBatchAssertion(id);
-        generator.import(state, rawAssertionsData as IPageStateGeneratorAssertionBatch);
+        generator.import(rawAssertionsData as IDomStateGeneratorAssertionBatch);
         for (const [sessionId, session] of generator.sessionsById) {
-          this.pageStateById.get(pageStateId).manuallyAssignedHeroSessionIds.add(sessionId);
+          this.domStateById.get(domStateId).manuallyAssignedHeroSessionIds.add(sessionId);
           if (session.db) {
-            this.trackPageStateTimeline(session.db, pageStateId, session.timelineRange);
+            this.trackDomStateTimeline(session.db, domStateId, session.timelineRange);
           }
         }
         this.emit('imported', { heroSessionIds: [...generator.sessionsById.keys()] });
       }
     }
 
-    if (!listener.states.length) {
-      generator.addState('default', tab.sessionId);
-      this.didMakeStateChanges(pageStateId, 'default');
-      return true;
-    }
     return false;
-  }
-
-  private bindPageStateListenerToGenerator(listener: PageStateListener): void {
-    const pageStateId = listener.id;
-    const generator = this.pageStateById.get(pageStateId).generator;
-
-    this.logger.info('Injecting PageState from ChromeAlive Generator', {
-      pageStateId,
-    });
-
-    const stateByBatchId = new Map<string, string>();
-    const pageState = this.pageStateById.get(pageStateId);
-    // load up the current assertions
-    for (const [state, details] of generator.statesByName) {
-      if (details.sessionIds.size === 0) continue;
-      const isGeneratorAddedState = !pageState.startingStates.includes(state);
-      const isModifiedState = pageState.modifiedStates.has(state);
-      if (!isGeneratorAddedState && !isModifiedState) continue;
-
-      const id = listener.addAssertionBatch(state, generator.export(state));
-      if (isGeneratorAddedState) stateByBatchId.set(id, state);
-    }
-
-    if (stateByBatchId.size) {
-      listener.on('updated', x => {
-        for (const [id, state] of stateByBatchId) {
-          if (x[id] === true) {
-            this.logger.info('Resolving PageState with Generator-added state', {
-              state,
-              id,
-            });
-            listener.emit('updated', { resolvedState: state });
-            break;
-          }
-        }
-      });
-    }
   }
 
   private async closeDevtoolsPanel(sessionId: string) {
@@ -585,12 +476,12 @@ export default class PageStateManager extends TypedEventEmitter<{
   }
 
   private clear(): void {
-    for (const details of this.pageStateById.values()) {
+    for (const details of this.domStateById.values()) {
       for (const sessionTimeline of details.heroSessionTimelinesById.values()) {
         sessionTimeline.close();
       }
     }
-    this.pageStateById.clear();
+    this.domStateById.clear();
     this.openHeroSessionsById.clear();
     for (const [sessionId, timeline] of this.timelineRecordersBySessionId) {
       if (sessionId === this.sessionObserver.heroSession?.id) continue;
@@ -599,29 +490,21 @@ export default class PageStateManager extends TypedEventEmitter<{
     this.timelineRecordersBySessionId.clear();
   }
 
-  private toEvent(): IPageStateUpdateEvent {
-    if (!this.activePageStateId || !this.pageStateById.has(this.activePageStateId)) return null;
-    const { needsCodeChange, name } = this.pageStateById.get(this.activePageStateId);
+  private toEvent(): IDomStateUpdateEvent {
+    if (!this.activeDomStateId || !this.domStateById.has(this.activeDomStateId)) return null;
+    const { name } = this.domStateById.get(this.activeDomStateId);
 
-    const result: IPageStateUpdateEvent = {
-      id: this.activePageStateId,
+    const result: IDomStateUpdateEvent = {
+      id: this.activeDomStateId,
       name,
-      needsCodeChange,
-      states: [],
+      assertionCounts: { total: 0 },
       heroSessions: [],
     };
 
     const generator = this.generator;
     if (!generator) return result;
 
-    for (const [state, details] of generator.statesByName) {
-      const assertionCounts = PageStateAssertions.countAssertions(details.assertsByFrameId);
-      result.states.push({
-        state,
-        heroSessionIds: [...details.sessionIds],
-        assertionCounts,
-      });
-    }
+    result.assertionCounts = DomStateAssertions.countAssertions(generator.assertsByFrameId);
 
     const heroAliveId = this.sessionObserver.heroSession?.id;
 
@@ -644,12 +527,11 @@ export default class PageStateManager extends TypedEventEmitter<{
         isPrimary: id === heroAliveId,
         isFocused: this.activeTimelineHeroSessionId === id,
         isSpawnedWorld: this.spawnedWorldHeroSessionIds.has(id) && id !== heroAliveId,
-        needsAssignment: generator.unresolvedSessionIds.has(id),
         isRunning: this.isSessionLive(sessionTimeline.heroSession),
       });
     }
 
-    // find sessions that are "pre" hitting the page state
+    // find sessions that are "pre" hitting the dom state
     for (const [id, heroSession] of this.openHeroSessionsById) {
       // if created, but not in generator yet, add now
       if (generator.sessionsById.has(id)) continue;
@@ -679,7 +561,6 @@ export default class PageStateManager extends TypedEventEmitter<{
         isFocused: false,
         isSpawnedWorld: this.openHeroSessionsById.has(id),
         isRunning: this.isSessionLive(heroSession),
-        needsAssignment: false,
       });
     }
 
@@ -696,7 +577,6 @@ export default class PageStateManager extends TypedEventEmitter<{
         isFocused: false,
         isRunning: true,
         isSpawnedWorld: true,
-        needsAssignment: false,
       });
     }
     return result;
@@ -707,12 +587,5 @@ export default class PageStateManager extends TypedEventEmitter<{
     if (this.sessionObserver.heroSession === heroSession)
       return this.sessionObserver.playbackState === 'running';
     return heroSession.isClosing === false;
-  }
-
-  private didMakeStateChanges(pageStateId: string, state: string): void {
-    const meta = this.pageStateById.get(pageStateId);
-    const newStateList = meta.generator.states.toString();
-    meta.needsCodeChange = newStateList !== meta.startingStates.toString();
-    if (meta.startingStates.includes(state)) meta.modifiedStates.add(state);
   }
 }

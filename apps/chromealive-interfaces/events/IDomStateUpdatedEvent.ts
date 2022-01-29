@@ -1,19 +1,13 @@
 import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
-import { IAssertionCounts } from '@ulixee/hero-interfaces/IPageStateAssertionBatch';
+import { IAssertionCounts } from '@ulixee/hero-interfaces/IDomStateAssertionBatch';
 
-export default interface IPageStateUpdatedEvent {
+export default interface IDomStateUpdatedEvent {
   id: string;
   name: string;
-  needsCodeChange: boolean;
-  states: {
-    state: string;
-    heroSessionIds: string[];
-    assertionCounts: IAssertionCounts;
-  }[];
+  assertionCounts: IAssertionCounts;
   heroSessions: {
     id: string;
     isFocused: boolean;
-    needsAssignment: boolean;
     isRunning: boolean;
     isPrimary: boolean;
     isSpawnedWorld: boolean;

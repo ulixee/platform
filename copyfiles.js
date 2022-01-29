@@ -42,6 +42,7 @@ for (const workspace of workspaces) {
   }
   copyArgs.push(
     `${workspace}/assets/**/*`,
+    `${workspace}/.ulixee/*`,
     `${workspace}/package*.json`,
     `${workspace}/*/*.json`,
     `${workspace}/*/*.html`,
@@ -55,7 +56,6 @@ for (const workspace of workspaces) {
 }
 
 if (isStandardBuild) copyArgs.push('-a');
-console.log(copyArgs);
 
 copyfiles([...copyArgs, copyToDir], {}, () => {
   // eslint-disable-next-line no-console

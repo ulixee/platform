@@ -10,13 +10,12 @@ export default interface IHeroSessionActiveEvent {
   playbackState: 'running' | 'paused';
   run: number;
   runtimeMs: number;
-  pageStateIdNeedsResolution: string;
-  pageStates: {
+  domStates: {
     id: string;
     name: string;
     offsetPercent: number;
-    isUnresolved: boolean;
-    resolvedState: string;
+    didMatch: boolean;
+    inProgress: boolean;
   }[];
   worldHeroSessionIds: string[];
   timeline: ITimelineMetadata;

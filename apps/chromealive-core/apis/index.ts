@@ -2,25 +2,21 @@ import { IApiHandlerSpec } from '@ulixee/apps-chromealive-interfaces/apis';
 import MouseApi from './MouseApi';
 import AppApi from './AppApi';
 import SessionApi from './SessionApi';
-import PageStateApi from './PageStateApi';
+import DomStateApi from './DomStateApi';
 
 const ApiHandlers: IApiHandlerSpec = {
   'App.boundsChanged': AppApi.boundsChanged,
   'App.ready': AppApi.ready,
   'App.focus': AppApi.focus,
   'Mouse.state': MouseApi.state,
-  'PageState.load': PageStateApi.load,
-  'PageState.addState': PageStateApi.addState,
-  'PageState.renameState': PageStateApi.renameState,
-  'PageState.removeState': PageStateApi.removeState,
-  'PageState.spawnSession': PageStateApi.spawnSession,
-  'PageState.modifySessionTimes': PageStateApi.modifySessionTimes,
-  'PageState.focusSessionTime': PageStateApi.focusSessionTime,
-  'PageState.extendSessionTime': PageStateApi.extendSessionTime,
-  'PageState.unfocusSession': PageStateApi.unfocusSession,
-  'PageState.openSession': PageStateApi.openSession,
-  'PageState.save': PageStateApi.save,
-  'PageState.exit': PageStateApi.exit,
+  'DomState.load': DomStateApi.load,
+  'DomState.spawnSession': DomStateApi.spawnSession,
+  'DomState.modifySessionTimes': DomStateApi.modifySessionTimes,
+  'DomState.focusSessionTime': DomStateApi.focusSessionTime,
+  'DomState.extendSessionTime': DomStateApi.extendSessionTime,
+  'DomState.unfocusSession': DomStateApi.unfocusSession,
+  'DomState.openSession': DomStateApi.openSession,
+  'DomState.exit': DomStateApi.exit,
   'Session.quit': SessionApi.quit,
   'Session.timetravel': SessionApi.timetravel,
   'Session.resume': SessionApi.resume,

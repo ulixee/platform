@@ -108,8 +108,7 @@ function createDefaultSession(): IHeroSessionActiveEvent {
     worldHeroSessionIds: [],
     heroSessionId: '',
     run: 0,
-    pageStateIdNeedsResolution: null,
-    pageStates: [],
+    domStates: [],
     hasWarning: false,
     scriptEntrypoint: '',
     scriptLastModifiedTime: 0,
@@ -150,8 +149,7 @@ export default Vue.defineComponent({
       showTimelineHover: Vue.ref(false),
       isDragging: Vue.ref(false),
 
-      focusedPageState: Vue.reactive({} as { offset: number; id: string; window: Window }),
-      autoshownPageStateId: Vue.ref<string>(null),
+      focusedDomState: Vue.reactive({} as { offset: number; id: string; window: Window }),
     };
   },
   emits: ['open-generator'],
@@ -170,69 +168,65 @@ export default Vue.defineComponent({
       this.showMenu = !this.showMenu;
     },
 
-    showPageStatePopup(tick?: ITimelineTick) {
+    showDomStatePopup(tick: ITimelineTick) {
       const width = 400;
       const height = 150;
-      if (!tick) {
-        const unresolvedId = this.session.pageStates.find(x => x.isUnresolved)?.id;
-        tick = this.timelineTicks.find(x => x.id === unresolvedId && x.class === 'pagestate');
-      }
       const { bottom } = this.timelineRef.getTrackBoundingRect();
       const offset = this.timelineRef.getPageXByOffsetPercent(tick?.offsetPercent ?? 100);
-      this.focusedPageState.offset = offset;
+      this.focusedDomState.offset = offset;
       const left = window.screenLeft + offset - width + 80;
       const top = window.screenTop + bottom + 4;
 
-      const pageStateId = tick.id as string;
+      const domStateId = tick.id as string;
 
-      const pageState = {
-        message: this.pageStateMessage(pageStateId),
-        isResolving: this.pageStateIsResolving(pageStateId),
+      const domState = {
+        message: this.domStateMessage(domStateId),
+        isResolving: this.domStateIsResolving(domStateId),
       };
 
-      if (this.focusedPageState.window) {
-        if (tick?.id !== this.focusedPageState.id) {
+      if (this.focusedDomState.window) {
+        if (tick?.id !== this.focusedDomState.id) {
           return;
         }
-        const childWindow = this.focusedPageState.window;
+        const childWindow = this.focusedDomState.window;
         if (childWindow.screenTop !== top || childWindow.screenLeft !== left) {
           childWindow.moveTo(left, top);
         }
-        if ('onPageStateUpdated' in childWindow) {
-          (childWindow as any).onPageStateUpdated(pageState);
+        if ('onDomStateUpdated' in childWindow) {
+          (childWindow as any).onDomStateUpdated(domState);
         } else {
-          (childWindow as any).pageState = pageState;
+          (childWindow as any).domState = domState;
         }
         return;
       }
 
       this.showTimelineHover = false;
-      this.focusedPageState.id = pageStateId;
+      this.focusedDomState.id = domStateId;
       const features = `top=${top},left=${left},width=${width},height=${height}`;
-      this.focusedPageState.window = window.open(
-        '/pagestate-popup.html',
-        'PageStatePopup',
+      this.focusedDomState.window = window.open(
+        '/domstate-popup.html',
+        'DomStatePopup',
         features,
       );
-      (this.focusedPageState.window as any).pageState = pageState;
-      (this.focusedPageState.window as any).openPageState = this.openPageState.bind(
+      (this.focusedDomState.window as any).domState = domState;
+      (this.focusedDomState.window as any).openDomState = this.openDomState.bind(
         this,
         tick?.id as string,
       );
-      this.focusedPageState.window.addEventListener('close', () => {
-        this.focusedPageState.window = null;
+      this.focusedDomState.window.addEventListener('close', () => {
+        this.focusedDomState.window = null;
       });
-      this.focusedPageState.window.addEventListener('manual-close', () => {
-        this.focusedPageState.window = null;
+      this.focusedDomState.window.addEventListener('manual-close', () => {
+        this.focusedDomState.window = null;
       });
     },
 
-    closePageStatePopup() {
-      if (this.focusedPageState.window) {
+    closeDomStatePopup() {
+      if (this.focusedDomState.window) {
         try {
-          this.focusedPageState.window.close();
+          this.focusedDomState.window.close();
         } catch (err) {}
-        this.focusedPageState.window = null;
+        this.focusedDomState.window = null;
       }
     },
 
@@ -265,26 +259,24 @@ export default Vue.defineComponent({
     },
 
     onTimelineHover(hoverEvent: ITimelineHoverEvent): void {
-      if (this.autoshownPageStateId && this.timelineOffset >= 99.9) return;
-
-      let pageStateTick: ITimelineTick;
+      let domStateTick: ITimelineTick;
       if (
-        hoverEvent.closestTickAbove?.class === 'pagestate' &&
+        hoverEvent.closestTickAbove?.class === 'domstate' &&
         hoverEvent.closestTickAbove.offsetPercent - hoverEvent.offset < 2
       )
-        pageStateTick = hoverEvent.closestTickAbove;
+        domStateTick = hoverEvent.closestTickAbove;
       else if (
-        hoverEvent.closestTickBelow?.class === 'pagestate' &&
+        hoverEvent.closestTickBelow?.class === 'domstate' &&
         hoverEvent.offset - hoverEvent.closestTickBelow.offsetPercent < 2
       )
-        pageStateTick = hoverEvent.closestTickBelow;
+        domStateTick = hoverEvent.closestTickBelow;
 
-      if (pageStateTick && !this.isTimetravelMode) {
-        this.showPageStatePopup(pageStateTick);
+      if (domStateTick && !this.isTimetravelMode) {
+        this.showDomStatePopup(domStateTick);
         return;
       }
 
-      this.closePageStatePopup();
+      this.closeDomStatePopup();
 
       const stats = this.timelineRef.getTimelineStats(hoverEvent.offset);
       Object.assign(this.timelineHover, hoverEvent, stats);
@@ -293,9 +285,6 @@ export default Vue.defineComponent({
 
     onTimelineMouseout(): void {
       this.showTimelineHover = false;
-      if (this.autoshownPageStateId && !this.isTimetravelMode) {
-        this.showPageStatePopup();
-      }
     },
 
     onTimelineClick(event: MouseEvent, tick: ITimelineTick): void {
@@ -316,7 +305,7 @@ export default Vue.defineComponent({
 
     timetravelDragstart(): void {
       this.isDragging = true;
-      this.closePageStatePopup();
+      this.closeDomStatePopup();
     },
 
     timetravelDragend(): void {
@@ -359,6 +348,7 @@ export default Vue.defineComponent({
       if (Date.now() - this.lastTimetravelTimestamp < 250) {
         if (this.timetravelTimeout) return;
         this.timetravelTimeout = setTimeout(this.doTimetravel, 100) as any;
+        return;
       }
       const percentOffset = this.pendingTimetravelOffset;
       this.clearPendingTimetravel();
@@ -395,25 +385,23 @@ export default Vue.defineComponent({
       Client.send('Session.step', { heroSessionId: this.session.heroSessionId });
     },
 
-    pageStateMessage(pageStateId?: string): string {
-      const pageState =
-        this.session.pageStates.find(x => x.id === pageStateId) ??
-        this.session.pageStates[this.session.pageStates.length - 1];
-      return pageState.isUnresolved
-        ? 'New Page State Found'
-        : `Page State: ${pageState.resolvedState ?? '...'}`;
+    domStateMessage(domStateId?: string): string {
+      const domState =
+        this.session.domStates.find(x => x.id === domStateId) ??
+        this.session.domStates[this.session.domStates.length - 1];
+      return `Dom State: ${domState.name}`;
     },
 
-    pageStateIsResolving(pageStateId?: string): boolean {
-      const pageState =
-        this.session.pageStates.find(x => x.id === pageStateId) ??
-        this.session.pageStates[this.session.pageStates.length - 1];
-      return !pageState.isUnresolved && !pageState.resolvedState;
+    domStateIsResolving(domStateId?: string): boolean {
+      const domState =
+        this.session.domStates.find(x => x.id === domStateId) ??
+        this.session.domStates[this.session.domStates.length - 1];
+      return !domState.inProgress;
     },
 
-    openPageState(pageStateId?: string) {
-      pageStateId ??= this.session.pageStates[this.session.pageStates.length - 1].id;
-      this.$emit('open-generator', pageStateId);
+    openDomState(domStateId?: string) {
+      domStateId ??= this.session.domStates[this.session.domStates.length - 1].id;
+      this.$emit('open-generator', domStateId);
     },
 
     updateScriptTimeAgo(): void {
@@ -434,7 +422,7 @@ export default Vue.defineComponent({
         timelineTicks.push({
           id: url.navigationId,
           offsetPercent: url.offsetPercent,
-          class: 'urlrequest',
+          class: url.offsetPercent === 100 ? 'url': 'urlrequest',
         });
         for (const status of url.loadStatusOffsets) {
           if (status.loadStatus === LoadStatus.HttpResponded) {
@@ -447,18 +435,16 @@ export default Vue.defineComponent({
         }
       }
 
-      let unresolvedPageStateTick: ITimelineTick;
-      for (const pageState of message.pageStates) {
-        if (pageState.offsetPercent < 0) continue;
-        const match = timelineTicks.findIndex(x => x.offsetPercent === pageState.offsetPercent);
+      for (const domState of message.domStates) {
+        if (domState.offsetPercent < 0) continue;
+        const match = timelineTicks.findIndex(x => x.offsetPercent === domState.offsetPercent);
         // delete other ticks at this location
         if (match >= 0) timelineTicks.splice(match, 1);
         const tick: ITimelineTick = {
-          id: pageState.id,
-          offsetPercent: pageState.offsetPercent,
-          class: 'pagestate',
+          id: domState.id,
+          offsetPercent: domState.offsetPercent,
+          class: 'domstate',
         };
-        if (pageState.id === message.pageStateIdNeedsResolution) unresolvedPageStateTick = tick;
         timelineTicks.push(tick);
       }
       timelineTicks.sort((a, b) => a.offsetPercent - b.offsetPercent);
@@ -468,19 +454,12 @@ export default Vue.defineComponent({
       this.timelineUrlIndex =
         this.startLocation === 'sessionStart' ? 0 : message.timeline.urls.length - 1;
 
-      if (!message.pageStateIdNeedsResolution) {
-        if (this.focusedPageState.id === this.autoshownPageStateId) {
-          this.closePageStatePopup();
-        }
-        this.autoshownPageStateId = null;
-      }
-
       this.onAppModeEvent({ mode: message.mode });
 
       if (isNewId || !this.isTimetravelMode) {
         this.timelineOffset = 100;
         this.showTimelineHover = false;
-        if (!message.heroSessionId) this.closePageStatePopup();
+        if (!message.heroSessionId) this.closeDomStatePopup();
       }
 
       this.updateScriptTimeAgo();
@@ -489,16 +468,10 @@ export default Vue.defineComponent({
     onAppModeEvent(message: IAppModeEvent): void {
       this.isTimetravelMode = message.mode === 'timetravel';
       if (this.isTimetravelMode) {
-        this.closePageStatePopup();
+        this.closeDomStatePopup();
       } else if (message.mode === 'live') {
         this.timelineOffset = 100;
         this.clearPendingTimetravel();
-        if (this.session.pageStateIdNeedsResolution && !this.isDragging) {
-          const unresolvedPageStateTick = this.timelineTicks.find(
-            x => x.class === 'pagestate' && x.id === this.session.pageStateIdNeedsResolution,
-          );
-          this.showPageStatePopup(unresolvedPageStateTick);
-        }
       }
     },
 
@@ -520,7 +493,7 @@ export default Vue.defineComponent({
     Client.off('App.mode', this.onAppModeEvent);
     window.removeEventListener('blur', this.hideMenu);
     document.removeEventListener('keyup', this.onKeypress);
-    this.closePageStatePopup();
+    this.closeDomStatePopup();
   },
 });
 </script>
@@ -663,7 +636,7 @@ export default Vue.defineComponent({
   }
 
   .timeline {
-    .bar .tick.pagestate .marker {
+    .bar .tick.domstate .marker {
       width: 20px;
       height: 20px;
       left: -11px;
@@ -674,7 +647,7 @@ export default Vue.defineComponent({
       border: 0 none;
       box-shadow: -1px 1px 2px rgba(0, 0, 0, 0.6);
       display: inline-block;
-      background-image: url('~@/assets/icons/pagestate.svg');
+      background-image: url('~@/assets/icons/domstate.svg');
       backface-visibility: hidden;
       background-size: contain;
       background-repeat: no-repeat;
@@ -697,7 +670,7 @@ export default Vue.defineComponent({
     }
 
     &:hover {
-      .bar .tick.pagestate .marker {
+      .bar .tick.domstate .marker {
         z-index: 0;
         opacity: 0.1;
       }

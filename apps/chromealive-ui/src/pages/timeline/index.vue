@@ -16,7 +16,7 @@
     <FocusedTimeline
       v-else
       ref="focusedTimlineRef"
-      :page-state-id="pageStateId"
+      :dom-state-id="domStateId"
       @exit="exitGenerator()"
     ></FocusedTimeline>
   </div>
@@ -45,18 +45,18 @@ export default Vue.defineComponent({
       isDragging: Vue.computed(() => liveView.value?.isDragging || focusedTimlineRef.value?.isDragging),
       isLoading: Vue.ref(false),
       showFocusedTimeline: Vue.ref(false),
-      pageStateId: Vue.ref<string>(null),
+      domStateId: Vue.ref<string>(null),
     };
   },
   methods: {
     exitGenerator() {
       this.showFocusedTimeline = false;
-      this.pageStateId = null;
+      this.domStateId = null;
     },
 
-    openGenerator(pageStateId: string) {
+    openGenerator(domStateId: string) {
       this.showFocusedTimeline = true;
-      this.pageStateId = pageStateId;
+      this.domStateId = domStateId;
     },
 
     async sendAppHeightChanged() {
@@ -83,7 +83,7 @@ export default Vue.defineComponent({
     });
     Client.on('App.mode', message => {
       const { mode } = message;
-      this.showFocusedTimeline = mode === 'pagestate';
+      this.showFocusedTimeline = mode === 'domstate';
     });
     Client.on('Session.loaded', () => (this.isLoading = false));
     new ResizeObserver(() => this.sendAppHeightChanged()).observe(this.appDiv);

@@ -3,11 +3,9 @@ import { Session as HeroSession, Tab } from '@ulixee/hero-core';
 import FrameNavigations, { IFrameNavigationEvents } from '@ulixee/hero-core/lib/FrameNavigations';
 import { LoadStatus } from '@ulixee/hero-interfaces/Location';
 import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
-import PageStateGenerator, {
-  IPageStateSession,
-} from '@ulixee/hero-timetravel/lib/PageStateGenerator';
+import DomStateGenerator, { IDomStateSession } from '@ulixee/hero-timetravel/lib/DomStateGenerator';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
-import PageStateListener, { IPageStateEvents } from '@ulixee/hero-core/lib/PageStateListener';
+import DomStateListener, { IDomStateEvents } from '@ulixee/hero-core/lib/DomStateListener';
 import {
   addEventListener,
   removeEventListeners,
@@ -16,9 +14,9 @@ import {
 import IRegisteredEventListener from '@ulixee/commons/interfaces/IRegisteredEventListener';
 import TimelineRecorder from '@ulixee/hero-timetravel/lib/TimelineRecorder';
 
-export default class PageStateSessionTimeline extends TypedEventEmitter<{
-  'updated-generator': { pageStateId: string };
-  'timeline-change': { pageStateId: string; timelineRange: [number, number] };
+export default class DomStateSessionTimeline extends TypedEventEmitter<{
+  'updated-generator': { domStateId: string };
+  'timeline-change': { domStateId: string; timelineRange: [number, number] };
 }> {
   public defaultWaitMilliseconds = 5e3;
 
@@ -38,8 +36,8 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
 
   constructor(
     readonly db: SessionDb,
-    readonly pageStateId: string,
-    private readonly pageStateGenerator: PageStateGenerator,
+    readonly domStateId: string,
+    private readonly domStateGenerator: DomStateGenerator,
     timelineRange?: TimelineBuilder['timelineRange'],
   ) {
     super();
@@ -71,23 +69,23 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
     return timeRange;
   }
 
-  public onNewPageState(
+  public onNewDomState(
     tab: Tab,
-    listener: PageStateListener,
+    listener: DomStateListener,
   ): { loadingRange: [number, number]; timelineRange: [number, number] } {
     const statusChangeRegistration = addEventListener(
       tab.navigations,
       'status-change',
       this.onTabNavigationStatusChange.bind(this, tab),
     );
-    const pageStateResolvedRegistration = addEventListener(
+    const domStateResolvedRegistration = addEventListener(
       listener,
       'resolved',
-      this.onPageStateResolved.bind(this, tab, statusChangeRegistration.handler),
+      this.onDomStateResolved.bind(this, tab, statusChangeRegistration.handler),
     );
-    this.eventRegistrations.push(statusChangeRegistration, pageStateResolvedRegistration);
+    this.eventRegistrations.push(statusChangeRegistration, domStateResolvedRegistration);
 
-    const { loadingRange, timelineRange } = this.createPageStateTimelines(
+    const { loadingRange, timelineRange } = this.createDomStateTimelines(
       listener,
       tab.navigations,
       tab.sessionId,
@@ -127,14 +125,14 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
     return this.timelineBuilder.refreshMetadata();
   }
 
-  private getGeneratorSession(): IPageStateSession {
-    return this.pageStateGenerator.sessionsById?.get(this.sessionId);
+  private getGeneratorSession(): IDomStateSession {
+    return this.domStateGenerator.sessionsById?.get(this.sessionId);
   }
 
-  private onPageStateResolved(
+  private onDomStateResolved(
     tab: Tab,
     statusChangeListener: (ev: IFrameNavigationEvents['status-change']) => void,
-    resolution: IPageStateEvents['resolved'],
+    resolution: IDomStateEvents['resolved'],
   ) {
     // keep going if we run into an error?
     if (resolution.error) return;
@@ -156,7 +154,7 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
 
     this.updateRecordUntilTime(timeRange[1], true);
     this.emit('timeline-change', {
-      pageStateId: this.pageStateId,
+      domStateId: this.domStateId,
       timelineRange: [...timeRange],
     });
   }
@@ -187,7 +185,7 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
     }
     if (hasLoadingRangeChanges) {
       generatorSession.needsProcessing = true;
-      this.emit('updated-generator', { pageStateId: this.pageStateId });
+      this.emit('updated-generator', { domStateId: this.domStateId });
     }
 
     // don't update for Dom Content Loaded past range
@@ -208,7 +206,7 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
   }
 
   private getDefaultTimelineMillis(excludeSessionId: string): number {
-    for (const [id, session] of this.pageStateGenerator.sessionsById) {
+    for (const [id, session] of this.domStateGenerator.sessionsById) {
       if (id !== excludeSessionId) {
         const timelineMillis = session.timelineRange[1] - session.timelineRange[0];
         if (timelineMillis > this.defaultWaitMilliseconds) {
@@ -219,8 +217,8 @@ export default class PageStateSessionTimeline extends TypedEventEmitter<{
     return this.defaultWaitMilliseconds;
   }
 
-  private createPageStateTimelines(
-    listener: PageStateListener,
+  private createDomStateTimelines(
+    listener: DomStateListener,
     navigations: FrameNavigations,
     sessionId: string,
   ): { loadingRange: [number, number]; timelineRange: [number, number] } {
