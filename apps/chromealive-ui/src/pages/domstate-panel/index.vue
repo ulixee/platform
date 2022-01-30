@@ -56,22 +56,22 @@
             </select>
           </div>
           <div class="session-details" @click.prevent="focusOnSession(session)">
-            <Timeline :hero-session-id="session.id" :timeline="session.timeline" :ticks="[]">
-              <div
-                class="drag-range"
-                :style="{
-                left: `calc(${session.timelineOffsetPercents[0]}% - 11px)`,
-                width: `calc(${
-                  session.timelineOffsetPercents[1] - session.timelineOffsetPercents[0]
-                }% + 21px)`,
-              }"
-              >
-                <span class="start-time">{{ formattedTime(session, true) }}</span>
-                <TimelineHandle class="dragLeft"></TimelineHandle>
-                <TimelineHandle class="dragRight"></TimelineHandle>
-                <span class="end-time">{{ formattedTime(session, false) }}</span>
-              </div>
-            </Timeline>
+<!--            <Timeline :hero-session-id="session.id" :timeline="session.timeline" :ticks="[]">-->
+<!--              <div-->
+<!--                class="drag-range"-->
+<!--                :style="{-->
+<!--                left: `calc(${session.timelineOffsetPercents[0]}% - 11px)`,-->
+<!--                width: `calc(${-->
+<!--                  session.timelineOffsetPercents[1] - session.timelineOffsetPercents[0]-->
+<!--                }% + 21px)`,-->
+<!--              }"-->
+<!--              >-->
+<!--                <span class="start-time">{{ formattedTime(session, true) }}</span>-->
+<!--                <TimelineHandle class="dragLeft"></TimelineHandle>-->
+<!--                <TimelineHandle class="dragRight"></TimelineHandle>-->
+<!--                <span class="end-time">{{ formattedTime(session, false) }}</span>-->
+<!--              </div>-->
+<!--            </Timeline>-->
 
             <table class="asserts">
               <thead>
@@ -103,8 +103,8 @@ import * as Vue from 'vue';
 import Client from '@/api/Client';
 import IDomStateUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDomStateUpdatedEvent';
 import * as screenshotCache from '@/utils/screenshotCache';
-import Timeline from '@/components/Timeline.vue';
-import TimelineHandle from '@/components/TimelineHandle.vue';
+// import Timeline from '../timeline/components/Timeline.vue';
+// import TimelineHandle from '../timeline/components/TimelineHandle.vue';
 
 function defaultData(): IDomStateUpdatedEvent {
   return {
@@ -117,7 +117,7 @@ function defaultData(): IDomStateUpdatedEvent {
 
 export default Vue.defineComponent({
   name: 'DomStatePanel',
-  components: { Timeline, TimelineHandle },
+  // components: { Timeline, TimelineHandle },
   setup() {
     document.title = 'DomState Panel';
 

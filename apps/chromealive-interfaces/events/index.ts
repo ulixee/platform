@@ -15,7 +15,7 @@ export default interface IChromeAliveEvents {
   'App.startedDraggingChrome': null;
   'App.stoppedDraggingChrome': null;
   'App.quit': null;
-  'App.move': IAppMoveEvent;
+  'App.moveTo': IAppMoveEvent;
   'App.mode': IAppModeEvent;
   'Session.loading': void;
   'Session.loaded': void;

@@ -7,7 +7,10 @@ const { log } = Log(module);
 
 export default class AliveBarPositioner {
   public static workarea: IBounds;
-  public static chromeToolsHeight = 79;
+  public static chromeToolsTopPadding = 42;
+  public static chromeToolsLeftPadding = 100;
+  public static chromeToolsWidth = 140;
+
   private static lastAppBounds: IBounds = { top: -1, left: -1, height: 0, width: 0 };
   private static isMousedown = false;
   private static didSendAppHide = false;
@@ -66,7 +69,9 @@ export default class AliveBarPositioner {
     this.lastWindowBoundsBySessionId[sessionId] = { ...bounds };
 
     const newBounds = { ...bounds };
-    newBounds.top += this.chromeToolsHeight;
+    newBounds.top += this.chromeToolsTopPadding;
+    newBounds.left += this.chromeToolsLeftPadding;
+    newBounds.width -= this.chromeToolsWidth;
 
     const hasChanges =
       this.lastAppBounds.top !== newBounds.top ||
@@ -94,14 +99,13 @@ export default class AliveBarPositioner {
 
     this.lastAppBounds = newBounds;
 
-    ChromeAliveCore.sendAppEvent('App.move', {
+    ChromeAliveCore.sendAppEvent('App.moveTo', {
       bounds: {
         x: newBounds.left,
         y: newBounds.top,
-        width: bounds.width,
+        width: newBounds.width,
         height: bounds.height,
       },
-      item: 'timetravel',
     });
   }
 

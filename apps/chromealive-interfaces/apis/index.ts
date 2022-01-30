@@ -1,7 +1,8 @@
 import ISessionApi from './ISessionApi';
 import IAppApi from './IAppApi';
 import IMouseApi from './IMouseApi';
-import DomStateApi from './IDomStateApi';
+import IDomStateApi from './IDomStateApi';
+import INavigationApi from './INavigationApi';
 
 export type IApiHandlerSpec = {
   'Session.quit': ISessionApi['quit'];
@@ -15,14 +16,15 @@ export type IApiHandlerSpec = {
   'App.ready': IAppApi['ready'];
   'App.focus': IAppApi['focus'];
   'Mouse.state': IMouseApi['state'];
-  'DomState.load': DomStateApi['load'];
-  'DomState.spawnSession': DomStateApi['spawnSession'];
-  'DomState.unfocusSession': DomStateApi['unfocusSession'];
-  'DomState.openSession': DomStateApi['openSession'];
-  'DomState.modifySessionTimes': DomStateApi['modifySessionTimes'];
-  'DomState.focusSessionTime': DomStateApi['focusSessionTime'];
-  'DomState.extendSessionTime': DomStateApi['extendSessionTime'];
-  'DomState.exit': DomStateApi['exit'];
+  'DomState.load': IDomStateApi['load'];
+  'DomState.spawnSession': IDomStateApi['spawnSession'];
+  'DomState.unfocusSession': IDomStateApi['unfocusSession'];
+  'DomState.openSession': IDomStateApi['openSession'];
+  'DomState.modifySessionTimes': IDomStateApi['modifySessionTimes'];
+  'DomState.focusSessionTime': IDomStateApi['focusSessionTime'];
+  'DomState.extendSessionTime': IDomStateApi['extendSessionTime'];
+  'DomState.exit': IDomStateApi['exit'];
+  'Navigation.openAbout': INavigationApi['openAbout'];
 };
 
 type IPromiseType<T> = T extends PromiseLike<infer U> ? U : T;
