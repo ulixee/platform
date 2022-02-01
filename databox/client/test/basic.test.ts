@@ -49,7 +49,10 @@ describe('basic Databox tests', () => {
 
     const ranScript = await new Promise(resolve => {
       // eslint-disable-next-line no-new
-      new DataboxPackage(() => resolve(true));
+      new DataboxPackage(async databox => {
+        await databox.hero;
+        resolve(true);
+      });
     });
     await new Promise(resolve => process.nextTick(resolve));
     expect(ranScript).toBe(true);
@@ -72,6 +75,7 @@ describe('basic Databox tests', () => {
       await hero.goto('https://news.ycombinator.org');
       await hero.close();
     });
+    expect(connection.outgoing.mock.calls).toHaveLength(0);
     await packagedDatabox.run();
     const outgoingHeroCommands = connection.outgoing.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toMatchObject([
@@ -94,13 +98,7 @@ describe('basic Databox tests', () => {
     await packagedDatabox.run();
 
     const outgoingHeroCommands = connection.outgoing.mock.calls;
-    expect(outgoingHeroCommands.map(c => c[0].command)).toMatchObject([
-      'Core.connect',
-      'Core.createSession',
-      'Tab.goto',
-      'Session.close',
-      'Core.disconnect',
-    ]);
+    expect(outgoingHeroCommands.map(c => c[0].command)).toContain('Session.close');
   });
 
   it('should emit close hero on error', async () => {
@@ -119,13 +117,7 @@ describe('basic Databox tests', () => {
     await expect(packagedDatabox.run()).rejects.toThrowError();
 
     const outgoingHeroCommands = connection.outgoing.mock.calls;
-    expect(outgoingHeroCommands.map(c => c[0].command)).toMatchObject([
-      'Core.connect',
-      'Core.createSession',
-      'Tab.goto',
-      'Session.close',
-      'Core.disconnect',
-    ]);
+    expect(outgoingHeroCommands.map(c => c[0].command)).toContain('Session.close');
   });
 
   it('should be able to bypass the interaction step', async () => {
@@ -144,14 +136,6 @@ describe('basic Databox tests', () => {
     await packagedDatabox.run();
     expect(interactFn).not.toHaveBeenCalled();
     expect(extractFn).toHaveBeenCalledTimes(1);
-
-    const outgoingHeroCommands = connection.outgoing.mock.calls;
-    expect(outgoingHeroCommands.map(c => c[0].command)).toMatchObject([
-      'Core.connect',
-      'Core.createSession',
-      'Session.close',
-      'Core.disconnect',
-    ]);
   });
 
   it('can read command line args', async () => {
