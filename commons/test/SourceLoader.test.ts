@@ -10,6 +10,6 @@ it('can lookup source code', function () {
     return callsite;
   }
   const site = loadCallsite();
-  expect(SourceLoader.getSource(site[0]).code).toBe(`    callsite ??= getCallSite();`);
+  expect(SourceLoader.getSource(site[0]).code).toBe(`    callsite ??= getCallsite();`);
   expect(SourceLoader.getSource(site[1]).code).toBe(`  const site = loadCallsite();`);
 });
