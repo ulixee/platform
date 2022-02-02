@@ -28,10 +28,8 @@ export default class DataboxPackage implements IDataboxPackage {
       }
     }
 
-    this.run(options).catch(error => {
-      // eslint-disable-next-line no-console
-      console.error(`ERROR running databox: `, error);
-    });
+    // already logged
+    this.run(options).catch(() => null);
   }
 
   public async run(options: IDataboxRunOptions = {}): Promise<void> {
@@ -49,6 +47,8 @@ export default class DataboxPackage implements IDataboxPackage {
       }
     } catch (error) {
       databoxInternal.emit('error', error);
+      // eslint-disable-next-line no-console
+      console.error(`ERROR running databox: `, error);
       throw error;
     } finally {
       await databoxInternal.close();

@@ -18,12 +18,12 @@ export default class CollectedFragments {
   async get(name: string): Promise<DocumentFragment> {
     const fragments = await this.getMeta(name);
     if (fragments.length === 0) return null;
-    return this.#domParser.parseFromString(fragments[0].outerHTML, 'text/html') as any;
+    return this.#domParser.parseFromString(fragments[0].outerHTML, 'text/html').firstChild;
   }
 
   async getAll(name: string): Promise<DocumentFragment[]> {
     const fragments = await this.getMeta(name);
     if (fragments.length === 0) return null;
-    return fragments.map(x => this.#domParser.parseFromString(x.outerHTML, 'text/html') as any);
+    return fragments.map(x => this.#domParser.parseFromString(x.outerHTML, 'text/html').firstChild);
   }
 }

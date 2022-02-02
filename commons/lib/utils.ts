@@ -13,17 +13,28 @@ export function assert(value: unknown, message?: string, reject?): void {
   }
 }
 
+// @deprecated - change case... can't remove due to hero dependency
 export function getCallSite(priorToFilename?: string, endFilename?: string): ISourceCodeLocation[] {
-  const err = new Error();
+  return getCallsite(priorToFilename, endFilename);
+}
+
+export function getCallsite(priorToFilename?: string, endFilename?: string): ISourceCodeLocation[] {
   const startingPrepareStack = Error.prepareStackTrace;
+  const startingTraceLimit = Error.stackTraceLimit;
 
-  Error.prepareStackTrace = (_, stack) => stack;
+  Error.stackTraceLimit = 25;
+  Error.prepareStackTrace = (_, callsite) => {
+    return callsite.map(x => ({
+      filename: x.getFileName(),
+      line: x.getLineNumber(),
+      column: x.getColumnNumber() - 1,
+    }));
+  };
 
-  let stack = (err.stack as unknown as CallSite[]).map(x => ({
-    filename: x.getFileName(),
-    line: x.getLineNumber(),
-    column: x.getColumnNumber() - 1,
-  }));
+  const capture: { stack?: ISourceCodeLocation[] } = {};
+  Error.captureStackTrace(capture);
+  Error.stackTraceLimit = startingTraceLimit;
+  let stack = capture.stack;
 
   Error.prepareStackTrace = startingPrepareStack;
   let startIndex = 1;
@@ -47,7 +58,10 @@ export function getCallSite(priorToFilename?: string, endFilename?: string): ISo
     }
     if (lastIdx >= 0) stack = stack.slice(0, lastIdx + 1);
   }
-  return stack.filter(x => !!x.filename && !x.filename?.startsWith('internal'));
+  return stack.filter(
+    x =>
+      !!x.filename && !x.filename.startsWith('internal') && !x.filename.startsWith('node:internal'),
+  );
 }
 
 export function escapeUnescapedChar(str: string, char: string): string {

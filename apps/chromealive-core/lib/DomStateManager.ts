@@ -438,7 +438,7 @@ export default class DomStateManager extends TypedEventEmitter<{
     if (lastCommand.callsite) {
       const callsite = JSON.parse(lastCommand.callsite)[0];
       const sourceCode = SourceLoader.getSource(callsite);
-      if (sourceCode.code) {
+      if (sourceCode?.code) {
         name = `after "${sourceCode.code.trim()}"`;
       }
     }

@@ -5,6 +5,8 @@ export default class SourceLoader {
   private static sourceLines: { [source: string]: string[] } = {};
 
   static getSource(codeLocation: ISourceCodeLocation): ISourceCodeLocation & { code: string } {
+    if (!codeLocation) return null;
+
     const originalSourcePosition = SourceMapSupport.getOriginalSourcePosition(codeLocation);
     if (originalSourcePosition.source !== codeLocation.filename) {
       codeLocation = {
