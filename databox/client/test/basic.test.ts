@@ -126,15 +126,15 @@ describe('basic Databox tests', () => {
     const connection = new MockedConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
 
-    const interactFn = jest.fn();
+    const runFn = jest.fn();
     const extractFn = jest.fn();
     const packagedDatabox = new DataboxPackage({
-      interact: interactFn,
+      run: runFn,
       extract: extractFn,
     });
 
     await packagedDatabox.run();
-    expect(interactFn).not.toHaveBeenCalled();
+    expect(runFn).not.toHaveBeenCalled();
     expect(extractFn).toHaveBeenCalledTimes(1);
   });
 

@@ -1,13 +1,13 @@
 import Databox from '@ulixee/databox';
 
 export default new Databox({
-  async interact({ hero }) {
+  async run({ hero }) {
     await hero.goto('https://news.ycombinator.com/');
     await hero.waitForPaintingStable();
     const records = await hero.document.querySelectorAll('.athing');
-    await records.$collect('titles');
+    await records.$extractLater('titles');
     for (const record of records) {
-      await record.nextElementSibling.$collect('subtitles');
+      await record.nextElementSibling.$extractLater('subtitles');
     }
 
     const links = await hero.document.querySelectorAll('.subtext > a');

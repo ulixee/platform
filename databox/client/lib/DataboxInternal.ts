@@ -2,6 +2,8 @@ import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Hero, { IHeroCreateOptions } from '@ulixee/hero';
 import Output, { createObservableOutput } from './Output';
+import './DomExtender';
+import './ResourceExtender';
 
 export default class DataboxInternal extends TypedEventEmitter<{ close: void; error: Error }> {
   public hero: Hero;

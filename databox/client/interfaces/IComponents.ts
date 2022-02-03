@@ -1,11 +1,11 @@
-import Interactor from '../lib/Interactor';
+import Runner from '../lib/Runner';
 import Extractor from '../lib/Extractor';
 
 export default interface IComponents {
-  interact?: IInteractFn;
+  run?: IRunFn;
   extract?: IExtractFn;
   schema?: any;
 }
 
-export type IInteractFn = (databox: Interactor) => void | Promise<void>;
-export type IExtractFn = (extract: Extractor) => void | Promise<void>;
+export type IRunFn = (databox: Runner) => void | Promise<void>;
+export type IExtractFn = (databox: Extractor) => void | Promise<void>;
