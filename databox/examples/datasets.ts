@@ -16,11 +16,9 @@ export default new Databox(async databox => {
     const title = await dataset.textContent;
     await hero.click(dataset);
     await hero.waitForLocation('change');
-    await hero.waitForState({
-      allTrue({ assert }) {
-        assert(hero.querySelector('.DatasetHeader .dataset').$isVisible);
-        assert(hero.querySelector('.cost .large-text').$isVisible);
-      },
+    await hero.waitForState(assert => {
+      assert(hero.querySelector('.DatasetHeader .dataset').$isVisible);
+      assert(hero.querySelector('.cost .large-text').$isVisible);
     });
     const cost = await hero.querySelector('.cost .large-text').innerText;
     output.push({ cost, title });

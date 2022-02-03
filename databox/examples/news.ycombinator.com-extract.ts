@@ -22,8 +22,8 @@ export default new Databox({
       // });
     }
   },
-  async extract({ output, collectedFragments }) {
-    const storyFragment = await collectedFragments.get('table');
+  async extract({ output, collectedElements }) {
+    const storyFragment = await collectedElements.get('table');
     const stories = storyFragment.querySelectorAll('.athing');
     for (const story of stories) {
       const extraElem = story.nextElementSibling;
