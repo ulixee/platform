@@ -34,10 +34,6 @@ jobs:
         run: yarn && yarn build
         working-directory: ./hero
 
-      - name: Install Databox
-        run: yarn && yarn build
-        working-directory: ./databox
-
       - name: Yarn build
         run: yarn && yarn build
         env:
@@ -48,7 +44,7 @@ jobs:
         working-directory: ./build
         run: sudo $(npx install-browser-deps)
 
-      - name: Run  Lint
+      - name: Run Lint
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 14 }}
         run: NODE_OPTIONS=--max-old-space-size=4096 yarn lint
 

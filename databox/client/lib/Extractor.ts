@@ -2,6 +2,7 @@ import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import DataboxInternal from './DataboxInternal';
 import CollectedElements from './CollectedElements';
 import CollectedResources from './CollectedResources';
+import CollectedSnippets from './CollectedSnippets';
 
 export default class Extractor extends TypedEventEmitter<{ close: void; error: Error }> {
   readonly #databoxInternal: DataboxInternal;
@@ -9,23 +10,24 @@ export default class Extractor extends TypedEventEmitter<{ close: void; error: E
 
   constructor(databoxInternal: DataboxInternal) {
     super();
-    const { sessionIdToExtract, hero } = databoxInternal
+    const { sessionIdToExtract, hero } = databoxInternal;
     this.#databoxInternal = databoxInternal;
     this.#sessionId = sessionIdToExtract ? Promise.resolve(sessionIdToExtract) : hero.sessionId;
   }
 
   public get collectedElements(): CollectedElements {
     const { hero } = this.#databoxInternal;
-    return new CollectedElements(
-      hero.getCollectedFragments.bind(hero, this.#sessionId),
-    )
+    return new CollectedElements(hero.getCollectedElements.bind(hero, this.#sessionId));
+  }
+
+  public get collectedSnippets(): CollectedSnippets {
+    const { hero } = this.#databoxInternal;
+    return new CollectedSnippets(hero.getCollectedSnippets.bind(hero, this.#sessionId));
   }
 
   public get collectedResources(): CollectedResources {
     const { hero } = this.#databoxInternal;
-    return new CollectedResources(
-      hero.getCollectedResources.bind(hero, this.#sessionId),
-    );
+    return new CollectedResources(hero.getCollectedResources.bind(hero, this.#sessionId));
   }
 
   public get action(): DataboxInternal['action'] {
