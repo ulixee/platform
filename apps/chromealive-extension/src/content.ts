@@ -18,18 +18,18 @@ let elementOptionsOverlay: ElementOptionsOverlay;
 const elementsBucket = new ElementsBucket()
 
 function openSelectorMenu({ backendNodeId, element }: { backendNodeId?: number, element?: HTMLElement }) {
-  if (!elementOptionsOverlay) {
-    elementOptionsOverlay = document.createElement('chromealive-element-options-overlay') as ElementOptionsOverlay;
-    elementOptionsOverlay.attachElementsBucket(elementsBucket);
-    document.body.appendChild(elementOptionsOverlay);
-    document.body.addEventListener('click', closeSelectorMenu);
-  }
-  element ??= elementsBucket.getByKey(backendNodeId);
-  if (element && backendNodeId) {
-    elementOptionsOverlay.open(backendNodeId, element)
-  } else if (backendNodeId) {
-    elementOptionsOverlay.openByBackendNodeId(backendNodeId);
-  }
+  // if (!elementOptionsOverlay) {
+  //   elementOptionsOverlay = document.createElement('chromealive-element-options-overlay') as ElementOptionsOverlay;
+  //   elementOptionsOverlay.attachElementsBucket(elementsBucket);
+  //   document.body.appendChild(elementOptionsOverlay);
+  //   document.body.addEventListener('click', closeSelectorMenu);
+  // }
+  // element ??= elementsBucket.getByKey(backendNodeId);
+  // if (element && backendNodeId) {
+  //   elementOptionsOverlay.open(backendNodeId, element)
+  // } else if (backendNodeId) {
+  //   elementOptionsOverlay.openByBackendNodeId(backendNodeId);
+  // }
 }
 
 function closeSelectorMenu() {
