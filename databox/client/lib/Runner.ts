@@ -10,6 +10,10 @@ export default class Runner extends TypedEventEmitter<{ close: void; error: Erro
     this.#databoxInternal = databoxActive;
   }
 
+  public async extractLater(name: string, value: any): Promise<void> {
+    await this.hero.collectSnippet(name, value);
+  }
+
   public get hero(): Hero {
     return this.#databoxInternal.hero;
   }
@@ -22,7 +26,7 @@ export default class Runner extends TypedEventEmitter<{ close: void; error: Erro
     return this.#databoxInternal.input;
   }
 
-  public get output():DataboxInternal['output'] {
+  public get output(): DataboxInternal['output'] {
     return this.#databoxInternal.output;
   }
 

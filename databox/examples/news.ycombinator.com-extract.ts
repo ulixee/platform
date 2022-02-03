@@ -23,8 +23,8 @@ export default new Databox({
     }
   },
   async extract({ output, collectedElements }) {
-    const storyFragment = await collectedElements.get('table');
-    const stories = storyFragment.querySelectorAll('.athing');
+    const storyElement = await collectedElements.get('table');
+    const stories = storyElement.querySelectorAll('.athing');
     for (const story of stories) {
       const extraElem = story.nextElementSibling;
       output.push({});
@@ -47,5 +47,5 @@ export default new Databox({
 
       record.url = titleElem.getAttribute('href');
     }
-  }
+  },
 });

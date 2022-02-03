@@ -9,9 +9,9 @@ beforeAll(async () => {
 afterAll(() => Promise.all([Helpers.afterAll(), HeroHelpers.afterAll()]));
 afterEach(() => Promise.all([Helpers.afterEach(), HeroHelpers.afterEach()]));
 
-describe('basic Fragment tests', () => {
-  it('can create fragments', async () => {
-    koaServer.get('/fragment-basic', ctx => {
+describe('basic Element tests', () => {
+  it('can extract elements', async () => {
+    koaServer.get('/element-basic', ctx => {
       ctx.body = `
         <body>
           <div class="test1">test 1</div>
@@ -21,23 +21,23 @@ describe('basic Fragment tests', () => {
         </body>
       `;
     });
-    const hero = await openBrowser(`/fragment-basic`);
+    const hero = await openBrowser(`/element-basic`);
     const test1Element = await hero.document.querySelector('.test1');
     await test1Element.$extractLater('a');
     await test1Element.nextElementSibling.$extractLater('b');
 
-    const fragmentsA = await hero.getCollectedFragments(hero.sessionId, 'a');
-    expect(fragmentsA).toHaveLength(1);
-    expect(fragmentsA[0].outerHTML).toBe('<div class="test1">test 1</div>');
+    const elementsA = await hero.getCollectedElements(hero.sessionId, 'a');
+    expect(elementsA).toHaveLength(1);
+    expect(elementsA[0].outerHTML).toBe('<div class="test1">test 1</div>');
 
-    const fragmentsB = await hero.getCollectedFragments(hero.sessionId, 'b');
-    expect(fragmentsB[0].outerHTML).toBe(`<div class="test2">
+    const elementsB = await hero.getCollectedElements(hero.sessionId, 'b');
+    expect(elementsB[0].outerHTML).toBe(`<div class="test2">
             <ul><li>Test 2</li></ul>
           </div>`);
   });
 
-  it('can save fragment children', async () => {
-    koaServer.get('/fragment-list', ctx => {
+  it('can extract selectorAll lists', async () => {
+    koaServer.get('/element-list', ctx => {
       ctx.body = `
         <body>
 
@@ -51,10 +51,10 @@ describe('basic Fragment tests', () => {
         </body>
       `;
     });
-    const hero = await openBrowser(`/fragment-list`);
+    const hero = await openBrowser(`/element-list`);
     await hero.document.querySelectorAll('.valid').$extractLater('valid');
 
-    const valid = await hero.getCollectedFragments(hero.sessionId, 'valid');
+    const valid = await hero.getCollectedElements(hero.sessionId, 'valid');
     expect(valid).toHaveLength(3);
     expect(valid[0].outerHTML).toBe('<li class="valid">Test 1</li>');
     expect(valid[1].outerHTML).toBe('<li class="valid">Test 4</li>');

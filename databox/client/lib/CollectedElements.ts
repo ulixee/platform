@@ -1,14 +1,14 @@
 /// <reference lib="DOM" />
 /// <reference lib="DOM.Iterable" />
-import ICollectedFragment from '@ulixee/hero-interfaces/ICollectedFragment';
+import ICollectedElement from '@ulixee/hero-interfaces/ICollectedElement';
 import { DOMParser } from 'linkedom';
 
 export default class CollectedElements {
   #domParser = new DOMParser();
-  #collectedElementsByName = new Map<string, ICollectedFragment[]>();
-  constructor(private readonly getElements: (name: string) => Promise<ICollectedFragment[]>) {}
+  #collectedElementsByName = new Map<string, ICollectedElement[]>();
+  constructor(private readonly getElements: (name: string) => Promise<ICollectedElement[]>) {}
 
-  async getMeta(name: string): Promise<ICollectedFragment[]> {
+  async getMeta(name: string): Promise<ICollectedElement[]> {
     if (this.#collectedElementsByName.has(name)) return this.#collectedElementsByName.get(name);
     const elements = await this.getElements(name);
     this.#collectedElementsByName.set(name, elements);

@@ -16,7 +16,7 @@ class MockedConnectionToHeroCore extends ConnectionToHeroCore {
           data: { sessionId: 'session-id' },
         };
       }
-      if (command === 'Session.getCollectedFragments') {
+      if (command === 'Session.getCollectedElements') {
         return {
           data: [],
         };

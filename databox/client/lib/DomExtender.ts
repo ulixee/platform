@@ -1,5 +1,17 @@
-import type {} from 'awaited-dom/base/interfaces/super';
-import type {} from 'awaited-dom/base/interfaces/official';
+import {
+  ISuperElement,
+  ISuperHTMLCollection,
+  ISuperHTMLElement,
+  ISuperNode,
+  ISuperNodeList,
+} from 'awaited-dom/base/interfaces/super';
+import {
+  IElement,
+  IHTMLCollection,
+  IHTMLElement,
+  INode,
+  INodeList,
+} from 'awaited-dom/base/interfaces/official';
 import { awaitedPathState, extendNodeLists, extendNodes } from '@ulixee/hero/lib/DomExtender';
 
 interface IBaseExtendNode {
@@ -30,7 +42,7 @@ const NodeExtensionFns: Omit<IBaseExtendNode, ''> = {
   async $extractLater(name: string): Promise<void> {
     const { awaitedPath, awaitedOptions } = awaitedPathState.getState(this);
     const coreFrame = await awaitedOptions.coreFrame;
-    await coreFrame.collectFragment(name, awaitedPath.toJSON());
+    await coreFrame.collectElement(name, awaitedPath.toJSON());
   },
 };
 
@@ -38,9 +50,21 @@ const NodeListExtensionFns: IBaseExtendNodeList = {
   async $extractLater(name: string): Promise<void> {
     const { awaitedPath, awaitedOptions } = awaitedPathState.getState(this);
     const coreFrame = await awaitedOptions.coreFrame;
-    await coreFrame.collectFragment(name, awaitedPath.toJSON());
+    await coreFrame.collectElement(name, awaitedPath.toJSON());
   },
 };
 
 extendNodes<IBaseExtendNode, any>(NodeExtensionFns, {});
 extendNodeLists(NodeListExtensionFns);
+export {
+  ISuperElement,
+  ISuperNode,
+  ISuperHTMLElement,
+  ISuperNodeList,
+  ISuperHTMLCollection,
+  IElement,
+  INode,
+  IHTMLElement,
+  INodeList,
+  IHTMLCollection,
+};

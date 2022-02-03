@@ -1,7 +1,6 @@
 import IResolvablePromise from '../interfaces/IResolvablePromise';
 import ISourceCodeLocation from '../interfaces/ISourceCodeLocation';
 import Resolvable from './Resolvable';
-import CallSite = NodeJS.CallSite;
 
 export function assert(value: unknown, message?: string, reject?): void {
   if (value) return;
