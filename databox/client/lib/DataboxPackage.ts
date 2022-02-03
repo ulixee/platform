@@ -2,19 +2,19 @@ import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
 import IDataboxPackage from '@ulixee/databox-interfaces/IDataboxPackage';
 import UlixeeConfig from '@ulixee/commons/config';
 import readCommandLineArgs from './utils/readCommandLineArgs';
-import Interactor from './Interactor';
+import Runner from './Runner';
 import Extractor from './Extractor';
-import IComponents, { IInteractFn } from '../interfaces/IComponents';
+import IComponents, { IRunFn } from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
 
 export default class DataboxPackage implements IDataboxPackage {
   #components: IComponents;
 
-  constructor(components: IInteractFn | IComponents) {
+  constructor(components: IRunFn | IComponents) {
     this.#components =
       typeof components === 'function'
         ? {
-            interact: components as IInteractFn,
+            run: components as IRunFn,
           }
         : { ...components };
     if (process.env.DATABOX_RUN_LATER) return;
@@ -34,11 +34,11 @@ export default class DataboxPackage implements IDataboxPackage {
 
   public async run(options: IDataboxRunOptions = {}): Promise<void> {
     const databoxInternal = new DataboxInternal(options);
-    const shouldRunInteract = !databoxInternal.sessionIdToExtract;
+    const shouldRunFull = !databoxInternal.sessionIdToExtract;
     try {
-      if (shouldRunInteract) {
-        const interactor = new Interactor(databoxInternal);
-        await this.#components.interact(interactor);
+      if (shouldRunFull) {
+        const runner = new Runner(databoxInternal);
+        await this.#components.run(runner);
       }
 
       if (this.#components.extract) {

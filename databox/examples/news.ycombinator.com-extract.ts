@@ -1,10 +1,10 @@
 import Databox from '@ulixee/databox';
 
 export default new Databox({
-  async interact({ hero }) {
+  async run({ hero }) {
     await hero.goto('https://news.ycombinator.com/');
     await hero.waitForPaintingStable();
-    await hero.document.querySelector('#hnmain').$collect('table');
+    await hero.document.querySelector('#hnmain').$extractLater('table');
 
     const links = await hero.document.querySelectorAll('.subtext > a');
 

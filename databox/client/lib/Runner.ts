@@ -2,7 +2,7 @@ import Hero from '@ulixee/hero';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import DataboxInternal from './DataboxInternal';
 
-export default class Interactor extends TypedEventEmitter<{ close: void; error: Error }> {
+export default class Runner extends TypedEventEmitter<{ close: void; error: Error }> {
   #databoxInternal: DataboxInternal;
 
   constructor(databoxActive: DataboxInternal) {

@@ -18,6 +18,7 @@
   },
   "devDependencies": {
     "@ulixee/databox-testing": "1.5.4",
+    "@ulixee/hero-testing": "1.5.4",
     "@ulixee/hero-core": "1.5.4",
     "@types/web": "^0.0.50"
   }
