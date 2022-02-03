@@ -1,17 +1,5 @@
-import {
-  ISuperElement,
-  ISuperHTMLCollection,
-  ISuperHTMLElement,
-  ISuperNode,
-  ISuperNodeList,
-} from 'awaited-dom/base/interfaces/super';
-import {
-  IElement,
-  IHTMLCollection,
-  IHTMLElement,
-  INode,
-  INodeList,
-} from 'awaited-dom/base/interfaces/official';
+import type {} from 'awaited-dom/base/interfaces/super';
+import type {} from 'awaited-dom/base/interfaces/official';
 import { awaitedPathState, extendNodeLists, extendNodes } from '@ulixee/hero/lib/DomExtender';
 
 interface IBaseExtendNode {
