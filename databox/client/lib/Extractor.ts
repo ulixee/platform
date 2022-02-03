@@ -1,6 +1,6 @@
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import DataboxInternal from './DataboxInternal';
-import CollectedFragments from './CollectedFragments';
+import CollectedElements from './CollectedElements';
 import CollectedResources from './CollectedResources';
 
 export default class Extractor extends TypedEventEmitter<{ close: void; error: Error }> {
@@ -14,9 +14,9 @@ export default class Extractor extends TypedEventEmitter<{ close: void; error: E
     this.#sessionId = sessionIdToExtract ? Promise.resolve(sessionIdToExtract) : hero.sessionId;
   }
 
-  public get collectedFragments(): CollectedFragments {
+  public get collectedElements(): CollectedElements {
     const { hero } = this.#databoxInternal;
-    return new CollectedFragments(
+    return new CollectedElements(
       hero.getCollectedFragments.bind(hero, this.#sessionId),
     )
   }

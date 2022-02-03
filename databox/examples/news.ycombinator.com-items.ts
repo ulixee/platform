@@ -26,9 +26,9 @@ export default new Databox({
       // });
     }
   },
-  async extract({ output, collectedFragments }) {
-    const titles = await collectedFragments.getAll('titles');
-    const subtitles = await collectedFragments.getAll('subtitles');
+  async extract({ output, collectedElements }) {
+    const titles = await collectedElements.getAll('titles');
+    const subtitles = await collectedElements.getAll('subtitles');
     for (let i = 0; i < titles.length; i += 1) {
       const story = titles[i];
       const extraElem = subtitles[i];
