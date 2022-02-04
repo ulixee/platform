@@ -1,4 +1,5 @@
 import { Resource, WebsocketResource } from '@ulixee/hero';
+import { InternalPropertiesSymbol } from '@ulixee/hero/lib/InternalProperties';
 import type {} from '@ulixee/hero/lib/extendables';
 
 interface IExtendResource {
@@ -16,7 +17,7 @@ declare module '@ulixee/hero/lib/extendables' {
 
 const ResourceExtensionFns: IExtendResource = {
   $extractLater(name: string): Promise<void> {
-    const internalState = this[Symbol.for('@ulixee/internalState')];
+    const internalState = this[InternalPropertiesSymbol];
     const id = internalState.resourceMeta.id;
     const coreTabPromise = internalState.coreTabPromise;
     return coreTabPromise.then(x => x.collectResource(name, id));

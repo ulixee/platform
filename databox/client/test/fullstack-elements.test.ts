@@ -1,5 +1,7 @@
 import { Helpers } from '@ulixee/databox-testing';
 import { Helpers as HeroHelpers } from '@ulixee/hero-testing';
+import Hero from '@ulixee/hero';
+import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
 import DataboxRunner from '../lib/Runner';
 
 let koaServer: HeroHelpers.ITestKoaServer;
@@ -21,16 +23,17 @@ describe('basic Element tests', () => {
         </body>
       `;
     });
-    const hero = await openBrowser(`/element-basic`);
+    const [hero, coreSession] = await openBrowser(`/element-basic`);
+    const sessionId = await hero.sessionId;
     const test1Element = await hero.document.querySelector('.test1');
     await test1Element.$extractLater('a');
     await test1Element.nextElementSibling.$extractLater('b');
 
-    const elementsA = await hero.getCollectedElements(hero.sessionId, 'a');
+    const elementsA = await coreSession.getCollectedElements(sessionId, 'a');
     expect(elementsA).toHaveLength(1);
     expect(elementsA[0].outerHTML).toBe('<div class="test1">test 1</div>');
 
-    const elementsB = await hero.getCollectedElements(hero.sessionId, 'b');
+    const elementsB = await coreSession.getCollectedElements(sessionId, 'b');
     expect(elementsB[0].outerHTML).toBe(`<div class="test2">
             <ul><li>Test 2</li></ul>
           </div>`);
@@ -51,10 +54,11 @@ describe('basic Element tests', () => {
         </body>
       `;
     });
-    const hero = await openBrowser(`/element-list`);
+    const [hero, coreSession] = await openBrowser(`/element-list`);
+    const sessionId = await hero.sessionId;
     await hero.document.querySelectorAll('.valid').$extractLater('valid');
 
-    const valid = await hero.getCollectedElements(hero.sessionId, 'valid');
+    const valid = await coreSession.getCollectedElements(sessionId, 'valid');
     expect(valid).toHaveLength(3);
     expect(valid[0].outerHTML).toBe('<li class="valid">Test 1</li>');
     expect(valid[1].outerHTML).toBe('<li class="valid">Test 4</li>');
@@ -62,12 +66,12 @@ describe('basic Element tests', () => {
   });
 });
 
-async function openBrowser(path: string) {
+async function openBrowser(path: string): Promise<[Hero, ICoreSession]> {
   const databoxInternal = await Helpers.createFullstackDataboxInternal();
-  const databoxRunner = new DataboxRunner(databoxInternal);
-  const hero = databoxRunner.hero;
+  const hero = databoxInternal.hero;
+  const coreSession = await databoxInternal.coreSessionPromise;
   Helpers.needsClosing.push(databoxInternal);
   await hero.goto(`${koaServer.baseUrl}${path}`);
   await hero.waitForPaintingStable();
-  return hero;
+  return [hero, coreSession];
 }
