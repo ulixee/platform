@@ -32,7 +32,7 @@ export default class DataboxInternal extends TypedEventEmitter<{ close: void; er
     this.initializeHero();
     this.coreSessionPromise
       .then(coreSession => databoxInternalByCoreSession.set(coreSession, this))
-      .catch(error => console.log('Could not set databoxInternalByCoreSession: ', error));
+      .catch(() => null);
 
     this.beforeClose = () => this.hero.close();
     this.on('error', () => this.hero.close());
