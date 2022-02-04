@@ -1,4 +1,5 @@
 import { inspect } from 'util';
+import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
 import ObjectObserver from './ObjectObserver';
 
 export default class Output<T = any> extends Array<T> {
@@ -20,17 +21,17 @@ export default class Output<T = any> extends Array<T> {
   }
 }
 
-export function createObservableOutput<T>(hero): Output<T> {
+export function createObservableOutput<T>(coreSessionPromise: Promise<ICoreSession>): Output<T> {
   const observable = new ObjectObserver(new Output());
   observable.onChanges = changes => {
     const changesToRecord = changes.map(change => ({
-      type: change.type,
+      type: change.type as string,
       value: change.value,
       path: JSON.stringify(change.path),
       timestamp: Date.now(),
     }));
 
-    hero.recordOutput(changesToRecord).catch(() => null);
+    coreSessionPromise.then(coreSession => coreSession.recordOutput(changesToRecord)).catch(() => null);
   };
   return observable.proxy;
 }

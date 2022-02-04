@@ -2,8 +2,6 @@ import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
 import IDataboxPackage from '@ulixee/databox-interfaces/IDataboxPackage';
 import UlixeeConfig from '@ulixee/commons/config';
 import readCommandLineArgs from './utils/readCommandLineArgs';
-import Runner from './Runner';
-import Extractor from './Extractor';
 import IComponents, { IRunFn } from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
 
@@ -37,18 +35,16 @@ export default class DataboxPackage implements IDataboxPackage {
     const shouldRunFull = !databoxInternal.sessionIdToExtract;
     try {
       if (shouldRunFull) {
-        const runner = new Runner(databoxInternal);
-        await this.#components.run(runner);
+        await databoxInternal.execRunner(this.#components.run);
       }
 
       if (this.#components.extract) {
-        const extractor = new Extractor(databoxInternal);
-        await this.#components.extract(extractor);
+        databoxInternal.execExtractor(this.#components.extract);
       }
     } catch (error) {
-      databoxInternal.emit('error', error);
       // eslint-disable-next-line no-console
       console.error(`ERROR running databox: `, error);
+      databoxInternal.emit('error', error);
       throw error;
     } finally {
       await databoxInternal.close();

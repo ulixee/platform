@@ -11,7 +11,8 @@ export default class Runner extends TypedEventEmitter<{ close: void; error: Erro
   }
 
   public async extractLater(name: string, value: any): Promise<void> {
-    await this.hero.collectSnippet(name, value);
+    const coreSession = await this.#databoxInternal.coreSessionPromise;
+    await coreSession.collectSnippet(name, value);
   }
 
   public get hero(): Hero {

@@ -1,15 +1,23 @@
 import ICollectedResource from '@ulixee/hero-interfaces/ICollectedResource';
+import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
 
 export default class CollectedResources {
-  constructor(private readonly getResources: (name: string) => Promise<ICollectedResource[]>) {}
+  readonly #coreSessionPromise: Promise<ICoreSession>;
+  readonly #sessionIdPromise: Promise<string>;
 
-  async get(name: string): Promise<ICollectedResource> {
-    const resources = await this.getResources(name);
-    if (resources.length) return resources[0];
-    return null;
+  constructor(coreSessionPromise: Promise<ICoreSession>, sessionIdPromise: Promise<string>) {
+    this.#coreSessionPromise = coreSessionPromise;
+    this.#sessionIdPromise = sessionIdPromise;
   }
 
-  getAll(name: string): Promise<ICollectedResource[]> {
-    return this.getResources(name);
+  async get(name: string): Promise<ICollectedResource> {
+    const [coreSession, sessionId] = await Promise.all([this.#coreSessionPromise, this.#sessionIdPromise]);
+    const resources = await coreSession.getCollectedResources(sessionId, name);
+    return resources.length ? resources[0] : null;
+  }
+
+  async getAll(name: string): Promise<ICollectedResource[]> {
+    const [coreSession, sessionId] = await Promise.all([this.#coreSessionPromise, this.#sessionIdPromise]);
+    return coreSession.getCollectedResources(sessionId, name);
   }
 }

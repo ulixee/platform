@@ -6,28 +6,25 @@ import CollectedSnippets from './CollectedSnippets';
 
 export default class Extractor extends TypedEventEmitter<{ close: void; error: Error }> {
   readonly #databoxInternal: DataboxInternal;
-  readonly #sessionId: Promise<string>;
+  readonly #sessionIdPromise: Promise<string>;
 
   constructor(databoxInternal: DataboxInternal) {
     super();
     const { sessionIdToExtract, hero } = databoxInternal;
     this.#databoxInternal = databoxInternal;
-    this.#sessionId = sessionIdToExtract ? Promise.resolve(sessionIdToExtract) : hero.sessionId;
+    this.#sessionIdPromise = sessionIdToExtract ? Promise.resolve(sessionIdToExtract) : hero.sessionId;
   }
 
   public get collectedElements(): CollectedElements {
-    const { hero } = this.#databoxInternal;
-    return new CollectedElements(hero.getCollectedElements.bind(hero, this.#sessionId));
+    return new CollectedElements(this.#databoxInternal.coreSessionPromise, this.#sessionIdPromise);
   }
 
   public get collectedSnippets(): CollectedSnippets {
-    const { hero } = this.#databoxInternal;
-    return new CollectedSnippets(hero.getCollectedSnippets.bind(hero, this.#sessionId));
+    return new CollectedSnippets(this.#databoxInternal.coreSessionPromise, this.#sessionIdPromise);
   }
 
   public get collectedResources(): CollectedResources {
-    const { hero } = this.#databoxInternal;
-    return new CollectedResources(hero.getCollectedResources.bind(hero, this.#sessionId));
+    return new CollectedResources(this.#databoxInternal.coreSessionPromise, this.#sessionIdPromise);
   }
 
   public get action(): DataboxInternal['action'] {
