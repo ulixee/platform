@@ -11,7 +11,7 @@ import Extractor from './Extractor';
 import {
   IExtractElementFn,
   IExtractElementsFn,
-  IExtractFn,
+  IExtractFn, IHeroPlugin,
   IRunFn,
 } from '../interfaces/IComponents';
 
@@ -26,10 +26,10 @@ export default class DataboxInternal extends TypedEventEmitter<{ close: void; er
   #isClosing: Promise<void>;
   #extractorPromises: Promise<any>[] = [];
 
-  constructor(runOptions: IDataboxRunOptions) {
+  constructor(runOptions: IDataboxRunOptions, heroPlugins: IHeroPlugin[] = []) {
     super();
     this.runOptions = runOptions;
-    this.initializeHero();
+    this.initializeHero(heroPlugins);
     this.coreSessionPromise
       .then(coreSession => databoxInternalByCoreSession.set(coreSession, this))
       .catch(() => null);
@@ -119,12 +119,15 @@ export default class DataboxInternal extends TypedEventEmitter<{ close: void; er
     return this.#isClosing;
   }
 
-  protected initializeHero(): void {
+  protected initializeHero(heroPlugins: IHeroPlugin[]): void {
     const heroOptions: IHeroCreateOptions = {};
     for (const [key, value] of Object.entries(this.runOptions)) {
       heroOptions[key] = value;
     }
     this.hero = new Hero(heroOptions);
+    for (const plugin of heroPlugins) {
+      this.hero.use(plugin);
+    }
   }
 }
 

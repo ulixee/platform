@@ -31,7 +31,7 @@ export default class DataboxPackage implements IDataboxPackage {
   }
 
   public async run(options: IDataboxRunOptions = {}): Promise<void> {
-    const databoxInternal = new DataboxInternal(options);
+    const databoxInternal = new DataboxInternal(options, this.#components.plugins);
     const shouldRunFull = !databoxInternal.sessionIdToExtract;
     try {
       if (shouldRunFull) {
