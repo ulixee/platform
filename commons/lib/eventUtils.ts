@@ -25,14 +25,10 @@ export function addEventListeners(
 }
 
 export function removeEventListeners(
-  listeners: Array<{
-    emitter: EventEmitter | ITypedEventEmitter<any>;
-    eventName: string | symbol;
-    handler: (...args: any[]) => void;
-  }>,
+  listeners: Array<IRegisteredEventListener>,
 ): void {
   for (const listener of listeners) {
-    listener.emitter.removeListener(listener.eventName, listener.handler);
+    listener.emitter.off(listener.eventName, listener.handler);
   }
   listeners.length = 0;
 }
@@ -110,8 +106,7 @@ export class TypedEventEmitter<T> extends EventEmitter implements ITypedEventEmi
     const messageId = this.logger?.stats(`waitOn:${eventType}`, {
       timeoutMillis,
     });
-
-    const listener = addTypedEventListener(this, eventType, (result: T[K]) => {
+    const callbackFn = (result: T[K]): void => {
       // give the listeners a second to register
       if (!listenerFn || listenerFn.call(this, result)) {
         this.logger?.stats(`waitOn.resolve:${eventType}`, {
@@ -119,10 +114,11 @@ export class TypedEventEmitter<T> extends EventEmitter implements ITypedEventEmi
         });
         promise.resolve(result);
       }
-    });
+    }
+    this.on(eventType, callbackFn);
 
     return promise.promise.finally(() => {
-      removeEventListeners([listener]);
+      this.off(eventType, callbackFn);
       const idx = this.pendingWaitEvents.findIndex(x => x.id === id);
       if (idx >= 0) this.pendingWaitEvents.splice(idx, 1);
     });

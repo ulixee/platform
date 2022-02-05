@@ -15,17 +15,18 @@ export default class Resolvable<T = any> implements IResolvablePromise<T>, Promi
   constructor(timeoutMillis?: number, timeoutMessage?: string) {
     // get parent stack
     this.stack = new Error('').stack.slice(8);
+    this.promise = new Promise<T>((resolve, reject) => {
+      this.resolveFn = resolve;
+      this.rejectFn = reject;
+    });
 
     if (timeoutMillis !== undefined && timeoutMillis !== null) {
       this.timeout = (
         setTimeout(this.rejectWithTimeout.bind(this, timeoutMessage), timeoutMillis) as any
       ).unref();
     }
-    this.promise = new Promise<T>((resolve, reject) => {
-      this.resolveFn = resolve;
-      this.rejectFn = reject;
-    });
-    bindFunctions(this);
+    this.resolve = this.resolve.bind(this);
+    this.reject = this.reject.bind(this);
   }
 
   public resolve(value: T | PromiseLike<T>): void {
@@ -37,6 +38,7 @@ export default class Resolvable<T = any> implements IResolvablePromise<T>, Promi
       .then(x => {
         this.isResolved = true;
         this.resolved = x;
+        this.clean();
       })
       .catch(this.reject);
   }
@@ -44,8 +46,8 @@ export default class Resolvable<T = any> implements IResolvablePromise<T>, Promi
   public reject(error: Error): void {
     if (this.isResolved) return;
     this.isResolved = true;
-    clearTimeout(this.timeout);
     this.rejectFn(error);
+    this.clean();
   }
 
   public toJSON(): object {
@@ -71,6 +73,13 @@ export default class Resolvable<T = any> implements IResolvablePromise<T>, Promi
   public finally(onfinally?: () => void): Promise<T> {
     return this.promise.finally(onfinally);
   }
+
+  private clean(): void {
+    clearTimeout(this.timeout);
+    this.resolveFn = null;
+    this.rejectFn = null;
+  }
+
 
   private rejectWithTimeout(message: string): void {
     const error = new TimeoutError(message);
