@@ -16,9 +16,21 @@ export default class CollectedElements {
     this.#sessionIdPromise = sessionIdPromise;
   }
 
+  get names(): Promise<string[]> {
+    return Promise.all([this.#coreSessionPromise, this.#sessionIdPromise]).then(
+      async ([coreSession, sessionId]) => {
+        const names = await coreSession.getCollectedAssetNames(sessionId);
+        return names.elements;
+      },
+    );
+  }
+
   async getMeta(name: string): Promise<ICollectedElement[]> {
     if (this.#collectedElementsByName.has(name)) return this.#collectedElementsByName.get(name);
-    const [coreSession, sessionId] = await Promise.all([this.#coreSessionPromise, this.#sessionIdPromise]);
+    const [coreSession, sessionId] = await Promise.all([
+      this.#coreSessionPromise,
+      this.#sessionIdPromise,
+    ]);
     const elements = await coreSession.getCollectedElements(sessionId, name);
     this.#collectedElementsByName.set(name, elements);
     return elements;

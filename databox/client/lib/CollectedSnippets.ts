@@ -10,15 +10,30 @@ export default class CollectedSnippets {
     this.#sessionIdPromise = sessionIdPromise;
   }
 
+  get names(): Promise<string[]> {
+    return Promise.all([this.#coreSessionPromise, this.#sessionIdPromise]).then(
+      async ([coreSession, sessionId]) => {
+        const names = await coreSession.getCollectedAssetNames(sessionId);
+        return names.snippets;
+      },
+    );
+  }
+
   async get<T>(name: string): Promise<T> {
-    const [coreSession, sessionId] = await Promise.all([this.#coreSessionPromise, this.#sessionIdPromise]);
+    const [coreSession, sessionId] = await Promise.all([
+      this.#coreSessionPromise,
+      this.#sessionIdPromise,
+    ]);
     const snippets = await coreSession.getCollectedSnippets(sessionId, name);
     if (snippets.length) return snippets[0].value as T;
     return null;
   }
 
   async getAll(name: string): Promise<ICollectedSnippet[]> {
-    const [coreSession, sessionId] = await Promise.all([this.#coreSessionPromise, this.#sessionIdPromise]);
+    const [coreSession, sessionId] = await Promise.all([
+      this.#coreSessionPromise,
+      this.#sessionIdPromise,
+    ]);
     return coreSession.getCollectedSnippets(sessionId, name);
   }
 }

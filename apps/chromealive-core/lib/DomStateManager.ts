@@ -309,7 +309,8 @@ export default class DomStateManager extends TypedEventEmitter<{
     this.openHeroSessionsById.set(heroSession.id, heroSession);
     this.spawnedWorldHeroSessionIds.add(heroSession.id);
 
-    heroSession.on('tab-created', this.onTab);
+    // DISABLE tracking tabs, which live updates background sessions
+    // heroSession.on('tab-created', this.onTab);
     heroSession.on('closing', this.untrackHeroSession.bind(this, heroSession));
   }
 
