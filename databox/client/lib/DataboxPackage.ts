@@ -39,7 +39,7 @@ export default class DataboxPackage implements IDataboxPackage {
       }
 
       if (this.#components.extract) {
-        databoxInternal.execExtractor(this.#components.extract);
+        await databoxInternal.execExtractor(this.#components.extract);
       }
     } catch (error) {
       // eslint-disable-next-line no-console
