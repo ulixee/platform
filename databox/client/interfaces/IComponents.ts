@@ -1,22 +1,33 @@
-import { IClientPluginClass } from '@ulixee/hero-interfaces/IClientPlugin';
-import { IPluginClass } from '@ulixee/hero-interfaces/IPlugin';
+import { IHeroCreateOptions } from '@ulixee/hero';
 import Runner from '../lib/Runner';
 import Extractor from '../lib/Extractor';
 
-export default interface IComponents {
-  run: IRunFn;
-  extract?: IExtractFn;
-  plugins?: IHeroPlugin[];
+export default interface IComponents<TInput, TOutput> {
+  defaults?: IDefaultsObj<TInput, TOutput>;
+  run: IRunFn<TInput, TOutput>;
+  extract?: IExtractFn<TInput, TOutput>;
   schema?: any;
 }
 
-export type IHeroPlugin = string | IClientPluginClass | { [name: string]: IPluginClass };
+export interface IDefaultsObj<TInput, TOutput> {
+  hero?: Partial<IHeroCreateOptions>;
+  input?: Partial<TInput>;
+  output?: Partial<TOutput>;
+}
 
-export type IRunFn = (databox: Runner) => void | Promise<void>;
-export type IExtractFn = (databox: Extractor) => void | Promise<void>;
+export type IRunFn<TInput, TOutput> = (databox: Runner<TInput, TOutput>) => void | Promise<void>;
+export type IExtractFn<TInput, TOutput> = (
+  databox: Extractor<TInput, TOutput>,
+) => void | Promise<void>;
 
-export type IExtractElementFn<T> = (element: Element, databox: Extractor) => T | Promise<T>;
-export type IExtractElementsFn<T> = (elements: Element[], databox: Extractor) => T | Promise<T>;
+export type IExtractElementFn<T, TInput = any, TOutput = any> = (
+  element: Element,
+  databox: Extractor<TInput, TOutput>,
+) => T | Promise<T>;
+export type IExtractElementsFn<T, TInput = any, TOutput = any> = (
+  elements: Element[],
+  databox: Extractor<TInput, TOutput>,
+) => T | Promise<T>;
 
 export interface IExtractElementOptions {
   name?: string;

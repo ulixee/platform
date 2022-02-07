@@ -73,7 +73,7 @@ describe('basic Element tests', () => {
   });
 });
 
-async function openBrowser(path: string): Promise<[Hero, ICoreSession, DataboxInternal]> {
+async function openBrowser(path: string): Promise<[Hero, ICoreSession, DataboxInternal<any, any>]> {
   const databoxInternal = await Helpers.createFullstackDataboxInternal();
   const hero = databoxInternal.hero;
   const coreSession = await databoxInternal.coreSessionPromise;

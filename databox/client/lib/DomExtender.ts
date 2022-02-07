@@ -14,7 +14,7 @@ import {
 } from 'awaited-dom/base/interfaces/official';
 import { awaitedPathState, extendNodeLists, extendNodes } from '@ulixee/hero/lib/DomExtender';
 import { IExtractElementFn, IExtractElementOptions, IExtractElementsFn } from '../interfaces/IComponents';
-import { getDataboxInternalByCoreSession } from './DataboxInternal';
+import { getDataboxInternalByHero } from './DataboxInternal';
 import CollectedElements from './CollectedElements';
 
 interface IBaseExtendNode {
@@ -49,8 +49,8 @@ const NodeExtensionFns: Omit<IBaseExtendNode, ''> = {
     const coreFrame = await awaitedOptions.coreFrame;
     const collectedElements = await coreFrame.collectElement(options.name, awaitedPath.toJSON(), true);
     const frozenElement = CollectedElements.parseIntoFrozenDom(collectedElements[0].outerHTML);
-    const coreSession = coreFrame.coreTab.coreSession;
-    const databoxInternal = getDataboxInternalByCoreSession(coreSession);
+    const hero = coreFrame.coreTab.coreSession.hero;
+    const databoxInternal = getDataboxInternalByHero(hero);
     const response = databoxInternal.execExtractor(extractFn, frozenElement);
     return response as unknown as T;
   },
@@ -67,8 +67,8 @@ const NodeListExtensionFns: IBaseExtendNodeList = {
     const coreFrame = await awaitedOptions.coreFrame;
     const collectedElements = await coreFrame.collectElement(options.name, awaitedPath.toJSON(), true);
     const frozenElements = collectedElements.map(x => CollectedElements.parseIntoFrozenDom(x.outerHTML));
-    const coreSession = coreFrame.coreTab.coreSession;
-    const databoxInternal = getDataboxInternalByCoreSession(coreSession);
+    const hero = coreFrame.coreTab.coreSession.hero;
+    const databoxInternal = getDataboxInternalByHero(hero);
     const response = databoxInternal.execExtractor(extractFn, frozenElements);
     return response as unknown as T;
   },
