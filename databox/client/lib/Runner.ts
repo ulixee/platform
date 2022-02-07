@@ -2,10 +2,10 @@ import Hero from '@ulixee/hero';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import DataboxInternal from './DataboxInternal';
 
-export default class Runner extends TypedEventEmitter<{ close: void; error: Error }> {
-  #databoxInternal: DataboxInternal;
+export default class Runner<TInput, TOutput> extends TypedEventEmitter<{ close: void; error: Error }> {
+  #databoxInternal: DataboxInternal<TInput, TOutput>;
 
-  constructor(databoxActive: DataboxInternal) {
+  constructor(databoxActive: DataboxInternal<TInput, TOutput>) {
     super();
     this.#databoxInternal = databoxActive;
   }
@@ -19,15 +19,15 @@ export default class Runner extends TypedEventEmitter<{ close: void; error: Erro
     return this.#databoxInternal.hero;
   }
 
-  public get action(): DataboxInternal['action'] {
+  public get action(): DataboxInternal<TInput, TOutput>['action'] {
     return this.#databoxInternal.action;
   }
 
-  public get input(): DataboxInternal['input'] {
-    return this.#databoxInternal.input;
+  public get input(): TInput {
+    return this.#databoxInternal.input as TInput;
   }
 
-  public get output(): DataboxInternal['output'] {
+  public get output(): TOutput {
     return this.#databoxInternal.output;
   }
 
@@ -35,11 +35,11 @@ export default class Runner extends TypedEventEmitter<{ close: void; error: Erro
     this.#databoxInternal.output = value;
   }
 
-  public get sessionId(): DataboxInternal['sessionId'] {
+  public get sessionId(): DataboxInternal<TInput, TOutput>['sessionId'] {
     return this.#databoxInternal.sessionId;
   }
 
-  public get schema(): DataboxInternal['schema'] {
+  public get schema(): DataboxInternal<TInput, TOutput>['schema'] {
     return this.#databoxInternal.schema;
   }
 }

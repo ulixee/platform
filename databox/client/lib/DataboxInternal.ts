@@ -9,30 +9,33 @@ import './ResourceExtender';
 import Runner from './Runner';
 import Extractor from './Extractor';
 import {
+  IDefaultsObj,
   IExtractElementFn,
   IExtractElementsFn,
-  IExtractFn, IHeroPlugin,
+  IExtractFn,
   IRunFn,
 } from '../interfaces/IComponents';
 
-const databoxInternalByCoreSession: WeakMap<ICoreSession, DataboxInternal> = new WeakMap();
+const databoxInternalByHero: WeakMap<Hero, DataboxInternal<any, any>> = new WeakMap();
 
-export default class DataboxInternal extends TypedEventEmitter<{ close: void; error: Error }> {
+export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<{ close: void; error: Error }> {
   public hero: Hero;
   readonly runOptions: IDataboxRunOptions;
   beforeClose?: () => Promise<any>;
 
-  #output: Output;
+  readonly #input: TInput;
+  #output: Output<TOutput>;
   #isClosing: Promise<void>;
   #extractorPromises: Promise<any>[] = [];
+  #defaults: IDefaultsObj<TInput, TOutput>;
 
-  constructor(runOptions: IDataboxRunOptions, heroPlugins: IHeroPlugin[] = []) {
+  constructor(runOptions: IDataboxRunOptions, defaults?: IDefaultsObj<TInput, TOutput>) {
     super();
     this.runOptions = runOptions;
-    this.initializeHero(heroPlugins);
-    this.coreSessionPromise
-      .then(coreSession => databoxInternalByCoreSession.set(coreSession, this))
-      .catch(() => null);
+    this.#defaults = defaults || {};
+    this.#input = (this.#defaults.input || {}) as TInput;
+
+    this.initializeHero();
 
     this.beforeClose = () => this.hero.close();
     this.on('error', () => this.hero.close());
@@ -54,16 +57,18 @@ export default class DataboxInternal extends TypedEventEmitter<{ close: void; er
     return this.runOptions.action || '/';
   }
 
-  public get input(): { [key: string]: any } {
-    const input = this.runOptions.input || {};
-    return { ...input };
+  public get input(): TInput {
+    return { ...this.#input };
   }
 
-  public get output(): any | any[] {
+  public get output(): TOutput {
     if (!this.#output) {
       this.#output = createObservableOutput(this.coreSessionPromise);
+      for (const [key, value] of Object.entries(this.#defaults.output || {})) {
+        this.#output[key] = value;
+      }
     }
-    return this.#output;
+    return this.#output as unknown as TOutput;
   }
 
   public set output(value: any | any[]) {
@@ -82,23 +87,23 @@ export default class DataboxInternal extends TypedEventEmitter<{ close: void; er
     return {};
   }
 
-  public async execRunner(runFn: IRunFn) {
-    const runner = new Runner(this);
+  public async execRunner(runFn: IRunFn<TInput, TOutput>) {
+    const runner = new Runner<TInput, TOutput>(this);
     await runFn(runner);
   }
 
   public execExtractor<T>(
-    extractFn: IExtractFn | IExtractElementFn<T> | IExtractElementsFn<T>,
+    extractFn: IExtractFn<TInput, TOutput> | IExtractElementFn<T, TInput, TOutput> | IExtractElementsFn<T, TInput, TOutput>,
     element?: Element | Element[],
   ) {
-    const extractor = new Extractor(this);
+    const extractor = new Extractor<TInput, TOutput>(this);
     let response: any;
     if (Array.isArray(element)) {
-      response = (extractFn as IExtractElementsFn<T>)(element as Element[], extractor);
+      response = (extractFn as IExtractElementsFn<T, TInput, TOutput>)(element as Element[], extractor);
     } else if (element) {
-      response = (extractFn as IExtractElementFn<T>)(element as Element, extractor);
+      response = (extractFn as IExtractElementFn<T, TInput, TOutput>)(element as Element, extractor);
     } else {
-      response = (extractFn as IExtractFn)(extractor);
+      response = (extractFn as IExtractFn<TInput, TOutput>)(extractor);
     }
     this.#extractorPromises.push(response);
     return response;
@@ -119,18 +124,16 @@ export default class DataboxInternal extends TypedEventEmitter<{ close: void; er
     return this.#isClosing;
   }
 
-  protected initializeHero(heroPlugins: IHeroPlugin[]): void {
-    const heroOptions: IHeroCreateOptions = {};
-    for (const [key, value] of Object.entries(this.runOptions)) {
-      heroOptions[key] = value;
-    }
+  protected initializeHero(): void {
+    const heroOptions: IHeroCreateOptions = {
+      ...this.#defaults.hero,
+      ...this.runOptions,
+    };
     this.hero = new Hero(heroOptions);
-    for (const plugin of heroPlugins) {
-      this.hero.use(plugin);
-    }
+    databoxInternalByHero.set(this.hero, this)
   }
 }
 
-export function getDataboxInternalByCoreSession(coreSession: ICoreSession): DataboxInternal {
-  return databoxInternalByCoreSession.get(coreSession);
+export function getDataboxInternalByHero(hero: Hero): DataboxInternal<any, any> {
+  return databoxInternalByHero.get(hero);
 }

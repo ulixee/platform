@@ -50,7 +50,7 @@ export function onClose(closeFn: (() => Promise<any>) | (() => any), onlyCloseOn
   needsClosing.push({ close: closeFn, onlyCloseOnFinal });
 }
 
-class FullstackDataboxInternal extends DataboxInternal {
+class FullstackDataboxInternal extends DataboxInternal<any, any> {
   protected initializeHero(): void {
     const heroOptions: IHeroCreateOptions = {};
     for (const [key, value] of Object.entries(this.runOptions)) {

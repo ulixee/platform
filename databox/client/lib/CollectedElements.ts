@@ -10,6 +10,7 @@ export default class CollectedElements {
   #collectedElementsByName = new Map<string, ICollectedElement[]>();
   readonly #coreSessionPromise: Promise<ICoreSession>;
   readonly #sessionIdPromise: Promise<string>;
+  readonly #rawDetailsByElement: Map<Element, ICollectedElement> = new Map();
 
   constructor(coreSessionPromise: Promise<ICoreSession>, sessionIdPromise: Promise<string>) {
     this.#coreSessionPromise = coreSessionPromise;
@@ -25,7 +26,7 @@ export default class CollectedElements {
     );
   }
 
-  async getMeta(name: string): Promise<ICollectedElement[]> {
+  async getRawDetails(name: string): Promise<ICollectedElement[]> {
     if (this.#collectedElementsByName.has(name)) return this.#collectedElementsByName.get(name);
     const [coreSession, sessionId] = await Promise.all([
       this.#coreSessionPromise,
@@ -36,16 +37,26 @@ export default class CollectedElements {
     return elements;
   }
 
+  getRawDetailsByElement(element: Element): ICollectedElement {
+    return this.#rawDetailsByElement.get(element)  ;
+  }
+
   async get(name: string): Promise<Element> {
-    const collectedElements = await this.getMeta(name);
+    const collectedElements = await this.getRawDetails(name);
     if (collectedElements.length === 0) return null;
-    return CollectedElements.parseIntoFrozenDom(collectedElements[0].outerHTML);
+    const element = CollectedElements.parseIntoFrozenDom(collectedElements[0].outerHTML);
+    this.#rawDetailsByElement.set(element, collectedElements[0]);
+    return element;
   }
 
   async getAll(name: string): Promise<Element[]> {
-    const collectedElements = await this.getMeta(name);
+    const collectedElements = await this.getRawDetails(name);
     if (collectedElements.length === 0) return null;
-    return collectedElements.map(x => CollectedElements.parseIntoFrozenDom(x.outerHTML));
+    return collectedElements.map(x => {
+      const element = CollectedElements.parseIntoFrozenDom(x.outerHTML);
+      this.#rawDetailsByElement.set(element, collectedElements[0]);
+      return element;
+    });
   }
 
   public static parseIntoFrozenDom(outerHTML: string): Element {

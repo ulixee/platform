@@ -1,11 +1,11 @@
 import { IHeroCreateOptions } from '@ulixee/hero';
 
-export default interface IDataboxRunOptions
+export default interface IDataboxRunOptions<TInput = any>
   extends Partial<
     Omit<ISessionCreateOptions, 'scriptInstanceMeta'>
   >, IHeroCreateOptions {
   action?: string;
-  input?: {};
+  input?: TInput;
   fields?: {};
 }
 

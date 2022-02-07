@@ -36,7 +36,7 @@ describe('basic output tests', () => {
     const connection = new MockedConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
 
-    const databoxInternal = new DataboxInternal({});
+    const databoxInternal = new DataboxInternal<any, any>({});
     databoxInternal.output.test = true;
     await databoxInternal.close();
 
