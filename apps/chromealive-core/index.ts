@@ -11,6 +11,8 @@ import SessionObserver from './lib/SessionObserver';
 import ConnectionToClient from './lib/ConnectionToClient';
 import FocusedWindowModule from './lib/hero-plugin-modules/FocusedWindowModule';
 import AliveBarPositioner from './lib/AliveBarPositioner';
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 
 const { log } = Log(module);
 
@@ -27,6 +29,7 @@ export default class ChromeAliveCore {
   private static shouldAutoShowBrowser = false;
   private static app: ChildProcess;
   private static coreServerAddress?: Promise<string>;
+  private static events = new EventSubscriber();
 
   public static setCoreServerAddress(address: Promise<string>) {
     this.coreServerAddress = address;
@@ -39,7 +42,7 @@ export default class ChromeAliveCore {
     const connection = new ConnectionToClient();
     this.connections.push(connection);
     this.onWsConnected();
-    connection.on('close', () => {
+    this.events.once(connection, 'close', () => {
       const idx = this.connections.indexOf(connection);
       if (idx >= 0) this.connections.splice(idx, 1);
     });
@@ -54,10 +57,14 @@ export default class ChromeAliveCore {
 
     bindFunctions(this);
 
-    HeroGlobalPool.events.on('browser-launched', this.onNewBrowser);
-    HeroGlobalPool.events.on('all-browsers-closed', this.hideApp);
-    HeroGlobalPool.events.on('session-created', this.onHeroSessionCreated);
-    HeroGlobalPool.events.on('browser-has-no-open-windows', this.onBrowserHasNoWindows);
+    this.events.on(HeroGlobalPool.events, 'browser-launched', this.onNewBrowser);
+    this.events.on(HeroGlobalPool.events, 'all-browsers-closed', this.hideApp);
+    this.events.on(HeroGlobalPool.events, 'session-created', this.onHeroSessionCreated);
+    this.events.on(
+      HeroGlobalPool.events,
+      'browser-has-no-open-windows',
+      this.onBrowserHasNoWindows,
+    );
 
     FocusedWindowModule.onVisibilityChange = this.changeActiveSessions;
 
@@ -67,10 +74,7 @@ export default class ChromeAliveCore {
   public static shutdown() {
     log.info('Shutting down ChromeAlive!');
     this.closeApp();
-    HeroGlobalPool.events.off('browser-launched', this.onNewBrowser);
-    HeroGlobalPool.events.off('all-browsers-closed', this.hideApp);
-    HeroGlobalPool.events.off('session-created', this.onHeroSessionCreated);
-    HeroGlobalPool.events.off('browser-has-no-open-windows', this.onBrowserHasNoWindows);
+    this.events.close();
     while (this.connections.length) {
       const next = this.connections.shift();
       next.close();
@@ -87,8 +91,7 @@ export default class ChromeAliveCore {
     if (!sessionObserver) return;
 
     const { heroSession } = sessionObserver;
-    const page = [...heroSession.tabsById.values()].find(x => !x.isClosing)?.puppetPage;
-    return page;
+    return [...heroSession.tabsById.values()].find(x => !x.isClosing)?.puppetPage;
   }
 
   public static sendAppEvent<T extends keyof IChromeAliveEvents>(
@@ -120,7 +123,7 @@ export default class ChromeAliveCore {
       return;
     }
 
-    if (heroSession.mode === 'development') {
+    if (heroSession.mode === 'development' && !('extractSessionId' in heroSession.options)) {
       heroSession.configureHeaded({ showBrowser: true });
       heroSession.options.sessionKeepAlive = true;
       heroSession.options.viewport ??= { width: 0, height: 0 };
@@ -128,21 +131,34 @@ export default class ChromeAliveCore {
     // if not auto-registered, check if browser is showing
     if (!heroSession.options.showBrowser) return;
 
+    const sessionId = heroSession.id;
     log.info('New Hero Session Created: %s (%s)', {
       script: script.split('/').pop(),
-      sessionId: heroSession.id,
+      sessionId,
     });
     // keep alive session
     heroSession.options.sessionKeepAlive = true;
     const sessionObserver = new SessionObserver(heroSession);
-    this.sessionObserversById.set(heroSession.id, sessionObserver);
-    sessionObserver.on('hero:updated', this.sendActiveSession.bind(this, heroSession.id));
-    sessionObserver.on('app:mode', this.sendAppModeEvent.bind(this, heroSession.id));
-    sessionObserver.on('databox:updated', this.sendDataboxUpdatedEvent.bind(this, heroSession.id));
-    sessionObserver.domStateManager.on('updated', x => this.sendAppEvent('DomState.updated', x));
-    sessionObserver.on('closed', this.onSessionObserverClosed.bind(this, sessionObserver));
 
-    this.sendActiveSession(heroSession.id);
+    this.sessionObserversById.set(sessionId, sessionObserver);
+    const sourceCode = sessionObserver.sourceCodeTimeline;
+    const on = this.events.on.bind(this.events);
+    const sessionEvents = [
+      on(sessionObserver, 'hero:updated', this.sendActiveSession.bind(this, sessionId)),
+      on(sessionObserver, 'app:mode', this.sendAppModeEvent.bind(this, sessionId)),
+      on(sessionObserver, 'databox:updated', this.sendDataboxUpdatedEvent.bind(this, sessionId)),
+      on(sessionObserver, 'closed', this.onSessionObserverClosed.bind(this, sessionObserver)),
+      on(sourceCode, 'command', this.sendAppEvent.bind(this, 'Command.updated')),
+      on(sourceCode, 'source', this.sendAppEvent.bind(this, 'SourceCode.updated')),
+      on(
+        sessionObserver.timetravelPlayer,
+        'new-tick-command',
+        this.sendCommandFocusedEvent.bind(this, sessionId),
+      ),
+    ];
+    this.events.group('session', ...sessionEvents);
+
+    this.sendActiveSession(sessionId);
 
     const isRestartedSessionId =
       this.restartingHeroSessionId === heroSession.options.sessionResume?.sessionId;
@@ -151,7 +167,7 @@ export default class ChromeAliveCore {
       this.restartingHeroSessionId = null;
       this.sendAppEvent('Session.loading');
       AliveBarPositioner.showHeroSessionOnBounds(heroSession.id);
-      sessionObserver.once('hero:updated', () => {
+      this.events.once(sessionObserver, 'hero:updated', () => {
         this.sendAppEvent('Session.loaded');
         AliveBarPositioner.showApp();
       });
@@ -169,9 +185,18 @@ export default class ChromeAliveCore {
     }
   }
 
+  private static sendCommandFocusedEvent(
+    sessionId: string,
+    event: TimetravelPlayer['EventTypes']['new-tick-command'],
+  ): void {
+    this.sendDataboxUpdatedEvent(sessionId);
+    this.sendAppEvent('Command.focused', event);
+  }
+
   private static onSessionObserverClosed(sessionObserver: SessionObserver) {
     const heroSessionId = sessionObserver.heroSession.id;
     this.sessionObserversById.delete(heroSessionId);
+    this.events.endGroup('session');
     if (this.activeHeroSessionId === heroSessionId) {
       this.activeHeroSessionId = null;
       if (this.restartingHeroSessionId === heroSessionId) {
@@ -246,8 +271,8 @@ export default class ChromeAliveCore {
     }
 
     this.app = launchChromeAlive(...args);
-    this.app.once('exit', () => (this.app = null));
-    this.app.once('close', () => (this.app = null));
+    this.events.once(this.app, 'exit', () => (this.app = null));
+    this.events.once(this.app, 'close', () => (this.app = null));
     log.info('Launched Electron App', {
       file: this.app?.spawnfile,
       args: this.app?.spawnargs,

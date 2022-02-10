@@ -1,4 +1,5 @@
 import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
+import ICommandUpdatedEvent from '../events/ICommandUpdatedEvent';
 
 export interface ISessionResumeArgs extends IHeroSessionArgs {
   startLocation: ISessionCreateOptions['sessionResume']['startLocation'];
@@ -21,6 +22,10 @@ export default interface ISessionApi {
   ): {
     imageBase64: string;
   };
+  getScriptState(args?: IHeroSessionArgs): Promise<{
+    commandsById: Record<number, ICommandUpdatedEvent>;
+    sourceFileLines: Record<string, string[]>;
+  }>;
   quit(args: IHeroSessionArgs): Promise<void>;
   timetravel(
     args: IHeroSessionArgs & {

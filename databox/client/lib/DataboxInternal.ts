@@ -2,7 +2,7 @@ import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Hero, { IHeroCreateOptions } from '@ulixee/hero';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
-import { InternalPropertiesSymbol } from '@ulixee/hero/lib/InternalProperties';
+import { InternalPropertiesSymbol, scriptInstance } from '@ulixee/hero/lib/internal';
 import Output, { createObservableOutput } from './Output';
 import './DomExtender';
 import './ResourceExtender';
@@ -18,7 +18,13 @@ import {
 
 const databoxInternalByHero: WeakMap<Hero, DataboxInternal<any, any>> = new WeakMap();
 
-export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<{ close: void; error: Error }> {
+const ModulePath = require.resolve('../index').replace(/\/index\.(?:ts|js)/, '');
+scriptInstance.ignoreModulePaths.push(ModulePath);
+
+export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<{
+  close: void;
+  error: Error;
+}> {
   public hero: Hero;
   readonly runOptions: IDataboxRunOptions;
   beforeClose?: () => Promise<any>;
@@ -93,15 +99,24 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
   }
 
   public execExtractor<T>(
-    extractFn: IExtractFn<TInput, TOutput> | IExtractElementFn<T, TInput, TOutput> | IExtractElementsFn<T, TInput, TOutput>,
+    extractFn:
+      | IExtractFn<TInput, TOutput>
+      | IExtractElementFn<T, TInput, TOutput>
+      | IExtractElementsFn<T, TInput, TOutput>,
     element?: Element | Element[],
   ) {
     const extractor = new Extractor<TInput, TOutput>(this);
     let response: any;
     if (Array.isArray(element)) {
-      response = (extractFn as IExtractElementsFn<T, TInput, TOutput>)(element as Element[], extractor);
+      response = (extractFn as IExtractElementsFn<T, TInput, TOutput>)(
+        element as Element[],
+        extractor,
+      );
     } else if (element) {
-      response = (extractFn as IExtractElementFn<T, TInput, TOutput>)(element as Element, extractor);
+      response = (extractFn as IExtractElementFn<T, TInput, TOutput>)(
+        element as Element,
+        extractor,
+      );
     } else {
       response = (extractFn as IExtractFn<TInput, TOutput>)(extractor);
     }
@@ -130,7 +145,7 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
       ...this.runOptions,
     };
     this.hero = new Hero(heroOptions);
-    databoxInternalByHero.set(this.hero, this)
+    databoxInternalByHero.set(this.hero, this);
   }
 }
 

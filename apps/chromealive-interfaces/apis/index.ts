@@ -9,6 +9,7 @@ export type IApiHandlerSpec = {
   'Session.resume': ISessionApi['resume'];
   'Session.step': ISessionApi['step'];
   'Session.getScreenshot': ISessionApi['getScreenshot'];
+  'Session.getScriptState': ISessionApi['getScriptState'];
   'App.boundsChanged': IAppApi['boundsChanged'];
   'App.ready': IAppApi['ready'];
   'App.focus': IAppApi['focus'];

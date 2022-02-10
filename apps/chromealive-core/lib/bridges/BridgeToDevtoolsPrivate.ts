@@ -11,6 +11,7 @@ import {
   MessageLocation,
   ResponseCode,
 } from '../BridgeHelpers';
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 
 export default class BridgeToDevtoolsPrivate extends EventEmitter {
   private devtoolsSessionMap = new Map<
@@ -18,20 +19,22 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
     { contextIds: number[]; tabId?: number }
   >();
 
+  private events = new EventSubscriber();
+
   public addDevtoolsSession(devtoolsSession: IDevtoolsSession) {
     this.devtoolsSessionMap.set(devtoolsSession, { contextIds: [] });
 
-    devtoolsSession.on('Runtime.executionContextCreated', event =>
+    this.events.on(devtoolsSession, 'Runtime.executionContextCreated', event =>
       this.onContextCreated(devtoolsSession, event),
     );
-    devtoolsSession.on('Runtime.executionContextDestroyed', event =>
+    this.events.on(devtoolsSession, 'Runtime.executionContextDestroyed', event =>
       this.onContextDestroyed(devtoolsSession, event),
     );
-    devtoolsSession.on('Runtime.executionContextsCleared', () =>
+    this.events.on(devtoolsSession, 'Runtime.executionContextsCleared', () =>
       this.onContextCleared(devtoolsSession),
     );
 
-    devtoolsSession.on('Runtime.bindingCalled', event =>
+    this.events.on(devtoolsSession, 'Runtime.bindingCalled', event =>
       this.handleIncomingMessageFromBrowser(event),
     );
 
@@ -62,11 +65,21 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
               console.log('UNHANDLED MESSAGE FROM CORE: ', destLocation, responseCode, payload);
             }
           };
-          (${interceptElementWasSelected.toString()})('${___sendToCore}', '${MessageEventType.OpenElementOptionsOverlay}');
-          (${interceptInspectElementMode.toString()})('${___sendToCore}', '${MessageEventType.InspectElementModeChanged}');
-          (${interceptElementPanelOnHighlight.toString()})('${___sendToCore}', '${MessageEventType.HideElementOptionsOverlay}');
-          (${interceptElementPanelOnRemoveHighlight.toString()})('${___sendToCore}', '${MessageEventType.RemoveHideFromElementOptionsOverlay}');
-          (${injectContextMenu.toString()})('${___sendToCore}', '${MessageEventType.UpdateElementOptions}');
+          (${interceptElementWasSelected.toString()})('${___sendToCore}', '${
+          MessageEventType.OpenElementOptionsOverlay
+        }');
+          (${interceptInspectElementMode.toString()})('${___sendToCore}', '${
+          MessageEventType.InspectElementModeChanged
+        }');
+          (${interceptElementPanelOnHighlight.toString()})('${___sendToCore}', '${
+          MessageEventType.HideElementOptionsOverlay
+        }');
+          (${interceptElementPanelOnRemoveHighlight.toString()})('${___sendToCore}', '${
+          MessageEventType.RemoveHideFromElementOptionsOverlay
+        }');
+          (${injectContextMenu.toString()})('${___sendToCore}', '${
+          MessageEventType.UpdateElementOptions
+        }');
         })();`,
       }),
       this.getDevtoolsTabId.bind(this, devtoolsSession),
@@ -77,6 +90,7 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
 
   public close() {
     this.devtoolsSessionMap.clear();
+    this.events.close();
   }
 
   public async closePanel(tabId: number): Promise<void> {
@@ -252,15 +266,17 @@ function interceptElementWasSelected(sendToCoreFnName, eventType) {
   const globalWindow = window;
   // @ts-ignore
   const globalSDK = window.SDK;
-  if (!globalSDK) return setTimeout(() => interceptElementWasSelected(sendToCoreFnName, eventType), 1);
+  if (!globalSDK)
+    return setTimeout(() => interceptElementWasSelected(sendToCoreFnName, eventType), 1);
 
   const inspectNodeRequested = globalSDK.OverlayModel.prototype.inspectNodeRequested;
-  globalSDK.OverlayModel.prototype.inspectNodeRequested = function({ backendNodeId }) {
+  globalSDK.OverlayModel.prototype.inspectNodeRequested = function ({ backendNodeId }) {
     const payload = '{"event":"' + eventType + '","backendNodeId": ' + backendNodeId + '}';
-    const packedMessage = ':ContentScript       :N:{"origLocation":"DevtoolsPrivate","payload":' + payload + '}';
+    const packedMessage =
+      ':ContentScript       :N:{"origLocation":"DevtoolsPrivate","payload":' + payload + '}';
     globalWindow[sendToCoreFnName](packedMessage);
     inspectNodeRequested.call(this, { backendNodeId });
-  }
+  };
 }
 
 // THIS CREATES CONTEXT MENU
@@ -293,11 +309,8 @@ async function injectContextMenu(sendToCoreFnName, eventType) {
 }
 `;
 
-
 // Every time a node element is highlighted using Inspector in page (not devtools panel)
 // SDK.OverlayModel.prototype.nodeHighlightRequested = function({nodeId}) {
 //   console.log('nodeHighlightRequested', nodeId);
 //   nodeHighlightRequested.call(this, {nodeId});
 // }
-
-

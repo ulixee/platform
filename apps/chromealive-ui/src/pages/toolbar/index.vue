@@ -31,7 +31,7 @@
         <ChevronRightIcon class="arrow" />
       </li>
 
-      <li :class="{ focused: mode === 'timetravel' }">
+      <li :class="{ focused: mode === 'timetravel' }" @click.prevent="toggleTimetravel()">
         <img class="icon" src="/icons/timetravel.svg" />
         <div class="label">Timetravel</div>
         <div class="count">{{ timetravelEvents > 0 ? timetravelEvents : '' }}</div>
@@ -54,11 +54,13 @@ import humanizeBytes from '@/utils/humanizeBytes';
 enum Panel {
   domstate = 'domstate',
   output = 'output',
+  timetravel = 'timetravel'
 }
 
 const PanelPaths = {
   [Panel.output]: '/databox.html',
   [Panel.domstate]: '/domstate-panel.html',
+  [Panel.timetravel]: '/hero-script.html',
 };
 
 export default Vue.defineComponent({
@@ -130,6 +132,13 @@ export default Vue.defineComponent({
         this.openPanel(Panel.output, { width: 300, height: 400 });
       }
     },
+    toggleTimetravel(): void {
+      if (this.isPanelOpen(Panel.timetravel)) {
+        this.panelWindow.close();
+      } else {
+        this.openPanel(Panel.timetravel, { width: 1040, height: 500, left: 0, top: 600 });
+      }
+    },
     closeDomState() {
       if (this.isPanelOpen(Panel.domstate)) {
         this.panelWindow.close();
@@ -199,7 +208,7 @@ li {
   @apply flex flex-row border-t py-3 pl-3 pr-2 text-sm cursor-pointer;
   text-shadow: 1px 1px 0 white;
   &.focused {
-    @apply bg-purple-200
+    @apply bg-purple-200;
   }
   &:hover {
     @apply bg-purple-100;

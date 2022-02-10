@@ -1,4 +1,4 @@
-import { Session as HeroSession, Tab } from '@ulixee/hero-core';
+import { Session as HeroSession } from '@ulixee/hero-core';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import * as Fs from 'fs';
 import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
@@ -11,15 +11,15 @@ import * as Path from 'path';
 import { fork } from 'child_process';
 import Log from '@ulixee/commons/lib/Logger';
 import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
-import { ITabEventParams } from '@ulixee/hero-core/lib/Tab';
 import TimelineBuilder from '@ulixee/hero-timetravel/lib/TimelineBuilder';
-import DomStateManager from './DomStateManager';
 import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import ChromeAliveCore from '../index';
 import TimelineRecorder from '@ulixee/hero-timetravel/lib/TimelineRecorder';
 import AliveBarPositioner from './AliveBarPositioner';
 import OutputRebuilder, { IOutputSnapshot } from './OutputRebuilder';
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import SourceCodeTimeline from './SourceCodeTimeline';
 
 const { log } = Log(module);
 
@@ -31,21 +31,13 @@ export default class SessionObserver extends TypedEventEmitter<{
 }> {
   public mode: IAppModeEvent['mode'] = 'live';
   public playbackState: IHeroSessionActiveEvent['playbackState'] = 'running';
-  public readonly domStateManager: DomStateManager;
   public readonly timelineBuilder: TimelineBuilder;
 
   public readonly timetravelPlayer: TimetravelPlayer;
   public readonly timelineRecorder: TimelineRecorder;
   public readonly scriptInstanceMeta: IScriptInstanceMeta;
   public readonly worldHeroSessionIds = new Set<string>();
-
-  private waitForDomStateEvents: {
-    id: string;
-    startingCommandId: number;
-    timestamp: number;
-    didMatch?: boolean;
-    inProgress: boolean;
-  }[] = [];
+  public readonly sourceCodeTimeline: SourceCodeTimeline;
 
   private sessionHasChangesRequiringRestart = false;
 
@@ -53,6 +45,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   private outputRebuilder = new OutputRebuilder();
   private hasScriptUpdatesSinceLastRun = false;
   private watchHandle: Fs.FSWatcher;
+  private eventSubscriber = new EventSubscriber();
 
   constructor(public readonly heroSession: HeroSession) {
     super();
@@ -61,34 +54,24 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.scriptInstanceMeta = heroSession.options.scriptInstanceMeta;
     this.worldHeroSessionIds.add(heroSession.id);
 
-    this.heroSession.on('tab-created', this.onTabCreated);
-    this.heroSession.on('kept-alive', this.onHeroSessionKeptAlive);
-    this.heroSession.on('resumed', this.onHeroSessionResumed);
-    this.heroSession.on('closing', this.close);
+    this.eventSubscriber.on(this.heroSession, 'kept-alive', this.onHeroSessionKeptAlive);
+    this.eventSubscriber.on(this.heroSession, 'resumed', this.onHeroSessionResumed);
+    this.eventSubscriber.on(this.heroSession, 'closing', this.close);
+    this.eventSubscriber.on(this.heroSession, 'output', this.onOutputUpdated);
 
     this.timelineBuilder = new TimelineBuilder({ liveSession: heroSession });
 
     this.timelineRecorder = new TimelineRecorder(heroSession);
-    this.timelineRecorder.on('updated', () => this.emit('hero:updated'));
+    this.eventSubscriber.on(this.timelineRecorder, 'updated', () => this.emit('hero:updated'));
 
     this.timetravelPlayer = TimetravelPlayer.create(heroSession.id, heroSession);
-    this.timetravelPlayer.on('all-tabs-closed', this.onTimetravelClosed);
-    this.timetravelPlayer.on('open', this.onTimetravelOpened);
-    this.timetravelPlayer.on('new-tick-command', () => this.emit('databox:updated'));
+    this.eventSubscriber.on(this.timetravelPlayer, 'all-tabs-closed', this.onTimetravelClosed);
+    this.eventSubscriber.on(this.timetravelPlayer, 'open', this.onTimetravelOpened);
 
     this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint).mtimeMs;
 
-    this.domStateManager = new DomStateManager(this);
-    this.domStateManager.on('imported', this.onDomStateImported.bind(this));
-    this.domStateManager.on('enter', () => {
-      this.mode = 'domstate';
-      this.emit('app:mode');
-    });
-    this.domStateManager.on('exit', () => {
-      this.mode = 'live';
-      this.emit('app:mode');
-    });
-    this.bindOutput();
+    this.sourceCodeTimeline = new SourceCodeTimeline(heroSession);
+
     this.watchHandle = Fs.watch(
       this.scriptInstanceMeta.entrypoint,
       {
@@ -98,15 +81,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     );
   }
 
-  public getScreenshot(heroSessionId: string, tabId: number, timestamp: number): string {
-    if (heroSessionId === this.heroSession.id) {
-      return this.timelineBuilder.getScreenshot(tabId, timestamp);
-    }
-    return this.domStateManager.getScreenshot(heroSessionId, tabId, timestamp);
-  }
-
   public onMultiverseSession(session: HeroSession): void {
-    this.domStateManager.onMultiverseSession(session);
     this.worldHeroSessionIds.add(session.id);
     this.emit('hero:updated');
   }
@@ -143,11 +118,12 @@ export default class SessionObserver extends TypedEventEmitter<{
         env: { ...process.env, HERO_CLI_NOPROMPT: 'true' },
       });
       child.stderr.setEncoding('utf-8');
-      child.stderr.on('data', x => {
+      const evt = this.eventSubscriber.on(child.stderr, 'data', x => {
         if (x.includes('ScriptChangedNeedsRestartError')) {
           this.relaunchSession('sessionStart').catch(() => null);
         }
       });
+      this.eventSubscriber.once(child, 'exit', () => this.eventSubscriber.off(evt));
     } catch (error) {
       this.logger.error('ERROR resuming session', { error });
       return error;
@@ -159,14 +135,11 @@ export default class SessionObserver extends TypedEventEmitter<{
       this.watchHandle.close();
       this.watchHandle = null;
     }
-    this.heroSession.off('tab-created', this.onTabCreated);
-    this.heroSession.off('kept-alive', this.onHeroSessionKeptAlive);
-    this.heroSession.off('resumed', this.onHeroSessionResumed);
-    this.heroSession.off('closing', this.close);
+    this.sourceCodeTimeline.close();
+
+    this.eventSubscriber.close();
     this.timelineRecorder.stop();
     this.timetravelPlayer?.close()?.catch(console.error);
-    this.domStateManager.close(true).catch(console.error);
-    this.domStateManager.removeAllListeners('updated');
     this.emit('closed');
   }
 
@@ -184,19 +157,6 @@ export default class SessionObserver extends TypedEventEmitter<{
     const domStates: IHeroSessionActiveEvent['domStates'] = [];
     const timeline = this.timelineBuilder.refreshMetadata();
     const commandTimeline = this.timelineBuilder.commandTimeline;
-
-    for (const state of this.waitForDomStateEvents) {
-      const offsetPercent = commandTimeline.getTimelineOffsetForTimestamp(state.timestamp);
-      if (offsetPercent === -1) continue;
-
-      domStates.push({
-        id: state.id,
-        name: this.domStateManager.getDomState(state.id)?.name,
-        offsetPercent,
-        didMatch: state.didMatch,
-        inProgress: state.inProgress,
-      });
-    }
 
     const currentTab = this.heroSession.getLastActiveTab();
 
@@ -276,22 +236,44 @@ export default class SessionObserver extends TypedEventEmitter<{
     }
   }
 
+  public async timetravel(
+    percentOffset: number,
+    step?: 'forward' | 'back',
+  ): Promise<{ timelineOffsetPercent: number }> {
+    // set to timetravel mode in advance to prevent jumping out
+    this.mode = 'timetravel';
+
+    if (!this.timetravelPlayer.isOpen) {
+      await this.updateTabGroup(true).catch(console.error);
+    }
+    if (step) {
+      await this.timetravelPlayer.step(step);
+    } else {
+      await this.timetravelPlayer.goto(percentOffset ?? 100);
+    }
+
+    await this.timetravelPlayer.showLoadStatus(this.timelineBuilder.lastMetadata);
+    return { timelineOffsetPercent: this.timetravelPlayer.activeTab.currentTimelineOffsetPct };
+  }
+
   public async closeTimetravel(): Promise<void> {
     await this.timetravelPlayer.close();
   }
 
   public async onTimetravelOpened(): Promise<void> {
     this.mode = 'timetravel';
-    this.tabGroupModule.once('tab-group-opened', this.closeTimetravel);
-    await this.updateTabGroup(true).catch(console.error);
-    this.timetravelPlayer.once('timetravel-to-end', this.closeTimetravel);
+    const events = [
+      this.eventSubscriber.once(this.tabGroupModule, 'tab-group-opened', this.closeTimetravel),
+      this.eventSubscriber.once(this.timetravelPlayer, 'timetravel-to-end', this.closeTimetravel),
+    ];
+    this.eventSubscriber.group('timetravel', ...events);
+    await this.timetravelPlayer.activeTab.mirrorPage.page.bringToFront();
     this.emit('app:mode');
   }
 
   private async onTimetravelClosed(): Promise<void> {
     this.mode = 'live';
-    this.tabGroupModule?.off('tab-group-opened', this.closeTimetravel);
-    this.timetravelPlayer.off('timetravel-to-end', this.closeTimetravel);
+    this.eventSubscriber.endGroup('timetravel');
     await this.updateTabGroup(false).catch(console.error);
     this.emit('app:mode');
   }
@@ -313,7 +295,8 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   private onHeroSessionResumed(): void {
     this.playbackState = 'running';
-    this.bindOutput();
+    this.outputRebuilder = new OutputRebuilder();
+    this.sourceCodeTimeline.clearCache()
     this.hasScriptUpdatesSinceLastRun = false;
     this.emit('hero:updated');
     this.emit('databox:updated');
@@ -325,46 +308,8 @@ export default class SessionObserver extends TypedEventEmitter<{
     event.message = `ChromeAlive! has assumed control of your script. You can make changes to your script and re-run from the ChromeAlive interface.`;
   }
 
-  private bindOutput(): void {
-    this.heroSession?.off('output', this.onOutputUpdated);
-    this.outputRebuilder = new OutputRebuilder();
-    this.heroSession.on('output', this.onOutputUpdated);
-  }
-
   private onOutputUpdated(event: { changes: IOutputChangeRecord[] }): void {
     this.outputRebuilder.applyChanges(event.changes);
     this.emit('databox:updated');
-  }
-
-  private onDomStateImported(event: { heroSessionIds: string[] }) {
-    for (const id of event.heroSessionIds) this.worldHeroSessionIds.add(id);
-    this.emit('hero:updated');
-  }
-
-  private onTabCreated(tabEvent: { tab: Tab }) {
-    const tab = tabEvent.tab;
-    tab.on('wait-for-domstate', this.onWaitForDomState);
-  }
-
-  private onWaitForDomState(event: ITabEventParams['wait-for-domstate']): void {
-    const { listener } = event;
-    const id = listener.id;
-    const startingCommandId = listener.startingCommandId;
-    const timestamp = listener.commandStartTime;
-    const domState = { id, startingCommandId, timestamp, didMatch: null, inProgress: true };
-
-    const existing = this.waitForDomStateEvents.find(x => x.id === id);
-    if (existing) {
-      existing.timestamp = timestamp;
-      existing.startingCommandId = startingCommandId;
-    } else {
-      this.waitForDomStateEvents.push(domState);
-    }
-    this.emit('hero:updated');
-    listener.once('resolved', state => {
-      domState.didMatch = state.didMatch;
-      domState.inProgress = false;
-      this.emit('hero:updated');
-    });
   }
 }
