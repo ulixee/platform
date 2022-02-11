@@ -1,41 +1,53 @@
 import IRegisteredEventListener, { IEventSubscriber } from '../interfaces/IRegisteredEventListener';
 
-export default class EventSubscriber implements IEventSubscriber {
-  private readonly registeredEventListeners: IRegisteredEventListener[] = [];
+type AnyFunction = (...args: any[]) => any;
 
-  on<K extends string | symbol, Func extends (...args: any[]) => void>(
+export default class EventSubscriber implements IEventSubscriber {
+  public groups: { [key: string]: IRegisteredEventListener[] } = {};
+  private readonly registeredEventListeners = new Set<IRegisteredEventListener>();
+
+  on<K extends string | symbol, Func extends AnyFunction>(
     emitter: {
-      on(event: K, listener: Func, includeUnhandledEvents?: boolean);
-      off(event: K, listener: Func);
+      on(
+        event: K,
+        listener: (...args: Parameters<Func>) => ReturnType<Func>,
+        includeUnhandledEvents?: boolean,
+      );
+      off(event: K, listener: (...args: Parameters<Func>) => ReturnType<Func>);
     },
     eventName: K,
-    handler: Func,
+    handler: (...args: Parameters<Func>) => ReturnType<Func>,
     includeUnhandledEvents?: boolean,
   ): IRegisteredEventListener {
     emitter.on(eventName, handler, includeUnhandledEvents);
     const registeredEvent: IRegisteredEventListener = { emitter, eventName, handler };
-    this.registeredEventListeners.push(registeredEvent);
+    this.registeredEventListeners.add(registeredEvent);
     return registeredEvent;
   }
 
-  once<Event extends string | symbol, Func extends (...args: any[]) => void>(
+  once<K extends string | symbol, Func extends AnyFunction>(
     emitter: {
-      once(event: Event, listener: Func, includeUnhandledEvents?: boolean);
-      off(event: Event, listener: Func);
+      once(
+        event: K,
+        listener: (...args: Parameters<Func>) => ReturnType<Func>,
+        includeUnhandledEvents?: boolean,
+      );
+      off(event: K, listener: (...args: Parameters<Func>) => ReturnType<Func>);
     },
-    eventName: Event,
-    handler: Func,
+    eventName: K,
+    handler: (...args: Parameters<Func>) => ReturnType<Func>,
     includeUnhandledEvents?: boolean,
   ): IRegisteredEventListener {
     emitter.once(eventName, handler, includeUnhandledEvents);
     const registeredEvent: IRegisteredEventListener = { emitter, eventName, handler };
-    this.registeredEventListeners.push(registeredEvent);
+    this.registeredEventListeners.add(registeredEvent);
     return registeredEvent;
   }
 
   off(...listeners: IRegisteredEventListener[]): void {
     for (const listener of listeners) {
       listener.emitter.off(listener.eventName, listener.handler);
+      this.registeredEventListeners.delete(listener);
     }
     listeners.length = 0;
   }
@@ -48,6 +60,17 @@ export default class EventSubscriber implements IEventSubscriber {
       }
       listener.emitter.off(listener.eventName, listener.handler);
     }
-    this.registeredEventListeners.length = 0;
+    this.registeredEventListeners.clear();
+  }
+
+  group(name: string, ...listeners: IRegisteredEventListener[]): void {
+    this.groups[name] ??= [];
+    this.groups[name].push(...listeners);
+  }
+
+  endGroup(name: string): void {
+    const events = this.groups[name];
+    delete this.groups[name];
+    this.off(...events);
   }
 }

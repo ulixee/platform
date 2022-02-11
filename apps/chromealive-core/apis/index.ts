@@ -22,6 +22,7 @@ const ApiHandlers: IApiHandlerSpec = {
   'Session.resume': SessionApi.resume,
   'Session.step': SessionApi.step,
   'Session.getScreenshot': SessionApi.getScreenshot,
+  'Session.getScriptState': SessionApi.getScriptState,
 };
 
 export default ApiHandlers;

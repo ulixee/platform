@@ -29,6 +29,7 @@ export class Menubar extends EventEmitter {
   #vueServer: VueServer;
   #ulixeeServer: UlixeeServer;
   #ulixeeConfig: UlixeeConfig;
+  #isClosing = false;
 
   constructor(options?: IMenubarOptions) {
     super();
@@ -127,19 +128,22 @@ export class Menubar extends EventEmitter {
     this.#isVisible = true;
   }
 
+  private async appExit(): Promise<void> {
+    if (this.#isClosing) return;
+    this.#isClosing = true;
+    console.warn('Quitting Ulixee Menubar');
+    this.#tray.removeAllListeners();
+    this.hideWindow();
+    await this.stopServer();
+    app.exit();
+  }
+
   private appReady(): void {
     try {
-      app.on('before-quit', async e => {
-        console.warn('Quitting Ulixee Menubar');
-        e.preventDefault();
-        await this.stopServer();
-        this.hideWindow();
-        app.exit();
-      });
       // for now auto-start
       this.startServer().catch(console.error);
       ShutdownHandler.exitOnSignal = false;
-      ShutdownHandler.register(() => this.stopServer());
+      ShutdownHandler.register(() => this.appExit());
 
       this.#tray = new Tray(iconPath);
 
@@ -240,7 +244,7 @@ export class Menubar extends EventEmitter {
         const [api] = args;
 
         if (api === 'App.quit') {
-          app.quit();
+          await this.appExit();
         }
 
         if (api === 'App.openLogsDirectory') {
@@ -310,6 +314,7 @@ export class Menubar extends EventEmitter {
   }
 
   private async updateServerStatus() {
+    if (this.#isClosing) return;
     let address: string = null;
     if (this.#ulixeeServer) {
       address = await this.#ulixeeServer.address;

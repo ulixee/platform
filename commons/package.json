@@ -5,7 +5,8 @@
   "scripts": {},
   "dependencies": {
     "https-proxy-agent": "^5.0.0",
-    "source-map-js": "^1.0.1"
+    "source-map-js": "^1.0.1",
+    "devtools-protocol": "^0.0.799653"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^5.4.1"

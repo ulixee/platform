@@ -1,5 +1,5 @@
 import { Resource, WebsocketResource } from '@ulixee/hero';
-import { InternalPropertiesSymbol } from '@ulixee/hero/lib/InternalProperties';
+import { InternalPropertiesSymbol } from '@ulixee/hero/lib/internal';
 import type {} from '@ulixee/hero/lib/extendables';
 
 interface IExtendResource {

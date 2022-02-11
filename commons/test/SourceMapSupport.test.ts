@@ -2,12 +2,14 @@ import { SourceMapSupport } from '../lib/SourceMapSupport';
 import { SourceMapGenerator } from 'source-map-js';
 import * as fs from 'fs';
 import * as path from 'path';
+import SourceLoader from '../lib/SourceLoader';
 
 let counter = 0;
 
 beforeEach(() => {
   jest.resetModules();
   SourceMapSupport.resetCache();
+  SourceLoader.resetCache();
   counter += 1;
 });
 

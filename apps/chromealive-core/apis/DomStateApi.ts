@@ -1,5 +1,4 @@
 import { IDomStateApiStatics } from '@ulixee/apps-chromealive-interfaces/apis/IDomStateApi';
-import ChromeAliveCore from '../index';
 import DomStateManager from '../lib/DomStateManager';
 
 @IDomStateApiStatics
@@ -58,5 +57,5 @@ export default class DomStateApi {
 }
 
 function getDomStateManager(): DomStateManager {
-  return ChromeAliveCore.activeSessionObserver.domStateManager;
+  return null;
 }

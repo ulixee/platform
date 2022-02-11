@@ -437,7 +437,7 @@ export default class DomStateManager extends TypedEventEmitter<{
     const lastCommand = tab.session.commands.history[tab.session.commands.length - 2];
     let name = `after "${lastCommand.name}"`;
     if (lastCommand.callsite) {
-      const callsite = JSON.parse(lastCommand.callsite)[0];
+      const callsite = lastCommand.callsite[0];
       const sourceCode = SourceLoader.getSource(callsite);
       if (sourceCode?.code) {
         name = `after "${sourceCode.code.trim()}"`;

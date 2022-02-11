@@ -1,4 +1,4 @@
-import {
+import ISessionApi, {
   IHeroSessionArgs,
   ISessionApiStatics,
   ISessionResumeArgs,
@@ -8,16 +8,21 @@ import ChromeAliveCore from '../index';
 
 @ISessionApiStatics
 export default class SessionApi {
-  static getScreenshot(args: IHeroSessionArgs & { tabId: number; timestamp: number }): {
+  static getScreenshot(): {
     imageBase64: string;
   } {
-    const imageBase64 = getObserver().getScreenshot(args.heroSessionId, args.tabId, args.timestamp);
-    return { imageBase64 };
+    return { imageBase64: null };
   }
 
   static async quit(args: IHeroSessionArgs): Promise<void> {
     const sessionObserver = getObserver(args);
     await sessionObserver.heroSession.close(true);
+  }
+
+  static getScriptState(args?: IHeroSessionArgs): ReturnType<ISessionApi['getScriptState']> {
+    const sessionObserver = getObserver(args);
+
+    return Promise.resolve(sessionObserver.sourceCodeTimeline.getCurrentState());
   }
 
   static async timetravel(
@@ -29,19 +34,7 @@ export default class SessionApi {
     timelineOffsetPercent: number;
   }> {
     const sessionObserver = getObserver(args);
-    let timelineOffsetPercent = args.percentOffset ?? 100;
-    // set to timetravel mode in advance to prevent jumping out
-    sessionObserver.mode = 'timetravel';
-    if (args.step) {
-      timelineOffsetPercent = await sessionObserver.timetravelPlayer.step(args.step);
-    } else {
-      await sessionObserver.timetravelPlayer.goto(timelineOffsetPercent);
-    }
-
-    await sessionObserver.timetravelPlayer.showLoadStatus(
-      sessionObserver.timelineBuilder.lastMetadata,
-    );
-    return { timelineOffsetPercent };
+    return await sessionObserver.timetravel(args.percentOffset, args.step);
   }
 
   static step(args: IHeroSessionArgs): void {

@@ -1,8 +1,7 @@
-import { MappedPosition, SourceMapConsumer } from 'source-map-js';
-import * as fs from 'fs';
+import { SourceMapConsumer } from 'source-map-js';
 import * as path from 'path';
 import ISourceCodeLocation from '../interfaces/ISourceCodeLocation';
-import { URL } from 'url';
+import SourceLoader from './SourceLoader';
 
 // ATTRIBUTION: forked from https://github.com/evanw/node-source-map-support
 
@@ -14,12 +13,14 @@ const fileUrlPrefix = 'file://';
 export class SourceMapSupport {
   private static sourceMapCache: { [source: string]: { map: SourceMapConsumer; url: string } } = {};
   private static resolvedPathCache: { [file_url: string]: string } = {};
-  private static fileContentsCache: { [filepath: string]: string } = {};
 
   static resetCache(): void {
     this.sourceMapCache = {};
     this.resolvedPathCache = {};
-    this.fileContentsCache = {};
+  }
+
+  static clearCache(filepath: string): void {
+    this.sourceMapCache[filepath] = null;
   }
 
   static install(): void {
@@ -29,7 +30,7 @@ export class SourceMapSupport {
     }
   }
 
-  static getOriginalSourcePosition(position: ISourceCodeLocation): MappedPosition {
+  static getOriginalSourcePosition(position: ISourceCodeLocation): ISourceCodeLocation & { name?: string } {
     this.sourceMapCache[position.filename] ??= this.retrieveSourceMap(position.filename);
 
     const sourceMap = this.sourceMapCache[position.filename];
@@ -38,39 +39,16 @@ export class SourceMapSupport {
 
       // Only return the original position if a matching line was found
       if (originalPosition.source) {
-        originalPosition.source = this.resolvePath(sourceMap.url, originalPosition.source);
-        return originalPosition;
+        return {
+          filename: this.resolvePath(sourceMap.url, originalPosition.source),
+          column: originalPosition.column,
+          line: originalPosition.line,
+          name: originalPosition.name,
+        };
       }
     }
 
-    return {
-      source: position.filename,
-      line: position.line,
-      column: position.column,
-    };
-  }
-
-  static getFileContents(filepath: string, cache = true): string {
-    if (this.fileContentsCache[filepath]) return this.fileContentsCache[filepath];
-
-    const originalFilepath = filepath;
-    // Trim the path to make sure there is no extra whitespace.
-    let lookupFilepath: string | URL = filepath.trim();
-    if (filepath.startsWith(fileUrlPrefix)) {
-      lookupFilepath = new URL(filepath);
-    }
-
-    let data: string = null;
-    try {
-      data = fs.readFileSync(lookupFilepath, 'utf8');
-    } catch (err) {
-      // couldn't read
-    }
-    if (cache) {
-      this.fileContentsCache[filepath] = data;
-      this.fileContentsCache[originalFilepath] = data;
-    }
-    return data;
+    return position;
   }
 
   private static prepareStackTrace(error: Error, stack: NodeJS.CallSite[]): string {
@@ -93,14 +71,14 @@ export class SourceMapSupport {
             line: frame.getLineNumber(),
             column: frame.getColumnNumber() - 1,
           });
-          if (position.source !== filename) {
+          if (position.filename !== filename) {
             const fnName = containingFnName ?? frame.getFunctionName();
             containingFnName = position.name;
             frame = new Proxy(frame, {
               get(target: NodeJS.CallSite, p: string | symbol): any {
                 if (p === 'getFunctionName') return () => fnName;
-                if (p === 'getFileName') return () => position.source;
-                if (p === 'getScriptNameOrSourceURL') return () => position.source;
+                if (p === 'getFileName') return () => position.filename;
+                if (p === 'getScriptNameOrSourceURL') return () => position.filename;
                 if (p === 'getLineNumber') return () => position.line;
                 if (p === 'getColumnNumber') return () => position.column + 1;
                 if (p === 'toString') return CallSiteToString.bind(frame);
@@ -118,7 +96,7 @@ export class SourceMapSupport {
   }
 
   private static retrieveSourceMap(source: string): { url: string; map: SourceMapConsumer } {
-    const fileData = this.getFileContents(source, false);
+    const fileData = SourceLoader.getFileContents(source, false);
 
     // Find the *last* sourceMappingURL to avoid picking up sourceMappingURLs from comments, strings, etc.
     let sourceMappingURL: string;
@@ -136,7 +114,7 @@ export class SourceMapSupport {
         sourceMappingURL = source;
       } else {
         sourceMappingURL = this.resolvePath(source, sourceMappingURL);
-        sourceMapData = this.getFileContents(sourceMappingURL);
+        sourceMapData = SourceLoader.getFileContents(sourceMappingURL);
       }
     }
 
