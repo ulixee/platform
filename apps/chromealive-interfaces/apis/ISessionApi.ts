@@ -1,3 +1,4 @@
+import type { IDomRecording } from '@ulixee/hero-core/models/DomChangesTable';
 import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
 import ICommandUpdatedEvent from '../events/ICommandUpdatedEvent';
 
@@ -22,7 +23,12 @@ export default interface ISessionApi {
   ): {
     imageBase64: string;
   };
-  getScriptState(args?: IHeroSessionArgs): Promise<{
+  getDom(args?: IHeroSessionArgs): Promise<
+    IDomRecording & {
+      framesById: { [id: number]: { parentId: number; domNodeId: number } };
+    }
+  >;
+  getScriptState(args?: IHeroSessionArgs & { tabId?: number }): Promise<{
     commandsById: Record<number, ICommandUpdatedEvent>;
     sourceFileLines: Record<string, string[]>;
   }>;

@@ -1,4 +1,4 @@
-import { Session as HeroSession } from '@ulixee/hero-core';
+import { Session as HeroSession, Tab } from '@ulixee/hero-core';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import * as Fs from 'fs';
 import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
@@ -20,6 +20,8 @@ import AliveBarPositioner from './AliveBarPositioner';
 import OutputRebuilder, { IOutputSnapshot } from './OutputRebuilder';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import SourceCodeTimeline from './SourceCodeTimeline';
+import { IDomRecording } from '@ulixee/hero-core/models/DomChangesTable';
+import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
 
 const { log } = Log(module);
 
@@ -46,6 +48,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   private hasScriptUpdatesSinceLastRun = false;
   private watchHandle: Fs.FSWatcher;
   private eventSubscriber = new EventSubscriber();
+  private readonly lastDomChangesByTabId: Record<number, number> = {};
 
   constructor(public readonly heroSession: HeroSession) {
     super();
@@ -58,6 +61,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.eventSubscriber.on(this.heroSession, 'resumed', this.onHeroSessionResumed);
     this.eventSubscriber.on(this.heroSession, 'closing', this.close);
     this.eventSubscriber.on(this.heroSession, 'output', this.onOutputUpdated);
+    this.eventSubscriber.on(this.heroSession, 'tab-created', this.onTabCreated);
 
     this.timelineBuilder = new TimelineBuilder({ liveSession: heroSession });
 
@@ -271,6 +275,39 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.emit('app:mode');
   }
 
+  public onTabCreated(event: HeroSession['EventTypes']['tab-created']): void {
+    this.eventSubscriber.on(
+      event.tab,
+      'page-events',
+      this.sendDomRecordingUpdates.bind(this, event.tab),
+    );
+  }
+
+  public sendDomRecordingUpdates(tab: Tab, events: Tab['EventTypes']['page-events']): void {
+    if (!events.records.domChanges?.length) return;
+    const timestamp = this.lastDomChangesByTabId[tab.id];
+    const domRecording = tab.mirrorPage.getDomRecordingSince(timestamp);
+
+    this.lastDomChangesByTabId[tab.id] =
+      domRecording.paintEvents[domRecording.paintEvents.length - 1].timestamp;
+
+    ChromeAliveCore.sendAppEvent('Dom.updated', {
+      paintEvents: domRecording.paintEvents.map(x => x.changeEvents),
+      framesById: tab.session.db.frames.framesById,
+    });
+  }
+
+  public getDomRecording(tabId: number): ReturnType<ISessionApi['getDom']> {
+    const tab = this.heroSession.tabsById.get(tabId) ?? this.heroSession.getLastActiveTab();
+    const domRecording = {
+      ...tab.mirrorPage.domRecording,
+      framesById: this.heroSession.db.frames.framesById,
+    };
+    const last = domRecording.paintEvents[domRecording.paintEvents.length - 1];
+    if (last) this.lastDomChangesByTabId[tab.id] = last.timestamp;
+    return Promise.resolve(domRecording);
+  }
+
   private async onTimetravelClosed(): Promise<void> {
     this.mode = 'live';
     this.eventSubscriber.endGroup('timetravel');
@@ -296,7 +333,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   private onHeroSessionResumed(): void {
     this.playbackState = 'running';
     this.outputRebuilder = new OutputRebuilder();
-    this.sourceCodeTimeline.clearCache()
+    this.sourceCodeTimeline.clearCache();
     this.hasScriptUpdatesSinceLastRun = false;
     this.emit('hero:updated');
     this.emit('databox:updated');

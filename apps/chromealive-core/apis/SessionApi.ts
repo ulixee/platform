@@ -26,6 +26,11 @@ export default class SessionApi {
     return Promise.resolve(sessionObserver.sourceCodeTimeline.getCurrentState());
   }
 
+  static getDom(args?: IHeroSessionArgs & { tabId?: number }): ReturnType<ISessionApi['getDom']> {
+    const sessionObserver = getObserver(args);
+    return sessionObserver.getDomRecording(args?.tabId);
+  }
+
   static async timetravel(
     args: IHeroSessionArgs & {
       percentOffset?: number;

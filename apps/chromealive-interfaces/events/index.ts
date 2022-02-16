@@ -6,6 +6,8 @@ import IAppModeEvent from './IAppModeEvent';
 import ICommandUpdatedEvent from './ICommandUpdatedEvent';
 import ISourceCodeUpdatedEvent from './ISourceCodeUpdatedEvent';
 import ICommandFocusedEvent from './ICommandFocusedEvent';
+import IDomFocusEvent from './IDomFocusEvent';
+import IDomUpdatedEvent from './IDomUpdatedEvent';
 
 export default interface IChromeAliveEvents {
   'App.show': { onTop: boolean };
@@ -19,6 +21,8 @@ export default interface IChromeAliveEvents {
   'Session.loaded': void;
   'Session.active': IHeroSessionActiveEvent;
   'Databox.updated': IDataboxUpdatedEvent;
+  'Dom.updated': IDomUpdatedEvent;
+  'Dom.focus': IDomFocusEvent;
   'DomState.updated': IDomStateUpdateEvent;
   'Command.updated': ICommandUpdatedEvent;
   'Command.focused': ICommandFocusedEvent;

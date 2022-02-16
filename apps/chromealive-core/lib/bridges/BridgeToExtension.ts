@@ -56,7 +56,6 @@ export default class BridgeToExtension extends EventEmitter {
     });
 
     return Promise.all([
-      devtoolsSession.send('Runtime.enable'),
       devtoolsSession.send('Runtime.addBinding', { name: ___sendToCore }),
       devtoolsSession.send('Runtime.runIfWaitingForDebugger'),
     ]).catch(() => null);
