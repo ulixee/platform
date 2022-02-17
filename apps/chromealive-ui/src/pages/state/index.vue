@@ -1,6 +1,11 @@
 <template>
   <div class="wrapper">
-    <DomNode v-if="mainFrame && mainFrame.document" :node-state="mainFrame.document" :indent="0" />
+    <DomNode
+      v-if="mainFrame && mainFrame.document"
+      :node-state="mainFrame.document"
+      :indent="0"
+      :hidden-node-groups="hiddenNodeGroups"
+    />
   </div>
 </template>
 
@@ -18,6 +23,14 @@ export interface IDomFrameNodes {
   document?: DomNodeState;
 }
 
+// FrameAndNodeId is necessary because of overlapping ids. frameId_nodeId
+export interface IHiddenNodeGroups {
+  isExpandedByGroupId: Map<number, boolean>;
+  frameNodeIdsByGroupId: Map<number, string[]>;
+  collapsedGroupIdByFrameNodeId: Map<string, number>;
+  createdGroupIdByFrameNodeId: Map<string, number>;
+}
+
 export default Vue.defineComponent({
   name: 'StatePanel',
   components: { DomNode },
@@ -29,6 +42,14 @@ export default Vue.defineComponent({
       domNodesByFrameId: Vue.reactive<Record<number, IDomFrameNodes>>({}),
       framesById: Vue.reactive(new Map<number, { parentId: number; domNodeId: number }>()),
       mainFrameIds: Vue.reactive(new Set<number>()),
+      activeGroupId: -1,
+      latestGroupId: 0,
+      hiddenNodeGroups: Vue.reactive<IHiddenNodeGroups>({
+        isExpandedByGroupId: new Map(),
+        frameNodeIdsByGroupId: new Map(),
+        collapsedGroupIdByFrameNodeId: new Map(),
+        createdGroupIdByFrameNodeId: new Map(),
+      }),
     };
   },
   watch: {},
@@ -93,6 +114,46 @@ export default Vue.defineComponent({
       }
 
       this.loadedIndex = index;
+      this.activeGroupId = 0;
+      this.latestGroupId = 0;
+      this.hiddenNodeGroups.frameNodeIdsByGroupId.clear();
+      this.hiddenNodeGroups.isExpandedByGroupId.clear();
+      this.hiddenNodeGroups.collapsedGroupIdByFrameNodeId.clear();
+      this.hiddenNodeGroups.createdGroupIdByFrameNodeId.clear();
+      this.findTreeChanges(this.mainFrame.document);
+    },
+    findTreeChanges(nodeState: DomNodeState): void {
+      const groups = this.hiddenNodeGroups;
+
+      if (nodeState.hasChanges) {
+        this.activeGroupId = null;
+      } else if (
+        !nodeState.isDoctype &&
+        !nodeState.isDocument &&
+        nodeState.tagName !== 'html' &&
+        !(nodeState.isTextNode && !nodeState.hasText)
+      ) {
+        if (this.activeGroupId) {
+          groups.collapsedGroupIdByFrameNodeId.set(nodeState.frameNodeId, this.activeGroupId);
+          groups.frameNodeIdsByGroupId.get(this.activeGroupId).push(nodeState.frameNodeId);
+        } else {
+          const nextId = (this.latestGroupId += 1);
+          this.activeGroupId = nextId;
+          groups.isExpandedByGroupId.set(nextId, false);
+          groups.createdGroupIdByFrameNodeId.set(nodeState.frameNodeId, nextId);
+          groups.collapsedGroupIdByFrameNodeId.set(nodeState.frameNodeId, nextId);
+          groups.frameNodeIdsByGroupId.set(this.activeGroupId, [nodeState.frameNodeId]);
+        }
+      }
+
+      for (const child of nodeState.children) {
+        this.findTreeChanges(child);
+      }
+      if (nodeState.contentDocument) {
+        for (const child of nodeState.contentDocument.children) {
+          this.findTreeChanges(child);
+        }
+      }
     },
     applyDomChanges(changeEvents: IFrontendDomChangeEvent[], highlight: boolean): void {
       for (const change of changeEvents) {
@@ -110,6 +171,7 @@ export default Vue.defineComponent({
           const frameContext = this.domNodesByFrameId[change.frameId] as IDomFrameNodes;
 
           frameContext.nodesById[change.nodeId] ??= new DomNodeState(
+            change.frameId,
             frameContext.nodesById,
             change.nodeId,
           );
@@ -120,11 +182,9 @@ export default Vue.defineComponent({
           if (domNode.isDocument) {
             frameContext.document = domNode;
             const frame = this.framesById.get(change.frameId);
-            if (!frame.domNodeId && frame.parentId) {
-              console.log('Frame does not have a dom node id, continuing', frame);
-            } else if (frame.parentId) {
+            if (frame.parentId) {
               const parentFrameContext = this.domNodesByFrameId[frame.parentId];
-              const containerFrameElement = parentFrameContext.nodesById[frame.domNodeId];
+              const containerFrameElement = parentFrameContext?.nodesById[frame.domNodeId];
               if (!containerFrameElement) {
                 console.warn('Could not find dom node for frame', frame, change);
               } else {

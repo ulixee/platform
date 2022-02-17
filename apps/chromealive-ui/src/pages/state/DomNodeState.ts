@@ -5,6 +5,7 @@ const voidElementsRegex =
 
 export default class DomNodeState {
   isConnectedToHierarchy: boolean;
+  isManuallyExpanded: boolean = null;
 
   contentDocument?: DomNodeState; // for frames
 
@@ -13,6 +14,8 @@ export default class DomNodeState {
   tagName: string;
   parentNodeId: number;
   previousSiblingId: number;
+  isMultiline = false;
+  readonly frameNodeId: string; // frameId_nodeId;
   readonly childNodeIds: number[] = [];
   readonly attributes = new Map<string, string>();
   readonly classes = new Set<string>();
@@ -75,8 +78,8 @@ export default class DomNodeState {
     return this.nodeType === NodeType.ShadowRoot;
   }
 
-  get hasTreeChanges(): boolean {
-    if (
+  get hasChanges(): boolean {
+    return !!(
       this.changes.added ||
       this.changes.removed ||
       this.changes.removedChildIds ||
@@ -84,8 +87,11 @@ export default class DomNodeState {
       this.changes.attrs ||
       this.changes.classes ||
       this.changes.styles
-    )
-      return true;
+    );
+  }
+
+  get hasTreeChanges(): boolean {
+    if (this.hasChanges) return true;
 
     for (const child of this.children) {
       if (child.hasTreeChanges) return true;
@@ -127,6 +133,12 @@ export default class DomNodeState {
       const node = this.nodesById[childId];
       if (node.isElement || node.isShadowRoot) return true;
     }
+    if (this.changes?.removedChildIds) {
+      for (const childId of this.changes?.removedChildIds) {
+        const node = this.nodesById[childId];
+        if (node.isElement || node.isShadowRoot) return true;
+      }
+    }
     return false;
   }
 
@@ -148,7 +160,28 @@ export default class DomNodeState {
     return children;
   }
 
-  constructor(private nodesById: Record<number, DomNodeState>, readonly nodeId: number) {}
+  constructor(readonly frameId: number, private nodesById: Record<number, DomNodeState>, readonly nodeId: number) {
+    this.frameNodeId = `${frameId}_${nodeId}`
+  }
+
+  remove(highlight: boolean): void {
+    if (highlight) {
+      this.changes.removed = true;
+      if (this.changes.added) this.changes.added = false;
+      // clear out changes
+      this.changes.styles = undefined;
+      this.changes.attrs = undefined;
+      this.changes.props = undefined;
+      this.changes.classes = undefined;
+    }
+
+    this.parentNode.removeChild(this.nodeId, highlight);
+    // remove hierarchy
+    this.isConnectedToHierarchy = false;
+    for (const child of this.children) {
+      child.remove(highlight);
+    }
+  }
 
   removeChild(nodeId: number, highlight: boolean) {
     const prevIndex = this.childNodeIds.indexOf(nodeId);
@@ -164,7 +197,10 @@ export default class DomNodeState {
   apply(change: IFrontendDomChangeEvent, highlightChange: boolean): void {
     if (change.tagName) this.tagName = change.tagName.toLowerCase();
     if (change.nodeType) this.nodeType = change.nodeType;
-    if (change.textContent) this.textContent = change.textContent;
+    if (change.textContent) {
+      this.textContent = change.textContent.trim();
+      this.isMultiline = /\r?\n/.test(this.textContent);
+    }
 
     if (change.attributes) {
       for (const [name, value] of Object.entries(change.attributes)) {
@@ -192,7 +228,7 @@ export default class DomNodeState {
           if (value === null) {
             this.attributes.delete(name);
           } else {
-            this.attributes.set(name, value);
+            this.attributes.set(name, value ?? undefined);
           }
         }
       }
@@ -220,13 +256,7 @@ export default class DomNodeState {
     }
 
     if (change.action === DomActionType.removed) {
-      if (highlightChange) {
-        this.changes.removed = true;
-        this.changes.added = false;
-      }
-
-      this.parentNode.removeChild(this.nodeId, highlightChange);
-      this.isConnectedToHierarchy = false;
+      this.remove(highlightChange);
     }
 
     if (change.action === DomActionType.added) {

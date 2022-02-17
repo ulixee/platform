@@ -1,6 +1,27 @@
 <template>
+  <div v-if="createdCollapseGroupId && isGroupCollapsed" class="collapse-container">
+    <a
+      :style="{ paddingLeft: indentPx }"
+      href="javascript:void(0)"
+      :groupId="createdCollapseGroupId"
+      class="collapse-group"
+      @click.prevent="openCollapseGroup"
+      >----------- show
+      {{ hiddenNodeGroups.frameNodeIdsByGroupId.get(createdCollapseGroupId).length }} hidden DOM elements
+      ------------</a
+    >
+    <DomNode
+      v-for="node of children"
+      :node-state="node"
+      :indent="indent + 1"
+      :hidden-node-groups="hiddenNodeGroups"
+    />
+  </div>
+
   <div
+    :nodeId="nodeState.nodeId"
     :class="{
+      node: true,
       doctype: nodeState.isDoctype,
       comment: nodeState.isComment,
       'text-node': nodeState.isTextNode,
@@ -8,29 +29,41 @@
       removed: nodeState.changes.removed,
       added: nodeState.changes.added,
       'no-children': !nodeState.hasElementChildren,
-      'multi-line': nodeState.hasText && nodeState.textContent.length > 100,
-      empty: nodeState.hasText && !nodeState.textContent.trim(),
+      'multi-line': nodeState.hasText && nodeState.isMultiline,
+      empty: nodeState.isTextNode && !nodeState.hasText,
       collapsed: isCollapsed,
+      hidden: isGroupCollapsed,
     }"
   >
-    <slot v-if="nodeState.isTextOnlyNode"
-      ><slot v-if="nodeState.isComment">// </slot>{{ nodeState.textContent?.trim() ?? '' }}
-    </slot>
+    <span
+      v-if="nodeState.isTextOnlyNode"
+      class="text observable"
+      :style="{ paddingLeft: isInlineTag ? 0 : indentPx }"
+    >
+      <slot v-if="nodeState.isComment">// </slot>{{ nodeState.textContent ?? '' }}
+    </span>
     <slot v-else-if="nodeState.isDocument || nodeState.isShadowRoot">
-      <DomNode v-for="node of nodeState.children" :node-state="node" :indent="indent + 1" />
+      <DomNode
+        v-for="node of children"
+        :node-state="node"
+        :indent="indent + 1"
+        :hidden-node-groups="hiddenNodeGroups"
+      />
     </slot>
     <slot v-else>
-      <div class="element-start">
-        <a class="expander" @click.prevent="isExpanded = !isExpanded">{{
-          !isCollapsible ? '' : isCollapsed ? '+' : '-'
-        }}</a>
+      <div class="element-start observable" :style="{ paddingLeft: indentPx }">
+        <a
+          class="expander"
+          @click.prevent="nodeState.isManuallyExpanded = !nodeState.isManuallyExpanded"
+          >{{ !isCollapsible ? '' : isCollapsed ? '+' : '-' }}</a
+        >
         <span class="open-tag">{{ openTag }}</span>
 
         <span class="attr" v-if="nodeState.classAttr">
           <span class="attr-name">class</span>
           <span class="attr-eq">="</span>
           <span
-            class="attr-value attr-classname"
+            class="attr-value attr-classname observable"
             v-for="clazz of classes"
             :class="{
               added: nodeState.changes.classes?.added.has(clazz),
@@ -43,7 +76,7 @@
           <span class="attr-name">style</span>
           <span class="attr-eq">="</span>
           <span
-            class="attr-value attr-style"
+            class="attr-value attr-style observable"
             v-for="style of styles"
             :class="{
               added: nodeState.changes.styles?.added.has(style.name),
@@ -54,7 +87,7 @@
           >{{ '"' }}
         </span>
         <span
-          class="attr"
+          class="attr observable"
           v-for="attr of attributes"
           :class="{
             added: nodeState.changes.attrs?.added.has(attr.name),
@@ -67,7 +100,7 @@
           <span class="attr-value" v-if="attr.value !== undefined">"{{ attr.value }}"</span>
         </span>
         <span
-          class="prop"
+          class="prop observable"
           v-for="prop of properties"
           :class="{
             added: nodeState.changes.props?.added.has(prop.name),
@@ -84,25 +117,30 @@
         <span class="open-tag-end">{{ nodeState.isVoidElement ? '/>' : '>' }}</span>
       </div>
 
-      <slot v-if="isCollapsed">...</slot>
+      <span v-if="isCollapsed">...</span>
       <slot v-else>
-        <DomNode v-for="node of nodeState.children" :node-state="node" :indent="indent + 1" />
         <DomNode
-          v-if="nodeState.contentDocument"
-          v-for="node of nodeState.contentDocument.children"
+          v-for="node of children"
           :node-state="node"
           :indent="indent + 1"
+          :hidden-node-groups="hiddenNodeGroups"
         />
       </slot>
-      <div class="element-end" v-if="!nodeState.isVoidElement">{{ closeTag }}</div>
+      <div
+        class="element-end observable"
+        v-if="!nodeState.isVoidElement"
+        :style="{ paddingLeft: isInlineTag ? 0 : indentPx }"
+      >
+        {{ closeTag }}
+      </div>
     </slot>
   </div>
 </template>
 
 <script lang="ts">
-import * as Vue from 'vue';
 import { defineComponent, PropType } from 'vue';
 import DomNodeState from '@/pages/state/DomNodeState';
+import { IHiddenNodeGroups } from '@/pages/state/index.vue';
 
 const DomNode = defineComponent({
   name: 'DomNode',
@@ -113,6 +151,10 @@ const DomNode = defineComponent({
       required: true,
     },
     indent: Number,
+    hiddenNodeGroups: {
+      type: Object as PropType<IHiddenNodeGroups>,
+      required: true,
+    },
   },
   emits: [],
   computed: {
@@ -130,6 +172,13 @@ const DomNode = defineComponent({
         }
       }
       return classes;
+    },
+    children() {
+      const children = this.nodeState.children;
+      if (this.nodeState.contentDocument) {
+        children.push(...this.nodeState.contentDocument.children);
+      }
+      return children;
     },
     styles() {
       const styles = [...this.nodeState.styles];
@@ -163,25 +212,44 @@ const DomNode = defineComponent({
     isCollapsible() {
       if (this.nodeState.isDocument || this.nodeState.isDoctype || this.nodeState.isShadowRoot)
         return false;
+      if (this.nodeState.isTextNode && this.nodeState.isMultiline) return true;
       return this.nodeState.hasElementChildren;
     },
     isCollapsed() {
-      if (this.isExpanded === true) return false;
-      if (this.isExpanded === false) return true;
+      if (this.nodeState.isManuallyExpanded === true) return false;
+      if (this.nodeState.isManuallyExpanded === false) return true;
       if (this.isCollapsible === false) return false;
 
       return !this.nodeState.hasTreeChanges;
     },
-    margin(): string {
-      return `${this.indent * 2}px`;
+    isGroupCollapsed() {
+      if (!this.collapseGroupId) return false;
+      return this.hiddenNodeGroups.isExpandedByGroupId.get(this.collapseGroupId) !== true;
+    },
+    isInlineTag() {
+      if (this.nodeState.isComment) return false;
+      if (this.nodeState.isTextNode) return !this.nodeState.isMultiline;
+      if (!this.nodeState.hasElementChildren) return true;
+      if (this.nodeState.childNodeIds.length === 1 && this.nodeState.children[0]?.isMultiline) {
+        return false;
+      }
+      return this.isCollapsed;
+    },
+    indentPx(): string {
+      return `${this.indent * 5}px`;
+    },
+    collapseGroupId(): number {
+      return this.hiddenNodeGroups.collapsedGroupIdByFrameNodeId.get(this.nodeState.frameNodeId);
+    },
+    createdCollapseGroupId(): number {
+      return this.hiddenNodeGroups.createdGroupIdByFrameNodeId.get(this.nodeState.frameNodeId);
     },
   },
-  setup(props) {
-    return {
-      isExpanded: Vue.ref<boolean>(null),
-    };
-  },
+  setup(props) {},
   methods: {
+    openCollapseGroup() {
+      this.hiddenNodeGroups.isExpandedByGroupId.set(this.collapseGroupId, true);
+    },
   },
   beforeUnmount() {},
 });
@@ -191,31 +259,46 @@ export default DomNode;
 <style lang="scss">
 @import '../../assets/style/resets';
 
-.added {
+.added > .observable,
+.added.observable {
   color: #059d05 !important;
 }
-.changed {
-  color: #9bf69b !important;
+.changed > .observable,
+.changed.observable {
+  color: #0eb7de !important;
 }
-.removed {
+.removed > .observable,
+.removed.observable {
   color: red !important;
+}
+
+.collapse-container {
+  a {
+    margin: 8px 0;
+    display: block;
+    text-indent: 13px; // offset for expander
+    color: #868686;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-style: italic;
+  }
 }
 
 .comment {
   white-space: pre;
   color: #ababab;
-  padding-left: 13px; // offset for expander
+  text-indent: 13px; // offset for expander
 }
 .doctype {
   color: grey;
-  padding-left: 13px; // offset for expander
-  margin-left: 8px;
+  text-indent: 13px; // offset for expander
+  margin-left: 5px;
 }
 .text-node {
   white-space: pre;
   color: #595959;
   display: inline;
-  padding-left: 13px; // offset for expander
+  text-indent: 13px; // offset for expander
   &.multi-line {
     display: block;
   }
@@ -224,10 +307,11 @@ export default DomNode;
   }
 }
 
-.element,
-.text-node,
-.comment {
-  margin-left: 8px;
+.node > .element-start:hover,
+.node > .element-end:hover,
+.node.no-children:hover,
+.node.collapsed:hover {
+  background-color: aliceblue;
 }
 
 .attr,
@@ -241,33 +325,44 @@ export default DomNode;
   margin-left: 0;
 }
 
-.element {
+.node {
   > .element-start,
   > .element-end {
     display: block;
   }
   > .element-end {
-    padding-left: 13px;
+    text-indent: 13px;
   }
   &.collapsed {
     > .element-start,
     > .element-end {
-      display: inline-block;
-      padding-left: 0;
+      display: inline;
+      text-indent: 0;
     }
   }
 
   &.no-children {
     > .element-start,
     > .element-end {
-      display: inline-block;
+      display: inline;
     }
     > .element-end,
     > .text-node {
-      padding-left: 0;
+      text-indent: 0;
     }
-    > .multi-line + .element-end, > .text-node.multi-line {
-      padding-left: 13px;
+    > .multi-line + .element-end,
+    > .text-node.multi-line {
+      text-indent: 13px;
+      display: block;
+    }
+  }
+
+  &.hidden {
+    > .element-start,
+    > .element-end,
+    > .text,
+    > span {
+      display: none !important;
     }
   }
 

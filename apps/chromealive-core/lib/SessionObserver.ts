@@ -20,7 +20,6 @@ import AliveBarPositioner from './AliveBarPositioner';
 import OutputRebuilder, { IOutputSnapshot } from './OutputRebuilder';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import SourceCodeTimeline from './SourceCodeTimeline';
-import { IDomRecording } from '@ulixee/hero-core/models/DomChangesTable';
 import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
 
 const { log } = Log(module);
