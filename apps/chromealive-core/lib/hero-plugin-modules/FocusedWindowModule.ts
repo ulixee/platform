@@ -3,6 +3,7 @@ import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import { EventEmitter } from 'events';
 import BridgeToExtension from '../bridges/BridgeToExtension';
 import IDevtoolsSession from '@ulixee/hero-interfaces/IDevtoolsSession';
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 
 export default class FocusedWindowModule {
   private sessionId: string;
@@ -17,13 +18,17 @@ export default class FocusedWindowModule {
     });
   }
 
-  public onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
+  public onNewPuppetPage(
+    page: IPuppetPage,
+    sessionSummary: ISessionSummary,
+    events: EventSubscriber,
+  ): Promise<any> {
     if (!this.sessionId) {
       this.sessionId ??= sessionSummary.id;
-      if (process.env.HERO_DEBUG_CHROMEALIVE) this.debugServiceWorker(page.devtoolsSession);
+      if (process.env.HERO_DEBUG_CHROMEALIVE) this.debugServiceWorker(page.devtoolsSession, events);
     }
     const pageId = page.id;
-    page.once('close', () => this.handlePageIsClosed(pageId));
+    events.once(page, 'close', this.handlePageIsClosed.bind(this, pageId));
 
     return Promise.resolve();
   }
@@ -44,17 +49,17 @@ export default class FocusedWindowModule {
     );
   }
 
-  private debugServiceWorker(devtoolsSession: IDevtoolsSession): void {
+  private debugServiceWorker(devtoolsSession: IDevtoolsSession, events: EventSubscriber): void {
     devtoolsSession.send('ServiceWorker.enable').catch(console.error);
-    devtoolsSession.on('ServiceWorker.workerErrorReported', ev =>
+    events.on(devtoolsSession, 'ServiceWorker.workerErrorReported', ev =>
       // eslint-disable-next-line no-console
       console.debug('ServiceWorker.workerErrorReported', ev.errorMessage),
     );
-    devtoolsSession.on('ServiceWorker.workerRegistrationUpdated', ev =>
+    events.on(devtoolsSession, 'ServiceWorker.workerRegistrationUpdated', ev =>
       // eslint-disable-next-line no-console
       console.debug('ServiceWorker.workerRegistrationUpdated', ...ev.registrations),
     );
-    devtoolsSession.on('ServiceWorker.workerVersionUpdated', ev =>
+    events.on(devtoolsSession, 'ServiceWorker.workerVersionUpdated', ev =>
       // eslint-disable-next-line no-console
       console.debug('ServiceWorker.workerVersionUpdated', ...ev.versions),
     );

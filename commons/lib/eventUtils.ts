@@ -52,7 +52,6 @@ export function addTypedEventListeners<T, K extends keyof T & (string | symbol)>
     return { emitter, eventName, handler };
   });
 }
-
 export class TypedEventEmitter<T> extends EventEmitter implements ITypedEventEmitter<T> {
   public storeEventsWithoutListeners = false;
   public EventTypes: T;
@@ -60,19 +59,19 @@ export class TypedEventEmitter<T> extends EventEmitter implements ITypedEventEmi
   protected logger?: IBoundLog;
 
   private pendingIdCounter = 0;
-  private pendingWaitEvents: IPendingWaitEvent[] = [];
+  private pendingWaitEventsById = new Map<number, IPendingWaitEvent>();
 
   private eventsToLog = new Set<string | symbol>();
   private storedEventsByType = new Map<keyof T & (string | symbol), any[]>();
   private reemitterCountByEventType: { [eventType: string]: number } = {};
 
   public cancelPendingEvents(message?: string, excludeEvents?: (keyof T & string)[]): void {
-    const events = [...this.pendingWaitEvents];
-    this.pendingWaitEvents.length = 0;
+    const events = [...this.pendingWaitEventsById.values()];
+    this.pendingWaitEventsById.clear();
     while (events.length) {
       const event = events.shift();
       if (excludeEvents && excludeEvents.includes(event.event as any)) {
-        this.pendingWaitEvents.push(event);
+        this.pendingWaitEventsById.set(event.id, event);
         continue;
       }
       if (message) event.error.message = message;
@@ -97,7 +96,7 @@ export class TypedEventEmitter<T> extends EventEmitter implements ITypedEventEmi
     this.pendingIdCounter += 1;
     const id = this.pendingIdCounter;
 
-    this.pendingWaitEvents.push({
+    this.pendingWaitEventsById.set(id, {
       id,
       event: eventType,
       resolvable: promise,
@@ -114,13 +113,12 @@ export class TypedEventEmitter<T> extends EventEmitter implements ITypedEventEmi
         });
         promise.resolve(result);
       }
-    }
+    };
     this.on(eventType, callbackFn);
 
     return promise.promise.finally(() => {
       this.off(eventType, callbackFn);
-      const idx = this.pendingWaitEvents.findIndex(x => x.id === id);
-      if (idx >= 0) this.pendingWaitEvents.splice(idx, 1);
+      this.pendingWaitEventsById.delete(id);
     });
   }
 

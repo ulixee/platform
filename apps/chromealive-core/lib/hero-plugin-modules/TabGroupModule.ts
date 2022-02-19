@@ -35,7 +35,7 @@ export default class TabGroupModule extends TypedEventEmitter<{
   }
 
   public onNewPuppetPage(page: IPuppetPage): Promise<any> {
-    page.once('close', this.pageClosed.bind(this, page));
+    page.once('close', this.pageClosed.bind(this, page.id));
     return Promise.resolve();
   }
 
@@ -119,7 +119,7 @@ export default class TabGroupModule extends TypedEventEmitter<{
     return (await this.bridgeToExtension.send(message, puppetPage.id)) as T;
   }
 
-  private pageClosed(page: IPuppetPage) {
-    this.identityByPageId.delete(page.id);
+  private pageClosed(pageId: string) {
+    this.identityByPageId.delete(pageId);
   }
 }

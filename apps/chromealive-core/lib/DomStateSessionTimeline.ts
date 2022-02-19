@@ -6,12 +6,8 @@ import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
 import DomStateGenerator, { IDomStateSession } from '@ulixee/hero-timetravel/lib/DomStateGenerator';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import DomStateListener, { IDomStateEvents } from '@ulixee/hero-core/lib/DomStateListener';
-import {
-  addEventListener,
-  removeEventListeners,
-  TypedEventEmitter,
-} from '@ulixee/commons/lib/eventUtils';
-import IRegisteredEventListener from '@ulixee/commons/interfaces/IRegisteredEventListener';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import TimelineRecorder from '@ulixee/hero-timetravel/lib/TimelineRecorder';
 
 export default class DomStateSessionTimeline extends TypedEventEmitter<{
@@ -31,7 +27,7 @@ export default class DomStateSessionTimeline extends TypedEventEmitter<{
   public heroSession?: HeroSession;
   public timelineBuilder: TimelineBuilder;
 
-  private eventRegistrations: IRegisteredEventListener[] = [];
+  private events = new EventSubscriber();
   private timelineRecorder: TimelineRecorder;
 
   constructor(
@@ -73,17 +69,16 @@ export default class DomStateSessionTimeline extends TypedEventEmitter<{
     tab: Tab,
     listener: DomStateListener,
   ): { loadingRange: [number, number]; timelineRange: [number, number] } {
-    const statusChangeRegistration = addEventListener(
+    const statusChangeRegistration = this.events.on(
       tab.navigations,
       'status-change',
       this.onTabNavigationStatusChange.bind(this, tab),
     );
-    const domStateResolvedRegistration = addEventListener(
+    this.events.on(
       listener,
       'resolved',
       this.onDomStateResolved.bind(this, tab, statusChangeRegistration.handler),
     );
-    this.eventRegistrations.push(statusChangeRegistration, domStateResolvedRegistration);
 
     const { loadingRange, timelineRange } = this.createDomStateTimelines(
       listener,
@@ -104,8 +99,7 @@ export default class DomStateSessionTimeline extends TypedEventEmitter<{
   }
 
   public close(): void {
-    removeEventListeners(this.eventRegistrations);
-    this.eventRegistrations.length = 0;
+    this.events.close();
   }
 
   public getTimestampForOffset(offset: number): number {

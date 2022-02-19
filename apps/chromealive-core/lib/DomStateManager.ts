@@ -317,7 +317,7 @@ export default class DomStateManager extends TypedEventEmitter<{
   private untrackHeroSession(heroSession: HeroSession): void {
     this.openHeroSessionsById.delete(heroSession.id);
     heroSession.off('tab-created', this.onTab);
-    this.timelineRecordersBySessionId.get(heroSession.id)?.stop();
+    this.timelineRecordersBySessionId.get(heroSession.id)?.close();
     this.timelineRecordersBySessionId.delete(heroSession.id);
   }
 
@@ -486,7 +486,7 @@ export default class DomStateManager extends TypedEventEmitter<{
     this.openHeroSessionsById.clear();
     for (const [sessionId, timeline] of this.timelineRecordersBySessionId) {
       if (sessionId === this.sessionObserver.heroSession?.id) continue;
-      timeline.stop();
+      timeline.close();
     }
     this.timelineRecordersBySessionId.clear();
   }

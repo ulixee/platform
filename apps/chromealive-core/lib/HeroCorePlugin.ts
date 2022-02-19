@@ -1,5 +1,5 @@
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import * as Path from 'path';
-import { EventEmitter } from 'events';
 import Log from '@ulixee/commons/lib/Logger';
 import ICorePluginCreateOptions from '@ulixee/hero-interfaces/ICorePluginCreateOptions';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
@@ -16,6 +16,7 @@ import { extensionId } from './ExtensionUtils';
 import DevtoolsPanelModule from './hero-plugin-modules/DevtoolsPanelModule';
 import ElementsModule from './hero-plugin-modules/ElementsModule';
 import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
+import EventEmitter = require('events');
 
 const { log } = Log(module);
 
@@ -36,23 +37,23 @@ export default class HeroCorePlugin extends CorePlugin {
   private focusedWindowModule: FocusedWindowModule;
   private devtoolsPanelModule: DevtoolsPanelModule;
   private elementsModule: ElementsModule;
+  private events = new EventSubscriber();
+  private browserEmitter = new EventEmitter();
 
   constructor(createOptions: ICorePluginCreateOptions) {
     super(createOptions);
     this.bridgeToExtension = new BridgeToExtension();
     this.bridgeToDevtoolsPrivate = new BridgeToDevtoolsPrivate();
 
-    const browserEmitter = new EventEmitter();
-    this.tabGroupModule = new TabGroupModule(this.bridgeToExtension, browserEmitter);
-    this.windowBoundsModule = new WindowBoundsModule(this.bridgeToExtension, browserEmitter);
-    this.focusedWindowModule = new FocusedWindowModule(this.bridgeToExtension, browserEmitter);
+    this.tabGroupModule = new TabGroupModule(this.bridgeToExtension, this.browserEmitter);
+    this.windowBoundsModule = new WindowBoundsModule(this.bridgeToExtension, this.browserEmitter);
+    this.focusedWindowModule = new FocusedWindowModule(this.bridgeToExtension, this.browserEmitter);
     this.devtoolsPanelModule = new DevtoolsPanelModule(
       this.bridgeToDevtoolsPrivate,
       this.tabGroupModule,
     );
-    this.elementsModule = new ElementsModule(this.bridgeToExtension, browserEmitter);
-
-    this.bridgeToDevtoolsPrivate.on('message', (message, { destLocation }) => {
+    this.elementsModule = new ElementsModule(this.bridgeToExtension, this.browserEmitter);
+    this.events.on(this.bridgeToDevtoolsPrivate, 'message', (message, { destLocation }) => {
       const { ContentScript, BackgroundScript } = MessageLocation;
       if ([ContentScript, BackgroundScript].includes(destLocation)) {
         this.bridgeToExtension.send(message).catch(error => {
@@ -64,7 +65,7 @@ export default class HeroCorePlugin extends CorePlugin {
       }
     });
 
-    this.bridgeToExtension.on('message', (message, messageComponents) => {
+    this.events.on(this.bridgeToExtension, 'message', (message, messageComponents) => {
       const { destLocation, stringifiedMessage, puppetPageId } = messageComponents;
       if (destLocation === MessageLocation.DevtoolsPrivate) {
         this.bridgeToDevtoolsPrivate.send(message).catch(error =>
@@ -75,7 +76,7 @@ export default class HeroCorePlugin extends CorePlugin {
         );
       } else if (destLocation === MessageLocation.Core) {
         const { payload } = JSON.parse(stringifiedMessage);
-        browserEmitter.emit('payload', payload, puppetPageId);
+        this.browserEmitter.emit('payload', payload, puppetPageId);
       }
     });
   }
@@ -83,7 +84,7 @@ export default class HeroCorePlugin extends CorePlugin {
   async onNewPuppetContext(context: IPuppetContext, sessionSummary: ISessionSummary): Promise<any> {
     if (context.isIncognito || sessionSummary.options.showBrowser === false) return;
 
-    context.once('close', this.onContextClosed.bind(this, sessionSummary));
+    this.events.once(context, 'close', this.onContextClosed.bind(this, sessionSummary));
 
     this.tabGroupModule.onNewPuppetContext(context, sessionSummary);
     this.devtoolsPanelModule.onNewPuppetContext(context, sessionSummary);
@@ -117,9 +118,9 @@ export default class HeroCorePlugin extends CorePlugin {
   async onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
     if (page.browserContext.isIncognito || sessionSummary.options.showBrowser === false) return;
     await Promise.all([
-      this.bridgeToExtension.addPuppetPage(page),
+      this.bridgeToExtension.addPuppetPage(page, this.events),
       this.windowBoundsModule.onNewPuppetPage(page, sessionSummary),
-      this.focusedWindowModule.onNewPuppetPage(page, sessionSummary),
+      this.focusedWindowModule.onNewPuppetPage(page, sessionSummary, this.events),
       this.tabGroupModule.onNewPuppetPage(page),
     ]);
   }
@@ -139,5 +140,7 @@ export default class HeroCorePlugin extends CorePlugin {
   onContextClosed(sessionSummary: ISessionSummary): void {
     this.tabGroupModule.close();
     this.devtoolsPanelModule.close(sessionSummary);
+    this.events.close();
+    this.browserEmitter.removeAllListeners();
   }
 }
