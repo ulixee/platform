@@ -3,6 +3,7 @@ import ISessionApi, {
   ISessionApiStatics,
   ISessionResumeArgs,
 } from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
+import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import SessionObserver from '../lib/SessionObserver';
 import ChromeAliveCore from '../index';
 
@@ -25,6 +26,11 @@ export default class SessionApi {
     return Promise.resolve(sessionObserver.sourceCodeTimeline.getCurrentState());
   }
 
+  static getDom(args?: IHeroSessionArgs & { tabId?: number }): ReturnType<ISessionApi['getDom']> {
+    const sessionObserver = getObserver(args);
+    return sessionObserver.getDomRecording(args?.tabId);
+  }
+
   static async timetravel(
     args: IHeroSessionArgs & {
       percentOffset?: number;
@@ -34,7 +40,14 @@ export default class SessionApi {
     timelineOffsetPercent: number;
   }> {
     const sessionObserver = getObserver(args);
-    return await sessionObserver.timetravel(args.percentOffset, args.step);
+    try {
+      return await sessionObserver.timetravel(args.percentOffset, args.step);
+    } catch (err) {
+      if (err instanceof CanceledPromiseError) {
+        return { timelineOffsetPercent: 100 };
+      }
+      throw err;
+    }
   }
 
   static step(args: IHeroSessionArgs): void {

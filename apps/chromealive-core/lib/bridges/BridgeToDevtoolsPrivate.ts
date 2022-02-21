@@ -39,9 +39,7 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
     );
 
     return Promise.all([
-      devtoolsSession.send('Runtime.enable'),
       devtoolsSession.send('Runtime.addBinding', { name: ___sendToCore }),
-      devtoolsSession.send('Page.enable'),
       devtoolsSession.send('Page.addScriptToEvaluateOnNewDocument', {
         source: `(function run() {
           window.___includedBackendNodeIds = new Set();

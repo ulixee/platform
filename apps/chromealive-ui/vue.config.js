@@ -7,6 +7,7 @@ module.exports = {
     'domstate-panel': './src/pages/domstate-panel/index.ts',
     'domstate-popup': './src/pages/domstate-popup/index.ts',
     'hero-script': './src/pages/hero-script/index.ts',
+    state: './src/pages/state/index.ts',
     about: './src/pages/about/index.ts',
   },
 };

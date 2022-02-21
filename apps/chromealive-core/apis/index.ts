@@ -23,6 +23,7 @@ const ApiHandlers: IApiHandlerSpec = {
   'Session.step': SessionApi.step,
   'Session.getScreenshot': SessionApi.getScreenshot,
   'Session.getScriptState': SessionApi.getScriptState,
+  'Session.getDom': SessionApi.getDom,
 };
 
 export default ApiHandlers;

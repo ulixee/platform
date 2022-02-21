@@ -142,6 +142,7 @@ export default class ChromeAliveCore {
 
     this.sessionObserversById.set(sessionId, sessionObserver);
     const sourceCode = sessionObserver.sourceCodeTimeline;
+    const timetravel = sessionObserver.timetravelPlayer;
     const on = this.events.on.bind(this.events);
     const sessionEvents = [
       on(sessionObserver, 'hero:updated', this.sendActiveSession.bind(this, sessionId)),
@@ -150,11 +151,8 @@ export default class ChromeAliveCore {
       on(sessionObserver, 'closed', this.onSessionObserverClosed.bind(this, sessionObserver)),
       on(sourceCode, 'command', this.sendAppEvent.bind(this, 'Command.updated')),
       on(sourceCode, 'source', this.sendAppEvent.bind(this, 'SourceCode.updated')),
-      on(
-        sessionObserver.timetravelPlayer,
-        'new-tick-command',
-        this.sendCommandFocusedEvent.bind(this, sessionId),
-      ),
+      on(timetravel, 'new-tick-command', this.sendCommandFocusedEvent.bind(this, sessionId)),
+      on(timetravel, 'new-paint-index', this.sendPaintIndexEvent.bind(this, sessionId)),
     ];
     this.events.group('session', ...sessionEvents);
 
@@ -191,6 +189,17 @@ export default class ChromeAliveCore {
   ): void {
     this.sendDataboxUpdatedEvent(sessionId);
     this.sendAppEvent('Command.focused', event);
+  }
+
+  private static sendPaintIndexEvent(
+    sessionId: string,
+    event: TimetravelPlayer['EventTypes']['new-paint-index'],
+  ): void {
+    this.sendAppEvent('Dom.focus', {
+      paintIndex: event.paintIndex,
+      highlightPaintIndexRange: [event.paintIndex, event.paintIndex],
+      documentLoadPaintIndex: event.documentLoadPaintIndex,
+    });
   }
 
   private static onSessionObserverClosed(sessionObserver: SessionObserver) {

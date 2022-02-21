@@ -21,3 +21,5 @@ tsconfig.tsbuildinfo
 **/dist
 /.eslintcache
 connect
+/databox/examples/codepen.ts
+/databox/examples/duckduckgo.ts
