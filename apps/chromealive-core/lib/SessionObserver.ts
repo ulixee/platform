@@ -46,7 +46,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   private outputRebuilder = new OutputRebuilder();
   private hasScriptUpdatesSinceLastRun = false;
   private watchHandle: Fs.FSWatcher;
-  private eventSubscriber = new EventSubscriber();
+  private events = new EventSubscriber();
   private readonly lastDomChangesByTabId: Record<number, number> = {};
 
   constructor(public readonly heroSession: HeroSession) {
@@ -56,20 +56,20 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.scriptInstanceMeta = heroSession.options.scriptInstanceMeta;
     this.worldHeroSessionIds.add(heroSession.id);
 
-    this.eventSubscriber.on(this.heroSession, 'kept-alive', this.onHeroSessionKeptAlive);
-    this.eventSubscriber.on(this.heroSession, 'resumed', this.onHeroSessionResumed);
-    this.eventSubscriber.on(this.heroSession, 'closing', this.close);
-    this.eventSubscriber.on(this.heroSession, 'output', this.onOutputUpdated);
-    this.eventSubscriber.on(this.heroSession, 'tab-created', this.onTabCreated);
+    this.events.on(this.heroSession, 'kept-alive', this.onHeroSessionKeptAlive);
+    this.events.on(this.heroSession, 'resumed', this.onHeroSessionResumed);
+    this.events.on(this.heroSession, 'closing', this.close);
+    this.events.on(this.heroSession, 'output', this.onOutputUpdated);
+    this.events.on(this.heroSession, 'tab-created', this.onTabCreated);
 
     this.timelineBuilder = new TimelineBuilder({ liveSession: heroSession });
 
     this.timelineRecorder = new TimelineRecorder(heroSession);
-    this.eventSubscriber.on(this.timelineRecorder, 'updated', () => this.emit('hero:updated'));
+    this.events.on(this.timelineRecorder, 'updated', () => this.emit('hero:updated'));
 
     this.timetravelPlayer = TimetravelPlayer.create(heroSession.id, heroSession);
-    this.eventSubscriber.on(this.timetravelPlayer, 'all-tabs-closed', this.onTimetravelClosed);
-    this.eventSubscriber.on(this.timetravelPlayer, 'open', this.onTimetravelOpened);
+    this.events.on(this.timetravelPlayer, 'all-tabs-closed', this.onTimetravelClosed);
+    this.events.on(this.timetravelPlayer, 'open', this.onTimetravelOpened);
 
     this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint).mtimeMs;
 
@@ -121,12 +121,12 @@ export default class SessionObserver extends TypedEventEmitter<{
         env: { ...process.env, HERO_CLI_NOPROMPT: 'true' },
       });
       child.stderr.setEncoding('utf-8');
-      const evt = this.eventSubscriber.on(child.stderr, 'data', x => {
+      const evt = this.events.on(child.stderr, 'data', x => {
         if (x.includes('ScriptChangedNeedsRestartError')) {
           this.relaunchSession('sessionStart').catch(() => null);
         }
       });
-      this.eventSubscriber.once(child, 'exit', () => this.eventSubscriber.off(evt));
+      this.events.once(child, 'exit', () => this.events.off(evt));
     } catch (error) {
       this.logger.error('ERROR resuming session', { error });
       return error;
@@ -140,8 +140,8 @@ export default class SessionObserver extends TypedEventEmitter<{
     }
     this.sourceCodeTimeline.close();
 
-    this.eventSubscriber.close();
-    this.timelineRecorder.stop();
+    this.events.close();
+    this.timelineRecorder.close();
     this.timetravelPlayer?.close()?.catch(console.error);
     this.emit('closed');
   }
@@ -266,16 +266,16 @@ export default class SessionObserver extends TypedEventEmitter<{
   public async onTimetravelOpened(): Promise<void> {
     this.mode = 'timetravel';
     const events = [
-      this.eventSubscriber.once(this.tabGroupModule, 'tab-group-opened', this.closeTimetravel),
-      this.eventSubscriber.once(this.timetravelPlayer, 'timetravel-to-end', this.closeTimetravel),
+      this.events.once(this.tabGroupModule, 'tab-group-opened', this.closeTimetravel),
+      this.events.once(this.timetravelPlayer, 'timetravel-to-end', this.closeTimetravel),
     ];
-    this.eventSubscriber.group('timetravel', ...events);
+    this.events.group('timetravel', ...events);
     await this.timetravelPlayer.activeTab.mirrorPage.page.bringToFront();
     this.emit('app:mode');
   }
 
   public onTabCreated(event: HeroSession['EventTypes']['tab-created']): void {
-    this.eventSubscriber.on(
+    this.events.on(
       event.tab,
       'page-events',
       this.sendDomRecordingUpdates.bind(this, event.tab),
@@ -309,7 +309,7 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   private async onTimetravelClosed(): Promise<void> {
     this.mode = 'live';
-    this.eventSubscriber.endGroup('timetravel');
+    this.events.endGroup('timetravel');
     await this.updateTabGroup(false).catch(console.error);
     this.emit('app:mode');
   }

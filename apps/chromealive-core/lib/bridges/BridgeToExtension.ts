@@ -1,3 +1,4 @@
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { EventEmitter } from 'events';
 import IDevtoolsSession, { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
@@ -19,41 +20,47 @@ import Log from '@ulixee/commons/lib/Logger';
 const { log } = Log(module);
 
 export default class BridgeToExtension extends EventEmitter {
-  private puppetDetailsByPageId = new Map<string, { contextId: number; puppetPage: IPuppetPage }>();
+  private contextIdByPageId = new Map<string, number>();
   private devtoolsSessionsByPageId: { [pageId: string]: IDevtoolsSession } = {};
   private pendingByResponseId: { [id: string]: IResolvablePromise<any> } = {};
 
-  public getContextIdByPuppetPageId(puppetPageId: string) {
-    const puppetDetails = this.puppetDetailsByPageId.get(puppetPageId);
-    return puppetDetails ? puppetDetails.contextId : null;
+  public getContextIdByPuppetPageId(puppetPageId: string): number | null {
+    return this.contextIdByPageId.get(puppetPageId) ?? null;
   }
 
   public getDevtoolsSessionByPuppetPageId(puppetPageId: string) {
     return this.devtoolsSessionsByPageId[puppetPageId];
   }
 
-  public addPuppetPage(page: IPuppetPage): Promise<any> {
-    const { devtoolsSession } = page;
-    this.devtoolsSessionsByPageId[page.id] = devtoolsSession;
+  public addPuppetPage(page: IPuppetPage, events: EventSubscriber): Promise<any> {
+    const { devtoolsSession, id } = page;
+    this.devtoolsSessionsByPageId[id] = devtoolsSession;
 
-    page.once('close', () => {
-      this.closePuppetPage(page);
-      delete this.devtoolsSessionsByPageId[page.id];
-    });
-    page.once('close', () => this.closePuppetPage(page));
+    events.once(page, 'close', this.closePuppetPage.bind(this, id));
 
-    devtoolsSession.on('Runtime.executionContextCreated', event => {
-      this.onContextCreated(page, event);
-    });
+    events.on(
+      devtoolsSession,
+      'Runtime.executionContextCreated',
+      this.onContextCreated.bind(this, id),
+    );
 
-    devtoolsSession.on('Runtime.executionContextDestroyed', event => {
-      this.onContextDestroyed(page, event);
-    });
-    devtoolsSession.on('Runtime.executionContextsCleared', () => this.onContextCleared(page));
+    events.on(
+      devtoolsSession,
+      'Runtime.executionContextDestroyed',
+      this.onContextDestroyed.bind(this, id),
+    );
 
-    devtoolsSession.on('Runtime.bindingCalled', event => {
-      this.handleIncomingMessageFromBrowser(event, page.id);
-    });
+    events.on(
+      devtoolsSession,
+      'Runtime.executionContextsCleared',
+      this.onContextCleared.bind(this, id),
+    );
+
+    events.on(
+      devtoolsSession,
+      'Runtime.bindingCalled',
+      this.handleIncomingMessageFromBrowser.bind(this, id),
+    );
 
     return Promise.all([
       devtoolsSession.send('Runtime.addBinding', { name: ___sendToCore }),
@@ -68,14 +75,18 @@ export default class BridgeToExtension extends EventEmitter {
     if (!puppetPageId) {
       throw new Error(`No active puppet page ${puppetPageId}`);
     }
-    const puppetContext = this.puppetDetailsByPageId.get(puppetPageId);
-    if (!puppetContext) {
-      log.warn(`No puppet details for ${puppetPageId}`, { sessionId: null, puppetPageId });
+    const contextId = this.getContextIdByPuppetPageId(puppetPageId);
+    if (!contextId) {
+      log.warn(`No puppet execution context for ${puppetPageId}`, {
+        sessionId: null,
+        puppetPageId,
+      });
       return Promise.resolve();
     }
+    const devtoolsSession = this.getDevtoolsSessionByPuppetPageId(puppetPageId);
     this.runInBrowser(
-      puppetContext.puppetPage.devtoolsSession,
-      puppetContext.contextId,
+      devtoolsSession,
+      contextId,
       `window.${___receiveFromCore}('${destLocation}', '${responseCode}', ${restOfMessage});`,
     );
     if (messageExpectsResponse(message)) {
@@ -90,14 +101,12 @@ export default class BridgeToExtension extends EventEmitter {
     return Promise.resolve();
   }
 
-  public closePuppetPage(page: IPuppetPage) {
-    this.puppetDetailsByPageId.delete(page.id);
+  public closePuppetPage(puppetPageId: string) {
+    this.contextIdByPageId.delete(puppetPageId);
   }
 
   public close() {
-    for (const { puppetPage } of this.puppetDetailsByPageId.values()) {
-      this.closePuppetPage(puppetPage);
-    }
+    this.contextIdByPageId.clear();
   }
 
   private runInBrowser(
@@ -117,8 +126,12 @@ export default class BridgeToExtension extends EventEmitter {
     });
   }
 
-  private handleIncomingMessageFromBrowser(event: any, puppetPageId: string) {
+  private handleIncomingMessageFromBrowser(
+    puppetPageId: string,
+    event: Protocol.Runtime.BindingCalledEvent,
+  ) {
     if (event.name !== ___sendToCore) return;
+
     const [destLocation, responseCode, stringifiedMessage] =
       extractStringifiedComponentsFromMessage(event.payload);
     if (isResponseMessage(event.payload)) {
@@ -136,27 +149,23 @@ export default class BridgeToExtension extends EventEmitter {
   }
 
   private onContextCreated(
-    puppetPage: IPuppetPage,
+    pageId: string,
     event: Protocol.Runtime.ExecutionContextCreatedEvent,
   ): void {
     if (!event.context.origin.startsWith(`chrome-extension://${extensionId}`)) return;
-    this.puppetDetailsByPageId.set(puppetPage.id, {
-      contextId: event.context.id,
-      puppetPage: puppetPage,
-    });
+    this.contextIdByPageId.set(pageId, event.context.id);
   }
 
   private onContextDestroyed(
-    page: IPuppetPage,
+    pageId: string,
     event: Protocol.Runtime.ExecutionContextDestroyedEvent,
   ): void {
-    const pageDetails = this.puppetDetailsByPageId.get(page.id);
-    if (pageDetails && pageDetails.contextId === event.executionContextId) {
-      this.puppetDetailsByPageId.delete(page.id);
+    if (this.contextIdByPageId.get(pageId) === event.executionContextId) {
+      this.contextIdByPageId.delete(pageId);
     }
   }
 
-  private onContextCleared(page: IPuppetPage): void {
-    this.puppetDetailsByPageId.delete(page.id);
+  private onContextCleared(pageId: string): void {
+    this.contextIdByPageId.delete(pageId);
   }
 }

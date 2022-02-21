@@ -20,7 +20,7 @@
     "vue-json-pretty": "^1.7.1",
     "json5": "^2.2.0",
     "@ulixee/apps-chromealive-interfaces": "1.5.4",
-    "@ulixee/commons": "1.5.9",
+    "@ulixee/commons": "1.5.10",
     "@ulixee/hero-interfaces": "1.5.4"
   },
   "devDependencies": {
