@@ -33,17 +33,6 @@
       border-width: 2px;
     }
 
-    /*&::before {*/
-    /*  content: '';*/
-    /*  position: absolute;*/
-    /*  background: white;*/
-    /*  left: 0;*/
-    /*  top: 0;*/
-    /*  height: 100%;*/
-    /*  width: 1px;*/
-    /*  z-index: 1;*/
-    /*}*/
-
     &::after {
       content: '';
       display: block;

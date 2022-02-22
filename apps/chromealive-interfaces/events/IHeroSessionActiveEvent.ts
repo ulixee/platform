@@ -7,7 +7,7 @@ export default interface IHeroSessionActiveEvent {
   heroSessionId: string;
   hasWarning: boolean;
   mode: IAppModeEvent['mode'];
-  playbackState: 'running' | 'paused';  // done
+  playbackState: 'running' | 'paused';  // paused = done
   run: number;
   runtimeMs: number;
   domStates: {

@@ -105,7 +105,6 @@ export default class HeroCorePlugin extends CorePlugin {
     launchArguments.push(
       `--disable-extensions-except=${extensionPath}`,
       `--load-extension=${extensionPath}`,
-      // '--enable-automation',
     );
     const noStartupIndex = launchArguments.indexOf('--no-startup-window');
     if (noStartupIndex >= 0) launchArguments.splice(noStartupIndex, 1);
