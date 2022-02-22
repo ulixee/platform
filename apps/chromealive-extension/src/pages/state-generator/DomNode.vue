@@ -139,8 +139,8 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
-import DomNodeState from '@/pages/state/DomNodeState';
-import { IHiddenNodeGroups } from '@/pages/state/index.vue';
+import DomNodeState from './DomNodeState';
+import { IHiddenNodeGroups } from './index.vue';
 
 const DomNode = defineComponent({
   name: 'DomNode',

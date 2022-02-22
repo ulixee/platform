@@ -97,13 +97,13 @@
     mounted() {
       // window.addEventListener('blur', this.hideMenu);
       window.addEventListener('click', this.hideMenu);
-      WindowsController.on(EmitterName.hideMenu, this.finishHideMenu);
+      WindowsController.on(EmitterName.hideMenuPrimary, this.finishHideMenu);
     },
 
     beforeUnmount() {
       // window.removeEventListener('blur', this.hideMenu);
       window.removeEventListener('click', this.hideMenu);
-      WindowsController.off(EmitterName.hideMenu, this.finishHideMenu);
+      WindowsController.off(EmitterName.hideMenuPrimary, this.finishHideMenu);
     },
   });
 </script>

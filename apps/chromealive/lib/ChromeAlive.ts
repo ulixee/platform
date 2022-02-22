@@ -183,21 +183,19 @@ export class ChromeAlive extends EventEmitter {
 
     // for output window
     this.#toolbarWindow.webContents.setWindowOpenHandler(details => {
-      const isFinder = details.frameName === 'Finder';
-      const isPopup = isFinder || details.frameName.includes('Menu');
+      const isMenu = details.frameName.includes('Menu');
       return {
         action: 'allow',
         overrideBrowserWindowOptions: {
-          resizable: !isPopup,
-          frame: !isPopup,
+          resizable: !isMenu,
+          frame: !isMenu,
           roundedCorners: true,
-          movable: !isPopup,
+          movable: !isMenu,
           closable: true,
-          transparent: isPopup,
+          transparent: isMenu,
           titleBarStyle: 'default',
           alwaysOnTop: true,
-          // focusable: !isPopup,
-          hasShadow: !isPopup,
+          hasShadow: !isMenu,
           acceptFirstMouse: true,
           useContentSize: true,
           webPreferences: {
@@ -224,10 +222,10 @@ export class ChromeAlive extends EventEmitter {
         });
       } else if (eventName === 'App:showChildWindow') {
         const frameName = args[0];
-        this.#childWindowsByName.get(frameName).show();
+        this.#childWindowsByName.get(frameName)?.show();
       } else if (eventName === 'App:hideChildWindow') {
         const frameName = args[0];
-        this.#childWindowsByName.get(frameName).hide();
+        this.#childWindowsByName.get(frameName)?.hide();
       } else if (eventName === 'chromealive:event') {
         const [eventType, data] = args;
         this.onChromeAliveEvent(eventType, data);

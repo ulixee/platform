@@ -12,7 +12,7 @@ export default class AboutPage extends TypedEventEmitter<{ close: void }> {
   private page: Promise<IPuppetPage>;
 
   private aboutPages = {
-    circuits: 'about.html',
+    circuits: 'about-screen.html',
   };
 
   constructor(readonly heroSession: HeroSession) {

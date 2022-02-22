@@ -1,227 +1,257 @@
 <template>
-  <div class="grid grid-cols-3 pl-3 h-screen">
-    <div class="column h-full pr-3">
-      <div class="header">
-        <div class="arrow"></div>
-        <h1 class="flex-1">Generator Options</h1>
-        <div class="text-right">
-          <button @click="resetGenerator">Reset</button>
-          <button class="arrowed-button border" @click="runGenerator">{{runText}}<div class="arrow"></div></button>
-        </div>
-      </div>
-      <div class="content border-r-2 border-gray-300 h-full pr-5 pt-3">
-        <ul class="steps">
-          <li class="flex flex-row items-center">
-            <label for="location" class="text-sm font-medium text-gray-700 w-14">Match</label>
-            <select id="location" v-model="selectorType" name="location" class="flex-1 mt-1 w-full pl-3 pr-10 py-0 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-              <option value="single">Single Element</option>
-              <option value="multiple">Multiple Elements</option>
-            </select>
-          </li>
-          <li>
-            <label class="text-sm font-medium text-gray-700 w-14">Include {{(selectorType === 'single' || includedNamesById.size === 1) ? 'This Element' : 'These Elements'}}</label>
-            <div v-if="!includedNamesById.size" class="italic text-gray-400">
-              No included elements
-            </div>
-            <ul v-else>
-              <li @click="openElement(id)" v-for="[id, name] in includedNamesById.entries()" class="border border-dashed rounded border-transparent hover:border-gray-400">{{name}}</li>
-            </ul>
-          </li>
-
-          <li v-if="selectorType === 'multiple'">
-            <label class="text-sm font-medium text-gray-700 w-14">Exclude {{excludedNamesById.size === 1 ? 'This Element' : 'These Elements'}}</label>
-            <div v-if="!excludedNamesById.size" class="exclude text-gray-400">
-              No excluded elements
-            </div>
-            <ul v-else>
-              <li @click="openElement(id)" v-for="[id, name] in excludedNamesById.entries()" class="border border-dashed rounded border-transparent hover:border-gray-400">{{name}}</li>
-            </ul>
-          </li>
-        </ul>
-      </div>
-    </div>
-    <div class="column h-full pr-3">
-      <div class="header">
-        <div class="arrow"></div>
-        <h1 class="ml-5 flex-1">Selectors Found</h1>
-        <div class="text-right">
-          <button class="arrowed-button border" @click="runTests">{{testText}}<div class="arrow"></div></button>
-        </div>
-      </div>
-      <div class="content border-r-2 border-gray-300 h-full">
-        <table>
-          <tbody>
-            <tr v-for="selector in selectors">
-              <td class="border-t border-gray-300"></td>
-              <td class="border-t border-gray-300">
-                <span v-for="part in selector" class="border border-dashed rounded border-transparent hover:border-gray-400 font-mono">{{part}}</span>
-              </td>
-              <td class="border-t border-gray-300"></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div class="column pr-3">
-      <div class="header">
-        <h1 class="ml-5">Durability</h1>
-      </div>
-      <div class="content h-full">
-        <table>
-          <tbody>
-            <tr>
-              <td><div></div></td>
-              <td><div></div></td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+  <div class="wrapper">
+    <DomNode
+      v-if="mainFrame && mainFrame.document"
+      :node-state="mainFrame.document"
+      :indent="0"
+      :hidden-node-groups="hiddenNodeGroups"
+    />
   </div>
 </template>
 
 <script lang="ts">
 import * as Vue from 'vue';
-import { MessageEventType } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
-import { onMessagePayload, sendToContentScript } from '../../lib/devtools/DevtoolsMessenger';
+import Client from '../../api/Client';
+import { DomActionType, IFrontendDomChangeEvent } from '@ulixee/hero-interfaces/IDomChangeEvent';
+import DomNodeState from './DomNodeState';
+import DomNode from './DomNode.vue';
+import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
+import { IChromeAliveApis } from '@ulixee/apps-chromealive-interfaces/apis';
 
-const includedNamesById = Vue.reactive(new Map());
-const excludedNamesById = Vue.reactive(new Map());
+export interface IDomFrameNodes {
+  nodesById: Record<number, DomNodeState>;
+  document?: DomNodeState;
+}
 
-const runText = Vue.ref('Run');
-const testText = Vue.ref('Test');
-const selectors = Vue.reactive([]);
-
-onMessagePayload(payload => {
-  const { event, name, backendNodeId } = payload;
-  if (event === MessageEventType.AddIncludedElement) {
-    includedNamesById.set(backendNodeId, name);
-  } else if (event === MessageEventType.RemoveIncludedElement) {
-    includedNamesById.delete(backendNodeId);
-  } else if (event === MessageEventType.AddExcludedElement) {
-    excludedNamesById.set(backendNodeId, name);
-  } else if (event === MessageEventType.RemoveExcludedElement) {
-    excludedNamesById.delete(backendNodeId);
-  } else if (event === MessageEventType.FinishedSelectorGeneration) {
-    runText.value = 'Run';
-    selectors.splice(0, selectors.length, ...payload.selectors);
-  }
-});
+// FrameAndNodeId is necessary because of overlapping ids. frameId_nodeId
+export interface IHiddenNodeGroups {
+  isExpandedByGroupId: Map<number, boolean>;
+  frameNodeIdsByGroupId: Map<number, string[]>;
+  collapsedGroupIdByFrameNodeId: Map<string, number>;
+  createdGroupIdByFrameNodeId: Map<string, number>;
+}
 
 export default Vue.defineComponent({
-  name: 'SelectorGenerator',
-  components: {},
+  name: 'StatePanel',
+  components: { DomNode },
   setup() {
-    const selectorType = Vue.ref<string>('single');
-    const selectorTypeAuto = Vue.ref<boolean>(true);
-
-    Vue.watch(selectorType, () => {
-      selectorTypeAuto.value = false;
-    });
-
-    Vue.watch(includedNamesById, () => {
-      if (selectorTypeAuto.value) {
-        selectorType.value = includedNamesById.size > 1 ? 'multiple' : 'single';
+    return {
+      focusedPaintIndex: Vue.ref<number>(null),
+      paintEvents: Vue.reactive<IFrontendDomChangeEvent[][]>([]),
+      loadedIndex: Vue.ref<number>(-1),
+      domNodesByFrameId: Vue.reactive<Record<number, IDomFrameNodes>>({}),
+      framesById: Vue.reactive(new Map<number, { parentId: number; domNodeId: number }>()),
+      mainFrameIds: Vue.reactive(new Set<number>()),
+      activeGroupId: -1,
+      latestGroupId: 0,
+      hiddenNodeGroups: Vue.reactive<IHiddenNodeGroups>({
+        isExpandedByGroupId: new Map(),
+        frameNodeIdsByGroupId: new Map(),
+        collapsedGroupIdByFrameNodeId: new Map(),
+        createdGroupIdByFrameNodeId: new Map(),
+      }),
+    };
+  },
+  watch: {},
+  computed: {
+    mainFrame(): IDomFrameNodes {
+      for (const frameId of this.mainFrameIds) {
+        if (frameId in this.domNodesByFrameId) {
+          return this.domNodesByFrameId[frameId] as IDomFrameNodes;
+        }
       }
-    });
-
-    return { includedNamesById, excludedNamesById, runText, selectors, testText, selectorType, selectorTypeAuto };
+    },
   },
   methods: {
-    runGenerator() {
-      sendToContentScript(null, { event: MessageEventType.RunSelectorGenerator });
-      this.runText = 'Running...';
+    setPaintEvents(
+      paintEvents: IFrontendDomChangeEvent[][],
+      framesById: { [id: number]: { parentId: number; domNodeId: number } },
+    ) {
+      this.paintEvents.length = paintEvents.length;
+      for (let i = 0; i < paintEvents.length; i += 1) {
+        // don't overwrite existing with empty
+        if (paintEvents[i]?.length) {
+          this.paintEvents[i] = paintEvents[i];
+        }
+      }
+      (window as any).paintEvents = this.paintEvents;
+      this.mainFrameIds.clear();
+      this.framesById.clear();
+      for (const [id, value] of Object.entries(framesById)) {
+        if (!value.parentId) this.mainFrameIds.add(Number(id));
+        this.framesById.set(Number(id), value);
+      }
+
+      if (!this.focusedPaintIndex) {
+        const index = paintEvents.length - 1;
+        this.setPaintIndex(index, [index, index]);
+      }
     },
-    runTests() {
-      this.testText = 'Testing...';
+    setPaintIndex(
+      index: number,
+      highlightChangeIndices: [start: number, end: number],
+      documentLoadPaintIndex = 0,
+    ): void {
+      if (index === this.loadedIndex) return;
+      console.log('Setting paint index', {
+        newIndex: index,
+        currentIndex: this.loadedIndex,
+        documentLoadPaintIndex,
+        highlightChangeIndices,
+        totalPaints: this.paintEvents.length,
+      });
+
+      if (index === -1) {
+        for (const frameId of Object.keys(this.domNodesByFrameId)) {
+          this.domNodesByFrameId[frameId] = { nodesById: {} };
+        }
+      }
+
+      for (let i = documentLoadPaintIndex; i <= index; i += 1) {
+        if (!this.paintEvents[i]) continue;
+        const highlight = i >= highlightChangeIndices[0] && i <= highlightChangeIndices[1];
+        this.applyDomChanges(this.paintEvents[i], highlight);
+      }
+
+      this.loadedIndex = index;
+      this.activeGroupId = 0;
+      this.latestGroupId = 0;
+      this.hiddenNodeGroups.frameNodeIdsByGroupId.clear();
+      this.hiddenNodeGroups.isExpandedByGroupId.clear();
+      this.hiddenNodeGroups.collapsedGroupIdByFrameNodeId.clear();
+      this.hiddenNodeGroups.createdGroupIdByFrameNodeId.clear();
+      this.findTreeChanges(this.mainFrame.document);
     },
-    resetGenerator() {
-      sendToContentScript(null, { event: MessageEventType.ResetSelectorGenerator });
+    findTreeChanges(nodeState: DomNodeState): void {
+      const groups = this.hiddenNodeGroups;
+
+      if (nodeState.hasChanges) {
+        this.activeGroupId = null;
+      } else if (
+        !nodeState.isDoctype &&
+        !nodeState.isDocument &&
+        nodeState.tagName !== 'html' &&
+        !(nodeState.isTextNode && !nodeState.hasText)
+      ) {
+        if (this.activeGroupId) {
+          groups.collapsedGroupIdByFrameNodeId.set(nodeState.frameNodeId, this.activeGroupId);
+          groups.frameNodeIdsByGroupId.get(this.activeGroupId).push(nodeState.frameNodeId);
+        } else {
+          const nextId = (this.latestGroupId += 1);
+          this.activeGroupId = nextId;
+          groups.isExpandedByGroupId.set(nextId, false);
+          groups.createdGroupIdByFrameNodeId.set(nodeState.frameNodeId, nextId);
+          groups.collapsedGroupIdByFrameNodeId.set(nodeState.frameNodeId, nextId);
+          groups.frameNodeIdsByGroupId.set(this.activeGroupId, [nodeState.frameNodeId]);
+        }
+      }
+
+      for (const child of nodeState.children) {
+        this.findTreeChanges(child);
+      }
+      if (nodeState.contentDocument) {
+        for (const child of nodeState.contentDocument.children) {
+          this.findTreeChanges(child);
+        }
+      }
     },
-    openElement(backendNodeId: string) {
-      sendToContentScript(null, { event: MessageEventType.OpenElementOptionsOverlay, backendNodeId });
-    }
-  }
+    applyDomChanges(changeEvents: IFrontendDomChangeEvent[], highlight: boolean): void {
+      for (const change of changeEvents) {
+        if (change.action === DomActionType.location) continue;
+
+        if (change.action === DomActionType.newDocument) {
+          this.domNodesByFrameId[change.frameId] = { nodesById: {} };
+          continue;
+        }
+
+        try {
+          this.domNodesByFrameId[change.frameId] ??= {
+            nodesById: {},
+          };
+          const frameContext = this.domNodesByFrameId[change.frameId] as IDomFrameNodes;
+
+          frameContext.nodesById[change.nodeId] ??= new DomNodeState(
+            change.frameId,
+            frameContext.nodesById,
+            change.nodeId,
+          );
+
+          const domNode = frameContext.nodesById[change.nodeId];
+          domNode.apply(change, highlight);
+
+          if (domNode.isDocument) {
+            frameContext.document = domNode;
+            const frame = this.framesById.get(change.frameId);
+            if (frame.parentId) {
+              const parentFrameContext = this.domNodesByFrameId[frame.parentId];
+              const containerFrameElement = parentFrameContext?.nodesById[frame.domNodeId];
+              if (!containerFrameElement) {
+                console.warn('Could not find dom node for frame', frame, change);
+              } else {
+                containerFrameElement.contentDocument = domNode;
+              }
+            }
+          }
+        } catch (error) {
+          console.error('ERROR apply dom change', { change, error });
+        }
+      }
+    },
+    onDomFocus(event: IChromeAliveEvents['Dom.focus']): void {
+      this.focusedPaintIndex = event.paintIndex;
+      this.setPaintIndex(
+        event.paintIndex,
+        event.highlightPaintIndexRange,
+        event.documentLoadPaintIndex,
+      );
+    },
+    onDomUpdated(event: IChromeAliveEvents['Dom.updated']): void {
+      this.setPaintEvents(event.paintEvents, event.framesById);
+    },
+    onDomResponse(response: IChromeAliveApis['Session.getDom']['result']): void {
+      this.setPaintEvents(
+        response.paintEvents.map(x => x.changeEvents),
+        response.framesById,
+      );
+      Client.on('Dom.updated', this.onDomUpdated);
+      Client.on('Dom.focus', this.onDomFocus);
+    },
+  },
+
+  mounted() {
+    Client.connect().catch(err => alert(err.stack));
+    Client.send('Session.getDom')
+      .then(this.onDomResponse)
+      .catch(err => alert(err.stack));
+  },
+
+  beforeUnmount() {
+    Client.off('Dom.updated', this.onDomUpdated);
+    Client.off('Dom.focus', this.onDomFocus);
+  },
 });
 </script>
 
-<style lang="scss" scoped>
-  .header {
-    @apply font-bold border-b h-10 flex flex-row items-center relative;
-  }
-  .header {
-    position: relative;
-    & > .arrow {
-      position: absolute;
-      top: 2px;
-      right: -1rem;
-      border-top: 2px solid rgba(209, 213, 219, 1);
-      border-right: 2px solid rgba(209, 213, 219, 1);
-      transform: rotate(45deg);
-      @apply h-8 w-8;
-      /*&:after {*/
-      /*  content: '';*/
-      /*}*/
-    }
-  }
+<style lang="scss">
+@import '../../assets/style/common-mixins';
+@import '../../assets/style/resets';
 
-  ul.steps {
-    & > li {
-      padding-left: 10px;
-      margin-left: 5px;
-      position: relative;
-      padding-bottom: 10px;
-      &:before {
-        content: '';
-        background: rgba(0,0,0,0.3);
-        position: absolute;
-        height: 100%;
-        width: 1px;
-        left: 0;
-        top: 8px;
-      }
-      &:after {
-        content: '';
-        position: absolute;
-        top: 8px;
-        left: -5px;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: green;
-        border: 1px solid white;
-      }
-    }
-  }
+:root {
+  --toolbarBackgroundColor: #f5faff;
+  --buttonActiveBackgroundColor: rgba(176, 173, 173, 0.4);
+  --buttonHoverBackgroundColor: rgba(255, 255, 255, 0.08);
+}
 
-  button {
-    @apply px-5;
-    &.arrowed-button {
-      left: -3px;
-      border-right: none;
-      background: #D8D8D8;
-      border-color: #979797;
-      position:relative;
-      .arrow {
-        width: 30px;
-        height: 100%;
-        position: absolute;
-        right: -30px;
-        top: 0;
-        overflow: hidden;
-        &:after {
-          content: "";
-          position: absolute;
-          top: 2px;
-          left: -11px;
-          transform: rotate(45deg);
-          background: #D8D8D8;
-          border: 1px solid #979797;
-          width: 19px;
-          height: 91%;
-        }
-      }
-    }
-  }
+body {
+  height: 100vh;
+  margin: 0;
+  border-top: 0 none;
+  width: 100%;
+}
+
+.wrapper {
+  box-sizing: border-box;
+  background: white;
+  margin: 0;
+}
 </style>

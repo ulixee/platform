@@ -71,9 +71,9 @@
       toggleFinder(event: MouseEvent) {
         const rect = (event.target as HTMLElement).getBoundingClientRect();
         if (this.isShowingFinder) {
-          WindowsController.hideFinder();
+          WindowsController.hideMenuFinder();
         } else {
-          WindowsController.showFinder(rect);
+          WindowsController.showMenuFinder(rect);
           this.isShowingFinder = true;
         }
       },
@@ -99,11 +99,11 @@
     },
 
     mounted() {
-      WindowsController.on(EmitterName.hideFinder, this.finishHideFinder.bind(this));
+      WindowsController.on(EmitterName.hideMenuFinder, this.finishHideFinder.bind(this));
     },
 
     beforeUnmount() {
-      WindowsController.off(EmitterName.hideFinder, this.finishHideFinder.bind(this));
+      WindowsController.off(EmitterName.hideMenuFinder, this.finishHideFinder.bind(this));
     }
   });
 </script>

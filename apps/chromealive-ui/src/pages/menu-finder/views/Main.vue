@@ -1,6 +1,6 @@
 <template>
   <div class="Finder absolute">
-    <div v-if="isSelectMode" class="waiting-for-selection">waiting for element...</div>
+    <div v-if="isSelectMode" class="waiting-for-selection">WAITING FOR ELEMENT</div>
     <div v-else class="overlay-box">
       <div class="form p-3">
         <div class="flex flex-row">
@@ -104,8 +104,12 @@
   .waiting-for-selection {
     width: 100%;
     border: 1px solid rgba(0,0,0,0.25);
+    background: white;
+    padding: 6px 10px;
+    text-align: center;
     border-radius: 4px;
-    box-shadow: 1px 1px 10px 1px rgba(0,0,0,0.3);
+    color: rgba(0,0,0,0.7);
+    box-shadow: 1px 1px 5px 1px rgba(0,0,0,0.2);
   }
 
   .icon {

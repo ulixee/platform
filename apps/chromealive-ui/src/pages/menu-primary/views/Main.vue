@@ -1,11 +1,20 @@
 <template>
-  <div class="Menu bg-white">
-    <ul class="whitespace-nowrap">
-      <li class="item">Jump Forward to Live Mode</li>
-      <li class="item">Replay</li>
-      <li class="item">Rerun in Live Mode</li>
-      <li class="separator bg-gray-200"></li>
-      <li class="item">About ChromeAlive!</li>
+  <div class="Menu">
+    <ul >
+      <li class="info">
+        Chrome is bound to <strong>{{session?.scriptEntrypoint || 'unknown script'}}</strong>, a <strong>Hero</strong>
+        script wrapped as a <strong>Databox</strong>.</li>
+      <li class="separator"></li>
+      <li class="item">Continue Script Execution</li>
+      <li class="item">Replay from Beginning of Script</li>
+      <li class="separator"></li>
+      <li class="item-wrapper flex flex-row">
+        <div class="flex-1">Open In Finder</div>
+        <div class="item">Executed JS</div>
+        <div class="item">Source TS</div>
+      </li>
+      <li class="separator"></li>
+      <li class="item">About Ulixee</li>
     </ul>
   </div>
 </template>
@@ -52,11 +61,19 @@ export default defineComponent({
     border: 1px solid rgba(0,0,0,0.25);
     border-radius: 7px;
     box-shadow: 1px 1px 10px 1px rgba(0,0,0,0.3);
+    background: white;
+    padding: 0 1px;
     ul {
       text-align: left;
       padding: 5px 1px 3px;
       li {
+        &.info {
+          padding: 6px 14px 6px 20px;
+          font-style: italic;
+          opacity: 0.6;
+        }
         &.item {
+          white-space: nowrap;
           padding: 6px 14px 6px 20px;
           border-radius: 5px;
           &:hover {
@@ -66,6 +83,20 @@ export default defineComponent({
         &.separator {
           margin: 3px 0;
           height: 1px;
+          @apply bg-gray-200;
+        }
+        &.item-wrapper {
+          white-space: nowrap;
+          div {
+            padding: 6px 14px 6px 20px;
+          }
+          .item {
+            padding: 6px 16px;
+            @apply border-l border-gray-200;
+            &:hover {
+              background: #FAF4FF;
+            }
+          }
         }
       }
     }
