@@ -41,6 +41,11 @@ export default interface ISessionApi {
   ): Promise<{
     timelineOffsetPercent: number;
   }>;
+  openPanel(
+    args: IHeroSessionArgs & {
+      panel: 'Output' | 'Input' | 'Tested';
+    },
+  ): void;
   step(args: IHeroSessionArgs): void;
   resume(args: ISessionResumeArgs): Promise<{
     success: boolean;

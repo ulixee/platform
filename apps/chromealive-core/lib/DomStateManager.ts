@@ -20,7 +20,7 @@ import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
 import DomStateSessionTimeline from './DomStateSessionTimeline';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import TimelineRecorder from '@ulixee/hero-timetravel/lib/TimelineRecorder';
-import AboutPage from './AboutPage';
+import VuePage from './VuePage';
 import SourceLoader from '@ulixee/commons/lib/SourceLoader';
 
 const { log } = Log(module);
@@ -53,7 +53,7 @@ export default class DomStateManager extends TypedEventEmitter<{
 
   private activeDomStateId: string;
   private activeTimelineHeroSessionId: string;
-  private readonly aboutPage: AboutPage;
+  private readonly aboutPage: VuePage;
   private tabGroupId: number;
   private readonly spawnedWorldHeroSessionIds = new Set<string>();
   private readonly openHeroSessionsById = new Map<string, HeroSession>();
@@ -79,7 +79,7 @@ export default class DomStateManager extends TypedEventEmitter<{
     this.logger = log.createChild(module, {
       sessionId: sourceHeroSession.id,
     });
-    this.aboutPage = new AboutPage(sessionObserver.heroSession);
+    this.aboutPage = new VuePage(sessionObserver.heroSession, 'http://ulixee.about');
     this.trackHeroSession(sourceHeroSession, sessionObserver.timelineRecorder);
   }
 
@@ -222,13 +222,13 @@ export default class DomStateManager extends TypedEventEmitter<{
 
   public async unfocusSession(): Promise<void> {
     this.activeTimelineHeroSessionId = null;
-    await this.aboutPage.open('circuits');
+    await this.openAboutPage();
     await this.closeTimetravel();
     this.publish();
   }
 
   public async openTimetravel(heroSessionId: string): Promise<void> {
-    await this.aboutPage.open('circuits');
+    await this.openAboutPage();
 
     if (this.activeTimelineHeroSessionId === heroSessionId) {
       await this.gotoActiveSessionEnd();
@@ -285,10 +285,14 @@ export default class DomStateManager extends TypedEventEmitter<{
     await this.timetravelTo(sessionDetails.loadingRange[1]);
   }
 
+  private async openAboutPage(): Promise<void> {
+    await this.aboutPage.open('/about-screen.html', '/circuits');
+  }
+
   private async onTimetravelTabsClosed(): Promise<void> {
     await this.closeTimetravel();
     if (!this.isClosing) {
-      await this.aboutPage.open('circuits');
+      await this.openAboutPage();
     }
 
     this.publish();

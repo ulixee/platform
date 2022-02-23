@@ -11,6 +11,7 @@ export type IApiHandlerSpec = {
   'Session.step': ISessionApi['step'];
   'Session.getScreenshot': ISessionApi['getScreenshot'];
   'Session.getScriptState': ISessionApi['getScriptState'];
+  'Session.openPanel': ISessionApi['openPanel'],
   'Session.getDom':ISessionApi['getDom'];
   'App.boundsChanged': IAppApi['boundsChanged'];
   'App.ready': IAppApi['ready'];

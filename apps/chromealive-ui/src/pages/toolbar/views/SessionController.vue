@@ -93,6 +93,12 @@ export default Vue.defineComponent({
     select(item: string) {
       this.selectedItem = item;
       this.activeItem = item;
+      if (item === 'Output' || item === 'Input' || item === 'Tested') {
+        Client.send('Session.openPanel', {
+          heroSessionId: this.session.heroSessionId,
+          panel: item,
+        });
+      }
     },
 
     toggleAddress() {
@@ -120,7 +126,7 @@ export default Vue.defineComponent({
         timelineTicks.push({
           id: url.navigationId,
           offsetPercent: url.offsetPercent,
-          class: url.offsetPercent === 100 ? 'url': 'urlrequest',
+          class: url.offsetPercent === 100 ? 'url' : 'urlrequest',
         });
         for (const status of url.loadStatusOffsets) {
           timelineTicks.push({
@@ -146,9 +152,9 @@ export default Vue.defineComponent({
 
       this.onAppModeEvent({ mode: message.mode });
 
-    //   if (isNewId || !this.isTimetravelMode) {
-    //     this.timelineOffset = 100;
-    //   }
+      //   if (isNewId || !this.isTimetravelMode) {
+      //     this.timelineOffset = 100;
+      //   }
     },
 
     onDataboxUpdated(message: IDataboxUpdatedEvent) {
@@ -196,7 +202,7 @@ function createDefaultSession(): IHeroSessionActiveEvent {
 
 <style lang="scss" scoped>
 :root {
-  --toolbarBackgroundColor: #FAF4FF;
+  --toolbarBackgroundColor: #faf4ff;
 }
 
 .bar-wrapper {

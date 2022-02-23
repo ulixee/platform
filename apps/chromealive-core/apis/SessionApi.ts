@@ -50,6 +50,13 @@ export default class SessionApi {
     }
   }
 
+  static openPanel(args: Parameters<ISessionApi['openPanel']>[0]): void {
+    const sessionObserver = getObserver(args);
+    sessionObserver
+      .openPanel(args.panel)
+      .catch(err => console.error('ERROR opening panel %s', args.panel, err));
+  }
+
   static step(args: IHeroSessionArgs): void {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const observer = getObserver(args);

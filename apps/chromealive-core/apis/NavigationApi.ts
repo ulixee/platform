@@ -3,13 +3,13 @@ import {
 } from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
 import SessionObserver from '../lib/SessionObserver';
 import ChromeAliveCore from '../index';
-import AboutPage from '../lib/AboutPage';
+import VuePage from '../lib/VuePage';
 
 export default class NavigationApi {
   static async openAbout(): Promise<void> {
     const sessionObserver = getObserver();
-    const aboutPage = new AboutPage(sessionObserver.heroSession);
-    await aboutPage.open('circuits');
+    const aboutPage = new VuePage(sessionObserver.heroSession, 'http://ulixee.about');
+    await aboutPage.open('/screen-about.html', '/circuits');
   }
 }
 

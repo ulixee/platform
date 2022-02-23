@@ -21,6 +21,7 @@ import OutputRebuilder, { IOutputSnapshot } from './OutputRebuilder';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import SourceCodeTimeline from './SourceCodeTimeline';
 import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
+import VuePage from './VuePage';
 
 const { log } = Log(module);
 
@@ -41,6 +42,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   public readonly sourceCodeTimeline: SourceCodeTimeline;
 
   private sessionHasChangesRequiringRestart = false;
+  private extraTab: VuePage;
 
   private scriptLastModifiedTime: number;
   private outputRebuilder = new OutputRebuilder();
@@ -74,6 +76,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint).mtimeMs;
 
     this.sourceCodeTimeline = new SourceCodeTimeline(heroSession);
+    this.extraTab = new VuePage(heroSession, 'http://ulixee.app');
 
     this.watchHandle = Fs.watch(
       this.scriptInstanceMeta.entrypoint,
@@ -131,6 +134,15 @@ export default class SessionObserver extends TypedEventEmitter<{
       this.logger.error('ERROR resuming session', { error });
       return error;
     }
+  }
+
+  public async openPanel(panel: Parameters<ISessionApi['openPanel']>[0]['panel']): Promise<void> {
+    const path = {
+      Input: '/screen-input.html',
+      Output: '/screen-output.html',
+      Tested: '/screen-tests.html',
+    }[panel];
+    await this.extraTab.open(path, `/${panel.toLowerCase()}`);
   }
 
   public close(): void {
@@ -275,11 +287,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   public onTabCreated(event: HeroSession['EventTypes']['tab-created']): void {
-    this.events.on(
-      event.tab,
-      'page-events',
-      this.sendDomRecordingUpdates.bind(this, event.tab),
-    );
+    this.events.on(event.tab, 'page-events', this.sendDomRecordingUpdates.bind(this, event.tab));
   }
 
   public sendDomRecordingUpdates(tab: Tab, events: Tab['EventTypes']['page-events']): void {
