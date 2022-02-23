@@ -4,6 +4,12 @@ import { groupTabs, ungroupTabs, collapseGroup } from './lib/background/TabManag
 import logDebug from './lib/logDebug';
 import './lib/background/BackgroundListeners';
 
+let coreServerAddress;
+fetch(chrome.runtime.getURL('data/coreServer.json'))
+  .then((response) => response.json())
+  .then(data => coreServerAddress = data.address)
+  .catch(error => console.log(error));
+
 const RuntimeActions = {
   groupTabs,
   ungroupTabs,
@@ -24,6 +30,9 @@ onMessagePayload((payload, sendResponseFn) => {
         return null;
       })
       .catch(error => console.error('chrome.runtime.onMessageResponse:ERROR', { payload, error }));
+    return true;
+  } else if (payload.action === 'getCoreServerAddress') {
+    sendResponseFn(coreServerAddress);
     return true;
   }
   console.log('UNHANDLED MESSAGE: ', payload);

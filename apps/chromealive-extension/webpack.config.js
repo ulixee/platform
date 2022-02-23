@@ -33,6 +33,7 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: path.resolve('manifest.json'), to: `${outputDir}/manifest.json` },
+        { from: path.resolve('data/coreServer.json'), to: `${outputDir}/data/coreServer.json` },
       ],
     }),
   ],
