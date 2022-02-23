@@ -3,6 +3,7 @@ import MouseApi from './MouseApi';
 import AppApi from './AppApi';
 import SessionApi from './SessionApi';
 import DomStateApi from './DomStateApi';
+import NavigationApi from './NavigationApi';
 
 const ApiHandlers: IApiHandlerSpec = {
   'App.boundsChanged': AppApi.boundsChanged,
@@ -24,6 +25,7 @@ const ApiHandlers: IApiHandlerSpec = {
   'Session.getScreenshot': SessionApi.getScreenshot,
   'Session.getScriptState': SessionApi.getScriptState,
   'Session.getDom': SessionApi.getDom,
+  'Navigation.openAbout': NavigationApi.openAbout,
 };
 
 export default ApiHandlers;

@@ -1,13 +1,11 @@
 module.exports = {
   outputDir: '../../build/apps/chromealive/ui',
   pages: {
-    timeline: './src/pages/timeline/index.ts',
     toolbar: './src/pages/toolbar/index.ts',
-    databox: './src/pages/databox/index.ts',
-    'domstate-panel': './src/pages/domstate-panel/index.ts',
-    'domstate-popup': './src/pages/domstate-popup/index.ts',
-    'hero-script': './src/pages/hero-script/index.ts',
-    state: './src/pages/state/index.ts',
-    about: './src/pages/about/index.ts',
+    'menu-finder': './src/pages/menu-finder/index.ts',
+    'menu-primary': './src/pages/menu-primary/index.ts',
+    'menu-timetravel': './src/pages/menu-timetravel/index.ts',
+    'screen-output': './src/pages/screen-output/index.ts',
+    'screen-about': './src/pages/screen-about/index.ts',
   },
 };

@@ -2,7 +2,7 @@
 const { ipcRenderer } = require('electron');
 
 // @ts-ignore
-window.addEventListener('mousemove', () => ipcRenderer.send('mousemove'), { capture: false });
+window.addEventListener('mousemove', () => ipcRenderer.send('App:mousemove'), { capture: false });
 
 // @ts-ignore
 document.addEventListener('chromealive:event', e => {
@@ -21,9 +21,25 @@ document.addEventListener('chromealive:api', e => {
 });
 
 // @ts-ignore
-document.addEventListener('app:height-changed', e => {
+document.addEventListener('App:changeHeight', e => {
   // eslint-disable-next-line no-console
-  console.log('app:height-changed', e);
+  console.log('App:changeHeight', e);
   const message = e.detail;
-  ipcRenderer.send('resize-height', message.height);
+  ipcRenderer.send('App:changeHeight', message.height);
+});
+
+// @ts-ignore
+document.addEventListener('App:showChildWindow', e => {
+  // eslint-disable-next-line no-console
+  console.log('App:showChildWindow', e);
+  const message = e.detail;
+  ipcRenderer.send('App:showChildWindow', message.frameName);
+});
+
+// @ts-ignore
+document.addEventListener('App:hideChildWindow', e => {
+  // eslint-disable-next-line no-console
+  console.log('App:hideChildWindow', e);
+  const message = e.detail;
+  ipcRenderer.send('App:hideChildWindow', message.frameName);
 });

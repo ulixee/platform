@@ -1,231 +1,88 @@
 <template>
-  <div id="wrapper" ref="toolbarRef">
-    <h1>Superhero</h1>
-
-    <ul>
-      <li :class="{ focused: mode === 'domstate' }">
-        <img class="icon" src="/icons/circuits.svg" />
-        <div class="label">Circuits</div>
-        <div class="count">{{ domStates.length }}</div>
-        <ChevronRightIcon class="arrow" />
-      </li>
-
-      <li>
-        <img class="icon" src="/icons/selectors.svg" />
-        <div class="label">Selectors</div>
-        <div class="count">5</div>
-        <ChevronRightIcon class="arrow" />
-      </li>
-
-      <li>
-        <img class="icon" src="/icons/worlds.svg" />
-        <div class="label">Worlds</div>
-        <div class="count">{{ worldSessionIds.size }}</div>
-        <ChevronRightIcon class="arrow" />
-      </li>
-
-      <li @click.prevent="toggleOutput()">
-        <img class="icon" src="/icons/output.svg" />
-        <div class="label">Output</div>
-        <div class="count">{{ outputSize }}</div>
-        <ChevronRightIcon class="arrow" />
-      </li>
-
-      <li :class="{ focused: mode === 'timetravel' }" @click.prevent="toggleTimetravel()">
-        <img class="icon" src="/icons/timetravel.svg" />
-        <div class="label">Timetravel</div>
-        <div class="count">{{ timetravelEvents > 0 ? timetravelEvents : '' }}</div>
-        <ChevronRightIcon class="arrow" />
-      </li>
-    </ul>
+  <div id="ChromeAliveToolbar" :class="{ loading: isLoading }">
+    <SessionController></SessionController>
   </div>
 </template>
 
 <script lang="ts">
 import * as Vue from 'vue';
-import { ChevronRightIcon } from '@heroicons/vue/solid';
-import { IBounds } from '@ulixee/apps-chromealive-interfaces/IBounds';
 import Client from '@/api/Client';
-import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
-import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
-import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
-import humanizeBytes from '@/utils/humanizeBytes';
-
-enum Panel {
-  domstate = 'domstate',
-  output = 'output',
-  timetravel = 'timetravel'
-}
-
-const PanelPaths = {
-  [Panel.output]: '/databox.html',
-  [Panel.domstate]: '/domstate-panel.html',
-  [Panel.timetravel]: '/hero-script.html',
-};
+import SessionController from '@/pages/toolbar/views/SessionController.vue';
 
 export default Vue.defineComponent({
-  name: 'Toolbar',
-  components: { ChevronRightIcon },
+  name: 'App',
+  components: {
+    SessionController
+  },
   setup() {
-    let toolbarRef = Vue.ref<HTMLDivElement>();
+
     return {
-      toolbarRef,
-      domStates: Vue.ref<IHeroSessionActiveEvent['domStates']>([]),
-      outputSize: Vue.ref<string>(''),
-      worldSessionIds: Vue.reactive(new Set<string>()),
-      timetravelEvents: Vue.ref<number>(0),
-      mode: Vue.ref<IAppModeEvent['mode']>('live'),
-      loadedPanelName: Vue.ref<Panel>(),
-      panelWindow: null as Window,
-      activeDomStateId: Vue.ref<string>(),
+      isLoading: Vue.ref(false),
     };
   },
-  methods: {
-    isPanelOpen(panel: Panel): boolean {
-      return !!this.panelWindow && this.loadedPanelName === panel;
-    },
-    openPanel(panel: Panel, defaultBounds: Partial<IBounds>): void {
-      const toolbarBounds = this.toolbarRef.getBoundingClientRect();
-      let bounds = [defaultBounds.width, defaultBounds.height];
-      if (localStorage.getItem(`${panel}.lastSize`)) {
-        bounds = (localStorage.getItem(`${panel}.lastSize`) ?? '').split(',').map(Number);
-      }
 
-      const [width, height] = bounds;
-      const top = defaultBounds.top ?? toolbarBounds.top - 50;
-      const left = defaultBounds.left ?? toolbarBounds.right + 40;
-
-      const features = [
-        `top=${toolbarBounds}`,
-        `left=${left}`,
-        `width=${width}`,
-        `height=${height}`,
-      ].join(',');
-
-      const path = PanelPaths[panel];
-      if (!this.panelWindow) {
-        this.panelWindow = window.open(path, 'ToolbarPanel', features);
-
-        this.panelWindow.addEventListener('resize', this.onPanelResized);
-        this.panelWindow.addEventListener('close', this.onPanelClosed);
-        this.panelWindow.addEventListener('manual-close', this.onPanelClosed);
-      } else {
-        this.panelWindow.location.href = path;
-        this.panelWindow.moveTo(left, top);
-        this.panelWindow.resizeTo(width, height);
-      }
-      this.loadedPanelName = panel;
-    },
-    onPanelClosed(): void {
-      this.loadedPanelName = null;
-      this.panelWindow = null;
-    },
-    onPanelResized(): void {
-      const width = this.panelWindow.innerWidth;
-      const height = this.panelWindow.innerHeight;
-      localStorage.setItem(`${this.loadedPanelName}.lastSize`, [width, height].join(','));
-    },
-    toggleOutput(): void {
-      if (this.isPanelOpen(Panel.output)) {
-        this.panelWindow.close();
-      } else {
-        this.openPanel(Panel.output, { width: 300, height: 400 });
-      }
-    },
-    toggleTimetravel(): void {
-      if (this.isPanelOpen(Panel.timetravel)) {
-        this.panelWindow.close();
-      } else {
-        this.openPanel(Panel.timetravel, { width: 1040, height: 500, left: 0, top: 600 });
-      }
-    },
-    closeDomState() {
-      if (this.isPanelOpen(Panel.domstate)) {
-        this.panelWindow.close();
-      }
-    },
-    openDomState() {
-      this.openPanel(Panel.domstate, { width: 500, height: 400 });
-    },
-    onSessionActiveEvent(message: IHeroSessionActiveEvent) {
-      if (!message) {
-        this.timetravelEvents = 0;
-        this.domStates.length = 0;
-        this.worldSessionIds.clear();
-        this.outputSize = '';
-        return;
-      }
-      this.timetravelEvents = message.timeline.urls.length + message.timeline.paintEvents.length;
-      this.domStates.length = message.domStates.length;
-      Object.assign(this.domStates, message.domStates);
-      for (const worldHeroSessionId of message.worldHeroSessionIds) {
-        this.worldSessionIds.add(worldHeroSessionId);
-      }
-    },
-    onDataboxUpdated(message: IDataboxUpdatedEvent) {
-      this.outputSize = humanizeBytes(message?.bytes);
-    },
-    onAppModeEvent(message: IAppModeEvent): void {
-      const startingMode = this.mode;
-      this.mode = message.mode;
-
-      if (this.mode === 'live') {
-        if (startingMode === 'domstate') {
-          this.closeDomState();
-        }
-      } else if (this.mode === 'domstate') {
-        this.openDomState();
-      }
-    },
-  },
   async created() {
     await Client.connect();
   },
 
   mounted() {
-    Client.on('Session.active', this.onSessionActiveEvent);
-    Client.on('Databox.updated', this.onDataboxUpdated);
-    Client.on('App.mode', this.onAppModeEvent);
+    Client.on('Session.loading', () => {
+      this.isLoading = true;
+    });
+    Client.on('Session.loaded', () => {
+      this.isLoading = false
+    });
   },
 });
 </script>
 
 <style lang="scss">
-#wrapper {
-  background: #faf4ff;
-  border: 1px solid rgba(0, 0, 0, 0.3);
-  box-shadow: 1px 1px 5px 3px rgba(0, 0, 0, 0.1);
-  border-radius: 0 5px 5px 0;
+html {
+  padding: 0;
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
+  font-size: 13px;
+  overflow: hidden;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
-#app {
-  display: flex;
+
+body {
+  padding: 0;
+  margin: 0;
 }
-h1 {
-  @apply font-bold py-3 px-2 select-none;
+
+* {
+  user-select: none;
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+#ChromeAliveToolbar {
+  overflow-y: visible;
   -webkit-app-region: drag;
+  vertical-align: top;
+  color: rgba(0, 0, 0, 0.8);
+  box-sizing: border-box;
+  height: 36px;
+  background: white;
+
+  &.loading > * {
+    opacity: 0.5;
+    border: 1px solid #3c3c3c;
+  }
 }
-li {
-  @apply flex flex-row border-t py-3 pl-3 pr-2 text-sm cursor-pointer;
-  text-shadow: 1px 1px 0 white;
-  &.focused {
-    @apply bg-purple-200;
-  }
-  &:hover {
-    @apply bg-purple-100;
-  }
-  .icon {
-    @apply w-5 mr-2;
-  }
-  .label {
-    @apply flex-1;
-    max-width: 150px;
-  }
-  .count {
-    @apply ml-4;
-    opacity: 0.4;
-  }
-  .arrow {
-    @apply w-4 ml-2;
-  }
+
+.icon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  will-change: background-image;
+  transition: 0.15s background-image;
+  backface-visibility: hidden;
+  background-size: contain;
+  background-repeat: no-repeat;
 }
 </style>

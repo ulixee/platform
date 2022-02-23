@@ -49,6 +49,8 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
             const { event, backendNodeId } = payload;
             if (event === '${MessageEventType.OpenSelectorGeneratorPanel}') {
               (${openSelectorGeneratorPanel.toString()})(DevToolsAPI, '${extensionId}');
+            } else if (event === '${MessageEventType.EnterInspectElementMode}') {
+              (${enterInspectElementMode.toString()})(InspectorFrontendAPI);
             } else if (payload.event === '${MessageEventType.CloseDevtoolsPanel}'){
               InspectorFrontendHost.closeWindow();
             } else if (event === '${MessageEventType.AddIncludedElement}') {
@@ -64,20 +66,20 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
             }
           };
           (${interceptElementWasSelected.toString()})('${___sendToCore}', '${
-          MessageEventType.OpenElementOptionsOverlay
-        }');
+            MessageEventType.OpenElementOptionsOverlay
+          }');
           (${interceptInspectElementMode.toString()})('${___sendToCore}', '${
-          MessageEventType.InspectElementModeChanged
-        }');
+            MessageEventType.InspectElementModeChanged
+          }');
           (${interceptElementPanelOnHighlight.toString()})('${___sendToCore}', '${
-          MessageEventType.HideElementOptionsOverlay
-        }');
+            MessageEventType.HideElementOptionsOverlay
+          }');
           (${interceptElementPanelOnRemoveHighlight.toString()})('${___sendToCore}', '${
-          MessageEventType.RemoveHideFromElementOptionsOverlay
-        }');
+            MessageEventType.RemoveHideFromElementOptionsOverlay
+          }');
           (${injectContextMenu.toString()})('${___sendToCore}', '${
-          MessageEventType.UpdateElementOptions
-        }');
+            MessageEventType.UpdateElementOptions
+          }');
         })();`,
       }),
       this.getDevtoolsTabId.bind(this, devtoolsSession),
@@ -206,7 +208,11 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
 // eslint-disable-next-line @typescript-eslint/no-shadow
 function openSelectorGeneratorPanel(DevToolsAPI: any, extensionId: string) {
   // We can get list from UI.panels
-  DevToolsAPI.showPanel(`chrome-extension://${extensionId}SelectorGenerator`);
+  DevToolsAPI.showPanel(`chrome-extension://${extensionId}HeroScript`);
+}
+
+function enterInspectElementMode(InspectorFrontendAPI: any) {
+  InspectorFrontendAPI.enterInspectElementMode()
 }
 
 const interceptInspectElementMode = `

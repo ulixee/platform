@@ -1,7 +1,7 @@
 const pages = {}
 
 const outputDir = '../../build/apps/chromealive/extension';
-const chromeName = ['selector-generator']
+const chromeName = ['hero-script', 'state-generator']
 
 chromeName.forEach(name => {
   pages[name] = {

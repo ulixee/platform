@@ -38,6 +38,7 @@ export enum MessageEventType {
   FinishedSelectorGeneration = 'FinishedSelectorGeneration',
   UpdateElementOptions = 'UpdateElementOptions',
   CloseDevtoolsPanel = 'CloseDevtoolsPanel',
+  EnterInspectElementMode = 'EnterInspectElementMode',
 }
 
 export type IMessageEventType = keyof typeof MessageEventType;

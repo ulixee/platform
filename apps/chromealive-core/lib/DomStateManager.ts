@@ -228,6 +228,8 @@ export default class DomStateManager extends TypedEventEmitter<{
   }
 
   public async openTimetravel(heroSessionId: string): Promise<void> {
+    await this.aboutPage.open('circuits');
+
     if (this.activeTimelineHeroSessionId === heroSessionId) {
       await this.gotoActiveSessionEnd();
       return;
