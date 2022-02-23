@@ -14,6 +14,7 @@ import FocusedWindowModule from './lib/hero-plugin-modules/FocusedWindowModule';
 import AliveBarPositioner from './lib/AliveBarPositioner';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
+import { URL } from 'url';
 
 const { log } = Log(module);
 
@@ -104,7 +105,7 @@ export default class ChromeAliveCore {
     }
   }
 
-  private static onHeroSessionCreated(event: { session: HeroSession }): Promise<any> {
+  private static async onHeroSessionCreated(event: { session: HeroSession }): Promise<any> {
     const { session: heroSession } = event;
 
     const script = heroSession.options.scriptInstanceMeta?.entrypoint;
@@ -140,6 +141,8 @@ export default class ChromeAliveCore {
     // keep alive session
     heroSession.options.sessionKeepAlive = true;
     const sessionObserver = new SessionObserver(heroSession);
+    const coreServerAddress = await this.coreServerAddress;
+    heroSession.mitmRequestSession.bypassResourceRegistrationForHost = new URL(coreServerAddress);
 
     this.sessionObserversById.set(sessionId, sessionObserver);
     const sourceCode = sessionObserver.sourceCodeTimeline;
