@@ -106,8 +106,6 @@ export default class HeroCorePlugin extends CorePlugin {
       `--disable-extensions-except=${extensionPath}`,
       `--load-extension=${extensionPath}`,
     );
-    const noStartupIndex = launchArguments.indexOf('--no-startup-window');
-    if (noStartupIndex >= 0) launchArguments.splice(noStartupIndex, 1);
   }
 
   configure(options: IBrowserEmulatorConfig): Promise<any> | void {

@@ -19,6 +19,7 @@ const ApiHandlers: IApiHandlerSpec = {
   'DomState.openSession': DomStateApi.openSession,
   'DomState.exit': DomStateApi.exit,
   'Session.quit': SessionApi.quit,
+  'Session.openPanel': SessionApi.openPanel,
   'Session.timetravel': SessionApi.timetravel,
   'Session.resume': SessionApi.resume,
   'Session.step': SessionApi.step,

@@ -25,10 +25,10 @@ export default class ChromeAliveCore {
 
   public static restartingHeroSessionId: string;
   public static activeHeroSessionId: string;
+  public static coreServerAddress?: Promise<string>;
   private static connections: ConnectionToClient[] = [];
   private static shouldAutoShowBrowser = false;
   private static app: ChildProcess;
-  private static coreServerAddress?: Promise<string>;
   private static events = new EventSubscriber();
 
   public static setCoreServerAddress(address: Promise<string>) {

@@ -7,21 +7,24 @@ import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { httpGet } from '@ulixee/commons/lib/downloadFile';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 
-export default class AboutPage extends TypedEventEmitter<{ close: void }> {
+export default class VuePage extends TypedEventEmitter<{ close: void }> {
   private page: Promise<IPuppetPage>;
 
-  private aboutPages = {
-    circuits: 'about-screen.html',
-  };
+  private visiblePath: string;
+  private vuePath: string;
+  private events = new EventSubscriber();
 
-  constructor(readonly heroSession: HeroSession) {
+  constructor(readonly heroSession: HeroSession, readonly pageUrl: string) {
     super();
   }
 
-  public async open(aboutPage: keyof AboutPage['aboutPages']) {
+  public async open(vuePath: string, visiblePath = '/') {
+    this.vuePath = slashPrefix(vuePath);
+    this.visiblePath = slashPrefix(visiblePath);
     const page = await this.openPuppetPage();
-    await page.navigate(`http://ulixee.about/${aboutPage}`);
+    await page.navigate(`${this.pageUrl}${visiblePath}`);
   }
 
   public async close(): Promise<void> {
@@ -44,13 +47,13 @@ export default class AboutPage extends TypedEventEmitter<{ close: void }> {
       if (plugin.onNewPuppetPage) await plugin.onNewPuppetPage(page, this.sessionSummary());
     }
 
-    // prevent dns lookup
+    const coreServerAddress = (await ChromeAliveCore.coreServerAddress).replace('http:', 'ws:');
+    this.heroSession.mitmRequestSession.bypassResourceRegistrationForUrl = coreServerAddress;
+      // prevent dns lookup
     this.heroSession.mitmRequestSession.interceptorHandlers.push({
-      urls: ['http://ulixee.about/*'],
+      urls: [`${this.pageUrl}/*`],
     });
-    await page.setNetworkRequestInterceptor(
-      this.routeNetworkToVueApp.bind(this, 'http://ulixee.about'),
-    );
+    await page.setNetworkRequestInterceptor(this.routeNetworkToVueApp.bind(this, this.pageUrl));
     return page;
   }
 
@@ -65,15 +68,16 @@ export default class AboutPage extends TypedEventEmitter<{ close: void }> {
     domain: string,
     request: Protocol.Fetch.RequestPausedEvent,
   ): Promise<Protocol.Fetch.FulfillRequestRequest | Protocol.Fetch.ContinueRequestRequest> {
+    console.log('route netowrk url', request.request.url);
     if (!request.request.url.startsWith(domain)) return;
 
     const url = new URL(request.request.url);
     url.host = ChromeAliveCore.vueServer.replace('http://', '');
-    url.protocol = 'http';
-    const mapping = this.aboutPages[url.pathname.slice(1)];
-    if (mapping) {
-      url.pathname = `/${mapping}`;
+    if (url.protocol === 'https') url.protocol = 'http';
+    if (url.pathname === this.visiblePath) {
+      url.pathname = this.vuePath;
     }
+
     const res = await new Promise<http.IncomingMessage>(resolve => httpGet(url.href, resolve));
     const bodyChunks: Buffer[] = [];
     for await (const chunk of res) bodyChunks.push(chunk);
@@ -88,4 +92,9 @@ export default class AboutPage extends TypedEventEmitter<{ close: void }> {
       body: Buffer.concat(bodyChunks).toString('base64'),
     } as Protocol.Fetch.FulfillRequestRequest;
   }
+}
+
+function slashPrefix(path: string): string {
+  if (path.startsWith('/')) return path;
+  return `/${path}`;
 }
