@@ -1,3 +1,4 @@
+import * as Fs from 'fs';
 import HeroCore, { GlobalPool as HeroGlobalPool, Session as HeroSession } from '@ulixee/hero-core';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
 import Log from '@ulixee/commons/lib/Logger';
@@ -6,7 +7,7 @@ import launchChromeAlive from '@ulixee/apps-chromealive/index';
 import type Puppet from '@ulixee/hero-puppet';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
-import HeroCorePlugin from './lib/HeroCorePlugin';
+import HeroCorePlugin, { extensionPath } from './lib/HeroCorePlugin';
 import SessionObserver from './lib/SessionObserver';
 import ConnectionToClient from './lib/ConnectionToClient';
 import FocusedWindowModule from './lib/hero-plugin-modules/FocusedWindowModule';
@@ -276,7 +277,10 @@ export default class ChromeAliveCore {
 
     const args: string[] = hideOnLaunch ? ['--hide'] : [];
     if (this.coreServerAddress) {
-      args.push(`--coreServerAddress=${await this.coreServerAddress}`);
+      const coreServerAddress = await this.coreServerAddress;
+      const filePath = `${extensionPath}/data/coreServer.json`;
+      Fs.writeFileSync(filePath, JSON.stringify({ address: coreServerAddress }));
+      args.push(`--coreServerAddress=${coreServerAddress}`);
     }
 
     this.app = launchChromeAlive(...args);

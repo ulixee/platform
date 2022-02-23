@@ -257,8 +257,6 @@ export default DomNode;
 </script>
 
 <style lang="scss">
-@import '../../assets/style/resets';
-
 .added > .observable,
 .added.observable {
   color: #059d05 !important;

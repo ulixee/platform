@@ -23,6 +23,7 @@ import Client from '../../api/Client';
 import ICommandUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/ICommandUpdatedEvent';
 import ICommandFocusedEvent from '@ulixee/apps-chromealive-interfaces/events/ICommandFocusedEvent';
 import ISourceCodeUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/ISourceCodeUpdatedEvent';
+import { sendToBackgroundScript } from '../../lib/devtools/DevtoolsMessenger';
 
 export default Vue.defineComponent({
   name: 'HeroScriptPanel',
@@ -127,14 +128,16 @@ export default Vue.defineComponent({
   },
 
   mounted() {
-    Client.connect().catch(err => alert(String(err)));
-    Client.send('Session.getScriptState')
-      .then(this.onScriptStateResponse)
-      .catch(err => alert(String(err)));
+    sendToBackgroundScript({ action: 'getCoreServerAddress' }, (serverAddress) => {
+      window.setHeroServerUrl(serverAddress);
+      Client.send('Session.getScriptState')
+        .then(this.onScriptStateResponse)
+        .catch(err => alert(String(err)));
 
-    Client.on('SourceCode.updated', this.onSourceCodeUpdated);
-    Client.on('Command.updated', this.onCommandUpdated);
-    Client.on('Command.focused', this.onCommandFocused);
+      Client.on('SourceCode.updated', this.onSourceCodeUpdated);
+      Client.on('Command.updated', this.onCommandUpdated);
+      Client.on('Command.focused', this.onCommandFocused);
+    });
   },
 
   beforeUnmount() {

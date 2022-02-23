@@ -17,6 +17,7 @@ import DomNodeState from './DomNodeState';
 import DomNode from './DomNode.vue';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
 import { IChromeAliveApis } from '@ulixee/apps-chromealive-interfaces/apis';
+import { sendToBackgroundScript } from '../../lib/devtools/DevtoolsMessenger';
 
 export interface IDomFrameNodes {
   nodesById: Record<number, DomNodeState>;
@@ -87,6 +88,7 @@ export default Vue.defineComponent({
         this.setPaintIndex(index, [index, index]);
       }
     },
+
     setPaintIndex(
       index: number,
       highlightChangeIndices: [start: number, end: number],
@@ -122,6 +124,7 @@ export default Vue.defineComponent({
       this.hiddenNodeGroups.createdGroupIdByFrameNodeId.clear();
       this.findTreeChanges(this.mainFrame.document);
     },
+
     findTreeChanges(nodeState: DomNodeState): void {
       const groups = this.hiddenNodeGroups;
 
@@ -155,6 +158,7 @@ export default Vue.defineComponent({
         }
       }
     },
+
     applyDomChanges(changeEvents: IFrontendDomChangeEvent[], highlight: boolean): void {
       for (const change of changeEvents) {
         if (change.action === DomActionType.location) continue;
@@ -197,6 +201,7 @@ export default Vue.defineComponent({
         }
       }
     },
+
     onDomFocus(event: IChromeAliveEvents['Dom.focus']): void {
       this.focusedPaintIndex = event.paintIndex;
       this.setPaintIndex(
@@ -205,9 +210,11 @@ export default Vue.defineComponent({
         event.documentLoadPaintIndex,
       );
     },
+
     onDomUpdated(event: IChromeAliveEvents['Dom.updated']): void {
       this.setPaintEvents(event.paintEvents, event.framesById);
     },
+
     onDomResponse(response: IChromeAliveApis['Session.getDom']['result']): void {
       this.setPaintEvents(
         response.paintEvents.map(x => x.changeEvents),
@@ -219,10 +226,12 @@ export default Vue.defineComponent({
   },
 
   mounted() {
-    Client.connect().catch(err => alert(err.stack));
-    Client.send('Session.getDom')
-      .then(this.onDomResponse)
-      .catch(err => alert(err.stack));
+    sendToBackgroundScript({ action: 'getCoreServerAddress' }, (serverAddress) => {
+      window.setHeroServerUrl(serverAddress);
+      Client.send('Session.getDom')
+        .then(this.onDomResponse)
+        .catch(err => alert(err.stack));
+    });
   },
 
   beforeUnmount() {
@@ -233,9 +242,6 @@ export default Vue.defineComponent({
 </script>
 
 <style lang="scss">
-@import '../../assets/style/common-mixins';
-@import '../../assets/style/resets';
-
 :root {
   --toolbarBackgroundColor: #f5faff;
   --buttonActiveBackgroundColor: rgba(176, 173, 173, 0.4);

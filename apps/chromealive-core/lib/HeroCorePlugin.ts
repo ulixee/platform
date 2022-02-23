@@ -21,7 +21,7 @@ import EventEmitter = require('events');
 const { log } = Log(module);
 
 // have to resolve an actual file
-const extensionPath = Path.resolve(__dirname, '../..', 'chromealive/extension').replace(
+export const extensionPath = Path.resolve(__dirname, '../..', 'chromealive/extension').replace(
   'app.asar',
   'app.asar.unpacked',
 ); // make electron packaging friendly
@@ -99,7 +99,7 @@ export default class HeroCorePlugin extends CorePlugin {
     }
   }
 
-  onBrowserLaunchConfiguration(launchArguments: string[]): void {
+  public onBrowserLaunchConfiguration(launchArguments: string[]): void {
     if (launchArguments.includes('--headless')) return;
 
     launchArguments.push(
@@ -108,11 +108,11 @@ export default class HeroCorePlugin extends CorePlugin {
     );
   }
 
-  configure(options: IBrowserEmulatorConfig): Promise<any> | void {
+  public configure(options: IBrowserEmulatorConfig): Promise<any> | void {
     this.windowBoundsModule.configure(options);
   }
 
-  async onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
+  public async onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
     if (page.browserContext.isIncognito || sessionSummary.options.showBrowser === false) return;
     await Promise.all([
       this.bridgeToExtension.addPuppetPage(page, this.events),
@@ -122,11 +122,11 @@ export default class HeroCorePlugin extends CorePlugin {
     ]);
   }
 
-  onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession): Promise<any> {
+  public onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession): Promise<any> {
     return this.bridgeToDevtoolsPrivate.addDevtoolsSession(devtoolsSession);
   }
 
-  onServiceWorkerAttached(
+  public onServiceWorkerAttached(
     devtoolsSession: IDevtoolsSession,
     event: Protocol.Target.AttachedToTargetEvent,
   ): Promise<any> {
@@ -134,7 +134,7 @@ export default class HeroCorePlugin extends CorePlugin {
     if (targetInfo.url !== `chrome-extension://${extensionId}/background.js`) return;
   }
 
-  onContextClosed(sessionSummary: ISessionSummary): void {
+  public onContextClosed(sessionSummary: ISessionSummary): void {
     this.tabGroupModule.close();
     this.devtoolsPanelModule.close(sessionSummary);
     this.events.close();
