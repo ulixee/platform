@@ -1,11 +1,11 @@
-import { latestBrowserEngineId } from '@ulixee/default-browser-emulator';
+import { defaultBrowserEngine } from '@ulixee/default-browser-emulator';
 
 let hasUnpackedChrome = false;
 export default async function installDefaultChrome(): Promise<void> {
   if (hasUnpackedChrome) return;
   try {
     // eslint-disable-next-line global-require,import/no-dynamic-require
-    let LatestChrome = require(`@ulixee/${latestBrowserEngineId}`);
+    let LatestChrome = require(`@ulixee/${defaultBrowserEngine.id}`);
     if (LatestChrome.default) LatestChrome = LatestChrome.default;
     const chromeApp = new LatestChrome();
     if (chromeApp.isInstalled) {
