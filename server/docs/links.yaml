@@ -1,0 +1,20 @@
+- title: Overview
+  items:
+    - Introduction
+    - Configuration
+
+- title: Basic Interfaces
+  items:
+    - Server
+    - ChromeAlive
+
+- title: Contribute
+  items:
+    - How to contribute
+    - Code of conduct
+
+- title: Help
+  items:
+    - Prerequisites
+    - How to upgrade
+    - Troubleshooting

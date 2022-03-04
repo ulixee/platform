@@ -1,12 +1,11 @@
 import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
-import IDataboxPackage from '@ulixee/databox-interfaces/IDataboxPackage';
 import UlixeeConfig from '@ulixee/commons/config';
 import readCommandLineArgs from './utils/readCommandLineArgs';
 import IComponents, { IRunFn } from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
 import IBasicInput from '../interfaces/IBasicInput';
 
-export default class DataboxPackage<TInput = IBasicInput, TOutput = any> implements IDataboxPackage {
+export default class DataboxPackage<TInput = IBasicInput, TOutput = any> {
   #components: IComponents<TInput, TOutput>;
 
   constructor(components: IRunFn<TInput, TOutput> | IComponents<TInput, TOutput>) {
@@ -31,8 +30,11 @@ export default class DataboxPackage<TInput = IBasicInput, TOutput = any> impleme
     this.run(options).catch(() => null);
   }
 
-  public async run(options: IDataboxRunOptions = {}): Promise<any> {
-    const databoxInternal = new DataboxInternal<TInput, TOutput>(options, this.#components.defaults);
+  public async run(options: IDataboxRunOptions = {}): Promise<TOutput> {
+    const databoxInternal = new DataboxInternal<TInput, TOutput>(
+      options,
+      this.#components.defaults,
+    );
     const shouldRunFull = !databoxInternal.sessionIdToExtract;
     try {
       if (shouldRunFull) {

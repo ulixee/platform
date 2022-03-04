@@ -2,10 +2,9 @@
 BasicLayout.Home
   Section(container="md" dots="true")
     .post-header.container-md.mb-x2
-      h1 The Web Browser  Built for Scraping
+      h1 The Data Harvesting Network
       p.
-        Ulixee is a headless browser that’s nearly impossible to detect. It achieves this by emulating real users.
-        And it has powerful auto-replay functionality that lets you create and debug scripts in record setting time.
+        Ulixee is a set of tools that make Web Scraping reliable, easier to troubleshoot and simple to write. It includes a scriptable Web Browser that mimics a human user; scripts written as re-usable, composable units; and tooling to deploy your own network.
       a.button(href="/docs") Get Started
 
     //.awards

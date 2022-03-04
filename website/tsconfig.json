@@ -11,7 +11,7 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "declarationMap": false,
-    "strict": true,
+    "strict": false,
     "lib": ["es2019", "dom"]
   },
   "include": ["./src/**/*", ".eslintrc.js"]

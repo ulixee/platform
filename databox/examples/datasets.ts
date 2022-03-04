@@ -1,12 +1,10 @@
 import Databox from '@ulixee/databox';
 
 export default new Databox(async databox => {
-  const { input, output, hero } = databox;
-  input.url ??= 'https://ulixee.org';
+  const { output, hero } = databox;
   await hero.goto('https://ulixee.org');
 
   const { document } = hero;
-  // step 1 - look in dom
   const datasets = await document.querySelectorAll('.datasets .title');
 
   output.datasets = [];
