@@ -23,7 +23,11 @@ export default interface ISessionApi {
   ): {
     imageBase64: string;
   };
-  getDom(args?: IHeroSessionArgs): Promise<
+  getDom(
+    args?: IHeroSessionArgs & {
+      tabId?: number;
+    },
+  ): Promise<
     IDomRecording & {
       framesById: { [id: number]: { parentId: number; domNodeId: number } };
     }
@@ -35,6 +39,7 @@ export default interface ISessionApi {
   quit(args: IHeroSessionArgs): Promise<void>;
   timetravel(
     args: IHeroSessionArgs & {
+      commandId?: number;
       percentOffset?: number;
       step?: 'forward' | 'back';
     },

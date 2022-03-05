@@ -7,7 +7,7 @@
   "main": "index.js",
   "author": "Data Liberation Foundation",
   "scripts": {
-    "serve": "vue-cli-service serve",
+    "serve": "vue-cli-service serve --watch",
     "build:webpack": "webpack --config webpack.config.js",
     "build:vue": "vue-cli-service build",
     "build": "yarn build:vue && yarn build:webpack",

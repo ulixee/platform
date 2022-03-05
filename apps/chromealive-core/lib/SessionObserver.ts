@@ -251,20 +251,24 @@ export default class SessionObserver extends TypedEventEmitter<{
     }
   }
 
-  public async timetravel(
-    percentOffset: number,
-    step?: 'forward' | 'back',
-  ): Promise<{ timelineOffsetPercent: number }> {
+  public async timetravel(option: {
+    percentOffset?: number;
+    step?: 'forward' | 'back';
+    commandId?: number;
+  }): Promise<{ timelineOffsetPercent: number }> {
     // set to timetravel mode in advance to prevent jumping out
     this.mode = 'timetravel';
-
     if (!this.timetravelPlayer.isOpen) {
       await this.updateTabGroup(true).catch(console.error);
     }
-    if (step) {
-      await this.timetravelPlayer.step(step);
+    if (option.step) {
+      await this.timetravelPlayer.step(option.step);
     } else {
-      await this.timetravelPlayer.goto(percentOffset ?? 100);
+      let offsetPercent = option.percentOffset;
+      if (option.commandId) {
+        offsetPercent = await this.timetravelPlayer.findCommandPercentOffset(option.commandId);
+      }
+      await this.timetravelPlayer.goto(offsetPercent ?? 100);
     }
 
     await this.timetravelPlayer.showLoadStatus(this.timelineBuilder.lastMetadata);
