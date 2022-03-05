@@ -4,6 +4,7 @@ export default new Databox(async databox => {
   const { input, output, hero } = databox;
   input.url ??= 'https://ulixee.org';
   await hero.goto('https://ulixee.org');
+  await hero.querySelector('.datasets').$waitForVisible();
 
   const { document } = hero;
   // step 1 - look in dom

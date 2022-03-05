@@ -71,6 +71,6 @@ export default class EventSubscriber implements IEventSubscriber {
   endGroup(name: string): void {
     const events = this.groups[name];
     delete this.groups[name];
-    this.off(...events);
+    if (events) this.off(...events);
   }
 }

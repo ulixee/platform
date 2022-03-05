@@ -15,33 +15,28 @@ export default class SessionApi {
     return { imageBase64: null };
   }
 
-  static async quit(args: IHeroSessionArgs): Promise<void> {
+  static async quit(args: Parameters<ISessionApi['quit']>[0]): Promise<void> {
     const sessionObserver = getObserver(args);
     await sessionObserver.heroSession.close(true);
   }
 
-  static getScriptState(args?: IHeroSessionArgs): ReturnType<ISessionApi['getScriptState']> {
+  static getScriptState(args?: Parameters<ISessionApi['getScriptState']>[0]): ReturnType<ISessionApi['getScriptState']> {
     const sessionObserver = getObserver(args);
 
     return Promise.resolve(sessionObserver.sourceCodeTimeline.getCurrentState());
   }
 
-  static getDom(args?: IHeroSessionArgs & { tabId?: number }): ReturnType<ISessionApi['getDom']> {
+  static getDom(args?: Parameters<ISessionApi['getDom']>[0]): ReturnType<ISessionApi['getDom']> {
     const sessionObserver = getObserver(args);
     return sessionObserver.getDomRecording(args?.tabId);
   }
 
-  static async timetravel(
-    args: IHeroSessionArgs & {
-      percentOffset?: number;
-      step?: 'forward' | 'back';
-    },
-  ): Promise<{
+  static async timetravel(args: Parameters<ISessionApi['timetravel']>[0]): Promise<{
     timelineOffsetPercent: number;
   }> {
     const sessionObserver = getObserver(args);
     try {
-      return await sessionObserver.timetravel(args.percentOffset, args.step);
+      return await sessionObserver.timetravel(args);
     } catch (err) {
       if (err instanceof CanceledPromiseError) {
         return { timelineOffsetPercent: 100 };
