@@ -3,6 +3,7 @@ import Databox from '@ulixee/databox';
 export default new Databox(async databox => {
   const { output, hero } = databox;
   await hero.goto('https://ulixee.org');
+  await hero.querySelector('.datasets').$waitForVisible();
 
   const { document } = hero;
   const datasets = await document.querySelectorAll('.datasets .title');

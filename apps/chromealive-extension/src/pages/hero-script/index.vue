@@ -4,6 +4,7 @@
     <div
       class="line"
       v-for="(line, i) in activeFileLines"
+      @click="clickLine(i + 1, activeFilename)"
       :class="getClassesForLineIndex(i)"
       :ref="
         el => {
@@ -13,6 +14,17 @@
     >
       <span class="line-number">{{ i + 1 }}.</span>
       <pre class="code">{{ line }}</pre>
+
+      <select
+        class="call-marker"
+        @change="changedFocusedCommand()"
+        @click.stop.prevent="onSelectClick($event)"
+        v-model="focusedCommandId"
+      >
+        <option v-for="call of getCallsForLine(i + 1)" :value="call.commandId">
+          {{ call.callInfo }}
+        </option>
+      </select>
     </div>
   </div>
 </template>
@@ -59,27 +71,57 @@ export default Vue.defineComponent({
     },
   },
   methods: {
-    getCommandsAtPositions(
-      positions: { line: number; filename: string }[],
-    ): ICommandUpdatedEvent[] {
-      const commands: ICommandUpdatedEvent[] = [];
-      for (const position of positions) {
-        const key = `${position.filename}_${position.line}`;
-        if (!this.commandIdsByLineKey[key]) continue;
-
-        for (const id of this.commandIdsByLineKey[key]) {
-          const command = this.commandsById[id];
-          if (command) commands.push(command);
-        }
+    getCallsForLine(line: number): { commandId: number; callInfo: string; active: boolean }[] {
+      const filename = this.activeFilename;
+      if (!filename) return [];
+      const commands = this.getCommandsAtPosition(line, filename);
+      if (!commands?.length) return [];
+      return commands.map((x, i) => {
+        return {
+          commandId: x.command.id,
+          callInfo: `${i + 1} of ${commands.length}`,
+          active: this.focusedCommandId === x.command.id,
+        };
+      });
+    },
+    onSelectClick(e): void {
+      e.stopPropagation();
+    },
+    changedFocusedCommand(): void {
+      Client.send('Session.timetravel', {
+        heroSessionId: null,
+        commandId: this.focusedCommandId,
+      }).catch(err => alert(err.message));
+    },
+    clickLine(line: number, filename: string): Promise<void> {
+      const commandIds: Set<number> = this.commandIdsByLineKey[`${filename}_${line}`];
+      if (!commandIds?.size) return;
+      Client.send('Session.timetravel', {
+        heroSessionId: null,
+        commandId: [...commandIds][0],
+      }).catch(err => alert(err.message));
+    },
+    getCommandsAtPosition(line: number, filename: string): ICommandUpdatedEvent[] {
+      if (!filename || line === undefined || line === null) return [];
+      const commandIds: Set<number> = this.commandIdsByLineKey[`${filename}_${line}`];
+      if (commandIds) {
+        return [...commandIds].map(id => this.commandsById[id]).filter(Boolean);
       }
-      return commands;
+      return [];
     },
     getClassesForLineIndex(index: number) {
-      if (!this.focusedPositions?.length) return;
-      const active = this.focusedPositions.some(x => x.line === index + 1);
-      const commandsAtLines = this.getCommandsAtPositions(this.focusedPositions);
-      const hasError = commandsAtLines.some(x => x.command.resultType?.includes('Error'));
-      return { active, error: hasError };
+      const filename = this.activeFilename;
+      const active =
+        this.focusedPositions?.some(x => x.line === index + 1 && x.filename === filename) ?? false;
+
+      const commandsAtLine = this.getCommandsAtPosition(index + 1, this.activeFilename);
+      const hasError = commandsAtLine.some(x => x.command.resultType?.includes('Error'));
+      return {
+        active,
+        error: hasError,
+        'multi-call': commandsAtLine.length > 1,
+        command: commandsAtLine.length > 0,
+      };
     },
     onCommandUpdated(message: ICommandUpdatedEvent) {
       this.commandsById[message.command.id] = message;
@@ -114,7 +156,7 @@ export default Vue.defineComponent({
         this.onCommandUpdated(ev);
       }
       for (const [filename, lines] of Object.entries(message.sourceFileLines)) {
-        this.onSourceCodeUpdated({ filename, lines })
+        this.onSourceCodeUpdated({ filename, lines });
       }
     },
 
@@ -127,8 +169,8 @@ export default Vue.defineComponent({
     },
   },
 
-  mounted() {
-    sendToBackgroundScript({ action: 'getCoreServerAddress' }, (serverAddress) => {
+  async mounted() {
+    sendToBackgroundScript({ action: 'getCoreServerAddress' }, serverAddress => {
       window.setHeroServerUrl(serverAddress);
       Client.send('Session.getScriptState')
         .then(this.onScriptStateResponse)
@@ -176,12 +218,44 @@ h5 {
   flex-direction: row;
   justify-content: end;
   align-items: baseline;
+  height: 16px;
+  margin: 2px 0;
+  .call-marker {
+    display: none;
+  }
+
+  &:hover {
+    background: #eeeeee;
+  }
+  &.command {
+    &.multi-call {
+      .call-marker {
+        display: none;
+        float: right;
+        font-size: 11px;
+        width: 60px;
+      }
+      &:hover .call-marker {
+        display: block;
+      }
+    }
+    &:hover {
+      background: aliceblue;
+      cursor: pointer;
+    }
+    .line-number {
+      background: aliceblue;
+    }
+  }
   &.active {
     background: green;
     color: white;
+    &:hover {
+      background: green;
+    }
   }
   &.error {
-    background: yellow;
+    background: yellow !important;
   }
   .line-number {
     display: flex;
