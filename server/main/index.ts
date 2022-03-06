@@ -86,14 +86,14 @@ export default class Server {
     this.wsRoutes.push([route, handleFn]);
   }
 
-  public async close(waitForOpenConnections = true): Promise<void> {
+  public async close(closeDependencies = true): Promise<void> {
     try {
       const logid = log.stats('Server.Closing', {
-        waitForOpenConnections,
+        closeDependencies,
         sessionId: null,
       });
 
-      if (waitForOpenConnections) {
+      if (closeDependencies) {
         await this.coreConnectors.close();
       }
 

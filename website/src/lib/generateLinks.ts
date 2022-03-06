@@ -1,33 +1,46 @@
 import kebabCase from 'lodash.kebabcase';
+const config = require('../../gridsome.config');
 
-// eslint-disable-next-line import/no-dynamic-require
-const links = require(`${__dirname}/../../../hero/docs/main/links.yaml`);
+export default function generateLinks(linkGroups: any[], typeName: string) {
+  const allLinks: INavGroup[] = [];
+  const options = config.plugins.find(x => x.options?.typeName === typeName)?.options;
+  for (const group of linkGroups) {
+    const link = `${options.pathPrefix}/${kebabCase(group.title)}`;
+    const editBaseLink = `${options.editingDomain}/${group.title}`;
+    const navGroup: INavGroup = {
+      title: group.title,
+      link,
+      items: group.items.map((x: any) => itemToNavLink(link, editBaseLink, x)),
+    };
+    allLinks.push(navGroup);
+  }
+  return allLinks;
+}
 
-export default function generateLinks() {
-  links.forEach((group: any) => {
-    group.link = `/docs/${kebabCase(group.title)}`;
-    group.items = group.items.map((item: any) => {
-      if (item.items) {
-        item.link = `${group.link}/${kebabCase(item.title)}`;
-        item.editLink = `/docs/${group.title}/${item.title}`;
-        item.items = item.items.map((itm: any) => {
-          if (typeof itm === 'string') {
-            return {
-              title: itm,
-              link: `${item.link}/${kebabCase(itm)}`,
-            };
-          }
-          return itm;
-        });
-      } else if (typeof item === 'string') {
-        return {
-          title: item,
-          link: `${group.link}/${kebabCase(item)}`,
-          editLink: `/docs/${group.title}/${item}`,
-        };
-      }
-      return item;
-    });
-  });
-  return links;
+function itemToNavLink(groupLink: string, editBaseLink: string, item: INavLink | string): INavLink {
+  const title = typeof item === 'string' ? item : item.title;
+  const newBaseEditLink = `${editBaseLink}/${title}`;
+  const newItem: INavLink = {
+    title,
+    link: `${groupLink}/${kebabCase(title)}`,
+    editLink: `${newBaseEditLink}.md`,
+  };
+  const nestedItems = (item as INavLink).items;
+  if (nestedItems) {
+    newItem.items = nestedItems.map(x => itemToNavLink(newItem.link, newBaseEditLink, x));
+  }
+  return newItem;
+}
+
+export interface INavGroup {
+  title: string;
+  link: string;
+  items: INavLink[];
+}
+
+export interface INavLink {
+  title: string;
+  link: string;
+  editLink: string;
+  items?: INavLink[];
 }

@@ -8,6 +8,7 @@ export default class Runner<TInput, TOutput> extends TypedEventEmitter<{ close: 
   constructor(databoxActive: DataboxInternal<TInput, TOutput>) {
     super();
     this.#databoxInternal = databoxActive;
+    this.extractLater = this.extractLater.bind(this);
   }
 
   public async extractLater(name: string, value: any): Promise<void> {

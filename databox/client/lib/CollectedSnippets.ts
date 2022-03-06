@@ -29,11 +29,12 @@ export default class CollectedSnippets {
     return null;
   }
 
-  async getAll(name: string): Promise<ICollectedSnippet[]> {
+  async getAll<T = unknown>(name: string): Promise<T[]> {
     const [coreSession, sessionId] = await Promise.all([
       this.#coreSessionPromise,
       this.#sessionIdPromise,
     ]);
-    return coreSession.getCollectedSnippets(sessionId, name);
+    const snippets = await coreSession.getCollectedSnippets(sessionId, name);
+    return snippets.map(x => x.value);
   }
 }

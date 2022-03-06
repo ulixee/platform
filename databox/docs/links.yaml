@@ -1,0 +1,30 @@
+- title: Overview
+  items:
+    - Introduction
+    - Configuration
+
+- title: Basic Interfaces
+  items:
+    - Databox
+    - Extractor
+    - Runner
+    - HeroExtensions
+
+- title: Advanced
+  items:
+    - Input
+    - Output
+    - CollectedElements
+    - CollectedResources
+    - CollectedSnippets
+
+- title: Contribute
+  items:
+    - How to contribute
+    - Code of conduct
+
+- title: Help
+  items:
+    - Prerequisites
+    - How to upgrade
+    - Troubleshooting
