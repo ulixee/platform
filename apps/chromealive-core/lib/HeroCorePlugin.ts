@@ -97,6 +97,7 @@ export default class HeroCorePlugin extends CorePlugin {
         });
       }
     }
+    await context.newPage();
   }
 
   public onBrowserLaunchConfiguration(launchArguments: string[]): void {

@@ -7,7 +7,6 @@ import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
 
 export default class TabGroupModule extends TypedEventEmitter<{
-  'tab-group-opened': number;
   'tab-identified': { puppetPageId: string; tabId: number };
 }> {
   public static bySessionId = new Map<string, TabGroupModule>();
@@ -23,8 +22,6 @@ export default class TabGroupModule extends TypedEventEmitter<{
     browserEmitter.on('payload', (payload, puppetPageId) => {
       if (payload.event === 'OnTabIdentify') {
         this.onTabIdentified(payload, puppetPageId);
-      } else if (payload.event === 'OnTabGroupOpened') {
-        this.emit('tab-group-opened', payload.groupId);
       }
     });
   }
@@ -43,51 +40,42 @@ export default class TabGroupModule extends TypedEventEmitter<{
     TabGroupModule.bySessionId.delete(this.sessionId);
   }
 
-  public async groupTabs(
-    puppetPages: IPuppetPage[],
-    title: string,
-    color: string,
-    collapsed: boolean,
-  ): Promise<number> {
-    if (!puppetPages.length) return;
+  public async hideTabs(options?: { show?: IPuppetPage[], onlyHide?: IPuppetPage[] }): Promise<void> {
+    let puppetPageId: string;
+    const showTabIds: number[] = [];
+    const onlyHideTabIds: number[] = [];
 
-    const tabIds: number[] = [];
-    let windowId: number;
-    for (const page of puppetPages) {
-      const ids = this.identityByPageId.get(page.id);
+    for (const puppetPage of options?.show || []) {
+      const ids = this.identityByPageId.get(puppetPage.id);
       if (ids) {
-        windowId = ids.windowId;
-        tabIds.push(ids.tabId);
+        puppetPageId ??= puppetPage.id;
+        showTabIds.push(ids.tabId);
       }
     }
-    const args = {
-      tabIds,
-      windowId,
-      title,
-      color,
-      collapsed,
-    };
-    const { groupId } = await this.sendToExtension<{ groupId: number }>(
-      puppetPages[0],
-      'groupTabs',
+
+    for (const puppetPage of options?.onlyHide || []) {
+      const ids = this.identityByPageId.get(puppetPage.id);
+      if (ids) {
+        puppetPageId ??= puppetPage.id;
+        onlyHideTabIds.push(ids.tabId);
+      }
+    }
+
+    if (!puppetPageId) {
+      for (const [ pageId ] of this.identityByPageId.entries()) {
+        puppetPageId = pageId;
+        break;
+      }
+    }
+
+    const args = { showTabIds, onlyHideTabIds };
+    console.log('hideTabs: ', args);
+    await this.sendToExtension<void>(
+      puppetPageId,
+      'hideTabs',
       args,
       true,
     );
-    return groupId;
-  }
-
-  public async ungroupTabs(puppetPages: IPuppetPage[]): Promise<void> {
-    const tabIds: number[] = [];
-    for (const page of puppetPages) {
-      const ids = this.identityByPageId.get(page.id);
-      if (ids) tabIds.push(ids.tabId);
-    }
-    const args = { tabIds };
-    await this.sendToExtension<void>(puppetPages[0], 'ungroupTabs', args, false);
-  }
-
-  public async collapseGroup(puppetPage: IPuppetPage, groupId: number): Promise<void> {
-    await this.sendToExtension<void>(puppetPage, 'collapseGroup', { groupId }, false);
   }
 
   private onTabIdentified(
@@ -100,12 +88,12 @@ export default class TabGroupModule extends TypedEventEmitter<{
   }
 
   private async sendToExtension<T>(
-    puppetPage: IPuppetPage,
+    puppetPageId: string,
     action: string,
     args: object = {},
     waitForResponse = false,
   ): Promise<T> {
-    if (!puppetPage) return;
+    if (!puppetPageId) return;
 
     const responseCode = waitForResponse ? ResponseCode.Y : ResponseCode.N;
     const responseId = responseCode === ResponseCode.Y ? createResponseId() : undefined;
@@ -116,7 +104,7 @@ export default class TabGroupModule extends TypedEventEmitter<{
       responseCode,
       responseId,
     };
-    return (await this.bridgeToExtension.send(message, puppetPage.id)) as T;
+    return (await this.bridgeToExtension.send(message, puppetPageId)) as T;
   }
 
   private pageClosed(pageId: string) {

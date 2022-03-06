@@ -21,7 +21,7 @@ import OutputRebuilder, { IOutputSnapshot } from './OutputRebuilder';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import SourceCodeTimeline from './SourceCodeTimeline';
 import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
-import VuePage from './VuePage';
+import VueScreen from './VueScreen';
 
 const { log } = Log(module);
 
@@ -42,7 +42,8 @@ export default class SessionObserver extends TypedEventEmitter<{
   public readonly sourceCodeTimeline: SourceCodeTimeline;
 
   private sessionHasChangesRequiringRestart = false;
-  private extraTab: VuePage;
+  private vueScreensByName: { [name: string]: VueScreen } = {};
+  private hasStartedTimetravel = false;
 
   private scriptLastModifiedTime: number;
   private outputRebuilder = new OutputRebuilder();
@@ -70,13 +71,11 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.events.on(this.timelineRecorder, 'updated', () => this.emit('hero:updated'));
 
     this.timetravelPlayer = TimetravelPlayer.create(heroSession.id, heroSession);
-    this.events.on(this.timetravelPlayer, 'all-tabs-closed', this.onTimetravelClosed);
-    this.events.on(this.timetravelPlayer, 'open', this.onTimetravelOpened);
+    this.events.on(this.timetravelPlayer, 'tab-opened', this.onTimetravelTabOpened);
 
     this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint).mtimeMs;
 
     this.sourceCodeTimeline = new SourceCodeTimeline(heroSession);
-    this.extraTab = new VuePage(heroSession, 'http://ulixee.app');
 
     this.watchHandle = Fs.watch(
       this.scriptInstanceMeta.entrypoint,
@@ -136,13 +135,25 @@ export default class SessionObserver extends TypedEventEmitter<{
     }
   }
 
-  public async openPanel(panel: Parameters<ISessionApi['openPanel']>[0]['panel']): Promise<void> {
-    const path = {
-      Input: '/screen-input.html',
-      Output: '/screen-output.html',
-      Tested: '/screen-tests.html',
-    }[panel];
-    await this.extraTab.open(path, `/${panel.toLowerCase()}`);
+  public async openPlayer(): Promise<void> {
+    if (this.mode === 'live') {
+      await this.showSessionTabs();
+    } else {
+      await this.showTimetavelTabs();
+    }
+  }
+
+  public async openScreen(name: Parameters<ISessionApi['openScreen']>[0]['screenName']): Promise<void> {
+    const tabExists = !!this.vueScreensByName[name];
+    this.vueScreensByName[name] ??= new VueScreen(name, this.heroSession);
+    const vueScreen = this.vueScreensByName[name];
+    if (tabExists) {
+      const puppetPage = await vueScreen.puppetPage;
+      await this.tabGroupModule.hideTabs({ show: [puppetPage] });
+    } else {
+      await this.tabGroupModule.hideTabs();
+      await vueScreen.open();
+    }
   }
 
   public close(): void {
@@ -214,80 +225,32 @@ export default class SessionObserver extends TypedEventEmitter<{
     return TabGroupModule.bySessionId.get(this.heroSession.id);
   }
 
-  public async groupTabs(name: string, color: string, collapse: boolean): Promise<number> {
-    const tabGroupModule = this.tabGroupModule;
-    if (!tabGroupModule) return;
-
-    const pages = [...this.heroSession.tabsById.values()].map(x => x.puppetPage);
-    if (!pages.length) return;
-    return await tabGroupModule.groupTabs(pages, name, color, collapse);
-  }
-
-  public async updateTabGroup(groupLive: boolean): Promise<void> {
-    const tabGroupModule = this.tabGroupModule;
-    if (!tabGroupModule) return;
-
-    const pages = [...this.heroSession.tabsById.values()].map(x => x.puppetPage);
-    if (!pages.length) return;
-
-    if (groupLive === false) {
-      await tabGroupModule.ungroupTabs(pages);
-    } else {
-      await this.groupTabs('Reopen Live', 'blue', true);
-    }
-  }
-
-  public async didFocusOnPage(pageId: string, didFocus: boolean): Promise<void> {
-    const isLiveTab = this.isLivePage(pageId);
-    const isTimetravelTab = this.timetravelPlayer.isOwnPage(pageId) ?? false;
-
-    // if closing time travel tab, leave
-    if (isTimetravelTab && !didFocus) return;
-
-    const didFocusOnLiveTab = isLiveTab && didFocus;
-    // if time travel is opened and we focused on a live page, close it
-    if (didFocusOnLiveTab && this.timetravelPlayer.isOpen) {
-      await this.closeTimetravel();
-    }
-  }
-
   public async timetravel(option: {
     percentOffset?: number;
     step?: 'forward' | 'back';
     commandId?: number;
   }): Promise<{ timelineOffsetPercent: number }> {
-    // set to timetravel mode in advance to prevent jumping out
-    this.mode = 'timetravel';
-    if (!this.timetravelPlayer.isOpen) {
-      await this.updateTabGroup(true).catch(console.error);
+    if (!this.hasStartedTimetravel) {
+      this.hasStartedTimetravel = true;
+      await this.hideAllTabs().catch(console.error);
     }
     if (option.step) {
       await this.timetravelPlayer.step(option.step);
     } else {
-      let offsetPercent = option.percentOffset;
+      let percentOffset = option.percentOffset ?? 100;
       if (option.commandId) {
-        offsetPercent = await this.timetravelPlayer.findCommandPercentOffset(option.commandId);
+        percentOffset = await this.timetravelPlayer.findCommandPercentOffset(option.commandId);
       }
-      await this.timetravelPlayer.goto(offsetPercent ?? 100);
+      if (percentOffset === 100) {
+        this.onEnteredLiveMode().catch(console.error);
+      } else {
+        this.onEnteredTimetravel().catch(console.error);
+      }
+      await this.timetravelPlayer.goto(percentOffset);
     }
 
     await this.timetravelPlayer.showLoadStatus(this.timelineBuilder.lastMetadata);
     return { timelineOffsetPercent: this.timetravelPlayer.activeTab.currentTimelineOffsetPct };
-  }
-
-  public async closeTimetravel(): Promise<void> {
-    await this.timetravelPlayer.close();
-  }
-
-  public async onTimetravelOpened(): Promise<void> {
-    this.mode = 'timetravel';
-    const events = [
-      this.events.once(this.tabGroupModule, 'tab-group-opened', this.closeTimetravel),
-      this.events.once(this.timetravelPlayer, 'timetravel-to-end', this.closeTimetravel),
-    ];
-    this.events.group('timetravel', ...events);
-    await this.timetravelPlayer.activeTab.mirrorPage.page.bringToFront();
-    this.emit('app:mode');
   }
 
   public onTabCreated(event: HeroSession['EventTypes']['tab-created']): void {
@@ -319,10 +282,45 @@ export default class SessionObserver extends TypedEventEmitter<{
     return Promise.resolve(domRecording);
   }
 
-  private async onTimetravelClosed(): Promise<void> {
+  private async showTimetavelTabs(): Promise<void> {
+    const tabGroupModule = this.tabGroupModule;
+    if (!tabGroupModule) return;
+
+    const puppetPages = [...this.heroSession.tabsById.values()].map(x => x.puppetPage);
+    const sessionPages = puppetPages.filter(x => x.groupName === 'session');
+    const timetravelPages = [];
+    if (this.timetravelPlayer.activeTab?.mirrorPage?.page) {
+      timetravelPages.push(this.timetravelPlayer.activeTab?.mirrorPage?.page);
+    }
+    await this.tabGroupModule.hideTabs({ onlyHide: sessionPages, show: timetravelPages });
+  }
+
+  private async showSessionTabs(): Promise<void> {
+    const puppetPages = [...this.heroSession.tabsById.values()].map(x => x.puppetPage);
+    const sessionPages = puppetPages.filter(x => x.groupName === 'session');
+    await this.tabGroupModule.hideTabs({ show: sessionPages });
+  }
+
+  private async hideAllTabs(): Promise<void> {
+    await this.tabGroupModule.hideTabs();
+  }
+
+  private async onTimetravelTabOpened(): Promise<void> {
+    if (this.mode !== 'timetravel') return;
+    await this.timetravelPlayer.activeTab.mirrorPage.page.bringToFront();    
+  }
+
+  private async onEnteredTimetravel(): Promise<void> {
+    if (this.mode === 'timetravel') return;
+    this.mode = 'timetravel';
+    await this.showTimetavelTabs();
+    this.emit('app:mode');
+  }
+
+  private async onEnteredLiveMode(): Promise<void> {
+    if (this.mode === 'live') return;
     this.mode = 'live';
-    this.events.endGroup('timetravel');
-    await this.updateTabGroup(false).catch(console.error);
+    await this.showSessionTabs();
     this.emit('app:mode');
   }
 

@@ -34,9 +34,9 @@
         style="z-index: 2"
       />
       <TestedButton
-        @select="select('Tested')"
-        :isSelected="selectedItem === 'Tested'"
-        :isActive="activeItem === 'Tested'"
+        @select="select('Reliability')"
+        :isSelected="selectedItem === 'Reliability'"
+        :isActive="activeItem === 'Reliability'"
         :isMinimal="isMinimal"
         style="z-index: 1"
       />
@@ -93,11 +93,13 @@ export default Vue.defineComponent({
     select(item: string) {
       this.selectedItem = item;
       this.activeItem = item;
-      if (item === 'Output' || item === 'Input' || item === 'Tested') {
-        Client.send('Session.openPanel', {
+      if (item === 'Output' || item === 'Input' || item === 'Reliability') {
+        Client.send('Session.openScreen', {
           heroSessionId: this.session.heroSessionId,
-          panel: item,
+          screenName: item,
         });
+      } else if (item === 'Player') {
+        Client.send('Session.openPlayer');
       }
     },
 

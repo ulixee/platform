@@ -136,10 +136,6 @@
         }
         const percentOffset = this.pendingTimetravelOffset;
         this.clearPendingTimetravel();
-        console.log('Session.timetravel: ', {
-          heroSessionId: this.session?.heroSessionId,
-          percentOffset,
-        });
         await Client.send('Session.timetravel', {
           heroSessionId: this.session?.heroSessionId,
           percentOffset,

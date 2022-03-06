@@ -1,11 +1,32 @@
 module.exports = {
   outputDir: '../../build/apps/chromealive/ui',
   pages: {
-    toolbar: './src/pages/toolbar/index.ts',
-    'menu-finder': './src/pages/menu-finder/index.ts',
-    'menu-primary': './src/pages/menu-primary/index.ts',
-    'menu-timetravel': './src/pages/menu-timetravel/index.ts',
-    'screen-output': './src/pages/screen-output/index.ts',
-    'screen-about': './src/pages/screen-about/index.ts',
+    toolbar: {
+      entry: './src/pages/toolbar/index.ts',
+    },
+    'menu-finder': {
+      entry: './src/pages/menu-finder/index.ts',
+    },
+    'menu-primary': {
+      entry: './src/pages/menu-primary/index.ts',
+    },
+    'menu-timetravel': {
+      entry: './src/pages/menu-timetravel/index.ts',
+    },
+    'screen-input': {
+      title: 'Input Configuration',
+      entry: './src/pages/screen-input/index.ts',
+    },
+    'screen-output': {
+      title: 'Output',
+      entry: './src/pages/screen-output/index.ts',
+    },
+    'screen-reliability': {
+      title: 'Reliability Testing',
+      entry: './src/pages/screen-reliability/index.ts',
+    },
+    'screen-about': {
+      entry: './src/pages/screen-about/index.ts',
+    },
   },
 };

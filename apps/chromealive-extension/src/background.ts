@@ -1,6 +1,6 @@
 /// <reference types="chrome"/>
 import { onMessagePayload } from './lib/background/BackgroundMessenger';
-import { groupTabs, ungroupTabs, collapseGroup } from './lib/background/TabManagement';
+import { hideTabs } from './lib/background/TabManagement';
 import logDebug from './lib/logDebug';
 import './lib/background/BackgroundListeners';
 
@@ -11,9 +11,7 @@ fetch(chrome.runtime.getURL('data/coreServer.json'))
   .catch(error => console.log(error));
 
 const RuntimeActions = {
-  groupTabs,
-  ungroupTabs,
-  collapseGroup,
+  hideTabs,
 };
 
 onMessagePayload((payload, sendResponseFn) => {
