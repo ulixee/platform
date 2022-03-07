@@ -20,7 +20,6 @@ import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
 import DomStateSessionTimeline from './DomStateSessionTimeline';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import TimelineRecorder from '@ulixee/hero-timetravel/lib/TimelineRecorder';
-import VueScreen from './VueScreen';
 import SourceLoader from '@ulixee/commons/lib/SourceLoader';
 
 const { log } = Log(module);

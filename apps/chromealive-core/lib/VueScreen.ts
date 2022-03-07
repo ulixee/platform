@@ -102,8 +102,3 @@ export default class VueScreen extends TypedEventEmitter<{ close: void }> {
     } as Protocol.Fetch.FulfillRequestRequest;
   }
 }
-
-function slashPrefix(path: string): string {
-  if (path.startsWith('/')) return path;
-  return `/${path}`;
-}

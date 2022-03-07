@@ -88,7 +88,7 @@ async function groupTabs(payload: {
 
 // LISTENERS ///////////////////////////////////////////////////////////////////////////////////////
 
-chrome.tabGroups.onMoved.addListener(group => {
+chrome.tabGroups.onMoved.addListener(() => {
   moveHiddenGroupToLeft(hiddenGroupId);
 });
 
@@ -111,7 +111,7 @@ chrome.tabGroups.onRemoved.addListener(async (tabGroup) => {
   await createHiddenGroup();
 });
 
-chrome.tabs.onMoved.addListener(group => {
+chrome.tabs.onMoved.addListener(() => {
   moveHiddenGroupToLeft(hiddenGroupId);
 });
 
@@ -130,7 +130,7 @@ function moveHiddenGroupToLeft(groupId: number, isRetry = false) {
 
 let isCollapsingHiddenGroup = false;
 function collapseHiddenGroup(groupId, isRetry = false) {
-  if (isMovingHiddenGroup && !isRetry) return;
+  if (isCollapsingHiddenGroup && !isRetry) return;
   isCollapsingHiddenGroup = true;
 
   chrome.tabGroups.update(groupId, { collapsed: true })

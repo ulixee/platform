@@ -69,7 +69,6 @@ export default class TabGroupModule extends TypedEventEmitter<{
     }
 
     const args = { showTabIds, onlyHideTabIds };
-    console.log('hideTabs: ', args);
     await this.sendToExtension<void>(
       puppetPageId,
       'hideTabs',

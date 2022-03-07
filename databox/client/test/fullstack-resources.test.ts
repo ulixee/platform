@@ -47,7 +47,7 @@ describe('basic resource tests', () => {
       const elem = hero1.document.querySelector('a');
       await hero1.click(elem);
 
-      const resources = await hero1.waitForResource({ type: 'Fetch' });
+      const resources = await hero1.waitForResources({ type: 'Fetch' });
       expect(resources).toHaveLength(1);
       await resources[0].$extractLater('xhr');
 
