@@ -46,11 +46,12 @@ export default interface ISessionApi {
   ): Promise<{
     timelineOffsetPercent: number;
   }>;
-  openPanel(
+  openScreen(
     args: IHeroSessionArgs & {
-      panel: 'Output' | 'Input' | 'Tested';
+      screenName: 'Output' | 'Input' | 'Reliability';
     },
   ): void;
+  openPlayer(): void;
   step(args: IHeroSessionArgs): void;
   resume(args: ISessionResumeArgs): Promise<{
     success: boolean;

@@ -11,7 +11,7 @@
     "build:webpack": "webpack --config webpack.config.js",
     "build:vue": "vue-cli-service build",
     "build": "yarn build:vue && yarn build:webpack",
-    "watch": "vue-cli-service build --watch"
+    "watch": "vue-cli-service build --watch & webpack --watch --config webpack.config.js"
   },
   "dependencies": {
     "@babel/core": "^7.0.0",

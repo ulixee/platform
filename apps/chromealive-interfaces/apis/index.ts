@@ -2,7 +2,6 @@ import ISessionApi from './ISessionApi';
 import IAppApi from './IAppApi';
 import IMouseApi from './IMouseApi';
 import IDomStateApi from './IDomStateApi';
-import INavigationApi from './INavigationApi';
 
 export type IApiHandlerSpec = {
   'Session.quit': ISessionApi['quit'];
@@ -11,7 +10,8 @@ export type IApiHandlerSpec = {
   'Session.step': ISessionApi['step'];
   'Session.getScreenshot': ISessionApi['getScreenshot'];
   'Session.getScriptState': ISessionApi['getScriptState'];
-  'Session.openPanel': ISessionApi['openPanel'],
+  'Session.openScreen': ISessionApi['openScreen'],
+  'Session.openPlayer': ISessionApi['openPlayer'],
   'Session.getDom':ISessionApi['getDom'];
   'App.boundsChanged': IAppApi['boundsChanged'];
   'App.ready': IAppApi['ready'];
@@ -25,7 +25,6 @@ export type IApiHandlerSpec = {
   'DomState.focusSessionTime': IDomStateApi['focusSessionTime'];
   'DomState.extendSessionTime': IDomStateApi['extendSessionTime'];
   'DomState.exit': IDomStateApi['exit'];
-  'Navigation.openAbout': INavigationApi['openAbout'];
 };
 
 type IPromiseType<T> = T extends PromiseLike<infer U> ? U : T;

@@ -20,7 +20,6 @@ import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
 import DomStateSessionTimeline from './DomStateSessionTimeline';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import TimelineRecorder from '@ulixee/hero-timetravel/lib/TimelineRecorder';
-import VuePage from './VuePage';
 import SourceLoader from '@ulixee/commons/lib/SourceLoader';
 
 const { log } = Log(module);
@@ -53,7 +52,6 @@ export default class DomStateManager extends TypedEventEmitter<{
 
   private activeDomStateId: string;
   private activeTimelineHeroSessionId: string;
-  private readonly aboutPage: VuePage;
   private tabGroupId: number;
   private readonly spawnedWorldHeroSessionIds = new Set<string>();
   private readonly openHeroSessionsById = new Map<string, HeroSession>();
@@ -79,7 +77,6 @@ export default class DomStateManager extends TypedEventEmitter<{
     this.logger = log.createChild(module, {
       sessionId: sourceHeroSession.id,
     });
-    this.aboutPage = new VuePage(sessionObserver.heroSession, 'http://ulixee.about');
     this.trackHeroSession(sourceHeroSession, sessionObserver.timelineRecorder);
   }
 
@@ -108,17 +105,15 @@ export default class DomStateManager extends TypedEventEmitter<{
     for (const { generator } of this.domStateById.values()) {
       await generator.close();
     }
-    if (this.aboutPage) await this.aboutPage.close();
     // don't clear generators or sessions in case we re-open
     if (destroy) {
       this.clear();
     }
 
-    this.sessionObserver.tabGroupModule?.off('tab-group-opened', this.listenForTabGroupOpened);
     await this.closeTimetravel();
     if (this.tabGroupId) {
       this.tabGroupId = null;
-      await this.sessionObserver.updateTabGroup(false);
+      // await this.sessionObserver.updateTabGroup(false);
     }
   }
 
@@ -170,14 +165,7 @@ export default class DomStateManager extends TypedEventEmitter<{
     await this.openTimetravel(sessionIdToOpen);
     this.updateState();
 
-    this.sessionObserver
-      .groupTabs('', 'grey', true)
-      .then(x => {
-        this.tabGroupId = x;
-        this.sessionObserver.tabGroupModule.on('tab-group-opened', this.listenForTabGroupOpened);
-        return null;
-      })
-      .catch(console.error);
+    // I (Caleb) removed this.sessionObserver.groupTabs command
 
     await this.closeDevtoolsPanel(sessionIdToOpen);
   }
@@ -222,14 +210,11 @@ export default class DomStateManager extends TypedEventEmitter<{
 
   public async unfocusSession(): Promise<void> {
     this.activeTimelineHeroSessionId = null;
-    await this.openAboutPage();
     await this.closeTimetravel();
     this.publish();
   }
 
   public async openTimetravel(heroSessionId: string): Promise<void> {
-    await this.openAboutPage();
-
     if (this.activeTimelineHeroSessionId === heroSessionId) {
       await this.gotoActiveSessionEnd();
       return;
@@ -255,23 +240,8 @@ export default class DomStateManager extends TypedEventEmitter<{
     await Promise.all([
       this.gotoActiveSessionEnd(),
       prevTimetravel?.close(),
-      this.aboutPage.close(),
     ]);
     this.timetravelPlayer.once('all-tabs-closed', this.onTimetravelTabsClosed);
-  }
-
-  private listenForTabGroupOpened(openedGroupId: number) {
-    const groupId = this.tabGroupId;
-    // if still open, re-collapse
-    if (groupId === openedGroupId && this.domStateById.size) {
-      this.sessionObserver.tabGroupModule
-        .collapseGroup(this.sessionObserver.heroSession.getLastActiveTab().puppetPage, groupId)
-        .catch(error => {
-          this.logger.error('Error keeping live tabGroup collapsed', {
-            error,
-          });
-        });
-    }
   }
 
   private async timetravelTo(timestamp: number): Promise<void> {
@@ -285,16 +255,8 @@ export default class DomStateManager extends TypedEventEmitter<{
     await this.timetravelTo(sessionDetails.loadingRange[1]);
   }
 
-  private async openAboutPage(): Promise<void> {
-    await this.aboutPage.open('/about-screen.html', '/circuits');
-  }
-
   private async onTimetravelTabsClosed(): Promise<void> {
     await this.closeTimetravel();
-    if (!this.isClosing) {
-      await this.openAboutPage();
-    }
-
     this.publish();
   }
 

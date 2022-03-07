@@ -45,11 +45,18 @@ export default class SessionApi {
     }
   }
 
-  static openPanel(args: Parameters<ISessionApi['openPanel']>[0]): void {
+  static openScreen(args: Parameters<ISessionApi['openScreen']>[0]): void {
     const sessionObserver = getObserver(args);
     sessionObserver
-      .openPanel(args.panel)
-      .catch(err => console.error('ERROR opening panel %s', args.panel, err));
+      .openScreen(args.screenName)
+      .catch(err => console.error('ERROR opening screen %s', args.screenName, err));
+  }
+
+  static openPlayer(): void {
+    const sessionObserver = getObserver();
+    sessionObserver
+      .openPlayer()
+      .catch(err => console.error('ERROR opening player', err));
   }
 
   static step(args: IHeroSessionArgs): void {

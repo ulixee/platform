@@ -257,16 +257,13 @@ export default class ChromeAliveCore {
     this.sendAppEvent('App.mode', { mode: sessionObserver.mode });
   }
 
-  private static async changeActiveSessions(
+  private static changeActiveSessions(
     status: { focused: boolean; active: boolean },
     heroSessionId: string,
     pageId: string,
-  ): Promise<void> {
+  ): void {
     const isPageVisible = status.active;
     log.info('Changing active session', { isPageVisible, sessionId: heroSessionId, pageId });
-
-    const sessionObserver = this.sessionObserversById.get(heroSessionId);
-    await sessionObserver?.didFocusOnPage(pageId, isPageVisible);
 
     if (this.activeHeroSessionId) {
       AliveBarPositioner.showApp(status.focused);

@@ -7,42 +7,56 @@ import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { httpGet } from '@ulixee/commons/lib/downloadFile';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
+import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
 
-export default class VuePage extends TypedEventEmitter<{ close: void }> {
-  private page: Promise<IPuppetPage>;
+export default class VueScreen extends TypedEventEmitter<{ close: void }> {
+  public puppetPage: Promise<IPuppetPage>;
 
-  private visiblePath: string;
-  private vuePath: string;
+  private readonly vuePath: string;
 
-  constructor(readonly heroSession: HeroSession, readonly pageUrl: string) {
+  private readonly pageUrl: string;
+  private readonly pageHost: string;
+  private readonly pagePath: string;
+  private readonly pageProtocol: string;
+
+  constructor(name: Parameters<ISessionApi['openScreen']>[0]['screenName'], readonly heroSession: HeroSession) {
     super();
+    this.pageProtocol = 'http';
+    this.pageHost = `${name.toLowerCase()}.ulixee`
+    this.pagePath = '/';
+    this.pageUrl = `${this.pageProtocol}://${this.pageHost}${this.pagePath}`;
     // prevent dns lookup
     this.heroSession.mitmRequestSession.interceptorHandlers.push({
-      urls: [`${this.pageUrl}/*`],
+      urls: [`${this.pageProtocol}://${this.pageHost}/*`],
     });
+
+    this.vuePath = {
+      Input: '/screen-input.html',
+      Output: '/screen-output.html',
+      Reliability: '/screen-reliability.html',
+    }[name];
   }
 
-  public async open(vuePath: string, visiblePath = '/') {
-    this.vuePath = slashPrefix(vuePath);
-    this.visiblePath = slashPrefix(visiblePath);
-    const page = await this.openPuppetPage();
-    await page.navigate(`${this.pageUrl}${visiblePath}`);
+  public async open() {
+    if (!this.puppetPage) {
+      const puppetPage = await this.openPuppetPage();
+      await puppetPage.navigate(this.pageUrl);
+    }
+    return this.puppetPage;
   }
 
   public async close(): Promise<void> {
-    if (this.page) {
-      await this.page.then(x => x.close()).catch(() => null);
+    if (this.puppetPage) {
+      await this.puppetPage.then(x => x.close()).catch(() => null);
     }
   }
 
   private async openPuppetPage(): Promise<IPuppetPage> {
-    if (this.page) return this.page;
+    this.puppetPage = this.heroSession.browserContext.newPage({ runPageScripts: false });
 
-    this.page = this.heroSession.browserContext.newPage({ runPageScripts: false });
-
-    const page = await this.page;
+    const page = await this.puppetPage;
     page.once('close', () => {
-      this.page = null;
+      this.puppetPage = null;
       this.emit('close');
     });
     for (const plugin of this.heroSession.plugins.corePlugins) {
@@ -69,7 +83,7 @@ export default class VuePage extends TypedEventEmitter<{ close: void }> {
     const url = new URL(request.request.url);
     url.host = ChromeAliveCore.vueServer.replace('http://', '');
     if (url.protocol === 'https') url.protocol = 'http';
-    if (url.pathname === this.visiblePath) {
+    if (url.pathname === this.pagePath) {
       url.pathname = this.vuePath;
     }
 
@@ -87,9 +101,4 @@ export default class VuePage extends TypedEventEmitter<{ close: void }> {
       body: Buffer.concat(bodyChunks).toString('base64'),
     } as Protocol.Fetch.FulfillRequestRequest;
   }
-}
-
-function slashPrefix(path: string): string {
-  if (path.startsWith('/')) return path;
-  return `/${path}`;
 }

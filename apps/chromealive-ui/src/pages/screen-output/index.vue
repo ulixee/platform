@@ -1,29 +1,20 @@
 <template>
-  <div class="Wrapper">
-    <div class="OutputPanel">
-      <h2>
-        Output
-        <span class="DataSize">{{ dataSize }}</span>
-      </h2>
-      <Json v-if="output" :json="output" :scrollToRecordId="scrollToRecordId" />
-      <div v-else class="Explainer">
-        <p>This panel shows output set using "databox.output".</p>
-        <p>You can use the "databox.output" object as an array:</p>
-        <pre>
- databox.output.push({
-   text,
-   href,
- })     </pre
-        >
-        <p>Or as an object:</p>
-        <pre>databox.output.text = text;</pre>
-        <p>
-          As you set each data-entry, it will stream into this panel as the same json you'll get if
-          you print databox.output:
-        </p>
-        <pre>console.log(databox.output);</pre>
-      </div>
+  <div class="py-12 px-28">
+    <div class="pb-5 mb-5 border-b border-gray-400 text-center ">
+      <div class="text-2xl mb-2 script-path font-thin opacity-50">sites/kayak.ts</div>
+      <h1>OUTPUT DATA</h1>
     </div>
+
+    <ul class="flex flex-row border-b border-gray-200 pb-5">
+      <li class="flex-1">Started January 23, 2022 at 11:35:39 AM EST</li>
+      <li class="flex-1">Finished on January 23, 2022 at 11:36:02 AM EST</li>
+    </ul>
+
+    <h2>Databox Output <span>{{ dataSize }}</span>:</h2>
+    <div class="box bg-gray-50 border border-gray-200 min-h-[200px]">
+      <Json v-if="output" :json="output" :scrollToRecordId="scrollToRecordId" class="p-5 text-sm text-gray-600" />
+    </div>
+    4 Collected Resources, 3 Collected Elements, 18 Extract Functions
   </div>
 </template>
 
@@ -91,67 +82,15 @@ export default Vue.defineComponent({
 });
 </script>
 
-<style lang="scss">
-@import '../../assets/style/common-mixins';
-@import '../../assets/style/resets';
+<style lang="scss" scoped="scoped">
 
-:root {
-  --toolbarBackgroundColor: #fffdf4;
+h1 {
+  color: #ADA0B6;
+  @apply text-6xl mb-3;
 }
 
-body {
-  height: 100vh;
-  margin: 0;
-  border-top: 0 none;
-  width: 100%;
+h2 {
+  @apply mt-10 font-bold mb-5;
 }
 
-.Wrapper {
-  box-sizing: border-box;
-  background: white;
-  margin: 0;
-}
-
-.OutputPanel,
-.InputPanel {
-  box-sizing: border-box;
-  padding: 0 10px 10px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  position: relative;
-  width: 100%;
-  margin-bottom: 10px;
-
-  h2 {
-    font-family: system-ui, sans-serif;
-    font-size: 15px;
-    text-align: left;
-    padding: 5px 15px 5px;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    background-color: var(--toolbarBackgroundColor);
-    box-shadow: 0 0 1px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.16);
-    margin: 0 -20px 10px;
-    color: #2d2d2d;
-  }
-}
-
-.Explainer {
-  margin: 5px;
-  border-radius: 5px;
-  border: 1px solid #e4e4e4;
-  background: #fbfbfb;
-  padding: 10px;
-
-  pre {
-    padding: 10px;
-    background: #eeeeee;
-  }
-}
-
-.DataSize {
-  font-weight: normal;
-  font-size: 0.9em;
-  font-style: italic;
-  color: #3c3c3c;
-}
 </style>

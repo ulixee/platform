@@ -48,9 +48,7 @@ export default defineComponent({
       });
     },
 
-    openAbout() {
-      Client.send('Navigation.openAbout');
-    },
+    openAbout() {},
   },
 });
 </script>
