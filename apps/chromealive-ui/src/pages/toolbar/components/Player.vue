@@ -333,7 +333,7 @@
       margin-right: 32px;
 
       &:hover .text {
-        background: rgba($bgColorHover, 0.5);
+        background: rgba($bgColorHover, 0.7);
       }
 
       .text {

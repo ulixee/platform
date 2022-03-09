@@ -7,7 +7,7 @@
     <div class="backgrounds">
       <div class="left-notch"></div>
     </div>
-    <Borders :isSelected="isSelected" :isFocused="isFocused" :showArrow="false" />
+    <Borders :isSelected="isSelected" :isFocused="isFocused" :hasRightCircle="true" />
 
     <img src="@/assets/icons/heart.svg" class="icon" />
     <span class="label" v-if="!isMinimal">36% Reliability</span>

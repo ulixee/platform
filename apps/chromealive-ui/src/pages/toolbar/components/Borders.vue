@@ -1,13 +1,16 @@
 <template>
-  <div class="Borders" :class="{ isSelected: isSelected, notSelected: !isSelected, hasHalfCircle: !showArrow }">
+  <div class="Borders" :class="{ isSelected: isSelected, notSelected: !isSelected, hasRightCircle, hasLeftCircle }">
     <div class="line top"></div>
     <div class="line bottom"></div>
+    
+    <div v-if="hasLeftCircle" class="left-circle"></div>
+
     <ArrowRight
       :isSelected="isSelected"
       :isFocused="isSelected"
-      v-if="showArrow"
+      v-if="!hasRightCircle"
     />
-    <div v-else class="half-circle"></div>
+    <div v-else-if="hasRightCircle" class="right-circle"></div>
   </div>
 </template>
 
@@ -24,10 +27,14 @@
       isSelected: {
         type: Boolean,
       },
-      showArrow: {
+      hasRightCircle: {
         type: Boolean,
-        default: true,
+        default: false,
       },
+      hasLeftCircle: {
+        type: Boolean,
+        default: false,
+      }
     }
   });
 </script>
@@ -47,15 +54,30 @@
       .line {
         display: block;
       }
-      .half-circle {
+      .right-circle {
+        display: block;
+      }
+
+      .left-circle {
         display: block;
       }
     }
 
-    &.hasHalfCircle {
+    &.hasRightCircle {
       .line {
         width: calc(100% - 17px);
         right: 16px;
+      }
+    }
+
+    &.hasLeftCircle {
+      .line {
+        width: calc(100% - 18px);
+        right: -2px;
+        background: linear-gradient(to right, rgba($borderColorSelected, 0.5) 0%, $borderColorSelected 35px);
+      }
+      .line.top:after {
+        display: none;
       }
     }
   }
@@ -64,7 +86,7 @@
     right: -16.8px;
   }
 
-  .half-circle {
+  .right-circle {
     position: absolute;
     display: none;
     top: 0;
@@ -83,6 +105,28 @@
       width: 2px;
       height: calc(100% - 3px);
       background-color: white;
+    }
+  }
+
+  .left-circle {
+    position: absolute;
+    display: none;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 20px;
+    overflow: hidden;
+    &:after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: calc(100% + 3px);
+      height: 100%;
+      border: 1.5px solid rgba($borderColorSelected, 0.5);
+      border-right: 0;
+      border-radius: $borderRadius 0 0 $borderRadius;
+      box-shadow: inset 0 1px 2px $shadowColor;
     }
   }
 

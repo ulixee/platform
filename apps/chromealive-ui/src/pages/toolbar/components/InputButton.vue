@@ -10,8 +10,7 @@
       <div class="right-arrow"></div>
     </div>
 
-    <div class="half-circle"></div>
-    <Borders :isSelected="isSelected" :isFocused="isSelected" />
+    <Borders :isSelected="isSelected" :isFocused="isSelected" :hasLeftCircle="true" />
 
     <img src="@/assets/icons/input.svg" class="icon" />
     <span class="label" v-if="!isMinimal">2KB Input</span>
@@ -74,9 +73,7 @@
     
     &.isSelected {
       color: $textColorSelected;
-      .half-circle {
-        display: block;
-      }
+
       .backgrounds {
         width: calc(100% + 3px);
         background: $bgColorSelected;
@@ -86,20 +83,6 @@
         opacity: $iconOpacitySelected;
       }
     }
-  }
-
-  .half-circle {
-    position: absolute;
-    display: none;
-    top: 0;
-    left: 0;
-    border: 1px solid $borderColorSelected;
-    border-right: none;
-    height: 100%;
-    width: 20px;
-    border-radius: $borderRadius 0 0 $borderRadius;
-    box-shadow: inset 0 1px 2px $shadowColor;
-    z-index: 2;
   }
 
  .icon {
