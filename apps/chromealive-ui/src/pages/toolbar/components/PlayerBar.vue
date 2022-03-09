@@ -70,7 +70,7 @@
       ArrowRight,
     },
     props: ['isSelected', 'mouseIsWithinPlayer', 'isRunning', 'ticks', 'session'],
-    emits: ['select'],
+    emits: ['toggleTimetravel'],
     setup(props) {
       const markerElem = Vue.ref<HTMLElement>();
       const trackRect = Vue.ref<DOMRect>();
@@ -131,14 +131,17 @@
 
       async doTimetravel() {
         if (this.pendingTimetravelOffset === null) return;
-
         if (Date.now() - this.lastTimetravelTimestamp < 250) {
           if (this.timetravelTimeout) return;
           this.timetravelTimeout = setTimeout(this.doTimetravel, 100) as any;
           return;
         }
+
         const percentOffset = this.pendingTimetravelOffset;
+        const isLiveMode = percentOffset === 100;
+        this.$emit('toggleTimetravel', isLiveMode);
         this.clearPendingTimetravel();
+        
         await Client.send('Session.timetravel', {
           heroSessionId: this.session?.heroSessionId,
           percentOffset,
@@ -171,7 +174,7 @@
         return this.markerRect;
       },
 
-      handleMouseDown(event: MouseEvent, item: MouseDownItem | undefined) {
+      handleMouseDown(event: MouseEvent, item?: MouseDownItem) {
         if (event.button !== 0) return;
         if (!this.isSelected) return;
         event.preventDefault();
@@ -428,7 +431,6 @@
       margin-left: -13px;
     }
   }
-
   .marker {
     position: absolute;
     top: -4px;

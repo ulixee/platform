@@ -16,9 +16,13 @@
       <Borders :isSelected="isSelected" :isFocused="isFocused" />
 
       <div class="address-bar relative h-full flex flex-row">
-        <div class="live-icon">
+        <div v-if="isLiveMode" class="live-icon">
           <div class="text">LIVE</div>
         </div>
+        <div v-else class="timetravel-icon">
+          <img src="@/assets/icons/timetravel.svg" class="h-5 w-5" />
+        </div>
+
         <div class="address">
           <div class="text">example.org</div>
         </div>
@@ -39,6 +43,7 @@
           :isRunning="isRunning"
           :ticks="ticks"
           :session="session"
+          @toggleTimetravel="toggleTimetravel"
           class="flex-1"
         />
       </div>
@@ -66,9 +71,14 @@
       return {
         mouseIsWithinPlayer: Vue.ref(false),
         isShowingFinder: Vue.ref(false),
+        isLiveMode: Vue.ref(true),
       }
     },
     methods: {
+      toggleTimetravel(isLiveMode: boolean) {
+        this.isLiveMode = isLiveMode;
+      },
+
       handleClick() {
         if (!this.isSelected) {
           event.stopPropagation();
@@ -132,13 +142,18 @@
         background: $bgColorSelected;
       }
       .search-icon {
-        pointer-events: auto;
         img {
           opacity: 0.4;
           pointer-events: none;
         }
         &:after {
           background: white;
+        }
+      }
+      .timetravel-icon {
+        img {
+          opacity: 0.4;
+          pointer-events: none;
         }
       }
     }
@@ -155,12 +170,17 @@
       }
       .search-icon {
         display: none;
+        img {
+          opacity: 0.2;
+        }
+      }
+      .timetravel-icon {
+        img {
+          opacity: 0.2;
+        }
       }
       .live-icon, .address {
         opacity: 0.4;
-      }
-      .search-icon img {
-        opacity: 0.2;
       }
     }
 
@@ -173,9 +193,9 @@
       }
       .search-icon {
         display: block;
-      }
-      .search-icon:after {
-        background: $bgColorHover;
+        &:after {
+          background: $bgColorHover;
+        }
       }
       .bar-bg {
         background-color: color.scale($bgColorHover, $lightness: -5%);
@@ -237,7 +257,7 @@
       background: $textColorSelected;
     }
     .text {
-      background: #5B5B5B;
+      background: #7c7e85;
       color: white;
       font-size: 12px;
       padding: 2px 5px;
@@ -259,7 +279,7 @@
       bottom: 5px;
       width: calc(100% + 7px);
       left: 0;
-      border-left: 1px solid rgba(0,0,0,0.1);
+      border-left: 1px solid rgba(0,0,0,0.2);
       border-radius: 0 15px 20px 0;
       z-index: 2;
     }
@@ -299,6 +319,30 @@
     }
   }
 
+.timetravel-icon {
+    margin-left: 10px;
+    padding: 6.2px 3px 5px 3px;
+    z-index: 10;
+
+    img {
+      position: relative;
+      z-index: 2;
+      opacity: 0.2;
+    }
+
+    &:hover {
+      img {
+        filter: $iconFilterSelected;
+        opacity: 1 !important;
+      }
+    }
+
+    &.hasFinder img {
+      filter: $iconFilterSelected;
+      opacity: 1 !important;
+    }
+  }
+
   .bar-bg {
     opacity: 0.9;
     background-color: #ECDBF7;
@@ -325,12 +369,14 @@
 
   .address-bar {
     position: relative;
+    
     .address {
       min-width: 200px;
       line-height: 12px;
       color: #202124;
       padding: 6.2px 5px 5px 1px;
       margin-right: 32px;
+      text-shadow: 1px 1px 0 white;
 
       &:hover .text {
         background: rgba($bgColorHover, 0.7);
