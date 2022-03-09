@@ -3,56 +3,64 @@
     @click="handleClick"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
-    :class="{ selected: isSelected, unselected: !isSelected, active: isActive, inactive: !isActive }"
+    :class="{ isSelected: isSelected, notSelected: !isSelected, isFocused: isFocused, notFocused: !isFocused }"
     class="Player"
   >
     <div class="wrapper relative w-full h-full flex flex-row items-center">
-      <ArrowLeft
-        :isSelected="isSelected"
-        :isActive="isActive"
-      />
-      <ArrowRight
-        v-if="isSelected"
-        :isSelected="isSelected"
-        :isActive="isActive"
-      />
-      <div class="bar-bg"></div>
-
-      <div
-        :class="{ hasFinder: isShowingFinder }"
-        class="search-icon"
-        @click="toggleFinder"
-      >
-        <img src="@/assets/icons/search.svg" class="h-5 w-5" />
+      
+      <div class="backgrounds">
+        <div class="left-notch"></div>
+        <div class="right-arrow"></div>
       </div>
 
-      <PlayerBar
-        :isSelected="isSelected"
-        :mouseIsWithinPlayer="mouseIsWithinPlayer"
-        :isRunning="isRunning"
-        :ticks="ticks"
-        :session="session"
-        class="flex-1"
-      />
+      <Borders :isSelected="isSelected" :isFocused="isFocused" />
+
+      <div class="address-bar relative h-full flex flex-row">
+        <div class="live-icon">
+          <div class="text">LIVE</div>
+        </div>
+        <div class="address">
+          <div class="text">example.org</div>
+        </div>
+        <div
+          :class="{ hasFinder: isShowingFinder }"
+          class="search-icon"
+          @click="toggleFinder"
+        >
+          <img src="@/assets/icons/search.svg" class="h-5 w-5" />
+        </div>
+      </div>
+
+      <div class="player-wrapper relative flex-1 h-full flex flex-row items-center">
+        <div class="bar-bg"></div>
+        <PlayerBar
+          :isSelected="isSelected"
+          :mouseIsWithinPlayer="mouseIsWithinPlayer"
+          :isRunning="isRunning"
+          :ticks="ticks"
+          :session="session"
+          class="flex-1"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
   import * as Vue from 'vue';
-  import ArrowLeft from './ArrowLeft.vue';
   import ArrowRight from './ArrowRight.vue';
   import PlayerBar from './PlayerBar.vue';
+  import Borders from './Borders.vue';
   import WindowsController, { EmitterName } from '@/pages/toolbar/lib/WindowsController';
 
   export default Vue.defineComponent({
     name: 'Player',
     components: {
-      ArrowLeft,
       ArrowRight,
       PlayerBar,
+      Borders,
     },
-    props: ['isSelected', 'isActive', 'ticks', 'isRunning', 'session'],
+    props: ['isSelected', 'isFocused', 'ticks', 'isRunning', 'session'],
     emits: ['select'],
     setup() {
       return {
@@ -114,102 +122,66 @@
   @import "../variables";
 
   .Player {
+    position: relative;
     padding-top: 4px;
     padding-bottom: 4px;
-    position: relative;
-
-    &.active {
-      .wrapper {
-        border-width: 2px;
-      }
-    }
-    &.inactive {
-      .ArrowLeft {
-        top: -1px;
-      }
-    }
-
-    &.selected {
-      .wrapper {
-        margin-left: 0;
-        border-color: $borderColorSelected;
-        box-shadow: inset 1px 1px 2px $shadowColor;
-        background: $bgSelected;
+    margin-right: 12px;
+    
+    &.isSelected {
+      .backgrounds {
+        background: $bgColorSelected;
       }
       .search-icon {
         pointer-events: auto;
-        padding-left: 21px;
         img {
           opacity: 0.4;
           pointer-events: none;
         }
-        &:before {
+        &:after {
           background: white;
         }
       }
-      .ArrowLeft {
-        left: 0;
-      }
     }
 
-    &.unselected {
-      .wrapper {
-        margin-left: 7px;
-        width: calc(100% - 9px);
-
-        &:before {
-          content: '';
-          position: absolute;
-          top: -1px;
-          left: 0;
-          width: 0;
-          height: 0;
-          border-top: 13px solid transparent;
-          border-bottom: 13px solid transparent;
-          border-left: 13px solid white;
-        }
-
-        &:after {
-          content: "";
-          position: absolute;
-          top: -0.5;
-          right: -13px;
-          width: 0;
-          height: 0;
-          border-top: 13.5px solid transparent;
-          border-bottom: 14.5px solid transparent;
-          border-left: 13.5px solid white;
-        }
+    &.notSelected {
+      .address-bar {
+        pointer-events: none;
       }
       .bar-bg {
-        background-color: color.grayscale(#ECDBF7);
-        width: calc(100% - 38px);
-        left: 39px;
+        background-color: transparent;
+        &:after {
+          display: none;
+        }
+      }
+      .search-icon {
+        display: none;
+      }
+      .live-icon, .address {
+        opacity: 0.4;
       }
       .search-icon img {
-        opacity: 0.1;
+        opacity: 0.2;
       }
     }
 
-    &.unselected:hover {
-      .wrapper {
-        background: $bgHover;
-        border-color: color.scale($bgHover, $lightness: -5%);
-        box-shadow: inset 1px 1px 0 white;
-        &:after {
-          border-left-color: $bgHover;
+    &.notSelected:hover {
+      .backgrounds {
+        background: $bgColorHover;
+        .right-arrow {
+          border-left-color: $bgColorHover;
         }
       }
-      .search-icon:before {
-        background: $bgHover;
-        img {
-          opacity: 0.1;
-        }
+      .search-icon {
+        display: block;
+      }
+      .search-icon:after {
+        background: $bgColorHover;
       }
       .bar-bg {
-        background-color: color.scale($bgHover, $lightness: -5%);
+        background-color: color.scale($bgColorHover, $lightness: -5%);
         &:after {
-          border-left-color: color.scale($bgHover, $lightness: -5%);
+          display: block;
+          border-left-color: color.scale($bgColorHover, $lightness: -5%);
         }
       }
     }
@@ -218,19 +190,79 @@
   .wrapper {
     width: 100%;
     height: 100%;
-    padding-right: 15px;
-    border: 1px solid $borderColor;
     border-right: none;
     border-left: none;
     position: relative;
   }
 
-  .search-icon {
-    pointer-events: none;
-    padding: 6.2px 0px 5px 15px;
+  .backgrounds {
+    position: absolute;
+    left: -4px;
+    top: 0;
+    width: calc(100% + 4px);
+    height: 100%;
+    background: $bgColor;
+    .left-notch {
+      content: '';
+      position: absolute;
+      top: 0.2px;
+      left: 0;
+      width: 0;
+      height: 0;
+      border-top: 14px solid transparent;
+      border-bottom: 14px solid transparent;
+      border-left: 13px solid white;
+    }
+
+    .right-arrow {
+      content: "";
+      position: absolute;
+      top: 0.2px;
+      right: -14px;
+      width: 0;
+      height: 0;
+      border-top: 14px solid transparent;
+      border-bottom: 14px solid transparent;
+      border-left: 14.5px solid $bgColor;
+    }
+  }
+
+  .live-icon {
+    padding: 6.2px 3px 5px 10px;
     z-index: 10;
     position: relative;
-    margin-right: 7px;
+    margin-left: 5px;
+
+    &:hover .text {
+      background: $textColorSelected;
+    }
+    .text {
+      background: #5B5B5B;
+      color: white;
+      font-size: 12px;
+      padding: 2px 5px;
+      line-height: 12px;
+      border-radius: 3px;
+    }
+  }
+
+  .search-icon {
+    padding: 6.2px 0px 5px 8px;
+    z-index: 10;
+    position: absolute;
+    right: 7px;
+
+    &:before {
+      content: '';
+      position: absolute;
+      top: 6px;
+      bottom: 5px;
+      width: calc(100% + 7px);
+      left: 0;
+      border-left: 1px solid rgba(0,0,0,0.1);
+      border-radius: 0 15px 20px 0;
+      z-index: 2;
+    }
 
     img {
       position: relative;
@@ -238,9 +270,15 @@
       opacity: 0.2;
     }
 
-    &:hover img {
-      filter: $iconFilterSelected;
-      opacity: 1 !important;
+    &:hover {
+      &:before {
+        background: rgba($bgColorHover, 0.5);
+        border-left: none;
+      }
+      img {
+        filter: $iconFilterSelected;
+        opacity: 1 !important;
+      }
     }
 
     &.hasFinder img {
@@ -248,15 +286,14 @@
       opacity: 1 !important;
     }
 
-    &:before {
+    &:after {
       content: '';
       position: absolute;
-      z-index: 1;
       height: 19px;
       width: 18px;
       top: 4px;
       right: -10px;
-      background: white;
+      background: $bgColor;
       border-radius: 50%;
       z-index: 1;
     }
@@ -267,11 +304,11 @@
     background-color: #ECDBF7;
     height: 16px;
     top: calc(50% - 8px);
-    left: 44px;
+    left: 0;
     position: absolute;
     z-index: 3;
     pointer-events: none;
-    width: calc(100% - 46px);
+    width: 100%;
 
     &:after {
       content: '';
@@ -286,15 +323,24 @@
     }
   }
 
-  .ArrowRight {
-    right: -14px;
-    top: -2px;
-  }
-  .ArrowLeft {
-    left: -6px;
-  }
+  .address-bar {
+    position: relative;
+    .address {
+      min-width: 200px;
+      line-height: 12px;
+      color: #202124;
+      padding: 6.2px 5px 5px 1px;
+      margin-right: 32px;
 
-  button {
-    cursor: default;
+      &:hover .text {
+        background: rgba($bgColorHover, 0.5);
+      }
+
+      .text {
+        padding: 1px 5px 3px 5px;
+        line-height: 12px;
+        border-radius: 2px;
+      }
+    }
   }
 </style>

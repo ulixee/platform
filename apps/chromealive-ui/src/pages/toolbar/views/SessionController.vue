@@ -1,46 +1,38 @@
 <template>
   <div class="bar-wrapper flex flex-row items-stretch">
-    <!-- <Titlebar :session="session" :isTimetravelMode="isTimetravelMode" /> -->
-    <AddressField
-      @toggle="toggleAddress"
-      :isActive="activeItem === 'Address'"
-      :session="session"
-      :style="{ width: activeItem === 'Address' ? '40%' : '20%' }"
+    <MenuButton class="z-20" />
+    <InputButton
+      @select="select('Input')"
+      :isSelected="selectedItem === 'Input'"
+      :isFocused="selectedItem === 'Input'"
+      :isMinimal="isMinimal"
+      class="z-20"
     />
-    <div class="ulixee-tools flex-1 flex flex-row items-stretch">
-      <InputButton
-        @select="select('Input')"
-        :isSelected="selectedItem === 'Input'"
-        :isActive="activeItem === 'Input'"
-        :isMinimal="isMinimal"
-        class="z-20"
-      />
-      <Player
-        @select="select('Player')"
-        :isSelected="selectedItem === 'Player'"
-        :isActive="activeItem === 'Player'"
-        :ticks="timelineTicks"
-        :isRunning="isRunning"
-        :isMinimal="isMinimal"
-        :session="session"
-        class="flex-1 z-10"
-      />
-      <OutputButton
-        @select="select('Output')"
-        :isSelected="selectedItem === 'Output'"
-        :isActive="activeItem === 'Output'"
-        :isMinimal="isMinimal"
-        :outputSize="outputSize"
-        style="z-index: 2"
-      />
-      <TestedButton
-        @select="select('Reliability')"
-        :isSelected="selectedItem === 'Reliability'"
-        :isActive="activeItem === 'Reliability'"
-        :isMinimal="isMinimal"
-        style="z-index: 1"
-      />
-    </div>
+    <Player
+      @select="select('Player')"
+      :isSelected="selectedItem === 'Player'"
+      :isFocused="selectedItem === 'Player'"
+      :ticks="timelineTicks"
+      :isRunning="isRunning"
+      :isMinimal="isMinimal"
+      :session="session"
+      class="flex-1 z-10"
+    />
+    <OutputButton
+      @select="select('Output')"
+      :isSelected="selectedItem === 'Output'"
+      :isFocused="selectedItem === 'Output'"
+      :isMinimal="isMinimal"
+      :outputSize="outputSize"
+      style="z-index: 2"
+    />
+    <ReliabilityButton
+      @select="select('Reliability')"
+      :isSelected="selectedItem === 'Reliability'"
+      :isFocused="selectedItem === 'Reliability'"
+      :isMinimal="isMinimal"
+      style="z-index: 1"
+    />
   </div>
 </template>
 
@@ -52,22 +44,22 @@ import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEv
 import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
 import { ChevronDownIcon } from '@heroicons/vue/outline';
 import humanizeBytes from '@/utils/humanizeBytes';
+import MenuButton from '../components/MenuButton.vue';
 import InputButton from '../components/InputButton.vue';
 import Player from '../components/Player.vue';
 import OutputButton from '../components/OutputButton.vue';
-import TestedButton from '../components/TestedButton.vue';
-import AddressField from '../components/AddressField.vue';
+import ReliabilityButton from '../components/ReliabilityButton.vue';
 
 type IStartLocation = 'currentLocation' | 'sessionStart';
 
 export default Vue.defineComponent({
   name: 'SessionController',
   components: {
+    MenuButton,
     InputButton,
     Player,
     OutputButton,
-    TestedButton,
-    AddressField,
+    ReliabilityButton,
     ChevronDownIcon,
   },
   setup() {
@@ -75,13 +67,11 @@ export default Vue.defineComponent({
 
     return {
       session,
-      isTimetravelMode: Vue.ref(false),
       isRunning: Vue.ref(false),
       isMinimal: Vue.ref(false),
       startLocation: Vue.ref<IStartLocation>('currentLocation'),
       timelineTicks: Vue.ref<any[]>([]),
-      activeItem: Vue.ref('Player'),
-      selectedItem: Vue.ref('Player'),
+      selectedItem: Vue.ref(''),
       outputSize: Vue.ref<string>(''),
     };
   },
@@ -92,7 +82,6 @@ export default Vue.defineComponent({
   methods: {
     select(item: string) {
       this.selectedItem = item;
-      this.activeItem = item;
       if (item === 'Output' || item === 'Input' || item === 'Reliability') {
         Client.send('Session.openScreen', {
           heroSessionId: this.session.heroSessionId,
@@ -100,14 +89,6 @@ export default Vue.defineComponent({
         });
       } else if (item === 'Player') {
         Client.send('Session.openPlayer');
-      }
-    },
-
-    toggleAddress() {
-      if (this.activeItem === 'Address') {
-        this.activeItem = this.selectedItem;
-      } else {
-        this.activeItem = 'Address';
       }
     },
 
@@ -153,10 +134,6 @@ export default Vue.defineComponent({
       this.isRunning = this.session.playbackState === 'running';
 
       this.onAppModeEvent({ mode: message.mode });
-
-      //   if (isNewId || !this.isTimetravelMode) {
-      //     this.timelineOffset = 100;
-      //   }
     },
 
     onDataboxUpdated(message: IDataboxUpdatedEvent) {
@@ -164,7 +141,6 @@ export default Vue.defineComponent({
     },
 
     onAppModeEvent(message: IAppModeEvent): void {
-      this.isTimetravelMode = message.mode === 'timetravel';
       if (message.mode === 'live') {
         // this.timelineOffset = 100;
         // this.clearPendingTimetravel();
@@ -203,18 +179,16 @@ function createDefaultSession(): IHeroSessionActiveEvent {
 </script>
 
 <style lang="scss" scoped>
-:root {
-  --toolbarBackgroundColor: #faf4ff;
-}
+  @use "sass:math";
+  @import "../variables.scss";
 
-.bar-wrapper {
-  background-color: var(--toolbarBackgroundColor);
-  padding-left: 8px;
-  height: 36px;
-  cursor: default;
-}
+  :root {
+    --toolbarBackgroundColor: #faf4ff;
+  }
 
-.ulixee-tools {
-  margin-left: 2px;
-}
+  .bar-wrapper {
+    background-color: var(--toolbarBackgroundColor);
+    height: 36px;
+    cursor: default;
+  }
 </style>

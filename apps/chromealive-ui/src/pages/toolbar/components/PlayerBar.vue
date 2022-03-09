@@ -1,5 +1,10 @@
 <template>
-  <div class="PlayerBar relative" @mousedown="handleMouseDown($event)" :style="formattedCssVars()" :class="{ selected: isSelected, unselected: !isSelected }">
+  <div 
+    class="PlayerBar relative" 
+    @mousedown="handleMouseDown($event)" 
+    :style="formattedCssVars()" 
+    :class="{ isSelected: isSelected, notSelected: !isSelected }"
+  >
     <div class="ticks">
       <div
         v-for="(tick, i) in ticks"
@@ -36,7 +41,6 @@
 <script lang="ts">
   import * as Vue from 'vue';
   import Client from '@/api/Client';
-  import ArrowLeft from './ArrowLeft.vue';
   import ArrowRight from './ArrowRight.vue';
 
   const startMarkerPosition = 0;
@@ -63,7 +67,6 @@
   export default Vue.defineComponent({
     name: 'PlayerBar',
     components: {
-      ArrowLeft,
       ArrowRight,
     },
     props: ['isSelected', 'mouseIsWithinPlayer', 'isRunning', 'ticks', 'session'],
@@ -395,7 +398,7 @@
   .PlayerBar {
     height: 100%;
 
-    &.unselected {
+    &.notSelected {
       .ticks {
         display: none;
       }
@@ -420,8 +423,9 @@
     &.isAtLive {
       width: 31px;
       height: 31px;
-      top: -3.5px;
+      top: -1.5px;
       border-radius: 50%;
+      margin-left: -13px;
     }
   }
 
@@ -455,8 +459,9 @@
     &.isLive {
       width: 32px;
       height: 32px;
-      top: -3.5px;
+      top: -2.5px;
       border-radius: 50%;
+      margin-left: -13px;
       &:hover {
         box-shadow: 1px 1px 3px 2px rgba(95, 0, 134, 0.3);
       }
@@ -653,10 +658,7 @@
   .ArrowRight {
     right: -27px;
   }
-  .ArrowLeft {
-    left: -6px;
-  }
-
+  
   button {
     cursor: default;
   }
