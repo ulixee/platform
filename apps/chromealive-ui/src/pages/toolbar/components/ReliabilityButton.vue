@@ -2,16 +2,15 @@
   <div
     @click="handleClick"
     :class="{ isSelected: isSelected, notSelected: !isSelected, isFocused: isFocused, notFocused: !isFocused }"
-    class="OutputButton relative flex flex-row items-center whitespace-nowrap"
+    class="ReliabilityButton flex flex-row items-center"
   >
     <div class="backgrounds">
-        <div class="left-notch"></div>
-        <div class="right-arrow"></div>
+      <div class="left-notch"></div>
     </div>
-    <Borders :isSelected="isSelected" :isFocused="isFocused" />
+    <Borders :isSelected="isSelected" :isFocused="isFocused" :hasRightCircle="true" />
 
-    <img src="@/assets/icons/database.svg" class="icon" />
-    <span v-if="!isMinimal" class="label">{{outputSize || 0}}KB Output</span>
+    <img src="@/assets/icons/heart.svg" class="icon" />
+    <span class="label" v-if="!isMinimal">36% Reliability</span>
   </div>
 </template>
 
@@ -20,11 +19,21 @@
   import Borders from './Borders.vue';
 
   export default Vue.defineComponent({
-    name: 'OutputButton',
+    name: 'ReliabilityButton',
     components: {
       Borders,
     },
-    props: ['isSelected', 'isFocused', 'isMinimal', 'outputSize'],
+    props: {
+      isSelected: {
+        type: Boolean,
+      },
+      isFocused: {
+        type: Boolean,
+      }, 
+      isMinimal: {
+        type: Boolean,
+      },
+    },
     emits: ['select'],
     setup() {
       return {}
@@ -43,34 +52,30 @@
   @use "sass:color";
   @import "../variables";
 
-  .OutputButton {
+  .ReliabilityButton {
     margin-top: 4px;
-    margin-right: 12px;
     height: 28px;
     position: relative;
+    border-radius: 0 $borderRadius $borderRadius 0;
+    padding: 0 10px 0 17px;
     color: $textColor;
     font-size: $fontSize;
     text-shadow: 1px 1px 0 white;
-    padding-left: 15px;
 
     &.isSelected {
       color: $textColorSelected;
       .backgrounds {
         background: $bgColorSelected;
       }
-
       .icon {
-        opacity: $iconOpacitySelected;
         filter: $iconFilterSelected;
+        opacity: $iconOpacitySelected;
       }
     }
 
     &.notSelected {
       .backgrounds {
         .left-notch {
-          display: block;
-        }
-        .right-arrow {
           display: block;
         }
       }
@@ -84,7 +89,6 @@
           border-left-color: $bgColorHover;
         }
       }
-    
       .icon {
         opacity: $iconOpacityHover;
       }
@@ -98,6 +102,7 @@
     width: calc(100% + 4px);
     height: 100%;
     background: $bgColor;
+    border-radius: 0 $borderRadius $borderRadius 0;
 
     .left-notch {
       position: absolute;
@@ -110,20 +115,7 @@
       border-bottom: 14px solid transparent;
       border-left: 13px solid white;
     }
-
-    .right-arrow {
-      position: absolute;
-      display: none;
-      top: 0.2;
-      right: -13px;
-      width: 0;
-      height: 0;
-      border-top: 14px solid transparent;
-      border-bottom: 14px solid transparent;
-      border-left: 13px solid $bgColor;
-    }
   }
-
   .icon {
     height: 15px;
     opacity: $iconOpacity;
@@ -134,5 +126,4 @@
     display: block;
     position: relative;
   }
-
 </style>

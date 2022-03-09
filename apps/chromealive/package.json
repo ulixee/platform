@@ -20,27 +20,28 @@
     "install/*"
   ],
   "dependencies": {
+    "@electron/remote": "^2.0.5",
+    "@ulixee/apps-chromealive-interfaces": "^1.5.4",
+    "@ulixee/commons": "1.5.10",
+    "compare-versions": "^3.6.0",
+    "electron-context-menu": "^3.1.2",
+    "electron-log": "^4.4.6",
     "node-static": "^0.7.11",
-    "tslib": "^2.3.1",
     "progress": "^2.0.3",
     "tar": "^6.1.11",
-    "compare-versions": "^3.6.0",
-    "electron-log": "^4.4.1",
-    "@ulixee/commons": "1.5.10",
-    "@ulixee/apps-chromealive-interfaces": "^1.5.4",
-    "electron-context-menu": "^3.1.1",
+    "tslib": "^2.3.1",
     "ws": "^7.4.6"
   },
   "optionalDependencies": {
-    "nseventmonitor": "^1.0.0"
+    "nseventmonitor": "^1.0.2"
   },
   "devDependencies": {
-    "@types/tar": "^4.0.5",
     "@types/progress": "^2.0.5",
-    "electron": "13.1.9",
-    "electron-builder": "^22.11.11",
-    "shx": "^0.3.3",
-    "cross-env": "^7.0.3"
+    "@types/tar": "^4.0.5",
+    "cross-env": "^7.0.3",
+    "electron": "17.1.0",
+    "electron-builder": "^22.14.13",
+    "shx": "^0.3.3"
   },
   "build": {
     "appId": "dev.ulixee.chromealive",

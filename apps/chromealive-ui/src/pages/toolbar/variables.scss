@@ -1,12 +1,15 @@
 $borderColor: rgba(51, 0, 73, 0.15);
-$borderColorSelected: #c663ff;
+$borderColorHover: rgba(51, 0, 73, 0.25);
+$borderColorSelected: rgba(198, 99, 255, 1);
+$borderColorSelectedLight: rgba(198, 99, 255, 0.5);
 $borderRadius: 17px;
 
 $bgColor: #F1F3F4;
-$bgHover: #F0E4F5;
-$bgSelected: white;
+$bgColorHover: #F0E4F5;
+$bgColorSelected: white;
 
 $shadowColor: rgba(51, 0, 73, 0.2);
+$shadowColorEnhanced: rgba(51, 0, 73, 0.3);
 
 $arrowSize: 28;
 
