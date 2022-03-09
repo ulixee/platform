@@ -67,8 +67,7 @@
   @import "../variables.scss";
 
   .MenuButton {
-    margin-top: 4px;
-    margin-right: 5px;
+    margin: 4px 6px 0 2px;
     height: 28px;
     position: relative;
     color: $textColor;
@@ -78,7 +77,7 @@
     border-radius: $borderRadius;
 
     &:hover {
-      background: $bgColorHover;
+      background: rgba($bgColorHover, 0.75);
     }
     &.hasMenu {
       background: color.scale(#DCDEE0, $lightness: -5%);;

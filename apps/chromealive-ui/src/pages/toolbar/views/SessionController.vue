@@ -71,7 +71,7 @@ export default Vue.defineComponent({
       isMinimal: Vue.ref(false),
       startLocation: Vue.ref<IStartLocation>('currentLocation'),
       timelineTicks: Vue.ref<any[]>([]),
-      selectedItem: Vue.ref(''),
+      selectedItem: Vue.ref('Player'),
       outputSize: Vue.ref<string>(''),
     };
   },

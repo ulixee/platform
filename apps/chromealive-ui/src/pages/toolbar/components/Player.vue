@@ -152,7 +152,7 @@
       }
       .timetravel-icon {
         img {
-          opacity: 0.4;
+          opacity: 0.7;
           pointer-events: none;
         }
       }

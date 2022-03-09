@@ -1,4 +1,5 @@
 import { app, BrowserWindow, screen } from 'electron';
+import * as remoteMain from '@electron/remote/main';
 import { EventEmitter } from 'events';
 import { Server as StaticServer } from 'node-static';
 import * as Http from 'http';
@@ -165,6 +166,7 @@ export class ChromeAlive extends EventEmitter {
       roundedCorners: false,
       movable: false,
       closable: false,
+      resizable: false,
       transparent: true,
       acceptFirstMouse: true,
       hasShadow: false,
@@ -176,10 +178,11 @@ export class ChromeAlive extends EventEmitter {
       webPreferences: {
         preload: `${__dirname}/PagePreload.js`,
         nativeWindowOpen: true,
-        enableRemoteModule: true,
       },
       height: 44,
     });
+
+    remoteMain.enable(this.#toolbarWindow.webContents);
 
     // for output window
     this.#toolbarWindow.webContents.setWindowOpenHandler(details => {
