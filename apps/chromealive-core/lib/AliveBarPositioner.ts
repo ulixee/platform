@@ -5,8 +5,12 @@ import ChromeAliveCore from '../index';
 
 const { log } = Log(module);
 
+interface IBoundsAndScale extends IBounds {
+  scale: number;
+}
+
 export default class AliveBarPositioner {
-  public static workarea: IBounds;
+  public static workarea: IBoundsAndScale;
   public static chromeToolsTopPadding = 42;
   public static chromeToolsLeftPadding = 100;
   public static chromeToolsWidth = 140;
@@ -25,7 +29,7 @@ export default class AliveBarPositioner {
     [sessionId: string]: IBounds;
   } = {};
 
-  public static getMaxChromeBounds(): IBounds | null {
+  public static getMaxChromeBounds(): IBoundsAndScale | null {
     if (!this.workarea) return null;
 
     return {
@@ -33,6 +37,7 @@ export default class AliveBarPositioner {
       left: this.workarea.left,
       width: this.workarea.width,
       height: this.workarea.height,
+      scale: this.workarea.scale,
     };
   }
 
@@ -119,12 +124,13 @@ export default class AliveBarPositioner {
     }
   }
 
-  public static onAppReady(workarea: IBounds): void {
-    log.info('App workarea setup', { workarea, sessionId: null });
+  public static onAppReady(workarea: IBoundsAndScale): void {
     this.workarea = workarea;
     const maxbounds = this.getMaxChromeBounds();
+
     defaultScreen.width = maxbounds.width;
     defaultScreen.height = maxbounds.height;
+    defaultScreen.scale = maxbounds.scale;
   }
 
   public static restartingSession(sessionId: string): void {

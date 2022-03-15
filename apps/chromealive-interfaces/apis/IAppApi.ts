@@ -5,7 +5,7 @@ export default interface IAppApi {
     error?: Error;
   };
 
-  ready(args: { workarea: IBounds; vueServer: string }): void;
+  ready(args: { workarea: IBounds & { scale: number }; vueServer: string }): void;
   focus(): void;
 }
 

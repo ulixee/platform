@@ -240,7 +240,12 @@ export class ChromeAlive extends EventEmitter {
 
     await this.injectCoreServer(this.#toolbarWindow);
 
-    const workareaBounds = { left: workarea.x, top: workarea.y, ...workarea };
+    const workareaBounds = {
+      left: workarea.x,
+      top: workarea.y,
+      ...workarea,
+      scale: mainScreen.scaleFactor,
+    };
     await this.#api.send('App.ready', {
       workarea: workareaBounds,
       vueServer: `http://localhost:${vueServerAddress.port}`,

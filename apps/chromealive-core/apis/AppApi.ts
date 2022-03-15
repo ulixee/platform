@@ -1,5 +1,4 @@
-import { IBounds } from '@ulixee/apps-chromealive-interfaces/IBounds';
-import { IAppApiStatics } from '@ulixee/apps-chromealive-interfaces/apis/IAppApi';
+import IAppApi, { IAppApiStatics } from '@ulixee/apps-chromealive-interfaces/apis/IAppApi';
 import AliveBarPositioner from '../lib/AliveBarPositioner';
 import ChromeAliveCore from '../index';
 
@@ -9,7 +8,7 @@ export default class AppApi {
     return {};
   }
 
-  static ready(args: { workarea: IBounds; vueServer: string }): void {
+  static ready(args: Parameters<IAppApi['ready']>[0]): void {
     ChromeAliveCore.vueServer = args.vueServer;
     AliveBarPositioner.onAppReady(args.workarea);
   }
