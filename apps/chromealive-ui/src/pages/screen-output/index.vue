@@ -71,7 +71,6 @@ export default Vue.defineComponent({
 
     Vue.onMounted(() => {
       Client.on('Databox.updated', event => onDataboxUpdated(event));
-      Client.on('Session.active', event => onSessionActive(event));
     });
 
     Client.connect().catch(err => alert(String(err)));

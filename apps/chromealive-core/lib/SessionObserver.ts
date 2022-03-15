@@ -22,6 +22,8 @@ import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import SourceCodeTimeline from './SourceCodeTimeline';
 import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
 import VueScreen from './VueScreen';
+import DevtoolsBackdoorModule from './hero-plugin-modules/DevtoolsBackdoorModule';
+import ElementsModule from './hero-plugin-modules/ElementsModule';
 
 const { log } = Log(module);
 
@@ -144,6 +146,26 @@ export default class SessionObserver extends TypedEventEmitter<{
     }
   }
 
+  public async toggleInspectElementMode(): Promise<void> {
+    await this.devtoolsBackdoorModule.toggleInspectElementMode();
+  }
+
+  public async highlightNode(backendNodeId: number): Promise<void> {
+    await this.elementsModule.highlightNode(backendNodeId);
+  }
+
+  public async hideHighlight(): Promise<void> {
+    await this.elementsModule.hideHighlight();
+  }
+
+  public async searchElements(text: string): Promise<any[]> {
+    return await this.devtoolsBackdoorModule.searchDom(text);
+  }
+
+  public async generateQuerySelector(backendNodeId: number): Promise<any> {
+    return await this.elementsModule.generateQuerySelector(backendNodeId);
+  }
+
   public async openScreen(
     name: Parameters<ISessionApi['openScreen']>[0]['screenName'],
   ): Promise<void> {
@@ -226,6 +248,14 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   public get tabGroupModule(): TabGroupModule {
     return TabGroupModule.bySessionId.get(this.heroSession.id);
+  }
+
+  public get devtoolsBackdoorModule(): DevtoolsBackdoorModule {
+    return DevtoolsBackdoorModule.bySessionId.get(this.heroSession.id);
+  }
+
+  public get elementsModule(): ElementsModule {
+    return ElementsModule.bySessionId.get(this.heroSession.id);
   }
 
   public async timetravel(

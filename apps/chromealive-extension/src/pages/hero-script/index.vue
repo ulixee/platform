@@ -220,14 +220,16 @@ h5 {
   align-items: baseline;
   height: 16px;
   margin: 2px 0;
+  pointer-events: none;
+  color: #999999;
+
   .call-marker {
     display: none;
   }
 
-  &:hover {
-    background: #eeeeee;
-  }
   &.command {
+    color: black;
+    pointer-events: initial;
     &.multi-call {
       .call-marker {
         display: none;

@@ -1,13 +1,11 @@
 import ISessionApi, {
   IHeroSessionArgs,
-  ISessionApiStatics,
   ISessionResumeArgs,
 } from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import SessionObserver from '../lib/SessionObserver';
 import ChromeAliveCore from '../index';
 
-@ISessionApiStatics
 export default class SessionApi {
   static getScreenshot(): {
     imageBase64: string;

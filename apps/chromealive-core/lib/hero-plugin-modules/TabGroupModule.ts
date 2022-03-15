@@ -3,20 +3,23 @@ import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import BridgeToExtension from '../bridges/BridgeToExtension';
 import { createResponseId, IMessageObject, MessageLocation, ResponseCode } from '../BridgeHelpers';
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
+import { createPromise } from '@ulixee/commons/lib/utils';
+import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
 
-export default class TabGroupModule extends TypedEventEmitter<{
-  'tab-identified': { puppetPageId: string; tabId: number };
-}> {
+interface IPageIdentity {
+  tabId: number; 
+  windowId: number
+}
+export default class TabGroupModule {
   public static bySessionId = new Map<string, TabGroupModule>();
 
-  public identityByPageId = new Map<string, { tabId: number; windowId: number }>();
+  private identityByPuppetPage = new Map<IPuppetPage, IResolvablePromise<IPageIdentity>>();
+  private puppetPagesById = new Map<string, IPuppetPage>();
   private bridgeToExtension: BridgeToExtension;
   private sessionId: string;
 
   constructor(bridgeToExtension: BridgeToExtension, browserEmitter: EventEmitter) {
-    super();
     this.bridgeToExtension = bridgeToExtension;
     this.close = this.close.bind(this);
     browserEmitter.on('payload', (payload, puppetPageId) => {
@@ -31,13 +34,23 @@ export default class TabGroupModule extends TypedEventEmitter<{
     TabGroupModule.bySessionId.set(this.sessionId, this);
   }
 
-  public onNewPuppetPage(page: IPuppetPage): Promise<any> {
-    page.once('close', this.pageClosed.bind(this, page.id));
+  public onNewPuppetPage(puppetPage: IPuppetPage): Promise<any> {
+    this.puppetPagesById.set(puppetPage.id, puppetPage);
+    this.identityByPuppetPage.set(puppetPage, createPromise<IPageIdentity>(2e3, 'PuppetPage never received Tab ID'));
+    puppetPage.once('close', this.puppetPageClosed.bind(this, puppetPage));
     return Promise.resolve();
   }
 
-  public close() {
-    TabGroupModule.bySessionId.delete(this.sessionId);
+  public async getTabIdByPuppetPageId(puppetPageId: string): Promise<number> {
+    const puppetPage = this.puppetPagesById.get(puppetPageId);
+    const { tabId } = await this.identityByPuppetPage.get(puppetPage).promise;
+    return tabId;
+  }
+
+  public async getPuppetPageByTabId(tabId: number): Promise<IPuppetPage> {
+    const puppetPages = Array.from(this.identityByPuppetPage.keys());
+    const identities = await Promise.all(this.identityByPuppetPage.values());
+    return puppetPages.find((puppetPage, i) => identities[i].tabId === tabId);
   }
 
   public async hideTabs(options?: { show?: IPuppetPage[], onlyHide?: IPuppetPage[] }): Promise<void> {
@@ -46,26 +59,23 @@ export default class TabGroupModule extends TypedEventEmitter<{
     const onlyHideTabIds: number[] = [];
 
     for (const puppetPage of options?.show || []) {
-      const ids = this.identityByPageId.get(puppetPage.id);
-      if (ids) {
+      const identity = await this.identityByPuppetPage.get(puppetPage).promise;
+      if (identity) {
         puppetPageId ??= puppetPage.id;
-        showTabIds.push(ids.tabId);
+        showTabIds.push(identity.tabId);
       }
     }
 
     for (const puppetPage of options?.onlyHide || []) {
-      const ids = this.identityByPageId.get(puppetPage.id);
-      if (ids) {
+      const identity = await this.identityByPuppetPage.get(puppetPage).promise;
+      if (identity) {
         puppetPageId ??= puppetPage.id;
-        onlyHideTabIds.push(ids.tabId);
+        onlyHideTabIds.push(identity.tabId);
       }
     }
 
     if (!puppetPageId) {
-      for (const [ pageId ] of this.identityByPageId.entries()) {
-        puppetPageId = pageId;
-        break;
-      }
+      puppetPageId = this.identityByPuppetPage.keys().next().value?.id;
     }
 
     const args = { showTabIds, onlyHideTabIds };
@@ -77,13 +87,17 @@ export default class TabGroupModule extends TypedEventEmitter<{
     );
   }
 
+  public close() {
+    TabGroupModule.bySessionId.delete(this.sessionId);
+  }
+
   private onTabIdentified(
     payload: { windowId: number; tabId: number },
     puppetPageId: string,
   ): void {
     const { windowId, tabId } = payload;
-    this.identityByPageId.set(puppetPageId, { windowId, tabId });
-    this.emit('tab-identified', { puppetPageId, tabId });
+    const puppetPage = this.puppetPagesById.get(puppetPageId);
+    this.identityByPuppetPage.get(puppetPage).resolve({ windowId, tabId });
   }
 
   private async sendToExtension<T>(
@@ -106,7 +120,8 @@ export default class TabGroupModule extends TypedEventEmitter<{
     return (await this.bridgeToExtension.send(message, puppetPageId)) as T;
   }
 
-  private pageClosed(pageId: string) {
-    this.identityByPageId.delete(pageId);
+  private puppetPageClosed(puppetPage: IPuppetPage) {
+    this.identityByPuppetPage.delete(puppetPage);
+    this.puppetPagesById.delete(puppetPage.id);
   }
 }

@@ -164,6 +164,7 @@ export class ChromeAlive extends EventEmitter {
       show: false,
       frame: false,
       roundedCorners: false,
+      focusable: false,
       movable: false,
       closable: false,
       resizable: false,
@@ -184,7 +185,7 @@ export class ChromeAlive extends EventEmitter {
 
     remoteMain.enable(this.#toolbarWindow.webContents);
 
-    // for output window
+    // for child windows
     this.#toolbarWindow.webContents.setWindowOpenHandler(details => {
       const isMenu = details.frameName.includes('Menu');
       return {

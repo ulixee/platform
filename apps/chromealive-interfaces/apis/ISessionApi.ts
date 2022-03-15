@@ -11,9 +11,6 @@ export interface IHeroSessionArgs {
   heroSessionId: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function ISessionApiStatics(constructor: ISessionApi) {}
-
 export default interface ISessionApi {
   getScreenshot(
     args: IHeroSessionArgs & {

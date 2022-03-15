@@ -131,7 +131,6 @@ export default class BridgeToExtension extends EventEmitter {
     event: Protocol.Runtime.BindingCalledEvent,
   ) {
     if (event.name !== ___sendToCore) return;
-
     const [destLocation, responseCode, stringifiedMessage] =
       extractStringifiedComponentsFromMessage(event.payload);
     if (isResponseMessage(event.payload)) {

@@ -2,6 +2,7 @@ import { IApiHandlerSpec } from '@ulixee/apps-chromealive-interfaces/apis';
 import MouseApi from './MouseApi';
 import AppApi from './AppApi';
 import SessionApi from './SessionApi';
+import DevtoolsBackdoorApi from './DevtoolsBackdoorApi';
 import DomStateApi from './DomStateApi';
 
 const ApiHandlers: IApiHandlerSpec = {
@@ -26,6 +27,11 @@ const ApiHandlers: IApiHandlerSpec = {
   'Session.getScreenshot': SessionApi.getScreenshot,
   'Session.getScriptState': SessionApi.getScriptState,
   'Session.getDom': SessionApi.getDom,
+  'DevtoolsBackdoor.toggleInspectElementMode': DevtoolsBackdoorApi.toggleInspectElementMode,
+  'DevtoolsBackdoor.highlightNode': DevtoolsBackdoorApi.highlightNode,
+  'DevtoolsBackdoor.hideHighlight': DevtoolsBackdoorApi.hideHighlight,
+  'DevtoolsBackdoor.searchElements': DevtoolsBackdoorApi.searchElements,
+  'DevtoolsBackdoor.generateQuerySelector': DevtoolsBackdoorApi.generateQuerySelector,
 };
 
 export default ApiHandlers;

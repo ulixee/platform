@@ -21,7 +21,8 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
 
   private events = new EventSubscriber();
 
-  public addDevtoolsSession(devtoolsSession: IDevtoolsSession) {
+  public async onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession) {
+    console.log('ADDED DEVTOOLS SESSION: ', devtoolsSession.id);
     this.devtoolsSessionMap.set(devtoolsSession, { contextIds: [] });
 
     this.events.on(devtoolsSession, 'Runtime.executionContextCreated', event =>
@@ -38,10 +39,11 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
       this.handleIncomingMessageFromBrowser(event),
     );
 
-    return Promise.all([
+    await Promise.all([
       devtoolsSession.send('Runtime.addBinding', { name: ___sendToCore }),
       devtoolsSession.send('Page.addScriptToEvaluateOnNewDocument', {
         source: `(function run() {
+          console.log('Page.addScriptToEvaluateOnNewDocument');
           window.___includedBackendNodeIds = new Set();
           window.___excludedBackendNodeIds = new Set();
           window.${___receiveFromCore} = function ${___receiveFromCore}(destLocation, responseCode, restOfMessage) {
@@ -49,8 +51,8 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
             const { event, backendNodeId } = payload;
             if (event === '${MessageEventType.OpenSelectorGeneratorPanel}') {
               (${openSelectorGeneratorPanel.toString()})(DevToolsAPI, '${extensionId}');
-            } else if (event === '${MessageEventType.EnterInspectElementMode}') {
-              (${enterInspectElementMode.toString()})(InspectorFrontendAPI);
+            } else if (event === '${MessageEventType.ToggleInspectElementMode}') {
+              (${toggleInspectElementMode.toString()})(InspectorFrontendAPI);
             } else if (payload.event === '${MessageEventType.CloseDevtoolsPanel}'){
               InspectorFrontendHost.closeWindow();
             } else if (event === '${MessageEventType.AddIncludedElement}') {
@@ -85,25 +87,14 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
       this.getDevtoolsTabId.bind(this, devtoolsSession),
       devtoolsSession.send('Runtime.runIfWaitingForDebugger'),
     ]).catch(() => null);
+
+    const contextId = this.devtoolsSessionMap.get(devtoolsSession).contextIds[0];
+    console.log('RUNNING IN BROWSER: ', contextId);
+    await this.runInBrowser(devtoolsSession, contextId, `console.log('INJECTING...'); (${interceptInspectElementMode.toString()})('${___sendToCore}', '${MessageEventType.InspectElementModeChanged}');`);
+
     // (${interceptElementOverlayDispatches.toString()})('${___sendToCore}', '${MessageEventType.CloseElementOptionsOverlay}');
   }
 
-  public close() {
-    this.devtoolsSessionMap.clear();
-    this.events.close();
-  }
-
-  public async closePanel(tabId: number): Promise<void> {
-    await this.send(
-      {
-        destLocation: MessageLocation.DevtoolsPrivate,
-        origLocation: MessageLocation.Core,
-        payload: { event: MessageEventType.CloseDevtoolsPanel },
-        responseCode: ResponseCode.N,
-      },
-      tabId,
-    );
-  }
 
   public async send(message: IMessageObject | string, tabId?: number): Promise<void> {
     const [destLocation, responseCode, restOfMessage] =
@@ -170,6 +161,7 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
   private handleIncomingMessageFromBrowser(event: any) {
     if (event.name !== ___sendToCore) return;
     const [destLocation] = extractStringifiedComponentsFromMessage(event.payload);
+    console.log('___sendToCore', destLocation, event.payload);
     this.emit('message', event.payload, { destLocation });
   }
 
@@ -181,7 +173,9 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
       this.devtoolsSessionMap.set(devtoolsSession, { contextIds: [] });
     }
     const contextIds = this.devtoolsSessionMap.get(devtoolsSession).contextIds;
-    if (!contextIds.includes(event.context.id)) contextIds.push(event.context.id);
+    if (!contextIds.includes(event.context.id)) {
+      contextIds.push(event.context.id);
+    }
   }
 
   private onContextDestroyed(
@@ -211,31 +205,32 @@ function openSelectorGeneratorPanel(DevToolsAPI: any, extensionId: string) {
   DevToolsAPI.showPanel(`chrome-extension://${extensionId}HeroScript`);
 }
 
-function enterInspectElementMode(InspectorFrontendAPI: any) {
+function toggleInspectElementMode(InspectorFrontendAPI: any) {
   InspectorFrontendAPI.enterInspectElementMode()
 }
 
 const interceptInspectElementMode = `
 async function interceptInspectElementMode(sendToCoreFnName, eventType) {
   const globalWindow = window;
-  const elements = await import('./elements/elements.js');
+  const elements = await import('./devtools-frontend/front_end/panels/elements/elements.js');
   const InspectElementModeController = elements.InspectElementModeController.InspectElementModeController;
-  const setMode = InspectElementModeController.prototype._setMode;
+  const setMode = InspectElementModeController.prototype.setMode;
   function override(mode) {
-    const isOn = mode === 'searchForNode'; // ToDo: we may need to expand this
+    console.log('INSPECT MODE: ', mode);
+    const isOn = mode === 'searchForNode';
     const payload = '{"event":"' + eventType +'","isOn": ' + isOn.toString() + '}';
-    const packedMessage = ':ContentScript       :N:{"origLocation":"DevtoolsPrivate","payload":'+ payload + '}';
+    const packedMessage = ':Core                :N:{"origLocation":"DevtoolsPrivate","payload":'+ payload + '}';
     globalWindow[sendToCoreFnName](packedMessage);
     setMode.call(this, mode);
   }
-  InspectElementModeController.prototype._setMode = override;
+  InspectElementModeController.prototype.setMode = override;
 }
 `;
 
 const interceptElementPanelOnHighlight = `
 async function interceptElementPanelOnHighlight(sendToCoreFnName, eventType) {
   const globalWindow = window;
-  const elements = await import('./elements/elements.js');
+  const elements = await import('./devtools-frontend/front_end/panels/elements/elements.js');
   const ElementsTreeOutline = elements.ElementsTreeOutline.ElementsTreeOutline;
   const highlightTreeElement = ElementsTreeOutline.prototype._highlightTreeElement;
   ElementsTreeOutline.prototype._highlightTreeElement = function(element, showInfo) {
@@ -250,7 +245,7 @@ async function interceptElementPanelOnHighlight(sendToCoreFnName, eventType) {
 const interceptElementPanelOnRemoveHighlight = `
 async function interceptElementPanelWasHovered(sendToCoreFnName, eventType) {
   const globalWindow = window;
-  const elements = await import('./elements/elements.js');
+  const elements = await import('./devtools-frontend/front_end/panels/elements/elements.js');
   const ElementsTreeOutline = elements.ElementsTreeOutline.ElementsTreeOutline;
   const setHoverEffect = ElementsTreeOutline.prototype.setHoverEffect;
   ElementsTreeOutline.prototype.setHoverEffect = function(treeElement) {
@@ -286,7 +281,7 @@ function interceptElementWasSelected(sendToCoreFnName, eventType) {
 // THIS CREATES CONTEXT MENU
 const injectContextMenu = `
 async function injectContextMenu(sendToCoreFnName, eventType) {
-  const elements = await import('./elements/elements.js');
+  const elements = await import('./devtools-frontend/front_end/panels/elements/elements.js');
   const ElementsTreeElement = elements.ElementsTreeElement.ElementsTreeElement;
   const populateNodeContextMenu = ElementsTreeElement.prototype.populateNodeContextMenu;
     
