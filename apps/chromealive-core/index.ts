@@ -157,6 +157,7 @@ export default class ChromeAliveCore {
       on(sourceCode, 'source', this.sendAppEvent.bind(this, 'SourceCode.updated')),
       on(timetravel, 'new-tick-command', this.sendCommandFocusedEvent.bind(this, sessionId)),
       on(timetravel, 'new-paint-index', this.sendPaintIndexEvent.bind(this, sessionId)),
+      on(timetravel, 'new-offset', this.sendTimetravelOffset.bind(this, sessionId)),
     ];
     this.events.group('session', ...sessionEvents);
 
@@ -195,13 +196,19 @@ export default class ChromeAliveCore {
     this.sendAppEvent('Command.focused', event);
   }
 
+  private static sendTimetravelOffset(
+    sessionId: string,
+    event: TimetravelPlayer['EventTypes']['new-offset'],
+  ): void {
+    this.sendAppEvent('Session.timetravel', event);
+  }
+
   private static sendPaintIndexEvent(
     sessionId: string,
     event: TimetravelPlayer['EventTypes']['new-paint-index'],
   ): void {
     this.sendAppEvent('Dom.focus', {
-      paintIndex: event.paintIndex,
-      highlightPaintIndexRange: [event.paintIndex, event.paintIndex],
+      highlightPaintIndexRange: event.paintIndexRange,
       documentLoadPaintIndex: event.documentLoadPaintIndex,
     });
   }

@@ -39,7 +39,7 @@ export default Vue.defineComponent({
     return {
       focusedPaintIndex: Vue.ref<number>(null),
       paintEvents: Vue.reactive<IFrontendDomChangeEvent[][]>([]),
-      loadedIndex: Vue.ref<number>(-1),
+      loadedIndexRange: Vue.ref<[number, number]>([-1, -1]),
       domNodesByFrameId: Vue.reactive<Record<number, IDomFrameNodes>>({}),
       framesById: Vue.reactive(new Map<number, { parentId: number; domNodeId: number }>()),
       mainFrameIds: Vue.reactive(new Set<number>()),
@@ -85,37 +85,28 @@ export default Vue.defineComponent({
 
       if (!this.focusedPaintIndex) {
         const index = paintEvents.length - 1;
-        this.setPaintIndex(index, [index, index]);
+        this.setPaintIndex([index, index]);
       }
     },
 
-    setPaintIndex(
-      index: number,
-      highlightChangeIndices: [start: number, end: number],
-      documentLoadPaintIndex = 0,
-    ): void {
-      if (index === this.loadedIndex) return;
-      console.log('Setting paint index', {
-        newIndex: index,
-        currentIndex: this.loadedIndex,
-        documentLoadPaintIndex,
-        highlightChangeIndices,
-        totalPaints: this.paintEvents.length,
-      });
+    setPaintIndex(loadedIndices: [start: number, end: number], documentLoadPaintIndex = 0): void {
+      if (
+        loadedIndices[0] === this.loadedIndexRange[0] &&
+        loadedIndices[1] === this.loadedIndexRange[1]
+      )
+        return;
 
-      if (index === -1) {
-        for (const frameId of Object.keys(this.domNodesByFrameId)) {
-          this.domNodesByFrameId[frameId] = { nodesById: {} };
-        }
+      for (const frameId of Object.keys(this.domNodesByFrameId)) {
+        delete this.domNodesByFrameId[frameId];
       }
 
-      for (let i = documentLoadPaintIndex; i <= index; i += 1) {
+      for (let i = documentLoadPaintIndex; i <= loadedIndices[1]; i += 1) {
         if (!this.paintEvents[i]) continue;
-        const highlight = i >= highlightChangeIndices[0] && i <= highlightChangeIndices[1];
+        const highlight = i >= loadedIndices[0] && i <= loadedIndices[1];
         this.applyDomChanges(this.paintEvents[i], highlight);
       }
 
-      this.loadedIndex = index;
+      this.loadedIndexRange = loadedIndices;
       this.activeGroupId = 0;
       this.latestGroupId = 0;
       this.hiddenNodeGroups.frameNodeIdsByGroupId.clear();
@@ -203,12 +194,8 @@ export default Vue.defineComponent({
     },
 
     onDomFocus(event: IChromeAliveEvents['Dom.focus']): void {
-      this.focusedPaintIndex = event.paintIndex;
-      this.setPaintIndex(
-        event.paintIndex,
-        event.highlightPaintIndexRange,
-        event.documentLoadPaintIndex,
-      );
+      this.focusedPaintIndexRange = event.highlightPaintIndexRange;
+      this.setPaintIndex(event.highlightPaintIndexRange, event.documentLoadPaintIndex);
     },
 
     onDomUpdated(event: IChromeAliveEvents['Dom.updated']): void {
@@ -226,7 +213,7 @@ export default Vue.defineComponent({
   },
 
   mounted() {
-    sendToBackgroundScript({ action: 'getCoreServerAddress' }, (serverAddress) => {
+    sendToBackgroundScript({ action: 'getCoreServerAddress' }, serverAddress => {
       window.setHeroServerUrl(serverAddress);
       Client.send('Session.getDom')
         .then(this.onDomResponse)
