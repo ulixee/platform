@@ -41,6 +41,7 @@ export default interface ISessionApi {
     args: IHeroSessionArgs & {
       commandId?: number;
       percentOffset?: number;
+      timelinePercentRange?: [start: number, end: number];
       step?: 'forward' | 'back';
     },
   ): Promise<{

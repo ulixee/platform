@@ -8,6 +8,7 @@ import ISourceCodeUpdatedEvent from './ISourceCodeUpdatedEvent';
 import ICommandFocusedEvent from './ICommandFocusedEvent';
 import IDomFocusEvent from './IDomFocusEvent';
 import IDomUpdatedEvent from './IDomUpdatedEvent';
+import ISessionTimetravelEvent from './ISessionTimetravelEvent';
 
 export default interface IChromeAliveEvents {
   'App.show': { onTop: boolean };
@@ -20,6 +21,7 @@ export default interface IChromeAliveEvents {
   'Session.loading': void;
   'Session.loaded': void;
   'Session.active': IHeroSessionActiveEvent;
+  'Session.timetravel': ISessionTimetravelEvent;
   'Databox.updated': IDataboxUpdatedEvent;
   'Dom.updated': IDomUpdatedEvent;
   'Dom.focus': IDomFocusEvent;

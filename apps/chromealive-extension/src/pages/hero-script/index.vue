@@ -238,6 +238,9 @@ h5 {
       &:hover .call-marker {
         display: block;
       }
+      &.active .call-marker {
+        display: block;
+      }
     }
     &:hover {
       background: aliceblue;

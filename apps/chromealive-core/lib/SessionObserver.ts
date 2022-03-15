@@ -28,6 +28,7 @@ const { log } = Log(module);
 export default class SessionObserver extends TypedEventEmitter<{
   'hero:updated': void;
   'databox:updated': void;
+  timetravel: { timelineOffsetPercent: number };
   'app:mode': void;
   closed: void;
 }> {
@@ -143,7 +144,9 @@ export default class SessionObserver extends TypedEventEmitter<{
     }
   }
 
-  public async openScreen(name: Parameters<ISessionApi['openScreen']>[0]['screenName']): Promise<void> {
+  public async openScreen(
+    name: Parameters<ISessionApi['openScreen']>[0]['screenName'],
+  ): Promise<void> {
     const tabExists = !!this.vueScreensByName[name];
     this.vueScreensByName[name] ??= new VueScreen(name, this.heroSession);
     const vueScreen = this.vueScreensByName[name];
@@ -225,22 +228,25 @@ export default class SessionObserver extends TypedEventEmitter<{
     return TabGroupModule.bySessionId.get(this.heroSession.id);
   }
 
-  public async timetravel(option: {
-    percentOffset?: number;
-    step?: 'forward' | 'back';
-    commandId?: number;
-  }): Promise<{ timelineOffsetPercent: number }> {
+  public async timetravel(
+    option: Parameters<ISessionApi['timetravel']>[0],
+  ): Promise<{ timelineOffsetPercent: number }> {
     if (!this.hasStartedTimetravel) {
       this.hasStartedTimetravel = true;
       await this.hideAllTabs().catch(console.error);
     }
+
+    await this.timetravelPlayer.setFocusedOffsetRange(option.timelinePercentRange);
+
     if (option.step) {
       await this.timetravelPlayer.step(option.step);
     } else {
-      let percentOffset = option.percentOffset ?? 100;
+      let percentOffset: number;
       if (option.commandId) {
         percentOffset = await this.timetravelPlayer.findCommandPercentOffset(option.commandId);
       }
+      percentOffset ??= option.percentOffset ?? 100;
+
       if (percentOffset === 100) {
         this.onEnteredLiveMode().catch(console.error);
       } else {
@@ -250,7 +256,8 @@ export default class SessionObserver extends TypedEventEmitter<{
     }
 
     await this.timetravelPlayer.showLoadStatus(this.timelineBuilder.lastMetadata);
-    return { timelineOffsetPercent: this.timetravelPlayer.activeTab.currentTimelineOffsetPct };
+    const timelineOffsetPercent = this.timetravelPlayer.activeTab.currentTimelineOffsetPct;
+    return { timelineOffsetPercent };
   }
 
   public onTabCreated(event: HeroSession['EventTypes']['tab-created']): void {
@@ -307,7 +314,7 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   private async onTimetravelTabOpened(): Promise<void> {
     if (this.mode !== 'timetravel') return;
-    await this.timetravelPlayer.activeTab.mirrorPage.page.bringToFront();    
+    await this.timetravelPlayer.activeTab.mirrorPage.page.bringToFront();
   }
 
   private async onEnteredTimetravel(): Promise<void> {
