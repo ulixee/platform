@@ -2,6 +2,7 @@ import { Helpers } from '@ulixee/databox-testing';
 import { Helpers as HeroHelpers } from '@ulixee/hero-testing';
 import Hero from '@ulixee/hero';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
+import CollectedResources from '../lib/CollectedResources';
 
 let koaServer: HeroHelpers.ITestKoaServer;
 beforeAll(async () => {
@@ -51,9 +52,10 @@ describe('basic resource tests', () => {
       expect(resources).toHaveLength(1);
       await resources[0].$extractLater('xhr');
 
-      const collected = await coreSession1.getCollectedResources(await hero1.sessionId, 'xhr');
+      const collectedResources = new CollectedResources(Promise.resolve(coreSession1), hero1.sessionId);
+      const collected = await collectedResources.getAll('xhr');
       expect(collected).toHaveLength(1);
-      expect(collected[0].response.json).toEqual({ hi: 'there' });
+      expect(collected[0].json).toEqual({ hi: 'there' });
       await hero1.close();
     }
 
@@ -64,11 +66,12 @@ describe('basic resource tests', () => {
 
       await hero2.goto(`${koaServer.baseUrl}`);
       await hero2.waitForPaintingStable();
-      const collected2 = await coreSession2.getCollectedResources(await hero1.sessionId, 'xhr');
+      const collectedResources = new CollectedResources(Promise.resolve(coreSession2), hero1.sessionId);
+      const collected2 = await collectedResources.getAll('xhr');
       expect(collected2).toHaveLength(1);
       expect(collected2[0].url).toBe(`${koaServer.baseUrl}/ajax?counter=0`);
       // should prefetch the body
-      expect(collected2[0].response.buffer).toBeTruthy();
+      expect(collected2[0].buffer).toBeTruthy();
     }
   });
 });
