@@ -6,10 +6,11 @@ import { createResponseId, IMessageObject, MessageLocation, ResponseCode } from 
 import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
 
 interface IPageIdentity {
-  tabId: number; 
-  windowId: number
+  tabId: number;
+  windowId: number;
 }
 export default class TabGroupModule {
   public static bySessionId = new Map<string, TabGroupModule>();
@@ -36,7 +37,10 @@ export default class TabGroupModule {
 
   public onNewPuppetPage(puppetPage: IPuppetPage): Promise<any> {
     this.puppetPagesById.set(puppetPage.id, puppetPage);
-    this.identityByPuppetPage.set(puppetPage, createPromise<IPageIdentity>(2e3, 'PuppetPage never received Tab ID'));
+    this.identityByPuppetPage.set(
+      puppetPage,
+      createPromise<IPageIdentity>(2e3, 'PuppetPage never received Tab ID'),
+    );
     puppetPage.once('close', this.puppetPageClosed.bind(this, puppetPage));
     return Promise.resolve();
   }
@@ -53,12 +57,11 @@ export default class TabGroupModule {
     return puppetPages.find((puppetPage, i) => identities[i].tabId === tabId);
   }
 
-  public async hideTabs(options?: { show?: IPuppetPage[], onlyHide?: IPuppetPage[] }): Promise<void> {
+  public async showTabs(...pages: IPuppetPage[]): Promise<void> {
     let puppetPageId: string;
     const showTabIds: number[] = [];
-    const onlyHideTabIds: number[] = [];
 
-    for (const puppetPage of options?.show || []) {
+    for (const puppetPage of pages) {
       const identity = await this.identityByPuppetPage.get(puppetPage).promise;
       if (identity) {
         puppetPageId ??= puppetPage.id;
@@ -66,25 +69,10 @@ export default class TabGroupModule {
       }
     }
 
-    for (const puppetPage of options?.onlyHide || []) {
-      const identity = await this.identityByPuppetPage.get(puppetPage).promise;
-      if (identity) {
-        puppetPageId ??= puppetPage.id;
-        onlyHideTabIds.push(identity.tabId);
-      }
-    }
+    puppetPageId ??= this.identityByPuppetPage.keys().next().value;
 
-    if (!puppetPageId) {
-      puppetPageId = this.identityByPuppetPage.keys().next().value?.id;
-    }
-
-    const args = { showTabIds, onlyHideTabIds };
-    await this.sendToExtension<void>(
-      puppetPageId,
-      'hideTabs',
-      args,
-      true,
-    );
+    const args = { showTabIds };
+    await this.sendToExtension<void>(puppetPageId, 'hideTabs', args, true);
   }
 
   public close() {

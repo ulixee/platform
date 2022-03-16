@@ -6,10 +6,12 @@
       :isSelected="selectedItem === 'Input'"
       :isFocused="selectedItem === 'Input'"
       :isMinimal="isMinimal"
+      :inputSize="inputSize"
       class="z-20"
     />
     <Player
       @select="select('Player')"
+      :mode="mode"
       :isSelected="selectedItem === 'Player'"
       :isFocused="selectedItem === 'Player'"
       :ticks="timelineTicks"
@@ -67,12 +69,14 @@ export default Vue.defineComponent({
 
     return {
       session,
+      mode: Vue.ref('Live'),
       isRunning: Vue.ref(false),
       isMinimal: Vue.ref(false),
       startLocation: Vue.ref<IStartLocation>('currentLocation'),
       timelineTicks: Vue.ref<any[]>([]),
       selectedItem: Vue.ref('Player'),
-      outputSize: Vue.ref<string>(''),
+      outputSize: Vue.ref<string>(humanizeBytes(0)),
+      inputSize: Vue.ref<string>(humanizeBytes(0)),
     };
   },
   async created() {
@@ -94,7 +98,8 @@ export default Vue.defineComponent({
 
     onSessionActiveEvent(message: IHeroSessionActiveEvent) {
       if (!message) {
-        this.outputSize = '';
+        this.outputSize = humanizeBytes(0);
+        this.inputSize = humanizeBytes(0);
         return;
       }
 
@@ -132,6 +137,7 @@ export default Vue.defineComponent({
       this.timelineTicks = timelineTicks.filter(x => x.offsetPercent);
 
       this.isRunning = this.session.playbackState === 'running';
+      this.inputSize = humanizeBytes(message.inputBytes);
 
       this.onAppModeEvent({ mode: message.mode });
     },
@@ -141,9 +147,12 @@ export default Vue.defineComponent({
     },
 
     onAppModeEvent(message: IAppModeEvent): void {
-      if (message.mode === 'live') {
-        // this.timelineOffset = 100;
-        // this.clearPendingTimetravel();
+      const { mode } = message;
+      this.mode = mode;
+      if (mode === 'Live' || mode === 'Timetravel') {
+        this.selectedItem = 'Player';
+      } else {
+        this.selectedItem = mode;
       }
     },
   },
@@ -165,7 +174,7 @@ function createDefaultSession(): IHeroSessionActiveEvent {
   return {
     timeline: { urls: [], paintEvents: [], screenshots: [], storageEvents: [] },
     playbackState: 'paused',
-    mode: 'live',
+    mode: 'Live',
     runtimeMs: 0,
     worldHeroSessionIds: [],
     heroSessionId: '',
@@ -179,16 +188,16 @@ function createDefaultSession(): IHeroSessionActiveEvent {
 </script>
 
 <style lang="scss" scoped>
-  @use "sass:math";
-  @import "../variables.scss";
+@use "sass:math";
+@import '../variables.scss';
 
-  :root {
-    --toolbarBackgroundColor: #faf4ff;
-  }
+:root {
+  --toolbarBackgroundColor: #faf4ff;
+}
 
-  .bar-wrapper {
-    background-color: var(--toolbarBackgroundColor);
-    height: 36px;
-    cursor: default;
-  }
+.bar-wrapper {
+  background-color: var(--toolbarBackgroundColor);
+  height: 36px;
+  cursor: default;
+}
 </style>

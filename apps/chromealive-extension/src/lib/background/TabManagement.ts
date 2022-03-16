@@ -6,8 +6,8 @@ let hiddenGroupId: number;
 const visibleTabIds: Set<number> = new Set();
 const hiddenTabIds: Set<number> = new Set();
 
-export async function hideTabs(payload: { showTabIds: number[], onlyHideTabIds: number[] }): Promise<void> {
-  const { showTabIds, onlyHideTabIds } = payload;
+export async function hideTabs(payload: { showTabIds: number[] }): Promise<void> {
+  const { showTabIds } = payload;
   const currentWindow = await chrome.windows.getCurrent();
   const existingTabs = await chrome.tabs.query({ windowId: currentWindow.id });
   let activeTabWasHidden = false;
@@ -16,7 +16,7 @@ export async function hideTabs(payload: { showTabIds: number[], onlyHideTabIds: 
     if (showTabIds.includes(tab.id)) {
       visibleTabIds.add(tab.id);
       hiddenTabIds.delete(tab.id);
-    } else if (!onlyHideTabIds.length || onlyHideTabIds.includes(tab.id)) {
+    } else {
       if (tab.active) {
         activeTabWasHidden = true;
       }
@@ -27,7 +27,7 @@ export async function hideTabs(payload: { showTabIds: number[], onlyHideTabIds: 
 
   await chrome.tabs.group({
     groupId: hiddenGroupId,
-    tabIds: Array.from(hiddenTabIds)
+    tabIds: Array.from(hiddenTabIds),
   });
 
   if (visibleTabIds.size) {
@@ -106,7 +106,12 @@ chrome.tabs.onActivated.addListener(async ({ tabId }) => {
   }
 });
 
-chrome.tabGroups.onRemoved.addListener(async (tabGroup) => {
+chrome.tabs.onRemoved.addListener(tabId => {
+  hiddenTabIds.delete(tabId);
+  visibleTabIds.delete(tabId);
+});
+
+chrome.tabGroups.onRemoved.addListener(async tabGroup => {
   if (tabGroup.id !== hiddenGroupId) return;
   await createHiddenGroup();
 });
@@ -118,45 +123,73 @@ chrome.tabs.onMoved.addListener(() => {
 // PRIVATE /////////////////////////////////////////////////////////////////////////////////////////
 
 let isMovingHiddenGroup = false;
-function moveHiddenGroupToLeft(groupId: number, isRetry = false) {
-  if (isMovingHiddenGroup && !isRetry) return;
+function moveHiddenGroupToLeft(groupId: number, retryNumber = 0) {
+  if (isMovingHiddenGroup && !retryNumber) return;
   isMovingHiddenGroup = true;
-  chrome.tabGroups.move(groupId, { index: 0 })
-    .then(() => isMovingHiddenGroup = false)
-    .catch(() => {
-      setTimeout(() => moveHiddenGroupToLeft(groupId, true), 50);
+  chrome.tabGroups
+    .move(groupId, { index: 0 })
+    .then(() => (isMovingHiddenGroup = false))
+    .catch(err => {
+      if (retryNumber > 10) throw err;
+      setTimeout(() => moveHiddenGroupToLeft(groupId, retryNumber + 1), 50);
     });
 }
 
 let isCollapsingHiddenGroup = false;
-function collapseHiddenGroup(groupId, isRetry = false) {
-  if (isCollapsingHiddenGroup && !isRetry) return;
+function collapseHiddenGroup(groupId, retryNumber = 0) {
+  if (isCollapsingHiddenGroup && !retryNumber) return;
   isCollapsingHiddenGroup = true;
 
-  chrome.tabGroups.update(groupId, { collapsed: true })
-    .then(() => isCollapsingHiddenGroup = false)
-    .catch(() => {
-      setTimeout(() => collapseHiddenGroup(groupId, true), 50);
+  chrome.tabGroups
+    .update(groupId, { collapsed: true })
+    .then(() => (isCollapsingHiddenGroup = false))
+    .catch(err => {
+      if (retryNumber > 10) throw err;
+      setTimeout(() => collapseHiddenGroup(groupId, retryNumber + 1), 50);
     });
 }
 
 let isActivatingTab = false;
-function activateTab(tabId: number, isRetry = false) {
-  if (isActivatingTab && !isRetry) return;
+function activateTab(tabId: number, retryNumber = 0) {
+  if (isActivatingTab && !retryNumber) return;
   isActivatingTab = true;
 
-  chrome.tabs.update(tabId, { active: true })
-    .then(() => isActivatingTab = false)
-    .catch(() => {
-      setTimeout(() => activateTab(tabId, true), 50);
+  chrome.tabs
+    .update(tabId, { active: true })
+    .then(() => (isActivatingTab = false))
+    .catch(err => {
+      if (retryNumber > 10) {
+        if (String(err).includes('No tab with id')) {
+          hiddenTabIds.delete(tabId);
+          visibleTabIds.delete(tabId);
+          return;
+        }
+        throw err;
+      }
+      setTimeout(() => activateTab(tabId, retryNumber + 1), 50);
     });
 }
 
 async function createHiddenGroup() {
+  if (hiddenGroupId === undefined) {
+    const hiddenGroups = await chrome.tabGroups.query({ collapsed: true });
+    if (hiddenGroups.length) {
+      hiddenGroupId = hiddenGroups[0].id;
+      const tabs = await chrome.tabs.query({ currentWindow: true });
+      for (const tab of tabs) {
+        if (tab.groupId === hiddenGroupId) hiddenTabIds.add(tab.id);
+        else visibleTabIds.add(tab.id);
+      }
+      return;
+    }
+  }
+
+  hiddenGroupId = undefined;
+
   for (const tabId of visibleTabIds.values()) {
     try {
       await chrome.tabs.get(tabId);
-    } catch(error) {
+    } catch (error) {
       visibleTabIds.delete(tabId);
     }
   }
@@ -174,7 +207,7 @@ async function createHiddenGroup() {
     if (hiddenTabIds.has(existingTab.id)) {
       continue;
     } else if (!hiddenTabIds.size && existingTab.url === 'about:blank') {
-      hiddenTabIds.add(existingTab.id)
+      hiddenTabIds.add(existingTab.id);
     }
     visibleTabIds.add(existingTab.id);
   }
@@ -187,7 +220,7 @@ async function createHiddenGroup() {
       selected: false,
       active: false,
     });
-    hiddenTabIds.add(newTab.id)
+    hiddenTabIds.add(newTab.id);
   }
 
   const hiddenTabIdsArray = Array.from(hiddenTabIds);

@@ -24,6 +24,7 @@ import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
 import VueScreen from './VueScreen';
 import DevtoolsBackdoorModule from './hero-plugin-modules/DevtoolsBackdoorModule';
 import ElementsModule from './hero-plugin-modules/ElementsModule';
+import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 
 const { log } = Log(module);
 
@@ -34,7 +35,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   'app:mode': void;
   closed: void;
 }> {
-  public mode: IAppModeEvent['mode'] = 'live';
+  public mode: IAppModeEvent['mode'] = 'Live';
   public playbackState: IHeroSessionActiveEvent['playbackState'] = 'running';
   public readonly timelineBuilder: TimelineBuilder;
 
@@ -46,7 +47,6 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   private sessionHasChangesRequiringRestart = false;
   private vueScreensByName: { [name: string]: VueScreen } = {};
-  private hasStartedTimetravel = false;
 
   private scriptLastModifiedTime: number;
   private outputRebuilder = new OutputRebuilder();
@@ -139,10 +139,13 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   public async openPlayer(): Promise<void> {
-    if (this.mode === 'live') {
+    if (
+      !this.timetravelPlayer.isOpen ||
+      this.timetravelPlayer.activeTab.currentTimelineOffsetPct === 100
+    ) {
       await this.showSessionTabs();
     } else {
-      await this.showTimetavelTabs();
+      await this.showTimetravelTabs();
     }
   }
 
@@ -172,13 +175,15 @@ export default class SessionObserver extends TypedEventEmitter<{
     const tabExists = !!this.vueScreensByName[name];
     this.vueScreensByName[name] ??= new VueScreen(name, this.heroSession);
     const vueScreen = this.vueScreensByName[name];
-    if (tabExists) {
-      const puppetPage = await vueScreen.puppetPage;
-      await this.tabGroupModule.hideTabs({ show: [puppetPage] });
-    } else {
-      await this.tabGroupModule.hideTabs();
+    if (!tabExists) {
+      this.events.once(vueScreen, 'close', () => delete this.vueScreensByName[name]);
       await vueScreen.open();
     }
+
+    this.mode = name;
+    this.emit('app:mode');
+    const puppetPage = await vueScreen.puppetPage;
+    await this.tabGroupModule.showTabs(puppetPage);
   }
 
   public close(): void {
@@ -261,28 +266,23 @@ export default class SessionObserver extends TypedEventEmitter<{
   public async timetravel(
     option: Parameters<ISessionApi['timetravel']>[0],
   ): Promise<{ timelineOffsetPercent: number }> {
-    if (!this.hasStartedTimetravel) {
-      this.hasStartedTimetravel = true;
-      await this.hideAllTabs().catch(console.error);
-    }
-
     await this.timetravelPlayer.setFocusedOffsetRange(option.timelinePercentRange);
 
+    let percentOffset: number;
     if (option.step) {
-      await this.timetravelPlayer.step(option.step);
+      percentOffset = await this.timetravelPlayer.step(option.step);
     } else {
-      let percentOffset: number;
       if (option.commandId) {
         percentOffset = await this.timetravelPlayer.findCommandPercentOffset(option.commandId);
       }
       percentOffset ??= option.percentOffset ?? 100;
-
-      if (percentOffset === 100) {
-        this.onEnteredLiveMode().catch(console.error);
-      } else {
-        this.onEnteredTimetravel().catch(console.error);
-      }
       await this.timetravelPlayer.goto(percentOffset);
+    }
+
+    if (percentOffset === 100) {
+      await this.showSessionTabs();
+    } else {
+      await this.showTimetravelTabs();
     }
 
     await this.timetravelPlayer.showLoadStatus(this.timelineBuilder.lastMetadata);
@@ -319,53 +319,31 @@ export default class SessionObserver extends TypedEventEmitter<{
     return Promise.resolve(domRecording);
   }
 
-  private async showTimetavelTabs(): Promise<void> {
-    const tabGroupModule = this.tabGroupModule;
-    if (!tabGroupModule) return;
-
-    const puppetPages = [...this.heroSession.tabsById.values()].map(x => x.puppetPage);
-    const sessionPages = puppetPages.filter(x => x.groupName === 'session');
-    const timetravelPages = [];
-    if (this.timetravelPlayer.activeTab?.mirrorPage?.page) {
-      timetravelPages.push(this.timetravelPlayer.activeTab?.mirrorPage?.page);
-    }
-    await this.tabGroupModule.hideTabs({ onlyHide: sessionPages, show: timetravelPages });
+  private async showTimetravelTabs(): Promise<void> {
+    if (this.mode === 'Timetravel') return;
+    this.mode = 'Timetravel';
+    this.emit('app:mode');
+    const timetravelPage = this.timetravelPlayer.activeTab.mirrorPage?.page;
+    await this.tabGroupModule.showTabs(timetravelPage);
   }
 
   private async showSessionTabs(): Promise<void> {
-    const puppetPages = [...this.heroSession.tabsById.values()].map(x => x.puppetPage);
-    const sessionPages = puppetPages.filter(x => x.groupName === 'session');
-    await this.tabGroupModule.hideTabs({ show: sessionPages });
-  }
+    if (this.mode === 'Live') return;
 
-  private async hideAllTabs(): Promise<void> {
-    await this.tabGroupModule.hideTabs();
+    this.mode = 'Live';
+    this.emit('app:mode');
+    const sessionPages: IPuppetPage[] = [];
+    for (const tab of this.heroSession.tabsById.values()) {
+      if (tab.puppetPage.groupName === 'session') {
+        sessionPages.push(tab.puppetPage);
+      }
+    }
+    await this.tabGroupModule.showTabs(...sessionPages);
   }
 
   private async onTimetravelTabOpened(): Promise<void> {
-    if (this.mode !== 'timetravel') return;
+    if (this.mode !== 'Timetravel') return;
     await this.timetravelPlayer.activeTab.mirrorPage.page.bringToFront();
-  }
-
-  private async onEnteredTimetravel(): Promise<void> {
-    if (this.mode === 'timetravel') return;
-    this.mode = 'timetravel';
-    await this.showTimetavelTabs();
-    this.emit('app:mode');
-  }
-
-  private async onEnteredLiveMode(): Promise<void> {
-    if (this.mode === 'live') return;
-    this.mode = 'live';
-    await this.showSessionTabs();
-    this.emit('app:mode');
-  }
-
-  private isLivePage(pageId: string): boolean {
-    for (const tab of this.heroSession.tabsById.values()) {
-      if (tab.puppetPage.id === pageId) return true;
-    }
-    return false;
   }
 
   private async onScriptEntrypointUpdated(action: string): Promise<void> {
