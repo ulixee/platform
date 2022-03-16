@@ -1,4 +1,4 @@
-import IDataboxUpdatedEvent from './IDataboxUpdatedEvent';
+import IDataboxOutputEvent from './IDataboxOutputEvent';
 import IHeroSessionActiveEvent from './IHeroSessionActiveEvent';
 import IDomStateUpdateEvent from './IDomStateUpdatedEvent';
 import IAppMoveEvent from './IAppMoveEvent';
@@ -11,6 +11,7 @@ import IDomUpdatedEvent from './IDomUpdatedEvent';
 import ISessionTimetravelEvent from './ISessionTimetravelEvent';
 import IInterceptInspectElementMode from './IInterceptInspectElementMode';
 import { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
+import IDataboxCollectedAssetEvent from './IDataboxCollectedAssetEvent';
 
 export default interface IChromeAliveEvents {
   'App.show': { onTop: boolean };
@@ -25,7 +26,8 @@ export default interface IChromeAliveEvents {
   'Session.active': IHeroSessionActiveEvent;
   'Session.timetravel': ISessionTimetravelEvent;
   'Session.interceptInspectElementMode': IInterceptInspectElementMode;
-  'Databox.updated': IDataboxUpdatedEvent;
+  'Databox.output': IDataboxOutputEvent;
+  'Databox.collected-asset': IDataboxCollectedAssetEvent;
   'Dom.updated': IDomUpdatedEvent;
   'Dom.focus': IDomFocusEvent;
   'DomState.updated': IDomStateUpdateEvent;

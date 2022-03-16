@@ -5,7 +5,9 @@ import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import type { IOutputChangeRecord } from '@ulixee/hero-core/models/OutputTable';
-import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
+import IDataboxOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxOutputEvent';
+import IDataboxCollectedAssets from '@ulixee/apps-chromealive-interfaces/IDataboxCollectedAssets';
+import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxCollectedAssetEvent';
 import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
 import * as Path from 'path';
 import { fork } from 'child_process';
@@ -25,12 +27,16 @@ import VueScreen from './VueScreen';
 import DevtoolsBackdoorModule from './hero-plugin-modules/DevtoolsBackdoorModule';
 import ElementsModule from './hero-plugin-modules/ElementsModule';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
+import SourceLoader from '@ulixee/commons/lib/SourceLoader';
+import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation';
+import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
 
 const { log } = Log(module);
 
 export default class SessionObserver extends TypedEventEmitter<{
   'hero:updated': void;
-  'databox:updated': void;
+  'databox:output': void;
+  'databox:asset': IDataboxCollectedAssetEvent;
   timetravel: { timelineOffsetPercent: number };
   'app:mode': void;
   closed: void;
@@ -66,6 +72,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.events.on(this.heroSession, 'resumed', this.onHeroSessionResumed);
     this.events.on(this.heroSession, 'closing', this.close);
     this.events.on(this.heroSession, 'output', this.onOutputUpdated);
+    this.events.on(this.heroSession, 'collected-asset', this.onCollectedAsset);
     this.events.on(this.heroSession, 'tab-created', this.onTabCreated);
 
     this.timelineBuilder = new TimelineBuilder({ liveSession: heroSession });
@@ -95,7 +102,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   public async relaunchSession(
-    startLocation: ISessionCreateOptions['sessionResume']['startLocation'],
+    startLocation: ISessionCreateOptions['sessionResume']['startLocation'] | 'extraction',
     startNavigationId?: number,
   ): Promise<Error | undefined> {
     if (startLocation === 'sessionStart' || this.sessionHasChangesRequiringRestart) {
@@ -112,6 +119,9 @@ export default class SessionObserver extends TypedEventEmitter<{
     ];
     if (startNavigationId) {
       execArgv.push(`--sessionResume.startNavigationId`, String(startNavigationId));
+    }
+    if (startLocation === 'extraction') {
+      execArgv.push('--extractSessionId', this.heroSession.id, '--mode', 'background');
     }
     if (script.endsWith('.ts')) {
       execArgv.push('-r', 'ts-node/register');
@@ -210,7 +220,6 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   public getHeroSessionEvent(): IHeroSessionActiveEvent {
-    const domStates: IHeroSessionActiveEvent['domStates'] = [];
     const timeline = this.timelineBuilder.refreshMetadata();
     const commandTimeline = this.timelineBuilder.commandTimeline;
 
@@ -225,20 +234,55 @@ export default class SessionObserver extends TypedEventEmitter<{
     });
 
     return {
-      hasWarning: false,
       run: this.heroSession.commands.resumeCounter,
       heroSessionId: this.heroSession.id,
+      startTime: commandTimeline.startTime,
+      endTime: commandTimeline.endTime,
       runtimeMs: commandTimeline.runtimeMs,
       mode: this.mode,
+      inputBytes: this.heroSession.meta.input
+        ? Buffer.byteLength(JSON.stringify(this.heroSession.meta.input))
+        : 0,
       playbackState: this.playbackState,
       worldHeroSessionIds: [...this.worldHeroSessionIds],
       ...this.getScriptDetails(),
-      domStates,
       timeline,
     };
   }
 
-  public getDataboxEvent(): IDataboxUpdatedEvent {
+  public async getCollectedAssets(fromSessionId?: string): Promise<IDataboxCollectedAssets> {
+    const sessionId = fromSessionId ?? this.heroSession.id;
+    const assetNames = await this.heroSession.getCollectedAssetNames(sessionId);
+    const result: IDataboxCollectedAssets = {
+      collectedElements: [],
+      collectedResources: [],
+      collectedSnippets: [],
+    };
+    for (const name of assetNames.elements) {
+      const elements = await this.heroSession.getCollectedElements(sessionId, name);
+      for (const element of elements as IDataboxCollectedAssets['collectedElements']) {
+        this.addSourceCodeLocation(element);
+        result.collectedElements.push(element);
+      }
+    }
+    for (const name of assetNames.resources) {
+      const resources = await this.heroSession.getCollectedResources(sessionId, name);
+      for (const resource of resources as IDataboxCollectedAssets['collectedResources']) {
+        this.addSourceCodeLocation(resource);
+        result.collectedResources.push(resource);
+      }
+    }
+    for (const name of assetNames.snippets) {
+      const snippets = await this.heroSession.getCollectedSnippets(sessionId, name);
+      for (const snippet of snippets as IDataboxCollectedAssets['collectedSnippets']) {
+        this.addSourceCodeLocation(snippet);
+        result.collectedSnippets.push(snippet);
+      }
+    }
+    return result;
+  }
+
+  public getDataboxEvent(): IDataboxOutputEvent {
     const commandId = this.timetravelPlayer.activeCommandId;
 
     const output: IOutputSnapshot = this.outputRebuilder.getLatestSnapshot(commandId) ?? {
@@ -288,6 +332,34 @@ export default class SessionObserver extends TypedEventEmitter<{
     await this.timetravelPlayer.showLoadStatus(this.timelineBuilder.lastMetadata);
     const timelineOffsetPercent = this.timetravelPlayer.activeTab.currentTimelineOffsetPct;
     return { timelineOffsetPercent };
+  }
+
+  public getSourceCodeAtCommandId(commandId: number): ISourceCodeLocation[] {
+    const command = this.heroSession.commands.history.find(x => x.id === commandId);
+    if (!command) return [];
+    return command.callsite.map(x => SourceLoader.getSource(x));
+  }
+
+  public addSourceCodeLocation(record: { commandId: number } & ISourceCodeReference): void {
+    record.sourcecode = this.getSourceCodeAtCommandId(record.commandId);
+  }
+
+  public onCollectedAsset(event: HeroSession['EventTypes']['collected-asset']): void {
+    const sendEvent: IDataboxCollectedAssetEvent = {};
+
+    if (event.type === 'resource') {
+      sendEvent.collectedResource = event.asset as any;
+      this.addSourceCodeLocation(sendEvent.collectedResource);
+    }
+    if (event.type === 'element') {
+      sendEvent.collectedElement = event.asset as any;
+      this.addSourceCodeLocation(sendEvent.collectedElement);
+    }
+    if (event.type === 'snippet') {
+      sendEvent.collectedSnippet = event.asset as any;
+      this.addSourceCodeLocation(sendEvent.collectedSnippet);
+    }
+    this.emit('databox:asset', sendEvent);
   }
 
   public onTabCreated(event: HeroSession['EventTypes']['tab-created']): void {
@@ -360,7 +432,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.sourceCodeTimeline.clearCache();
     this.hasScriptUpdatesSinceLastRun = false;
     this.emit('hero:updated');
-    this.emit('databox:updated');
+    this.emit('databox:output');
   }
 
   private onHeroSessionKeptAlive(event: { message: string }): void {
@@ -371,6 +443,6 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   private onOutputUpdated(event: { changes: IOutputChangeRecord[] }): void {
     this.outputRebuilder.applyChanges(event.changes);
-    this.emit('databox:updated');
+    this.emit('databox:output');
   }
 }

@@ -25,6 +25,7 @@
     "mitt": "^3.0.0",
     "vue": "^3.2.31",
     "postcss": "^8.4.7",
+    "moment": "^2.29.1",
     "vue-json-pretty": "^1.7.1"
   },
   "devDependencies": {

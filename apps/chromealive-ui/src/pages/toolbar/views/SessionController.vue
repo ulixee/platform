@@ -43,7 +43,7 @@ import * as Vue from 'vue';
 import Client from '@/api/Client';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
-import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
+import IDataboxOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxOutputEvent';
 import { ChevronDownIcon } from '@heroicons/vue/outline';
 import humanizeBytes from '@/utils/humanizeBytes';
 import MenuButton from '../components/MenuButton.vue';
@@ -142,7 +142,7 @@ export default Vue.defineComponent({
       this.onAppModeEvent({ mode: message.mode });
     },
 
-    onDataboxUpdated(message: IDataboxUpdatedEvent) {
+    onDataboxUpdated(message: IDataboxOutputEvent) {
       this.outputSize = humanizeBytes(message?.bytes);
     },
 
@@ -159,13 +159,13 @@ export default Vue.defineComponent({
 
   mounted() {
     Client.on('Session.active', this.onSessionActiveEvent);
-    Client.on('Databox.updated', this.onDataboxUpdated);
+    Client.on('Databox.output', this.onDataboxUpdated);
     Client.on('App.mode', this.onAppModeEvent);
   },
 
   beforeUnmount() {
     Client.off('Session.active', this.onSessionActiveEvent);
-    Client.off('Databox.updated', this.onDataboxUpdated);
+    Client.off('Databox.output', this.onDataboxUpdated);
     Client.off('App.mode', this.onAppModeEvent);
   },
 });
@@ -179,8 +179,8 @@ function createDefaultSession(): IHeroSessionActiveEvent {
     worldHeroSessionIds: [],
     heroSessionId: '',
     run: 0,
-    domStates: [],
-    hasWarning: false,
+    inputBytes: 0,
+    startTime: Date.now(),
     scriptEntrypoint: '',
     scriptLastModifiedTime: 0,
   };

@@ -4,6 +4,7 @@ import AppApi from './AppApi';
 import SessionApi from './SessionApi';
 import DevtoolsBackdoorApi from './DevtoolsBackdoorApi';
 import DomStateApi from './DomStateApi';
+import DataboxApi from './DataboxApi';
 
 const ApiHandlers: IApiHandlerSpec = {
   'App.boundsChanged': AppApi.boundsChanged,
@@ -27,6 +28,11 @@ const ApiHandlers: IApiHandlerSpec = {
   'Session.getScreenshot': SessionApi.getScreenshot,
   'Session.getScriptState': SessionApi.getScriptState,
   'Session.getDom': SessionApi.getDom,
+  'Session.getActive': SessionApi.getActive,
+  'Session.getMeta': SessionApi.getMeta,
+  'Databox.getOutput': DataboxApi.getOutput,
+  'Databox.getCollectedAssets': DataboxApi.getCollectedAssets,
+  'Databox.runExtract': DataboxApi.runExtract,
   'DevtoolsBackdoor.toggleInspectElementMode': DevtoolsBackdoorApi.toggleInspectElementMode,
   'DevtoolsBackdoor.highlightNode': DevtoolsBackdoorApi.highlightNode,
   'DevtoolsBackdoor.hideHighlight': DevtoolsBackdoorApi.hideHighlight,

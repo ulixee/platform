@@ -14,6 +14,7 @@ import FocusedWindowModule from './lib/hero-plugin-modules/FocusedWindowModule';
 import AliveBarPositioner from './lib/AliveBarPositioner';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
+import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxCollectedAssetEvent';
 import { URL } from 'url';
 
 const { log } = Log(module);
@@ -111,17 +112,17 @@ export default class ChromeAliveCore {
     const script = heroSession.options.scriptInstanceMeta?.entrypoint;
     if (!script) return;
 
-    if (heroSession.mode === 'timetravel') {
+    if (
+      heroSession.mode === 'timetravel' ||
+      heroSession.mode === 'production' ||
+      heroSession.mode === 'background'
+    ) {
       return;
     }
 
     if (heroSession.mode === 'multiverse') {
       const observer = this.sessionObserversById.get(this.activeHeroSessionId);
       observer?.onMultiverseSession(heroSession);
-      return;
-    }
-
-    if (heroSession.mode === 'production') {
       return;
     }
 
@@ -151,7 +152,12 @@ export default class ChromeAliveCore {
     const sessionEvents = [
       on(sessionObserver, 'hero:updated', this.sendActiveSession.bind(this, sessionId)),
       on(sessionObserver, 'app:mode', this.sendAppModeEvent.bind(this, sessionId)),
-      on(sessionObserver, 'databox:updated', this.sendDataboxUpdatedEvent.bind(this, sessionId)),
+      on(sessionObserver, 'databox:output', this.sendDataboxUpdatedEvent.bind(this, sessionId)),
+      on(
+        sessionObserver,
+        'databox:asset',
+        this.sendDataboxCollectedAssetsEvent.bind(this, sessionId),
+      ),
       on(sessionObserver, 'closed', this.onSessionObserverClosed.bind(this, sessionObserver)),
       on(sourceCode, 'command', this.sendAppEvent.bind(this, 'Command.updated')),
       on(sourceCode, 'source', this.sendAppEvent.bind(this, 'SourceCode.updated')),
@@ -222,13 +228,13 @@ export default class ChromeAliveCore {
       if (this.restartingHeroSessionId === heroSessionId) {
         this.sendAppEvent('Session.active', {
           heroSessionId: null,
-          domStates: [],
           timeline: { urls: [], screenshots: [], paintEvents: [], storageEvents: [] },
           run: 0,
-          hasWarning: false,
           playbackState: 'running',
-          mode: 'live',
+          mode: 'Live',
           worldHeroSessionIds: [],
+          startTime: Date.now(),
+          inputBytes: 0,
           runtimeMs: 0,
           ...sessionObserver.getScriptDetails(),
         });
@@ -237,7 +243,7 @@ export default class ChromeAliveCore {
         this.sendAppEvent('Session.active', null);
       }
 
-      this.sendAppEvent('Databox.updated', {
+      this.sendAppEvent('Databox.output', {
         changes: [],
         output: null,
         bytes: 0,
@@ -255,7 +261,16 @@ export default class ChromeAliveCore {
   private static sendDataboxUpdatedEvent(heroSessionId: string) {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
-    this.sendAppEvent('Databox.updated', sessionObserver.getDataboxEvent());
+    this.sendAppEvent('Databox.output', sessionObserver.getDataboxEvent());
+  }
+
+  private static sendDataboxCollectedAssetsEvent(
+    heroSessionId: string,
+    event: IDataboxCollectedAssetEvent,
+  ): void {
+    const sessionObserver = this.sessionObserversById.get(heroSessionId);
+    if (!sessionObserver) return;
+    this.sendAppEvent('Databox.collected-asset', event);
   }
 
   private static sendAppModeEvent(heroSessionId: string) {

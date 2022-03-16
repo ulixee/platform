@@ -3,20 +3,15 @@ import IAppModeEvent from './IAppModeEvent';
 
 export default interface IHeroSessionActiveEvent {
   scriptEntrypoint: string;
+  startTime: number;
+  endTime?: number;
   scriptLastModifiedTime: number;
   heroSessionId: string;
-  hasWarning: boolean;
   mode: IAppModeEvent['mode'];
+  inputBytes: number;
   playbackState: 'running' | 'paused';  // paused = done
   run: number;
   runtimeMs: number;
-  domStates: {
-    id: string;
-    name: string;
-    offsetPercent: number;
-    didMatch: boolean;
-    inProgress: boolean;
-  }[];
   worldHeroSessionIds: string[];
   timeline: ITimelineMetadata;
 }

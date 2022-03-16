@@ -3,6 +3,7 @@ import IDevtoolsBackdoorApi from './IDevtoolsBackdoorApi';
 import IAppApi from './IAppApi';
 import IMouseApi from './IMouseApi';
 import IDomStateApi from './IDomStateApi';
+import IDataboxApi from './IDataboxApi';
 
 export type IApiHandlerSpec = {
   'Session.quit': ISessionApi['quit'];
@@ -11,9 +12,14 @@ export type IApiHandlerSpec = {
   'Session.step': ISessionApi['step'];
   'Session.getScreenshot': ISessionApi['getScreenshot'];
   'Session.getScriptState': ISessionApi['getScriptState'];
-  'Session.openScreen': ISessionApi['openScreen'],
-  'Session.openPlayer': ISessionApi['openPlayer'],
-  'Session.getDom':ISessionApi['getDom'];
+  'Session.openScreen': ISessionApi['openScreen'];
+  'Session.openPlayer': ISessionApi['openPlayer'];
+  'Session.getDom': ISessionApi['getDom'];
+  'Session.getActive': ISessionApi['getActive'];
+  'Session.getMeta': ISessionApi['getMeta'];
+  'Databox.runExtract': IDataboxApi['runExtract'];
+  'Databox.getOutput': IDataboxApi['getOutput'];
+  'Databox.getCollectedAssets': IDataboxApi['getCollectedAssets'];
   'App.boundsChanged': IAppApi['boundsChanged'];
   'App.ready': IAppApi['ready'];
   'App.focus': IAppApi['focus'];
