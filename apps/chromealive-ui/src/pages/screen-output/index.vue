@@ -19,7 +19,7 @@
     <h2>
       Databox Output <span>{{ dataSize }}</span>:
     </h2>
-    <div class="box bg-gray-50 border border-gray-200 min-h-[200px] max-h-[500px]">
+    <div class="box bg-gray-50 border border-gray-200 min-h-[200px] max-h-[500px] overflow-auto">
       <Json
         v-if="output"
         :json="output"
@@ -55,13 +55,13 @@
           Http Requested at {{ formatTimestamp(resource.resource.request.timestamp) }}
         </div>
         <div class="grid grid-cols-2 gap-4">
-          <div class="p-10 bg-gray-10 border border-gray-200 font-thin whitespace-pre text-sm">
+          <div class="p-10 bg-gray-10 border border-gray-200 font-thin whitespace-pre text-sm overflow-auto">
             <div class="label font-bold">
               Request Headers
             </div>
             {{ formatJson(resource.resource.request.headers) }}
           </div>
-          <div class="p-10 bg-gray-10 border border-gray-200 font-thin whitespace-pre text-sm">
+          <div class="p-10 bg-gray-10 border border-gray-200 font-thin whitespace-pre text-sm overflow-auto">
             <div class="label font-bold">
               Response Headers
             </div>
@@ -105,7 +105,7 @@
           Collected at {{ formatTimestamp(snippet.timestamp) }}
         </div>
         <div class="grid">
-          <div class="p-10 bg-gray-10 border border-gray-200 font-thin whitespace-pre text-sm">
+          <div class="p-10 bg-gray-10 border border-gray-200 font-thin whitespace-pre text-sm overflow-auto">
             {{ formatJson(snippet.value) }}
           </div>
         </div>
@@ -135,7 +135,7 @@
           Collected at {{ formatTimestamp(element.timestamp) }} from
           {{ element.documentUrl }}
         </div>
-        <div class="p-10 bg-gray-100 border border-gray-200 font-thin whitespace-pre text-sm">
+        <div class="p-10 bg-gray-100 border border-gray-200 font-thin whitespace-pre text-sm overflow-auto">
           {{ element.outerHTML }}
         </div>
 
@@ -368,13 +368,13 @@ export default Vue.defineComponent({
     refreshData(): void {
       Client.send('Session.getActive')
         .then(this.onSessionActive)
-        .catch(err => alert(String(err)));
+        .catch(err => alert(err.stack));
       Client.send('Databox.getOutput')
         .then(x => this.onDataboxOutput({ ...x, changes: undefined }))
-        .catch(err => alert(String(err)));
+        .catch(err => alert(err.stack));
       Client.send('Databox.getCollectedAssets')
         .then(this.onCollectedAssets)
-        .catch(err => alert(String(err)));
+        .catch(err => alert(err.stack));
     },
     runExtract(): void {
       Client.send('Databox.runExtract', { heroSessionId: this.sessionId }).catch(err =>

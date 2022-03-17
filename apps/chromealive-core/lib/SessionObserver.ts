@@ -289,9 +289,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   public getDataboxEvent(): IDataboxOutputEvent {
-    const commandId = this.timetravelPlayer.activeCommandId;
-
-    const output: IOutputSnapshot = this.outputRebuilder.getLatestSnapshot(commandId) ?? {
+    const output: IOutputSnapshot = this.outputRebuilder.getLatestSnapshot() ?? {
       bytes: 0,
       output: null,
       changes: [],

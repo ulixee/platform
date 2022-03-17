@@ -1,52 +1,65 @@
 <template>
   <div
     class="PlayerBar relative"
-    @mousedown="handleMouseDown($event)"
     :style="formattedCssVars()"
     :class="{ isSelected: isSelected, notSelected: !isSelected }"
+    @mousedown="handleMouseDown($event)"
   >
     <div class="ticks">
       <div
         v-for="(tick, i) in ticks"
+        :key="tick.offsetPercent"
         class="tick"
         :class="{ [tick.class]: true }"
-        :key="tick.offsetPercent"
-        @click.prevent="clickTick($event, tick)"
         :style="{ left: tick.offsetPercent + '%' }"
+        @click.prevent="clickTick($event, tick)"
       >
-        <div v-if="i !== tick.length - 1" class="tick-overlay"></div>
+        <div
+          v-if="i !== tick.length - 1"
+          class="tick-overlay"
+        />
       </div>
     </div>
 
-    <div class="ghost" v-if="isSelected" :class="ghostClass"></div>
     <div
-      class="marker"
+      v-if="isSelected"
+      class="ghost"
+      :class="ghostClass"
+    />
+    <div
       v-if="isSelected"
       ref="markerElem"
-      @mousedown="handleMouseDown($event, 'marker')"
+      class="marker"
       :class="{ active: activeItem === 'marker', ...markerClass }"
+      @mousedown="handleMouseDown($event, 'marker')"
     >
       <div class="marker-wrapper">
-        <div class="dragger left" @mousedown="handleMouseDown($event, 'draggerLeft')"></div>
-        <div class="dragger right" @mousedown="handleMouseDown($event, 'draggerRight')"></div>
+        <div
+          class="dragger left"
+          @mousedown="handleMouseDown($event, 'draggerLeft')"
+        />
+        <div
+          class="dragger right"
+          @mousedown="handleMouseDown($event, 'draggerRight')"
+        />
       </div>
 
-      <div class="play-icon"></div>
-      <div class="pause-icon"></div>
+      <div class="play-icon" />
+      <div class="pause-icon" />
 
       <div
         class="nib left"
-        @mousedown="handleMouseDown($event, 'nibLeft')"
         :class="{ active: activeItem === 'nibLeft' }"
+        @mousedown="handleMouseDown($event, 'nibLeft')"
       >
-        <div class="arrow-up"></div>
+        <div class="arrow-up" />
       </div>
       <div
         class="nib right"
-        @mousedown="handleMouseDown($event, 'nibRight')"
         :class="{ active: activeItem === 'nibRight' }"
+        @mousedown="handleMouseDown($event, 'nibRight')"
       >
-        <div class="arrow-up"></div>
+        <div class="arrow-up" />
       </div>
     </div>
   </div>
@@ -84,7 +97,7 @@ export default Vue.defineComponent({
   components: {
     ArrowRight,
   },
-  props: ['isSelected', 'mouseIsWithinPlayer', 'isRunning', 'ticks', 'session'],
+  props: ['isSelected', 'mouseIsWithinPlayer', 'isRunning', 'ticks', 'session', 'mode'],
   emits: ['toggleTimetravel'],
   setup(props) {
     const markerElem = Vue.ref<HTMLElement>();
@@ -133,6 +146,21 @@ export default Vue.defineComponent({
       timetravelTimeout: -1,
       lastTimetravelTimestamp: -1,
     };
+  },
+  watch: {
+    mode(value) {
+      if (value === 'Live') {
+        this.markerClass.isLive = true;
+        this.ghostClass.isAtLive = true;
+        this.markerClass.hasMultiple = false;
+        this.cssVars.markerLeft = liveMarkerPosition;
+        this.cssVars.markerRight = '';
+      }
+      else if (value === 'Timetravel') {
+        this.markerClass.isLive = false;
+        this.ghostClass.isAtLive = false;
+      }
+    }
   },
   methods: {
     formattedCssVars() {

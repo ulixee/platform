@@ -24,7 +24,7 @@ export default function flattenJson(
   const { key, index, showComma = false } = options;
   const type = Object.prototype.toString.call(data).slice(8, -1).toLowerCase();
 
-  if (typeof data === 'object') {
+  if (data && typeof data === 'object') {
     const isArray = type === 'array';
 
     const results: FlatJson[] = [

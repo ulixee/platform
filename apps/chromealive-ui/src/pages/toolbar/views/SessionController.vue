@@ -2,38 +2,38 @@
   <div class="bar-wrapper flex flex-row items-stretch">
     <MenuButton class="z-20" />
     <InputButton
-      @select="select('Input')"
-      :isSelected="selectedItem === 'Input'"
-      :isFocused="selectedItem === 'Input'"
-      :isMinimal="isMinimal"
-      :inputSize="inputSize"
+      :is-selected="selectedItem === 'Input'"
+      :is-focused="selectedItem === 'Input'"
+      :is-minimal="isMinimal"
+      :input-size="inputSize"
       class="z-20"
+      @select="select('Input')"
     />
     <Player
-      @select="select('Player')"
       :mode="mode"
-      :isSelected="selectedItem === 'Player'"
-      :isFocused="selectedItem === 'Player'"
+      :is-selected="selectedItem === 'Player'"
+      :is-focused="selectedItem === 'Player'"
       :ticks="timelineTicks"
-      :isRunning="isRunning"
-      :isMinimal="isMinimal"
+      :is-running="isRunning"
+      :is-minimal="isMinimal"
       :session="session"
       class="flex-1 z-10"
+      @select="select('Player')"
     />
     <OutputButton
-      @select="select('Output')"
-      :isSelected="selectedItem === 'Output'"
-      :isFocused="selectedItem === 'Output'"
-      :isMinimal="isMinimal"
-      :outputSize="outputSize"
+      :is-selected="selectedItem === 'Output'"
+      :is-focused="selectedItem === 'Output'"
+      :is-minimal="isMinimal"
+      :output-size="outputSize"
       style="z-index: 2"
+      @select="select('Output')"
     />
     <ReliabilityButton
-      @select="select('Reliability')"
-      :isSelected="selectedItem === 'Reliability'"
-      :isFocused="selectedItem === 'Reliability'"
-      :isMinimal="isMinimal"
+      :is-selected="selectedItem === 'Reliability'"
+      :is-focused="selectedItem === 'Reliability'"
+      :is-minimal="isMinimal"
       style="z-index: 1"
+      @select="select('Reliability')"
     />
   </div>
 </template>
@@ -90,9 +90,9 @@ export default Vue.defineComponent({
         Client.send('Session.openScreen', {
           heroSessionId: this.session.heroSessionId,
           screenName: item,
-        });
+        }).catch(err => alert(String(err)));
       } else if (item === 'Player') {
-        Client.send('Session.openPlayer');
+        Client.send('Session.openPlayer').catch(err => alert(String(err)));
       }
     },
 
@@ -106,6 +106,11 @@ export default Vue.defineComponent({
       message ??= createDefaultSession();
       const isNewId =
         message.heroSessionId !== this.session.heroSessionId || !message.heroSessionId;
+      if (isNewId) {
+        if (this.selectedItem !== 'Player') {
+          this.select('Player');
+        }
+      }
       Object.assign(this.session, message);
 
       const timelineTicks: any[] = [];

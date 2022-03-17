@@ -1,8 +1,5 @@
 <template>
   <div
-    @click="handleClick"
-    @mouseenter="handleMouseEnter"
-    @mouseleave="handleMouseLeave"
     :class="{
       isSelected: isSelected,
       notSelected: !isSelected,
@@ -10,42 +7,77 @@
       notFocused: !isFocused,
     }"
     class="Player"
+    @click="handleClick"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
   >
     <div class="wrapper relative w-full h-full flex flex-row items-center">
       <div class="backgrounds">
-        <div class="left-notch"></div>
-        <div class="right-arrow"></div>
+        <div class="left-notch" />
+        <div class="right-arrow" />
       </div>
 
-      <Borders :isSelected="isSelected" :isFocused="isFocused" />
+      <Borders
+        :is-selected="isSelected"
+        :is-focused="isFocused"
+      />
 
       <div class="address-bar relative h-full flex flex-row">
-        <div v-if="isLiveMode" class="live-icon">
-          <div class="text" v-if="isRunning">LIVE</div>
-          <div class="text" v-else>DONE</div>
+        <div
+          v-if="isLiveMode"
+          class="live-icon"
+        >
+          <div
+            v-if="isRunning"
+            class="text"
+          >
+            LIVE
+          </div>
+          <div
+            v-else
+            class="text"
+          >
+            DONE
+          </div>
         </div>
-        <div v-else class="timetravel-icon">
-          <img src="@/assets/icons/timetravel.svg" class="h-5 w-5" />
+        <div
+          v-else
+          class="timetravel-icon"
+        >
+          <img
+            src="@/assets/icons/timetravel.svg"
+            class="h-5 w-5"
+          >
         </div>
 
         <div class="address">
-          <div class="text">example.org</div>
+          <div class="text">
+            example.org
+          </div>
         </div>
-        <div :class="{ hasFinder: isShowingFinder }" class="search-icon" @click="toggleFinder">
-          <img src="@/assets/icons/search.svg" class="h-5 w-5" />
+        <div
+          :class="{ hasFinder: isShowingFinder }"
+          class="search-icon"
+          @click="toggleFinder"
+        >
+          <img
+            src="@/assets/icons/search.svg"
+            class="h-5 w-5"
+          >
         </div>
       </div>
 
       <div class="player-wrapper relative flex-1 h-full flex flex-row items-center">
-        <div class="bar-bg"></div>
+        <div class="bar-bg" />
         <PlayerBar
-          :isSelected="isSelected"
-          :mouseIsWithinPlayer="mouseIsWithinPlayer"
-          :isRunning="isRunning"
+          :is-selected="isSelected"
+          :mouse-is-within-player="mouseIsWithinPlayer"
+          :is-running="isRunning"
           :ticks="ticks"
           :session="session"
-          @toggleTimetravel="toggleTimetravel"
+          :mode="mode"
           class="flex-1"
+          @toggleTimetravel="toggleTimetravel"
         />
       </div>
     </div>
@@ -118,13 +150,6 @@ export default Vue.defineComponent({
     handleMouseEnter() {
       this.mouseIsWithinPlayer = true;
     },
-
-    // resume() {
-    //   Client.send('Session.resume', {
-    //     heroSessionId: this.session.heroSessionId,
-    //     startLocation: this.startLocation,
-    //   });
-    // },
   },
 
   mounted() {

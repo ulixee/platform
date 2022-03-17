@@ -1,24 +1,36 @@
 <template>
   <div class="Json">
     <div
-      class="JsonNode"
       v-for="node of json"
+      :id="node.path"
       :key="node.id"
       :ref="
         el => {
           jsonNodes[node.id] = el;
         }
       "
-      :id="node.path"
+      class="JsonNode"
       :class="{ highlighted: node.highlighted }"
     >
-      <div class="indent" v-for="i in node.level" :key="i">{{ ' ' }}</div>
-      <span v-if="node.key" class="key">{{ node.key }}: </span>
+      <div
+        v-for="i in node.level"
+        :key="i"
+        class="indent"
+      >
+        {{ ' ' }}
+      </div>
+      <span
+        v-if="node.key"
+        class="key"
+      >{{ node.key }}: </span>
       <span>
         <span :class="{ ['value-' + node.type]: node.isContent, brackets: !node.isContent }">{{
-          node.content
+          node.content === null ? 'null' : node.content
         }}</span>
-        <span v-if="node.showComma" class="comma">, </span>
+        <span
+          v-if="node.showComma"
+          class="comma"
+        >, </span>
       </span>
     </div>
   </div>
