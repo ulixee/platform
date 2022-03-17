@@ -8,8 +8,6 @@ import {
   MessageEventType,
   extractStringifiedComponentsFromMessage,
   IMessageObject,
-  MessageLocation,
-  ResponseCode,
 } from '../BridgeHelpers';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 
@@ -21,7 +19,7 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
 
   private events = new EventSubscriber();
 
-  public async onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession) {
+  public async onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession): Promise<void> {
     this.devtoolsSessionMap.set(devtoolsSession, { contextIds: [] });
 
     this.events.on(devtoolsSession, 'Runtime.executionContextCreated', event =>
@@ -155,7 +153,7 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
       });
   }
 
-  private handleIncomingMessageFromBrowser(event: any) {
+  private handleIncomingMessageFromBrowser(event: any): void {
     if (event.name !== ___sendToCore) return;
     const [destLocation] = extractStringifiedComponentsFromMessage(event.payload);
     this.emit('message', event.payload, { destLocation });
@@ -196,12 +194,12 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
 // METHODS TO RUN IN BROWSER CONTEXT ////////////////////////////////////////////////////////
 
 // eslint-disable-next-line @typescript-eslint/no-shadow
-function openSelectorGeneratorPanel(DevToolsAPI: any, extensionId: string) {
+function openSelectorGeneratorPanel(DevToolsAPI: any, extensionId: string): void {
   // We can get list from UI.panels
   DevToolsAPI.showPanel(`chrome-extension://${extensionId}HeroScript`);
 }
 
-function toggleInspectElementMode(InspectorFrontendAPI: any) {
+function toggleInspectElementMode(InspectorFrontendAPI: any): void {
   InspectorFrontendAPI.enterInspectElementMode()
 }
 
@@ -255,13 +253,15 @@ async function interceptElementPanelWasHovered(sendToCoreFnName, eventType) {
 `;
 
 // Every time an element in page is selected for inspection
-function interceptElementWasSelected(sendToCoreFnName, eventType) {
+function interceptElementWasSelected(sendToCoreFnName, eventType): void {
   // @ts-ignore
   const globalWindow = window;
   // @ts-ignore
   const globalSDK = window.SDK;
-  if (!globalSDK)
-    return setTimeout(() => interceptElementWasSelected(sendToCoreFnName, eventType), 1);
+  if (!globalSDK) {
+    setTimeout(() => interceptElementWasSelected(sendToCoreFnName, eventType), 1);
+    return;
+  }
 
   const inspectNodeRequested = globalSDK.OverlayModel.prototype.inspectNodeRequested;
   globalSDK.OverlayModel.prototype.inspectNodeRequested = function ({ backendNodeId }) {

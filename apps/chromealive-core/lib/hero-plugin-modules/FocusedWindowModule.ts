@@ -28,7 +28,8 @@ export default class FocusedWindowModule {
   ): Promise<any> {
     if (!this.sessionId) {
       this.sessionId ??= sessionSummary.id;
-      if (process.env.HERO_DEBUG_CHROMEALIVE) this.debugServiceWorker(puppetPage.devtoolsSession, events);
+      if (process.env.HERO_DEBUG_CHROMEALIVE)
+        this.debugServiceWorker(puppetPage.devtoolsSession, events);
     }
     this.puppetPagesById.set(puppetPage.id, puppetPage);
     events.once(puppetPage, 'close', this.handlePuppetPageIsClosed.bind(this, puppetPage.id));
@@ -36,7 +37,7 @@ export default class FocusedWindowModule {
     return Promise.resolve();
   }
 
-  private handlePageIsVisible(payload: any, puppetPageId: string) {
+  private handlePageIsVisible(payload: any, puppetPageId: string): void {
     FocusedWindowModule.activePuppetPage = this.puppetPagesById.get(puppetPageId);
     FocusedWindowModule.onVisibilityChange(
       { active: true, focused: payload.focused },

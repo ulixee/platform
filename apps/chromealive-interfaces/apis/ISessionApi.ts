@@ -61,4 +61,5 @@ export default interface ISessionApi {
   }>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/explicit-function-return-type
 export function ISessionApiStatics(staticClass: ISessionApi) {}

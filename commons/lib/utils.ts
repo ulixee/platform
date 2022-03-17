@@ -22,7 +22,7 @@ export function getCallsite(priorToFilename?: string, endFilename?: string): ISo
   const startingTraceLimit = Error.stackTraceLimit;
 
   Error.stackTraceLimit = 25;
-  Error.prepareStackTrace = (_, callsite) => {
+  Error.prepareStackTrace = (_, callsite): ISourceCodeLocation[] => {
     return callsite.map(x => ({
       filename: x.getFileName(),
       line: x.getLineNumber(),

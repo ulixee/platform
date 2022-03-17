@@ -21,15 +21,15 @@ export default class HeroCoreConnector extends BaseCoreConnector {
     return Core.dataDir;
   }
 
-  public async start() {
+  public async start(): Promise<void> {
     await Core.start();
   }
 
-  public async close() {
+  public async close(): Promise<void> {
     await Core.shutdown();
   }
 
-  private handleHeroScript(ws: WebSocket) {
+  private handleHeroScript(ws: WebSocket):void {
     const connection = Core.addConnection();
     ws.on('message', message => {
       const payload = TypeSerializer.parse(message.toString(), 'CLIENT');

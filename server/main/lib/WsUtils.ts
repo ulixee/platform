@@ -2,7 +2,7 @@ import * as WebSocket from 'ws';
 
 const CLOSE_UNEXPECTED_ERROR = 1011;
 
-export function isWsOpen(ws: WebSocket) {
+export function isWsOpen(ws: WebSocket): boolean {
   return ws.readyState === WebSocket.OPEN;
 }
 

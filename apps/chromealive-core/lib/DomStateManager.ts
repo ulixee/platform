@@ -139,7 +139,7 @@ export default class DomStateManager extends TypedEventEmitter<{
     }
   }
 
-  public onMultiverseSession(heroSession: HeroSession) {
+  public onMultiverseSession(heroSession: HeroSession): void {
     // not be our session
     if (heroSession.options.scriptInstanceMeta.entrypoint !== this.scriptInstanceMeta.entrypoint) {
       return;
@@ -289,12 +289,12 @@ export default class DomStateManager extends TypedEventEmitter<{
     this.timelineRecordersBySessionId.delete(heroSession.id);
   }
 
-  private onTab(event: { tab: Tab }) {
+  private onTab(event: { tab: Tab }): void {
     const { tab } = event;
     tab.on('wait-for-domstate', this.onWaitForDomState.bind(this, tab));
   }
 
-  private onWaitForDomState(tab: Tab, event: ITabEventParams['wait-for-domstate']) {
+  private onWaitForDomState(tab: Tab, event: ITabEventParams['wait-for-domstate']): void {
     const listener = event.listener;
     const domStateId = listener.id;
     const sessionId = tab.sessionId;
@@ -342,7 +342,7 @@ export default class DomStateManager extends TypedEventEmitter<{
     return domStateTimeline;
   }
 
-  private onDomStateResolved(tab: Tab, domStateId: string, event: IDomStateEvents['resolved']) {
+  private onDomStateResolved(tab: Tab, domStateId: string, event: IDomStateEvents['resolved']): void {
     const activeDomState = this.domStateById.get(domStateId);
     const generator = activeDomState?.generator;
     if (!generator) return;
@@ -435,7 +435,7 @@ export default class DomStateManager extends TypedEventEmitter<{
     return false;
   }
 
-  private async closeDevtoolsPanel(sessionId: string) {
+  private async closeDevtoolsPanel(sessionId: string): Promise<void> {
     await this.timetravelPlayer.activeTab.mirrorPage.isReady;
     DevtoolsBackdoorModule.bySessionId
       .get(sessionId)

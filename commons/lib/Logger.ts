@@ -49,7 +49,7 @@ class Log implements ILog {
     // no-op
   }
 
-  protected logToConsole(level: LogLevel, entry: ILogEntry) {
+  protected logToConsole(level: LogLevel, entry: ILogEntry): void {
     const printablePath = entry.module.replace('.js', '').replace('.ts', '').replace('build/', '');
 
     const { error, printData } = translateToPrintable(entry.data);

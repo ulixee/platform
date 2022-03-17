@@ -8,7 +8,7 @@ import {
 } from '@ulixee/commons/lib/Logger';
 
 class UlixeeLogger extends Log {
-  protected logToConsole(level: ILogEntry['level'], entry: ILogEntry) {
+  protected logToConsole(level: ILogEntry['level'], entry: ILogEntry): void {
     const printablePath = entry.module
       .replace('.js', '')
       .replace('.ts', '')

@@ -74,7 +74,7 @@ export default class TabGroupModule {
     await this.sendToExtension<void>(puppetPageId, 'hideTabs', args, true);
   }
 
-  public close() {
+  public close(): void {
     TabGroupModule.bySessionId.delete(this.sessionId);
   }
 
@@ -107,7 +107,7 @@ export default class TabGroupModule {
     return (await this.bridgeToExtension.send(message, puppetPageId)) as T;
   }
 
-  private puppetPageClosed(puppetPage: IPuppetPage) {
+  private puppetPageClosed(puppetPage: IPuppetPage): void {
     this.identityByPuppetPage.delete(puppetPage);
     this.puppetPagesById.delete(puppetPage.id);
   }

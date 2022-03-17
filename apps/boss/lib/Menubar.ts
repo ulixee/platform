@@ -175,7 +175,7 @@ export class Menubar extends EventEmitter {
     }
   }
 
-  private listenForMouseDown() {
+  private listenForMouseDown(): void {
     if (process.platform !== 'darwin') return;
     // eslint-disable-next-line import/no-unresolved,global-require
     const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
@@ -284,7 +284,7 @@ export class Menubar extends EventEmitter {
 
   /// //// SERVER MANAGEMENT ////////////////////////////////////////////////////////////////////////////////////////////
 
-  private async stopServer() {
+  private async stopServer(): Promise<void> {
     if (!this.#ulixeeServer) return;
 
     // eslint-disable-next-line no-console
@@ -295,7 +295,7 @@ export class Menubar extends EventEmitter {
     await this.updateServerStatus();
   }
 
-  private async startServer() {
+  private async startServer(): Promise<void> {
     if (this.#ulixeeServer) return;
     ChromeAliveCore.register(true);
     this.#ulixeeServer = new UlixeeServer();
@@ -313,7 +313,7 @@ export class Menubar extends EventEmitter {
     await this.updateServerStatus();
   }
 
-  private async updateServerStatus() {
+  private async updateServerStatus(): Promise<void> {
     if (this.#isClosing) return;
     let address: string = null;
     if (this.#ulixeeServer) {

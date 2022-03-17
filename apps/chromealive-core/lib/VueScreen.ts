@@ -40,7 +40,7 @@ export default class VueScreen extends TypedEventEmitter<{ close: void }> {
     }[name];
   }
 
-  public async open() {
+  public async open(): Promise<IPuppetPage> {
     if (!this.puppetPage) {
       const puppetPage = await this.openPuppetPage();
       await puppetPage.navigate(this.pageUrl);

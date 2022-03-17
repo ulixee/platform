@@ -19,7 +19,7 @@ export default class ElementsModule {
     this.sessionId = sessionSummary.id;
     ElementsModule.bySessionId.set(this.sessionId, this);
   }
-  
+
   public async onNewPuppetPage(
     puppetPage: IPuppetPage,
     sessionSummary: ISessionSummary,
@@ -31,18 +31,18 @@ export default class ElementsModule {
     await puppetPage.devtoolsSession.send('Overlay.enable');
   }
 
-  public async highlightNode(backendNodeId: number) {
-    await FocusedWindowModule.activePuppetPage?.devtoolsSession.send('Overlay.highlightNode', { 
+  public async highlightNode(backendNodeId: number): Promise<void> {
+    await FocusedWindowModule.activePuppetPage?.devtoolsSession.send('Overlay.highlightNode', {
       highlightConfig,
-      backendNodeId 
+      backendNodeId,
     });
   }
 
-  public async hideHighlight() {
+  public async hideHighlight(): Promise<void> {
     await FocusedWindowModule.activePuppetPage?.devtoolsSession.send('Overlay.hideHighlight');
   }
 
   public async generateQuerySelector(_backendNodeId: number): Promise<void> {
-    // 
+    //
   }
 }

@@ -34,7 +34,7 @@ export default class ChromeAliveCore {
   private static app: ChildProcess;
   private static events = new EventSubscriber();
 
-  public static setCoreServerAddress(address: Promise<string>) {
+  public static setCoreServerAddress(address: Promise<string>): void {
     this.coreServerAddress = address;
     this.launchApp(true).catch(err => {
       console.error('Cannot launch ChromeAlive app', err);
@@ -52,7 +52,7 @@ export default class ChromeAliveCore {
     return connection;
   }
 
-  public static register(isNodeRegisteredModule = false) {
+  public static register(isNodeRegisteredModule = false): void {
     log.info('Registering ChromeAlive!');
     if (isNodeRegisteredModule === true) {
       this.shouldAutoShowBrowser = true;
@@ -74,7 +74,7 @@ export default class ChromeAliveCore {
     HeroCore.use(HeroCorePlugin);
   }
 
-  public static shutdown() {
+  public static shutdown(): void {
     log.info('Shutting down ChromeAlive!');
     this.closeApp();
     this.events.close();
@@ -100,7 +100,7 @@ export default class ChromeAliveCore {
   public static sendAppEvent<T extends keyof IChromeAliveEvents>(
     eventType: T,
     data: IChromeAliveEvents[T] = null,
-  ) {
+  ): void {
     for (const connection of this.connections) {
       connection.sendEvent({ eventType, data });
     }
@@ -191,7 +191,7 @@ export default class ChromeAliveCore {
     }
   }
 
-  private static onWsConnected() {
+  private static onWsConnected(): void {
     log.info('ChromeAlive! Ws Connected', {
       sessionId: this.activeHeroSessionId,
     });
@@ -226,7 +226,7 @@ export default class ChromeAliveCore {
     });
   }
 
-  private static onSessionObserverClosed(sessionObserver: SessionObserver) {
+  private static onSessionObserverClosed(sessionObserver: SessionObserver): void {
     const heroSessionId = sessionObserver.heroSession.id;
     this.sessionObserversById.delete(heroSessionId);
     this.events.endGroup('session');
@@ -258,14 +258,14 @@ export default class ChromeAliveCore {
     }
   }
 
-  private static sendActiveSession(heroSessionId: string) {
+  private static sendActiveSession(heroSessionId: string): void {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
 
     this.sendAppEvent('Session.active', sessionObserver.getHeroSessionEvent());
   }
 
-  private static sendDataboxUpdatedEvent(heroSessionId: string) {
+  private static sendDataboxUpdatedEvent(heroSessionId: string): void {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
     this.sendAppEvent('Databox.output', sessionObserver.getDataboxEvent());
@@ -280,7 +280,7 @@ export default class ChromeAliveCore {
     this.sendAppEvent('Databox.collected-asset', event);
   }
 
-  private static sendAppModeEvent(heroSessionId: string) {
+  private static sendAppModeEvent(heroSessionId: string): void {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
     this.sendAppEvent('App.mode', { mode: sessionObserver.mode });
@@ -322,7 +322,7 @@ export default class ChromeAliveCore {
     });
   }
 
-  private static onBrowserHasNoWindows(event: { puppet: Puppet }) {
+  private static onBrowserHasNoWindows(event: { puppet: Puppet }): void {
     // only check for headed
     if (!event.puppet.browserEngine.isHeaded) return;
 

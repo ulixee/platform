@@ -9,6 +9,7 @@ module.exports = {
     'no-console': 'off',
     'global-require': 'off',
     'import/extensions': 'off',
+    '@typescript-eslint/explicit-function-return-type': 'off',
   },
   ignorePatterns: [".eslintrc.js", "postcss.config.js", "tailwind.config.js", "webpack.config.js"]
 };

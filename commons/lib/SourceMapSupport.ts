@@ -165,7 +165,7 @@ function CallSiteToString(
     isPromiseAny?(): boolean;
     getPromiseIndex?(): number;
   },
-) {
+): string {
   let fileName;
   let fileLocation = '';
   if (this.isNative()) {

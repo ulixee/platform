@@ -41,7 +41,7 @@ export default class ConnectionToClient extends TypedEventEmitter<{
     this.emit('close');
   }
 
-  public sendEvent<T extends keyof IChromeAliveEvents>(event: IChromeAliveEvent<T>) {
+  public sendEvent<T extends keyof IChromeAliveEvents>(event: IChromeAliveEvent<T>): void {
     this.emit('message', event);
   }
 }

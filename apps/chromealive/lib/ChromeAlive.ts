@@ -100,7 +100,7 @@ export class ChromeAlive extends EventEmitter {
     this.#toolbarIsVisible = true;
   }
 
-  private toggleToolbarOnTop(onTop: boolean) {
+  private toggleToolbarOnTop(onTop: boolean): void {
     this.#toolbarWindow.setAlwaysOnTop(onTop);
     for (const window of this.#childWindowsByName.values()) {
       window.setAlwaysOnTop(onTop);
@@ -129,7 +129,7 @@ export class ChromeAlive extends EventEmitter {
     }
   }
 
-  private listenForMouseDown() {
+  private listenForMouseDown(): void {
     // TODO: add linux/win support
     // https://github.com/wilix-team/iohook (seems unstable, but possibly look at ideas?)
     // windows: https://github.com/xanderfrangos/global-mouse-events

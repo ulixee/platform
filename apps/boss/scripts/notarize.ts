@@ -1,6 +1,6 @@
 import { notarize } from 'electron-notarize';
 
-export default async function notarizing(context) {
+export default async function notarizing(context): Promise<void> {
   const { electronPlatformName, appOutDir } = context;
 
   if (electronPlatformName !== 'darwin' || process.env.SKIP_NOTARIZE) {

@@ -33,7 +33,7 @@ export default class Server {
     });
   }
 
-  public get hasConnections() {
+  public get hasConnections(): boolean {
     return this.wsServer.clients.size > 0;
   }
 
@@ -78,11 +78,11 @@ export default class Server {
     return this.serverAddress.promise;
   }
 
-  public addHttpRoute(route: RegExp | string, handleFn: IHttpHandleFn) {
+  public addHttpRoute(route: RegExp | string, handleFn: IHttpHandleFn): void {
     this.httpRoutes.push([route, handleFn]);
   }
 
-  public addWsRoute(route: RegExp | string, handleFn: IWsHandleFn) {
+  public addWsRoute(route: RegExp | string, handleFn: IWsHandleFn): void {
     this.wsRoutes.push([route, handleFn]);
   }
 
@@ -116,7 +116,7 @@ export default class Server {
     }
   }
 
-  private handleHome(req: IncomingMessage, res: ServerResponse) {
+  private handleHome(req: IncomingMessage, res: ServerResponse): void {
     res.end(`Ulixee Server v${pkg.version}`);
   }
 
@@ -155,7 +155,7 @@ export default class Server {
     ws.close();
   }
 
-  private onHttpError(error: Error) {
+  private onHttpError(error: Error): void {
     log.warn('Error on Server.httpServer', {
       error,
       sessionId: null,

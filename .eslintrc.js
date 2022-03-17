@@ -74,6 +74,12 @@ module.exports = {
         '@typescript-eslint/require-await': 'off',
       },
     },
+    {
+      files: '*.js',
+      rules: {
+        '@typescript-eslint/explicit-function-return-type': 'off',
+      },
+    },
   ],
   ignorePatterns: [
     '**/node_modules',
@@ -162,7 +168,10 @@ module.exports = {
     '@typescript-eslint/object-shorthand-properties-first': 'off',
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-function-return-type': [
+      'error',
+      { allowExpressions: true, allowHigherOrderFunctions: true },
+    ],
     '@typescript-eslint/no-inferrable-types': 'warn',
     '@typescript-eslint/lines-between-class-members': [
       'error',

@@ -81,11 +81,11 @@ export interface IMessageObject {
 
 export type IRestOfMessageObject = Omit<IMessageObject, 'destLocation' | 'responseCode'>;
 
-export function createResponseId() {
+export function createResponseId(): string {
   return nanoid();
 }
 
-export function packMessage(message: IMessageObject | string) {
+export function packMessage(message: IMessageObject | string): string {
   if (typeof message === 'string') {
     if (isPackedMessage(message)) return message;
     throw new Error('Unknown message format');
@@ -99,7 +99,7 @@ export function packMessage(message: IMessageObject | string) {
   return `:${destLocation.padEnd(lengthOfDestLocationField)}:${responseCode}:${stringifiedMessage}`;
 }
 
-function isPackedMessage(message: string) {
+function isPackedMessage(message: string): boolean {
   return message.substr(0, 1) === fieldDivider;
 }
 
@@ -125,12 +125,14 @@ export function isResponseMessage(message: IMessageObject | string): boolean {
   return message.responseCode === ResponseCode.R;
 }
 
-export function extractStringifiedComponentsFromMessage(message: IMessageObject | string) {
+export function extractStringifiedComponentsFromMessage(
+  message: IMessageObject | string,
+): [destLocation: string, responseCode: keyof typeof ResponseCode, stringifiedMessage: string] {
   if (typeof message === 'string' && isPackedMessage(message)) {
     const destLocation = message.substr(startOfDestLocationField, lengthOfDestLocationField);
     const responseCode = message.substr(startOfResponseCodeField, lengthOfResponseCodeField);
     const stringifiedMessage = message.substr(startOfStringifiedMessageField);
-    return [destLocation.trim(), responseCode, stringifiedMessage];
+    return [destLocation.trim(), responseCode as any, stringifiedMessage];
   }
   if (typeof message === 'string') throw new Error('Unknown message format');
 
@@ -139,7 +141,7 @@ export function extractStringifiedComponentsFromMessage(message: IMessageObject 
   return [destLocation, responseCode || ResponseCode.N, stringifiedMessage];
 }
 
-export function extractResponseIdFromMessage(message: IMessageObject | string) {
+export function extractResponseIdFromMessage(message: IMessageObject | string): string {
   if (typeof message === 'string' && isPackedMessage(message)) {
     const stringifiedMessage = message.substr(startOfStringifiedMessageField);
     return JSON.parse(stringifiedMessage).responseId as string;

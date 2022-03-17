@@ -22,14 +22,14 @@ export default class CoreConnectors {
     }
   }
 
-  public async start() {
+  public async start(): Promise<void> {
     for (const coreConnector of this.coreConnectors) {
       await coreConnector.start();
     }
     isConnected = true;
   }
 
-  public async close() {
+  public async close(): Promise<void> {
     for (const coreConnector of this.coreConnectors) {
       await coreConnector.close();
     }

@@ -5,14 +5,17 @@ import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import IDevtoolsSession, { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
 import TabGroupModule from './TabGroupModule';
-import { EventType, ___emitFromDevtoolsToCore } from '../../injected-scripts/DevtoolsBackdoorConfig';
+import {
+  EventType,
+  ___emitFromDevtoolsToCore,
+} from '../../injected-scripts/DevtoolsBackdoorConfig';
 import FocusedWindowModule from './FocusedWindowModule';
 import ChromeAliveCore from '../../index';
 
 export default class DevtoolsBackdoorModule {
   public static bySessionId = new Map<string, DevtoolsBackdoorModule>();
   private events = new EventSubscriber();
-  
+
   private devtoolsSessionMap = new Map<
     IDevtoolsSession,
     { executionContextId: number; tabId?: number }
@@ -26,10 +29,12 @@ export default class DevtoolsBackdoorModule {
   constructor(readonly tabGroupModule: TabGroupModule) {}
 
   public onNewPuppetContext(context: IPuppetContext, session: ISessionSummary): void {
-    DevtoolsBackdoorModule.bySessionId.set(session.id, this);
+    const id = session.id;
+    DevtoolsBackdoorModule.bySessionId.set(id, this);
+    this.events.once(context, 'close', () => DevtoolsBackdoorModule.bySessionId.delete(id));
   }
 
-  public async onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession) {
+  public async onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession): Promise<void> {
     this.events.on(devtoolsSession, 'Runtime.executionContextCreated', event =>
       this.onExecutionContextCreated(devtoolsSession, event),
     );
@@ -44,7 +49,7 @@ export default class DevtoolsBackdoorModule {
     ]).catch(() => null);
   }
 
-  public onDevtoolsPanelDetached(devtoolsSession: IDevtoolsSession) {
+  public onDevtoolsPanelDetached(devtoolsSession: IDevtoolsSession): void {
     const tabId = this.devtoolsSessionMap.get(devtoolsSession)?.tabId;
     this.devtoolsSessionMap.delete(devtoolsSession);
     this.tabMap.delete(tabId);
@@ -68,7 +73,7 @@ export default class DevtoolsBackdoorModule {
   }
 
   public async closeDevtoolsPanelForPage(puppetPage: IPuppetPage): Promise<void> {
-    const tabId = await this.tabGroupModule.getTabIdByPuppetPageId(puppetPage.id); 
+    const tabId = await this.tabGroupModule.getTabIdByPuppetPageId(puppetPage.id);
     await this.send(tabId, 'DevtoolsBackdoor.closeDevtools');
   }
 
@@ -76,7 +81,7 @@ export default class DevtoolsBackdoorModule {
     const puppetPage = FocusedWindowModule.activePuppetPage;
     if (!puppetPage) return;
 
-    const tabId = await this.tabGroupModule.getTabIdByPuppetPageId(puppetPage.id); 
+    const tabId = await this.tabGroupModule.getTabIdByPuppetPageId(puppetPage.id);
     await this.send(tabId, 'DevtoolsBackdoor.showElementsPanel');
     const elementSummaries = await this.send(tabId, 'DevtoolsBackdoor.searchDom', [query]);
 
@@ -85,18 +90,18 @@ export default class DevtoolsBackdoorModule {
 
   // END OF COMMANDS
 
-  private handleIncomingMessageFromBrowser(devtoolsSession: IDevtoolsSession, message: any) {
+  private handleIncomingMessageFromBrowser(devtoolsSession: IDevtoolsSession, message: any): void {
     if (message.name !== ___emitFromDevtoolsToCore) return;
     const payload = JSON.parse(message.payload);
     const event = payload.event;
     if (event === EventType.ElementWasSelected) {
       this.emitElementWasSelected(devtoolsSession, payload.backendNodeId).catch(console.error);
     } else if (event === EventType.ToggleInspectElementMode) {
-      this.emitToggleInspectElementMode(payload.isActive);  
+      this.emitToggleInspectElementMode(payload.isActive);
     }
   }
 
-  private async emitElementWasSelected(devtoolsSession: IDevtoolsSession, backendNodeId: number) {
+  private async emitElementWasSelected(devtoolsSession: IDevtoolsSession, backendNodeId: number): Promise<void> {
     const { tabId } = this.devtoolsSessionMap.get(devtoolsSession);
     const puppetPage = await this.tabGroupModule.getPuppetPageByTabId(tabId);
     if (!puppetPage) {
@@ -107,10 +112,13 @@ export default class DevtoolsBackdoorModule {
       backendNodeId,
     });
     const nodeOverview = result.node;
-    ChromeAliveCore.sendAppEvent('DevtoolsBackdoor.elementWasSelected', { backendNodeId, nodeOverview });
+    ChromeAliveCore.sendAppEvent('DevtoolsBackdoor.elementWasSelected', {
+      backendNodeId,
+      nodeOverview,
+    });
   }
 
-  private emitToggleInspectElementMode(isActive: boolean) {
+  private emitToggleInspectElementMode(isActive: boolean): void {
     ChromeAliveCore.sendAppEvent('DevtoolsBackdoor.toggleInspectElementMode', { isActive });
   }
 
@@ -119,7 +127,7 @@ export default class DevtoolsBackdoorModule {
     event: Protocol.Runtime.ExecutionContextCreatedEvent,
   ): Promise<void> {
     if (this.devtoolsSessionMap.has(devtoolsSession)) return;
-    
+
     let response: Protocol.Runtime.EvaluateResponse;
     try {
       response = await devtoolsSession.send('Runtime.evaluate', {
@@ -134,7 +142,7 @@ export default class DevtoolsBackdoorModule {
       if (response.exceptionDetails) {
         throw new Error(response.exceptionDetails.exception.description);
       }
-    } catch(error) {
+    } catch (error) {
       if (error.message.includes('Cannot find context with specified id')) return;
       throw error;
     }
@@ -164,8 +172,14 @@ export default class DevtoolsBackdoorModule {
 }
 
 const pageScripts = {
-  DevtoolsBackdoorConfig: fs.readFileSync(`${__dirname}/../../injected-scripts/DevtoolsBackdoorConfig.js`, 'utf8'),
-  DevtoolsBackdoor: fs.readFileSync(`${__dirname}/../../injected-scripts/DevtoolsBackdoor.js`, 'utf8'),
+  DevtoolsBackdoorConfig: fs.readFileSync(
+    `${__dirname}/../../injected-scripts/DevtoolsBackdoorConfig.js`,
+    'utf8',
+  ),
+  DevtoolsBackdoor: fs.readFileSync(
+    `${__dirname}/../../injected-scripts/DevtoolsBackdoor.js`,
+    'utf8',
+  ),
 };
 
 const injectedScript = `(function devtoolsBackdoor() {

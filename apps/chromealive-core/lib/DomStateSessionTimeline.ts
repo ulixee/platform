@@ -127,7 +127,7 @@ export default class DomStateSessionTimeline extends TypedEventEmitter<{
     tab: Tab,
     statusChangeListener: (ev: IFrameNavigationEvents['status-change']) => void,
     resolution: IDomStateEvents['resolved'],
-  ) {
+  ): void {
     // keep going if we run into an error?
     if (resolution.error) return;
     tab.navigations.off('status-change', statusChangeListener);
@@ -138,7 +138,7 @@ export default class DomStateSessionTimeline extends TypedEventEmitter<{
     this.timelineRecorder.dontExtendSessionPastTime(generatorSession.timelineRange[1]);
   }
 
-  private changeTimelineRange(timeRange: [number, number]) {
+  private changeTimelineRange(timeRange: [number, number]): void {
     const generatorSession = this.getGeneratorSession();
     if (generatorSession.timelineRange?.toString() === timeRange.toString()) return;
 
@@ -245,7 +245,7 @@ export default class DomStateSessionTimeline extends TypedEventEmitter<{
     };
   }
 
-  private updateRecordUntilTime(recordUntilTime: number, recordUntilLoad: boolean) {
+  private updateRecordUntilTime(recordUntilTime: number, recordUntilLoad: boolean): void {
     if (recordUntilTime > Date.now())
       this.timelineRecorder.recordScreenUntilTime = Math.max(
         recordUntilTime,

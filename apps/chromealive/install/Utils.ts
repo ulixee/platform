@@ -10,15 +10,15 @@ const { version } = packageJson;
 
 export { version };
 
-export function recordVersion() {
+export function recordVersion(): void {
   Fs.writeFileSync(`${getInstallDirectory()}/version`, version);
 }
 
-export function getInstallDirectory() {
+export function getInstallDirectory(): string {
   return Path.join(getCacheDirectory(), 'ulixee', 'chromealive');
 }
 
-function getPlatformExecutable() {
+function getPlatformExecutable(): string {
   const platform = process.env.npm_config_platform || os.platform();
 
   switch (platform) {
@@ -38,7 +38,7 @@ function getPlatformExecutable() {
 
 /////// DISTRIBUTED BINARY /////////////////////////////////////////////////////////////////////////////////////////////
 
-export function isBinaryInstalled() {
+export function isBinaryInstalled(): boolean {
   try {
     const installedVersion = Fs.readFileSync(`${getInstallDirectory()}/version`, 'utf-8').trim();
     const isCurrentVersionValid = compareVersions.compare(installedVersion, version, '>=');
@@ -52,18 +52,18 @@ export function isBinaryInstalled() {
   return Fs.existsSync(getBinaryPath());
 }
 
-export function getBinaryPath() {
+export function getBinaryPath(): string {
   const platformPath = getPlatformExecutable();
   return Path.join(getInstallDirectory(), platformPath);
 }
 
 /////// LOCAL BUILD ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-export function isLocalBuildPresent() {
+export function isLocalBuildPresent(): boolean {
   return Fs.existsSync(getLocalBuildPath());
 }
 
-export function getLocalBuildPath() {
+export function getLocalBuildPath(): string {
   const platformPath = getPlatformExecutable();
 
   const platform = process.env.npm_config_platform || os.platform();

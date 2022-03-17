@@ -25,7 +25,7 @@ export default class ChromeAliveApi extends TypedEventEmitter<{ close: void }> {
     process.on('message', this.onMessage.bind(this));
   }
 
-  public async connect() {
+  public async connect(): Promise<void> {
     const webSocket = new WebSocket(this.chromeAliveServerApi);
     this.webSocket = webSocket;
     this.webSocket.on('close', () => this.emit('close'));
@@ -50,7 +50,7 @@ export default class ChromeAliveApi extends TypedEventEmitter<{ close: void }> {
     });
   }
 
-  public close() {
+  public close(): void {
     if (this.webSocket?.readyState === WebSocket.OPEN) {
       try {
         this.webSocket.terminate();
@@ -84,7 +84,7 @@ export default class ChromeAliveApi extends TypedEventEmitter<{ close: void }> {
     return result;
   }
 
-  private onMessage(message: Serializable) {
+  private onMessage(message: Serializable): void {
     if (message === 'exit') {
       this.onEvent('App.quit');
       return;

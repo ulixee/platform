@@ -5,7 +5,7 @@ const dest = Path.join(process.cwd(), process.argv[2]);
 
 const baseBuild = `${__dirname}/../../../..`;
 
-function copyDir(baseDir: string, outDir: string) {
+function copyDir(baseDir: string, outDir: string): void {
   if (!Fs.existsSync(outDir)) Fs.mkdirSync(outDir);
 
   const packageJson = Fs.existsSync(`${baseDir}/package.json`)

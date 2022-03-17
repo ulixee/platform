@@ -16,7 +16,7 @@ export default class ChromeAliveCoreConnector extends BaseCoreConnector {
     this.server = server;
   }
 
-  public close() {
+  public close(): void {
     const ChromeAliveCore = ChromeAliveCoreConnector.getChromeAlive();
     ChromeAliveCore.shutdown();
   }
@@ -27,7 +27,7 @@ export default class ChromeAliveCoreConnector extends BaseCoreConnector {
     ChromeAliveCore.setCoreServerAddress(chromeAliveAddress);
   }
 
-  private onConnection(ws: WebSocket) {
+  private onConnection(ws: WebSocket): void {
     const ChromeAliveCore = ChromeAliveCoreConnector.getChromeAlive();
     const connection = ChromeAliveCore.addConnection();
     ws.on('message', message => {

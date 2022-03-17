@@ -1,6 +1,5 @@
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import * as Path from 'path';
-import Log from '@ulixee/commons/lib/Logger';
 import ICorePluginCreateOptions from '@ulixee/hero-interfaces/ICorePluginCreateOptions';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import { IBrowserEmulatorConfig, ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
@@ -14,8 +13,8 @@ import { extensionId } from './ExtensionUtils';
 import DevtoolsBackdoorModule from './hero-plugin-modules/DevtoolsBackdoorModule';
 import ElementsModule from './hero-plugin-modules/ElementsModule';
 import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
-import EventEmitter = require('events');
 import { MessageLocation } from './BridgeHelpers';
+import EventEmitter = require('events');
 
 // have to resolve an actual file
 export const extensionPath = Path.resolve(__dirname, '../..', 'chromealive/extension').replace(
@@ -31,7 +30,7 @@ export default class HeroCorePlugin extends CorePlugin {
   private tabGroupModule: TabGroupModule;
   private windowBoundsModule: WindowBoundsModule;
   private focusedWindowModule: FocusedWindowModule;
-  private DevtoolsBackdoorModule: DevtoolsBackdoorModule;
+  private devtoolsBackdoorModule: DevtoolsBackdoorModule;
   private elementsModule: ElementsModule;
   private events = new EventSubscriber();
   private browserEmitter = new EventEmitter();
@@ -44,7 +43,7 @@ export default class HeroCorePlugin extends CorePlugin {
     this.windowBoundsModule = new WindowBoundsModule(this.bridgeToExtension, this.browserEmitter);
     this.focusedWindowModule = new FocusedWindowModule(this.bridgeToExtension, this.browserEmitter);
     this.elementsModule = new ElementsModule(this.bridgeToExtension);
-    this.DevtoolsBackdoorModule = new DevtoolsBackdoorModule(this.tabGroupModule);
+    this.devtoolsBackdoorModule = new DevtoolsBackdoorModule(this.tabGroupModule);
 
     this.events.on(this.bridgeToExtension, 'message', (message, messageComponents) => {
       const { destLocation, stringifiedMessage, puppetPageId } = messageComponents;
@@ -62,7 +61,7 @@ export default class HeroCorePlugin extends CorePlugin {
 
     this.tabGroupModule.onNewPuppetContext(context, sessionSummary);
     this.elementsModule.onNewPuppetContext(context, sessionSummary);
-    this.DevtoolsBackdoorModule.onNewPuppetContext(context, sessionSummary);
+    this.devtoolsBackdoorModule.onNewPuppetContext(context, sessionSummary);
 
     const currentTargets = await context.sendWithBrowserDevtoolsSession('Target.getTargets');
     let hasBlankTab = false;
@@ -100,13 +99,13 @@ export default class HeroCorePlugin extends CorePlugin {
 
   public onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession): Promise<any> {
     return Promise.all([
-      this.DevtoolsBackdoorModule.onDevtoolsPanelAttached(devtoolsSession),
+      this.devtoolsBackdoorModule.onDevtoolsPanelAttached(devtoolsSession),
     ]);
   }
 
   public onDevtoolsPanelDetached(devtoolsSession: IDevtoolsSession): Promise<any> {
     return Promise.all([
-      this.DevtoolsBackdoorModule.onDevtoolsPanelDetached(devtoolsSession),
+      this.devtoolsBackdoorModule.onDevtoolsPanelDetached(devtoolsSession),
     ]);
   }
 
@@ -120,7 +119,7 @@ export default class HeroCorePlugin extends CorePlugin {
 
   public onContextClosed(sessionSummary: ISessionSummary): void {
     this.tabGroupModule.close();
-    this.DevtoolsBackdoorModule.close(sessionSummary);
+    this.devtoolsBackdoorModule.close(sessionSummary);
     this.events.close();
     this.browserEmitter.removeAllListeners();
   }

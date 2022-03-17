@@ -28,7 +28,7 @@ export default class BridgeToExtension extends EventEmitter {
     return this.contextIdByPageId.get(puppetPageId) ?? null;
   }
 
-  public getDevtoolsSessionByPuppetPageId(puppetPageId: string) {
+  public getDevtoolsSessionByPuppetPageId(puppetPageId: string): IDevtoolsSession {
     return this.devtoolsSessionsByPageId[puppetPageId];
   }
 
@@ -101,11 +101,11 @@ export default class BridgeToExtension extends EventEmitter {
     return Promise.resolve();
   }
 
-  public closePuppetPage(puppetPageId: string) {
+  public closePuppetPage(puppetPageId: string): void {
     this.contextIdByPageId.delete(puppetPageId);
   }
 
-  public close() {
+  public close(): void {
     this.contextIdByPageId.clear();
   }
 
@@ -113,7 +113,7 @@ export default class BridgeToExtension extends EventEmitter {
     devtoolsSession: IDevtoolsSession,
     contextId: number,
     expressionToRun: string,
-  ) {
+  ): void {
     const response = devtoolsSession.send('Runtime.evaluate', {
       expression: expressionToRun,
       contextId,
@@ -129,7 +129,7 @@ export default class BridgeToExtension extends EventEmitter {
   private handleIncomingMessageFromBrowser(
     puppetPageId: string,
     event: Protocol.Runtime.BindingCalledEvent,
-  ) {
+  ): void {
     if (event.name !== ___sendToCore) return;
     const [destLocation, responseCode, stringifiedMessage] =
       extractStringifiedComponentsFromMessage(event.payload);
