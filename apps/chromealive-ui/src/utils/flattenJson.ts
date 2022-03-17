@@ -88,7 +88,7 @@ export function convertJsonToFlat(json: any, highlightedPaths: string[] = []): F
 
   let counter = 0;
   for (const record of flatJson) {
-    counter += 1
+    counter += 1;
     record.id = counter;
     if (highlightedPaths?.some(x => record.path.startsWith(x))) {
       record.highlighted = true;
