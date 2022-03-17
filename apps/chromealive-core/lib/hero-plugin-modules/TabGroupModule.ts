@@ -6,7 +6,6 @@ import { createResponseId, IMessageObject, MessageLocation, ResponseCode } from 
 import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
-import Resolvable from '@ulixee/commons/lib/Resolvable';
 
 interface IPageIdentity {
   tabId: number;
