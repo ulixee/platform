@@ -423,6 +423,7 @@ export default Vue.defineComponent({
 
     onTimetraveled(event: ISessionTimetravelEvent): void {
       this.markerClass.isLive = false;
+      if (this.mouseDownItem) return;
       if (event.focusedRange) {
         this.markerClass.hasMultiple = true;
         this.cssVars.markerLeft = event.focusedRange[0];
