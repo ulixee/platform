@@ -1,34 +1,46 @@
 <template>
   <div class="py-12 px-28">
     <div class="pb-5 mb-5 border-b border-gray-400 text-center">
-      <div class="text-2xl mb-2 script-path font-thin opacity-50">{{ scriptEntrypoint }}</div>
+      <div class="text-2xl mb-2 script-path font-thin opacity-50">
+        {{ scriptEntrypoint }}
+      </div>
       <h1>OUTPUT DATA</h1>
     </div>
 
     <ul class="flex flex-row border-b border-gray-200 pb-5">
-      <li class="flex-1">Started {{ startTime }}</li>
-      <li class="flex-1">Finished on {{ endTime }}</li>
+      <li class="flex-1">
+        Started {{ startTime }}
+      </li>
+      <li class="flex-1">
+        Finished on {{ endTime }}
+      </li>
     </ul>
 
     <h2>
-      Databox Output <span>{{ dataSize }}</span
-      >:
+      Databox Output <span>{{ dataSize }}</span>:
     </h2>
-    <div class="box bg-gray-50 border border-gray-200 min-h-[200px]">
+    <div class="box bg-gray-50 border border-gray-200 min-h-[200px] max-h-[500px]">
       <Json
         v-if="output"
         :json="output"
-        :scrollToRecordId="scrollToRecordId"
+        :scroll-to-record-id="scrollToRecordId"
         class="p-5 text-sm text-gray-600"
       />
     </div>
     {{ collectedResourcesString }}, {{ collectedElementsString }}, {{ collectedSnippetsString }}
 
+    <div class="text-center my-10">
+      <a
+        class="underline text-purple-700"
+        href="/rerun-extract"
+        @click.prevent="runExtract"
+      >Re-run Extract</a>
+    </div>
     <slot v-if="collectedAssets.collectedResources.length">
       <h2>Collected Resources</h2>
       <div
-        class="box border border-gray-100 p-10 mb-20"
         v-for="resource of collectedAssets.collectedResources"
+        class="box border border-gray-100 p-10 mb-20"
       >
         <h4>Name "{{ resource.name }}"</h4>
         <h5>
@@ -44,11 +56,15 @@
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div class="p-10 bg-gray-10 border border-gray-200 font-thin whitespace-pre text-sm">
-            <div class="label font-bold">Request Headers</div>
+            <div class="label font-bold">
+              Request Headers
+            </div>
             {{ formatJson(resource.resource.request.headers) }}
           </div>
           <div class="p-10 bg-gray-10 border border-gray-200 font-thin whitespace-pre text-sm">
-            <div class="label font-bold">Response Headers</div>
+            <div class="label font-bold">
+              Response Headers
+            </div>
             {{ formatJson(resource.resource.response.headers) }}
           </div>
         </div>
@@ -56,22 +72,24 @@
         <div class="font-sm whitespace-pre box border border-gray-100 bg-gray-100 my-2 p-2">
           <div>Source Code</div>
           <div v-for="line of resource.sourcecode">
-            <span class="text-gray-300">{{line.line}}.</span>
-            <span class="text-gray-500">{{line.code}}</span>
+            <span class="text-gray-300">{{ line.line }}.</span>
+            <span class="text-gray-500">{{ line.code }}</span>
           </div>
         </div>
 
         <div class="mt-20 box">
           <a
+            class="text-purple-700 underline"
             :href="resourceDataUrlsById[resource.resource.id]"
             target="_blank"
             :download="resourceFilename(resource)"
-            >Download Response ({{ byteSize(resource.resource.response.buffer) }})</a
-          >
+          >Download Response ({{ byteSize(resource.resource.response.buffer) }})</a>
 
-          <a class="ml-20" href="javascript:void(0)" @click.prevent="inspectResource(resource)"
-            >Inspect Resource</a
-          >
+          <a
+            class="ml-20 text-purple-700 underline"
+            href="javascript:void(0)"
+            @click.prevent="inspectResource(resource)"
+          >Inspect Resource</a>
         </div>
       </div>
     </slot>
@@ -79,11 +97,13 @@
     <slot v-if="collectedAssets.collectedSnippets.length">
       <h2>Collected Snippets</h2>
       <div
-        class="box border border-gray-100 p-10 mb-20"
         v-for="snippet of collectedAssets.collectedSnippets"
+        class="box border border-gray-100 p-10 mb-20"
       >
         <h4>Name "{{ snippet.name }}"</h4>
-        <div class="font-thin">Collected at {{ formatTimestamp(snippet.timestamp) }}</div>
+        <div class="font-thin">
+          Collected at {{ formatTimestamp(snippet.timestamp) }}
+        </div>
         <div class="grid">
           <div class="p-10 bg-gray-10 border border-gray-200 font-thin whitespace-pre text-sm">
             {{ formatJson(snippet.value) }}
@@ -93,8 +113,8 @@
         <div class="font-sm whitespace-pre box border border-gray-100 bg-gray-100 my-2 p-2">
           <div>Source Code</div>
           <div v-for="line of snippet.sourcecode">
-            <span class="text-gray-300">{{line.line}}.</span>
-            <span class="text-gray-500">{{line.code}}</span>
+            <span class="text-gray-300">{{ line.line }}.</span>
+            <span class="text-gray-500">{{ line.code }}</span>
           </div>
         </div>
       </div>
@@ -103,8 +123,8 @@
     <slot v-if="collectedAssets.collectedElements.length">
       <h2>Collected Elements</h2>
       <div
-        class="box border border-gray-100 p-10 mb-20"
         v-for="element of collectedAssets.collectedElements"
+        class="box border border-gray-100 p-10 mb-20"
       >
         <h4>Name "{{ element.name }}"</h4>
         <h5>
@@ -122,25 +142,29 @@
         <div class="font-sm whitespace-pre box border border-gray-100 bg-gray-100 my-2 p-2">
           <div>Source Code</div>
           <div v-for="line of element.sourcecode">
-            <span class="text-gray-300">{{line.line}}.</span>
-            <span class="text-gray-500">{{line.code}}</span>
+            <span class="text-gray-300">{{ line.line }}.</span>
+            <span class="text-gray-500">{{ line.code }}</span>
           </div>
         </div>
         <div class="mt-20 box">
           <a
+            class="underline text-purple-700"
             :href="`data:text/html,${encodeURIComponent(element.outerHTML)}`"
             target="_blank"
             :download="element.name + '.html'"
-            >Download HTML</a
-          >
+          >Download HTML</a>
 
-          <a class="ml-20" href="javascript:void(0)" @click.prevent="inspectElement(element)"
-            >Inspect Element</a
-          >
+          <a
+            class="ml-20 underline text-purple-700"
+            href="javascript:void(0)"
+            @click.prevent="inspectElement(element)"
+          >Inspect Element</a>
 
-          <a class="ml-20" href="javascript:void(0)" @click.prevent="timetravelToElement(element)"
-            >Show Element in Timetravel</a
-          >
+          <a
+            class="ml-20 underline text-purple-700"
+            href="javascript:void(0)"
+            @click.prevent="timetravelToElement(element)"
+          >Show Element in Timetravel</a>
         </div>
       </div>
     </slot>
@@ -162,6 +186,7 @@ import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/eve
 import IResourceMeta from '@ulixee/hero-interfaces/IResourceMeta';
 import ICollectedResource from '@ulixee/hero-interfaces/ICollectedResource';
 import ICollectedElement from '@ulixee/hero-interfaces/ICollectedElement';
+import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
 
 export default Vue.defineComponent({
   name: 'Databox',
@@ -182,6 +207,7 @@ export default Vue.defineComponent({
       resourceDataUrlsById: Vue.ref<Record<number, string>>({}),
       startTime: Vue.ref<string>(''),
       endTime: Vue.ref<string>(''),
+      sessionId: null as string,
     };
   },
   computed: {
@@ -202,7 +228,7 @@ export default Vue.defineComponent({
     byteSize(buffer: Uint8Array): string {
       return humanizeBytes(buffer.byteLength);
     },
-    resourceFilename(resource: ICollectedResource): string {
+    resourceFilename(resource: ICollectedResource & ISourceCodeReference): string {
       const url = new URL(resource.resource.url);
       const postfix = url.pathname.split('.').pop() ?? 'html';
       const matchingName = this.collectedAssets.collectedResources.filter(
@@ -302,6 +328,7 @@ export default Vue.defineComponent({
         data.responseAsText = await blob.text();
       }
 
+      // eslint-disable-next-line no-console
       console.log('Collected Resource (%s)', resource.name, data);
     },
     async inspectElement(element: ICollectedElement): Promise<void> {
@@ -312,6 +339,8 @@ export default Vue.defineComponent({
         element: renderer.content.firstChild,
         rawDetails: { ...element },
       };
+
+      // eslint-disable-next-line no-console
       console.log('Collected Element (%s)', element.name, data);
     },
     timetravelToElement(element: ICollectedElement): void {
@@ -346,6 +375,11 @@ export default Vue.defineComponent({
       Client.send('Databox.getCollectedAssets')
         .then(this.onCollectedAssets)
         .catch(err => alert(String(err)));
+    },
+    runExtract(): void {
+      Client.send('Databox.runExtract', { heroSessionId: this.sessionId }).catch(err =>
+        alert(String(err)),
+      );
     },
   },
   mounted() {

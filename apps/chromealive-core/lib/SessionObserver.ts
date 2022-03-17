@@ -101,6 +101,11 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.emit('hero:updated');
   }
 
+  public bindExtractor(extractorSession: HeroSession): void {
+    const evt = this.events.on(extractorSession, 'output', this.onOutputUpdated);
+    this.events.once(extractorSession, 'closed', () => this.events.off(evt));
+  }
+
   public async relaunchSession(
     startLocation: ISessionCreateOptions['sessionResume']['startLocation'] | 'extraction',
     startNavigationId?: number,
@@ -121,14 +126,15 @@ export default class SessionObserver extends TypedEventEmitter<{
       execArgv.push(`--sessionResume.startNavigationId`, String(startNavigationId));
     }
     if (startLocation === 'extraction') {
-      execArgv.push('--extractSessionId', this.heroSession.id, '--mode', 'background');
+      execArgv.length = 0;
+      this.resetExtraction();
+      execArgv.push('--extractSessionId', this.heroSession.id, '--mode', 'browserless');
     }
     if (script.endsWith('.ts')) {
       execArgv.push('-r', 'ts-node/register');
     }
 
     try {
-      this.logger.info('Resuming session', { execArgv });
       const child = fork(script, execArgv, {
         // execArgv,
         cwd: this.scriptInstanceMeta.workingDirectory,
@@ -439,6 +445,11 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.playbackState = 'paused';
     this.emit('hero:updated');
     event.message = `ChromeAlive! has assumed control of your script. You can make changes to your script and re-run from the ChromeAlive interface.`;
+  }
+
+  private resetExtraction(): void {
+    this.outputRebuilder = new OutputRebuilder();
+    this.emit('databox:output');
   }
 
   private onOutputUpdated(event: { changes: IOutputChangeRecord[] }): void {

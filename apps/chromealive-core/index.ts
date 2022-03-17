@@ -112,11 +112,18 @@ export default class ChromeAliveCore {
     const script = heroSession.options.scriptInstanceMeta?.entrypoint;
     if (!script) return;
 
-    if (
-      heroSession.mode === 'timetravel' ||
-      heroSession.mode === 'production' ||
-      heroSession.mode === 'background'
-    ) {
+    if (heroSession.mode === 'timetravel' || heroSession.mode === 'production') {
+      return;
+    }
+
+    if (heroSession.mode === 'browserless') {
+      // @ts-expect-error
+      const extractSessionId = heroSession.options.extractSessionId;
+      if (extractSessionId) {
+        const observer = this.sessionObserversById.get(extractSessionId);
+        if (observer) observer.bindExtractor(heroSession);
+        return;
+      }
       return;
     }
 
