@@ -8,17 +8,17 @@ export enum EmitterName {
 }
 
 type IEmitterEvents = {
-  [EmitterName.showMenuPrimary]: DOMRect,
-  [EmitterName.hideMenuPrimary]: void,
-  [EmitterName.showMenuFinder]: DOMRect,
-  [EmitterName.hideMenuFinder]: void,
-}
+  [EmitterName.showMenuPrimary]: DOMRect;
+  [EmitterName.hideMenuPrimary]: void;
+  [EmitterName.showMenuFinder]: DOMRect;
+  [EmitterName.hideMenuFinder]: void;
+};
 
 const emitter: Emitter<IEmitterEvents> = mitt<IEmitterEvents>();
 
 let isFocused = false;
-window.addEventListener('focus', () => isFocused = true);
-window.addEventListener('blur', () => isFocused = false);
+window.addEventListener('focus', () => (isFocused = true));
+window.addEventListener('blur', () => (isFocused = false));
 
 export default class WindowsController {
   static primaryMenu;
@@ -40,7 +40,7 @@ export default class WindowsController {
       this.primaryMenu.hideMenu = () => {
         if (isFocused) return;
         this.hideMenuPrimary();
-      }
+      };
     }
   }
 
@@ -70,7 +70,7 @@ export default class WindowsController {
       this.finderMenu.hideMenu = () => {
         if (isFocused) return;
         this.hideMenuFinder();
-      }
+      };
     }
   }
 

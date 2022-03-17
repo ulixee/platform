@@ -11,7 +11,7 @@
     <Borders :isSelected="isSelected" :isFocused="isFocused" />
 
     <img src="@/assets/icons/database.svg" class="icon" />
-    <span v-if="!isMinimal" class="label">{{outputSize || 0}} Output</span>
+    <span v-if="!isMinimal" class="label">{{outputSize}} Output</span>
   </div>
 </template>
 

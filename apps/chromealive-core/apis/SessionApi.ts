@@ -20,7 +20,9 @@ export default class SessionApi {
     await sessionObserver.heroSession.close(true);
   }
 
-  static getScriptState(args?: Parameters<ISessionApi['getScriptState']>[0]): ReturnType<ISessionApi['getScriptState']> {
+  static getScriptState(
+    args?: Parameters<ISessionApi['getScriptState']>[0],
+  ): ReturnType<ISessionApi['getScriptState']> {
     const sessionObserver = getObserver(args);
 
     return Promise.resolve(sessionObserver.sourceCodeTimeline.getCurrentState());
@@ -29,6 +31,18 @@ export default class SessionApi {
   static getDom(args?: Parameters<ISessionApi['getDom']>[0]): ReturnType<ISessionApi['getDom']> {
     const sessionObserver = getObserver(args);
     return sessionObserver.getDomRecording(args?.tabId);
+  }
+
+  static getMeta(args: Parameters<ISessionApi['getMeta']>[0]): ReturnType<ISessionApi['getMeta']> {
+    const sessionObserver = getObserver(args);
+    return sessionObserver.heroSession.meta;
+  }
+
+  static getActive(
+    args: Parameters<ISessionApi['getActive']>[0],
+  ): ReturnType<ISessionApi['getActive']> {
+    const sessionObserver = getObserver(args);
+    return sessionObserver.getHeroSessionEvent();
   }
 
   static async timetravel(args: Parameters<ISessionApi['timetravel']>[0]): Promise<{
@@ -54,9 +68,7 @@ export default class SessionApi {
 
   static openPlayer(): void {
     const sessionObserver = getObserver();
-    sessionObserver
-      .openPlayer()
-      .catch(err => console.error('ERROR opening player', err));
+    sessionObserver.openPlayer().catch(err => console.error('ERROR opening player', err));
   }
 
   static step(args: IHeroSessionArgs): void {

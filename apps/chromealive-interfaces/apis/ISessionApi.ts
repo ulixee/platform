@@ -1,6 +1,8 @@
 import type { IDomRecording } from '@ulixee/hero-core/models/DomChangesTable';
+import IHeroMeta from '@ulixee/hero-interfaces/IHeroMeta';
 import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
 import ICommandUpdatedEvent from '../events/ICommandUpdatedEvent';
+import IHeroSessionActiveEvent from '../events/IHeroSessionActiveEvent';
 
 export interface ISessionResumeArgs extends IHeroSessionArgs {
   startLocation: ISessionCreateOptions['sessionResume']['startLocation'];
@@ -29,6 +31,8 @@ export default interface ISessionApi {
       framesById: { [id: number]: { parentId: number; domNodeId: number } };
     }
   >;
+  getActive(args?: IHeroSessionArgs): IHeroSessionActiveEvent;
+  getMeta(args?: IHeroSessionArgs): IHeroMeta;
   getScriptState(args?: IHeroSessionArgs & { tabId?: number }): Promise<{
     commandsById: Record<number, ICommandUpdatedEvent>;
     sourceFileLines: Record<string, string[]>;

@@ -24,7 +24,7 @@ export default function flattenJson(
   const { key, index, showComma = false } = options;
   const type = Object.prototype.toString.call(data).slice(8, -1).toLowerCase();
 
-  if (typeof data === 'object') {
+  if (data && typeof data === 'object') {
     const isArray = type === 'array';
 
     const results: FlatJson[] = [
@@ -88,7 +88,7 @@ export function convertJsonToFlat(json: any, highlightedPaths: string[] = []): F
 
   let counter = 0;
   for (const record of flatJson) {
-    counter += 1
+    counter += 1;
     record.id = counter;
     if (highlightedPaths?.some(x => record.path.startsWith(x))) {
       record.highlighted = true;

@@ -65,14 +65,13 @@ export default class HeroCorePlugin extends CorePlugin {
     this.DevtoolsBackdoorModule.onNewPuppetContext(context, sessionSummary);
 
     const currentTargets = await context.sendWithBrowserDevtoolsSession('Target.getTargets');
+    let hasBlankTab = false;
     for (const target of currentTargets.targetInfos) {
       if (target.type === 'page' && target.url === 'chrome://newtab/') {
-        await context.sendWithBrowserDevtoolsSession('Target.closeTarget', {
-          targetId: target.targetId,
-        });
+        hasBlankTab = true;
       }
     }
-    await context.newPage({ runPageScripts: false });
+    if (!hasBlankTab) await context.newPage({ runPageScripts: false });
   }
 
   public onBrowserLaunchConfiguration(launchArguments: string[]): void {

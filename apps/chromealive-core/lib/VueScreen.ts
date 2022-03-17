@@ -19,10 +19,13 @@ export default class VueScreen extends TypedEventEmitter<{ close: void }> {
   private readonly pagePath: string;
   private readonly pageProtocol: string;
 
-  constructor(name: Parameters<ISessionApi['openScreen']>[0]['screenName'], readonly heroSession: HeroSession) {
+  constructor(
+    name: Parameters<ISessionApi['openScreen']>[0]['screenName'],
+    readonly heroSession: HeroSession,
+  ) {
     super();
     this.pageProtocol = 'http';
-    this.pageHost = `${name.toLowerCase()}.ulixee`
+    this.pageHost = `${name.toLowerCase()}.ulixee`;
     this.pagePath = '/';
     this.pageUrl = `${this.pageProtocol}://${this.pageHost}${this.pagePath}`;
     // prevent dns lookup
@@ -52,7 +55,10 @@ export default class VueScreen extends TypedEventEmitter<{ close: void }> {
   }
 
   private async openPuppetPage(): Promise<IPuppetPage> {
-    this.puppetPage = this.heroSession.browserContext.newPage({ runPageScripts: false });
+    this.puppetPage = this.heroSession.browserContext.newPage({
+      runPageScripts: false,
+      groupName: 'vue',
+    });
 
     const page = await this.puppetPage;
     page.once('close', () => {

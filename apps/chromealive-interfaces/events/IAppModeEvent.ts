@@ -1,3 +1,3 @@
 export default interface IAppModeEvent {
-  mode: 'live' | 'timetravel' | 'domstate';
+  mode: 'Live' | 'Timetravel' | 'Input' | 'Output' | 'Reliability';
 }

@@ -24,3 +24,5 @@ tsconfig.tsbuildinfo
 connect
 /databox/examples/codepen.ts
 /databox/examples/duckduckgo.ts
+/databox/examples/creep.ts
+/databox/examples/frame.ts

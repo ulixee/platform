@@ -13,7 +13,7 @@
     <Borders :isSelected="isSelected" :isFocused="isSelected" :hasLeftCircle="true" />
 
     <img src="@/assets/icons/input.svg" class="icon" />
-    <span class="label" v-if="!isMinimal">2KB Input</span>
+    <span v-if="!isMinimal" class="label">{{inputSize}} Input</span>
   </div>
 </template>
 
@@ -28,7 +28,7 @@
       ArrowRight,
       Borders,
     },
-    props: ['isSelected', 'isMinimal'],
+    props: ['isSelected', 'isMinimal', 'inputSize'],
     emits: ['select'],
     setup() {
       return {
@@ -70,7 +70,7 @@
         }
       }
     }
-    
+
     &.isSelected {
       color: $textColorSelected;
 

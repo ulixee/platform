@@ -2,36 +2,38 @@
   <div class="bar-wrapper flex flex-row items-stretch">
     <MenuButton class="z-20" />
     <InputButton
-      @select="select('Input')"
-      :isSelected="selectedItem === 'Input'"
-      :isFocused="selectedItem === 'Input'"
-      :isMinimal="isMinimal"
+      :is-selected="selectedItem === 'Input'"
+      :is-focused="selectedItem === 'Input'"
+      :is-minimal="isMinimal"
+      :input-size="inputSize"
       class="z-20"
+      @select="select('Input')"
     />
     <Player
-      @select="select('Player')"
-      :isSelected="selectedItem === 'Player'"
-      :isFocused="selectedItem === 'Player'"
+      :mode="mode"
+      :is-selected="selectedItem === 'Player'"
+      :is-focused="selectedItem === 'Player'"
       :ticks="timelineTicks"
-      :isRunning="isRunning"
-      :isMinimal="isMinimal"
+      :is-running="isRunning"
+      :is-minimal="isMinimal"
       :session="session"
       class="flex-1 z-10"
+      @select="select('Player')"
     />
     <OutputButton
-      @select="select('Output')"
-      :isSelected="selectedItem === 'Output'"
-      :isFocused="selectedItem === 'Output'"
-      :isMinimal="isMinimal"
-      :outputSize="outputSize"
+      :is-selected="selectedItem === 'Output'"
+      :is-focused="selectedItem === 'Output'"
+      :is-minimal="isMinimal"
+      :output-size="outputSize"
       style="z-index: 2"
+      @select="select('Output')"
     />
     <ReliabilityButton
-      @select="select('Reliability')"
-      :isSelected="selectedItem === 'Reliability'"
-      :isFocused="selectedItem === 'Reliability'"
-      :isMinimal="isMinimal"
+      :is-selected="selectedItem === 'Reliability'"
+      :is-focused="selectedItem === 'Reliability'"
+      :is-minimal="isMinimal"
       style="z-index: 1"
+      @select="select('Reliability')"
     />
   </div>
 </template>
@@ -41,7 +43,7 @@ import * as Vue from 'vue';
 import Client from '@/api/Client';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
-import IDataboxUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxUpdatedEvent';
+import IDataboxOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxOutputEvent';
 import { ChevronDownIcon } from '@heroicons/vue/outline';
 import humanizeBytes from '@/utils/humanizeBytes';
 import MenuButton from '../components/MenuButton.vue';
@@ -67,12 +69,14 @@ export default Vue.defineComponent({
 
     return {
       session,
+      mode: Vue.ref('Live'),
       isRunning: Vue.ref(false),
       isMinimal: Vue.ref(false),
       startLocation: Vue.ref<IStartLocation>('currentLocation'),
       timelineTicks: Vue.ref<any[]>([]),
       selectedItem: Vue.ref('Player'),
-      outputSize: Vue.ref<string>(''),
+      outputSize: Vue.ref<string>(humanizeBytes(0)),
+      inputSize: Vue.ref<string>(humanizeBytes(0)),
     };
   },
   async created() {
@@ -86,21 +90,27 @@ export default Vue.defineComponent({
         Client.send('Session.openScreen', {
           heroSessionId: this.session.heroSessionId,
           screenName: item,
-        });
+        }).catch(err => alert(String(err)));
       } else if (item === 'Player') {
-        Client.send('Session.openPlayer');
+        Client.send('Session.openPlayer').catch(err => alert(String(err)));
       }
     },
 
     onSessionActiveEvent(message: IHeroSessionActiveEvent) {
       if (!message) {
-        this.outputSize = '';
+        this.outputSize = humanizeBytes(0);
+        this.inputSize = humanizeBytes(0);
         return;
       }
 
       message ??= createDefaultSession();
       const isNewId =
         message.heroSessionId !== this.session.heroSessionId || !message.heroSessionId;
+      if (isNewId) {
+        if (this.selectedItem !== 'Player') {
+          this.select('Player');
+        }
+      }
       Object.assign(this.session, message);
 
       const timelineTicks: any[] = [];
@@ -132,31 +142,35 @@ export default Vue.defineComponent({
       this.timelineTicks = timelineTicks.filter(x => x.offsetPercent);
 
       this.isRunning = this.session.playbackState === 'running';
+      this.inputSize = humanizeBytes(message.inputBytes);
 
       this.onAppModeEvent({ mode: message.mode });
     },
 
-    onDataboxUpdated(message: IDataboxUpdatedEvent) {
+    onDataboxUpdated(message: IDataboxOutputEvent) {
       this.outputSize = humanizeBytes(message?.bytes);
     },
 
     onAppModeEvent(message: IAppModeEvent): void {
-      if (message.mode === 'live') {
-        // this.timelineOffset = 100;
-        // this.clearPendingTimetravel();
+      const { mode } = message;
+      this.mode = mode;
+      if (mode === 'Live' || mode === 'Timetravel') {
+        this.selectedItem = 'Player';
+      } else {
+        this.selectedItem = mode;
       }
     },
   },
 
   mounted() {
     Client.on('Session.active', this.onSessionActiveEvent);
-    Client.on('Databox.updated', this.onDataboxUpdated);
+    Client.on('Databox.output', this.onDataboxUpdated);
     Client.on('App.mode', this.onAppModeEvent);
   },
 
   beforeUnmount() {
     Client.off('Session.active', this.onSessionActiveEvent);
-    Client.off('Databox.updated', this.onDataboxUpdated);
+    Client.off('Databox.output', this.onDataboxUpdated);
     Client.off('App.mode', this.onAppModeEvent);
   },
 });
@@ -165,13 +179,13 @@ function createDefaultSession(): IHeroSessionActiveEvent {
   return {
     timeline: { urls: [], paintEvents: [], screenshots: [], storageEvents: [] },
     playbackState: 'paused',
-    mode: 'live',
+    mode: 'Live',
     runtimeMs: 0,
     worldHeroSessionIds: [],
     heroSessionId: '',
     run: 0,
-    domStates: [],
-    hasWarning: false,
+    inputBytes: 0,
+    startTime: Date.now(),
     scriptEntrypoint: '',
     scriptLastModifiedTime: 0,
   };
@@ -179,16 +193,16 @@ function createDefaultSession(): IHeroSessionActiveEvent {
 </script>
 
 <style lang="scss" scoped>
-  @use "sass:math";
-  @import "../variables.scss";
+@use "sass:math";
+@import '../variables.scss';
 
-  :root {
-    --toolbarBackgroundColor: #faf4ff;
-  }
+:root {
+  --toolbarBackgroundColor: #faf4ff;
+}
 
-  .bar-wrapper {
-    background-color: var(--toolbarBackgroundColor);
-    height: 36px;
-    cursor: default;
-  }
+.bar-wrapper {
+  background-color: var(--toolbarBackgroundColor);
+  height: 36px;
+  cursor: default;
+}
 </style>
