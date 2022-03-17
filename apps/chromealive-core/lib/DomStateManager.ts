@@ -15,7 +15,7 @@ import TimelineBuilder from '@ulixee/hero-timetravel/lib/TimelineBuilder';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import { LoadStatus } from '@ulixee/hero-interfaces/Location';
 import DomStateAssertions from '@ulixee/hero-timetravel/lib/DomStateAssertions';
-import DevtoolsPanelModule from './hero-plugin-modules/DevtoolsPanelModule';
+import DevtoolsBackdoorModule from './hero-plugin-modules/DevtoolsBackdoorModule';
 import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
 import DomStateSessionTimeline from './DomStateSessionTimeline';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
@@ -437,7 +437,7 @@ export default class DomStateManager extends TypedEventEmitter<{
 
   private async closeDevtoolsPanel(sessionId: string) {
     await this.timetravelPlayer.activeTab.mirrorPage.isReady;
-    DevtoolsPanelModule.bySessionId
+    DevtoolsBackdoorModule.bySessionId
       .get(sessionId)
       .closeDevtoolsPanelForPage(this.timetravelPlayer.activeTab.mirrorPage.page)
       .catch(console.error);

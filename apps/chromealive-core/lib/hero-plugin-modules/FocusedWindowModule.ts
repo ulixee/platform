@@ -6,6 +6,9 @@ import IDevtoolsSession from '@ulixee/hero-interfaces/IDevtoolsSession';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 
 export default class FocusedWindowModule {
+  public static activePuppetPage: IPuppetPage;
+
+  private puppetPagesById = new Map<string, IPuppetPage>();
   private sessionId: string;
   private bridgeToExtension: BridgeToExtension;
 
@@ -19,21 +22,22 @@ export default class FocusedWindowModule {
   }
 
   public onNewPuppetPage(
-    page: IPuppetPage,
+    puppetPage: IPuppetPage,
     sessionSummary: ISessionSummary,
     events: EventSubscriber,
   ): Promise<any> {
     if (!this.sessionId) {
       this.sessionId ??= sessionSummary.id;
-      if (process.env.HERO_DEBUG_CHROMEALIVE) this.debugServiceWorker(page.devtoolsSession, events);
+      if (process.env.HERO_DEBUG_CHROMEALIVE) this.debugServiceWorker(puppetPage.devtoolsSession, events);
     }
-    const pageId = page.id;
-    events.once(page, 'close', this.handlePageIsClosed.bind(this, pageId));
+    this.puppetPagesById.set(puppetPage.id, puppetPage);
+    events.once(puppetPage, 'close', this.handlePuppetPageIsClosed.bind(this, puppetPage.id));
 
     return Promise.resolve();
   }
 
   private handlePageIsVisible(payload: any, puppetPageId: string) {
+    FocusedWindowModule.activePuppetPage = this.puppetPagesById.get(puppetPageId);
     FocusedWindowModule.onVisibilityChange(
       { active: true, focused: payload.focused },
       this.sessionId,
@@ -41,7 +45,11 @@ export default class FocusedWindowModule {
     );
   }
 
-  private handlePageIsClosed(puppetPageId: string): void {
+  private handlePuppetPageIsClosed(puppetPageId: string): void {
+    this.puppetPagesById.delete(puppetPageId);
+    if (FocusedWindowModule.activePuppetPage?.id === puppetPageId) {
+      FocusedWindowModule.activePuppetPage = undefined;
+    }
     FocusedWindowModule.onVisibilityChange(
       { active: false, focused: false },
       this.sessionId,

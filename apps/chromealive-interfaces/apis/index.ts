@@ -1,4 +1,5 @@
 import ISessionApi from './ISessionApi';
+import IDevtoolsBackdoorApi from './IDevtoolsBackdoorApi';
 import IAppApi from './IAppApi';
 import IMouseApi from './IMouseApi';
 import IDomStateApi from './IDomStateApi';
@@ -25,6 +26,11 @@ export type IApiHandlerSpec = {
   'DomState.focusSessionTime': IDomStateApi['focusSessionTime'];
   'DomState.extendSessionTime': IDomStateApi['extendSessionTime'];
   'DomState.exit': IDomStateApi['exit'];
+  'DevtoolsBackdoor.toggleInspectElementMode': IDevtoolsBackdoorApi['toggleInspectElementMode'];
+  'DevtoolsBackdoor.highlightNode': IDevtoolsBackdoorApi['highlightNode'];
+  'DevtoolsBackdoor.hideHighlight': IDevtoolsBackdoorApi['hideHighlight'];
+  'DevtoolsBackdoor.searchElements': IDevtoolsBackdoorApi['searchElements'];
+  'DevtoolsBackdoor.generateQuerySelector': IDevtoolsBackdoorApi['generateQuerySelector'];
 };
 
 type IPromiseType<T> = T extends PromiseLike<infer U> ? U : T;

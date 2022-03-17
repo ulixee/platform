@@ -1,6 +1,6 @@
 import ISessionApi, {
-  IHeroSessionArgs,
   ISessionApiStatics,
+  IHeroSessionArgs,
   ISessionResumeArgs,
 } from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';

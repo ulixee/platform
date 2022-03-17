@@ -25,6 +25,9 @@
   "references": [
     {
       "path": "databox"
+    },
+    {
+      "path": "apps/chromealive-core/injected-scripts/tsconfig.json"
     }
   ],
   "include": ["server", "apps", "commons", "./*.js", "./*.json", ".eslintrc.js"],
@@ -38,6 +41,7 @@
     "apps/chromealive-ui",
     "apps/menubar-ui",
     "apps/chromealive-extension",
+    "apps/chromealive-core/injected-scripts",
     "hero",
     "website",
     "databox",

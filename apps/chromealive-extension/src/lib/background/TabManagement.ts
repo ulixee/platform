@@ -152,8 +152,6 @@ function activateTab(tabId: number, isRetry = false) {
     });
 }
 
-//
-
 async function createHiddenGroup() {
   for (const tabId of visibleTabIds.values()) {
     try {

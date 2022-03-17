@@ -10,4 +10,4 @@ export default interface IAppApi {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function IAppApiStatics(constructor: IAppApi) {}
+export function IAppApiStatics(staticClass: IAppApi) {}

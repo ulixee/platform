@@ -9,6 +9,8 @@ import ICommandFocusedEvent from './ICommandFocusedEvent';
 import IDomFocusEvent from './IDomFocusEvent';
 import IDomUpdatedEvent from './IDomUpdatedEvent';
 import ISessionTimetravelEvent from './ISessionTimetravelEvent';
+import IInterceptInspectElementMode from './IInterceptInspectElementMode';
+import { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
 
 export default interface IChromeAliveEvents {
   'App.show': { onTop: boolean };
@@ -22,6 +24,7 @@ export default interface IChromeAliveEvents {
   'Session.loaded': void;
   'Session.active': IHeroSessionActiveEvent;
   'Session.timetravel': ISessionTimetravelEvent;
+  'Session.interceptInspectElementMode': IInterceptInspectElementMode;
   'Databox.updated': IDataboxUpdatedEvent;
   'Dom.updated': IDomUpdatedEvent;
   'Dom.focus': IDomFocusEvent;
@@ -29,4 +32,6 @@ export default interface IChromeAliveEvents {
   'Command.updated': ICommandUpdatedEvent;
   'Command.focused': ICommandFocusedEvent;
   'SourceCode.updated': ISourceCodeUpdatedEvent;
+  'DevtoolsBackdoor.toggleInspectElementMode': { isActive: boolean };
+  'DevtoolsBackdoor.elementWasSelected': { backendNodeId: number, nodeOverview: Protocol.DOM.Node };
 }

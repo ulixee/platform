@@ -267,10 +267,10 @@ export default class ChromeAliveCore {
   private static changeActiveSessions(
     status: { focused: boolean; active: boolean },
     heroSessionId: string,
-    pageId: string,
+    puppetPageId: string,
   ): void {
     const isPageVisible = status.active;
-    log.info('Changing active session', { isPageVisible, sessionId: heroSessionId, pageId });
+    log.info('Changing active session', { isPageVisible, sessionId: heroSessionId, pageId: puppetPageId });
 
     if (this.activeHeroSessionId) {
       AliveBarPositioner.showApp(status.focused);

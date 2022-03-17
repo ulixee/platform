@@ -1,75 +1,48 @@
-import { EventEmitter } from 'events';
-import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import BridgeToExtension from '../bridges/BridgeToExtension';
-import { MessageEventType } from '../BridgeHelpers';
+import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
+import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
+import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
+import FocusedWindowModule from './FocusedWindowModule';
+import highlightConfig from './highlightConfig';
 
-import Log from '@ulixee/commons/lib/Logger';
+export default class ElementsModule {
+  public static bySessionId = new Map<string, ElementsModule>();
 
-const { log } = Log(module);
-
-export default class FocusedWindowModule {
   private bridgeToExtension: BridgeToExtension;
-  private bNodeIdToObjectIdMap: {
-    [puppetPageId: string]: {
-      [contextId: string]: {
-        [backendNodeId: number]: string;
-      };
-    };
-  } = {};
+  private sessionId: string;
 
-  constructor(bridgeToExtension: BridgeToExtension, browserEmitter: EventEmitter) {
+  constructor(bridgeToExtension: BridgeToExtension) {
     this.bridgeToExtension = bridgeToExtension;
-    browserEmitter.on('payload', (payload, puppetPageId) => {
-      if (payload.event === MessageEventType.ContentScriptNeedsElement) {
-        this.sendElementToContentScript(payload, puppetPageId).catch(error => {
-          log.error('ERROR SENDING TO ELEMENT: ', { error, sessionId: null });
-        });
-      }
-    });
   }
 
-  private async sendElementToContentScript({ backendNodeId, callbackFnName }, puppetPageId) {
-    const remoteObjectId = await this.resolveBackendNodeId(backendNodeId, puppetPageId);
-    await this.sendToContentScript(backendNodeId, remoteObjectId, callbackFnName, puppetPageId);
+  public onNewPuppetContext(_context: IPuppetContext, sessionSummary: ISessionSummary): void {
+    this.sessionId = sessionSummary.id;
+    ElementsModule.bySessionId.set(this.sessionId, this);
   }
-
-  private async resolveBackendNodeId(backendNodeId: number, puppetPageId: string): Promise<string> {
-    const contextId = this.bridgeToExtension.getContextIdByPuppetPageId(puppetPageId);
-    this.bNodeIdToObjectIdMap[puppetPageId] ??= {};
-    this.bNodeIdToObjectIdMap[puppetPageId][contextId] ??= {};
-    const objectId = this.bNodeIdToObjectIdMap[puppetPageId][contextId][backendNodeId];
-    if (objectId) return objectId;
-
-    const devtoolsSession = this.bridgeToExtension.getDevtoolsSessionByPuppetPageId(puppetPageId);
-    const result = await devtoolsSession.send('DOM.resolveNode', {
-      backendNodeId,
-      executionContextId: contextId,
-    });
-    const remoteObjectId = result.object.objectId;
-    this.bNodeIdToObjectIdMap[puppetPageId][contextId][backendNodeId] = remoteObjectId;
-    return remoteObjectId;
-  }
-
-  private async sendToContentScript<T>(
-    backendNodeId: number,
-    remoteObjectId: string,
-    callbackFnName: string,
-    puppetPageId: string,
-  ): Promise<T> {
-    try {
-      const devtoolsSession = this.bridgeToExtension.getDevtoolsSessionByPuppetPageId(puppetPageId);
-      const result = await devtoolsSession.send('Runtime.callFunctionOn', {
-        functionDeclaration: `function executeRemoteFn() {
-          window.${callbackFnName}(${backendNodeId}, this);
-        }`,
-        objectId: remoteObjectId,
-      });
-      if (result.exceptionDetails) {
-        throw new Error(JSON.stringify(result.exceptionDetails));
-      }
-    } catch (err) {
-      if (err instanceof CanceledPromiseError) return;
-      throw err;
+  
+  public async onNewPuppetPage(
+    puppetPage: IPuppetPage,
+    sessionSummary: ISessionSummary,
+  ): Promise<any> {
+    if (!this.sessionId) {
+      this.sessionId ??= sessionSummary.id;
     }
+    await puppetPage.devtoolsSession.send('DOM.enable');
+    await puppetPage.devtoolsSession.send('Overlay.enable');
+  }
+
+  public async highlightNode(backendNodeId: number) {
+    await FocusedWindowModule.activePuppetPage?.devtoolsSession.send('Overlay.highlightNode', { 
+      highlightConfig,
+      backendNodeId 
+    });
+  }
+
+  public async hideHighlight() {
+    await FocusedWindowModule.activePuppetPage?.devtoolsSession.send('Overlay.hideHighlight');
+  }
+
+  public async generateQuerySelector(_backendNodeId: number): Promise<void> {
+    // 
   }
 }

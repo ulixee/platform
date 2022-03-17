@@ -17,7 +17,8 @@ customElements.define('chromealive-element-options-overlay', ElementOptionsOverl
 let elementOptionsOverlay: ElementOptionsOverlay;
 const elementsBucket = new ElementsBucket()
 
-function openSelectorMenu({ backendNodeId, element }: { backendNodeId?: number, element?: HTMLElement }) {
+function openSelectorMenu(_options: { backendNodeId?: number, element?: HTMLElement }) {
+  // const { backendNodeId, element } = options;
   // if (!elementOptionsOverlay) {
   //   elementOptionsOverlay = document.createElement('chromealive-element-options-overlay') as ElementOptionsOverlay;
   //   elementOptionsOverlay.attachElementsBucket(elementsBucket);
@@ -45,12 +46,11 @@ function tmpHideSelectorMenu(value: boolean) {
 onMessagePayload(async payload => {
   const { event, backendNodeId } = payload;
   if (event === MessageEventType.InspectElementModeChanged) {
-    if (payload.isOn) {
+    if (payload.isActive) {
       closeSelectorMenu();
     }
 
   } else if (event === MessageEventType.OpenElementOptionsOverlay) {
-    console.log(payload);
     openSelectorMenu({ backendNodeId });
 
   } else if (event === MessageEventType.HideElementOptionsOverlay) {
