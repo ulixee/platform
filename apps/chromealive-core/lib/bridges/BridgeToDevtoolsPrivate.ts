@@ -22,7 +22,6 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
   private events = new EventSubscriber();
 
   public async onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession) {
-    console.log('ADDED DEVTOOLS SESSION: ', devtoolsSession.id);
     this.devtoolsSessionMap.set(devtoolsSession, { contextIds: [] });
 
     this.events.on(devtoolsSession, 'Runtime.executionContextCreated', event =>
@@ -43,7 +42,6 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
       devtoolsSession.send('Runtime.addBinding', { name: ___sendToCore }),
       devtoolsSession.send('Page.addScriptToEvaluateOnNewDocument', {
         source: `(function run() {
-          console.log('Page.addScriptToEvaluateOnNewDocument');
           window.___includedBackendNodeIds = new Set();
           window.___excludedBackendNodeIds = new Set();
           window.${___receiveFromCore} = function ${___receiveFromCore}(destLocation, responseCode, restOfMessage) {
@@ -89,8 +87,7 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
     ]).catch(() => null);
 
     const contextId = this.devtoolsSessionMap.get(devtoolsSession).contextIds[0];
-    console.log('RUNNING IN BROWSER: ', contextId);
-    await this.runInBrowser(devtoolsSession, contextId, `console.log('INJECTING...'); (${interceptInspectElementMode.toString()})('${___sendToCore}', '${MessageEventType.InspectElementModeChanged}');`);
+    await this.runInBrowser(devtoolsSession, contextId, `(${interceptInspectElementMode.toString()})('${___sendToCore}', '${MessageEventType.InspectElementModeChanged}');`);
 
     // (${interceptElementOverlayDispatches.toString()})('${___sendToCore}', '${MessageEventType.CloseElementOptionsOverlay}');
   }
@@ -161,7 +158,6 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
   private handleIncomingMessageFromBrowser(event: any) {
     if (event.name !== ___sendToCore) return;
     const [destLocation] = extractStringifiedComponentsFromMessage(event.payload);
-    console.log('___sendToCore', destLocation, event.payload);
     this.emit('message', event.payload, { destLocation });
   }
 
@@ -216,7 +212,6 @@ async function interceptInspectElementMode(sendToCoreFnName, eventType) {
   const InspectElementModeController = elements.InspectElementModeController.InspectElementModeController;
   const setMode = InspectElementModeController.prototype.setMode;
   function override(mode) {
-    console.log('INSPECT MODE: ', mode);
     const isOn = mode === 'searchForNode';
     const payload = '{"event":"' + eventType +'","isOn": ' + isOn.toString() + '}';
     const packedMessage = ':Core                :N:{"origLocation":"DevtoolsPrivate","payload":'+ payload + '}';

@@ -71,7 +71,7 @@ class DevtoolsBackdoor {
   }
 
   public static getState() {
-    // ToDo
+    // TODO
     // position of HeroScript & StateGenerator in tabs list
     // scrollY position of HeroScript + StateGenerator panels
     // the active tab, if HeroScript or StateGenerator
@@ -79,7 +79,7 @@ class DevtoolsBackdoor {
   }
 
   public static setState() {
-    // ToDo
+    // TODO
   }
 }
 

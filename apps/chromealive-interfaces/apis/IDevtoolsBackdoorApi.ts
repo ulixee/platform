@@ -1,5 +1,3 @@
-export function IDevtoolsBackdoorApiStatics() {}
-
 export default interface IDevtoolsBackdoorApi {
   toggleInspectElementMode(): Promise<void>;
   highlightNode(options: { backendNodeId: number }): Promise<void>;
@@ -7,3 +5,5 @@ export default interface IDevtoolsBackdoorApi {
   searchElements(options: { query: string }): Promise<any[]>;
   generateQuerySelector(options: { backendNodeId: number }): Promise<any>;
 }
+
+export function IDevtoolsBackdoorApiStatics(staticClass: IDevtoolsBackdoorApi) {}

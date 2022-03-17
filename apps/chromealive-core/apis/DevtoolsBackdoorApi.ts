@@ -1,8 +1,9 @@
-import IDevtoolsBackdoorApi from '@ulixee/apps-chromealive-interfaces/apis/IDevtoolsBackdoorApi';
+import IDevtoolsBackdoorApi, { IDevtoolsBackdoorApiStatics } from '@ulixee/apps-chromealive-interfaces/apis/IDevtoolsBackdoorApi';
 import { IHeroSessionArgs } from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
 import SessionObserver from '../lib/SessionObserver';
 import ChromeAliveCore from '../index';
 
+@IDevtoolsBackdoorApiStatics
 export default class DevtoolsBackdoorApi {
   static toggleInspectElementMode(): ReturnType<IDevtoolsBackdoorApi['toggleInspectElementMode']> {
     const sessionObserver = getObserver();

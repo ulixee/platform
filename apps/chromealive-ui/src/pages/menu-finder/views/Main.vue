@@ -116,7 +116,6 @@
         this.isSelectMode = false;
         this.devtoolsElement = nodeOverview;
         this.tagPreview = `<${nodeOverview.localName}>...</${nodeOverview.localName}>`
-        console.log('handleElementWasSelected', nodeOverview);
       },
 
       highlightNode(backendNodeId: number) {

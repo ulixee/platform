@@ -14,4 +14,4 @@ export default interface IDomStateApi {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function IDomStateApiStatics(constructor: IDomStateApi) {}
+export function IDomStateApiStatics(staticClass: IDomStateApi) {}

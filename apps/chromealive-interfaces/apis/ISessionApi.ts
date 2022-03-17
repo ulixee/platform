@@ -56,3 +56,5 @@ export default interface ISessionApi {
     error?: Error;
   }>;
 }
+
+export function ISessionApiStatics(staticClass: ISessionApi) {}

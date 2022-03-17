@@ -100,7 +100,7 @@ export default class DevtoolsBackdoorModule {
     const { tabId } = this.devtoolsSessionMap.get(devtoolsSession);
     const puppetPage = await this.tabGroupModule.getPuppetPageByTabId(tabId);
     if (!puppetPage) {
-      // ToDo: This should not be thrown. Find out why.
+      // TODO: This should not be thrown. Find out why.
       console.error('MISSING puppetPage: ', tabId, puppetPage);
     }
     const result = await puppetPage.devtoolsSession.send('DOM.describeNode', {
