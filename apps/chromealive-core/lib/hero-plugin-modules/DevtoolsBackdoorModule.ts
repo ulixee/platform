@@ -1,19 +1,15 @@
 import * as fs from 'fs';
 import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
-import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
-import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import IDevtoolsSession, { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
-import TabGroupModule from './TabGroupModule';
 import {
-  EventType,
   ___emitFromDevtoolsToCore,
+  EventType,
 } from '../../injected-scripts/DevtoolsBackdoorConfig';
-import FocusedWindowModule from './FocusedWindowModule';
 import ChromeAliveCore from '../../index';
+import HeroCorePlugin from '../HeroCorePlugin';
 
 export default class DevtoolsBackdoorModule {
-  public static bySessionId = new Map<string, DevtoolsBackdoorModule>();
   private events = new EventSubscriber();
 
   private devtoolsSessionMap = new Map<
@@ -26,13 +22,7 @@ export default class DevtoolsBackdoorModule {
     { executionContextId: number; devtoolsSession: IDevtoolsSession }
   >();
 
-  constructor(readonly tabGroupModule: TabGroupModule) {}
-
-  public onNewPuppetContext(context: IPuppetContext, session: ISessionSummary): void {
-    const id = session.id;
-    DevtoolsBackdoorModule.bySessionId.set(id, this);
-    this.events.once(context, 'close', () => DevtoolsBackdoorModule.bySessionId.delete(id));
-  }
+  constructor(readonly heroPlugin: HeroCorePlugin) {}
 
   public async onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession): Promise<void> {
     this.events.on(devtoolsSession, 'Runtime.executionContextCreated', event =>
@@ -55,33 +45,32 @@ export default class DevtoolsBackdoorModule {
     this.tabMap.delete(tabId);
   }
 
-  public close(session: ISessionSummary): void {
+  public close(): void {
     this.devtoolsSessionMap.clear();
     this.tabMap.clear();
     this.events.close();
-    DevtoolsBackdoorModule.bySessionId.delete(session.id);
   }
 
   // COMMANDS
 
   public async toggleInspectElementMode(): Promise<boolean> {
-    const puppetPage = FocusedWindowModule.activePuppetPage;
+    const puppetPage = this.heroPlugin.activePuppetPage;
     if (!puppetPage) return;
 
-    const tabId = await this.tabGroupModule.getTabIdByPuppetPageId(puppetPage.id);
+    const tabId = await this.heroPlugin.getTabIdByPuppetPageId(puppetPage.id);
     return await this.send(tabId, 'DevtoolsBackdoor.toggleInspectElementMode');
   }
 
   public async closeDevtoolsPanelForPage(puppetPage: IPuppetPage): Promise<void> {
-    const tabId = await this.tabGroupModule.getTabIdByPuppetPageId(puppetPage.id);
+    const tabId = await this.heroPlugin.getTabIdByPuppetPageId(puppetPage.id);
     await this.send(tabId, 'DevtoolsBackdoor.closeDevtools');
   }
 
   public async searchDom(query: string): Promise<any[]> {
-    const puppetPage = FocusedWindowModule.activePuppetPage;
+    const puppetPage = this.heroPlugin.activePuppetPage;
     if (!puppetPage) return;
 
-    const tabId = await this.tabGroupModule.getTabIdByPuppetPageId(puppetPage.id);
+    const tabId = await this.heroPlugin.getTabIdByPuppetPageId(puppetPage.id);
     await this.send(tabId, 'DevtoolsBackdoor.showElementsPanel');
     const elementSummaries = await this.send(tabId, 'DevtoolsBackdoor.searchDom', [query]);
 
@@ -101,9 +90,12 @@ export default class DevtoolsBackdoorModule {
     }
   }
 
-  private async emitElementWasSelected(devtoolsSession: IDevtoolsSession, backendNodeId: number): Promise<void> {
+  private async emitElementWasSelected(
+    devtoolsSession: IDevtoolsSession,
+    backendNodeId: number,
+  ): Promise<void> {
     const { tabId } = this.devtoolsSessionMap.get(devtoolsSession);
-    const puppetPage = await this.tabGroupModule.getPuppetPageByTabId(tabId);
+    const puppetPage = await this.heroPlugin.getPuppetPageByTabId(tabId);
     if (!puppetPage) {
       // TODO: This should not be thrown. Find out why.
       console.error('MISSING puppetPage: ', tabId, puppetPage);

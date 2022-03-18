@@ -10,7 +10,6 @@ import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import HeroCorePlugin, { extensionPath } from './lib/HeroCorePlugin';
 import SessionObserver from './lib/SessionObserver';
 import ConnectionToClient from './lib/ConnectionToClient';
-import FocusedWindowModule from './lib/hero-plugin-modules/FocusedWindowModule';
 import AliveBarPositioner from './lib/AliveBarPositioner';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
@@ -69,8 +68,6 @@ export default class ChromeAliveCore {
       this.onBrowserHasNoWindows,
     );
 
-    FocusedWindowModule.onVisibilityChange = this.changeActiveSessions;
-
     HeroCore.use(HeroCorePlugin);
   }
 
@@ -103,6 +100,25 @@ export default class ChromeAliveCore {
   ): void {
     for (const connection of this.connections) {
       connection.sendEvent({ eventType, data });
+    }
+  }
+
+  public static changeActiveSessions(
+    status: { focused: boolean; active: boolean },
+    heroSessionId: string,
+    puppetPageId: string,
+  ): void {
+    const isPageVisible = status.active;
+    log.info('Changing active session', {
+      isPageVisible,
+      sessionId: heroSessionId,
+      pageId: puppetPageId,
+    });
+
+    if (this.activeHeroSessionId) {
+      AliveBarPositioner.showApp(status.focused);
+    } else {
+      AliveBarPositioner.hideApp();
     }
   }
 
@@ -284,21 +300,6 @@ export default class ChromeAliveCore {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
     this.sendAppEvent('App.mode', { mode: sessionObserver.mode });
-  }
-
-  private static changeActiveSessions(
-    status: { focused: boolean; active: boolean },
-    heroSessionId: string,
-    puppetPageId: string,
-  ): void {
-    const isPageVisible = status.active;
-    log.info('Changing active session', { isPageVisible, sessionId: heroSessionId, pageId: puppetPageId });
-
-    if (this.activeHeroSessionId) {
-      AliveBarPositioner.showApp(status.focused);
-    } else {
-      AliveBarPositioner.hideApp();
-    }
   }
 
   private static async launchApp(hideOnLaunch = false): Promise<void> {

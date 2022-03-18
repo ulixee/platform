@@ -59,16 +59,11 @@ export default class SessionApi {
     }
   }
 
-  static openScreen(args: Parameters<ISessionApi['openScreen']>[0]): void {
+  static openMode(args: Parameters<ISessionApi['openMode']>[0]): void {
     const sessionObserver = getObserver(args);
     sessionObserver
-      .openScreen(args.screenName)
-      .catch(err => console.error('ERROR opening screen %s', args.screenName, err));
-  }
-
-  static openPlayer(): void {
-    const sessionObserver = getObserver();
-    sessionObserver.openPlayer().catch(err => console.error('ERROR opening player', err));
+      .openMode(args.mode)
+      .catch(err => console.error('ERROR opening player mode %s', args.mode, err));
   }
 
   static step(args: IHeroSessionArgs): void {

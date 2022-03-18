@@ -2,7 +2,6 @@ import ISessionApi from './ISessionApi';
 import IDevtoolsBackdoorApi from './IDevtoolsBackdoorApi';
 import IAppApi from './IAppApi';
 import IMouseApi from './IMouseApi';
-import IDomStateApi from './IDomStateApi';
 import IDataboxApi from './IDataboxApi';
 
 export type IApiHandlerSpec = {
@@ -12,8 +11,7 @@ export type IApiHandlerSpec = {
   'Session.step': ISessionApi['step'];
   'Session.getScreenshot': ISessionApi['getScreenshot'];
   'Session.getScriptState': ISessionApi['getScriptState'];
-  'Session.openScreen': ISessionApi['openScreen'];
-  'Session.openPlayer': ISessionApi['openPlayer'];
+  'Session.openMode': ISessionApi['openMode'];
   'Session.getDom': ISessionApi['getDom'];
   'Session.getActive': ISessionApi['getActive'];
   'Session.getMeta': ISessionApi['getMeta'];
@@ -24,14 +22,6 @@ export type IApiHandlerSpec = {
   'App.ready': IAppApi['ready'];
   'App.focus': IAppApi['focus'];
   'Mouse.state': IMouseApi['state'];
-  'DomState.load': IDomStateApi['load'];
-  'DomState.spawnSession': IDomStateApi['spawnSession'];
-  'DomState.unfocusSession': IDomStateApi['unfocusSession'];
-  'DomState.openSession': IDomStateApi['openSession'];
-  'DomState.modifySessionTimes': IDomStateApi['modifySessionTimes'];
-  'DomState.focusSessionTime': IDomStateApi['focusSessionTime'];
-  'DomState.extendSessionTime': IDomStateApi['extendSessionTime'];
-  'DomState.exit': IDomStateApi['exit'];
   'DevtoolsBackdoor.toggleInspectElementMode': IDevtoolsBackdoorApi['toggleInspectElementMode'];
   'DevtoolsBackdoor.highlightNode': IDevtoolsBackdoorApi['highlightNode'];
   'DevtoolsBackdoor.hideHighlight': IDevtoolsBackdoorApi['hideHighlight'];

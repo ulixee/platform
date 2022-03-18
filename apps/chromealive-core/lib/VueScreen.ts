@@ -20,7 +20,7 @@ export default class VueScreen extends TypedEventEmitter<{ close: void }> {
   private readonly pageProtocol: string;
 
   constructor(
-    name: Parameters<ISessionApi['openScreen']>[0]['screenName'],
+    name: Parameters<ISessionApi['openMode']>[0]['mode'],
     readonly heroSession: HeroSession,
   ) {
     super();

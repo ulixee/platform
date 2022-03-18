@@ -30,6 +30,8 @@ import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import SourceLoader from '@ulixee/commons/lib/SourceLoader';
 import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation';
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
+import MirrorPage from '@ulixee/hero-timetravel/lib/MirrorPage';
+import HeroCorePlugin from './HeroCorePlugin';
 
 const { log } = Log(module);
 
@@ -48,8 +50,29 @@ export default class SessionObserver extends TypedEventEmitter<{
   public readonly timetravelPlayer: TimetravelPlayer;
   public readonly timelineRecorder: TimelineRecorder;
   public readonly scriptInstanceMeta: IScriptInstanceMeta;
-  public readonly worldHeroSessionIds = new Set<string>();
   public readonly sourceCodeTimeline: SourceCodeTimeline;
+
+  public readonly liveMirrorPagesByTabId: { [tabId: number]: MirrorPage } = {};
+
+  public readonly worldHeroSessionIds = new Set<string>();
+
+  public get heroCorePlugin(): HeroCorePlugin {
+    return HeroCorePlugin.bySessionId.get(this.heroSession.id);
+  }
+
+  public get tabGroupModule(): TabGroupModule {
+    return this.heroCorePlugin.tabGroupModule;
+  }
+
+  public get devtoolsBackdoorModule(): DevtoolsBackdoorModule {
+    return this.heroCorePlugin.devtoolsBackdoorModule;
+  }
+
+  public get elementsModule(): ElementsModule {
+    return this.heroCorePlugin.elementsModule;
+  }
+
+  public mirrorPagePauseRefreshing = false;
 
   private sessionHasChangesRequiringRestart = false;
   private vueScreensByName: { [name: string]: VueScreen } = {};
@@ -60,6 +83,8 @@ export default class SessionObserver extends TypedEventEmitter<{
   private watchHandle: Fs.FSWatcher;
   private events = new EventSubscriber();
   private readonly lastDomChangesByTabId: Record<number, number> = {};
+  private mirrorRefreshLastUpdated: number;
+  private mirrorRefreshTimeout: NodeJS.Timeout;
 
   constructor(public readonly heroSession: HeroSession) {
     super();
@@ -154,17 +179,6 @@ export default class SessionObserver extends TypedEventEmitter<{
     }
   }
 
-  public async openPlayer(): Promise<void> {
-    if (
-      !this.timetravelPlayer.isOpen ||
-      this.timetravelPlayer.activeTab.currentTimelineOffsetPct === 100
-    ) {
-      await this.showSessionTabs();
-    } else {
-      await this.showTimetravelTabs();
-    }
-  }
-
   public async toggleInspectElementMode(): Promise<void> {
     await this.devtoolsBackdoorModule.toggleInspectElementMode();
   }
@@ -185,21 +199,40 @@ export default class SessionObserver extends TypedEventEmitter<{
     return await this.elementsModule.generateQuerySelector(backendNodeId);
   }
 
-  public async openScreen(
-    name: Parameters<ISessionApi['openScreen']>[0]['screenName'],
-  ): Promise<void> {
-    const tabExists = !!this.vueScreensByName[name];
-    this.vueScreensByName[name] ??= new VueScreen(name, this.heroSession);
-    const vueScreen = this.vueScreensByName[name];
-    if (!tabExists) {
-      this.events.once(vueScreen, 'close', () => delete this.vueScreensByName[name]);
-      await vueScreen.open();
+  public async openPlayer(): Promise<void> {
+    this.mirrorPagePauseRefreshing = false;
+    if (
+      !this.timetravelPlayer.isOpen ||
+      this.timetravelPlayer.activeTab.currentTimelineOffsetPct === 100
+    ) {
+      await this.showSessionTabs();
+    } else {
+      await this.showTimetravelTabs();
+    }
+  }
+
+  public async openMode(mode: Parameters<ISessionApi['openMode']>[0]['mode']): Promise<void> {
+    this.mirrorPagePauseRefreshing = mode === 'Finder';
+    if (mode === 'Finder') {
+      const activeTabId = this.heroSession.getLastActiveTab().id;
+      const mirrorPage = this.liveMirrorPagesByTabId[activeTabId];
+      await this.tabGroupModule.showTabs(mirrorPage.page);
+    } else if (mode === 'Live' || mode === 'Timetravel') {
+      await this.openPlayer();
+    } else {
+      const tabExists = !!this.vueScreensByName[mode];
+      this.vueScreensByName[mode] ??= new VueScreen(mode, this.heroSession);
+      const vueScreen = this.vueScreensByName[mode];
+      if (!tabExists) {
+        this.events.once(vueScreen, 'close', () => delete this.vueScreensByName[mode]);
+        await vueScreen.open();
+      }
+      const puppetPage = await vueScreen.puppetPage;
+      await this.tabGroupModule.showTabs(puppetPage);
     }
 
-    this.mode = name;
+    this.mode = mode;
     this.emit('app:mode');
-    const puppetPage = await vueScreen.puppetPage;
-    await this.tabGroupModule.showTabs(puppetPage);
   }
 
   public close(): void {
@@ -208,8 +241,16 @@ export default class SessionObserver extends TypedEventEmitter<{
       this.watchHandle = null;
     }
     this.sourceCodeTimeline.close();
-
     this.events.close();
+
+    for (const screen of Object.values(this.vueScreensByName)) {
+      screen.close().catch(console.error);
+    }
+
+    for (const mirrorPage of Object.values(this.liveMirrorPagesByTabId)) {
+      mirrorPage.close().catch(console.error);
+    }
+
     this.timelineRecorder.close();
     this.timetravelPlayer?.close()?.catch(console.error);
     this.emit('closed');
@@ -299,18 +340,6 @@ export default class SessionObserver extends TypedEventEmitter<{
     };
   }
 
-  public get tabGroupModule(): TabGroupModule {
-    return TabGroupModule.bySessionId.get(this.heroSession.id);
-  }
-
-  public get devtoolsBackdoorModule(): DevtoolsBackdoorModule {
-    return DevtoolsBackdoorModule.bySessionId.get(this.heroSession.id);
-  }
-
-  public get elementsModule(): ElementsModule {
-    return ElementsModule.bySessionId.get(this.heroSession.id);
-  }
-
   public async timetravel(
     option: Parameters<ISessionApi['timetravel']>[0],
   ): Promise<{ timelineOffsetPercent: number }> {
@@ -368,6 +397,14 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   public onTabCreated(event: HeroSession['EventTypes']['tab-created']): void {
     this.events.on(event.tab, 'page-events', this.sendDomRecordingUpdates.bind(this, event.tab));
+    const mirrorPage = event.tab.createMirrorPage();
+    const shouldAttach = Object.keys(this.liveMirrorPagesByTabId).length === 0;
+    this.liveMirrorPagesByTabId[event.tab.id] = mirrorPage;
+    if (shouldAttach) {
+      mirrorPage
+        .attachToPage(this.heroCorePlugin.mirrorPuppetPage, this.heroSession.id)
+        .catch(error => this.logger.error('ERROR setting up mirrorPage', { error }));
+    }
   }
 
   public sendDomRecordingUpdates(tab: Tab, events: Tab['EventTypes']['page-events']): void {
@@ -378,10 +415,43 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.lastDomChangesByTabId[tab.id] =
       domRecording.paintEvents[domRecording.paintEvents.length - 1].timestamp;
 
+    this.refreshLiveMirrorPage(tab.id).catch(console.error);
+
     ChromeAliveCore.sendAppEvent('Dom.updated', {
       paintEvents: domRecording.paintEvents.map(x => x.changeEvents),
       framesById: tab.session.db.frames.framesById,
     });
+  }
+
+  public async refreshLiveMirrorPage(tabId: number, force = false): Promise<void> {
+    const now = Date.now();
+    if (!force && this.mirrorPagePauseRefreshing) {
+      clearTimeout(this.mirrorRefreshTimeout);
+      this.mirrorRefreshTimeout = setTimeout(
+        this.refreshLiveMirrorPage.bind(this, tabId),
+        500,
+      ).unref();
+      return;
+    }
+
+    if (!force && this.mirrorRefreshLastUpdated && now - this.mirrorRefreshLastUpdated < 100) {
+      if (!this.mirrorRefreshTimeout) {
+        this.mirrorRefreshTimeout = setTimeout(
+          this.refreshLiveMirrorPage.bind(this, tabId),
+          now - this.mirrorRefreshLastUpdated,
+        ).unref();
+        return;
+      }
+    }
+    clearTimeout(this.mirrorRefreshTimeout);
+    this.mirrorRefreshTimeout = null;
+    this.mirrorRefreshLastUpdated = now;
+
+    try {
+      await this.liveMirrorPagesByTabId[tabId].load();
+    } catch (error) {
+      this.logger.error('ERROR loading mirror page to latest', { error });
+    }
   }
 
   public getDomRecording(tabId: number): ReturnType<ISessionApi['getDom']> {
