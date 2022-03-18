@@ -30,6 +30,8 @@ import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import SourceLoader from '@ulixee/commons/lib/SourceLoader';
 import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation';
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
+import MirrorPage from '@ulixee/hero-timetravel/lib/MirrorPage';
+import HeroCorePlugin from './HeroCorePlugin';
 
 const { log } = Log(module);
 
@@ -299,16 +301,20 @@ export default class SessionObserver extends TypedEventEmitter<{
     };
   }
 
+  public get heroCorePlugin(): HeroCorePlugin {
+    return HeroCorePlugin.bySessionId.get(this.heroSession.id);
+  }
+
   public get tabGroupModule(): TabGroupModule {
-    return TabGroupModule.bySessionId.get(this.heroSession.id);
+    return this.heroCorePlugin.tabGroupModule;
   }
 
   public get devtoolsBackdoorModule(): DevtoolsBackdoorModule {
-    return DevtoolsBackdoorModule.bySessionId.get(this.heroSession.id);
+    return this.heroCorePlugin.devtoolsBackdoorModule;
   }
 
   public get elementsModule(): ElementsModule {
-    return ElementsModule.bySessionId.get(this.heroSession.id);
+    return this.heroCorePlugin.elementsModule;
   }
 
   public async timetravel(
