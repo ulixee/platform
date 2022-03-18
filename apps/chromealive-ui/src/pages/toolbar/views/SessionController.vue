@@ -2,35 +2,37 @@
   <div class="bar-wrapper flex flex-row items-stretch">
     <MenuButton class="z-20" />
     <InputButton
-      :is-selected="selectedItem === 'Input'"
-      :is-focused="selectedItem === 'Input'"
+      :is-selected="mode === 'Input'"
+      :is-focused="mode === 'Input'"
       :is-minimal="isMinimal"
       :input-size="inputSize"
       class="z-20"
       @select="select('Input')"
     />
     <Player
+      :ref="player"
       :mode="mode"
-      :is-selected="selectedItem === 'Player'"
-      :is-focused="selectedItem === 'Player'"
+      :is-selected="isPlayerSelected"
+      :is-focused="isPlayerSelected"
       :ticks="timelineTicks"
       :is-running="isRunning"
       :is-minimal="isMinimal"
       :session="session"
       class="flex-1 z-10"
-      @select="select('Player')"
+      @select="selectPlayerMode"
+      @toggleFinder="onFinderModeToggled"
     />
     <OutputButton
-      :is-selected="selectedItem === 'Output'"
-      :is-focused="selectedItem === 'Output'"
+      :is-selected="mode === 'Output'"
+      :is-focused="mode === 'Output'"
       :is-minimal="isMinimal"
       :output-size="outputSize"
       style="z-index: 2"
       @select="select('Output')"
     />
     <ReliabilityButton
-      :is-selected="selectedItem === 'Reliability'"
-      :is-focused="selectedItem === 'Reliability'"
+      :is-selected="mode === 'Reliability'"
+      :is-focused="mode === 'Reliability'"
       :is-minimal="isMinimal"
       style="z-index: 1"
       @select="select('Reliability')"
@@ -66,15 +68,21 @@ export default Vue.defineComponent({
   },
   setup() {
     const session = Vue.reactive(createDefaultSession());
+    const mode = Vue.ref<IAppModeEvent['mode']>('Live');
+    const isPlayerSelected = Vue.computed(() => {
+      const value = mode.value;
+      return value === 'Live' || value === 'Timetravel' || value === 'Finder';
+    });
 
     return {
       session,
-      mode: Vue.ref('Live'),
+      isPlayerSelected,
+      mode,
+      previousPlayerMode: Vue.ref<IAppModeEvent['mode']>(mode.value),
       isRunning: Vue.ref(false),
       isMinimal: Vue.ref(false),
       startLocation: Vue.ref<IStartLocation>('currentLocation'),
       timelineTicks: Vue.ref<any[]>([]),
-      selectedItem: Vue.ref('Player'),
       outputSize: Vue.ref<string>(humanizeBytes(0)),
       inputSize: Vue.ref<string>(humanizeBytes(0)),
     };
@@ -82,17 +90,31 @@ export default Vue.defineComponent({
   async created() {
     await Client.connect();
   },
-
+  watch: {
+    mode() {
+      if (this.mode === 'Live' || this.mode === 'Timetravel') {
+        this.previousPlayerMode = this.mode;
+      }
+    },
+  },
   methods: {
-    select(item: string) {
-      this.selectedItem = item;
-      if (item === 'Output' || item === 'Input' || item === 'Reliability') {
-        Client.send('Session.openScreen', {
-          heroSessionId: this.session.heroSessionId,
-          screenName: item,
-        }).catch(err => alert(String(err)));
-      } else if (item === 'Player') {
-        Client.send('Session.openPlayer').catch(err => alert(String(err)));
+    selectPlayerMode(): void {
+      this.select(this.previousPlayerMode);
+    },
+
+    select(mode: IAppModeEvent['mode']) {
+      this.mode = mode;
+      Client.send('Session.openMode', {
+        heroSessionId: this.session.heroSessionId,
+        mode,
+      }).catch(err => alert(String(err)));
+    },
+
+    onFinderModeToggled(isToggledOn: boolean): void {
+      if (isToggledOn) {
+        this.select('Finder');
+      } else {
+        this.selectPlayerMode();
       }
     },
 
@@ -107,9 +129,7 @@ export default Vue.defineComponent({
       const isNewId =
         message.heroSessionId !== this.session.heroSessionId || !message.heroSessionId;
       if (isNewId) {
-        if (this.selectedItem !== 'Player') {
-          this.select('Player');
-        }
+        this.mode = 'Live';
       }
       Object.assign(this.session, message);
 
@@ -154,11 +174,6 @@ export default Vue.defineComponent({
     onAppModeEvent(message: IAppModeEvent): void {
       const { mode } = message;
       this.mode = mode;
-      if (mode === 'Live' || mode === 'Timetravel') {
-        this.selectedItem = 'Player';
-      } else {
-        this.selectedItem = mode;
-      }
     },
   },
 

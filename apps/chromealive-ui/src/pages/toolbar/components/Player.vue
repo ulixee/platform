@@ -7,7 +7,7 @@
       notFocused: !isFocused,
     }"
     class="Player"
-    @click="handleClick"
+    @click="handleClick($event)"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
   >
@@ -99,22 +99,19 @@ export default Vue.defineComponent({
     Borders,
   },
   props: ['isSelected', 'isFocused', 'ticks', 'isRunning', 'session', 'mode'],
-  emits: ['select'],
-  setup() {
+  emits: ['select', 'toggleFinder'],
+  setup(props) {
+    const isLiveMode = Vue.computed(() => props.mode === 'Live');
+    const isShowingFinder = Vue.computed(() => props.mode === 'Finder');
     return {
       mouseIsWithinPlayer: Vue.ref(false),
-      isShowingFinder: Vue.ref(false),
-      isLiveMode: Vue.ref(true),
+      isLiveMode,
+      isShowingFinder
     };
   },
   watch: {
-    mode(value) {
-      if (value === 'Live') {
-        this.isLiveMode = true;
-      }
-      else if (value === 'Timetravel') {
-        this.isLiveMode = false;
-      }
+    isShowingFinder(value) {
+      if (!value) WindowsController.hideMenuFinder();
     },
   },
   methods: {
@@ -122,7 +119,7 @@ export default Vue.defineComponent({
       this.isLiveMode = isLiveMode;
     },
 
-    handleClick() {
+    handleClick(event) {
       if (!this.isSelected) {
         event.stopPropagation();
         this.$emit('select');
@@ -131,16 +128,19 @@ export default Vue.defineComponent({
 
     toggleFinder(event: MouseEvent) {
       const rect = (event.target as HTMLElement).getBoundingClientRect();
-      if (this.isShowingFinder) {
+      let isShowingFinder = true;
+      if (this.mode === 'Finder') {
         WindowsController.hideMenuFinder();
+        isShowingFinder = false;
       } else {
         WindowsController.showMenuFinder(rect);
-        this.isShowingFinder = true;
+        isShowingFinder = true;
       }
+      this.$emit('toggleFinder', isShowingFinder);
     },
 
     finishHideFinder() {
-      this.isShowingFinder = false;
+      this.$emit('toggleFinder', false);
     },
 
     handleMouseLeave() {

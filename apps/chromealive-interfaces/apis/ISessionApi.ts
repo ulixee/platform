@@ -3,6 +3,7 @@ import IHeroMeta from '@ulixee/hero-interfaces/IHeroMeta';
 import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
 import ICommandUpdatedEvent from '../events/ICommandUpdatedEvent';
 import IHeroSessionActiveEvent from '../events/IHeroSessionActiveEvent';
+import IAppModeEvent from '../events/IAppModeEvent';
 
 export interface ISessionResumeArgs extends IHeroSessionArgs {
   startLocation: ISessionCreateOptions['sessionResume']['startLocation'];
@@ -48,12 +49,11 @@ export default interface ISessionApi {
   ): Promise<{
     timelineOffsetPercent: number;
   }>;
-  openScreen(
+  openMode(
     args: IHeroSessionArgs & {
-      screenName: 'Output' | 'Input' | 'Reliability';
+      mode: IAppModeEvent['mode'];
     },
   ): void;
-  openPlayer(): void;
   step(args: IHeroSessionArgs): void;
   resume(args: ISessionResumeArgs): Promise<{
     success: boolean;

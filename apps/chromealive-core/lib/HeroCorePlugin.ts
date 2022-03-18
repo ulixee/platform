@@ -36,6 +36,7 @@ export default class HeroCorePlugin extends CorePlugin {
   public devtoolsBackdoorModule: DevtoolsBackdoorModule;
   public elementsModule: ElementsModule;
   public sessionId: string;
+  public mirrorPuppetPage: IPuppetPage;
 
   private readonly bridgeToExtension: BridgeToExtension;
   private readonly identityByPuppetPage = new Map<IPuppetPage, IResolvablePromise<IPageIdentity>>();
@@ -76,7 +77,6 @@ export default class HeroCorePlugin extends CorePlugin {
     return puppetPages.find((puppetPage, i) => identities[i].tabId === tabId);
   }
 
-
   /// /// PLUGIN IMPLEMENTATION METHODS ////////////////////////////////////////////////////////////////////////////////
 
   public configure(options: IBrowserEmulatorConfig): Promise<any> | void {
@@ -105,19 +105,21 @@ export default class HeroCorePlugin extends CorePlugin {
     HeroCorePlugin.bySessionId.set(id, this);
     this.events.once(context, 'close', this.onBrowserContextClosed.bind(this, sessionSummary));
 
-    let hasMirrorPage = false;
+    // the Default context can be re-used, so check for an existing mirrorPage
     for (const page of context.pagesById.values()) {
       if (page.groupName === 'mirrorPage') {
-        hasMirrorPage = true;
+        this.mirrorPuppetPage = page;
         break;
       }
     }
-    if (!hasMirrorPage)
-      await context.newPage({
-        runPageScripts: false,
-        enableDomStorageTracker: false,
-        groupName: 'mirrorPage',
-      });
+
+    this.mirrorPuppetPage ??= await context.newPage({
+      runPageScripts: false,
+      enableDomStorageTracker: false,
+      groupName: 'mirrorPage',
+    });
+
+    await this.onNewPuppetPage(this.mirrorPuppetPage, sessionSummary);
   }
 
   public async onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
@@ -172,6 +174,9 @@ export default class HeroCorePlugin extends CorePlugin {
 
   public onBrowserContextClosed(sessionSummary: ISessionSummary): void {
     HeroCorePlugin.bySessionId.delete(sessionSummary.id);
+    this.mirrorPuppetPage
+      ?.close()
+      .catch(err => console.error('Error closing mirror puppet page', err));
     this.devtoolsBackdoorModule.close();
     this.events.close();
     this.browserEmitter.removeAllListeners();
