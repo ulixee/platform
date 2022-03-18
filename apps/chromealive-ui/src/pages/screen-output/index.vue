@@ -264,13 +264,14 @@ export default Vue.defineComponent({
               .slice(-1)
               .pop();
             this.scrollToRecordId = recordToScroll ? recordToScroll.id : null;
-          });
+          }).catch(console.error);
         }
       } else {
         this.output = convertJsonToFlat({});
       }
     },
     onSessionActive(data: IHeroSessionActiveEvent) {
+      if (!data) return;
       if (this.scriptEntrypoint && !data.scriptEntrypoint.endsWith(this.scriptEntrypoint)) {
         this.onDataboxUpdated({} as IDataboxOutputEvent);
       }
@@ -347,7 +348,7 @@ export default Vue.defineComponent({
       Client.send('Session.timetravel', {
         heroSessionId: null,
         commandId: element.commandId,
-      }).catch(err => alert(err.message));
+      }).catch(err => console.error(err));
     },
     resourceToBlob(resource: IResourceMeta): Blob {
       const mime =
@@ -368,22 +369,22 @@ export default Vue.defineComponent({
     refreshData(): void {
       Client.send('Session.getActive')
         .then(this.onSessionActive)
-        .catch(err => alert(err.stack));
+        .catch(err => console.error(err));
       Client.send('Databox.getOutput')
         .then(x => this.onDataboxOutput({ ...x, changes: undefined }))
-        .catch(err => alert(err.stack));
+        .catch(err => console.error(err));
       Client.send('Databox.getCollectedAssets')
         .then(this.onCollectedAssets)
-        .catch(err => alert(err.stack));
+        .catch(err => console.error(err));
     },
     runExtract(): void {
       Client.send('Databox.runExtract', { heroSessionId: this.sessionId }).catch(err =>
-        alert(String(err)),
+        console.error(err),
       );
     },
   },
   mounted() {
-    Client.connect().catch(err => alert(String(err)));
+    Client.connect().catch(err => console.error(err));
     this.refreshData();
     Client.on('Databox.output', this.onDataboxOutput);
     Client.on('Databox.collected-asset', this.onCollectedAsset);

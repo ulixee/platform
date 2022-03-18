@@ -92,6 +92,7 @@ export default Vue.defineComponent({
   },
   methods: {
     onSessionActive(data: IHeroSessionActiveEvent) {
+      if (!data) return;
       if (!this.scriptEntrypoint || !data.scriptEntrypoint.endsWith(this.scriptEntrypoint)) {
         this.input = convertJsonToFlat({});
         this.meta = {} as any;
@@ -109,14 +110,14 @@ export default Vue.defineComponent({
     refreshMeta(): void {
       Client.send('Session.getActive')
         .then(this.onSessionActive)
-        .catch(err => alert(String(err)));
+        .catch(err => console.error(err));
       Client.send('Session.getMeta')
         .then(this.onHeroMeta)
-        .catch(err => alert(String(err)));
+        .catch(err => console.error(err));
     },
   },
   mounted() {
-    Client.connect().catch(err => alert(String(err)));
+    Client.connect().catch(err => console.error(err));
     this.refreshMeta();
     Client.on('Session.active', this.onSessionActive);
   },
