@@ -5,6 +5,8 @@ export enum EmitterName {
   hideMenuPrimary = 'hideMenuPrimary',
   showMenuFinder = 'showMenuFinder',
   hideMenuFinder = 'hideMenuFinder',
+  showMenuUrl = 'showMenuUrl',
+  hideMenuUrl = 'hideMenuUrl',
 }
 
 type IEmitterEvents = {
@@ -12,6 +14,8 @@ type IEmitterEvents = {
   [EmitterName.hideMenuPrimary]: void;
   [EmitterName.showMenuFinder]: DOMRect;
   [EmitterName.hideMenuFinder]: void;
+  [EmitterName.showMenuUrl]: DOMRect;
+  [EmitterName.hideMenuUrl]: void;
 };
 
 const emitter: Emitter<IEmitterEvents> = mitt<IEmitterEvents>();
@@ -23,6 +27,7 @@ window.addEventListener('blur', () => (isFocused = false));
 export default class WindowsController {
   static primaryMenu;
   static finderMenu;
+  static urlMenu;
 
   static showMenuPrimary(rect: DOMRect) {
     const frameName = 'MenuPrimary';
@@ -82,6 +87,38 @@ export default class WindowsController {
       }),
     );
     emitter.emit(EmitterName.hideMenuFinder);
+  }
+
+
+  static showMenuUrl(rect: DOMRect) {
+    const frameName = 'MenuUrl';
+    const left = rect.x + window.screenLeft - 10;
+    const top = rect.y + rect.height + window.screenTop - 5;
+    if (this.urlMenu) {
+      document.dispatchEvent(
+        new CustomEvent('App:showChildWindow', {
+          detail: { frameName },
+        }),
+      );
+    } else {
+      const features = `top=${top},left=${left},width=${rect.width*2},height=${400}`;
+      this.urlMenu = window.open('/menu-url.html', frameName, features);
+      this.urlMenu.addEventListener('blur', () => this.hideMenuUrl())
+      this.urlMenu.hideMenu = () => {
+        if (isFocused) return;
+        this.hideMenuUrl();
+      };
+    }
+  }
+
+  static hideMenuUrl() {
+    const frameName = 'MenuUrl';
+    document.dispatchEvent(
+      new CustomEvent('App:hideChildWindow', {
+        detail: { frameName },
+      }),
+    );
+    emitter.emit(EmitterName.hideMenuUrl);
   }
 
   static on(eventName: EmitterName, callback: () => void) {

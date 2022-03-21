@@ -229,7 +229,11 @@ export default class ChromeAliveCore {
     sessionId: string,
     event: TimetravelPlayer['EventTypes']['new-offset'],
   ): void {
-    this.sendAppEvent('Session.timetravel', event);
+    const timetravel = this.sessionObserversById.get(sessionId).timetravelPlayer;
+    this.sendAppEvent('Session.timetravel', {
+      ...event,
+      url: timetravel.activeTab.mirrorPage.page.mainFrame.url,
+    });
   }
 
   private static sendPaintIndexEvent(

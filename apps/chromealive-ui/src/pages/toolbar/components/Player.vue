@@ -7,7 +7,7 @@
       notFocused: !isFocused,
     }"
     class="Player"
-    @click="handleClick($event)"
+    @click="handleClick"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
   >
@@ -17,42 +17,24 @@
         <div class="right-arrow" />
       </div>
 
-      <Borders
-        :is-selected="isSelected"
-        :is-focused="isFocused"
-      />
+      <Borders :is-selected="isSelected" :is-focused="isFocused" />
 
       <div class="address-bar relative h-full flex flex-row">
-        <div
-          v-if="isLiveMode"
-          class="live-icon"
-        >
-          <div
-            v-if="isRunning"
-            class="text"
-          >
+        <div v-if="isLiveMode" class="live-icon">
+          <div v-if="isRunning" class="text">
             LIVE
           </div>
-          <div
-            v-else
-            class="text"
-          >
+          <div v-else class="text">
             DONE
           </div>
         </div>
-        <div
-          v-else
-          class="timetravel-icon"
-        >
-          <img
-            src="@/assets/icons/timetravel.svg"
-            class="h-5 w-5"
-          >
+        <div v-else class="timetravel-icon">
+          <img src="@/assets/icons/timetravel.svg" class="h-5 w-5">
         </div>
 
-        <div class="address">
+        <div class="address" @click="toggleUrlMenu">
           <div class="text">
-            example.org
+            {{ currentUrl }}
           </div>
         </div>
         <div
@@ -60,10 +42,7 @@
           class="search-icon"
           @click="toggleFinder"
         >
-          <img
-            src="@/assets/icons/search.svg"
-            class="h-5 w-5"
-          >
+          <img src="@/assets/icons/search.svg" class="h-5 w-5">
         </div>
       </div>
 
@@ -97,15 +76,32 @@ export default Vue.defineComponent({
     PlayerBar,
     Borders,
   },
-  props: ['isSelected', 'isFocused', 'ticks', 'isRunning', 'session', 'mode'],
+  props: ['isSelected', 'isFocused', 'ticks', 'isRunning', 'session', 'mode', 'timetravelUrl'],
   emits: ['select', 'toggleFinder'],
   setup(props) {
     const isLiveMode = Vue.computed(() => props.mode === 'Live');
     const isShowingFinder = Vue.computed(() => props.mode === 'Finder');
+    const currentUrl = Vue.computed(() => {
+      let url = 'about:blank';
+      if (props.mode === 'Live') {
+        const urls = props.session?.timeline?.urls;
+        if (urls.length) {
+          url = urls[urls.length - 1]?.url;
+        }
+      } else {
+        url = props.timetravelUrl;
+      }
+      if (!url) url = 'about:blank';
+      if (url.endsWith('/')) url = url.slice(0, -1);
+      return url.replace('https://', '').replace('http://', '');
+    });
+
     return {
+      currentUrl,
+      isShowingUrlMenu: Vue.ref(false),
       mouseIsWithinPlayer: Vue.ref(false),
       isLiveMode,
-      isShowingFinder
+      isShowingFinder,
     };
   },
   watch: {
@@ -114,10 +110,6 @@ export default Vue.defineComponent({
     },
   },
   methods: {
-    toggleTimetravel(isLiveMode: boolean) {
-      this.isLiveMode = isLiveMode;
-    },
-
     handleClick(event) {
       if (!this.isSelected) {
         event.stopPropagation();
@@ -136,6 +128,16 @@ export default Vue.defineComponent({
         isShowingFinder = true;
       }
       this.$emit('toggleFinder', isShowingFinder);
+    },
+
+    toggleUrlMenu(event: MouseEvent) {
+      const rect = (event.target as HTMLElement).parentElement.getBoundingClientRect();
+      if (this.isShowingUrlMenu) {
+        WindowsController.hideMenuUrl();
+      } else {
+        WindowsController.showMenuUrl(rect);
+      }
+      this.isShowingUrlMenu = !this.isShowingUrlMenu;
     },
 
     finishHideFinder() {

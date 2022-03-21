@@ -10,7 +10,6 @@
       @select="select('Input')"
     />
     <Player
-      :ref="player"
       :mode="mode"
       :is-selected="isPlayerSelected"
       :is-focused="isPlayerSelected"
@@ -18,6 +17,7 @@
       :is-running="isRunning"
       :is-minimal="isMinimal"
       :session="session"
+      :timetravel-url="timetravelUrl"
       class="flex-1 z-10"
       @select="selectPlayerMode"
       @toggleFinder="onFinderModeToggled"
@@ -53,6 +53,7 @@ import InputButton from '../components/InputButton.vue';
 import Player from '../components/Player.vue';
 import OutputButton from '../components/OutputButton.vue';
 import ReliabilityButton from '../components/ReliabilityButton.vue';
+import ISessionTimetravelEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionTimetravelEvent';
 
 type IStartLocation = 'currentLocation' | 'sessionStart';
 
@@ -85,6 +86,7 @@ export default Vue.defineComponent({
       timelineTicks: Vue.ref<any[]>([]),
       outputSize: Vue.ref<string>(humanizeBytes(0)),
       inputSize: Vue.ref<string>(humanizeBytes(0)),
+      timetravelUrl: Vue.ref<string>(null),
     };
   },
   async created() {
@@ -118,6 +120,10 @@ export default Vue.defineComponent({
       }
     },
 
+    onSessionTimetravel(message: ISessionTimetravelEvent) {
+      this.timetravelUrl = message.url;
+    },
+
     onSessionActiveEvent(message: IHeroSessionActiveEvent) {
       if (!message) {
         this.outputSize = humanizeBytes(0);
@@ -136,11 +142,6 @@ export default Vue.defineComponent({
       const timelineTicks: any[] = [];
       for (const url of message.timeline.urls) {
         if (url.offsetPercent < 0) continue;
-        timelineTicks.push({
-          id: url.navigationId,
-          offsetPercent: url.offsetPercent,
-          class: url.offsetPercent === 100 ? 'url' : 'urlrequest',
-        });
         for (const status of url.loadStatusOffsets) {
           timelineTicks.push({
             id: url.navigationId,
@@ -178,12 +179,14 @@ export default Vue.defineComponent({
   },
 
   mounted() {
+    Client.on('Session.timetravel', this.onSessionTimetravel);
     Client.on('Session.active', this.onSessionActiveEvent);
     Client.on('Databox.output', this.onDataboxUpdated);
     Client.on('App.mode', this.onAppModeEvent);
   },
 
   beforeUnmount() {
+    Client.off('Session.timetravel', this.onSessionTimetravel);
     Client.off('Session.active', this.onSessionActiveEvent);
     Client.off('Databox.output', this.onDataboxUpdated);
     Client.off('App.mode', this.onAppModeEvent);
