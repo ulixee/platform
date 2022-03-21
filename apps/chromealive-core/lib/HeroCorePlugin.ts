@@ -43,6 +43,7 @@ export default class HeroCorePlugin extends CorePlugin {
   private readonly puppetPagesById = new Map<string, IPuppetPage>();
   private readonly events = new EventSubscriber();
   private readonly browserEmitter = new EventEmitter();
+  private hasRegisteredServiceWorkerDebug = false;
 
   constructor(createOptions: ICorePluginCreateOptions) {
     super(createOptions);
@@ -57,7 +58,7 @@ export default class HeroCorePlugin extends CorePlugin {
 
   public async getIdentifiedPuppetPageId(): Promise<string> {
     for (const [puppetPage, identityResolution] of this.identityByPuppetPage) {
-      const identity = await identityResolution.promise;
+      const identity = identityResolution.isResolved ? await identityResolution.promise : null;
       if (identity) {
         return puppetPage.id;
       }
@@ -127,13 +128,17 @@ export default class HeroCorePlugin extends CorePlugin {
 
     this.sessionId ??= sessionSummary.id;
     this.puppetPagesById.set(page.id, page);
+    const identityTimeout = page.groupName === 'mirrorPage' ? 30e3 : 10e3;
     this.identityByPuppetPage.set(
       page,
-      createPromise<IPageIdentity>(2e3, 'PuppetPage never received Tab ID'),
+      createPromise<IPageIdentity>(identityTimeout, 'PuppetPage never received Tab ID'),
     );
     this.events.once(page, 'close', this.onPuppetPageClosed.bind(this, page));
 
-    if (process.env.HERO_DEBUG_CHROMEALIVE) this.debugServiceWorker(page.devtoolsSession);
+    if (process.env.HERO_DEBUG_CHROMEALIVE) {
+      if (!this.hasRegisteredServiceWorkerDebug) this.debugServiceWorker(page.devtoolsSession);
+      this.hasRegisteredServiceWorkerDebug = true;
+    }
 
     await Promise.all([
       this.bridgeToExtension.addPuppetPage(page, this.events),

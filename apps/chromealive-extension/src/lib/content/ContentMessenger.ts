@@ -96,20 +96,21 @@ function handleConnectedToBackgroundScript(port: chrome.runtime.Port) {
   registerActivePort(port);
 }
 
-function onPortDisconnect(): void {
-  activePort.onMessage.removeListener(handleIncomingMessageFromBackgroundScript);
-  activePort = null;
-  setTimeout(connect, 1e3);
+function onPortDisconnect(port: chrome.runtime.Port): void {
+  port.onMessage.removeListener(handleIncomingMessageFromBackgroundScript);
+  if (port === activePort) activePort = null;
+  if (!activePort) setTimeout(connect, 1e3);
 }
 
 function registerActivePort(port: chrome.runtime.Port): void {
-  if (activePort !== port) {
+  if (activePort === port) return;
+  if (activePort && activePort !== port) {
     try {
       activePort.disconnect();
     } catch (err) {}
   }
   activePort = port;
-  activePort.onDisconnect.addListener(onPortDisconnect);
+  activePort.onDisconnect.addListener(onPortDisconnect.bind(null, port));
   activePort.onMessage.addListener(handleIncomingMessageFromBackgroundScript);
 }
 

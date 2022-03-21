@@ -4,10 +4,9 @@ import { hideTabs } from './lib/background/TabManagement';
 import logDebug from './lib/logDebug';
 import './lib/background/BackgroundListeners';
 
-let coreServerAddress;
-fetch(chrome.runtime.getURL('data/coreServer.json'))
+const coreServerAddress = fetch(chrome.runtime.getURL('data/coreServer.json'))
   .then((response) => response.json())
-  .then(data => coreServerAddress = data.address)
+  .then(data => data.address)
   .catch(error => console.log(error));
 
 const RuntimeActions = {
@@ -19,7 +18,10 @@ onMessagePayload((payload, sendResponseFn) => {
     const fn = RuntimeActions[payload.action];
     fn(payload)
       .catch(error => {
-        if (sendResponseFn) sendResponseFn(error);
+        if (sendResponseFn) {
+          sendResponseFn(error);
+          sendResponseFn = null;
+        }
         console.error('chrome.runtime.onMessage:ERROR', { payload, error });
       })
       .then(result => {
@@ -30,7 +32,7 @@ onMessagePayload((payload, sendResponseFn) => {
       .catch(error => console.error('chrome.runtime.onMessageResponse:ERROR', { payload, error }));
     return true;
   } else if (payload.action === 'getCoreServerAddress') {
-    sendResponseFn(coreServerAddress);
+    void coreServerAddress.then(x => sendResponseFn(x));
     return true;
   }
   console.log('UNHANDLED MESSAGE: ', payload);

@@ -77,7 +77,6 @@
           :session="session"
           :mode="mode"
           class="flex-1"
-          @toggleTimetravel="toggleTimetravel"
         />
       </div>
     </div>
