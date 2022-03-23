@@ -135,7 +135,6 @@ export default Vue.defineComponent({
         this.outputSize = humanizeBytes(0);
         this.inputSize = humanizeBytes(0);
         this.mode = 'Live';
-        return;
       }
 
       message ??= createDefaultSession();
@@ -201,11 +200,8 @@ function createDefaultSession(): IHeroSessionActiveEvent {
   return {
     timeline: { urls: [], paintEvents: [], screenshots: [], storageEvents: [] },
     playbackState: 'paused',
-    mode: 'Live',
     runtimeMs: 0,
-    worldHeroSessionIds: [],
     heroSessionId: '',
-    run: 0,
     inputBytes: 0,
     startTime: Date.now(),
     scriptEntrypoint: '',

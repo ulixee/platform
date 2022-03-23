@@ -239,14 +239,29 @@ export default Vue.defineComponent({
       }
 
       event.stopPropagation();
+      window.addEventListener('mouseup', this.handleMouseup);
     },
 
     handleMouseup(event: MouseEvent) {
-      if (!this.isSelected) return;
+      console.log('mouseup');
+      window.removeEventListener('mouseup', this.handleMouseup);
+
+      const isMouseDown = this.isMouseDown;
+      const isMouseDownDragging = this.isMouseDownDragging;
+      const isMaybeClickingPlay = this.isMaybeClickingPlay;
+
+      this.isMouseDown = false;
+      this.isMouseDownDragging = false;
+      this.isMaybeClickingPlay = false;
+      this.mouseDownItem = undefined;
+      this.$el.style.cursor = '';
+      this.markerRect = null;
+
+      if (!this.isSelected || !isMouseDown) return;
       if (event.button !== 0) return;
       event.preventDefault();
 
-      if (this.isMaybeClickingPlay && !this.isMouseDownDragging) {
+      if (isMaybeClickingPlay && !isMouseDownDragging) {
         this.togglePlay();
       }
 
@@ -265,12 +280,6 @@ export default Vue.defineComponent({
         void this.doTimetravel();
       }
 
-      this.isMouseDown = false;
-      this.isMouseDownDragging = false;
-      this.isMaybeClickingPlay = false;
-      this.mouseDownItem = undefined;
-      this.$el.style.cursor = '';
-      this.markerRect = null;
     },
 
     togglePlay() {
@@ -477,7 +486,6 @@ export default Vue.defineComponent({
   },
   mounted() {
     Client.on('Session.timetravel', this.onTimetraveled);
-    window.addEventListener('mouseup', this.handleMouseup);
     window.addEventListener('mousemove', this.handleMousemove.bind(this));
   },
   beforeUnmount() {

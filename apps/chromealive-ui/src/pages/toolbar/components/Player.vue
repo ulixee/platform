@@ -79,7 +79,6 @@ export default Vue.defineComponent({
   emits: ['select', 'toggleFinder'],
   setup(props) {
     const isLiveMode = Vue.computed(() => props.mode === 'Live');
-    const isShowingFinder = Vue.computed(() => props.mode === 'Finder');
     const currentUrl = Vue.computed(() => {
       let url = 'about:blank';
       if (props.mode === 'Live' || props.mode === 'Finder' && !props.timetravel) {
@@ -100,12 +99,13 @@ export default Vue.defineComponent({
       isShowingUrlMenu: Vue.ref(false),
       mouseIsWithinPlayer: Vue.ref(false),
       isLiveMode,
-      isShowingFinder,
+      isShowingFinder: Vue.ref<boolean>(false),
     };
   },
   watch: {
-    isShowingFinder(value) {
-      if (!value) WindowsController.hideMenuFinder();
+    mode(value) {
+      if (value !== 'Finder') WindowsController.hideMenuFinder();
+      this.isShowingFinder = value === 'Finder';
     },
   },
   methods: {
@@ -118,15 +118,13 @@ export default Vue.defineComponent({
 
     toggleFinder(event: MouseEvent) {
       const rect = (event.target as HTMLElement).getBoundingClientRect();
-      let isShowingFinder = true;
-      if (this.mode === 'Finder') {
-        WindowsController.hideMenuFinder();
-        isShowingFinder = false;
-      } else {
+      this.isShowingFinder = !this.isShowingFinder;
+      if (this.isShowingFinder) {
         WindowsController.showMenuFinder(rect);
-        isShowingFinder = true;
+      } else {
+        WindowsController.hideMenuFinder();
       }
-      this.$emit('toggleFinder', isShowingFinder);
+      this.$emit('toggleFinder', this.isShowingFinder);
     },
 
     toggleUrlMenu(event: MouseEvent) {
@@ -140,7 +138,8 @@ export default Vue.defineComponent({
     },
 
     finishHideFinder() {
-      this.$emit('toggleFinder', false);
+      // this is triggering a loop of window showing and mode cycling
+      // this.$emit('toggleFinder', false);
     },
 
     handleMouseLeave() {
