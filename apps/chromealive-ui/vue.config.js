@@ -13,6 +13,9 @@ module.exports = {
     'menu-timetravel': {
       entry: './src/pages/menu-timetravel/index.ts',
     },
+    'menu-url': {
+      entry: './src/pages/menu-url/index.ts',
+    },
     'screen-input': {
       title: 'Input Configuration',
       entry: './src/pages/screen-input/index.ts',

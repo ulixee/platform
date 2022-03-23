@@ -54,7 +54,7 @@ export default interface ISessionApi {
       mode: IAppModeEvent['mode'];
     },
   ): void;
-  step(args: IHeroSessionArgs): void;
+  pause(args: IHeroSessionArgs): void;
   resume(args: ISessionResumeArgs): Promise<{
     success: boolean;
     error?: Error;

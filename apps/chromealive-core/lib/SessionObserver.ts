@@ -9,11 +9,8 @@ import IDataboxOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDat
 import IDataboxCollectedAssets from '@ulixee/apps-chromealive-interfaces/IDataboxCollectedAssets';
 import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxCollectedAssetEvent';
 import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
-import * as Path from 'path';
 import { fork } from 'child_process';
 import Log from '@ulixee/commons/lib/Logger';
-import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
-import TimelineBuilder from '@ulixee/hero-timetravel/lib/TimelineBuilder';
 import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import ChromeAliveCore from '../index';
@@ -32,6 +29,10 @@ import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation'
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
 import MirrorPage from '@ulixee/hero-timetravel/lib/MirrorPage';
 import HeroCorePlugin from './HeroCorePlugin';
+import CommandTimeline from '@ulixee/hero-timetravel/lib/CommandTimeline';
+import { LoadStatus } from '@ulixee/hero-interfaces/Location';
+import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
+import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 
 const { log } = Log(module);
 
@@ -39,13 +40,11 @@ export default class SessionObserver extends TypedEventEmitter<{
   'hero:updated': void;
   'databox:output': void;
   'databox:asset': IDataboxCollectedAssetEvent;
-  timetravel: { timelineOffsetPercent: number };
   'app:mode': void;
   closed: void;
 }> {
   public mode: IAppModeEvent['mode'] = 'Live';
   public playbackState: IHeroSessionActiveEvent['playbackState'] = 'running';
-  public readonly timelineBuilder: TimelineBuilder;
 
   public readonly timetravelPlayer: TimetravelPlayer;
   public readonly timelineRecorder: TimelineRecorder;
@@ -77,6 +76,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   private sessionHasChangesRequiringRestart = false;
   private vueScreensByName: { [name: string]: VueScreen } = {};
 
+  private scriptEntrypointTs: string;
   private scriptLastModifiedTime: number;
   private outputRebuilder = new OutputRebuilder();
   private hasScriptUpdatesSinceLastRun = false;
@@ -85,6 +85,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   private readonly lastDomChangesByTabId: Record<number, number> = {};
   private mirrorRefreshLastUpdated: number;
   private mirrorRefreshTimeout: NodeJS.Timeout;
+  private lastTimelineMetadata: ITimelineMetadata;
 
   constructor(public readonly heroSession: HeroSession) {
     super();
@@ -100,17 +101,24 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.events.on(this.heroSession, 'collected-asset', this.onCollectedAsset);
     this.events.on(this.heroSession, 'tab-created', this.onTabCreated);
 
-    this.timelineBuilder = new TimelineBuilder({ liveSession: heroSession });
+    const resumedSessionId = this.heroSession.options.sessionResume?.sessionId;
+    if (resumedSessionId) {
+      this.bindOriginalSessionClose(resumedSessionId);
+    }
 
     this.timelineRecorder = new TimelineRecorder(heroSession);
     this.events.on(this.timelineRecorder, 'updated', () => this.emit('hero:updated'));
 
     this.timetravelPlayer = TimetravelPlayer.create(heroSession.id, heroSession);
-    this.events.on(this.timetravelPlayer, 'tab-opened', this.onTimetravelTabOpened);
 
     this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint).mtimeMs;
 
     this.sourceCodeTimeline = new SourceCodeTimeline(heroSession);
+
+    const entrypoint = this.sourceCodeTimeline.entrypoint;
+    if (entrypoint !== this.scriptInstanceMeta.entrypoint) {
+      this.scriptEntrypointTs = entrypoint;
+    }
 
     this.watchHandle = Fs.watch(
       this.scriptInstanceMeta.entrypoint,
@@ -131,14 +139,25 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.events.once(extractorSession, 'closed', () => this.events.off(evt));
   }
 
+  public pauseSession(): void {
+    this.playbackState = 'paused';
+    this.heroSession.pauseCommands().catch(() => null);
+  }
+
+  public resumeSession(): void {
+    this.playbackState = 'running';
+    this.heroSession.resumeCommands().catch(() => null);
+  }
+
   public async relaunchSession(
-    startLocation: ISessionCreateOptions['sessionResume']['startLocation'] | 'extraction',
-    startNavigationId?: number,
+    startLocation: 'sessionStart' | 'extraction',
   ): Promise<Error | undefined> {
     if (startLocation === 'sessionStart' || this.sessionHasChangesRequiringRestart) {
       ChromeAliveCore.restartingHeroSessionId = this.heroSession.id;
       AliveBarPositioner.restartingSession(this.heroSession.id);
-      await this.heroSession.close(true);
+      this.close();
+      await this.heroSession.closeTabs();
+      this.heroSession.closeMitm();
     }
     const script = this.scriptInstanceMeta.entrypoint;
     const execArgv = [
@@ -147,9 +166,6 @@ export default class SessionObserver extends TypedEventEmitter<{
       `--sessionResume.sessionId`,
       this.heroSession.id,
     ];
-    if (startNavigationId) {
-      execArgv.push(`--sessionResume.startNavigationId`, String(startNavigationId));
-    }
     if (startLocation === 'extraction') {
       execArgv.length = 0;
       this.resetExtraction();
@@ -160,19 +176,12 @@ export default class SessionObserver extends TypedEventEmitter<{
     }
 
     try {
-      const child = fork(script, execArgv, {
+      fork(script, execArgv, {
         // execArgv,
         cwd: this.scriptInstanceMeta.workingDirectory,
-        stdio: ['ignore', 'inherit', 'pipe', 'ipc'],
+        stdio: ['ignore', 'inherit', 'inherit', 'ipc'],
         env: { ...process.env, HERO_CLI_NOPROMPT: 'true' },
       });
-      child.stderr.setEncoding('utf-8');
-      const evt = this.events.on(child.stderr, 'data', x => {
-        if (x.includes('ScriptChangedNeedsRestartError')) {
-          this.relaunchSession('sessionStart').catch(() => null);
-        }
-      });
-      this.events.once(child, 'exit', () => this.events.off(evt));
     } catch (error) {
       this.logger.error('ERROR resuming session', { error });
       return error;
@@ -199,26 +208,18 @@ export default class SessionObserver extends TypedEventEmitter<{
     return await this.elementsModule.generateQuerySelector(backendNodeId);
   }
 
-  public async openPlayer(): Promise<void> {
-    this.mirrorPagePauseRefreshing = false;
-    if (
-      !this.timetravelPlayer.isOpen ||
-      this.timetravelPlayer.activeTab.currentTimelineOffsetPct === 100
-    ) {
-      await this.showSessionTabs();
-    } else {
-      await this.showTimetravelTabs();
-    }
-  }
-
   public async openMode(mode: Parameters<ISessionApi['openMode']>[0]['mode']): Promise<void> {
     this.mirrorPagePauseRefreshing = mode === 'Finder';
+    const focusPages: IPuppetPage[] = [];
     if (mode === 'Finder') {
       const activeTabId = this.heroSession.getLastActiveTab().id;
       const mirrorPage = this.liveMirrorPagesByTabId[activeTabId];
-      await this.tabGroupModule.showTabs(mirrorPage.page);
-    } else if (mode === 'Live' || mode === 'Timetravel') {
-      await this.openPlayer();
+      focusPages.push(mirrorPage.page);
+    } else if (mode === 'Live') {
+      focusPages.push(...this.getSessionPuppetPages());
+    } else if (mode === 'Timetravel') {
+      if (!this.timetravelPlayer.isOpen) await this.timetravelPlayer.goto(100);
+      focusPages.push(this.timetravelPlayer.activeTab.mirrorPage.page);
     } else {
       const tabExists = !!this.vueScreensByName[mode];
       this.vueScreensByName[mode] ??= new VueScreen(mode, this.heroSession);
@@ -228,9 +229,10 @@ export default class SessionObserver extends TypedEventEmitter<{
         await vueScreen.open();
       }
       const puppetPage = await vueScreen.puppetPage;
-      await this.tabGroupModule.showTabs(puppetPage);
+      focusPages.push(puppetPage);
     }
 
+    await this.tabGroupModule.showTabs(...focusPages);
     this.mode = mode;
     this.emit('app:mode');
   }
@@ -258,42 +260,97 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   public getScriptDetails(): Pick<
     IHeroSessionActiveEvent,
-    'scriptEntrypoint' | 'scriptLastModifiedTime'
+    'scriptEntrypoint' | 'scriptEntrypointTs' | 'scriptLastModifiedTime'
   > {
     return {
-      scriptEntrypoint: this.scriptInstanceMeta.entrypoint.split(Path.sep).slice(-2).join(Path.sep),
+      scriptEntrypoint: this.scriptInstanceMeta.entrypoint,
+      scriptEntrypointTs: this.scriptEntrypointTs,
       scriptLastModifiedTime: this.scriptLastModifiedTime,
     };
   }
 
   public getHeroSessionEvent(): IHeroSessionActiveEvent {
-    const timeline = this.timelineBuilder.refreshMetadata();
-    const commandTimeline = this.timelineBuilder.commandTimeline;
+    const commandTimeline = CommandTimeline.fromSession(this.heroSession);
 
-    const currentTab = this.heroSession.getLastActiveTab();
+    const db = this.heroSession.db;
 
-    timeline.urls.push({
-      url: currentTab?.url,
-      tabId: currentTab?.id,
-      navigationId: null, // don't include nav id since we want to resume session at current
-      offsetPercent: 100,
-      loadStatusOffsets: [],
-    });
+    const mainFrameIds = db.frames.mainFrameIds();
+
+    const urls: ITimelineMetadata['urls'] = [];
+
+    const loadStatusLookups = [
+      [LoadStatus.HttpRequested, 'Http Requested'],
+      [LoadStatus.JavascriptReady, 'Document Open'],
+    ];
+
+    const urlChangeTimestamps: number[] = [];
+    for (const nav of commandTimeline.loadedNavigations) {
+      if (!mainFrameIds.has(nav.frameId)) continue;
+
+      const urlOffset =
+        urls.length === 0 ? 0 : commandTimeline.getTimelineOffsetForTimestamp(nav.initiatedTime);
+      if (urlOffset === -1) continue;
+
+      const entry: ITimelineMetadata['urls'][0] = {
+        tabId: nav.tabId,
+        url: nav.finalUrl ?? nav.requestedUrl,
+        offsetPercent: urlOffset,
+        navigationId: nav.id,
+        loadStatusOffsets: [],
+      };
+      urls.push(entry);
+
+      for (const [loadStatus, name] of loadStatusLookups) {
+        const timestamp = nav.statusChanges.get(loadStatus as LoadStatus);
+        const offsetPercent = commandTimeline.getTimelineOffsetForTimestamp(timestamp);
+        if (loadStatus === LoadStatus.HttpResponded) {
+          urlChangeTimestamps.push(nav.initiatedTime);
+        }
+        if (offsetPercent !== -1) {
+          entry.loadStatusOffsets.push({
+            timestamp,
+            loadStatus: loadStatus as LoadStatus,
+            status: name,
+            offsetPercent,
+          });
+        }
+      }
+    }
+
+    const paintEvents: ITimelineMetadata['paintEvents'] = [];
+    let domChangeForUrl = 0;
+    for (const [timestamp, domChanges] of db.domChanges.countByTimestamp) {
+      // if we got back the response, reset our counter
+      if (urlChangeTimestamps.length && timestamp > urlChangeTimestamps[0]) {
+        urlChangeTimestamps.shift();
+        domChangeForUrl = 0;
+      }
+      domChangeForUrl += domChanges;
+      const offsetPercent = commandTimeline.getTimelineOffsetForTimestamp(timestamp);
+      if (offsetPercent === -1) continue;
+      paintEvents.push({
+        domChanges: domChangeForUrl,
+        offsetPercent,
+      });
+    }
+    this.lastTimelineMetadata = {
+      urls,
+      paintEvents,
+      screenshots: [],
+      storageEvents: [],
+    };
 
     return {
-      run: this.heroSession.commands.resumeCounter,
       heroSessionId: this.heroSession.id,
       startTime: commandTimeline.startTime,
       endTime: commandTimeline.endTime,
       runtimeMs: commandTimeline.runtimeMs,
-      mode: this.mode,
       inputBytes: this.heroSession.meta.input
         ? Buffer.byteLength(JSON.stringify(this.heroSession.meta.input))
         : 0,
       playbackState: this.playbackState,
-      worldHeroSessionIds: [...this.worldHeroSessionIds],
       ...this.getScriptDetails(),
-      timeline,
+      timeline: this.lastTimelineMetadata,
     };
   }
 
@@ -345,24 +402,18 @@ export default class SessionObserver extends TypedEventEmitter<{
   ): Promise<{ timelineOffsetPercent: number }> {
     await this.timetravelPlayer.setFocusedOffsetRange(option.timelinePercentRange);
 
-    let percentOffset: number;
     if (option.step) {
-      percentOffset = await this.timetravelPlayer.step(option.step);
+      await this.timetravelPlayer.step(option.step);
     } else {
+      let percentOffset = option.percentOffset;
       if (option.commandId) {
         percentOffset = await this.timetravelPlayer.findCommandPercentOffset(option.commandId);
       }
-      percentOffset ??= option.percentOffset ?? 100;
-      await this.timetravelPlayer.goto(percentOffset);
+      await this.timetravelPlayer.goto(percentOffset ?? 100);
     }
 
-    if (percentOffset === 100) {
-      await this.showSessionTabs();
-    } else {
-      await this.showTimetravelTabs();
-    }
-
-    await this.timetravelPlayer.showLoadStatus(this.timelineBuilder.lastMetadata);
+    await this.openMode('Timetravel');
+    await this.timetravelPlayer.showLoadStatus(this.lastTimelineMetadata);
     const timelineOffsetPercent = this.timetravelPlayer.activeTab.currentTimelineOffsetPct;
     return { timelineOffsetPercent };
   }
@@ -396,14 +447,23 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   public onTabCreated(event: HeroSession['EventTypes']['tab-created']): void {
-    this.events.on(event.tab, 'page-events', this.sendDomRecordingUpdates.bind(this, event.tab));
+    const pageEvents = this.events.on(
+      event.tab,
+      'page-events',
+      this.sendDomRecordingUpdates.bind(this, event.tab),
+    );
     const mirrorPage = event.tab.createMirrorPage();
     const shouldAttach = Object.keys(this.liveMirrorPagesByTabId).length === 0;
-    this.liveMirrorPagesByTabId[event.tab.id] = mirrorPage;
+    const tabId = event.tab.id;
+    this.liveMirrorPagesByTabId[tabId] = mirrorPage;
+    this.events.once(event.tab, 'close', () => {
+      this.events.off(pageEvents);
+      delete this.liveMirrorPagesByTabId[tabId];
+    });
     if (shouldAttach) {
       mirrorPage
         .attachToPage(this.heroCorePlugin.mirrorPuppetPage, this.heroSession.id)
-        .catch(error => this.logger.error('ERROR setting up mirrorPage', { error }));
+        .catch(error => this.logger.error('ERROR setting up mirrorPage', { error, tabId }));
     }
   }
 
@@ -450,7 +510,8 @@ export default class SessionObserver extends TypedEventEmitter<{
     try {
       await this.liveMirrorPagesByTabId[tabId].load();
     } catch (error) {
-      this.logger.error('ERROR loading mirror page to latest', { error });
+      if (!(error instanceof CanceledPromiseError))
+        this.logger.error('ERROR loading mirror page to latest', { error });
     }
   }
 
@@ -465,31 +526,14 @@ export default class SessionObserver extends TypedEventEmitter<{
     return Promise.resolve(domRecording);
   }
 
-  private async showTimetravelTabs(): Promise<void> {
-    if (this.mode === 'Timetravel') return;
-    this.mode = 'Timetravel';
-    this.emit('app:mode');
-    const timetravelPage = this.timetravelPlayer.activeTab.mirrorPage?.page;
-    await this.tabGroupModule.showTabs(timetravelPage);
-  }
-
-  private async showSessionTabs(): Promise<void> {
-    if (this.mode === 'Live') return;
-
-    this.mode = 'Live';
-    this.emit('app:mode');
+  private getSessionPuppetPages(): IPuppetPage[] {
     const sessionPages: IPuppetPage[] = [];
     for (const tab of this.heroSession.tabsById.values()) {
       if (tab.puppetPage.groupName === 'session') {
         sessionPages.push(tab.puppetPage);
       }
     }
-    await this.tabGroupModule.showTabs(...sessionPages);
-  }
-
-  private async onTimetravelTabOpened(): Promise<void> {
-    if (this.mode !== 'Timetravel') return;
-    await this.timetravelPlayer.activeTab.mirrorPage.page.bringToFront();
+    return sessionPages;
   }
 
   private async onScriptEntrypointUpdated(action: string): Promise<void> {
@@ -510,9 +554,19 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   private onHeroSessionKeptAlive(event: { message: string }): void {
-    this.playbackState = 'paused';
+    this.playbackState = 'finished';
     this.emit('hero:updated');
     event.message = `ChromeAlive! has assumed control of your script. You can make changes to your script and re-run from the ChromeAlive interface.`;
+  }
+
+  private bindOriginalSessionClose(resumingSessionId: string): void {
+    const resumedSession = HeroSession.get(resumingSessionId);
+    // bind close to original session if it's still active
+    if (resumedSession && !resumedSession.isClosing) {
+      this.events.once(this.heroSession, 'closing', () => resumedSession.close(true));
+      // close new session if killed off (eg, via cli)
+      this.events.once(resumedSession, 'closing', () => this.heroSession.close(true));
+    }
   }
 
   private resetExtraction(): void {

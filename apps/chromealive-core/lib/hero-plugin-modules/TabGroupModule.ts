@@ -7,7 +7,7 @@ export default class TabGroupModule {
   public async showTabs(...pages: IPuppetPage[]): Promise<void> {
     const showTabIds: number[] = [];
 
-    const puppetPageId = await this.heroPlugin.getIdentifiedPuppetPageId();
+    const puppetPageId = this.heroPlugin.activePuppetPage.id;
     for (const puppetPage of pages) {
       const tabId = await this.heroPlugin.getTabIdByPuppetPageId(puppetPage.id);
       if (tabId) {

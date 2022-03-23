@@ -10,14 +10,13 @@
       @select="select('Input')"
     />
     <Player
-      :ref="player"
       :mode="mode"
       :is-selected="isPlayerSelected"
       :is-focused="isPlayerSelected"
       :ticks="timelineTicks"
-      :is-running="isRunning"
       :is-minimal="isMinimal"
       :session="session"
+      :timetravel="timetravel"
       class="flex-1 z-10"
       @select="selectPlayerMode"
       @toggleFinder="onFinderModeToggled"
@@ -53,8 +52,15 @@ import InputButton from '../components/InputButton.vue';
 import Player from '../components/Player.vue';
 import OutputButton from '../components/OutputButton.vue';
 import ReliabilityButton from '../components/ReliabilityButton.vue';
+import ISessionTimetravelEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionTimetravelEvent';
 
 type IStartLocation = 'currentLocation' | 'sessionStart';
+
+export interface ITimelineTick {
+  id: string | number;
+  offsetPercent: number;
+  class: string;
+}
 
 export default Vue.defineComponent({
   name: 'SessionController',
@@ -79,12 +85,12 @@ export default Vue.defineComponent({
       isPlayerSelected,
       mode,
       previousPlayerMode: Vue.ref<IAppModeEvent['mode']>(mode.value),
-      isRunning: Vue.ref(false),
       isMinimal: Vue.ref(false),
       startLocation: Vue.ref<IStartLocation>('currentLocation'),
       timelineTicks: Vue.ref<any[]>([]),
       outputSize: Vue.ref<string>(humanizeBytes(0)),
       inputSize: Vue.ref<string>(humanizeBytes(0)),
+      timetravel: Vue.ref<{ url: string, percentOffset: number }>(null),
     };
   },
   async created() {
@@ -99,13 +105,15 @@ export default Vue.defineComponent({
   },
   methods: {
     selectPlayerMode(): void {
-      this.select(this.previousPlayerMode);
+      this.select(this.previousPlayerMode ?? 'Live');
     },
 
     select(mode: IAppModeEvent['mode']) {
+      const heroSessionId = this.session.heroSessionId;
       this.mode = mode;
+      if (!heroSessionId) return;
       Client.send('Session.openMode', {
-        heroSessionId: this.session.heroSessionId,
+        heroSessionId,
         mode,
       }).catch(err => alert(String(err)));
     },
@@ -118,10 +126,15 @@ export default Vue.defineComponent({
       }
     },
 
+    onSessionTimetravel(message: ISessionTimetravelEvent) {
+      this.timetravel = message;
+    },
+
     onSessionActiveEvent(message: IHeroSessionActiveEvent) {
       if (!message) {
         this.outputSize = humanizeBytes(0);
         this.inputSize = humanizeBytes(0);
+        this.mode = 'Live';
         return;
       }
 
@@ -133,14 +146,9 @@ export default Vue.defineComponent({
       }
       Object.assign(this.session, message);
 
-      const timelineTicks: any[] = [];
+      const timelineTicks: ITimelineTick[] = [];
       for (const url of message.timeline.urls) {
         if (url.offsetPercent < 0) continue;
-        timelineTicks.push({
-          id: url.navigationId,
-          offsetPercent: url.offsetPercent,
-          class: url.offsetPercent === 100 ? 'url' : 'urlrequest',
-        });
         for (const status of url.loadStatusOffsets) {
           timelineTicks.push({
             id: url.navigationId,
@@ -161,10 +169,7 @@ export default Vue.defineComponent({
       timelineTicks.sort((a, b) => a.offsetPercent - b.offsetPercent);
       this.timelineTicks = timelineTicks.filter(x => x.offsetPercent);
 
-      this.isRunning = this.session.playbackState === 'running';
       this.inputSize = humanizeBytes(message.inputBytes);
-
-      this.onAppModeEvent({ mode: message.mode });
     },
 
     onDataboxUpdated(message: IDataboxOutputEvent) {
@@ -178,12 +183,14 @@ export default Vue.defineComponent({
   },
 
   mounted() {
+    Client.on('Session.timetravel', this.onSessionTimetravel);
     Client.on('Session.active', this.onSessionActiveEvent);
     Client.on('Databox.output', this.onDataboxUpdated);
     Client.on('App.mode', this.onAppModeEvent);
   },
 
   beforeUnmount() {
+    Client.off('Session.timetravel', this.onSessionTimetravel);
     Client.off('Session.active', this.onSessionActiveEvent);
     Client.off('Databox.output', this.onDataboxUpdated);
     Client.off('App.mode', this.onAppModeEvent);

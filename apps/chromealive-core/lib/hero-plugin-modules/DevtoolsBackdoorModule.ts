@@ -43,6 +43,7 @@ export default class DevtoolsBackdoorModule {
     const tabId = this.devtoolsSessionMap.get(devtoolsSession)?.tabId;
     this.devtoolsSessionMap.delete(devtoolsSession);
     this.tabMap.delete(tabId);
+    this.events.close();
   }
 
   public close(): void {

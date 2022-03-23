@@ -2,20 +2,35 @@
   <div class="Menu">
     <ul>
       <li class="info">
-        Chrome is bound to <strong>{{ scriptEntrypoint }}</strong
-        >, a <strong>Hero</strong> script wrapped as a <strong>Databox</strong>.
+        Chrome is bound to <strong>{{ scriptEntrypoint }}</strong>, a <strong>Hero</strong> script wrapped as a <strong>Databox</strong>.
       </li>
-      <li class="separator"></li>
-      <li class="item" @click.prevent="continueScript">Continue Script Execution</li>
-      <li class="item" @click.prevent="restartScript">Replay from Beginning of Script</li>
-      <li class="separator"></li>
+      <li class="separator" />
+      <li class="item" @click.prevent="continueScript">
+        Continue Script Execution
+      </li>
+      <li class="item" @click.prevent="restartScript">
+        Replay from Beginning of Script
+      </li>
+      <li class="separator" />
       <li class="item-wrapper flex flex-row">
-        <div class="flex-1">Open In Finder</div>
-        <div class="item">Executed JS</div>
-        <div class="item">Source TS</div>
+        <div class="flex-1">
+          Open In {{ fileOsTool() }}
+        </div>
+        <div class="item" @click.prevent="openScript(scriptEntrypointRaw)">
+          Executed JS
+        </div>
+        <div
+          v-if="scriptEntrypointTs"
+          class="item"
+          @click.prevent="openScript(scriptEntrypointTs)"
+        >
+          Source TS
+        </div>
       </li>
-      <li class="separator"></li>
-      <li class="item" @click.prevent="openAbout">About Ulixee</li>
+      <li class="separator" />
+      <li class="item" @click.prevent="openAbout">
+        About Ulixee
+      </li>
     </ul>
   </div>
 </template>
@@ -36,14 +51,35 @@ export default defineComponent({
   setup() {
     return {
       scriptEntrypoint: Vue.ref<string>('unknown script'),
+      scriptEntrypointRaw: Vue.ref<string>(null),
+      scriptEntrypointTs: Vue.ref<string>(null),
       session: Vue.reactive<IHeroSessionActiveEvent>({} as any),
     };
   },
+  mounted() {
+    Client.connect().catch(err => alert(String(err)));
+    this.refreshData();
+    Client.on('Session.active', this.onSessionActive);
+  },
   methods: {
+    fileOsTool() {
+      const platform = navigator.platform.toLowerCase();
+      if (platform.startsWith('win')) return 'Explorer';
+      if (platform.startsWith('mac')) return 'Finder';
+      return 'File System';
+    },
     quitScript() {
       Client.send('Session.quit', {
         heroSessionId: this.session.heroSessionId,
       });
+    },
+
+    openScript(filepath: string) {
+      document.dispatchEvent(
+        new CustomEvent('chromealive:api', {
+          detail: { api: 'File:navigate', args: { filepath } },
+        }),
+      );
     },
 
     continueScript() {
@@ -65,18 +101,18 @@ export default defineComponent({
     onSessionActive(data: IHeroSessionActiveEvent) {
       const divider = data.scriptEntrypoint.includes('/') ? '/' : '\\';
       this.session = data;
-      this.scriptEntrypoint = data.scriptEntrypoint.split(divider).slice(-2).join(divider);
+      this.scriptEntrypoint = (data.scriptEntrypointTs ?? data.scriptEntrypoint)
+        .split(divider)
+        .slice(-2)
+        .join(divider);
+      this.scriptEntrypointRaw = data.scriptEntrypoint;
+      this.scriptEntrypointTs = data.scriptEntrypointTs;
     },
     refreshData(): void {
       Client.send('Session.getActive')
         .then(this.onSessionActive)
         .catch(err => alert(String(err)));
     },
-  },
-  mounted() {
-    Client.connect().catch(err => alert(String(err)));
-    this.refreshData();
-    Client.on('Session.active', this.onSessionActive);
   },
 });
 </script>

@@ -14,10 +14,7 @@
         :style="{ left: tick.offsetPercent + '%' }"
         @click.prevent="clickTick($event, tick)"
       >
-        <div
-          v-if="i !== tick.length - 1"
-          class="tick-overlay"
-        />
+        <div v-if="i !== tick.length - 1" class="tick-overlay" />
       </div>
     </div>
 
@@ -30,22 +27,19 @@
       v-if="isSelected"
       ref="markerElem"
       class="marker"
-      :class="{ active: activeItem === 'marker', ...markerClass }"
+      :class="{ active: activeItem === 'marker', ...markerClass, [session.playbackState]: 1 }"
       @mousedown="handleMouseDown($event, 'marker')"
     >
       <div class="marker-wrapper">
-        <div
-          class="dragger left"
-          @mousedown="handleMouseDown($event, 'draggerLeft')"
-        />
-        <div
-          class="dragger right"
-          @mousedown="handleMouseDown($event, 'draggerRight')"
-        />
+        <div class="dragger left" @mousedown="handleMouseDown($event, 'draggerLeft')" />
+        <div class="dragger right" @mousedown="handleMouseDown($event, 'draggerRight')" />
       </div>
 
       <div class="play-icon" />
       <div class="pause-icon" />
+      <div class="restart-icon">
+        <img src="@/assets/icons/refresh.svg" alt="restart">
+      </div>
 
       <div
         class="nib left"
@@ -70,6 +64,10 @@ import * as Vue from 'vue';
 import Client from '@/api/Client';
 import ArrowRight from './ArrowRight.vue';
 import ISessionTimetravelEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionTimetravelEvent';
+import { PropType } from 'vue';
+import { ITimelineTick } from '@/pages/toolbar/views/SessionController.vue';
+import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
+import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
 
 const startMarkerPosition = 0;
 const liveMarkerPosition = 100;
@@ -97,8 +95,18 @@ export default Vue.defineComponent({
   components: {
     ArrowRight,
   },
-  props: ['isSelected', 'mouseIsWithinPlayer', 'isRunning', 'ticks', 'session', 'mode'],
-  emits: ['toggleTimetravel'],
+  props: {
+    isSelected: { type: Boolean },
+    mouseIsWithinPlayer: { type: Boolean },
+    ticks: {
+      type: Array as PropType<ITimelineTick[]>,
+    },
+    session: {
+      type: Object as PropType<IHeroSessionActiveEvent>,
+    },
+    mode: { type: String as PropType<IAppModeEvent['mode']> },
+  },
+  emits: [],
   setup(props) {
     const markerElem = Vue.ref<HTMLElement>();
     const trackRect = Vue.ref<DOMRect>();
@@ -129,7 +137,6 @@ export default Vue.defineComponent({
       markerClass: Vue.reactive({
         isLive: true,
         hasMultiple: false,
-        isPlaying: false,
       }),
       ghostClass,
       cssVars: Vue.ref({
@@ -142,7 +149,7 @@ export default Vue.defineComponent({
       isMouseDownDragging: Vue.ref(false),
       isMaybeClickingPlay: Vue.ref(false),
 
-      pendingTimetravelOffset: null as number,
+      lastTimetravelOffset: null as number,
       timetravelTimeout: -1,
       lastTimetravelTimestamp: -1,
     };
@@ -151,16 +158,13 @@ export default Vue.defineComponent({
     mode(value) {
       if (value === 'Live') {
         this.markerClass.isLive = true;
-        this.ghostClass.isAtLive = true;
         this.markerClass.hasMultiple = false;
         this.cssVars.markerLeft = liveMarkerPosition;
         this.cssVars.markerRight = '';
-      }
-      else if (value === 'Timetravel') {
+      } else if (value === 'Timetravel') {
         this.markerClass.isLive = false;
-        this.ghostClass.isAtLive = false;
       }
-    }
+    },
   },
   methods: {
     formattedCssVars() {
@@ -170,34 +174,10 @@ export default Vue.defineComponent({
       }, {});
     },
 
-    async doTimetravel() {
-      if (this.pendingTimetravelOffset === null) return;
-      if (Date.now() - this.lastTimetravelTimestamp < 250) {
-        if (this.timetravelTimeout) return;
-        this.timetravelTimeout = setTimeout(this.doTimetravel, 100) as any;
-        return;
-      }
-
-      this.lastTimetravelTimestamp = Date.now();
-      const percentOffset = this.pendingTimetravelOffset;
-      const isLiveMode = percentOffset === 100;
-      this.$emit('toggleTimetravel', isLiveMode);
-      this.clearPendingTimetravel();
-      const isMultiple = this.markerClass.hasMultiple;
-
-      await Client.send('Session.timetravel', {
-        heroSessionId: this.session?.heroSessionId,
-        timelinePercentRange: isMultiple
-          ? [this.cssVars.markerLeft, 100 - this.cssVars.markerRight]
-          : [percentOffset, percentOffset],
-        percentOffset,
-      });
-    },
-
     clearPendingTimetravel() {
       clearTimeout(this.timetravelTimeout);
       this.timetravelTimeout = null;
-      this.pendingTimetravelOffset = null;
+      this.lastTimetravelOffset = null;
     },
 
     convertLeftMousePctToPixels(pctPos): number {
@@ -207,7 +187,19 @@ export default Vue.defineComponent({
 
     convertGlobalMouseLeftToPct(mousePosX: number): number {
       const trackRect = this.getTrackBoundingRect();
-      return ((mousePosX - trackRect.x) / trackRect.width) * 100;
+      const pct = ((mousePosX - trackRect.x) / trackRect.width) * 100;
+      return this.constraintMousePct(pct);
+    },
+
+    constraintMousePct(pct: number): number {
+      if (!this.markerClass.hasMultiple && pct >= liveMarkerPosition) {
+        return liveMarkerPosition;
+      } else if (this.markerClass.hasMultiple && pct >= maxMarkerPosition) {
+        return maxMarkerPosition;
+      } else if (pct < startMarkerPosition) {
+        return startMarkerPosition;
+      }
+      return pct;
     },
 
     getTrackBoundingRect(): DOMRect {
@@ -258,29 +250,19 @@ export default Vue.defineComponent({
         this.togglePlay();
       }
 
-      const leftAsRight = 100 - this.cssVars.markerLeft;
-      const markerPos1 = this.convertLeftMousePctToPixels(leftAsRight);
+      const markerPos1 = this.convertLeftMousePctToPixels(this.cssVars.markerLeft);
       const markerPos2 = this.convertLeftMousePctToPixels(this.cssVars.markerRight);
-      if (Math.abs(markerPos1 - markerPos2) < minPixelForMultiple) {
+      if (Math.abs(markerPos2 - markerPos1) < minPixelForMultiple) {
         this.cssVars.markerRight = '';
         this.markerClass.hasMultiple = false;
-        this.activeItem =
-          this.activeItem === ActiveItem.nibRight ? ActiveItem.nibLeft : this.activeItem;
-        if (this.activeItem === ActiveItem.nibLeft) {
-          this.pendingTimetravelOffset = this.cssVars.markerLeft;
-          this.doTimetravel();
+        if (this.activeItem === ActiveItem.nibRight) {
+          this.activeItem = ActiveItem.nibLeft;
         }
       }
 
       if (this.activeItem === ActiveItem.nibLeft || this.activeItem === ActiveItem.nibRight) {
-        this.lastTimetravelTimestamp = -1;
-        if (!this.pendingTimetravelOffset) {
-          const isRightNib = this.activeItem === ActiveItem.nibRight;
-          this.pendingTimetravelOffset = isRightNib
-            ? 100 - this.cssVars.markerRight
-            : this.cssVars.markerLeft;
-        }
-        this.doTimetravel();
+        this.clearPendingTimetravel();
+        void this.doTimetravel();
       }
 
       this.isMouseDown = false;
@@ -292,38 +274,49 @@ export default Vue.defineComponent({
     },
 
     togglePlay() {
-      if (this.markerClass.isPlaying) {
+      if (this.session.playbackState === 'running') {
         this.pauseScript();
-      } else {
+      } else if (this.session.playbackState === 'paused') {
         this.resumeScript();
+      } else {
+        this.restartScript();
       }
     },
 
+    restartScript() {
+      void Client.send('Session.resume', {
+        heroSessionId: this.session.heroSessionId,
+        startLocation: 'sessionStart',
+      });
+    },
+
     resumeScript() {
-      this.markerClass.isPlaying = true;
+      this.session.playbackState = 'running';
+      void Client.send('Session.resume', {
+        heroSessionId: this.session.heroSessionId,
+        startLocation: 'currentLocation',
+      });
     },
 
     pauseScript() {
-      this.markerClass.isPlaying = false;
+      this.session.playbackState = 'paused';
+      void Client.send('Session.pause', {
+        heroSessionId: this.session.heroSessionId,
+      });
     },
 
     showMarker(event: MouseEvent) {
       this.activeItem = ActiveItem.nibLeft;
-      this.markerClass.isLive = false;
       this.markerClass.hasMultiple = false;
       this.cssVars.markerRight = '';
-      let markerLeftPct = this.convertGlobalMouseLeftToPct(event.pageX - 3);
-      if (markerLeftPct >= 100) {
-        markerLeftPct = 100;
-        this.markerClass.isLive = true;
-      } else if (markerLeftPct < 0) {
-        markerLeftPct = 0;
-      }
-      this.cssVars.markerLeft = markerLeftPct;
+      this.cssVars.markerLeft = this.convertGlobalMouseLeftToPct(event.pageX - 3);
+      this.markerClass.isLive = this.cssVars.markerLeft === liveMarkerPosition;
+
+      // if we just entered timetravel, travel immediately
       if (!this.markerClass.isLive) {
-        this.pendingTimetravelOffset = this.cssVars.markerLeft;
-        this.doTimetravel();
+        this.clearPendingTimetravel();
       }
+      void this.doTimetravel();
     },
 
     handleMousemove(event: MouseEvent) {
@@ -337,10 +330,13 @@ export default Vue.defineComponent({
       if (Math.abs(event.pageX - this.mousedownX) >= minPixelForMultiple) {
         this.isMouseDownDragging = true;
       }
-      if ([MouseDownItem.nibLeft, MouseDownItem.nibRight].includes(this.mouseDownItem)) {
-        this.handleDraggingNib(event);
-      } else if (
-        [MouseDownItem.draggerLeft, MouseDownItem.draggerRight].includes(this.mouseDownItem)
+      if (
+        [
+          MouseDownItem.nibLeft,
+          MouseDownItem.nibRight,
+          MouseDownItem.draggerLeft,
+          MouseDownItem.draggerRight,
+        ].includes(this.mouseDownItem)
       ) {
         this.handleDraggingNib(event);
       } else if (!this.mouseDownItem) {
@@ -384,28 +380,15 @@ export default Vue.defineComponent({
     handleDraggingNib(event: MouseEvent) {
       let mousePctLeft = this.convertGlobalMouseLeftToPct(event.pageX - 3);
 
-      this.markerClass.isLive = false;
-      if (!this.markerClass.hasMultiple && mousePctLeft >= liveMarkerPosition) {
-        mousePctLeft = liveMarkerPosition;
-        this.markerClass.isLive = true;
-      } else if (this.markerClass.hasMultiple && mousePctLeft >= maxMarkerPosition) {
-        mousePctLeft = maxMarkerPosition;
-      } else if (mousePctLeft < startMarkerPosition) {
-        mousePctLeft = startMarkerPosition;
-      }
       if ([MouseDownItem.nibLeft, MouseDownItem.draggerLeft].includes(this.mouseDownItem)) {
         this.cssVars.markerLeft = mousePctLeft;
       } else {
-        this.cssVars.markerRight = 100 - mousePctLeft;
+        this.cssVars.markerRight = mousePctLeft;
       }
-
-      if (!this.markerClass.isLive) {
-        this.pendingTimetravelOffset =
-          this.activeItem === ActiveItem.nibRight
-            ? 100 - this.cssVars.markerRight
-            : this.cssVars.markerLeft;
-        this.doTimetravel();
+      if (this.markerClass.isLive && mousePctLeft >= liveMarkerPosition) {
+        this.clearPendingTimetravel();
       }
+      void this.doTimetravel();
     },
 
     handleDraggingNew(event: MouseEvent) {
@@ -417,49 +400,78 @@ export default Vue.defineComponent({
       this.markerClass.hasMultiple = true;
 
       if (dragLength < 0) {
-        const mousePctRight = 100 - this.convertGlobalMouseLeftToPct(this.mousedownX + 3);
-        let mousePctLeft = this.convertGlobalMouseLeftToPct(this.mousedownX + dragLength - 3);
-        if (mousePctLeft >= maxMarkerPosition) {
-          mousePctLeft = maxMarkerPosition;
-        } else if (mousePctLeft < startMarkerPosition) {
-          mousePctLeft = 0;
-        }
+        const mousePctRight = this.convertGlobalMouseLeftToPct(this.mousedownX + 3);
+        const mousePctLeft = this.convertGlobalMouseLeftToPct(this.mousedownX + dragLength - 3);
 
         this.cssVars.markerRight = mousePctRight;
         this.cssVars.markerLeft = mousePctLeft;
         this.activeItem = ActiveItem.nibLeft;
       } else {
-        let mousePctLeft = this.convertGlobalMouseLeftToPct(event.pageX);
-        this.markerClass.isLive = false;
-        if (mousePctLeft >= maxMarkerPosition) {
-          mousePctLeft = maxMarkerPosition;
-        } else if (mousePctLeft < startMarkerPosition) {
-          mousePctLeft = 0;
-        }
+        const mousePctLeft = this.convertGlobalMouseLeftToPct(event.pageX);
 
-        const mousePctRight = 100 - mousePctLeft;
-        this.cssVars.markerRight = mousePctRight;
+        this.cssVars.markerRight = mousePctLeft;
         this.activeItem = ActiveItem.nibRight;
       }
 
-      this.pendingTimetravelOffset =
-        this.activeItem === ActiveItem.nibRight
-          ? 100 - this.cssVars.markerRight
-          : this.cssVars.markerLeft;
-      this.doTimetravel();
+      void this.doTimetravel();
+    },
+
+    async doTimetravel() {
+      if (Date.now() - this.lastTimetravelTimestamp < 250) {
+        this.timetravelTimeout ??= setTimeout(this.doTimetravel, 100) as any;
+        return;
+      }
+
+      const startOffset = this.cssVars.markerLeft;
+      const endOffset = this.cssVars.markerRight;
+      let percentOffset = startOffset;
+      if (this.markerClass.hasMultiple && this.activeItem === ActiveItem.nibRight) {
+        percentOffset = endOffset;
+      }
+
+      this.markerClass.isLive = percentOffset >= liveMarkerPosition;
+      if (this.markerClass.isLive) {
+        this.markerClass.hasMultiple = false;
+        percentOffset = liveMarkerPosition;
+      }
+      const isMultiple = this.markerClass.hasMultiple;
+
+      if (percentOffset === this.lastTimetravelOffset) return;
+
+      this.clearPendingTimetravel();
+      this.lastTimetravelOffset = startOffset;
+      this.lastTimetravelTimestamp = Date.now();
+      const heroSessionId = this.session?.heroSessionId;
+      if (!heroSessionId) return;
+
+      if (percentOffset >= liveMarkerPosition) {
+        if (this.mode !== 'Live') {
+          await Client.send('Session.openMode', { mode: 'Live', heroSessionId });
+        }
+        return;
+      }
+
+      await Client.send('Session.timetravel', {
+        heroSessionId,
+        timelinePercentRange: isMultiple
+          ? [startOffset, endOffset]
+          : [percentOffset, percentOffset],
+        percentOffset,
+      });
     },
 
     onTimetraveled(event: ISessionTimetravelEvent): void {
       this.markerClass.isLive = false;
-      if (this.mouseDownItem) return;
+      if (this.mouseDownItem || this.isMouseDown || this.isMouseDownDragging) return;
+
       if (event.focusedRange) {
         this.markerClass.hasMultiple = true;
         this.cssVars.markerLeft = event.focusedRange[0];
-        this.cssVars.markerRight = 100 - event.focusedRange[1];
+        this.cssVars.markerRight = event.focusedRange[1];
       } else {
         this.markerClass.hasMultiple = false;
         this.cssVars.markerLeft = event.percentOffset;
-        this.cssVars.markerRight = 100 - event.percentOffset;
+        this.cssVars.markerRight = event.percentOffset;
       }
     },
   },
@@ -519,12 +531,22 @@ export default Vue.defineComponent({
   z-index: 12;
   left: calc(100% * var(--markerLeft) / 100);
 
-  &.isLive.isPlaying {
+  &.isLive.running {
     animation: pulse-animation 1s infinite;
     .pause-icon {
       display: block;
     }
+    .restart-icon {
+      display: none;
+    }
+  }
+
+  &.isLive.paused {
+    animation: pulse-animation 1s infinite;
     .play-icon {
+      display: block;
+    }
+    .restart-icon {
       display: none;
     }
   }
@@ -547,7 +569,7 @@ export default Vue.defineComponent({
     &:hover {
       box-shadow: 1px 1px 3px 2px rgba(95, 0, 134, 0.3);
     }
-    .play-icon {
+    .restart-icon {
       display: block;
     }
     .dragger {
@@ -569,7 +591,7 @@ export default Vue.defineComponent({
   }
 
   &.hasMultiple {
-    right: calc(100% * var(--markerRight) / 100);
+    right: calc(100% * (100 - var(--markerRight)) / 100);
     .dragger {
       display: block;
     }
@@ -692,6 +714,20 @@ export default Vue.defineComponent({
   border-top: 8px solid transparent;
   border-bottom: 8px solid transparent;
   border-left: 9px solid #9a78a8;
+}
+
+.restart-icon {
+  position: absolute;
+  display: none;
+  top: calc(50% - 12px);
+  left: calc(50% - 12px);
+  width: 24px;
+  height: 24px;
+  img {
+    width: 100%;
+    height: auto;
+    filter: invert(54%) sepia(19%) saturate(699%) hue-rotate(238deg) brightness(91%) contrast(85%);
+  }
 }
 
 .pause-icon {

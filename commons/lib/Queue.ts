@@ -14,7 +14,7 @@ export default class Queue {
     return (this.activeCount > 0 || this.queue.length > 0) && !this.stopDequeuing;
   }
 
-  private readonly abortPromise = new Resolvable<CanceledPromiseError>();
+  private abortPromise = new Resolvable<CanceledPromiseError>();
   private idleTimout: NodeJS.Timeout;
   private activeCount = 0;
 
@@ -37,6 +37,12 @@ export default class Queue {
 
     this.next().catch(() => null);
     return promise.promise;
+  }
+
+  public reset(): void {
+    this.stop();
+    this.abortPromise = new Resolvable();
+    this.stopDequeuing = false;
   }
 
   public willStop(): void {

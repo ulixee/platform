@@ -73,7 +73,7 @@ chrome.runtime.onConnect.addListener(port => {
   const portLocation = MessageLocation[portIdentifiers[0]];
   const tabId = portIdentifiers[1] ? Number(portIdentifiers[1]) : port.sender.tab?.id;
 
-  if (!portLocation || !tabId) {
+  if (!portLocation || !tabId || tabId === -1) {
     port.disconnect();
     logDebug('Unknown port connection');
     return;
@@ -211,13 +211,21 @@ function registerPort(tabId: number, portLocation: IMessageLocation, port: chrom
 
   port.onMessage.addListener(onMessage);
   port.onDisconnect.addListener(function disconnect() {
-    unregisterPort(tabId, portLocation);
+    unregisterPort(tabId, portLocation, port);
     port.onDisconnect.removeListener(disconnect);
   });
 }
 
-function unregisterPort(tabId: number, portLocation: IMessageLocation) {
+function unregisterPort(
+  tabId: number,
+  portLocation: IMessageLocation,
+  portToUnregister?: chrome.runtime.Port,
+) {
   const port: chrome.runtime.Port = portsByTabId[tabId][portLocation];
+  if (portToUnregister && port !== portToUnregister) {
+    portToUnregister.onMessage.removeListener(onMessage);
+    return;
+  }
   delete portsByTabId[tabId][portLocation];
   if (port) port.onMessage.removeListener(onMessage);
   if (!Object.keys(portsByTabId[tabId]).length) {
@@ -247,14 +255,16 @@ function connectToTabContentScript(
   if (
     portLocation !== MessageLocation.ContentScript &&
     !sendThroughContentScript.includes(portLocation)
-  )
+  ) {
+    console.warn('Attempted to connect to invalid pass through location', { portLocation, tabId });
     return;
+  }
   try {
     port = chrome.tabs.connect(tabId, { name: currentMessengerLocation, frameId: 0 });
     registerPort(tabId, MessageLocation.ContentScript, port);
     return port;
   } catch (err) {
-    /* nothing */
+    console.error('Could not connect to content script', { portLocation, tabId, err });
   }
 }
 

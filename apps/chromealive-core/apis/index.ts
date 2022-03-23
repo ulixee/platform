@@ -14,7 +14,7 @@ const ApiHandlers: IApiHandlerSpec = {
   'Session.openMode': SessionApi.openMode,
   'Session.timetravel': SessionApi.timetravel,
   'Session.resume': SessionApi.resume,
-  'Session.step': SessionApi.step,
+  'Session.pause': SessionApi.pause,
   'Session.getScreenshot': SessionApi.getScreenshot,
   'Session.getScriptState': SessionApi.getScriptState,
   'Session.getDom': SessionApi.getDom,

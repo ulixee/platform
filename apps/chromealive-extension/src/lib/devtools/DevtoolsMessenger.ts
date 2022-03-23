@@ -7,18 +7,13 @@ import {
   createResponseId,
 } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
 
-
 type IPort = chrome.runtime.Port;
 type IResponseFn = (response: any) => void;
 
 const currentTabId = chrome.devtools.inspectedWindow.tabId;
 const currentMessengerLocation = MessageLocation.DevtoolsScript;
 
-export function sendToContentScript(
-  tabId: number,
-  payload: any,
-  responseCallbackFn?: IResponseFn,
-) {
+export function sendToContentScript(tabId: number, payload: any, responseCallbackFn?: IResponseFn) {
   const message: IMessageObject = {
     destLocation: MessageLocation.ContentScript,
     origLocation: currentMessengerLocation,
@@ -28,10 +23,7 @@ export function sendToContentScript(
   routeInternally(message);
 }
 
-export function sendToBackgroundScript(
-  payload: any,
-  responseCallbackFn?: IResponseFn,
-) {
+export function sendToBackgroundScript(payload: any, responseCallbackFn?: IResponseFn) {
   const message: IMessageObject = {
     destLocation: MessageLocation.BackgroundScript,
     origLocation: currentMessengerLocation,
@@ -77,9 +69,9 @@ export function offMessage() {
 
 const pendingByResponseId: {
   [id: string]: {
-    responseFn: IResponseFn,
-    timeoutId: any,
-  }
+    responseFn: IResponseFn;
+    timeoutId: any;
+  };
 } = {};
 
 // LISTENER TO <-> FROM BACKGROUND /////////////////////////////////////////////////////////////////
@@ -89,6 +81,10 @@ let activePort: IPort;
 function connect() {
   try {
     if (activePort) return;
+    if (!currentTabId || currentTabId === -1) {
+      console.warn('No tab id to register for devtools');
+      return;
+    }
     const port = chrome.runtime.connect({ name: `${currentMessengerLocation}:${currentTabId}` });
     handleConnectedToBackgroundScript(port);
   } catch (err) {
@@ -97,14 +93,24 @@ function connect() {
   }
 }
 
-function handleConnectedToBackgroundScript(port: IPort) {
-  activePort = port;
-  activePort.onDisconnect.addListener(() => {
-    console.log('DISCONNECTED from BackgroundScript');
-    activePort.onMessage.removeListener(handleIncomingMessageFromBackgroundScript);
+function disconnectPort(port: IPort) {
+  console.log('DISCONNECTED from BackgroundScript');
+  port.onMessage.removeListener(handleIncomingMessageFromBackgroundScript);
+  if (port === activePort) {
     activePort = null;
     setTimeout(connect, 1e3);
-  });
+  }
+}
+
+function handleConnectedToBackgroundScript(port: IPort) {
+  if (activePort === port) return;
+  if (activePort && activePort !== port) {
+    try {
+      activePort.disconnect();
+    } catch (err) {}
+  }
+  activePort = port;
+  activePort.onDisconnect.addListener(disconnectPort.bind(null, port));
   activePort.onMessage.addListener(handleIncomingMessageFromBackgroundScript);
 }
 
@@ -127,9 +133,7 @@ connect();
 
 function handleIncomingLocalMessage(message: IMessageObject) {
   const needsResponse = messageExpectsResponse(message);
-  const responseFn = needsResponse
-    ? response => routeResponseBack(message, response)
-    : undefined;
+  const responseFn = needsResponse ? response => routeResponseBack(message, response) : undefined;
   onMessageFn(message.payload, responseFn);
 }
 
@@ -170,7 +174,7 @@ function convertResponseFnToCodeAndId(responseFn: IResponseFn) {
       timeoutId: setTimeout(() => {
         throw new Error(`Response for ${responseId} not received within 10s`);
       }, 10e3),
-    }
+    };
     return {
       responseCode: ResponseCode.Y,
       responseId,

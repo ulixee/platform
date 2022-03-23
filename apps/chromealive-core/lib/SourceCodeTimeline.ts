@@ -13,6 +13,7 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
   source: ISourceCodeUpdatedEvent;
   command: ICommandUpdatedEvent;
 }> {
+  public entrypoint: string;
   private sourceFileLines: { [path: string]: string[] } = {};
   private events = new EventSubscriber();
   private commandsById: { [id: number]: ICommandUpdatedEvent } = {};
@@ -20,6 +21,10 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
   constructor(readonly heroSession: Session) {
     super();
     bindFunctions(this);
+
+    this.entrypoint = SourceMapSupport.getSourceFile(
+      heroSession.options.scriptInstanceMeta.entrypoint,
+    );
     this.events.on(heroSession.commands, 'start', this.onCommandStart);
     this.events.on(heroSession.commands, 'finish', this.onCommandFinished);
   }

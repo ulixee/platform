@@ -66,11 +66,9 @@ export default class SessionApi {
       .catch(err => console.error('ERROR opening player mode %s', args.mode, err));
   }
 
-  static step(args: IHeroSessionArgs): void {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  static pause(args: IHeroSessionArgs): void {
     const observer = getObserver(args);
-
-    // observer.heroSession.commands.pause();
+    observer.pauseSession();
   }
 
   static async resume(args: ISessionResumeArgs): Promise<{
@@ -79,7 +77,12 @@ export default class SessionApi {
   }> {
     const observer = getObserver(args);
 
-    const error = await observer.relaunchSession(args.startLocation, args.startFromNavigationId);
+    if (args.startLocation === 'currentLocation') {
+      observer.resumeSession();
+      return { success: true };
+    }
+
+    const error = await observer.relaunchSession(args.startLocation);
 
     return {
       success: !error,
