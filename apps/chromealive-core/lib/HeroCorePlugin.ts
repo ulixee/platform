@@ -165,6 +165,7 @@ export default class HeroCorePlugin extends CorePlugin {
   }
 
   public onPuppetPageClosed(puppetPage: IPuppetPage): void {
+    this.identityByPuppetPage.get(puppetPage)?.resolve(null);
     this.identityByPuppetPage.delete(puppetPage);
     this.puppetPagesById.delete(puppetPage.id);
     if (this.activePuppetPage?.id === puppetPage.id) {

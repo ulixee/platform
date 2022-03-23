@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen } from 'electron';
+import { app, BrowserWindow, screen, shell } from 'electron';
 import * as remoteMain from '@electron/remote/main';
 import { EventEmitter } from 'events';
 import { Server as StaticServer } from 'node-static';
@@ -259,6 +259,16 @@ export class ChromeAlive extends EventEmitter {
       throw new Error(`Child window with the same frameName already exists: ${frameName}`);
     }
     this.#childWindowsByName.set(frameName, childWindow);
+    childWindow.webContents.on('ipc-message', (e, eventName, ...args) => {
+      if (eventName === 'chromealive:api') {
+        const [api, apiArgs] = args;
+        if (api === 'File:navigate') {
+          const { filepath } = apiArgs;
+          shell.showItemInFolder(filepath);
+        }
+      }
+    });
+
     let hasHandled = false;
     childWindow.on('close', async e => {
       if (!hasHandled) {

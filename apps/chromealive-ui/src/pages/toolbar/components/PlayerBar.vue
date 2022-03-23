@@ -14,10 +14,7 @@
         :style="{ left: tick.offsetPercent + '%' }"
         @click.prevent="clickTick($event, tick)"
       >
-        <div
-          v-if="i !== tick.length - 1"
-          class="tick-overlay"
-        />
+        <div v-if="i !== tick.length - 1" class="tick-overlay" />
       </div>
     </div>
 
@@ -30,22 +27,19 @@
       v-if="isSelected"
       ref="markerElem"
       class="marker"
-      :class="{ active: activeItem === 'marker', ...markerClass }"
+      :class="{ active: activeItem === 'marker', ...markerClass, [session.playbackState]: 1 }"
       @mousedown="handleMouseDown($event, 'marker')"
     >
       <div class="marker-wrapper">
-        <div
-          class="dragger left"
-          @mousedown="handleMouseDown($event, 'draggerLeft')"
-        />
-        <div
-          class="dragger right"
-          @mousedown="handleMouseDown($event, 'draggerRight')"
-        />
+        <div class="dragger left" @mousedown="handleMouseDown($event, 'draggerLeft')" />
+        <div class="dragger right" @mousedown="handleMouseDown($event, 'draggerRight')" />
       </div>
 
       <div class="play-icon" />
       <div class="pause-icon" />
+      <div class="restart-icon">
+        <img src="@/assets/icons/refresh.svg" alt="restart">
+      </div>
 
       <div
         class="nib left"
@@ -70,6 +64,10 @@ import * as Vue from 'vue';
 import Client from '@/api/Client';
 import ArrowRight from './ArrowRight.vue';
 import ISessionTimetravelEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionTimetravelEvent';
+import { PropType } from 'vue';
+import { ITimelineTick } from '@/pages/toolbar/views/SessionController.vue';
+import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
+import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
 
 const startMarkerPosition = 0;
 const liveMarkerPosition = 100;
@@ -97,7 +95,17 @@ export default Vue.defineComponent({
   components: {
     ArrowRight,
   },
-  props: ['isSelected', 'mouseIsWithinPlayer', 'isRunning', 'ticks', 'session', 'mode'],
+  props: {
+    isSelected: { type: Boolean },
+    mouseIsWithinPlayer: { type: Boolean },
+    ticks: {
+      type: Array as PropType<ITimelineTick[]>,
+    },
+    session: {
+      type: Object as PropType<IHeroSessionActiveEvent>,
+    },
+    mode: { type: String as PropType<IAppModeEvent['mode']> },
+  },
   emits: [],
   setup(props) {
     const markerElem = Vue.ref<HTMLElement>();
@@ -129,7 +137,6 @@ export default Vue.defineComponent({
       markerClass: Vue.reactive({
         isLive: true,
         hasMultiple: false,
-        isPlaying: false,
       }),
       ghostClass,
       cssVars: Vue.ref({
@@ -157,9 +164,6 @@ export default Vue.defineComponent({
       } else if (value === 'Timetravel') {
         this.markerClass.isLive = false;
       }
-    },
-    isRunning(value) {
-      this.markerClass.isPlaying = value;
     },
   },
   methods: {
@@ -270,40 +274,49 @@ export default Vue.defineComponent({
     },
 
     togglePlay() {
-      if (this.markerClass.isPlaying) {
+      if (this.session.playbackState === 'running') {
         this.pauseScript();
-      } else {
+      } else if (this.session.playbackState === 'paused') {
         this.resumeScript();
+      } else {
+        this.restartScript();
       }
     },
 
+    restartScript() {
+      void Client.send('Session.resume', {
+        heroSessionId: this.session.heroSessionId,
+        startLocation: 'sessionStart',
+      });
+    },
+
     resumeScript() {
-      this.markerClass.isPlaying = true;
-      void Client.send('Session.resume');
+      this.session.playbackState = 'running';
+      void Client.send('Session.resume', {
+        heroSessionId: this.session.heroSessionId,
+        startLocation: 'currentLocation',
+      });
     },
 
     pauseScript() {
-      this.markerClass.isPlaying = false;
-      void Client.send('Session.step');
+      this.session.playbackState = 'paused';
+      void Client.send('Session.pause', {
+        heroSessionId: this.session.heroSessionId,
+      });
     },
 
     showMarker(event: MouseEvent) {
       this.activeItem = ActiveItem.nibLeft;
-      this.markerClass.isLive = false;
       this.markerClass.hasMultiple = false;
       this.cssVars.markerRight = '';
-      let markerLeftPct = this.convertGlobalMouseLeftToPct(event.pageX - 3);
-      if (markerLeftPct >= 100) {
-        markerLeftPct = 100;
-        this.markerClass.isLive = true;
-      } else if (markerLeftPct < 0) {
-        markerLeftPct = 0;
-      }
-      this.cssVars.markerLeft = markerLeftPct;
+      this.cssVars.markerLeft = this.convertGlobalMouseLeftToPct(event.pageX - 3);
+      this.markerClass.isLive = this.cssVars.markerLeft === liveMarkerPosition;
+
+      // if we just entered timetravel, travel immediately
       if (!this.markerClass.isLive) {
         this.clearPendingTimetravel();
-        void this.doTimetravel();
       }
+      void this.doTimetravel();
     },
 
     handleMousemove(event: MouseEvent) {
@@ -419,7 +432,7 @@ export default Vue.defineComponent({
       this.markerClass.isLive = percentOffset >= liveMarkerPosition;
       if (this.markerClass.isLive) {
         this.markerClass.hasMultiple = false;
-        percentOffset = 100;
+        percentOffset = liveMarkerPosition;
       }
       const isMultiple = this.markerClass.hasMultiple;
 
@@ -428,9 +441,18 @@ export default Vue.defineComponent({
       this.clearPendingTimetravel();
       this.lastTimetravelOffset = startOffset;
       this.lastTimetravelTimestamp = Date.now();
+      const heroSessionId = this.session?.heroSessionId;
+      if (!heroSessionId) return;
+
+      if (percentOffset >= liveMarkerPosition) {
+        if (this.mode !== 'Live') {
+          await Client.send('Session.openMode', { mode: 'Live', heroSessionId });
+        }
+        return;
+      }
 
       await Client.send('Session.timetravel', {
-        heroSessionId: this.session?.heroSessionId,
+        heroSessionId,
         timelinePercentRange: isMultiple
           ? [startOffset, endOffset]
           : [percentOffset, percentOffset],
@@ -509,12 +531,22 @@ export default Vue.defineComponent({
   z-index: 12;
   left: calc(100% * var(--markerLeft) / 100);
 
-  &.isLive.isPlaying {
+  &.isLive.running {
     animation: pulse-animation 1s infinite;
     .pause-icon {
       display: block;
     }
+    .restart-icon {
+      display: none;
+    }
+  }
+
+  &.isLive.paused {
+    animation: pulse-animation 1s infinite;
     .play-icon {
+      display: block;
+    }
+    .restart-icon {
       display: none;
     }
   }
@@ -537,7 +569,7 @@ export default Vue.defineComponent({
     &:hover {
       box-shadow: 1px 1px 3px 2px rgba(95, 0, 134, 0.3);
     }
-    .play-icon {
+    .restart-icon {
       display: block;
     }
     .dragger {
@@ -682,6 +714,20 @@ export default Vue.defineComponent({
   border-top: 8px solid transparent;
   border-bottom: 8px solid transparent;
   border-left: 9px solid #9a78a8;
+}
+
+.restart-icon {
+  position: absolute;
+  display: none;
+  top: calc(50% - 12px);
+  left: calc(50% - 12px);
+  width: 24px;
+  height: 24px;
+  img {
+    width: 100%;
+    height: auto;
+    filter: invert(54%) sepia(19%) saturate(699%) hue-rotate(238deg) brightness(91%) contrast(85%);
+  }
 }
 
 .pause-icon {

@@ -256,10 +256,7 @@ export default class ChromeAliveCore {
         this.sendAppEvent('Session.active', {
           heroSessionId: null,
           timeline: { urls: [], screenshots: [], paintEvents: [], storageEvents: [] },
-          run: 0,
-          playbackState: 'running',
-          mode: 'Live',
-          worldHeroSessionIds: [],
+          playbackState: 'finished',
           startTime: Date.now(),
           inputBytes: 0,
           runtimeMs: 0,

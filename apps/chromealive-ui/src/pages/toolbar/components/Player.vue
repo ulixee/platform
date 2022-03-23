@@ -21,7 +21,7 @@
 
       <div class="address-bar relative h-full flex flex-row">
         <div v-if="isLiveMode" class="live-icon">
-          <div v-if="isRunning" class="text">
+          <div v-if="session.playbackState !== 'finished'" class="text">
             LIVE
           </div>
           <div v-else class="text">
@@ -49,9 +49,8 @@
       <div class="player-wrapper relative flex-1 h-full flex flex-row items-center">
         <div class="bar-bg" />
         <PlayerBar
-          :is-selected="isSelected"
+          :is-selected="isSelected && !isShowingFinder"
           :mouse-is-within-player="mouseIsWithinPlayer"
-          :is-running="isRunning"
           :ticks="ticks"
           :session="session"
           :mode="mode"
@@ -76,20 +75,20 @@ export default Vue.defineComponent({
     PlayerBar,
     Borders,
   },
-  props: ['isSelected', 'isFocused', 'ticks', 'isRunning', 'session', 'mode', 'timetravelUrl'],
+  props: ['isSelected', 'isFocused', 'ticks', 'session', 'mode', 'timetravel'],
   emits: ['select', 'toggleFinder'],
   setup(props) {
     const isLiveMode = Vue.computed(() => props.mode === 'Live');
     const isShowingFinder = Vue.computed(() => props.mode === 'Finder');
     const currentUrl = Vue.computed(() => {
       let url = 'about:blank';
-      if (props.mode === 'Live') {
+      if (props.mode === 'Live' || props.mode === 'Finder' && !props.timetravel) {
         const urls = props.session?.timeline?.urls;
         if (urls.length) {
           url = urls[urls.length - 1]?.url;
         }
       } else {
-        url = props.timetravelUrl;
+        url = props.timetravel?.url;
       }
       if (!url) url = 'about:blank';
       if (url.endsWith('/')) url = url.slice(0, -1);

@@ -8,7 +8,7 @@ export type IApiHandlerSpec = {
   'Session.quit': ISessionApi['quit'];
   'Session.timetravel': ISessionApi['timetravel'];
   'Session.resume': ISessionApi['resume'];
-  'Session.step': ISessionApi['step'];
+  'Session.pause': ISessionApi['pause'];
   'Session.getScreenshot': ISessionApi['getScreenshot'];
   'Session.getScriptState': ISessionApi['getScriptState'];
   'Session.openMode': ISessionApi['openMode'];

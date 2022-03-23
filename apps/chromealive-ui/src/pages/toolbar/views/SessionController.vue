@@ -14,10 +14,9 @@
       :is-selected="isPlayerSelected"
       :is-focused="isPlayerSelected"
       :ticks="timelineTicks"
-      :is-running="isRunning"
       :is-minimal="isMinimal"
       :session="session"
-      :timetravel-url="timetravelUrl"
+      :timetravel="timetravel"
       class="flex-1 z-10"
       @select="selectPlayerMode"
       @toggleFinder="onFinderModeToggled"
@@ -57,6 +56,12 @@ import ISessionTimetravelEvent from '@ulixee/apps-chromealive-interfaces/events/
 
 type IStartLocation = 'currentLocation' | 'sessionStart';
 
+export interface ITimelineTick {
+  id: string | number;
+  offsetPercent: number;
+  class: string;
+}
+
 export default Vue.defineComponent({
   name: 'SessionController',
   components: {
@@ -80,13 +85,12 @@ export default Vue.defineComponent({
       isPlayerSelected,
       mode,
       previousPlayerMode: Vue.ref<IAppModeEvent['mode']>(mode.value),
-      isRunning: Vue.ref(false),
       isMinimal: Vue.ref(false),
       startLocation: Vue.ref<IStartLocation>('currentLocation'),
       timelineTicks: Vue.ref<any[]>([]),
       outputSize: Vue.ref<string>(humanizeBytes(0)),
       inputSize: Vue.ref<string>(humanizeBytes(0)),
-      timetravelUrl: Vue.ref<string>(null),
+      timetravel: Vue.ref<{ url: string, percentOffset: number }>(null),
     };
   },
   async created() {
@@ -101,13 +105,15 @@ export default Vue.defineComponent({
   },
   methods: {
     selectPlayerMode(): void {
-      this.select(this.previousPlayerMode);
+      this.select(this.previousPlayerMode ?? 'Live');
     },
 
     select(mode: IAppModeEvent['mode']) {
+      const heroSessionId = this.session.heroSessionId;
       this.mode = mode;
+      if (!heroSessionId) return;
       Client.send('Session.openMode', {
-        heroSessionId: this.session.heroSessionId,
+        heroSessionId,
         mode,
       }).catch(err => alert(String(err)));
     },
@@ -121,13 +127,14 @@ export default Vue.defineComponent({
     },
 
     onSessionTimetravel(message: ISessionTimetravelEvent) {
-      this.timetravelUrl = message.url;
+      this.timetravel = message;
     },
 
     onSessionActiveEvent(message: IHeroSessionActiveEvent) {
       if (!message) {
         this.outputSize = humanizeBytes(0);
         this.inputSize = humanizeBytes(0);
+        this.mode = 'Live';
         return;
       }
 
@@ -139,7 +146,7 @@ export default Vue.defineComponent({
       }
       Object.assign(this.session, message);
 
-      const timelineTicks: any[] = [];
+      const timelineTicks: ITimelineTick[] = [];
       for (const url of message.timeline.urls) {
         if (url.offsetPercent < 0) continue;
         for (const status of url.loadStatusOffsets) {
@@ -162,10 +169,7 @@ export default Vue.defineComponent({
       timelineTicks.sort((a, b) => a.offsetPercent - b.offsetPercent);
       this.timelineTicks = timelineTicks.filter(x => x.offsetPercent);
 
-      this.isRunning = this.session.playbackState === 'running';
       this.inputSize = humanizeBytes(message.inputBytes);
-
-      this.onAppModeEvent({ mode: message.mode });
     },
 
     onDataboxUpdated(message: IDataboxOutputEvent) {

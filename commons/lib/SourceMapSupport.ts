@@ -30,7 +30,23 @@ export class SourceMapSupport {
     }
   }
 
-  static getOriginalSourcePosition(position: ISourceCodeLocation): ISourceCodeLocation & { name?: string } {
+  static getSourceFile(filename: string): string {
+    this.sourceMapCache[filename] ??= this.retrieveSourceMap(filename);
+    if (!this.sourceMapCache[filename].map) return filename;
+
+    let source = filename;
+    const sourceMap = this.sourceMapCache[filename];
+    sourceMap.map.eachMapping(mapping => {
+      if (source === filename) {
+        source = this.resolvePath(sourceMap.url, mapping.source);
+      }
+    });
+    return source;
+  }
+
+  static getOriginalSourcePosition(
+    position: ISourceCodeLocation,
+  ): ISourceCodeLocation & { name?: string } {
     this.sourceMapCache[position.filename] ??= this.retrieveSourceMap(position.filename);
 
     const sourceMap = this.sourceMapCache[position.filename];

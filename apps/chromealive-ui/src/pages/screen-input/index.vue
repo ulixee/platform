@@ -1,12 +1,18 @@
 <template>
   <div class="py-12 px-28">
     <div class="pb-5 mb-5 border-b border-gray-400 text-center">
-      <div class="text-2xl mb-2 script-path font-thin opacity-50">{{ scriptEntrypoint }}</div>
+      <div class="text-2xl mb-2 script-path font-thin opacity-50">
+        {{ scriptEntrypoint }}
+      </div>
       <h1>INPUT CONFIGURATION</h1>
     </div>
     <ul class="flex flex-row border-b border-gray-200 pb-5">
-      <li class="flex-1">Started {{ startTime }}</li>
-      <li class="flex-1">Finished on {{ endTime }}</li>
+      <li class="flex-1">
+        Started {{ startTime }}
+      </li>
+      <li class="flex-1">
+        Finished on {{ endTime }}
+      </li>
     </ul>
 
     <h2>Databox Input:</h2>
@@ -17,31 +23,57 @@
     <h2>Hero Settings:</h2>
     <ul class="hero-settings">
       <li>
-        <div class="label">User Agent String</div>
-        <div class="value">{{ meta.userAgentString }}</div>
+        <div class="label">
+          User Agent String
+        </div>
+        <div class="value">
+          {{ meta.userAgentString }}
+        </div>
       </li>
       <li>
-        <div class="label">User Agent OS</div>
-        <div class="value">{{ meta.operatingSystemName }} {{ meta.operatingSystemVersion }}</div>
+        <div class="label">
+          User Agent OS
+        </div>
+        <div class="value">
+          {{ meta.operatingSystemName }} {{ meta.operatingSystemVersion }}
+        </div>
       </li>
       <li>
-        <div class="label">User Agent Browser</div>
-        <div class="value">{{ meta.browserName }} {{ meta.browserFullVersion }}</div>
+        <div class="label">
+          User Agent Browser
+        </div>
+        <div class="value">
+          {{ meta.browserName }} {{ meta.browserFullVersion }}
+        </div>
       </li>
       <li>
-        <div class="label">Rendering Engine</div>
-        <div class="value">{{ meta.renderingEngine }} {{ meta.renderingEngineVersion }}</div>
+        <div class="label">
+          Rendering Engine
+        </div>
+        <div class="value">
+          {{ meta.renderingEngine }} {{ meta.renderingEngineVersion }}
+        </div>
       </li>
       <li v-if="meta.upstreamProxyIpMask">
-        <div class="label">Hero Core IP Address</div>
-        <div class="value">{{ meta.upstreamProxyIpMask.publicIp }}</div>
+        <div class="label">
+          Hero Core IP Address
+        </div>
+        <div class="value">
+          {{ meta.upstreamProxyIpMask.publicIp }}
+        </div>
       </li>
       <li>
-        <div class="label">Proxy IP Address</div>
-        <div class="value">{{ meta.upstreamProxyIpMask?.proxyIp ?? 'No Proxy Used' }}</div>
+        <div class="label">
+          Proxy IP Address
+        </div>
+        <div class="value">
+          {{ meta.upstreamProxyIpMask?.proxyIp ?? 'No Proxy Used' }}
+        </div>
       </li>
       <li v-if="meta.viewport">
-        <div class="label">Viewport</div>
+        <div class="label">
+          Viewport
+        </div>
         <div class="value">
           Screen: {{ meta.viewport.screenWidth }}x{{ meta.viewport.screenHeight }}, Viewport:
           {{ meta.viewport.width }}x{{ meta.viewport.height }}, Scale
@@ -50,20 +82,36 @@
         </div>
       </li>
       <li>
-        <div class="label">Timezone</div>
-        <div class="value">{{ meta.timezoneId }}</div>
+        <div class="label">
+          Timezone
+        </div>
+        <div class="value">
+          {{ meta.timezoneId }}
+        </div>
       </li>
       <li>
-        <div class="label">Geolocation</div>
-        <div class="value">{{ meta.geolocation ?? '-' }}</div>
+        <div class="label">
+          Geolocation
+        </div>
+        <div class="value">
+          {{ meta.geolocation ?? '-' }}
+        </div>
       </li>
       <li>
-        <div class="label">Locale</div>
-        <div class="value">{{ meta.locale }}</div>
+        <div class="label">
+          Locale
+        </div>
+        <div class="value">
+          {{ meta.locale }}
+        </div>
       </li>
       <li>
-        <div class="label">Session ID</div>
-        <div class="value">{{ meta.sessionId }}</div>
+        <div class="label">
+          Session ID
+        </div>
+        <div class="value">
+          {{ meta.sessionId }}
+        </div>
       </li>
     </ul>
   </div>
@@ -93,13 +141,15 @@ export default Vue.defineComponent({
   methods: {
     onSessionActive(data: IHeroSessionActiveEvent) {
       if (!data) return;
-      if (!this.scriptEntrypoint || !data.scriptEntrypoint.endsWith(this.scriptEntrypoint)) {
+
+      const entrypoint = data.scriptEntrypointTs ?? data.scriptEntrypoint;
+      if (!this.scriptEntrypoint || !entrypoint.endsWith(this.scriptEntrypoint)) {
         this.input = convertJsonToFlat({});
         this.meta = {} as any;
         this.refreshMeta();
       }
-      const divider = data.scriptEntrypoint.includes('/') ? '/' : '\\';
-      this.scriptEntrypoint = data.scriptEntrypoint.split(divider).slice(-2).join(divider);
+      const divider = entrypoint.includes('/') ? '/' : '\\';
+      this.scriptEntrypoint = entrypoint.split(divider).slice(-2).join(divider);
       this.startTime = moment(data.startTime).format(`LL [at] LTS z`);
       this.endTime = moment(data.endTime ?? Date.now()).format(`LL [at] LTS z`);
     },

@@ -40,6 +40,7 @@
       <h2>Collected Resources</h2>
       <div
         v-for="resource of collectedAssets.collectedResources"
+        :key="resource.resource.id"
         class="box border border-gray-100 p-10 mb-20"
       >
         <h4>Name "{{ resource.name }}"</h4>
@@ -55,13 +56,33 @@
           Http Requested at {{ formatTimestamp(resource.resource.request.timestamp) }}
         </div>
         <div class="grid grid-cols-2 gap-4">
-          <div class="p-10 bg-gray-10 border border-gray-200 font-thin whitespace-pre text-sm overflow-auto">
+          <div
+            class="
+              p-10
+              bg-gray-10
+              border border-gray-200
+              font-thin
+              whitespace-pre
+              text-sm
+              overflow-auto
+            "
+          >
             <div class="label font-bold">
               Request Headers
             </div>
             {{ formatJson(resource.resource.request.headers) }}
           </div>
-          <div class="p-10 bg-gray-10 border border-gray-200 font-thin whitespace-pre text-sm overflow-auto">
+          <div
+            class="
+              p-10
+              bg-gray-10
+              border border-gray-200
+              font-thin
+              whitespace-pre
+              text-sm
+              overflow-auto
+            "
+          >
             <div class="label font-bold">
               Response Headers
             </div>
@@ -71,7 +92,7 @@
 
         <div class="font-sm whitespace-pre box border border-gray-100 bg-gray-100 my-2 p-2">
           <div>Source Code</div>
-          <div v-for="line of resource.sourcecode">
+          <div v-for="line of resource.sourcecode" :key="line.line">
             <span class="text-gray-300">{{ line.line }}.</span>
             <span class="text-gray-500">{{ line.code }}</span>
           </div>
@@ -98,6 +119,7 @@
       <h2>Collected Snippets</h2>
       <div
         v-for="snippet of collectedAssets.collectedSnippets"
+        :key="snippet.commandId"
         class="box border border-gray-100 p-10 mb-20"
       >
         <h4>Name "{{ snippet.name }}"</h4>
@@ -105,14 +127,24 @@
           Collected at {{ formatTimestamp(snippet.timestamp) }}
         </div>
         <div class="grid">
-          <div class="p-10 bg-gray-10 border border-gray-200 font-thin whitespace-pre text-sm overflow-auto">
+          <div
+            class="
+              p-10
+              bg-gray-10
+              border border-gray-200
+              font-thin
+              whitespace-pre
+              text-sm
+              overflow-auto
+            "
+          >
             {{ formatJson(snippet.value) }}
           </div>
         </div>
 
         <div class="font-sm whitespace-pre box border border-gray-100 bg-gray-100 my-2 p-2">
           <div>Source Code</div>
-          <div v-for="line of snippet.sourcecode">
+          <div v-for="line of snippet.sourcecode" :key="line.line">
             <span class="text-gray-300">{{ line.line }}.</span>
             <span class="text-gray-500">{{ line.code }}</span>
           </div>
@@ -124,6 +156,7 @@
       <h2>Collected Elements</h2>
       <div
         v-for="element of collectedAssets.collectedElements"
+        :key="element.id"
         class="box border border-gray-100 p-10 mb-20"
       >
         <h4>Name "{{ element.name }}"</h4>
@@ -135,13 +168,23 @@
           Collected at {{ formatTimestamp(element.timestamp) }} from
           {{ element.documentUrl }}
         </div>
-        <div class="p-10 bg-gray-100 border border-gray-200 font-thin whitespace-pre text-sm overflow-auto">
+        <div
+          class="
+            p-10
+            bg-gray-100
+            border border-gray-200
+            font-thin
+            whitespace-pre
+            text-sm
+            overflow-auto
+          "
+        >
           {{ element.outerHTML }}
         </div>
 
         <div class="font-sm whitespace-pre box border border-gray-100 bg-gray-100 my-2 p-2">
           <div>Source Code</div>
-          <div v-for="line of element.sourcecode">
+          <div v-for="line of element.sourcecode" :key="line.line">
             <span class="text-gray-300">{{ line.line }}.</span>
             <span class="text-gray-500">{{ line.code }}</span>
           </div>
@@ -188,7 +231,7 @@ import ICollectedResource from '@ulixee/hero-interfaces/ICollectedResource';
 import ICollectedElement from '@ulixee/hero-interfaces/ICollectedElement';
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
 
-export default Vue.defineComponent({
+const databox: any = Vue.defineComponent({
   name: 'Databox',
   components: { Json },
   setup() {
@@ -272,11 +315,13 @@ export default Vue.defineComponent({
     },
     onSessionActive(data: IHeroSessionActiveEvent) {
       if (!data) return;
-      if (this.scriptEntrypoint && !data.scriptEntrypoint.endsWith(this.scriptEntrypoint)) {
-        this.onDataboxUpdated({} as IDataboxOutputEvent);
+
+      const entrypoint = data.scriptEntrypointTs ?? data.scriptEntrypoint;
+      if (this.scriptEntrypoint && !entrypoint.endsWith(this.scriptEntrypoint)) {
+        this.onDataboxOutput({} as IDataboxOutputEvent);
       }
-      const divider = data.scriptEntrypoint.includes('/') ? '/' : '\\';
-      this.scriptEntrypoint = data.scriptEntrypoint.split(divider).slice(-2).join(divider);
+      const divider = entrypoint.includes('/') ? '/' : '\\';
+      this.scriptEntrypoint = entrypoint.split(divider).slice(-2).join(divider);
       this.startTime = moment(data.startTime).format(`LL [at] LTS z`);
       this.endTime = moment(data.endTime ?? Date.now()).format(`LL [at] LTS z`);
     },
@@ -332,7 +377,7 @@ export default Vue.defineComponent({
       // eslint-disable-next-line no-console
       console.log('Collected Resource (%s)', resource.name, data);
     },
-    async inspectElement(element: ICollectedElement): Promise<void> {
+    inspectElement(element: ICollectedElement): void {
       const renderer = document.createElement('template');
       renderer.innerHTML = element.outerHTML;
       let data: any = {
@@ -391,6 +436,7 @@ export default Vue.defineComponent({
     Client.on('Session.active', this.onSessionActive);
   },
 });
+export default databox;
 </script>
 
 <style lang="scss" scoped="scoped">
