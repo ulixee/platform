@@ -5,7 +5,7 @@ import * as Path from 'path';
 
 const shouldFix = process.argv[2] === 'fix';
 const pkgPaths: Set<string> = new Set();
-const submodules = ['boss', 'chrome-alive', 'commons', 'databox', 'hero', 'runner', 'server', 'website'];
+const submodules = ['boss', 'chrome-alive', 'commons', 'databox', 'docs', 'hero', 'runner', 'server', 'website'];
 
 recursivelyFindPackageFiles(Path.resolve(__dirname, 'package.json'));
 

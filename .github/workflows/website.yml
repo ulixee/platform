@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  website:
+  docs:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,15 +24,15 @@ jobs:
 
       - name: yarn
         run: yarn install --network-timeout 1000000
-        working-directory: ./website
+        working-directory: ./docs
 
       - name: Build Webite
         run: yarn build
-        working-directory: ./website
+        working-directory: ./docs
 
       - name: Deploy Website
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build-dist/website
+          publish_dir: ./build-dist/docs
           commit_message: '[skip ci] Updates'

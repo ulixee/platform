@@ -18,7 +18,7 @@ Install [Node.js 14](https://nodejs.org/en/download/) or higher and [Yarn](https
 
 ## Contributing to the docs
 
-We are a strong believer that documentation is very important for any open-source projects. Ulixee uses Gridsome for its website and documentation.
+We are a strong believer that documentation is very important for any open-source projects. Ulixee uses Gridsome for its documentation.
 
 1. If you want to add/modify any Databox documentation, go to the
    [docs folder on GitHub](https://github.com/ulixee/ulixee/tree/databox/docs) and

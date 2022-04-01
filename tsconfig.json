@@ -44,6 +44,7 @@
     "apps/chromealive-core/injected-scripts",
     "hero",
     "website",
+    "docs",
     "databox",
     "runner",
     "**/*.d.ts"

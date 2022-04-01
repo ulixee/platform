@@ -86,6 +86,7 @@ module.exports = {
     '**/databox',
     '**/hero',
     'runner/**',
+    'docs',
     'website',
     'node_modules',
     '**/test/assets/**',
