@@ -1,14 +1,22 @@
 <template lang="pug">
-BasicLayout.Home
-  Section(container="md" dots="true")
-    .post-header.container-md.mb-x2
-      h1 The Data Harvesting Network
-      p.
-        Ulixee is a set of tools that make Web Scraping reliable, easier to troubleshoot and simple to write. It includes a scriptable Web Browser that mimics a human user; scripts written as re-usable, composable units; and tooling to deploy your own network.
-      a.button(href="/docs") Get Started
+  BasicLayout.Docs
+    Section(container="md" dots="true")
+      .post-header.container-md.mb-x2
+        h1 The Platform Built for Scraping
+        p.
+          Ulixee is a toolset that makes it a cinch to deploy a data collection network.
 
-    //.awards
-      .box Ranked #1 Headless Browser by the Bot Blocking Analyzer (psst... we created it)
+        h5 Learn about our Tooling:
+        ul
+          li
+            a(href="/docs/hero") Hero:
+            span.description The W3C-spec Headless Web Browser that's nearly impossible to detect.
+          li
+            a(href="/docs/databox") Databox:
+            span.description Create composable, re-usable, configurable scripts.
+          li
+            a(href="/docs/server") Server:
+            span.description Easily run across multiple machines.
 </template>
 
 <script lang="ts">
@@ -18,50 +26,13 @@ import { Vue, Component, Prop } from 'vue-property-decorator';
   components: {},
 })
 export default class Home extends Vue {
-  public mounted() {
-    document.body.setAttribute('data-theme', 'dark');
-  }
-
-  public destroyed() {
-    document.body.removeAttribute('data-theme');
-  }
 }
 </script>
 
 <style lang="scss">
-.Home {
-  text-align: center;
-  h1 {
-    font-size: 5.9rem;
-  }
-  p {
-    padding: 0 25px;
-    font-size: 1.3rem;
-  }
-  .el-row {
-    height: 100vh;
-  }
-  .Content {
-    min-height: calc(100vh - 129px);
-  }
-
-  a.button {
-    margin-top: 50px;
-    padding: 13px 70px;
-    font-size: 1.4rem;
-  }
-
-  .awards {
-    margin-top: 80px;
-    .box {
-      display: inline-block;
-      padding: 7px 45px;
-      background: rgba(0,0,0,0.1);
-      border-radius: 5px;
-      box-shadow: 1px 1px 0 rgba(255,255,255,0.1);
-      border: 1px solid rgba(0, 0, 0, 0.2);
-      color: rgba(255,255,255,0.5);
-    }
+.Docs {
+  .description {
+    margin-left: 5px;
   }
 }
 </style>

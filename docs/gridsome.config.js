@@ -99,46 +99,6 @@ module.exports = {
           },
         },
       },
-    },
-    {
-      use: '@gridsome/vue-remark',
-      options: {
-        baseDir: './blog',
-        pathPrefix: '/blog',
-        typeName: 'Post',
-        template: './src/templates/BlogPost.vue',
-        plugins: ['@gridsome/remark-prismjs'],
-        remark: {
-          autolinkHeadings: {
-            content: {
-              type: 'text',
-              value: '#',
-            },
-          },
-        },
-      },
-    },
-    {
-      use: '@microflash/gridsome-plugin-feed',
-      options: {
-        contentTypes: ['Post'],
-        feedOptions: {
-          title: 'Ulixee Blog',
-          description: 'A blog about scraping, features and experiences developing Ulixee',
-        },
-        rss: {
-          enabled: true,
-          output: '/feed.xml',
-        },
-        atom: {
-          enabled: true,
-          output: '/feed.atom',
-        },
-        json: {
-          enabled: true,
-          output: '/feed.json',
-        },
-      },
-    },
+    }
   ],
 };

@@ -5,8 +5,6 @@
       Nav.flex-fit
       SearchForm
       nav.header-actions.flex
-        a(aria-label="Twitter" href="//twitter.com/Ulixee" rel="noopener noreferrer" target="_blank" title="Follow us on Twitter")
-          twitter-logo
         a(aria-label="Discord" href="//discord.gg/ydycFGU" rel="noopener noreferrer" class="hide-for-small" target="_blank" title="Join our discord")
           discord-logo
         .has-dropdown
