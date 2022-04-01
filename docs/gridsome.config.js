@@ -2,7 +2,7 @@ module.exports = {
   titleTemplate: 'Ulixee - The Scraping Toolkit',
   siteUrl: 'https://ulixee.org',
   pathPrefix: '/',
-  outputDir: '../build-dist/website',
+  outputDir: '../build-dist/docs',
   templates: {},
   chainWebpack: config => {
     const svgRule = config.module.rule('svg');

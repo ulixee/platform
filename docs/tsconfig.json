@@ -5,7 +5,7 @@
     "moduleResolution": "node",
     "experimentalDecorators": true,
     "noImplicitReturns": true,
-    "outDir": "../build-dist/website",
+    "outDir": "../build-dist/docs",
     "allowSyntheticDefaultImports": true,
     "sourceMap": false,
     "skipLibCheck": true,

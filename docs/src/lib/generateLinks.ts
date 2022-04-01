@@ -1,7 +1,7 @@
 import kebabCase from 'lodash.kebabcase';
 const config = require('../../gridsome.config');
 
-export default function generateLinks(linkGroups: any[], typeName: string) {
+export default function generateLinks(linkGroups: any[], typeName: string): INavGroup[] {
   const allLinks: INavGroup[] = [];
   const options = config.plugins.find(x => x.options?.typeName === typeName)?.options;
   for (const group of linkGroups) {
