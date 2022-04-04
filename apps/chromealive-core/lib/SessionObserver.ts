@@ -100,6 +100,8 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.events.on(this.heroSession, 'output', this.onOutputUpdated);
     this.events.on(this.heroSession, 'collected-asset', this.onCollectedAsset);
     this.events.on(this.heroSession, 'tab-created', this.onTabCreated);
+    this.events.on(this.heroSession.commands, 'pause', this.onCommandsPaused);
+    this.events.on(this.heroSession.commands, 'resume', this.onCommandsResumed);
 
     const resumedSessionId = this.heroSession.options.sessionResume?.sessionId;
     if (resumedSessionId) {
@@ -140,12 +142,10 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   public pauseSession(): void {
-    this.playbackState = 'paused';
     this.heroSession.pauseCommands().catch(() => null);
   }
 
   public resumeSession(): void {
-    this.playbackState = 'running';
     this.heroSession.resumeCommands().catch(() => null);
   }
 
@@ -551,6 +551,16 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.hasScriptUpdatesSinceLastRun = false;
     this.emit('hero:updated');
     this.emit('databox:output');
+  }
+
+  private onCommandsPaused(): void {
+    this.playbackState = 'paused';
+    this.emit('hero:updated');
+  }
+
+  private onCommandsResumed(): void {
+    this.playbackState = 'running';
+    this.emit('hero:updated');
   }
 
   private onHeroSessionKeptAlive(event: { message: string }): void {
