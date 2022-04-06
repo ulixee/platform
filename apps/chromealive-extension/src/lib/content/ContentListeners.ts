@@ -8,19 +8,3 @@ document.addEventListener('visibilitychange', () => {
     focused: state === 'visible',
   });
 });
-
-window.addEventListener('blur', () => {
-  sendToCore({
-    event: 'OnPageVisible',
-    active: true,
-    focused: false,
-  });
-});
-
-window.addEventListener('focus', () => {
-  sendToCore({
-    event: 'OnPageVisible',
-    active: true,
-    focused: true,
-  });
-});

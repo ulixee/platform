@@ -144,6 +144,8 @@ export default class HeroCorePlugin extends CorePlugin {
     }
 
     await Promise.all([
+      // needed to know when to blur tab and thus ChromeAlive bar (otherwise they all think they're still active)
+      page.devtoolsSession.send('Emulation.setFocusEmulationEnabled', { enabled: false }).catch(err => err),
       this.bridgeToExtension.addPuppetPage(page, this.events),
       this.setPageViewportToWindowBounds(page),
       this.elementsModule.onNewPuppetPage(page),

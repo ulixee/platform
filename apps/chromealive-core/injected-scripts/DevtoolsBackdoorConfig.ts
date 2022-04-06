@@ -5,4 +5,5 @@ export const ___emitFromDevtoolsToCore = '___emitFromDevtoolsToCore';
 export const EventType = {
   ElementWasSelected: 'ElementWasSelected',
   ToggleInspectElementMode: 'ToggleInspectElementMode',
+  DevtoolsFocus: 'DevtoolsFocus',
 };

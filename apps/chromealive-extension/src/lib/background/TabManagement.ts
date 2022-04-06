@@ -4,19 +4,21 @@ let creatingTabGroup = false;
 let hiddenGroupId: number;
 const visibleTabIds = new Set<number>();
 const hiddenTabIds = new Set<number>();
-const isStarted = createHiddenGroup().catch(error => console.log(error));
+const isStarted = createHiddenGroup().catch(error =>
+  console.error('Error creating hidden group', error),
+);
 // @ts-expect-error
 self.details = {
   visibleTabIds,
   hiddenTabIds,
-  creatingTabGroup
-}
+  creatingTabGroup,
+};
 
 export async function hideTabs(payload: { showTabIds: number[] }): Promise<void> {
   const { showTabIds } = payload;
   await isStarted;
 
-  const existingTabs = await chrome.tabs.query({ currentWindow: true });
+  const existingTabs = await chrome.tabs.query({});
   visibleTabIds.clear();
   hiddenTabIds.clear();
 
@@ -32,21 +34,34 @@ export async function hideTabs(payload: { showTabIds: number[] }): Promise<void>
     await createTabGroup([...hiddenTabIds]);
   }
 
+  logDebug('Grouped tabs at ' + new Date().toISOString(), {
+    hiddenGroupId,
+    hiddenTabIds: Array.from(hiddenTabIds),
+    visibleTabs: [...visibleTabIds],
+  });
+
   await chrome.tabs.group({
     groupId: hiddenGroupId,
     tabIds: Array.from(hiddenTabIds),
   });
 
-  console.log('grouped', {
-    hiddenGroupId,
-    tabIds: Array.from(hiddenTabIds),
-    visibleTabs: [...visibleTabIds],
-  });
-
   if (visibleTabIds.size) {
-    const tabIds = Array.from(visibleTabIds);
-    await chrome.tabs.ungroup(tabIds);
-    await chrome.tabs.update(tabIds[0], { active: true });
+    for (const tab of existingTabs) {
+      if (!visibleTabIds.has(tab.id)) continue;
+      logDebug('Activate tab', tab);
+      if (tab.groupId) {
+        await chrome.tabs.ungroup(tab.id);
+      }
+      if (!tab.active) {
+        await chrome.tabs.update(tab.id, { active: true });
+        await delay();
+        const window = await chrome.windows.getCurrent();
+        if (!window?.focused) {
+          logDebug('Focus window', window);
+          await chrome.windows.update(tab.windowId, { focused: true });
+        }
+      }
+    }
   }
 }
 
@@ -60,7 +75,7 @@ chrome.tabGroups.onMoved.addListener(() => {
 chrome.tabGroups.onUpdated.addListener(async group => {
   if (creatingTabGroup) return;
   if (group.id === hiddenGroupId && !group.collapsed) {
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await delay();
     collapseHiddenGroup(group.id);
     moveHiddenGroupToLeft(hiddenGroupId);
   }
@@ -68,7 +83,7 @@ chrome.tabGroups.onUpdated.addListener(async group => {
 
 chrome.tabGroups.onRemoved.addListener(async tabGroup => {
   if (tabGroup.id !== hiddenGroupId) return;
-  await new Promise(resolve => setTimeout(resolve, 200));
+  await delay();
   await createHiddenGroup();
 });
 
@@ -79,7 +94,7 @@ chrome.tabs.onRemoved.addListener(tabId => {
 
 chrome.tabs.onMoved.addListener((tabId, moveInfo) => {
   if (moveInfo.toIndex === 0) {
-    setTimeout(() => moveHiddenGroupToLeft(hiddenGroupId), 200);
+    setTimeout(() => moveHiddenGroupToLeft(hiddenGroupId), 50);
   }
 });
 
@@ -152,7 +167,13 @@ async function createHiddenGroup(): Promise<void> {
 
   for (const tab of tabs) {
     if (visibleTabIds.has(tab.id)) {
-      if (!tab.active) await chrome.tabs.update(tab.id, { active: true });
+      if (!tab.active) {
+        await chrome.tabs.update(tab.id, { active: true });
+        const window = await chrome.windows.getCurrent();
+        if (!window?.focused) {
+          await chrome.windows.update(window.id, { focused: true });
+        }
+      }
       break;
     }
   }
@@ -165,15 +186,19 @@ async function createTabGroup(tabIds: number[]): Promise<void> {
       hiddenGroupId = await chrome.tabs.group({
         tabIds,
       });
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await delay();
     }
     await chrome.tabGroups.update(hiddenGroupId, { color: 'grey', collapsed: true, title: '' });
-    logDebug(`Updated group tabIds=${tabIds.join(',')}, groupId=${hiddenGroupId}`);
+    logDebug(`Created tab group. TabIds=${tabIds.join(',')}, groupId=${hiddenGroupId}`);
   } catch (err) {
     console.error('ERROR updating tab group', err);
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await delay();
     return createTabGroup(tabIds);
   } finally {
     creatingTabGroup = false;
   }
+}
+
+function delay(ms = 50): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }

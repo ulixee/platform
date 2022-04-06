@@ -60,7 +60,9 @@ export default class ChromeAliveCore {
     bindFunctions(this);
 
     this.events.on(HeroGlobalPool.events, 'browser-launched', this.onNewBrowser);
-    this.events.on(HeroGlobalPool.events, 'all-browsers-closed', this.hideApp);
+    this.events.on(HeroGlobalPool.events, 'all-browsers-closed', () =>
+      AliveBarPositioner.resetSession(),
+    );
     this.events.on(HeroGlobalPool.events, 'session-created', this.onHeroSessionCreated);
     this.events.on(
       HeroGlobalPool.events,
@@ -116,9 +118,10 @@ export default class ChromeAliveCore {
     });
 
     if (this.activeHeroSessionId) {
-      AliveBarPositioner.showApp(status.focused);
+      if (status.focused) AliveBarPositioner.focusedPageId(puppetPageId);
+      else AliveBarPositioner.blurredPageId(puppetPageId);
     } else {
-      AliveBarPositioner.hideApp();
+      AliveBarPositioner.blurredPageId(puppetPageId);
     }
   }
 
@@ -198,12 +201,13 @@ export default class ChromeAliveCore {
     if (!this.activeHeroSessionId || isRestartedSessionId) {
       this.restartingHeroSessionId = null;
       this.sendAppEvent('Session.loading');
-      AliveBarPositioner.showHeroSessionOnBounds(heroSession.id);
+      AliveBarPositioner.showHeroSessionOnBounds(sessionId);
       this.events.once(sessionObserver, 'hero:updated', () => {
         this.sendAppEvent('Session.loaded');
-        AliveBarPositioner.showApp();
+        const plugin = HeroCorePlugin.bySessionId.get(sessionId);
+        if (plugin.activePuppetPage) AliveBarPositioner.focusedPageId(plugin.activePuppetPage.id);
       });
-      this.activeHeroSessionId = heroSession.id;
+      this.activeHeroSessionId = sessionId;
     }
   }
 
@@ -263,7 +267,7 @@ export default class ChromeAliveCore {
           ...sessionObserver.getScriptDetails(),
         });
       } else {
-        AliveBarPositioner.hideApp();
+        AliveBarPositioner.resetSession(heroSessionId);
         this.sendAppEvent('Session.active', null);
       }
 
@@ -340,10 +344,6 @@ export default class ChromeAliveCore {
 
   private static async onNewBrowser(): Promise<void> {
     await this.launchApp();
-  }
-
-  private static hideApp(): void {
-    AliveBarPositioner.hideApp();
   }
 
   private static closeApp(): void {

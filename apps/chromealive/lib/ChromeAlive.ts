@@ -24,7 +24,9 @@ export class ChromeAlive extends EventEmitter {
   #mouseDown: boolean;
   #api: ChromeAliveApi;
   #exited = false;
-  #preDragVisibleChildWindowIds: number[] = [];
+  #visibleWindowIdsToVisibleTime = new Map<number, number>();
+  #lastChildWindowBlur = -1;
+  #savedVisibleWindowIds = new Set<number>();
 
   constructor(readonly coreServerAddress?: string) {
     super();
@@ -79,67 +81,59 @@ export class ChromeAlive extends EventEmitter {
   }
 
   private hideToolbarWindow(): void {
-    console.log('hideToolbar');
-    if (!this.#toolbarIsVisible) {
-      return;
-    }
+    if (this.doesAnyAppWindowHaveFocus() || Date.now() - this.#lastChildWindowBlur < 500) return;
+    this.#savedVisibleWindowIds.clear();
+    for (const id of this.#visibleWindowIdsToVisibleTime.keys())
+      this.#savedVisibleWindowIds.add(id);
 
     this.#toolbarWindow.hide();
     for (const window of this.#childWindowsByName.values()) {
       window.hide();
     }
-    this.#toolbarIsVisible = false;
   }
 
-  private showToolbarWindow(onTop: boolean): void {
-    console.log('showToolbar', { onTop });
-
+  private showToolbarWindow(): void {
     if (!this.#toolbarWindow.isVisible()) {
-      this.#toolbarWindow.show();
-      for (const window of this.#childWindowsByName.values()) {
-        window.show();
-      }
+      this.#toolbarWindow.showInactive();
     }
-    this.toggleToolbarOnTop(onTop);
-    this.#toolbarIsVisible = true;
-    if (!onTop) {
-     const hasFocus = this.doesAppWindowHaveFocus();
-      console.log('not on top', hasFocus);
-      if (!hasFocus) this.#toolbarWindow.blur();
+    for (const window of this.#childWindowsByName.values()) {
+      if (window.isVisible()) continue;
+      if (this.#savedVisibleWindowIds.has(window.id)) window.show();
     }
+    this.#savedVisibleWindowIds.clear();
   }
 
-  private doesAppWindowHaveFocus(): boolean {
-    if (this.#toolbarWindow.isFocused()) return true;
+  private doesAnyAppWindowHaveFocus(): boolean {
+    if (
+      this.#toolbarWindow.isFocused() ||
+      this.#toolbarWindow.webContents.isFocused() ||
+      this.#toolbarWindow.webContents.isDevToolsFocused()
+    ) {
+      return true;
+    }
+    // if any windows launched in last second, consider this "focused"
+    const now = Date.now();
+    for (const value of this.#visibleWindowIdsToVisibleTime.values()) {
+      if (now - value < 500) return true;
+    }
     for (const window of this.#childWindowsByName.values()) {
-      if (window.isFocused()) return true;
+      if (
+        window.isFocused() ||
+        window.webContents.isFocused() ||
+        window.webContents.isDevToolsFocused()
+      ) {
+        return true;
+      }
     }
     return false;
   }
 
-  private toggleToolbarOnTop(onTop: boolean): void {
-    this.#toolbarWindow.setAlwaysOnTop(onTop);
-    for (const window of this.#childWindowsByName.values()) {
-      window.setAlwaysOnTop(onTop);
-    }
-  }
-
   private didStartDragging(): void {
-    this.#preDragVisibleChildWindowIds = [];
-    for (const window of this.#childWindowsByName.values()) {
-      if (window.isVisible()) this.#preDragVisibleChildWindowIds.push(window.id);
-    }
     this.hideToolbarWindow();
   }
 
   private didStopDragging(): void {
-    this.#toolbarIsVisible = true;
-    this.#toolbarWindow.show();
-    for (const window of this.#childWindowsByName.values()) {
-      if (this.#preDragVisibleChildWindowIds.includes(window.id)) window.show();
-    }
-    this.#preDragVisibleChildWindowIds.length = 0;
-    this.toggleToolbarOnTop(true);
+    this.showToolbarWindow();
   }
 
   private appExit(): void {
@@ -213,6 +207,7 @@ export class ChromeAlive extends EventEmitter {
       acceptFirstMouse: true,
       hasShadow: false,
       skipTaskbar: true,
+      alwaysOnTop: true,
       autoHideMenuBar: true,
       width: workarea.width,
       y: workarea.y,
@@ -257,9 +252,8 @@ export class ChromeAlive extends EventEmitter {
     this.#toolbarWindow.on('close', () => app.exit());
     this.#toolbarWindow.webContents.on('ipc-message', (e, eventName, ...args) => {
       if (eventName === 'App:mousemove') {
-        // move back to top
-        if (this.#toolbarIsVisible && this.#toolbarWindow.isAlwaysOnTop()) {
-          this.toggleToolbarOnTop(true);
+        if (!this.#toolbarWindow.isFocused()) {
+          this.#toolbarWindow.showInactive();
         }
       } else if (eventName === 'App:changeHeight') {
         this.#toolbarWindow.setBounds({
@@ -267,7 +261,9 @@ export class ChromeAlive extends EventEmitter {
         });
       } else if (eventName === 'App:showChildWindow') {
         const frameName = args[0];
-        this.#childWindowsByName.get(frameName)?.show();
+        const window = this.#childWindowsByName.get(frameName);
+        window?.show();
+        window?.focusOnWebView();
       } else if (eventName === 'App:hideChildWindow') {
         const frameName = args[0];
         this.#childWindowsByName.get(frameName)?.hide();
@@ -307,6 +303,14 @@ export class ChromeAlive extends EventEmitter {
       }
     });
 
+    const id = childWindow.id;
+    childWindow.on('show', () => {
+      this.#visibleWindowIdsToVisibleTime.set(id, Date.now());
+    });
+    childWindow.on('hide', () => {
+      this.#lastChildWindowBlur = Date.now();
+      this.#visibleWindowIdsToVisibleTime.delete(id);
+    });
     let hasHandled = false;
     childWindow.on('close', async e => {
       if (!hasHandled) {
@@ -360,8 +364,7 @@ export class ChromeAlive extends EventEmitter {
       this.didStopDragging();
     }
     if (eventType === 'App.show') {
-      const onTop = (data as any).onTop ?? true;
-      this.showToolbarWindow(onTop);
+      this.showToolbarWindow();
     }
     if (eventType === 'App.hide') {
       this.hideToolbarWindow();

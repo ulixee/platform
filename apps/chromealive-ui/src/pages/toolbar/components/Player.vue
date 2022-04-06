@@ -105,7 +105,6 @@ export default Vue.defineComponent({
   },
   watch: {
     mode(value) {
-      if (value !== 'Finder') WindowsController.hideMenuFinder();
       this.isShowingFinder = value === 'Finder';
     },
   },
@@ -145,6 +144,10 @@ export default Vue.defineComponent({
       }
     },
 
+    finishHideUrl() {
+      this.isShowingUrlMenu = false;
+    },
+
     handleMouseLeave() {
       this.mouseIsWithinPlayer = false;
     },
@@ -156,10 +159,12 @@ export default Vue.defineComponent({
 
   mounted() {
     WindowsController.on(EmitterName.hideMenuFinder, this.finishHideFinder.bind(this));
+    WindowsController.on(EmitterName.hideMenuUrl, this.finishHideUrl.bind(this));
   },
 
   beforeUnmount() {
     WindowsController.off(EmitterName.hideMenuFinder, this.finishHideFinder.bind(this));
+    WindowsController.off(EmitterName.hideMenuUrl, this.finishHideUrl.bind(this));
   },
 });
 </script>

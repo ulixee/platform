@@ -20,13 +20,10 @@ type IEmitterEvents = {
 
 const emitter: Emitter<IEmitterEvents> = mitt<IEmitterEvents>();
 
-let isFocused = false;
-window.addEventListener('focus', () => (isFocused = true));
-window.addEventListener('blur', () => (isFocused = false));
-
 export default class WindowsController {
   static primaryMenu;
-  static finderMenu;
+  static finderMenu: Window;
+  static showingFinderMenuTimestamp: number;
   static urlMenu;
 
   static showMenuPrimary(rect: DOMRect) {
@@ -42,15 +39,15 @@ export default class WindowsController {
     } else {
       const features = `top=${top},left=${left},width=${380},height=${228}`;
       this.primaryMenu = window.open('/menu-primary.html', frameName, features);
-      this.primaryMenu.addEventListener('blur', () => this.hideMenuPrimary());
-      this.primaryMenu.hideMenu = () => {
-        if (isFocused) return;
+      this.primaryMenu.addEventListener('blur', () => {
         this.hideMenuPrimary();
-      };
+      });
     }
   }
 
   static hideMenuPrimary() {
+    if (!this.primaryMenu) return;
+
     const frameName = 'MenuPrimary';
     document.dispatchEvent(
       new CustomEvent('App:hideChildWindow', {
@@ -65,6 +62,8 @@ export default class WindowsController {
     const left = rect.x + window.screenLeft - 10;
     const top = rect.y + rect.height + window.screenTop - 5;
     if (this.finderMenu) {
+      this.finderMenu.moveTo(left, top);
+      this.showingFinderMenuTimestamp = Date.now();
       document.dispatchEvent(
         new CustomEvent('App:showChildWindow', {
           detail: { frameName },
@@ -72,12 +71,12 @@ export default class WindowsController {
       );
     } else {
       const features = `top=${top},left=${left},width=${400},height=${400}`;
+      this.showingFinderMenuTimestamp = Date.now();
       this.finderMenu = window.open('/menu-finder.html', frameName, features);
-      this.finderMenu.addEventListener('blur', () => this.hideMenuFinder());
-      this.finderMenu.hideMenu = () => {
-        if (isFocused) return;
+      this.finderMenu.addEventListener('blur', () => {
+        if (Date.now() - this.showingFinderMenuTimestamp < 500) return;
         this.hideMenuFinder();
-      };
+      });
     }
   }
 
@@ -104,11 +103,9 @@ export default class WindowsController {
     } else {
       const features = `top=${top},left=${left},width=${rect.width * 2},height=${400}`;
       this.urlMenu = window.open('/menu-url.html', frameName, features);
-      this.urlMenu.addEventListener('blur', () => this.hideMenuUrl());
-      this.urlMenu.hideMenu = () => {
-        if (isFocused) return;
+      this.urlMenu.addEventListener('blur', () => {
         this.hideMenuUrl();
-      };
+      });
     }
   }
 

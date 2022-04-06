@@ -22,8 +22,22 @@ export default class AliveBarPositioner {
   private static pendingWindowRepositionSessionId: string;
   private static pendingShowSessionId: string;
 
+  private static focusedPagesById = new Map<string, boolean>();
+  private static focusedDevtoolsById = new Map<string, boolean>();
   private static isDraggingChrome = false;
-  private static isAppOnTop = false;
+
+  private static get isAppShowing(): boolean {
+    for (const value of this.focusedDevtoolsById.values()) if (value) return true;
+    for (const value of this.focusedPagesById.values()) if (value) return true;
+    return false;
+  }
+
+  private static lastVisibility = {
+    showing: false,
+    hasDelayedHide: false,
+    sendTime: -1,
+    sendTimeout: null as NodeJS.Timeout,
+  };
 
   private static lastWindowBoundsBySessionId: {
     [sessionId: string]: IBounds;
@@ -48,21 +62,72 @@ export default class AliveBarPositioner {
         ChromeAliveCore.sendAppEvent('App.startedDraggingChrome');
       } else {
         ChromeAliveCore.sendAppEvent('App.stoppedDraggingChrome');
-        this.isAppOnTop = true;
       }
     }
   }
 
-  public static showApp(onTop = true): void {
-    // app show puts app on top
-    ChromeAliveCore.sendAppEvent('App.show', { onTop });
-    this.isAppOnTop = onTop;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static setDevtoolsFocused(puppetPageId: string, focused: boolean, dockSide: string): void {
+    this.focusedDevtoolsById.set(puppetPageId, focused);
+    this.syncAppVisibility();
   }
 
-  public static hideApp(): void {
+  public static focusedPageId(puppetPageId: string): void {
+    // app show puts app on top
+    this.focusedPagesById.set(puppetPageId, true);
+    this.syncAppVisibility();
+  }
+
+  public static resetSession(heroSessionId?: string): void {
+    this.focusedDevtoolsById.clear();
+    this.focusedPagesById.clear();
+    if (heroSessionId) {
+      delete this.lastWindowBoundsBySessionId[heroSessionId];
+    } else {
+      this.lastWindowBoundsBySessionId = {};
+    }
+    this.syncAppVisibility();
+  }
+
+  public static blurredPageId(puppetPageId: string): void {
+    this.focusedPagesById.set(puppetPageId, false);
     this.isDraggingChrome = false;
-    this.isAppOnTop = false;
-    ChromeAliveCore.sendAppEvent('App.hide');
+    this.syncAppVisibility();
+  }
+
+  public static syncAppVisibility(): void {
+    const isShowing = this.isAppShowing;
+
+    if (!isShowing && this.isMousedown) return;
+
+    clearTimeout(this.lastVisibility.sendTimeout);
+    this.lastVisibility.sendTimeout = null;
+    let msToDelay: number;
+    // if not showing, wait for 500 ms
+    if (this.lastVisibility.showing === true && !isShowing && !this.lastVisibility.hasDelayedHide) {
+      this.lastVisibility.hasDelayedHide = true;
+      msToDelay = 500;
+    } else {
+      msToDelay = Date.now() - this.lastVisibility.sendTime;
+      if (msToDelay > 100) msToDelay = -1;
+    }
+    if (msToDelay > 0) {
+      this.lastVisibility.sendTimeout = setTimeout(this.syncAppVisibility.bind(this), msToDelay);
+      return;
+    }
+    this.lastVisibility.hasDelayedHide = false;
+
+    if (this.lastVisibility.showing === isShowing) {
+      return;
+    }
+
+    this.lastVisibility.showing = isShowing;
+    this.lastVisibility.sendTime = Date.now();
+    if (isShowing) {
+      ChromeAliveCore.sendAppEvent('App.show');
+    } else {
+      ChromeAliveCore.sendAppEvent('App.hide');
+    }
   }
 
   public static showHeroSessionOnBounds(sessionId: string): void {
@@ -122,6 +187,7 @@ export default class AliveBarPositioner {
 
       this.onChromeWindowBoundsChanged(sessionId, this.lastWindowBoundsBySessionId[sessionId]);
     }
+    if (!this.isMousedown) this.syncAppVisibility();
   }
 
   public static onAppReady(workarea: IBoundsAndScale): void {
