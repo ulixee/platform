@@ -1,28 +1,35 @@
 import logDebug from '../logDebug';
 
 let creatingTabGroup = false;
-
 let hiddenGroupId: number;
-const visibleTabIds: Set<number> = new Set();
-const hiddenTabIds: Set<number> = new Set();
+const visibleTabIds = new Set<number>();
+const hiddenTabIds = new Set<number>();
+const isStarted = createHiddenGroup().catch(error => console.log(error));
+// @ts-expect-error
+self.details = {
+  visibleTabIds,
+  hiddenTabIds,
+  creatingTabGroup
+}
 
 export async function hideTabs(payload: { showTabIds: number[] }): Promise<void> {
   const { showTabIds } = payload;
-  const currentWindow = await chrome.windows.getCurrent();
-  const existingTabs = await chrome.tabs.query({ windowId: currentWindow.id });
-  let activeTabWasHidden = false;
+  await isStarted;
+
+  const existingTabs = await chrome.tabs.query({ currentWindow: true });
+  visibleTabIds.clear();
+  hiddenTabIds.clear();
 
   for (const tab of existingTabs) {
     if (showTabIds.includes(tab.id)) {
       visibleTabIds.add(tab.id);
-      hiddenTabIds.delete(tab.id);
     } else {
-      if (tab.active) {
-        activeTabWasHidden = true;
-      }
-      visibleTabIds.delete(tab.id);
       hiddenTabIds.add(tab.id);
     }
+  }
+
+  if (!hiddenGroupId) {
+    await createTabGroup([...hiddenTabIds]);
   }
 
   await chrome.tabs.group({
@@ -30,80 +37,39 @@ export async function hideTabs(payload: { showTabIds: number[] }): Promise<void>
     tabIds: Array.from(hiddenTabIds),
   });
 
+  console.log('grouped', {
+    hiddenGroupId,
+    tabIds: Array.from(hiddenTabIds),
+    visibleTabs: [...visibleTabIds],
+  });
+
   if (visibleTabIds.size) {
     const tabIds = Array.from(visibleTabIds);
     await chrome.tabs.ungroup(tabIds);
-    if (activeTabWasHidden) {
-      await chrome.tabs.update(tabIds[0], { active: true });
-    }
-  }
-}
-
-export function isCreatingTabGroup() {
-  return creatingTabGroup;
-}
-
-async function groupTabs(payload: {
-  tabIds: number[];
-  collapsed: boolean;
-  windowId: number;
-  color: chrome.tabGroups.ColorEnum;
-}): Promise<{ groupId: number }> {
-  const { windowId, tabIds, color, collapsed } = payload;
-  const matchingGroups = await new Promise<chrome.tabGroups.TabGroup[]>(resolve =>
-    chrome.tabGroups.query({ windowId }, resolve),
-  );
-
-  creatingTabGroup = true;
-  try {
-    let groupId = matchingGroups[0]?.id;
-    if (groupId) {
-      await chrome.tabs.group({
-        groupId,
-        tabIds,
-      });
-    } else {
-      groupId = await chrome.tabs.group({
-        createProperties: {
-          windowId,
-        },
-        tabIds,
-      });
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    logDebug(`Updated group tabIds=${tabIds.join(',')}, windowId=${windowId}, groupId=${groupId}`);
-
-    await moveHiddenGroupToLeft(groupId);
-    await chrome.tabGroups.update(groupId, { color, collapsed, title: '' });
-    logDebug(`Updated group props=${JSON.stringify({ color, collapsed })}`);
-
-    return { groupId };
-  } catch (err) {
-    console.error('ERROR updating tab group', err);
-    setTimeout(() => groupTabs(payload), 100);
-  } finally {
-    setTimeout(() => (creatingTabGroup = false), 200);
+    await chrome.tabs.update(tabIds[0], { active: true });
   }
 }
 
 // LISTENERS ///////////////////////////////////////////////////////////////////////////////////////
 
 chrome.tabGroups.onMoved.addListener(() => {
+  if (creatingTabGroup) return;
   moveHiddenGroupToLeft(hiddenGroupId);
 });
 
-chrome.tabGroups.onUpdated.addListener(group => {
+chrome.tabGroups.onUpdated.addListener(async group => {
   if (creatingTabGroup) return;
   if (group.id === hiddenGroupId && !group.collapsed) {
+    await new Promise(resolve => setTimeout(resolve, 100));
     collapseHiddenGroup(group.id);
+    moveHiddenGroupToLeft(hiddenGroupId);
   }
 });
 
-chrome.tabs.onActivated.addListener(async ({ tabId }) => {
-  if (hiddenTabIds.has(tabId)) {
-    const activeTabId = Array.from(visibleTabIds)[0];
-    await activateTab(activeTabId);
-  }
+chrome.tabGroups.onRemoved.addListener(async tabGroup => {
+  if (tabGroup.id !== hiddenGroupId) return;
+  await new Promise(resolve => setTimeout(resolve, 200));
+  await createHiddenGroup();
 });
 
 chrome.tabs.onRemoved.addListener(tabId => {
@@ -111,19 +77,17 @@ chrome.tabs.onRemoved.addListener(tabId => {
   visibleTabIds.delete(tabId);
 });
 
-chrome.tabGroups.onRemoved.addListener(async tabGroup => {
-  if (tabGroup.id !== hiddenGroupId) return;
-  await createHiddenGroup();
-});
-
-chrome.tabs.onMoved.addListener(() => {
-  moveHiddenGroupToLeft(hiddenGroupId);
+chrome.tabs.onMoved.addListener((tabId, moveInfo) => {
+  if (moveInfo.toIndex === 0) {
+    setTimeout(() => moveHiddenGroupToLeft(hiddenGroupId), 200);
+  }
 });
 
 // PRIVATE /////////////////////////////////////////////////////////////////////////////////////////
 
 let isMovingHiddenGroup = false;
 function moveHiddenGroupToLeft(groupId: number, retryNumber = 0) {
+  if (!groupId) return;
   if (isMovingHiddenGroup && !retryNumber) return;
   isMovingHiddenGroup = true;
   chrome.tabGroups
@@ -131,12 +95,14 @@ function moveHiddenGroupToLeft(groupId: number, retryNumber = 0) {
     .then(() => (isMovingHiddenGroup = false))
     .catch(err => {
       if (retryNumber > 10) throw err;
+      isMovingHiddenGroup = false;
       setTimeout(() => moveHiddenGroupToLeft(groupId, retryNumber + 1), 50);
     });
 }
 
 let isCollapsingHiddenGroup = false;
 function collapseHiddenGroup(groupId, retryNumber = 0) {
+  if (!groupId) return;
   if (isCollapsingHiddenGroup && !retryNumber) return;
   isCollapsingHiddenGroup = true;
 
@@ -145,37 +111,19 @@ function collapseHiddenGroup(groupId, retryNumber = 0) {
     .then(() => (isCollapsingHiddenGroup = false))
     .catch(err => {
       if (retryNumber > 10) throw err;
+      isCollapsingHiddenGroup = false;
       setTimeout(() => collapseHiddenGroup(groupId, retryNumber + 1), 50);
     });
 }
 
-let isActivatingTab = false;
-function activateTab(tabId: number, retryNumber = 0) {
-  if (isActivatingTab && !retryNumber) return;
-  isActivatingTab = true;
+// CREATE GROUP /////////////////////////////////////////////////////////////////////////////////////////
 
-  chrome.tabs
-    .update(tabId, { active: true })
-    .then(() => (isActivatingTab = false))
-    .catch(err => {
-      if (retryNumber > 10) {
-        if (String(err).includes('No tab with id')) {
-          hiddenTabIds.delete(tabId);
-          visibleTabIds.delete(tabId);
-          return;
-        }
-        throw err;
-      }
-      setTimeout(() => activateTab(tabId, retryNumber + 1), 50);
-    });
-}
-
-async function createHiddenGroup() {
+async function createHiddenGroup(): Promise<void> {
+  const tabs = await chrome.tabs.query({ currentWindow: true });
   if (hiddenGroupId === undefined) {
     const hiddenGroups = await chrome.tabGroups.query({ collapsed: true });
     if (hiddenGroups.length) {
       hiddenGroupId = hiddenGroups[0].id;
-      const tabs = await chrome.tabs.query({ currentWindow: true });
       for (const tab of tabs) {
         if (tab.groupId === hiddenGroupId) hiddenTabIds.add(tab.id);
         else visibleTabIds.add(tab.id);
@@ -184,53 +132,48 @@ async function createHiddenGroup() {
     }
   }
 
-  hiddenGroupId = undefined;
-
-  for (const tabId of visibleTabIds.values()) {
-    try {
-      await chrome.tabs.get(tabId);
-    } catch (error) {
-      visibleTabIds.delete(tabId);
-    }
-  }
-  for (const tabId of hiddenTabIds.values()) {
-    try {
-      await chrome.tabs.get(tabId);
-    } catch (error) {
-      hiddenTabIds.delete(tabId);
-    }
-  }
-  const currentWindow = await chrome.windows.getCurrent();
+  hiddenTabIds.clear();
+  visibleTabIds.clear();
   // window opens with one or more tabs that should remain shown
-  const existingTabs = await chrome.tabs.query({ windowId: currentWindow.id });
-  for (const existingTab of existingTabs) {
-    if (hiddenTabIds.has(existingTab.id)) {
-      continue;
-    } else if (!hiddenTabIds.size && existingTab.url === 'about:blank') {
+  for (const existingTab of tabs) {
+    if (!existingTab.active) {
       hiddenTabIds.add(existingTab.id);
+    } else {
+      visibleTabIds.add(existingTab.id);
     }
-    visibleTabIds.add(existingTab.id);
   }
 
   // tabGroup must have at least 1 tab so we create one if needed
   if (!hiddenTabIds.size) {
-    const newTab = await chrome.tabs.create({
-      url: 'chrome://newtab/',
-      index: 0,
-      selected: false,
-      active: false,
-    });
-    hiddenTabIds.add(newTab.id);
+    return;
   }
 
-  const hiddenTabIdsArray = Array.from(hiddenTabIds);
-  const { groupId } = await groupTabs({
-    tabIds: hiddenTabIdsArray,
-    collapsed: true,
-    windowId: currentWindow.id,
-    color: 'grey',
-  });
-  hiddenGroupId = groupId;
+  await createTabGroup([...hiddenTabIds]);
+
+  for (const tab of tabs) {
+    if (visibleTabIds.has(tab.id)) {
+      if (!tab.active) await chrome.tabs.update(tab.id, { active: true });
+      break;
+    }
+  }
 }
 
-createHiddenGroup().catch(error => console.log(error));
+async function createTabGroup(tabIds: number[]): Promise<void> {
+  try {
+    creatingTabGroup = true;
+    if (!hiddenGroupId) {
+      hiddenGroupId = await chrome.tabs.group({
+        tabIds,
+      });
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    await chrome.tabGroups.update(hiddenGroupId, { color: 'grey', collapsed: true, title: '' });
+    logDebug(`Updated group tabIds=${tabIds.join(',')}, groupId=${hiddenGroupId}`);
+  } catch (err) {
+    console.error('ERROR updating tab group', err);
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return createTabGroup(tabIds);
+  } finally {
+    creatingTabGroup = false;
+  }
+}

@@ -24,6 +24,7 @@ export class ChromeAlive extends EventEmitter {
   #mouseDown: boolean;
   #api: ChromeAliveApi;
   #exited = false;
+  #preDragVisibleChildWindowIds: number[] = [];
 
   constructor(readonly coreServerAddress?: string) {
     super();
@@ -78,6 +79,7 @@ export class ChromeAlive extends EventEmitter {
   }
 
   private hideToolbarWindow(): void {
+    console.log('hideToolbar');
     if (!this.#toolbarIsVisible) {
       return;
     }
@@ -90,6 +92,8 @@ export class ChromeAlive extends EventEmitter {
   }
 
   private showToolbarWindow(onTop: boolean): void {
+    console.log('showToolbar', { onTop });
+
     if (!this.#toolbarWindow.isVisible()) {
       this.#toolbarWindow.show();
       for (const window of this.#childWindowsByName.values()) {
@@ -98,6 +102,19 @@ export class ChromeAlive extends EventEmitter {
     }
     this.toggleToolbarOnTop(onTop);
     this.#toolbarIsVisible = true;
+    if (!onTop) {
+     const hasFocus = this.doesAppWindowHaveFocus();
+      console.log('not on top', hasFocus);
+      if (!hasFocus) this.#toolbarWindow.blur();
+    }
+  }
+
+  private doesAppWindowHaveFocus(): boolean {
+    if (this.#toolbarWindow.isFocused()) return true;
+    for (const window of this.#childWindowsByName.values()) {
+      if (window.isFocused()) return true;
+    }
+    return false;
   }
 
   private toggleToolbarOnTop(onTop: boolean): void {
@@ -107,12 +124,35 @@ export class ChromeAlive extends EventEmitter {
     }
   }
 
+  private didStartDragging(): void {
+    this.#preDragVisibleChildWindowIds = [];
+    for (const window of this.#childWindowsByName.values()) {
+      if (window.isVisible()) this.#preDragVisibleChildWindowIds.push(window.id);
+    }
+    this.hideToolbarWindow();
+  }
+
+  private didStopDragging(): void {
+    this.#toolbarIsVisible = true;
+    this.#toolbarWindow.show();
+    for (const window of this.#childWindowsByName.values()) {
+      if (this.#preDragVisibleChildWindowIds.includes(window.id)) window.show();
+    }
+    this.#preDragVisibleChildWindowIds.length = 0;
+    this.toggleToolbarOnTop(true);
+  }
+
   private appExit(): void {
     if (this.#exited) return;
     this.#exited = true;
 
     console.warn('EXITING CHROMEALIVE!');
-    this.#nsEventMonitor?.stop();
+    try {
+      this.#nsEventMonitor?.stop();
+      this.#api.close();
+    } catch (err) {
+      console.error('ERROR shutting down', err);
+    }
     app.exit();
   }
 
@@ -121,6 +161,7 @@ export class ChromeAlive extends EventEmitter {
       await this.#api.connect();
       await this.createToolbarWindow();
       this.listenForMouseDown();
+      app.once('before-quit', () => this.appExit());
       ShutdownHandler.register(() => this.appExit());
 
       this.emit('ready');
@@ -230,9 +271,6 @@ export class ChromeAlive extends EventEmitter {
       } else if (eventName === 'App:hideChildWindow') {
         const frameName = args[0];
         this.#childWindowsByName.get(frameName)?.hide();
-      } else if (eventName === 'chromealive:event') {
-        const [eventType, data] = args;
-        this.onChromeAliveEvent(eventType, data);
       }
     });
 
@@ -299,6 +337,8 @@ export class ChromeAlive extends EventEmitter {
   private moveToolbarWindow(move: IAppMoveEvent): void {
     const bounds = this.#toolbarWindow.getBounds();
     if (bounds.x !== move.bounds.x || bounds.y !== move.bounds.y) {
+      bounds.x = move.bounds.x;
+      bounds.y = move.bounds.y;
       this.#toolbarWindow.setPosition(move.bounds.x, move.bounds.y);
     }
     if (bounds.width !== move.bounds.width) {
@@ -311,11 +351,13 @@ export class ChromeAlive extends EventEmitter {
     eventType: T,
     data: IChromeAliveEvents[T],
   ): void {
+    if (this.#exited) return;
+
     if (eventType === 'App.startedDraggingChrome') {
-      this.hideToolbarWindow();
+      this.didStartDragging();
     }
     if (eventType === 'App.stoppedDraggingChrome') {
-      this.showToolbarWindow(true);
+      this.didStopDragging();
     }
     if (eventType === 'App.show') {
       const onTop = (data as any).onTop ?? true;
@@ -324,7 +366,11 @@ export class ChromeAlive extends EventEmitter {
     if (eventType === 'App.hide') {
       this.hideToolbarWindow();
     }
-    if (eventType === 'App.quit') app.exit();
-    if (eventType === 'App.moveTo') this.moveToolbarWindow(data as IAppMoveEvent);
+    if (eventType === 'App.quit') {
+      this.appExit();
+    }
+    if (eventType === 'App.moveTo') {
+      this.moveToolbarWindow(data as IAppMoveEvent);
+    }
   }
 }

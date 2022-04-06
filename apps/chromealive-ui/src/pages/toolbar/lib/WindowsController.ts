@@ -42,6 +42,7 @@ export default class WindowsController {
     } else {
       const features = `top=${top},left=${left},width=${380},height=${228}`;
       this.primaryMenu = window.open('/menu-primary.html', frameName, features);
+      this.primaryMenu.addEventListener('blur', () => this.hideMenuPrimary());
       this.primaryMenu.hideMenu = () => {
         if (isFocused) return;
         this.hideMenuPrimary();
@@ -72,6 +73,7 @@ export default class WindowsController {
     } else {
       const features = `top=${top},left=${left},width=${400},height=${400}`;
       this.finderMenu = window.open('/menu-finder.html', frameName, features);
+      this.finderMenu.addEventListener('blur', () => this.hideMenuFinder());
       this.finderMenu.hideMenu = () => {
         if (isFocused) return;
         this.hideMenuFinder();
@@ -89,7 +91,6 @@ export default class WindowsController {
     emitter.emit(EmitterName.hideMenuFinder);
   }
 
-
   static showMenuUrl(rect: DOMRect) {
     const frameName = 'MenuUrl';
     const left = rect.x + window.screenLeft - 10;
@@ -101,9 +102,9 @@ export default class WindowsController {
         }),
       );
     } else {
-      const features = `top=${top},left=${left},width=${rect.width*2},height=${400}`;
+      const features = `top=${top},left=${left},width=${rect.width * 2},height=${400}`;
       this.urlMenu = window.open('/menu-url.html', frameName, features);
-      this.urlMenu.addEventListener('blur', () => this.hideMenuUrl())
+      this.urlMenu.addEventListener('blur', () => this.hideMenuUrl());
       this.urlMenu.hideMenu = () => {
         if (isFocused) return;
         this.hideMenuUrl();

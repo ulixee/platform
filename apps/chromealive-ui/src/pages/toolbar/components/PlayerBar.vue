@@ -2,7 +2,7 @@
   <div
     class="PlayerBar relative"
     :style="formattedCssVars()"
-    :class="{ isSelected: isSelected, notSelected: !isSelected }"
+    :class="{ isSelected, notSelected: !isSelected, isUsingFinder }"
     @mousedown="handleMouseDown($event)"
   >
     <div class="ticks">
@@ -19,15 +19,15 @@
     </div>
 
     <div
-      v-if="isSelected"
+      v-if="isSelected || isUsingFinder"
       class="ghost"
       :class="ghostClass"
     />
     <div
-      v-if="isSelected"
+      v-if="isSelected || isUsingFinder"
       ref="markerElem"
       class="marker"
-      :class="{ active: activeItem === 'marker', ...markerClass, [session.playbackState]: 1 }"
+      :class="{ active: activeItem === 'marker', ...markerClass, [session.playbackState]: 1, finder: isUsingFinder }"
       @mousedown="handleMouseDown($event, 'marker')"
     >
       <div class="marker-wrapper">
@@ -98,6 +98,7 @@ export default Vue.defineComponent({
   props: {
     isSelected: { type: Boolean },
     mouseIsWithinPlayer: { type: Boolean },
+    isUsingFinder: { type: Boolean },
     ticks: {
       type: Array as PropType<ITimelineTick[]>,
     },
@@ -115,6 +116,7 @@ export default Vue.defineComponent({
     const ghostClass = Vue.reactive({
       show: false,
       isAtLive: false,
+      finder: props.isUsingFinder
     });
 
     Vue.watch(
@@ -507,6 +509,10 @@ export default Vue.defineComponent({
   min-width: 4px;
   z-index: 12;
   left: calc(100% * var(--markerLeft) / 100);
+
+  &.finder {
+    opacity: 0.8;
+  }
 
   &.isLive.running {
     animation: pulse-animation 1s infinite;

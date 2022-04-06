@@ -50,6 +50,7 @@
         <div class="bar-bg" />
         <PlayerBar
           :is-selected="isSelected && !isShowingFinder"
+          :is-using-finder="isShowingFinder"
           :mouse-is-within-player="mouseIsWithinPlayer"
           :ticks="ticks"
           :session="session"
@@ -81,7 +82,7 @@ export default Vue.defineComponent({
     const isLiveMode = Vue.computed(() => props.mode === 'Live');
     const currentUrl = Vue.computed(() => {
       let url = 'about:blank';
-      if (props.mode === 'Live' || props.mode === 'Finder' && !props.timetravel) {
+      if (props.mode === 'Live' || (props.mode === 'Finder' && !props.timetravel)) {
         const urls = props.session?.timeline?.urls;
         if (urls.length) {
           url = urls[urls.length - 1]?.url;
@@ -138,8 +139,10 @@ export default Vue.defineComponent({
     },
 
     finishHideFinder() {
-      // this is triggering a loop of window showing and mode cycling
-      // this.$emit('toggleFinder', false);
+      if (this.isShowingFinder) {
+        this.isShowingFinder = false;
+        this.$emit('toggleFinder', false);
+      }
     },
 
     handleMouseLeave() {

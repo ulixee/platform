@@ -212,9 +212,14 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.mirrorPagePauseRefreshing = mode === 'Finder';
     const focusPages: IPuppetPage[] = [];
     if (mode === 'Finder') {
-      const activeTabId = this.heroSession.getLastActiveTab().id;
-      const mirrorPage = this.liveMirrorPagesByTabId[activeTabId];
-      focusPages.push(mirrorPage.page);
+      // if coming from timetravel, we'll use the timetravel player
+      if (this.timetravelPlayer.isOpen && this.mode === 'Timetravel') {
+        focusPages.push(this.timetravelPlayer.activeTab.mirrorPage.page);
+      } else {
+        const activeTabId = this.heroSession.getLastActiveTab().id;
+        const mirrorPage = this.liveMirrorPagesByTabId[activeTabId];
+        focusPages.push(mirrorPage.page);
+      }
     } else if (mode === 'Live') {
       focusPages.push(...this.getSessionPuppetPages());
     } else if (mode === 'Timetravel') {
@@ -252,6 +257,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     for (const mirrorPage of Object.values(this.liveMirrorPagesByTabId)) {
       mirrorPage.close().catch(console.error);
     }
+    clearTimeout(this.mirrorRefreshTimeout);
 
     this.timelineRecorder.close();
     this.timetravelPlayer?.close()?.catch(console.error);
@@ -461,6 +467,9 @@ export default class SessionObserver extends TypedEventEmitter<{
       delete this.liveMirrorPagesByTabId[tabId];
     });
     if (shouldAttach) {
+      this.openMode('Live').catch(error =>
+        this.logger.error('ERROR loading mode', { error, tabId }),
+      );
       mirrorPage
         .attachToPage(this.heroCorePlugin.mirrorPuppetPage, this.heroSession.id)
         .catch(error => this.logger.error('ERROR setting up mirrorPage', { error, tabId }));
@@ -489,7 +498,7 @@ export default class SessionObserver extends TypedEventEmitter<{
       clearTimeout(this.mirrorRefreshTimeout);
       this.mirrorRefreshTimeout = setTimeout(
         this.refreshLiveMirrorPage.bind(this, tabId),
-        500,
+        1e3,
       ).unref();
       return;
     }
