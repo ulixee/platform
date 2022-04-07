@@ -8,6 +8,7 @@ import {
 } from '../../injected-scripts/DevtoolsBackdoorConfig';
 import ChromeAliveCore from '../../index';
 import HeroCorePlugin from '../HeroCorePlugin';
+import AliveBarPositioner from '../AliveBarPositioner';
 
 export default class DevtoolsBackdoorModule {
   private events = new EventSubscriber();
@@ -88,6 +89,8 @@ export default class DevtoolsBackdoorModule {
       this.emitElementWasSelected(devtoolsSession, payload.backendNodeId).catch(console.error);
     } else if (event === EventType.ToggleInspectElementMode) {
       this.emitToggleInspectElementMode(payload.isActive);
+    } else if (event === EventType.DevtoolsFocus) {
+      this.emitDevtoolsFocusChanged(devtoolsSession, payload.focus, payload.dockSide);
     }
   }
 
@@ -115,6 +118,20 @@ export default class DevtoolsBackdoorModule {
     ChromeAliveCore.sendAppEvent('DevtoolsBackdoor.toggleInspectElementMode', { isActive });
   }
 
+  private emitDevtoolsFocusChanged(
+    devtoolsSession: IDevtoolsSession,
+    isFocused: boolean,
+    dockSide: 'undocked' | 'bottom' | 'left' | 'right',
+  ): void {
+    const tabId = this.devtoolsSessionMap.get(devtoolsSession)?.tabId;
+    void this.heroPlugin.getPuppetPageByTabId(tabId).then(puppetPage => {
+      if (puppetPage) {
+        AliveBarPositioner.setDevtoolsFocused(puppetPage.id, isFocused, dockSide);
+      }
+      return null;
+    });
+  }
+
   private async onExecutionContextCreated(
     devtoolsSession: IDevtoolsSession,
     event: Protocol.Runtime.ExecutionContextCreatedEvent,
@@ -126,7 +143,7 @@ export default class DevtoolsBackdoorModule {
       response = await devtoolsSession.send('Runtime.evaluate', {
         expression: `(function devtoolsBackdoorInjectedScripts() {
           ${injectedScript};
-          return DevtoolsBackdoor.getInspectedTabId();
+          return DevtoolsBackdoor.getInspectedTabId(10e3);
         })();`,
         awaitPromise: true,
         returnByValue: true,

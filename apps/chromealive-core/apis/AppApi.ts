@@ -13,7 +13,5 @@ export default class AppApi {
     AliveBarPositioner.onAppReady(args.workarea);
   }
 
-  static focus(): void {
-    AliveBarPositioner.showApp(true);
-  }
+  static focus(): void {}
 }

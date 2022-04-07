@@ -11,7 +11,7 @@
       "run_at": "document_start"
     }
   ],
-  "host_permissions": ["https://*/*", "http://*/*", "*://*/*"],
+  "host_permissions": ["https://*/*", "http://*/*", "*://*/*", "about:blank"],
   "background": {
     "service_worker": "/background.js"
   },

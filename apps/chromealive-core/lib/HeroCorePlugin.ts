@@ -56,26 +56,26 @@ export default class HeroCorePlugin extends CorePlugin {
     this.events.on(this.bridgeToExtension, 'message', this.onBridgeMessage.bind(this));
   }
 
-  public async getIdentifiedPuppetPageId(): Promise<string> {
-    for (const [puppetPage, identityResolution] of this.identityByPuppetPage) {
-      const identity = identityResolution.isResolved ? await identityResolution.promise : null;
-      if (identity) {
-        return puppetPage.id;
-      }
-    }
-    return this.puppetPagesById.keys().next().value;
-  }
-
   public async getTabIdByPuppetPageId(puppetPageId: string): Promise<number> {
     const puppetPage = this.puppetPagesById.get(puppetPageId);
-    const { tabId } = await this.identityByPuppetPage.get(puppetPage).promise;
-    return tabId;
+    try {
+      const { tabId } = await this.identityByPuppetPage.get(puppetPage).promise;
+      return tabId;
+    } catch (error) {
+      console.warn('Could not get tab id for puppet page', { puppetPageId, error });
+      return null;
+    }
   }
 
   public async getPuppetPageByTabId(tabId: number): Promise<IPuppetPage> {
-    const puppetPages = Array.from(this.identityByPuppetPage.keys());
-    const identities = await Promise.all(this.identityByPuppetPage.values());
-    return puppetPages.find((puppetPage, i) => identities[i].tabId === tabId);
+    for (const [page, identity] of this.identityByPuppetPage) {
+      try {
+        const id = await identity;
+        if (id.tabId === tabId) return page;
+      } catch (err) {
+        // no-op
+      }
+    }
   }
 
   /// /// PLUGIN IMPLEMENTATION METHODS ////////////////////////////////////////////////////////////////////////////////
@@ -114,7 +114,7 @@ export default class HeroCorePlugin extends CorePlugin {
       }
     }
 
-    this.mirrorPuppetPage ??= await context.newPage({
+    this.mirrorPuppetPage = await context.newPage({
       runPageScripts: false,
       enableDomStorageTracker: false,
       groupName: 'mirrorPage',
@@ -126,13 +126,16 @@ export default class HeroCorePlugin extends CorePlugin {
   public async onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
     if (page.browserContext.isIncognito || sessionSummary.options.showBrowser === false) return;
 
-    this.sessionId ??= sessionSummary.id;
     this.puppetPagesById.set(page.id, page);
-    const identityTimeout = page.groupName === 'mirrorPage' ? 30e3 : 10e3;
+    if (page.groupName === 'session') {
+      this.activePuppetPage ??= page;
+    }
+    const identityTimeout = page.groupName === 'mirrorPage' ? undefined : 10e3;
     this.identityByPuppetPage.set(
       page,
       createPromise<IPageIdentity>(identityTimeout, 'PuppetPage never received Tab ID'),
     );
+    this.identityByPuppetPage.get(page).promise.catch(console.warn);
     this.events.once(page, 'close', this.onPuppetPageClosed.bind(this, page));
 
     if (process.env.HERO_DEBUG_CHROMEALIVE) {
@@ -141,6 +144,8 @@ export default class HeroCorePlugin extends CorePlugin {
     }
 
     await Promise.all([
+      // needed to know when to blur tab and thus ChromeAlive bar (otherwise they all think they're still active)
+      page.devtoolsSession.send('Emulation.setFocusEmulationEnabled', { enabled: false }).catch(err => err),
       this.bridgeToExtension.addPuppetPage(page, this.events),
       this.setPageViewportToWindowBounds(page),
       this.elementsModule.onNewPuppetPage(page),

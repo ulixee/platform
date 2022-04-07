@@ -1,5 +1,4 @@
 import { sendToCore } from './BackgroundMessenger';
-import { isCreatingTabGroup } from './TabManagement';
 
 // WINDOW BOUNDS //////////////////////////////////////////////////////////////////////////////
 
@@ -42,19 +41,3 @@ async function broadcastOnPageVisible(windowId: number): Promise<void> {
     ...message,
   });
 }
-
-// GROUP OPENED //////////////////////////////////////////////////////////////////////////////
-
-function broadcastGroupOpened(windowId: number, groupId: number): void {
-  return sendToCore({
-    event: 'OnTabGroupOpened',
-    windowId,
-    groupId,
-    tabGroupOpened: true,
-  });
-}
-
-chrome.tabGroups.onUpdated.addListener(group => {
-  if (isCreatingTabGroup()) return;
-  if (group.collapsed === false) return broadcastGroupOpened(group.windowId, group.id);
-});
