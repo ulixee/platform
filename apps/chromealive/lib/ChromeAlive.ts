@@ -23,6 +23,7 @@ export class ChromeAlive extends EventEmitter {
   #nsEventMonitor: any;
   #mouseDown: boolean;
   #api: ChromeAliveApi;
+  #hideOnTimeout: NodeJS.Timeout;
   #exited = false;
   #visibleWindowIdsToVisibleTime = new Map<number, number>();
   #lastChildWindowBlur = -1;
@@ -81,7 +82,11 @@ export class ChromeAlive extends EventEmitter {
   }
 
   private hideToolbarWindow(): void {
-    if (this.doesAnyAppWindowHaveFocus() || Date.now() - this.#lastChildWindowBlur < 500) return;
+    clearTimeout(this.#hideOnTimeout);
+    if (this.doesAnyAppWindowHaveFocus() || Date.now() - this.#lastChildWindowBlur < 500) {
+      this.#hideOnTimeout = setTimeout(this.hideToolbarWindow.bind(this), 500);
+      return;
+    }
     this.#savedVisibleWindowIds.clear();
     for (const id of this.#visibleWindowIdsToVisibleTime.keys())
       this.#savedVisibleWindowIds.add(id);
@@ -93,6 +98,7 @@ export class ChromeAlive extends EventEmitter {
   }
 
   private showToolbarWindow(): void {
+    clearTimeout(this.#hideOnTimeout);
     if (!this.#toolbarWindow.isVisible()) {
       this.#toolbarWindow.showInactive();
     }

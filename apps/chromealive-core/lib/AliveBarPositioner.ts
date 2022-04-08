@@ -95,26 +95,38 @@ export default class AliveBarPositioner {
     this.syncAppVisibility();
   }
 
-  public static syncAppVisibility(): void {
+  public static syncAppVisibility(isDelay = false): void {
     const isShowing = this.isAppShowing;
 
-    if (!isShowing && this.isMousedown) return;
+    if (!isShowing && this.isMousedown) {
+      return;
+    }
 
-    clearTimeout(this.lastVisibility.sendTimeout);
-    this.lastVisibility.sendTimeout = null;
     let msToDelay: number;
     // if not showing, wait for 500 ms
-    if (this.lastVisibility.showing === true && !isShowing && !this.lastVisibility.hasDelayedHide) {
-      this.lastVisibility.hasDelayedHide = true;
-      msToDelay = 500;
+    if (this.lastVisibility.showing === true && !isShowing) {
+      if (isDelay) msToDelay = 0;
+      else {
+        if (this.lastVisibility.hasDelayedHide) return;
+        this.lastVisibility.hasDelayedHide = true;
+
+        msToDelay = 500;
+      }
     } else {
       msToDelay = Date.now() - this.lastVisibility.sendTime;
       if (msToDelay > 100) msToDelay = -1;
     }
+
+    clearTimeout(this.lastVisibility.sendTimeout);
+    this.lastVisibility.sendTimeout = null;
     if (msToDelay > 0) {
-      this.lastVisibility.sendTimeout = setTimeout(this.syncAppVisibility.bind(this), msToDelay);
+      this.lastVisibility.sendTimeout = setTimeout(
+        this.syncAppVisibility.bind(this, true),
+        msToDelay,
+      );
       return;
     }
+
     this.lastVisibility.hasDelayedHide = false;
 
     if (this.lastVisibility.showing === isShowing) {

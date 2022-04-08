@@ -54,12 +54,6 @@ export async function hideTabs(payload: { showTabIds: number[] }): Promise<void>
       }
       if (!tab.active) {
         await chrome.tabs.update(tab.id, { active: true });
-        await delay();
-        const window = await chrome.windows.getCurrent();
-        if (!window?.focused) {
-          logDebug('Focus window', window);
-          await chrome.windows.update(tab.windowId, { focused: true });
-        }
       }
     }
   }
