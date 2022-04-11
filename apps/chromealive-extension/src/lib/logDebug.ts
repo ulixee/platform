@@ -10,6 +10,6 @@ self.enableDebugLogging = enableDebugLogging;
 export default function logDebug(message: string, ...args: any[]) {
   if (isDebugEnabled) {
     // eslint-disable-next-line no-console
-    console.log(message, ...args);
+    console.log(new Date().toISOString().split('T').pop() + ' ' + message, ...args);
   }
 }

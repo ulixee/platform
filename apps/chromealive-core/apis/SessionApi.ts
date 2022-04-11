@@ -89,9 +89,14 @@ export default class SessionApi {
       error,
     };
   }
+
+  static search(args?: Parameters<ISessionApi['search']>[0]): ReturnType<ISessionApi['search']> {
+    const sessionObserver = getObserver(args);
+    return sessionObserver.search(args.query);
+  }
 }
 
-function getObserver(args?: IHeroSessionArgs): SessionObserver {
+function getObserver(args?: Partial<IHeroSessionArgs>): SessionObserver {
   const sessionId = args?.heroSessionId ?? ChromeAliveCore.activeHeroSessionId;
   if (!sessionId || !ChromeAliveCore.sessionObserversById.has(sessionId))
     throw new Error(`No active session found - sessionId: "${sessionId}"`);

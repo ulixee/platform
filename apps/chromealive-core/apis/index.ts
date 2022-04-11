@@ -20,13 +20,13 @@ const ApiHandlers: IApiHandlerSpec = {
   'Session.getDom': SessionApi.getDom,
   'Session.getActive': SessionApi.getActive,
   'Session.getMeta': SessionApi.getMeta,
+  'Session.search': SessionApi.search,
   'Databox.getOutput': DataboxApi.getOutput,
   'Databox.getCollectedAssets': DataboxApi.getCollectedAssets,
   'Databox.runExtract': DataboxApi.runExtract,
   'DevtoolsBackdoor.toggleInspectElementMode': DevtoolsBackdoorApi.toggleInspectElementMode,
   'DevtoolsBackdoor.highlightNode': DevtoolsBackdoorApi.highlightNode,
   'DevtoolsBackdoor.hideHighlight': DevtoolsBackdoorApi.hideHighlight,
-  'DevtoolsBackdoor.searchElements': DevtoolsBackdoorApi.searchElements,
   'DevtoolsBackdoor.generateQuerySelector': DevtoolsBackdoorApi.generateQuerySelector,
 };
 

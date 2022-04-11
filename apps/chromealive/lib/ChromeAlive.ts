@@ -26,8 +26,9 @@ export class ChromeAlive extends EventEmitter {
   #hideOnTimeout: NodeJS.Timeout;
   #exited = false;
   #visibleWindowIdsToVisibleTime = new Map<number, number>();
-  #lastChildWindowBlur = -1;
+  #lastWindowInteract = -1;
   #savedVisibleWindowIds = new Set<number>();
+  #apiWantsToShowToolbar = false;
 
   constructor(readonly coreServerAddress?: string) {
     super();
@@ -82,8 +83,9 @@ export class ChromeAlive extends EventEmitter {
   }
 
   private hideToolbarWindow(): void {
+    this.#apiWantsToShowToolbar = false;
     clearTimeout(this.#hideOnTimeout);
-    if (this.doesAnyAppWindowHaveFocus() || Date.now() - this.#lastChildWindowBlur < 500) {
+    if (this.doesAnyAppWindowHaveFocus() || Date.now() - this.#lastWindowInteract < 500) {
       this.#hideOnTimeout = setTimeout(this.hideToolbarWindow.bind(this), 500);
       return;
     }
@@ -98,6 +100,7 @@ export class ChromeAlive extends EventEmitter {
   }
 
   private showToolbarWindow(): void {
+    this.#apiWantsToShowToolbar = true;
     clearTimeout(this.#hideOnTimeout);
     if (!this.#toolbarWindow.isVisible()) {
       this.#toolbarWindow.showInactive();
@@ -107,6 +110,18 @@ export class ChromeAlive extends EventEmitter {
       if (this.#savedVisibleWindowIds.has(window.id)) window.show();
     }
     this.#savedVisibleWindowIds.clear();
+  }
+
+  private onAppWindowBlurred(id: number): void {
+    this.#lastWindowInteract = Date.now();
+    this.#visibleWindowIdsToVisibleTime.delete(id);
+    if (this.#apiWantsToShowToolbar === false) {
+      clearTimeout(this.#hideOnTimeout);
+      this.#hideOnTimeout = setTimeout(() => {
+        // only run if still false
+        if (this.#apiWantsToShowToolbar === false) this.hideToolbarWindow();
+      }, 500);
+    }
   }
 
   private doesAnyAppWindowHaveFocus(): boolean {
@@ -205,11 +220,11 @@ export class ChromeAlive extends EventEmitter {
       show: false,
       frame: false,
       roundedCorners: false,
-      focusable: false,
+      focusable: true,
       movable: false,
       closable: false,
       resizable: false,
-      transparent: true,
+      transparent: false,
       acceptFirstMouse: true,
       hasShadow: false,
       skipTaskbar: true,
@@ -230,13 +245,14 @@ export class ChromeAlive extends EventEmitter {
     // for child windows
     this.#toolbarWindow.webContents.setWindowOpenHandler(details => {
       const isMenu = details.frameName.includes('Menu');
+      const canMoveAndResize = !isMenu || details.frameName === 'MenuFinder';
       return {
         action: 'allow',
         overrideBrowserWindowOptions: {
-          resizable: !isMenu,
+          resizable: canMoveAndResize,
           frame: !isMenu,
           roundedCorners: true,
-          movable: !isMenu,
+          movable: canMoveAndResize,
           closable: true,
           transparent: isMenu,
           titleBarStyle: 'default',
@@ -254,12 +270,28 @@ export class ChromeAlive extends EventEmitter {
     this.#toolbarWindow.webContents.on('did-create-window', (childWindow, details) => {
       this.trackChildWindow(childWindow, details);
     });
+    const id = this.#toolbarWindow.id;
+
+    this.#toolbarWindow.on('show', () => {
+      this.#visibleWindowIdsToVisibleTime.set(id, Date.now());
+      if (this.#apiWantsToShowToolbar) this.showToolbarWindow();
+    });
+
+    this.#toolbarWindow.on('focus', () => {
+      this.#visibleWindowIdsToVisibleTime.set(id, Date.now());
+      if (this.#apiWantsToShowToolbar) this.showToolbarWindow();
+    });
+
+    this.#toolbarWindow.on('blur', () => this.onAppWindowBlurred(id));
 
     this.#toolbarWindow.on('close', () => app.exit());
     this.#toolbarWindow.webContents.on('ipc-message', (e, eventName, ...args) => {
       if (eventName === 'App:mousemove') {
-        if (!this.#toolbarWindow.isFocused()) {
-          this.#toolbarWindow.showInactive();
+        this.#lastWindowInteract = Date.now();
+        clearTimeout(this.#hideOnTimeout);
+        if (!this.#toolbarWindow.isVisible()) {
+          this.#toolbarWindow.show();
+          if (!this.#toolbarWindow.webContents.isFocused()) this.#toolbarWindow.focusOnWebView();
         }
       } else if (eventName === 'App:changeHeight') {
         this.#toolbarWindow.setBounds({
@@ -298,6 +330,7 @@ export class ChromeAlive extends EventEmitter {
     if (this.#childWindowsByName.has(frameName)) {
       throw new Error(`Child window with the same frameName already exists: ${frameName}`);
     }
+
     this.#childWindowsByName.set(frameName, childWindow);
     childWindow.webContents.on('ipc-message', (e, eventName, ...args) => {
       if (eventName === 'chromealive:api') {
@@ -306,6 +339,10 @@ export class ChromeAlive extends EventEmitter {
           const { filepath } = apiArgs;
           shell.showItemInFolder(filepath);
         }
+      } else if (eventName === 'App:changeHeight') {
+        childWindow.setBounds({
+          height: Math.round(args[0]),
+        });
       }
     });
 
@@ -313,10 +350,11 @@ export class ChromeAlive extends EventEmitter {
     childWindow.on('show', () => {
       this.#visibleWindowIdsToVisibleTime.set(id, Date.now());
     });
-    childWindow.on('hide', () => {
-      this.#lastChildWindowBlur = Date.now();
-      this.#visibleWindowIdsToVisibleTime.delete(id);
+    childWindow.on('focus', () => {
+      this.#visibleWindowIdsToVisibleTime.set(id, Date.now());
     });
+    childWindow.on('blur', () => this.onAppWindowBlurred(id));
+    childWindow.on('hide', () => this.onAppWindowBlurred(id));
     let hasHandled = false;
     childWindow.on('close', async e => {
       if (!hasHandled) {

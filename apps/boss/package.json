@@ -6,6 +6,7 @@
     "build": "yarn build:ui && yarn build:basic && cd ../../build/apps/boss && yarn && electron-builder install-app-deps",
     "build:basic": "cd ../.. && yarn run tsc && cd apps/boss && yarn copy:build",
     "build:ui": "yarn workspace @ulixee/apps-menubar-ui build && yarn workspace @ulixee/apps-chromealive-ui build && yarn workspace @ulixee/apps-chromealive-extension build",
+    "watch": "yarn copy:build --watch",
     "copy:build": "cd ../../build/apps/boss && node builder/copySources.js ./packages",
     "dist": "yarn build && cd ../../build/apps/boss && yarn && electron-builder --publish onTagOrDraft",
     "dist:basic": "yarn build:basic && cd ../../build/apps/boss && electron-builder",

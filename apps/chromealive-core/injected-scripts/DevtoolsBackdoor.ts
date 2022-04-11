@@ -1,4 +1,3 @@
-import { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
 import {} from '@ulixee/hero-interfaces/IDomChangeEvent';
 
 declare global {
@@ -72,6 +71,16 @@ class DevtoolsBackdoor {
     return results.nodeIds.map((x: number) => convertToElementSummary(x, domModel));
   }
 
+  public static async revealNodeInElementsPanel(backendNodeId: string) {
+    const Common = await eval("import('./devtools-frontend/front_end/core/common/common.js')");
+    const SDK = await eval("import('./devtools-frontend/front_end/core/sdk/sdk.js')");
+    const domModels = SDK.TargetManager.TargetManager.instance().models(SDK.DOMModel.DOMModel);
+    const domModel = domModels[0];
+    const nodeMap = await domModel.pushNodesByBackendIdsToFrontend(new Set([backendNodeId]));
+    const node = nodeMap.get(backendNodeId);
+    void Common.Revealer.reveal(node);
+  }
+
   public static getState() {
     // TODO
     // position of HeroScript & StateGenerator in tabs list
@@ -143,8 +152,8 @@ async function emitToggledInspectElementMode() {
   const orignalFn = InspectElementModeController.prototype.setMode;
 
   function setMode(mode: any) {
-    const isActive = mode === 'searchForNode';
-    const payload = JSON.stringify({ event: EventType.ToggleInspectElementMode, isActive });
+    const isActive = mode === 'searchForNode' || mode === 'searchForUAShadowDOM';
+    const payload = JSON.stringify({ event: EventType.ToggleInspectElementMode, isActive, mode });
     DevtoolsBackdoor.inspectElementModeIsActive = isActive;
     window[___emitFromDevtoolsToCore](payload);
     orignalFn.call(this, mode);

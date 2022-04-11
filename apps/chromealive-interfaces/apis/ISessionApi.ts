@@ -4,6 +4,7 @@ import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions
 import ICommandUpdatedEvent from '../events/ICommandUpdatedEvent';
 import IHeroSessionActiveEvent from '../events/IHeroSessionActiveEvent';
 import IAppModeEvent from '../events/IAppModeEvent';
+import ISessionSearchResult from '../ISessionSearchResult';
 
 export interface ISessionResumeArgs extends IHeroSessionArgs {
   startLocation: ISessionCreateOptions['sessionResume']['startLocation'];
@@ -59,6 +60,8 @@ export default interface ISessionApi {
     success: boolean;
     error?: Error;
   }>;
+
+  search(args: Partial<IHeroSessionArgs> & { query: string }): Promise<ISessionSearchResult>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/explicit-function-return-type

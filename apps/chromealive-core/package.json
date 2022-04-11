@@ -17,13 +17,17 @@
     "@ulixee/hero-timetravel": "1.5.4",
     "@ulixee/apps-chromealive": "1.5.4",
     "@ulixee/apps-chromealive-interfaces": "1.5.4",
-    "nanoid": "^3.1.30"
+    "nanoid": "^3.1.30",
+    "fuse.js": "^6.5.3"
   },
   "peerDependencies": {
     "@ulixee/hero-core": "^1.5.4"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.154",
-    "@ulixee/hero-puppet": "1.5.4"
+    "@ulixee/hero-testing": "1.5.4",
+    "@ulixee/hero-puppet": "1.5.4",
+    "@ulixee/hero-fullstack": "1.5.4",
+    "linkedom": "^0.13.0"
   }
 }

@@ -10,8 +10,8 @@ import IDomFocusEvent from './IDomFocusEvent';
 import IDomUpdatedEvent from './IDomUpdatedEvent';
 import ISessionTimetravelEvent from './ISessionTimetravelEvent';
 import IInterceptInspectElementMode from './IInterceptInspectElementMode';
-import { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
 import IDataboxCollectedAssetEvent from './IDataboxCollectedAssetEvent';
+import IElementSummary from '../IElementSummary';
 
 export default interface IChromeAliveEvents {
   'App.show': { onTop: boolean };
@@ -35,5 +35,5 @@ export default interface IChromeAliveEvents {
   'Command.focused': ICommandFocusedEvent;
   'SourceCode.updated': ISourceCodeUpdatedEvent;
   'DevtoolsBackdoor.toggleInspectElementMode': { isActive: boolean };
-  'DevtoolsBackdoor.elementWasSelected': { backendNodeId: number, nodeOverview: Protocol.DOM.Node };
+  'DevtoolsBackdoor.elementWasSelected': { element: IElementSummary };
 }
