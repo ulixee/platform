@@ -1,42 +1,30 @@
 <template>
   <div id="menu">
     <div class="section">
-      <ul class="basic-stats">
-        <li>
-          <div class="num">1</div>
-          <div class="label">SERVER</div>
-        </li>
-        <li>
-          <div class="num">1</div>
-          <div class="label">DATABOX</div>
-        </li>
-        <li>
-          <div class="num">1</div>
-          <div class="label">QUERIES</div>
-        </li>
-      </ul>
+      <a class="disabled">Open Ulixee Manager <span class="coming-soon">Coming Soon</span></a>
+      <a class="disabled">Open Ulixee Composer <span class="coming-soon">Coming Soon</span></a>
+      <a class="disabled">Open Ulixee Marketplace <span class="coming-soon">Coming Soon</span></a>
+      <a>Preferences...</a>
+      <a>Check for Updates</a>
     </div>
     <div class="section">
-      <div class="server-status">
-        <span class="circle" :class="{ stopped: !serverStarted }"></span>
-        <span v-if="serverStarted" class="text">Ulixee Server is running on {{ address }}</span>
-        <span v-else class="text">Server not running</span>
-      </div>
-      <button v-if="serverStarted" @click.prevent="stop()">Stop</button>
-      <button v-else @click.prevent="start()">Start</button>
-      <button @click.prevent="restart()">Restart</button>
-    </div>
-    <div class="section">
-      <a>Open Ulixee Desktop</a>
       <a @click.prevent="openLogsDirectory()">Open App Logs</a>
       <a @click.prevent="openDataDirectory()">Open Data Directory</a>
     </div>
     <div class="section">
-      <a>Preferences</a>
-      <a>About Ulixee</a>
+      <a @click.prevent="quit()">Shutdown Ulixee</a>
     </div>
     <div class="section">
-      <a @click.prevent="quit()">Quit</a>
+      <div class="server-status">
+        <span class="circle" :class="{ stopped: !serverStarted }"></span>
+        <span v-if="serverStarted" class="text">Server is running on {{ address }}</span>
+        <span v-else class="text">Server is not running</span>
+      </div>
+      <div class="server-actions">
+        <button v-if="serverStarted" @click.prevent="stop()">Stop</button>
+        <button v-else @click.prevent="start()">Start</button>
+        <button @click.prevent="restart()">Restart</button>
+      </div>
     </div>
   </div>
 </template>
@@ -79,10 +67,10 @@ export default Vue.defineComponent({
       this.sendEvent('Server.stop');
     },
     openLogsDirectory() {
-      this.sendEvent('App.openLogsDirectory')
+      this.sendEvent('App.openLogsDirectory');
     },
     openDataDirectory() {
-      this.sendEvent('App.openDataDirectory')
+      this.sendEvent('App.openDataDirectory');
     },
     sendEvent(api: string, ...args: any[]) {
       document.dispatchEvent(
@@ -90,8 +78,8 @@ export default Vue.defineComponent({
           detail: { api, args },
         }),
       );
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -132,9 +120,30 @@ button {
       background-color: Highlight;
       color: HighlightText;
     }
+    .coming-soon {
+      text-transform: uppercase;
+      font-weight: lighter;
+      font-size: 0.9em;
+      border-radius: 5px;
+      float: right;
+      padding: 2px 5px;
+      margin-right: 20px;
+      margin-top: -2px;
+      border: 1px solid #595959;
+    }
+    &.disabled {
+      color: #595959;
+      &:hover {
+        background-color: #eee;
+        .coming-soon {
+          opacity: 0.2;
+        }
+      }
+    }
+    box-sizing: border-box;
     display: block;
-    border-radius: 4px;
-    padding: 5px 2px;
+    margin: 3px 0;
+    padding: 5px 7px;
   }
 
   .section {
@@ -142,11 +151,14 @@ button {
       border-bottom: none;
       box-shadow: none;
     }
-    padding: 10px 5px;
+    padding: 7px 0;
+    margin: 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
   }
   .server-status {
+    padding: 8px 10px;
+    font-weight: bold;
     .circle {
       width: 10px;
       height: 10px;
@@ -155,6 +167,26 @@ button {
       background-color: greenyellow;
       border-radius: 50%;
       margin-right: 5px;
+      vertical-align: text-top;
+      margin-top: 2px;
+      &.stopped {
+        background-color: lightgrey;
+      }
+    }
+  }
+  .server-actions {
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-content: space-between;
+    button {
+      flex-grow: 1;
+      width: 35%;
+      padding: 3px 5px;
+      &:first-child{
+        margin-right: 30px;
+      }
     }
   }
   ul.basic-stats {
