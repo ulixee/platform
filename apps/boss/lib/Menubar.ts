@@ -39,7 +39,8 @@ export class Menubar extends EventEmitter {
     if (process.platform === 'darwin') {
       app.setActivationPolicy('accessory');
     }
-    this.#vueServer = new VueServer(vueDistPath);
+    const cacheTime = app.isPackaged ? 3600 * 24 : 0;
+    this.#vueServer = new VueServer(vueDistPath, cacheTime);
     this.#ulixeeConfig = UlixeeConfig.global;
 
     if (app.isReady()) {

@@ -54,12 +54,6 @@ export async function hideTabs(payload: { showTabIds: number[] }): Promise<void>
       }
       if (!tab.active) {
         await chrome.tabs.update(tab.id, { active: true });
-        await delay();
-        const window = await chrome.windows.getCurrent();
-        if (!window?.focused) {
-          logDebug('Focus window', window);
-          await chrome.windows.update(tab.windowId, { focused: true });
-        }
       }
     }
   }
@@ -94,7 +88,7 @@ chrome.tabs.onRemoved.addListener(tabId => {
 
 chrome.tabs.onMoved.addListener((tabId, moveInfo) => {
   if (moveInfo.toIndex === 0) {
-    setTimeout(() => moveHiddenGroupToLeft(hiddenGroupId), 50);
+    setTimeout(() => moveHiddenGroupToLeft(hiddenGroupId), 100);
   }
 });
 
@@ -111,7 +105,7 @@ function moveHiddenGroupToLeft(groupId: number, retryNumber = 0) {
     .catch(err => {
       if (retryNumber > 10) throw err;
       isMovingHiddenGroup = false;
-      setTimeout(() => moveHiddenGroupToLeft(groupId, retryNumber + 1), 50);
+      setTimeout(() => moveHiddenGroupToLeft(groupId, retryNumber + 1), 100);
     });
 }
 
@@ -127,7 +121,7 @@ function collapseHiddenGroup(groupId, retryNumber = 0) {
     .catch(err => {
       if (retryNumber > 10) throw err;
       isCollapsingHiddenGroup = false;
-      setTimeout(() => collapseHiddenGroup(groupId, retryNumber + 1), 50);
+      setTimeout(() => collapseHiddenGroup(groupId, retryNumber + 1), 100);
     });
 }
 

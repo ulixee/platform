@@ -12,8 +12,8 @@ export default class VueServer {
     });
   }
 
-  constructor(distFolder: string) {
-    const staticServer = new StaticServer(distFolder);
+  constructor(distFolder: string, cacheTime: number) {
+    const staticServer = new StaticServer(distFolder, { cache: cacheTime });
 
     this.#httpServer = Http.createServer((req, res) => {
       staticServer.serve(req, res);

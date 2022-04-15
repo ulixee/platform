@@ -9,8 +9,11 @@ import {
 import ChromeAliveCore from '../../index';
 import HeroCorePlugin from '../HeroCorePlugin';
 import AliveBarPositioner from '../AliveBarPositioner';
+import IElementSummary from '@ulixee/apps-chromealive-interfaces/IElementSummary';
 
 export default class DevtoolsBackdoorModule {
+  public pendingLiveInspectedNode: { tabId: number; backendNodeId: number; frameId: string };
+
   private events = new EventSubscriber();
 
   private devtoolsSessionMap = new Map<
@@ -53,11 +56,19 @@ export default class DevtoolsBackdoorModule {
     this.events.close();
   }
 
+  public async showElementsPanel(puppetPage: IPuppetPage): Promise<void> {
+    const tabId = await this.heroPlugin.getTabIdByPuppetPageId(puppetPage.id);
+    await this.send(tabId, 'DevtoolsBackdoor.showElementsPanel');
+  }
+
   // COMMANDS
 
   public async toggleInspectElementMode(): Promise<boolean> {
     const puppetPage = this.heroPlugin.activePuppetPage;
     if (!puppetPage) return;
+
+    await puppetPage.bringToFront();
+    await puppetPage.evaluate('document.body.focus()');
 
     const tabId = await this.heroPlugin.getTabIdByPuppetPageId(puppetPage.id);
     return await this.send(tabId, 'DevtoolsBackdoor.toggleInspectElementMode');
@@ -68,7 +79,7 @@ export default class DevtoolsBackdoorModule {
     await this.send(tabId, 'DevtoolsBackdoor.closeDevtools');
   }
 
-  public async searchDom(query: string): Promise<any[]> {
+  public async searchDom(query: string): Promise<IElementSummary[]> {
     const puppetPage = this.heroPlugin.activePuppetPage;
     if (!puppetPage) return;
 
@@ -79,7 +90,73 @@ export default class DevtoolsBackdoorModule {
     return elementSummaries;
   }
 
+  public async focusPendingFinderNode(): Promise<void> {
+    const pendingLiveInspectedNode = this.pendingLiveInspectedNode;
+    if (!pendingLiveInspectedNode) return;
+    this.pendingLiveInspectedNode = null;
+
+    // 1. Get Hero.nodeId from the source frame (re: second arg, mirror page doesn't run in isolated world)
+    const heroNodeId = await this.translateBackendNodeIdToHeroId(pendingLiveInspectedNode, true);
+
+    if (!heroNodeId) return;
+
+    // 2. Find the backendNodeId in the target page
+    const mirrorPuppetPage = this.heroPlugin.mirrorPuppetPage;
+    const backendNodeId = await this.translateHeroNodeIdToBackendNodeId(
+      mirrorPuppetPage,
+      heroNodeId,
+      false,
+    );
+
+    // 3. Send backendNodeId to the client-side Backdoor
+    const mirrorTabId = await this.heroPlugin.getTabIdByPuppetPageId(mirrorPuppetPage.id);
+    await this.send(mirrorTabId, 'DevtoolsBackdoor.revealNodeInElementsPanel', [backendNodeId]);
+  }
+
   // END OF COMMANDS
+
+  private async translateHeroNodeIdToBackendNodeId(
+    page: IPuppetPage,
+    heroNodeId: number,
+    isolatedEnvironment = true,
+  ): Promise<number> {
+    // not sure how to get the right frame?
+    const frame = page.mainFrame;
+    const highlightNodeEvent = new Promise<Protocol.Runtime.InspectRequestedEvent>(resolve => {
+      this.events.once(page.devtoolsSession, 'Runtime.inspectRequested', resolve);
+    });
+    await frame.evaluate(
+      `inspect(NodeTracker.getWatchedNodeWithId(${heroNodeId}))`,
+      isolatedEnvironment,
+      { includeCommandLineAPI: true },
+    );
+    const highlightedNode = await highlightNodeEvent;
+    const objectId = highlightedNode.object?.objectId;
+    if (!objectId) return;
+    const nodeDescription = await page.devtoolsSession.send('DOM.describeNode', {
+      objectId,
+    });
+    return nodeDescription.node.backendNodeId;
+  }
+
+  private async translateBackendNodeIdToHeroId(
+    nodeLocation: {
+      tabId: number;
+      backendNodeId: number;
+      frameId?: string;
+    },
+    resolveNodeInIsolatedContext = true,
+  ): Promise<number> {
+    const { tabId, backendNodeId, frameId } = nodeLocation;
+    const puppetPage = await this.heroPlugin.getPuppetPageByTabId(tabId);
+    if (!puppetPage) return null;
+    const sourceFrame = puppetPage.frames.find(x => x.id === frameId) ?? puppetPage.mainFrame;
+    const chromeNodeId = await sourceFrame.resolveNodeId(
+      backendNodeId,
+      resolveNodeInIsolatedContext,
+    );
+    return await sourceFrame.evaluateOnNode<number>(chromeNodeId, 'NodeTracker.watchNode(this)');
+  }
 
   private handleIncomingMessageFromBrowser(devtoolsSession: IDevtoolsSession, message: any): void {
     if (message.name !== ___emitFromDevtoolsToCore) return;
@@ -107,10 +184,16 @@ export default class DevtoolsBackdoorModule {
     const result = await puppetPage.devtoolsSession.send('DOM.describeNode', {
       backendNodeId,
     });
+
     const nodeOverview = result.node;
+    const element = this.toElementSummary(nodeOverview, { backendNodeId });
+
+    if (puppetPage.groupName === 'session') {
+      this.pendingLiveInspectedNode = { tabId, frameId: nodeOverview.frameId, backendNodeId };
+      return;
+    }
     ChromeAliveCore.sendAppEvent('DevtoolsBackdoor.elementWasSelected', {
-      backendNodeId,
-      nodeOverview,
+      element,
     });
   }
 
@@ -130,6 +213,30 @@ export default class DevtoolsBackdoorModule {
       }
       return null;
     });
+  }
+
+  private toElementSummary(
+    nodeOverview: Protocol.DOM.Node,
+    id: { backendNodeId?: number; objectId?: string },
+  ): IElementSummary {
+    const attributes: IElementSummary['attributes'] = [];
+    if (nodeOverview.attributes) {
+      for (let i = 0; i < nodeOverview.attributes.length; i += 2) {
+        const name = nodeOverview.attributes[i];
+        const value = nodeOverview.attributes[i + 1];
+        attributes.push({ name, value });
+      }
+    }
+    const element: IElementSummary = {
+      ...id,
+      localName: nodeOverview.localName,
+      nodeName: nodeOverview.nodeName,
+      nodeType: nodeOverview.nodeType,
+      attributes,
+      hasChildren: nodeOverview.childNodeCount > 0,
+      nodeValueInternal: nodeOverview.nodeValue,
+    };
+    return element;
   }
 
   private async onExecutionContextCreated(

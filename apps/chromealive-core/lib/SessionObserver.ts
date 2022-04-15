@@ -33,6 +33,11 @@ import CommandTimeline from '@ulixee/hero-timetravel/lib/CommandTimeline';
 import { LoadStatus } from '@ulixee/hero-interfaces/Location';
 import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
+import ISessionSearchResult, {
+  ISearchContext,
+} from '@ulixee/apps-chromealive-interfaces/ISessionSearchResult';
+import ResourceSearch from './ResourceSearch';
+import { ISelectorMap } from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
 
 const { log } = Log(module);
 
@@ -86,6 +91,8 @@ export default class SessionObserver extends TypedEventEmitter<{
   private mirrorRefreshLastUpdated: number;
   private mirrorRefreshTimeout: NodeJS.Timeout;
   private lastTimelineMetadata: ITimelineMetadata;
+  private resourceSearch: ResourceSearch;
+  private isSearchingTimetravel = false;
 
   constructor(public readonly heroSession: HeroSession) {
     super();
@@ -93,6 +100,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.logger = log.createChild(module, { sessionId: heroSession.id });
     this.scriptInstanceMeta = heroSession.options.scriptInstanceMeta;
     this.worldHeroSessionIds.add(heroSession.id);
+    this.resourceSearch = new ResourceSearch(heroSession, this.events);
 
     this.events.on(this.heroSession, 'kept-alive', this.onHeroSessionKeptAlive);
     this.events.on(this.heroSession, 'resumed', this.onHeroSessionResumed);
@@ -192,32 +200,78 @@ export default class SessionObserver extends TypedEventEmitter<{
     await this.devtoolsBackdoorModule.toggleInspectElementMode();
   }
 
-  public async highlightNode(backendNodeId: number): Promise<void> {
-    await this.elementsModule.highlightNode(backendNodeId);
+  public async highlightNode(id: { backendNodeId?: number; objectId?: string }): Promise<void> {
+    await this.elementsModule.highlightNode(id);
   }
 
   public async hideHighlight(): Promise<void> {
     await this.elementsModule.hideHighlight();
   }
 
-  public async searchElements(text: string): Promise<any[]> {
-    return await this.devtoolsBackdoorModule.searchDom(text);
+  public async search(query: string): Promise<ISessionSearchResult> {
+    const searchingContext = this.getCurrentSearchContext();
+
+    return {
+      searchingContext,
+      elements: await this.devtoolsBackdoorModule.searchDom(query),
+      resources: this.resourceSearch.search(query, searchingContext),
+    };
   }
 
-  public async generateQuerySelector(backendNodeId: number): Promise<any> {
-    return await this.elementsModule.generateQuerySelector(backendNodeId);
+  public getCurrentSearchContext(): ISearchContext {
+    if (!this.lastTimelineMetadata) this.getHeroSessionEvent();
+    const metadata = this.lastTimelineMetadata;
+    const lastUrl = metadata.urls[metadata.urls.length - 1];
+    const lastNavigation = this.heroSession
+      .getLastActiveTab()
+      .navigations.get(lastUrl.navigationId);
+    const commandTimeline = CommandTimeline.fromSession(this.heroSession);
+    let tabId = lastUrl.tabId;
+    let startTime =
+      lastNavigation.statusChanges.get('HttpRequested') ??
+      lastNavigation.statusChanges.get('HttpResponded');
+    let endTime = commandTimeline.endTime;
+    let documentUrl = lastNavigation.finalUrl ?? lastNavigation.requestedUrl;
+    if (this.isSearchingTimetravel) {
+      const tab = this.timetravelPlayer.activeTab;
+      tabId = tab.id;
+      documentUrl = tab.currentTick.documentUrl;
+      if (!tab.focusedOffsetRange) {
+        const documentLoadTime = tab.getPaintEventAtIndex(
+          tab.currentTick.documentLoadPaintIndex,
+        )?.timestamp;
+        if (documentLoadTime) startTime = documentLoadTime;
+        endTime = tab.currentTick.timestamp;
+      } else {
+        const focusedTicks = tab.focusedPaintIndexes;
+        startTime = tab.getPaintEventAtIndex(focusedTicks[0])?.timestamp;
+        endTime = tab.getPaintEventAtIndex(focusedTicks[1])?.timestamp;
+      }
+    }
+    return { baseTime: commandTimeline.startTime, startTime, tabId, endTime, documentUrl };
+  }
+
+  public async generateQuerySelector(id: {
+    backendNodeId?: number;
+    objectId?: string;
+  }): Promise<ISelectorMap> {
+    return await this.elementsModule.generateQuerySelector(id);
   }
 
   public async openMode(mode: Parameters<ISessionApi['openMode']>[0]['mode']): Promise<void> {
     this.mirrorPagePauseRefreshing = mode === 'Finder';
+    this.isSearchingTimetravel = false;
+    let isFocusingOnFrozenLiveTab = false;
     const focusPages: IPuppetPage[] = [];
     if (mode === 'Finder') {
       // if coming from timetravel, we'll use the timetravel player
       if (this.timetravelPlayer.isOpen && this.mode === 'Timetravel') {
+        this.isSearchingTimetravel = true;
         focusPages.push(this.timetravelPlayer.activeTab.mirrorPage.page);
       } else {
         const activeTabId = this.heroSession.getLastActiveTab().id;
         const mirrorPage = this.liveMirrorPagesByTabId[activeTabId];
+        isFocusingOnFrozenLiveTab = true;
         focusPages.push(mirrorPage.page);
       }
     } else if (mode === 'Live') {
@@ -240,6 +294,13 @@ export default class SessionObserver extends TypedEventEmitter<{
     await this.tabGroupModule.showTabs(...focusPages);
     this.mode = mode;
     this.emit('app:mode');
+    if (this.mode === 'Finder') {
+      await this.heroCorePlugin.devtoolsBackdoorModule.showElementsPanel(focusPages[0]);
+    }
+
+    if (isFocusingOnFrozenLiveTab === true) {
+      await this.heroCorePlugin.devtoolsBackdoorModule.focusPendingFinderNode();
+    }
   }
 
   public close(): void {

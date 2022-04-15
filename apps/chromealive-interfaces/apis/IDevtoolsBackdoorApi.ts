@@ -1,9 +1,10 @@
+import { ISelectorMap } from '../ISelectorMap';
+
 export default interface IDevtoolsBackdoorApi {
   toggleInspectElementMode(): Promise<void>;
-  highlightNode(options: { backendNodeId: number }): Promise<void>;
+  highlightNode(options: { backendNodeId?: number; objectId?: string }): Promise<void>;
   hideHighlight(): Promise<void>;
-  searchElements(options: { query: string }): Promise<any[]>;
-  generateQuerySelector(options: { backendNodeId: number }): Promise<any>;
+  generateQuerySelector(options: { backendNodeId?: number; objectId?: string }): Promise<ISelectorMap>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/explicit-function-return-type

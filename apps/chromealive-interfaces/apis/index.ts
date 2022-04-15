@@ -15,6 +15,7 @@ export type IApiHandlerSpec = {
   'Session.getDom': ISessionApi['getDom'];
   'Session.getActive': ISessionApi['getActive'];
   'Session.getMeta': ISessionApi['getMeta'];
+  'Session.search': ISessionApi['search'];
   'Databox.runExtract': IDataboxApi['runExtract'];
   'Databox.getOutput': IDataboxApi['getOutput'];
   'Databox.getCollectedAssets': IDataboxApi['getCollectedAssets'];
@@ -25,7 +26,6 @@ export type IApiHandlerSpec = {
   'DevtoolsBackdoor.toggleInspectElementMode': IDevtoolsBackdoorApi['toggleInspectElementMode'];
   'DevtoolsBackdoor.highlightNode': IDevtoolsBackdoorApi['highlightNode'];
   'DevtoolsBackdoor.hideHighlight': IDevtoolsBackdoorApi['hideHighlight'];
-  'DevtoolsBackdoor.searchElements': IDevtoolsBackdoorApi['searchElements'];
   'DevtoolsBackdoor.generateQuerySelector': IDevtoolsBackdoorApi['generateQuerySelector'];
 };
 

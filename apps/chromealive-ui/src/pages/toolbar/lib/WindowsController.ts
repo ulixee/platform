@@ -75,7 +75,7 @@ export default class WindowsController {
       this.finderMenu = window.open('/menu-finder.html', frameName, features);
       this.finderMenu.addEventListener('blur', () => {
         if (Date.now() - this.showingFinderMenuTimestamp < 500) return;
-        this.hideMenuFinder();
+        window.focus();
       });
     }
   }
