@@ -224,7 +224,7 @@ export class ChromeAlive extends EventEmitter {
       movable: false,
       closable: false,
       resizable: false,
-      transparent: false,
+      transparent: true,
       acceptFirstMouse: true,
       hasShadow: false,
       skipTaskbar: true,

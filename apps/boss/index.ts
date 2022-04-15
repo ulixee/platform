@@ -18,7 +18,7 @@ if (process.argv.some(x => x.includes('--chromealive'))) {
   const menubar = new Menubar({
     windowPosition: 'trayLeft',
     width: 300,
-    height: 350,
+    height: 380,
     tooltip: 'Ulixee',
   });
 
