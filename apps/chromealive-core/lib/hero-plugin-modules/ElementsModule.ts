@@ -2,7 +2,6 @@ import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
 import highlightConfig from './highlightConfig';
 import HeroCorePlugin from '../HeroCorePlugin';
 import * as fs from 'fs';
-import { ISelectorMapContext } from '../../injected-scripts/generateSelectorMap';
 import { ISelectorMap } from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
 
 const installSymbol = Symbol.for('@ulixee/generateSelectorMap');
