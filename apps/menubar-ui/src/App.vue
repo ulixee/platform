@@ -39,8 +39,8 @@ export default Vue.defineComponent({
     let serverStarted = Vue.ref(false);
     let address = Vue.ref('');
 
-    document.addEventListener('boss:event', evt => {
-      console.log('Boss:event', evt);
+    document.addEventListener('desktop:event', evt => {
+      console.log('desktop:event', evt);
       const { eventType, data } = (evt as CustomEvent).detail;
       if (eventType === 'Server.status') {
         address.value = data.address;
@@ -74,7 +74,7 @@ export default Vue.defineComponent({
     },
     sendEvent(api: string, ...args: any[]) {
       document.dispatchEvent(
-        new CustomEvent('boss:api', {
+        new CustomEvent('desktop:api', {
           detail: { api, args },
         }),
       );

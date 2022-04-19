@@ -1,16 +1,16 @@
 {
-  "name": "@ulixee/apps-boss",
+  "name": "@ulixee/apps-desktop",
   "version": "1.5.4",
   "main": "index.js",
   "scripts": {
-    "build": "yarn build:ui && yarn build:basic && cd ../../build/apps/boss && yarn && electron-builder install-app-deps",
-    "build:basic": "cd ../.. && yarn run tsc && cd apps/boss && yarn copy:build",
+    "build": "yarn build:ui && yarn build:basic && cd ../../build/apps/desktop && yarn && electron-builder install-app-deps",
+    "build:basic": "cd ../.. && yarn run tsc && cd apps/desktop && yarn copy:build",
     "build:ui": "yarn workspace @ulixee/apps-menubar-ui build && yarn workspace @ulixee/apps-chromealive-ui build && yarn workspace @ulixee/apps-chromealive-extension build",
     "watch": "yarn copy:build --watch",
-    "copy:build": "cd ../../build/apps/boss && node builder/copySources.js ./packages",
-    "dist": "yarn build && cd ../../build/apps/boss && yarn && electron-builder --publish onTagOrDraft",
-    "dist:basic": "yarn build:basic && cd ../../build/apps/boss && electron-builder",
-    "start": "yarn copy:build && cd ../../build/apps/boss && npx electron ."
+    "copy:build": "cd ../../build/apps/desktop && node builder/copySources.js ./packages",
+    "dist": "yarn build && cd ../../build/apps/desktop && yarn && electron-builder --publish onTagOrDraft",
+    "dist:basic": "yarn build:basic && cd ../../build/apps/desktop && electron-builder",
+    "start": "yarn copy:build && cd ../../build/apps/desktop && npx electron ."
   },
   "repository": "git@github.com:ulixee/ulixee.git",
   "author": "Caleb Clark <calebjclark@gmail.com>",
@@ -22,6 +22,7 @@
     "@ulixee/server": "1.5.4",
     "electron-log": "^4.4.6",
     "electron-positioner": "^4.1.0",
+    "electron-updater": "^5.0.1",
     "node-static": "^0.7.11",
     "tar": "^6.1.11",
     "tslib": "^2.3.1"
@@ -37,8 +38,8 @@
     "nseventmonitor": "^1.0.0"
   },
   "build": {
-    "appId": "dev.ulixee.boss",
-    "productName": "Ulixee Boss",
+    "appId": "dev.ulixee.desktop",
+    "productName": "Ulixee",
     "afterSign": "scripts/notarize.js",
     "asarUnpack": [
       "node_modules/@ulixee/apps-chromealive-core",
@@ -60,14 +61,15 @@
       "extendInfo": {
         "LSUIElement": 1
       },
-      "target": "dmg",
       "entitlements": "assets/entitlements.mac.plist",
       "entitlementsInherit": "assets/entitlements.mac.plist"
     },
     "dmg": {
       "sign": false
     },
-    "win": {},
+    "win": {
+      "target": "NSIS"
+    },
     "linux": {
       "category": "Development",
       "target": "AppImage"
@@ -83,6 +85,7 @@
     "**/electron-webpack/**",
     "nseventmonitor",
     "electron-positioner",
+    "electron-updater",
     "better-sqlite3"
   ]
 }

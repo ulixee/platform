@@ -27,10 +27,6 @@ jobs:
         env:
           HERO_SKIP_CHROME_DOWNLOAD: 1
 
-      - name: Install Databox
-        run: yarn && yarn build
-        working-directory: ./databox
-
       - name: Yarn build
         run: yarn && yarn build
         env:

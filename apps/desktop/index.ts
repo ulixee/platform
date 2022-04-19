@@ -24,6 +24,6 @@ if (process.argv.some(x => x.includes('--chromealive'))) {
 
   menubar.on('ready', () => {
     // eslint-disable-next-line no-console
-    console.log('RUNNING ULIXEE BOSS');
+    console.log('RUNNING ULIXEE.APP');
   });
 }

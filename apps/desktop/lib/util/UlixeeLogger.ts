@@ -13,7 +13,7 @@ class UlixeeLogger extends Log {
       .replace('.js', '')
       .replace('.ts', '')
       .replace('build/', '')
-      .replace('apps/boss/packages', '');
+      .replace('apps/desktop/packages', '');
 
     const { error, printData } = translateToPrintable(entry.data);
 

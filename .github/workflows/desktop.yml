@@ -1,4 +1,4 @@
-name: Boss
+name: Desktop
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  boss:
+  app:
     strategy:
       fail-fast: false
       matrix:
@@ -28,10 +28,6 @@ jobs:
         run: yarn && yarn build
         working-directory: ./hero
 
-      - name: Install Databox
-        run: yarn && yarn build
-        working-directory: ./databox
-
       - name: Yarn build
         run: yarn && yarn build
 
@@ -41,23 +37,24 @@ jobs:
         env:
           APPLE_NOTARIZE_KEY: ${{secrets.APPLE_NOTARIZE_KEY}}
 
-      - name: Build Boss
+      - name: Build Desktop
         run: yarn dist
-        working-directory: ./apps/boss
+        working-directory: ./apps/desktop
         env:
           USE_HARD_LINKS: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
 
-      - name: Upload Boss
+      - name: Upload App
         if: ${{ github.ref != 'refs/heads/main' || failure() }}
         uses: actions/upload-artifact@v2
         with:
-          name: boss-${{ matrix.os }}
+          name: desktop-${{ matrix.os }}
           path: |
-            ./build/apps/boss/dist/*.zip
-            ./build/apps/boss/dist/*.AppImage
-            ./build/apps/boss/dist/*.dmg
-            ./build/apps/boss/dist/*.exe
+            ./build/apps/desktop/dist/*.zip
+            ./build/apps/desktop/dist/*.AppImage
+            ./build/apps/desktop/dist/*.dmg
+            ./build/apps/desktop/dist/*.exe
+            ./build/apps/desktop/dist/*.yml
           retention-days: 1

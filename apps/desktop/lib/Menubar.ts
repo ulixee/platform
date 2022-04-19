@@ -241,7 +241,7 @@ export class Menubar extends EventEmitter {
     this.#browserWindow.setVisibleOnAllWorkspaces(true);
     this.#browserWindow.on('close', this.windowClear.bind(this));
     this.#browserWindow.webContents.on('ipc-message', async (e, message, ...args) => {
-      if (message === 'boss:api') {
+      if (message === 'desktop:api') {
         const [api] = args;
 
         if (api === 'App.quit') {
@@ -331,7 +331,7 @@ export class Menubar extends EventEmitter {
       const json = { detail: { eventType, data } };
       await this.#browserWindow.webContents.executeJavaScript(`(()=>{
       const evt = ${JSON.stringify(json)};
-      document.dispatchEvent(new CustomEvent('boss:event', evt));
+      document.dispatchEvent(new CustomEvent('desktop:event', evt));
     })()`);
     }
   }
