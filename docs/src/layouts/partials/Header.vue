@@ -5,7 +5,7 @@
       Nav.flex-fit
       SearchForm
       nav.header-actions.flex
-        a(aria-label="Discord" href="//discord.gg/ydycFGU" rel="noopener noreferrer" class="hide-for-small" target="_blank" title="Join our discord")
+        a(aria-label="Discord" href="//discord.gg/tMAycnemHU" rel="noopener noreferrer" class="hide-for-small" target="_blank" title="Join our discord")
           discord-logo
         .has-dropdown
           a(aria-label="github" href="//github.com/ulixee/ulixee" rel="noopener noreferrer" target="_blank" title="Ulixee @ GitHub")
