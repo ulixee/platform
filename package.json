@@ -46,8 +46,9 @@
     "@types/node": "^14.17.9",
     "@typescript-eslint/eslint-plugin": "^5.10.1",
     "@typescript-eslint/parser": "^5.1.0",
-    "copyfiles": "^2.4.1",
+    "@vue/cli-plugin-eslint": "~4.5.0",
     "concurrently": "^6.2.1",
+    "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "eslint": "^7.21.0",
     "eslint-config-airbnb-typescript": "^14.0.1",
@@ -61,11 +62,10 @@
     "eslint-plugin-promise": "^5.1.1",
     "eslint-plugin-react": "^7.22.0",
     "eslint-plugin-react-hooks": "^4.2.0",
-    "@vue/cli-plugin-eslint": "~4.5.0",
+    "husky": "^7.0.1",
     "jest": "^27.0.6",
     "jest-environment-node": "^27.0.6",
     "jest-summary-reporter": "^0.0.2",
-    "husky": "^7.0.1",
     "lerna": "^4.0.0",
     "lint-staged": "^10.5.2",
     "prettier": "^2.2.1",
@@ -109,5 +109,6 @@
     "remark-slug": "https://github.com/ulixee/remark-slug.git",
     "tough-cookie": "^4.0.0",
     "**/ua-parser-js": "0.7.28"
-  }
+  },
+  "dependencies": {}
 }

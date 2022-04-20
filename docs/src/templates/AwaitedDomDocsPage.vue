@@ -50,7 +50,8 @@ CoreLayout.has-sidebar.AwaitedDomPage(:footer="false")
   import GithubLogo from '~/assets/logos/github.svg';
   import generateLinks from "../lib/generateLinks";
 
-  const links = generateLinks();
+  const linkGroups = require(`${__dirname}/../../../server/docs/links.yaml`);
+  const links = generateLinks(linkGroups,'AwaitedDom');
 
   @Component({
       // @ts-ignore

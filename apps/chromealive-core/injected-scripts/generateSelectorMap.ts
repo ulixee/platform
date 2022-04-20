@@ -1,5 +1,4 @@
 import type {
-  ISelectorMap,
   ISelectorOption,
 } from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
 
@@ -96,6 +95,7 @@ export default function generateSelectorMap(
 
     if (counter > nextBreakpoint) {
       nextBreakpoint += 10e3;
+      // eslint-disable-next-line no-console
       console.log('Checking for matches after %s permutations', counter, context.selectors.length);
       if (context.selectors.length) return false;
     }

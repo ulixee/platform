@@ -26,7 +26,7 @@ beforeAll(async () => {
   koaServer.get('/data.json', ctx => {
     ctx.body = {
       hi: 'there',
-      wiki: true
+      wiki: true,
     };
   });
 });
@@ -43,6 +43,9 @@ describe('basic ResourceSearch tests', () => {
     await tab.goto(exampleUrl);
 
     await tab.waitForResources({ url: `data.json` });
+    await tab.waitForLoad('AllContentLoaded');
+    await new Promise(resolve => setTimeout(resolve, 50));
+
     const context = {
       documentUrl: exampleUrl,
       tabId: tab.id,
