@@ -186,30 +186,38 @@ export class ChromeAlive extends EventEmitter {
   }
 
   private listenForMouseDown(): void {
-    // TODO: add linux/win support
+    // TODO: add linux support
     // https://github.com/wilix-team/iohook (seems unstable, but possibly look at ideas?)
-    // windows: https://github.com/xanderfrangos/global-mouse-events
 
-    if (process.platform !== 'darwin' || this.#nsEventMonitor) return;
+    if (process.platform === 'darwin') {
+      if (this.#nsEventMonitor) return;
+      // eslint-disable-next-line import/no-unresolved,global-require
+      const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
 
-    // eslint-disable-next-line import/no-unresolved,global-require
-    const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
+      // https://developer.apple.com/documentation/appkit/nsevent/eventtype/leftmousedown
+      enum NSEventType {
+        LeftMouseDown = 1,
+        LeftMouseUp = 2,
+      }
 
-    // https://developer.apple.com/documentation/appkit/nsevent/eventtype/leftmousedown
-    enum NSEventType {
-      LeftMouseDown = 1,
-      LeftMouseUp = 2,
-    }
-
-    const monitor = new NSEventMonitor();
-    monitor.start(
-      NSEventMask.mouseEntered | NSEventMask.leftMouseDown | NSEventMask.leftMouseUp,
-      ev => {
+      const monitor = new NSEventMonitor();
+      monitor.start(NSEventMask.leftMouseDown | NSEventMask.leftMouseUp, ev => {
         this.#mouseDown = ev.type === NSEventType.LeftMouseDown;
         return this.#api.send('Mouse.state', { isMousedown: this.#mouseDown });
-      },
-    );
-    this.#nsEventMonitor = monitor;
+      });
+      this.#nsEventMonitor = monitor;
+    } else if (process.platform === 'win32') {
+      // eslint-disable-next-line import/no-unresolved,global-require
+      const mouseEvents = require('global-mouse-events') as any;
+      mouseEvents.on('mousedown', ev => {
+        this.#mouseDown = ev.type === 1;
+        return this.#api.send('Mouse.state', { isMousedown: this.#mouseDown });
+      });
+      mouseEvents.on('mouseup', () => {
+        this.#mouseDown = false;
+        return this.#api.send('Mouse.state', { isMousedown: false });
+      });
+    }
   }
 
   private async createToolbarWindow(): Promise<void> {

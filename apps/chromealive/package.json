@@ -26,6 +26,7 @@
     "compare-versions": "^3.6.0",
     "electron-context-menu": "^3.1.2",
     "electron-log": "^4.4.6",
+    "global-mouse-events": "1.0.7",
     "node-static": "^0.7.11",
     "progress": "^2.0.3",
     "tar": "^6.1.11",
@@ -72,6 +73,8 @@
   "nohoist": [
     "**/electron",
     "**/electron-webpack",
-    "**/electron-webpack/**"
+    "**/electron-webpack/**",
+    "global-mouse-events",
+    "nseventmonitor"
   ]
 }
