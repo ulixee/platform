@@ -14528,7 +14528,7 @@ npmlog@^5.0.1:
     gauge "^3.0.0"
     set-blocking "^2.0.0"
 
-nseventmonitor@^1.0.0, nseventmonitor@^1.0.2:
+nseventmonitor@1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/nseventmonitor/-/nseventmonitor-1.0.2.tgz#aaffe68512e42ccedb7f83eea6727d7a7e268819"
   integrity sha512-iiBYqjB0iNTWO4aVPKM7oFuI6qz6zeOwu8IezLa82ClnKRpJTQnOieezjzIFTibzBtRffmgy+a3KlJ1HkfiTng==

@@ -1,5 +1,7 @@
+#!/usr/bin/env node
+
 import '@ulixee/commons/lib/SourceMapSupport';
-import Server from '@ulixee/server';
+import Server from '../index';
 import * as yargsParser from 'yargs-parser';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 
@@ -11,7 +13,8 @@ import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
   ShutdownHandler.register(() => server.close());
 
   await server.listen({ port: args.port ?? 0 });
-  const startMessage = `Ulixee Server is listening on port ${await server.port}\nhttp://${await server.address}`;
+  const address = `${await server.port}\nhttp://${await server.address}`;
+  const startMessage = `Ulixee Server v${server.version} is listening on port ${address}`;
 
   // eslint-disable-next-line no-console
   console.log(

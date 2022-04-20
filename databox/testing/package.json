@@ -8,7 +8,7 @@
     "node": ">=13.2.0"
   },
   "dependencies": {
-    "@ulixee/commons": "1.5.10",
+    "@ulixee/commons": "1.5.11",
     "@ulixee/databox": "1.5.4",
     "@ulixee/databox-interfaces": "1.5.4",
     "@ulixee/hero-fullstack": "1.5.4",

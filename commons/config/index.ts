@@ -1,6 +1,7 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import { getCacheDirectory } from '../lib/dirUtils';
+import { safeOverwriteFile } from '../lib/fileUtils';
 
 export default class UlixeeConfig {
   public static get global(): UlixeeConfig {
@@ -36,7 +37,7 @@ export default class UlixeeConfig {
   }
 
   public save(): Promise<void> {
-    return Fs.promises.writeFile(this.configPath, JSON.stringify(this.getData(), null, 2));
+    return safeOverwriteFile(this.configPath, JSON.stringify(this.getData(), null, 2));
   }
 
   private getData(): IUlixeeConfig {
@@ -50,6 +51,7 @@ export default class UlixeeConfig {
     const key = this.getLocationKey(runtimeLocation);
     if (!this.cachedConfigObjects[key]) {
       const directory = this.findConfigDirectory(runtimeLocation);
+      if (directory === this.globalConfigDirectory) return UlixeeConfig.global;
       if (!this.isCacheEnabled) return new UlixeeConfig(directory);
 
       this.cachedConfigObjects[key] = new UlixeeConfig(directory);
