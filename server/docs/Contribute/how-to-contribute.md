@@ -1,6 +1,6 @@
 # How to contribute
 
-> Ulixee is an open-source project built by core maintainers and contributors. We want to make it easy for anyone to participate. Contribute to core, build plugins, improve documentation or write a blog post. It all helps Ulixee on its mission to keep the web open for innovation.
+> Ulixee is an open-source project built by core maintainers and contributors. We want to make it easy for anyone to participate. Contribute to core, build plugins or improve documentation. It all helps Ulixee on its mission to keep the web open for innovation.
 
 Read the [code of conduct](./code-of-conduct).
 
@@ -26,7 +26,3 @@ We are a strong believer that documentation is very important for any open-sourc
 2. GitHub then allows you to commit the change and raise a PR right in the UI. This is the _easiest_ way you can contribute to Ulixee!
 
 You can also clone [the Ulixee repo](https://github.com/ulixee/ulixee) and work locally on documentation.
-
-## Contributing to the blog
-
-_Coming soon..._

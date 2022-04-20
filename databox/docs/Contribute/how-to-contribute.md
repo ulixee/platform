@@ -26,7 +26,3 @@ We are a strong believer that documentation is very important for any open-sourc
 2. GitHub then allows you to commit the change and raise a PR right in the UI. This is the _easiest_ way you can contribute to Ulixee!
 
 You can also clone [the Ulixee repo](https://github.com/ulixee/ulixee) and work locally on documentation.
-
-## Contributing to the blog
-
-_Coming soon..._
