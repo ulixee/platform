@@ -45,6 +45,8 @@ jobs:
       - name: Build Chromealive
         run: yarn dist
         working-directory: ./apps/chromealive
+        env:
+          NODE_ENV: production
 
       - name: Upload to Release
         env:

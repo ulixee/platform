@@ -27,7 +27,12 @@
       v-if="isSelected || isUsingFinder"
       ref="markerElem"
       class="marker"
-      :class="{ active: activeItem === 'marker', ...markerClass, [session.playbackState]: 1, finder: isUsingFinder }"
+      :class="{
+        active: activeItem === 'marker',
+        ...markerClass,
+        [session.playbackState]: 1,
+        finder: isUsingFinder,
+      }"
       @mousedown="handleMouseDown($event, 'marker')"
     >
       <div class="marker-wrapper">
@@ -116,7 +121,7 @@ export default Vue.defineComponent({
     const ghostClass = Vue.reactive({
       show: false,
       isAtLive: false,
-      finder: props.isUsingFinder
+      finder: props.isUsingFinder,
     });
 
     Vue.watch(
@@ -365,6 +370,7 @@ export default Vue.defineComponent({
       if ([MouseDownItem.nibLeft, MouseDownItem.draggerLeft].includes(this.mouseDownItem)) {
         this.cssVars.markerLeft = mousePctLeft;
       } else {
+        if (mousePctLeft > liveMarkerPosition) mousePctLeft = liveMarkerPosition;
         this.cssVars.markerRight = mousePctLeft;
       }
 
@@ -379,16 +385,15 @@ export default Vue.defineComponent({
 
       this.$el.style.cursor = 'col-resize';
       this.markerClass.hasMultiple = true;
+      let mousePctRight = this.convertGlobalMouseLeftToPct(this.mousedownX + 3);
+      if (mousePctRight > liveMarkerPosition) mousePctRight = liveMarkerPosition;
+      this.cssVars.markerRight = mousePctRight;
 
       if (dragLength < 0) {
-        const mousePctRight = this.convertGlobalMouseLeftToPct(this.mousedownX + 3);
         const mousePctLeft = this.convertGlobalMouseLeftToPct(this.mousedownX + dragLength - 3);
-
-        this.cssVars.markerRight = mousePctRight;
         this.cssVars.markerLeft = mousePctLeft;
         this.activeItem = ActiveItem.nibLeft;
       } else {
-        this.cssVars.markerRight = this.convertGlobalMouseLeftToPct(event.pageX);
         this.activeItem = ActiveItem.nibRight;
       }
 
@@ -409,7 +414,8 @@ export default Vue.defineComponent({
       if (this.markerClass.hasMultiple && this.activeItem === ActiveItem.nibRight) {
         percentOffset = endOffset;
       }
-      this.markerClass.isLive = percentOffset >= liveMarkerPosition;
+      this.markerClass.isLive =
+        percentOffset >= liveMarkerPosition && this.activeItem !== ActiveItem.nibRight;
       if (this.markerClass.isLive) {
         this.markerClass.hasMultiple = false;
         percentOffset = liveMarkerPosition;
@@ -424,7 +430,7 @@ export default Vue.defineComponent({
       const heroSessionId = this.session?.heroSessionId;
       if (!heroSessionId) return;
 
-      if (percentOffset >= liveMarkerPosition) {
+      if (percentOffset >= liveMarkerPosition && this.activeItem !== ActiveItem.nibRight) {
         if (this.mode !== 'Live') {
           await Client.send('Session.openMode', { mode: 'Live', heroSessionId });
         }

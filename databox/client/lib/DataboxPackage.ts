@@ -1,9 +1,12 @@
 import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
 import UlixeeConfig from '@ulixee/commons/config';
+import UlixeeServerConfig from '@ulixee/commons/config/servers';
 import readCommandLineArgs from './utils/readCommandLineArgs';
 import IComponents, { IRunFn } from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
 import IBasicInput from '../interfaces/IBasicInput';
+
+const { version } = require('../package.json');
 
 export default class DataboxPackage<TInput = IBasicInput, TOutput = any> {
   #components: IComponents<TInput, TOutput>;
@@ -20,7 +23,10 @@ export default class DataboxPackage<TInput = IBasicInput, TOutput = any> {
     const options: IDataboxRunOptions = readCommandLineArgs();
 
     if (!options.connectionToCore) {
-      const serverHost = UlixeeConfig.load()?.serverHost ?? UlixeeConfig.global.serverHost;
+      const serverHost =
+        UlixeeConfig.load()?.serverHost ??
+        UlixeeConfig.global.serverHost ??
+        UlixeeServerConfig.global.getVersionHost(version);
       if (serverHost) {
         options.connectionToCore = { host: serverHost };
       }

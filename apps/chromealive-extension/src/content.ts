@@ -1,6 +1,5 @@
 /// <reference types="chrome"/>
 import '@webcomponents/custom-elements';
-import getCssSelector from 'css-selector-generator';
 import { MessageEventType } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
 import ElementOptionsOverlay from './lib/ElementOptionsOverlay';
 import { onMessagePayload, sendToDevtoolsScript } from './lib/content/ContentMessenger';
@@ -8,8 +7,6 @@ import ElementsBucket from './lib/ElementsBucket';
 import './lib/content/ContentListeners';
 import findSelectors from './lib/content/findSelectors';
 
-// @ts-ignore
-window.getCssSelector = getCssSelector;
 
 // Define the new element
 customElements.define('chromealive-element-options-overlay', ElementOptionsOverlay);

@@ -7,6 +7,7 @@ import { createPromise } from '@ulixee/commons/lib/utils';
 import { isWsOpen } from './lib/WsUtils';
 import CoreConnectors from './lib/CoreConnectors';
 import UlixeeServerConfig from '@ulixee/commons/config/servers';
+import UlixeeConfig from '@ulixee/commons/config';
 
 const pkg = require('./package.json');
 
@@ -73,9 +74,20 @@ export default class Server {
   public async listen(options?: ListenOptions): Promise<AddressInfo> {
     if (this.serverAddress.isResolved) return this.serverAddress.promise;
 
+    const listenOptions = { ...(options ?? { port: 0 }) };
+    if (!options?.port) {
+      const address =
+        UlixeeConfig.load()?.serverHost ??
+        UlixeeConfig.global.serverHost ??
+        UlixeeServerConfig.global.getVersionHost(this.version);
+      if (address) {
+        listenOptions.port = Number(address.split(':').pop());
+      }
+    }
+
     this.httpServer.once('error', this.serverAddress.reject);
     this.httpServer
-      .listen(options ?? { port: 0 }, () => {
+      .listen(listenOptions, () => {
         this.httpServer.off('error', this.serverAddress.reject);
         this.serverAddress.resolve(this.httpServer.address() as AddressInfo);
       })
@@ -85,7 +97,9 @@ export default class Server {
 
     // if we're dealing with local or no configuration, set the local version host
     if (
-      (serverAddress.address === '127.0.0.1' || serverAddress.address === '::' || serverAddress.address === '::1') &&
+      (serverAddress.address === '127.0.0.1' ||
+        serverAddress.address === '::' ||
+        serverAddress.address === '::1') &&
       !options?.port
     ) {
       // publish port with the version

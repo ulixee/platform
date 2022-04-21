@@ -21,7 +21,7 @@ import EventEmitter = require('events');
 import IViewport from '@ulixee/hero-interfaces/IViewport';
 
 // have to resolve an actual file
-export const extensionPath = Path.resolve(__dirname, '../..', 'chromealive/extension').replace(
+export const extensionPath = Path.resolve(__dirname, '../extension').replace(
   'app.asar',
   'app.asar.unpacked',
 ); // make electron packaging friendly
@@ -145,7 +145,9 @@ export default class HeroCorePlugin extends CorePlugin {
 
     await Promise.all([
       // needed to know when to blur tab and thus ChromeAlive bar (otherwise they all think they're still active)
-      page.devtoolsSession.send('Emulation.setFocusEmulationEnabled', { enabled: false }).catch(err => err),
+      page.devtoolsSession
+        .send('Emulation.setFocusEmulationEnabled', { enabled: false })
+        .catch(err => err),
       this.bridgeToExtension.addPuppetPage(page, this.events),
       this.setPageViewportToWindowBounds(page),
       this.elementsModule.onNewPuppetPage(page),

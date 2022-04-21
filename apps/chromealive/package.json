@@ -47,6 +47,13 @@
   "build": {
     "appId": "dev.ulixee.chromealive",
     "productName": "ChromeAlive!",
+    "directories": {
+      "buildResources": "assets"
+    },
+    "files": [
+      "**/*",
+      "assets/*"
+    ],
     "mac": {
       "category": "public.app-category.developer-tools",
       "hardenedRuntime": true,

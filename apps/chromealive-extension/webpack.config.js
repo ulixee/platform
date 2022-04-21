@@ -2,11 +2,12 @@ const path = require("path");
 const CopyPlugin = require('copy-webpack-plugin')
 
 const srcDir = path.join(__dirname, "src");
-const outputDir = path.resolve(__dirname, '../../build/apps/chromealive/extension');
+const outDir = process.env.BUILD_DIR ?? 'build'
+const outputDir = path.resolve(__dirname, path.join('../..', outDir, 'apps/chromealive-core/extension'));
 
 module.exports = {
   devtool: 'inline-source-map',
-  mode: 'development',
+  mode: process.env.NODE_ENV === 'production' ? 'production': 'development',
   entry: {
     background: path.join(srcDir, 'background.ts'),
     content: path.join(srcDir, 'content.ts'),

@@ -12,7 +12,7 @@ import VueServer from './VueServer';
 import installDefaultChrome from './util/installDefaultChrome';
 import UlixeeConfig from '@ulixee/commons/config';
 import { autoUpdater, UpdateInfo, ProgressInfo } from 'electron-updater';
-
+const { version } = require('../package.json');
 // Forked from https://github.com/maxogden/menubar
 
 const iconPath = Path.resolve(__dirname, '..', 'assets', 'IconTemplate.png');
@@ -65,10 +65,14 @@ export class Menubar extends EventEmitter {
     }
     (this.#nsEventMonitor as any)?.stop();
 
-    if (this.#browserWindow?.isVisible()) {
-      this.#browserWindow?.hide();
-    }
     this.#isVisible = false;
+    try {
+      if (this.#browserWindow?.isVisible() && !this.#browserWindow?.isDestroyed()) {
+        this.#browserWindow?.hide();
+      }
+    } catch (error) {
+      if (!String(error).includes('Object has been destroyed')) throw error;
+    }
   }
 
   private async showWindow(trayPos?: Electron.Rectangle): Promise<void> {
@@ -163,9 +167,10 @@ export class Menubar extends EventEmitter {
 
       log.transports.file.level = 'debug';
       autoUpdater.logger = log;
-      autoUpdater.autoDownload = false;
+      autoUpdater.autoDownload = true;
+      autoUpdater.autoInstallOnAppQuit = false;
       autoUpdater.allowDowngrade = true;
-      autoUpdater.allowPrerelease = true;
+      autoUpdater.allowPrerelease = version.includes('alpha');
       autoUpdater.on('update-not-available', this.noUpdateAvailable.bind(this));
       autoUpdater.on('update-available', this.onUpdateAvailable.bind(this));
       autoUpdater.signals.progress(this.onDownloadProgress.bind(this));
@@ -281,7 +286,7 @@ export class Menubar extends EventEmitter {
     this.#positioner = new Positioner(this.#browserWindow);
 
     this.#browserWindow.on('blur', () => {
-      if (!this.#browserWindow) {
+      if (!this.#browserWindow || this.#isClosing) {
         return;
       }
       this.#blurTimeout = setTimeout(() => this.hideWindow(), 100);
@@ -364,7 +369,12 @@ export class Menubar extends EventEmitter {
     if (this.#ulixeeServer) return;
     ChromeAliveCore.register(true);
     this.#ulixeeServer = new UlixeeServer();
-    await this.#ulixeeServer.listen();
+    const address = UlixeeConfig.global?.serverHost;
+    let port = 0;
+    if (address) {
+      port = Number(address.split(':').pop());
+    }
+    await this.#ulixeeServer.listen({ port });
 
     await installDefaultChrome();
 

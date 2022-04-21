@@ -51,6 +51,7 @@ jobs:
         run: yarn dist
         working-directory: ./apps/desktop
         env:
+          NODE_ENV: production
           USE_HARD_LINKS: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_LINK: ${{ secrets.CSC_LINK }}

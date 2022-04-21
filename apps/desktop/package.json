@@ -52,7 +52,8 @@
       "**/*",
       "assets/*",
       "!**/chromealive/dist",
-      "!packages"
+      "!packages",
+      "!dist"
     ],
     "mac": {
       "category": "public.app-category.developer-tools",
