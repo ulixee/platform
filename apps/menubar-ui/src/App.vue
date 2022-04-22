@@ -6,14 +6,17 @@
       <a class="disabled">Open Ulixee Marketplace <span class="coming-soon">Coming Soon</span></a>
       <a>Preferences...</a>
 
-      <a @click.prevent="" v-if="downloadProgress > 0"
+      <a v-if="downloadProgress > 0 && downloadProgress < 100"
         >Downloading new Version <span class="progress">{{ downloadProgress }}%</span></a
       >
-      <a @click.prevent="downloadUpdate" v-else-if="newVersion"
-        >Update Available <span class="new-version">Install {{ newVersion }}</span></a
+      <a @click.prevent="void 0" v-else-if="isInstalling"
+        >Installing <span class="installing-version">{{ newVersion }}</span></a
+      >
+      <a @click.prevent="installUpdate" v-else-if="newVersion"
+        >Update Available <span class="new-version">{{ downloadProgress < 100 ? '' : 'Install ' }}{{ newVersion }}</span></a
       >
       <a @click.prevent="checkForUpdate" v-else
-        >Check for Updates <span v-if="onLatestVersion" class="latest-version">Latest</span></a
+        >Check for Updates <span v-if="onLatestVersion" class="latest-version">On Latest</span></a
       >
     </div>
     <div class="section">
@@ -49,13 +52,16 @@ export default Vue.defineComponent({
       serverStarted: Vue.ref(false),
       address: Vue.ref(''),
       onLatestVersion: Vue.ref(false),
+      isInstalling: Vue.ref(false),
       newVersion: Vue.ref(''),
       downloadProgress: Vue.ref(0),
     };
   },
   mounted() {
     document.addEventListener('desktop:event', evt => {
-      console.log('desktop:event', evt);
+      try {
+        console.log('desktop:event', evt);
+      } catch (err) {}
       const { eventType, data } = (evt as CustomEvent).detail;
       if (eventType === 'Server.status') {
         this.address = data.address;
@@ -66,10 +72,14 @@ export default Vue.defineComponent({
       }
       if (eventType === 'Version.available') {
         this.onLatestVersion = false;
-        this.newVersion = data.newVersion;
+        this.newVersion = data.version;
+        this.downloadProgress = 0;
+      }
+      if (eventType === 'Version.installing') {
+        this.isInstalling = true;
       }
       if (eventType === 'Version.download') {
-        this.downloadProgress = data.downloadProgress;
+        this.downloadProgress = data.progress;
       }
     });
 
@@ -94,8 +104,8 @@ export default Vue.defineComponent({
     openDataDirectory() {
       this.sendApi('App.openDataDirectory');
     },
-    downloadUpdate() {
-      this.sendApi('Version.download');
+    installUpdate() {
+      this.sendApi('Version.install');
     },
     checkForUpdate() {
       this.sendApi('Version.check');
@@ -151,6 +161,7 @@ button {
     .coming-soon,
     .latest-version,
     .new-version,
+    .installing-version,
     .progress {
       text-transform: uppercase;
       font-weight: lighter;
@@ -169,11 +180,16 @@ button {
       font-weight: bold;
     }
 
-    .new-version {
+    .new-version,
+    .installing-version {
       background-color: #039403;
       font-weight: 700;
       color: #eee;
       font-size: 0.8em;
+    }
+
+    .installing-version {
+      background-color: #027fea;
     }
 
     &.disabled {

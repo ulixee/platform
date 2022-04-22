@@ -4,6 +4,7 @@ import log from 'electron-log';
 import { Menubar } from './lib/Menubar';
 import { app } from 'electron';
 
+const { version } = require('./package.json');
 Object.assign(console, log.functions);
 
 if (app.isPackaged) {
@@ -17,7 +18,7 @@ if (process.argv.some(x => x.includes('--chromealive'))) {
   const chromealive = new ChromeAlive();
   chromealive.on('ready', () => {
     // eslint-disable-next-line no-console
-    console.log('RUNNING CHROMEALIVE');
+    console.log('RUNNING CHROMEALIVE', version);
   });
 } else {
   const menubar = new Menubar({
@@ -29,6 +30,6 @@ if (process.argv.some(x => x.includes('--chromealive'))) {
 
   menubar.on('ready', () => {
     // eslint-disable-next-line no-console
-    console.log('RUNNING ULIXEE.APP');
+    console.log('RUNNING ULIXEE.APP', version);
   });
 }

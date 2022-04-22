@@ -31,6 +31,9 @@ export class Menubar extends EventEmitter {
   #ulixeeServer: UlixeeServer;
   #ulixeeConfig: UlixeeConfig;
   #isClosing = false;
+  #updateInfoPromise: Promise<UpdateInfo>;
+  #installUpdateOnExit = false;
+  #downloadProgress = 0;
 
   constructor(options?: IMenubarOptions) {
     super();
@@ -134,13 +137,22 @@ export class Menubar extends EventEmitter {
     this.#isVisible = true;
   }
 
-  private async appExit(): Promise<void> {
+  private async beforeQuit(): Promise<void> {
     if (this.#isClosing) return;
     this.#isClosing = true;
     console.warn('Quitting Ulixee Menubar');
     this.#tray.removeAllListeners();
     this.hideWindow();
     await this.stopServer();
+  }
+
+  private async appExit(): Promise<void> {
+    await this.beforeQuit();
+    if (this.#installUpdateOnExit) {
+      log.debug('Installing update before exit');
+      await this.#updateInfoPromise;
+      await autoUpdater.quitAndInstall(false, true);
+    }
     app.exit();
   }
 
@@ -159,6 +171,8 @@ export class Menubar extends EventEmitter {
           this.showWindow().catch(console.error);
         }
       });
+
+      app.once('before-quit', this.beforeQuit.bind(this));
 
       this.#tray.on('click', this.clicked.bind(this));
       this.#tray.on('right-click', this.clicked.bind(this));
@@ -216,6 +230,7 @@ export class Menubar extends EventEmitter {
 
   private async onUpdateAvailable(update: UpdateInfo): Promise<void> {
     log.info('New Ulixee.app version available', update);
+    this.#updateInfoPromise = Promise.resolve(update);
     await this.sendToVueApp('Version.available', {
       version: update.version,
     });
@@ -223,21 +238,32 @@ export class Menubar extends EventEmitter {
 
   private async onDownloadProgress(progress: ProgressInfo): Promise<void> {
     log.verbose('New version download progress', progress);
+    this.#downloadProgress = Math.round(progress.percent);
     await this.sendToVueApp('Version.download', {
-      downloadPercent: progress.percent,
+      progress: this.#downloadProgress,
     });
   }
 
   private async versionCheck(): Promise<void> {
+    if (await this.#updateInfoPromise) return;
+    if (autoUpdater.isUpdaterActive()) return;
     try {
-      await autoUpdater.checkForUpdatesAndNotify();
+      log.verbose('Checking for version update');
+      this.#updateInfoPromise = autoUpdater.checkForUpdates().then(x => x.updateInfo);
+      await this.#updateInfoPromise;
     } catch (error) {
       log.error('ERROR checking for new version', error);
     }
   }
 
-  private async versionDownload(): Promise<void> {
-    await autoUpdater.downloadUpdate();
+  private async versionInstall(): Promise<void> {
+    log.verbose('Installing version', {
+      progress: this.#downloadProgress,
+      update: await this.#updateInfoPromise,
+    });
+    this.#installUpdateOnExit = true;
+    await this.sendToVueApp('Version.installing', {})
+    if (this.#downloadProgress < 100) await autoUpdater.downloadUpdate();
     await autoUpdater.quitAndInstall(false, true);
   }
 
@@ -261,7 +287,14 @@ export class Menubar extends EventEmitter {
     this.#cachedBounds = bounds || this.#cachedBounds;
     await this.showWindow(this.#cachedBounds);
 
-    await this.versionCheck();
+    try {
+      if (!this.#updateInfoPromise) {
+        this.#updateInfoPromise = autoUpdater.checkForUpdatesAndNotify().then(x => x.updateInfo);
+        await this.#updateInfoPromise;
+      }
+    } catch (error) {
+      log.error('ERROR checking for new version', error);
+    }
   }
 
   private async createWindow(): Promise<void> {
@@ -331,17 +364,18 @@ export class Menubar extends EventEmitter {
           await this.versionCheck();
         }
 
-        if (api === 'Version.download') {
-          await this.versionDownload();
+        if (api === 'Version.install') {
+          await this.versionInstall();
         }
       }
     });
 
     const port = await this.#vueServer.port;
-    const windowBackground = systemPreferences.getColor('window-background').replace('#', '');
+    const backgroundPref = process.platform === 'win32' ? 'window' : 'window-background';
+    const windowBackground = systemPreferences.getColor(backgroundPref)?.replace('#', '') ?? '';
     const url = `http://localhost:${port}/?windowBackground=${windowBackground}`;
     await this.#browserWindow.loadURL(url);
-    if (!app.isPackaged) {
+    if (!app.isPackaged || process.env.OPEN_DEVTOOLS) {
       this.#browserWindow.webContents.openDevTools({ mode: 'undocked' });
     }
     if (this.#ulixeeServer) {
