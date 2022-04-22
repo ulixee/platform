@@ -165,8 +165,7 @@ export class Menubar extends EventEmitter {
       this.#tray.on('double-click', this.clicked.bind(this));
       this.#tray.setToolTip(this.#options.tooltip || '');
 
-      log.transports.file.level = 'debug';
-      autoUpdater.logger = log;
+      autoUpdater.logger = null;
       autoUpdater.autoDownload = true;
       autoUpdater.autoInstallOnAppQuit = false;
       autoUpdater.allowDowngrade = true;
@@ -261,6 +260,8 @@ export class Menubar extends EventEmitter {
 
     this.#cachedBounds = bounds || this.#cachedBounds;
     await this.showWindow(this.#cachedBounds);
+
+    await this.versionCheck();
   }
 
   private async createWindow(): Promise<void> {

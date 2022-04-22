@@ -13,7 +13,6 @@
     "start": "yarn copy:build && cd ../../build/apps/desktop && npx electron ."
   },
   "repository": "git@github.com:ulixee/ulixee.git",
-  "author": "Caleb Clark <calebjclark@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "@ulixee/apps-chromealive-core": "1.5.4",
@@ -24,11 +23,10 @@
     "electron-positioner": "^4.1.0",
     "electron-updater": "^5.0.1",
     "global-mouse-events": "1.0.7",
-    "node-static": "^0.7.11",
-    "tar": "^6.1.11",
-    "tslib": "^2.3.1"
+    "node-static": "^0.7.11"
   },
   "devDependencies": {
+    "tslib": "^2.3.1",
     "cross-env": "^7.0.3",
     "electron": "17.1.0",
     "electron-builder": "^23.0.3",

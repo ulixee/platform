@@ -2,8 +2,13 @@ import './lib/util/UlixeeLogger';
 import '@ulixee/commons/lib/SourceMapSupport';
 import log from 'electron-log';
 import { Menubar } from './lib/Menubar';
+import { app } from 'electron';
 
 Object.assign(console, log.functions);
+
+if (app.isPackaged) {
+  process.env.DEBUG = [process.env.DEBUG ?? '', 'ulixee:*'].filter(Boolean).join(',');
+}
 
 if (process.argv.some(x => x.includes('--chromealive'))) {
   // eslint-disable-next-line global-require,import/no-extraneous-dependencies

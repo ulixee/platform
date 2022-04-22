@@ -42,6 +42,10 @@ function getPreferredLaunch(): 'local' | 'workspace' | 'binary' | 'desktop' {
     return 'local';
   }
 
+  if (isBinaryInstalled()) {
+    return 'binary';
+  }
+
   try {
     require.resolve('./app');
     // eslint-disable-next-line global-require
@@ -59,9 +63,5 @@ function getPreferredLaunch(): 'local' | 'workspace' | 'binary' | 'desktop' {
     } catch (err) {
       // not installed locally
     }
-  }
-
-  if (isBinaryInstalled()) {
-    return 'binary';
   }
 }

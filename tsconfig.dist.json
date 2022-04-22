@@ -4,5 +4,13 @@
     "outDir": "./build-dist",
     "sourceMap": true,
     "inlineSourceMap": false
-  }
+  },
+  "references": [
+    {
+      "path": "databox/tsconfig.dist.json"
+    },
+    {
+      "path": "apps/chromealive-core/injected-scripts/tsconfig.dist.json"
+    }
+  ]
 }
