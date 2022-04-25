@@ -15,7 +15,16 @@ function copyDir(baseDir: string, outDir: string): void {
     : { private: false };
 
   for (const dir of Fs.readdirSync(baseDir)) {
-    if (dir === 'node_modules' || dir === 'packages' || dir === 'boss' || dir.endsWith('-ui'))
+    if (
+      dir.startsWith('.') ||
+      dir.endsWith('-ui') ||
+      dir === 'node_modules' ||
+      dir === 'packages' ||
+      dir === 'desktop' ||
+      dir === 'chromealive-extension' ||
+      dir === 'examples' ||
+      dir === 'test'
+    )
       continue;
     const dirPath = `${baseDir}/${dir}`;
     const outPath = `${outDir}/${dir}`;

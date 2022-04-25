@@ -1,6 +1,8 @@
+const path = require('path');
 const pages = {}
 
-const outputDir = '../../build/apps/chromealive/extension';
+const outDir = process.env.BUILD_DIR ?? 'build'
+const outputDir = path.resolve(__dirname, path.join('../..', outDir, 'apps/chromealive-core/extension'));
 const chromeName = ['hero-script', 'state-generator']
 
 chromeName.forEach(name => {

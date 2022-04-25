@@ -48,7 +48,7 @@ module.exports = {
   ],
   globalSetup: './jest.setup.js',
   setupFilesAfterEnv: ['./jest.setupPerTest.js'],
-  modulePathIgnorePatterns: ['build/apps/boss/packages'],
+  modulePathIgnorePatterns: ['build/apps/desktop/packages'],
   globalTeardown: './jest.teardown.js',
   testTimeout: 10e3,
   reporters: ['default', 'jest-summary-reporter'],

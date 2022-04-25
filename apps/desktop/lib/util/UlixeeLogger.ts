@@ -6,14 +6,20 @@ import {
   loggerSessionIdNames,
   translateToPrintable,
 } from '@ulixee/commons/lib/Logger';
+import { app } from 'electron';
 
 class UlixeeLogger extends Log {
+  constructor(module: NodeModule, boundContext?: any) {
+    super(module, boundContext);
+    this.useColors = !app.isPackaged;
+  }
+
   protected logToConsole(level: ILogEntry['level'], entry: ILogEntry): void {
     const printablePath = entry.module
       .replace('.js', '')
       .replace('.ts', '')
       .replace('build/', '')
-      .replace('apps/boss/packages', '');
+      .replace('apps/desktop/packages', '');
 
     const { error, printData } = translateToPrintable(entry.data);
 

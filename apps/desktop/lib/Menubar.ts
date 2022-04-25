@@ -11,7 +11,8 @@ import { getWindowPosition } from './util/getWindowPosition';
 import VueServer from './VueServer';
 import installDefaultChrome from './util/installDefaultChrome';
 import UlixeeConfig from '@ulixee/commons/config';
-
+import { autoUpdater, UpdateInfo, ProgressInfo } from 'electron-updater';
+const { version } = require('../package.json');
 // Forked from https://github.com/maxogden/menubar
 
 const iconPath = Path.resolve(__dirname, '..', 'assets', 'IconTemplate.png');
@@ -30,6 +31,9 @@ export class Menubar extends EventEmitter {
   #ulixeeServer: UlixeeServer;
   #ulixeeConfig: UlixeeConfig;
   #isClosing = false;
+  #updateInfoPromise: Promise<UpdateInfo>;
+  #installUpdateOnExit = false;
+  #downloadProgress = 0;
 
   constructor(options?: IMenubarOptions) {
     super();
@@ -64,10 +68,14 @@ export class Menubar extends EventEmitter {
     }
     (this.#nsEventMonitor as any)?.stop();
 
-    if (this.#browserWindow?.isVisible()) {
-      this.#browserWindow.hide();
-    }
     this.#isVisible = false;
+    try {
+      if (this.#browserWindow?.isVisible() && !this.#browserWindow?.isDestroyed()) {
+        this.#browserWindow?.hide();
+      }
+    } catch (error) {
+      if (!String(error).includes('Object has been destroyed')) throw error;
+    }
   }
 
   private async showWindow(trayPos?: Electron.Rectangle): Promise<void> {
@@ -129,13 +137,22 @@ export class Menubar extends EventEmitter {
     this.#isVisible = true;
   }
 
-  private async appExit(): Promise<void> {
+  private async beforeQuit(): Promise<void> {
     if (this.#isClosing) return;
     this.#isClosing = true;
     console.warn('Quitting Ulixee Menubar');
     this.#tray.removeAllListeners();
     this.hideWindow();
     await this.stopServer();
+  }
+
+  private async appExit(): Promise<void> {
+    await this.beforeQuit();
+    if (this.#installUpdateOnExit) {
+      log.debug('Installing update before exit');
+      await this.#updateInfoPromise;
+      await autoUpdater.quitAndInstall(false, true);
+    }
     app.exit();
   }
 
@@ -155,10 +172,21 @@ export class Menubar extends EventEmitter {
         }
       });
 
+      app.once('before-quit', this.beforeQuit.bind(this));
+
       this.#tray.on('click', this.clicked.bind(this));
       this.#tray.on('right-click', this.clicked.bind(this));
       this.#tray.on('double-click', this.clicked.bind(this));
       this.#tray.setToolTip(this.#options.tooltip || '');
+
+      autoUpdater.logger = null;
+      autoUpdater.autoDownload = true;
+      autoUpdater.autoInstallOnAppQuit = false;
+      autoUpdater.allowDowngrade = true;
+      autoUpdater.allowPrerelease = version.includes('alpha');
+      autoUpdater.on('update-not-available', this.noUpdateAvailable.bind(this));
+      autoUpdater.on('update-available', this.onUpdateAvailable.bind(this));
+      autoUpdater.signals.progress(this.onDownloadProgress.bind(this));
 
       if (!this.#options.windowPosition) {
         // Fill in this.#options.windowPosition when taskbar position is available
@@ -177,15 +205,66 @@ export class Menubar extends EventEmitter {
   }
 
   private listenForMouseDown(): void {
-    if (process.platform !== 'darwin') return;
-    // eslint-disable-next-line import/no-unresolved,global-require
-    const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
+    if (process.platform === 'darwin') {
+      // eslint-disable-next-line import/no-unresolved,global-require
+      const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
 
-    this.#nsEventMonitor ??= new NSEventMonitor();
-    (this.#nsEventMonitor as any).start(
-      NSEventMask.leftMouseDown | NSEventMask.rightMouseDown,
-      this.hideWindow.bind(this),
-    );
+      this.#nsEventMonitor ??= new NSEventMonitor();
+      (this.#nsEventMonitor as any).start(
+        NSEventMask.leftMouseDown | NSEventMask.rightMouseDown,
+        this.hideWindow.bind(this),
+      );
+    } else if (process.platform === 'win32') {
+      // eslint-disable-next-line import/no-unresolved,global-require
+      const mouseEvents = require('global-mouse-events') as any;
+      mouseEvents.on('mousedown', event => {
+        if (event.button === 1 || event.button === 2) this.hideWindow();
+      });
+    }
+  }
+
+  private async noUpdateAvailable(): Promise<void> {
+    log.verbose('No new Ulixee.app versions available');
+    await this.sendToVueApp('Version.onLatest', {});
+  }
+
+  private async onUpdateAvailable(update: UpdateInfo): Promise<void> {
+    log.info('New Ulixee.app version available', update);
+    this.#updateInfoPromise = Promise.resolve(update);
+    await this.sendToVueApp('Version.available', {
+      version: update.version,
+    });
+  }
+
+  private async onDownloadProgress(progress: ProgressInfo): Promise<void> {
+    log.verbose('New version download progress', progress);
+    this.#downloadProgress = Math.round(progress.percent);
+    await this.sendToVueApp('Version.download', {
+      progress: this.#downloadProgress,
+    });
+  }
+
+  private async versionCheck(): Promise<void> {
+    if (await this.#updateInfoPromise) return;
+    if (autoUpdater.isUpdaterActive()) return;
+    try {
+      log.verbose('Checking for version update');
+      this.#updateInfoPromise = autoUpdater.checkForUpdates().then(x => x.updateInfo);
+      await this.#updateInfoPromise;
+    } catch (error) {
+      log.error('ERROR checking for new version', error);
+    }
+  }
+
+  private async versionInstall(): Promise<void> {
+    log.verbose('Installing version', {
+      progress: this.#downloadProgress,
+      update: await this.#updateInfoPromise,
+    });
+    this.#installUpdateOnExit = true;
+    await this.sendToVueApp('Version.installing', {})
+    if (this.#downloadProgress < 100) await autoUpdater.downloadUpdate();
+    await autoUpdater.quitAndInstall(false, true);
   }
 
   private async clicked(
@@ -207,6 +286,15 @@ export class Menubar extends EventEmitter {
 
     this.#cachedBounds = bounds || this.#cachedBounds;
     await this.showWindow(this.#cachedBounds);
+
+    try {
+      if (!this.#updateInfoPromise) {
+        this.#updateInfoPromise = autoUpdater.checkForUpdatesAndNotify().then(x => x.updateInfo);
+        await this.#updateInfoPromise;
+      }
+    } catch (error) {
+      log.error('ERROR checking for new version', error);
+    }
   }
 
   private async createWindow(): Promise<void> {
@@ -232,7 +320,7 @@ export class Menubar extends EventEmitter {
     this.#positioner = new Positioner(this.#browserWindow);
 
     this.#browserWindow.on('blur', () => {
-      if (!this.#browserWindow) {
+      if (!this.#browserWindow || this.#isClosing) {
         return;
       }
       this.#blurTimeout = setTimeout(() => this.hideWindow(), 100);
@@ -241,8 +329,12 @@ export class Menubar extends EventEmitter {
     this.#browserWindow.setVisibleOnAllWorkspaces(true);
     this.#browserWindow.on('close', this.windowClear.bind(this));
     this.#browserWindow.webContents.on('ipc-message', async (e, message, ...args) => {
-      if (message === 'boss:api') {
+      if (message === 'desktop:api') {
         const [api] = args;
+
+        if (api === 'mousedown' && this.#browserWindow && this.#isVisible) {
+          this.hideWindow();
+        }
 
         if (api === 'App.quit') {
           await this.appExit();
@@ -267,13 +359,25 @@ export class Menubar extends EventEmitter {
         if (api === 'Server.getStatus') {
           await this.updateServerStatus();
         }
+
+        if (api === 'Version.check') {
+          await this.versionCheck();
+        }
+
+        if (api === 'Version.install') {
+          await this.versionInstall();
+        }
       }
     });
 
     const port = await this.#vueServer.port;
-    const windowBackground = systemPreferences.getColor('window-background').replace('#', '');
+    const backgroundPref = process.platform === 'win32' ? 'window' : 'window-background';
+    const windowBackground = systemPreferences.getColor(backgroundPref)?.replace('#', '') ?? '';
     const url = `http://localhost:${port}/?windowBackground=${windowBackground}`;
     await this.#browserWindow.loadURL(url);
+    if (!app.isPackaged || process.env.OPEN_DEVTOOLS) {
+      this.#browserWindow.webContents.openDevTools({ mode: 'undocked' });
+    }
     if (this.#ulixeeServer) {
       await this.updateServerStatus();
     }
@@ -300,14 +404,14 @@ export class Menubar extends EventEmitter {
     if (this.#ulixeeServer) return;
     ChromeAliveCore.register(true);
     this.#ulixeeServer = new UlixeeServer();
-    if (!this.#ulixeeConfig.serverHost) {
-      await this.#ulixeeConfig.setGlobalDefaults();
+    const address = UlixeeConfig.global?.serverHost;
+    let port = 0;
+    if (address) {
+      port = Number(address.split(':').pop());
     }
+    await this.#ulixeeServer.listen({ port });
 
     await installDefaultChrome();
-
-    const [host, port] = this.#ulixeeConfig.serverHost.split(':').slice(-2);
-    await this.#ulixeeServer.listen({ port: Number(port), host });
 
     // eslint-disable-next-line no-console
     console.log(`STARTED ULIXEE SERVER at ${await this.#ulixeeServer.address}`);
@@ -331,7 +435,7 @@ export class Menubar extends EventEmitter {
       const json = { detail: { eventType, data } };
       await this.#browserWindow.webContents.executeJavaScript(`(()=>{
       const evt = ${JSON.stringify(json)};
-      document.dispatchEvent(new CustomEvent('boss:event', evt));
+      document.dispatchEvent(new CustomEvent('desktop:event', evt));
     })()`);
     }
   }

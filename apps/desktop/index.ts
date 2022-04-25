@@ -2,8 +2,14 @@ import './lib/util/UlixeeLogger';
 import '@ulixee/commons/lib/SourceMapSupport';
 import log from 'electron-log';
 import { Menubar } from './lib/Menubar';
+import { app } from 'electron';
 
+const { version } = require('./package.json');
 Object.assign(console, log.functions);
+
+if (app.isPackaged) {
+  process.env.DEBUG = [process.env.DEBUG ?? '', 'ulixee:*'].filter(Boolean).join(',');
+}
 
 if (process.argv.some(x => x.includes('--chromealive'))) {
   // eslint-disable-next-line global-require,import/no-extraneous-dependencies
@@ -12,7 +18,7 @@ if (process.argv.some(x => x.includes('--chromealive'))) {
   const chromealive = new ChromeAlive();
   chromealive.on('ready', () => {
     // eslint-disable-next-line no-console
-    console.log('RUNNING CHROMEALIVE');
+    console.log('RUNNING CHROMEALIVE', version);
   });
 } else {
   const menubar = new Menubar({
@@ -24,6 +30,6 @@ if (process.argv.some(x => x.includes('--chromealive'))) {
 
   menubar.on('ready', () => {
     // eslint-disable-next-line no-console
-    console.log('RUNNING ULIXEE BOSS');
+    console.log('RUNNING ULIXEE.APP', version);
   });
 }

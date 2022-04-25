@@ -5,7 +5,7 @@ const pkg = require('./package.json');
 const workspaces = [];
 const workspacesWithModules = ['node_modules'];
 for (const workspaceDir of pkg.workspaces.packages) {
-  if (workspaceDir.includes('/build') || workspaceDir.includes('boss/packages')) continue;
+  if (workspaceDir.includes('/build') || workspaceDir.includes('desktop/packages')) continue;
 
   const workspace = workspaceDir.replace('/*', '');
   workspaces.push(workspace);

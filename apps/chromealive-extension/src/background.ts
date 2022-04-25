@@ -4,10 +4,9 @@ import { hideTabs } from './lib/background/TabManagement';
 import logDebug from './lib/logDebug';
 import './lib/background/BackgroundListeners';
 
-const coreServerAddress = fetch(chrome.runtime.getURL('data/coreServer.json'))
-  .then((response) => response.json())
-  .then(data => data.address)
-  .catch(error => console.log(error));
+// variable injected!
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const __CORE_SERVER_ADDRESS__ = '';
 
 const RuntimeActions = {
   hideTabs,
@@ -32,7 +31,7 @@ onMessagePayload((payload, sendResponseFn) => {
       .catch(error => console.error('chrome.runtime.onMessageResponse:ERROR', { payload, error }));
     return true;
   } else if (payload.action === 'getCoreServerAddress') {
-    void coreServerAddress.then(x => sendResponseFn(x));
+    sendResponseFn(__CORE_SERVER_ADDRESS__);
     return true;
   }
   console.log('UNHANDLED MESSAGE: ', payload);

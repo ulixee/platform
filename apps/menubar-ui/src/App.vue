@@ -5,7 +5,19 @@
       <a class="disabled">Open Ulixee Composer <span class="coming-soon">Coming Soon</span></a>
       <a class="disabled">Open Ulixee Marketplace <span class="coming-soon">Coming Soon</span></a>
       <a>Preferences...</a>
-      <a>Check for Updates</a>
+
+      <a v-if="downloadProgress > 0 && downloadProgress < 100"
+        >Downloading new Version <span class="progress">{{ downloadProgress }}%</span></a
+      >
+      <a @click.prevent="void 0" v-else-if="isInstalling"
+        >Installing <span class="installing-version">{{ newVersion }}</span></a
+      >
+      <a @click.prevent="installUpdate" v-else-if="newVersion"
+        >Update Available <span class="new-version">{{ downloadProgress < 100 ? '' : 'Install ' }}{{ newVersion }}</span></a
+      >
+      <a @click.prevent="checkForUpdate" v-else
+        >Check for Updates <span v-if="onLatestVersion" class="latest-version">On Latest</span></a
+      >
     </div>
     <div class="section">
       <a @click.prevent="openLogsDirectory()">Open App Logs</a>
@@ -36,45 +48,71 @@ export default Vue.defineComponent({
   name: 'App',
   components: {},
   setup() {
-    let serverStarted = Vue.ref(false);
-    let address = Vue.ref('');
-
-    document.addEventListener('boss:event', evt => {
-      console.log('Boss:event', evt);
+    return {
+      serverStarted: Vue.ref(false),
+      address: Vue.ref(''),
+      onLatestVersion: Vue.ref(false),
+      isInstalling: Vue.ref(false),
+      newVersion: Vue.ref(''),
+      downloadProgress: Vue.ref(0),
+    };
+  },
+  mounted() {
+    document.addEventListener('desktop:event', evt => {
+      try {
+        console.log('desktop:event', evt);
+      } catch (err) {}
       const { eventType, data } = (evt as CustomEvent).detail;
       if (eventType === 'Server.status') {
-        address.value = data.address;
-        serverStarted.value = data.started;
+        this.address = data.address;
+        this.serverStarted = data.started;
+      }
+      if (eventType === 'Version.onLatest') {
+        this.onLatestVersion = true;
+      }
+      if (eventType === 'Version.available') {
+        this.onLatestVersion = false;
+        this.newVersion = data.version;
+        this.downloadProgress = 0;
+      }
+      if (eventType === 'Version.installing') {
+        this.isInstalling = true;
+      }
+      if (eventType === 'Version.download') {
+        this.downloadProgress = data.progress;
       }
     });
 
-    return { serverStarted, address };
-  },
-  mounted() {
-    this.sendEvent('Server.getStatus');
+    this.sendApi('Server.getStatus');
   },
   methods: {
     quit() {
-      this.sendEvent('App.quit');
+      this.sendApi('App.quit');
     },
     restart() {
-      this.sendEvent('Server.restart');
+      this.sendApi('Server.restart');
     },
     start() {
-      this.sendEvent('Server.start');
+      this.sendApi('Server.start');
     },
     stop() {
-      this.sendEvent('Server.stop');
+      this.sendApi('Server.stop');
     },
     openLogsDirectory() {
-      this.sendEvent('App.openLogsDirectory');
+      this.sendApi('App.openLogsDirectory');
     },
     openDataDirectory() {
-      this.sendEvent('App.openDataDirectory');
+      this.sendApi('App.openDataDirectory');
     },
-    sendEvent(api: string, ...args: any[]) {
+    installUpdate() {
+      this.sendApi('Version.install');
+    },
+    checkForUpdate() {
+      this.sendApi('Version.check');
+    },
+    sendApi(api: string, ...args: any[]) {
       document.dispatchEvent(
-        new CustomEvent('boss:api', {
+        new CustomEvent('desktop:api', {
           detail: { api, args },
         }),
       );
@@ -120,7 +158,11 @@ button {
       background-color: Highlight;
       color: HighlightText;
     }
-    .coming-soon {
+    .coming-soon,
+    .latest-version,
+    .new-version,
+    .installing-version,
+    .progress {
       text-transform: uppercase;
       font-weight: lighter;
       font-size: 0.9em;
@@ -131,6 +173,25 @@ button {
       margin-top: -2px;
       border: 1px solid #595959;
     }
+
+    .progress {
+      background-color: #848484;
+      color: #eeeeee;
+      font-weight: bold;
+    }
+
+    .new-version,
+    .installing-version {
+      background-color: #039403;
+      font-weight: 700;
+      color: #eee;
+      font-size: 0.8em;
+    }
+
+    .installing-version {
+      background-color: #027fea;
+    }
+
     &.disabled {
       color: #595959;
       &:hover {
@@ -140,6 +201,8 @@ button {
         }
       }
     }
+
+    white-space: nowrap;
     box-sizing: border-box;
     display: block;
     margin: 3px 0;
@@ -184,7 +247,7 @@ button {
       flex-grow: 1;
       width: 35%;
       padding: 3px 5px;
-      &:first-child{
+      &:first-child {
         margin-right: 30px;
       }
     }

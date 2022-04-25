@@ -1,4 +1,4 @@
-const outputDir = '../../build/apps/boss/ui';
+const outputDir = '../../build/apps/desktop/ui';
 
 module.exports = {
   filenameHashing: false,

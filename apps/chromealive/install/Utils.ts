@@ -2,7 +2,6 @@ import * as Path from 'path';
 import * as Fs from 'fs';
 import * as os from 'os';
 import * as compareVersions from 'compare-versions';
-import { getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
 
 const packageJson = require('../package.json');
 
@@ -15,7 +14,7 @@ export function recordVersion(): void {
 }
 
 export function getInstallDirectory(): string {
-  return Path.join(getCacheDirectory(), 'ulixee', 'chromealive');
+  return Path.join(__dirname, '..', 'dist');
 }
 
 function getPlatformExecutable(): string {

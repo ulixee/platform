@@ -45,7 +45,6 @@
     "hero",
     "website",
     "docs",
-    "databox",
     "runner",
     "**/*.d.ts"
   ]

@@ -1,6 +1,6 @@
 module.exports = {
   titleTemplate: 'Ulixee - The Scraping Toolkit',
-  siteUrl: 'https://ulixee.org',
+  siteUrl: 'https://docs.ulixee.org',
   pathPrefix: '/',
   outputDir: '../build-dist/docs',
   templates: {},

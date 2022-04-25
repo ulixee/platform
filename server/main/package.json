@@ -8,13 +8,17 @@
       "require": "./index.cjs"
     }
   },
+  "bin": {
+    "ulixee-server-start": "./bin/start.js"
+  },
   "scripts": {
-    "start": "node ../cli-commands/bin/start.js",
-    "start:alive": "node -r @ulixee/apps-chromealive-core/register ../cli-commands/bin/start.js"
+    "start": "node bin/start.js",
+    "start:alive": "node -r @ulixee/apps-chromealive-core/register bin/start.js"
   },
   "peerDependencies": {
-    "@ulixee/commons": "^1.5.10",
+    "@ulixee/commons": "^1.5.11",
     "@ulixee/hero-core": "^1.5.4",
+    "@ulixee/hero-interfaces": "^1.5.4",
     "@ulixee/apps-chromealive-core": "^1.5.4"
   },
   "peerDependenciesMeta": {
@@ -23,7 +27,8 @@
     }
   },
   "dependencies": {
-    "ws": "^7.4.6"
+    "ws": "^7.4.6",
+    "yargs-parser": "^20.2.9"
   },
   "devDependencies": {
     "@ulixee/hero-testing": "1.5.4"
