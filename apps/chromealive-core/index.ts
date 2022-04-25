@@ -29,7 +29,6 @@ export default class ChromeAliveCore {
   public static activeHeroSessionId: string;
   public static coreServerAddress?: Promise<string>;
   private static connections: ConnectionToClient[] = [];
-  private static shouldAutoShowBrowser = false;
   private static app: ChildProcess;
   private static events = new EventSubscriber();
 
@@ -51,11 +50,8 @@ export default class ChromeAliveCore {
     return connection;
   }
 
-  public static register(isNodeRegisteredModule = false): void {
+  public static register(): void {
     log.info('Registering ChromeAlive!');
-    if (isNodeRegisteredModule === true) {
-      this.shouldAutoShowBrowser = true;
-    }
 
     bindFunctions(this);
 
@@ -152,13 +148,13 @@ export default class ChromeAliveCore {
       return;
     }
 
-    if (heroSession.mode === 'development' && !('extractSessionId' in heroSession.options)) {
-      heroSession.configureHeaded({ showBrowser: true });
-      heroSession.options.sessionKeepAlive = true;
-      heroSession.options.viewport ??= { width: 0, height: 0 };
+    // ChromeAlive will only show up if specifically requested
+    if (!heroSession.options.showChromeAlive) {
+      return;
     }
-    // if not auto-registered, check if browser is showing
-    if (!heroSession.options.showBrowser) return;
+
+    // automatically showChrome if showChromeAlive is turned on
+    heroSession.configureHeaded({ showChrome: true, showChromeInteractions: true });
 
     const sessionId = heroSession.id;
     log.info('New Hero Session Created: %s (%s)', {
@@ -167,6 +163,7 @@ export default class ChromeAliveCore {
     });
     // keep alive session
     heroSession.options.sessionKeepAlive = true;
+    heroSession.options.viewport ??= { width: 0, height: 0 };
     const sessionObserver = new SessionObserver(heroSession);
     const coreServerAddress = await this.coreServerAddress;
     heroSession.mitmRequestSession.bypassResourceRegistrationForHost = new URL(coreServerAddress);

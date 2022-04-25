@@ -7,6 +7,7 @@ import {
   translateToPrintable,
 } from '@ulixee/commons/lib/Logger';
 import { app } from 'electron';
+import * as Path from 'path';
 
 class UlixeeLogger extends Log {
   constructor(module: NodeModule, boundContext?: any) {
@@ -18,8 +19,8 @@ class UlixeeLogger extends Log {
     const printablePath = entry.module
       .replace('.js', '')
       .replace('.ts', '')
-      .replace('build/', '')
-      .replace('apps/desktop/packages', '');
+      .replace(`build${Path.sep}`, '')
+      .replace(`apps${Path.sep}desktop${Path.sep}packages`, '');
 
     const { error, printData } = translateToPrintable(entry.data);
 

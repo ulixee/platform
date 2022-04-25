@@ -14,7 +14,7 @@ import Log from '@ulixee/commons/lib/Logger';
 import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import ChromeAliveCore from '../index';
-import TimelineRecorder from '@ulixee/hero-timetravel/lib/TimelineRecorder';
+import TimelineWatch from '@ulixee/hero-timetravel/lib/TimelineWatch';
 import AliveBarPositioner from './AliveBarPositioner';
 import OutputRebuilder, { IOutputSnapshot } from './OutputRebuilder';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
@@ -52,7 +52,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   public playbackState: IHeroSessionActiveEvent['playbackState'] = 'running';
 
   public readonly timetravelPlayer: TimetravelPlayer;
-  public readonly timelineRecorder: TimelineRecorder;
+  public readonly timelineWatch: TimelineWatch;
   public readonly scriptInstanceMeta: IScriptInstanceMeta;
   public readonly sourceCodeTimeline: SourceCodeTimeline;
 
@@ -116,8 +116,14 @@ export default class SessionObserver extends TypedEventEmitter<{
       this.bindOriginalSessionClose(resumedSessionId);
     }
 
-    this.timelineRecorder = new TimelineRecorder(heroSession);
-    this.events.on(this.timelineRecorder, 'updated', () => this.emit('hero:updated'));
+    this.timelineWatch = new TimelineWatch(heroSession, {
+      extendAfterCommands: 1e3,
+      extendAfterLoadStatus: {
+        status: LoadStatus.PaintingStable,
+        msAfterStatus: 2e3,
+      },
+    });
+    this.events.on(this.timelineWatch, 'updated', () => this.emit('hero:updated'));
 
     this.timetravelPlayer = TimetravelPlayer.create(heroSession.id, heroSession);
 
@@ -320,7 +326,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     }
     clearTimeout(this.mirrorRefreshTimeout);
 
-    this.timelineRecorder.close();
+    this.timelineWatch.close();
     this.timetravelPlayer?.close()?.catch(console.error);
     this.emit('closed');
   }
