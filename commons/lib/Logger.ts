@@ -220,7 +220,7 @@ interface ILogBuilder {
 function extractPathFromModule(module: NodeModule): string {
   const fullPath = typeof module === 'string' ? module : module.filename || module.id || '';
   return fullPath
-    .replace(/^(.*)\/ulixee\/(.*)$/, '$2')
-    .replace(/^(.*)\/@ulixee\/(.*)$/, '$2')
-    .replace(/^.*\/packages\/(.*)$/, '$1');
+    .replace(/^(.*)[/\\]ulixee[/\\](.+)$/, '$2')
+    .replace(/^(.*)[/\\]@ulixee[/\\](.+)$/, '$2')
+    .replace(/^.*[/\\]packages[/\\](.+)$/, '$1');
 }
