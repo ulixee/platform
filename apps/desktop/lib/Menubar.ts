@@ -289,7 +289,7 @@ export class Menubar extends EventEmitter {
 
     try {
       if (!this.#updateInfoPromise) {
-        this.#updateInfoPromise = autoUpdater.checkForUpdatesAndNotify().then(x => x.updateInfo);
+        this.#updateInfoPromise = autoUpdater.checkForUpdatesAndNotify().then(x => x?.updateInfo ?? null);
         await this.#updateInfoPromise;
       }
     } catch (error) {
@@ -402,7 +402,7 @@ export class Menubar extends EventEmitter {
 
   private async startServer(): Promise<void> {
     if (this.#ulixeeServer) return;
-    ChromeAliveCore.register(true);
+    ChromeAliveCore.register();
     this.#ulixeeServer = new UlixeeServer();
     const address = UlixeeConfig.global?.serverHost;
     let port = 0;

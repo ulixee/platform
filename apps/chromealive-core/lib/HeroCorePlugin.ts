@@ -86,8 +86,11 @@ export default class HeroCorePlugin extends CorePlugin {
     }
   }
 
-  public onBrowserLaunchConfiguration(launchArguments: string[]): void {
-    if (launchArguments.includes('--headless')) return;
+  public onBrowserLaunchConfiguration(
+    launchArguments: string[],
+    sessionSummary: ISessionSummary,
+  ): void {
+    if (launchArguments.includes('--headless') || (!sessionSummary?.options?.showChromeAlive)) return;
 
     launchArguments.push(
       `--disable-extensions-except=${extensionPath}`,
@@ -99,7 +102,7 @@ export default class HeroCorePlugin extends CorePlugin {
     context: IPuppetContext,
     sessionSummary: ISessionSummary,
   ): Promise<any> {
-    if (context.isIncognito || sessionSummary.options.showBrowser === false) return;
+    if (!sessionSummary.options.showChromeAlive) return;
 
     const id = sessionSummary.id;
     this.sessionId = id;
@@ -124,7 +127,7 @@ export default class HeroCorePlugin extends CorePlugin {
   }
 
   public async onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
-    if (page.browserContext.isIncognito || sessionSummary.options.showBrowser === false) return;
+    if (!sessionSummary.options.showChromeAlive) return;
 
     this.puppetPagesById.set(page.id, page);
     if (page.groupName === 'session') {
@@ -154,11 +157,19 @@ export default class HeroCorePlugin extends CorePlugin {
     ]);
   }
 
-  public onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession): Promise<any> {
+  public onDevtoolsPanelAttached(
+    devtoolsSession: IDevtoolsSession,
+    sessionSummary: ISessionSummary,
+  ): Promise<any> {
+    if (!sessionSummary.options.showChromeAlive) return;
     return this.devtoolsBackdoorModule.onDevtoolsPanelAttached(devtoolsSession);
   }
 
-  public onDevtoolsPanelDetached(devtoolsSession: IDevtoolsSession): Promise<any> {
+  public onDevtoolsPanelDetached(
+    devtoolsSession: IDevtoolsSession,
+    sessionSummary: ISessionSummary,
+  ): Promise<any> {
+    if (!sessionSummary.options.showChromeAlive) return;
     this.devtoolsBackdoorModule.onDevtoolsPanelDetached(devtoolsSession);
     return Promise.resolve();
   }
