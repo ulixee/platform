@@ -59,6 +59,9 @@ function copyDir(baseDir: string, outDir: string): void {
 
 copyDir(`${baseBuild}/build`, dest);
 copyDir(`${baseBuild}/hero/build`, `${dest}/hero`);
+copyDir(`${baseBuild}/../secret-agent/build`, `${dest}/secret-agent`);
+copyDir(`${baseBuild}/../bureau/emulator-spec/build`, `${dest}/emulator-spec`);
+copyDir(`${baseBuild}/../bureau/build/emulator-plugins`, `${dest}/emulator-plugins`);
 
 // eslint-disable-next-line no-console
 console.log('Copied files to dest', dest);

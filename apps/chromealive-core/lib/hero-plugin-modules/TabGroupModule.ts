@@ -1,21 +1,21 @@
-import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
+import { IPage } from '@bureau/interfaces/IPage';
 import HeroCorePlugin from '../HeroCorePlugin';
 
 export default class TabGroupModule {
   constructor(private heroPlugin: HeroCorePlugin) {}
 
-  public async showTabs(...pages: IPuppetPage[]): Promise<void> {
+  public async showTabs(...pages: IPage[]): Promise<void> {
     const showTabIds: number[] = [];
 
-    const puppetPageId = this.heroPlugin.activePuppetPage.id;
-    for (const puppetPage of pages) {
-      const tabId = await this.heroPlugin.getTabIdByPuppetPageId(puppetPage.id);
+    const pageId = this.heroPlugin.activePage.id;
+    for (const page of pages) {
+      const tabId = await this.heroPlugin.getTabIdByPageId(page.id);
       if (tabId) {
         showTabIds.push(tabId);
       }
     }
 
     const args = { showTabIds };
-    await this.heroPlugin.sendToExtension<void>(puppetPageId, 'hideTabs', args, true);
+    await this.heroPlugin.sendToExtension<void>(pageId, 'hideTabs', args, true);
   }
 }

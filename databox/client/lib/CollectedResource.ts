@@ -1,6 +1,6 @@
 import ICollectedResource from '@ulixee/hero-interfaces/ICollectedResource';
 import ICollectedResourceDetails from '../interfaces/ICollectedResourceDetails';
-import IResourceType from '@ulixee/hero-interfaces/IResourceType';
+import IResourceType from '@bureau/interfaces/IResourceType';
 import IWebsocketMessage from '@ulixee/hero-interfaces/IWebsocketMessage';
 
 export default class CollectedResource implements ICollectedResourceDetails {

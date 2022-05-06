@@ -1,4 +1,4 @@
-import IResourceMeta from '@ulixee/hero-interfaces/IResourceMeta';
+import IResourceMeta from '@bureau/interfaces/IResourceMeta';
 import IWebsocketMessage from '@ulixee/hero-interfaces/IWebsocketMessage';
 
 export default interface ICollectedResourceDetails extends Required<IResourceMeta>, IResponseBody {

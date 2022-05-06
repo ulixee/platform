@@ -25,7 +25,7 @@
     "test:all": "yarn copy:build && cross-env HERO_DATA_DIR=.data-test NODE_ENV=test jest",
     "lint": "eslint --cache ./"
   },
-  "repository": "git@github.com:ulixee/devenv.git",
+  "repository": "git@github.com:ulixee/ulixee.git",
   "author": "Data Liberation Foundation",
   "contributors": [
     "Caleb Clark",
@@ -33,7 +33,7 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ulixee/devenv/issues"
+    "url": "https://github.com/ulixee/ulixee/issues"
   },
   "homepage": "https://ulixee.org",
   "engines": {
@@ -80,7 +80,10 @@
       "databox/*",
       "server/*",
       "hero/build/*",
-      "hero/build/plugins/*"
+      "hero/build/plugins/*",
+      "../secret-agent/build/*",
+      "../bureau/build/emulator-plugins/*",
+      "../bureau/emulator-spec/build"
     ],
     "nohoist": [
       "**/babel-loader",

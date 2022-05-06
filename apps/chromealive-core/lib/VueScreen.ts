@@ -2,15 +2,16 @@ import { URL } from 'url';
 import ChromeAliveCore from '../index';
 import { Session as HeroSession } from '@ulixee/hero-core';
 import * as http from 'http';
-import { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
-import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
+import { Protocol } from '@bureau/interfaces/IDevtoolsSession';
+import { IPage } from '@bureau/interfaces/IPage';
 import { httpGet } from '@ulixee/commons/lib/downloadFile';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
+import Page from 'secret-agent/lib/Page';
 
 export default class VueScreen extends TypedEventEmitter<{ close: void }> {
-  public puppetPage: Promise<IPuppetPage>;
+  public page: Promise<Page>;
 
   private readonly vuePath: string;
 
@@ -40,36 +41,38 @@ export default class VueScreen extends TypedEventEmitter<{ close: void }> {
     }[name];
   }
 
-  public async open(): Promise<IPuppetPage> {
-    if (!this.puppetPage) {
-      const puppetPage = await this.openPuppetPage();
-      await puppetPage.navigate(this.pageUrl);
+  public async open(): Promise<IPage> {
+    if (!this.page) {
+      const page = await this.openPage();
+      await page.navigate(this.pageUrl);
     }
-    return this.puppetPage;
+    return this.page;
   }
 
   public async close(): Promise<void> {
-    if (this.puppetPage) {
-      await this.puppetPage.then(x => x.close()).catch(() => null);
+    if (this.page) {
+      await this.page.then(x => x.close()).catch(() => null);
     }
   }
 
-  private async openPuppetPage(): Promise<IPuppetPage> {
-    this.puppetPage = this.heroSession.browserContext.newPage({
+  private async openPage(): Promise<IPage> {
+    this.page = this.heroSession.browserContext.newPage({
       runPageScripts: false,
       groupName: 'vue',
     });
 
-    const page = await this.puppetPage;
+    const page = await this.page;
     page.once('close', () => {
-      this.puppetPage = null;
+      this.page = null;
       this.emit('close');
     });
     for (const plugin of this.heroSession.plugins.corePlugins) {
-      if (plugin.onNewPuppetPage) await plugin.onNewPuppetPage(page, this.sessionSummary());
+      if (plugin.onNewPage) await plugin.onNewPage(page);
     }
 
-    await page.setNetworkRequestInterceptor(this.routeNetworkToVueApp.bind(this, this.pageUrl));
+    await page.setNetworkRequestInterceptor(
+      this.routeNetworkToVueApp.bind(this, this.pageUrl) as any,
+    );
     return page;
   }
 

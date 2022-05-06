@@ -1,4 +1,4 @@
-import { Protocol } from "@ulixee/hero-interfaces/IDevtoolsSession";
+import { Protocol } from "@bureau/interfaces/IDevtoolsSession";
 
 const highlightConfig = {
   showInfo: true,

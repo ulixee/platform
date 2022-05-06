@@ -4,20 +4,25 @@ import ILog, { ILogData } from '../interfaces/ILog';
 
 const hasBeenLoggedSymbol = Symbol.for('hasBeenLogged');
 
+const logFilters = {
+  active: [] as RegExp[],
+  skip: [] as RegExp[],
+  enabledNamesCache: {} as { [namespace: string]: boolean },
+};
+
 let logId = 0;
 class Log implements ILog {
-  public readonly level: string = process.env.DEBUG ? 'stats' : 'error';
+  public readonly level: LogLevel;
   public useColors =
     process.env.NODE_DISABLE_COLORS !== 'true' && process.env.NODE_DISABLE_COLORS !== '1';
 
   protected readonly boundContext: any = {};
   private readonly module: string;
-  private readonly logLevel: number;
 
   constructor(module: NodeModule, boundContext?: any) {
-    this.logLevel = logLevels.indexOf(this.level);
     this.module = module ? extractPathFromModule(module) : '';
     if (boundContext) this.boundContext = boundContext;
+    this.level = isEnabled(this.module) ? 'stats' : 'error';
   }
 
   public stats(action: string, data?: ILogData): number {
@@ -98,7 +103,7 @@ class Log implements ILog {
       level,
       module: this.module,
     };
-    if (logLevels.indexOf(level) >= this.logLevel) {
+    if (logLevels[level] >= logLevels[this.level]) {
       this.logToConsole(level, entry);
     }
     LogEvents.broadcast(entry);
@@ -157,7 +162,7 @@ export function translateToPrintable(
   return result;
 }
 
-const logLevels = ['stats', 'info', 'warn', 'error'];
+const logLevels = { stats: 0, info: 1, warn: 2, error: 3 };
 
 let logCreator = (module: NodeModule): { log: ILog } => {
   const log: ILog = new Log(module);
@@ -211,7 +216,7 @@ export interface ILogEntry {
   level: LogLevel;
 }
 
-type LogLevel = 'stats' | 'info' | 'warn' | 'error';
+type LogLevel = keyof typeof logLevels;
 
 interface ILogBuilder {
   log: ILog;
@@ -220,7 +225,52 @@ interface ILogBuilder {
 function extractPathFromModule(module: NodeModule): string {
   const fullPath = typeof module === 'string' ? module : module.filename || module.id || '';
   return fullPath
+    .replace(/^(.*)[/\\]secret-agent[/\\](.+)$/, 'secret-agent/$2')
     .replace(/^(.*)[/\\]ulixee[/\\](.+)$/, '$2')
     .replace(/^(.*)[/\\]@ulixee[/\\](.+)$/, '$2')
     .replace(/^.*[/\\]packages[/\\](.+)$/, '$1');
 }
+
+/// LOG FILTERING //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function isEnabled(name: string): boolean {
+  if (name in logFilters.enabledNamesCache) return logFilters.enabledNamesCache[name];
+
+  if (name[name.length - 1] === '*') {
+    return true;
+  }
+
+  for (const ns of logFilters.skip) {
+    if (ns.test(name)) {
+      logFilters.enabledNamesCache[name] = false;
+      return false;
+    }
+  }
+
+  for (const ns of logFilters.active) {
+    if (ns.test(name)) {
+      logFilters.enabledNamesCache[name] = true;
+      return true;
+    }
+  }
+
+  logFilters.enabledNamesCache[name] = false;
+  return false;
+}
+
+function enable(namespaces: string): void {
+  const split = (typeof namespaces === 'string' ? namespaces : '').split(/[\s,]+/);
+
+  for (const part of split) {
+    if (!part) continue;
+
+    namespaces = part.replace(/\*/g, '.*?');
+
+    if (namespaces[0] === '-') {
+      logFilters.skip.push(new RegExp('^' + namespaces.slice(1) + '$'));
+    } else {
+      logFilters.active.push(new RegExp('^' + namespaces + '$'));
+    }
+  }
+}
+enable(process.env.DEBUG);

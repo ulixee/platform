@@ -5,7 +5,8 @@
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/hero-interfaces": "1.5.4"
+    "@ulixee/hero-interfaces": "1.5.4",
+    "@bureau/interfaces": "2.0.0-alpha.1"
   },
   "devDependencies": {}
 }

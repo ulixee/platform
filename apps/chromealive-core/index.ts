@@ -1,12 +1,12 @@
 import * as Fs from 'fs';
-import HeroCore, { GlobalPool as HeroGlobalPool, Session as HeroSession } from '@ulixee/hero-core';
+import HeroCore, { Session as HeroSession } from '@ulixee/hero-core';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
 import Log from '@ulixee/commons/lib/Logger';
 import { ChildProcess } from 'child_process';
 import launchChromeAlive from '@ulixee/apps-chromealive/index';
-import type Puppet from '@ulixee/hero-puppet';
+import { Browser } from 'secret-agent';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
-import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
+import { IPage } from '@bureau/interfaces/IPage';
 import HeroCorePlugin, { extensionPath } from './lib/HeroCorePlugin';
 import SessionObserver from './lib/SessionObserver';
 import ConnectionToClient from './lib/ConnectionToClient';
@@ -55,16 +55,10 @@ export default class ChromeAliveCore {
 
     bindFunctions(this);
 
-    this.events.on(HeroGlobalPool.events, 'browser-launched', this.onNewBrowser);
-    this.events.on(HeroGlobalPool.events, 'all-browsers-closed', () =>
-      AliveBarPositioner.resetSession(),
-    );
-    this.events.on(HeroGlobalPool.events, 'session-created', this.onHeroSessionCreated);
-    this.events.on(
-      HeroGlobalPool.events,
-      'browser-has-no-open-windows',
-      this.onBrowserHasNoWindows,
-    );
+    this.events.on(HeroCore.events, 'browser-launched', this.onNewBrowser);
+    this.events.on(HeroCore.events, 'all-browsers-closed', () => AliveBarPositioner.resetSession());
+    this.events.on(HeroCore.events, 'browser-has-no-open-windows', this.onBrowserHasNoWindows);
+    this.events.on(HeroSession.events, 'new', this.onHeroSessionCreated);
 
     HeroCore.use(HeroCorePlugin);
   }
@@ -83,13 +77,13 @@ export default class ChromeAliveCore {
     this.sessionObserversById.clear();
   }
 
-  public static getActivePuppetPage(): IPuppetPage {
+  public static getActivePage(): IPage {
     if (!this.activeHeroSessionId) return;
     const sessionObserver = this.sessionObserversById.get(this.activeHeroSessionId);
     if (!sessionObserver) return;
 
     const { heroSession } = sessionObserver;
-    return [...heroSession.tabsById.values()].find(x => !x.isClosing)?.puppetPage;
+    return [...heroSession.tabsById.values()].find(x => !x.isClosing)?.page;
   }
 
   public static sendAppEvent<T extends keyof IChromeAliveEvents>(
@@ -104,20 +98,20 @@ export default class ChromeAliveCore {
   public static changeActiveSessions(
     status: { focused: boolean; active: boolean },
     heroSessionId: string,
-    puppetPageId: string,
+    pageId: string,
   ): void {
     const isPageVisible = status.active;
     log.info('Changing active session', {
       isPageVisible,
       sessionId: heroSessionId,
-      pageId: puppetPageId,
+      pageId: pageId,
     });
 
     if (this.activeHeroSessionId) {
-      if (status.focused) AliveBarPositioner.focusedPageId(puppetPageId);
-      else AliveBarPositioner.blurredPageId(puppetPageId);
+      if (status.focused) AliveBarPositioner.focusedPageId(pageId);
+      else AliveBarPositioner.blurredPageId(pageId);
     } else {
-      AliveBarPositioner.blurredPageId(puppetPageId);
+      AliveBarPositioner.blurredPageId(pageId);
     }
   }
 
@@ -166,7 +160,7 @@ export default class ChromeAliveCore {
     heroSession.options.viewport ??= { width: 0, height: 0 };
     const sessionObserver = new SessionObserver(heroSession);
     const coreServerAddress = await this.coreServerAddress;
-    heroSession.mitmRequestSession.bypassResourceRegistrationForHost = new URL(coreServerAddress);
+    heroSession.bypassResourceRegistrationForHost = new URL(coreServerAddress);
 
     this.sessionObserversById.set(sessionId, sessionObserver);
     const sourceCode = sessionObserver.sourceCodeTimeline;
@@ -202,7 +196,7 @@ export default class ChromeAliveCore {
       this.events.once(sessionObserver, 'hero:updated', () => {
         this.sendAppEvent('Session.loaded');
         const plugin = HeroCorePlugin.bySessionId.get(sessionId);
-        if (plugin.activePuppetPage) AliveBarPositioner.focusedPageId(plugin.activePuppetPage.id);
+        if (plugin.activePage) AliveBarPositioner.focusedPageId(plugin.activePage.id);
       });
       this.activeHeroSessionId = sessionId;
     }
@@ -330,16 +324,16 @@ export default class ChromeAliveCore {
     });
   }
 
-  private static onBrowserHasNoWindows(event: { puppet: Puppet }): void {
+  private static onBrowserHasNoWindows(event: { browser: Browser }): void {
     // only check for headed
-    if (!event.puppet.browserEngine.isHeaded) return;
+    if (!event.browser.engine.isHeaded) return;
 
-    const browserId = event.puppet.browserId;
+    const browserId = event.browser.id;
     setTimeout(() => {
       const sessionsUsingEngine = HeroSession.sessionsWithBrowserId(browserId);
       const hasWindows = sessionsUsingEngine.some(x => x.tabsById.size > 0);
       if (!hasWindows) {
-        return event.puppet.close();
+        return event.browser.close();
       }
     }, 2e3).unref();
   }
