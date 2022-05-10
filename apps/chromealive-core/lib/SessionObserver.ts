@@ -23,14 +23,14 @@ import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
 import VueScreen from './VueScreen';
 import DevtoolsBackdoorModule from './hero-plugin-modules/DevtoolsBackdoorModule';
 import ElementsModule from './hero-plugin-modules/ElementsModule';
-import { IPage } from '@bureau/interfaces/IPage';
+import { IPage } from '@unblocked-web/emulator-spec/browser/IPage';
 import SourceLoader from '@ulixee/commons/lib/SourceLoader';
 import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation';
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
 import MirrorPage from '@ulixee/hero-timetravel/lib/MirrorPage';
 import HeroCorePlugin from './HeroCorePlugin';
 import CommandTimeline from '@ulixee/hero-timetravel/lib/CommandTimeline';
-import { LoadStatus } from '@bureau/interfaces/Location';
+import { LoadStatus } from '@unblocked-web/emulator-spec/browser/Location';
 import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import ISessionSearchResult, {

@@ -1,4 +1,4 @@
-import { IPage } from '@bureau/interfaces/IPage';
+import { IPage } from '@unblocked-web/emulator-spec/browser/IPage';
 import HeroCorePlugin from '../HeroCorePlugin';
 
 export default class TabGroupModule {

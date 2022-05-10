@@ -226,7 +226,7 @@ import { convertJsonToFlat } from '@/utils/flattenJson';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import IDataboxCollectedAssetsResponse from '@ulixee/apps-chromealive-interfaces/IDataboxCollectedAssets';
 import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxCollectedAssetEvent';
-import IResourceMeta from '@bureau/interfaces/IResourceMeta';
+import IResourceMeta from '@unblocked-web/emulator-spec/IResourceMeta';
 import ICollectedResource from '@ulixee/hero-interfaces/ICollectedResource';
 import ICollectedElement from '@ulixee/hero-interfaces/ICollectedElement';
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';

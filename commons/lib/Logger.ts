@@ -225,7 +225,7 @@ interface ILogBuilder {
 function extractPathFromModule(module: NodeModule): string {
   const fullPath = typeof module === 'string' ? module : module.filename || module.id || '';
   return fullPath
-    .replace(/^(.*)[/\\]secret-agent[/\\](.+)$/, 'secret-agent/$2')
+    .replace(/^(.*)[/\\]unblocked[/\\](.+)$/, '$2')
     .replace(/^(.*)[/\\]ulixee[/\\](.+)$/, '$2')
     .replace(/^(.*)[/\\]@ulixee[/\\](.+)$/, '$2')
     .replace(/^.*[/\\]packages[/\\](.+)$/, '$1');
@@ -261,15 +261,25 @@ function isEnabled(name: string): boolean {
 function enable(namespaces: string): void {
   const split = (typeof namespaces === 'string' ? namespaces : '').split(/[\s,]+/);
 
-  for (const part of split) {
+  for (let part of split) {
     if (!part) continue;
 
-    namespaces = part.replace(/\*/g, '.*?');
+    part = part.replace(/\*/g, '.*?');
 
-    if (namespaces[0] === '-') {
-      logFilters.skip.push(new RegExp('^' + namespaces.slice(1) + '$'));
+    if (part[0] === '-') {
+      logFilters.skip.push(new RegExp('^' + part.slice(1) + '$'));
     } else {
-      logFilters.active.push(new RegExp('^' + namespaces + '$'));
+      logFilters.active.push(new RegExp('^' + part + '$'));
+      if (part.includes('sa:*') || part.includes('sa*')) {
+        logFilters.active.push(/secret-agent\/*/);
+      } else if (part === 'sa') {
+        logFilters.active.push(/secret-agent\/*/);
+        logFilters.skip.push(new RegExp('DevtoolsSessionLogger'));
+        logFilters.skip.push(new RegExp(/secret-agent\/mitm*/));
+
+      } else if (part.includes('sa:devtools')) {
+        logFilters.active.push(new RegExp('DevtoolsSessionLogger'));
+      }
     }
   }
 }

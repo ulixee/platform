@@ -4,9 +4,9 @@ import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
 import Log from '@ulixee/commons/lib/Logger';
 import { ChildProcess } from 'child_process';
 import launchChromeAlive from '@ulixee/apps-chromealive/index';
-import { Browser } from 'secret-agent';
+import { Browser } from '@unblocked-web/secret-agent';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
-import { IPage } from '@bureau/interfaces/IPage';
+import { IPage } from '@unblocked-web/emulator-spec/browser/IPage';
 import HeroCorePlugin, { extensionPath } from './lib/HeroCorePlugin';
 import SessionObserver from './lib/SessionObserver';
 import ConnectionToClient from './lib/ConnectionToClient';
@@ -157,6 +157,8 @@ export default class ChromeAliveCore {
     });
     // keep alive session
     heroSession.options.sessionKeepAlive = true;
+    // extensions need incognito disabled
+    heroSession.options.disableIncognito = true;
     heroSession.options.viewport ??= { width: 0, height: 0 };
     const sessionObserver = new SessionObserver(heroSession);
     const coreServerAddress = await this.coreServerAddress;

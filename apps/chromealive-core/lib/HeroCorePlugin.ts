@@ -1,9 +1,9 @@
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import * as Path from 'path';
 import ICorePluginCreateOptions from '@ulixee/hero-interfaces/ICorePluginCreateOptions';
-import { IPage } from '@bureau/interfaces/IPage';
+import { IPage } from '@unblocked-web/emulator-spec/browser/IPage';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
-import IDevtoolsSession from '@bureau/interfaces/IDevtoolsSession';
+import IDevtoolsSession from '@unblocked-web/emulator-spec/browser/IDevtoolsSession';
 import CorePlugin from '@ulixee/hero-plugin-utils/lib/CorePlugin';
 import BridgeToExtension from './bridges/BridgeToExtension';
 import { createPromise } from '@ulixee/commons/lib/utils';
@@ -12,16 +12,16 @@ import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 import { extensionId } from './ExtensionUtils';
 import DevtoolsBackdoorModule from './hero-plugin-modules/DevtoolsBackdoorModule';
 import ElementsModule from './hero-plugin-modules/ElementsModule';
-import { IWorker } from '@bureau/interfaces/IWorker';
+import { IWorker } from '@unblocked-web/emulator-spec/browser/IWorker';
 import { createResponseId, IMessageObject, MessageLocation, ResponseCode } from './BridgeHelpers';
 import ChromeAliveCore from '../index';
 import AliveBarPositioner from './AliveBarPositioner';
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/IBounds';
-import IViewport from '@bureau/interfaces/IViewport';
-import IBrowser from '@bureau/interfaces/IBrowser';
-import { BrowserContext, Page } from 'secret-agent';
+import IViewport from '@unblocked-web/emulator-spec/browser/IViewport';
+import IBrowser from '@unblocked-web/emulator-spec/browser/IBrowser';
+import { BrowserContext, Page } from '@unblocked-web/secret-agent';
 import EventEmitter = require('events');
-import { IBrowserEmulatorConfig } from '@bureau/interfaces/IBrowserEmulator';
+import { IBrowserEmulatorConfig } from '@unblocked-web/emulator-spec/IBrowserEmulator';
 
 // have to resolve an actual file
 export const extensionPath = Path.resolve(__dirname, '../extension').replace(

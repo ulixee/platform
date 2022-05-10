@@ -2,13 +2,13 @@ import { URL } from 'url';
 import ChromeAliveCore from '../index';
 import { Session as HeroSession } from '@ulixee/hero-core';
 import * as http from 'http';
-import { Protocol } from '@bureau/interfaces/IDevtoolsSession';
-import { IPage } from '@bureau/interfaces/IPage';
+import { Protocol } from '@unblocked-web/emulator-spec/browser/IDevtoolsSession';
+import { IPage } from '@unblocked-web/emulator-spec/browser/IPage';
 import { httpGet } from '@ulixee/commons/lib/downloadFile';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
-import Page from 'secret-agent/lib/Page';
+import Page from '@unblocked-web/secret-agent/lib/Page';
 
 export default class VueScreen extends TypedEventEmitter<{ close: void }> {
   public page: Promise<Page>;

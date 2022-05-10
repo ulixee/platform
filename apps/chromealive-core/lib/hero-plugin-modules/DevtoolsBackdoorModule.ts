@@ -1,7 +1,7 @@
 import * as fs from 'fs';
-import { IPage } from '@bureau/interfaces/IPage';
+import { IPage } from '@unblocked-web/emulator-spec/browser/IPage';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import IDevtoolsSession, { Protocol } from '@bureau/interfaces/IDevtoolsSession';
+import IDevtoolsSession, { Protocol } from '@unblocked-web/emulator-spec/browser/IDevtoolsSession';
 import {
   ___emitFromDevtoolsToCore,
   EventType,

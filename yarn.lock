@@ -4297,6 +4297,11 @@
     progress "^2.0.3"
     tar "^6.1.0"
 
+"@unblocked-web/js-path@2.0.0-alpha.1":
+  version "2.0.0-alpha.1"
+  resolved "https://registry.yarnpkg.com/@unblocked-web/js-path/-/js-path-2.0.0-alpha.1.tgz#39482400d582a1cb88197724f2b1efa339d9483f"
+  integrity sha512-59FWvS1XRD862CLm2/9ZPiJlylolwkhe3HRH+aIes7dRXHSlpdwOLQG1V6NN1W//TXh9ars3f3TJqr4XLSaAcg==
+
 "@vue/babel-helper-vue-jsx-merge-props@^1.2.1":
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/@vue/babel-helper-vue-jsx-merge-props/-/babel-helper-vue-jsx-merge-props-1.2.1.tgz#31624a7a505fb14da1d58023725a4c5f270e6a81"
@@ -5944,10 +5949,12 @@ autoprefixer@^9.8.6:
     postcss "^7.0.32"
     postcss-value-parser "^4.1.0"
 
-awaited-dom@1.3.2:
-  version "1.3.2"
-  resolved "https://registry.yarnpkg.com/awaited-dom/-/awaited-dom-1.3.2.tgz#90f044bda2d3329b74518acea6300968439a67ad"
-  integrity sha512-sShOBw8zGlXrUEEt9DTAB2FtB8qoNkMl0y8VLbpEoX0akWffe1WKZAmqlXVIA1N3HPMjV/Nf+m3S2qCzcMyl8g==
+awaited-dom@1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/awaited-dom/-/awaited-dom-1.4.0.tgz#d74ed6bf7012aa8588f2189bee1dd2f7661870d4"
+  integrity sha512-0Am2L51ByCfKkHXUs8Cv2qCoukJtXq+iLrBwoPgNPB5OmfmdnPefibb6jJ1SN9pNMx7pxMakScYY2aO2gikoww==
+  dependencies:
+    "@unblocked-web/js-path" "2.0.0-alpha.1"
 
 aws-sign2@~0.7.0:
   version "0.7.0"

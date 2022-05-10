@@ -18,7 +18,7 @@ import * as Vue from 'vue';
 import { defineComponent } from 'vue';
 import Client from '@/api/Client';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
-import { LoadStatus } from '@bureau/interfaces/Location';
+import { LoadStatus } from '@unblocked-web/emulator-spec/Location';
 
 export default defineComponent({
   name: 'Menu',

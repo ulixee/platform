@@ -1,4 +1,4 @@
-import IRect from '@bureau/interfaces/IRect';
+import IRect from '@unblocked-web/emulator-spec/browser/IRect';
 
 export default interface IAppMoveEvent {
   bounds: IRect;

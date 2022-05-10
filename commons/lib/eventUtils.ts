@@ -66,6 +66,7 @@ export class TypedEventEmitter<T> extends EventEmitter implements ITypedEventEmi
   private reemitterCountByEventType: { [eventType: string]: number } = {};
 
   public cancelPendingEvents(message?: string, excludeEvents?: (keyof T & string)[]): void {
+    this.storedEventsByType.clear();
     const events = [...this.pendingWaitEventsById.values()];
     this.pendingWaitEventsById.clear();
     while (events.length) {
