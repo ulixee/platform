@@ -23,14 +23,14 @@ import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
 import VueScreen from './VueScreen';
 import DevtoolsBackdoorModule from './hero-plugin-modules/DevtoolsBackdoorModule';
 import ElementsModule from './hero-plugin-modules/ElementsModule';
-import { IPage } from '@unblocked-web/emulator-spec/browser/IPage';
+import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
 import SourceLoader from '@ulixee/commons/lib/SourceLoader';
 import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation';
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
 import MirrorPage from '@ulixee/hero-timetravel/lib/MirrorPage';
 import HeroCorePlugin from './HeroCorePlugin';
 import CommandTimeline from '@ulixee/hero-timetravel/lib/CommandTimeline';
-import { LoadStatus } from '@unblocked-web/emulator-spec/browser/Location';
+import { LoadStatus } from '@unblocked-web/specifications/agent/browser/Location';
 import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import ISessionSearchResult, {
@@ -193,7 +193,7 @@ export default class SessionObserver extends TypedEventEmitter<{
         // execArgv,
         cwd: this.scriptInstanceMeta.workingDirectory,
         stdio: ['ignore', 'inherit', 'inherit', 'ipc'],
-        env: { ...process.env, HERO_CLI_NOPROMPT: 'true' },
+        env: { ...process.env, ULX_CLI_NOPROMPT: 'true' },
       });
     } catch (error) {
       this.logger.error('ERROR resuming session', { error });

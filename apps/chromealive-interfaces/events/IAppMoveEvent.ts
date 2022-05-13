@@ -1,4 +1,4 @@
-import IRect from '@unblocked-web/emulator-spec/browser/IRect';
+import IRect from '@unblocked-web/specifications/agent/browser/IRect';
 
 export default interface IAppMoveEvent {
   bounds: IRect;

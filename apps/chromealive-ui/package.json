@@ -19,7 +19,7 @@
     "@ulixee/commons": "1.5.11",
     "@ulixee/apps-chromealive-interfaces": "1.5.4",
     "@ulixee/hero-interfaces": "1.5.4",
-    "@unblocked-web/emulator-spec": "2.0.0-alpha.1",
+    "@unblocked-web/specifications": "2.0.0-alpha.1",
     "@webcomponents/custom-elements": "^1.5.0",
     "core-js": "^3.21.1",
     "json5": "^2.2.0",

@@ -1,7 +1,7 @@
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { EventEmitter } from 'events';
-import IDevtoolsSession, { Protocol } from '@unblocked-web/emulator-spec/browser/IDevtoolsSession';
-import { IPage } from '@unblocked-web/emulator-spec/browser/IPage';
+import IDevtoolsSession, { Protocol } from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
+import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';

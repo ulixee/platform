@@ -6,7 +6,7 @@
   "license": "MIT",
   "dependencies": {
     "@ulixee/hero-interfaces": "1.5.4",
-    "@unblocked-web/emulator-spec": "2.0.0-alpha.1"
+    "@unblocked-web/specifications": "2.0.0-alpha.1"
   },
   "devDependencies": {}
 }

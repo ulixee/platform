@@ -1,4 +1,3 @@
-import ICollectedSnippet from '@ulixee/hero-interfaces/ICollectedSnippet';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
 
 export default class CollectedSnippets {

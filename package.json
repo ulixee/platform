@@ -21,8 +21,8 @@
     "watch:all": "concurrently -n hero,databox,devenv \"cd hero && yarn watch\" \"cd databox && yarn watch\" \"yarn watch\"",
     "start": "yarn workspace @ulixee/server start",
     "test": "yarn copy:build && yarn test:build",
-    "test:build": "cd ./build && cross-env HERO_DATA_DIR=.data-test NODE_ENV=test jest",
-    "test:all": "yarn copy:build && cross-env HERO_DATA_DIR=.data-test NODE_ENV=test jest",
+    "test:build": "cd ./build && cross-env ULX_DATA_DIR=.data-test NODE_ENV=test jest",
+    "test:all": "yarn copy:build && cross-env ULX_DATA_DIR=.data-test NODE_ENV=test jest",
     "lint": "eslint --cache ./"
   },
   "repository": "git@github.com:ulixee/ulixee.git",
@@ -81,9 +81,9 @@
       "server/*",
       "hero/build/*",
       "hero/build/plugins/*",
-      "../unblocked/secret-agent/build/*",
-      "../unblocked/build/emulator-plugins/*",
-      "../unblocked/emulator-spec/build"
+      "../unblocked/agent/build/*",
+      "../unblocked/build/agent-plugins/*",
+      "../unblocked/specifications/build"
     ],
     "nohoist": [
       "**/babel-loader",

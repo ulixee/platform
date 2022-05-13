@@ -271,11 +271,11 @@ function enable(namespaces: string): void {
     } else {
       logFilters.active.push(new RegExp('^' + part + '$'));
       if (part.includes('sa:*') || part.includes('sa*')) {
-        logFilters.active.push(/secret-agent\/*/);
+        logFilters.active.push(/agent\/*/);
       } else if (part === 'sa') {
-        logFilters.active.push(/secret-agent\/*/);
+        logFilters.active.push(/agent\/*/);
         logFilters.skip.push(new RegExp('DevtoolsSessionLogger'));
-        logFilters.skip.push(new RegExp(/secret-agent\/mitm*/));
+        logFilters.skip.push(new RegExp(/agent\/mitm*/));
 
       } else if (part.includes('sa:devtools')) {
         logFilters.active.push(new RegExp('DevtoolsSessionLogger'));

@@ -1,9 +1,9 @@
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import * as Path from 'path';
 import ICorePluginCreateOptions from '@ulixee/hero-interfaces/ICorePluginCreateOptions';
-import { IPage } from '@unblocked-web/emulator-spec/browser/IPage';
-import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
-import IDevtoolsSession from '@unblocked-web/emulator-spec/browser/IDevtoolsSession';
+import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
+import { CorePluginClassDecorator, ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
+import IDevtoolsSession from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
 import CorePlugin from '@ulixee/hero-plugin-utils/lib/CorePlugin';
 import BridgeToExtension from './bridges/BridgeToExtension';
 import { createPromise } from '@ulixee/commons/lib/utils';
@@ -12,16 +12,16 @@ import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 import { extensionId } from './ExtensionUtils';
 import DevtoolsBackdoorModule from './hero-plugin-modules/DevtoolsBackdoorModule';
 import ElementsModule from './hero-plugin-modules/ElementsModule';
-import { IWorker } from '@unblocked-web/emulator-spec/browser/IWorker';
+import { IWorker } from '@unblocked-web/specifications/agent/browser/IWorker';
 import { createResponseId, IMessageObject, MessageLocation, ResponseCode } from './BridgeHelpers';
 import ChromeAliveCore from '../index';
 import AliveBarPositioner from './AliveBarPositioner';
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/IBounds';
-import IViewport from '@unblocked-web/emulator-spec/browser/IViewport';
-import IBrowser from '@unblocked-web/emulator-spec/browser/IBrowser';
-import { BrowserContext, Page } from '@unblocked-web/secret-agent';
+import IViewport from '@unblocked-web/specifications/agent/browser/IViewport';
+import IBrowser from '@unblocked-web/specifications/agent/browser/IBrowser';
+import { BrowserContext, Page } from '@unblocked-web/agent';
+import IEmulationProfile from '@unblocked-web/specifications/plugin/IEmulationProfile';
 import EventEmitter = require('events');
-import { IBrowserEmulatorConfig } from '@unblocked-web/emulator-spec/IBrowserEmulator';
 
 // have to resolve an actual file
 export const extensionPath = Path.resolve(__dirname, '../extension').replace(
@@ -29,6 +29,7 @@ export const extensionPath = Path.resolve(__dirname, '../extension').replace(
   'app.asar.unpacked',
 ); // make electron packaging friendly
 
+@CorePluginClassDecorator
 export default class HeroCorePlugin extends CorePlugin {
   public static id = '@ulixee/chromealive-hero-core-plugin';
 
@@ -83,7 +84,7 @@ export default class HeroCorePlugin extends CorePlugin {
 
   /// /// PLUGIN IMPLEMENTATION METHODS ////////////////////////////////////////////////////////////////////////////////
 
-  public configure(options: IBrowserEmulatorConfig): Promise<any> | void {
+  public configure(options: IEmulationProfile): Promise<any> | void {
     if ((options.viewport as any)?.isDefault) {
       Object.assign(options.viewport, this.getMaxChromeViewport());
     }
@@ -101,8 +102,6 @@ export default class HeroCorePlugin extends CorePlugin {
   }
 
   public async onNewBrowserContext(context: BrowserContext): Promise<any> {
-    if (!this.sessionSummary.options.showChromeAlive) return;
-
     const id = this.sessionSummary.id;
     this.sessionId = id;
     HeroCorePlugin.bySessionId.set(id, this);
@@ -127,8 +126,6 @@ export default class HeroCorePlugin extends CorePlugin {
   }
 
   public async onNewPage(page: Page): Promise<any> {
-    if (!this.sessionSummary.options.showChromeAlive) return;
-
     this.pagesById.set(page.id, page);
     if (page.groupName === 'session') {
       this.activePage ??= page;
@@ -141,7 +138,7 @@ export default class HeroCorePlugin extends CorePlugin {
     this.identityByPage.get(page).promise.catch(console.warn);
     this.events.once(page, 'close', this.onPageClosed.bind(this, page));
 
-    if (process.env.HERO_DEBUG_CHROMEALIVE) {
+    if (process.env.ULX_CHROMEALIVE_DEBUG) {
       if (!this.hasRegisteredServiceWorkerDebug) this.debugServiceWorker(page.devtoolsSession);
       this.hasRegisteredServiceWorkerDebug = true;
     }
@@ -158,12 +155,10 @@ export default class HeroCorePlugin extends CorePlugin {
   }
 
   public onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession): Promise<any> {
-    if (!this.sessionSummary.options.showChromeAlive) return;
     return this.devtoolsBackdoorModule.onDevtoolsPanelAttached(devtoolsSession);
   }
 
   public onDevtoolsPanelDetached(devtoolsSession: IDevtoolsSession): Promise<any> {
-    if (!this.sessionSummary.options.showChromeAlive) return;
     this.devtoolsBackdoorModule.onDevtoolsPanelDetached(devtoolsSession);
     return Promise.resolve();
   }
@@ -305,6 +300,10 @@ export default class HeroCorePlugin extends CorePlugin {
       // eslint-disable-next-line no-console
       console.debug('ServiceWorker.workerVersionUpdated', ...ev.versions),
     );
+  }
+
+  public static shouldActivate(profile: IEmulationProfile, session: ISessionSummary): boolean {
+    return session.options.showChromeAlive;
   }
 }
 

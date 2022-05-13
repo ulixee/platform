@@ -1,4 +1,4 @@
-import { Protocol } from "@unblocked-web/emulator-spec/browser/IDevtoolsSession";
+import { Protocol } from "@unblocked-web/specifications/agent/browser/IDevtoolsSession";
 
 const highlightConfig = {
   showInfo: true,

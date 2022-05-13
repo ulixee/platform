@@ -55,7 +55,7 @@ function getPreferredLaunch(): 'local' | 'workspace' | 'binary' | 'desktop' {
     // not installed locally
   }
 
-  const forceBinary = JSON.parse(process.env.ULX_USE_CHROMEALIVE_BINARY ?? 'false');
+  const forceBinary = JSON.parse(process.env.ULX_CHROMEALIVE_USE_BINARY ?? 'false');
   if (!forceBinary) {
     try {
       require.resolve('./app');

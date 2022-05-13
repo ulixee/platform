@@ -3,8 +3,8 @@ import { Session as HeroSession } from '@ulixee/hero-core';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import FuseJs from 'fuse.js';
 import { ISearchContext } from '@ulixee/apps-chromealive-interfaces/ISessionSearchResult';
-import IResourceMeta from '@unblocked-web/emulator-spec/net/IResourceMeta';
-import IResourceType from '@unblocked-web/emulator-spec/net/IResourceType';
+import IResourceMeta from '@unblocked-web/specifications/agent/net/IResourceMeta';
+import IResourceType from '@unblocked-web/specifications/agent/net/IResourceType';
 
 const Fuse = require('fuse.js/dist/fuse.common.js');
 

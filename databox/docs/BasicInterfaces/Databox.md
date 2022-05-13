@@ -71,7 +71,7 @@ export default new Databox({
 
 ### new Databox<InputType,OutputType>_(function | databoxComponents)_ {#constructor}
 
-Creates a new Databox instance. If the environment variable `DATABOX_RUN_LATER` is truthy, this function will not run immediately, but wait for the [run()](#run) function to be invoked.
+Creates a new Databox instance. If the environment variable `ULX_DATABOX_RUN_LATER` is truthy, this function will not run immediately, but wait for the [run()](#run) function to be invoked.
 
 A databox can be constructed with a generic type argument to type (in Typescript) the Input and Output parameters passed into your callback function(s).
 
@@ -94,7 +94,7 @@ Run the Databox function. The provided options will be used to configure the cre
 
 This function does not need to be called directly to run your script. You can simply run the script as a normal node script.
 
-NOTE: if the environment variable `DATABOX_RUN_LATER` is not truthy, creating a Databox will trigger this function to run.
+NOTE: if the environment variable `ULX_DATABOX_RUN_LATER` is not truthy, creating a Databox will trigger this function to run.
 
 #### **Arguments**:
 

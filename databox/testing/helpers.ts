@@ -40,13 +40,18 @@ async function closeAll(isFinal = false): Promise<void> {
   );
 }
 
-export function createFullstackDataboxInternal(options: IDataboxRunOptions = {}): FullstackDataboxInternal {
+export function createFullstackDataboxInternal(
+  options: IDataboxRunOptions = {},
+): FullstackDataboxInternal {
   const databoxInternal = new FullstackDataboxInternal(options);
   needsClosing.push(databoxInternal);
   return databoxInternal;
 }
 
-export function onClose(closeFn: (() => Promise<any>) | (() => any), onlyCloseOnFinal = false) {
+export function onClose(
+  closeFn: (() => Promise<any>) | (() => any),
+  onlyCloseOnFinal = false,
+): void {
   needsClosing.push({ close: closeFn, onlyCloseOnFinal });
 }
 

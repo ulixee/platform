@@ -1,4 +1,4 @@
-import { IPage } from '@unblocked-web/emulator-spec/browser/IPage';
+import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
 import highlightConfig from './highlightConfig';
 import HeroCorePlugin from '../HeroCorePlugin';
 import * as fs from 'fs';

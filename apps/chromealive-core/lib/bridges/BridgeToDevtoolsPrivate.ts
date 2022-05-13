@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
-import IDevtoolsSession, { Protocol } from '@unblocked-web/emulator-spec/browser/IDevtoolsSession';
+import IDevtoolsSession, { Protocol } from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
 import { extensionId } from '../ExtensionUtils';
 import {
   ___sendToCore,

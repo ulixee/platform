@@ -11,7 +11,7 @@
     "@ulixee/databox-interfaces": "1.5.4",
     "@ulixee/hero": "1.5.4",
     "@ulixee/hero-interfaces": "1.5.4",
-    "@unblocked-web/emulator-spec": "2.0.0-alpha.1",
+    "@unblocked-web/specifications": "2.0.0-alpha.1",
     "linkedom": "^0.13.0",
     "awaited-dom": "1.4.0",
     "yargs-parser": "^20.2.9"
