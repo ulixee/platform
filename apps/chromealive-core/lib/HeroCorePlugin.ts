@@ -92,9 +92,6 @@ export default class HeroCorePlugin extends CorePlugin {
 
   public onNewBrowser(browser: IBrowser): void {
     const launchArguments = browser.engine.launchArguments;
-    if (launchArguments.includes('--headless') || !this.sessionSummary?.options?.showChromeAlive)
-      return;
-
     launchArguments.push(
       `--disable-extensions-except=${extensionPath}`,
       `--load-extension=${extensionPath}`,
@@ -303,7 +300,7 @@ export default class HeroCorePlugin extends CorePlugin {
   }
 
   public static shouldActivate(profile: IEmulationProfile, session: ISessionSummary): boolean {
-    return session.options.showChromeAlive;
+    return session.options.showChromeAlive && session.options.showChrome;
   }
 }
 

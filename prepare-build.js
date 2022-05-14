@@ -21,7 +21,7 @@ function processPackageJson(packagePath) {
     private: overridesJson.private || packageJson.private,
   };
 
-  if (finalPackageJson.workspaces) {
+  if (finalPackageJson.workspaces && finalPackageJson.workspaces.packages) {
     finalPackageJson.workspaces.packages = finalPackageJson.workspaces.packages.map(x => {
       if (x.startsWith('../') && !fs.existsSync(`${buildDir}/${x.replace('/*', '')}`)) {
         return `../${x}`;

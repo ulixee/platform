@@ -147,9 +147,6 @@ export default class ChromeAliveCore {
       return;
     }
 
-    // automatically showChrome if showChromeAlive is turned on
-    heroSession.configureHeaded({ showChrome: true, showChromeInteractions: true });
-
     const sessionId = heroSession.id;
     log.info('New Hero Session Created: %s (%s)', {
       script: script.split('/').pop(),
@@ -157,6 +154,9 @@ export default class ChromeAliveCore {
     });
     // keep alive session
     heroSession.options.sessionKeepAlive = true;
+    // automatically showChrome if showChromeAlive is turned on
+    heroSession.options.showChrome = true;
+    heroSession.options.showChromeInteractions = true;
     // extensions need incognito disabled
     heroSession.options.disableIncognito = true;
     heroSession.options.viewport ??= { width: 0, height: 0 };
