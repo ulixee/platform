@@ -1,5 +1,4 @@
-import { Helpers } from '@ulixee/databox-testing';
-import { Helpers as HeroHelpers } from '@ulixee/hero-testing';
+import * as Helpers from './_helpers';import { Helpers as HeroHelpers } from '@ulixee/hero-testing';
 import DataboxRunner from '../lib/Runner';
 import Extractor from '../lib/Extractor';
 

@@ -1,4 +1,4 @@
-import { Helpers } from '@ulixee/databox-testing';
+import * as Helpers from './_helpers';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import { Observable } from '../lib/ObjectObserver';
 

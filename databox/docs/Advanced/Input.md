@@ -9,7 +9,7 @@ Command line variables are parsed using [yargs-parser](https://github.com/yargs/
 ```
 
 ```js
-import Databox from '@ulixee/databox';
+import Databox from '@ulixee/databox-for-hero';
 
 export default new Databox(databox => {
   const { input } = databox;

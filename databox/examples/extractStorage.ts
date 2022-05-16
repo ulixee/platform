@@ -1,4 +1,4 @@
-import Databox from '@ulixee/databox';
+import Databox from '@ulixee/databox-for-hero';
 
 export default new Databox({
   async run({ hero, extractLater }) {

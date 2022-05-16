@@ -5,7 +5,7 @@
 Occasionally in extraction, it's desirable to save information you extract during your [`run`](/docs/databox/basic-interfaces/databox#constructor) function. This class allows you to retrieve "Snippets" collected using [extractLater](/docs/databox/basic-interfaces/runner#extract-later).
 
 ```js
-import Databox from '@ulixee/databox';
+import Databox from '@ulixee/databox-for-hero';
 
 export default new Databox({
   async run({ hero, extractLater }) {

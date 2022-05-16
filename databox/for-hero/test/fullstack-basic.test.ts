@@ -1,4 +1,4 @@
-import { Helpers } from '@ulixee/databox-testing';
+import * as Helpers from './_helpers';
 import DataboxRunner from '../lib/Runner';
 
 afterAll(Helpers.afterAll);

@@ -1,4 +1,4 @@
-import { Helpers } from '@ulixee/databox-testing';
+import * as Helpers from './_helpers';
 import { Helpers as HeroHelpers } from '@ulixee/hero-testing';
 import Hero from '@ulixee/hero';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
@@ -40,7 +40,7 @@ describe('basic Element tests', () => {
           </div>`);
 
     const extractor = new Extractor(databoxInternal);
-    await expect(extractor.collectedElements.names).resolves.toMatchObject(['a','b']);
+    await expect(extractor.collectedElements.names).resolves.toMatchObject(['a', 'b']);
   });
 
   it('can extract selectorAll lists', async () => {
@@ -58,7 +58,7 @@ describe('basic Element tests', () => {
         </body>
       `;
     });
-    const [hero, coreSession,databoxInternal] = await openBrowser(`/element-list`);
+    const [hero, coreSession, databoxInternal] = await openBrowser(`/element-list`);
     const sessionId = await hero.sessionId;
     await hero.document.querySelectorAll('.valid').$extractLater('valid');
 

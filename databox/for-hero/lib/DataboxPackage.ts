@@ -1,4 +1,4 @@
-import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
+import IDataboxRunOptions from '../interfaces/IDataboxRunOptions';
 import UlixeeConfig from '@ulixee/commons/config';
 import UlixeeServerConfig from '@ulixee/commons/config/servers';
 import readCommandLineArgs from './utils/readCommandLineArgs';

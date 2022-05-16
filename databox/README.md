@@ -1,6 +1,6 @@
-# Ulixee Databox
+# Databox for Hero
 
-Databox is a simple wrapper for your scraper script that converts it into a discrete, composable, and deployable unit. 
+Databox for Hero is a simple wrapper for your Hero scraper script that converts it into a discrete, composable, and deployable unit. 
 
 - [x] **Production Proof Your Script** - Production proof your script a thousand different ways.
 - [x] **Breaking Notifications** - Get notified when your scripts break.
@@ -8,18 +8,18 @@ Databox is a simple wrapper for your scraper script that converts it into a disc
 - [x] **Works with Chrome Alive!** - Progressively build your scripts with chrome alive!
 - [x] **Easy Management** - Manage your databoxes like a boss.
 
-Check out our [website for more details](https://ulixee.org/databox).
+Check out our [website](https://docs.ulixee.org/databox) for more details.
 
 ## Installation
 
 ```shell script
-npm install @ulixee/databox
+npm install @ulixee/databox-for-hero
 ```
 
 or
 
 ```shell script
-yarn add @ulixee/databox
+yarn add @ulixee/databox-for-hero
 ```
 
 ## Usage
@@ -28,7 +28,7 @@ Wrapping your script in a Databox gives it instant access to the input and outpu
 
 script.ts
 ```js
-const Databox = require('@ulixee/databox');
+const Databox = require('@ulixee/databox-for-hero');
 
 new Databox(databox => {
   const { input, output } = databox;
@@ -60,11 +60,11 @@ const runner = new Runner('');
 const output = await runner.run({ params: { name: 'Alfonso' } });
 ```
 
-Browse the [full API docs](https://ulixee.org/docs/databox).
+Browse the [full API docs](https://docs.ulixee.org/databox).
 
 ## Contributing
 
-We'd love your help in making Databox a better tool. Please don't hesitate to send a pull request.
+We'd love your help making `Databox for Hero` a better tool. Please don't hesitate to send a pull request.
 
 ## License
 

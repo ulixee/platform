@@ -1,4 +1,4 @@
-import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
+import IDataboxRunOptions from '../interfaces/IDataboxRunOptions';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Hero, { IHeroCreateOptions } from '@ulixee/hero';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';

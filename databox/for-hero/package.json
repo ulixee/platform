@@ -1,14 +1,13 @@
 {
-  "name": "@ulixee/databox",
+  "name": "@ulixee/databox-for-hero",
   "version": "1.5.4",
-  "description": "The client interface for Databox",
+  "description": "The Databox for Hero library.",
   "exports": {
     "import": "./index.mjs",
     "require": "./index.cjs"
   },
   "dependencies": {
     "@ulixee/commons": "1.5.11",
-    "@ulixee/databox-interfaces": "1.5.4",
     "@ulixee/hero": "1.5.4",
     "@ulixee/hero-interfaces": "1.5.4",
     "@unblocked-web/specifications": "2.0.0-alpha.1",
@@ -17,9 +16,9 @@
     "yargs-parser": "^20.2.9"
   },
   "devDependencies": {
-    "@ulixee/databox-testing": "1.5.4",
     "@ulixee/hero-testing": "1.5.4",
     "@ulixee/hero-core": "1.5.4",
+    "@ulixee/hero-fullstack": "1.5.4",
     "@types/web": "^0.0.50"
   }
 }
