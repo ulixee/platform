@@ -1,7 +1,7 @@
-import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
-import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
 import FullstackHero, { IHeroCreateOptions } from '@ulixee/hero-fullstack';
-import DataboxInternal from '@ulixee/databox/lib/DataboxInternal';
+import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
+import IDataboxRunOptions from '../interfaces/IDataboxRunOptions';
+import DataboxInternal from '../lib/DataboxInternal';
 
 export const needsClosing: { close: () => Promise<any> | void; onlyCloseOnFinal?: boolean }[] = [];
 

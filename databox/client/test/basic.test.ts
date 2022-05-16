@@ -2,7 +2,7 @@ import { ConnectionToCore as ConnectionToHeroCore } from '@ulixee/hero';
 import ConnectionFactory from '@ulixee/hero/connections/ConnectionFactory';
 import ICoreRequestPayload from '@ulixee/hero-interfaces/ICoreRequestPayload';
 import ICoreResponsePayload from '@ulixee/hero-interfaces/ICoreResponsePayload';
-import { Helpers } from '@ulixee/databox-testing';
+import * as Helpers from './_helpers';
 import DataboxPackage from '../index';
 import readCommandLineArgs from '../lib/utils/readCommandLineArgs';
 

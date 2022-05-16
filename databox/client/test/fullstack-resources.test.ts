@@ -1,4 +1,4 @@
-import { Helpers } from '@ulixee/databox-testing';
+import * as Helpers from './_helpers';
 import { Helpers as HeroHelpers } from '@ulixee/hero-testing';
 import Hero from '@ulixee/hero';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
@@ -52,7 +52,10 @@ describe('basic resource tests', () => {
       expect(resources).toHaveLength(1);
       await resources[0].$extractLater('xhr');
 
-      const collectedResources = new CollectedResources(Promise.resolve(coreSession1), hero1.sessionId);
+      const collectedResources = new CollectedResources(
+        Promise.resolve(coreSession1),
+        hero1.sessionId,
+      );
       const collected = await collectedResources.getAll('xhr');
       expect(collected).toHaveLength(1);
       expect(collected[0].json).toEqual({ hi: 'there' });
@@ -66,7 +69,10 @@ describe('basic resource tests', () => {
 
       await hero2.goto(`${koaServer.baseUrl}`);
       await hero2.waitForPaintingStable();
-      const collectedResources = new CollectedResources(Promise.resolve(coreSession2), hero1.sessionId);
+      const collectedResources = new CollectedResources(
+        Promise.resolve(coreSession2),
+        hero1.sessionId,
+      );
       const collected2 = await collectedResources.getAll('xhr');
       expect(collected2).toHaveLength(1);
       expect(collected2[0].url).toBe(`${koaServer.baseUrl}/ajax?counter=0`);

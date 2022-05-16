@@ -5,7 +5,7 @@
 The default format for a Databox is to export a default object that provides a single callback with your logic. Your callback will be supplied with [input](#input) parameters, an [output](#output) object to assemble your collected data, and a [Hero](/docs/hero) object to interact with the web.
 
 ```js
-import Databox from '@ulixee/databox';
+import Databox from '@ulixee/databox-for-hero';
 
 export default new Databox(async databox => {
   const { hero, input, output } = databox;
@@ -21,7 +21,7 @@ export default new Databox(async databox => {
 Databoxes automatically provision a [Hero](/docs/hero) instance. You can configure it using Databox defaults.
 
 ```js
-import Databox from '@ulixee/databox';
+import Databox from '@ulixee/databox-for-hero';
 
 export default new Databox({
   defaults: {
@@ -44,7 +44,7 @@ export default new Databox({
 Databoxes also provide a way to simplify data extraction once you have collected [DOM Elements](/docs/databox/advanced/collected-elements), [Resources](/docs/databox/advanced/collected-resources) and [Snippets](/docs/databox/advanced/collected-snippets) you need to harvest.
 
 ```js
-import Databox from '@ulixee/databox';
+import Databox from '@ulixee/databox-for-hero';
 
 export default new Databox({
   async run(databox) {

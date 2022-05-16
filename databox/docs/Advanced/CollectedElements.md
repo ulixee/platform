@@ -5,7 +5,7 @@
 CollectedElements allows you to retrieve the DOM Elements saved using [`$extract`](/docs/databox/basic-interfaces/dom-extenders#extract) or [`$extractLater`](/docs/databox/basic-interfaces/dom-extenders#extract-later). Retrieved DOM Elements can be interacted with using normal HTML DOM Apis (no awaits are necessary).
 
 ```js
-import Databox from '@ulixee/databox';
+import Databox from '@ulixee/databox-for-hero';
 
 export default new Databox({
   async run({ hero }) {

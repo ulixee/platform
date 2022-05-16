@@ -9,7 +9,7 @@ Examples of this include JSON files, HTML Documents, PDFs, etc.
 Saving them for extraction can be desirable because you can re-run your [Extractor](/docs/databox/basic-interfaces/extractor) repeatedly without having to restart a Headless browser (which can be significantly slower). Once they're saved, you can rapidly iterate on your extraction logic (eg, to transform a JSON payload) until it produces the desired output.
 
 ```js
-import Databox from '@ulixee/databox';
+import Databox from '@ulixee/databox-for-hero';
 
 export default new Databox({
   async run({ hero }) {

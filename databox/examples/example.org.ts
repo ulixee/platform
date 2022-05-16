@@ -1,4 +1,4 @@
-import Databox from '@ulixee/databox';
+import Databox from '@ulixee/databox-for-hero';
 
 // configure input.url by running as node example.org.js --input.url="https://ulixee.org"
 
