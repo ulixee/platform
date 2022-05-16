@@ -83,7 +83,6 @@ module.exports = {
   ],
   ignorePatterns: [
     '**/node_modules',
-    '**/databox',
     '**/hero',
     'runner/**',
     'docs',

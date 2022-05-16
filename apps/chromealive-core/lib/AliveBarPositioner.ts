@@ -1,6 +1,6 @@
 import Log from '@ulixee/commons/lib/Logger';
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/IBounds';
-import { defaultScreen } from '@ulixee/default-browser-emulator/lib/Viewports';
+import { defaultScreen } from '@unblocked-web/default-browser-emulator/lib/Viewports';
 import ChromeAliveCore from '../index';
 
 const { log } = Log(module);
@@ -67,14 +67,14 @@ export default class AliveBarPositioner {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public static setDevtoolsFocused(puppetPageId: string, focused: boolean, dockSide: string): void {
-    this.focusedDevtoolsById.set(puppetPageId, focused);
+  public static setDevtoolsFocused(pageId: string, focused: boolean, dockSide: string): void {
+    this.focusedDevtoolsById.set(pageId, focused);
     this.syncAppVisibility();
   }
 
-  public static focusedPageId(puppetPageId: string): void {
+  public static focusedPageId(pageId: string): void {
     // app show puts app on top
-    this.focusedPagesById.set(puppetPageId, true);
+    this.focusedPagesById.set(pageId, true);
     this.syncAppVisibility();
   }
 
@@ -89,8 +89,8 @@ export default class AliveBarPositioner {
     this.syncAppVisibility();
   }
 
-  public static blurredPageId(puppetPageId: string): void {
-    this.focusedPagesById.set(puppetPageId, false);
+  public static blurredPageId(pageId: string): void {
+    this.focusedPagesById.set(pageId, false);
     this.isDraggingChrome = false;
     this.syncAppVisibility();
   }

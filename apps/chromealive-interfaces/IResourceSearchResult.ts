@@ -1,4 +1,4 @@
-import IResourceType from '@ulixee/hero-interfaces/IResourceType';
+import IResourceType from '@unblocked-web/specifications/agent/net/IResourceType';
 
 export default interface IResourceSearchResult {
   id: number;

@@ -1,4 +1,4 @@
-import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
+import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
 import highlightConfig from './highlightConfig';
 import HeroCorePlugin from '../HeroCorePlugin';
 import * as fs from 'fs';
@@ -8,20 +8,20 @@ const installSymbol = Symbol.for('@ulixee/generateSelectorMap');
 export default class ElementsModule {
   constructor(private heroCorePlugin: HeroCorePlugin) {}
 
-  public async onNewPuppetPage(puppetPage: IPuppetPage): Promise<any> {
-    await puppetPage.devtoolsSession.send('DOM.enable');
-    await puppetPage.devtoolsSession.send('Overlay.enable');
+  public async onNewPage(page: IPage): Promise<any> {
+    await page.devtoolsSession.send('DOM.enable');
+    await page.devtoolsSession.send('Overlay.enable');
   }
 
   public async highlightNode(id: { backendNodeId?: number; objectId?: string }): Promise<void> {
-    await this.heroCorePlugin.activePuppetPage?.devtoolsSession.send('Overlay.highlightNode', {
+    await this.heroCorePlugin.activePage?.devtoolsSession.send('Overlay.highlightNode', {
       highlightConfig,
       ...id,
     });
   }
 
   public async hideHighlight(): Promise<void> {
-    await this.heroCorePlugin.activePuppetPage?.devtoolsSession.send('Overlay.hideHighlight');
+    await this.heroCorePlugin.activePage?.devtoolsSession.send('Overlay.hideHighlight');
   }
 
   public async generateQuerySelector(
@@ -31,8 +31,8 @@ export default class ElementsModule {
     },
     results = 50,
   ): Promise<ISelectorMap> {
-    const frame = this.heroCorePlugin.activePuppetPage.mainFrame;
-    const chromeObjectId = id.objectId ?? (await frame.resolveNodeId(id.backendNodeId, false));
+    const frame = this.heroCorePlugin.activePage.mainFrame;
+    const chromeObjectId = id.objectId ?? (await frame.resolveDevtoolsNodeId(id.backendNodeId, false));
     if (!frame[installSymbol]) {
       await frame.evaluate(injectedScript, false);
       frame[installSymbol] = true;

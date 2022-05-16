@@ -14,9 +14,14 @@ export default class Queue {
     return (this.activeCount > 0 || this.queue.length > 0) && !this.stopDequeuing;
   }
 
+  public get size(): number {
+    return this.queue.length;
+  }
+
+  public activeCount = 0;
+
   private abortPromise = new Resolvable<CanceledPromiseError>();
   private idleTimout: NodeJS.Timeout;
-  private activeCount = 0;
 
   private stopDequeuing = false;
 

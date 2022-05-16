@@ -1,13 +1,5 @@
-// suppressing this error since including it requires puppet to be published
-// eslint-disable-next-line import/no-extraneous-dependencies
-import Puppet from '@ulixee/hero-puppet';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import BrowserEmulator from '@ulixee/default-browser-emulator';
-import TypeSerializer, { stringifiedTypeSerializerClass } from '../lib/TypeSerializer';
+import TypeSerializer from '../lib/TypeSerializer';
 import { CanceledPromiseError } from '../interfaces/IPendingWaitEvent';
-import logger from '../lib/Logger';
-
-const { log } = logger(module);
 
 let testObject: any;
 beforeAll(() => {
@@ -36,38 +28,4 @@ test('it should be able to serialize a complex object in nodejs', () => {
   expect(typeof result).toBe('string');
   const decoded = TypeSerializer.parse(result);
   expect(decoded).toEqual(testObject);
-});
-
-test('should be able to serialize and deserialize in a browser window', async () => {
-  const { browserEngine } = BrowserEmulator.selectBrowserMeta();
-  const puppet = new Puppet(browserEngine);
-  try {
-    await puppet.start();
-    const context = await puppet.newContext(
-      {
-        userAgentString: 'Page tests',
-        // eslint-disable-next-line require-await
-        async onNewPuppetPage(): Promise<any> {
-          return null;
-        },
-        onNewPuppetContext(): Promise<any> {
-          return null;
-        },
-      } as any,
-      log as any,
-    );
-    const page = await context.newPage();
-    await page.evaluate(`${stringifiedTypeSerializerClass}`);
-    const serialized = TypeSerializer.stringify(testObject);
-
-    const result = await page.evaluate<any>(`(function() {
-    const decodedInClient = TypeSerializer.parse(JSON.stringify(${serialized}));
-    return TypeSerializer.stringify(decodedInClient);
-})()`);
-    expect(typeof result).toBe('string');
-    const decoded = TypeSerializer.parse(result);
-    expect(decoded).toEqual(testObject);
-  } finally {
-    await puppet.close();
-  }
 });

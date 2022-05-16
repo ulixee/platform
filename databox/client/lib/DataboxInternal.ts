@@ -52,7 +52,7 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
   }
 
   public get sessionIdToExtract(): string | undefined {
-    return (this.runOptions as any).extractSessionId ?? process.env.HERO_EXTRACT_SESSION_ID;
+    return (this.runOptions as any).extractSessionId ?? process.env.ULX_EXTRACT_SESSION_ID;
   }
 
   public get isClosing(): boolean {
@@ -93,7 +93,7 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
     return {};
   }
 
-  public async execRunner(runFn: IRunFn<TInput, TOutput>) {
+  public async execRunner(runFn: IRunFn<TInput, TOutput>): Promise<void> {
     const runner = new Runner<TInput, TOutput>(this);
     await runFn(runner);
   }
@@ -104,7 +104,7 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
       | IExtractElementFn<T, TInput, TOutput>
       | IExtractElementsFn<T, TInput, TOutput>,
     element?: Element | Element[],
-  ) {
+  ): Promise<any> {
     const extractor = new Extractor<TInput, TOutput>(this);
     let response: any;
     if (Array.isArray(element)) {

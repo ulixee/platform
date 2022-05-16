@@ -18,7 +18,7 @@ export default class DataboxPackage<TInput = IBasicInput, TOutput = any> {
             run: components as IRunFn<TInput, TOutput>,
           }
         : { ...components };
-    if (process.env.DATABOX_RUN_LATER) return;
+    if (process.env.ULX_DATABOX_RUN_LATER) return;
 
     const options: IDataboxRunOptions = readCommandLineArgs();
 

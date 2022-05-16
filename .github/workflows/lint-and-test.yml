@@ -40,6 +40,14 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
         if: ${{ matrix.os == 'windows-latest' }}
 
+      - name: (TEMP) Clone unblocked
+        run: git clone --recurse-submodules -j8 https://github.com/unblockable/unblocked.git
+        working-directory: ..
+
+      - name: (TEMP) Install unblocked
+        run: yarn build:all
+        working-directory: ../unblocked
+
       - name: Install Hero
         run: yarn && yarn build
         working-directory: ./hero

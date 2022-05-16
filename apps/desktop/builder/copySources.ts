@@ -51,7 +51,7 @@ function copyDir(baseDir: string, outDir: string): void {
           }, 50);
         });
       }
-    } else if (!packageJson.workspaces) {
+    } else if (!packageJson.workspaces || packageJson.workspaces?.length === 0) {
       Fs.copyFileSync(dirPath, outPath);
     }
   }
@@ -59,6 +59,9 @@ function copyDir(baseDir: string, outDir: string): void {
 
 copyDir(`${baseBuild}/build`, dest);
 copyDir(`${baseBuild}/hero/build`, `${dest}/hero`);
+copyDir(`${baseBuild}/../unblocked/agent/build`, `${dest}/agent`);
+copyDir(`${baseBuild}/../unblocked/specifications/build`, `${dest}/specifications`);
+copyDir(`${baseBuild}/../unblocked/build/agent-plugins`, `${dest}/agent-plugins`);
 
 // eslint-disable-next-line no-console
 console.log('Copied files to dest', dest);

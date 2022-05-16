@@ -1,7 +1,7 @@
 import * as fs from 'fs';
-import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
+import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import IDevtoolsSession, { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
+import IDevtoolsSession, { Protocol } from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
 import {
   ___emitFromDevtoolsToCore,
   EventType,
@@ -56,34 +56,34 @@ export default class DevtoolsBackdoorModule {
     this.events.close();
   }
 
-  public async showElementsPanel(puppetPage: IPuppetPage): Promise<void> {
-    const tabId = await this.heroPlugin.getTabIdByPuppetPageId(puppetPage.id);
+  public async showElementsPanel(page: IPage): Promise<void> {
+    const tabId = await this.heroPlugin.getTabIdByPageId(page.id);
     await this.send(tabId, 'DevtoolsBackdoor.showElementsPanel');
   }
 
   // COMMANDS
 
   public async toggleInspectElementMode(): Promise<boolean> {
-    const puppetPage = this.heroPlugin.activePuppetPage;
-    if (!puppetPage) return;
+    const page = this.heroPlugin.activePage;
+    if (!page) return;
 
-    await puppetPage.bringToFront();
-    await puppetPage.evaluate('document.body.focus()');
+    await page.bringToFront();
+    await page.evaluate('document.body.focus()');
 
-    const tabId = await this.heroPlugin.getTabIdByPuppetPageId(puppetPage.id);
+    const tabId = await this.heroPlugin.getTabIdByPageId(page.id);
     return await this.send(tabId, 'DevtoolsBackdoor.toggleInspectElementMode');
   }
 
-  public async closeDevtoolsPanelForPage(puppetPage: IPuppetPage): Promise<void> {
-    const tabId = await this.heroPlugin.getTabIdByPuppetPageId(puppetPage.id);
+  public async closeDevtoolsPanelForPage(page: IPage): Promise<void> {
+    const tabId = await this.heroPlugin.getTabIdByPageId(page.id);
     await this.send(tabId, 'DevtoolsBackdoor.closeDevtools');
   }
 
   public async searchDom(query: string): Promise<IElementSummary[]> {
-    const puppetPage = this.heroPlugin.activePuppetPage;
-    if (!puppetPage) return;
+    const page = this.heroPlugin.activePage;
+    if (!page) return;
 
-    const tabId = await this.heroPlugin.getTabIdByPuppetPageId(puppetPage.id);
+    const tabId = await this.heroPlugin.getTabIdByPageId(page.id);
     await this.send(tabId, 'DevtoolsBackdoor.showElementsPanel');
     const elementSummaries = await this.send(tabId, 'DevtoolsBackdoor.searchDom', [query]);
 
@@ -101,22 +101,22 @@ export default class DevtoolsBackdoorModule {
     if (!heroNodeId) return;
 
     // 2. Find the backendNodeId in the target page
-    const mirrorPuppetPage = this.heroPlugin.mirrorPuppetPage;
+    const mirrorPage = this.heroPlugin.mirrorPage;
     const backendNodeId = await this.translateHeroNodeIdToBackendNodeId(
-      mirrorPuppetPage,
+      mirrorPage,
       heroNodeId,
       false,
     );
 
     // 3. Send backendNodeId to the client-side Backdoor
-    const mirrorTabId = await this.heroPlugin.getTabIdByPuppetPageId(mirrorPuppetPage.id);
+    const mirrorTabId = await this.heroPlugin.getTabIdByPageId(mirrorPage.id);
     await this.send(mirrorTabId, 'DevtoolsBackdoor.revealNodeInElementsPanel', [backendNodeId]);
   }
 
   // END OF COMMANDS
 
   private async translateHeroNodeIdToBackendNodeId(
-    page: IPuppetPage,
+    page: IPage,
     heroNodeId: number,
     isolatedEnvironment = true,
   ): Promise<number> {
@@ -148,10 +148,10 @@ export default class DevtoolsBackdoorModule {
     resolveNodeInIsolatedContext = true,
   ): Promise<number> {
     const { tabId, backendNodeId, frameId } = nodeLocation;
-    const puppetPage = await this.heroPlugin.getPuppetPageByTabId(tabId);
-    if (!puppetPage) return null;
-    const sourceFrame = puppetPage.frames.find(x => x.id === frameId) ?? puppetPage.mainFrame;
-    const chromeNodeId = await sourceFrame.resolveNodeId(
+    const page = await this.heroPlugin.getPageByTabId(tabId);
+    if (!page) return null;
+    const sourceFrame = page.frames.find(x => x.id === frameId) ?? page.mainFrame;
+    const chromeNodeId = await sourceFrame.resolveDevtoolsNodeId(
       backendNodeId,
       resolveNodeInIsolatedContext,
     );
@@ -176,19 +176,19 @@ export default class DevtoolsBackdoorModule {
     backendNodeId: number,
   ): Promise<void> {
     const { tabId } = this.devtoolsSessionMap.get(devtoolsSession);
-    const puppetPage = await this.heroPlugin.getPuppetPageByTabId(tabId);
-    if (!puppetPage) {
+    const page = await this.heroPlugin.getPageByTabId(tabId);
+    if (!page) {
       // TODO: This should not be thrown. Find out why.
-      console.error('MISSING puppetPage: ', tabId, puppetPage);
+      console.error('MISSING page: ', tabId, page);
     }
-    const result = await puppetPage.devtoolsSession.send('DOM.describeNode', {
+    const result = await page.devtoolsSession.send('DOM.describeNode', {
       backendNodeId,
     });
 
     const nodeOverview = result.node;
     const element = this.toElementSummary(nodeOverview, { backendNodeId });
 
-    if (puppetPage.groupName === 'session') {
+    if (page.groupName === 'session') {
       this.pendingLiveInspectedNode = { tabId, frameId: nodeOverview.frameId, backendNodeId };
       return;
     }
@@ -207,9 +207,9 @@ export default class DevtoolsBackdoorModule {
     dockSide: 'undocked' | 'bottom' | 'left' | 'right',
   ): void {
     const tabId = this.devtoolsSessionMap.get(devtoolsSession)?.tabId;
-    void this.heroPlugin.getPuppetPageByTabId(tabId).then(puppetPage => {
-      if (puppetPage) {
-        AliveBarPositioner.setDevtoolsFocused(puppetPage.id, isFocused, dockSide);
+    void this.heroPlugin.getPageByTabId(tabId).then(page => {
+      if (page) {
+        AliveBarPositioner.setDevtoolsFocused(page.id, isFocused, dockSide);
       }
       return null;
     });

@@ -1,10 +1,10 @@
 import IResourceSearchResult from '@ulixee/apps-chromealive-interfaces/IResourceSearchResult';
-import { Session as HeroSession, Session } from '@ulixee/hero-core';
-import IResourceMeta from '@ulixee/hero-interfaces/IResourceMeta';
-import IResourceType from '@ulixee/hero-interfaces/IResourceType';
+import { Session as HeroSession } from '@ulixee/hero-core';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import FuseJs from 'fuse.js';
 import { ISearchContext } from '@ulixee/apps-chromealive-interfaces/ISessionSearchResult';
+import IResourceMeta from '@unblocked-web/specifications/agent/net/IResourceMeta';
+import IResourceType from '@unblocked-web/specifications/agent/net/IResourceType';
 
 const Fuse = require('fuse.js/dist/fuse.common.js');
 
@@ -13,7 +13,7 @@ export default class ResourceSearch {
     [tabId: number]: FuseJs<{ id: number; body: string; url: string }>;
   } = {};
 
-  constructor(private heroSession: Session, private events: EventSubscriber) {
+  constructor(private heroSession: HeroSession, private events: EventSubscriber) {
     this.events.on(this.heroSession, 'tab-created', this.onTabCreated.bind(this));
   }
 

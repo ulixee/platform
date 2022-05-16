@@ -1,7 +1,7 @@
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { EventEmitter } from 'events';
-import IDevtoolsSession, { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
-import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
+import IDevtoolsSession, { Protocol } from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
+import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
@@ -24,19 +24,19 @@ export default class BridgeToExtension extends EventEmitter {
   private devtoolsSessionsByPageId: { [pageId: string]: IDevtoolsSession } = {};
   private pendingByResponseId: { [id: string]: IResolvablePromise<any> } = {};
 
-  public getContextIdByPuppetPageId(puppetPageId: string): number | null {
-    return this.contextIdByPageId.get(puppetPageId) ?? null;
+  public getContextIdByPageId(pageId: string): number | null {
+    return this.contextIdByPageId.get(pageId) ?? null;
   }
 
-  public getDevtoolsSessionByPuppetPageId(puppetPageId: string): IDevtoolsSession {
-    return this.devtoolsSessionsByPageId[puppetPageId];
+  public getDevtoolsSessionByPageId(pageId: string): IDevtoolsSession {
+    return this.devtoolsSessionsByPageId[pageId];
   }
 
-  public addPuppetPage(page: IPuppetPage, events: EventSubscriber): Promise<any> {
+  public addPage(page: IPage, events: EventSubscriber): Promise<any> {
     const { devtoolsSession, id } = page;
     this.devtoolsSessionsByPageId[id] = devtoolsSession;
 
-    events.once(page, 'close', this.closePuppetPage.bind(this, id));
+    events.once(page, 'close', this.closePage.bind(this, id));
 
     events.on(
       devtoolsSession,
@@ -68,22 +68,22 @@ export default class BridgeToExtension extends EventEmitter {
     ]).catch(() => null);
   }
 
-  public send<T = any>(message: any, puppetPageId?: string): Promise<T | void> {
+  public send<T = any>(message: any, pageId?: string): Promise<T | void> {
     const [destLocation, responseCode, restOfMessage] =
       extractStringifiedComponentsFromMessage(message);
-    puppetPageId ??= ChromeAliveCore.getActivePuppetPage()?.id;
-    if (!puppetPageId) {
-      throw new Error(`No active puppet page ${puppetPageId}`);
+    pageId ??= ChromeAliveCore.getActivePage()?.id;
+    if (!pageId) {
+      throw new Error(`No active browser page ${pageId}`);
     }
-    const contextId = this.getContextIdByPuppetPageId(puppetPageId);
+    const contextId = this.getContextIdByPageId(pageId);
     if (!contextId) {
-      log.warn(`No puppet execution context for ${puppetPageId}`, {
+      log.warn(`No browser execution context for ${pageId}`, {
         sessionId: null,
-        puppetPageId,
+        pageId,
       });
       return Promise.resolve();
     }
-    const devtoolsSession = this.getDevtoolsSessionByPuppetPageId(puppetPageId);
+    const devtoolsSession = this.getDevtoolsSessionByPageId(pageId);
     this.runInBrowser(
       devtoolsSession,
       contextId,
@@ -101,8 +101,8 @@ export default class BridgeToExtension extends EventEmitter {
     return Promise.resolve();
   }
 
-  public closePuppetPage(puppetPageId: string): void {
-    this.contextIdByPageId.delete(puppetPageId);
+  public closePage(pageId: string): void {
+    this.contextIdByPageId.delete(pageId);
   }
 
   public close(): void {
@@ -127,7 +127,7 @@ export default class BridgeToExtension extends EventEmitter {
   }
 
   private handleIncomingMessageFromBrowser(
-    puppetPageId: string,
+    pageId: string,
     event: Protocol.Runtime.BindingCalledEvent,
   ): void {
     if (event.name !== ___sendToCore) return;
@@ -142,7 +142,7 @@ export default class BridgeToExtension extends EventEmitter {
         destLocation,
         responseCode,
         stringifiedMessage,
-        puppetPageId,
+        pageId,
       });
     }
   }

@@ -51,4 +51,4 @@ A Databox can be configured to defer running until the `run()` function is expli
 
 #### Environment Variable
 
-- DATABOX_RUN_LATER `boolean-ish`. Set to a value to enable explicitly running this Databox.
+- ULX_DATABOX_RUN_LATER `boolean-ish`. Set to a value to enable explicitly running this Databox.

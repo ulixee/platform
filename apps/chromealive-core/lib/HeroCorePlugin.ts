@@ -1,9 +1,9 @@
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import * as Path from 'path';
 import ICorePluginCreateOptions from '@ulixee/hero-interfaces/ICorePluginCreateOptions';
-import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
-import { IBrowserEmulatorConfig, ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
-import IDevtoolsSession, { Protocol } from '@ulixee/hero-interfaces/IDevtoolsSession';
+import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
+import { CorePluginClassDecorator, ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
+import IDevtoolsSession from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
 import CorePlugin from '@ulixee/hero-plugin-utils/lib/CorePlugin';
 import BridgeToExtension from './bridges/BridgeToExtension';
 import { createPromise } from '@ulixee/commons/lib/utils';
@@ -12,13 +12,16 @@ import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 import { extensionId } from './ExtensionUtils';
 import DevtoolsBackdoorModule from './hero-plugin-modules/DevtoolsBackdoorModule';
 import ElementsModule from './hero-plugin-modules/ElementsModule';
-import IPuppetContext from '@ulixee/hero-interfaces/IPuppetContext';
+import { IWorker } from '@unblocked-web/specifications/agent/browser/IWorker';
 import { createResponseId, IMessageObject, MessageLocation, ResponseCode } from './BridgeHelpers';
 import ChromeAliveCore from '../index';
 import AliveBarPositioner from './AliveBarPositioner';
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/IBounds';
+import IViewport from '@unblocked-web/specifications/agent/browser/IViewport';
+import IBrowser from '@unblocked-web/specifications/agent/browser/IBrowser';
+import { BrowserContext, Page } from '@unblocked-web/agent';
+import IEmulationProfile from '@unblocked-web/specifications/plugin/IEmulationProfile';
 import EventEmitter = require('events');
-import IViewport from '@ulixee/hero-interfaces/IViewport';
 
 // have to resolve an actual file
 export const extensionPath = Path.resolve(__dirname, '../extension').replace(
@@ -26,21 +29,22 @@ export const extensionPath = Path.resolve(__dirname, '../extension').replace(
   'app.asar.unpacked',
 ); // make electron packaging friendly
 
+@CorePluginClassDecorator
 export default class HeroCorePlugin extends CorePlugin {
   public static id = '@ulixee/chromealive-hero-core-plugin';
 
   public static bySessionId = new Map<string, HeroCorePlugin>();
 
-  public activePuppetPage: IPuppetPage;
+  public activePage: Page;
   public tabGroupModule: TabGroupModule;
   public devtoolsBackdoorModule: DevtoolsBackdoorModule;
   public elementsModule: ElementsModule;
   public sessionId: string;
-  public mirrorPuppetPage: IPuppetPage;
+  public mirrorPage: Page;
 
   private readonly bridgeToExtension: BridgeToExtension;
-  private readonly identityByPuppetPage = new Map<IPuppetPage, IResolvablePromise<IPageIdentity>>();
-  private readonly puppetPagesById = new Map<string, IPuppetPage>();
+  private readonly identityByPage = new Map<Page, IResolvablePromise<IPageIdentity>>();
+  private readonly pagesById = new Map<string, Page>();
   private readonly events = new EventSubscriber();
   private readonly browserEmitter = new EventEmitter();
   private hasRegisteredServiceWorkerDebug = false;
@@ -56,19 +60,19 @@ export default class HeroCorePlugin extends CorePlugin {
     this.events.on(this.bridgeToExtension, 'message', this.onBridgeMessage.bind(this));
   }
 
-  public async getTabIdByPuppetPageId(puppetPageId: string): Promise<number> {
-    const puppetPage = this.puppetPagesById.get(puppetPageId);
+  public async getTabIdByPageId(pageId: string): Promise<number> {
+    const page = this.pagesById.get(pageId);
     try {
-      const { tabId } = await this.identityByPuppetPage.get(puppetPage).promise;
+      const { tabId } = await this.identityByPage.get(page).promise;
       return tabId;
     } catch (error) {
-      console.warn('Could not get tab id for puppet page', { puppetPageId, error });
+      console.warn('Could not get tab id for browser page', { pageId, error });
       return null;
     }
   }
 
-  public async getPuppetPageByTabId(tabId: number): Promise<IPuppetPage> {
-    for (const [page, identity] of this.identityByPuppetPage) {
+  public async getPageByTabId(tabId: number): Promise<Page> {
+    for (const [page, identity] of this.identityByPage) {
       try {
         const id = await identity;
         if (id.tabId === tabId) return page;
@@ -80,68 +84,58 @@ export default class HeroCorePlugin extends CorePlugin {
 
   /// /// PLUGIN IMPLEMENTATION METHODS ////////////////////////////////////////////////////////////////////////////////
 
-  public configure(options: IBrowserEmulatorConfig): Promise<any> | void {
+  public configure(options: IEmulationProfile): Promise<any> | void {
     if ((options.viewport as any)?.isDefault) {
       Object.assign(options.viewport, this.getMaxChromeViewport());
     }
   }
 
-  public onBrowserLaunchConfiguration(
-    launchArguments: string[],
-    sessionSummary: ISessionSummary,
-  ): void {
-    if (launchArguments.includes('--headless') || (!sessionSummary?.options?.showChromeAlive)) return;
-
+  public onNewBrowser(browser: IBrowser): void {
+    const launchArguments = browser.engine.launchArguments;
     launchArguments.push(
       `--disable-extensions-except=${extensionPath}`,
       `--load-extension=${extensionPath}`,
     );
   }
 
-  public async onNewPuppetContext(
-    context: IPuppetContext,
-    sessionSummary: ISessionSummary,
-  ): Promise<any> {
-    if (!sessionSummary.options.showChromeAlive) return;
-
-    const id = sessionSummary.id;
+  public async onNewBrowserContext(context: BrowserContext): Promise<any> {
+    const id = this.sessionSummary.id;
     this.sessionId = id;
     HeroCorePlugin.bySessionId.set(id, this);
-    this.events.once(context, 'close', this.onBrowserContextClosed.bind(this, sessionSummary));
+    this.events.once(context, 'close', this.onBrowserContextClosed.bind(this, this.sessionSummary));
 
     // the Default context can be re-used, so check for an existing mirrorPage
     for (const page of context.pagesById.values()) {
       if (page.groupName === 'mirrorPage') {
-        this.mirrorPuppetPage = page;
+        this.mirrorPage = page;
         break;
       }
     }
 
-    this.mirrorPuppetPage = await context.newPage({
+    this.mirrorPage = await context.newPage({
       runPageScripts: false,
       enableDomStorageTracker: false,
       groupName: 'mirrorPage',
+      installJsPathIntoDefaultContext: true,
     });
 
-    await this.onNewPuppetPage(this.mirrorPuppetPage, sessionSummary);
+    await this.onNewPage(this.mirrorPage);
   }
 
-  public async onNewPuppetPage(page: IPuppetPage, sessionSummary: ISessionSummary): Promise<any> {
-    if (!sessionSummary.options.showChromeAlive) return;
-
-    this.puppetPagesById.set(page.id, page);
+  public async onNewPage(page: Page): Promise<any> {
+    this.pagesById.set(page.id, page);
     if (page.groupName === 'session') {
-      this.activePuppetPage ??= page;
+      this.activePage ??= page;
     }
     const identityTimeout = page.groupName === 'mirrorPage' ? undefined : 10e3;
-    this.identityByPuppetPage.set(
+    this.identityByPage.set(
       page,
-      createPromise<IPageIdentity>(identityTimeout, 'PuppetPage never received Tab ID'),
+      createPromise<IPageIdentity>(identityTimeout, 'Page never received Tab ID'),
     );
-    this.identityByPuppetPage.get(page).promise.catch(console.warn);
-    this.events.once(page, 'close', this.onPuppetPageClosed.bind(this, page));
+    this.identityByPage.get(page).promise.catch(console.warn);
+    this.events.once(page, 'close', this.onPageClosed.bind(this, page));
 
-    if (process.env.HERO_DEBUG_CHROMEALIVE) {
+    if (process.env.ULX_CHROMEALIVE_DEBUG) {
       if (!this.hasRegisteredServiceWorkerDebug) this.debugServiceWorker(page.devtoolsSession);
       this.hasRegisteredServiceWorkerDebug = true;
     }
@@ -151,68 +145,54 @@ export default class HeroCorePlugin extends CorePlugin {
       page.devtoolsSession
         .send('Emulation.setFocusEmulationEnabled', { enabled: false })
         .catch(err => err),
-      this.bridgeToExtension.addPuppetPage(page, this.events),
+      this.bridgeToExtension.addPage(page, this.events),
       this.setPageViewportToWindowBounds(page),
-      this.elementsModule.onNewPuppetPage(page),
+      this.elementsModule.onNewPage(page),
     ]);
   }
 
-  public onDevtoolsPanelAttached(
-    devtoolsSession: IDevtoolsSession,
-    sessionSummary: ISessionSummary,
-  ): Promise<any> {
-    if (!sessionSummary.options.showChromeAlive) return;
+  public onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession): Promise<any> {
     return this.devtoolsBackdoorModule.onDevtoolsPanelAttached(devtoolsSession);
   }
 
-  public onDevtoolsPanelDetached(
-    devtoolsSession: IDevtoolsSession,
-    sessionSummary: ISessionSummary,
-  ): Promise<any> {
-    if (!sessionSummary.options.showChromeAlive) return;
+  public onDevtoolsPanelDetached(devtoolsSession: IDevtoolsSession): Promise<any> {
     this.devtoolsBackdoorModule.onDevtoolsPanelDetached(devtoolsSession);
     return Promise.resolve();
   }
 
-  public onServiceWorkerAttached(
-    devtoolsSession: IDevtoolsSession,
-    event: Protocol.Target.AttachedToTargetEvent,
-  ): Promise<any> {
-    const { targetInfo } = event;
-    if (targetInfo.url !== `chrome-extension://${extensionId}/background.js`) return;
+  public onNewWorker(worker: IWorker): Promise<any> {
+    if (worker.url !== `chrome-extension://${extensionId}/background.js`) return;
   }
 
-  public onPuppetPageClosed(puppetPage: IPuppetPage): void {
-    this.identityByPuppetPage.get(puppetPage)?.resolve(null);
-    this.identityByPuppetPage.delete(puppetPage);
-    this.puppetPagesById.delete(puppetPage.id);
-    if (this.activePuppetPage?.id === puppetPage.id) {
-      this.activePuppetPage = undefined;
+  public onPageClosed(page: Page): void {
+    this.identityByPage.get(page)?.resolve(null);
+    this.identityByPage.delete(page);
+    this.pagesById.delete(page.id);
+    if (this.activePage?.id === page.id) {
+      this.activePage = undefined;
     }
     ChromeAliveCore.changeActiveSessions(
       { active: false, focused: false },
       this.sessionId,
-      puppetPage.id,
+      page.id,
     );
   }
 
   public onBrowserContextClosed(sessionSummary: ISessionSummary): void {
     HeroCorePlugin.bySessionId.delete(sessionSummary.id);
-    this.mirrorPuppetPage
-      ?.close()
-      .catch(err => console.error('Error closing mirror puppet page', err));
+    this.mirrorPage?.close().catch(err => console.error('Error closing mirror browser page', err));
     this.devtoolsBackdoorModule.close();
     this.events.close();
     this.browserEmitter.removeAllListeners();
   }
 
   public async sendToExtension<T>(
-    puppetPageId: string,
+    pageId: string,
     action: string,
     args: object = {},
     waitForResponse = false,
   ): Promise<T> {
-    if (!puppetPageId) return;
+    if (!pageId) return;
 
     const responseCode = waitForResponse ? ResponseCode.Y : ResponseCode.N;
     const responseId = responseCode === ResponseCode.Y ? createResponseId() : undefined;
@@ -223,7 +203,7 @@ export default class HeroCorePlugin extends CorePlugin {
       responseCode,
       responseId,
     };
-    return (await this.bridgeToExtension.send(message, puppetPageId)) as T;
+    return (await this.bridgeToExtension.send(message, pageId)) as T;
   }
 
   /// ///// BRIDGE MESSAGE HANDLER /////////////////////////////////////////////////////////////////////////////////////
@@ -233,38 +213,35 @@ export default class HeroCorePlugin extends CorePlugin {
     messageComponents: {
       destLocation: keyof typeof MessageLocation;
       stringifiedMessage: string;
-      puppetPageId: string;
+      pageId: string;
     },
   ): void {
-    const { destLocation, stringifiedMessage, puppetPageId } = messageComponents;
+    const { destLocation, stringifiedMessage, pageId } = messageComponents;
     if (destLocation !== MessageLocation.Core) return;
 
     const { payload } = JSON.parse(stringifiedMessage);
     if (payload.event === 'OnTabIdentify') {
-      this.onTabIdentified(payload, puppetPageId);
+      this.onTabIdentified(payload, pageId);
     } else if (payload.event === 'OnPageVisible') {
-      this.handlePageIsVisible(payload, puppetPageId);
+      this.handlePageIsVisible(payload, pageId);
     } else if (payload.event === 'OnWindowBounds') {
       this.onBoundsChanged(payload.windowBounds);
     }
   }
 
-  private handlePageIsVisible(payload: any, puppetPageId: string): void {
-    this.activePuppetPage = this.puppetPagesById.get(puppetPageId);
+  private handlePageIsVisible(payload: any, pageId: string): void {
+    this.activePage = this.pagesById.get(pageId);
     ChromeAliveCore.changeActiveSessions(
       { active: true, focused: payload.focused },
       this.sessionId,
-      puppetPageId,
+      pageId,
     );
   }
 
-  private onTabIdentified(
-    payload: { windowId: number; tabId: number },
-    puppetPageId: string,
-  ): void {
+  private onTabIdentified(payload: { windowId: number; tabId: number }, pageId: string): void {
     const { windowId, tabId } = payload;
-    const puppetPage = this.puppetPagesById.get(puppetPageId);
-    this.identityByPuppetPage.get(puppetPage).resolve({ windowId, tabId });
+    const page = this.pagesById.get(pageId);
+    this.identityByPage.get(page).resolve({ windowId, tabId });
   }
 
   /// /// VIEWPORT FULL SCREEN /////////////////////////////////////////////////////////////////////////////////////////
@@ -274,7 +251,7 @@ export default class HeroCorePlugin extends CorePlugin {
     AliveBarPositioner.onChromeWindowBoundsChanged(this.sessionId, bounds);
   }
 
-  private async setPageViewportToWindowBounds(page: IPuppetPage): Promise<void> {
+  private async setPageViewportToWindowBounds(page: IPage): Promise<void> {
     const { windowId, bounds } = await page.devtoolsSession.send('Browser.getWindowForTarget');
 
     AliveBarPositioner.onChromeWindowBoundsChanged(this.sessionId, bounds as IBounds);
@@ -320,6 +297,10 @@ export default class HeroCorePlugin extends CorePlugin {
       // eslint-disable-next-line no-console
       console.debug('ServiceWorker.workerVersionUpdated', ...ev.versions),
     );
+  }
+
+  public static shouldActivate(profile: IEmulationProfile, session: ISessionSummary): boolean {
+    return session.options.showChromeAlive && session.options.showChrome;
   }
 }
 

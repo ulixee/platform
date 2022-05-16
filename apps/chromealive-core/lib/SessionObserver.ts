@@ -23,14 +23,14 @@ import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
 import VueScreen from './VueScreen';
 import DevtoolsBackdoorModule from './hero-plugin-modules/DevtoolsBackdoorModule';
 import ElementsModule from './hero-plugin-modules/ElementsModule';
-import { IPuppetPage } from '@ulixee/hero-interfaces/IPuppetPage';
+import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
 import SourceLoader from '@ulixee/commons/lib/SourceLoader';
 import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation';
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
 import MirrorPage from '@ulixee/hero-timetravel/lib/MirrorPage';
 import HeroCorePlugin from './HeroCorePlugin';
 import CommandTimeline from '@ulixee/hero-timetravel/lib/CommandTimeline';
-import { LoadStatus } from '@ulixee/hero-interfaces/Location';
+import { LoadStatus } from '@unblocked-web/specifications/agent/browser/Location';
 import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import ISessionSearchResult, {
@@ -171,7 +171,6 @@ export default class SessionObserver extends TypedEventEmitter<{
       AliveBarPositioner.restartingSession(this.heroSession.id);
       this.close();
       await this.heroSession.closeTabs();
-      this.heroSession.closeMitm();
     }
     const script = this.scriptInstanceMeta.entrypoint;
     const execArgv = [
@@ -194,7 +193,7 @@ export default class SessionObserver extends TypedEventEmitter<{
         // execArgv,
         cwd: this.scriptInstanceMeta.workingDirectory,
         stdio: ['ignore', 'inherit', 'inherit', 'ipc'],
-        env: { ...process.env, HERO_CLI_NOPROMPT: 'true' },
+        env: { ...process.env, ULX_CLI_NOPROMPT: 'true' },
       });
     } catch (error) {
       this.logger.error('ERROR resuming session', { error });
@@ -268,7 +267,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.mirrorPagePauseRefreshing = mode === 'Finder';
     this.isSearchingTimetravel = false;
     let isFocusingOnFrozenLiveTab = false;
-    const focusPages: IPuppetPage[] = [];
+    const focusPages: IPage[] = [];
     if (mode === 'Finder') {
       // if coming from timetravel, we'll use the timetravel player
       if (this.timetravelPlayer.isOpen && this.mode === 'Timetravel') {
@@ -281,7 +280,7 @@ export default class SessionObserver extends TypedEventEmitter<{
         focusPages.push(mirrorPage.page);
       }
     } else if (mode === 'Live') {
-      focusPages.push(...this.getSessionPuppetPages());
+      focusPages.push(...this.getSessionPages());
     } else if (mode === 'Timetravel') {
       if (!this.timetravelPlayer.isOpen) await this.timetravelPlayer.goto(100);
       focusPages.push(this.timetravelPlayer.activeTab.mirrorPage.page);
@@ -293,8 +292,8 @@ export default class SessionObserver extends TypedEventEmitter<{
         this.events.once(vueScreen, 'close', () => delete this.vueScreensByName[mode]);
         await vueScreen.open();
       }
-      const puppetPage = await vueScreen.puppetPage;
-      focusPages.push(puppetPage);
+      const page = await vueScreen.page;
+      focusPages.push(page);
     }
 
     await this.tabGroupModule.showTabs(...focusPages);
@@ -538,7 +537,7 @@ export default class SessionObserver extends TypedEventEmitter<{
         this.logger.error('ERROR loading mode', { error, tabId }),
       );
       mirrorPage
-        .attachToPage(this.heroCorePlugin.mirrorPuppetPage, this.heroSession.id)
+        .attachToPage(this.heroCorePlugin.mirrorPage, this.heroSession.id)
         .catch(error => this.logger.error('ERROR setting up mirrorPage', { error, tabId }));
     }
   }
@@ -602,11 +601,11 @@ export default class SessionObserver extends TypedEventEmitter<{
     return Promise.resolve(domRecording);
   }
 
-  private getSessionPuppetPages(): IPuppetPage[] {
-    const sessionPages: IPuppetPage[] = [];
+  private getSessionPages(): IPage[] {
+    const sessionPages: IPage[] = [];
     for (const tab of this.heroSession.tabsById.values()) {
-      if (tab.puppetPage.groupName === 'session') {
-        sessionPages.push(tab.puppetPage);
+      if (tab.page.groupName === 'session') {
+        sessionPages.push(tab.page);
       }
     }
     return sessionPages;
