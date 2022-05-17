@@ -4,7 +4,7 @@
   "description": "The internal developer environment that we use for building and running the Ulixee platform",
   "scripts": {
     "prepare": "husky install",
-    "bump-version": "lerna version --conventional-commits --no-push --exact --force-publish",
+    "bump-version": "node versionBump.js patch",
     "build": "yarn && yarn tsc && cd ./build && yarn",
     "build:hero": "cd hero && yarn build",
     "build:all": "yarn build:hero && yarn build",
