@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/apps-chromealive-core",
-  "version": "1.5.4",
+  "version": "2.0.0-alpha.1",
   "main": "index.js",
   "scripts": {
     "build": "tsc -b -i"
@@ -8,26 +8,26 @@
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/commons": "1.5.11",
-    "@ulixee/databox-for-hero": "1.5.4",
-    "@unblocked-web/default-browser-emulator": "2.0.0-alpha.1",
-    "@ulixee/hero-interfaces": "1.5.4",
-    "@ulixee/hero-plugin-utils": "1.5.4",
+    "@ulixee/apps-chromealive": "2.0.0-alpha.1",
+    "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.1",
+    "@ulixee/commons": "2.0.0-alpha.1",
+    "@ulixee/databox-for-hero": "2.0.0-alpha.1",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.1",
+    "@ulixee/hero-plugin-utils": "2.0.0-alpha.1",
+    "@ulixee/hero-timetravel": "2.0.0-alpha.1",
     "@unblocked-web/agent": "2.0.0-alpha.1",
+    "@unblocked-web/default-browser-emulator": "2.0.0-alpha.1",
     "@unblocked-web/specifications": "2.0.0-alpha.1",
-    "@ulixee/hero-timetravel": "1.5.4",
-    "@ulixee/apps-chromealive": "1.5.4",
-    "@ulixee/apps-chromealive-interfaces": "1.5.4",
-    "nanoid": "^3.1.30",
-    "fuse.js": "^6.5.3"
+    "fuse.js": "^6.5.3",
+    "nanoid": "^3.1.30"
   },
   "peerDependencies": {
-    "@ulixee/hero-core": "^1.5.4"
+    "@ulixee/hero-core": "^2.0.0-alpha.1"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.154",
-    "@ulixee/hero-testing": "1.5.4",
-    "@ulixee/hero-fullstack": "1.5.4",
+    "@ulixee/hero-fullstack": "2.0.0-alpha.1",
+    "@ulixee/hero-testing": "2.0.0-alpha.1",
     "linkedom": "^0.13.0"
   }
 }

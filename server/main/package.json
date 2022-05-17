@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/server",
-  "version": "1.5.4",
+  "version": "2.0.0-alpha.1",
   "description": "The server",
   "exports": {
     ".": {
@@ -16,10 +16,10 @@
     "start:alive": "node -r @ulixee/apps-chromealive-core/register bin/start.js"
   },
   "peerDependencies": {
-    "@ulixee/commons": "^1.5.11",
-    "@ulixee/hero-core": "^1.5.4",
-    "@ulixee/hero-interfaces": "^1.5.4",
-    "@ulixee/apps-chromealive-core": "^1.5.4"
+    "@ulixee/apps-chromealive-core": "^2.0.0-alpha.1",
+    "@ulixee/commons": "^2.0.0-alpha.1",
+    "@ulixee/hero-core": "^2.0.0-alpha.1",
+    "@ulixee/hero-interfaces": "^2.0.0-alpha.1"
   },
   "peerDependenciesMeta": {
     "@ulixee/apps-chromealive-core": {
@@ -31,6 +31,6 @@
     "yargs-parser": "^20.2.9"
   },
   "devDependencies": {
-    "@ulixee/hero-testing": "1.5.4"
+    "@ulixee/hero-testing": "2.0.0-alpha.1"
   }
 }

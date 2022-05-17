@@ -19,13 +19,13 @@ Each Databox is a wrapper for defining a composable Scraper script. Your functio
 To use Server in your project, install it with npm or yarn:
 
 ```bash
-npm i --save @ulixee/databox
+npm i --save @ulixee/databox-for-hero
 ```
 
 or
 
 ```bash
-yarn add @ulixee/databox
+yarn add @ulixee/databox-for-hero
 ```
 
 When you install Server, it will also install [`Hero`](/docs/hero).

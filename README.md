@@ -5,15 +5,21 @@ Ulixee is a scraping [engine][hero] with a built-in deployment [unit][databox] t
 This repository is the development home to several of the tools that make it easy to build and manage these scripts, including [ChromeAlive!](apps/chromealive), [Server][server] and [Databox for Hero][databox].
 
 ## Projects
+
 - Hero `/hero`. The Automated Browser Engine built for scraping. (repository home - https://github.com/ulixee/hero).
 - Databox for Hero `/databox/for-hero`. A discrete, composable unit for data extraction scripts.
 - Server `/server`. Run Ulixee tooling on a remote machine.
 - Stream `/stream`. Query, transform and compose Databoxes running on any machine.
 - ChromeAlive! `/apps/chromealive*`. Supercharge scraper script development using the Chrome browser.
 
+## Tooling
+
+Try out Ulixee Desktop! The Alpha release is available for download under [Assets](https://github.com/ulixee/ulixee/releases/latest)
+
 ## Developer Environment
 
 This project serves as a Monorepo for developing the Ulixee Apps, Hero, Databox and Server. To install this project, you'll need to:
+
 1. Clone with `--recursive` so that submodules are initialized.
 2. Run `yarn build:all` from the main repository.
 

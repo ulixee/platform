@@ -1,0 +1,22 @@
+# Change Log
+
+All notable changes to this project will be documented in this file.
+See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+
+# 2.0.0-alpha.1 (2022-05-16)
+
+
+### Bug Fixes
+
+* **databox:** server config ([94e241f](https://github.com/ulixee/ulixee/commit/94e241f015ec9caa4cd3e19fd6a514d2b2e93ada))
+
+
+### Features
+
+* added  to databox + renamed interact fn to run ([687317e](https://github.com/ulixee/ulixee/commit/687317e2dfb662be1c52c28c7efa7d3d074c992e))
+* **chromealive:** nav using hero script lines ([82f9f1b](https://github.com/ulixee/ulixee/commit/82f9f1bde103192b945d116790579d0ecf59b198))
+* collected snippets ([7ecd540](https://github.com/ulixee/ulixee/commit/7ecd5405b7aec12815d0efc4258a0aa3efdac48a))
+* convert pagestate to domstate ([8c7facd](https://github.com/ulixee/ulixee/commit/8c7facdd87fc8f294ac6c16256df32ed3602c736))
+* databox and herobox and merged... working with errors ([2d72035](https://github.com/ulixee/ulixee/commit/2d720353f4c442ac03a41b290c1e25bb501cf94a))
+* **docs:** databox + server docs ([c81c62f](https://github.com/ulixee/ulixee/commit/c81c62f0eac976dbfe293ff13156370c59c9731f))
+* updated examples to use new State syntax + renamed Fragments to Elements ([69ac1ed](https://github.com/ulixee/ulixee/commit/69ac1eded0d40525c2d21603ae39807ac1ed6908))

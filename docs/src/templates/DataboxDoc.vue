@@ -45,7 +45,7 @@ export default class HeroDoc extends Vue {
   public $route: any;
   public links: INavGroup[] = links;
   public rootPath = '/docs/databox';
-  public navTitle = 'Databox'
+  public navTitle = 'Databox for Hero'
 }
 </script>
 

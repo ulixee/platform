@@ -1,5 +1,6 @@
 import * as Http from 'http';
 import Server from '../index';
+const pkg = require('../package.json');
 
 describe('basic Server tests', () => {
   it('starts, responds to request and shuts down', async () => {
@@ -15,7 +16,7 @@ describe('basic Server tests', () => {
       });
     });
 
-    expect(response).toEqual('Ulixee Server v1.5.4');
+    expect(response).toEqual(`Ulixee Server v${pkg.version}`);
 
     await server.close();
   });
