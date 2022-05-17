@@ -14,7 +14,7 @@ This repository is the development home to several of the tools that make it eas
 
 ## Tooling
 
-Try out Ulixee Desktop! The Alpha release is available for download under [Assets](https://github.com/ulixee/ulixee/releases/latest)
+Try out Ulixee Desktop! The Alpha release is available for download under [Assets](https://github.com/ulixee/ulixee/releases/latest).
 
 ## Developer Environment
 

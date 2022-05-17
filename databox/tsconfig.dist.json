@@ -6,6 +6,6 @@
     "removeComments": true
   },
   "references": [],
-  "include": ["*.ts", ".eslintrc.js"],
-  "exclude": ["**/tsconfig*.json", "**/node_modules", "**/dist"]
+  "include": ["**/*.ts", ".eslintrc.js"],
+  "exclude": ["**/tsconfig*.json", "**/node_modules", "**/dist", "**/build", "**/build-dist"]
 }

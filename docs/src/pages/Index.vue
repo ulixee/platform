@@ -12,7 +12,7 @@
             a(href="/docs/hero") Hero:
             span.description The W3C-spec Headless Web Browser that's nearly impossible to detect.
           li
-            a(href="/docs/databox") Databox:
+            a(href="/docs/databox") Databox for Hero:
             span.description Create composable, re-usable, configurable scripts.
           li
             a(href="/docs/server") Server:
