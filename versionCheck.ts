@@ -5,7 +5,18 @@ import * as Path from 'path';
 
 const shouldFix = process.argv[2] === 'fix';
 const pkgPaths: Set<string> = new Set();
-const submodules = ['desktop', 'chrome-alive', 'commons', 'databox', 'docs', 'hero', 'runner', 'server', 'website'];
+const submodules = [
+  'apps',
+  'apps/chromealive',
+  'apps/chromealive-core',
+  'commons',
+  'databox',
+  'docs',
+  'hero',
+  'stream',
+  'server',
+  'website',
+];
 
 recursivelyFindPackageFiles(Path.resolve(__dirname, 'package.json'));
 
@@ -27,9 +38,8 @@ for (const pkgPath of Array.from(pkgPaths)) {
   const pkg = require(pkgPath);
   checkDependencies('dependency', pkg?.dependencies, pkgPath);
   checkDependencies('devDependency', pkg?.devDependencies, pkgPath);
-  Fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+  Fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 }
-
 
 // HELPERS /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -41,7 +51,9 @@ function checkDependencies(type: 'dependency' | 'devDependency', dependencies, p
         dependencies[name] = versionToBe;
         console.log(`UPGRADED ${name} from ${version} to ${versionToBe}: ${pkgPath}`);
       } else {
-        console.log(`MISMATCHED dependency version for ${name} (${version} should be ${versionToBe}): ${pkgPath}`);
+        console.log(
+          `MISMATCHED dependency version for ${name} (${version} should be ${versionToBe}): ${pkgPath}`,
+        );
       }
     }
   }
@@ -53,8 +65,8 @@ function recursivelyFindPackageFiles(pkgPath: string) {
   const pkgDir = Path.dirname(pkgPath);
   const workspaces = pkg.workspaces?.packages?.filter(x => !x.startsWith('../')) || [];
   for (const workspace of workspaces) {
-    if (workspace.includes('/**')) {
-      const workspaceDir = workspace.replace('/**', '');
+    if (workspace.includes('/*')) {
+      const workspaceDir = workspace.replace('/*', '');
       const subWorkspaces = Fs.readdirSync(Path.resolve(pkgDir, workspaceDir));
       for (const subWorkspace of subWorkspaces) {
         const newPkgPath = Path.resolve(pkgDir, workspaceDir, subWorkspace, 'package.json');
@@ -72,4 +84,3 @@ function recursivelyFindPackageFiles(pkgPath: string) {
     }
   }
 }
-

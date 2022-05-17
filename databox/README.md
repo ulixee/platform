@@ -5,7 +5,7 @@ Databox for Hero is a simple wrapper for your Hero scraper script that converts 
 - [x] **Production Proof Your Script** - Production proof your script a thousand different ways.
 - [x] **Breaking Notifications** - Get notified when your scripts break.
 - [x] **Runs Anywhere** - Containerize your scripts to run everywhere
-- [x] **Works with Chrome Alive!** - Progressively build your scripts with chrome alive!
+- [x] **Works with Chrome Alive!** - Progressively build your scripts with Chrome Alive!
 - [x] **Easy Management** - Manage your databoxes like a boss.
 
 Check out our [website](https://docs.ulixee.org/databox) for more details.
@@ -46,18 +46,22 @@ You can call your script in several ways.
 
 2) Through the Ulixee CLI:
 
+__ COMING SOON __
+
 ```shell script
 % ulixee databox run script.js --params.name=Alfonso
 ```
 
-Through Runner:
+Through Stream:
+
+__ COMING SOON __
 
 ```js
-import Runner from '@ulixee/runner';
+import Stream from '@ulixee/stream';
 
-const runner = new Runner('');
+const stream = new Stream('');
 
-const output = await runner.run({ params: { name: 'Alfonso' } });
+const output = await stream.query({ params: { name: 'Alfonso' } });
 ```
 
 Browse the [full API docs](https://docs.ulixee.org/databox).

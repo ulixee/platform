@@ -31,6 +31,6 @@
     "yargs-parser": "^20.2.9"
   },
   "devDependencies": {
-    "@ulixee/hero-testing": "2.0.0-alpha.1"
+    "@ulixee/hero-testing": "2.0.0-alpha.2"
   }
 }

@@ -3,7 +3,7 @@
   "version": "2.0.0-alpha.1",
   "private": true,
   "dependencies": {
-    "@ulixee/hero": "2.0.0-alpha.1",
+    "@ulixee/hero": "2.0.0-alpha.2",
     "@ulixee/server": "2.0.0-alpha.1"
   }
 }
