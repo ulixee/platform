@@ -1,13 +1,13 @@
 {
   "name": "@ulixee/databox-for-hero",
-  "version": "2.0.0-alpha.2",
+  "version": "2.0.0-alpha.3",
   "description": "The Databox for Hero library.",
   "exports": {
     "import": "./index.mjs",
     "require": "./index.cjs"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.2",
+    "@ulixee/commons": "2.0.0-alpha.3",
     "@ulixee/hero": "2.0.0-alpha.3",
     "@ulixee/hero-interfaces": "2.0.0-alpha.3",
     "@unblocked-web/specifications": "2.0.0-alpha.2",

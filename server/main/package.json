@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/server",
-  "version": "2.0.0-alpha.2",
+  "version": "2.0.0-alpha.3",
   "description": "The server",
   "exports": {
     ".": {
@@ -16,8 +16,8 @@
     "start:alive": "node -r @ulixee/apps-chromealive-core/register bin/start.js"
   },
   "peerDependencies": {
-    "@ulixee/apps-chromealive-core": "2.0.0-alpha.2",
-    "@ulixee/commons": "2.0.0-alpha.2",
+    "@ulixee/apps-chromealive-core": "2.0.0-alpha.3",
+    "@ulixee/commons": "2.0.0-alpha.3",
     "@ulixee/hero-core": "2.0.0-alpha.3",
     "@ulixee/hero-interfaces": "2.0.0-alpha.3"
   },
