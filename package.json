@@ -42,7 +42,7 @@
     "@commitlint/config-conventional": "^12.0.1",
     "@types/jest": "^26.0.20",
     "@types/node": "^14.18.18",
-    "@ulixee/repo-tools": "^1.0.3",
+    "@ulixee/repo-tools": "^1.0.7",
     "concurrently": "^6.2.2",
     "cross-env": "^7.0.3",
     "husky": "^7.0.1",
@@ -63,7 +63,7 @@
       "hero/build/*",
       "hero/build/plugins/*",
       "../unblocked/agent/build/*",
-      "../unblocked/build/agent-plugins/*",
+      "../unblocked/build/plugins/*",
       "../unblocked/specifications/build"
     ],
     "nohoist": [

@@ -8,17 +8,17 @@
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.2",
-    "@ulixee/hero": "2.0.0-alpha.2",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.2",
-    "@unblocked-web/specifications": "2.0.0-alpha.1",
+    "@ulixee/hero": "2.0.0-alpha.3",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.3",
+    "@unblocked-web/specifications": "2.0.0-alpha.2",
     "awaited-dom": "1.4.0",
     "linkedom": "^0.13.0",
     "yargs-parser": "^20.2.9"
   },
   "devDependencies": {
     "@types/web": "^0.0.50",
-    "@ulixee/hero-core": "2.0.0-alpha.2",
-    "@ulixee/hero-fullstack": "2.0.0-alpha.2",
-    "@ulixee/hero-testing": "2.0.0-alpha.2"
+    "@ulixee/hero-core": "2.0.0-alpha.3",
+    "@ulixee/hero-fullstack": "2.0.0-alpha.3",
+    "@ulixee/hero-testing": "2.0.0-alpha.3"
   }
 }

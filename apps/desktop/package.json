@@ -19,7 +19,7 @@
     "@ulixee/apps-chromealive-core": "2.0.0-alpha.2",
     "@ulixee/commons": "2.0.0-alpha.2",
     "@ulixee/server": "2.0.0-alpha.2",
-    "@unblocked-web/default-browser-emulator": "2.0.0-alpha.1",
+    "@unblocked-web/default-browser-emulator": "2.0.0-alpha.2",
     "electron-log": "^4.4.6",
     "electron-positioner": "^4.1.0",
     "electron-updater": "^5.0.1",

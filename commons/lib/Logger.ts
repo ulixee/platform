@@ -270,14 +270,14 @@ function enable(namespaces: string): void {
       logFilters.skip.push(new RegExp('^' + part.slice(1) + '$'));
     } else {
       logFilters.active.push(new RegExp('^' + part + '$'));
-      if (part.includes('sa:*') || part.includes('sa*')) {
+      if (part.includes('ubk:*') || part.includes('ubk*')) {
         logFilters.active.push(/agent\/*/);
-      } else if (part === 'sa') {
+      } else if (part === 'ubk') {
         logFilters.active.push(/agent\/*/);
         logFilters.skip.push(new RegExp('DevtoolsSessionLogger'));
         logFilters.skip.push(new RegExp(/agent\/mitm*/));
 
-      } else if (part.includes('sa:devtools')) {
+      } else if (part.includes('ubk:devtools')) {
         logFilters.active.push(new RegExp('DevtoolsSessionLogger'));
       }
     }
