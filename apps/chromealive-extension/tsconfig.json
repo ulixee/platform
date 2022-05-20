@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "experimentalDecorators": true,
-    "target": "ES2019",
+    "target": "ES2020",
     "module": "CommonJS",
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "noImplicitAny": false,
@@ -10,6 +10,6 @@
     "allowJs": true,
     "types": ["node", "webpack-env"]
   },
-  "include": ["**/*.ts", "**/*.vue", ".eslintrc.js", "manifest.json"],
+  "include": ["**/*.ts", "**/*.vue", "*.js", "manifest.json"],
   "exclude": ["**/tsconfig*.json", "**/node_modules", "**/build"]
 }

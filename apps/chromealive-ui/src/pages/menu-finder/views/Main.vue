@@ -12,102 +12,158 @@
       ref="overlayBoxRef"
       class="overlay-box"
     >
-      <div v-if="selectedElement" class="element-view flex flex-col overflow-hidden h-full">
-        <div class="header-bar flex-none flex flex-row content-between justify-between p-3">
+      <div
+        v-if="selectedElement"
+        class="element-view flex h-full flex-col overflow-hidden"
+      >
+        <div
+          class="
+            header-bar
+            flex flex-none flex-row
+            content-between
+            justify-between
+            p-3
+          "
+        >
           <a
             href="javascript:void(0)"
-            class="flex-none flex flex-row items-center text-slate-800 opacity-60 hover:opacity-90"
+            class="
+              flex flex-none flex-row
+              items-center
+              text-slate-800
+              opacity-60
+              hover:opacity-90
+            "
             @click="backToMain"
           >
-            <ChevronLeftIcon class="flex-initial w-8" />
+            <ChevronLeftIcon class="w-8 flex-initial" />
             <label class="flex-none italic">Back to finder</label>
           </a>
           <img
             src="@/assets/icons/node_search_icon.svg"
-            class="icon h-6 ml-3 mr-2 flex-none mt-1 self-end"
+            class="icon ml-3 mr-2 mt-1 h-6 flex-none self-end"
             @click="enableSelectMode"
           >
         </div>
-        <div class="content flex flex-col flex-1 overflow-y-auto overflow-x-hidden mt-4 p-3">
+        <div
+          class="
+            content
+            mt-4
+            flex flex-1 flex-col
+            overflow-y-auto overflow-x-hidden
+            p-3
+          "
+        >
           <div
             class="flex flex-none flex-row"
             @mouseenter="highlightNode(selectedElement)"
             @mouseleave="hideHighlight"
           >
-            <img src="@/assets/icons/element.svg" class="icon h-6 ml-3 mr-2 flex-none w-10">
+            <img
+              src="@/assets/icons/element.svg"
+              class="icon ml-3 mr-2 h-6 w-10 flex-none"
+            >
 
             <div class="flex-initial flex-1">
               {{ generateNodePreview(selectedElement) }}
             </div>
           </div>
-          <div class="flex flex-col flex-stretch flex-1 mt-5 p-3">
-            <h5 class="font-bold text-base">
+          <div class="flex-stretch mt-5 flex flex-1 flex-col p-3">
+            <h5 class="text-base font-bold">
               Shortest possible query selectors:
             </h5>
             <div
               v-if="isGeneratingQuerySelector"
-              class="p-2 mt-2 border-t border-gray-300 rounded-md italic text-sm text-slate-600"
+              class="
+                mt-2
+                rounded-md
+                border-t border-gray-300
+                p-2
+                text-sm
+                italic
+                text-slate-600
+              "
             >
               Calculating shortest querySelector...
             </div>
             <div
               v-for="match of querySelectorMatches"
               class="
-                border border-gray-300
-                rounded-md
-                bg-gray-100
-                p-2
                 mt-2
-                text-sm text-slate-800
                 select-all
                 break-words
+                rounded-md
+                border border-gray-300
+                bg-gray-100
+                p-2
+                text-sm text-slate-800
               "
             >
               hero.querySelector("{{ match }}");
             </div>
             <a
               v-if="querySelector.topMatches?.length"
-              class="font-bold text-sm mt-4 text-slate-600"
+              class="mt-4 text-sm font-bold text-slate-600"
               href="javascript:void(0)"
               @click="moreResults"
             >View more</a>
           </div>
         </div>
       </div>
-      <div v-else-if="selectedResource" class="resource-view flex flex-col overflow-hidden h-full">
-        <div class="header-bar flex-none flex flex-row content-between justify-between p-3">
+      <div
+        v-else-if="selectedResource"
+        class="resource-view flex h-full flex-col overflow-hidden"
+      >
+        <div
+          class="
+            header-bar
+            flex flex-none flex-row
+            content-between
+            justify-between
+            p-3
+          "
+        >
           <a
             href="javascript:void(0)"
-            class="flex-none flex flex-row items-center text-slate-800 opacity-60 hover:opacity-90"
+            class="
+              flex flex-none flex-row
+              items-center
+              text-slate-800
+              opacity-60
+              hover:opacity-90
+            "
             @click="backToMain"
           >
-            <ChevronLeftIcon class="flex-initial w-8 opacity-50" />
+            <ChevronLeftIcon class="w-8 flex-initial opacity-50" />
             <label class="flex-none italic text-slate-500">Back to finder</label>
           </a>
         </div>
 
-        <div class="content flex-1 overflow-y-auto overflow-x-hidden mt-5 p-3">
+        <div class="content mt-5 flex-1 overflow-y-auto overflow-x-hidden p-3">
           <div class="flex flex-none flex-row">
-            <img src="@/assets/icons/resource.svg" class="icon h-6 mr-2 flex-none w-10">
-            <div class="flex-1 mr-3">
+            <img
+              src="@/assets/icons/resource.svg"
+              class="icon mr-2 h-6 w-10 flex-none"
+            >
+            <div class="mr-3 flex-1">
               <div>{{ selectedResource.url }}</div>
             </div>
           </div>
-          <div class="flex flex-col flex-stretch flex-1 mt-5 p-3">
-            <h5 class="font-bold text-base">
+          <div class="flex-stretch mt-5 flex flex-1 flex-col p-3">
+            <h5 class="text-base font-bold">
               Hero resource filter:
             </h5>
             <pre
               class="
-                border border-gray-300
+                mt-2
+                select-all
+                whitespace-pre-wrap
+                break-words
                 rounded-md
+                border border-gray-300
                 bg-gray-100
                 p-2
-                mt-2
                 text-sm text-slate-800
-                select-all
-                break-words
-                whitespace-pre-wrap
               "
             >
   await hero.waitForResource({
@@ -115,31 +171,31 @@
     type: "{{ selectedResource.type }}"
   });</pre>
           </div>
-          <div class="flex flex-col mt-2 p-3">
-            <h5 class="font-bold text-base flex-none">
+          <div class="mt-2 flex flex-col p-3">
+            <h5 class="flex-none text-base font-bold">
               Response Body
             </h5>
             <div
               class="
-                flex-1
-                border border-gray-300
-                rounded-md
-                bg-gray-100
-                p-3
                 mt-1
                 w-full
                 max-w-full
+                flex-1
                 select-text
                 whitespace-pre-wrap
                 break-all
+                rounded-md
+                border border-gray-300
+                bg-gray-100
+                p-3
               "
               v-html="highlightedBody"
             />
           </div>
         </div>
       </div>
-      <div v-else class="search-view flex flex-col overflow-hidden h-full">
-        <div class="flex-none form header-bar p-3">
+      <div v-else class="search-view flex h-full flex-col overflow-hidden">
+        <div class="form header-bar flex-none p-3">
           <div class="flex flex-row">
             <input
               ref="inputElem"
@@ -147,13 +203,13 @@
               type="text"
               placeholder="Search page assets..."
               class="
-                appearance-none
                 block
                 w-full
+                appearance-none
+                rounded-md
+                border border-gray-300
                 px-3
                 py-2
-                border border-gray-300
-                rounded-md
                 placeholder-gray-400
                 focus:outline-none
               "
@@ -162,12 +218,15 @@
             >
             <img
               src="@/assets/icons/node_search_icon.svg"
-              class="icon h-6 ml-3 mr-2 mt-2"
+              class="icon ml-3 mr-2 mt-2 h-6"
               :class="{ active: isSelectMode }"
               @click="enableSelectMode"
             >
           </div>
-          <div class="flex flex-row mt-2" :class="{ 'opacity-80': !searchContext.documentUrl }">
+          <div
+            class="mt-2 flex flex-row"
+            :class="{ 'opacity-80': !searchContext.documentUrl }"
+          >
             <label class="font-sm text-slate-500">Filter results by:</label>
             <a
               href="javascript:void(0)"
@@ -185,7 +244,10 @@
           </div>
         </div>
         <div class="content flex-1 overflow-y-auto overflow-x-hidden">
-          <h5 v-if="searchContext.documentUrl" class="italic text-slate-500 mt-3 p-3">
+          <h5
+            v-if="searchContext.documentUrl"
+            class="mt-3 p-3 italic text-slate-500"
+          >
             Searching {{ searchContext.documentUrl }} from {{ searchTimes() }}
           </h5>
           <ul class="flex flex-col">
@@ -193,12 +255,15 @@
               v-for="record of elementResults"
               v-if="selectedFilter !== 'resources'"
               :key="record.backendNodeId"
-              class="flex my-2"
+              class="my-2 flex"
               @click="selectElement(record)"
               @mouseenter="highlightNode(record)"
               @mouseleave="hideHighlight"
             >
-              <img src="@/assets/icons/element.svg" class="icon h-6 ml-3 mr-2 flex-none w-10">
+              <img
+                src="@/assets/icons/element.svg"
+                class="icon ml-3 mr-2 h-6 w-10 flex-none"
+              >
               <div class="flex-1">
                 {{ generateNodePreview(record) }}
               </div>
@@ -207,30 +272,33 @@
               v-for="record of resourceResults"
               v-if="selectedFilter !== 'dom'"
               :key="record.id"
-              class="flex my-2"
+              class="my-2 flex"
               @click="selectResource(record)"
             >
-              <img src="@/assets/icons/resource.svg" class="icon h-6 ml-3 mr-2 flex-none w-10">
+              <img
+                src="@/assets/icons/resource.svg"
+                class="icon ml-3 mr-2 h-6 w-10 flex-none"
+              >
               <div class="flex-1">
                 <span class="italic">{{ record.url }}</span>
               </div>
             </li>
           </ul>
         </div>
-        <div v-if="devtoolsElement" class="flex-none footer-bar p-3">
+        <div v-if="devtoolsElement" class="footer-bar flex-none p-3">
           <div
             class="selected-element flex flex-row justify-center"
             @click="selectElement(devtoolsElement)"
             @mouseenter="highlightNode(devtoolsElement)"
             @mouseleave="hideHighlight"
           >
-            <label class="flex-none mr-5 text-slate-600">Selected Element</label>
+            <label class="mr-5 flex-none text-slate-600">Selected Element</label>
             <img
               src="@/assets/icons/element.svg"
-              class="icon h-4 align-middle flex-none mr-2 mt-1"
+              class="icon mr-2 mt-1 h-4 flex-none align-middle"
             >
 
-            <div class="flex-initial w-64 truncate">
+            <div class="w-64 flex-initial truncate">
               {{ generateNodePreview(devtoolsElement) }}
             </div>
           </div>
@@ -241,27 +309,27 @@
 </template>
 
 <script lang="ts">
-import * as Vue from 'vue';
-import Client from '@/api/Client';
+import * as Vue from "vue";
+import Client from "@/api/Client";
 import {
   Listbox,
   ListboxButton,
   ListboxLabel,
   ListboxOption,
   ListboxOptions,
-} from '@headlessui/vue';
-import { CheckIcon, ChevronLeftIcon, SelectorIcon } from '@heroicons/vue/solid';
-import IElementSummary from '@ulixee/apps-chromealive-interfaces/IElementSummary';
-import IResourceSearchResult from '@ulixee/apps-chromealive-interfaces/IResourceSearchResult';
-import { ISearchContext } from '@ulixee/apps-chromealive-interfaces/ISessionSearchResult';
-import { ISelectorMap } from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
-import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
+} from "@headlessui/vue";
+import { CheckIcon, ChevronLeftIcon, SelectorIcon } from "@heroicons/vue/solid";
+import IElementSummary from "@ulixee/apps-chromealive-interfaces/IElementSummary";
+import IResourceSearchResult from "@ulixee/apps-chromealive-interfaces/IResourceSearchResult";
+import { ISearchContext } from "@ulixee/apps-chromealive-interfaces/ISessionSearchResult";
+import { ISelectorMap } from "@ulixee/apps-chromealive-interfaces/ISelectorMap";
+import IHeroSessionActiveEvent from "@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent";
 
 function roundFloor(num: number): number {
   return Math.round(10 * num) / 10;
 }
 export default Vue.defineComponent({
-  name: 'Finder',
+  name: "Finder",
   components: {
     Listbox,
     ListboxButton,
@@ -287,14 +355,14 @@ export default Vue.defineComponent({
       matchesShown,
       querySelector,
       querySelectorMatches,
-      highlightedBody: Vue.ref<string>(''),
-      heroSessionId: Vue.ref<string>(''),
+      highlightedBody: Vue.ref<string>(""),
+      heroSessionId: Vue.ref<string>(""),
       overlayBoxRef: Vue.ref<HTMLElement>(),
       selectionRef: Vue.ref<HTMLElement>(),
       inputElem: Vue.ref<HTMLInputElement>(),
-      inputText: Vue.ref(''),
+      inputText: Vue.ref(""),
       searchContext: Vue.reactive<ISearchContext>({} as any),
-      selectedFilter: Vue.ref<'dom' | 'resources'>(null),
+      selectedFilter: Vue.ref<"dom" | "resources">(null),
       isSelectMode: Vue.ref(false),
       isGeneratingQuerySelector: Vue.ref(false),
       devtoolsElement: Vue.ref<IElementSummary>(),
@@ -324,13 +392,13 @@ export default Vue.defineComponent({
     },
     enableSelectMode() {
       this.isSelectMode = true;
-      void Client.send('DevtoolsBackdoor.toggleInspectElementMode');
+      void Client.send("DevtoolsBackdoor.toggleInspectElementMode");
     },
     generateNodePreview(element: IElementSummary): string {
-      let attrText = '';
+      let attrText = "";
       for (const attr of element.attributes) {
         const { name, value } = attr;
-        if (name === 'style') continue;
+        if (name === "style") continue;
         attrText += ` ${name}`;
         if (value) {
           let valueText = value;
@@ -343,9 +411,10 @@ export default Vue.defineComponent({
 
       const tag = element.localName;
 
-      let textContent = element.nodeValueInternal ?? '';
-      if (textContent.length > 50) textContent = textContent.substring(0, 20) + '\u2026';
-      if (element.hasChildren && textContent === '') textContent = '\u2026';
+      let textContent = element.nodeValueInternal ?? "";
+      if (textContent.length > 50)
+        textContent = textContent.substring(0, 20) + "\u2026";
+      if (element.hasChildren && textContent === "") textContent = "\u2026";
       return `<${tag}${attrText}>${textContent}</${tag}>`;
     },
     moreResults() {
@@ -355,7 +424,10 @@ export default Vue.defineComponent({
       clearTimeout(this.clearInspectorTimeout);
       if (!isActive) {
         // give it a second to turn off
-        this.clearInspectorTimeout = setTimeout(() => (this.isSelectMode = isActive), 500) as any;
+        this.clearInspectorTimeout = setTimeout(
+          () => (this.isSelectMode = isActive),
+          500
+        ) as any;
       }
     },
 
@@ -369,14 +441,14 @@ export default Vue.defineComponent({
     },
 
     highlightNode(element: IElementSummary) {
-      void Client.send('DevtoolsBackdoor.highlightNode', {
+      void Client.send("DevtoolsBackdoor.highlightNode", {
         backendNodeId: element.backendNodeId,
         objectId: element.objectId,
       });
     },
 
     hideHighlight() {
-      void Client.send('DevtoolsBackdoor.hideHighlight');
+      void Client.send("DevtoolsBackdoor.hideHighlight");
     },
 
     async selectElement(elementSummary: IElementSummary) {
@@ -386,17 +458,23 @@ export default Vue.defineComponent({
       this.querySelector.ancestors.length = 0;
       this.isGeneratingQuerySelector = true;
       const { backendNodeId } = elementSummary;
-      const response = await Client.send('DevtoolsBackdoor.generateQuerySelector', {
-        backendNodeId,
-      });
-      console.log('Created query selector map', response);
+      const response = await Client.send(
+        "DevtoolsBackdoor.generateQuerySelector",
+        {
+          backendNodeId,
+        }
+      );
+      console.log("Created query selector map", response);
       Object.assign(this.querySelector, response);
       this.isGeneratingQuerySelector = false;
     },
 
     selectResource(resource: IResourceSearchResult): void {
       this.selectedResource = resource;
-      this.highlightedBody = highlightIndices(resource.body, resource.matchIndices);
+      this.highlightedBody = highlightIndices(
+        resource.body,
+        resource.matchIndices
+      );
     },
 
     backToMain() {
@@ -407,8 +485,8 @@ export default Vue.defineComponent({
 
     async runSearch() {
       const query = this.inputText;
-      const searchResult = await Client.send('Session.search', { query });
-      console.log('Session.search', searchResult);
+      const searchResult = await Client.send("Session.search", { query });
+      console.log("Session.search", searchResult);
       Object.assign(this.searchContext, searchResult.searchingContext);
       this.resourceResults.length = 0;
       this.elementResults.length = 0;
@@ -416,7 +494,7 @@ export default Vue.defineComponent({
       Object.assign(this.elementResults, searchResult.elements);
     },
 
-    filterBy(type: 'dom' | 'resources') {
+    filterBy(type: "dom" | "resources") {
       if (this.selectedFilter === type) this.selectedFilter = null;
       else this.selectedFilter = type;
     },
@@ -427,11 +505,11 @@ export default Vue.defineComponent({
         height = this.selectionRef.getBoundingClientRect().height;
       }
       document.dispatchEvent(
-        new CustomEvent('App:changeHeight', {
+        new CustomEvent("App:changeHeight", {
           detail: {
             height,
           },
-        }),
+        })
       );
     },
 
@@ -445,21 +523,21 @@ export default Vue.defineComponent({
     },
   },
   mounted() {
-    window.addEventListener('focus', () => {
+    window.addEventListener("focus", () => {
       void this.$nextTick(() => {
         if (this.isSelectMode) return;
         this.inputElem?.focus();
       });
     });
 
-    Client.on('Session.active', message => this.onSessionUpdated(message));
+    Client.on("Session.active", (message) => this.onSessionUpdated(message));
 
-    Client.on('DevtoolsBackdoor.toggleInspectElementMode', ({ isActive }) => {
-      console.log('DevtoolsBackdoor.toggleInspectElementMode', isActive);
+    Client.on("DevtoolsBackdoor.toggleInspectElementMode", ({ isActive }) => {
+      console.log("DevtoolsBackdoor.toggleInspectElementMode", isActive);
       this.handleInspectElementModeChange(isActive);
     });
-    Client.on('DevtoolsBackdoor.elementWasSelected', event => {
-      console.log('DevtoolsBackdoor.elementWasSelected', event);
+    Client.on("DevtoolsBackdoor.elementWasSelected", (event) => {
+      console.log("DevtoolsBackdoor.elementWasSelected", event);
       this.handleElementWasSelected(event.element);
     });
   },
@@ -468,9 +546,12 @@ export default Vue.defineComponent({
   },
 });
 
-function highlightIndices(body: string, indices: [start: number, end: number][]) {
-  const startMarker = '&MARK-&';
-  const endMarker = '&-MARK&';
+function highlightIndices(
+  body: string,
+  indices: [start: number, end: number][]
+) {
+  const startMarker = "&MARK-&";
+  const endMarker = "&-MARK&";
   const newBody = [];
 
   let lastMarker = 0;
@@ -481,12 +562,12 @@ function highlightIndices(body: string, indices: [start: number, end: number][])
   }
   newBody.push(body.slice(lastMarker));
 
-  const santizer = document.createElement('p');
-  santizer.textContent = newBody.join('');
+  const santizer = document.createElement("p");
+  santizer.textContent = newBody.join("");
   let cleanedBody = santizer.innerHTML;
   return cleanedBody
-    .replaceAll('&amp;MARK-&amp;', '<mark>')
-    .replaceAll('&amp;-MARK&amp;', '</mark>');
+    .replaceAll("&amp;MARK-&amp;", "<mark>")
+    .replaceAll("&amp;-MARK&amp;", "</mark>");
 }
 </script>
 

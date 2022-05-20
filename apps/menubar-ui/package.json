@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/apps-menubar-ui",
-  "version": "2.0.0-alpha.2",
+  "version": "2.0.0-alpha.3",
   "private": true,
   "scripts": {
     "build": "vue-cli-service build",
@@ -25,7 +25,7 @@
     "@vue/compiler-sfc": "^3.0.0",
     "babel-loader": "^8.2.2",
     "copy-webpack-plugin": "^9.0.1",
-    "eslint": "^6.7.2",
+    "eslint": "^7.32.0",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-vue": "^7.0.0",
     "glob": "^7.1.6",
@@ -45,6 +45,7 @@
     "**/@vue/**",
     "**/@vue/**/**",
     "**/vue",
+    "**/eslint/**",
     "**/vue-loader",
     "**/vue-template-compiler",
     "**/vue-class-component"

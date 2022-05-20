@@ -8,5 +8,6 @@ module.exports = {
   ignorePatterns: ['static', 'node_modules', 'dist', 'build', '**/*.md', '*.js'],
   rules: {
     'no-console': 'off',
+    'import/no-unresolved': 'off',
   },
 };

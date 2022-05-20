@@ -30,7 +30,8 @@
     "src/**/*.vue",
     "tests/**/*.ts",
     "tests/**/*.tsx",
-    ".eslintrc.js"
+    ".eslintrc.js",
+    "*.js"
   ],
   "exclude": ["**/node_modules", "**/build", "**/build-dist"]
 }
