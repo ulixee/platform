@@ -8,7 +8,6 @@
     "noImplicitAny": false,
     "sourceMap": false,
     "allowJs": true,
-    "rootDir": ".",
     "types": ["node", "webpack-env"]
   },
   "include": ["**/*.ts", "**/*.vue", "*.js", "manifest.json"],

@@ -10,7 +10,7 @@
   "dependencies": {
     "@ulixee/apps-chromealive": "2.0.0-alpha.3",
     "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.3",
-    "@ulixee/commons": "2.0.0-alpha.3",
+    "@ulixee/commons": "2.0.0-alpha.2",
     "@ulixee/databox-for-hero": "2.0.0-alpha.3",
     "@ulixee/hero-interfaces": "2.0.0-alpha.3",
     "@ulixee/hero-plugin-utils": "2.0.0-alpha.3",

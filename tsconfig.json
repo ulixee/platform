@@ -12,7 +12,7 @@
       "path": "apps/chromealive-core/injected-scripts/tsconfig.json"
     }
   ],
-  "include": ["server", "apps", "commons", "./*.js", "./*.json", ".eslintrc.js"],
+  "include": ["server", "apps", "./*.js", "./*.json", ".eslintrc.js"],
   "exclude": [
     "**/tsconfig*.json",
     "build/**/*",
@@ -24,10 +24,10 @@
     "apps/menubar-ui",
     "apps/chromealive-extension",
     "apps/chromealive-core/injected-scripts",
-    "hero",
-    "website",
-    "docs",
-    "runner",
+    "**/hero",
+    "**/website",
+    "**/docs",
+    "**/stream",
     "**/*.d.ts",
     "build"
   ]

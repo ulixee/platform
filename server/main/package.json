@@ -17,7 +17,7 @@
   },
   "peerDependencies": {
     "@ulixee/apps-chromealive-core": "2.0.0-alpha.3",
-    "@ulixee/commons": "2.0.0-alpha.3",
+    "@ulixee/commons": "2.0.0-alpha.2",
     "@ulixee/hero-core": "2.0.0-alpha.3",
     "@ulixee/hero-interfaces": "2.0.0-alpha.3"
   },
