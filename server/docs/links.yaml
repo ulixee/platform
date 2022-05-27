@@ -3,16 +3,11 @@
     - Introduction
     - Configuration
 
-- title: Basic Interfaces
+- title: Modules
   items:
     - Server
     - ChromeAlive
-
-- title: Contribute
-  items:
-    - How to contribute
-    - Code of conduct
-
+    
 - title: Help
   items:
     - Prerequisites

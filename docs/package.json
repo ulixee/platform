@@ -32,6 +32,11 @@
   "devDependencies": {
     "@types/pluralize": "^0.0.29",
     "@types/typography": "^0.16.3",
+    "@tailwindcss/postcss7-compat": "^2.0.2",
+    "autoprefixer": "^9",
+    "gridsome-plugin-tailwindcss": "^4.1.1",
+    "postcss": "^7",
+    "tailwindcss": "npm:@tailwindcss/postcss7-compat",
     "gh-pages": "^3.1.0",
     "gridsome-plugin-pug": "^0.0.3",
     "gridsome-plugin-typescript": "https://github.com/calebjclark/gridsome-plugin-typescript.git",
@@ -46,5 +51,19 @@
   },
   "resolutions": {
     "remark-slug": "https://github.com/ulixee/remark-slug.git"
-  }
+  },
+  "nohoist": [
+    "**/@typescript-eslint",
+    "**/@typescript-eslint/**",
+    "**/@vue/**",
+    "**/@vue/**/**",
+    "**/vue",
+    "**/vue-loader",
+    "**/vue-template-compiler",
+    "**/postcss",
+    "**/postcss",
+    "**/tailwindcss",
+    "**/@nodelib",
+    "**/@nodelib/**"
+  ]
 }

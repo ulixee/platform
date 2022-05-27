@@ -1,15 +1,35 @@
+const tailwindcss = require("tailwindcss");
+
 module.exports = {
   titleTemplate: 'Ulixee - The Scraping Toolkit',
   siteUrl: 'https://docs.ulixee.org',
   pathPrefix: '/',
   outputDir: '../build-dist/docs',
   templates: {},
+  // css: {
+  //   loaderOptions: {
+  //     postcss: {
+  //       plugins: [
+  //         tailwindcss
+  //       ],
+  //     },
+  //   },
+  // },
   chainWebpack: config => {
     const svgRule = config.module.rule('svg');
     svgRule.uses.clear();
     svgRule.use('vue-svg-loader').loader('vue-svg-loader');
   },
   plugins: [
+    {
+      use: "gridsome-plugin-tailwindcss",
+      options: {
+        tailwindConfig: './tailwind.config.js',
+        presetEnvConfig: {},
+        shouldImport: false,
+        shouldTimeTravel: false
+      }
+    },
     {
       use: 'gridsome-plugin-pug',
       options: {

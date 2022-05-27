@@ -1,9 +1,13 @@
 <template>
-  <footer class="text-center">
-    An open source project by
-    <g-link to="https://github.com/calebjclark">@calebjclark</g-link>,
-    <g-link to="https://github.com/blakebyrnes">@blakebyrnes</g-link>,
-    and the <g-link to="https://dataliberationfoundation.org">Data Liberation Foundation</g-link>.
+  <footer class="font-light py-3 px-5 text-gray-600 opacity-50 text-sm flex flex-row w-full">
+    <div>
+      An open source project by
+      <g-link to="https://github.com/calebjclark">@calebjclark</g-link> and
+      <g-link to="https://github.com/blakebyrnes">@blakebyrnes</g-link>
+    </div>
+    <div class="hidden md:block text-right flex-1">
+      Because knowledge deserves to be free.
+    </div>
   </footer>
 </template>
 

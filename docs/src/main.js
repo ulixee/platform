@@ -5,8 +5,6 @@ import CoreLayout from './layouts/CoreLayout.vue';
 import BasicLayout from './layouts/BasicLayout.vue';
 
 import Section from '~/components/Section.vue';
-import Feature from '~/components/Feature.vue';
-import Card from '~/components/Card';
 
 import Typography from 'typography';
 import Prism from 'vue-prismjs';
@@ -39,8 +37,6 @@ export default function(Vue, { head, router }) {
   Vue.component('CoreLayout', CoreLayout);
   Vue.component('BasicLayout', BasicLayout);
   Vue.component('Section', Section);
-  Vue.component('Feature', Feature);
-  Vue.component('Card', Card);
   Vue.component('Prism', Prism);
 
   head.style.push({

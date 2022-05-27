@@ -6,13 +6,13 @@ Databoxes contain all their core logic in a single unit. This unit can be run on
 
 Databoxes allow you further break down your script into a "run" section and an "extract" section. 
 
-The 'run' step can be used with [Hero](/docs/hero) to interact with a website and collect assets like [Resources](/docs/databox/advanced/collected-resources), [HTML Fragments](/docs/databox/advanced/collected-fragmes) and [Data Snippets](/docs/databox/advanced/collected-snippets) that can be extracted later. 
+The 'run' step can be used with [Hero](/docs/hero) to interact with a website and collect assets like [Resources](/docs/databox/advanced-client/collected-resources), [HTML Fragments](/docs/databox/advanced-client/collected-fragmes) and [Data Snippets](/docs/databox/advanced-client/collected-snippets) that can be extracted later. 
 
 The 'extract' function is passed in collected assets, but no Hero. You can use this function to pull out data from a synchronous set of assets (ie, you don't have to run your logic browser-side). It also allows you to run your extraction logic as a unit, which enables you to keep running it on assets collected from your last `run` until your logic works correctly. 
 
 ## Dynamically Configurable
 
-Databoxes can have their configuration modified via command line, or passed into the [`databox.run({ input... })`](/docs/databox/basic-interfaces/databox#run) method.
+Databoxes can have their configuration modified via command line, or passed into the [`databox.run({ input... })`](/docs/databox/basic-client/databox#run) method.
 
 NOTE: you won't normally do this directly, but through the [`Runner`](/docs/runner) tool.
 
