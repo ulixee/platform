@@ -10,6 +10,6 @@
     "allowJs": true,
     "types": ["node", "webpack-env"]
   },
-  "include": ["**/*.ts", "**/*.vue", "*.js", "manifest.json"],
+  "include": ["./**/*.ts", "./**/*.vue", "*.js", "manifest.json"],
   "exclude": ["**/tsconfig*.json", "**/node_modules", "**/build"]
 }

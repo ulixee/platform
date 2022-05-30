@@ -1,10 +1,10 @@
-import IDataboxRunOptions from '../interfaces/IDataboxRunOptions';
+import IDataboxForHeroRunOptions from '../interfaces/IDataboxForHeroRunOptions';
 import UlixeeConfig from '@ulixee/commons/config';
 import UlixeeServerConfig from '@ulixee/commons/config/servers';
 import readCommandLineArgs from './utils/readCommandLineArgs';
 import IComponents, { IRunFn } from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
-import IBasicInput from '../interfaces/IBasicInput';
+import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
 
 const { version } = require('../package.json');
 
@@ -20,7 +20,7 @@ export default class DataboxPackage<TInput = IBasicInput, TOutput = any> {
         : { ...components };
     if (process.env.ULX_DATABOX_RUN_LATER) return;
 
-    const options: IDataboxRunOptions = readCommandLineArgs();
+    const options: IDataboxForHeroRunOptions = readCommandLineArgs();
 
     if (!options.connectionToCore) {
       const serverHost =
@@ -36,7 +36,7 @@ export default class DataboxPackage<TInput = IBasicInput, TOutput = any> {
     this.run(options).catch(() => null);
   }
 
-  public async run(options: IDataboxRunOptions = {}): Promise<TOutput> {
+  public async run(options: IDataboxForHeroRunOptions = {}): Promise<TOutput> {
     const databoxInternal = new DataboxInternal<TInput, TOutput>(
       options,
       this.#components.defaults,

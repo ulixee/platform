@@ -28,3 +28,4 @@ connect
 /databox/examples/duckduckgo.ts
 /databox/examples/creep.ts
 /databox/examples/frame.ts
+/.rollup.cache/

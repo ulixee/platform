@@ -10,6 +10,7 @@
     "@ulixee/commons": "2.0.0-alpha.2",
     "@ulixee/hero": "2.0.0-alpha.3",
     "@ulixee/hero-interfaces": "2.0.0-alpha.3",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.3",
     "@unblocked-web/specifications": "2.0.0-alpha.2",
     "awaited-dom": "1.4.0",
     "linkedom": "^0.13.0",

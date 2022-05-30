@@ -1,6 +1,6 @@
 import FullstackHero, { IHeroCreateOptions } from '@ulixee/hero-fullstack';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
-import IDataboxRunOptions from '../interfaces/IDataboxRunOptions';
+import IDataboxForHeroRunOptions from '../interfaces/IDataboxForHeroRunOptions';
 import DataboxInternal from '../lib/DataboxInternal';
 
 export const needsClosing: { close: () => Promise<any> | void; onlyCloseOnFinal?: boolean }[] = [];
@@ -41,7 +41,7 @@ async function closeAll(isFinal = false): Promise<void> {
 }
 
 export function createFullstackDataboxInternal(
-  options: IDataboxRunOptions = {},
+  options: IDataboxForHeroRunOptions = {},
 ): FullstackDataboxInternal {
   const databoxInternal = new FullstackDataboxInternal(options);
   needsClosing.push(databoxInternal);

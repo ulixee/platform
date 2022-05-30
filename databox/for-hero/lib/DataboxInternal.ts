@@ -1,4 +1,4 @@
-import IDataboxRunOptions from '../interfaces/IDataboxRunOptions';
+import IDataboxForHeroRunOptions from '../interfaces/IDataboxForHeroRunOptions';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Hero, { IHeroCreateOptions } from '@ulixee/hero';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
@@ -26,7 +26,7 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
   error: Error;
 }> {
   public hero: Hero;
-  readonly runOptions: IDataboxRunOptions;
+  readonly runOptions: IDataboxForHeroRunOptions;
   beforeClose?: () => Promise<any>;
 
   readonly #input: TInput;
@@ -35,7 +35,7 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
   #extractorPromises: Promise<any>[] = [];
   #defaults: IDefaultsObj<TInput, TOutput>;
 
-  constructor(runOptions: IDataboxRunOptions, defaults?: IDefaultsObj<TInput, TOutput>) {
+  constructor(runOptions: IDataboxForHeroRunOptions, defaults?: IDefaultsObj<TInput, TOutput>) {
     super();
     this.runOptions = runOptions;
     this.#defaults = defaults || {};
