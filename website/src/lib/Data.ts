@@ -16,8 +16,8 @@ export interface IPage {
 
 const repoLinks: { [key: string]: string } = {
   hero: 'https://github.com/ulixee/hero/tree/main/docs/main',
-  databox: 'https://github.com/ulixee/hero/tree/main/docs/main',
-  server: 'https://github.com/ulixee/hero/tree/main/docs/main',
+  databox: 'https://github.com/ulixee/ulixee/tree/main/databox/docs',
+  server: 'https://github.com/ulixee/ulixee/tree/main/server/docs',
 }
 
 export default class Data {
