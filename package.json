@@ -77,7 +77,12 @@
       "**/vue-loader",
       "**/vue-template-compiler",
       "**/vue-class-component",
-      "**/@types/web"
+      "**/@types/web",
+      "**/autoprefixer",
+      "**/postcss",
+      "**/tailwindcss",
+      "**/@nodelib",
+      "**/@nodelib/**"
     ]
   },
   "lint-staged": {

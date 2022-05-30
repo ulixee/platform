@@ -12,6 +12,8 @@ tsconfig.tsbuildinfo
 .idea/
 .history/
 
+/website/public/data
+
 **/.env
 
 .cache-test

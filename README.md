@@ -27,9 +27,9 @@ Learn more about Ulixee at [ulixee.org](https://ulixee.org).
 
 ## Contributing
 
-See [how-to-contribute.md](server/docs/Contribute/how-to-contribute.md) for ways to get started.
+See [How to Contribute](//ulixee.org/how-to-contribute) for ways to get started.
 
-This project has a [code of conduct](server/docs/Contribute/code-of-conduct.md). By interacting with this repository, organization, or community you agree to abide by its terms.
+This project has a [code of Conduct](//ulixee.org/code-of-conduct). By interacting with this repository, organization, or community you agree to abide by its terms.
 
 We'd love your help in making Ulixee a better set of tools. Please don't hesitate to send a pull request.
 

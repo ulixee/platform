@@ -1,0 +1,258 @@
+.DocsContent {
+  $borderColor: #c5d3e0;
+
+  blockquote {
+    margin: 0 0 2.0em;
+    padding: 0 1.5em;
+    border-left: 0.25em solid $borderColor;
+    font-size: 1.1rem;
+    @apply font-light text-lg;
+  }
+
+  table {
+    width: 100%;
+    th {
+      font-weight: bold;
+    }
+    th:first-child, td:first-child {
+      padding-left: 0;
+    }
+    th, td {
+      border-bottom: 1px solid hsla(0,0%,0%,0.12);
+      text-align: left;
+      padding-left: 1.06667rem;
+      padding-right: 1.06667rem;
+      padding-top: 0.8rem;
+      padding-bottom: calc(0.8rem - 1px);
+    }
+  }
+
+  table {
+    thead {
+      display: none;
+    }
+    td,
+    th {
+      border-left: 25px solid transparent;
+    }
+    th:first-child,
+    td:first-child {
+      border-left: 0;
+    }
+    tr:last-child {
+      td {
+        border-bottom: none;
+      }
+    }
+    a {
+      text-decoration: none;
+    }
+  }
+
+  table + h3 {
+    margin-top: 2.3rem;
+  }
+
+  p + table,
+  p + .show-table-header + table {
+    margin-top: -10px;
+  }
+
+  .show-table-header + table {
+    thead {
+      display: revert;
+    }
+  }
+  .show-bottom-border + table {
+    tr:last-child td {
+      border-bottom: 1px solid hsla(0, 0%, 0%, 0.12);
+    }
+  }
+  .minimal-row-height + table {
+    th,
+    td {
+      padding-top: 0.2rem;
+      padding-bottom: calc(0.2rem - 1px);
+    }
+  }
+
+  ul {
+    margin-bottom: 1.3rem;
+    list-style: circle;
+    padding-left: 20px;
+  }
+
+  li {
+    margin-bottom: 0.6rem;
+  }
+  
+  p {
+    margin-bottom: 1.3rem;
+  }
+
+  .lead {
+    font-size: 1.2rem;
+  }
+
+  .small {
+    font-size: 0.8em;
+  }
+
+  strong {
+    font-weight: 500;
+  }
+
+  p {
+    letter-spacing: -.15px;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  li {
+    letter-spacing: -.15px;
+  }
+
+  pre {
+    margin-bottom: 1.3rem;
+  }
+
+  :not(pre) > code {
+    color: #1f699e;
+    margin-left: 3px;
+    padding: .2rem .33rem;
+    vertical-align: 1%;
+    background-color: rgba(212,53,159,0.04);
+  }
+  .uppercase {
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    padding-bottom: 9px;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    margin-bottom: 1.6rem;
+    color: inherit;
+    font-weight: bold;
+    text-rendering: optimizeLegibility;
+    font-size: 1.84242rem;
+    line-height: 1.1;
+    border-bottom: 1px solid $borderColor;
+    box-shadow: 0 1px 0 white;
+  }
+
+  h1 + h2 {
+    border-top: none;
+    box-shadow: none;
+  }
+
+  h2 {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 1.8rem;
+    margin-bottom: 1.6rem;
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 1.5rem;
+    color: inherit;
+    font-weight: 200;
+    text-rendering: optimizeLegibility;
+    font-size: 1.52524rem;
+    line-height: 1.1;
+    border-top: 2px solid $borderColor;
+    box-shadow: inset 0 1px 0 white;
+  }
+
+  h3 {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 1.5rem;
+    margin-bottom: 1.6rem;
+    color: inherit;
+    font-weight: bold;
+    text-rendering: optimizeLegibility;
+    font-size: 1.11354rem;
+    line-height: 1.1;
+    border-top: 1px solid $borderColor;
+    box-shadow: inset 0 1px 0 white;
+  }
+
+  h4 {
+    font-weight: bold;
+  }
+
+  h3 {
+    margin-top: 1.8rem;
+
+    .specs {
+      float: right;
+      i {
+        color: var(--inline-code-text);
+        background: var(--inline-code-bg);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        box-shadow: inset 1px 1px 0 white;
+        border-radius: 2px;
+        padding: 1px 3px;
+        display: inline-block;
+        font-size: 0.8rem;
+        margin-left: 7px;
+      }
+    }
+    em {
+      font-weight: normal;
+      font-style: normal;
+      margin-left: -2px;
+    }
+  }
+
+  h5 {
+    text-transform: uppercase;
+    font-weight: 500;
+    letter-spacing: .5px;
+  }
+
+  h2, h3 {
+    small {
+      font-weight: normal;
+      opacity: .8;
+      margin: 0 1rem;
+    }
+  }
+
+  h2,
+  h3,
+  h4 {
+    a[aria-hidden='true'] {
+      float: left;
+      top: 0.12em;
+      margin-left: -1.2em;
+      font-size: 0.85em;
+      text-align: center;
+      width: 0.8em;
+      opacity: 0;
+      color: var(--primary-color-dark);
+      box-shadow: none;
+      background: none;
+    }
+
+    &:hover a {
+      opacity: 1;
+    }
+  }
+
+  h1, h4 {
+    a[aria-hidden='true'] {
+      display: none;
+    }
+  }
+}

@@ -8,7 +8,6 @@ Databox for Hero is a simple wrapper for your Hero scraper script that converts 
 - [x] **Works with Chrome Alive!** - Progressively build your scripts with Chrome Alive!
 - [x] **Easy Management** - Manage your databoxes like a boss.
 
-Check out our [website](https://docs.ulixee.org/databox) for more details.
 
 ## Installation
 

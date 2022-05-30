@@ -12,11 +12,11 @@ By creating a boundary around a single "scrape", scripts are far easier to test,
 
 ## How It Works
 
-Each Databox is a wrapper for defining a composable Scraper script. Your function takes in Input provided by tooling or a CLI, performs an extraction and returns Output. A [Hero](/docs/hero) instance is automatically instantiated and passed into your function. Databoxes interact with a [Servers](/docs/server) - either on your local machine, or running remotely.
+Each Databox is a wrapper for defining a composable scraper script. Each databox takes in Input provided by tooling or a CLI, performs an extraction and returns Output. A [Hero](/docs/hero) instance is automatically instantiated and passed into your function. Databoxes interact with a [Servers](/docs/server) - either on your local machine, or running remotely.
 
 ## Installation
 
-To use Server in your project, install it with npm or yarn:
+To use DataboxForHero in your project, install it with npm or yarn:
 
 ```bash
 npm i --save @ulixee/databox-for-hero
@@ -28,7 +28,7 @@ or
 yarn add @ulixee/databox-for-hero
 ```
 
-When you install Server, it will also install [`Hero`](/docs/hero).
+When you install DataboxForhero, it will also install [Hero](/docs/hero).
 
 ## Usage Example
 
