@@ -1,50 +1,39 @@
-import { ConnectionToCore as ConnectionToHeroCore } from '@ulixee/hero';
 import ConnectionFactory from '@ulixee/hero/connections/ConnectionFactory';
-import ICoreRequestPayload from '@ulixee/hero-interfaces/ICoreRequestPayload';
-import ICoreResponsePayload from '@ulixee/hero-interfaces/ICoreResponsePayload';
-import * as Helpers from './_helpers';
+import { Helpers } from '@ulixee/databox-testing';
 import DataboxPackage from '../index';
 import readCommandLineArgs from '../lib/utils/readCommandLineArgs';
+import MockConnectionToHeroCore from './_MockConnectionToHeroCore';
+import { DataboxRunSettings } from '../lib/DataboxPackage';
 
 afterAll(Helpers.afterAll);
 
-class MockedConnectionToHeroCore extends ConnectionToHeroCore {
-  public readonly outgoing = jest.fn(
-    async ({ command }: ICoreRequestPayload): Promise<ICoreResponsePayload> => {
-      if (command === 'Core.createSession') {
-        return {
-          data: { sessionId: 'session-id' },
-        };
-      }
-      if (command === 'Session.getCollectedElements') {
-        return {
-          data: [],
-        };
-      }
-      if (command === 'Session.getCollectedResources') {
-        return {
-          data: [],
-        };
-      }
-    },
-  );
-
-  async internalSendRequest(payload: ICoreRequestPayload): Promise<void> {
-    const response = await this.outgoing(payload);
-    this.onMessage({
-      responseId: payload.messageId,
-      data: response?.data ?? {},
-      ...(response ?? {}),
-    });
-  }
-
-  protected createConnection = () => Promise.resolve(null);
-  protected destroyConnection = () => Promise.resolve(null);
+function createConnectionToHeroCore() {
+  return new MockConnectionToHeroCore(({ command, messageId: responseId }) => {
+    if (command === 'Core.createSession') {
+      return {
+        responseId,
+        data: { sessionId: 'session-id' },
+      };
+    }
+    if (command === 'Session.getCollectedElements') {
+      return {
+        responseId,
+        data: [],
+      };
+    }
+    if (command === 'Session.getCollectedResources') {
+      return {
+        responseId,
+        data: [],
+      };
+    }
+    return { responseId, data: {} };
+  });
 }
 
 describe('basic Databox tests', () => {
   it('automatically runs and closes a databox', async () => {
-    const connection = new MockedConnectionToHeroCore();
+    const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
 
     const ranScript = await new Promise(resolve => {
@@ -57,7 +46,7 @@ describe('basic Databox tests', () => {
     await new Promise(resolve => process.nextTick(resolve));
     expect(ranScript).toBe(true);
 
-    const outgoingCommands = connection.outgoing.mock.calls;
+    const outgoingCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingCommands.map(c => c[0].command)).toMatchObject([
       'Core.connect',
       'Core.createSession',
@@ -67,17 +56,17 @@ describe('basic Databox tests', () => {
   });
 
   it('waits until run method is explicitly called', async () => {
-    process.env.ULX_DATABOX_RUN_LATER = 'true';
-    const connection = new MockedConnectionToHeroCore();
+    DataboxRunSettings.runLater = true;
+    const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
     const packagedDatabox = new DataboxPackage(async databox => {
       const hero = databox.hero;
       await hero.goto('https://news.ycombinator.org');
       await hero.close();
     });
-    expect(connection.outgoing.mock.calls).toHaveLength(0);
+    expect(connection.outgoingSpy.mock.calls).toHaveLength(0);
     await packagedDatabox.run();
-    const outgoingHeroCommands = connection.outgoing.mock.calls;
+    const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toMatchObject([
       'Core.connect',
       'Core.createSession',
@@ -88,8 +77,8 @@ describe('basic Databox tests', () => {
   });
 
   it('should call close on hero automatically', async () => {
-    process.env.ULX_DATABOX_RUN_LATER = 'true';
-    const connection = new MockedConnectionToHeroCore();
+    DataboxRunSettings.runLater = true;
+    const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
     const packagedDatabox = new DataboxPackage(async databox => {
       const hero = databox.hero;
@@ -97,13 +86,13 @@ describe('basic Databox tests', () => {
     });
     await packagedDatabox.run();
 
-    const outgoingHeroCommands = connection.outgoing.mock.calls;
+    const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toContain('Session.close');
   });
 
   it('should emit close hero on error', async () => {
-    process.env.ULX_DATABOX_RUN_LATER = 'true';
-    const connection = new MockedConnectionToHeroCore();
+    DataboxRunSettings.runLater = true;
+    const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
     const packagedDatabox = new DataboxPackage(async databox => {
       const hero = databox.hero;
@@ -116,14 +105,14 @@ describe('basic Databox tests', () => {
 
     await expect(packagedDatabox.run()).rejects.toThrowError();
 
-    const outgoingHeroCommands = connection.outgoing.mock.calls;
+    const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toContain('Session.close');
   });
 
   it('should be able to bypass the interaction step', async () => {
-    process.env.ULX_DATABOX_RUN_LATER = 'true';
+    DataboxRunSettings.runLater = true;
     process.env.ULX_EXTRACT_SESSION_ID = '1';
-    const connection = new MockedConnectionToHeroCore();
+    const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
 
     const runFn = jest.fn();

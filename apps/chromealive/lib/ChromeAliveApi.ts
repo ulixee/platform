@@ -1,20 +1,20 @@
 import { Serializable } from 'child_process';
 import {
-  IChromeAliveApis,
+  IChromeAliveApiRequest,
   IChromeAliveApiResponse,
+  IChromeAliveApis,
 } from '@ulixee/apps-chromealive-interfaces/apis';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
-import * as WebSocket from 'ws';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import IChromeAliveEvent from '@ulixee/apps-chromealive-interfaces/events/IChromeAliveEvent';
+import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
+import ITransportToCore from '@ulixee/net/interfaces/ITransportToCore';
 
 type IEvent = keyof IChromeAliveEvents;
 
 export default class ChromeAliveApi extends TypedEventEmitter<{ close: void }> {
-  private pendingMessagesById = new Map<string, (args: any) => any>();
-  private messageCounter = 0;
-  private webSocket: WebSocket;
+  private connection: ConnectionToCore<IChromeAliveApis, IChromeAliveEvents>;
+  private readonly transport: ITransportToCore;
 
   constructor(
     private chromeAliveServerApi: string,
@@ -23,65 +23,24 @@ export default class ChromeAliveApi extends TypedEventEmitter<{ close: void }> {
     super();
     process.on('disconnect', () => this.onEvent('App.quit'));
     process.on('message', this.onMessage.bind(this));
+    this.transport = new WsTransportToCore(chromeAliveServerApi);
+    this.connection = new ConnectionToCore(this.transport);
+    this.connection.on('event', this.onMessage.bind(this));
   }
 
   public async connect(): Promise<void> {
-    const webSocket = new WebSocket(this.chromeAliveServerApi);
-    this.webSocket = webSocket;
-    this.webSocket.on('close', () => this.emit('close'));
-    const result = await new Promise<WebSocket | Error>(resolve => {
-      function onError(error: Error): void {
-        if (error instanceof Error) resolve(error);
-        else resolve(new Error(`Error connecting to Websocket host -> ${error}`));
-      }
-
-      webSocket.once('close', onError);
-      webSocket.once('error', onError);
-      webSocket.once('open', () => {
-        webSocket.off('error', onError);
-        webSocket.off('close', onError);
-        resolve(webSocket);
-      });
-    });
-    if (result instanceof Error) throw result;
-    webSocket.on('message', message => {
-      const payload = TypeSerializer.parse(message.toString(), 'REMOTE CORE');
-      this.onMessage(payload);
-    });
+    await this.connection.connect();
   }
 
-  public close(): void {
-    if (this.webSocket?.readyState === WebSocket.OPEN) {
-      try {
-        this.webSocket.terminate();
-      } catch (_) {
-        // ignore errors terminating
-      }
-    }
+  public async disconnect(): Promise<void> {
+    await this.connection.disconnect();
   }
 
   public async send<T extends keyof IChromeAliveApis>(
-    api: T,
-    args: IChromeAliveApis[T]['args'],
-  ): Promise<IChromeAliveApis[T]['result']> {
-    if (this.webSocket?.readyState !== WebSocket.OPEN) {
-      throw new Error('Websocket was not open');
-    }
-
-    const messageId = String((this.messageCounter += 1));
-    const promise = new Promise(resolve => {
-      this.pendingMessagesById.set(messageId, resolve);
-    });
-    const message = TypeSerializer.stringify({
-      api,
-      messageId,
-      args,
-    });
-
-    this.webSocket.send(message);
-    const result = await promise;
-    if (result instanceof Error) throw result;
-    return result;
+    command: T,
+    ...args: IChromeAliveApiRequest<T>['args']
+  ): Promise<IChromeAliveApiResponse<T>['data']> {
+    return await this.connection.sendRequest({ command, args });
   }
 
   private onMessage(message: Serializable): void {
@@ -89,14 +48,7 @@ export default class ChromeAliveApi extends TypedEventEmitter<{ close: void }> {
       this.onEvent('App.quit');
       return;
     }
-    const apiResponse = message as IChromeAliveApiResponse<any>;
-    if (apiResponse.responseId) {
-      const callback = this.pendingMessagesById.get(apiResponse.responseId);
-      this.pendingMessagesById.delete(apiResponse.responseId);
-      if (callback) callback(apiResponse.result);
-    } else {
-      const apiEvent = message as IChromeAliveEvent<any>;
-      this.onEvent(apiEvent.eventType, apiEvent.data);
-    }
+    const apiEvent = message as IChromeAliveEvent<any>;
+    this.onEvent(apiEvent.eventType, apiEvent.data);
   }
 }

@@ -1,11 +1,11 @@
-import { IApiHandlerSpec } from '@ulixee/apps-chromealive-interfaces/apis';
+import { IChromeAliveApis } from '@ulixee/apps-chromealive-interfaces/apis';
 import MouseApi from './MouseApi';
 import AppApi from './AppApi';
 import SessionApi from './SessionApi';
 import DevtoolsBackdoorApi from './DevtoolsBackdoorApi';
 import DataboxApi from './DataboxApi';
 
-const ApiHandlers: IApiHandlerSpec = {
+const ApiHandlers: IChromeAliveApis = {
   'App.boundsChanged': AppApi.boundsChanged,
   'App.ready': AppApi.ready,
   'App.focus': AppApi.focus,

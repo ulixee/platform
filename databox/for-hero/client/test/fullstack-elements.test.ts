@@ -1,16 +1,15 @@
-import * as Helpers from './_helpers';
-import { Helpers as HeroHelpers } from '@ulixee/hero-testing';
+import { Helpers } from '@ulixee/databox-testing';
 import Hero from '@ulixee/hero';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
 import DataboxInternal from '../lib/DataboxInternal';
 import Extractor from '../lib/Extractor';
 
-let koaServer: HeroHelpers.ITestKoaServer;
+let koaServer: Helpers.ITestKoaServer;
 beforeAll(async () => {
-  koaServer = await HeroHelpers.runKoaServer();
+  koaServer = await Helpers.runKoaServer();
 });
-afterAll(() => Promise.all([Helpers.afterAll(), HeroHelpers.afterAll()]));
-afterEach(() => Promise.all([Helpers.afterEach(), HeroHelpers.afterEach()]));
+afterAll(() => Promise.all([Helpers.afterAll(), Helpers.afterAll()]));
+afterEach(() => Promise.all([Helpers.afterEach(), Helpers.afterEach()]));
 
 describe('basic Element tests', () => {
   it('can extract elements', async () => {

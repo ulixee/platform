@@ -38,6 +38,7 @@ import ISessionSearchResult, {
 } from '@ulixee/apps-chromealive-interfaces/ISessionSearchResult';
 import ResourceSearch from './ResourceSearch';
 import { ISelectorMap } from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
+import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
 
 const { log } = Log(module);
 
@@ -93,6 +94,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   private lastTimelineMetadata: ITimelineMetadata;
   private resourceSearch: ResourceSearch;
   private isSearchingTimetravel = false;
+  private readonly logger: IBoundLog;
 
   constructor(public readonly heroSession: HeroSession) {
     super();

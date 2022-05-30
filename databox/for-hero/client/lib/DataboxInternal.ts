@@ -39,12 +39,16 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
     super();
     this.runOptions = runOptions;
     this.#defaults = defaults || {};
-    this.#input = (this.#defaults.input || {}) as TInput;
+    this.#input = this.#defaults.input as TInput;
+    this.#input ??= {} as TInput;
+    if (runOptions.input) {
+      Object.assign(this.#input, runOptions.input)
+    }
 
     this.initializeHero();
 
     this.beforeClose = () => this.hero.close();
-    this.on('error', () => this.hero.close());
+    this.once('error', () => this.hero.close());
   }
 
   public get coreSessionPromise(): Promise<ICoreSession> {

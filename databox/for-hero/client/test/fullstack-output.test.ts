@@ -1,10 +1,7 @@
-import * as Helpers from './_helpers';
+import { Helpers } from '@ulixee/databox-testing';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import { Observable } from '../lib/ObjectObserver';
 
-beforeAll(async () => {
-  Helpers.onClose(() => {}, true);
-});
 afterAll(Helpers.afterAll);
 afterEach(Helpers.afterEach);
 

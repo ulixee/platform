@@ -1,13 +1,13 @@
-import * as Helpers from './_helpers';import { Helpers as HeroHelpers } from '@ulixee/hero-testing';
+import { Helpers } from '@ulixee/databox-testing';
 import DataboxRunner from '../lib/Runner';
 import Extractor from '../lib/Extractor';
 
-let koaServer: HeroHelpers.ITestKoaServer;
+let koaServer: Helpers.ITestKoaServer;
 beforeAll(async () => {
-  koaServer = await HeroHelpers.runKoaServer();
+  koaServer = await Helpers.runKoaServer();
 });
-afterAll(() => Promise.all([Helpers.afterAll(), HeroHelpers.afterAll()]));
-afterEach(() => Promise.all([Helpers.afterEach(), HeroHelpers.afterEach()]));
+afterAll(() => Promise.all([Helpers.afterAll(), Helpers.afterAll()]));
+afterEach(() => Promise.all([Helpers.afterEach(), Helpers.afterEach()]));
 
 describe('basic snippets tests', () => {
   it('collects snippets for extraction', async () => {
@@ -23,7 +23,7 @@ describe('basic snippets tests', () => {
 
     const extractor = new Extractor(databoxInternal);
     await expect(extractor.collectedSnippets.get('data')).resolves.toMatchObject({ value: true });
-    await expect(extractor.collectedSnippets.get('text')).resolves.toBe('string')
-    await expect(extractor.collectedSnippets.get('number')).resolves.toBe(1)
+    await expect(extractor.collectedSnippets.get('text')).resolves.toBe('string');
+    await expect(extractor.collectedSnippets.get('number')).resolves.toBe(1);
   });
 });

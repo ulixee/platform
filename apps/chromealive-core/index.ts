@@ -9,14 +9,22 @@ import { bindFunctions } from '@ulixee/commons/lib/utils';
 import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
 import HeroCorePlugin, { extensionPath } from './lib/HeroCorePlugin';
 import SessionObserver from './lib/SessionObserver';
-import ConnectionToClient from './lib/ConnectionToClient';
+import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import AliveBarPositioner from './lib/AliveBarPositioner';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxCollectedAssetEvent';
 import { URL } from 'url';
+import ChromeAliveCoreApis from './apis';
+import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
+import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 
 const { log } = Log(module);
+
+type IConnectionToChromeAliveClient = IConnectionToClient<
+  typeof ChromeAliveCoreApis,
+  IChromeAliveEvents
+>;
 
 export default class ChromeAliveCore {
   public static sessionObserversById = new Map<string, SessionObserver>();
@@ -28,7 +36,7 @@ export default class ChromeAliveCore {
   public static restartingHeroSessionId: string;
   public static activeHeroSessionId: string;
   public static coreServerAddress?: Promise<string>;
-  private static connections: ConnectionToClient[] = [];
+  private static connections: IConnectionToChromeAliveClient[] = [];
   private static app: ChildProcess;
   private static events = new EventSubscriber();
 
@@ -39,11 +47,16 @@ export default class ChromeAliveCore {
     });
   }
 
-  public static addConnection(): ConnectionToClient {
-    const connection = new ConnectionToClient();
+  public static addConnection(
+    transport: ITransportToClient<typeof ChromeAliveCoreApis>,
+  ): IConnectionToChromeAliveClient {
+    const connection: IConnectionToChromeAliveClient = new ConnectionToClient(
+      transport,
+      ChromeAliveCoreApis,
+    );
     this.connections.push(connection);
     this.onWsConnected();
-    this.events.once(connection, 'close', () => {
+    this.events.once(connection, 'disconnect', () => {
       const idx = this.connections.indexOf(connection);
       if (idx >= 0) this.connections.splice(idx, 1);
     });
@@ -69,7 +82,7 @@ export default class ChromeAliveCore {
     this.events.close();
     while (this.connections.length) {
       const next = this.connections.shift();
-      next.close();
+      void next.disconnect();
     }
     for (const observer of this.sessionObserversById.values()) {
       observer.close();

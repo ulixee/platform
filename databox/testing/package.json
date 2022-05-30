@@ -1,0 +1,32 @@
+{
+  "name": "@ulixee/databox-testing",
+  "version": "2.0.0-alpha.3",
+  "description": "Helpers and stubs for testing",
+  "main": "index.js",
+  "private": true,
+  "engines": {
+    "node": ">=13.2.0"
+  },
+  "dependencies": {
+    "@koa/multer": "^3.0.0",
+    "@koa/router": "^8.0.8",
+    "@ulixee/commons": "2.0.0-alpha.2",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.3",
+    "@ulixee/databox-for-hero": "2.0.0-alpha.3",
+    "@ulixee/hero-core": "2.0.0-alpha.3",
+    "@ulixee/hero-fullstack": "2.0.0-alpha.3",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.3",
+    "@unblocked-web/agent-mitm-socket": "2.0.0-alpha.2",
+    "@unblocked-web/js-path": "2.0.0-alpha.1",
+    "@unblocked-web/specifications": "2.0.0-alpha.2",
+    "http-proxy-agent": "^4.0.1",
+    "https-proxy-agent": "^5.0.0",
+    "koa": "^2.11.0",
+    "multer": "^1.4.2"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.11.3",
+    "@types/koa__multer": "^2.0.2",
+    "@types/koa__router": "^8.0.2"
+  }
+}

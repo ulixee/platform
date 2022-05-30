@@ -1,46 +1,28 @@
-import * as Helpers from './_helpers';
-import ICoreRequestPayload from '@ulixee/hero-interfaces/ICoreRequestPayload';
-import ICoreResponsePayload from '@ulixee/hero-interfaces/ICoreResponsePayload';
-import { ConnectionToCore as ConnectionToHeroCore } from '@ulixee/hero';
+import { Helpers } from '@ulixee/databox-testing';
 import ConnectionFactory from '@ulixee/hero/connections/ConnectionFactory';
 import DataboxInternal from '../lib/DataboxInternal';
+import MockConnectionToHeroCore from './_MockConnectionToHeroCore';
 
 afterAll(Helpers.afterAll);
 
-class MockedConnectionToHeroCore extends ConnectionToHeroCore {
-  public readonly outgoing = jest.fn(
-    async ({ command }: ICoreRequestPayload): Promise<ICoreResponsePayload> => {
-      if (command === 'Core.createSession') {
-        return {
-          data: { sessionId: 'session-id' },
-        };
-      }
-    },
-  );
-
-  async internalSendRequest(payload: ICoreRequestPayload): Promise<void> {
-    const response = await this.outgoing(payload);
-    this.onMessage({
-      responseId: payload.messageId,
-      data: response?.data ?? {},
-      ...(response ?? {}),
-    });
-  }
-
-  protected createConnection = () => Promise.resolve(null);
-  protected destroyConnection = () => Promise.resolve(null);
-}
-
 describe('basic output tests', () => {
   it('sends output changes to server', async () => {
-    const connection = new MockedConnectionToHeroCore();
+    const connection = new MockConnectionToHeroCore(({ command, messageId: responseId }) => {
+      const response = {
+        responseId,
+        data: {},
+      };
+      if (command === 'Core.createSession') response.data = { sessionId: 'session-id' };
+
+      return response;
+    });
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
 
     const databoxInternal = new DataboxInternal<any, any>({});
     databoxInternal.output.test = true;
     await databoxInternal.close();
 
-    const outgoingCommands = connection.outgoing.mock.calls;
+    const outgoingCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingCommands.map(c => c[0].command)).toMatchObject([
       'Core.connect',
       'Core.createSession',

@@ -8,6 +8,10 @@ import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
 
 const { version } = require('../package.json');
 
+export const DataboxRunSettings = {
+  runLater: !!process.env.ULX_DATABOX_RUN_LATER,
+};
+
 export default class DataboxPackage<TInput = IBasicInput, TOutput = any> {
   #components: IComponents<TInput, TOutput>;
 
@@ -18,7 +22,7 @@ export default class DataboxPackage<TInput = IBasicInput, TOutput = any> {
             run: components as IRunFn<TInput, TOutput>,
           }
         : { ...components };
-    if (process.env.ULX_DATABOX_RUN_LATER) return;
+    if (DataboxRunSettings.runLater) return;
 
     const options: IDataboxForHeroRunOptions = readCommandLineArgs();
 
@@ -53,7 +57,6 @@ export default class DataboxPackage<TInput = IBasicInput, TOutput = any> {
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`ERROR running databox: `, error);
-      databoxInternal.emit('error', error);
       throw error;
     } finally {
       await databoxInternal.close();

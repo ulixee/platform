@@ -1,12 +1,11 @@
-import * as Helpers from './_helpers';
-import { Helpers as HeroHelpers } from '@ulixee/hero-testing';
+import { Helpers } from '@ulixee/databox-testing';
 import Hero from '@ulixee/hero';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
 import CollectedResources from '../lib/CollectedResources';
 
-let koaServer: HeroHelpers.ITestKoaServer;
+let koaServer: Helpers.ITestKoaServer;
 beforeAll(async () => {
-  koaServer = await HeroHelpers.runKoaServer();
+  koaServer = await Helpers.runKoaServer();
   koaServer.get('/resources-test', ctx => {
     ctx.body = `<html>
 <body>
@@ -27,8 +26,8 @@ beforeAll(async () => {
     };
   });
 });
-afterAll(() => Promise.all([Helpers.afterAll(), HeroHelpers.afterAll()]));
-afterEach(() => Promise.all([Helpers.afterEach(), HeroHelpers.afterEach()]));
+afterAll(() => Promise.all([Helpers.afterAll(), Helpers.afterAll()]));
+afterEach(() => Promise.all([Helpers.afterEach(), Helpers.afterEach()]));
 
 async function createBrowser(): Promise<[Hero, ICoreSession]> {
   const databoxInternal = await Helpers.createFullstackDataboxInternal();

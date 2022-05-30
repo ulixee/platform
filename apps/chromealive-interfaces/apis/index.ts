@@ -3,8 +3,10 @@ import IDevtoolsBackdoorApi from './IDevtoolsBackdoorApi';
 import IAppApi from './IAppApi';
 import IMouseApi from './IMouseApi';
 import IDataboxApi from './IDataboxApi';
+import type ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
+import type ICoreRequestPayload from '@ulixee/net/interfaces/ICoreRequestPayload';
 
-export type IApiHandlerSpec = {
+export type IChromeAliveApis = {
   'Session.quit': ISessionApi['quit'];
   'Session.timetravel': ISessionApi['timetravel'];
   'Session.resume': ISessionApi['resume'];
@@ -29,24 +31,12 @@ export type IApiHandlerSpec = {
   'DevtoolsBackdoor.generateQuerySelector': IDevtoolsBackdoorApi['generateQuerySelector'];
 };
 
-type IPromiseType<T> = T extends PromiseLike<infer U> ? U : T;
+export type IChromeAliveApiResponse<T extends keyof IChromeAliveApis> = ICoreResponsePayload<
+  IChromeAliveApis,
+  T
+>;
 
-type IApi<T extends (args: any) => any> = {
-  args: Parameters<T>[0];
-  result: IPromiseType<ReturnType<T>>;
-};
-
-export type IChromeAliveApis = {
-  [key in keyof IApiHandlerSpec]: IApi<IApiHandlerSpec[key]>;
-};
-
-export interface IChromeAliveApiRequest<K extends keyof IChromeAliveApis> {
-  api: K;
-  messageId: string;
-  args: IChromeAliveApis[K]['args'];
-}
-
-export interface IChromeAliveApiResponse<K extends keyof IChromeAliveApis> {
-  responseId: string;
-  result: IChromeAliveApis[K]['result'];
-}
+export type IChromeAliveApiRequest<T extends keyof IChromeAliveApis> = ICoreRequestPayload<
+  IChromeAliveApis,
+  T
+  >;

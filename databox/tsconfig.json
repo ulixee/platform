@@ -7,7 +7,8 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "noImplicitAny": false,
     "sourceMap": true,
-    "allowJs": true
+    "allowJs": true,
+    "noImplicitOverride": true
   },
   "include": ["./**/*.ts", ".eslintrc.js"],
   "exclude": ["**/tsconfig*.json", "**/node_modules", "packager/test/assets", "**/build"]

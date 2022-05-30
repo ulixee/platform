@@ -29,6 +29,7 @@ export default async function rollupDatabox(
           resolveOnly: module =>
             !module.startsWith('@ulixee') &&
             !module.startsWith('@unblocked-web') &&
+            !module.includes('/databox-for-') &&
             module !== 'awaited-dom',
         }),
         typescript({

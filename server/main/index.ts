@@ -4,10 +4,10 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo, ListenOptions, Socket } from 'net';
 import Log from '@ulixee/commons/lib/Logger';
 import { createPromise } from '@ulixee/commons/lib/utils';
-import { isWsOpen } from './lib/WsUtils';
-import CoreConnectors from './lib/CoreConnectors';
+import { isWsOpen } from '@ulixee/net/lib/WsUtils';
 import UlixeeServerConfig from '@ulixee/commons/config/servers';
 import UlixeeConfig from '@ulixee/commons/config';
+import CoreRouter from './lib/CoreRouter';
 
 const pkg = require('./package.json');
 
@@ -47,7 +47,7 @@ export default class Server {
   private serverAddress = createPromise<AddressInfo>();
   private readonly addressHost: string;
   private readonly httpServer: Http.Server;
-  private readonly coreConnectors: CoreConnectors;
+  private readonly router: CoreRouter;
   private readonly httpRoutes: [url: RegExp | string, method: string, handler: IHttpHandleFn][];
   private readonly wsRoutes: [RegExp | string, IWsHandleFn][] = [];
 
@@ -63,19 +63,19 @@ export default class Server {
     });
     this.wsServer.on('connection', this.handleWsConnection.bind(this));
     this.httpRoutes = [];
-    this.coreConnectors = new CoreConnectors(this);
+    this.router = new CoreRouter(this);
     this.addHttpRoute('/', 'GET', this.handleHome.bind(this));
   }
 
   public get dataDir(): string {
-    return this.coreConnectors.heroConnector.dataDir;
+    return this.router.dataDir;
   }
 
-  public async listen(options?: ListenOptions): Promise<AddressInfo> {
+  public async listen(options?: ListenOptions, shouldAutoRouteServer = true): Promise<AddressInfo> {
     if (this.serverAddress.isResolved) return this.serverAddress.promise;
 
     const listenOptions = { ...(options ?? { port: 0 }) };
-    if (!options?.port) {
+    if (!options?.port && shouldAutoRouteServer) {
       const address =
         UlixeeConfig.load()?.serverHost ??
         UlixeeConfig.global.serverHost ??
@@ -92,22 +92,22 @@ export default class Server {
         this.serverAddress.resolve(this.httpServer.address() as AddressInfo);
       })
       .ref();
-    await this.coreConnectors.start();
     const serverAddress = await this.serverAddress.promise;
+    const isLocalhost =
+      serverAddress.address === '127.0.0.1' ||
+      serverAddress.address === '::' ||
+      serverAddress.address === '::1';
 
     // if we're dealing with local or no configuration, set the local version host
-    if (
-      (serverAddress.address === '127.0.0.1' ||
-        serverAddress.address === '::' ||
-        serverAddress.address === '::1') &&
-      !options?.port
-    ) {
+    if (isLocalhost && !options?.port && shouldAutoRouteServer) {
       // publish port with the version
       await UlixeeServerConfig.global.setVersionHost(
         this.version,
         `localhost:${serverAddress.port}`,
       );
     }
+
+    await this.router.start(`${this.addressHost}:${serverAddress.port}`);
 
     return serverAddress;
   }
@@ -130,7 +130,7 @@ export default class Server {
       await UlixeeServerConfig.global.setVersionHost(this.version, null);
 
       if (closeDependencies) {
-        await this.coreConnectors.close();
+        await this.router.close();
       }
 
       for (const ws of this.wsServer.clients) {

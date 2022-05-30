@@ -7,7 +7,7 @@ test('it should generate a relative script entrypoint', async () => {
   expect(packager.outputPath).toBe(
     `${getCacheDirectory()}/ulixee/databox/packager-test-assets-typescript-src-index`,
   );
-  await packager.create();
+  await packager.build();
   expect(packager.package.script).toBe(
     await Fs.readFile(packager.outputPath + '/databox.js', 'utf8'),
   );
@@ -20,9 +20,9 @@ test('it should generate a relative script entrypoint', async () => {
   expect(packager.package.manifest).toEqual({
     scriptEntrypoint: 'packager/test/assets/typescript/src/index.ts',
     scriptRollupHash: expect.any(String),
-    databoxType: 'databox-for-hero',
-    databoxTypeVersion: require('../package.json').version,
+    databoxModule: '@ulixee/databox-for-hero',
+    databoxModuleVersion: require('../package.json').version,
   });
 
   await Fs.rmdir(packager.outputPath, { recursive: true });
-});
+}, 45e3);
