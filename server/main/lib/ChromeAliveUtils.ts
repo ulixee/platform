@@ -1,9 +1,11 @@
 import type IChromeAliveCore from '@ulixee/apps-chromealive-core';
+import Env from '../env'
 
 export default class ChromeAliveUtils {
   public static isInstalled(): boolean {
     try {
-      if (process.env.NODE_ENV === 'test') return false;
+
+      if (Env.disableChromeAlive) return false;
       this.getChromeAlive();
       return true;
     } catch (err) {

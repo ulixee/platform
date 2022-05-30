@@ -7,14 +7,17 @@ let ulixeeServer: UlixeeServer;
 let koaServer: Helpers.ITestKoaServer;
 beforeAll(async () => {
   ulixeeServer = new UlixeeServer();
-  Helpers.needsClosing.push(ulixeeServer);
+  Helpers.needsClosing.push({
+    close: ulixeeServer.close.bind(ulixeeServer),
+    onlyCloseOnFinal: true,
+  });
   koaServer = await Helpers.runKoaServer();
   await ulixeeServer.listen(null, false);
 });
 afterAll(Helpers.afterAll);
 
 test('it should be able to upload a databox and run it by hash', async () => {
-  const packager = new Packager(require.resolve('./_testDatabox'));
+  const packager = new Packager(require.resolve('./_testDatabox.js'));
   await packager.build();
   const serverHost = await ulixeeServer.address;
   await packager.upload(serverHost);
@@ -34,7 +37,7 @@ test('it should be able to upload a databox and run it by hash', async () => {
 }, 45e3);
 
 test('it should throw an error if the default export is not a databox', async () => {
-  const packager = new Packager(require.resolve('./_testDatabox2'));
+  const packager = new Packager(require.resolve('./_testDatabox2.js'));
   await packager.build();
   const serverHost = await ulixeeServer.address;
   await packager.upload(serverHost);

@@ -23,11 +23,9 @@ scriptInstance.ignoreModulePaths.push(ModulePath);
 
 export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<{
   close: void;
-  error: Error;
 }> {
   public hero: Hero;
   readonly runOptions: IDataboxForHeroRunOptions;
-  beforeClose?: () => Promise<any>;
 
   readonly #input: TInput;
   #output: Output<TOutput>;
@@ -42,13 +40,10 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
     this.#input = this.#defaults.input as TInput;
     this.#input ??= {} as TInput;
     if (runOptions.input) {
-      Object.assign(this.#input, runOptions.input)
+      Object.assign(this.#input, runOptions.input);
     }
 
     this.initializeHero();
-
-    this.beforeClose = () => this.hero.close();
-    this.once('error', () => this.hero.close());
   }
 
   public get coreSessionPromise(): Promise<ICoreSession> {
@@ -133,8 +128,8 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
     this.emit('close');
     this.#isClosing = new Promise(async (resolve, reject) => {
       try {
-        await Promise.all(this.#extractorPromises);
-        if (this.beforeClose) await this.beforeClose();
+        await Promise.all(this.#extractorPromises).catch(err => err);
+        await this.hero.close();
         resolve();
       } catch (error) {
         reject(error);

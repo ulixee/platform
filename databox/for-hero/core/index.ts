@@ -17,14 +17,16 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
 
   private compiledScriptsByPath = new Map<string, Promise<VMScript>>();
 
-  private connectionToCore: ConnectionToHeroCore;
+  private connectionToLocalHeroCore: ConnectionToHeroCore;
   private vm = new NodeVM({
     console: 'inherit',
     sandbox: {},
     wasm: false,
     eval: false,
+    wrapper: 'commonjs',
+    strict: true,
     require: {
-      root: './',
+      builtin: [],
       external: ['@ulixee/*', '@unblocked-web/*', 'awaited-dom'],
     },
   });
@@ -32,11 +34,11 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
   public async start(): Promise<void> {
     DataboxRunSettings.runLater = true;
     await HeroCore.start();
-    this.connectionToCore = createDirectConnectionToCore();
+    this.connectionToLocalHeroCore = createDirectConnectionToCore();
   }
 
   public async close(): Promise<void> {
-    if (this.connectionToCore) await this.connectionToCore.disconnect();
+    if (this.connectionToLocalHeroCore) await this.connectionToLocalHeroCore.disconnect();
     await HeroCore.shutdown();
   }
 
@@ -53,7 +55,7 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
     const output = await databox.run({
       mode: 'production',
       input,
-      connectionToCore: this.connectionToCore,
+      connectionToCore: this.connectionToLocalHeroCore,
     });
     return { output };
   }

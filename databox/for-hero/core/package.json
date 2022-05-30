@@ -2,6 +2,14 @@
   "name": "@ulixee/databox-for-hero-core",
   "version": "2.0.0-alpha.3",
   "main": "index.js",
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.cjs"
+    },
+    "./package.json": "./package.json",
+    "./register": "./register.js"
+  },
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {

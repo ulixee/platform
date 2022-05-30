@@ -1,7 +1,6 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import IDataboxPackage from '@ulixee/databox-interfaces/IDataboxPackage';
-import { getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
 import rollupDatabox from './lib/rollupDatabox';
 import { createHash } from 'crypto';
 import { safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
@@ -18,31 +17,36 @@ export default class DataboxPackager {
     this.entrypoint = Path.resolve(entrypoint);
     this.relativeScriptPath = Path.relative(this.projectPath + '/..', entrypoint);
 
-    const databoxPath = Path.resolve(Path.join(getCacheDirectory(), 'ulixee', 'databox'));
+    const databoxPath = Path.resolve(Path.dirname(entrypoint), '.databox');
 
-    const startPathLength = databoxPath.length;
-    const allowCharacterLength = (process.platform === 'win32' ? 260 : 1024) - startPathLength - 1;
-    const shortScriptName = this.relativeScriptPath
-      .replace(Path.extname(this.relativeScriptPath), '')
+    const shortScriptName = Path.basename(entrypoint)
+      .replace(Path.extname(entrypoint), '')
       .replace(/[.]/g, '-')
-      .replace(/[\\\/]/g, '-')
-      .substring(0, allowCharacterLength)
       .toLowerCase();
 
-    this.outputPath = Path.join(getCacheDirectory(), 'ulixee', 'databox', shortScriptName);
+    this.outputPath = Path.join(databoxPath, shortScriptName);
   }
 
   public async build(): Promise<void> {
+    const { sourceCode, sourceMap } = await this.rollup();
+    await this.createManifest(sourceCode, sourceMap);
+  }
+
+  public async rollup(): Promise<{ sourceMap: string; sourceCode: string }> {
     const rollup = await rollupDatabox(this.entrypoint, { outDir: this.outputPath });
+    return { sourceMap: rollup.sourceMap, sourceCode: rollup.code.toString('utf8') };
+  }
+
+  public async createManifest(sourceCode: string, sourceMap: string): Promise<void> {
     this.package = {
       manifest: {
         scriptEntrypoint: this.relativeScriptPath,
-        scriptRollupHash: DataboxPackager.sha3_256_base64(rollup.code),
+        scriptRollupHash: DataboxPackager.sha3_256_base64(Buffer.from(sourceCode)),
         databoxModule: this.databoxModule,
         databoxModuleVersion: require(`${this.databoxModule}/package.json`).version,
       },
-      script: rollup.code.toString('utf8'),
-      sourceMap: rollup.sourceMap,
+      script: sourceCode,
+      sourceMap,
     };
     await safeOverwriteFile(
       `${this.outputPath}/manifest.json`,
@@ -51,7 +55,7 @@ export default class DataboxPackager {
   }
 
   public async upload(serverHost: string): Promise<void> {
-    const connection = ConnectionToDataboxCore.remote(serverHost)
+    const connection = ConnectionToDataboxCore.remote(serverHost);
     try {
       await connection.sendRequest({ command: 'Databox.upload', args: [this.package] }, 120e3);
     } finally {

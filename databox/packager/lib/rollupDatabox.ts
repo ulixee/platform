@@ -3,48 +3,55 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import * as Path from 'path';
 import * as Fs from 'fs';
 import { terser } from 'rollup-plugin-terser';
-
+const sourcemaps = require('rollup-plugin-sourcemaps');
 const commonjs = require('@rollup/plugin-commonjs');
 const typescript = require('@rollup/plugin-typescript');
 
 export default async function rollupDatabox(
-  input: string,
+  scriptPath: string,
   options: { tsconfig?: string; outDir?: string; dryRun?: boolean } = {},
 ): Promise<{ bytes: number; code: Buffer; sourceMap: string; modules: string[] }> {
   const outDir = options.outDir ?? `${__dirname}/../`;
+  const plugins = [
+    nodeResolve({
+      resolveOnly: module =>
+        !module.startsWith('@ulixee') &&
+        !module.startsWith('@unblocked-web') &&
+        !module.includes('/databox-for-') &&
+        module !== 'awaited-dom',
+    }),
+    commonjs(),
+    terser({ compress: false, mangle: false, format: { comments: false }, ecma: 2020 }),
+  ];
 
-  const tsExtras = {};
-  let tsconfig = options.tsconfig;
-  if (!tsconfig && input.endsWith('.ts')) {
-    tsconfig = findTsConfig(Path.dirname(input));
-    console.log('Packaging Databox: tried to find tsconfig in directory structure', { tsconfig });
+  if (scriptPath.endsWith('.ts')) {
+    let tsconfig = options.tsconfig;
+    if (!tsconfig) {
+      tsconfig = findTsConfig(Path.dirname(scriptPath));
+      console.log('Packaging Databox: tried to find tsconfig in directory structure', { tsconfig });
+    }
+    plugins.splice(
+      2,
+      0,
+      typescript({
+        compilerOptions: {
+          module: 'esnext',
+          sourceMap: true,
+          inlineSourceMap: false,
+          inlineSources: true,
+        },
+        tsconfig,
+      }),
+    );
+  } else {
+    plugins.splice(0, 0, sourcemaps());
   }
 
   try {
     // create a bundle
     const bundle = await rollup({
-      input,
-      plugins: [
-        nodeResolve({
-          resolveOnly: module =>
-            !module.startsWith('@ulixee') &&
-            !module.startsWith('@unblocked-web') &&
-            !module.includes('/databox-for-') &&
-            module !== 'awaited-dom',
-        }),
-        typescript({
-          compilerOptions: {
-            allowJs: true,
-            module: 'esnext',
-            sourceMap: true,
-            inlineSources: true,
-          },
-          tsconfig,
-          ...tsExtras,
-        }),
-        commonjs(),
-        terser({ compress: false, mangle: false, format: { comments: false }, ecma: 2020 }),
-      ],
+      input: scriptPath,
+      plugins,
     });
 
     const outFn = options.dryRun ? 'generate' : 'write';
@@ -68,8 +75,7 @@ export default async function rollupDatabox(
     for (const [module, details] of Object.entries(out.modules)) {
       if (details.renderedLength > 0) modules.push(module);
     }
-    const code = Buffer.from(out.code + '//# sourceMappingURL=databox.js.map\n' +
-      '');
+    const code = Buffer.from(out.code + '//# sourceMappingURL=databox.js.map\n' + '');
     const bytes = Buffer.byteLength(code);
     await bundle?.close();
     return {

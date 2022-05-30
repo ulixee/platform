@@ -1,14 +1,22 @@
 {
   "name": "@ulixee/databox-packager",
   "version": "2.0.0-alpha.3",
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
   "description": "Packager for creating Databox bundles that can be consumed by a Ulixee Server",
   "dependencies": {
     "rollup": "^2.74.1",
     "rollup-plugin-terser": "^7.0.2",
+    "rollup-plugin-sourcemaps": "^0.6.3",
     "@rollup/plugin-commonjs": "^22.0.0",
     "@rollup/plugin-node-resolve": "^13.3.0",
     "@rollup/plugin-typescript": "^8.3.2",
-    "@ulixee/commons": "^2.0.0-alpha.2",
+    "@ulixee/commons": "2.0.0-alpha.2",
     "@ulixee/net": "2.0.0-alpha.2",
     "@ulixee/databox-interfaces": "2.0.0-alpha.3",
     "@ulixee/databox-client": "2.0.0-alpha.3",

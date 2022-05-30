@@ -6,11 +6,15 @@ import * as WebSocket from 'ws';
 import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
+import { getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
+import * as Path from 'path';
 
 export default class CoreRouter {
   public get dataDir(): string {
     return HeroCore.dataDir;
   }
+
+  public cacheDirectory = Path.join(getCacheDirectory(), 'ulixee');
 
   private server: Server;
   private readonly connections: IConnectionToClient<any, any>[] = [];
@@ -40,10 +44,12 @@ export default class CoreRouter {
 
   public async start(serverAddress: string): Promise<void> {
     await HeroCore.start();
-    await DataboxCore.start(this.dataDir);
+    await DataboxCore.start(Path.join(this.cacheDirectory, 'databoxes'));
     if (ChromeAliveUtils.isInstalled()) {
+      const chromeAliveCore = ChromeAliveUtils.getChromeAlive();
       const wsAddress = Promise.resolve(`ws://${serverAddress}/chromealive`);
-      ChromeAliveUtils.getChromeAlive().setCoreServerAddress(wsAddress);
+      chromeAliveCore.setCoreServerAddress(wsAddress);
+      await chromeAliveCore.register();
     }
   }
 
@@ -61,6 +67,7 @@ export default class CoreRouter {
   private handleApi(connectionType: keyof CoreRouter['connectionTypes'], ws: WebSocket): void {
     const transport = new WsTransportToClient(ws);
     const connection = this.connectionTypes[connectionType](transport);
+    if (!connection) throw new Error(`Unknown connection protocol attempted "${connectionType}"`);
     this.connections.push(connection);
   }
 }
