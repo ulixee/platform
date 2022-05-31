@@ -16,7 +16,7 @@
     "@rollup/plugin-commonjs": "^22.0.0",
     "@rollup/plugin-node-resolve": "^13.3.0",
     "@rollup/plugin-typescript": "^8.3.2",
-    "@ulixee/commons": "2.0.0-alpha.2",
+    "@ulixee/commons": "2.0.0-alpha.3",
     "@ulixee/net": "2.0.0-alpha.2",
     "@ulixee/databox-interfaces": "2.0.0-alpha.3",
     "@ulixee/databox-client": "2.0.0-alpha.3",

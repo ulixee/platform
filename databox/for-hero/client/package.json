@@ -11,8 +11,8 @@
     "./lib/*": "./lib/*.js"
   },
   "dependencies": {
-    "@ulixee/net": "2.0.0-alpha.2",
-    "@ulixee/commons": "2.0.0-alpha.2",
+    "@ulixee/net": "2.0.0-alpha.3",
+    "@ulixee/commons": "2.0.0-alpha.3",
     "@ulixee/hero": "2.0.0-alpha.3",
     "@ulixee/hero-interfaces": "2.0.0-alpha.3",
     "@ulixee/databox-interfaces": "2.0.0-alpha.3",
