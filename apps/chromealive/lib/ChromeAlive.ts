@@ -164,7 +164,7 @@ export class ChromeAlive extends EventEmitter {
     console.warn('EXITING CHROMEALIVE!');
     try {
       this.#nsEventMonitor?.stop();
-      this.#api.close();
+      void this.#api.disconnect().catch(() => null);
     } catch (err) {
       console.error('ERROR shutting down', err);
     }
@@ -342,8 +342,8 @@ export class ChromeAlive extends EventEmitter {
     this.#childWindowsByName.set(frameName, childWindow);
     childWindow.webContents.on('ipc-message', (e, eventName, ...args) => {
       if (eventName === 'chromealive:api') {
-        const [api, apiArgs] = args;
-        if (api === 'File:navigate') {
+        const [command, apiArgs] = args;
+        if (command === 'File:navigate') {
           const { filepath } = apiArgs;
           shell.showItemInFolder(filepath);
         }

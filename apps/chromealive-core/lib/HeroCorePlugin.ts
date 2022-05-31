@@ -31,7 +31,7 @@ export const extensionPath = Path.resolve(__dirname, '../extension').replace(
 
 @CorePluginClassDecorator
 export default class HeroCorePlugin extends CorePlugin {
-  public static id = '@ulixee/chromealive-hero-core-plugin';
+  public static override id = '@ulixee/chromealive-hero-core-plugin';
 
   public static bySessionId = new Map<string, HeroCorePlugin>();
 

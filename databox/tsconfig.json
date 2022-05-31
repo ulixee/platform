@@ -2,13 +2,14 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "experimentalDecorators": true,
-    "target": "ES2019",
+    "target": "ES2020",
     "module": "CommonJS",
-    "lib": ["ES2019", "DOM", "DOM.Iterable"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "noImplicitAny": false,
     "sourceMap": true,
-    "allowJs": true
+    "allowJs": true,
+    "noImplicitOverride": true
   },
-  "include": ["**/*.ts", ".eslintrc.js"],
-  "exclude": ["**/tsconfig*.json", "**/node_modules", "**/build"]
+  "include": ["./**/*.ts", ".eslintrc.js"],
+  "exclude": ["**/tsconfig*.json", "**/node_modules", "packager/test/assets", "**/build"]
 }

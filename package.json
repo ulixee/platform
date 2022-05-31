@@ -58,10 +58,12 @@
     "packages": [
       "apps/*",
       "databox/*",
+      "databox/for-hero/*",
       "server/*",
       "hero/build/*",
       "hero/build/plugins/*",
       "../commons/build",
+      "../net/build",
       "../unblocked/agent/build/*",
       "../unblocked/build/plugins/*",
       "../unblocked/specifications/build"

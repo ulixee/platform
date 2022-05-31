@@ -9,11 +9,6 @@ import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
   const args = yargsParser(process.argv);
   const server = new Server();
 
-  try {
-    require('@ulixee/apps-chromealive-core/register')
-  } catch (error) {}
-
-  ShutdownHandler.exitOnSignal = false;
   ShutdownHandler.register(() => server.close());
 
   await server.listen({ port: args.port });

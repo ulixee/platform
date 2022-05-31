@@ -15,7 +15,7 @@ class UlixeeLogger extends Log {
     this.useColors = !app.isPackaged;
   }
 
-  protected logToConsole(level: ILogEntry['level'], entry: ILogEntry): void {
+  protected override logToConsole(level: ILogEntry['level'], entry: ILogEntry): void {
     const printablePath = entry.module
       .replace('.js', '')
       .replace('.ts', '')

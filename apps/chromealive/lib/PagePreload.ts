@@ -15,8 +15,8 @@ document.addEventListener('chromealive:event', e => {
 document.addEventListener('chromealive:api', e => {
   const message = e.detail;
   // eslint-disable-next-line no-console
-  console.log('chromealive:api', message.api, message.args);
-  ipcRenderer.send('chromealive:api', message.api, message.args);
+  console.log('chromealive:api', message.command, message.args);
+  ipcRenderer.send('chromealive:api', message.command, message.args);
 });
 
 // @ts-ignore

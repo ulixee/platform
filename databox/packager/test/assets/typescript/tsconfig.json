@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "noImplicitAny": false,
+    "sourceMap": true,
+    "allowJs": true
+  },
+  "include": ["./src/*.ts"],
+  "exclude": ["**/tsconfig*.json", "**/node_modules", "**/build"]
+}

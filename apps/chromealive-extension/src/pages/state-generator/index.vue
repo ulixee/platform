@@ -16,7 +16,7 @@ import { DomActionType, IFrontendDomChangeEvent } from '@ulixee/hero-interfaces/
 import DomNodeState from './DomNodeState';
 import DomNode from './DomNode.vue';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
-import { IChromeAliveApis } from '@ulixee/apps-chromealive-interfaces/apis';
+import { IChromeAliveApiResponse, IChromeAliveApis } from '@ulixee/apps-chromealive-interfaces/apis';
 import { sendToBackgroundScript } from '../../lib/devtools/DevtoolsMessenger';
 
 export interface IDomFrameNodes {
@@ -202,7 +202,7 @@ export default Vue.defineComponent({
       this.setPaintEvents(event.paintEvents, event.framesById);
     },
 
-    onDomResponse(response: IChromeAliveApis['Session.getDom']['result']): void {
+    onDomResponse(response: IChromeAliveApiResponse<'Session.getDom'>['data']): void {
       this.setPaintEvents(
         response.paintEvents.map(x => x.changeEvents),
         response.framesById,

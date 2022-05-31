@@ -65,11 +65,11 @@ class Client {
   }
 
   async send<T extends keyof IChromeAliveApis>(
-    api: T,
-    args?: IChromeAliveApis[T]['args'],
-  ): Promise<IChromeAliveApis[T]['result']> {
+    command: T,
+    ...args: IChromeAliveApiRequest<T>['args']
+  ): Promise<IChromeAliveApiResponse<T>['data']> {
     if (!this.connectedPromise) {
-      setTimeout(() => this.send(api, args), 500);
+      setTimeout(() => this.send(command, ...args), 500);
       return;
     }
     await this.connectedPromise;
@@ -77,16 +77,16 @@ class Client {
     const messageId = String(this.messageCounter);
 
     const message = TypeSerializer.stringify(<IChromeAliveApiRequest<T>>{
-      api,
+      command,
       messageId,
       args,
     });
     document.dispatchEvent(
       new CustomEvent('chromealive:api', {
-        detail: { api, messageId, args },
+        detail: { command, messageId, args },
       }),
     );
-    return new Promise<IChromeAliveApis[T]['result']>(resolve => {
+    return new Promise(resolve => {
       this.connection.send(message);
       this.pendingMessagesById.set(messageId, { resolve });
     });
@@ -108,8 +108,8 @@ class Client {
         }),
       );
     } else {
-      const { responseId, result } = event;
-      this.pendingMessagesById.get(responseId)?.resolve(result);
+      const { responseId, data } = event;
+      this.pendingMessagesById.get(responseId)?.resolve(data);
       this.pendingMessagesById.delete(responseId);
     }
   }

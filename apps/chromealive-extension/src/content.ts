@@ -14,6 +14,7 @@ customElements.define('chromealive-element-options-overlay', ElementOptionsOverl
 let elementOptionsOverlay: ElementOptionsOverlay;
 const elementsBucket = new ElementsBucket()
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function openSelectorMenu(_options: { backendNodeId?: number, element?: HTMLElement }) {
   // const { backendNodeId, element } = options;
   // if (!elementOptionsOverlay) {
