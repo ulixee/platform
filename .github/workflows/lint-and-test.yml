@@ -83,11 +83,11 @@ jobs:
         run: NODE_OPTIONS=--max-old-space-size=4096 yarn lint
 
       - name: Run tests
-        run: yarn test:all --testTimeout=60000 --maxWorkers=2
+        run: yarn test --testTimeout=60000 --maxWorkers=2
 
       - name: 'Tar files'
         if: ${{ failure() }}
-        run: tar -cvf test-dbs.tar .data-test
+        run: tar -cvf test-dbs.tar build/.data-test
 
       - name: Upload Databases
         if: ${{ failure() }}
