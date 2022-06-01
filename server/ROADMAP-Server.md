@@ -7,9 +7,8 @@ The initial “Cloud” service will be deployed as a network of hosted Rigs (th
 
 ## 2.1 - First Remote Deployment
 We need capabilities to deploy, remove and run remote Databoxes.
-- Endpoint uploading and installing a Databox
-  Testing
-- Endpoint for running a local-on-the-service databox using the Packaged Databox hash
+[x] Endpoint uploading and installing a Databox
+[x] Endpoint for running a local-on-the-service databox using the Packaged Databox hash
 - Docker that runs on AWS
 
 ## 2.2 - Support Payment Wall

@@ -1,13 +1,7 @@
 import cjsImport from './index.js';
 
-const {
-  Observable,
-  ConnectionToCore
-} = cjsImport;
+const { Observable, Runner, Extractor } = cjsImport;
 
-export {
-  Observable,
-  ConnectionToCore
-};
+export { Observable, Runner, Extractor };
 
 export default cjsImport.default;

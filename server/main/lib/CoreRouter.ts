@@ -24,7 +24,7 @@ export default class CoreRouter {
   } = {
     hero: transport => HeroCore.addConnection(transport),
     databox: transport => DataboxCore.addConnection(transport),
-    chromealive: transport => ChromeAliveUtils.getChromeAlive().addConnection(transport),
+    chromealive: transport => ChromeAliveUtils.getChromeAlive().addConnection(transport) as any,
   };
 
   constructor(server: Server) {
