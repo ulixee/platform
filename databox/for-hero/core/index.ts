@@ -5,9 +5,9 @@ import DataboxCore from '@ulixee/databox-core';
 import { ConnectionToHeroCore, createDirectConnectionToCore } from '@ulixee/hero-fullstack';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManfiest';
 import { NodeVM, VMScript } from 'vm2';
-import DataboxPackage from '@ulixee/databox-for-hero';
+import DataboxWrapper from '@ulixee/databox-for-hero';
 import * as Fs from 'fs';
-import { DataboxRunSettings } from '@ulixee/databox-for-hero/lib/DataboxPackage';
+import { DataboxRunSettings } from '@ulixee/databox-for-hero/lib/DataboxWrapper';
 
 const { version: HeroVersion } = require('@ulixee/hero-core/package.json');
 
@@ -44,15 +44,15 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
 
   public async run(path: string, manifest: IDataboxManifest, input: any): Promise<{ output: any }> {
     const script = await this.getVMScript(path, manifest);
-    const databox: DataboxPackage = this.vm.run(script);
+    const databoxWrapper: DataboxWrapper = this.vm.run(script);
 
-    if (!(databox instanceof DataboxPackage)) {
+    if (!(databoxWrapper instanceof DataboxWrapper)) {
       throw new Error(
         'The default export from this script needs to inherit from "@ulixee/databox-for-hero"',
       );
     }
 
-    const output = await databox.run({
+    const output = await databoxWrapper.run({
       mode: 'production',
       input,
       connectionToCore: this.connectionToLocalHeroCore,
