@@ -5,6 +5,7 @@ import readCommandLineArgs from './utils/readCommandLineArgs';
 import IComponents, { IRunFn } from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
 import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
+import IDataboxWrapper from '@ulixee/databox-interfaces/IDataboxWrapper';
 
 const { version } = require('../package.json');
 
@@ -12,7 +13,7 @@ export const DataboxRunSettings = {
   runLater: !!process.env.ULX_DATABOX_RUN_LATER,
 };
 
-export default class DataboxPackage<TInput = IBasicInput, TOutput = any> {
+export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> implements IDataboxWrapper {
   #components: IComponents<TInput, TOutput>;
 
   constructor(components: IRunFn<TInput, TOutput> | IComponents<TInput, TOutput>) {
