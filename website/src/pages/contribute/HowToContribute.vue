@@ -1,8 +1,8 @@
 <template>
   <MainLayout>
-    <h1>How to contribute</h1>
+    <h1 class="text-3xl font-light uppercase">How to contribute</h1>
 
-    <blockquote>
+    <blockquote class="border-l-4 my-5 border-slate-300 pl-5">
       Ulixee is an open-source project built by core maintainers and contributors. We want to make
       it easy for anyone to participate. Contribute to our Apps, Server, Databox, Stream, Hero,
       improve documentation or improve detections and evasions in the
@@ -48,19 +48,17 @@
       We are a strong believer that documentation is very important for any open-source projects.
     </p>
 
-    <ol>
-      <li>
-        Every project in Ulixee has a `/docs` folder. If you want to add/modify any documentation,
-        you can go any of these folders on
-        <a href="https://github.com/ulixee/ulixee">GitHub</a> (eg,
-        <a href="https://github.com/ulixee/ulixee/tree/main/databox/docs">Databox docs</a>) and use
-        the file editor to edit and then preview your changes.
-      </li>
-      <li>
-        GitHub then allows you to commit the change and raise a PR right in the UI. This is the
-        _easiest_ way you can contribute to Hero!
-      </li>
-    </ol>
+    <p>
+      Every project in Ulixee has a `/docs` folder. If you want to add/modify any documentation,
+      you can go any of these folders on
+      <a href="https://github.com/ulixee/ulixee">GitHub</a> (eg,
+      <a href="https://github.com/ulixee/ulixee/tree/main/databox/docs">Databox docs</a>) and use
+      the file editor to edit and then preview your changes.
+    </p>
+    <p>
+      GitHub then allows you to commit the change and raise a PR right in the UI. This is the
+      _easiest_ way you can contribute.
+    </p>
 
     <p>
       You can also clone <a href="https://github.com/ulixee/ulixee">the Ulixee monorepo</a> and work
@@ -68,3 +66,15 @@
     </p>
   </MainLayout>
 </template>
+
+<style lang="scss" scoped>
+h2 {
+  @apply text-xl font-bold mb-3;
+}
+h3 {
+  @apply font-bold mb-3;
+}
+p {
+  @apply mb-5;
+}
+</style>

@@ -43,4 +43,5 @@ for (const item of data.children) {
 }
 
 const filePath = Path.join(websiteDir, `public/data/milestones.json`);
+Fs.mkdirSync(Path.dirname(filePath), { recursive: true });
 Fs.writeFileSync(filePath, JSON.stringify(milestones, null, 2));
