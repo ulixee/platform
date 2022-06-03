@@ -24,7 +24,7 @@ yarn add @ulixee/server
 
 When you install Server, it requires a PeerDependency of [`Hero`](/docs/hero).
 
-It will also optionally use a PeerDependency `ChromeAlive!` core. This tool enhances the Hero Development process.
+It will also optionally use a PeerDependency `ChromeAlive!` Core (`@ulixee/apps-chromealive-core`). This tool enhances the Hero Development process.
 
 ## Usage Example
 
@@ -39,13 +39,13 @@ import Server from '@ulixee/server';
 })();
 ```
 
-To refer to this server in a Hero client, you would use the connection you created in the Hero constructor.
+To refer to this server in a Hero client, you can supply the host string to the constructor.
 
 ```js
 import Hero from '@ulixee/hero';
 
 (async () => {
-  const hero = new Hero({ connectionToCore: { port: 8080 } });
+  const hero = new Hero({ connectionToCore: { host: 'ws://localhost:8080' } });
   await hero.goto('https://example.org');
   await hero.close();
 })();

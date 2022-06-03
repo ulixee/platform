@@ -6,8 +6,8 @@
 - title: Modules
   items:
     - Server
-    - ChromeAlive
-    
+#    - ChromeAlive
+
 - title: Help
   items:
     - Prerequisites
