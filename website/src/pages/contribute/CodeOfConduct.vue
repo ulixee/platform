@@ -1,6 +1,6 @@
 <template>
   <MainLayout>
-    <h1 class="text-3xl font-light">Contributor Covenant Code of Conduct</h1>
+    <h1 class="text-3xl font-light uppercase mb-5">Contributor Covenant Code of Conduct</h1>
 
     <h2>Our Pledge</h2>
 
@@ -25,7 +25,7 @@
       <li>Showing empathy towards other community members</li>
     </ul>
 
-    Examples of unacceptable behavior by participants include:
+    <p>Examples of unacceptable behavior by participants include:</p>
 
     <ul>
       <li>The use of sexualized language or imagery and unwelcome sexual attention or advances</li>
@@ -99,3 +99,20 @@
     </p>
   </MainLayout>
 </template>
+
+<style lang="scss" scoped>
+  h2 {
+    @apply text-xl font-bold mb-3;
+  }
+  h3 {
+    @apply font-bold mb-3;
+  }
+  p {
+    @apply mb-5;
+  }
+  ul {
+    @apply mb-5;
+    list-style: circle;
+    padding-left: 20px;
+  }
+</style>

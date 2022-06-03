@@ -45,7 +45,7 @@ To refer to this server in a Hero client, you would use the connection you creat
 import Hero from '@ulixee/hero';
 
 (async () => {
-  const hero = new Hero({ connectionToCore: { port: 8080 } });
+  const hero = new Hero({ connectionToCore: { host: 'ws://localhost:8080' } });
   await hero.goto('https://example.org');
   await hero.close();
 })();

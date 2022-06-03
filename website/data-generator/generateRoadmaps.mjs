@@ -111,7 +111,9 @@ for (const roadmapPath of roadmapPaths) {
     minorReleases,
     unversionedFeatures,
   }
+  Fs.mkdirSync(Path.dirname(filePath), { recursive: true });
   Fs.writeFileSync(filePath, JSON.stringify(fileData, null, 2));
 
+  Fs.mkdirSync(Path.dirname(milestonesPath), { recursive: true });
   Fs.writeFileSync(milestonesPath, JSON.stringify(milestones, null, 2));
 }
