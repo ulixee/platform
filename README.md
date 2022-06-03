@@ -29,7 +29,7 @@ Learn more about Ulixee at [ulixee.org](https://ulixee.org).
 
 See [How to Contribute](//ulixee.org/how-to-contribute) for ways to get started.
 
-This project has a [code of Conduct](//ulixee.org/code-of-conduct). By interacting with this repository, organization, or community you agree to abide by its terms.
+This project has a [Code of Conduct](//ulixee.org/code-of-conduct). By interacting with this repository, organization, or community you agree to abide by its terms.
 
 We'd love your help in making Ulixee a better set of tools. Please don't hesitate to send a pull request.
 
@@ -38,6 +38,6 @@ We'd love your help in making Ulixee a better set of tools. Please don't hesitat
 [MIT](LICENSE.md)
 
 [hero]: https://github.com/ulixee/hero
-[databox]: ./databox/for-hero
-[stream]: ./stream
-[server]: ./server
+[databox]: databox/for-hero
+[stream]: stream
+[server]: server
