@@ -28,6 +28,7 @@
   }
 
   table {
+    margin-bottom: 1.3rem;
     thead {
       display: none;
     }
@@ -76,6 +77,12 @@
     }
   }
 
+  ol {
+    margin-bottom: 1.3rem;
+    list-style: decimal;
+    padding-left: 20px;
+  }
+
   ul {
     margin-bottom: 1.3rem;
     list-style: circle;
@@ -86,10 +93,6 @@
     margin-bottom: 0.6rem;
   }
   
-  p {
-    margin-bottom: 1.3rem;
-  }
-
   .lead {
     font-size: 1.2rem;
   }
@@ -103,6 +106,7 @@
   }
 
   p {
+    margin-bottom: 1.3rem;
     letter-spacing: -.15px;
     &:last-child {
       margin-bottom: 0;
