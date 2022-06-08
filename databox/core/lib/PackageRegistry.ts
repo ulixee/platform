@@ -3,7 +3,7 @@ import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import { promises as Fs, mkdirSync } from 'fs';
 import * as crypto from 'crypto';
 import * as Path from 'path';
-import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManfiest';
+import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 import { nanoid } from 'nanoid';
 import DataboxesDb from './DataboxesDb';
 import { IDataboxRecord } from './DataboxesTable';

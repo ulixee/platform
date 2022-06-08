@@ -4,7 +4,7 @@ import PackageRegistry from './lib/PackageRegistry';
 import IDataboxModuleRunner from './interfaces/IDataboxModuleRunner';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
-import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManfiest';
+import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 
 type IDataboxConnectionToClient = ConnectionToClient<IDataboxApis, {}>;
 

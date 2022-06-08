@@ -23,15 +23,16 @@ yarn add @ulixee/databox-for-hero
 
 ## Usage
 
-Wrapping your script in a Databox gives it instant access to the input and output objects: 
+Wrapping your script in a Databox gives it instant access to the input and output objects, along with a Hero instance: 
 
 script.ts
 ```js
 const Databox = require('@ulixee/databox-for-hero');
 
-new Databox(databox => {
-  const { input, output } = databox;
-  output.data = `My name is ${input.params.name}`;
+new Databox(async databox => {
+  const { input, output, hero } = databox;
+  await hero.goto('https://example.org');
+  output.data = `I went to example.org. Your input was: ${input.params.name}`;
 });
 ```
 
@@ -43,17 +44,9 @@ You can call your script in several ways.
 % node script.js --params.name=Alfonso
 ```
 
-2) Through the Ulixee CLI:
+2) Through Stream:
 
-__ COMING SOON __
-
-```shell script
-% ulixee databox run script.js --params.name=Alfonso
-```
-
-Through Stream:
-
-__ COMING SOON __
+__COMING SOON__
 
 ```js
 import Stream from '@ulixee/stream';

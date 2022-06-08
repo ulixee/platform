@@ -7,7 +7,10 @@ afterEach(Helpers.afterEach);
 
 describe('Full output tests', () => {
   it('records object changes', async () => {
-    const databoxInternal = await Helpers.createFullstackDataboxInternal();
+    const databoxInternal = await Helpers.createFullstackDataboxInternal<
+      any,
+      { started: Date; page: { url: string; title: string; data?: Buffer } }
+    >();
     const output = databoxInternal.output;
     output.started = new Date();
     const url = 'https://example.org';
@@ -57,7 +60,10 @@ describe('Full output tests', () => {
   });
 
   it('can add array-ish items to the main object', async () => {
-    const databoxInternal = await Helpers.createFullstackDataboxInternal();
+    const databoxInternal = await Helpers.createFullstackDataboxInternal<
+      any,
+      { url: string; title: string; date: Date; buffer: Buffer }[]
+    >();
     const output = databoxInternal.output;
     const date = new Date();
     output.push({
@@ -97,7 +103,7 @@ describe('Full output tests', () => {
   });
 
   it('can add observables directly', async () => {
-    const databoxInternal = await Helpers.createFullstackDataboxInternal();
+    const databoxInternal = await Helpers.createFullstackDataboxInternal<any, any>();
     const output = databoxInternal.output;
     const record = Observable({} as any);
     output.push(record);
@@ -129,7 +135,7 @@ describe('Full output tests', () => {
   });
 
   it('can replace the main object', async () => {
-    const databoxInternal = await Helpers.createFullstackDataboxInternal();
+    const databoxInternal = await Helpers.createFullstackDataboxInternal<any, { test: string }>();
     databoxInternal.output.test = 'true';
     databoxInternal.output = {
       try: true,

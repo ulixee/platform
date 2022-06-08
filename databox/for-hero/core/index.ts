@@ -2,12 +2,12 @@ import HeroCore from '@ulixee/hero-core';
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import IDataboxModuleRunner from '@ulixee/databox-core/interfaces/IDataboxModuleRunner';
 import DataboxCore from '@ulixee/databox-core';
-import { ConnectionToHeroCore, createDirectConnectionToCore } from '@ulixee/hero-fullstack';
-import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManfiest';
+import { ConnectionToHeroCore } from '@ulixee/hero';
+import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 import { NodeVM, VMScript } from 'vm2';
 import DataboxWrapper from '@ulixee/databox-for-hero';
 import * as Fs from 'fs';
-import { DataboxRunSettings } from '@ulixee/databox-for-hero/lib/DataboxWrapper';
+import TransportBridge from '@ulixee/net/lib/TransportBridge';
 
 const { version: HeroVersion } = require('@ulixee/hero-core/package.json');
 
@@ -17,7 +17,7 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
 
   private compiledScriptsByPath = new Map<string, Promise<VMScript>>();
 
-  private connectionToLocalHeroCore: ConnectionToHeroCore;
+  private connectionToHeroCore: ConnectionToHeroCore;
   private vm = new NodeVM({
     console: 'inherit',
     sandbox: {},
@@ -26,25 +26,26 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
     wrapper: 'commonjs',
     strict: true,
     require: {
-      builtin: [],
       external: ['@ulixee/*', '@unblocked-web/*', 'awaited-dom'],
     },
   });
 
   public async start(): Promise<void> {
-    DataboxRunSettings.runLater = true;
+    DataboxWrapper.runLater = true;
     await HeroCore.start();
-    this.connectionToLocalHeroCore = createDirectConnectionToCore();
+    const bridge = new TransportBridge();
+    HeroCore.addConnection(bridge.transportToClient);
+    this.connectionToHeroCore = new ConnectionToHeroCore(bridge.transportToCore);
   }
 
   public async close(): Promise<void> {
-    if (this.connectionToLocalHeroCore) await this.connectionToLocalHeroCore.disconnect();
+    await this.connectionToHeroCore?.disconnect();
     await HeroCore.shutdown();
   }
 
   public async run(path: string, manifest: IDataboxManifest, input: any): Promise<{ output: any }> {
     const script = await this.getVMScript(path, manifest);
-    const databoxWrapper: DataboxWrapper = this.vm.run(script);
+    const databoxWrapper = this.vm.run(script);
 
     if (!(databoxWrapper instanceof DataboxWrapper)) {
       throw new Error(
@@ -53,9 +54,8 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
     }
 
     const output = await databoxWrapper.run({
-      mode: 'production',
       input,
-      connectionToCore: this.connectionToLocalHeroCore,
+      connectionToCore: this.connectionToHeroCore,
     });
     return { output };
   }

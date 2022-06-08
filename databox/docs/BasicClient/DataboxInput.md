@@ -9,7 +9,7 @@ When running the Databox as a NodeJs script from the command line, you can pass 
 ```
 
 ```js
-import Databox from '@ulixee/databox-for-hero';
+import Databox from '@ulixee/databox-for-hero-playground';
 
 export default new Databox(databox => {
   const { input } = databox;

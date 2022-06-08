@@ -1,6 +1,6 @@
 import { Database as SqliteDatabase } from 'better-sqlite3';
 import SqliteTable from '@ulixee/commons/lib/SqliteTable';
-import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManfiest';
+import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 
 export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
   public static byHash: { [hash: string]: IDataboxRecord };

@@ -37,7 +37,7 @@ You can run this inline if you need access to your extracted data during your [R
   - name `string`. A name to give to the [CollectedElement](/docs/databox/advanced-client/collected-elements) during final extraction. It does not need to be unique - items with the same name will be added to a list.
 
 ```js
-import Databox from '@ulixee/databox-for-hero';
+import Databox from '@ulixee/databox-for-hero-playground';
 
 export default new Databox(async ({ hero }) => {
   await hero.goto('https://ulixee.org');
@@ -54,7 +54,7 @@ export default new Databox(async ({ hero }) => {
 Collect an Element for extraction during the [Extractor](/docs/databox/advanced-client/extractor) callback. The advantage of `$extractLater` is you can defer extraction until later, where you can write your logic and re-run your extraction quickly as you fix it.
 
 ```js
-import Databox from '@ulixee/databox-for-hero';
+import Databox from '@ulixee/databox-for-hero-playground';
 
 export default new Databox({
   async run({ hero }) {
@@ -95,7 +95,7 @@ This function is the same as `node.extract`, except the callback is provided a l
 Collect the Node HTML for all Elements of a NodeList or HTMLElementCollection. They will be available for extraction during the [Extractor](/docs/databox/advanced-client/extractor) callback.
 
 ```js
-import Databox from '@ulixee/databox-for-hero';
+import Databox from '@ulixee/databox-for-hero-playground';
 
 export default new Databox({
   async run({ hero }) {
@@ -122,7 +122,7 @@ export default new Databox({
 Collect the Resource and all metadata (including body) for later extraction.
 
 ```js
-import Databox from '@ulixee/databox-for-hero';
+import Databox from '@ulixee/databox-for-hero-playground';
 
 export default new Databox({
   async run({ hero }) {

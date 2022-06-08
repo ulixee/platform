@@ -1,44 +1,29 @@
 import IDataboxForHeroRunOptions from '../interfaces/IDataboxForHeroRunOptions';
-import UlixeeConfig from '@ulixee/commons/config';
-import UlixeeServerConfig from '@ulixee/commons/config/servers';
 import readCommandLineArgs from './utils/readCommandLineArgs';
 import IComponents, { IRunFn } from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
 import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
 import IDataboxWrapper from '@ulixee/databox-interfaces/IDataboxWrapper';
 
-const { version } = require('../package.json');
+export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
+  implements IDataboxWrapper
+{
+  public static runLater = !!process.env.ULX_DATABOX_RUN_LATER;
 
-export const DataboxRunSettings = {
-  runLater: !!process.env.ULX_DATABOX_RUN_LATER,
-};
-
-export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> implements IDataboxWrapper {
+  public autoRunPromise: Promise<TOutput | Error>;
   #components: IComponents<TInput, TOutput>;
 
   constructor(components: IRunFn<TInput, TOutput> | IComponents<TInput, TOutput>) {
     this.#components =
       typeof components === 'function'
         ? {
-            run: components as IRunFn<TInput, TOutput>,
+            run: components,
           }
         : { ...components };
-    if (DataboxRunSettings.runLater) return;
 
-    const options: IDataboxForHeroRunOptions = readCommandLineArgs();
-
-    if (!options.connectionToCore) {
-      const serverHost =
-        UlixeeConfig.load()?.serverHost ??
-        UlixeeConfig.global.serverHost ??
-        UlixeeServerConfig.global.getVersionHost(version);
-      if (serverHost) {
-        options.connectionToCore = { host: serverHost };
-      }
+    if (!DataboxWrapper.runLater) {
+      this.autoRunPromise = DataboxWrapper.autoRun(this);
     }
-
-    // already logged
-    this.run(options).catch(() => null);
   }
 
   public async run(options: IDataboxForHeroRunOptions = {}): Promise<TOutput> {
@@ -56,7 +41,6 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
         await databoxInternal.execExtractor(this.#components.extract);
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error(`ERROR running databox: `, error);
       throw error;
     } finally {
@@ -64,5 +48,10 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
     }
 
     return databoxInternal.output;
+  }
+
+  public static autoRun<T>(databoxWrapper: DataboxWrapper): Promise<T | Error> {
+    const options = readCommandLineArgs();
+    return databoxWrapper.run(options).catch(err => err);
   }
 }

@@ -10,6 +10,9 @@
       "path": "databox/tsconfig.dist.json"
     },
     {
+      "path": "playgrounds/databox-for-hero/tsconfig.dist.json"
+    },
+    {
       "path": "apps/chromealive-core/injected-scripts/tsconfig.dist.json"
     }
   ]

@@ -8,6 +8,7 @@ import { isWsOpen } from '@ulixee/net/lib/WsUtils';
 import UlixeeServerConfig from '@ulixee/commons/config/servers';
 import UlixeeConfig from '@ulixee/commons/config';
 import CoreRouter from './lib/CoreRouter';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 
 const pkg = require('./package.json');
 
@@ -76,10 +77,7 @@ export default class Server {
 
     const listenOptions = { ...(options ?? { port: 0 }) };
     if (!options?.port && shouldAutoRouteServer) {
-      const address =
-        UlixeeConfig.load()?.serverHost ??
-        UlixeeConfig.global.serverHost ??
-        UlixeeServerConfig.global.getVersionHost(this.version);
+      const address = Server.getHost(this.version);
       if (address) {
         listenOptions.port = Number(address.split(':').pop());
       }
@@ -105,6 +103,7 @@ export default class Server {
         this.version,
         `localhost:${serverAddress.port}`,
       );
+      ShutdownHandler.register(() => UlixeeServerConfig.global.setVersionHost(this.version, null));
     }
 
     await this.router.start(`${this.addressHost}:${serverAddress.port}`);
@@ -197,5 +196,13 @@ export default class Server {
       error,
       sessionId: null,
     });
+  }
+
+  public static getHost(version: string): string {
+    return (
+      UlixeeConfig.load()?.serverHost ??
+      UlixeeConfig.global.serverHost ??
+      UlixeeServerConfig.global.getVersionHost(version)
+    );
   }
 }

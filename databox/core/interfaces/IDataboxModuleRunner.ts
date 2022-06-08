@@ -1,4 +1,4 @@
-import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManfiest';
+import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 
 export default interface IDataboxModuleRunner {
   runsDataboxModuleVersion: string;
