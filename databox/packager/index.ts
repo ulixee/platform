@@ -3,37 +3,65 @@ import * as Path from 'path';
 import IDataboxPackage from '@ulixee/databox-interfaces/IDataboxPackage';
 import rollupDatabox from './lib/rollupDatabox';
 import { createHash } from 'crypto';
-import { safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
+import { readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import { ConnectionToDataboxCore } from '@ulixee/databox-client';
+import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 
 export default class DataboxPackager {
   public readonly relativeScriptPath: string;
   public package: IDataboxPackage;
   public outputPath: string;
+  public readonly databoxModule: string;
   private readonly projectPath: string;
 
-  constructor(readonly entrypoint: string, readonly databoxModule = '@ulixee/databox-for-hero') {
+  constructor(
+    readonly entrypoint: string,
+    options?: {
+      databoxModule?: string;
+      outputPath?: string;
+    },
+  ) {
+    this.databoxModule = options?.databoxModule ?? '@ulixee/databox-for-hero';
     this.projectPath = Path.resolve(this.findProjectPath());
     this.entrypoint = Path.resolve(entrypoint);
     this.relativeScriptPath = Path.relative(this.projectPath + '/..', entrypoint);
+    if (options?.outputPath) {
+      this.outputPath = Path.resolve(options.outputPath);
+      const path = this.outputPath;
+      if (Fs.existsSync(path) && !Fs.lstatSync(path).isDirectory()) {
+        this.outputPath = Path.dirname(path);
+      }
+    } else {
+      const outputDir = Path.resolve(Path.dirname(entrypoint), '.databox');
 
-    const databoxPath = Path.resolve(Path.dirname(entrypoint), '.databox');
+      const shortScriptName = Path.basename(entrypoint)
+        .replace(Path.extname(entrypoint), '')
+        .replace(/[.]/g, '-')
+        .toLowerCase();
 
-    const shortScriptName = Path.basename(entrypoint)
-      .replace(Path.extname(entrypoint), '')
-      .replace(/[.]/g, '-')
-      .toLowerCase();
-
-    this.outputPath = Path.join(databoxPath, shortScriptName);
+      this.outputPath = Path.join(outputDir, shortScriptName);
+    }
   }
 
-  public async build(): Promise<void> {
-    const { sourceCode, sourceMap } = await this.rollup();
+  public async loadPackage(): Promise<void> {
+    const manifest = await readFileAsJson<IDataboxManifest>(`${this.outputPath}/manifest.json`);
+    const script = await Fs.promises.readFile(`${this.outputPath}/databox.js`, 'utf8');
+    const sourceMap = await Fs.promises.readFile(`${this.outputPath}/databox.js.map`, 'utf8');
+    this.package = { manifest, script, sourceMap };
+  }
+
+  public async build(options?: { tsconfig?: string }): Promise<void> {
+    const { sourceCode, sourceMap } = await this.rollup(options);
     await this.createManifest(sourceCode, sourceMap);
   }
 
-  public async rollup(): Promise<{ sourceMap: string; sourceCode: string }> {
-    const rollup = await rollupDatabox(this.entrypoint, { outDir: this.outputPath });
+  public async rollup(options?: {
+    tsconfig?: string;
+  }): Promise<{ sourceMap: string; sourceCode: string }> {
+    const rollup = await rollupDatabox(this.entrypoint, {
+      outDir: this.outputPath,
+      tsconfig: options?.tsconfig,
+    });
     return { sourceMap: rollup.sourceMap, sourceCode: rollup.code.toString('utf8') };
   }
 
@@ -54,10 +82,10 @@ export default class DataboxPackager {
     );
   }
 
-  public async upload(serverHost: string): Promise<void> {
+  public async upload(serverHost: string, timeoutMs = 120e3): Promise<void> {
     const connection = ConnectionToDataboxCore.remote(serverHost);
     try {
-      await connection.sendRequest({ command: 'Databox.upload', args: [this.package] }, 120e3);
+      await connection.sendRequest({ command: 'Databox.upload', args: [this.package] }, timeoutMs);
     } finally {
       await connection.disconnect();
     }

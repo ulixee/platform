@@ -27,7 +27,6 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.154",
-    "@ulixee/hero-fullstack": "2.0.0-alpha.3",
     "@ulixee/hero-testing": "2.0.0-alpha.3",
     "linkedom": "^0.13.0"
   }

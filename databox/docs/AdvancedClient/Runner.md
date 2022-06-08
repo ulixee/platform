@@ -43,7 +43,7 @@ Readonly unique sessionId for this Session.
 Collect a snippet. It can be any data from your script, whether transformed or collected.
 
 ```js
-import Databox from '@ulixee/databox-for-hero';
+import Databox from '@ulixee/databox-for-hero-playground';
 
 export default new Databox({
   async run({ hero, extractLater }) {

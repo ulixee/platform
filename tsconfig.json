@@ -10,10 +10,13 @@
       "path": "databox"
     },
     {
+      "path": "playgrounds/databox-for-hero"
+    },
+    {
       "path": "apps/chromealive-core/injected-scripts/tsconfig.json"
     }
   ],
-  "include": ["server", "apps", "./*.js", "./*.json", ".eslintrc.js"],
+  "include": ["server", "apps", "playgrounds", "./*.js", "./*.json", ".eslintrc.js"],
   "exclude": [
     "**/tsconfig*.json",
     "build/**/*",
@@ -25,6 +28,7 @@
     "apps/menubar-ui",
     "apps/chromealive-extension",
     "apps/chromealive-core/injected-scripts",
+    "playgrounds/databox-for-hero",
     "**/hero",
     "**/website",
     "**/docs",

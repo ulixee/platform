@@ -9,9 +9,10 @@ import * as http2 from 'http2';
 import Core from '@ulixee/hero-core';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { Helpers } from './index';
-import FullstackHero, { IHeroCreateOptions } from '@ulixee/hero-fullstack';
+import Hero, { ConnectionToHeroCore, IHeroCreateOptions } from '@ulixee/hero';
 import DataboxInternal from '@ulixee/databox-for-hero/lib/DataboxInternal';
 import IDataboxForHeroRunOptions from '@ulixee/databox-for-hero/interfaces/IDataboxForHeroRunOptions';
+import TransportBridge from '@ulixee/net/lib/TransportBridge';
 
 export const needsClosing: { close: () => Promise<any> | void; onlyCloseOnFinal?: boolean }[] = [];
 
@@ -124,20 +125,13 @@ function destroyServerFn(
     });
 }
 
-export function createFullstackDataboxInternal(
+export function createFullstackDataboxInternal<IInput, IOutput>(
   options: IDataboxForHeroRunOptions = {},
-): FullstackDataboxInternal {
-  const databoxInternal = new FullstackDataboxInternal(options);
+): DataboxInternal<IInput, IOutput> {
+  const bridge = new TransportBridge();
+  Core.addConnection(bridge.transportToClient);
+  options.connectionToCore = new ConnectionToHeroCore(bridge.transportToCore);
+  const databoxInternal = new DataboxInternal<IInput, IOutput>(options);
   Helpers.needsClosing.push(databoxInternal);
   return databoxInternal;
-}
-
-class FullstackDataboxInternal extends DataboxInternal<any, any> {
-  protected override initializeHero(): void {
-    const heroOptions: IHeroCreateOptions = {};
-    for (const [key, value] of Object.entries(this.runOptions)) {
-      heroOptions[key] = value;
-    }
-    this.hero = new FullstackHero(heroOptions);
-  }
 }

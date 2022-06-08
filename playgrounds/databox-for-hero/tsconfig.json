@@ -1,5 +1,5 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "experimentalDecorators": true,
     "target": "ES2020",
@@ -10,6 +10,6 @@
     "allowJs": true,
     "noImplicitOverride": true
   },
-  "include": ["./**/*.ts", "./**/*.json", ".eslintrc.js"],
-  "exclude": ["**/tsconfig*.json", "**/node_modules", "packager/test/assets", "**/build"]
+  "include": ["./**/*.ts", "./*.ts"],
+  "exclude": ["**/tsconfig*.json", "**/node_modules", "**/build"]
 }

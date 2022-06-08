@@ -1,0 +1,26 @@
+{
+  "name": "@ulixee/databox-for-hero-playground",
+  "version": "2.0.0-alpha.3",
+  "main": "index.js",
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "repository": "git@github.com:ulixee/ulixee.git",
+  "license": "MIT",
+  "dependencies": {
+    "@ulixee/commons": "2.0.0-alpha.3",
+    "@ulixee/net": "2.0.0-alpha.3",
+    "@ulixee/databox-client": "2.0.0-alpha.3",
+    "@ulixee/databox-core": "2.0.0-alpha.3",
+    "@ulixee/databox-for-hero": "2.0.0-alpha.3",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.3",
+    "@ulixee/server": "2.0.0-alpha.3",
+    "@ulixee/hero": "2.0.0-alpha.3",
+    "@ulixee/hero-core": "2.0.0-alpha.3",
+    "vm2": "^3.9.9"
+  }
+}

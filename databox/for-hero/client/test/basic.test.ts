@@ -3,7 +3,6 @@ import { Helpers } from '@ulixee/databox-testing';
 import DataboxWrapper from '../index';
 import readCommandLineArgs from '../lib/utils/readCommandLineArgs';
 import MockConnectionToHeroCore from './_MockConnectionToHeroCore';
-import { DataboxRunSettings } from '../lib/DataboxWrapper';
 
 afterAll(Helpers.afterAll);
 
@@ -56,7 +55,7 @@ describe('basic Databox tests', () => {
   });
 
   it('waits until run method is explicitly called', async () => {
-    DataboxRunSettings.runLater = true;
+    DataboxWrapper.runLater = true;
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
     const databoxWrapper = new DataboxWrapper(async databox => {
@@ -77,7 +76,7 @@ describe('basic Databox tests', () => {
   });
 
   it('should call close on hero automatically', async () => {
-    DataboxRunSettings.runLater = true;
+    DataboxWrapper.runLater = true;
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
     const databoxWrapper = new DataboxWrapper(async databox => {
@@ -91,7 +90,7 @@ describe('basic Databox tests', () => {
   });
 
   it('should emit close hero on error', async () => {
-    DataboxRunSettings.runLater = true;
+    DataboxWrapper.runLater = true;
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
     const databoxWrapper = new DataboxWrapper(async databox => {
@@ -110,7 +109,7 @@ describe('basic Databox tests', () => {
   });
 
   it('should be able to bypass the interaction step', async () => {
-    DataboxRunSettings.runLater = true;
+    DataboxWrapper.runLater = true;
     process.env.ULX_EXTRACT_SESSION_ID = '1';
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);

@@ -7,7 +7,7 @@ It's a specialized object because it allows Databox to observe an object that yo
 Output is able to act like an Array or an Object. It will serialize properly in either use-case.
 
 ```js
-import Databox from '@ulixee/databox-for-hero';
+import Databox from '@ulixee/databox-for-hero-playground';
 
 export default new Databox(async databox => {
   const { output, hero } = databox;
@@ -26,7 +26,7 @@ export default new Databox(async databox => {
 NOTE: you cannot "re-assign" the output variable and have it be observed. You should instead use `Object.assign(output, yourVariables)` to assign them onto the output object, or set properties individually.
 
 ```js
-import Databox from '@ulixee/databox-for-hero';
+import Databox from '@ulixee/databox-for-hero-playground';
 
 export default new Databox(async databox => {
   const { output, hero } = databox;
@@ -45,7 +45,7 @@ export default new Databox(async databox => {
 Any object you assign into Output is "copied" into the Output object. To create an object that will be tracked through the process of attaching it to output, you can use the `Observable` class.
 
 ```js
-import Databox, { Observable } from '@ulixee/databox-for-hero';
+import Databox, { Observable } from '@ulixee/databox-for-hero-playground';
 
 export default new Databox(async databox => {
   const { output, hero } = databox;
@@ -61,7 +61,7 @@ export default new Databox(async databox => {
 If you do not use `Observable` or re-retrieve your object, you should NOT expect further changes to the source object to be saved.
 
 ```js
-import Databox from '@ulixee/databox-for-hero';
+import Databox from '@ulixee/databox-for-hero-playground';
 
 export default new Databox(async databox => {
   const { output, hero } = databox;
