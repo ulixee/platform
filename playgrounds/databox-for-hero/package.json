@@ -14,7 +14,7 @@
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.3",
     "@ulixee/net": "2.0.0-alpha.3",
-    "@ulixee/databox-client": "2.0.0-alpha.3",
+    "@ulixee/databox": "2.0.0-alpha.3",
     "@ulixee/databox-core": "2.0.0-alpha.3",
     "@ulixee/databox-for-hero": "2.0.0-alpha.3",
     "@ulixee/databox-interfaces": "2.0.0-alpha.3",

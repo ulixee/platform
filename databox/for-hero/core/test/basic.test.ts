@@ -1,7 +1,7 @@
 import UlixeeServer from '@ulixee/server';
 import { Helpers } from '@ulixee/databox-testing';
 import Packager from '@ulixee/databox-packager';
-import { ConnectionToDataboxCore } from '@ulixee/databox-client';
+import { ConnectionToDataboxCore } from '@ulixee/databox';
 
 let ulixeeServer: UlixeeServer;
 let koaServer: Helpers.ITestKoaServer;

@@ -59,6 +59,7 @@
       "databox/*",
       "databox/for-hero/*",
       "server/*",
+      "cli",
       "hero/build/*",
       "hero/build/plugins/*",
       "playgrounds/*",

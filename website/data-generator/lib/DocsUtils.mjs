@@ -10,10 +10,8 @@ const websiteDir = Path.join(rootDir, 'website');
 
 export function ensureIndexFile(originalBasePath, toolKey, relativeWebsiteDir) {
   relativeWebsiteDir = relativeWebsiteDir ? `${toolKey}/${relativeWebsiteDir}` : toolKey;
-  const originalPath = Path.join(originalBasePath, `${relativeWebsiteDir}/Index.md`);
-  const copyFromPath = Path.join(websiteDir, `public/data/docs/${relativeWebsiteDir}/Overview/Introduction.json`);
+  const copyFromPath = Path.join(websiteDir, `public/data/docs/${relativeWebsiteDir}/overview/introduction.json`);
   const copyToPath = Path.join(websiteDir, `public/data/docs/${relativeWebsiteDir}/index.json`);
-  if (Fs.existsSync(originalPath)) return;
   if (!Fs.existsSync(copyFromPath)) return;
   Fs.copyFileSync(copyFromPath, copyToPath);
 }

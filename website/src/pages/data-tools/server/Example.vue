@@ -11,19 +11,14 @@
       </p>
 
       <Prism language="shell">
-        npm install @ulixee/server
-        npx ulixee-server-start
+        npx @ulixee/server start
       </Prism>
 
-      <!-- <Prism language="shell">
-        npx @ulixee/launch-server
-      </Prism> -->
-
-      <!-- <p>There are several flags you can add to the launch command. Below are two of them:</p>
+      <p>There are several flags you can add to the start command. Below are two of them:</p>
       <ul>
-        <li>--mode=production</li>
         <li>--port=80</li>
-      </ul> -->
+        <li>-x (disable ChromeAlive, even if installed locally)</li>
+      </ul>
 
       <p>Open the docs to see your full options.</p>
     </AboveTheFold>

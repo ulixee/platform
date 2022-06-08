@@ -22,9 +22,36 @@ or
 yarn add @ulixee/server
 ```
 
-When you install Server, it requires a PeerDependency of [`Hero`](/docs/hero).
+When you install Server, it requires PeerDependencies of [`Hero`](//ulixee.org/docs/hero) and [`Databox`](//ulixee.org/docs/databox).
 
-It will also optionally use a PeerDependency `ChromeAlive!` core. This tool enhances the Hero Development process.
+It will also optionally use a PeerDependency `ChromeAlive!` Core (`@ulixee/apps-chromealive-core`). This tool enhances the Hero Development process.
+
+## Command Line Interface (CLI)
+
+You can launch a Server instance from an npm script or the command line using the CLI. The following command is added to your local bin if you have `@ulixee/server` as a dependency:
+
+```json
+{
+  "scripts": {
+    "ulixee-start": "@ulixee/server start"
+  }
+}
+```
+
+You can run the start command from the command line as `npx @ulixee/server start`.
+
+### Command Options:
+
+- `-p, --port` The port to use. Defaults to any available port.
+- `-x, --disable-chrome-alive` Do not enable ChromeAlive! even if installed locally.
+
+### Global CLI
+
+The Ulixee CLI allows you to start a Ulixee Server. To use it, first install the cli globally.
+`npm -i -g @ulixee/cli`
+
+Now you can run the following command from your project directory with any of the options described above:
+`ulixee server start`
 
 ## Usage Example
 
@@ -39,7 +66,9 @@ import Server from '@ulixee/server';
 })();
 ```
 
-To refer to this server in a Hero client, you would use the connection you created in the Hero constructor.
+To refer to this server in a Hero client, you can supply the host string to the constructor.
+
+NOTE: connection details on a local machine are optional. If you don't supply any connection detail, Hero and Databox will connect to the local host.
 
 ```js
 import Hero from '@ulixee/hero';

@@ -27,6 +27,15 @@ test('it should support packaging an commonjs project', async () => {
   expect(bundled.modules).not.toContain('@ulixee/databox-for-hero');
 }, 45e3);
 
+test('it should support packaging a prebuilt project', async () => {
+  const bundled = await rollupDatabox(`${__dirname}/assets/prebuilt/src/index.js`, {
+    dryRun: true,
+  });
+  // should import helpers.ts, index.ts, lodash-es. Needs a second pass of commonjs exports
+  expect(bundled.modules).toHaveLength(7);
+  expect(bundled.modules).not.toContain('@ulixee/databox-for-hero');
+}, 45e3);
+
 test('it should require a base class to have a default export', async () => {
   await expect(
     rollupDatabox(`${__dirname}/assets/non-default/index.js`, {

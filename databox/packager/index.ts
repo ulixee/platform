@@ -2,10 +2,10 @@ import * as Fs from 'fs';
 import * as Path from 'path';
 import IDataboxPackage from '@ulixee/databox-interfaces/IDataboxPackage';
 import rollupDatabox from './lib/rollupDatabox';
-import { createHash } from 'crypto';
 import { readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
-import { ConnectionToDataboxCore } from '@ulixee/databox-client';
+import { ConnectionToDataboxCore } from '@ulixee/databox';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
+import * as Hasher from '@ulixee/commons/lib/Hasher';
 
 export default class DataboxPackager {
   public readonly relativeScriptPath: string;
@@ -69,7 +69,7 @@ export default class DataboxPackager {
     this.package = {
       manifest: {
         scriptEntrypoint: this.relativeScriptPath,
-        scriptRollupHash: DataboxPackager.sha3_256_base64(Buffer.from(sourceCode)),
+        scriptRollupHash: Hasher.hashDatabox(Buffer.from(sourceCode)),
         databoxModule: this.databoxModule,
         databoxModuleVersion: require(`${this.databoxModule}/package.json`).version,
       },
@@ -110,9 +110,5 @@ export default class DataboxPackager {
       }
       path = Path.dirname(path);
     } while (path && path !== last);
-  }
-
-  private static sha3_256_base64(data: Buffer): string {
-    return createHash('sha3-256').update(data).digest('base64');
   }
 }

@@ -8,7 +8,11 @@
     "deploy": "firebase deploy --only hosting",
     "build": "yarn generate && vue-cli-service build --mode production",
     "lint": "vue-cli-service lint",
-    "watch:stream": "npx onchange '../stream/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}"
+    "watch:stream": "npx onchange '../stream/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",
+    "watch:databox": "npx onchange '../databox/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",
+    "watch:hero": "npx onchange '../hero/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",
+    "watch:server": "npx onchange '../server/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",
+    "watch": "concurrently -n w: \"npm:watch:*\""
   },
   "dependencies": {
     "@headlessui/vue": "^1.5.0",
@@ -20,6 +24,7 @@
     "docsearch.js": "^2.6.3",
     "hastscript": "^7.0.2",
     "js-yaml": "^4.1.0",
+    "concurrently": "^6.2.2",
     "lodash.kebabcase": "^4.1.1",
     "param-case": "^3.0.4",
     "prismjs": "^1.28.0",
