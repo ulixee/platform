@@ -5,12 +5,13 @@ import IDataboxModuleRunner from './interfaces/IDataboxModuleRunner';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
+import env from './env';
 
 type IDataboxConnectionToClient = ConnectionToClient<IDataboxApis, {}>;
 
 export default class DataboxCore {
   public static connections = new Set<IDataboxConnectionToClient>();
-  public static dataDir: string;
+  public static databoxesDir: string;
 
   private static runnersByModuleName: { [module: string]: IDataboxModuleRunner } = {};
   private static packageRegistry: PackageRegistry;
@@ -32,10 +33,10 @@ export default class DataboxCore {
     this.runnersByModuleName[moduleRunner.runsDataboxModule] = moduleRunner;
   }
 
-  public static async start(dataDir?: string): Promise<void> {
-    if (dataDir) this.dataDir = dataDir;
+  public static async start(): Promise<void> {
+    this.databoxesDir = env.databoxStorage;
     for (const runner of Object.values(this.runnersByModuleName)) {
-      await runner.start(this.dataDir);
+      await runner.start(this.databoxesDir);
     }
   }
 
@@ -57,7 +58,7 @@ export default class DataboxCore {
   }
 
   public static async run(scriptHash: string, input?: any): Promise<{ output: any }> {
-    const databox = this.getPackageRegistry().getByHash(scriptHash);
+    const databox = await this.getPackageRegistry().getByHash(scriptHash);
 
     const runner = this.runnersByModuleName[databox.module];
     if (!runner.canSatisfyVersion(databox.moduleVersion)) {
@@ -77,7 +78,7 @@ export default class DataboxCore {
   }
 
   private static getPackageRegistry(): PackageRegistry {
-    this.packageRegistry ??= new PackageRegistry(this.dataDir);
+    this.packageRegistry ??= new PackageRegistry(this.databoxesDir);
     return this.packageRegistry;
   }
 }

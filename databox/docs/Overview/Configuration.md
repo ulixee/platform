@@ -24,7 +24,10 @@ const options = {
 
 ### Ulixee Config
 
-If no connectionToCore is provided to a Databox, it will look for a Ulixee Configuration file.
+If no connectionToCore is provided to a Databox:
+
+1. a local Server connection will attempt to be automatically discovered.
+2. if none is found, it will look for a Ulixee Configuration file.
 
 This process starts in the directory of your script and looks upwards to the root for a folder called '.ulixee'. The configuration file inside this folder is expected to be called 'config.json';
 
@@ -52,3 +55,20 @@ A Databox can be configured to defer running until the `run()` function is expli
 #### Environment Variable
 
 - ULX_DATABOX_RUN_LATER `boolean-ish`. Set to a value to enable explicitly running this Databox.
+
+### Databox Core Storage {#storage}
+
+Databox Core stores and retrieves [packaged Databoxes](/docs/databox/overview/deployment) from a configurable location on a machine. This directory will contain:
+
+1. `dbx*`. Packaged databoxes organized into folders by their Bech32m encoded hashes.
+2. `index.db`. A sqlite3 file containing an index of all Databoxes installed locally. This index will be automatically updated if new files are added to the folder and requested in a query.
+
+#### Environment Variable
+
+- ULX_DATABOX_DIR `string`. Absolute path to a directory containing Databoxes. Defaults to `<CACHE>/ulixee/databoxes`.
+
+CACHE is determined as:
+
+- Mac: ~/Library/Cache
+- Linux: ~/.cache (environment variable XDG_CACHE_HOME)
+- Windows: ~/AppData/Local (environment variable LOCALAPPDATA)

@@ -16,7 +16,7 @@ export default class DataboxesDb {
 
   constructor(baseDir: string) {
     if (!Fs.existsSync(baseDir)) Fs.mkdirSync(baseDir, { recursive: true });
-    this.db = new Database(`${baseDir}/databoxes.db`);
+    this.db = new Database(`${baseDir}/index.db`);
     this.databoxes = new DataboxesTable(this.db);
     this.saveInterval = setInterval(this.flush.bind(this), 5e3).unref();
 

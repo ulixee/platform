@@ -10,8 +10,7 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
       db,
       'Databoxes',
       [
-        ['id', 'TEXT', 'NOT NULL PRIMARY KEY'],
-        ['scriptHash', 'TEXT'],
+        ['scriptHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
         ['scriptEntrypoint', 'TEXT'],
         ['module', 'TEXT'],
         ['moduleVersion', 'TEXT'],
@@ -22,10 +21,9 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
     if (!DataboxesTable.byHash) DataboxesTable.loadCache(this.all());
   }
 
-  public save(id: string, manifest: IDataboxManifest): void {
+  public save(manifest: IDataboxManifest): void {
     const storedDate = Date.now();
     this.queuePendingInsert([
-      id,
       manifest.scriptRollupHash,
       manifest.scriptEntrypoint,
       manifest.databoxModule,
@@ -33,7 +31,6 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
       storedDate,
     ]);
     DataboxesTable.byHash[manifest.scriptRollupHash] = {
-      id,
       scriptHash: manifest.scriptRollupHash,
       scriptEntrypoint: manifest.scriptEntrypoint,
       module: manifest.databoxModule,
@@ -55,7 +52,6 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
 }
 
 export interface IDataboxRecord {
-  id: string;
   scriptHash: string;
   scriptEntrypoint: string;
   module: string;

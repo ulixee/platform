@@ -16,7 +16,7 @@
       "path": "apps/chromealive-core/injected-scripts/tsconfig.json"
     }
   ],
-  "include": ["server", "apps", "playgrounds", "./*.js", "./*.json", ".eslintrc.js"],
+  "include": ["server", "apps", "playgrounds", "cli", "./*.js", "./*.json", ".eslintrc.js"],
   "exclude": [
     "**/tsconfig*.json",
     "build/**/*",

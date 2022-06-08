@@ -3,7 +3,7 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import * as Path from 'path';
 import * as Fs from 'fs';
 import { terser } from 'rollup-plugin-terser';
-const sourcemaps = require('rollup-plugin-sourcemaps');
+import sourcemaps from './sourcemaps';
 const commonjs = require('@rollup/plugin-commonjs');
 const typescript = require('@rollup/plugin-typescript');
 
@@ -104,3 +104,4 @@ function findTsConfig(path: string): string {
     path = Path.dirname(path);
   } while (path && path !== last);
 }
+

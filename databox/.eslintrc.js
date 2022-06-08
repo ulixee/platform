@@ -5,10 +5,13 @@ module.exports = {
     project: Path.join(__dirname, 'tsconfig.json'),
   },
   extends: '../.eslintrc.js',
-  rules: {
-    'no-console': 'off',
-    'global-require': 'off',
-    'import/extensions': 'off',
-  },
   ignorePatterns: ['.eslintrc.js'],
+  overrides: [
+    {
+      files: ['packager/**'],
+      rules: {
+        'no-console': 'off',
+      },
+    },
+  ],
 };

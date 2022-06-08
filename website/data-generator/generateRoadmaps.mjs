@@ -1,8 +1,8 @@
 import Fs from 'fs';
 import Path from 'path';
 import Url from 'url';
-import { unified } from 'unified'
-import remarkParse from 'remark-parse'
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
 
 const UNVERSIONED = 'UNVERSIONED';
 const __dirname = Path.dirname(Url.fileURLToPath(import.meta.url));
@@ -11,7 +11,7 @@ const websiteDir = Path.resolve(__dirname, '../');
 
 const milestonesPath = `${websiteDir}/public/data/milestones.json`;
 const rawMilestones = Fs.readFileSync(milestonesPath, 'utf-8');
-const milestones = JSON.parse(rawMilestones)
+const milestones = JSON.parse(rawMilestones);
 
 const roadmapPaths = [
   'server/ROADMAP-Server.md',
@@ -33,7 +33,11 @@ const roadmapPaths = [
 
 for (const roadmapPath of roadmapPaths) {
   const toolName = roadmapPath.match(/([^-]+)\.md$/)[1];
-  console.log(toolName, '...')
+  console.log(toolName, '...');
+  if (!Fs.existsSync(`${rootDir}/${roadmapPath}`)) {
+    console.warn(`WARN: ${rootDir}/${roadmapPath} doesn't exist!!`);
+    continue;
+  }
   const rawData = Fs.readFileSync(`${rootDir}/${roadmapPath}`, 'utf-8');
   const data = unified().use(remarkParse).parse(rawData);
 
@@ -46,14 +50,13 @@ for (const roadmapPath of roadmapPaths) {
   for (const item of data.children) {
     if (item.type === 'heading' && activeVersion == UNVERSIONED) {
       const heading = item.children.map(x => x.value).join(' ');
-      
+
       if (unversionedFeatures[heading]) {
         throw new Error(`Unversioned header already exists: ${heading}`);
       }
-      
+
       unversionedFeatures[heading] = { heading };
       unversionedHeader = heading;
-
     } else if (item.type === 'heading') {
       const value = item.children.map(x => x.value).join(' ');
       if (value === UNVERSIONED) {
@@ -64,19 +67,16 @@ for (const roadmapPath of roadmapPaths) {
       if (!match) {
         throw new Error(`Unparsable header (${roadmapPath}): ${value}`);
       }
-      
+
       const [, version, heading] = match;
       if (minorReleases[version]) {
         throw new Error(`Version already exists (${roadmapPath}): ${version}`);
       }
-      
+
       minorReleases[version] = { heading, version };
       activeVersion = version;
-  
-    } else if (item.type === 'paragraph') {  
-      const paragraphs = [
-        ...item.children.map(x => x.value),
-      ]
+    } else if (item.type === 'paragraph') {
+      const paragraphs = [...item.children.map(x => x.value)];
 
       if (activeVersion === UNVERSIONED) {
         paragraphs.unshift(unversionedFeatures[unversionedHeader].description);
@@ -110,7 +110,7 @@ for (const roadmapPath of roadmapPaths) {
     intro,
     minorReleases,
     unversionedFeatures,
-  }
+  };
   Fs.mkdirSync(Path.dirname(filePath), { recursive: true });
   Fs.writeFileSync(filePath, JSON.stringify(fileData, null, 2));
 
