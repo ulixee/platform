@@ -17,27 +17,4 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 * **databox:** add databox cores ([36e4fd8](https://github.com/ulixee/ulixee/commit/36e4fd802175985755394751dd09a8ceabc5bfa4))
 * playgrounds for hero and databox-for-hero ([34eca22](https://github.com/ulixee/ulixee/commit/34eca2237aa92e73794a3b5ea6bcc6eef41a1572))
 * renamed DataboxPackage.ts in databox/for-hero to DataboxWrapper.ts ([cfc625e](https://github.com/ulixee/ulixee/commit/cfc625ef8adffc9967429a24cabe8d0872d29263))
-
-
-
-
-
-# [2.0.0-alpha.3](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.2...v2.0.0-alpha.3) (2022-05-19)
-
-**Note:** Version bump only for package @ulixee/databox-for-hero
-
-
-
-
-
-# [2.0.0-alpha.2](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.1...v2.0.0-alpha.2) (2022-05-17)
-
-**Note:** Version bump only for package @ulixee/databox-for-hero
-
-
-
-
-
-# 2.0.0-alpha.1 (2022-05-16)
-
-**Note:** Version bump only for package @ulixee/databox-for-hero
+* ulixee cli ([767f0a9](https://github.com/ulixee/ulixee/commit/767f0a955587755df2f6a2e7042092023e68f7c6))

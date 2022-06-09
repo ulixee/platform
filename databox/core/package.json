@@ -1,13 +1,13 @@
 {
   "name": "@ulixee/databox-core",
-  "version": "2.0.0-alpha.3",
+  "version": "2.0.0-alpha.4",
   "main": "index.js",
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.3",
-    "@ulixee/net": "2.0.0-alpha.3",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.3",
+    "@ulixee/commons": "2.0.0-alpha.4",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.4",
+    "@ulixee/net": "2.0.0-alpha.4-1",
     "better-sqlite3": "^7.5.0"
   }
 }

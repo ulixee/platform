@@ -6,38 +6,9 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 # [2.0.0-alpha.4](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.3...v2.0.0-alpha.4) (2022-06-09)
 
 
-### Bug Fixes
-
-* broken databox test ([81fa421](https://github.com/ulixee/ulixee/commit/81fa42177e335c61c1f35fe645eb4f3bd15701fd))
-* packager tests ([a75162a](https://github.com/ulixee/ulixee/commit/a75162ac5cae234487e96bea1ff5b52f27a931f7))
-
-
 ### Features
 
 * **databox:** add databox cores ([36e4fd8](https://github.com/ulixee/ulixee/commit/36e4fd802175985755394751dd09a8ceabc5bfa4))
+* **databox:** packaging ([4303a87](https://github.com/ulixee/ulixee/commit/4303a8731ab3aaa6d3f5f859e760948c54305e69))
 * playgrounds for hero and databox-for-hero ([34eca22](https://github.com/ulixee/ulixee/commit/34eca2237aa92e73794a3b5ea6bcc6eef41a1572))
 * renamed DataboxPackage.ts in databox/for-hero to DataboxWrapper.ts ([cfc625e](https://github.com/ulixee/ulixee/commit/cfc625ef8adffc9967429a24cabe8d0872d29263))
-
-
-
-
-
-# [2.0.0-alpha.3](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.2...v2.0.0-alpha.3) (2022-05-19)
-
-**Note:** Version bump only for package @ulixee/databox-for-hero
-
-
-
-
-
-# [2.0.0-alpha.2](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.1...v2.0.0-alpha.2) (2022-05-17)
-
-**Note:** Version bump only for package @ulixee/databox-for-hero
-
-
-
-
-
-# 2.0.0-alpha.1 (2022-05-16)
-
-**Note:** Version bump only for package @ulixee/databox-for-hero
