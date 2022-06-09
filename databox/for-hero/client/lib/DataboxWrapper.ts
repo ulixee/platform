@@ -5,12 +5,14 @@ import DataboxInternal from './DataboxInternal';
 import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
 import IDataboxWrapper from '@ulixee/databox-interfaces/IDataboxWrapper';
 
-export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
-  implements IDataboxWrapper
-{
-  public static runLater = !!process.env.ULX_DATABOX_RUN_LATER;
+export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> implements IDataboxWrapper {
+  public static defaultExport: DataboxWrapper;
+  public static disableAutorun = !!process.env.ULX_DATABOX_DISABLE_AUTORUN;
 
-  public autoRunPromise: Promise<TOutput | Error>;
+  public disableAutorun: boolean;
+  public successCount = 0;
+  public errorCount = 0;
+
   #components: IComponents<TInput, TOutput>;
 
   constructor(components: IRunFn<TInput, TOutput> | IComponents<TInput, TOutput>) {
@@ -20,10 +22,8 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
             run: components,
           }
         : { ...components };
-
-    if (!DataboxWrapper.runLater) {
-      this.autoRunPromise = DataboxWrapper.autoRun(this);
-    }
+    
+    this.disableAutorun = DataboxWrapper.disableAutorun;
   }
 
   public async run(options: IDataboxForHeroRunOptions = {}): Promise<TOutput> {
@@ -42,16 +42,39 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
       }
     } catch (error) {
       console.error(`ERROR running databox: `, error);
+      this.errorCount++;
       throw error;
     } finally {
       await databoxInternal.close();
     }
-
+    
+    this.successCount++;
     return databoxInternal.output;
   }
 
-  public static autoRun<T>(databoxWrapper: DataboxWrapper): Promise<T | Error> {
+  public static run<T>(databoxWrapper: DataboxWrapper): Promise<T | Error> {
     const options = readCommandLineArgs();
     return databoxWrapper.run(options).catch(err => err);
   }
+
+  public static async tryAutorunDatabox(): Promise<void> {
+    let databoxWrapper = DataboxWrapper.defaultExport;
+    let parent = module.parent;
+    
+    while (!databoxWrapper && parent) {
+      if (parent === require.main && parent.exports?.default instanceof DataboxWrapper) {
+        databoxWrapper = parent.exports?.default;
+      } 
+      parent = parent.parent;
+    }
+  
+    if (databoxWrapper.disableAutorun) return;
+    if (databoxWrapper.successCount || databoxWrapper.errorCount) return;
+    await DataboxWrapper.run(databoxWrapper);    
+  }
 }
+
+process.on('beforeExit', async () => {
+  await DataboxWrapper.tryAutorunDatabox();
+  process.exit(0);
+});

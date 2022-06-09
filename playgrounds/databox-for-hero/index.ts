@@ -17,7 +17,7 @@ const { version } = require('./package.json');
 export { Observable, IHeroCreateOptions, Runner, Extractor };
 
 export default class DataboxPlayground extends DataboxWrapper {
-  public static override async autoRun<T>(databoxWrapper: DataboxWrapper): Promise<T | Error> {
+  public static override async run<T>(databoxWrapper: DataboxWrapper): Promise<T | Error> {
     let serverHost =
       UlixeeConfig.load()?.serverHost ??
       UlixeeConfig.global.serverHost ??
