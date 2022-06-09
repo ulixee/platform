@@ -35,15 +35,15 @@ describe('basic Databox tests', () => {
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
 
-    const ranScript = await new Promise(resolve => {
-      // eslint-disable-next-line no-new
-      new DataboxWrapper(async databox => {
+    const ranScript = new Promise(resolve => {
+      DataboxWrapper.defaultExport = new DataboxWrapper(async databox => {
         await databox.hero;
         resolve(true);
       });
     });
+    await DataboxWrapper.tryAutorunDatabox();
     await new Promise(resolve => process.nextTick(resolve));
-    expect(ranScript).toBe(true);
+    expect(await ranScript).toBe(true);
 
     const outgoingCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingCommands.map(c => c[0].command)).toMatchObject([
@@ -55,7 +55,7 @@ describe('basic Databox tests', () => {
   });
 
   it('waits until run method is explicitly called', async () => {
-    DataboxWrapper.runLater = true;
+    DataboxWrapper.disableAutorun = true;
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
     const databoxWrapper = new DataboxWrapper(async databox => {
@@ -76,7 +76,7 @@ describe('basic Databox tests', () => {
   });
 
   it('should call close on hero automatically', async () => {
-    DataboxWrapper.runLater = true;
+    DataboxWrapper.disableAutorun = true;
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
     const databoxWrapper = new DataboxWrapper(async databox => {
@@ -90,7 +90,7 @@ describe('basic Databox tests', () => {
   });
 
   it('should emit close hero on error', async () => {
-    DataboxWrapper.runLater = true;
+    DataboxWrapper.disableAutorun = true;
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
     const databoxWrapper = new DataboxWrapper(async databox => {
@@ -109,7 +109,7 @@ describe('basic Databox tests', () => {
   });
 
   it('should be able to bypass the interaction step', async () => {
-    DataboxWrapper.runLater = true;
+    DataboxWrapper.disableAutorun = true;
     process.env.ULX_EXTRACT_SESSION_ID = '1';
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);

@@ -31,7 +31,7 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
   });
 
   public async start(): Promise<void> {
-    DataboxWrapper.runLater = true;
+    DataboxWrapper.disableAutorun = true;
     await HeroCore.start();
     const bridge = new TransportBridge();
     HeroCore.addConnection(bridge.transportToClient);

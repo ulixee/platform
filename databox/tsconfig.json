@@ -10,6 +10,6 @@
     "allowJs": true,
     "noImplicitOverride": true
   },
-  "include": ["./**/*.ts", "./**/*.json", ".eslintrc.js"],
+  "include": ["./**/*.ts", "./**/*.json", ".eslintrc.js", "examples/basic.mjs"],
   "exclude": ["**/tsconfig*.json", "**/node_modules", "packager/test/assets", "**/build"]
 }

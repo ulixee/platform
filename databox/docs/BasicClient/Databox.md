@@ -67,11 +67,13 @@ export default new Databox({
 });
 ```
 
+If you directly execute a javascript/typescript file from the command and that file contains a default Databox export (like the scripts listed above), the databox's [run()](#run) function will automatially be invoked. You can disable this autorun feature by setting the environment variable `ULX_DATABOX_DISABLE_AUTORUN` to be truthy.
+
 ## Constructor
 
 ### new Databox<InputType,OutputType>_(function | databoxComponents)_ {#constructor}
 
-Creates a new Databox instance. If the environment variable `ULX_DATABOX_RUN_LATER` is truthy, this function will not run immediately, but wait for the [run()](#run) function to be invoked.
+Creates a new Databox instance. 
 
 A databox can be constructed with a generic type argument to type (in Typescript) the Input and Output parameters passed into your callback function(s).
 

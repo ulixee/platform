@@ -54,7 +54,7 @@ A Databox can be configured to defer running until the `run()` function is expli
 
 #### Environment Variable
 
-- ULX_DATABOX_RUN_LATER `boolean-ish`. Set to a value to enable explicitly running this Databox.
+- ULX_DATABOX_DISABLE_AUTORUN `boolean-ish`. Set this to truthy to explicitly disable autorunning Databoxes when a script is directly executed from the command line.
 
 ### Databox Core Storage {#storage}
 
