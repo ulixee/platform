@@ -29,11 +29,10 @@
     "apps/chromealive-extension",
     "apps/chromealive-core/injected-scripts",
     "playgrounds/databox-for-hero",
-    "**/hero",
+    "hero",
     "**/website",
     "**/docs",
     "**/stream",
-    "**/*.d.ts",
-    "build"
+    "**/*.d.ts"
   ]
 }
