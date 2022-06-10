@@ -4,7 +4,6 @@
   "description": "The internal developer environment that we use for building and running the Ulixee platform",
   "scripts": {
     "prepare": "husky install",
-    "bump-version": "ulx-repo-version-bump",
     "build": "yarn && yarn tsc && cd ./build && yarn",
     "build:hero": "cd hero && yarn build",
     "build:all": "yarn build:hero && yarn build",
@@ -20,7 +19,9 @@
     "test": "yarn copy:build && yarn test:build",
     "test:build": "cd ./build && cross-env ULX_DATA_DIR=.data-test NODE_ENV=test jest",
     "test:all": "yarn copy:build && cross-env ULX_DATA_DIR=.data-test NODE_ENV=test jest",
-    "lint": "eslint --cache ./"
+    "lint": "eslint --cache ./",
+    "version": "ulx-repo-version-check fix",
+    "version:bump": "ulx-repo-version-bump"
   },
   "repository": "git@github.com:ulixee/ulixee.git",
   "author": "Data Liberation Foundation",

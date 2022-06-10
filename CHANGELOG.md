@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.6](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.5...v2.0.0-alpha.6) (2022-06-10)
+
+
+### Bug Fixes
+
+* abort attemptAutorun of databox if no default databox was found ([ce16e75](https://github.com/ulixee/ulixee/commit/ce16e753b98251e3e47b4d05d6651130c61d7de4))
+* hero-playground ts not including index.js ([89360b0](https://github.com/ulixee/ulixee/commit/89360b000435ec957ce36dde6aff7e33fd00198a))
+
+
+
+
+
 # [2.0.0-alpha.5](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.3...v2.0.0-alpha.5) (2022-06-10)
 
 

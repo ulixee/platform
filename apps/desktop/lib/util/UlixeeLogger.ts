@@ -9,7 +9,9 @@ import {
 import { app } from 'electron';
 import * as Path from 'path';
 
-class UlixeeLogger extends Log {
+Object.assign(console, log.functions);
+
+export default class UlixeeLogger extends Log {
   constructor(module: NodeModule, boundContext?: any) {
     super(module, boundContext);
     this.useColors = !app.isPackaged;
@@ -39,8 +41,10 @@ class UlixeeLogger extends Log {
       log[level](...args);
     }
   }
-}
 
-injectLogger(module => {
-  return { log: new UlixeeLogger(module) };
-});
+  static register(): void {
+    injectLogger(module => {
+      return { log: new UlixeeLogger(module) };
+    });
+  }
+}
