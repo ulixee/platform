@@ -6,7 +6,7 @@
   "license": "MIT",
   "bin": "./bin/cli.js",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.4",
+    "@ulixee/commons": "2.0.0-alpha.5",
     "commander": "^9.3.0"
   }
 }

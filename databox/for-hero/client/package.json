@@ -12,11 +12,11 @@
     "./lib/utils/*": "./lib/utils/*.js"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.4",
+    "@ulixee/commons": "2.0.0-alpha.5",
     "@ulixee/databox-interfaces": "2.0.0-alpha.4",
-    "@ulixee/hero": "2.0.0-alpha.4",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.4",
-    "@ulixee/net": "2.0.0-alpha.4-1",
+    "@ulixee/hero": "2.0.0-alpha.5",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.5",
+    "@ulixee/net": "2.0.0-alpha.5",
     "@unblocked-web/specifications": "2.0.0-alpha.2",
     "awaited-dom": "1.4.0",
     "linkedom": "^0.13.0",
@@ -25,6 +25,6 @@
   "devDependencies": {
     "@types/web": "^0.0.50",
     "@ulixee/databox-testing": "2.0.0-alpha.4",
-    "@ulixee/hero-core": "2.0.0-alpha.4"
+    "@ulixee/hero-core": "2.0.0-alpha.5"
   }
 }

@@ -5,9 +5,9 @@
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.4",
+    "@ulixee/commons": "2.0.0-alpha.5",
     "@ulixee/databox-interfaces": "2.0.0-alpha.4",
-    "@ulixee/net": "2.0.0-alpha.4-1",
+    "@ulixee/net": "2.0.0-alpha.5",
     "better-sqlite3": "^7.5.0"
   }
 }

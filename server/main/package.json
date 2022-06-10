@@ -16,11 +16,11 @@
   },
   "peerDependencies": {
     "@ulixee/apps-chromealive-core": "2.0.0-alpha.4",
-    "@ulixee/commons": "2.0.0-alpha.4",
+    "@ulixee/commons": "2.0.0-alpha.5",
     "@ulixee/databox-core": "2.0.0-alpha.4",
-    "@ulixee/hero-core": "2.0.0-alpha.4",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.4",
-    "@ulixee/net": "2.0.0-alpha.4-1"
+    "@ulixee/hero-core": "2.0.0-alpha.5",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.5",
+    "@ulixee/net": "2.0.0-alpha.5"
   },
   "peerDependenciesMeta": {
     "@ulixee/apps-chromealive-core": {
@@ -32,6 +32,6 @@
     "ws": "^7.4.6"
   },
   "devDependencies": {
-    "@ulixee/hero-testing": "2.0.0-alpha.4"
+    "@ulixee/hero-testing": "2.0.0-alpha.5"
   }
 }

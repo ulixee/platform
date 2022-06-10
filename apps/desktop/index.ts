@@ -8,7 +8,7 @@ const { version } = require('./package.json');
 Object.assign(console, log.functions);
 
 if (app.isPackaged) {
-  process.env.DEBUG = [process.env.DEBUG ?? '', 'ulixee:*'].filter(Boolean).join(',');
+  process.env.DEBUG = [process.env.DEBUG ?? '', 'ulx:*'].filter(Boolean).join(',');
 }
 
 if (process.argv.some(x => x.includes('--chromealive'))) {
