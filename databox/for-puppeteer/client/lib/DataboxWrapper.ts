@@ -6,7 +6,9 @@ import IDataboxForPuppeteerRunOptions from '../interfaces/IDataboxForPuppeteerRu
 import IComponents, { IRunFn } from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
 
-export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> implements IDataboxWrapper {
+export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
+  implements IDataboxWrapper
+{
   public static defaultExport: DataboxWrapper;
 
   public disableAutorun: boolean;
@@ -22,15 +24,12 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
             run: components,
           }
         : { ...components };
-    
+
     this.disableAutorun = !!process.env.ULX_DATABOX_DISABLE_AUTORUN;
   }
 
   public async run(options: IDataboxForPuppeteerRunOptions = {}): Promise<TOutput> {
-    const databoxInternal = new DataboxInternal<TInput, TOutput>(
-      options,
-      this.#components.defaults,
-    );
+    const databoxInternal = new DataboxInternal(options, this.#components.defaults);
     try {
       await databoxInternal.execRunner(this.#components.run);
     } catch (error) {
@@ -40,7 +39,7 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
     } finally {
       await databoxInternal.close();
     }
-    
+
     this.successCount++;
     return databoxInternal.output;
   }
@@ -54,6 +53,5 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
     await attemptAutorun(module.parent, require.main, DataboxWrapper);
   }
 }
-
 
 setupAutorunBeforeExitHook(DataboxWrapper);

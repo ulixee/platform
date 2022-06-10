@@ -1,7 +1,7 @@
 import { Helpers } from '@ulixee/hero-testing';
 import { ITestKoaServer } from '@ulixee/hero-testing/helpers';
-import ResourceSearch from '../lib/ResourceSearch';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import ResourceSearch from '../lib/ResourceSearch';
 
 let koaServer: ITestKoaServer;
 beforeAll(async () => {

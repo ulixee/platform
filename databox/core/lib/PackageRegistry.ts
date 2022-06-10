@@ -4,9 +4,9 @@ import { promises as Fs } from 'fs';
 import * as Hasher from '@ulixee/commons/lib/Hasher';
 import * as Path from 'path';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
+import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
 import DataboxesDb from './DataboxesDb';
 import { IDataboxRecord } from './DataboxesTable';
-import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
 
 export default class PackageRegistry {
   private readonly databoxesDb: DataboxesDb;
@@ -62,6 +62,7 @@ export default class PackageRegistry {
   private checkDataboxModuleInstalled(module: string, version: string): void {
     let installedModuleVersion: string;
     try {
+      // eslint-disable-next-line global-require,import/no-dynamic-require
       const databoxPackageJson = require(`${module}/package.json`);
       installedModuleVersion = databoxPackageJson.version;
     } catch (error) {

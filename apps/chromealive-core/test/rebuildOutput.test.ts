@@ -1,6 +1,6 @@
 import Output from '@ulixee/databox-for-hero/lib/Output';
-import OutputRebuilder from '../lib/OutputRebuilder';
 import ObjectObserver from '@ulixee/databox-for-hero/lib/ObjectObserver';
+import OutputRebuilder from '../lib/OutputRebuilder';
 
 describe('basic OutputRebuilder tests', () => {
   it('should be able to rebuild an output with snapshots at every external id', async () => {

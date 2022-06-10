@@ -9,6 +9,7 @@ module.exports = {
     {
       files: ['**/*.ts'],
       rules: {
+        'no-eval': 'off',
         'max-classes-per-file': 'off',
         '@typescript-eslint/no-unused-vars': 'off',
         '@typescript-eslint/explicit-function-return-type': 'off',

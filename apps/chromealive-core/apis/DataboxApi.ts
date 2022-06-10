@@ -1,9 +1,9 @@
 import { IHeroSessionArgs } from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
-import SessionObserver from '../lib/SessionObserver';
-import ChromeAliveCore from '../index';
 import IDataboxApi, {
   IDataboxApiStatics,
 } from '@ulixee/apps-chromealive-interfaces/apis/IDataboxApi';
+import SessionObserver from '../lib/SessionObserver';
+import ChromeAliveCore from '../index';
 
 @IDataboxApiStatics
 export default class DataboxApi {

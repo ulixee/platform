@@ -134,7 +134,7 @@ export default class DomNodeState {
       if (node.isElement || node.isShadowRoot) return true;
     }
     if (this.changes?.removedChildIds) {
-      for (const childId of this.changes?.removedChildIds) {
+      for (const childId of this.changes.removedChildIds) {
         const node = this.nodesById[childId];
         if (node.isElement || node.isShadowRoot) return true;
       }
@@ -339,7 +339,7 @@ export default class DomNodeState {
       chunk += attr.substring(offset, nextSplit);
 
       // data URIs can contain semicolons, so make sure we get the whole thing
-      if (/url\([^\)]+$/.test(chunk)) {
+      if (/url\([^)]+$/.test(chunk)) {
         chunk += ';';
         offset = nextSplit + 1;
         continue;

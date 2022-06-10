@@ -11,6 +11,13 @@ module.exports = {
       files: ['packager/**'],
       rules: {
         'no-console': 'off',
+        'import/no-dynamic-require': 'off',
+      },
+    },
+    {
+      files: ['**/DataboxWrapper.ts'],
+      rules: {
+        'import/no-import-module-exports': 'off',
       },
     },
   ],

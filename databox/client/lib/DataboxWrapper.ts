@@ -1,10 +1,10 @@
+import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
+import IDataboxWrapper from '@ulixee/databox-interfaces/IDataboxWrapper';
+import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
 import readCommandLineArgs from './utils/readCommandLineArgs';
 import IComponents, { IRunFn } from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
-import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
-import IDataboxWrapper from '@ulixee/databox-interfaces/IDataboxWrapper';
 import { setupAutorunBeforeExitHook, attemptAutorun } from './utils/Autorun';
-import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
 
 export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> implements IDataboxWrapper {
   public static defaultExport: DataboxWrapper;

@@ -1,8 +1,8 @@
-import IDataboxForHeroRunOptions from '../interfaces/IDataboxForHeroRunOptions';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Hero, { IHeroCreateOptions } from '@ulixee/hero';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
 import { InternalPropertiesSymbol, scriptInstance } from '@ulixee/hero/lib/internal';
+import IDataboxForHeroRunOptions from '../interfaces/IDataboxForHeroRunOptions';
 import Output, { createObservableOutput } from './Output';
 import './DomExtender';
 import './ResourceExtender';

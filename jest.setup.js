@@ -1,4 +1,5 @@
 const fs = require('fs');
+
 const rmSync = 'rmSync' in fs ? 'rmSync' : 'rmdirSync';
 
 // eslint-disable-next-line import/no-extraneous-dependencies

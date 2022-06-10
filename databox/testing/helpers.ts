@@ -8,11 +8,11 @@ import * as net from 'net';
 import * as http2 from 'http2';
 import Core from '@ulixee/hero-core';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
-import { Helpers } from './index';
 import Hero, { ConnectionToHeroCore, IHeroCreateOptions } from '@ulixee/hero';
 import DataboxInternal from '@ulixee/databox-for-hero/lib/DataboxInternal';
 import IDataboxForHeroRunOptions from '@ulixee/databox-for-hero/interfaces/IDataboxForHeroRunOptions';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
+import { Helpers } from './index';
 
 export const needsClosing: { close: () => Promise<any> | void; onlyCloseOnFinal?: boolean }[] = [];
 

@@ -23,13 +23,14 @@ export default function cliCommands(): Command {
   for (const { module, name, description } of modules) {
     try {
       const modulePath = require.resolve(module, { paths: [cwd] });
+      // eslint-disable-next-line global-require,import/no-dynamic-require
       const commands: Command = require(modulePath).default();
       commands.name(name).description(description);
       program.addCommand(commands);
     } catch (error) {
       program
         .command(name)
-        .description(description + ' [NOT INSTALLED]')
+        .description(`${description  } [NOT INSTALLED]`)
         .action(() => {
           console.warn(
             `You don't have the required Ulixee module installed in this project.\n\nnpm install --save ${module}\n\n`,

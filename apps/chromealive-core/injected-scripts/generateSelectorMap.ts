@@ -138,7 +138,7 @@ function createAncestorSelector(
     if (!value) {
       selectorMaskByElement.set(combo.element, value);
     }
-    value = value | (1n << BigInt(combo.index));
+    value |= (1n << BigInt(combo.index));
     selectorMaskByElement.set(combo.element, value);
   }
 
@@ -247,7 +247,7 @@ function generateTarget(element: Element, boundary: ParentNode): ITarget {
 
 function generateAncestors(element: Element, boundary: ParentNode): IAncestors {
   const ancestors: IAncestors = [];
-  while (true) {
+  while (element) {
     element = element.parentElement;
     if (!element) return ancestors;
     const selectorOptions = extractSelectorOptions(element, boundary, ancestors.length);

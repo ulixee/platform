@@ -1,11 +1,11 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import IDataboxPackage from '@ulixee/databox-interfaces/IDataboxPackage';
-import rollupDatabox from './lib/rollupDatabox';
 import { readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import { ConnectionToDataboxCore } from '@ulixee/databox';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 import * as Hasher from '@ulixee/commons/lib/Hasher';
+import rollupDatabox from './lib/rollupDatabox';
 
 export default class DataboxPackager {
   public readonly relativeScriptPath: string;
@@ -24,7 +24,7 @@ export default class DataboxPackager {
     this.databoxModule = options?.databoxModule ?? '@ulixee/databox-for-hero';
     this.projectPath = Path.resolve(this.findProjectPath());
     this.entrypoint = Path.resolve(entrypoint);
-    this.relativeScriptPath = Path.relative(this.projectPath + '/..', entrypoint);
+    this.relativeScriptPath = Path.relative(`${this.projectPath  }/..`, entrypoint);
     if (options?.outputPath) {
       this.outputPath = Path.resolve(options.outputPath);
       const path = this.outputPath;
@@ -99,7 +99,9 @@ export default class DataboxPackager {
       if (Fs.existsSync(Path.join(rootPath, 'package.json'))) {
         return rootPath;
       }
-    } catch (e) {}
+    } catch (e) {
+      /* no-op */
+    }
 
     let last: string;
     let path = this.entrypoint;

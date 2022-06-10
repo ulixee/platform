@@ -4,6 +4,7 @@ import * as Path from 'path';
 import * as Fs from 'fs';
 import { terser } from 'rollup-plugin-terser';
 import sourcemaps from './sourcemaps';
+
 const commonjs = require('@rollup/plugin-commonjs');
 const typescript = require('@rollup/plugin-typescript');
 
@@ -55,7 +56,7 @@ export default async function rollupDatabox(
     });
 
     const outFn = options.dryRun ? 'generate' : 'write';
-    const outFile = outDir + '/databox.js';
+    const outFile = `${outDir}/databox.js`;
     const { output } = await bundle[outFn]({
       file: outFile,
       sourcemap: true,
@@ -75,7 +76,7 @@ export default async function rollupDatabox(
     for (const [module, details] of Object.entries(out.modules)) {
       if (details.renderedLength > 0) modules.push(module);
     }
-    const code = Buffer.from(out.code + '//# sourceMappingURL=databox.js.map\n' + '');
+    const code = Buffer.from(`${out.code}//# sourceMappingURL=databox.js.map\n`);
     const bytes = Buffer.byteLength(code);
     await bundle?.close();
     return {
@@ -104,4 +105,3 @@ function findTsConfig(path: string): string {
     path = Path.dirname(path);
   } while (path && path !== last);
 }
-

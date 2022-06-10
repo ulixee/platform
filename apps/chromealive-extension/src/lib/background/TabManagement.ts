@@ -7,8 +7,9 @@ const hiddenTabIds = new Set<number>();
 const isStarted = createHiddenGroup().catch(error =>
   console.error('Error creating hidden group', error),
 );
+
 // @ts-expect-error
-self.details = {
+self.details = { // eslint-disable-line no-restricted-globals
   visibleTabIds,
   hiddenTabIds,
   creatingTabGroup,
@@ -34,7 +35,7 @@ export async function hideTabs(payload: { showTabIds: number[] }): Promise<void>
     await createTabGroup([...hiddenTabIds]);
   }
 
-  logDebug('Grouped tabs at ' + new Date().toISOString(), {
+  logDebug(`Grouped tabs at ${  new Date().toISOString()}`, {
     hiddenGroupId,
     hiddenTabIds: Array.from(hiddenTabIds),
     visibleTabs: [...visibleTabIds],

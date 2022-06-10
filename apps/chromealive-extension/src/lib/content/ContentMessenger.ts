@@ -107,7 +107,9 @@ function registerActivePort(port: chrome.runtime.Port): void {
   if (activePort && activePort !== port) {
     try {
       activePort.disconnect();
-    } catch (err) {}
+    } catch (err) {
+      /* no-op */
+    }
   }
   activePort = port;
   activePort.onDisconnect.addListener(onPortDisconnect.bind(null, port));

@@ -1,6 +1,6 @@
 import '@ulixee/commons/lib/SourceMapSupport';
-import { Menubar } from './lib/Menubar';
 import { app } from 'electron';
+import { Menubar } from './lib/Menubar';
 
 if (app.isPackaged) {
   process.env.DEBUG = [process.env.DEBUG ?? '', 'ulx:*', 'ubk'].filter(Boolean).join(',');

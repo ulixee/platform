@@ -1,7 +1,7 @@
 import { Command } from 'commander';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import UlixeeServer from './index';
 import UlixeeServerEnv from './env';
-import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 
 const pkg = require('./package.json');
 

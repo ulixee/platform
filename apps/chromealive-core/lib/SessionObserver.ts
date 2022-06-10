@@ -11,24 +11,15 @@ import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/eve
 import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
 import { fork } from 'child_process';
 import Log from '@ulixee/commons/lib/Logger';
-import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
-import ChromeAliveCore from '../index';
 import TimelineWatch from '@ulixee/hero-timetravel/lib/TimelineWatch';
-import AliveBarPositioner from './AliveBarPositioner';
-import OutputRebuilder, { IOutputSnapshot } from './OutputRebuilder';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import SourceCodeTimeline from './SourceCodeTimeline';
 import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
-import VueScreen from './VueScreen';
-import DevtoolsBackdoorModule from './hero-plugin-modules/DevtoolsBackdoorModule';
-import ElementsModule from './hero-plugin-modules/ElementsModule';
 import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
 import SourceLoader from '@ulixee/commons/lib/SourceLoader';
 import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation';
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
 import MirrorPage from '@ulixee/hero-timetravel/lib/MirrorPage';
-import HeroCorePlugin from './HeroCorePlugin';
 import CommandTimeline from '@ulixee/hero-timetravel/lib/CommandTimeline';
 import { LoadStatus } from '@unblocked-web/specifications/agent/browser/Location';
 import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
@@ -36,9 +27,18 @@ import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEve
 import ISessionSearchResult, {
   ISearchContext,
 } from '@ulixee/apps-chromealive-interfaces/ISessionSearchResult';
-import ResourceSearch from './ResourceSearch';
 import { ISelectorMap } from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
+import ResourceSearch from './ResourceSearch';
+import HeroCorePlugin from './HeroCorePlugin';
+import ElementsModule from './hero-plugin-modules/ElementsModule';
+import DevtoolsBackdoorModule from './hero-plugin-modules/DevtoolsBackdoorModule';
+import VueScreen from './VueScreen';
+import SourceCodeTimeline from './SourceCodeTimeline';
+import OutputRebuilder, { IOutputSnapshot } from './OutputRebuilder';
+import AliveBarPositioner from './AliveBarPositioner';
+import ChromeAliveCore from '../index';
+import TabGroupModule from './hero-plugin-modules/TabGroupModule';
 
 const { log } = Log(module);
 

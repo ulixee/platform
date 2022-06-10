@@ -4,5 +4,16 @@
   },
   "devDependencies": {
     "lerna": "^4.0.0"
+  },
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "databox/*",
+      "databox/for-hero/*",
+      "databox/for-puppeteer/*",
+      "server/*",
+      "cli",
+      "playgrounds/*"
+    ]
   }
 }

@@ -1,8 +1,8 @@
 import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
-import highlightConfig from './highlightConfig';
-import HeroCorePlugin from '../HeroCorePlugin';
 import * as fs from 'fs';
 import { ISelectorMap } from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
+import highlightConfig from './highlightConfig';
+import HeroCorePlugin from '../HeroCorePlugin';
 
 const installSymbol = Symbol.for('@ulixee/generateSelectorMap');
 export default class ElementsModule {

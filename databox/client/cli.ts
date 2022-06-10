@@ -62,7 +62,7 @@ export default function databoxCommands(): Command {
 
 function getPackager(path: string, outputPath: string): Packager {
   try {
-    // eslint-disable-next-line import/no-extraneous-dependencies
+    // eslint-disable-next-line import/no-extraneous-dependencies,global-require
     const PackagerClass: typeof Packager = require('@ulixee/databox-packager').default;
     return new PackagerClass(path, { outputPath });
   } catch (error) {

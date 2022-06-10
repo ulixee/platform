@@ -204,7 +204,9 @@ function registerPort(tabId: number, portLocation: IMessageLocation, port: chrom
   if (existing && existing !== port) {
     try {
       existing.disconnect();
-    } catch (error) {}
+    } catch (error) {
+      /* no-op */
+    }
   }
 
   portsByTabId[tabId][portLocation] = port;

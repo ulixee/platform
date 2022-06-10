@@ -7,17 +7,17 @@ import launchChromeAlive from '@ulixee/apps-chromealive/index';
 import { Browser } from '@unblocked-web/agent';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
-import HeroCorePlugin, { extensionPath } from './lib/HeroCorePlugin';
-import SessionObserver from './lib/SessionObserver';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
-import AliveBarPositioner from './lib/AliveBarPositioner';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxCollectedAssetEvent';
 import { URL } from 'url';
-import ChromeAliveCoreApis from './apis';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
+import ChromeAliveCoreApis from './apis';
+import AliveBarPositioner from './lib/AliveBarPositioner';
+import SessionObserver from './lib/SessionObserver';
+import HeroCorePlugin, { extensionPath } from './lib/HeroCorePlugin';
 
 const { log } = Log(module);
 
@@ -117,7 +117,7 @@ export default class ChromeAliveCore {
     log.info('Changing active session', {
       isPageVisible,
       sessionId: heroSessionId,
-      pageId: pageId,
+      pageId,
     });
 
     if (this.activeHeroSessionId) {

@@ -13,7 +13,7 @@ const RankByType = {
   id: 2,
   class: 3,
   attr: 4,
-}
+};
 
 function sortByLength(a, b) {
   return a.length - b.length;
@@ -43,21 +43,31 @@ function generateShortSelectors(layers: ILayers, ancestorKeyPairs: string[][]): 
   let selectorDepth = 0;
   while (selectors.length < maxSelectorCount) {
     const maxSelectorCountRemaining = maxSelectorCount - selectors.length;
-    const possibleSelectors = fetchSelectorsToCheck(selectorDepth, layers, ancestorKeyPairs, maxSelectorCountRemaining);
+    const possibleSelectors = fetchSelectorsToCheck(
+      selectorDepth,
+      layers,
+      ancestorKeyPairs,
+      maxSelectorCountRemaining,
+    );
     for (const possibleSelector of possibleSelectors) {
       const hasOneMatch = document.querySelectorAll(possibleSelector).length === 1;
       if (!hasOneMatch) continue;
 
-      selectors.push(possibleSelector)
+      selectors.push(possibleSelector);
     }
-    selectorDepth++;
+    selectorDepth += 1;
   }
   return selectors;
 }
 
-function fetchSelectorsToCheck(depth: number, layers: ILayers, ancestorKeyPairs: string[][], maxSelectorCount: number): string[] {
+function fetchSelectorsToCheck(
+  depth: number,
+  layers: ILayers,
+  ancestorKeyPairs: string[][],
+  maxSelectorCount: number,
+): string[] {
   const selectors = [];
-  for (const ancestorKeys of ancestorKeyPairs.filter(x => x.length === depth+2)) {
+  for (const ancestorKeys of ancestorKeyPairs.filter(x => x.length === depth + 2)) {
     let baseSelectors = [''];
     let prevKey;
     for (const key of ancestorKeys) {
@@ -66,7 +76,7 @@ function fetchSelectorsToCheck(depth: number, layers: ILayers, ancestorKeyPairs:
         isDirectSibling = true;
       }
       const layer = layers[key];
-      const selectorOptions = layer.selectorOptions.filter(x => x.length === depth+1);
+      const selectorOptions = layer.selectorOptions.filter(x => x.length === depth + 1);
       baseSelectors = appendToSelectors(baseSelectors, selectorOptions, isDirectSibling);
     }
     selectors.push(...baseSelectors);
@@ -75,7 +85,11 @@ function fetchSelectorsToCheck(depth: number, layers: ILayers, ancestorKeyPairs:
   return selectors;
 }
 
-function appendToSelectors(baseSelectors, selectorOptions: ISelectorOption[], isDirectSibling: boolean): string[] {
+function appendToSelectors(
+  baseSelectors,
+  selectorOptions: ISelectorOption[],
+  isDirectSibling: boolean,
+): string[] {
   const newSelectors = [];
   const relation = isDirectSibling ? ' > ' : ' ';
   for (const selectorOption of selectorOptions) {
@@ -84,12 +98,12 @@ function appendToSelectors(baseSelectors, selectorOptions: ISelectorOption[], is
       for (const baseSelector of baseSelectors) {
         newSelectors.push(`${baseSelector}${relation}${newPart}`);
       }
-    } catch(error) {
+    } catch (error) {
       console.log(selectorOption);
       throw error;
     }
   }
-  return newSelectors
+  return newSelectors;
 }
 
 function generateLayerKeyPairs(target: ITarget, ancestors: IAncestors): string[][] {
@@ -105,7 +119,9 @@ function generateTarget(element: Element): ITarget {
   const selectorOptions = extractSelectorOptions(element);
   const parentElement = element.parentElement;
   try {
-    const uniqueToParent = selectorOptions.filter(x => parentElement.querySelectorAll(x.join('')).length === 1);
+    const uniqueToParent = selectorOptions.filter(
+      x => parentElement.querySelectorAll(x.join('')).length === 1,
+    );
     return { element, selectorOptions: uniqueToParent };
   } catch (error) {
     console.log(selectorOptions);
@@ -115,7 +131,7 @@ function generateTarget(element: Element): ITarget {
 
 function generateAncestors(element: Element): IAncestors {
   const ancestors: IAncestors = [];
-  while(true) {
+  while (element) {
     const parent = element.parentElement;
     if (parent.localName === 'body') break;
     const selectorOptions = extractSelectorOptions(parent);
@@ -129,12 +145,12 @@ function extractSelectorOptions(element: Element): ISelectorOption[] {
   const tagName = element.localName;
   const id = element.id && !element.id.match(/^[0-9]/) ? `#${element.id}` : null;
   const classes = Array.from(element.classList).map(x => `.${x}`);
-  const attrNames = element.getAttributeNames().filter(k => !['class'].includes(k))
+  const attrNames = element.getAttributeNames().filter(k => !['class'].includes(k));
   const attrs = attrNames.map(x => {
     const v = element.getAttribute(x);
     // only treat ID as an attribute if it starts with a number
     if (x === 'id' && v && !v.match(/^[0-9]/)) return;
-    return `[${x}="${v}"]`
+    return `[${x}="${v}"]`;
   });
   const parts = [
     { type: 'tag', rank: RankByType.tag, value: tagName },
@@ -144,7 +160,7 @@ function extractSelectorOptions(element: Element): ISelectorOption[] {
   ].filter(x => x.value);
 
   const selectorCombinations = generateAllCombinations(parts).map(combination => {
-    return combination.sort((a,b) => a.rank - b.rank);
+    return combination.sort((a, b) => a.rank - b.rank);
   });
 
   selectorCombinations.sort((a, b) => {
@@ -161,9 +177,8 @@ function extractSelectorOptions(element: Element): ISelectorOption[] {
 }
 
 function generateAllCombinations(options) {
-  const combinationFn = function(activeSet, restOfArray, all) {
-    if (!activeSet.length && !restOfArray.length)
-      return;
+  function combinationFn(activeSet, restOfArray, all) {
+    if (!activeSet.length && !restOfArray.length) return;
     if (!restOfArray.length) {
       all.push(activeSet);
     } else {
@@ -171,7 +186,7 @@ function generateAllCombinations(options) {
       combinationFn([...activeSet], restOfArray.slice(1), all);
     }
     return all;
-  }
+  };
   return combinationFn([], [...options], []);
 }
 
@@ -180,7 +195,7 @@ function calculatePossibleSelectorCount(layers: ILayers, ancestorKeyPairs: strin
   for (const ancestorKeys of ancestorKeyPairs) {
     let localCount = 1;
     for (const ancestorKey of ancestorKeys) {
-      localCount *= layers[ancestorKey].selectorOptions.length
+      localCount *= layers[ancestorKey].selectorOptions.length;
     }
     count += localCount;
   }

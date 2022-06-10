@@ -1,10 +1,10 @@
 import { IDataboxApis } from '@ulixee/databox-interfaces/IDataboxApis';
 import IDataboxPackage from '@ulixee/databox-interfaces/IDataboxPackage';
-import PackageRegistry from './lib/PackageRegistry';
-import IDataboxModuleRunner from './interfaces/IDataboxModuleRunner';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
+import IDataboxModuleRunner from './interfaces/IDataboxModuleRunner';
+import PackageRegistry from './lib/PackageRegistry';
 import env from './env';
 
 type IDataboxConnectionToClient = ConnectionToClient<IDataboxApis, {}>;

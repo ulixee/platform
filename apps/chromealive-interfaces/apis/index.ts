@@ -1,10 +1,10 @@
+import type ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
+import type ICoreRequestPayload from '@ulixee/net/interfaces/ICoreRequestPayload';
 import ISessionApi from './ISessionApi';
 import IDevtoolsBackdoorApi from './IDevtoolsBackdoorApi';
 import IAppApi from './IAppApi';
 import IMouseApi from './IMouseApi';
 import IDataboxApi from './IDataboxApi';
-import type ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
-import type ICoreRequestPayload from '@ulixee/net/interfaces/ICoreRequestPayload';
 
 export type IChromeAliveApis = {
   'Session.quit': ISessionApi['quit'];

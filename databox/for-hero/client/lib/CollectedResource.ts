@@ -1,7 +1,7 @@
 import ICollectedResource from '@ulixee/hero-interfaces/ICollectedResource';
-import ICollectedResourceDetails from '../interfaces/ICollectedResourceDetails';
 import IResourceType from '@unblocked-web/specifications/agent/net/IResourceType';
 import IWebsocketMessage from '@ulixee/hero-interfaces/IWebsocketMessage';
+import ICollectedResourceDetails from '../interfaces/ICollectedResourceDetails';
 
 export default class CollectedResource implements ICollectedResourceDetails {
   public documentUrl: string;

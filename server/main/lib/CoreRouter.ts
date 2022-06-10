@@ -1,5 +1,3 @@
-import Server from '../index';
-import ChromeAliveUtils from './ChromeAliveUtils';
 import DataboxCore from '@ulixee/databox-core';
 import HeroCore from '@ulixee/hero-core';
 import * as WebSocket from 'ws';
@@ -8,6 +6,8 @@ import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
+import ChromeAliveUtils from './ChromeAliveUtils';
+import Server from '../index';
 
 export default class CoreRouter {
   public static modulesToRegister = ['@ulixee/databox-for-hero-core/register'];
@@ -98,7 +98,9 @@ export default class CoreRouter {
 
 function safeRegisterModule(path: string): void {
   try {
-    // eslint-disable-next-line import/no-extraneous-dependencies
+    // eslint-disable-next-line import/no-dynamic-require
     require(path);
-  } catch (err) {}
+  } catch (err) {
+    /* no-op */
+  }
 }

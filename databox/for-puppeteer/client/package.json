@@ -1,6 +1,7 @@
 {
   "name": "@ulixee/databox-for-puppeteer",
-  "version": "2.0.0-alpha.5",
+  "version": "2.0.0-alpha.6",
+  "private": true,
   "description": "The Databox for Puppeteer library.",
   "exports": {
     ".": {
@@ -12,12 +13,11 @@
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.5",
-    "@ulixee/databox": "2.0.0-alpha.5",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.5",
-    "@types/puppeteer": "^5.4.6",
+    "@ulixee/databox": "2.0.0-alpha.6",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.6",
     "puppeteer": "^14.3.0"
   },
   "devDependencies": {
-    "@ulixee/databox-testing": "2.0.0-alpha.5"
+    "@ulixee/databox-testing": "2.0.0-alpha.6"
   }
 }

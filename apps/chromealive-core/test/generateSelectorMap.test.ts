@@ -9,8 +9,8 @@ afterAll(Helpers.afterAll);
 afterEach(Helpers.afterEach);
 
 test('bitmasks should convert', () => {
-  expect(getMaxBitmaskValue([1, 2, 3])).toEqual(BigInt(parseInt('111', 2)));
-  expect(decodeBitmask(BigInt(parseInt('1010', 2)), [1, 2, 3, 4])).toEqual([2, 4]);
+  expect(getMaxBitmaskValue([1, 2, 3])).toEqual(BigInt(0b111));
+  expect(decodeBitmask(BigInt(0b1010), [1, 2, 3, 4])).toEqual([2, 4]);
 });
 
 test('should be able to find a shortest path', async () => {

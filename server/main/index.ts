@@ -7,8 +7,8 @@ import { createPromise } from '@ulixee/commons/lib/utils';
 import { isWsOpen } from '@ulixee/net/lib/WsUtils';
 import UlixeeServerConfig from '@ulixee/commons/config/servers';
 import UlixeeConfig from '@ulixee/commons/config';
-import CoreRouter from './lib/CoreRouter';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import CoreRouter from './lib/CoreRouter';
 
 const pkg = require('./package.json');
 

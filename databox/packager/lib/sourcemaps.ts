@@ -23,7 +23,9 @@ export default function sourcemaps(): Plugin {
           }
           result.map = rawMap;
         }
-      } catch (_b) {}
+      } catch (_b) {
+        /* no-op */
+      }
       return Promise.resolve(result);
     },
   };

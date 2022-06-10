@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import IDevtoolsSession, { Protocol } from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { extensionId } from '../ExtensionUtils';
 import {
   ___sendToCore,
@@ -9,7 +10,6 @@ import {
   extractStringifiedComponentsFromMessage,
   IMessageObject,
 } from '../BridgeHelpers';
-import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 
 export default class BridgeToDevtoolsPrivate extends EventEmitter {
   private devtoolsSessionMap = new Map<
@@ -112,7 +112,7 @@ export default class BridgeToDevtoolsPrivate extends EventEmitter {
   private async getDevtoolsSessionWithTabId(tabId: number): Promise<IDevtoolsSession> {
     for (const [session, details] of this.devtoolsSessionMap) {
       if (details.tabId === tabId) return session;
-      else if (!details.tabId) {
+      if (!details.tabId) {
         const loadedTabId = await this.getDevtoolsTabId(session);
         if (loadedTabId === tabId) return session;
       }
@@ -263,13 +263,13 @@ function interceptElementWasSelected(sendToCoreFnName, eventType): void {
     return;
   }
 
-  const inspectNodeRequested = globalSDK.OverlayModel.prototype.inspectNodeRequested;
-  globalSDK.OverlayModel.prototype.inspectNodeRequested = function ({ backendNodeId }) {
-    const payload = '{"event":"' + eventType + '","backendNodeId": ' + backendNodeId + '}';
+  const inspectNodeRequestedOrig = globalSDK.OverlayModel.prototype.inspectNodeRequested;
+  globalSDK.OverlayModel.prototype.inspectNodeRequested = function inspectNodeRequested({ backendNodeId }) {
+    const payload = `{"event":"${  eventType  }","backendNodeId": ${  backendNodeId  }}`;
     const packedMessage =
-      ':ContentScript       :N:{"origLocation":"DevtoolsPrivate","payload":' + payload + '}';
+      `:ContentScript       :N:{"origLocation":"DevtoolsPrivate","payload":${  payload  }}`;
     globalWindow[sendToCoreFnName](packedMessage);
-    inspectNodeRequested.call(this, { backendNodeId });
+    inspectNodeRequestedOrig.call(this, { backendNodeId });
   };
 }
 

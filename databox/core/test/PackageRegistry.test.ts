@@ -1,6 +1,6 @@
-import PackageRegistry from '../lib/PackageRegistry';
 import * as Hasher from '@ulixee/commons/lib/Hasher';
 import { readFileSync } from 'fs';
+import PackageRegistry from '../lib/PackageRegistry';
 
 test('it should throw an error if the databox module is not installed', async () => {
   const registry = new PackageRegistry(process.env.ULX_DATA_DIR ?? '.');

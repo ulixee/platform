@@ -6,12 +6,13 @@ import UlixeeServer from '@ulixee/server';
 import * as Positioner from 'electron-positioner';
 import * as Path from 'path';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import UlixeeConfig from '@ulixee/commons/config';
+import { autoUpdater, UpdateInfo, ProgressInfo } from 'electron-updater';
 import IMenubarOptions from '../interfaces/IMenubarOptions';
 import { getWindowPosition } from './util/getWindowPosition';
 import VueServer from './VueServer';
 import installDefaultChrome from './util/installDefaultChrome';
-import UlixeeConfig from '@ulixee/commons/config';
-import { autoUpdater, UpdateInfo, ProgressInfo } from 'electron-updater';
+
 const { version } = require('../package.json');
 // Forked from https://github.com/maxogden/menubar
 

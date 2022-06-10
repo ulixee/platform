@@ -5,6 +5,7 @@ import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
+import Log from '@ulixee/commons/lib/Logger';
 import { extensionId } from '../ExtensionUtils';
 import ChromeAliveCore from '../../index';
 import {
@@ -15,7 +16,6 @@ import {
   isResponseMessage,
   messageExpectsResponse,
 } from '../BridgeHelpers';
-import Log from '@ulixee/commons/lib/Logger';
 
 const { log } = Log(module);
 

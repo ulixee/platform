@@ -1,5 +1,6 @@
 import * as Http from 'http';
 import Server from '../index';
+
 const pkg = require('../package.json');
 
 describe('basic Server tests', () => {

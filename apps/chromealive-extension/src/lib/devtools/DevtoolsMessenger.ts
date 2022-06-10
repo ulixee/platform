@@ -107,7 +107,9 @@ function handleConnectedToBackgroundScript(port: IPort) {
   if (activePort && activePort !== port) {
     try {
       activePort.disconnect();
-    } catch (err) {}
+    } catch (err) {
+      /* no-op */
+    }
   }
   activePort = port;
   activePort.onDisconnect.addListener(disconnectPort.bind(null, port));

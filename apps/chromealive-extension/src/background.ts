@@ -30,7 +30,7 @@ onMessagePayload((payload, sendResponseFn) => {
       })
       .catch(error => console.error('chrome.runtime.onMessageResponse:ERROR', { payload, error }));
     return true;
-  } else if (payload.action === 'getCoreServerAddress') {
+  } if (payload.action === 'getCoreServerAddress') {
     sendResponseFn(__CORE_SERVER_ADDRESS__);
     return true;
   }
