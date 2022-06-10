@@ -8,7 +8,6 @@ import { setupAutorunBeforeExitHook, attemptAutorun } from '@ulixee/databox/lib/
 
 export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> implements IDataboxWrapper {
   public static defaultExport: DataboxWrapper;
-  public static disableAutorun = !!process.env.ULX_DATABOX_DISABLE_AUTORUN;
 
   public disableAutorun: boolean;
   public successCount = 0;
@@ -24,7 +23,7 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
           }
         : { ...components };
     
-    this.disableAutorun = DataboxWrapper.disableAutorun;
+    this.disableAutorun = !!process.env.ULX_DATABOX_DISABLE_AUTORUN;
   }
 
   public async run(options: IDataboxForHeroRunOptions = {}): Promise<TOutput> {
