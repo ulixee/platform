@@ -57,7 +57,7 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
     return databoxWrapper.run(options).catch(err => err);
   }
 
-  public static async tryAutorunDatabox(): Promise<void> {
+  public static async attemptAutorun(): Promise<void> {
     let databoxWrapper = DataboxWrapper.defaultExport;
     let parent = module.parent;
     
@@ -67,7 +67,7 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
       } 
       parent = parent.parent;
     }
-  
+    if (!databoxWrapper) return;
     if (databoxWrapper.disableAutorun) return;
     if (databoxWrapper.successCount || databoxWrapper.errorCount) return;
     await DataboxWrapper.run(databoxWrapper);    
@@ -75,6 +75,6 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
 }
 
 process.on('beforeExit', async () => {
-  await DataboxWrapper.tryAutorunDatabox();
+  await DataboxWrapper.attemptAutorun();
   process.exit(0);
 });

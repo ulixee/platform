@@ -41,7 +41,7 @@ describe('basic Databox tests', () => {
         resolve(true);
       });
     });
-    await DataboxWrapper.tryAutorunDatabox();
+    await DataboxWrapper.attemptAutorun();
     await new Promise(resolve => process.nextTick(resolve));
     expect(await ranScript).toBe(true);
 
