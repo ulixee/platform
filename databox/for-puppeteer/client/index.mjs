@@ -1,9 +1,9 @@
 import { setupAutorunMjsHack } from '@ulixee/databox/index.mjs';
 import cjsImport from './index.js';
 
-const { Observable, Runner, Extractor } = cjsImport;
+const { Runner } = cjsImport;
 
-export { Observable, Runner, Extractor };
+export { Runner };
 
 export default cjsImport.default;
 

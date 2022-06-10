@@ -59,6 +59,7 @@
       "apps/*",
       "databox/*",
       "databox/for-hero/*",
+      "databox/for-puppeteer/*",
       "server/*",
       "cli",
       "hero/build/*",

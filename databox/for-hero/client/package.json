@@ -8,19 +8,18 @@
       "require": "./index.cjs"
     },
     "./package.json": "./package.json",
-    "./lib/*": "./lib/*.js",
-    "./lib/utils/*": "./lib/utils/*.js"
+    "./lib/*": "./lib/*.js"
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.5",
+    "@ulixee/databox": "2.0.0-alpha.5",
     "@ulixee/databox-interfaces": "2.0.0-alpha.6",
     "@ulixee/hero": "2.0.0-alpha.6",
     "@ulixee/hero-interfaces": "2.0.0-alpha.6",
     "@ulixee/net": "2.0.0-alpha.5",
     "@unblocked-web/specifications": "2.0.0-alpha.2",
     "awaited-dom": "1.4.0",
-    "linkedom": "^0.13.0",
-    "yargs-parser": "^20.2.9"
+    "linkedom": "^0.13.0"
   },
   "devDependencies": {
     "@types/web": "^0.0.50",

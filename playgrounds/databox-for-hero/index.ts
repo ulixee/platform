@@ -6,7 +6,7 @@ import DataboxWrapper, {
   Observable,
   Runner,
 } from '@ulixee/databox-for-hero';
-import readCommandLineArgs from '@ulixee/databox-for-hero/lib/utils/readCommandLineArgs';
+import readCommandLineArgs from '@ulixee/databox/lib/utils/readCommandLineArgs';
 import HeroCore from '@ulixee/hero-core';
 import UlixeeServer from '@ulixee/server';
 import UlixeeConfig from '@ulixee/commons/config';

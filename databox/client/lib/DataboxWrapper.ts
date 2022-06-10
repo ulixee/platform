@@ -1,10 +1,10 @@
-import readCommandLineArgs from '@ulixee/databox/lib/utils/readCommandLineArgs';
-import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
-import IDataboxWrapper from '@ulixee/databox-interfaces/IDataboxWrapper';
-import IDataboxForHeroRunOptions from '../interfaces/IDataboxForHeroRunOptions';
+import readCommandLineArgs from './utils/readCommandLineArgs';
 import IComponents, { IRunFn } from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
-import { setupAutorunBeforeExitHook, attemptAutorun } from '@ulixee/databox/lib/utils/Autorun';
+import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
+import IDataboxWrapper from '@ulixee/databox-interfaces/IDataboxWrapper';
+import { setupAutorunBeforeExitHook, attemptAutorun } from './utils/Autorun';
+import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
 
 export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> implements IDataboxWrapper {
   public static defaultExport: DataboxWrapper;
@@ -26,20 +26,14 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
     this.disableAutorun = !!process.env.ULX_DATABOX_DISABLE_AUTORUN;
   }
 
-  public async run(options: IDataboxForHeroRunOptions = {}): Promise<TOutput> {
+  public async run(options: IDataboxRunOptions = {}): Promise<TOutput> {
     const databoxInternal = new DataboxInternal<TInput, TOutput>(
       options,
       this.#components.defaults,
     );
-    const shouldRunFull = !databoxInternal.sessionIdToExtract;
     try {
-      if (shouldRunFull) {
-        await databoxInternal.execRunner(this.#components.run);
-      }
+      await databoxInternal.execRunner(this.#components.run);
 
-      if (this.#components.extract) {
-        await databoxInternal.execExtractor(this.#components.extract);
-      }
     } catch (error) {
       console.error(`ERROR running databox: `, error);
       this.errorCount++;
@@ -61,6 +55,5 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
     await attemptAutorun(module.parent, require.main, DataboxWrapper);
   }
 }
-
 
 setupAutorunBeforeExitHook(DataboxWrapper);
