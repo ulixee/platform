@@ -18,8 +18,8 @@
     "@ulixee/apps-chromealive-core": "2.0.0-alpha.5",
     "@ulixee/commons": "2.0.0-alpha.5",
     "@ulixee/databox-core": "2.0.0-alpha.5",
-    "@ulixee/hero-core": "2.0.0-alpha.5",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.5",
+    "@ulixee/hero-core": "2.0.0-alpha.6",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.6",
     "@ulixee/net": "2.0.0-alpha.5"
   },
   "peerDependenciesMeta": {
@@ -32,6 +32,6 @@
     "ws": "^7.4.6"
   },
   "devDependencies": {
-    "@ulixee/hero-testing": "2.0.0-alpha.5"
+    "@ulixee/hero-testing": "2.0.0-alpha.6"
   }
 }

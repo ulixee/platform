@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.5",
-    "@ulixee/hero": "2.0.0-alpha.5",
-    "@ulixee/hero-core": "2.0.0-alpha.5",
+    "@ulixee/hero": "2.0.0-alpha.6",
+    "@ulixee/hero-core": "2.0.0-alpha.6",
     "@ulixee/server": "2.0.0-alpha.5"
   }
 }
