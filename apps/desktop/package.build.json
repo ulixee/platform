@@ -5,6 +5,11 @@
     "start": "npx electron ."
   },
   "workspaces": {
-    "packages": ["packages/*", "packages/*/*", "packages/hero/plugins/*"]
+    "packages": [
+      "packages/*",
+      "packages/*/*",
+      "packages/databox/for-hero/*",
+      "packages/hero/plugins/*"
+    ]
   }
 }

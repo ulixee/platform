@@ -19,6 +19,7 @@ export default function launchChromeAlive(...launchArgs: string[]): ChildProcess
   const spawnOptions: SpawnOptions = {
     stdio,
     windowsHide: false,
+    env: process.env,
   };
 
   const preferredLaunch = getPreferredLaunch();

@@ -320,12 +320,16 @@ export default class ChromeAliveCore {
     if (this.coreServerAddress) {
       const coreServerAddress = await this.coreServerAddress;
       const filePath = `${extensionPath}/background.js`;
-      let fileContents = await Fs.promises.readFile(filePath, 'utf8');
-      fileContents = fileContents.replace(
-        /__CORE_SERVER_ADDRESS__ = '.*';/,
-        `__CORE_SERVER_ADDRESS__ = '${coreServerAddress}';`,
-      );
-      await Fs.promises.writeFile(filePath, fileContents);
+      try {
+        let fileContents = await Fs.promises.readFile(filePath, 'utf8');
+        fileContents = fileContents.replace(
+          /__CORE_SERVER_ADDRESS__ = '.*';/,
+          `__CORE_SERVER_ADDRESS__ = '${coreServerAddress}';`,
+        );
+        await Fs.promises.writeFile(filePath, fileContents);
+      } catch (err) {
+        throw new Error('Could not launch ChromeAlive! Not installed.');
+      }
       args.push(`--coreServerAddress=${coreServerAddress}`);
     }
 
