@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/apps-chromealive-core",
-  "version": "2.0.0-alpha.4",
+  "version": "2.0.0-alpha.5",
   "main": "index.js",
   "scripts": {
     "build": "tsc -b -i"
@@ -8,10 +8,10 @@
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/apps-chromealive": "2.0.0-alpha.4",
-    "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.4",
+    "@ulixee/apps-chromealive": "2.0.0-alpha.5",
+    "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.5",
     "@ulixee/commons": "2.0.0-alpha.5",
-    "@ulixee/databox-for-hero": "2.0.0-alpha.4",
+    "@ulixee/databox-for-hero": "2.0.0-alpha.5",
     "@ulixee/hero-interfaces": "2.0.0-alpha.5",
     "@ulixee/hero-plugin-utils": "2.0.0-alpha.5",
     "@ulixee/hero-timetravel": "2.0.0-alpha.5",

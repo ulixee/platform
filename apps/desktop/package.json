@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/apps-desktop",
-  "version": "2.0.0-alpha.4",
+  "version": "2.0.0-alpha.5",
   "private": true,
   "main": "index.js",
   "scripts": {
@@ -16,9 +16,9 @@
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/apps-chromealive-core": "2.0.0-alpha.4",
+    "@ulixee/apps-chromealive-core": "2.0.0-alpha.5",
     "@ulixee/commons": "2.0.0-alpha.5",
-    "@ulixee/server": "2.0.0-alpha.4",
+    "@ulixee/server": "2.0.0-alpha.5",
     "@unblocked-web/default-browser-emulator": "2.0.0-alpha.4",
     "electron-log": "^4.4.6",
     "electron-positioner": "^4.1.0",
