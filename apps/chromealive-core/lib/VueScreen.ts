@@ -3,7 +3,6 @@ import ChromeAliveCore from '../index';
 import { Session as HeroSession } from '@ulixee/hero-core';
 import * as http from 'http';
 import { Protocol } from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
-import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
 import { httpGet } from '@ulixee/commons/lib/downloadFile';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
@@ -41,10 +40,19 @@ export default class VueScreen extends TypedEventEmitter<{ close: void }> {
     }[name];
   }
 
-  public async open(): Promise<IPage> {
+  public async open(): Promise<Page> {
     if (!this.page) {
       const page = await this.openPage();
       await page.navigate(this.pageUrl);
+      await page.mainFrame.waitForLifecycleEvent('load');
+      const coreApiServerAddress = await ChromeAliveCore.coreServerAddress;
+      await page.evaluate(
+        `((url) => {
+        window.heroServerUrl = url;
+        if ('setHeroServerUrl' in window) window.setHeroServerUrl(url);
+      })(${JSON.stringify(coreApiServerAddress)})`,
+        false,
+      );
     }
     return this.page;
   }
@@ -55,10 +63,11 @@ export default class VueScreen extends TypedEventEmitter<{ close: void }> {
     }
   }
 
-  private async openPage(): Promise<IPage> {
+  private async openPage(): Promise<Page> {
     this.page = this.heroSession.browserContext.newPage({
       runPageScripts: false,
       groupName: 'vue',
+      enableDomStorageTracker: false,
     });
 
     const page = await this.page;

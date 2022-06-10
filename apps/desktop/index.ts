@@ -1,15 +1,13 @@
-import './lib/util/UlixeeLogger';
 import '@ulixee/commons/lib/SourceMapSupport';
-import log from 'electron-log';
 import { Menubar } from './lib/Menubar';
 import { app } from 'electron';
 
-const { version } = require('./package.json');
-Object.assign(console, log.functions);
-
 if (app.isPackaged) {
-  process.env.DEBUG = [process.env.DEBUG ?? '', 'ulx:*'].filter(Boolean).join(',');
+  process.env.DEBUG = [process.env.DEBUG ?? '', 'ulx:*', 'ubk'].filter(Boolean).join(',');
 }
+
+require('./lib/util/UlixeeLogger');
+const { version } = require('./package.json');
 
 if (process.argv.some(x => x.includes('--chromealive'))) {
   // eslint-disable-next-line global-require,import/no-extraneous-dependencies
