@@ -82,8 +82,8 @@ class Client {
     ...args: IChromeAliveApiRequest<T>["args"]
   ): Promise<IChromeAliveApiResponse<T>["data"]> {
     if (!this.connectedPromise) {
-      setTimeout(() => this.send(command, ...args), 500);
-      return;
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return this.send(command, ...args);
     }
     await this.connectedPromise;
     this.messageCounter += 1;

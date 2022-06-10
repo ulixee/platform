@@ -292,9 +292,8 @@ export default class SessionObserver extends TypedEventEmitter<{
       const vueScreen = this.vueScreensByName[mode];
       if (!tabExists) {
         this.events.once(vueScreen, 'close', () => delete this.vueScreensByName[mode]);
-        await vueScreen.open();
       }
-      const page = await vueScreen.page;
+      const page = await vueScreen.open();
       focusPages.push(page);
     }
 
