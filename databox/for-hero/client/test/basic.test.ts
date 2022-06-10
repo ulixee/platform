@@ -1,7 +1,6 @@
 import ConnectionFactory from '@ulixee/hero/connections/ConnectionFactory';
 import { Helpers } from '@ulixee/databox-testing';
 import DataboxWrapper from '../index';
-import readCommandLineArgs from '../lib/utils/readCommandLineArgs';
 import MockConnectionToHeroCore from './_MockConnectionToHeroCore';
 
 afterAll(Helpers.afterAll);
@@ -124,22 +123,5 @@ describe('basic Databox tests', () => {
     await databoxWrapper.run();
     expect(runFn).not.toHaveBeenCalled();
     expect(extractFn).toHaveBeenCalledTimes(1);
-  });
-
-  it('can read command line args', async () => {
-    process.argv[2] = '--input.city=Atlanta';
-    process.argv[3] = '--input.state="GA"';
-    process.argv[4] = '--input.address.number=9145';
-    process.argv[5] = '--input.address.street="Street Street"';
-    expect(readCommandLineArgs()).toEqual({
-      input: {
-        city: 'Atlanta',
-        state: 'GA',
-        address: {
-          number: 9145,
-          street: 'Street Street',
-        },
-      },
-    });
   });
 });

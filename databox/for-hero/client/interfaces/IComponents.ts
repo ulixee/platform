@@ -1,21 +1,18 @@
 import { IHeroCreateOptions } from '@ulixee/hero';
+import IComponentsBase, { IDefaultsObjBase, IRunFnBase } from '@ulixee/databox/interfaces/IComponentsBase';
 import Runner from '../lib/Runner';
 import Extractor from '../lib/Extractor';
 
-export default interface IComponents<TInput, TOutput> {
-  defaults?: IDefaultsObj<TInput, TOutput>;
-  run: IRunFn<TInput, TOutput>;
+export default interface IComponents<TInput, TOutput> extends IComponentsBase<IDefaultsObj<TInput, TOutput>, Runner<TInput, TOutput>> {
   extract?: IExtractFn<TInput, TOutput>;
-  schema?: any;
 }
 
-export interface IDefaultsObj<TInput, TOutput> {
+export interface IDefaultsObj<TInput, TOutput> extends IDefaultsObjBase<TInput, TOutput> {
   hero?: Partial<IHeroCreateOptions>;
-  input?: Partial<TInput>;
-  output?: Partial<TOutput>;
 }
 
-export type IRunFn<TInput, TOutput> = (databox: Runner<TInput, TOutput>) => void | Promise<void>;
+export type IRunFn<TInput, TOutput> = IRunFnBase<Runner<TInput, TOutput>>;
+
 export type IExtractFn<TInput, TOutput> = (
   databox: Extractor<TInput, TOutput>,
 ) => void | Promise<void>;
