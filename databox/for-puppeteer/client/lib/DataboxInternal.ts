@@ -56,7 +56,14 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
   public async execRunner(runFn: IRunFn<TInput, TOutput>): Promise<void> {
     const runner = new Runner<TInput, TOutput>(this);
     this.puppeteerBrowser = await this.puppeteerBrowserPromise;
-    await runFn(runner);
+    try {
+      await runFn(runner);
+    } catch (error) {
+      if (error.stack.includes('at async DataboxInternal.execRunner')) {
+        error.stack = error.stack.split('at async DataboxInternal.execRunner').shift().trim();
+      }
+      throw error;
+    }
   }
 
   public close(): Promise<void> {
