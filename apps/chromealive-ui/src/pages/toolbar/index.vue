@@ -1,6 +1,6 @@
 <template>
-  <div id="ChromeAliveToolbar" :class="{ loading: isLoading }">
-    <SessionController></SessionController>
+  <div id="ChromeAliveToolbar" :class="{ loading: isLoading, restarting: isRestarting }">
+    <SessionController />
   </div>
 </template>
 
@@ -18,6 +18,7 @@ export default Vue.defineComponent({
 
     return {
       isLoading: Vue.ref(false),
+      isRestarting: Vue.ref(false),
     };
   },
 
@@ -28,6 +29,9 @@ export default Vue.defineComponent({
   mounted() {
     Client.on('Session.loading', () => {
       this.isLoading = true;
+    });
+    Client.on('Session.active', (session) => {
+      this.isRestarting = session?.playbackState === 'restarting';
     });
     Client.on('Session.loaded', () => {
       this.isLoading = false
@@ -69,9 +73,10 @@ body {
   height: 36px;
   background: white;
 
-  &.loading > * {
-    opacity: 0.5;
-    border: 1px solid #3c3c3c;
+  &.restarting {
+    background: transparent;
+    opacity: 1;
+    border: none;
   }
 }
 

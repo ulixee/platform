@@ -8,7 +8,7 @@ export default interface IHeroSessionActiveEvent {
   scriptLastModifiedTime: number;
   heroSessionId: string;
   inputBytes: number;
-  playbackState: 'running' | 'paused' | 'finished';
+  playbackState: 'running' | 'paused' | 'finished' | 'restarting';
   runtimeMs: number;
   timeline: ITimelineMetadata;
 }

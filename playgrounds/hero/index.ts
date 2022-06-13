@@ -24,6 +24,7 @@ async function getCoreServerHost(): Promise<string> {
     await server.listen();
     serverHost = await server.address;
     console.log('Started Ulixee server at %s', serverHost);
+    Core.onShutdown = () => server.close();
     ShutdownHandler.register(() => server.close());
   } else {
     console.log('Connecting to Ulixee server at %s', serverHost);

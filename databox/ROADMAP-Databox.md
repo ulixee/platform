@@ -1,6 +1,5 @@
 ## 2.1
 We want to be able to “build” a databox into a package that can be deployed onto a server where it can be run efficiently to output only data.
-- Optimization
 - Localization Configuration 
 
 ## 2.6 - Virtual Machines

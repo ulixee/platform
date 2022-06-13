@@ -120,10 +120,9 @@ export default class ChromeAliveCore {
       pageId,
     });
 
-    if (this.activeHeroSessionId) {
-      if (status.focused) AliveBarPositioner.focusedPageId(pageId);
-      else AliveBarPositioner.blurredPageId(pageId);
-    } else {
+    if (this.activeHeroSessionId === heroSessionId && status.focused) {
+      AliveBarPositioner.focusedPageId(pageId);
+    } else if (!this.restartingHeroSessionId) {
       AliveBarPositioner.blurredPageId(pageId);
     }
   }
@@ -206,7 +205,9 @@ export default class ChromeAliveCore {
 
     if (!this.activeHeroSessionId || isRestartedSessionId) {
       this.restartingHeroSessionId = null;
-      this.sendAppEvent('Session.loading');
+      if (!isRestartedSessionId) {
+        this.sendAppEvent('Session.loading');
+      }
       AliveBarPositioner.showHeroSessionOnBounds(sessionId);
       this.events.once(sessionObserver, 'hero:updated', () => {
         this.sendAppEvent('Session.loaded');
@@ -266,7 +267,7 @@ export default class ChromeAliveCore {
         this.sendAppEvent('Session.active', {
           heroSessionId: null,
           timeline: { urls: [], screenshots: [], paintEvents: [], storageEvents: [] },
-          playbackState: 'finished',
+          playbackState: 'restarting',
           startTime: Date.now(),
           inputBytes: 0,
           runtimeMs: 0,

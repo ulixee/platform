@@ -31,7 +31,7 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
   });
 
   public async start(): Promise<void> {
-    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'Y';
+    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'true';
     await HeroCore.start();
     const bridge = new TransportBridge();
     HeroCore.addConnection(bridge.transportToClient);

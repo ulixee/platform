@@ -5,13 +5,14 @@
       notSelected: !isSelected,
       isFocused: isFocused,
       notFocused: !isFocused,
+      isRestartingSession,
     }"
     class="Player"
     @click="handleClick"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
   >
-    <div class="wrapper relative w-full h-full flex flex-row items-center">
+    <div class="wrapper relative flex h-full w-full flex-row items-center">
       <div class="backgrounds">
         <div class="left-notch" />
         <div class="right-arrow" />
@@ -19,7 +20,7 @@
 
       <Borders :is-selected="isSelected" :is-focused="isFocused" />
 
-      <div class="address-bar relative h-full flex flex-row">
+      <div class="address-bar relative flex h-full flex-row">
         <div v-if="isLiveMode" class="live-icon">
           <div v-if="session.playbackState !== 'finished'" class="text">
             LIVE
@@ -46,7 +47,7 @@
         </div>
       </div>
 
-      <div class="player-wrapper relative flex-1 h-full flex flex-row items-center">
+      <div class="player-wrapper relative flex h-full flex-1 flex-row items-center">
         <div class="bar-bg" />
         <PlayerBar
           :is-selected="isSelected && !isShowingFinder"
@@ -64,10 +65,10 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
+import WindowsController, { EmitterName } from '@/pages/toolbar/lib/WindowsController';
 import ArrowRight from './ArrowRight.vue';
 import PlayerBar from './PlayerBar.vue';
 import Borders from './Borders.vue';
-import WindowsController, { EmitterName } from '@/pages/toolbar/lib/WindowsController';
 
 export default Vue.defineComponent({
   name: 'Player',
@@ -80,6 +81,8 @@ export default Vue.defineComponent({
   emits: ['select', 'toggleFinder'],
   setup(props) {
     const isLiveMode = Vue.computed(() => props.mode === 'Live');
+    const isShowingFinder = Vue.computed(() => props.mode === 'Finder');
+    const isRestartingSession = Vue.computed(() => props.session?.playbackState === 'restarting');
     const currentUrl = Vue.computed(() => {
       let url = 'about:blank';
       if (props.mode === 'Live' || (props.mode === 'Finder' && !props.timetravel)) {
@@ -99,14 +102,10 @@ export default Vue.defineComponent({
       currentUrl,
       isShowingUrlMenu: Vue.ref(false),
       mouseIsWithinPlayer: Vue.ref(false),
+      isRestartingSession,
       isLiveMode,
-      isShowingFinder: Vue.ref<boolean>(false),
+      isShowingFinder,
     };
-  },
-  watch: {
-    mode(value) {
-      this.isShowingFinder = value === 'Finder';
-    },
   },
   methods: {
     handleClick(event) {
@@ -118,13 +117,12 @@ export default Vue.defineComponent({
 
     toggleFinder(event: MouseEvent) {
       const rect = (event.target as HTMLElement).getBoundingClientRect();
-      this.isShowingFinder = !this.isShowingFinder;
-      if (this.isShowingFinder) {
+      if (!this.isShowingFinder) {
         WindowsController.showMenuFinder(rect);
       } else {
         WindowsController.hideMenuFinder();
       }
-      this.$emit('toggleFinder', this.isShowingFinder);
+      this.$emit('toggleFinder', !this.isShowingFinder);
     },
 
     toggleUrlMenu(event: MouseEvent) {
@@ -139,7 +137,6 @@ export default Vue.defineComponent({
 
     finishHideFinder() {
       if (this.isShowingFinder) {
-        this.isShowingFinder = false;
         this.$emit('toggleFinder', false);
       }
     },
@@ -170,8 +167,8 @@ export default Vue.defineComponent({
 </script>
 
 <style lang="scss" scoped="scoped">
-@use "sass:math";
-@use "sass:color";
+@use 'sass:math';
+@use 'sass:color';
 @import '../variables';
 
 .Player {
@@ -198,6 +195,21 @@ export default Vue.defineComponent({
         opacity: 0.7;
         pointer-events: none;
       }
+    }
+  }
+
+  &.isRestartingSession {
+    .backgrounds, .address-bar, .Borders {
+      display: none;
+    }
+    .bar-bg {
+      background-color: transparent;
+      &:after {
+        display: none;
+      }
+    }
+    .live-icon {
+      opacity: 1;
     }
   }
 

@@ -79,7 +79,6 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   public mirrorPagePauseRefreshing = false;
 
-  private sessionHasChangesRequiringRestart = false;
   private vueScreensByName: { [name: string]: VueScreen } = {};
 
   private scriptEntrypointTs: string;
@@ -168,10 +167,12 @@ export default class SessionObserver extends TypedEventEmitter<{
   public async relaunchSession(
     startLocation: 'sessionStart' | 'extraction',
   ): Promise<Error | undefined> {
-    if (startLocation === 'sessionStart' || this.sessionHasChangesRequiringRestart) {
+    if (startLocation === 'sessionStart') {
       ChromeAliveCore.restartingHeroSessionId = this.heroSession.id;
       AliveBarPositioner.restartingSession(this.heroSession.id);
-      this.close();
+      // will automatically send out a restarting playback state
+
+      await this.close();
       await this.heroSession.closeTabs();
     }
     const script = this.scriptInstanceMeta.entrypoint;
@@ -180,6 +181,7 @@ export default class SessionObserver extends TypedEventEmitter<{
       startLocation,
       `--sessionResume.sessionId`,
       this.heroSession.id,
+      '--show-chrome-alive'
     ];
     if (startLocation === 'extraction') {
       execArgv.length = 0;
@@ -195,7 +197,7 @@ export default class SessionObserver extends TypedEventEmitter<{
         // execArgv,
         cwd: this.scriptInstanceMeta.workingDirectory,
         stdio: ['ignore', 'inherit', 'inherit', 'ipc'],
-        env: { ...process.env, ULX_CLI_NOPROMPT: 'true' },
+        env: { ...process.env, ULX_CLI_NOPROMPT: 'true', ULX_DATABOX_DISABLE_AUTORUN: undefined },
       });
     } catch (error) {
       this.logger.error('ERROR resuming session', { error });

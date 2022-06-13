@@ -2,7 +2,12 @@
   <div
     class="PlayerBar relative"
     :style="formattedCssVars()"
-    :class="{ isSelected, notSelected: !isSelected, isUsingFinder }"
+    :class="{
+      isSelected,
+      notSelected: !isSelected,
+      isUsingFinder,
+      isRestartingSession,
+    }"
     @mousedown="handleMouseDown($event)"
   >
     <div class="ticks">
@@ -68,11 +73,11 @@
 import * as Vue from 'vue';
 import { PropType } from 'vue';
 import Client from '@/api/Client';
-import ArrowRight from './ArrowRight.vue';
 import ISessionTimetravelEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionTimetravelEvent';
 import { ITimelineTick } from '@/pages/toolbar/views/SessionController.vue';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
+import ArrowRight from './ArrowRight.vue';
 
 const startMarkerPosition = 0;
 const liveMarkerPosition = 100;
@@ -155,14 +160,14 @@ export default Vue.defineComponent({
       isMouseDown: Vue.ref(false),
       isMouseDownDragging: Vue.ref(false),
       isMaybeClickingPlay: Vue.ref(false),
-
+      isRestartingSession: Vue.computed(() => props.session?.playbackState === 'restarting'),
       lastTimetravelOffset: null as number,
       timetravelTimeout: -1,
       lastTimetravelTimestamp: -1,
     };
   },
   watch: {
-    mode(value) {
+    mode(value: IAppModeEvent['mode']) {
       if (value === 'Live') {
         this.markerClass.isLive = true;
         this.markerClass.hasMultiple = false;
@@ -192,9 +197,11 @@ export default Vue.defineComponent({
 
       if (!this.markerClass.hasMultiple && pct >= liveMarkerPosition) {
         return liveMarkerPosition;
-      } else if (this.markerClass.hasMultiple && pct >= maxMarkerPosition) {
+      }
+      if (this.markerClass.hasMultiple && pct >= maxMarkerPosition) {
         return maxMarkerPosition;
-      } else if (pct < startMarkerPosition) {
+      }
+      if (pct < startMarkerPosition) {
         return startMarkerPosition;
       }
       return pct;
@@ -212,7 +219,7 @@ export default Vue.defineComponent({
 
     handleMouseDown(event: MouseEvent, item?: MouseDownItem) {
       if (event.button !== 0) return;
-      if (!this.isSelected) return;
+      if (!this.isSelected || this.isRestartingSession) return;
 
       event.preventDefault();
       event.stopPropagation();
@@ -307,7 +314,7 @@ export default Vue.defineComponent({
     },
 
     handleMousemove(event: MouseEvent) {
-      if (!this.isSelected) return;
+      if (!this.isSelected || this.isMaybeClickingPlay) return;
 
       if (!this.isMouseDown) {
         this.tryToShowGhost(event);
@@ -432,7 +439,10 @@ export default Vue.defineComponent({
 
       if (percentOffset >= liveMarkerPosition && this.activeItem !== ActiveItem.nibRight) {
         if (this.mode !== 'Live') {
-          await Client.send('Session.openMode', { mode: 'Live', heroSessionId });
+          await Client.send('Session.openMode', {
+            mode: 'Live',
+            heroSessionId,
+          });
         }
         return;
       }
@@ -472,7 +482,7 @@ export default Vue.defineComponent({
 </script>
 
 <style lang="scss" scoped="scoped">
-@use "sass:math";
+@use 'sass:math';
 @import '../variables';
 
 .PlayerBar {
@@ -481,6 +491,20 @@ export default Vue.defineComponent({
   &.notSelected {
     .ticks {
       display: none;
+    }
+  }
+  &.isRestartingSession {
+    .ticks, .ghost {
+      display: none;
+    }
+    .marker.isLive {
+      animation: pulse-animation 1s infinite;
+      .pause-icon {
+        display: none;
+      }
+      .restart-icon {
+        display: block;
+      }
     }
   }
 }

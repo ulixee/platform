@@ -6,7 +6,9 @@ import IDataboxForHeroRunOptions from '../interfaces/IDataboxForHeroRunOptions';
 import IComponents, { IRunFn } from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
 
-export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> implements IDataboxWrapper {
+export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
+  implements IDataboxWrapper
+{
   public static defaultExport: DataboxWrapper;
 
   public disableAutorun: boolean;
@@ -22,17 +24,15 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
             run: components,
           }
         : { ...components };
-    
+
     this.disableAutorun = !!process.env.ULX_DATABOX_DISABLE_AUTORUN;
   }
 
   public async run(options: IDataboxForHeroRunOptions = {}): Promise<TOutput> {
-    const databoxInternal = new DataboxInternal<TInput, TOutput>(
-      options,
-      this.#components.defaults,
-    );
-    const shouldRunFull = !databoxInternal.sessionIdToExtract;
+    let databoxInternal: DataboxInternal<TInput, TOutput>;
     try {
+      databoxInternal = new DataboxInternal(options, this.#components.defaults);
+      const shouldRunFull = !databoxInternal.sessionIdToExtract;
       if (shouldRunFull) {
         await databoxInternal.execRunner(this.#components.run);
       }
@@ -40,16 +40,16 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
       if (this.#components.extract) {
         await databoxInternal.execExtractor(this.#components.extract);
       }
+
+      this.successCount++;
+      return databoxInternal.output;
     } catch (error) {
       console.error(`ERROR running databox: `, error);
       this.errorCount++;
       throw error;
     } finally {
-      await databoxInternal.close();
+      await databoxInternal?.close();
     }
-    
-    this.successCount++;
-    return databoxInternal.output;
   }
 
   public static run<T>(databoxWrapper: DataboxWrapper): Promise<T | Error> {
@@ -61,6 +61,5 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
     await attemptAutorun(module.parent, require.main, DataboxWrapper);
   }
 }
-
 
 setupAutorunBeforeExitHook(DataboxWrapper);

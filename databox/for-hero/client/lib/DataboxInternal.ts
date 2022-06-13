@@ -2,6 +2,7 @@ import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Hero, { IHeroCreateOptions } from '@ulixee/hero';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
 import { InternalPropertiesSymbol, scriptInstance } from '@ulixee/hero/lib/internal';
+import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
 import IDataboxForHeroRunOptions from '../interfaces/IDataboxForHeroRunOptions';
 import Output, { createObservableOutput } from './Output';
 import './DomExtender';
@@ -94,7 +95,14 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
 
   public async execRunner(runFn: IRunFn<TInput, TOutput>): Promise<void> {
     const runner = new Runner<TInput, TOutput>(this);
-    await runFn(runner);
+    try {
+      await runFn(runner);
+    } catch (error) {
+      if (error.stack.includes('at async DataboxInternal.execRunner')) {
+        error.stack = error.stack.split('at async DataboxInternal.execRunner').shift().trim();
+      }
+      throw error;
+    }
   }
 
   public execExtractor<T>(
@@ -142,6 +150,7 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
     const heroOptions: IHeroCreateOptions = {
       ...this.#defaults.hero,
       ...this.runOptions,
+      input: this.#input,
     };
     this.hero = new Hero(heroOptions);
     databoxInternalByHero.set(this.hero, this);
