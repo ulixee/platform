@@ -1,7 +1,11 @@
 const Path = require('path');
 
 module.exports = {
-  extends: ['../../.eslintrc.js', 'plugin:vue/vue3-recommended', '@vue/typescript/recommended'],
+  extends: [
+    '../../.eslintrc.js',
+    'plugin:vue/vue3-recommended',
+    '@vue/typescript/recommended'
+  ],
   plugins: ['monorepo-cop'],
   parser: 'vue-eslint-parser',
   parserOptions: {
@@ -16,14 +20,17 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/ban-ts-comment': 'off',
     'vue/multi-word-component-names': 'off',
-    "vue/max-attributes-per-line": ["error", {
-      "singleline": {
-        "max": 2
+    'vue/max-attributes-per-line': [
+      'error',
+      {
+        singleline: {
+          max: 2,
+        },
+        multiline: {
+          max: 1,
+        },
       },
-      "multiline": {
-        "max": 1
-      }
-    }]
+    ],
   },
   overrides: [
     {
