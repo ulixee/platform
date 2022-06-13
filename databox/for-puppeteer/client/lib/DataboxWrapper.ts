@@ -29,19 +29,21 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
   }
 
   public async run(options: IDataboxForPuppeteerRunOptions = {}): Promise<TOutput> {
-    const databoxInternal = new DataboxInternal(options, this.#components.defaults);
+    let databoxInternal: DataboxInternal<TInput, TOutput>;
+
     try {
+      databoxInternal = new DataboxInternal(options, this.#components.defaults);
       await databoxInternal.execRunner(this.#components.run);
+
+      this.successCount++;
+      return databoxInternal.output;
     } catch (error) {
       console.error(`ERROR running databox: `, error);
       this.errorCount++;
       throw error;
     } finally {
-      await databoxInternal.close();
+      await databoxInternal?.close();
     }
-
-    this.successCount++;
-    return databoxInternal.output;
   }
 
   public static run<T>(databoxWrapper: DataboxWrapper): Promise<T | Error> {

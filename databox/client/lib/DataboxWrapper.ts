@@ -6,7 +6,9 @@ import IComponents, { IRunFn } from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
 import { setupAutorunBeforeExitHook, attemptAutorun } from './utils/Autorun';
 
-export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> implements IDataboxWrapper {
+export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
+  implements IDataboxWrapper
+{
   public static defaultExport: DataboxWrapper;
 
   public disableAutorun: boolean;
@@ -22,28 +24,26 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any> impleme
             run: components,
           }
         : { ...components };
-    
+
     this.disableAutorun = !!process.env.ULX_DATABOX_DISABLE_AUTORUN;
   }
 
   public async run(options: IDataboxRunOptions = {}): Promise<TOutput> {
-    const databoxInternal = new DataboxInternal<TInput, TOutput>(
-      options,
-      this.#components.defaults,
-    );
+    let databoxInternal: DataboxInternal<TInput, TOutput>;
+
     try {
+      databoxInternal = new DataboxInternal(options, this.#components.defaults);
       await databoxInternal.execRunner(this.#components.run);
 
+      this.successCount++;
+      return databoxInternal.output;
     } catch (error) {
       console.error(`ERROR running databox: `, error);
       this.errorCount++;
       throw error;
     } finally {
-      await databoxInternal.close();
+      await databoxInternal?.close();
     }
-    
-    this.successCount++;
-    return databoxInternal.output;
   }
 
   public static run<T>(databoxWrapper: DataboxWrapper): Promise<T | Error> {

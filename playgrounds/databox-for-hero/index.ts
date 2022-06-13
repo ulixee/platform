@@ -28,6 +28,7 @@ export default class DataboxPlayground extends DataboxWrapper {
       const server = new UlixeeServer();
       await server.listen();
       serverHost = await server.address;
+      HeroCore.onShutdown = () => server.close();
       console.log('Started Ulixee server at %s', serverHost);
       ShutdownHandler.register(() => server.close());
     }
