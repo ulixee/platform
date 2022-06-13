@@ -1,5 +1,5 @@
 <template>
-  <div class="bar-wrapper flex flex-row items-stretch">
+  <div class="bar-wrapper flex flex-row items-stretch" :class="{ isRestarting }">
     <MenuButton class="z-20" />
     <InputButton
       :is-selected="mode === 'Input'"
@@ -17,7 +17,7 @@
       :is-minimal="isMinimal"
       :session="session"
       :timetravel="timetravel"
-      class="flex-1 z-10"
+      class="z-10 flex-1"
       @select="selectPlayerMode"
       @toggleFinder="onFinderModeToggled"
     />
@@ -47,12 +47,12 @@ import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEv
 import IDataboxOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxOutputEvent';
 import { ChevronDownIcon } from '@heroicons/vue/outline';
 import humanizeBytes from '@/utils/humanizeBytes';
+import ISessionTimetravelEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionTimetravelEvent';
 import MenuButton from '../components/MenuButton.vue';
 import InputButton from '../components/InputButton.vue';
 import Player from '../components/Player.vue';
 import OutputButton from '../components/OutputButton.vue';
 import ReliabilityButton from '../components/ReliabilityButton.vue';
-import ISessionTimetravelEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionTimetravelEvent';
 
 type IStartLocation = 'currentLocation' | 'sessionStart';
 
@@ -79,10 +79,12 @@ export default Vue.defineComponent({
       const value = mode.value;
       return value === 'Live' || value === 'Timetravel' || value === 'Finder';
     });
+    const isRestarting = Vue.computed(() => session?.playbackState === 'restarting');
 
     return {
       session,
       isPlayerSelected,
+      isRestarting,
       mode,
       previousPlayerMode: Vue.ref<IAppModeEvent['mode']>(mode.value),
       isMinimal: Vue.ref(false),
@@ -90,7 +92,7 @@ export default Vue.defineComponent({
       timelineTicks: Vue.ref<any[]>([]),
       outputSize: Vue.ref<string>(humanizeBytes(0)),
       inputSize: Vue.ref<string>(humanizeBytes(0)),
-      timetravel: Vue.ref<{ url: string, percentOffset: number }>(null),
+      timetravel: Vue.ref<{ url: string; percentOffset: number }>(null),
     };
   },
   async created() {
@@ -211,7 +213,7 @@ function createDefaultSession(): IHeroSessionActiveEvent {
 </script>
 
 <style lang="scss" scoped>
-@use "sass:math";
+@use 'sass:math';
 @import '../variables.scss';
 
 :root {
@@ -222,5 +224,14 @@ function createDefaultSession(): IHeroSessionActiveEvent {
   background-color: var(--toolbarBackgroundColor);
   height: 36px;
   cursor: default;
+  &.isRestarting {
+    background-color: transparent;
+    .MenuButton,
+    .InputButton,
+    .OutputButton,
+    .ReliabilityButton {
+      visibility: hidden;
+    }
+  }
 }
 </style>
