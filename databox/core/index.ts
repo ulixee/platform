@@ -1,84 +1,76 @@
-import { IDataboxApis } from '@ulixee/databox-interfaces/IDataboxApis';
-import IDataboxPackage from '@ulixee/databox-interfaces/IDataboxPackage';
-import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
-import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
+import * as Fs from 'fs';
+import { NodeVM, VMScript } from 'vm2';
+import DataboxWrapper from '@ulixee/databox';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 import IDataboxModuleRunner from './interfaces/IDataboxModuleRunner';
-import PackageRegistry from './lib/PackageRegistry';
-import env from './env';
+import ServerHooks from './lib/ServerHooks';
 
-type IDataboxConnectionToClient = ConnectionToClient<IDataboxApis, {}>;
+export default class DataboxCore implements IDataboxModuleRunner {
+  public runsDataboxModuleVersion = '';
+  public runsDataboxModule = '@ulixee/databox';
 
-export default class DataboxCore {
-  public static connections = new Set<IDataboxConnectionToClient>();
-  public static databoxesDir: string;
+  private compiledScriptsByPath = new Map<string, Promise<VMScript>>();
 
-  private static runnersByModuleName: { [module: string]: IDataboxModuleRunner } = {};
-  private static packageRegistry: PackageRegistry;
-  private static apiHandlers: IDataboxApis = {
-    'Databox.upload': DataboxCore.upload.bind(this),
-    'Databox.run': DataboxCore.run.bind(this),
-  };
+  private vm = new NodeVM({
+    console: 'inherit',
+    sandbox: {},
+    wasm: false,
+    eval: false,
+    wrapper: 'commonjs',
+    strict: true,
+    require: {
+      external: ['@ulixee/*'],
+    },
+  });
 
-  public static addConnection(
-    transport: ITransportToClient<IDataboxApis, {}>,
-  ): IDataboxConnectionToClient {
-    const connection = new ConnectionToClient(transport, this.apiHandlers);
-    connection.once('disconnected', () => this.connections.delete(connection));
-    this.connections.add(connection);
-    return connection;
+  public async start(): Promise<void> {
+    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'Y';
+    await new Promise(resolve => process.nextTick(resolve));
   }
 
-  public static registerModule(moduleRunner: IDataboxModuleRunner): void {
-    this.runnersByModuleName[moduleRunner.runsDataboxModule] = moduleRunner;
+  public async close(): Promise<void> {
+    // TODO what should we cleanup
   }
 
-  public static async start(): Promise<void> {
-    this.databoxesDir = env.databoxStorage;
-    for (const runner of Object.values(this.runnersByModuleName)) {
-      await runner.start(this.databoxesDir);
-    }
-  }
+  public async run(path: string, manifest: IDataboxManifest, input: any): Promise<{ output: any }> {
+    const script = await this.getVMScript(path, manifest);
+    const databoxWrapper = this.vm.run(script);
 
-  public static async close(): Promise<void> {
-    this.packageRegistry?.flush();
-    for (const runner of Object.values(this.runnersByModuleName)) {
-      await runner.close();
-    }
-    this.runnersByModuleName = {};
-
-    for (const connection of this.connections) {
-      await connection.disconnect();
-    }
-    this.connections.clear();
-  }
-
-  public static async upload(databoxPackage: IDataboxPackage): Promise<void> {
-    await this.getPackageRegistry().save(databoxPackage);
-  }
-
-  public static async run(scriptHash: string, input?: any): Promise<{ output: any }> {
-    const databox = await this.getPackageRegistry().getByHash(scriptHash);
-
-    const runner = this.runnersByModuleName[databox.module];
-    if (!runner.canSatisfyVersion(databox.moduleVersion)) {
+    if (!(databoxWrapper instanceof DataboxWrapper)) {
       throw new Error(
-        `The current version of ${databox.module} (${runner.runsDataboxModuleVersion}) is incompatible with this Databox version (${databox.moduleVersion})`,
+        'The default export from this script needs to inherit from "@ulixee/databox"',
       );
     }
 
-    const manifest = <IDataboxManifest>{
-      scriptEntrypoint: databox.scriptEntrypoint,
-      scriptRollupHash: databox.scriptHash,
-      databoxModuleVersion: databox.moduleVersion,
-      databoxModule: databox.module,
-    };
-
-    return await runner.run(databox.path, manifest, input);
+    const output = await databoxWrapper.run({
+      input,
+    });
+    return { output };
   }
 
-  private static getPackageRegistry(): PackageRegistry {
-    this.packageRegistry ??= new PackageRegistry(this.databoxesDir);
-    return this.packageRegistry;
+  public canSatisfyVersion(version: string): boolean {
+    // TODO: there is no hero version
+    return true;
+  }
+
+  private getVMScript(path: string, manifest: IDataboxManifest): Promise<VMScript> {
+    if (this.compiledScriptsByPath.has(path)) {
+      return this.compiledScriptsByPath.get(path);
+    }
+
+    const script = new Promise<VMScript>(async resolve => {
+      const file = await Fs.promises.readFile(path, 'utf8');
+      const vmScript = new VMScript(file, {
+        filename: manifest.scriptEntrypoint,
+      }).compile();
+      resolve(vmScript);
+    });
+
+    this.compiledScriptsByPath.set(path, script);
+    return script;
+  }
+
+  public static register(): void {
+    ServerHooks.registerModule(new DataboxCore());
   }
 }

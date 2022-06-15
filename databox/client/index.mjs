@@ -1,8 +1,8 @@
 import cjsImport from './index.js';
 
-const { Runner, Extractor } = cjsImport;
+const { Runner } = cjsImport;
 
-export { Runner, Extractor };
+export { Runner };
 
 export default cjsImport.default;
 

@@ -6,8 +6,12 @@
   "license": "MIT",
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.5",
+    "@ulixee/databox": "2.0.0-alpha.6",
     "@ulixee/databox-interfaces": "2.0.0-alpha.6",
     "@ulixee/net": "2.0.0-alpha.5",
-    "better-sqlite3": "^7.5.0"
+    "better-sqlite3": "^7.5.1",
+    "nanoid": "^4.0.0",
+    "ts-node": "^10.8.1",
+    "vm2": "^3.9.9"
   }
 }

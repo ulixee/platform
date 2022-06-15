@@ -2,48 +2,37 @@ import * as Fs from 'fs';
 import * as Path from 'path';
 import IDataboxPackage from '@ulixee/databox-interfaces/IDataboxPackage';
 import { readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
-import { ConnectionToDataboxCore } from '@ulixee/databox';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 import * as Hasher from '@ulixee/commons/lib/Hasher';
 import rollupDatabox from './lib/rollupDatabox';
+import ConnectionToDataboxCore from './lib/ConnectionToDataboxCore';
+import LocalDataboxProcess from '@ulixee/databox-core/lib/LocalDataboxProcess';
+import { createPromise } from '@ulixee/commons/lib/utils';
+import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
 
 export default class DataboxPackager {
-  public readonly relativeScriptPath: string;
+  public relativeScriptPath: string;
   public package: IDataboxPackage;
   public outputPath: string;
-  public readonly databoxModule: string;
-  private readonly projectPath: string;
+  public databoxModule: string;
+  private projectPath: string;
+  private setupPromise: IResolvablePromise<void>;
+  private readonly entrypoint: string;
 
   constructor(
-    readonly entrypoint: string,
+    entrypoint: string,
     options?: {
       databoxModule?: string;
       outputPath?: string;
     },
   ) {
-    this.databoxModule = options?.databoxModule ?? '@ulixee/databox-for-hero';
-    this.projectPath = Path.resolve(this.findProjectPath());
     this.entrypoint = Path.resolve(entrypoint);
-    this.relativeScriptPath = Path.relative(`${this.projectPath  }/..`, entrypoint);
-    if (options?.outputPath) {
-      this.outputPath = Path.resolve(options.outputPath);
-      const path = this.outputPath;
-      if (Fs.existsSync(path) && !Fs.lstatSync(path).isDirectory()) {
-        this.outputPath = Path.dirname(path);
-      }
-    } else {
-      const outputDir = Path.resolve(Path.dirname(entrypoint), '.databox');
-
-      const shortScriptName = Path.basename(entrypoint)
-        .replace(Path.extname(entrypoint), '')
-        .replace(/[.]/g, '-')
-        .toLowerCase();
-
-      this.outputPath = Path.join(outputDir, shortScriptName);
-    }
+    this.databoxModule = options?.databoxModule;
+    this.outputPath = options?.outputPath ? Path.resolve(options?.outputPath) : undefined;
   }
 
   public async loadPackage(): Promise<void> {
+    await this.ensureSetup();
     const manifest = await readFileAsJson<IDataboxManifest>(`${this.outputPath}/manifest.json`);
     const script = await Fs.promises.readFile(`${this.outputPath}/databox.js`, 'utf8');
     const sourceMap = await Fs.promises.readFile(`${this.outputPath}/databox.js.map`, 'utf8');
@@ -58,6 +47,7 @@ export default class DataboxPackager {
   public async rollup(options?: {
     tsconfig?: string;
   }): Promise<{ sourceMap: string; sourceCode: string }> {
+    await this.ensureSetup();
     const rollup = await rollupDatabox(this.entrypoint, {
       outDir: this.outputPath,
       tsconfig: options?.tsconfig,
@@ -66,6 +56,7 @@ export default class DataboxPackager {
   }
 
   public async createManifest(sourceCode: string, sourceMap: string): Promise<void> {
+    await this.ensureSetup();
     this.package = {
       manifest: {
         scriptEntrypoint: this.relativeScriptPath,
@@ -89,6 +80,40 @@ export default class DataboxPackager {
     } finally {
       await connection.disconnect();
     }
+  }
+
+  private async findDataboxModule(): Promise<string> {
+    const databoxProcess = new LocalDataboxProcess(this.entrypoint);
+    const databoxModule = await databoxProcess.fetchModule();
+    await databoxProcess.close();
+    return databoxModule;
+  }
+
+  private async ensureSetup(): Promise<void> {
+    if (this.setupPromise) return this.setupPromise.promise;
+    this.setupPromise = createPromise<void>();
+
+    this.databoxModule ??= await this.findDataboxModule();
+    this.projectPath = Path.resolve(this.findProjectPath());
+    this.relativeScriptPath = Path.relative(`${this.projectPath  }/..`, this.entrypoint);
+
+    if (this.outputPath) {
+      const path = this.outputPath;
+      if (Fs.existsSync(path) && !Fs.lstatSync(path).isDirectory()) {
+        this.outputPath = Path.dirname(path);
+      }
+    } else {
+      const outputDir = Path.resolve(Path.dirname(this.entrypoint), '.databox');
+
+      const shortScriptName = Path.basename(this.entrypoint)
+        .replace(Path.extname(this.entrypoint), '')
+        .replace(/[.]/g, '-')
+        .toLowerCase();
+
+      this.outputPath = Path.join(outputDir, shortScriptName);
+    }
+
+    this.setupPromise.resolve();
   }
 
   private findProjectPath(): string {

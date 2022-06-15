@@ -9,6 +9,7 @@ import DataboxInternal from './DataboxInternal';
 export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
   implements IDataboxWrapper
 {
+  public static module = '@ulixee/databox-for-hero';
   public static defaultExport: DataboxWrapper;
 
   public disableAutorun: boolean;
