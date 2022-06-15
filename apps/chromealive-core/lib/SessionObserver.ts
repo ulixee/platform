@@ -181,7 +181,7 @@ export default class SessionObserver extends TypedEventEmitter<{
       startLocation,
       `--sessionResume.sessionId`,
       this.heroSession.id,
-      '--show-chrome-alive'
+      '--show-chrome-alive',
     ];
     if (startLocation === 'extraction') {
       execArgv.length = 0;

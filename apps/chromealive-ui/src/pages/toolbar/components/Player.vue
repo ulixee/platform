@@ -84,14 +84,12 @@ export default Vue.defineComponent({
     const isShowingFinder = Vue.computed(() => props.mode === 'Finder');
     const isRestartingSession = Vue.computed(() => props.session?.playbackState === 'restarting');
     const currentUrl = Vue.computed(() => {
-      let url = 'about:blank';
-      if (props.mode === 'Live' || (props.mode === 'Finder' && !props.timetravel)) {
+      let url = props.timetravel?.url;
+      if (props.mode === 'Live' || !url) {
         const urls = props.session?.timeline?.urls;
         if (urls.length) {
           url = urls[urls.length - 1]?.url;
         }
-      } else {
-        url = props.timetravel?.url;
       }
       if (!url) url = 'about:blank';
       if (url.endsWith('/')) url = url.slice(0, -1);
@@ -199,7 +197,9 @@ export default Vue.defineComponent({
   }
 
   &.isRestartingSession {
-    .backgrounds, .address-bar, .Borders {
+    .backgrounds,
+    .address-bar,
+    .Borders {
       display: none;
     }
     .bar-bg {
@@ -425,6 +425,7 @@ export default Vue.defineComponent({
 
 .address-bar {
   position: relative;
+  max-width: 25%;
 
   .address {
     min-width: 200px;
@@ -432,6 +433,7 @@ export default Vue.defineComponent({
     color: #202124;
     padding: 6.2px 5px 5px 1px;
     margin-right: 32px;
+    white-space: nowrap;
     text-shadow: 1px 1px 0 white;
 
     &:hover .text {
@@ -442,6 +444,8 @@ export default Vue.defineComponent({
       padding: 1px 5px 3px 5px;
       line-height: 12px;
       border-radius: 2px;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
   }
 }
