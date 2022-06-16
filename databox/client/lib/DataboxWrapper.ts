@@ -9,9 +9,9 @@ import { setupAutorunBeforeExitHook, attemptAutorun } from './utils/Autorun';
 export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
   implements IDataboxWrapper
 {
-  public static module = '@ulixee/databox';
   public static defaultExport: DataboxWrapper;
 
+  public readonly module = '@ulixee/databox';
   public disableAutorun: boolean;
   public successCount = 0;
   public errorCount = 0;

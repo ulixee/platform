@@ -1,4 +1,4 @@
-import { IDataboxWrapperClass } from "@ulixee/databox-interfaces/IDataboxWrapper";
+import IDataboxWrapper from "@ulixee/databox-interfaces/IDataboxWrapper";
 import { IMessage, IResponse } from "../interfaces/ILocalDataboxProcess";
 
 function sendToParent(response: IResponse): void {
@@ -17,22 +17,18 @@ process.on('exit', exit);
 process.on('message', async (message: IMessage) => {
   await new Promise(process.nextTick);
   if (message.action === 'fetchModule') {
-    const imported = require(message.scriptPath);
-    if (!imported.default)  throw new Error(`Databox script has no default export`);
+    const databoxWrapper = loadDataboxExport(message.scriptPath);
     
-    const DataboxWrapper = imported.default.constructor as IDataboxWrapperClass;
     return sendToParent({
       responseId: message.messageId,
       data: {
-        module: DataboxWrapper.module,
+        module: databoxWrapper.module,
       },
     });
 
-  } else if (message.action === 'run') {
-    const imported = require(message.scriptPath);
-    if (!imported.default) throw new Error(`Databox script has no default export`);
-
-    const output = await imported.default.run(message.input);
+  } if (message.action === 'run') {
+    const databoxWrapper = loadDataboxExport(message.scriptPath);
+    const output = await databoxWrapper.run(message.input);
 
     return sendToParent({ 
       responseId: message.messageId,
@@ -45,3 +41,10 @@ process.on('message', async (message: IMessage) => {
   // @ts-ignore
   throw new Error(`unknown action: ${message.action}`);
 });
+
+function loadDataboxExport(scriptPath: string): IDataboxWrapper {
+  const imported = require(scriptPath); // eslint-disable-line import/no-dynamic-require
+  const defaultExport = imported.default || imported;
+  if (!defaultExport) throw new Error(`Databox script has no default export`);
+  return defaultExport;
+}

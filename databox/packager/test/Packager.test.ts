@@ -4,10 +4,11 @@ import DatabasePackager from '../index';
 
 test('it should generate a relative script entrypoint', async () => {
   const packager = new DatabasePackager(`${__dirname}/assets/typescript/src/index.ts`);
+  await packager.build();
+  
   expect(packager.outputPath).toBe(
     Path.resolve(`${__dirname}/assets/typescript/src/.databox/index`),
   );
-  await packager.build();
   expect(packager.package.script).toBe(
     await Fs.readFile(`${packager.outputPath  }/databox.js`, 'utf8'),
   );

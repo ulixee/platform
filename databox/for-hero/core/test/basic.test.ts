@@ -37,17 +37,7 @@ test('it should be able to upload a databox and run it by hash', async () => {
 
 test('it should throw an error if the default export is not a databox', async () => {
   const packager = new Packager(require.resolve('./_testDatabox2.js'));
-  await packager.build();
-  const serverHost = await ulixeeServer.address;
-  await packager.upload(serverHost);
-
-  const { manifest } = packager.package;
-
-  const remoteTransport = ConnectionToDataboxCore.remote(serverHost);
   await expect(
-    remoteTransport.sendRequest({
-      command: 'Databox.run',
-      args: [manifest.scriptRollupHash],
-    }),
-  ).rejects.toThrow('needs to inherit from "@ulixee/databox-for-hero"');
+    packager.build()
+  ).rejects.toThrow("The exported databox object must specify a module");
 }, 45e3);

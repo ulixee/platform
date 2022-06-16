@@ -7,7 +7,7 @@ import { createPromise } from '@ulixee/commons/lib/utils';
 import { ChildProcess, fork } from 'child_process';
 import { IFetchModuleMessage, IRunMessage, IResponse, IFetchMeduleResponseData, IRunResponseData } from '../interfaces/ILocalDataboxProcess';
 
-const childScriptPath = require.resolve('../bin/databox-process.js');
+const databoxProcessJsPath = require.resolve('../bin/databox-process.js');
 
 export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Error }> { 
   public scriptPath: string;
@@ -58,12 +58,13 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
     if (this.#child) return this.#child;
 
     const execArgv = [];
-    const scriptDir = Path.dirname(childScriptPath);
-    if (this.scriptPath.endsWith('.ts')) {
+    const scriptDir = Path.dirname(this.scriptPath);
+    const scriptIsTsFile = this.scriptPath.endsWith('.ts');
+    if (scriptIsTsFile) {
       execArgv.push('-r', 'ts-node/register');
     }
 
-    this.#child = fork(childScriptPath, [], {
+    this.#child = fork(databoxProcessJsPath, [], {
       execArgv,
       cwd: scriptDir,
       stdio: ['ignore', 'inherit', 'inherit', 'ipc'],
@@ -72,6 +73,7 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
 
     this.#child.on('message', (x) => this.handleMessageFromChild(x as IResponse));
     this.#child.on('error', error => {
+      // eslint-disable-next-line no-console
       console.log('ERROR in LocalDataboxProcess', error);
       this.emit('error', error)
     });
