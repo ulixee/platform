@@ -12,19 +12,16 @@ import ConnectionToDataboxCore from './lib/ConnectionToDataboxCore';
 export default class DataboxPackager {
   public package: IDataboxPackage;
   public outputPath: string;
-  public databoxModule: string;
   private setupPromise: IResolvablePromise<void>;
   private readonly entrypoint: string;
 
   constructor(
     entrypoint: string,
     options?: {
-      databoxModule?: string;
       outputPath?: string;
     },
   ) {
     this.entrypoint = Path.resolve(entrypoint);
-    this.databoxModule = options?.databoxModule;
 
     if (options?.outputPath) {
       this.outputPath = Path.resolve(options?.outputPath);
@@ -67,21 +64,20 @@ export default class DataboxPackager {
   }
 
   public async createManifest(sourceCode: string, sourceMap: string): Promise<void> {
-    this.databoxModule ??= await this.findDataboxModule();
-    const relativeScriptPath = this.findRelativeScriptPath(this.databoxModule);
-    const databoxModuleVersion = this.loadDataboxModuleVersion();
-    if (!this.databoxModule) {
-      throw new Error('The exported databox object must specify a module');
+    const runtime = await this.findDataboxRuntime();
+    const relativeScriptPath = this.findRelativeScriptPath(runtime.name);
+    if (!runtime || !runtime.name) {
+      throw new Error('The exported databox object must specify a runtime');
     }
-    if (!databoxModuleVersion) {
-      throw new Error("The databox module does not specify a version in its package.json");
+    if (!runtime.version) {
+      throw new Error("The databox does not specify a runtime version");
     }
     this.package = {
       manifest: {
         scriptEntrypoint: relativeScriptPath,
         scriptRollupHash: Hasher.hashDatabox(Buffer.from(sourceCode)),
-        databoxModule: this.databoxModule,
-        databoxModuleVersion,
+        runtimeName: runtime.name,
+        runtimeVersion: runtime.version,
       },
       script: sourceCode,
       sourceMap,
@@ -101,31 +97,23 @@ export default class DataboxPackager {
     }
   }
 
-  private loadDataboxModuleVersion(): string {
-    try {
-      return require(`${this.databoxModule}/package.json`).version;
-    } catch (e) {
-      return;
-    }
-  }
-
-  private async findDataboxModule(): Promise<string> {
+  private async findDataboxRuntime(): Promise<{ name: string, version: string }> {
     const entrypoint = `${this.outputPath}/databox.js`;
     const databoxProcess = new LocalDataboxProcess(entrypoint);
-    const databoxModule = await databoxProcess.fetchModule();
+    const runtime = await databoxProcess.fetchRuntime();
     await new Promise(resolve => setTimeout(resolve, 1e3));
     await databoxProcess.close();
-    return databoxModule;
+    return runtime;
   }
 
-  private findRelativeScriptPath(databoxModule: string): string {
-    const projectPath = Path.resolve(this.findProjectPath(databoxModule));
+  private findRelativeScriptPath(runtimeName: string): string {
+    const projectPath = Path.resolve(this.findProjectPath(runtimeName));
     return Path.relative(`${projectPath}/..`, this.entrypoint);
   }
 
-  private findProjectPath(databoxModule: string): string {
+  private findProjectPath(runtimeName: string): string {
     try {
-      const heroForDataboxPath = require(`${databoxModule}/package.json`);
+      const heroForDataboxPath = require(`${runtimeName}/package.json`);
       // find the top node modules in the path
       const rootPath = heroForDataboxPath.split('node_modules').shift();
       if (Fs.existsSync(Path.join(rootPath, 'package.json'))) {

@@ -63,7 +63,7 @@ describe('basic Databox tests', () => {
       await hero.close();
     });
     expect(connection.outgoingSpy.mock.calls).toHaveLength(0);
-    await databoxWrapper.run();
+    await databoxWrapper.run({});
     const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toMatchObject([
       'Core.connect',
@@ -82,7 +82,7 @@ describe('basic Databox tests', () => {
       const hero = databox.hero;
       await hero.goto('https://news.ycombinator.org');
     });
-    await databoxWrapper.run();
+    await databoxWrapper.run({});
 
     const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toContain('Session.close');
@@ -101,7 +101,7 @@ describe('basic Databox tests', () => {
       await hero.interact('click');
     });
 
-    await expect(databoxWrapper.run()).rejects.toThrowError();
+    await expect(databoxWrapper.run({})).rejects.toThrowError();
 
     const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toContain('Session.close');
@@ -120,7 +120,7 @@ describe('basic Databox tests', () => {
       extract: extractFn,
     });
 
-    await databoxWrapper.run();
+    await databoxWrapper.run({});
     expect(runFn).not.toHaveBeenCalled();
     expect(extractFn).toHaveBeenCalledTimes(1);
   });

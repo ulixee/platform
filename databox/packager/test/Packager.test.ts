@@ -22,8 +22,8 @@ test('it should generate a relative script entrypoint', async () => {
   expect(packager.package.manifest).toEqual({
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `typescript`, `src`, `index.ts`),
     scriptRollupHash: expect.any(String),
-    databoxModule: '@ulixee/databox-for-hero',
-    databoxModuleVersion: require('../package.json').version,
+    runtimeName: '@ulixee/databox-for-hero',
+    runtimeVersion: require('../package.json').version,
   });
 
   await Fs.rmdir(packager.outputPath, { recursive: true });

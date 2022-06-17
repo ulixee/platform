@@ -1,23 +1,17 @@
 import * as Fs from 'fs';
 import { NodeVM, VMScript } from 'vm2';
-import HeroCore from '@ulixee/hero-core';
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
-import IDataboxModuleRunner from '@ulixee/databox-core/interfaces/IDataboxModuleRunner';
-import ServerHooks from '@ulixee/databox-core/lib/ServerHooks';
-import { ConnectionToHeroCore } from '@ulixee/hero';
+import IDataboxCoreRuntime from '@ulixee/databox-interfaces/IDataboxCoreRuntime';
+import DataboxCore from '@ulixee/databox-core';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
-import DataboxWrapper from '@ulixee/databox-for-hero';
-import TransportBridge from '@ulixee/net/lib/TransportBridge';
+import DataboxWrapper from '@ulixee/databox-for-puppeteer';
 
-const { version: HeroVersion } = require('@ulixee/hero-core/package.json');
-
-export default class DataboxForHeroCore implements IDataboxModuleRunner {
-  public runsDataboxModuleVersion: string = HeroVersion;
-  public runsDataboxModule = '@ulixee/databox-for-hero';
+export default class DataboxForPuppeteerCoreRuntime implements IDataboxCoreRuntime {
+  public databoxRuntimeVersion = '';
+  public databoxRuntimeName = '@ulixee/databox-for-puppeteer';
 
   private compiledScriptsByPath = new Map<string, Promise<VMScript>>();
 
-  private connectionToHeroCore: ConnectionToHeroCore;
   private vm = new NodeVM({
     console: 'inherit',
     sandbox: {},
@@ -26,21 +20,20 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
     wrapper: 'commonjs',
     strict: true,
     require: {
-      external: ['@ulixee/*', '@unblocked-web/*', 'awaited-dom'],
+      external: [
+        '@ulixee/*',
+        'puppeteer',
+      ],
     },
   });
 
   public async start(): Promise<void> {
-    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'true';
-    await HeroCore.start();
-    const bridge = new TransportBridge();
-    HeroCore.addConnection(bridge.transportToClient);
-    this.connectionToHeroCore = new ConnectionToHeroCore(bridge.transportToCore);
+    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'Y';
+    await new Promise(resolve => process.nextTick(resolve));
   }
 
   public async close(): Promise<void> {
-    await this.connectionToHeroCore?.disconnect();
-    await HeroCore.shutdown();
+    // TODO what should we cleanup
   }
 
   public async run(path: string, manifest: IDataboxManifest, input: any): Promise<{ output: any }> {
@@ -49,19 +42,19 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
 
     if (!(databoxWrapper instanceof DataboxWrapper)) {
       throw new Error(
-        'The default export from this script needs to inherit from "@ulixee/databox-for-hero"',
+        'The default export from this script needs to inherit from "@ulixee/databox-for-puppeteer"',
       );
     }
 
     const output = await databoxWrapper.run({
       input,
-      connectionToCore: this.connectionToHeroCore,
     });
     return { output };
   }
 
   public canSatisfyVersion(version: string): boolean {
-    return isSemverSatisfied(version, HeroVersion);
+    // TODO: there is no hero version
+    return true;
   }
 
   private getVMScript(path: string, manifest: IDataboxManifest): Promise<VMScript> {
@@ -82,6 +75,6 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
   }
 
   public static register(): void {
-    ServerHooks.registerModule(new DataboxForHeroCore());
+    DataboxCore.registerRuntime(new DataboxForPuppeteerCoreRuntime());
   }
 }

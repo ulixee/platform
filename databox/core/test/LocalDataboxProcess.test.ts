@@ -1,13 +1,13 @@
 import * as Path from 'path';
 import LocalDataboxProcess from '../lib/LocalDataboxProcess';
 
-test('it can extract the databox module', async () => {
-  const scriptPath = Path.resolve(__dirname, 'databoxes/module.js');
+test('it can extract the databox runtime', async () => {
+  const scriptPath = Path.resolve(__dirname, 'databoxes/runtime.js');
   const databoxProcess = new LocalDataboxProcess(scriptPath);
-  const module = await databoxProcess.fetchModule();
+  const runtime = await databoxProcess.fetchRuntime();
   await databoxProcess.close();
     
-  expect(module).toBe('@ulixee/test-database');
+  expect(runtime.name).toBe('@ulixee/test-database');
 });
 
 

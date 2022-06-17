@@ -1,6 +1,6 @@
 export interface IFetchModuleMessage {
   messageId: string;
-  action: 'fetchModule';
+  action: 'fetchRuntime';
   scriptPath: string;
 }
 
@@ -17,11 +17,12 @@ export interface IRunResponseData {
   output: any;
 }
 
-export interface IFetchMeduleResponseData {
-  module: string;
+export interface IFetchRuntimeResponseData {
+  name: string;
+  version: string;
 }
 
-export type IResponseData = IRunResponseData | IFetchMeduleResponseData;
+export type IResponseData = IRunResponseData | IFetchRuntimeResponseData;
 
 export interface IResponse {
   responseId: string;

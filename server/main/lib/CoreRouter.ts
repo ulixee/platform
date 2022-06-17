@@ -1,6 +1,6 @@
 import * as WebSocket from 'ws';
 import * as Http from 'http';
-import ServerHooks from '@ulixee/databox-core/lib/ServerHooks';
+import ServerHooks from '@ulixee/databox-core';
 import HeroCore from '@ulixee/hero-core';
 import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
@@ -11,8 +11,8 @@ import Server from '../index';
 
 export default class CoreRouter {
   public static modulesToRegister = [
-    '@ulixee/databox-core/register',
-    '@ulixee/databox-for-hero-core/register',
+    '@ulixee/databox-core-runtime/register',
+    '@ulixee/databox-for-hero-core-runtime/register',
   ];
 
   public get dataDir(): string {

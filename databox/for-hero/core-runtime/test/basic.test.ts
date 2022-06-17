@@ -39,5 +39,5 @@ test('it should throw an error if the default export is not a databox', async ()
   const packager = new Packager(require.resolve('./_testDatabox2.js'));
   await expect(
     packager.build()
-  ).rejects.toThrow("The exported databox object must specify a module");
+  ).rejects.toThrow('The exported databox object must specify a runtime');
 }, 45e3);

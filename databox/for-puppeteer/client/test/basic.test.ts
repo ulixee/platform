@@ -26,7 +26,7 @@ describe('basic Databox tests', () => {
       await page.close();
       databaseHasCompleted = true;
     });
-    await databoxWrapper.run();
+    await databoxWrapper.run({});
     expect(databaseHasCompleted).toBe(true);
   });
 
@@ -38,7 +38,7 @@ describe('basic Databox tests', () => {
       const page = await browser.newPage();
       await page.goto('https://example.org');
     });
-    await databoxWrapper.run();
+    await databoxWrapper.run({});
     const pages = await browser.pages();
     expect(pages.length).toBe(0);
   });
@@ -53,6 +53,6 @@ describe('basic Databox tests', () => {
       });
     });
 
-    await expect(databoxWrapper.run()).rejects.toThrowError();
+    await expect(databoxWrapper.run({})).rejects.toThrowError();
   });
 });

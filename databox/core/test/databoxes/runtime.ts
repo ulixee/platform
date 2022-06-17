@@ -1,5 +1,5 @@
 class TestDatabox {
-  module = '@ulixee/test-database';
+  runtimeName = '@ulixee/test-database';
 }
 
 export default new TestDatabox();

@@ -17,8 +17,8 @@
     "watch:all": "concurrently -n hero,devenv \"cd hero && yarn watch\" \"yarn watch\"",
     "start": "yarn workspace @ulixee/server start",
     "test": "yarn copy:build && yarn test:build",
-    "test:build": "cd ./build && cross-env ULX_DATA_DIR=.data-test NODE_ENV=test jest",
-    "test:all": "yarn copy:build && cross-env ULX_DATA_DIR=.data-test NODE_ENV=test jest",
+    "test:build": "cd ./build && cross-env ULX_DATA_DIR=.data-test ULX_DATABOX_DIR=.data-test NODE_ENV=test jest",
+    "test:all": "yarn copy:build && cross-env ULX_DATA_DIR=.data-test ULX_DATABOX_DIR=.data-test NODE_ENV=test jest",
     "lint": "eslint --cache ./",
     "version": "ulx-repo-version-check fix",
     "version:bump": "ulx-repo-version-bump"

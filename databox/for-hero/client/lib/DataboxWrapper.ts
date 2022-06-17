@@ -1,45 +1,36 @@
-import readCommandLineArgs from '@ulixee/databox/lib/utils/readCommandLineArgs';
 import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
 import IDataboxWrapper from '@ulixee/databox-interfaces/IDataboxWrapper';
-import { setupAutorunBeforeExitHook, attemptAutorun } from '@ulixee/databox/lib/utils/Autorun';
+import DataboxWrapperAbstract from '@ulixee/databox/lib/abstracts/DataboxWrapperAbstract';
 import IDataboxForHeroRunOptions from '../interfaces/IDataboxForHeroRunOptions';
-import IComponents, { IRunFn } from '../interfaces/IComponents';
+import IComponents from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
+import RunnerObject from './RunnerObject';
+
+const pkg = require('../package.json');
 
 export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
-  implements IDataboxWrapper
-{
-  public static defaultExport: DataboxWrapper;
+extends DataboxWrapperAbstract<
+  DataboxInternal<TInput, TOutput>,
+  TOutput,
+  IDataboxForHeroRunOptions<TInput>,
+  IComponents<TInput, TOutput>,
+  RunnerObject<TInput, TOutput>
+> implements IDataboxWrapper {
 
-  public readonly module = '@ulixee/databox-for-hero';
-  public disableAutorun: boolean;
-  public successCount = 0;
-  public errorCount = 0;
-
-  #components: IComponents<TInput, TOutput>;
-
-  constructor(components: IRunFn<TInput, TOutput> | IComponents<TInput, TOutput>) {
-    this.#components =
-      typeof components === 'function'
-        ? {
-            run: components,
-          }
-        : { ...components };
-
-    this.disableAutorun = !!process.env.ULX_DATABOX_DISABLE_AUTORUN;
-  }
-
-  public async run(options: IDataboxForHeroRunOptions = {}): Promise<TOutput> {
+  public override readonly runtimeName = pkg.name;
+  public override readonly runtimeVersion = pkg.version;
+  
+  public override async run(options: IDataboxForHeroRunOptions<TInput>): Promise<TOutput> {
     let databoxInternal: DataboxInternal<TInput, TOutput>;
     try {
-      databoxInternal = new DataboxInternal(options, this.#components.defaults);
+      databoxInternal = new DataboxInternal(options, this.components.defaults);
       const shouldRunFull = !databoxInternal.sessionIdToExtract;
       if (shouldRunFull) {
-        await databoxInternal.execRunner(this.#components.run);
+        await databoxInternal.execRunner(this.components.run);
       }
 
-      if (this.#components.extract) {
-        await databoxInternal.execExtractor(this.#components.extract);
+      if (this.components.extract) {
+        await databoxInternal.execExtractor(this.components.extract);
       }
 
       this.successCount++;
@@ -53,14 +44,7 @@ export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
     }
   }
 
-  public static run<T>(databoxWrapper: DataboxWrapper): Promise<T | Error> {
-    const options = readCommandLineArgs();
-    return databoxWrapper.run(options).catch(err => err);
-  }
-
-  public static async attemptAutorun(): Promise<void> {
-    await attemptAutorun(module.parent, require.main, DataboxWrapper);
+  protected createDataboxInternal(options: IDataboxForHeroRunOptions<TInput>): DataboxInternal<TInput, TOutput> {
+    return new DataboxInternal(options, this.components.defaults);
   }
 }
-
-setupAutorunBeforeExitHook(DataboxWrapper);

@@ -1,10 +1,10 @@
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import '@ulixee/commons/lib/SourceMapSupport';
 import DataboxWrapper, {
-  Extractor,
+  ExtractorObject,
+  RunnerObject,
   IHeroCreateOptions,
   Observable,
-  Runner,
 } from '@ulixee/databox-for-hero';
 import readCommandLineArgs from '@ulixee/databox/lib/utils/readCommandLineArgs';
 import HeroCore from '@ulixee/hero-core';
@@ -14,10 +14,10 @@ import UlixeeServerConfig from '@ulixee/commons/config/servers';
 
 const { version } = require('./package.json');
 
-export { Observable, IHeroCreateOptions, Runner, Extractor };
+export { Observable, IHeroCreateOptions, RunnerObject, ExtractorObject };
 
 export default class DataboxPlayground extends DataboxWrapper {
-  public static override async run<T>(databoxWrapper: DataboxWrapper): Promise<T | Error> {
+  public static override async run<TOutput>(databoxWrapper: DataboxWrapper): Promise<TOutput | Error> {
     let serverHost =
       UlixeeConfig.load()?.serverHost ??
       UlixeeConfig.global.serverHost ??

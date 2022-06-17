@@ -16,13 +16,14 @@ process.on('exit', exit);
 
 process.on('message', async (message: IMessage) => {
   await new Promise(process.nextTick);
-  if (message.action === 'fetchModule') {
+  if (message.action === 'fetchRuntime') {
     const databoxWrapper = loadDataboxExport(message.scriptPath);
     
     return sendToParent({
       responseId: message.messageId,
       data: {
-        module: databoxWrapper.module,
+        name: databoxWrapper.runtimeName,
+        version: databoxWrapper.runtimeVersion,
       },
     });
 

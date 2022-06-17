@@ -1,7 +1,8 @@
 import IDataboxRunOptions from './IDataboxRunOptions';
 
 export default interface IDataboxWrapper<TOutput = any> {
-  module: string;
+  runtimeName: string;
+  runtimeVersion: string;
   run(options?: IDataboxRunOptions): Promise<TOutput>;
 }
 

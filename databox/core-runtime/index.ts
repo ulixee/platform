@@ -1,14 +1,13 @@
 import * as Fs from 'fs';
 import { NodeVM, VMScript } from 'vm2';
-import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
-import IDataboxModuleRunner from '@ulixee/databox-core/interfaces/IDataboxModuleRunner';
-import ServerHooks from '@ulixee/databox-core/lib/ServerHooks';
+import DataboxWrapper from '@ulixee/databox';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
-import DataboxWrapper from '@ulixee/databox-for-puppeteer';
+import IDataboxCoreRuntime from '@ulixee/databox-interfaces/IDataboxCoreRuntime';
+import DataboxCore from '@ulixee/databox-core';
 
-export default class DataboxForPuppeteerCore implements IDataboxModuleRunner {
-  public runsDataboxModuleVersion = '';
-  public runsDataboxModule = '@ulixee/databox-for-puppeteer';
+export default class DataboxCoreRuntime implements IDataboxCoreRuntime {
+  public databoxRuntimeVersion = '';
+  public databoxRuntimeName = '@ulixee/databox';
 
   private compiledScriptsByPath = new Map<string, Promise<VMScript>>();
 
@@ -39,7 +38,7 @@ export default class DataboxForPuppeteerCore implements IDataboxModuleRunner {
 
     if (!(databoxWrapper instanceof DataboxWrapper)) {
       throw new Error(
-        'The default export from this script needs to inherit from "@ulixee/databox-for-puppeteer"',
+        'The default export from this script needs to inherit from "@ulixee/databox"',
       );
     }
 
@@ -72,6 +71,6 @@ export default class DataboxForPuppeteerCore implements IDataboxModuleRunner {
   }
 
   public static register(): void {
-    ServerHooks.registerModule(new DataboxForPuppeteerCore());
+    DataboxCore.registerRuntime(new DataboxCoreRuntime());
   }
 }

@@ -1,76 +1,123 @@
-import * as Fs from 'fs';
-import { NodeVM, VMScript } from 'vm2';
-import DataboxWrapper from '@ulixee/databox';
+import { IDataboxApis } from '@ulixee/databox-interfaces/IDataboxApis';
+import IDataboxPackage from '@ulixee/databox-interfaces/IDataboxPackage';
+import IDataboxCoreRuntime from '@ulixee/databox-interfaces/IDataboxCoreRuntime';
+import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
+import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
-import IDataboxModuleRunner from './interfaces/IDataboxModuleRunner';
-import ServerHooks from './lib/ServerHooks';
+import LocalDataboxProcess from './lib/LocalDataboxProcess';
+import PackageRegistry from './lib/PackageRegistry';
+import env from './env';
 
-export default class DataboxCore implements IDataboxModuleRunner {
-  public runsDataboxModuleVersion = '';
-  public runsDataboxModule = '@ulixee/databox';
+type IDataboxConnectionToClient = ConnectionToClient<IDataboxApis, {}>;
 
-  private compiledScriptsByPath = new Map<string, Promise<VMScript>>();
+export default class DataboxCore {
+  public static connections = new Set<IDataboxConnectionToClient>();
+  public static databoxesDir: string;
 
-  private vm = new NodeVM({
-    console: 'inherit',
-    sandbox: {},
-    wasm: false,
-    eval: false,
-    wrapper: 'commonjs',
-    strict: true,
-    require: {
-      external: ['@ulixee/*'],
-    },
-  });
+  private static coreRuntimesByName: { [name: string]: IDataboxCoreRuntime } = {};
+  private static packageRegistry: PackageRegistry;
+  private static apiHandlers: IDataboxApis = {
+    'Databox.upload': DataboxCore.upload.bind(this),
+    'Databox.run': DataboxCore.run.bind(this),
+    'Databox.runLocalScript': DataboxCore.runLocalScript.bind(this),
+  };
 
-  public async start(): Promise<void> {
-    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'Y';
-    await new Promise(resolve => process.nextTick(resolve));
+  public static addConnection(
+    transport: ITransportToClient<IDataboxApis, {}>,
+  ): IDataboxConnectionToClient {
+    const connection = new ConnectionToClient(transport, this.apiHandlers);
+    connection.once('disconnected', () => this.connections.delete(connection));
+    this.connections.add(connection);
+    return connection;
   }
 
-  public async close(): Promise<void> {
-    // TODO what should we cleanup
+  public static registerRuntime(coreRuntime: IDataboxCoreRuntime): void {
+    this.coreRuntimesByName[coreRuntime.databoxRuntimeName] = coreRuntime;
   }
 
-  public async run(path: string, manifest: IDataboxManifest, input: any): Promise<{ output: any }> {
-    const script = await this.getVMScript(path, manifest);
-    const databoxWrapper = this.vm.run(script);
+  public static async start(): Promise<void> {
+    this.databoxesDir = env.databoxStorage;
+    for (const runner of Object.values(this.coreRuntimesByName)) {
+      await runner.start(this.databoxesDir);
+    }
+  }
 
-    if (!(databoxWrapper instanceof DataboxWrapper)) {
+  public static async close(): Promise<void> {
+    this.packageRegistry?.flush();
+    for (const runner of Object.values(this.coreRuntimesByName)) {
+      await runner.close();
+    }
+    this.coreRuntimesByName = {};
+
+    for (const connection of this.connections) {
+      await connection.disconnect();
+    }
+    this.connections.clear();
+  }
+
+  public static async upload(databoxPackage: IDataboxPackage): Promise<void> {
+    await this.getPackageRegistry().save(databoxPackage);
+  }
+
+  public static async runLocalFile(scriptHash: string, input?: any): Promise<{ output: any }> {
+    const databox = await this.getPackageRegistry().getByHash(scriptHash);
+    const runner = this.coreRuntimesByName[databox.runtimeName];
+    if (!runner) {
+      throw new Error(`Server does not support required databox runtime: ${databox.runtimeName}`);
+    }
+    if (!runner.canSatisfyVersion(databox.runtimeVersion)) {
       throw new Error(
-        'The default export from this script needs to inherit from "@ulixee/databox"',
+        `The current version of ${databox.runtimeName} (${runner.databoxRuntimeVersion}) is incompatible with this Databox version (${databox.runtimeVersion})`,
       );
     }
 
-    const output = await databoxWrapper.run({
-      input,
-    });
+    const manifest = <IDataboxManifest>{
+      scriptEntrypoint: databox.scriptEntrypoint,
+      scriptRollupHash: databox.scriptHash,
+      runtimeVersion: databox.runtimeVersion,
+      runtimeName: databox.runtimeName,
+    };
+
+    return await runner.run(databox.path, manifest, input);
+  }
+
+  public static async run(scriptHash: string, input?: any): Promise<{ output: any }> {
+    const databox = await this.getPackageRegistry().getByHash(scriptHash);
+    const runner = this.coreRuntimesByName[databox.runtimeName];
+    if (!runner) {
+      throw new Error(`Server does not support required databox runtime: ${databox.runtimeName}`);
+    }
+    if (!runner.canSatisfyVersion(databox.runtimeVersion)) {
+      throw new Error(
+        `The current version of ${databox.runtimeName} (${runner.databoxRuntimeVersion}) is incompatible with this Databox version (${databox.runtimeVersion})`,
+      );
+    }
+
+    const manifest = <IDataboxManifest>{
+      scriptEntrypoint: databox.scriptEntrypoint,
+      scriptRollupHash: databox.scriptHash,
+      runtimeVersion: databox.runtimeVersion,
+      runtimeName: databox.runtimeName,
+    };
+
+    return await runner.run(databox.path, manifest, input);
+  }
+
+  public static async runLocalScript(scriptPath: string, input?: any): Promise<{ output: any }> {
+    const databoxProcess = new LocalDataboxProcess(scriptPath);
+    const runtime = await databoxProcess.fetchRuntime();
+    const runner = this.coreRuntimesByName[runtime.name];
+    if (!runner) {
+      throw new Error(`Server does not support required databox runtime: ${runtime.name}`);
+    }
+
+    const output = await databoxProcess.run(input);
+    
     return { output };
   }
 
-  public canSatisfyVersion(version: string): boolean {
-    // TODO: there is no hero version
-    return true;
-  }
-
-  private getVMScript(path: string, manifest: IDataboxManifest): Promise<VMScript> {
-    if (this.compiledScriptsByPath.has(path)) {
-      return this.compiledScriptsByPath.get(path);
-    }
-
-    const script = new Promise<VMScript>(async resolve => {
-      const file = await Fs.promises.readFile(path, 'utf8');
-      const vmScript = new VMScript(file, {
-        filename: manifest.scriptEntrypoint,
-      }).compile();
-      resolve(vmScript);
-    });
-
-    this.compiledScriptsByPath.set(path, script);
-    return script;
-  }
-
-  public static register(): void {
-    ServerHooks.registerModule(new DataboxCore());
+  private static getPackageRegistry(): PackageRegistry {
+    this.packageRegistry ??= new PackageRegistry(this.databoxesDir);
+    return this.packageRegistry;
   }
 }

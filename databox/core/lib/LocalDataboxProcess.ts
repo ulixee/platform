@@ -5,7 +5,7 @@ import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import { ChildProcess, fork } from 'child_process';
-import { IFetchModuleMessage, IRunMessage, IResponse, IFetchMeduleResponseData, IRunResponseData } from '../interfaces/ILocalDataboxProcess';
+import { IFetchModuleMessage, IRunMessage, IResponse, IFetchRuntimeResponseData, IRunResponseData } from '../interfaces/ILocalDataboxProcess';
 
 const databoxProcessJsPath = require.resolve('../bin/databox-process.js');
 
@@ -21,12 +21,15 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
     this.scriptPath = scriptPath;
   }
 
-  public async fetchModule(): Promise<string> {
-    const data = await this.sendMessageToChild<IFetchModuleMessage, IFetchMeduleResponseData>({ 
-      action: 'fetchModule', 
+  public async fetchRuntime(): Promise<{ name: string, version: string }> {
+    const data = await this.sendMessageToChild<IFetchModuleMessage, IFetchRuntimeResponseData>({ 
+      action: 'fetchRuntime', 
       scriptPath: this.scriptPath,
     });
-    return data.module;
+    return {
+      name: data.name,
+      version: data.version,
+    };
   }
 
   public async run(input: any): Promise<any> {
