@@ -54,7 +54,7 @@ describe('basic Databox tests', () => {
   });
 
   it('waits until run method is explicitly called', async () => {
-    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'Y';
+    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'true';
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
     const databoxWrapper = new DataboxWrapper(async databox => {
@@ -75,7 +75,7 @@ describe('basic Databox tests', () => {
   });
 
   it('should call close on hero automatically', async () => {
-    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'Y';
+    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'true';
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
     const databoxWrapper = new DataboxWrapper(async databox => {
@@ -89,7 +89,7 @@ describe('basic Databox tests', () => {
   });
 
   it('should emit close hero on error', async () => {
-    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'Y';
+    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'true';
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
     const databoxWrapper = new DataboxWrapper(async databox => {
@@ -108,7 +108,7 @@ describe('basic Databox tests', () => {
   });
 
   it('should be able to bypass the interaction step', async () => {
-    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'Y';
+    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'true';
     process.env.ULX_EXTRACT_SESSION_ID = '1';
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);

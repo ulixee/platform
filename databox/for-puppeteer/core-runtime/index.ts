@@ -28,7 +28,7 @@ export default class DataboxForPuppeteerCoreRuntime implements IDataboxCoreRunti
   });
 
   public async start(): Promise<void> {
-    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'Y';
+    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'true';
     await new Promise(resolve => process.nextTick(resolve));
   }
 
