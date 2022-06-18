@@ -38,9 +38,9 @@ export default class PackageRegistry {
   }
 
   public async save(databoxPackage: IDataboxPackage): Promise<void> {
-    this.checkDataboxModuleInstalled(
-      databoxPackage.manifest.databoxModule,
-      databoxPackage.manifest.databoxModuleVersion,
+    this.checkDataboxRuntimeInstalled(
+      databoxPackage.manifest.runtimeName,
+      databoxPackage.manifest.runtimeVersion,
     );
 
     // validate hash
@@ -59,20 +59,20 @@ export default class PackageRegistry {
     );
   }
 
-  private checkDataboxModuleInstalled(module: string, version: string): void {
-    let installedModuleVersion: string;
+  private checkDataboxRuntimeInstalled(name: string, version: string): void {
+    let installedRuntimeVersion: string;
     try {
       // eslint-disable-next-line global-require,import/no-dynamic-require
-      const databoxPackageJson = require(`${module}/package.json`);
-      installedModuleVersion = databoxPackageJson.version;
+      const databoxPackageJson = require(`${name}-core-runtime/package.json`);
+      installedRuntimeVersion = databoxPackageJson.version;
     } catch (error) {
       throw new Error(
-        `The requested Databox Module (${module}) is not installed.\n${error.message}`,
+        `The requested Databox runtime (${name}) is not installed.\n${error.message}`,
       );
     }
-    if (!isSemverSatisfied(version, installedModuleVersion)) {
+    if (!isSemverSatisfied(version, installedRuntimeVersion)) {
       throw new Error(
-        `The requested Databox Module Version (${installedModuleVersion}) is not compatible with the required version from your Databox Package (${module}).\n
+        `The requested Databox Module Version (${installedRuntimeVersion}) is not compatible with the required version from your Databox Package (${name}).\n
 Please try to re-upload after testing with the version available on this server.`,
       );
     }

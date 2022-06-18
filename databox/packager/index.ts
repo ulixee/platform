@@ -2,40 +2,38 @@ import * as Fs from 'fs';
 import * as Path from 'path';
 import IDataboxPackage from '@ulixee/databox-interfaces/IDataboxPackage';
 import { readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
-import { ConnectionToDataboxCore } from '@ulixee/databox';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 import * as Hasher from '@ulixee/commons/lib/Hasher';
+import LocalDataboxProcess from '@ulixee/databox-core/lib/LocalDataboxProcess';
+import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
 import rollupDatabox from './lib/rollupDatabox';
+import ConnectionToDataboxCore from './lib/ConnectionToDataboxCore';
 
 export default class DataboxPackager {
-  public readonly relativeScriptPath: string;
   public package: IDataboxPackage;
   public outputPath: string;
-  public readonly databoxModule: string;
-  private readonly projectPath: string;
+  private setupPromise: IResolvablePromise<void>;
+  private readonly entrypoint: string;
 
   constructor(
-    readonly entrypoint: string,
+    entrypoint: string,
     options?: {
-      databoxModule?: string;
       outputPath?: string;
     },
   ) {
-    this.databoxModule = options?.databoxModule ?? '@ulixee/databox-for-hero';
-    this.projectPath = Path.resolve(this.findProjectPath());
     this.entrypoint = Path.resolve(entrypoint);
-    this.relativeScriptPath = Path.relative(`${this.projectPath  }/..`, entrypoint);
+
     if (options?.outputPath) {
-      this.outputPath = Path.resolve(options.outputPath);
+      this.outputPath = Path.resolve(options?.outputPath);
       const path = this.outputPath;
       if (Fs.existsSync(path) && !Fs.lstatSync(path).isDirectory()) {
         this.outputPath = Path.dirname(path);
       }
     } else {
-      const outputDir = Path.resolve(Path.dirname(entrypoint), '.databox');
+      const outputDir = Path.resolve(Path.dirname(this.entrypoint), '.databox');
 
-      const shortScriptName = Path.basename(entrypoint)
-        .replace(Path.extname(entrypoint), '')
+      const shortScriptName = Path.basename(this.entrypoint)
+        .replace(Path.extname(this.entrypoint), '')
         .replace(/[.]/g, '-')
         .toLowerCase();
 
@@ -66,12 +64,20 @@ export default class DataboxPackager {
   }
 
   public async createManifest(sourceCode: string, sourceMap: string): Promise<void> {
+    const runtime = await this.findDataboxRuntime();
+    const relativeScriptPath = this.findRelativeScriptPath(runtime.name);
+    if (!runtime || !runtime.name) {
+      throw new Error('The exported databox object must specify a runtime');
+    }
+    if (!runtime.version) {
+      throw new Error("The databox does not specify a runtime version");
+    }
     this.package = {
       manifest: {
-        scriptEntrypoint: this.relativeScriptPath,
+        scriptEntrypoint: relativeScriptPath,
         scriptRollupHash: Hasher.hashDatabox(Buffer.from(sourceCode)),
-        databoxModule: this.databoxModule,
-        databoxModuleVersion: require(`${this.databoxModule}/package.json`).version,
+        runtimeName: runtime.name,
+        runtimeVersion: runtime.version,
       },
       script: sourceCode,
       sourceMap,
@@ -91,9 +97,23 @@ export default class DataboxPackager {
     }
   }
 
-  private findProjectPath(): string {
+  private async findDataboxRuntime(): Promise<{ name: string, version: string }> {
+    const entrypoint = `${this.outputPath}/databox.js`;
+    const databoxProcess = new LocalDataboxProcess(entrypoint);
+    const runtime = await databoxProcess.fetchRuntime();
+    await new Promise(resolve => setTimeout(resolve, 1e3));
+    await databoxProcess.close();
+    return runtime;
+  }
+
+  private findRelativeScriptPath(runtimeName: string): string {
+    const projectPath = Path.resolve(this.findProjectPath(runtimeName));
+    return Path.relative(`${projectPath}/..`, this.entrypoint);
+  }
+
+  private findProjectPath(runtimeName: string): string {
     try {
-      const heroForDataboxPath = require(`${this.databoxModule}/package.json`);
+      const heroForDataboxPath = require(`${runtimeName}/package.json`);
       // find the top node modules in the path
       const rootPath = heroForDataboxPath.split('node_modules').shift();
       if (Fs.existsSync(Path.join(rootPath, 'package.json'))) {

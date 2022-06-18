@@ -1,7 +1,7 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import DataboxWrapper from './lib/DataboxWrapper';
-import Runner from './lib/Runner';
+import RunnerObject from './lib/RunnerObject';
 
-export { Runner };
+export { RunnerObject };
 
 export default DataboxWrapper;

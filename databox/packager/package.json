@@ -9,6 +9,7 @@
     "@ulixee/commons": "2.0.0-alpha.5",
     "@ulixee/databox": "2.0.0-alpha.6",
     "@ulixee/databox-interfaces": "2.0.0-alpha.6",
+    "@ulixee/databox-core": "2.0.0-alpha.6",
     "@ulixee/net": "2.0.0-alpha.5",
     "rollup": "^2.74.1",
     "rollup-plugin-terser": "^7.0.2",

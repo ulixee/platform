@@ -1,7 +1,7 @@
-import DataboxCore from '@ulixee/databox-core';
-import HeroCore from '@ulixee/hero-core';
 import * as WebSocket from 'ws';
 import * as Http from 'http';
+import ServerHooks from '@ulixee/databox-core';
+import HeroCore from '@ulixee/hero-core';
 import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
@@ -10,13 +10,17 @@ import ChromeAliveUtils from './ChromeAliveUtils';
 import Server from '../index';
 
 export default class CoreRouter {
-  public static modulesToRegister = ['@ulixee/databox-for-hero-core/register'];
+  public static modulesToRegister = [
+    '@ulixee/databox-core-runtime/register',
+    '@ulixee/databox-for-hero-core-runtime/register',
+  ];
+
   public get dataDir(): string {
     return HeroCore.dataDir;
   }
 
   public get databoxesDir(): string {
-    return DataboxCore.databoxesDir;
+    return ServerHooks.databoxesDir;
   }
 
   private server: Server;
@@ -26,7 +30,7 @@ export default class CoreRouter {
     [key: string]: (transport: ITransportToClient<any>) => IConnectionToClient<any, any>;
   } = {
     hero: transport => HeroCore.addConnection(transport),
-    databox: transport => DataboxCore.addConnection(transport),
+    databox: transport => ServerHooks.addConnection(transport),
     chromealive: transport => ChromeAliveUtils.getChromeAlive().addConnection(transport) as any,
   };
 
@@ -48,7 +52,7 @@ export default class CoreRouter {
 
   public async start(serverAddress: string): Promise<void> {
     await HeroCore.start();
-    await DataboxCore.start();
+    await ServerHooks.start();
 
     if (ChromeAliveUtils.isInstalled()) {
       const chromeAliveCore = ChromeAliveUtils.getChromeAlive();
@@ -65,7 +69,7 @@ export default class CoreRouter {
     if (ChromeAliveUtils.isInstalled()) {
       await ChromeAliveUtils.getChromeAlive().shutdown();
     }
-    await DataboxCore.close();
+    await ServerHooks.close();
     await HeroCore.shutdown();
   }
 
@@ -85,7 +89,7 @@ export default class CoreRouter {
     const hash = url.pathname.replace('/databox/', '');
 
     let status = 200;
-    const response = await DataboxCore.run(hash, input).catch(err => {
+    const response = await ServerHooks.run(hash, input).catch(err => {
       status = 500;
       return err;
     });

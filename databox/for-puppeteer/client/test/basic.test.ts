@@ -17,7 +17,7 @@ describe('basic Databox tests', () => {
   });
 
   it('waits until run method is explicitly called', async () => {
-    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'Y';
+    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'true';
     let databaseHasCompleted = false;
     const databoxWrapper = new DataboxWrapper(async databox => {
       const { browser } = databox;
@@ -26,25 +26,25 @@ describe('basic Databox tests', () => {
       await page.close();
       databaseHasCompleted = true;
     });
-    await databoxWrapper.run();
+    await databoxWrapper.run({});
     expect(databaseHasCompleted).toBe(true);
   });
 
   it('should call close on puppeteer automatically', async () => {
-    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'Y';
+    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'true';
     let browser: PuppeteerBrowser;
     const databoxWrapper = new DataboxWrapper(async databox => {
       browser = databox.browser;
       const page = await browser.newPage();
       await page.goto('https://example.org');
     });
-    await databoxWrapper.run();
+    await databoxWrapper.run({});
     const pages = await browser.pages();
     expect(pages.length).toBe(0);
   });
 
   it('should emit close hero on error', async () => {
-    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'Y';
+    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'true';
     const databoxWrapper = new DataboxWrapper(async databox => {
       const browser = databox.browser;
       const page = await browser.newPage();
@@ -53,6 +53,6 @@ describe('basic Databox tests', () => {
       });
     });
 
-    await expect(databoxWrapper.run()).rejects.toThrowError();
+    await expect(databoxWrapper.run({})).rejects.toThrowError();
   });
 });

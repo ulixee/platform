@@ -4,10 +4,11 @@ import DatabasePackager from '../index';
 
 test('it should generate a relative script entrypoint', async () => {
   const packager = new DatabasePackager(`${__dirname}/assets/typescript/src/index.ts`);
+  await packager.build();
+  
   expect(packager.outputPath).toBe(
     Path.resolve(`${__dirname}/assets/typescript/src/.databox/index`),
   );
-  await packager.build();
   expect(packager.package.script).toBe(
     await Fs.readFile(`${packager.outputPath  }/databox.js`, 'utf8'),
   );
@@ -21,8 +22,8 @@ test('it should generate a relative script entrypoint', async () => {
   expect(packager.package.manifest).toEqual({
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `typescript`, `src`, `index.ts`),
     scriptRollupHash: expect.any(String),
-    databoxModule: '@ulixee/databox-for-hero',
-    databoxModuleVersion: require('../package.json').version,
+    runtimeName: '@ulixee/databox-for-hero',
+    runtimeVersion: require('../package.json').version,
   });
 
   await Fs.rmdir(packager.outputPath, { recursive: true });

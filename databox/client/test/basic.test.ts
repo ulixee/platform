@@ -21,7 +21,7 @@ describe('basic Databox tests', () => {
       databoxWasRun = true;
     });
 
-    await databoxWrapper.run();
+    await databoxWrapper.run({});
     await new Promise(resolve => process.nextTick(resolve));
     expect(await databoxWasRun).toBe(true);
   });

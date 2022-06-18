@@ -67,7 +67,7 @@ export default new Databox({
 });
 ```
 
-If you directly execute a javascript/typescript file from the command and that file contains a default Databox export (like the scripts listed above), the databox's [run()](#run) function will automatially be invoked. You can disable this autorun feature by setting the environment variable `ULX_DATABOX_DISABLE_AUTORUN` to be truthy.
+If you directly execute a javascript/typescript file from the command and that file contains a default Databox export (like the scripts listed above), the databox's [run()](#run) function will automatially be invoked. You can disable this autorun feature by setting the environment variable `ULX_DATABOX_DISABLE_AUTORUN` to `true`.
 
 ## Constructor
 

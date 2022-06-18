@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.5",
-    "@ulixee/databox": "2.0.0-alpha.5",
+    "@ulixee/databox": "2.0.0-alpha.6",
     "@ulixee/databox-interfaces": "2.0.0-alpha.6",
     "@ulixee/hero": "2.0.0-alpha.6",
     "@ulixee/hero-interfaces": "2.0.0-alpha.6",

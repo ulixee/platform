@@ -2,7 +2,7 @@ import { Helpers } from '@ulixee/databox-testing';
 import Hero from '@ulixee/hero';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
 import DataboxInternal from '../lib/DataboxInternal';
-import Extractor from '../lib/Extractor';
+import ExtractorObject from '../lib/ExtractorObject';
 
 let koaServer: Helpers.ITestKoaServer;
 beforeAll(async () => {
@@ -38,8 +38,8 @@ describe('basic Element tests', () => {
             <ul><li>Test 2</li></ul>
           </div>`);
 
-    const extractor = new Extractor(databoxInternal);
-    await expect(extractor.collectedElements.names).resolves.toMatchObject(['a', 'b']);
+    const extractorObject = new ExtractorObject(databoxInternal);
+    await expect(extractorObject.collectedElements.names).resolves.toMatchObject(['a', 'b']);
   });
 
   it('can extract selectorAll lists', async () => {
@@ -67,7 +67,7 @@ describe('basic Element tests', () => {
     expect(valid[1].outerHTML).toBe('<li class="valid">Test 4</li>');
     expect(valid[2].outerHTML).toBe('<li class="valid">Test 5</li>');
 
-    const extractor = new Extractor(databoxInternal);
+    const extractor = new ExtractorObject(databoxInternal);
     await expect(extractor.collectedElements.names).resolves.toMatchObject(['valid']);
   });
 });

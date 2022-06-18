@@ -1,7 +1,7 @@
 
-export default interface IComponentsBase<TDefaultsObj, Runner> {
+export default interface IComponentsBase<TRunnerObject, TDefaultsObj> {
+  run: IRunFnBase<TRunnerObject>;
   defaults?: TDefaultsObj;
-  run: IRunFnBase<Runner>;
   schema?: any;
 }
 
@@ -10,5 +10,5 @@ export interface IDefaultsObjBase<TInput, TOutput> {
   output?: Partial<TOutput>;
 }
 
-export type IRunFnBase<Runner> = (databox: Runner) => void | Promise<void>;
+export type IRunFnBase<TRunnerObject> = (databox: TRunnerObject) => void | Promise<void>;
 

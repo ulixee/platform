@@ -1,58 +1,26 @@
 import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
-import IDataboxWrapper from '@ulixee/databox-interfaces/IDataboxWrapper';
 import IDataboxRunOptions from '@ulixee/databox-interfaces/IDataboxRunOptions';
-import readCommandLineArgs from './utils/readCommandLineArgs';
-import IComponents, { IRunFn } from '../interfaces/IComponents';
 import DataboxInternal from './DataboxInternal';
-import { setupAutorunBeforeExitHook, attemptAutorun } from './utils/Autorun';
+import { setupAutorunBeforeExitHook } from './utils/Autorun';
+import DataboxWrapperAbstract from './abstracts/DataboxWrapperAbstract';
 
-export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
-  implements IDataboxWrapper
+const pkg = require('../package.json');
+
+export default class DataboxWrapper<
+    TInput = IBasicInput,
+    TOutput = any,
+  >
+  extends DataboxWrapperAbstract<
+    DataboxInternal<TInput, TOutput>,
+    TOutput,
+    IDataboxRunOptions
+  >
 {
-  public static defaultExport: DataboxWrapper;
+  public readonly runtimeName = pkg.name;
+  public readonly runtimeVersion = pkg.version;
 
-  public disableAutorun: boolean;
-  public successCount = 0;
-  public errorCount = 0;
-
-  #components: IComponents<TInput, TOutput>;
-
-  constructor(components: IRunFn<TInput, TOutput> | IComponents<TInput, TOutput>) {
-    this.#components =
-      typeof components === 'function'
-        ? {
-            run: components,
-          }
-        : { ...components };
-
-    this.disableAutorun = !!process.env.ULX_DATABOX_DISABLE_AUTORUN;
-  }
-
-  public async run(options: IDataboxRunOptions = {}): Promise<TOutput> {
-    let databoxInternal: DataboxInternal<TInput, TOutput>;
-
-    try {
-      databoxInternal = new DataboxInternal(options, this.#components.defaults);
-      await databoxInternal.execRunner(this.#components.run);
-
-      this.successCount++;
-      return databoxInternal.output;
-    } catch (error) {
-      console.error(`ERROR running databox: `, error);
-      this.errorCount++;
-      throw error;
-    } finally {
-      await databoxInternal?.close();
-    }
-  }
-
-  public static run<T>(databoxWrapper: DataboxWrapper): Promise<T | Error> {
-    const options = readCommandLineArgs();
-    return databoxWrapper.run(options).catch(err => err);
-  }
-
-  public static async attemptAutorun(): Promise<void> {
-    await attemptAutorun(module.parent, require.main, DataboxWrapper);
+  protected createDataboxInternal(options: IDataboxRunOptions<any>): DataboxInternal<TInput, TOutput> {
+    return new DataboxInternal(options, this.components.defaults);
   }
 }
 

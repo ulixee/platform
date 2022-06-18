@@ -1,6 +1,6 @@
 import { Helpers } from '@ulixee/databox-testing';
-import DataboxRunner from '../lib/Runner';
-import Extractor from '../lib/Extractor';
+import RunnerObject from '../lib/RunnerObject';
+import ExtractorObject from '../lib/ExtractorObject';
 
 let koaServer: Helpers.ITestKoaServer;
 beforeAll(async () => {
@@ -12,18 +12,18 @@ afterEach(() => Promise.all([Helpers.afterEach(), Helpers.afterEach()]));
 describe('basic snippets tests', () => {
   it('collects snippets for extraction', async () => {
     const databoxInternal = await Helpers.createFullstackDataboxInternal();
-    const databox = new DataboxRunner(databoxInternal);
+    const runnerObject = new RunnerObject(databoxInternal);
     Helpers.needsClosing.push(databoxInternal);
-    Helpers.needsClosing.push(databox.hero);
-    await databox.hero.goto(`${koaServer.baseUrl}/`);
+    Helpers.needsClosing.push(runnerObject.hero);
+    await runnerObject.hero.goto(`${koaServer.baseUrl}/`);
 
-    await databox.extractLater('data', { value: true });
-    await databox.extractLater('text', 'string');
-    await databox.extractLater('number', 1);
+    await runnerObject.extractLater('data', { value: true });
+    await runnerObject.extractLater('text', 'string');
+    await runnerObject.extractLater('number', 1);
 
-    const extractor = new Extractor(databoxInternal);
-    await expect(extractor.collectedSnippets.get('data')).resolves.toMatchObject({ value: true });
-    await expect(extractor.collectedSnippets.get('text')).resolves.toBe('string');
-    await expect(extractor.collectedSnippets.get('number')).resolves.toBe(1);
+    const extractorObject = new ExtractorObject(databoxInternal);
+    await expect(extractorObject.collectedSnippets.get('data')).resolves.toMatchObject({ value: true });
+    await expect(extractorObject.collectedSnippets.get('text')).resolves.toBe('string');
+    await expect(extractorObject.collectedSnippets.get('number')).resolves.toBe(1);
   });
 });

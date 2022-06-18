@@ -1,19 +1,19 @@
+import * as Fs from 'fs';
+import { NodeVM, VMScript } from 'vm2';
 import HeroCore from '@ulixee/hero-core';
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
-import IDataboxModuleRunner from '@ulixee/databox-core/interfaces/IDataboxModuleRunner';
+import IDataboxCoreRuntime from '@ulixee/databox-interfaces/IDataboxCoreRuntime';
 import DataboxCore from '@ulixee/databox-core';
 import { ConnectionToHeroCore } from '@ulixee/hero';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
-import { NodeVM, VMScript } from 'vm2';
 import DataboxWrapper from '@ulixee/databox-for-hero';
-import * as Fs from 'fs';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 
-const { version: HeroVersion } = require('@ulixee/hero-core/package.json');
+const { version: installedRuntimeVersion } = require('./package.json');
 
-export default class DataboxForHeroCore implements IDataboxModuleRunner {
-  public runsDataboxModuleVersion: string = HeroVersion;
-  public runsDataboxModule = '@ulixee/databox-for-hero';
+export default class DataboxForHeroCoreRuntime implements IDataboxCoreRuntime {
+  public databoxRuntimeVersion: string = installedRuntimeVersion;
+  public databoxRuntimeName = '@ulixee/databox-for-hero';
 
   private compiledScriptsByPath = new Map<string, Promise<VMScript>>();
 
@@ -61,7 +61,7 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
   }
 
   public canSatisfyVersion(version: string): boolean {
-    return isSemverSatisfied(version, HeroVersion);
+    return isSemverSatisfied(version, installedRuntimeVersion);
   }
 
   private getVMScript(path: string, manifest: IDataboxManifest): Promise<VMScript> {
@@ -82,6 +82,6 @@ export default class DataboxForHeroCore implements IDataboxModuleRunner {
   }
 
   public static register(): void {
-    DataboxCore.registerModule(new DataboxForHeroCore());
+    DataboxCore.registerRuntime(new DataboxForHeroCoreRuntime());
   }
 }

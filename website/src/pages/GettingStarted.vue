@@ -6,7 +6,7 @@
           <div>
             <h1 class="w-3/12 mt-3">
               <svg class="font-extralight w-full" viewBox="0 0 131 13">
-                <text x="0" y="12" style="fill: white">GET STARTED</text>
+                <text x="0" y="12" style="fill: white">GETTING STARTED</text>
               </svg>
             </h1>
             <h2 class="font-extrabold w-10/12 mt-3 border-t border-b border-fuchsia-400">

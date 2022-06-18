@@ -176,7 +176,8 @@ export default class SessionObserver extends TypedEventEmitter<{
       await this.heroSession.closeTabs();
     }
     const script = this.scriptInstanceMeta.entrypoint;
-    const execArgv = [
+    const execArgv = [];
+    const args = [
       `--sessionResume.startLocation`,
       startLocation,
       `--sessionResume.sessionId`,
@@ -184,17 +185,17 @@ export default class SessionObserver extends TypedEventEmitter<{
       '--show-chrome-alive',
     ];
     if (startLocation === 'extraction') {
-      execArgv.length = 0;
+      args.length = 0;
       this.resetExtraction();
-      execArgv.push('--extractSessionId', this.heroSession.id, '--mode', 'browserless');
+      args.push('--extractSessionId', this.heroSession.id, '--mode', 'browserless');
     }
     if (script.endsWith('.ts')) {
       execArgv.push('-r', 'ts-node/register');
     }
 
     try {
-      fork(script, execArgv, {
-        // execArgv,
+      fork(script, args, {
+        execArgv,
         cwd: this.scriptInstanceMeta.workingDirectory,
         stdio: ['ignore', 'inherit', 'inherit', 'ipc'],
         env: { ...process.env, ULX_CLI_NOPROMPT: 'true', ULX_DATABOX_DISABLE_AUTORUN: undefined },
