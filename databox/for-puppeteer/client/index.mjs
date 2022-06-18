@@ -1,10 +1,10 @@
-import { setupAutorunMjsHack } from '@ulixee/databox/index.mjs';
+import { setupAutorunMjsHack } from '@ulixee/databox/lib/utils/Autorun.mjs';
 import cjsImport from './index.js';
 
-const { Runner } = cjsImport;
+const { RunnerObject } = cjsImport;
 
-export { Runner };
+export { RunnerObject };
 
 export default cjsImport.default;
 
-setupAutorunMjsHack();
+setupAutorunMjsHack(cjsImport.default);
