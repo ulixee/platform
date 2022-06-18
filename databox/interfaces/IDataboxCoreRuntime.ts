@@ -1,6 +1,6 @@
 import IDataboxManifest from './IDataboxManifest';
 
-export default interface IDataboxModuleRunner {
+export default interface IDataboxCoreRuntime {
   databoxRuntimeVersion: string;
   databoxRuntimeName: string;
   start(dataDirectory: string, options?: any): Promise<void>;

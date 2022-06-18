@@ -1,9 +1,12 @@
 import * as Fs from 'fs';
 import { NodeVM, VMScript } from 'vm2';
+import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import DataboxWrapper from '@ulixee/databox';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 import IDataboxCoreRuntime from '@ulixee/databox-interfaces/IDataboxCoreRuntime';
 import DataboxCore from '@ulixee/databox-core';
+
+const { version: installedRuntimeVersion } = require('./package.json');
 
 export default class DataboxCoreRuntime implements IDataboxCoreRuntime {
   public databoxRuntimeVersion = '';
@@ -49,8 +52,7 @@ export default class DataboxCoreRuntime implements IDataboxCoreRuntime {
   }
 
   public canSatisfyVersion(version: string): boolean {
-    // TODO: there is no hero version
-    return true;
+    return isSemverSatisfied(version, installedRuntimeVersion);
   }
 
   private getVMScript(path: string, manifest: IDataboxManifest): Promise<VMScript> {

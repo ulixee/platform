@@ -6,6 +6,8 @@ import DataboxCore from '@ulixee/databox-core';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 import DataboxWrapper from '@ulixee/databox-for-puppeteer';
 
+const { version: installedRuntimeVersion } = require('./package.json');
+
 export default class DataboxForPuppeteerCoreRuntime implements IDataboxCoreRuntime {
   public databoxRuntimeVersion = '';
   public databoxRuntimeName = '@ulixee/databox-for-puppeteer';
@@ -53,8 +55,7 @@ export default class DataboxForPuppeteerCoreRuntime implements IDataboxCoreRunti
   }
 
   public canSatisfyVersion(version: string): boolean {
-    // TODO: there is no hero version
-    return true;
+    return isSemverSatisfied(version, installedRuntimeVersion);
   }
 
   private getVMScript(path: string, manifest: IDataboxManifest): Promise<VMScript> {

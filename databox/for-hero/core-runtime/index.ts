@@ -9,10 +9,10 @@ import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 import DataboxWrapper from '@ulixee/databox-for-hero';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 
-const { version: HeroVersion } = require('@ulixee/hero-core/package.json');
+const { version: installedRuntimeVersion } = require('./package.json');
 
 export default class DataboxForHeroCoreRuntime implements IDataboxCoreRuntime {
-  public databoxRuntimeVersion: string = HeroVersion;
+  public databoxRuntimeVersion: string = installedRuntimeVersion;
   public databoxRuntimeName = '@ulixee/databox-for-hero';
 
   private compiledScriptsByPath = new Map<string, Promise<VMScript>>();
@@ -61,7 +61,7 @@ export default class DataboxForHeroCoreRuntime implements IDataboxCoreRuntime {
   }
 
   public canSatisfyVersion(version: string): boolean {
-    return isSemverSatisfied(version, HeroVersion);
+    return isSemverSatisfied(version, installedRuntimeVersion);
   }
 
   private getVMScript(path: string, manifest: IDataboxManifest): Promise<VMScript> {
