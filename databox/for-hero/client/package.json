@@ -19,7 +19,7 @@
     "@ulixee/net": "2.0.0-alpha.5",
     "@unblocked-web/specifications": "2.0.0-alpha.2",
     "awaited-dom": "1.4.0",
-    "linkedom": "^0.13.0"
+    "linkedom": "^0.14.11"
   },
   "devDependencies": {
     "@types/web": "^0.0.50",

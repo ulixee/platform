@@ -202,9 +202,9 @@ export default class ChromeAliveCore {
 
     const isRestartedSessionId =
       this.restartingHeroSessionId === heroSession.options.sessionResume?.sessionId;
+    this.restartingHeroSessionId = null;
 
     if (!this.activeHeroSessionId || isRestartedSessionId) {
-      this.restartingHeroSessionId = null;
       if (!isRestartedSessionId) {
         this.sendAppEvent('Session.loading');
       }

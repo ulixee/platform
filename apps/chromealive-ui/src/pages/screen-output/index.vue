@@ -55,40 +55,6 @@
         <div class="font-thin">
           Http Requested at {{ formatTimestamp(resource.resource.request.timestamp) }}
         </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div
-            class="
-              p-10
-              bg-gray-10
-              border border-gray-200
-              font-thin
-              whitespace-pre
-              text-sm
-              overflow-auto
-            "
-          >
-            <div class="label font-bold">
-              Request Headers
-            </div>
-            {{ formatJson(resource.resource.request.headers) }}
-          </div>
-          <div
-            class="
-              p-10
-              bg-gray-10
-              border border-gray-200
-              font-thin
-              whitespace-pre
-              text-sm
-              overflow-auto
-            "
-          >
-            <div class="label font-bold">
-              Response Headers
-            </div>
-            {{ formatJson(resource.resource.response.headers) }}
-          </div>
-        </div>
 
         <div class="font-sm whitespace-pre box border border-gray-100 bg-gray-100 my-2 p-2">
           <div>Source Code</div>
@@ -167,19 +133,6 @@
         <div class="font-thin">
           Collected at {{ formatTimestamp(element.timestamp) }} from
           {{ element.documentUrl }}
-        </div>
-        <div
-          class="
-            p-10
-            bg-gray-100
-            border border-gray-200
-            font-thin
-            whitespace-pre
-            text-sm
-            overflow-auto
-          "
-        >
-          {{ element.outerHTML }}
         </div>
 
         <div class="font-sm whitespace-pre box border border-gray-100 bg-gray-100 my-2 p-2">
@@ -347,7 +300,7 @@ const databox: any = Vue.defineComponent({
     },
     async inspectResource(resource: ICollectedResource): Promise<void> {
       const blob = this.resourceToBlob(resource.resource);
-      let data: any = {
+      const data: any = {
         name: resource.name,
         resource: {
           ...resource.resource,
@@ -380,7 +333,7 @@ const databox: any = Vue.defineComponent({
     inspectElement(element: ICollectedElement): void {
       const renderer = document.createElement('template');
       renderer.innerHTML = element.outerHTML;
-      let data: any = {
+      const data: any = {
         name: element.name,
         element: renderer.content.firstChild,
         rawDetails: { ...element },
