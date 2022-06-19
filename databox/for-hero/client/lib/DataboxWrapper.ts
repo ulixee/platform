@@ -1,3 +1,4 @@
+import { setupAutorunBeforeExitHook } from '@ulixee/databox/lib/utils/Autorun';
 import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
 import IDataboxWrapper from '@ulixee/databox-interfaces/IDataboxWrapper';
 import DataboxWrapperAbstract from '@ulixee/databox/lib/abstracts/DataboxWrapperAbstract';
@@ -48,3 +49,5 @@ extends DataboxWrapperAbstract<
     return new DataboxInternal(options, this.components.defaults);
   }
 }
+
+setupAutorunBeforeExitHook(DataboxWrapper);

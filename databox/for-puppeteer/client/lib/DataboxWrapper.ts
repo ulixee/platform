@@ -1,7 +1,6 @@
-import readCommandLineArgs from '@ulixee/databox/lib/utils/readCommandLineArgs';
 import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
 import IDataboxWrapper from '@ulixee/databox-interfaces/IDataboxWrapper';
-import { setupAutorunBeforeExitHook, attemptAutorun } from '@ulixee/databox/lib/utils/Autorun';
+import { setupAutorunBeforeExitHook } from '@ulixee/databox/lib/utils/Autorun';
 import DataboxWrapperAbstract from '@ulixee/databox/lib/abstracts/DataboxWrapperAbstract';
 import IDataboxForPuppeteerRunOptions from '../interfaces/IDataboxForPuppeteerRunOptions';
 import IComponents from '../interfaces/IComponents';
