@@ -19,18 +19,12 @@
       >
         {{ ' ' }}
       </div>
-      <span
-        v-if="node.key"
-        class="key"
-      >{{ node.key }}: </span>
+      <span v-if="node.key" class="key">{{ node.key }}: </span>
       <span>
         <span :class="{ ['value-' + node.type]: node.isContent, brackets: !node.isContent }">{{
           node.content === null ? 'null' : node.content
         }}</span>
-        <span
-          v-if="node.showComma"
-          class="comma"
-        >, </span>
+        <span v-if="node.showComma" class="comma">, </span>
       </span>
     </div>
   </div>
@@ -53,12 +47,17 @@ export default defineComponent({
   setup(props) {
     const jsonNodes = ref<{ [id: number]: HTMLDivElement }>({});
 
+    let scrollOnTimeout: number;
+
     onBeforeUpdate(() => {
       jsonNodes.value = {};
     });
 
     onUpdated(() => {
-      if (props.scrollToRecordId) scrollToId(props.scrollToRecordId);
+      if (props.scrollToRecordId) {
+        if (scrollOnTimeout) clearTimeout(scrollOnTimeout);
+        scrollOnTimeout = setTimeout(() => scrollToId(props.scrollToRecordId), 50) as any;
+      }
     });
 
     function scrollToId(id: number) {
