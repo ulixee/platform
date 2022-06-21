@@ -9,7 +9,7 @@
   "scripts": {
     "build": "yarn build:ui && cd ../../build/apps/chromealive && yarn && electron-builder install-app-deps",
     "build:basic": "cd ../.. && yarn run tsc",
-    "build:ui": "yarn workspace @ulixee/apps-chromealive-ui build",
+    "build:ui": "yarn workspace @ulixee/apps-chromealive-ui build && yarn workspace @ulixee/apps-chromealive-extension build",
     "dist": "yarn build && cd ../../build/apps/chromealive && electron-builder -mwl && ./pack.sh",
     "dist:basic": "yarn build:basic && cd ../../build/apps/chromealive && electron-builder",
     "start": "cd ../../build/apps/chromealive && npx electron ."

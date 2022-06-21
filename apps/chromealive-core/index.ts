@@ -168,7 +168,7 @@ export default class ChromeAliveCore {
     heroSession.options.sessionKeepAlive = true;
     // automatically showChrome if showChromeAlive is turned on
     heroSession.options.showChrome = true;
-    heroSession.options.showChromeInteractions = true;
+    heroSession.options.showChromeInteractions ??= true;
     // extensions need incognito disabled
     heroSession.options.disableIncognito = true;
     heroSession.options.viewport ??= { width: 0, height: 0 };
@@ -321,6 +321,7 @@ export default class ChromeAliveCore {
     if (this.coreServerAddress) {
       const coreServerAddress = await this.coreServerAddress;
       const filePath = `${extensionPath}/background.js`;
+
       try {
         let fileContents = await Fs.promises.readFile(filePath, 'utf8');
         fileContents = fileContents.replace(
@@ -329,7 +330,7 @@ export default class ChromeAliveCore {
         );
         await Fs.promises.writeFile(filePath, fileContents);
       } catch (err) {
-        throw new Error('Could not launch ChromeAlive! Not installed.');
+        throw new Error('Could not launch ChromeAlive! Chrome Extension not installed.');
       }
       args.push(`--coreServerAddress=${coreServerAddress}`);
     }
