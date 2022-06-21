@@ -29,7 +29,6 @@ export default class ElementsModule {
       backendNodeId?: number;
       objectId?: string;
     },
-    results = 50,
   ): Promise<ISelectorMap> {
     const frame = this.heroCorePlugin.activePage.mainFrame;
     const chromeObjectId = id.objectId ?? (await frame.resolveDevtoolsNodeId(id.backendNodeId, false));
@@ -50,7 +49,8 @@ export default class ElementsModule {
           heroNodeId: x.heroNodeId,
           selectorOptions: x.selectorOptions,
         })),
-        topMatches: context.selectors.slice(0, ${results ?? 50}).map(x => x.selector),
+        topMatches: context.selectors.slice(0, 5000).map(x => x.selector),
+        nodePath: context.nodePath,
       };
     })();`,
     );

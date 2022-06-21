@@ -2,6 +2,7 @@ export interface ISelectorMap {
   target: ITarget;
   ancestors: ITarget[];
   topMatches: string[];
+  nodePath: string;
 }
 
 interface ITarget {

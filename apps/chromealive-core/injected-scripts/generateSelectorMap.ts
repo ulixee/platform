@@ -1,6 +1,4 @@
-import type {
-  ISelectorOption,
-} from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
+import type { ISelectorOption } from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
 
 const QuerySortOrder = {
   tag: 1,
@@ -37,6 +35,7 @@ export interface ISelectorMapContext {
   target: ITarget;
   ancestors: IAncestors;
   boundary: ParentNode;
+  nodePath: string;
   selectors: {
     targetBitmask: Bitmask;
     ancestorBitmasks: Bitmask[]; // [body, div, ... ] - not including target
@@ -64,6 +63,7 @@ export default function generateSelectorMap(
     ancestors,
     boundary,
     selectors: [],
+    nodePath: createNodePath(target, ancestors),
   };
 
   const emptyAncestorMasks = ancestors.map(() => 0n);
@@ -138,7 +138,7 @@ function createAncestorSelector(
     if (!value) {
       selectorMaskByElement.set(combo.element, value);
     }
-    value |= (1n << BigInt(combo.index));
+    value |= 1n << BigInt(combo.index);
     selectorMaskByElement.set(combo.element, value);
   }
 
@@ -315,6 +315,20 @@ function extractSelectorOptions(
   }
 
   return options;
+}
+
+function createNodePath(target: ITarget, ancestors: IAncestors): string {
+  const paths: string[] = [];
+  for (const node of [...ancestors, target]) {
+    const tag = node.selectorOptions.find(x => x.type === 'tag');
+    const index = node.selectorOptions.find(x => x.type === 'index');
+    let entry = tag.value;
+    if (index) {
+      entry += index.value;
+    }
+    paths.push(entry);
+  }
+  return paths.join('>');
 }
 
 function iterateBitmaskBySubsets(bitmask: Bitmask, iterateFn: (mask: bigint) => boolean): void {

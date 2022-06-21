@@ -40,6 +40,7 @@ import OutputRebuilder, { IOutputSnapshot } from './OutputRebuilder';
 import AliveBarPositioner from './AliveBarPositioner';
 import ChromeAliveCore from '../index';
 import TabGroupModule from './hero-plugin-modules/TabGroupModule';
+import SelectorRecommendations from './SelectorRecommendations';
 
 const { log } = Log(module);
 
@@ -80,6 +81,7 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   public mirrorPagePauseRefreshing = false;
 
+  private selectorRecommendations: SelectorRecommendations;
   private vueScreensByName: { [name: string]: VueScreen } = {};
 
   private scriptEntrypointTs: string;
@@ -125,6 +127,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.timetravelPlayer = TimetravelPlayer.create(heroSession.id, heroSession);
 
     this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint).mtimeMs;
+    this.selectorRecommendations = new SelectorRecommendations(this.scriptInstanceMeta);
 
     this.sourceCodeTimeline = new SourceCodeTimeline(heroSession);
 
@@ -268,7 +271,15 @@ export default class SessionObserver extends TypedEventEmitter<{
     backendNodeId?: number;
     objectId?: string;
   }): Promise<ISelectorMap> {
-    return await this.elementsModule.generateQuerySelector(id);
+    const selectorMap = await this.elementsModule.generateQuerySelector(id);
+    const activePageUrl = this.heroCorePlugin.activePage.mainFrame.url;
+
+    void this.selectorRecommendations
+      .save(selectorMap, activePageUrl)
+      .catch(err => console.error('ERROR saving selector map', err));
+
+    selectorMap.topMatches = selectorMap.topMatches.slice(0, 50);
+    return selectorMap;
   }
 
   public async openMode(mode: Parameters<ISessionApi['openMode']>[0]['mode']): Promise<void> {
