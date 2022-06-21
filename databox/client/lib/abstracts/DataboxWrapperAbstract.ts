@@ -6,19 +6,17 @@ import { attemptAutorun } from '../utils/Autorun';
 import DataboxInternalAbstract from './DataboxInternalAbstract';
 
 export default abstract class DataboxWrapperAbstract<
-    TDataboxInternal extends DataboxInternalAbstract<any, any>,
-    TOutput, 
-    TDataboxRunOptions extends IDataboxRunOptions = IDataboxRunOptions,
-    TComponents extends IComponentsBase<any, any> = IComponentsBase<any, any>, 
-    TRunnerObject = any,
-  >
-  implements IDataboxWrapper
+  TDataboxInternal extends DataboxInternalAbstract<any, any>,
+  TOutput,
+  TDataboxRunOptions extends IDataboxRunOptions = IDataboxRunOptions,
+  TComponents extends IComponentsBase<any, any> = IComponentsBase<any, any>,
+  TRunnerObject = any,
+> implements IDataboxWrapper
 {
   public static defaultExport: DataboxWrapperAbstract<any, any>;
 
-  // eslint-disable-next-line import/no-extraneous-dependencies
-  public readonly abstract runtimeName: string;
-  public readonly abstract runtimeVersion: string;
+  public abstract readonly runtimeName: string;
+  public abstract readonly runtimeVersion: string;
 
   public disableAutorun: boolean;
   public successCount = 0;
@@ -29,12 +27,14 @@ export default abstract class DataboxWrapperAbstract<
   constructor(components: IRunFnBase<TRunnerObject> | TComponents) {
     this.components =
       typeof components === 'function'
-        ? {
+        ? ({
             run: components,
-          } as TComponents
-        : { ...components } as TComponents;
+          } as TComponents)
+        : ({ ...components } as TComponents);
 
-    this.disableAutorun = !!process.env.ULX_DATABOX_DISABLE_AUTORUN;
+    this.disableAutorun = Boolean(
+      JSON.parse(process.env.ULX_DATABOX_DISABLE_AUTORUN?.toLowerCase() ?? 'false'),
+    );
   }
 
   public async run(options: TDataboxRunOptions): Promise<TOutput> {
@@ -55,8 +55,9 @@ export default abstract class DataboxWrapperAbstract<
     }
   }
 
-  public static run<TOutput
-  >(databoxWrapper: DataboxWrapperAbstract<any, any>): Promise<TOutput | Error> {
+  public static run<TOutput>(
+    databoxWrapper: DataboxWrapperAbstract<any, any>,
+  ): Promise<TOutput | Error> {
     const options = readCommandLineArgs();
     return databoxWrapper.run(options).catch(err => err);
   }

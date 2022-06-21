@@ -5,7 +5,6 @@ import IDevtoolsSession, {
   Protocol,
 } from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
 import IElementSummary from '@ulixee/apps-chromealive-interfaces/IElementSummary';
-import HeroCore from '@ulixee/hero-core';
 import {
   ___emitFromDevtoolsToCore,
   EventType,
@@ -13,7 +12,6 @@ import {
 import ChromeAliveCore from '../../index';
 import HeroCorePlugin from '../HeroCorePlugin';
 import AliveBarPositioner from '../AliveBarPositioner';
-import SessionObserver from '../SessionObserver';
 
 export default class DevtoolsBackdoorModule {
   public pendingLiveInspectedNode: { tabId: number; backendNodeId: number; frameId: string };
