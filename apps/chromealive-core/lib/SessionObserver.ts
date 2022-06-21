@@ -29,6 +29,7 @@ import ISessionSearchResult, {
 } from '@ulixee/apps-chromealive-interfaces/ISessionSearchResult';
 import { ISelectorMap } from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
+import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
 import ResourceSearch from './ResourceSearch';
 import HeroCorePlugin from './HeroCorePlugin';
 import ElementsModule from './hero-plugin-modules/ElementsModule';
@@ -171,28 +172,28 @@ export default class SessionObserver extends TypedEventEmitter<{
 
       await this.close();
       await this.heroSession.closeTabs();
+      SourceMapSupport.resetCache();
     }
     const script = this.scriptInstanceMeta.entrypoint;
-    const nodePath = this.scriptInstanceMeta.execPath;
+    const execPath = this.scriptInstanceMeta.execPath;
     const execArgv = this.scriptInstanceMeta.execArgv ?? [];
     const args = [
-      `--sessionResume.startLocation`,
-      startLocation,
-      `--sessionResume.sessionId`,
-      this.heroSession.id,
+      `--sessionResume.startLocation="${startLocation}"`,
+      `--sessionResume.sessionId="${this.heroSession.id}"`,
       '--show-chrome-alive',
     ];
     if (startLocation === 'extraction') {
       args.length = 0;
       this.resetExtraction();
-      args.push('--extractSessionId', this.heroSession.id, '--mode', 'browserless');
+      args.push(`--extractSessionId="${this.heroSession.id}"`, '--mode="browserless"');
     }
 
     try {
-      const child = spawn(nodePath, [...execArgv, script, ...args], {
+      this.logger.info('Relaunch Session', { execPath, args: [...execArgv, script, ...args] });
+      const child = spawn(execPath, [...execArgv, script, ...args], {
         cwd: this.scriptInstanceMeta.workingDirectory,
         stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-        env: { ...process.env, ULX_CLI_NOPROMPT: 'true', ULX_DATABOX_DISABLE_AUTORUN: undefined },
+        env: { ...process.env, ULX_CLI_NOPROMPT: 'true', ULX_DATABOX_DISABLE_AUTORUN: 'false' },
       });
       child.stderr.setEncoding('utf8');
       child.stdout.setEncoding('utf8');

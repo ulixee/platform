@@ -14,6 +14,7 @@ import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/eve
 import { URL } from 'url';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
+import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
 import ChromeAliveCoreApis from './apis';
 import AliveBarPositioner from './lib/AliveBarPositioner';
 import SessionObserver from './lib/SessionObserver';
@@ -137,6 +138,10 @@ export default class ChromeAliveCore {
       return;
     }
 
+    if (heroSession.options.sessionResume?.sessionId) {
+      SourceMapSupport.resetCache();
+    }
+
     if (heroSession.mode === 'browserless') {
       // @ts-expect-error
       const extractSessionId = heroSession.options.extractSessionId;
@@ -175,6 +180,7 @@ export default class ChromeAliveCore {
     const sessionObserver = new SessionObserver(heroSession);
     const coreServerAddress = await this.coreServerAddress;
     heroSession.bypassResourceRegistrationForHost = new URL(coreServerAddress);
+
 
     this.sessionObserversById.set(sessionId, sessionObserver);
     const sourceCode = sessionObserver.sourceCodeTimeline;
@@ -333,7 +339,7 @@ export default class ChromeAliveCore {
       } catch (err) {
         throw new Error('Could not launch ChromeAlive! Chrome Extension not installed.');
       }
-      args.push(`--coreServerAddress=${coreServerAddress}`);
+      args.push(`--coreServerAddress="${coreServerAddress}"`);
     }
 
     this.app = launchChromeAlive(...args);
