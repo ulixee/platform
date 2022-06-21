@@ -9,7 +9,7 @@ import IDataboxOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDat
 import IDataboxCollectedAssets from '@ulixee/apps-chromealive-interfaces/IDataboxCollectedAssets';
 import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxCollectedAssetEvent';
 import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
-import { fork } from 'child_process';
+import { spawn } from 'child_process';
 import Log from '@ulixee/commons/lib/Logger';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import TimelineWatch from '@ulixee/hero-timetravel/lib/TimelineWatch';
@@ -112,11 +112,6 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.events.on(this.heroSession.commands, 'pause', this.onCommandsPaused);
     this.events.on(this.heroSession.commands, 'resume', this.onCommandsResumed);
 
-    const resumedSessionId = this.heroSession.options.sessionResume?.sessionId;
-    if (resumedSessionId) {
-      this.bindOriginalSessionClose(resumedSessionId);
-    }
-
     this.timelineWatch = new TimelineWatch(heroSession, {
       extendAfterCommands: 1e3,
       extendAfterLoadStatus: {
@@ -135,6 +130,8 @@ export default class SessionObserver extends TypedEventEmitter<{
     const entrypoint = this.sourceCodeTimeline.entrypoint;
     if (entrypoint !== this.scriptInstanceMeta.entrypoint) {
       this.scriptEntrypointTs = entrypoint;
+    } else if (this.scriptInstanceMeta.entrypoint.endsWith('.ts')) {
+      this.scriptEntrypointTs = this.scriptInstanceMeta.entrypoint;
     }
 
     this.watchHandle = Fs.watch(
@@ -176,7 +173,8 @@ export default class SessionObserver extends TypedEventEmitter<{
       await this.heroSession.closeTabs();
     }
     const script = this.scriptInstanceMeta.entrypoint;
-    const execArgv = [];
+    const nodePath = this.scriptInstanceMeta.execPath;
+    const execArgv = this.scriptInstanceMeta.execArgv ?? [];
     const args = [
       `--sessionResume.startLocation`,
       startLocation,
@@ -189,16 +187,20 @@ export default class SessionObserver extends TypedEventEmitter<{
       this.resetExtraction();
       args.push('--extractSessionId', this.heroSession.id, '--mode', 'browserless');
     }
-    if (script.endsWith('.ts')) {
-      execArgv.push('-r', 'ts-node/register');
-    }
 
     try {
-      fork(script, args, {
-        execArgv,
+      const child = spawn(nodePath, [...execArgv, script, ...args], {
         cwd: this.scriptInstanceMeta.workingDirectory,
-        stdio: ['ignore', 'inherit', 'inherit', 'ipc'],
+        stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
         env: { ...process.env, ULX_CLI_NOPROMPT: 'true', ULX_DATABOX_DISABLE_AUTORUN: undefined },
+      });
+      child.stderr.setEncoding('utf8');
+      child.stdout.setEncoding('utf8');
+      child.stderr.on('data', msg => {
+        this.heroSession.awaitedEventEmitter.emit('rerun-stderr', msg);
+      });
+      child.stdout.on('data', msg => {
+        this.heroSession.awaitedEventEmitter.emit('rerun-stdout', msg);
       });
     } catch (error) {
       this.logger.error('ERROR resuming session', { error });
@@ -646,16 +648,6 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.playbackState = 'finished';
     this.emit('hero:updated');
     event.message = `ChromeAlive! has assumed control of your script. You can make changes to your script and re-run from the ChromeAlive interface.`;
-  }
-
-  private bindOriginalSessionClose(resumingSessionId: string): void {
-    const resumedSession = HeroSession.get(resumingSessionId);
-    // bind close to original session if it's still active
-    if (resumedSession && !resumedSession.isClosing) {
-      this.events.once(this.heroSession, 'closing', () => resumedSession.close(true));
-      // close new session if killed off (eg, via cli)
-      this.events.once(resumedSession, 'closing', () => this.heroSession.close(true));
-    }
   }
 
   private resetExtraction(): void {

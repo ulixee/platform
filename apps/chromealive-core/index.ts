@@ -196,11 +196,12 @@ export default class ChromeAliveCore {
       on(timetravel, 'new-paint-index', this.sendPaintIndexEvent.bind(this, sessionId)),
       on(timetravel, 'new-offset', this.sendTimetravelOffset.bind(this, sessionId)),
     ];
-    this.events.group('session', ...sessionEvents);
+    this.events.group(`session-${sessionId}`, ...sessionEvents);
 
     this.sendActiveSession(sessionId);
 
     const isRestartedSessionId =
+      !!this.restartingHeroSessionId &&
       this.restartingHeroSessionId === heroSession.options.sessionResume?.sessionId;
     this.restartingHeroSessionId = null;
 
@@ -260,7 +261,7 @@ export default class ChromeAliveCore {
   private static onSessionObserverClosed(sessionObserver: SessionObserver): void {
     const heroSessionId = sessionObserver.heroSession.id;
     this.sessionObserversById.delete(heroSessionId);
-    this.events.endGroup('session');
+    this.events.endGroup(`session-${heroSessionId}`);
     if (this.activeHeroSessionId === heroSessionId) {
       this.activeHeroSessionId = null;
       if (this.restartingHeroSessionId === heroSessionId) {
@@ -350,13 +351,21 @@ export default class ChromeAliveCore {
     if (!event.browser.engine.isHeaded) return;
 
     const browserId = event.browser.id;
-    setTimeout(() => {
+    const restartedSessionId = this.restartingHeroSessionId;
+    const checkForBrowserClose = (): any => {
+      if (
+        restartedSessionId &&
+        (!this.activeHeroSessionId || restartedSessionId === this.activeHeroSessionId)
+      ) {
+        return setTimeout(checkForBrowserClose, 1e3).unref();
+      }
       const sessionsUsingEngine = HeroSession.sessionsWithBrowserId(browserId);
       const hasWindows = sessionsUsingEngine.some(x => x.tabsById.size > 0);
       if (!hasWindows) {
         return event.browser.close();
       }
-    }, 2e3).unref();
+    };
+    setTimeout(checkForBrowserClose, 2e3).unref();
   }
 
   private static async onNewBrowser(): Promise<void> {

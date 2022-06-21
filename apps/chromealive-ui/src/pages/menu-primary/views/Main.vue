@@ -77,7 +77,7 @@ export default defineComponent({
     openScript(filepath: string) {
       document.dispatchEvent(
         new CustomEvent('chromealive:api', {
-          detail: { api: 'File:navigate', args: { filepath } },
+          detail: { command: 'File:navigate', args: { filepath } },
         }),
       );
     },
