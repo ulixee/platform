@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.7](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.6...v2.0.0-alpha.7) (2022-06-28)
+
+
+### Bug Fixes
+
+* allow showChromeInterations to be disabled + more accurate error msg if extension isn't found ([b452a71](https://github.com/ulixee/ulixee/commit/b452a71927a81a7cb4b95d1fd16e9228585cbbf0))
+* **apps:** remove headers from output page ([a1ebe9a](https://github.com/ulixee/ulixee/commit/a1ebe9ae20df4032e341b49fc85dd258112c6389))
+* **apps:** reset source map cache ([0b880d1](https://github.com/ulixee/ulixee/commit/0b880d166021771f74953276ae876fc206b95e5d))
+* **chromealive:** pipe output ([e49113c](https://github.com/ulixee/ulixee/commit/e49113c25a92bcb274fcead17682d64ef67b9da9))
+* **databox:** chromealive properly resumes databox ([34b7dcf](https://github.com/ulixee/ulixee/commit/34b7dcfdbef91fdbd245679e1dec86d7cb76c024))
+* **databox:** convert run later to boolean ([8a79290](https://github.com/ulixee/ulixee/commit/8a79290e2b67fde0e10e80be44e8745755f2344b))
+
+
+### Features
+
+* added cores to databox and for-puppeteer + ability to run local databox files ([237f1e9](https://github.com/ulixee/ulixee/commit/237f1e941843d8ca71bfc6c74d3bbc7b048f5d6b))
+* **apps:** save selectors ([dd7bcfd](https://github.com/ulixee/ulixee/commit/dd7bcfd55281088f14e5e8e5f7649f5845379ba2))
+* **chromealive:** restarting session mode ([34dee09](https://github.com/ulixee/ulixee/commit/34dee095b0e7e32b2988d604be7cef341332bd79))
+
+
+
+
+
 # [2.0.0-alpha.6](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.5...v2.0.0-alpha.6) (2022-06-10)
 
 **Note:** Version bump only for package @ulixee/apps-chromealive-core

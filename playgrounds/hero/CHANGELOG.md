@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.7](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.6...v2.0.0-alpha.7) (2022-06-28)
+
+
+### Bug Fixes
+
+* **databox:** log errors connecting to core ([e9093d0](https://github.com/ulixee/ulixee/commit/e9093d07b7f888c591ff3d9a9e4af66650548d93))
+* **playground:** server not shutting down ([e35606c](https://github.com/ulixee/ulixee/commit/e35606c2de1b7bf8605c06233a9fee0bcfa61074))
+
+
+
+
+
 # [2.0.0-alpha.6](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.5...v2.0.0-alpha.6) (2022-06-10)
 
 

@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.7](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.6...v2.0.0-alpha.7) (2022-06-28)
+
+
+### Bug Fixes
+
+* autorun was not setup correctly after previous databox changes ([1fe0c02](https://github.com/ulixee/ulixee/commit/1fe0c027c5ef6f1cbd8f8a11f48d23e0edc97182))
+* **cli:** arg parsing wrong when values needed ([b79d9c6](https://github.com/ulixee/ulixee/commit/b79d9c6869b0b3a17b2bdf3d4b1b5b0140f62309))
+* **databox:** convert run later to boolean ([8a79290](https://github.com/ulixee/ulixee/commit/8a79290e2b67fde0e10e80be44e8745755f2344b))
+* **databox:** log errors connecting to core ([e9093d0](https://github.com/ulixee/ulixee/commit/e9093d07b7f888c591ff3d9a9e4af66650548d93))
+* fixed some issues that the previous databox changes broke ([000f106](https://github.com/ulixee/ulixee/commit/000f106a2052c53a963c6cd706195a9508dc6f63))
+* moved ULX_DATABOX_DISABLE_AUTORUN check into databox constructors ([49b2935](https://github.com/ulixee/ulixee/commit/49b29359767bf40ab7d83f1547fd03f0e603f706))
+
+
+### Features
+
+* added @ulixee/databox as a standalone tool + databox-for-puppeteer ([94ddf8d](https://github.com/ulixee/ulixee/commit/94ddf8d24c93b12a5b81596a6db12e60016a110e))
+* added cores to databox and for-puppeteer + ability to run local databox files ([237f1e9](https://github.com/ulixee/ulixee/commit/237f1e941843d8ca71bfc6c74d3bbc7b048f5d6b))
+* **databox:** better error stacks (no library) ([ab27163](https://github.com/ulixee/ulixee/commit/ab2716373d0d9379d8d9a6fcd0f307c7647346eb))
+* databoxes now have core-runtimes ([9a63bd9](https://github.com/ulixee/ulixee/commit/9a63bd9cae3427c71c47cc46d7009b07ae3fed9f))
+
+
+
+
+
 # [2.0.0-alpha.6](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.5...v2.0.0-alpha.6) (2022-06-10)
 
 **Note:** Version bump only for package @ulixee/databox

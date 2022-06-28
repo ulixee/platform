@@ -18,15 +18,15 @@ export default function databoxCommands(): Command {
     )
     .option('-u, --upload', 'Upload this package to a Ulixee Server after packaging.', false)
     .option(
-      '-h, --upload-host',
+      '-h, --upload-host <host>',
       'Upload this package to the given host server. Will try to auto-connect if none specified.',
     )
     .option(
-      '-o, --output-dir',
+      '-o, --output-dir <dir>',
       'A directory to output the file to. Defaults to a `.databox` directory next to the input file.',
     )
     .option(
-      '-t, --tsconfig',
+      '-t, --tsconfig <path>',
       'A path to a TypeScript config file if needed. Will attempt to be auto-located based on the entrypoint if it ends in ".ts"',
     )
     .action(async (path, { tsconfig, outputDir, uploadHost, upload }) => {
@@ -47,7 +47,7 @@ export default function databoxCommands(): Command {
     .description('Upload an already packaged Databox to a server.')
     .argument('<packagePath>', 'The path to the packaged Databox and manifest.')
     .option(
-      '-u, --upload-host',
+      '-u, --upload-host <host>',
       'Upload this package to the given host server. Will try to auto-connect if none specified.',
     )
     .action(async (packagePath, { uploadHost }) => {

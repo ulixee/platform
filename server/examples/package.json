@@ -1,9 +1,9 @@
 {
   "name": "@ulixee/server-examples",
-  "version": "2.0.0-alpha.6",
+  "version": "2.0.0-alpha.7",
   "private": true,
   "dependencies": {
-    "@ulixee/hero": "2.0.0-alpha.6",
-    "@ulixee/server": "2.0.0-alpha.6"
+    "@ulixee/hero": "2.0.0-alpha.7",
+    "@ulixee/server": "2.0.0-alpha.7"
   }
 }
