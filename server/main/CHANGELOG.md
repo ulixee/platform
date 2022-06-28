@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.7](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.6...v2.0.0-alpha.7) (2022-06-28)
+
+
+### Bug Fixes
+
+* **cli:** arg parsing wrong when values needed ([b79d9c6](https://github.com/ulixee/ulixee/commit/b79d9c6869b0b3a17b2bdf3d4b1b5b0140f62309))
+
+
+### Features
+
+* added cores to databox and for-puppeteer + ability to run local databox files ([237f1e9](https://github.com/ulixee/ulixee/commit/237f1e941843d8ca71bfc6c74d3bbc7b048f5d6b))
+* databoxes now have core-runtimes ([9a63bd9](https://github.com/ulixee/ulixee/commit/9a63bd9cae3427c71c47cc46d7009b07ae3fed9f))
+
+
+
+
+
 # [2.0.0-alpha.6](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.5...v2.0.0-alpha.6) (2022-06-10)
 
 **Note:** Version bump only for package @ulixee/server

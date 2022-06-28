@@ -3,6 +3,42 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.7](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.6...v2.0.0-alpha.7) (2022-06-28)
+
+
+### Bug Fixes
+
+* allow showChromeInterations to be disabled + more accurate error msg if extension isn't found ([b452a71](https://github.com/ulixee/ulixee/commit/b452a71927a81a7cb4b95d1fd16e9228585cbbf0))
+* **apps:** page performance tweaks ([f1bc076](https://github.com/ulixee/ulixee/commit/f1bc076f8a31523521d46c49db9fdaf549276474))
+* **apps:** remove headers from output page ([a1ebe9a](https://github.com/ulixee/ulixee/commit/a1ebe9ae20df4032e341b49fc85dd258112c6389))
+* **apps:** reset source map cache ([0b880d1](https://github.com/ulixee/ulixee/commit/0b880d166021771f74953276ae876fc206b95e5d))
+* autorun was not setup correctly after previous databox changes ([1fe0c02](https://github.com/ulixee/ulixee/commit/1fe0c027c5ef6f1cbd8f8a11f48d23e0edc97182))
+* change ULX_DATABOX_DISABLE_AUTORUN values to be boolean ([3dd2d0a](https://github.com/ulixee/ulixee/commit/3dd2d0adc8ade84c80193ebdadbe8e850f13c712))
+* **chromealive:** pipe output ([e49113c](https://github.com/ulixee/ulixee/commit/e49113c25a92bcb274fcead17682d64ef67b9da9))
+* **cli:** arg parsing wrong when values needed ([b79d9c6](https://github.com/ulixee/ulixee/commit/b79d9c6869b0b3a17b2bdf3d4b1b5b0140f62309))
+* **databox:** chromealive properly resumes databox ([34b7dcf](https://github.com/ulixee/ulixee/commit/34b7dcfdbef91fdbd245679e1dec86d7cb76c024))
+* **databox:** convert run later to boolean ([8a79290](https://github.com/ulixee/ulixee/commit/8a79290e2b67fde0e10e80be44e8745755f2344b))
+* **databox:** log errors connecting to core ([e9093d0](https://github.com/ulixee/ulixee/commit/e9093d07b7f888c591ff3d9a9e4af66650548d93))
+* fixed some issues that the previous databox changes broke ([000f106](https://github.com/ulixee/ulixee/commit/000f106a2052c53a963c6cd706195a9508dc6f63))
+* moved ULX_DATABOX_DISABLE_AUTORUN check into databox constructors ([49b2935](https://github.com/ulixee/ulixee/commit/49b29359767bf40ab7d83f1547fd03f0e603f706))
+* **playground:** server not shutting down ([e35606c](https://github.com/ulixee/ulixee/commit/e35606c2de1b7bf8605c06233a9fee0bcfa61074))
+
+
+### Features
+
+* added @ulixee/databox as a standalone tool + databox-for-puppeteer ([94ddf8d](https://github.com/ulixee/ulixee/commit/94ddf8d24c93b12a5b81596a6db12e60016a110e))
+* added cores to databox and for-puppeteer + ability to run local databox files ([237f1e9](https://github.com/ulixee/ulixee/commit/237f1e941843d8ca71bfc6c74d3bbc7b048f5d6b))
+* added package.dist.json to databox-core ([cc947b4](https://github.com/ulixee/ulixee/commit/cc947b4fc8ac7deca9f294c674a6be560ce95fa1))
+* **apps:** save selectors ([dd7bcfd](https://github.com/ulixee/ulixee/commit/dd7bcfd55281088f14e5e8e5f7649f5845379ba2))
+* **chromealive:** restarting session mode ([34dee09](https://github.com/ulixee/ulixee/commit/34dee095b0e7e32b2988d604be7cef341332bd79))
+* **databox:** better error stacks (no library) ([ab27163](https://github.com/ulixee/ulixee/commit/ab2716373d0d9379d8d9a6fcd0f307c7647346eb))
+* databoxes now have core-runtimes ([9a63bd9](https://github.com/ulixee/ulixee/commit/9a63bd9cae3427c71c47cc46d7009b07ae3fed9f))
+* every databox core-runtime should check whether databox version is satisfied ([053032f](https://github.com/ulixee/ulixee/commit/053032f1a78d2b9af674baf86f69ebce459c1f46))
+
+
+
+
+
 # [2.0.0-alpha.6](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.5...v2.0.0-alpha.6) (2022-06-10)
 
 

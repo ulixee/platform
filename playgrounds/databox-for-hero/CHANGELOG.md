@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.7](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.6...v2.0.0-alpha.7) (2022-06-28)
+
+
+### Bug Fixes
+
+* **databox:** log errors connecting to core ([e9093d0](https://github.com/ulixee/ulixee/commit/e9093d07b7f888c591ff3d9a9e4af66650548d93))
+
+
+### Features
+
+* added @ulixee/databox as a standalone tool + databox-for-puppeteer ([94ddf8d](https://github.com/ulixee/ulixee/commit/94ddf8d24c93b12a5b81596a6db12e60016a110e))
+* databoxes now have core-runtimes ([9a63bd9](https://github.com/ulixee/ulixee/commit/9a63bd9cae3427c71c47cc46d7009b07ae3fed9f))
+
+
+
+
+
 # [2.0.0-alpha.6](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.5...v2.0.0-alpha.6) (2022-06-10)
 
 **Note:** Version bump only for package @ulixee/databox-for-hero-playground
