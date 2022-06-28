@@ -11,7 +11,7 @@ export default function cliCommands(): Command {
   program
     .command('start', { isDefault: true })
     .description('start a Ulixee Server')
-    .option('-p, --port', 'The port to use. Defaults to any available port.')
+    .option('-p, --port <number>', 'The port to use. Defaults to any available port.')
     .option('-x, --disable-chrome-alive', 'Do not enable ChromeAlive! even if installed locally.')
     .action(async opts => {
       const { port, disableChromeAlive } = opts;
