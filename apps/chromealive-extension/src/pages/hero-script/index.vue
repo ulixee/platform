@@ -48,13 +48,15 @@ export default Vue.defineComponent({
       focusedCommandId: Vue.ref<number>(null),
       scriptsByFilename: Vue.reactive<Record<string, ISourceCodeUpdatedEvent['lines']>>({}),
       commandsById: Vue.reactive<{ [commandId: number]: ICommandUpdatedEvent }>({}),
+      scrollOnTimeout: -1,
     };
   },
   watch: {
     ['focusedPositions.0.line'](value) {
       const firstLine = value;
       if (!firstLine) return;
-      setTimeout(() => {
+      clearTimeout(this.scrollOnTimeout);
+      this.scrollOnTimeout = setTimeout(() => {
         const $el = this.lineElemsByIdx[firstLine];
         if ($el) $el.scrollIntoView({ block: 'center' });
       });

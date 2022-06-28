@@ -8,7 +8,7 @@ import ISchema from '../../interfaces/ISchema';
 export default abstract class DataboxInternalAbstract<
   TRunnerObject extends RunnerObjectAbstract<any, any>,
   TDefaultsObject extends IDefaultsObjBase<any, any>,
-  TInput = IBasicInput, 
+  TInput = IBasicInput,
   TOutput = any,
   TDataboxRunOptions extends IDataboxRunOptions = IDataboxRunOptions,
   > extends TypedEventEmitter<{
@@ -58,8 +58,8 @@ export default abstract class DataboxInternalAbstract<
   }
 
   public async execRunner(runFn: IRunFnBase<TRunnerObject>): Promise<void> {
-    const runnerObject = this.createRunnerObject();
     try {
+      const runnerObject = this.createRunnerObject();
       await runFn(runnerObject);
     } catch (error) {
       if (error.stack.includes('at async DataboxInternal.execRunner')) {

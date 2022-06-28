@@ -14,6 +14,7 @@ import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/eve
 import { URL } from 'url';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
+import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
 import ChromeAliveCoreApis from './apis';
 import AliveBarPositioner from './lib/AliveBarPositioner';
 import SessionObserver from './lib/SessionObserver';
@@ -137,6 +138,10 @@ export default class ChromeAliveCore {
       return;
     }
 
+    if (heroSession.options.sessionResume?.sessionId) {
+      SourceMapSupport.resetCache();
+    }
+
     if (heroSession.mode === 'browserless') {
       // @ts-expect-error
       const extractSessionId = heroSession.options.extractSessionId;
@@ -176,6 +181,7 @@ export default class ChromeAliveCore {
     const coreServerAddress = await this.coreServerAddress;
     heroSession.bypassResourceRegistrationForHost = new URL(coreServerAddress);
 
+
     this.sessionObserversById.set(sessionId, sessionObserver);
     const sourceCode = sessionObserver.sourceCodeTimeline;
     const timetravel = sessionObserver.timetravelPlayer;
@@ -196,11 +202,12 @@ export default class ChromeAliveCore {
       on(timetravel, 'new-paint-index', this.sendPaintIndexEvent.bind(this, sessionId)),
       on(timetravel, 'new-offset', this.sendTimetravelOffset.bind(this, sessionId)),
     ];
-    this.events.group('session', ...sessionEvents);
+    this.events.group(`session-${sessionId}`, ...sessionEvents);
 
     this.sendActiveSession(sessionId);
 
     const isRestartedSessionId =
+      !!this.restartingHeroSessionId &&
       this.restartingHeroSessionId === heroSession.options.sessionResume?.sessionId;
     this.restartingHeroSessionId = null;
 
@@ -260,7 +267,7 @@ export default class ChromeAliveCore {
   private static onSessionObserverClosed(sessionObserver: SessionObserver): void {
     const heroSessionId = sessionObserver.heroSession.id;
     this.sessionObserversById.delete(heroSessionId);
-    this.events.endGroup('session');
+    this.events.endGroup(`session-${heroSessionId}`);
     if (this.activeHeroSessionId === heroSessionId) {
       this.activeHeroSessionId = null;
       if (this.restartingHeroSessionId === heroSessionId) {
@@ -332,7 +339,7 @@ export default class ChromeAliveCore {
       } catch (err) {
         throw new Error('Could not launch ChromeAlive! Chrome Extension not installed.');
       }
-      args.push(`--coreServerAddress=${coreServerAddress}`);
+      args.push(`--coreServerAddress="${coreServerAddress}"`);
     }
 
     this.app = launchChromeAlive(...args);
@@ -350,13 +357,21 @@ export default class ChromeAliveCore {
     if (!event.browser.engine.isHeaded) return;
 
     const browserId = event.browser.id;
-    setTimeout(() => {
+    const restartedSessionId = this.restartingHeroSessionId;
+    const checkForBrowserClose = (): any => {
+      if (
+        restartedSessionId &&
+        (!this.activeHeroSessionId || restartedSessionId === this.activeHeroSessionId)
+      ) {
+        return setTimeout(checkForBrowserClose, 1e3).unref();
+      }
       const sessionsUsingEngine = HeroSession.sessionsWithBrowserId(browserId);
       const hasWindows = sessionsUsingEngine.some(x => x.tabsById.size > 0);
       if (!hasWindows) {
         return event.browser.close();
       }
-    }, 2e3).unref();
+    };
+    setTimeout(checkForBrowserClose, 2e3).unref();
   }
 
   private static async onNewBrowser(): Promise<void> {

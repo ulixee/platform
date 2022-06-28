@@ -211,11 +211,11 @@ export class ChromeAlive extends EventEmitter {
       const mouseEvents = require('global-mouse-events') as any;
       mouseEvents.on('mousedown', ev => {
         this.#mouseDown = ev.type === 1;
-        return this.#api.send('Mouse.state', { isMousedown: this.#mouseDown });
+        return this.#api.send('Mouse.state', { isMousedown: this.#mouseDown }).catch(() => null);
       });
       mouseEvents.on('mouseup', () => {
         this.#mouseDown = false;
-        return this.#api.send('Mouse.state', { isMousedown: false });
+        return this.#api.send('Mouse.state', { isMousedown: false }).catch(() => null);
       });
     }
   }

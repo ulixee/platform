@@ -9,7 +9,7 @@ import IDataboxOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDat
 import IDataboxCollectedAssets from '@ulixee/apps-chromealive-interfaces/IDataboxCollectedAssets';
 import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxCollectedAssetEvent';
 import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
-import { fork } from 'child_process';
+import { spawn } from 'child_process';
 import Log from '@ulixee/commons/lib/Logger';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import TimelineWatch from '@ulixee/hero-timetravel/lib/TimelineWatch';
@@ -29,6 +29,7 @@ import ISessionSearchResult, {
 } from '@ulixee/apps-chromealive-interfaces/ISessionSearchResult';
 import { ISelectorMap } from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
+import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
 import ResourceSearch from './ResourceSearch';
 import HeroCorePlugin from './HeroCorePlugin';
 import ElementsModule from './hero-plugin-modules/ElementsModule';
@@ -39,6 +40,7 @@ import OutputRebuilder, { IOutputSnapshot } from './OutputRebuilder';
 import AliveBarPositioner from './AliveBarPositioner';
 import ChromeAliveCore from '../index';
 import TabGroupModule from './hero-plugin-modules/TabGroupModule';
+import SelectorRecommendations from './SelectorRecommendations';
 
 const { log } = Log(module);
 
@@ -79,6 +81,7 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   public mirrorPagePauseRefreshing = false;
 
+  private selectorRecommendations: SelectorRecommendations;
   private vueScreensByName: { [name: string]: VueScreen } = {};
 
   private scriptEntrypointTs: string;
@@ -112,11 +115,6 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.events.on(this.heroSession.commands, 'pause', this.onCommandsPaused);
     this.events.on(this.heroSession.commands, 'resume', this.onCommandsResumed);
 
-    const resumedSessionId = this.heroSession.options.sessionResume?.sessionId;
-    if (resumedSessionId) {
-      this.bindOriginalSessionClose(resumedSessionId);
-    }
-
     this.timelineWatch = new TimelineWatch(heroSession, {
       extendAfterCommands: 1e3,
       extendAfterLoadStatus: {
@@ -129,12 +127,15 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.timetravelPlayer = TimetravelPlayer.create(heroSession.id, heroSession);
 
     this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint).mtimeMs;
+    this.selectorRecommendations = new SelectorRecommendations(this.scriptInstanceMeta);
 
     this.sourceCodeTimeline = new SourceCodeTimeline(heroSession);
 
     const entrypoint = this.sourceCodeTimeline.entrypoint;
     if (entrypoint !== this.scriptInstanceMeta.entrypoint) {
       this.scriptEntrypointTs = entrypoint;
+    } else if (this.scriptInstanceMeta.entrypoint.endsWith('.ts')) {
+      this.scriptEntrypointTs = this.scriptInstanceMeta.entrypoint;
     }
 
     this.watchHandle = Fs.watch(
@@ -174,31 +175,36 @@ export default class SessionObserver extends TypedEventEmitter<{
 
       await this.close();
       await this.heroSession.closeTabs();
+      SourceMapSupport.resetCache();
     }
     const script = this.scriptInstanceMeta.entrypoint;
-    const execArgv = [];
+    const execPath = this.scriptInstanceMeta.execPath;
+    const execArgv = this.scriptInstanceMeta.execArgv ?? [];
     const args = [
-      `--sessionResume.startLocation`,
-      startLocation,
-      `--sessionResume.sessionId`,
-      this.heroSession.id,
+      `--sessionResume.startLocation="${startLocation}"`,
+      `--sessionResume.sessionId="${this.heroSession.id}"`,
       '--show-chrome-alive',
     ];
     if (startLocation === 'extraction') {
       args.length = 0;
       this.resetExtraction();
-      args.push('--extractSessionId', this.heroSession.id, '--mode', 'browserless');
-    }
-    if (script.endsWith('.ts')) {
-      execArgv.push('-r', 'ts-node/register');
+      args.push(`--extractSessionId="${this.heroSession.id}"`, '--mode="browserless"');
     }
 
     try {
-      fork(script, args, {
-        execArgv,
+      this.logger.info('Relaunch Session', { execPath, args: [...execArgv, script, ...args] });
+      const child = spawn(execPath, [...execArgv, script, ...args], {
         cwd: this.scriptInstanceMeta.workingDirectory,
-        stdio: ['ignore', 'inherit', 'inherit', 'ipc'],
-        env: { ...process.env, ULX_CLI_NOPROMPT: 'true', ULX_DATABOX_DISABLE_AUTORUN: undefined },
+        stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+        env: { ...process.env, ULX_CLI_NOPROMPT: 'true', ULX_DATABOX_DISABLE_AUTORUN: 'false' },
+      });
+      child.stderr.setEncoding('utf8');
+      child.stdout.setEncoding('utf8');
+      child.stderr.on('data', msg => {
+        this.heroSession.awaitedEventEmitter.emit('rerun-stderr', msg);
+      });
+      child.stdout.on('data', msg => {
+        this.heroSession.awaitedEventEmitter.emit('rerun-stdout', msg);
       });
     } catch (error) {
       this.logger.error('ERROR resuming session', { error });
@@ -265,7 +271,15 @@ export default class SessionObserver extends TypedEventEmitter<{
     backendNodeId?: number;
     objectId?: string;
   }): Promise<ISelectorMap> {
-    return await this.elementsModule.generateQuerySelector(id);
+    const selectorMap = await this.elementsModule.generateQuerySelector(id);
+    const activePageUrl = this.heroCorePlugin.activePage.mainFrame.url;
+
+    void this.selectorRecommendations
+      .save(selectorMap, activePageUrl)
+      .catch(err => console.error('ERROR saving selector map', err));
+
+    selectorMap.topMatches = selectorMap.topMatches.slice(0, 50);
+    return selectorMap;
   }
 
   public async openMode(mode: Parameters<ISessionApi['openMode']>[0]['mode']): Promise<void> {
@@ -646,16 +660,6 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.playbackState = 'finished';
     this.emit('hero:updated');
     event.message = `ChromeAlive! has assumed control of your script. You can make changes to your script and re-run from the ChromeAlive interface.`;
-  }
-
-  private bindOriginalSessionClose(resumingSessionId: string): void {
-    const resumedSession = HeroSession.get(resumingSessionId);
-    // bind close to original session if it's still active
-    if (resumedSession && !resumedSession.isClosing) {
-      this.events.once(this.heroSession, 'closing', () => resumedSession.close(true));
-      // close new session if killed off (eg, via cli)
-      this.events.once(resumedSession, 'closing', () => this.heroSession.close(true));
-    }
   }
 
   private resetExtraction(): void {

@@ -12,6 +12,7 @@
     >
     <DomNode
       v-for="node of children"
+      :key="node.id"
       :node-state="node"
       :indent="indent + 1"
       :hidden-node-groups="hiddenNodeGroups"
@@ -45,6 +46,7 @@
     <slot v-else-if="nodeState.isDocument || nodeState.isShadowRoot">
       <DomNode
         v-for="node of children"
+        :key="node.id"
         :node-state="node"
         :indent="indent + 1"
         :hidden-node-groups="hiddenNodeGroups"
@@ -121,6 +123,7 @@
       <slot v-else>
         <DomNode
           v-for="node of children"
+          :key="node.id"
           :node-state="node"
           :indent="indent + 1"
           :hidden-node-groups="hiddenNodeGroups"

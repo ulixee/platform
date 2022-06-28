@@ -1,7 +1,9 @@
 import * as fs from 'fs';
 import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import IDevtoolsSession, { Protocol } from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
+import IDevtoolsSession, {
+  Protocol,
+} from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
 import IElementSummary from '@ulixee/apps-chromealive-interfaces/IElementSummary';
 import {
   ___emitFromDevtoolsToCore,
@@ -178,6 +180,12 @@ export default class DevtoolsBackdoorModule {
     const { tabId } = this.devtoolsSessionMap.get(devtoolsSession);
     const page = await this.heroPlugin.getPageByTabId(tabId);
     if (!page) {
+      const session = ChromeAliveCore.sessionObserversById.get(
+        this.heroPlugin.sessionId,
+      )?.heroSession;
+      if (!session || session.isClosing) {
+        return;
+      }
       // TODO: This should not be thrown. Find out why.
       console.error('MISSING page: ', tabId, page);
     }

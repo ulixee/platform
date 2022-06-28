@@ -17,7 +17,7 @@
     "@ulixee/hero": "2.0.0-alpha.6",
     "@ulixee/hero-interfaces": "2.0.0-alpha.6",
     "@ulixee/net": "2.0.0-alpha.5",
-    "@unblocked-web/specifications": "2.0.0-alpha.2",
+    "@unblocked-web/specifications": "2.0.0-alpha.3",
     "awaited-dom": "1.4.0",
     "linkedom": "^0.14.11"
   },
