@@ -25,6 +25,7 @@
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.6",
     "@ulixee/databox-core": "2.0.0-alpha.7",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.7",
     "@ulixee/databox-core-runtime": "2.0.0-alpha.7",
     "@ulixee/databox-for-hero-core-runtime": "2.0.0-alpha.7",
     "@ulixee/hero-core": "2.0.0-alpha.7",

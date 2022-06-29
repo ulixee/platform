@@ -42,8 +42,16 @@ You can run the start command from the command line as `npx @ulixee/server start
 
 ### Command Options:
 
-- `-p, --port` The port to use. Defaults to any available port.
+- `-p, --port <number>` The port to use. Defaults to any available port.
+- `-h, --host <host>` The host the server should listen on. (default: localhost)
 - `-x, --disable-chrome-alive` Do not enable ChromeAlive! even if installed locally.
+- `-m, --max-concurrent-heroes <count>` Max number of concurrent Databoxes/Heroes to run at a time. (default: 10)
+- `-r, --max-databox-runtime-ms <millis>` Max runtime allowed for a Databox to complete. (default: 10 mins)
+- `-u, --unblocked-plugins <plugins...>` Register default Unblocked Plugin npm module names for all Hero instances to load.
+- `-d, --hero-data-dir <dir>` Override the default data directory for Hero sessions and dbs.
+- `-s, --databox-storage-dir <dir>` Override the default storage directory where Databoxes are located.
+- `-t, --databox-tmp-dir <dir>` Override the default temp directory where uploaded Databoxes are processed.
+- `-w, --databox-wait-for-completion` Wait for all in-process Databoxes to complete before shutting down a server. (default: false)
 
 ### Global CLI
 
