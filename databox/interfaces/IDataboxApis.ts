@@ -1,7 +1,5 @@
-import IDataboxPackage from './IDataboxPackage';
-
 export interface IDataboxApiHandlerFns {
-  upload(databoxPackage: IDataboxPackage): Promise<void>;
+  upload(dbxBuffer: Buffer): Promise<void>;
   run(scriptHash: string, input?: any): Promise<{ output?: any; error?: any }>;
   runLocalScript(scriptHash: string, input?: any): Promise<{ output?: any; error?: any }>;
 }

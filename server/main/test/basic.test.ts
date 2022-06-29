@@ -6,7 +6,7 @@ const pkg = require('../package.json');
 describe('basic Server tests', () => {
   it('starts, responds to request and shuts down', async () => {
     const server = new Server();
-    await server.listen({ port: 8099 });
+    await server.listen({ port: 8099 }, false);
     const url = `http://${await server.address}/`;
 
     const response = await new Promise(resolve => {

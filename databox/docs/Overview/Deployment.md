@@ -2,9 +2,23 @@
 
 ## Packaging
 
-Databoxes are packaged into a single javascript file for deployment. They include a sourcemap and manifest file indicating how to run the Databox.
+Databoxes are packaged into a single javascript file for deployment. They include a sourcemap and manifest file indicating how to run the Databox. These files are TarGzipped into a final `.dbx` file.
 
 We provide a packaging tool out of the box to combine your Databox and included modules into a single file. It can be run using the Databox CLI commands or the Ulixee CLI.
+
+#### Packaged .dbx Files
+
+Your Databox will be packaged into a file with the same name and path as your script, but with the extension `.dbx`. These files are safe to check-in to source control so other developers on your team can package and deploy the databoxes without a need to re-build them.
+
+##### Unpacking
+
+Packaged Databox files are simply GZIP compressed Tar files. You can use normal Unix (or other) commands to explore their contents:
+
+```tar -xf script.dbx```
+
+##### Deploying
+
+You can copy `.dbx` files into the configured [`Databox Storage`](/docs/databox/overview/configuration#storage) directory of your server before boot-up, and the server will automatically unpack and install them.
 
 #### Typescript Support
 
@@ -14,6 +28,16 @@ The packager can optionally process Typescript files for you. If you have a uniq
 
 The packager can process ES Modules or CommonJS. It will output a commonjs file so that Ulixee Server can import it on a server. The server will run your Databox in an isolated Sandbox for each run. No memory or variables are shared between runs.
 
+#### Versioning
+
+Every version of your script is hashed using a SHA3 256 algorithm, and encoded using Bech32m (a standard formalized by the Bitcoin working group to create file and url-safe base32 hash encodings).
+
+When you package up a new version of your Databox, it will maintain a list of the sequence of versions. Anytime your Databox is used on a Core Server, it will return the latest version hash. This helps inform users of your Databox when they're using an out-of-date version. 
+
+If you ever get out of sync with the versions that are on your server, you have two options.
+1. Edit the `manifest.json` file in the Databox build directory (defaults to `.dbx.build/[scriptName]` next to your script). 
+2. You'll also be prompted to intake the server version history when you try to upload an out of date script.
+
 #### Databox CLI:
 
 ```bash
@@ -22,7 +46,9 @@ The packager can process ES Modules or CommonJS. It will output a commonjs file 
 
 You must provide a path to the entrypoint of your Databox. The default export of the node module needs to be an instance of a `DataboxWrapper`.
 
-By default, your Databox will be packaged up into a folder called `.databox` directly next to your script. The folder contains your rolled up script, a sourcemap, and a manifest.json file. It's safe to delete this folder after your upload. You can also choose to output your packaged databoxes into a different location using the `--output-dir` option described below.
+Your Databox will be compiled into a folder called `.dbx.build` directly next to your script. The folder contains your rolled up script, a sourcemap, and a manifest.json file. These files will be Tar Gzipped into a `.dbx` file with your script name appended with `.dbx`.
+
+It's safe to delete the build directory after your upload. You can also choose to build your databoxes in a different location using the `--working-dir` option described below.
 
 #### Ulixee CLI
 
@@ -40,19 +66,20 @@ Options below show a short and long form.
 
 - `-u, --upload` `Boolean`. Upload this package to a Ulixee Server after packaging. (default: false)
 - `-h, --upload-host` `String`. Upload this package to the given host server. Will try to auto-connect if none specified.
-- `-o, --output-dir` `String`. A directory to output the file to. Defaults to a `.databox` directory next to the input file.
+- `-o, --working-dir` `String`. A directory to use as a temporary build directory. Defaults to a `.dbx.build` directory next to the input file.
 - `-t, --tsconfig` `String`. A path to a TypeScript config file (if needed). Will attempt to be auto-located based on the entrypoint if it ends in ".ts"
 
 ## Manifest
 
 When you package a Databox, a Manifest is created with the following properties:
 
-- scriptRollupHash `string`. This is a Sha3-256 hash of the rolled-up script. It is used to version your script and refer to it in queries to remote Servers. The encoding uses a base32 format called Bech32m so that it's file-path friendly.
+- scriptVersionHash `string`. This is a Sha3-256 hash of the rolled-up script. It is used to version your script and refer to it in queries to remote Servers. The encoding uses a base32 format called Bech32m so that it's file-path friendly.
+- scriptVersionHashHistory `string[]`. The history of versions with newest first.
 - scriptEntrypoint `string`. The relative path to your file (from the closest package.json).
 - runtimeName `string`. The "type" of Databox runtime used internally.
 - runtimeVersion `string`. The version of the Databox module. Your script will be checked for compatibility with the Server npm modules before it runs.
 
-This file will be automatically generated by the CLI. The `scriptRollupHash` is a good sanity check to compare versions on your local machine vs a Server. By default, Ulixee Servers store Databoxes in the `<OS Cache Directory>/ulixee/databoxes` directory ([details](/docs/databox/overview/configuration#storage)).
+This file will be automatically generated by the CLI. The `scriptVersionHash` is a good sanity check to compare versions on your local machine vs a Server. By default, Ulixee Servers store Databoxes in the `<OS Cache Directory>/ulixee/databoxes` directory ([details](/docs/databox/overview/configuration#storage)).
 
 ## Uploading
 
@@ -72,7 +99,9 @@ If you upload using the CLI, you can use the following command:
  ulixee databox upload [path to pre-packaged databox]
 ```
 
-You must provide a path to the pre-packaged databox directory. The directory must be a folder containing:
+You must provide a path to either:
+1. The pre-packaged `.dbx` file (eg, `<pathToScript/scriptNameMinusExtension>.dbx`)
+2. The `.dbx.build` directory of your script. The directory must be a folder containing:
 
 - `databox.js` The single file containing all your javascript code and a default export contanining DataboxWrapper instance.
 - `databox.js.map` A source map for your javascript.
@@ -83,6 +112,32 @@ You must provide a path to the pre-packaged databox directory. The directory mus
 Options below show a short and long form.
 
 - `-h, --upload-host` `String`. Upload this package to the given host server. Will try to auto-connect if none specified.
+- `-w, --working-dir` `String`. If the path is to a `.dbx` file, specifies the working directory used to create the given `.dbx` file. Defaults to a `.dbx.build` directory next to the `.dbx` file.
+
+
+## Unpacking
+
+You can unpack Databox `.dbx` into the local working directory using the unpack command:
+
+#### Databox CLI
+
+```bash
+ npx @ulixee/databox unpack [.dbxFile]
+```
+
+... or via Ulixee CLI:
+
+```bash
+ ulixee databox unpack [.dbxFile]
+```
+
+You must provide a path to a pre-packaged `.dbx` file (eg, `<pathToScript/scriptNameMinusExtension>.dbx`).
+
+#### CLI Options
+
+Options below show a short and long form.
+
+- `-w, --working-dir` `String`. The working for the given `.dbx` file. Defaults to a `.dbx.build/[scriptFilename]` directory next to the `.dbx` file.
 
 ## Databox Core Sandboxes
 

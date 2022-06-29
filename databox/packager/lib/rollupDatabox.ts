@@ -1,7 +1,5 @@
 import { rollup } from 'rollup';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
-import * as Path from 'path';
-import * as Fs from 'fs';
 import { terser } from 'rollup-plugin-terser';
 import sourcemaps from './sourcemaps';
 
@@ -21,31 +19,27 @@ export default async function rollupDatabox(
         !module.includes('/databox-for-') &&
         module !== 'awaited-dom',
     }),
-    commonjs(),
+    commonjs({ transformMixedEsModules: true, extensions: ['.js', '.ts'] }), // the ".ts" extension is required }),
     terser({ compress: false, mangle: false, format: { comments: false }, ecma: 2020 }),
   ];
 
   if (scriptPath.endsWith('.ts')) {
-    let tsconfig = options.tsconfig;
-    if (!tsconfig) {
-      tsconfig = findTsConfig(Path.dirname(scriptPath));
-      console.log('Packaging Databox: tried to find tsconfig in directory structure', { tsconfig });
-    }
-    plugins.splice(
-      2,
-      0,
+    plugins.unshift(
       typescript({
         compilerOptions: {
-          module: 'esnext',
+          composite: false,
           sourceMap: true,
           inlineSourceMap: false,
           inlineSources: true,
+          declaration: false,
+          checkJs: false,
         },
-        tsconfig,
+        outputToFilesystem: false,
+        tsconfig: options?.tsconfig,
       }),
     );
   } else {
-    plugins.splice(0, 0, sourcemaps());
+    plugins.unshift(sourcemaps());
   }
 
   try {
@@ -53,6 +47,18 @@ export default async function rollupDatabox(
     const bundle = await rollup({
       input: scriptPath,
       plugins,
+      onwarn: warning => {
+        if (warning.code === 'CIRCULAR_DEPENDENCY') return;
+        if (warning.code === 'PREFER_NAMED_EXPORTS') return;
+        if (warning.code === 'MIXED_EXPORTS') return;
+        if (warning.plugin === 'typescript') {
+          if (
+            warning.message.includes(`your configuration specifies a "module" other than "esnext"`)
+          )
+            return;
+        }
+        console.warn(warning.message, warning.code);
+      },
     });
 
     const outFn = options.dryRun ? 'generate' : 'write';
@@ -62,16 +68,9 @@ export default async function rollupDatabox(
       sourcemap: true,
       format: 'commonjs',
       generatedCode: 'es2015',
-      exports: 'default',
     });
 
     const [out] = output;
-    if (!out.exports.includes('default')) {
-      throw new Error(
-        'The Databox being packaged needs to have a default export that implements the Databox Specification.',
-      );
-    }
-
     const modules: string[] = [];
     for (const [module, details] of Object.entries(out.modules)) {
       if (details.renderedLength > 0) modules.push(module);
@@ -93,15 +92,4 @@ export default async function rollupDatabox(
     }
     throw error;
   }
-}
-
-function findTsConfig(path: string): string {
-  let last: string;
-  do {
-    last = path;
-    if (Fs.existsSync(`${path}/tsconfig.json`)) {
-      return `${path}/tsconfig.json`;
-    }
-    path = Path.dirname(path);
-  } while (path && path !== last);
 }

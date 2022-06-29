@@ -17,11 +17,11 @@ afterAll(Helpers.afterAll);
 
 test('it should be able to upload a databox and run it by hash', async () => {
   const packager = new Packager(require.resolve('./_testDatabox.js'));
-  await packager.build();
+  const dbx = await packager.build();
   const serverHost = await ulixeeServer.address;
-  await packager.upload(serverHost);
+  await dbx.upload(serverHost);
 
-  const databoxPackage = packager.package;
+  const manifest = packager.manifest;
 
   koaServer.get('/databox', ctx => {
     ctx.body = `<html><head><title>Databox!</title></head></html>`;
@@ -30,14 +30,17 @@ test('it should be able to upload a databox and run it by hash', async () => {
   await expect(
     remoteTransport.sendRequest({
       command: 'Databox.run',
-      args: [databoxPackage.manifest.scriptRollupHash, { url: `${koaServer.baseUrl}/databox` }],
+      args: [manifest.scriptVersionHash, { url: `${koaServer.baseUrl}/databox` }],
     }),
-  ).resolves.toEqual({ output: { title: 'Databox!' } });
+  ).resolves.toEqual({
+    output: { title: 'Databox!' },
+    latestVersionHash: manifest.scriptVersionHash,
+  });
 }, 45e3);
 
 test('it should throw an error if the default export is not a databox', async () => {
   const packager = new Packager(require.resolve('./_testDatabox2.js'));
-  await expect(
-    packager.build()
-  ).rejects.toThrow('The exported databox object must specify a runtime');
+  await expect(packager.build()).rejects.toThrow(
+    'The exported databox object must specify a runtime',
+  );
 }, 45e3);

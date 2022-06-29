@@ -10,17 +10,18 @@ import RunnerObject from './RunnerObject';
 const pkg = require('../package.json');
 
 export default class DataboxWrapper<TInput = IBasicInput, TOutput = any>
-extends DataboxWrapperAbstract<
-  DataboxInternal<TInput, TOutput>,
-  TOutput,
-  IDataboxForHeroRunOptions<TInput>,
-  IComponents<TInput, TOutput>,
-  RunnerObject<TInput, TOutput>
-> implements IDataboxWrapper {
-
+  extends DataboxWrapperAbstract<
+    DataboxInternal<TInput, TOutput>,
+    TOutput,
+    IDataboxForHeroRunOptions<TInput>,
+    IComponents<TInput, TOutput>,
+    RunnerObject<TInput, TOutput>
+  >
+  implements IDataboxWrapper
+{
   public override readonly runtimeName = pkg.name;
   public override readonly runtimeVersion = pkg.version;
-  
+
   public override async run(options: IDataboxForHeroRunOptions<TInput>): Promise<TOutput> {
     let databoxInternal: DataboxInternal<TInput, TOutput>;
     try {
@@ -45,7 +46,9 @@ extends DataboxWrapperAbstract<
     }
   }
 
-  protected createDataboxInternal(options: IDataboxForHeroRunOptions<TInput>): DataboxInternal<TInput, TOutput> {
+  protected createDataboxInternal(
+    options: IDataboxForHeroRunOptions<TInput>,
+  ): DataboxInternal<TInput, TOutput> {
     return new DataboxInternal(options, this.components.defaults);
   }
 }

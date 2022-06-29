@@ -8,3 +8,5 @@ export default new Databox({
     await hero.close();
   },
 });
+// test exporting another thing
+export { testFunction };
