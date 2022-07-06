@@ -8,6 +8,8 @@ import DataboxesDb from './DataboxesDb';
 import { IDataboxRecord } from './DataboxesTable';
 import InvalidScriptVersionHistoryError from './InvalidScriptVersionHistoryError';
 import DataboxNotFoundError from './DataboxNotFoundError';
+import DataboxManifest from './DataboxManifest';
+import MissingLinkedScriptVersionsError from './MissingLinkedScriptVersionsError';
 
 export default class PackageRegistry {
   private readonly databoxesDb: DataboxesDb;
@@ -18,7 +20,7 @@ export default class PackageRegistry {
 
   public getByHash(hash: string): IDataboxRecord & { path: string; latestVersionHash: string } {
     const path = this.getDataboxPathForHash(hash);
-    const entry = this.databoxesDb.databoxes.getByHash(hash);
+    const entry = this.databoxesDb.databoxes.getByVersionHash(hash);
     const latestVersionHash = this.getLatestVersion(hash);
 
     if (!entry) {
@@ -35,19 +37,29 @@ export default class PackageRegistry {
     return this.databoxesDb.databoxVersions.getLatestVersion(hash);
   }
 
-  public async save(databoxTmpPath: string): Promise<void> {
-    const manifest = await readFileAsJson<IDataboxManifest>(`${databoxTmpPath}/databox-manifest.json`);
+  public async save(databoxTmpPath: string, allowNewLinkedVersionHistory = false): Promise<void> {
+    const manifest = await readFileAsJson<IDataboxManifest>(
+      `${databoxTmpPath}/databox-manifest.json`,
+    );
     if (!manifest) throw new Error('Could not read the provided .dbx manifest.');
 
     this.checkDataboxRuntimeInstalled(manifest.runtimeName, manifest.runtimeVersion);
     // validate hash
     const scriptBuffer = await Fs.readFile(`${databoxTmpPath}/databox.js`);
-    const expectedHash = Hasher.hashDatabox(scriptBuffer);
-    if (manifest.scriptVersionHash !== expectedHash) {
+    const expectedScriptHash = Hasher.hash(scriptBuffer, 'scr');
+    if (manifest.scriptHash !== expectedScriptHash) {
       throw new Error(
-        'Mismatched Databox scriptVersionHash provided. Should be SHA3 256 in Bech32m encoding.',
+        'Mismatched Databox scriptHash provided. Should be SHA3 256 in Bech32m encoding.',
       );
     }
+    const expectedVersionHash = DataboxManifest.createVersionHash(manifest);
+    if (expectedVersionHash !== manifest.versionHash) {
+      throw new Error(
+        'Mismatched Databox versionHash provided. Should be SHA3 256 in Bech32m encoding.',
+      );
+    }
+
+    if (!allowNewLinkedVersionHistory) this.checkMatchingEntrypointVersions(manifest);
 
     this.checkVersionHistoryMatch(manifest);
 
@@ -73,32 +85,46 @@ Please try to re-upload after testing with the version available on this server.
     }
   }
 
+  private checkMatchingEntrypointVersions(manifest: IDataboxManifest): void {
+    if (manifest.linkedVersions.length) return;
+    const versionWithEntrypoint = this.databoxesDb.databoxes.findWithEntrypoint(
+      manifest.scriptEntrypoint,
+    );
+    if (versionWithEntrypoint) {
+      const baseHash = this.databoxesDb.databoxVersions.getBaseHash(
+        versionWithEntrypoint.versionHash,
+      );
+      const fullVersionHistory = this.databoxesDb.databoxVersions.getPreviousVersions(baseHash);
+      throw new MissingLinkedScriptVersionsError(
+        `You uploaded a script without any link to previous version history.`,
+        fullVersionHistory,
+      );
+    }
+  }
+
   private checkVersionHistoryMatch(manifest: IDataboxManifest): void {
-    if (Object.keys(manifest.scriptVersionHashToCreatedDate).length <= 1) return;
+    const versions = manifest.linkedVersions;
+    if (!versions.length) return;
 
     const storedPreviousVersions = this.databoxesDb.databoxVersions.getPreviousVersions(
-      Object.keys(manifest.scriptVersionHashToCreatedDate),
+      versions[versions.length - 1]?.versionHash,
     );
 
     let includesAllCurrentlyStoredVersions = true;
-    for (const scriptHash of Object.keys(storedPreviousVersions)) {
-      if (!manifest.scriptVersionHashToCreatedDate[scriptHash]) {
+    const fullVersionHistory = [...manifest.linkedVersions];
+    for (const versionEntry of storedPreviousVersions) {
+      fullVersionHistory.push(versionEntry);
+      if (!manifest.linkedVersions.some(x => x.versionHash === versionEntry.versionHash)) {
         includesAllCurrentlyStoredVersions = false;
-        break;
       }
     }
 
     // if previous version is not already set to this one, or set to itself, we have a mismatch
     if (!includesAllCurrentlyStoredVersions) {
-      const fullVersionHistory = Object.entries({
-        ...manifest.scriptVersionHashToCreatedDate,
-        ...storedPreviousVersions,
-      });
-      fullVersionHistory.sort((a, b) => b[1] - a[1]);
+      fullVersionHistory.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
       throw new InvalidScriptVersionHistoryError(
-        `The currently uploaded script has a different version history.`,
-        // @ts-ignore
-        Object.fromEntries(fullVersionHistory),
+        `The uploaded Databox has a different version history than your local version.`,
+        fullVersionHistory,
       );
     }
   }
@@ -116,13 +142,26 @@ Please try to re-upload after testing with the version available on this server.
   }
 
   private async savePackage(manifest: IDataboxManifest, tmpDir: string): Promise<string> {
-    const hash = manifest.scriptVersionHash;
+    const hash = manifest.versionHash;
     const destination = this.getPathForHash(hash);
 
     if (await existsAsync(destination)) {
       await Fs.copyFile(`${tmpDir}/databox-manifest.json`, this.getManifestPathForHash(hash));
     } else {
-      await Fs.rename(tmpDir, destination);
+      try {
+        // Windows has issues renaming cross-drive, so we need to fallback to copying.
+        await Fs.rename(tmpDir, destination);
+      } catch (error) {
+        await Fs.mkdir(destination, { recursive: true });
+        await Promise.all([
+          Fs.copyFile(`${tmpDir}/databox.js`, this.getDataboxPathForHash(hash)),
+          Fs.copyFile(`${tmpDir}/databox.js.map`, `${this.getDataboxPathForHash(hash)}.map`).catch(
+            () => null,
+          ),
+          Fs.copyFile(`${tmpDir}/databox-manifest.json`, this.getManifestPathForHash(hash)),
+        ]);
+        await Fs.rm(tmpDir, { recursive: true });
+      }
     }
 
     this.saveManifest(manifest);
@@ -132,9 +171,29 @@ Please try to re-upload after testing with the version available on this server.
 
   private saveManifest(manifest: IDataboxManifest): IDataboxRecord {
     this.databoxesDb.databoxes.save(manifest);
-    for (const [version, date] of Object.entries(manifest.scriptVersionHashToCreatedDate)) {
-      this.databoxesDb.databoxVersions.save(version, date, manifest.scriptVersionHash);
+    if (manifest.linkedVersions.length) {
+      const baseVersionHash =
+        manifest.linkedVersions[manifest.linkedVersions.length - 1].versionHash;
+      for (const version of manifest.linkedVersions) {
+        if (version.versionHash === baseVersionHash) continue;
+        this.databoxesDb.databoxVersions.save(
+          version.versionHash,
+          version.versionTimestamp,
+          baseVersionHash,
+        );
+      }
+      this.databoxesDb.databoxVersions.save(
+        manifest.versionHash,
+        manifest.versionTimestamp,
+        baseVersionHash,
+      );
+    } else {
+      this.databoxesDb.databoxVersions.save(
+        manifest.versionHash,
+        manifest.versionTimestamp,
+        manifest.versionHash,
+      );
     }
-    return this.databoxesDb.databoxes.getByHash(manifest.scriptVersionHash);
+    return this.databoxesDb.databoxes.getByVersionHash(manifest.versionHash);
   }
 }

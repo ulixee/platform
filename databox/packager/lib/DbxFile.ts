@@ -2,8 +2,8 @@ import * as Tar from 'tar';
 import * as Fs from 'fs/promises';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import * as Path from 'path';
+import DataboxManifest from '@ulixee/databox-core/lib/DataboxManifest';
 import ConnectionToDataboxCore from './ConnectionToDataboxCore';
-import DataboxManifest from './DataboxManifest';
 
 export default class DbxFile {
   public readonly workingDirectory: string;
@@ -58,22 +58,26 @@ export default class DbxFile {
     if (!keepOpen) await this.close();
   }
 
-  public async upload(serverHost: string, timeoutMs = 120e3): Promise<void> {
+  public async close(): Promise<void> {
+    if (await existsAsync(this.workingDirectory)) {
+      await Fs.rm(this.workingDirectory, { recursive: true });
+    }
+  }
+
+  public async upload(
+    serverHost: string,
+    allowNewScriptHistory = false,
+    timeoutMs = 120e3,
+  ): Promise<void> {
     const connection = ConnectionToDataboxCore.remote(serverHost);
     const compressedPackage = await Fs.readFile(this.dbxPath);
     try {
       await connection.sendRequest(
-        { command: 'Databox.upload', args: [compressedPackage] },
+        { command: 'Databox.upload', args: [compressedPackage, allowNewScriptHistory] },
         timeoutMs,
       );
     } finally {
       await connection.disconnect();
-    }
-  }
-
-  public async close(): Promise<void> {
-    if (await existsAsync(this.workingDirectory)) {
-      await Fs.rm(this.workingDirectory, { recursive: true });
     }
   }
 

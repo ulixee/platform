@@ -33,7 +33,7 @@ export default class SelectorRecommendations {
     if (!(await existsAsync(selectorMapsPath))) {
       Fs.mkdirSync(Path.dirname(selectorMapsPath));
     } else {
-      selectorMaps = await readFileAsJson<ISavedSelectors>(selectorMapsPath).catch(() => ({}));
+      selectorMaps = (await readFileAsJson<ISavedSelectors>(selectorMapsPath)) ?? {};
     }
     selectorMaps[url] ??= {};
     selectorMaps[url][map.nodePath] = map;

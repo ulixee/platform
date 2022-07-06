@@ -1,9 +1,9 @@
 import { registerSerializableErrorType } from '@ulixee/commons/lib/TypeSerializer';
-import { IVersionHashToCreatedTimestamp } from './DataboxVersionsTable';
+import { IVersionHistoryEntry } from '@ulixee/databox-interfaces/IDataboxManifest';
 
 export default class InvalidScriptVersionHistoryError extends Error {
   public code = 'InvalidScriptVersionHistoryError';
-  constructor(message: string, readonly versionHashHistory?: IVersionHashToCreatedTimestamp) {
+  constructor(message: string, readonly versionHistory?: IVersionHistoryEntry[]) {
     super(message);
     this.name = 'InvalidScriptVersionHistoryError';
   }

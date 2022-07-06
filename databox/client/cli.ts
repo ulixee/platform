@@ -8,7 +8,7 @@ export default function databoxCommands(): Command {
 
   databoxCommand
     .command('build')
-    .description('Build a Databox into a single ".dbx" file and generate a manifest.')
+    .description('Build a Databox into a single ".dbx" file.')
     .argument(
       '<path>',
       'The path of the entrypoint to the Databox. Must have a default export that is a DataboxWrapper.',
@@ -19,21 +19,29 @@ export default function databoxCommands(): Command {
       'Upload this package to the given host server. Will try to auto-connect if none specified.',
     )
     .option(
+      '-c, --clear-version-history',
+      'Clear out any version history for this script entrypoint',
+      false,
+    )
+    .option(
       '-s, --compiled-source-path <path>',
       'Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).',
     )
     .option(
       '-t, --tsconfig <path>',
-      'A path to a TypeScript config file if needed. Will attempt to be auto-located based on the entrypoint if it ends in ".ts"',
+      'A path to a TypeScript config file if needed. Will be auto-located based on the entrypoint if it ends in ".ts"',
     )
-    .action(async (path, { tsconfig, compiledSourcePath, uploadHost, upload }) => {
-      await getPackagerCommands().buildPackage(path, {
-        tsconfig,
-        compiledSourcePath,
-        uploadHost,
-        upload,
-      });
-    });
+    .action(
+      async (path, { tsconfig, compiledSourcePath, uploadHost, upload, clearVersionHistory }) => {
+        await getPackagerCommands().buildPackage(path, {
+          tsconfig,
+          compiledSourcePath,
+          uploadHost,
+          upload,
+          clearVersionHistory,
+        });
+      },
+    );
 
   databoxCommand
     .command('open')
@@ -49,7 +57,7 @@ export default function databoxCommands(): Command {
     .argument('<dbxPath>', 'The path to the packaged .dbx file.')
     .option(
       '-x, --discard-changes',
-      'The working for the given .dbx file. Defaults to a `.dbx.build/[scriptFilename]` directory next to the dbx file.',
+      'Remove the working directory without saving any changes',
     )
     .action(async (dbxPath, { discardChanges }) => {
       await getPackagerCommands().closeDbx(dbxPath, discardChanges);
@@ -63,8 +71,13 @@ export default function databoxCommands(): Command {
       '-u, --upload-host <host>',
       'Upload this package to the given host server. Will try to auto-connect if none specified.',
     )
-    .action(async (packagePath, { uploadHost }) => {
-      await getPackagerCommands().upload(packagePath, { uploadHost });
+    .option(
+      '-a, --allow-new-version-history',
+      'Allow uploaded Databox to create a new version history for the script entrypoint.',
+      false,
+    )
+    .action(async (packagePath, { uploadHost, allowNewVersionHistory }) => {
+      await getPackagerCommands().upload(packagePath, { uploadHost, allowNewVersionHistory });
     });
 
   return databoxCommand;

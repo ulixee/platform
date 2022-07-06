@@ -69,6 +69,8 @@ During bootup, any Packaged Databox files (`.dbx`) in this directory will be aut
 
 - ULX_DATABOX_DIR `string`. Absolute path to a directory containing Databoxes. Defaults to `<CACHE>/ulixee/databoxes`.
 
+#### Cache Directory {#cache}
+
 CACHE is determined as:
 
 - Mac: ~/Library/Cache

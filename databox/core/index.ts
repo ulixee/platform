@@ -9,6 +9,7 @@ import * as Path from 'path';
 import * as Os from 'os';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
+import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import env from './env';
 import PackageRegistry from './lib/PackageRegistry';
 import LocalDataboxProcess from './lib/LocalDataboxProcess';
@@ -58,7 +59,10 @@ export default class DataboxCore {
     await this.installManuallyUploadedDbxFiles();
   }
 
-  public static async upload(compressedDatabox: Buffer): Promise<void> {
+  public static async upload(
+    compressedDatabox: Buffer,
+    allowNewLinkedVersionHistory: boolean,
+  ): Promise<void> {
     if (this.isClosing)
       throw new CanceledPromiseError('Server shutting down. Not accepting uploads.');
 
@@ -68,7 +72,7 @@ export default class DataboxCore {
       (async () => {
         try {
           await unpackDbx(compressedDatabox, tmpDir);
-          await this.getPackageRegistry().save(tmpDir);
+          await this.getPackageRegistry().save(tmpDir, allowNewLinkedVersionHistory);
           // shouldn't be here anymore, but just in case
         } finally {
           await Fs.rmdir(tmpDir).catch(() => null);
@@ -97,10 +101,12 @@ export default class DataboxCore {
 
     const manifest: IDataboxManifest = {
       scriptEntrypoint: databox.scriptEntrypoint,
-      scriptVersionHash: databox.scriptHash,
+      versionHash: databox.versionHash,
+      versionTimestamp: Date.now(),
+      scriptHash: databox.scriptHash,
       runtimeVersion: databox.runtimeVersion,
       runtimeName: databox.runtimeName,
-      scriptVersionHashToCreatedDate: {},
+      linkedVersions: [],
     };
 
     return await this.trackRun(
@@ -109,7 +115,7 @@ export default class DataboxCore {
     );
   }
 
-  public static async runLocalScript(scriptPath: string, input?: any): Promise<{ output: any }> {
+  public static async runLocalScript(scriptPath: string, input?: any): Promise<{ output: any, latestVersionHash: string }> {
     const databoxProcess = new LocalDataboxProcess(scriptPath);
     const runtime = await databoxProcess.fetchRuntime();
     const runner = this.coreRuntimesByName[runtime.name];
@@ -160,6 +166,7 @@ export default class DataboxCore {
   }
 
   public static async installManuallyUploadedDbxFiles(): Promise<void> {
+    if (!(await existsAsync(this.databoxesDir))) return;
     for (const file of await Fs.readdir(this.databoxesDir)) {
       if (!file.endsWith('.dbx')) continue;
       const path = Path.join(this.databoxesDir, file);
@@ -170,7 +177,7 @@ export default class DataboxCore {
       const tmpDir = await Fs.mkdtemp(this.databoxesTmpDir);
       try {
         await unpackDbxFile(path, tmpDir, true);
-        await this.getPackageRegistry().save(tmpDir);
+        await this.getPackageRegistry().save(tmpDir, false);
         await Fs.unlink(path);
         // shouldn't be here anymore, but just in case
       } finally {

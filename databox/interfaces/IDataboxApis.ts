@@ -1,5 +1,5 @@
 export interface IDataboxApiHandlerFns {
-  upload(dbxBuffer: Buffer): Promise<void>;
+  upload(dbxBuffer: Buffer, allowNewLinkedVersionHistory: boolean): Promise<void>;
   run(scriptHash: string, input?: any): Promise<{ output?: any; error?: any }>;
   runLocalScript(scriptHash: string, input?: any): Promise<{ output?: any; error?: any }>;
 }

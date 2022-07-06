@@ -88,8 +88,13 @@ releasedToolNames.forEach(x => {
 
 const router = createRouter({
   scrollBehavior(to, from, savedPosition) {
-    if (to.hash) return;
-    
+    if (to.hash) {
+      return {
+        el: to.hash,
+        top: 70,
+      };
+    }
+
     if (savedPosition) {
       return savedPosition
     } else {

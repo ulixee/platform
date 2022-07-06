@@ -1,11 +1,10 @@
-import { existsSync, promises as Fs } from 'fs';
 import * as Path from 'path';
 import * as Hasher from '@ulixee/commons/lib/Hasher';
 import LocalDataboxProcess from '@ulixee/databox-core/lib/LocalDataboxProcess';
-import { existsAsync } from '@ulixee/commons/lib/fileUtils';
+import DataboxManifest from '@ulixee/databox-core/lib/DataboxManifest';
+import { findProjectPathSync } from '@ulixee/commons/lib/dirUtils';
 import rollupDatabox from './lib/rollupDatabox';
 import DbxFile from './lib/DbxFile';
-import DataboxManifest from './lib/DataboxManifest';
 
 export default class DataboxPackager {
   public manifest: DataboxManifest;
@@ -20,7 +19,7 @@ export default class DataboxPackager {
   private readonly entrypoint: string;
   private readonly filename: string;
 
-  constructor(entrypoint: string) {
+  constructor(entrypoint: string, private logToConsole = false) {
     this.entrypoint = Path.resolve(entrypoint);
     const entrypointName = Path.basename(this.entrypoint);
     this.filename = entrypointName.replace(Path.extname(entrypointName), '');
@@ -32,23 +31,16 @@ export default class DataboxPackager {
     tsconfig?: string;
     compiledSourcePath?: string;
     keepOpen?: boolean;
+    createNewVersionHistory?: boolean;
   }): Promise<DbxFile> {
     const dbx = new DbxFile(this.dbxPath);
     if ((await dbx.exists()) && !(await dbx.isOpen())) {
       await dbx.open(true);
     }
-    const sourceManifest = Path.join(
-      Path.dirname(this.entrypoint),
-      this.filename,
-      '-manifest.json',
-    );
-    if (await existsAsync(sourceManifest)) {
-      await Fs.copyFile(sourceManifest, this.manifest.path);
-    }
 
     const { sourceCode, sourceMap } = await this.rollup(options);
 
-    await this.createOrUpdateManifest(sourceCode, sourceMap);
+    await this.createOrUpdateManifest(sourceCode, sourceMap, options?.createNewVersionHistory);
     await dbx.save(options?.keepOpen);
 
     return dbx;
@@ -68,23 +60,29 @@ export default class DataboxPackager {
   public async createOrUpdateManifest(
     sourceCode: string,
     sourceMap: string,
+    createNewVersionHistory = false,
   ): Promise<DataboxManifest> {
     const runtime = await this.findDataboxRuntime();
     const relativeScriptPath = this.findRelativeScriptPath();
     if (!runtime || !runtime.name) {
-      throw new Error('The exported databox object must specify a runtime');
+      throw new Error('The exported Databox object must specify a runtime');
     }
     if (!runtime.version) {
-      throw new Error('The databox does not specify a runtime version');
+      throw new Error('The Databox does not specify a runtime version');
     }
 
-    const scriptVersionHash = Hasher.hashDatabox(Buffer.from(sourceCode));
-    await this.manifest.update(Date.now(), {
-      scriptEntrypoint: relativeScriptPath,
+    const scriptVersionHash = Hasher.hash(Buffer.from(sourceCode), 'scr');
+    await this.manifest.update(
       scriptVersionHash,
-      runtimeName: runtime.name,
-      runtimeVersion: runtime.version,
-    });
+      relativeScriptPath,
+      Date.now(),
+      runtime.name,
+      runtime.version,
+      this.logToConsole ? console.log : undefined,
+    );
+    if (createNewVersionHistory) {
+      await this.manifest.setLinkedVersions([]);
+    }
     this.script = sourceCode;
     this.sourceMap = sourceMap;
     return this.manifest;
@@ -100,19 +98,7 @@ export default class DataboxPackager {
   }
 
   private findRelativeScriptPath(): string {
-    const projectPath = Path.resolve(DataboxPackager.findProjectPath(this.entrypoint));
+    const projectPath = Path.resolve(findProjectPathSync(this.entrypoint));
     return Path.relative(`${projectPath}/..`, this.entrypoint);
-  }
-
-  public static findProjectPath(entrypoint: string): string {
-    let last: string;
-    let path = Path.resolve(entrypoint);
-    do {
-      last = path;
-      if (existsSync(Path.join(path, 'package.json'))) {
-        return path;
-      }
-      path = Path.dirname(path);
-    } while (path && path !== last);
   }
 }

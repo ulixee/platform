@@ -1,16 +1,16 @@
 import * as Fs from 'fs/promises';
 import * as Path from 'path';
-import * as os from 'os';
 import { existsSync } from 'fs';
+import DataboxManifest from '@ulixee/databox-core/lib/DataboxManifest';
 import DataboxPackager from '../index';
 import DbxFile from '../lib/DbxFile';
 
 beforeEach(async () => {
-  if (existsSync(`${__dirname}/assets/historyTest.js.dbx.build`)) {
-    await Fs.rm(`${__dirname}/assets/historyTest.js.dbx.build`, { recursive: true });
+  if (existsSync(`${__dirname}/assets/historyTest.dbx.build`)) {
+    await Fs.rm(`${__dirname}/assets/historyTest.dbx.build`, { recursive: true });
   }
-  if (existsSync(`${__dirname}/assets/historyTest.js.dbx`))
-    await Fs.unlink(`${__dirname}/assets/historyTest.js.dbx`);
+  if (existsSync(`${__dirname}/assets/historyTest.dbx`))
+    await Fs.unlink(`${__dirname}/assets/historyTest.dbx`);
 });
 
 let workingDirectory: string;
@@ -41,11 +41,13 @@ test('it should generate a relative script entrypoint', async () => {
   ).resolves.toBeTruthy();
 
   expect(packager.manifest.toJSON()).toEqual({
+    linkedVersions: [],
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `historyTest.js`),
-    scriptVersionHash: expect.any(String),
+    scriptHash: expect.any(String),
     runtimeName: '@ulixee/databox-for-hero',
     runtimeVersion: require('../package.json').version,
-    scriptVersionHashToCreatedDate: { [packager.manifest.scriptVersionHash]: expect.any(Number) },
+    versionHash: DataboxManifest.createVersionHash(packager.manifest),
+    versionTimestamp: expect.any(Number),
   });
   expect((await Fs.stat(`${__dirname}/assets/historyTest.dbx`)).isFile()).toBeTruthy();
 
@@ -59,27 +61,57 @@ test('should be able to modify the local built files for uploading', async () =>
   dbxFile = packager.dbxPath;
 
   await packager.build({ keepOpen: true });
-  packager.manifest.scriptVersionHashToCreatedDate['extra-version'] = Date.now();
+  packager.manifest.linkedVersions.push({
+    versionHash: 'dbxExtra',
+    versionTimestamp: Date.now(),
+  });
   await packager.manifest.save();
 
   const packager2 = new DataboxPackager(`${__dirname}/assets/historyTest.js`);
   await packager2.build({ keepOpen: true });
-  expect(packager2.manifest.scriptVersionHashToCreatedDate['extra-version']).toBeTruthy();
+  expect(packager2.manifest.linkedVersions.some(x => x.versionHash === 'dbxExtra')).toBeTruthy();
 });
 
-test.todo('should be able to read a custom manifest');
+test('should be able to read a databox manifest next to an entrypoint', async () => {
+  const packager = new DataboxPackager(`${__dirname}/assets/customManifest.js`);
+  workingDirectory = new DbxFile(dbxFile).workingDirectory;
+  dbxFile = packager.dbxPath;
 
-test.todo('should merge custom manifest, dbx file, project files, then global settings');
+  await packager.build({ keepOpen: true });
+  expect(packager.manifest.runtimeVersion).toBe('1.1.1');
+});
+
+test('should merge custom manifests', async () => {
+  const packager = new DataboxPackager(`${__dirname}/assets/customManifest.js`);
+  workingDirectory = new DbxFile(dbxFile).workingDirectory;
+  dbxFile = packager.dbxPath;
+
+  const projectConfig = Path.resolve(__dirname, '../..', '.ulixee');
+  await Fs.mkdir(projectConfig, { recursive: true }).catch(() => null);
+  await Fs.writeFile(
+    `${projectConfig}/databoxes.json`,
+    JSON.stringify({
+      [Path.join('..', 'packager', 'test', 'assets', 'customManifest-manifest.json')]: {
+        runtimeVersion: '1.1.2',
+        runtimeName: 'projectOverrider',
+      },
+    }),
+  );
+
+  await packager.build({ keepOpen: true });
+  // should take the closest (entrypoint override) over the project config
+  expect(packager.manifest.runtimeVersion).toBe('1.1.1');
+  expect(packager.manifest.runtimeName).toBe('projectOverrider');
+});
 
 test('should build a version history with a new version', async () => {
   const packager = new DataboxPackager(`${__dirname}/assets/historyTest.js`);
-  await packager.build();
-  const dbx = new DbxFile(dbxFile);
+  const dbx = await packager.build();
+  if (packager.manifest.linkedVersions.length) {
+    await packager.manifest.setLinkedVersions([]);
+  }
   workingDirectory = dbx.workingDirectory;
   dbxFile = packager.dbxPath;
-
-  await dbx.open();
-
   await Fs.writeFile(
     `${__dirname}/assets/_historytestManual.js`,
     `const Databox=require("@ulixee/databox-for-hero");
@@ -92,10 +124,10 @@ module.exports=new Databox(({output}) => {
     compiledSourcePath: Path.resolve(`${__dirname}/assets/_historytestManual.js`),
   });
   await Fs.unlink(`${__dirname}/assets/_historytestManual.js`);
-  expect(Object.keys(packager2.manifest.scriptVersionHashToCreatedDate)).toHaveLength(2);
+  expect(packager2.manifest.linkedVersions).toHaveLength(1);
 });
 
-test('should be able to "rebase" the version history', async () => {
+test('should be able to "link" the version history', async () => {
   await Fs.writeFile(
     `${__dirname}/assets/historyTest2.js`,
     `const Databox=require("@ulixee/databox-for-hero");
@@ -107,13 +139,12 @@ module.exports=new Databox(({output}) => {
   await packager.build({ keepOpen: true });
   dbxFile = packager.dbxPath;
 
-  await packager.manifest.rebase({
-    dbx1: Date.now() - 25e3,
-    dbx2: Date.now() - 30e3,
-    dbx3: Date.now() - 60e3,
-  });
-  expect(Object.keys(packager.manifest.scriptVersionHashToCreatedDate)).toEqual([
-    packager.manifest.scriptVersionHash,
+  await packager.manifest.setLinkedVersions([
+    { versionHash: 'dbx1', versionTimestamp: Date.now() - 25e3 },
+    { versionHash: 'dbx2', versionTimestamp: Date.now() - 30e3 },
+    { versionHash: 'dbx3', versionTimestamp: Date.now() - 60e3 },
+  ]);
+  expect(packager.manifest.linkedVersions.map(x => x.versionHash)).toEqual([
     'dbx1',
     'dbx2',
     'dbx3',
