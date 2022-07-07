@@ -10,18 +10,25 @@ import InvalidScriptVersionHistoryError from './InvalidScriptVersionHistoryError
 import DataboxNotFoundError from './DataboxNotFoundError';
 import DataboxManifest from './DataboxManifest';
 import MissingLinkedScriptVersionsError from './MissingLinkedScriptVersionsError';
+import { unpackDbxFile } from './dbxUtils';
 
 export default class PackageRegistry {
   private readonly databoxesDb: DataboxesDb;
 
-  constructor(readonly storageDir: string) {
+  constructor(readonly storageDir: string, readonly workingDir: string) {
     this.databoxesDb = new DataboxesDb(storageDir);
   }
 
-  public getByHash(hash: string): IDataboxRecord & { path: string; latestVersionHash: string } {
-    const path = this.getDataboxPathForHash(hash);
-    const entry = this.databoxesDb.databoxes.getByVersionHash(hash);
-    const latestVersionHash = this.getLatestVersion(hash);
+  public hasVersionHash(versionHash: string): boolean {
+    return !!this.databoxesDb.databoxes.getByVersionHash(versionHash);
+  }
+
+  public getByVersionHash(
+    versionHash: string,
+  ): IDataboxRecord & { path: string; latestVersionHash: string } {
+    const path = this.getExtractedDataboxPath(versionHash);
+    const entry = this.databoxesDb.databoxes.getByVersionHash(versionHash);
+    const latestVersionHash = this.getLatestVersion(versionHash);
 
     if (!entry) {
       throw new DataboxNotFoundError('Databox package not found on server.', latestVersionHash);
@@ -33,11 +40,23 @@ export default class PackageRegistry {
     };
   }
 
+  public async openDbx(manifest: IDataboxManifest): Promise<void> {
+    const dbxPath = this.getDbxPath(manifest);
+    const workingDir = this.getDataboxWorkingDirectory(manifest.versionHash);
+    if (await existsAsync(workingDir)) return;
+    await Fs.mkdir(workingDir, { recursive: true });
+    await unpackDbxFile(dbxPath, workingDir);
+  }
+
   public getLatestVersion(hash: string): string {
     return this.databoxesDb.databoxVersions.getLatestVersion(hash);
   }
 
-  public async save(databoxTmpPath: string, allowNewLinkedVersionHistory = false): Promise<void> {
+  public async save(
+    databoxTmpPath: string,
+    rawBuffer: Buffer,
+    allowNewLinkedVersionHistory = false,
+  ): Promise<{ dbxPath: string }> {
     const manifest = await readFileAsJson<IDataboxManifest>(
       `${databoxTmpPath}/databox-manifest.json`,
     );
@@ -63,7 +82,17 @@ export default class PackageRegistry {
 
     this.checkVersionHistoryMatch(manifest);
 
-    await this.savePackage(manifest, databoxTmpPath);
+    // move to an active working dir path
+    await Fs.rename(databoxTmpPath, this.getDataboxWorkingDirectory(manifest.versionHash));
+
+    const dbxPath = this.getDbxPath(manifest);
+    if (!(await existsAsync(dbxPath))) {
+      await Fs.writeFile(dbxPath, rawBuffer);
+    }
+
+    this.saveManifestMetadata(manifest);
+
+    return { dbxPath };
   }
 
   private checkDataboxRuntimeInstalled(name: string, version: string): void {
@@ -129,47 +158,23 @@ Please try to re-upload after testing with the version available on this server.
     }
   }
 
-  private getPathForHash(hash: string): string {
-    return Path.resolve(this.storageDir, hash);
+  private getDbxPath(manifest: IDataboxManifest): string {
+    const entrypoint = Path.basename(
+      manifest.scriptEntrypoint,
+      Path.extname(manifest.scriptEntrypoint),
+    );
+    return Path.resolve(this.storageDir, `${entrypoint}@${manifest.versionHash}.dbx`);
   }
 
-  private getManifestPathForHash(hash: string): string {
-    return Path.resolve(this.getPathForHash(hash), 'databox-manifest.json');
+  private getDataboxWorkingDirectory(versionHash: string): string {
+    return Path.resolve(this.workingDir, versionHash);
   }
 
-  private getDataboxPathForHash(hash: string): string {
-    return Path.resolve(this.getPathForHash(hash), 'databox.js');
+  private getExtractedDataboxPath(versionHash: string): string {
+    return Path.resolve(this.getDataboxWorkingDirectory(versionHash), 'databox.js');
   }
 
-  private async savePackage(manifest: IDataboxManifest, tmpDir: string): Promise<string> {
-    const hash = manifest.versionHash;
-    const destination = this.getPathForHash(hash);
-
-    if (await existsAsync(destination)) {
-      await Fs.copyFile(`${tmpDir}/databox-manifest.json`, this.getManifestPathForHash(hash));
-    } else {
-      try {
-        // Windows has issues renaming cross-drive, so we need to fallback to copying.
-        await Fs.rename(tmpDir, destination);
-      } catch (error) {
-        await Fs.mkdir(destination, { recursive: true });
-        await Promise.all([
-          Fs.copyFile(`${tmpDir}/databox.js`, this.getDataboxPathForHash(hash)),
-          Fs.copyFile(`${tmpDir}/databox.js.map`, `${this.getDataboxPathForHash(hash)}.map`).catch(
-            () => null,
-          ),
-          Fs.copyFile(`${tmpDir}/databox-manifest.json`, this.getManifestPathForHash(hash)),
-        ]);
-        await Fs.rm(tmpDir, { recursive: true });
-      }
-    }
-
-    this.saveManifest(manifest);
-
-    return hash;
-  }
-
-  private saveManifest(manifest: IDataboxManifest): IDataboxRecord {
+  private saveManifestMetadata(manifest: IDataboxManifest): IDataboxRecord {
     this.databoxesDb.databoxes.save(manifest);
     if (manifest.linkedVersions.length) {
       const baseVersionHash =

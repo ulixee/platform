@@ -22,7 +22,7 @@ type IDataboxConnectionToClient = ConnectionToClient<IDataboxApis, {}>;
 export default class DataboxCore {
   public static connections = new Set<IDataboxConnectionToClient>();
   public static databoxesDir: string;
-  public static databoxesTmpDir = Path.join(Os.tmpdir(), 'dbx-');
+  public static databoxesTmpDir = Path.join(Os.tmpdir(), 'ulixee', 'databox');
   public static maxRuntimeMs = 10 * 60e3; // 10 mins
   public static waitForDataboxCompletionOnShutdown = false;
   public static isClosing: Promise<void>;
@@ -38,6 +38,8 @@ export default class DataboxCore {
     'Databox.runLocalScript': DataboxCore.runLocalScript.bind(this),
   };
 
+  private static isStarted = new Resolvable<void>();
+
   public static addConnection(
     transport: ITransportToClient<IDataboxApis, {}>,
   ): IDataboxConnectionToClient {
@@ -52,11 +54,16 @@ export default class DataboxCore {
   }
 
   public static async start(): Promise<void> {
+    if (this.isStarted.isResolved) return this.isStarted.promise;
     this.databoxesDir ??= env.databoxStorage;
     for (const runner of Object.values(this.coreRuntimesByName)) {
       await runner.start(this.databoxesDir);
     }
+    if (!(await existsAsync(this.databoxesTmpDir))) {
+      await Fs.mkdir(this.databoxesTmpDir, { recursive: true });
+    }
     await this.installManuallyUploadedDbxFiles();
+    this.isStarted.resolve();
   }
 
   public static async upload(
@@ -66,13 +73,18 @@ export default class DataboxCore {
     if (this.isClosing)
       throw new CanceledPromiseError('Server shutting down. Not accepting uploads.');
 
-    const tmpDir = await Fs.mkdtemp(this.databoxesTmpDir);
+    await this.start();
+    const tmpDir = await Fs.mkdtemp(`${this.databoxesTmpDir}/`);
 
     return await this.trackUpload(
       (async () => {
         try {
           await unpackDbx(compressedDatabox, tmpDir);
-          await this.getPackageRegistry().save(tmpDir, allowNewLinkedVersionHistory);
+          await this.getPackageRegistry().save(
+            tmpDir,
+            compressedDatabox,
+            allowNewLinkedVersionHistory,
+          );
           // shouldn't be here anymore, but just in case
         } finally {
           await Fs.rmdir(tmpDir).catch(() => null);
@@ -82,13 +94,13 @@ export default class DataboxCore {
   }
 
   public static async run(
-    scriptHash: string,
+    versionHash: string,
     input?: any,
   ): Promise<{ output: any; latestVersionHash: string }> {
     if (this.isClosing)
       throw new CanceledPromiseError('Server shutting down. Not accepting new work');
     const packageRegistry = this.getPackageRegistry();
-    const databox = packageRegistry.getByHash(scriptHash);
+    const databox = packageRegistry.getByVersionHash(versionHash);
     const runner = this.coreRuntimesByName[databox.runtimeName];
     if (!runner) {
       throw new Error(`Server does not support required databox runtime: ${databox.runtimeName}`);
@@ -109,13 +121,20 @@ export default class DataboxCore {
       linkedVersions: [],
     };
 
+    if (!(await existsAsync(databox.path))) {
+      await packageRegistry.openDbx(manifest);
+    }
+
     return await this.trackRun(
       runner.run(databox.path, manifest, input),
       databox.latestVersionHash,
     );
   }
 
-  public static async runLocalScript(scriptPath: string, input?: any): Promise<{ output: any, latestVersionHash: string }> {
+  public static async runLocalScript(
+    scriptPath: string,
+    input?: any,
+  ): Promise<{ output: any; latestVersionHash: string }> {
     const databoxProcess = new LocalDataboxProcess(scriptPath);
     const runtime = await databoxProcess.fetchRuntime();
     const runner = this.coreRuntimesByName[runtime.name];
@@ -167,27 +186,31 @@ export default class DataboxCore {
 
   public static async installManuallyUploadedDbxFiles(): Promise<void> {
     if (!(await existsAsync(this.databoxesDir))) return;
+    const registry = this.getPackageRegistry();
     for (const file of await Fs.readdir(this.databoxesDir)) {
       if (!file.endsWith('.dbx')) continue;
       const path = Path.join(this.databoxesDir, file);
-      log.info('Found DBX file in databoxes directory. Checking for import.', {
+
+      if (file.includes('@')) {
+        const hash = file.replace('.dbx', '').split('@').pop();
+        if (registry.hasVersionHash(hash)) continue;
+      }
+
+      log.info('Found unknown .dbx file in databoxes directory. Checking for import.', {
         file,
         sessionId: null,
       });
+
       const tmpDir = await Fs.mkdtemp(this.databoxesTmpDir);
-      try {
-        await unpackDbxFile(path, tmpDir, true);
-        await this.getPackageRegistry().save(tmpDir, false);
-        await Fs.unlink(path);
-        // shouldn't be here anymore, but just in case
-      } finally {
-        await Fs.rmdir(tmpDir).catch(() => null);
-      }
+      await unpackDbxFile(path, tmpDir);
+      const buffer = await Fs.readFile(path);
+      const { dbxPath } = await registry.save(tmpDir, buffer, true);
+      if (dbxPath !== path) await Fs.unlink(path);
     }
   }
 
   private static getPackageRegistry(): PackageRegistry {
-    this.packageRegistry ??= new PackageRegistry(this.databoxesDir);
+    this.packageRegistry ??= new PackageRegistry(this.databoxesDir, this.databoxesTmpDir);
     return this.packageRegistry;
   }
 

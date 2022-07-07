@@ -18,12 +18,10 @@ export function unpackDbx(compressedDatabox: Buffer, toDirectory: string): Promi
 export async function unpackDbxFile(
   file: string,
   toDirectory: string,
-  unlink: boolean,
 ): Promise<void> {
   await Tar.extract({
     file,
     cwd: toDirectory,
-    unlink,
     preserveOwner: false,
   });
 }

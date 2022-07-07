@@ -16,6 +16,8 @@
   },
   "devDependencies": {
     "ts-node": "^10.8.1",
-    "@ulixee/databox-testing": "2.0.0-alpha.7"
+    "@ulixee/databox-testing": "2.0.0-alpha.7",
+    "@ulixee/databox-packager": "2.0.0-alpha.7",
+    "@ulixee/databox-core-runtime": "2.0.0-alpha.7"
   }
 }
