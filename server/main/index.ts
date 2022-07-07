@@ -23,6 +23,7 @@ type IWsHandleFn = (ws: WebSocket, request: Http.IncomingMessage, params: string
 
 export default class Server {
   public readonly wsServer: WebSocket.Server;
+  public readonly router: CoreRouter;
 
   public get address(): Promise<string> {
     return this.serverAddress.promise.then(x => {
@@ -48,7 +49,6 @@ export default class Server {
   private serverAddress = createPromise<AddressInfo>();
   private readonly addressHost: string;
   private readonly httpServer: Http.Server;
-  private readonly router: CoreRouter;
   private readonly httpRoutes: [url: RegExp | string, method: string, handler: IHttpHandleFn][];
   private readonly wsRoutes: [RegExp | string, IWsHandleFn][] = [];
 

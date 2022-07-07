@@ -52,7 +52,7 @@ export default class DataboxCore {
   }
 
   public static async start(): Promise<void> {
-    this.databoxesDir = env.databoxStorage;
+    this.databoxesDir ??= env.databoxStorage;
     for (const runner of Object.values(this.coreRuntimesByName)) {
       await runner.start(this.databoxesDir);
     }
