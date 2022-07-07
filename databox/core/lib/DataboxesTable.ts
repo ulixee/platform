@@ -1,16 +1,20 @@
-import { Database as SqliteDatabase } from 'better-sqlite3';
+import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 import SqliteTable from '@ulixee/commons/lib/SqliteTable';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 
 export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
-  public static byHash: { [hash: string]: IDataboxRecord };
+  private static byVersionHash: { [hash: string]: IDataboxRecord } = {};
+
+  private getQuery: Statement<string>;
 
   constructor(db: SqliteDatabase) {
     super(
       db,
       'Databoxes',
       [
-        ['scriptHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
+        ['versionHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
+        ['versionTimestamp', 'DATETIME'],
+        ['scriptHash', 'TEXT'],
         ['scriptEntrypoint', 'TEXT'],
         ['runtimeName', 'TEXT'],
         ['runtimeVersion', 'TEXT'],
@@ -18,20 +22,25 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
       ],
       true,
     );
-    if (!DataboxesTable.byHash) DataboxesTable.loadCache(this.all());
+    this.getQuery = db.prepare(`select * from ${this.tableName} where versionHash = ? limit 1`);
   }
 
   public save(manifest: IDataboxManifest): void {
     const storedDate = Date.now();
-    this.queuePendingInsert([
-      manifest.scriptRollupHash,
+    this.insertNow([
+      manifest.versionHash,
+      manifest.versionTimestamp,
+      manifest.scriptHash,
       manifest.scriptEntrypoint,
       manifest.runtimeName,
       manifest.runtimeVersion,
       storedDate,
     ]);
-    DataboxesTable.byHash[manifest.scriptRollupHash] = {
-      scriptHash: manifest.scriptRollupHash,
+
+    DataboxesTable.byVersionHash[manifest.versionHash] = {
+      versionHash: manifest.versionHash,
+      versionTimestamp: manifest.versionTimestamp,
+      scriptHash: manifest.scriptHash,
       scriptEntrypoint: manifest.scriptEntrypoint,
       runtimeName: manifest.runtimeName,
       runtimeVersion: manifest.runtimeVersion,
@@ -39,19 +48,22 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
     };
   }
 
-  public getByHash(hash: string): IDataboxRecord {
-    return DataboxesTable.byHash[hash];
+  public findWithEntrypoint(entrypoint: string): IDataboxRecord {
+    const query = this.db.prepare(
+      `select * from ${this.tableName} where scriptEntrypoint = ? limit 1`,
+    );
+    return query.get(entrypoint);
   }
 
-  private static loadCache(records: IDataboxRecord[]): void {
-    this.byHash = {};
-    for (const record of records) {
-      this.byHash[record.scriptHash] = record;
-    }
+  public getByVersionHash(versionHash: string): IDataboxRecord {
+    DataboxesTable.byVersionHash[versionHash] ??= this.getQuery.get(versionHash);
+    return DataboxesTable.byVersionHash[versionHash];
   }
 }
 
 export interface IDataboxRecord {
+  versionHash: string;
+  versionTimestamp: number;
   scriptHash: string;
   scriptEntrypoint: string;
   runtimeName: string;

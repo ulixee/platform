@@ -1,60 +1,27 @@
 import * as Database from 'better-sqlite3';
-import { Database as SqliteDatabase, Transaction } from 'better-sqlite3';
-import SqliteTable from '@ulixee/commons/lib/SqliteTable';
-import Log from '@ulixee/commons/lib/Logger';
+import { Database as SqliteDatabase } from 'better-sqlite3';
 import * as Fs from 'fs';
 import DataboxesTable from './DataboxesTable';
-
-const { log } = Log(module);
+import DataboxVersionsTable from './DataboxVersionsTable';
 
 export default class DataboxesDb {
   public readonly databoxes: DataboxesTable;
+  public readonly databoxVersions: DataboxVersionsTable;
+
   private db: SqliteDatabase;
-  private readonly batchInsert: Transaction;
-  private readonly saveInterval: NodeJS.Timeout;
-  private readonly tables: SqliteTable<any>[] = [];
 
   constructor(baseDir: string) {
     if (!Fs.existsSync(baseDir)) Fs.mkdirSync(baseDir, { recursive: true });
-    this.db = new Database(`${baseDir}/databoxes-index.db`);
+    this.db = new Database(`${baseDir}/index.db`);
+
     this.databoxes = new DataboxesTable(this.db);
-    this.saveInterval = setInterval(this.flush.bind(this), 5e3).unref();
-
-    this.tables = [this.databoxes];
-
-    this.batchInsert = this.db.transaction(() => {
-      for (const table of this.tables) {
-        try {
-          table.runPendingInserts();
-        } catch (error) {
-          if (
-            String(error).match(/attempt to write a readonly database/) ||
-            String(error).match(/database is locked/)
-          ) {
-            clearInterval(this.saveInterval);
-            this.db = null;
-          }
-          log.error('DataboxesDb.flushError', {
-            sessionId: null,
-            error,
-            table: table.tableName,
-          });
-        }
-      }
-    });
+    this.databoxVersions = new DataboxVersionsTable(this.db);
   }
 
   public close(): void {
     if (this.db) {
-      clearInterval(this.saveInterval);
-      this.flush();
       this.db.close();
     }
     this.db = null;
-  }
-
-  public flush(): void {
-    if (!this.db || this.db.readonly) return;
-    this.batchInsert.immediate();
   }
 }

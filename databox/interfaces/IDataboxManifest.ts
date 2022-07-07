@@ -1,6 +1,14 @@
 export default interface IDataboxManifest {
-  scriptRollupHash: string;
+  versionHash: string;
+  versionTimestamp: number;
+  linkedVersions: IVersionHistoryEntry[];
+  scriptHash: string;
   scriptEntrypoint: string;
   runtimeName: string;
   runtimeVersion: string;
+}
+
+export interface IVersionHistoryEntry {
+  versionHash: string;
+  versionTimestamp: number;
 }

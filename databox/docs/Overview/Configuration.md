@@ -63,9 +63,13 @@ Databox Core stores and retrieves [packaged Databoxes](/docs/databox/overview/de
 1. `dbx*`. Packaged databoxes organized into folders by their Bech32m encoded hashes.
 2. `index.db`. A sqlite3 file containing an index of all Databoxes installed locally. This index will be automatically updated if new files are added to the folder and requested in a query.
 
+During bootup, any Packaged Databox files (`.dbx`) in this directory will be automatically unpacked and loaded.
+
 #### Environment Variable
 
 - ULX_DATABOX_DIR `string`. Absolute path to a directory containing Databoxes. Defaults to `<CACHE>/ulixee/databoxes`.
+
+#### Cache Directory {#cache}
 
 CACHE is determined as:
 

@@ -31,8 +31,9 @@ export default class DataboxCoreRuntime implements IDataboxCoreRuntime {
     await new Promise(resolve => process.nextTick(resolve));
   }
 
-  public async close(): Promise<void> {
-    // TODO what should we cleanup
+  public close(): Promise<void> {
+    this.compiledScriptsByPath.clear();
+    return Promise.resolve();
   }
 
   public async run(path: string, manifest: IDataboxManifest, input: any): Promise<{ output: any }> {

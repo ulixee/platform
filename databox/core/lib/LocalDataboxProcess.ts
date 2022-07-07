@@ -5,13 +5,19 @@ import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import { ChildProcess, fork } from 'child_process';
-import { IFetchModuleMessage, IRunMessage, IResponse, IFetchRuntimeResponseData, IRunResponseData } from '../interfaces/ILocalDataboxProcess';
+import {
+  IFetchModuleMessage,
+  IRunMessage,
+  IResponse,
+  IFetchRuntimeResponseData,
+  IRunResponseData,
+} from '../interfaces/ILocalDataboxProcess';
 
 const databoxProcessJsPath = require.resolve('../bin/databox-process.js');
 
-export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Error }> { 
+export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Error }> {
   public scriptPath: string;
-  
+
   #isSpawned = false;
   #child: ChildProcess;
   #pendingById: { [id: string]: IResolvablePromise<any> } = {};
@@ -21,9 +27,9 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
     this.scriptPath = scriptPath;
   }
 
-  public async fetchRuntime(): Promise<{ name: string, version: string }> {
-    const data = await this.sendMessageToChild<IFetchModuleMessage, IFetchRuntimeResponseData>({ 
-      action: 'fetchRuntime', 
+  public async fetchRuntime(): Promise<{ name: string; version: string }> {
+    const data = await this.sendMessageToChild<IFetchModuleMessage, IFetchRuntimeResponseData>({
+      action: 'fetchRuntime',
       scriptPath: this.scriptPath,
     });
     return {
@@ -32,13 +38,13 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
     };
   }
 
-  public async run(input: any): Promise<any> {
-    const data = await this.sendMessageToChild<IRunMessage, IRunResponseData>({ 
-      action: 'run', 
+  public async run(input: any): Promise<{ output: any }> {
+    const data = await this.sendMessageToChild<IRunMessage, IRunResponseData>({
+      action: 'run',
       scriptPath: this.scriptPath,
       input,
     });
-    return data.output;
+    return { output: data.output };
   }
 
   public close(): Promise<void> {
@@ -56,7 +62,7 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
   private closeCleanup(): void {
     this.#child = undefined;
   }
- 
+
   private get child(): ChildProcess {
     if (this.#child) return this.#child;
 
@@ -74,17 +80,17 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
       env: { ...process.env, ULX_CLI_NOPROMPT: 'true' },
     });
 
-    this.#child.on('message', (x) => this.handleMessageFromChild(x as IResponse));
+    this.#child.on('message', x => this.handleMessageFromChild(x as IResponse));
     this.#child.on('error', error => {
       // eslint-disable-next-line no-console
       console.log('ERROR in LocalDataboxProcess', error);
-      this.emit('error', error)
+      this.emit('error', error);
     });
-    this.#child.on('spawn', () => this.#isSpawned = true);
+    this.#child.on('spawn', () => (this.#isSpawned = true));
     this.#child.on('exit', () => this.closeCleanup());
 
     return this.#child;
-  } 
+  }
 
   private handleMessageFromChild(response: IResponse): void {
     const promise = this.#pendingById[response.responseId];
@@ -92,7 +98,9 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
     promise.resolve(response.data);
   }
 
-  private sendMessageToChild<TMessage, TResponse>(message: Omit<TMessage, 'messageId'>): Promise<TResponse> {
+  private sendMessageToChild<TMessage, TResponse>(
+    message: Omit<TMessage, 'messageId'>,
+  ): Promise<TResponse> {
     const promise = createPromise<TResponse>();
     const messageId = nanoid();
     this.#pendingById[messageId] = promise;
