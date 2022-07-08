@@ -58,6 +58,10 @@ export default class DbxFile {
     if (!keepOpen) await this.close();
   }
 
+  public async delete(): Promise<void> {
+    await Fs.unlink(this.dbxPath);
+  }
+
   public async close(): Promise<void> {
     if (await existsAsync(this.workingDirectory)) {
       await Fs.rm(this.workingDirectory, { recursive: true });

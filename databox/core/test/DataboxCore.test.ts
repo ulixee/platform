@@ -9,7 +9,7 @@ import DataboxCore from '../index';
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'databox.core.test');
 const tmpDir = `${storageDir}/tmp`;
 
-DataboxCore.databoxesTmpDir = tmpDir;
+DataboxCore.databoxesUnpackDir = tmpDir;
 DataboxCore.databoxesDir = storageDir;
 
 beforeAll(async () => {
@@ -23,7 +23,7 @@ afterAll(() => {
 });
 
 test('should install new databoxes on startup', async () => {
-  const packager = new Packager(require.resolve('./databoxes/bootup.js'));
+  const packager = new Packager(require.resolve('./databoxes/bootup.ts'));
   const dbx = await packager.build();
   await Fs.copyFile(dbx.dbxPath, `${storageDir}/bootup.dbx`);
   await DataboxCore.installManuallyUploadedDbxFiles();
@@ -35,7 +35,7 @@ test('should install new databoxes on startup', async () => {
 });
 
 test('can load a version from disk if not already open', async () => {
-  const packager = new Packager(require.resolve('./databoxes/bootup.js'));
+  const packager = new Packager(require.resolve('./databoxes/bootup.ts'));
   const dbx = await packager.build();
   await expect(DataboxCore.upload(await Fs.readFile(dbx.dbxPath), false)).resolves.toBeUndefined();
 

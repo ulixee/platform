@@ -33,7 +33,7 @@ module.exports = {
   globalSetup: './jest.setup.js',
   setupFilesAfterEnv: ['./jest.setupPerTest.js'],
   globalTeardown: './jest.teardown.js',
-  testTimeout: 10e3,
+  testTimeout: 20e3,
   reporters: ['default', 'jest-summary-reporter'],
   roots: workspaces.map(x => `${x}/`),
   moduleDirectories: ['node_modules', ...workspaces.map(x => `${x}/node_modules`)],

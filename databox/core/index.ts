@@ -22,7 +22,7 @@ type IDataboxConnectionToClient = ConnectionToClient<IDataboxApis, {}>;
 export default class DataboxCore {
   public static connections = new Set<IDataboxConnectionToClient>();
   public static databoxesDir: string;
-  public static databoxesTmpDir = Path.join(Os.tmpdir(), 'ulixee', 'databox');
+  public static databoxesUnpackDir = Path.join(Os.tmpdir(), '.ulixee', 'databox');
   public static maxRuntimeMs = 10 * 60e3; // 10 mins
   public static waitForDataboxCompletionOnShutdown = false;
   public static isClosing: Promise<void>;
@@ -59,8 +59,8 @@ export default class DataboxCore {
     for (const runner of Object.values(this.coreRuntimesByName)) {
       await runner.start(this.databoxesDir);
     }
-    if (!(await existsAsync(this.databoxesTmpDir))) {
-      await Fs.mkdir(this.databoxesTmpDir, { recursive: true });
+    if (!(await existsAsync(this.databoxesUnpackDir))) {
+      await Fs.mkdir(this.databoxesUnpackDir, { recursive: true });
     }
     await this.installManuallyUploadedDbxFiles();
     this.isStarted.resolve();
@@ -74,10 +74,10 @@ export default class DataboxCore {
       throw new CanceledPromiseError('Server shutting down. Not accepting uploads.');
 
     await this.start();
-    const tmpDir = await Fs.mkdtemp(`${this.databoxesTmpDir}/`);
 
     return await this.trackUpload(
       (async () => {
+        const tmpDir = await Fs.mkdtemp(`${this.databoxesUnpackDir}/`);
         try {
           await unpackDbx(compressedDatabox, tmpDir);
           await this.getPackageRegistry().save(
@@ -85,9 +85,9 @@ export default class DataboxCore {
             compressedDatabox,
             allowNewLinkedVersionHistory,
           );
-          // shouldn't be here anymore, but just in case
         } finally {
-          await Fs.rmdir(tmpDir).catch(() => null);
+          // remove tmp dir in case of errors
+          await Fs.rmdir(tmpDir, { recursive: true }).catch(() => null);
         }
       })(),
     );
@@ -201,16 +201,17 @@ export default class DataboxCore {
         sessionId: null,
       });
 
-      const tmpDir = await Fs.mkdtemp(this.databoxesTmpDir);
+      const tmpDir = await Fs.mkdtemp(`${this.databoxesUnpackDir}/`);
       await unpackDbxFile(path, tmpDir);
       const buffer = await Fs.readFile(path);
       const { dbxPath } = await registry.save(tmpDir, buffer, true);
       if (dbxPath !== path) await Fs.unlink(path);
+      if (await existsAsync(tmpDir)) await Fs.rm(tmpDir, { recursive: true });
     }
   }
 
   private static getPackageRegistry(): PackageRegistry {
-    this.packageRegistry ??= new PackageRegistry(this.databoxesDir, this.databoxesTmpDir);
+    this.packageRegistry ??= new PackageRegistry(this.databoxesDir, this.databoxesUnpackDir);
     return this.packageRegistry;
   }
 

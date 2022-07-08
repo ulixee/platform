@@ -61,7 +61,6 @@ export default class PackageRegistry {
       `${databoxTmpPath}/databox-manifest.json`,
     );
     if (!manifest) throw new Error('Could not read the provided .dbx manifest.');
-
     this.checkDataboxRuntimeInstalled(manifest.runtimeName, manifest.runtimeVersion);
     // validate hash
     const scriptBuffer = await Fs.readFile(`${databoxTmpPath}/databox.js`);
@@ -78,14 +77,19 @@ export default class PackageRegistry {
       );
     }
 
+    const dbxPath = this.getDbxPath(manifest);
+    if (this.hasVersionHash(manifest.versionHash)) return { dbxPath };
+
     if (!allowNewLinkedVersionHistory) this.checkMatchingEntrypointVersions(manifest);
 
     this.checkVersionHistoryMatch(manifest);
 
     // move to an active working dir path
-    await Fs.rename(databoxTmpPath, this.getDataboxWorkingDirectory(manifest.versionHash));
+    const workingDirectory = this.getDataboxWorkingDirectory(manifest.versionHash);
+    if (!(await existsAsync(workingDirectory))) {
+      await Fs.rename(databoxTmpPath, workingDirectory);
+    }
 
-    const dbxPath = this.getDbxPath(manifest);
     if (!(await existsAsync(dbxPath))) {
       await Fs.writeFile(dbxPath, rawBuffer);
     }

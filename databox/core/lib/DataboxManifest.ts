@@ -5,9 +5,15 @@ import IDataboxManifest, {
 import { existsAsync, readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import * as Path from 'path';
 import UlixeeConfig from '@ulixee/commons/config';
-import { findProjectPathSync } from '@ulixee/commons/lib/dirUtils';
+import { findProjectPathAsync } from '@ulixee/commons/lib/dirUtils';
 import { assert } from '@ulixee/commons/lib/utils';
 import { promises as Fs } from 'fs';
+
+type IDataboxSources = [
+  global: DataboxManifest,
+  project?: DataboxManifest,
+  entrypoint?: DataboxManifest,
+];
 
 export default class DataboxManifest implements IDataboxManifest {
   public versionHash: string;
@@ -19,15 +25,10 @@ export default class DataboxManifest implements IDataboxManifest {
   public linkedVersions: IVersionHistoryEntry[];
   public allVersions: IVersionHistoryEntry[];
   public hasClearedLinkedVersions = false;
+  public overrides?: Partial<IDataboxManifest>;
   public source: 'default' | 'entrypoint' | 'project' | 'global';
 
   public readonly path: string;
-
-  #customSources: [
-    global: DataboxManifest,
-    project?: DataboxManifest,
-    entrypoint?: DataboxManifest,
-  ];
 
   constructor(
     manifestPath: string,
@@ -48,38 +49,48 @@ export default class DataboxManifest implements IDataboxManifest {
     return await existsAsync(this.path);
   }
 
-  public async setLinkedVersions(linkedVersions: IVersionHistoryEntry[]): Promise<void> {
+  public async setLinkedVersions(
+    absoluteScriptEntrypoint: string,
+    linkedVersions: IVersionHistoryEntry[],
+  ): Promise<void> {
     this.linkedVersions = linkedVersions;
     this.computeVersionHash();
     await this.save();
-    await this.syncOverrideManifestVersions();
+    const manifestSources = DataboxManifest.getCustomSources(absoluteScriptEntrypoint);
+    await this.syncOverrideManifestVersions(manifestSources);
   }
 
   public async update(
+    absoluteScriptEntrypoint: string,
     scriptHash: string,
-    scriptEntrypoint: string,
     versionTimestamp: number,
     runtimeName: string,
     runtimeVersion: string,
     logger?: (message: string, ...args: any[]) => any,
   ): Promise<void> {
     await this.load();
+
+    const projectPath = Path.resolve(await findProjectPathAsync(absoluteScriptEntrypoint));
+    const scriptEntrypoint = Path.relative(`${projectPath}/..`, absoluteScriptEntrypoint);
+
+    const manifestSources = DataboxManifest.getCustomSources(absoluteScriptEntrypoint);
+    await this.loadManifestSources(manifestSources);
     this.linkedVersions ??= [];
     this.runtimeName = runtimeName;
     this.runtimeVersion = runtimeVersion;
-    this.scriptEntrypoint = scriptEntrypoint;
     // allow manifest to override above values
-    await this.loadManifestOverrides(logger);
+    await this.loadManifestOverrides(manifestSources, logger);
 
     if (this.versionHash && !this.hasClearedLinkedVersions) {
       this.addVersionHashToHistory();
     }
+    this.scriptEntrypoint = scriptEntrypoint;
     this.versionTimestamp = versionTimestamp;
     this.scriptHash = scriptHash;
     await this.computeVersionHash();
 
     await this.save();
-    await this.syncOverrideManifestVersions();
+    await this.syncOverrideManifestVersions(manifestSources);
   }
 
   public computeVersionHash(): void {
@@ -88,7 +99,7 @@ export default class DataboxManifest implements IDataboxManifest {
 
   public async load(): Promise<boolean> {
     if (await this.exists()) {
-      let data: IDataboxManifest = (await readFileAsJson(this.path)) ?? {} as any;
+      let data: IDataboxManifest = (await readFileAsJson(this.path)) ?? ({} as any);
       if (this.source === 'global' || this.source === 'project') {
         data = filterUndefined(data[this.sharedConfigFileKey]);
       }
@@ -104,12 +115,14 @@ export default class DataboxManifest implements IDataboxManifest {
   }
 
   public async save(): Promise<void> {
-    const data = this.toJSON();
+    const data: any = this.toJSON();
     let json = data as any;
+    if (this.overrides) data.overrides = this.overrides;
+    if (this.allVersions) data.allVersions = this.allVersions;
 
     if (this.source === 'global' || this.source === 'project') {
       const config = (await readFileAsJson(this.path)) ?? {};
-      config[this.sharedConfigFileKey] = { ...data, allVersions: this.allVersions };
+      config[this.sharedConfigFileKey] = { ...data };
       json = config;
     }
     // don't create file if it doesn't exist already
@@ -124,69 +137,18 @@ export default class DataboxManifest implements IDataboxManifest {
 
   public toJSON(): IDataboxManifest {
     return {
-      scriptHash: this.scriptHash,
       versionHash: this.versionHash,
       versionTimestamp: this.versionTimestamp,
       linkedVersions: this.linkedVersions,
       scriptEntrypoint: this.scriptEntrypoint,
+      scriptHash: this.scriptHash,
       runtimeName: this.runtimeName,
       runtimeVersion: this.runtimeVersion,
     };
   }
 
-  private getAbsoluteScriptPath(): string {
-    if (this.source !== 'default') {
-      throw new Error('getAbsoluteScriptPath() can only be called from the default source');
-    }
-
-    const projectPath = findProjectPathSync(this.path);
-    return Path.resolve(projectPath, '..', this.scriptEntrypoint);
-  }
-
-  private getAbsoluteManifestPath(): string {
-    const scriptPath = this.getAbsoluteScriptPath();
-    return scriptPath.replace(Path.extname(scriptPath), '-manifest.json');
-  }
-
-  private loadEntrypointManifest(): DataboxManifest {
-    const manifestPath = this.getAbsoluteManifestPath();
-    return new DataboxManifest(manifestPath, 'entrypoint');
-  }
-
-  private loadProjectManifest(): DataboxManifest {
-    const manifestPath = this.getAbsoluteManifestPath();
-    const path = UlixeeConfig.findConfigDirectory(
-      {
-        entrypoint: manifestPath,
-        workingDirectory: manifestPath,
-      },
-      false,
-    );
-    if (!path) return null;
-    return new DataboxManifest(
-      Path.join(path, 'databoxes.json'),
-      'project',
-      Path.relative(path, manifestPath),
-    );
-  }
-
-  private loadGlobalManifest(): DataboxManifest {
-    const path = Path.join(UlixeeConfig.global.directoryPath, 'databoxes.json');
-    const manifestPath = this.getAbsoluteManifestPath();
-    return new DataboxManifest(path, 'global', manifestPath);
-  }
-
-  private getCustomSources(): DataboxManifest[] {
-    this.#customSources ??= [
-      this.loadGlobalManifest(),
-      this.loadProjectManifest(),
-      this.loadEntrypointManifest(),
-    ];
-    return this.#customSources;
-  }
-
-  private async syncOverrideManifestVersions(): Promise<void> {
-    for (const source of this.getCustomSources()) {
+  private async syncOverrideManifestVersions(sources: IDataboxSources): Promise<void> {
+    for (const source of sources) {
       if (!source || !(await source.exists())) continue;
       source.allVersions ??= [];
       if (!source.allVersions.some(x => x.versionHash === this.versionHash)) {
@@ -195,22 +157,33 @@ export default class DataboxManifest implements IDataboxManifest {
           versionTimestamp: this.versionTimestamp,
         });
       }
-      if (source.linkedVersions) {
-        source.linkedVersions = [...this.linkedVersions];
-      }
+      Object.assign(source, this.toJSON());
       await source.save();
     }
   }
 
-  private async loadManifestOverrides(
-    logger?: (message: string, ...args: any[]) => any,
-  ): Promise<void> {
-    for (const source of this.getCustomSources()) {
+  private async loadManifestSources(sources: IDataboxSources): Promise<void> {
+    for (const source of sources) {
       if (!source) continue;
       const didLoad = await source.load();
       if (didLoad) {
-        const overrides = filterUndefined(source.toJSON());
-        if (!Object.keys(overrides).length) continue;
+        const data = filterUndefined(source.toJSON());
+        if (!Object.keys(data).length) continue;
+        Object.assign(this, data);
+      }
+    }
+  }
+
+  private async loadManifestOverrides(
+    sources: IDataboxSources,
+    logger?: (message: string, ...args: any[]) => any,
+  ): Promise<void> {
+    for (const source of sources) {
+      if (!source) continue;
+      const didLoad = await source.load();
+      if (didLoad) {
+        const overrides = filterUndefined(source.overrides);
+        if (!overrides || !Object.keys(overrides).length) continue;
         logger?.('Applying Databox Manifest overrides', {
           source: source.source,
           path: source.path,
@@ -248,6 +221,45 @@ export default class DataboxManifest implements IDataboxManifest {
       linkedVersions,
     )}`;
     return Hasher.hash(Buffer.from(hash), 'dbx');
+  }
+
+  /// MANIFEST OVERRIDE FILES  /////////////////////////////////////////////////////////////////////////////////////////
+
+  private static getCustomSources(absoluteScriptEntrypoint: string): IDataboxSources {
+    const manifestPath = absoluteScriptEntrypoint.replace(
+      Path.extname(absoluteScriptEntrypoint),
+      '-manifest.json',
+    );
+    return [
+      this.loadGlobalManifest(manifestPath),
+      this.loadProjectManifest(manifestPath),
+      this.loadEntrypointManifest(manifestPath),
+    ];
+  }
+
+  private static loadEntrypointManifest(manifestPath: string): DataboxManifest {
+    return new DataboxManifest(manifestPath, 'entrypoint');
+  }
+
+  private static loadProjectManifest(manifestPath: string): DataboxManifest {
+    const path = UlixeeConfig.findConfigDirectory(
+      {
+        entrypoint: manifestPath,
+        workingDirectory: manifestPath,
+      },
+      false,
+    );
+    if (!path) return null;
+    return new DataboxManifest(
+      Path.join(path, 'databoxes.json'),
+      'project',
+      Path.relative(path, manifestPath),
+    );
+  }
+
+  private static loadGlobalManifest(manifestPath: string): DataboxManifest {
+    const path = Path.join(UlixeeConfig.global.directoryPath, 'databoxes.json');
+    return new DataboxManifest(path, 'global', manifestPath);
   }
 }
 
