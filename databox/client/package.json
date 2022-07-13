@@ -11,6 +11,7 @@
       "require": "./index.cjs"
     },
     "./package.json": "./package.json",
+    "./lib/utils/Autorun.mjs": "./lib/utils/Autorun.mjs",
     "./lib/*": "./lib/*.js"
   },
   "dependencies": {

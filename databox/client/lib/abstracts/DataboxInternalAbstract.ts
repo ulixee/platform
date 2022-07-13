@@ -29,7 +29,11 @@ export default abstract class DataboxInternalAbstract<
     this._input = (this.defaults as any).input as TInput;
     this._input ??= {} as TInput;
     if (runOptions.input) {
-      Object.assign(this._input, runOptions.input);
+      if (typeof runOptions.input === 'object') {
+        Object.assign(this._input, runOptions.input);
+      } else {
+        this._input = runOptions.input;
+      }
     }
   }
 
@@ -42,7 +46,10 @@ export default abstract class DataboxInternalAbstract<
   }
 
   public get input(): TInput {
-    return { ...this._input };
+    if (this._input && typeof this._input === 'object') {
+      return { ...this._input };
+    }
+    return this._input;
   }
 
   public get output(): TOutput {
