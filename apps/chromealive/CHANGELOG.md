@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.8](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.7...v2.0.0-alpha.8) (2022-07-13)
+
+
+### Bug Fixes
+
+* **databox:** update hero and hashUtils ([7796d42](https://github.com/ulixee/ulixee/commit/7796d425e99abf93c2b19f5bacee1553d7e0aae7))
+
+
+
+
+
 # [2.0.0-alpha.7](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.6...v2.0.0-alpha.7) (2022-06-28)
 
 

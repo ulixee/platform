@@ -1,0 +1,5 @@
+*.ts
+*.js
+!example.org.ts
+!proxy-example.mjs
+!ulixee.org.ts

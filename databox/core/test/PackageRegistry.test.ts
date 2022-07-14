@@ -1,4 +1,4 @@
-import * as Hasher from '@ulixee/commons/lib/Hasher';
+import * as HashUtils from '@ulixee/commons/lib/hashUtils';
 import IDataboxManifest, {
   IVersionHistoryEntry,
 } from '@ulixee/databox-interfaces/IDataboxManifest';
@@ -15,6 +15,11 @@ const tmpDir = `${storageDir}/tmp`;
 afterAll(() => {
   rmdirSync(storageDir, { recursive: true });
 });
+
+function hashScript(script: string): string {
+  const sha = HashUtils.sha3(script);
+  return HashUtils.encodeHash(sha, 'scr');
+}
 
 test('should throw an error if the databox runtime is not installed', async () => {
   const registry = new PackageRegistry(storageDir, tmpDir);
@@ -40,7 +45,7 @@ test('should throw an error if the databox runtime is not installed', async () =
 test('should be able to upload and retrieve the databox', async () => {
   const registry = new PackageRegistry(storageDir, tmpDir);
   const script = 'function(){}';
-  const scriptHash = Hasher.hash(Buffer.from(script), 'scr');
+  const scriptHash = hashScript(script);
   const databoxTmpDir = `${storageDir}/tmp/dbx2`;
   mkdirSync(databoxTmpDir, { recursive: true });
   const versionTimestamp = Date.now();
@@ -83,7 +88,7 @@ test('should allow a user to override updating with no history', async () => {
       runtimeName: '@ulixee/databox-for-hero',
       runtimeVersion: '2.0.0-alpha.1',
       scriptEntrypoint: 'override.js',
-      scriptHash: Hasher.hash(Buffer.from(script), 'scr'),
+      scriptHash: hashScript(script),
       versionHash: null,
       linkedVersions: [],
     };
@@ -102,7 +107,7 @@ test('should allow a user to override updating with no history', async () => {
       runtimeName: '@ulixee/databox-for-hero',
       runtimeVersion: '2.0.0-alpha.1',
       scriptEntrypoint: 'override.js',
-      scriptHash: Hasher.hash(Buffer.from(script), 'scr'),
+      scriptHash: hashScript(script),
       versionHash: null,
       linkedVersions: [],
     };
@@ -125,9 +130,9 @@ test('should allow a user to override updating with no history', async () => {
 test('should throw an error with version history if current versions are unmatched', async () => {
   const registry = new PackageRegistry(storageDir, tmpDir);
   const script1 = 'function 1(){}';
-  const script1VersionHash = Hasher.hash(Buffer.from(script1), 'scr');
+  const script1VersionHash = hashScript(script1);
   const script2 = 'function 2(){}';
-  const script2VersionHash = Hasher.hash(Buffer.from(script2), 'scr');
+  const script2VersionHash = hashScript(script2);
 
   const scriptDetails = {
     runtimeName: '@ulixee/databox-for-hero',
@@ -136,7 +141,7 @@ test('should throw an error with version history if current versions are unmatch
   };
 
   const script3 = 'function 3(){}';
-  const script3VersionHash = Hasher.hash(Buffer.from(script3), 'scr');
+  const script3VersionHash = hashScript(script3);
   const versions: IVersionHistoryEntry[] = [];
   {
     const databoxTmpDir = `${storageDir}/tmp/dbx3`;

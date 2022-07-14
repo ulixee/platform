@@ -1,6 +1,6 @@
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import { promises as Fs } from 'fs';
-import * as Hasher from '@ulixee/commons/lib/Hasher';
+import * as HashUtils from '@ulixee/commons/lib/hashUtils';
 import * as Path from 'path';
 import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
 import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
@@ -64,7 +64,8 @@ export default class PackageRegistry {
     this.checkDataboxRuntimeInstalled(manifest.runtimeName, manifest.runtimeVersion);
     // validate hash
     const scriptBuffer = await Fs.readFile(`${databoxTmpPath}/databox.js`);
-    const expectedScriptHash = Hasher.hash(scriptBuffer, 'scr');
+    const sha = HashUtils.sha3(Buffer.from(scriptBuffer));
+    const expectedScriptHash = HashUtils.encodeHash(sha, 'scr');
     if (manifest.scriptHash !== expectedScriptHash) {
       throw new Error(
         'Mismatched Databox scriptHash provided. Should be SHA3 256 in Bech32m encoding.',

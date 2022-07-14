@@ -1,5 +1,5 @@
 import * as Path from 'path';
-import * as Hasher from '@ulixee/commons/lib/Hasher';
+import * as HashUtils from '@ulixee/commons/lib/hashUtils';
 import LocalDataboxProcess from '@ulixee/databox-core/lib/LocalDataboxProcess';
 import DataboxManifest from '@ulixee/databox-core/lib/DataboxManifest';
 import UlixeeConfig from '@ulixee/commons/config';
@@ -73,7 +73,8 @@ export default class DataboxPackager {
       throw new Error('The Databox does not specify a runtime version');
     }
 
-    const scriptVersionHash = Hasher.hash(Buffer.from(sourceCode), 'scr');
+    const hash = HashUtils.sha3(Buffer.from(sourceCode));
+    const scriptVersionHash = HashUtils.encodeHash(hash, 'scr');
     await this.manifest.update(
       this.entrypoint,
       scriptVersionHash,

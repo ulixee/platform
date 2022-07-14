@@ -14,6 +14,9 @@ const rootDir = Path.resolve(__dirname, '../../');
   walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'hero');
   });
+  walkDirectory(`${mdDocsRootPath}/awaited-dom`, async filePath => {
+    await saveToWebsite(mdDocsRootPath, filePath, 'hero');
+  });
   ensureIndexFile(mdDocsRootPath, 'hero', 'main');
 }
 

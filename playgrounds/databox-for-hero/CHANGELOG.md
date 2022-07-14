@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.8](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.7...v2.0.0-alpha.8) (2022-07-13)
+
+
+### Bug Fixes
+
+* **databox:** autorun playgrounds ([64cd9c5](https://github.com/ulixee/ulixee/commit/64cd9c5f8ce4ac00e59aaa6fb92b6b72be567b91))
+
+
+
+
+
 # [2.0.0-alpha.7](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.6...v2.0.0-alpha.7) (2022-06-28)
 
 

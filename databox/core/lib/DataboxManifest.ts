@@ -1,4 +1,4 @@
-import * as Hasher from '@ulixee/commons/lib/Hasher';
+import * as HashUtils from '@ulixee/commons/lib/hashUtils';
 import IDataboxManifest, {
   IVersionHistoryEntry,
 } from '@ulixee/databox-interfaces/IDataboxManifest';
@@ -220,7 +220,8 @@ export default class DataboxManifest implements IDataboxManifest {
     const hash = `${scriptHash}${versionTimestamp}${scriptEntrypoint}${JSON.stringify(
       linkedVersions,
     )}`;
-    return Hasher.hash(Buffer.from(hash), 'dbx');
+    const sha = HashUtils.sha3(Buffer.from(hash));
+    return HashUtils.encodeHash(sha, 'dbx');
   }
 
   /// MANIFEST OVERRIDE FILES  /////////////////////////////////////////////////////////////////////////////////////////

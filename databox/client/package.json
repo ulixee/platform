@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/databox",
-  "version": "2.0.0-alpha.7",
+  "version": "2.0.0-alpha.8",
   "main": "index.js",
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
@@ -11,16 +11,17 @@
       "require": "./index.cjs"
     },
     "./package.json": "./package.json",
+    "./lib/utils/Autorun.mjs": "./lib/utils/Autorun.mjs",
     "./lib/*": "./lib/*.js"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.6",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.7",
-    "@ulixee/net": "2.0.0-alpha.6",
+    "@ulixee/commons": "2.0.0-alpha.8",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.8",
+    "@ulixee/net": "2.0.0-alpha.8",
     "commander": "^9.3.0",
     "yargs-parser": "^20.2.9"
   },
   "devDependencies": {
-    "@ulixee/databox-packager": "2.0.0-alpha.7"
+    "@ulixee/databox-packager": "2.0.0-alpha.8"
   }
 }

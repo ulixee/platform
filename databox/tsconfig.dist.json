@@ -6,7 +6,7 @@
     "removeComments": true
   },
   "references": [],
-  "include": ["./**/*.ts", ".eslintrc.js"],
+  "include": ["./**/*.ts", "./**/*.json", ".eslintrc.js"],
   "exclude": [
     "**/tsconfig*.json",
     "**/node_modules",

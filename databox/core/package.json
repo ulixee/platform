@@ -1,23 +1,23 @@
 {
   "name": "@ulixee/databox-core",
-  "version": "2.0.0-alpha.7",
+  "version": "2.0.0-alpha.8",
   "main": "index.js",
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.6",
-    "@ulixee/databox": "2.0.0-alpha.7",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.7",
-    "@ulixee/net": "2.0.0-alpha.6",
+    "@ulixee/commons": "2.0.0-alpha.8",
+    "@ulixee/databox": "2.0.0-alpha.8",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.8",
+    "@ulixee/net": "2.0.0-alpha.8",
     "better-sqlite3": "^7.5.1",
     "nanoid": "^3.1.30",
-    "vm2": "^3.9.9",
-    "tar": "^6.1.11"
+    "tar": "^6.1.11",
+    "vm2": "^3.9.9"
   },
   "devDependencies": {
     "ts-node": "^10.8.1",
-    "@ulixee/databox-testing": "2.0.0-alpha.7",
-    "@ulixee/databox-packager": "2.0.0-alpha.7",
-    "@ulixee/databox-core-runtime": "2.0.0-alpha.7"
+    "@ulixee/databox-testing": "2.0.0-alpha.8",
+    "@ulixee/databox-packager": "2.0.0-alpha.8",
+    "@ulixee/databox-core-runtime": "2.0.0-alpha.8"
   }
 }
