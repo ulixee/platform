@@ -13,13 +13,12 @@ We should eventually automate this to test using the "published" versions of pac
 - from @ulixee/ulixee: `npx ulx-repo-version-check fix` (update dependencies)
 
 ## Bump versions in this order
-1. @ulixee/commons
+1. @ulixee/shared
 2. @unblocked/agent
   - Release Asset: connect (mitm-socket). A draft release will be created. You need to publish it. 
 3. @unblocked/specifications (if needed)
 4. @unblocked/js-path (if needed)
 5. @unblocked/unblocked
-6. @ulixee/net
 7. @ulixee/hero
 8. @ulixee/ulixee
    - Release Assets: Requires a draft release pre-created (ChromeAlive!, Desktop)
