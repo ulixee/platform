@@ -6,8 +6,8 @@
   "main": "./index.js",
   "devDependencies": {},
   "dependencies": {
-    "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.7",
-    "@ulixee/commons": "2.0.0-alpha.7",
+    "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.8",
+    "@ulixee/commons": "2.0.0-alpha.8",
     "compare-versions": "^3.6.0",
     "progress": "^2.0.3",
     "tar": "^6.1.11",

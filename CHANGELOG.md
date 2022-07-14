@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.8](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.7...v2.0.0-alpha.8) (2022-07-13)
+
+
+### Bug Fixes
+
+* **databox:** autorun playgrounds ([61e1585](https://github.com/ulixee/ulixee/commit/61e15850d70fed4c640be12def2f4a579968692a))
+* **databox:** update hero and hashUtils ([b8432fc](https://github.com/ulixee/ulixee/commit/b8432fcb8343c5483aaa0c5a33d06d7f5abfa58a))
+* **website:** hero awaited dom links broken ([1710b84](https://github.com/ulixee/ulixee/commit/1710b84628f5c544452ed310487b27baded9d730))
+
+
+### Features
+
+* allow server configuration of hero/databox ([ac305d9](https://github.com/ulixee/ulixee/commit/ac305d967f414ab4b1f70f9adbfbd5f8b0c9f029))
+* **databox:** dbx package files ([57a067e](https://github.com/ulixee/ulixee/commit/57a067ea3be57516ea58c278dff07e1158c97848))
+* **databox:** deploy command ([2929b43](https://github.com/ulixee/ulixee/commit/2929b43ee34f41fc853623ace966501e5895e879))
+* **databox:** manifest setting overrides ([098126d](https://github.com/ulixee/ulixee/commit/098126d1e075e4378bc6f562739369d52ed5b4a0))
+* **databox:** store dbx files on server ([b331ede](https://github.com/ulixee/ulixee/commit/b331ede711f8539e91cbade5087c6e573aa3f407))
+
+
+
+
+
 # [2.0.0-alpha.7](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.6...v2.0.0-alpha.7) (2022-06-28)
 
 
