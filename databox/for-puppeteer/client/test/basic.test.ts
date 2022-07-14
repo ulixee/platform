@@ -29,7 +29,7 @@ describe('basic DataboxForPuppeteer tests', () => {
     databoxWrapper.disableAutorun = true;
     await databoxWrapper.run({});
     expect(databaseHasCompleted).toBe(true);
-  });
+  }, 30e3);
 
   it('should call close on puppeteer automatically', async () => {
     let browser: PuppeteerBrowser;

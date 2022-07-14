@@ -29,6 +29,26 @@ export async function upload(
   await uploadPackage(dbx, manifest, uploadHost, args.allowNewVersionHistory);
 }
 
+export async function deploy(
+  entrypoint: string,
+  options: {
+    tsconfig?: string;
+    compiledSourcePath?: string;
+    clearVersionHistory?: boolean;
+    uploadHost?: string;
+  },
+): Promise<void> {
+  const packager = new DataboxPackager(entrypoint, null, true);
+  console.log('Building Databox ...');
+  const dbx = await packager.build({
+    tsconfig: options.tsconfig,
+    compiledSourcePath: options.compiledSourcePath,
+  });
+  console.log('Uploading...');
+  await uploadPackage(dbx, packager.manifest, options.uploadHost, options.clearVersionHistory);
+  await dbx.delete();
+}
+
 export async function unpack(dbxPath: string): Promise<void> {
   const dbx = await new DbxFile(dbxPath);
   await dbx.open();
@@ -44,6 +64,7 @@ export async function closeDbx(dbxPath: string, discardChanges: boolean): Promis
 export async function buildPackage(
   path: string,
   options: {
+    outDir?: string;
     tsconfig?: string;
     compiledSourcePath?: string;
     clearVersionHistory?: boolean;
@@ -51,7 +72,7 @@ export async function buildPackage(
     upload?: boolean;
   },
 ): Promise<void> {
-  const packager = new DataboxPackager(path, true);
+  const packager = new DataboxPackager(path, options?.outDir, true);
   console.log('Building Databox ...');
   const dbx = await packager.build({
     tsconfig: options.tsconfig,
@@ -133,7 +154,9 @@ function handleMissingLinkedVersions(
     async answer => {
       if (answer.toLowerCase().includes('link')) {
         await dbxFile.open();
-        await manifest.setLinkedVersions(versionHistory);
+        const projectPath = findProjectPathSync(dbxFile.dbxPath);
+        const absoluteScriptPath = Path.join(projectPath, '..', manifest.scriptEntrypoint);
+        await manifest.setLinkedVersions(absoluteScriptPath, versionHistory);
         await dbxFile.save();
         await dbxFile.upload(uploadHost);
         printUploadedMessage(uploadHost, manifest);
@@ -158,8 +181,8 @@ function handleInvalidScriptVersionHistory(
     output: process.stdout,
   });
   const projectPath = findProjectPathSync(dbxFile.dbxPath);
-  const scriptPath = Path.join(projectPath, '..', manifest.scriptEntrypoint);
-  const customManifestPath = scriptPath.replace(Path.extname(scriptPath), '-manifest.json');
+  const absoluteScriptPath = Path.join(projectPath, '..', manifest.scriptEntrypoint);
+  const customManifestPath = absoluteScriptPath.replace(Path.extname(absoluteScriptPath), '-manifest.json');
 
   // TODO: compare tree to local tree to see how it differs and print out missing tree
   rl.question(
@@ -176,21 +199,21 @@ You can choose from the options below to link to the existing server versions or
     async answer => {
       if (answer.toLowerCase().includes('link')) {
         await dbxFile.open();
-        await manifest.setLinkedVersions(versionHistory);
+        await manifest.setLinkedVersions(absoluteScriptPath, versionHistory);
         await dbxFile.save();
         await dbxFile.upload(uploadHost);
         printUploadedMessage(uploadHost, manifest);
       }
       if (answer.toLowerCase().includes('custom')) {
-        if (!existsSync(scriptPath)) {
+        if (!existsSync(Path.dirname(absoluteScriptPath))) {
           throw new Error(
-            `Could not locate a path to save a custom manifest file\n\n(tried: "${scriptPath}")`,
+            `Could not locate a path to save a custom manifest file\n\n(tried: "${absoluteScriptPath}")`,
           );
         }
         const newManifest = new DataboxManifest(customManifestPath);
         await newManifest.update(
-          manifest.versionHash,
-          manifest.scriptEntrypoint,
+          absoluteScriptPath,
+          manifest.scriptHash,
           manifest.versionTimestamp,
           manifest.runtimeName,
           manifest.runtimeVersion,

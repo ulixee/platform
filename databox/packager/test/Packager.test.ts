@@ -11,6 +11,7 @@ beforeEach(async () => {
   }
   if (existsSync(`${__dirname}/assets/historyTest.dbx`))
     await Fs.unlink(`${__dirname}/assets/historyTest.dbx`);
+  if (existsSync(`${__dirname}/build`)) await Fs.rm(`${__dirname}/build`, { recursive: true });
 });
 
 let workingDirectory: string;
@@ -20,6 +21,11 @@ afterEach(async () => {
   if (dbxFile) await Fs.unlink(dbxFile).catch(() => null);
   workingDirectory = null;
   dbxFile = null;
+});
+
+afterAll(async () => {
+  if (workingDirectory) await Fs.rmdir(workingDirectory, { recursive: true }).catch(() => null);
+  if (dbxFile) await Fs.unlink(dbxFile).catch(() => null);
 });
 
 test('it should generate a relative script entrypoint', async () => {
@@ -74,41 +80,45 @@ test('should be able to modify the local built files for uploading', async () =>
 
 test('should be able to read a databox manifest next to an entrypoint', async () => {
   const packager = new DataboxPackager(`${__dirname}/assets/customManifest.js`);
-  workingDirectory = new DbxFile(dbxFile).workingDirectory;
+  workingDirectory = packager.dbx.workingDirectory;
   dbxFile = packager.dbxPath;
 
-  await packager.build({ keepOpen: true });
+  await packager.build();
   expect(packager.manifest.runtimeVersion).toBe('1.1.1');
 });
 
 test('should merge custom manifests', async () => {
   const packager = new DataboxPackager(`${__dirname}/assets/customManifest.js`);
-  workingDirectory = new DbxFile(dbxFile).workingDirectory;
+  workingDirectory = packager.dbx.workingDirectory;
   dbxFile = packager.dbxPath;
 
-  const projectConfig = Path.resolve(__dirname, '../..', '.ulixee');
+  const projectConfig = Path.resolve(__dirname, '..', '.ulixee');
   await Fs.mkdir(projectConfig, { recursive: true }).catch(() => null);
   await Fs.writeFile(
     `${projectConfig}/databoxes.json`,
     JSON.stringify({
-      [Path.join('..', 'packager', 'test', 'assets', 'customManifest-manifest.json')]: {
-        runtimeVersion: '1.1.2',
-        runtimeName: 'projectOverrider',
+      [Path.join('..', 'test', 'assets', 'customManifest-manifest.json')]: {
+        overrides: {
+          runtimeVersion: '1.1.2',
+          runtimeName: 'projectOverrider',
+        },
       },
     }),
   );
 
-  await packager.build({ keepOpen: true });
+  await packager.build();
+  await Fs.unlink(`${projectConfig}/databoxes.json`);
   // should take the closest (entrypoint override) over the project config
   expect(packager.manifest.runtimeVersion).toBe('1.1.1');
   expect(packager.manifest.runtimeName).toBe('projectOverrider');
 });
 
 test('should build a version history with a new version', async () => {
-  const packager = new DataboxPackager(`${__dirname}/assets/historyTest.js`);
+  const entrypoint = `${__dirname}/assets/historyTest.js`;
+  const packager = new DataboxPackager(entrypoint);
   const dbx = await packager.build();
   if (packager.manifest.linkedVersions.length) {
-    await packager.manifest.setLinkedVersions([]);
+    await packager.manifest.setLinkedVersions(entrypoint, []);
   }
   workingDirectory = dbx.workingDirectory;
   dbxFile = packager.dbxPath;
@@ -135,11 +145,13 @@ module.exports=new Databox(({output}) => {
    output.text=1;
 });`,
   );
-  const packager = new DataboxPackager(`${__dirname}/assets/historyTest2.js`);
+  const entrypoint = `${__dirname}/assets/historyTest2.js`;
+  const packager = new DataboxPackager(entrypoint);
   await packager.build({ keepOpen: true });
+  workingDirectory = packager.dbx.workingDirectory;
   dbxFile = packager.dbxPath;
 
-  await packager.manifest.setLinkedVersions([
+  await packager.manifest.setLinkedVersions(entrypoint, [
     { versionHash: 'dbx1', versionTimestamp: Date.now() - 25e3 },
     { versionHash: 'dbx2', versionTimestamp: Date.now() - 30e3 },
     { versionHash: 'dbx3', versionTimestamp: Date.now() - 60e3 },
@@ -149,4 +161,15 @@ module.exports=new Databox(({output}) => {
     'dbx2',
     'dbx3',
   ]);
+});
+
+test('should be able to change the output directory', async () => {
+  const packager = new DataboxPackager(`${__dirname}/assets/historyTest.js`, `${__dirname}/build`);
+  workingDirectory = packager.dbx.workingDirectory;
+  dbxFile = packager.dbxPath;
+
+  const dbx = await packager.build();
+  expect(dbx.dbxPath).toBe(Path.resolve(`${__dirname}/build/historyTest.dbx`));
+  expect(dbx.workingDirectory).toBe(Path.resolve(`${__dirname}/build/historyTest.dbx.build`));
+  expect(existsSync(dbx.dbxPath)).toBe(true);
 });
