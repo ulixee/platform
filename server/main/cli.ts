@@ -54,7 +54,6 @@ export default function cliCommands(): Command {
       if (disableChromeAlive) UlixeeServerEnv.disableChromeAlive = disableChromeAlive;
 
       const server = new UlixeeServer(host);
-      await server.listen({ port });
 
       const { unblockedPlugins, heroDataDir, maxConcurrentHeroes } = opts;
       server.router.heroConfiguration = {
@@ -74,6 +73,7 @@ export default function cliCommands(): Command {
         waitForDataboxCompletionOnShutdown: opts.databoxWaitForCompletion,
       };
 
+      await server.listen({ port });
       console.log('Ulixee Server listening at %s', await server.address);
       ShutdownHandler.register(() => server.close());
     });
