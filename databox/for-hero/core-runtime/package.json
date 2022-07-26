@@ -1,24 +1,24 @@
 {
   "name": "@ulixee/databox-for-hero-core-runtime",
-  "version": "2.0.0-alpha.8",
+  "version": "2.0.0-alpha.9",
   "main": "index.js",
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.8",
-    "@ulixee/databox": "2.0.0-alpha.8",
-    "@ulixee/databox-core": "2.0.0-alpha.8",
-    "@ulixee/databox-for-hero": "2.0.0-alpha.8",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.8",
-    "@ulixee/hero": "2.0.0-alpha.8",
-    "@ulixee/hero-core": "2.0.0-alpha.8",
+    "@ulixee/databox": "2.0.0-alpha.9",
+    "@ulixee/databox-core": "2.0.0-alpha.9",
+    "@ulixee/databox-for-hero": "2.0.0-alpha.9",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.9",
+    "@ulixee/hero": "2.0.0-alpha.9",
+    "@ulixee/hero-core": "2.0.0-alpha.9",
     "@ulixee/net": "2.0.0-alpha.8",
     "vm2": "^3.9.9"
   },
   "devDependencies": {
     "@types/node": "14.14.31",
-    "@ulixee/databox-packager": "2.0.0-alpha.8",
-    "@ulixee/databox-testing": "2.0.0-alpha.8",
-    "@ulixee/server": "2.0.0-alpha.8"
+    "@ulixee/databox-packager": "2.0.0-alpha.9",
+    "@ulixee/databox-testing": "2.0.0-alpha.9",
+    "@ulixee/server": "2.0.0-alpha.9"
   }
 }
