@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/apps-chromealive",
-  "version": "2.0.0-alpha.8",
+  "version": "2.0.0-alpha.9",
   "private": true,
   "license": "MIT",
   "description": "ChromeAlive! powers iterative Ulixee Hero web scraping in the Chrome browser.",
@@ -21,7 +21,7 @@
   ],
   "dependencies": {
     "@electron/remote": "^2.0.5",
-    "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.8",
+    "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.9",
     "@ulixee/commons": "2.0.0-alpha.8",
     "@ulixee/net": "2.0.0-alpha.8",
     "compare-versions": "^3.6.0",
