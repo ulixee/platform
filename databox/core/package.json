@@ -8,7 +8,7 @@
     "@ulixee/commons": "2.0.0-alpha.8",
     "@ulixee/crypto": "2.0.0-alpha.8",
     "@ulixee/databox": "2.0.0-alpha.9",
-    "@ulixee/sidechain-client": "2.0.0-alpha.8",
+    "@ulixee/sidechain": "2.0.0-alpha.8",
     "@ulixee/databox-interfaces": "2.0.0-alpha.9",
     "@ulixee/specification": "2.0.0-alpha.8",
     "@ulixee/net": "2.0.0-alpha.8",

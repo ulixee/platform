@@ -1,4 +1,4 @@
-import SidechainClient from '@ulixee/sidechain-client';
+import SidechainClient from '@ulixee/sidechain';
 import Identity from '@ulixee/crypto/lib/Identity';
 import Log from '@ulixee/commons/lib/Logger';
 import { sha3 } from '@ulixee/commons/lib/hashUtils';

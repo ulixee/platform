@@ -1,7 +1,7 @@
 import { IBlockSettings, IPayment } from '@ulixee/specification';
-import SidechainClient from '@ulixee/sidechain-client';
+import SidechainClient from '@ulixee/sidechain';
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
-import verifyPayment from '@ulixee/sidechain-client/lib/verifyPayment';
+import verifyPayment from '@ulixee/sidechain/lib/verifyPayment';
 import { IDataboxApiTypes } from '@ulixee/specification/databox';
 import { InsufficientMicronoteFundsError, InsufficientQueryPriceError } from './errors';
 

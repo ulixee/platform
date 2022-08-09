@@ -1,7 +1,7 @@
 import Identity from '@ulixee/crypto/lib/Identity';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha3 } from '@ulixee/commons/lib/hashUtils';
-import SidechainClient from '@ulixee/sidechain-client';
+import SidechainClient from '@ulixee/sidechain';
 import { IBlockSettings } from '@ulixee/specification';
 import ISidechainSettingsApis from '@ulixee/specification/sidechain/SidechainSettingsApis';
 import SidechainClientManager from '../lib/SidechainClientManager';
