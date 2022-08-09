@@ -2,7 +2,7 @@ import * as Fs from 'fs';
 import { NodeVM, VMScript } from 'vm2';
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import DataboxWrapper from '@ulixee/databox';
-import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
+import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import IDataboxCoreRuntime from '@ulixee/databox-interfaces/IDataboxCoreRuntime';
 import DataboxCore from '@ulixee/databox-core';
 

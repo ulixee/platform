@@ -8,6 +8,7 @@ import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
+import { IncomingMessage } from 'http';
 import ChromeAliveUtils from './ChromeAliveUtils';
 import Server from '../index';
 
@@ -18,8 +19,7 @@ export default class CoreRouter {
   ];
 
   public heroConfiguration: ICoreConfigureOptions;
-  public databoxConfiguration: IDataboxCoreConfigureOptions;
-  s;
+  public databoxConfiguration: Partial<IDataboxCoreConfigureOptions>;
 
   public get dataDir(): string {
     return HeroCore.dataDir;
@@ -60,7 +60,7 @@ export default class CoreRouter {
     await HeroCore.start(this.heroConfiguration);
 
     if (this.databoxConfiguration) {
-      Object.assign(DataboxCore, this.databoxConfiguration);
+      Object.assign(DataboxCore.options, this.databoxConfiguration);
     }
 
     await DataboxCore.start();
@@ -84,8 +84,12 @@ export default class CoreRouter {
     await HeroCore.shutdown();
   }
 
-  private handleApi(connectionType: keyof CoreRouter['connectionTypes'], ws: WebSocket): void {
-    const transport = new WsTransportToClient(ws);
+  private handleApi(
+    connectionType: keyof CoreRouter['connectionTypes'],
+    ws: WebSocket,
+    req: IncomingMessage,
+  ): void {
+    const transport = new WsTransportToClient(ws, req);
     const connection = this.connectionTypes[connectionType](transport);
     if (!connection) throw new Error(`Unknown connection protocol attempted "${connectionType}"`);
     this.connections.add(connection);
@@ -100,7 +104,10 @@ export default class CoreRouter {
     const hash = url.pathname.replace('/databox/', '');
 
     let status = 200;
-    const response = await DataboxCore.run(hash, input).catch(err => {
+    const response = await DataboxCore.apiRouter.handlers['Databox.run']({
+      versionHash: hash,
+      input,
+    }).catch(err => {
       status = 500;
       return err;
     });

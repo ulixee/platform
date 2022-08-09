@@ -1,6 +1,6 @@
 import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 import SqliteTable from '@ulixee/commons/lib/SqliteTable';
-import { IVersionHistoryEntry } from '@ulixee/databox-interfaces/IDataboxManifest';
+import { IVersionHistoryEntry } from '@ulixee/specification/types/IDataboxManifest';
 
 export default class DataboxVersionsTable extends SqliteTable<IDataboxVersionRecord> {
   private getQuery: Statement<string>;

@@ -5,7 +5,7 @@ import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import IDataboxCoreRuntime from '@ulixee/databox-interfaces/IDataboxCoreRuntime';
 import DataboxCore from '@ulixee/databox-core';
 import { ConnectionToHeroCore } from '@ulixee/hero';
-import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
+import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import DataboxWrapper from '@ulixee/databox-for-hero';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 

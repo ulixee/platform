@@ -10,6 +10,7 @@
     "@ulixee/databox-core": "2.0.0-alpha.9",
     "@ulixee/databox-for-hero": "2.0.0-alpha.9",
     "@ulixee/databox-interfaces": "2.0.0-alpha.9",
+    "@ulixee/specification": "2.0.0-alpha.8",
     "@ulixee/hero": "2.0.0-alpha.9",
     "@ulixee/hero-core": "2.0.0-alpha.9",
     "@ulixee/net": "2.0.0-alpha.8",

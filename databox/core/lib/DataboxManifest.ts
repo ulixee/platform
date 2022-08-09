@@ -1,13 +1,16 @@
 import * as HashUtils from '@ulixee/commons/lib/hashUtils';
 import IDataboxManifest, {
+  DataboxManifestSchema,
   IVersionHistoryEntry,
-} from '@ulixee/databox-interfaces/IDataboxManifest';
+} from '@ulixee/specification/types/IDataboxManifest';
 import { existsAsync, readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import * as Path from 'path';
 import UlixeeConfig from '@ulixee/commons/config';
 import { findProjectPathAsync } from '@ulixee/commons/lib/dirUtils';
 import { assert } from '@ulixee/commons/lib/utils';
 import { promises as Fs } from 'fs';
+import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
+import ValidationError from '@ulixee/specification/utils/ValidationError';
 
 type IDataboxSources = [
   global: DataboxManifest,
@@ -22,17 +25,24 @@ export default class DataboxManifest implements IDataboxManifest {
   public scriptEntrypoint: string;
   public runtimeName: string;
   public runtimeVersion: string;
+
+  // Payment details
+  public pricePerQuery?: number;
+  public paymentAddress?: string;
+  public creditsAddress?: string;
+
   public linkedVersions: IVersionHistoryEntry[];
   public allVersions: IVersionHistoryEntry[];
   public hasClearedLinkedVersions = false;
-  public overrides?: Partial<IDataboxManifest>;
-  public source: 'default' | 'entrypoint' | 'project' | 'global';
+
+  public explicitSettings: Partial<IDataboxManifest>;
+  public source: 'dbx' | 'entrypoint' | 'project' | 'global';
 
   public readonly path: string;
 
   constructor(
     manifestPath: string,
-    source: typeof DataboxManifest.prototype['source'] = 'default',
+    source: typeof DataboxManifest.prototype['source'] = 'dbx',
     private sharedConfigFileKey?: string,
   ) {
     this.path = manifestPath;
@@ -57,7 +67,7 @@ export default class DataboxManifest implements IDataboxManifest {
     this.computeVersionHash();
     await this.save();
     const manifestSources = DataboxManifest.getCustomSources(absoluteScriptEntrypoint);
-    await this.syncOverrideManifestVersions(manifestSources);
+    await this.syncGeneratedManifests(manifestSources);
   }
 
   public async update(
@@ -74,12 +84,12 @@ export default class DataboxManifest implements IDataboxManifest {
     const scriptEntrypoint = Path.relative(`${projectPath}/..`, absoluteScriptEntrypoint);
 
     const manifestSources = DataboxManifest.getCustomSources(absoluteScriptEntrypoint);
-    await this.loadManifestSources(manifestSources);
+    await this.loadGeneratedManifests(manifestSources);
     this.linkedVersions ??= [];
     this.runtimeName = runtimeName;
     this.runtimeVersion = runtimeVersion;
     // allow manifest to override above values
-    await this.loadManifestOverrides(manifestSources, logger);
+    await this.loadExplicitSettings(manifestSources, logger);
 
     if (this.versionHash && !this.hasClearedLinkedVersions) {
       this.addVersionHashToHistory();
@@ -88,9 +98,8 @@ export default class DataboxManifest implements IDataboxManifest {
     this.versionTimestamp = versionTimestamp;
     this.scriptHash = scriptHash;
     await this.computeVersionHash();
-
     await this.save();
-    await this.syncOverrideManifestVersions(manifestSources);
+    await this.syncGeneratedManifests(manifestSources);
   }
 
   public computeVersionHash(): void {
@@ -99,12 +108,26 @@ export default class DataboxManifest implements IDataboxManifest {
 
   public async load(): Promise<boolean> {
     if (await this.exists()) {
-      let data: IDataboxManifest = (await readFileAsJson(this.path)) ?? ({} as any);
+      let data: IDataboxManifestJson = (await readFileAsJson(this.path)) ?? ({} as any);
+      // Dbx manifest is just a raw manifest (no manual settings or history
+      if (data && this.source === 'dbx') {
+        Object.assign(this, filterUndefined(data));
+        return true;
+      }
+      // Global/Project configs store under a key
       if (this.source === 'global' || this.source === 'project') {
-        data = filterUndefined(data[this.sharedConfigFileKey]);
+        data = data[this.sharedConfigFileKey];
       }
       if (data) {
-        Object.assign(this, data);
+        const {
+          __GENERATED_LAST_VERSION__: generated,
+          __VERSION_HISTORY__: allVersions,
+          ...explicitSettings
+        } = data;
+        this.explicitSettings = filterUndefined(explicitSettings);
+        Object.assign(this, filterUndefined(generated));
+        if (allVersions) this.allVersions = allVersions;
+
         return true;
       }
     } else if (this.source === 'global') {
@@ -115,24 +138,35 @@ export default class DataboxManifest implements IDataboxManifest {
   }
 
   public async save(): Promise<void> {
-    const data: any = this.toJSON();
-    let json = data as any;
-    if (this.overrides) data.overrides = this.overrides;
-    if (this.allVersions) data.allVersions = this.allVersions;
-
+    let json: any;
     if (this.source === 'global' || this.source === 'project') {
       const config = (await readFileAsJson(this.path)) ?? {};
-      config[this.sharedConfigFileKey] = { ...data };
+      config[this.sharedConfigFileKey] = this.toConfigManifest();
       json = config;
+    } else if (this.source === 'entrypoint') {
+      json = this.toConfigManifest();
+    } else if (this.source === 'dbx') {
+      // dbx stores only the output
+      json = this.toJSON();
+      await DataboxManifest.validate(json);
     }
+
     // don't create file if it doesn't exist already
-    if (this.source !== 'default' && !(await this.exists())) {
+    if (this.source !== 'dbx' && !(await this.exists())) {
       return;
     }
     if (!(await existsAsync(Path.dirname(this.path)))) {
       await Fs.mkdir(Path.dirname(this.path), { recursive: true });
     }
     await safeOverwriteFile(this.path, JSON.stringify(json, null, 2));
+  }
+
+  public toConfigManifest(): IDataboxManifestJson {
+    return {
+      ...this.explicitSettings,
+      __GENERATED_LAST_VERSION__: this.toJSON(),
+      __VERSION_HISTORY__: this.allVersions,
+    };
   }
 
   public toJSON(): IDataboxManifest {
@@ -144,10 +178,13 @@ export default class DataboxManifest implements IDataboxManifest {
       scriptHash: this.scriptHash,
       runtimeName: this.runtimeName,
       runtimeVersion: this.runtimeVersion,
+      paymentAddress: this.paymentAddress,
+      creditsAddress: this.creditsAddress,
+      pricePerQuery: this.pricePerQuery,
     };
   }
 
-  private async syncOverrideManifestVersions(sources: IDataboxSources): Promise<void> {
+  private async syncGeneratedManifests(sources: IDataboxSources): Promise<void> {
     for (const source of sources) {
       if (!source || !(await source.exists())) continue;
       source.allVersions ??= [];
@@ -162,7 +199,7 @@ export default class DataboxManifest implements IDataboxManifest {
     }
   }
 
-  private async loadManifestSources(sources: IDataboxSources): Promise<void> {
+  private async loadGeneratedManifests(sources: IDataboxSources): Promise<void> {
     for (const source of sources) {
       if (!source) continue;
       const didLoad = await source.load();
@@ -174,7 +211,7 @@ export default class DataboxManifest implements IDataboxManifest {
     }
   }
 
-  private async loadManifestOverrides(
+  private async loadExplicitSettings(
     sources: IDataboxSources,
     logger?: (message: string, ...args: any[]) => any,
   ): Promise<void> {
@@ -182,15 +219,15 @@ export default class DataboxManifest implements IDataboxManifest {
       if (!source) continue;
       const didLoad = await source.load();
       if (didLoad) {
-        const overrides = filterUndefined(source.overrides);
-        if (!overrides || !Object.keys(overrides).length) continue;
+        const explicitSettings = filterUndefined(source.explicitSettings);
+        if (!explicitSettings || !Object.keys(explicitSettings).length) continue;
         logger?.('Applying Databox Manifest overrides', {
           source: source.source,
           path: source.path,
-          overrides,
+          overrides: explicitSettings,
         });
-        Object.assign(this, overrides);
-        if (overrides.linkedVersions?.length === 0) {
+        Object.assign(this, explicitSettings);
+        if (explicitSettings.linkedVersions?.length === 0) {
           this.hasClearedLinkedVersions = true;
         }
       }
@@ -212,16 +249,47 @@ export default class DataboxManifest implements IDataboxManifest {
   public static createVersionHash(
     manifest: Pick<
       IDataboxManifest,
-      'scriptHash' | 'versionTimestamp' | 'scriptEntrypoint' | 'linkedVersions'
+      | 'scriptHash'
+      | 'versionTimestamp'
+      | 'scriptEntrypoint'
+      | 'linkedVersions'
+      | 'paymentAddress'
+      | 'creditsAddress'
+      | 'pricePerQuery'
     >,
   ): string {
-    const { scriptHash, versionTimestamp, scriptEntrypoint, linkedVersions } = manifest;
-    linkedVersions.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
-    const hash = `${scriptHash}${versionTimestamp}${scriptEntrypoint}${JSON.stringify(
+    const {
+      scriptHash,
+      versionTimestamp,
+      scriptEntrypoint,
+      pricePerQuery,
+      paymentAddress,
+      creditsAddress,
       linkedVersions,
-    )}`;
-    const sha = HashUtils.sha3(Buffer.from(hash));
-    return HashUtils.encodeHash(sha, 'dbx');
+    } = manifest;
+    linkedVersions.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
+    const hashMessage = concatAsBuffer(
+      scriptHash,
+      versionTimestamp,
+      scriptEntrypoint,
+      pricePerQuery,
+      paymentAddress,
+      creditsAddress,
+      JSON.stringify(linkedVersions),
+    );
+    const sha = HashUtils.sha3(hashMessage);
+    return encodeBuffer(sha, 'dbx');
+  }
+
+  public static validate(json: IDataboxManifest): void {
+    try {
+      DataboxManifestSchema.parse(json);
+    } catch (error) {
+      throw ValidationError.fromZodValidation(
+        'This Manifest has errors that need to be fixed.',
+        error,
+      );
+    }
   }
 
   /// MANIFEST OVERRIDE FILES  /////////////////////////////////////////////////////////////////////////////////////////
@@ -264,11 +332,17 @@ export default class DataboxManifest implements IDataboxManifest {
   }
 }
 
-function filterUndefined<T>(object: T): Partial<T> {
+function filterUndefined<T>(object: T, omitKeys?: string[]): Partial<T> {
   if (!object) return object;
   const result: Partial<T> = {};
   for (const [key, value] of Object.entries(object)) {
+    if (omitKeys?.includes(key)) continue;
     if (value !== undefined) result[key] = value;
   }
   return result;
+}
+
+interface IDataboxManifestJson extends Partial<IDataboxManifest> {
+  __GENERATED_LAST_VERSION__: IDataboxManifest;
+  __VERSION_HISTORY__: IVersionHistoryEntry[];
 }

@@ -2,6 +2,8 @@ import * as Fs from 'fs/promises';
 import * as Path from 'path';
 import { existsSync } from 'fs';
 import DataboxManifest from '@ulixee/databox-core/lib/DataboxManifest';
+import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
+import { sha3 } from '@ulixee/commons/lib/hashUtils';
 import DataboxPackager from '../index';
 import DbxFile from '../lib/DbxFile';
 
@@ -41,7 +43,6 @@ test('it should generate a relative script entrypoint', async () => {
   expect(packager.sourceMap).toBe(
     await Fs.readFile(`${dbx.workingDirectory}/databox.js.map`, 'utf8'),
   );
-
   await expect(
     Fs.readFile(`${dbx.workingDirectory}/databox-manifest.json`, 'utf8'),
   ).resolves.toBeTruthy();
@@ -54,6 +55,9 @@ test('it should generate a relative script entrypoint', async () => {
     runtimeVersion: require('../package.json').version,
     versionHash: DataboxManifest.createVersionHash(packager.manifest),
     versionTimestamp: expect.any(Number),
+    paymentAddress: undefined,
+    pricePerQuery: undefined,
+    averageBytesPerQuery: undefined,
   });
   expect((await Fs.stat(`${__dirname}/assets/historyTest.dbx`)).isFile()).toBeTruthy();
 
@@ -66,16 +70,17 @@ test('should be able to modify the local built files for uploading', async () =>
   workingDirectory = new DbxFile(dbxFile).workingDirectory;
   dbxFile = packager.dbxPath;
 
+  const versionHash = encodeBuffer(sha3('dbxExtra'), 'dbx');
   await packager.build({ keepOpen: true });
   packager.manifest.linkedVersions.push({
-    versionHash: 'dbxExtra',
+    versionHash,
     versionTimestamp: Date.now(),
   });
   await packager.manifest.save();
 
   const packager2 = new DataboxPackager(`${__dirname}/assets/historyTest.js`);
   await packager2.build({ keepOpen: true });
-  expect(packager2.manifest.linkedVersions.some(x => x.versionHash === 'dbxExtra')).toBeTruthy();
+  expect(packager2.manifest.linkedVersions.some(x => x.versionHash === versionHash)).toBeTruthy();
 });
 
 test('should be able to read a databox manifest next to an entrypoint', async () => {
@@ -98,10 +103,8 @@ test('should merge custom manifests', async () => {
     `${projectConfig}/databoxes.json`,
     JSON.stringify({
       [Path.join('..', 'test', 'assets', 'customManifest-manifest.json')]: {
-        overrides: {
-          runtimeVersion: '1.1.2',
-          runtimeName: 'projectOverrider',
-        },
+        runtimeVersion: '1.1.2',
+        runtimeName: 'projectOverrider',
       },
     }),
   );
@@ -151,16 +154,13 @@ module.exports=new Databox(({output}) => {
   workingDirectory = packager.dbx.workingDirectory;
   dbxFile = packager.dbxPath;
 
+  const [dbx1, dbx2, dbx3] = ['dbx1', 'dbx2', 'dbx3'].map(x => encodeBuffer(sha3(x), 'dbx'));
   await packager.manifest.setLinkedVersions(entrypoint, [
-    { versionHash: 'dbx1', versionTimestamp: Date.now() - 25e3 },
-    { versionHash: 'dbx2', versionTimestamp: Date.now() - 30e3 },
-    { versionHash: 'dbx3', versionTimestamp: Date.now() - 60e3 },
+    { versionHash: dbx1, versionTimestamp: Date.now() - 25e3 },
+    { versionHash: dbx2, versionTimestamp: Date.now() - 30e3 },
+    { versionHash: dbx3, versionTimestamp: Date.now() - 60e3 },
   ]);
-  expect(packager.manifest.linkedVersions.map(x => x.versionHash)).toEqual([
-    'dbx1',
-    'dbx2',
-    'dbx3',
-  ]);
+  expect(packager.manifest.linkedVersions.map(x => x.versionHash)).toEqual([dbx1, dbx2, dbx3]);
 });
 
 test('should be able to change the output directory', async () => {
