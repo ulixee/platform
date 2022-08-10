@@ -13,7 +13,7 @@ test('it can save a databox manifest', () => {
   });
 
   expect(db.databoxes.getByVersionHash('abc')).toEqual({
-    creditsAddress: undefined,
+    giftCardAddress: undefined,
     paymentAddress: undefined,
     pricePerQuery: 0,
     scriptEntrypoint: 'script/index.js',

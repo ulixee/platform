@@ -29,7 +29,7 @@ export default class DataboxManifest implements IDataboxManifest {
   // Payment details
   public pricePerQuery?: number;
   public paymentAddress?: string;
-  public creditsAddress?: string;
+  public giftCardAddress?: string;
 
   public linkedVersions: IVersionHistoryEntry[];
   public allVersions: IVersionHistoryEntry[];
@@ -179,7 +179,7 @@ export default class DataboxManifest implements IDataboxManifest {
       runtimeName: this.runtimeName,
       runtimeVersion: this.runtimeVersion,
       paymentAddress: this.paymentAddress,
-      creditsAddress: this.creditsAddress,
+      giftCardAddress: this.giftCardAddress,
       pricePerQuery: this.pricePerQuery,
     };
   }
@@ -254,7 +254,7 @@ export default class DataboxManifest implements IDataboxManifest {
       | 'scriptEntrypoint'
       | 'linkedVersions'
       | 'paymentAddress'
-      | 'creditsAddress'
+      | 'giftCardAddress'
       | 'pricePerQuery'
     >,
   ): string {
@@ -264,7 +264,7 @@ export default class DataboxManifest implements IDataboxManifest {
       scriptEntrypoint,
       pricePerQuery,
       paymentAddress,
-      creditsAddress,
+      giftCardAddress,
       linkedVersions,
     } = manifest;
     linkedVersions.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
@@ -274,7 +274,7 @@ export default class DataboxManifest implements IDataboxManifest {
       scriptEntrypoint,
       pricePerQuery,
       paymentAddress,
-      creditsAddress,
+      giftCardAddress,
       JSON.stringify(linkedVersions),
     );
     const sha = HashUtils.sha3(hashMessage);

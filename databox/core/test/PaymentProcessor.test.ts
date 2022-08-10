@@ -20,7 +20,7 @@ const payment = {
   micronoteBatchIdentity: micronoteBatchIdentity.bech32,
   guaranteeBlockHeight: 0,
   micronoteSignature: micronoteBatchIdentity.sign(sha3(concatAsBuffer('1', 1000))),
-  isCreditBatch: false,
+  isGiftCardBatch: false,
   micronoteId: '1',
   batchSlug: '123',
   blockHeight: 0,
@@ -33,7 +33,7 @@ test('it should ensure a payment has enough microgons', async () => {
     {
       microgons: 100,
       sidechainIdentity,
-      isCreditBatch: false,
+      isGiftCardBatch: false,
     } as any,
     {
       anticipatedBytesPerQuery: 100,

@@ -12,7 +12,7 @@ export default {
     'Uploader Identities',
   ),
   paymentAddress: parseAddress(process.env.ULX_PAYMENT_ADDRESS),
-  creditsAddress: parseAddress(process.env.ULX_CREDITS_ADDRESS),
+  giftCardAddress: parseAddress(process.env.ULX_GIFT_CARD_ADDRESS),
   computePricePerKb: parseEnvInt(process.env.ULX_PRICE_PER_KB),
   approvedSidechains: [],
   defaultSidechainHost: process.env.ULX_SIDECHAIN_HOST,

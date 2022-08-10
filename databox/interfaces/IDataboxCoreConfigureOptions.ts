@@ -7,7 +7,7 @@ export default interface IDataboxCoreConfigureOptions {
   databoxesTmpDir: string;
   waitForDataboxCompletionOnShutdown: boolean;
   paymentAddress: string;
-  creditsAddress: string;
+  giftCardAddress: string;
   enableRunWithLocalPath: boolean;
   uploaderIdentities: string[];
   defaultBytesForPaymentEstimates: number;

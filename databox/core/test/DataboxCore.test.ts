@@ -68,7 +68,7 @@ test('can get metadata about an uploaded databox', async () => {
     runApi('Databox.meta', { versionHash: packager.manifest.versionHash }),
   ).resolves.toEqual({
     latestVersionHash: packager.manifest.versionHash,
-    creditPaymentAddresses: [],
+    giftCardPaymentAddresses: [],
     averageBytesPerQuery: expect.any(Number),
     averageMilliseconds: expect.any(Number),
     averageTotalPricePerQuery: 0,

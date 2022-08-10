@@ -6,18 +6,18 @@ export default new DataboxApiHandler('Databox.meta', {
     await DataboxCore.start();
 
     const databox = context.databoxRegistry.getByVersionHash(request.versionHash);
-    const creditPaymentAddresses: string[] = [];
+    const giftCardPaymentAddresses: string[] = [];
 
-    if (context.configuration.creditsAddress && databox.creditsAddress) {
-      creditPaymentAddresses.push(databox.creditsAddress);
-      if (context.configuration.creditsAddress !== databox.creditsAddress) {
-        creditPaymentAddresses.push(context.configuration.creditsAddress);
+    if (context.configuration.giftCardAddress && databox.giftCardAddress) {
+      giftCardPaymentAddresses.push(databox.giftCardAddress);
+      if (context.configuration.giftCardAddress !== databox.giftCardAddress) {
+        giftCardPaymentAddresses.push(context.configuration.giftCardAddress);
       }
     }
 
     return {
       latestVersionHash: databox.latestVersionHash,
-      creditPaymentAddresses,
+      giftCardPaymentAddresses,
       averageMilliseconds: databox.stats.averageMilliseconds,
       maxMilliseconds: databox.stats.maxMilliseconds,
       averageTotalPricePerQuery: databox.stats.averagePrice,

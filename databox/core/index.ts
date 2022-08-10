@@ -39,7 +39,7 @@ export default class DataboxCore {
     waitForDataboxCompletionOnShutdown: false,
     enableRunWithLocalPath: true,
     paymentAddress: env.paymentAddress,
-    creditsAddress: env.creditsAddress,
+    giftCardAddress: env.giftCardAddress,
     uploaderIdentities: env.uploaderIdentities,
     computePricePerKb: env.computePricePerKb ?? 0,
     defaultBytesForPaymentEstimates: 256,

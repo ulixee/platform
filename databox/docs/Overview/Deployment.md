@@ -79,7 +79,7 @@ When you package a Databox, a Manifest is created with the following properties:
 - runtimeName `string`. The "type" of Databox runtime used internally.
 - runtimeVersion `string`. The version of the Databox module. Your script will be checked for compatibility with the Server npm modules before it runs.
 - paymentAddress `string`. Optional address to use with the Ulixee Sidechain for payments.
-- pricePerQuery `number`. Optional price per query (in Ulixee Sidechain Microgons).
+- pricePerQuery `number`. Optional price per query (in Ulixee Sidechain microgons - 1 microgon = ~1/1,000,000 of a dollar).
 - creditAddress `string`. Optional Ulixee Sidechain address that is valid for credits issued to developers.
 
 ### Setting values:

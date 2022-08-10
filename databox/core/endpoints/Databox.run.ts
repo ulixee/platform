@@ -110,15 +110,15 @@ async function processPayments(
     context.logger,
   );
 
-  if (request.payment.isCreditBatch) {
-    if (!configuration.creditsAddress || !databox.creditsAddress) {
-      const rejector = !databox.creditsAddress ? 'databox' : 'server';
-      throw new InvalidMicronoteError(`This ${rejector} is not accepting credits`);
+  if (request.payment.isGiftCardBatch) {
+    if (!configuration.giftCardAddress || !databox.giftCardAddress) {
+      const rejector = !databox.giftCardAddress ? 'databox' : 'server';
+      throw new InvalidMicronoteError(`This ${rejector} is not accepting gift cards.`);
     }
-    paymentProcessor.addAddressPayable(configuration.creditsAddress, {
+    paymentProcessor.addAddressPayable(configuration.giftCardAddress, {
       pricePerKb: configuration.computePricePerKb,
     });
-    paymentProcessor.addAddressPayable(databox.creditsAddress, {
+    paymentProcessor.addAddressPayable(databox.giftCardAddress, {
       pricePerQuery: databox.pricePerQuery,
     });
   } else {
