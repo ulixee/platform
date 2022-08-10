@@ -3,6 +3,7 @@ import Core from '@ulixee/hero-core';
 import DefaultHero, { IHeroCreateOptions } from '@ulixee/hero';
 import UlixeeServer from '@ulixee/server';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import UlixeeServerConfig from '@ulixee/commons/config/servers';
 const { version } = require('./package.json');
 
 export * from '@ulixee/hero';
@@ -17,6 +18,10 @@ export default class Hero extends DefaultHero {
 
 async function getCoreServerHost(): Promise<string> {
   let serverHost = UlixeeServer.getHost(version);
+
+  if (serverHost?.startsWith('localhost')) {
+    serverHost = await UlixeeServerConfig.global.checkLocalVersionHost(version, serverHost);
+  }
 
   // start a server if none already started
   if (!serverHost) {

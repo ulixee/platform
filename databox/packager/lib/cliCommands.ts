@@ -127,10 +127,16 @@ async function uploadPackage(
   identityPath: string | undefined,
   identityPassphrase: string | undefined,
 ): Promise<void> {
-  uploadHost ??=
-    UlixeeConfig.load()?.serverHost ??
-    UlixeeConfig.global.serverHost ??
-    UlixeeServerConfig.global.getVersionHost(version);
+  if (!uploadHost) {
+    uploadHost =
+      UlixeeConfig.load()?.serverHost ??
+      UlixeeConfig.global.serverHost ??
+      UlixeeServerConfig.global.getVersionHost(version);
+
+    if (uploadHost?.startsWith('localhost')) {
+      uploadHost = await UlixeeServerConfig.global.checkLocalVersionHost(this.version, uploadHost);
+    }
+  }
 
   if (!uploadHost) {
     throw new Error(
