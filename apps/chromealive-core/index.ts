@@ -40,6 +40,7 @@ export default class ChromeAliveCore {
   private static connections: IConnectionToChromeAliveClient[] = [];
   private static app: ChildProcess;
   private static events = new EventSubscriber();
+  private static isEnabled = false;
 
   public static setCoreServerAddress(address: Promise<string>): void {
     this.coreServerAddress = address;
@@ -67,6 +68,7 @@ export default class ChromeAliveCore {
   public static register(): void {
     log.info('Registering ChromeAlive!');
 
+    this.isEnabled = true;
     bindFunctions(this);
 
     this.events.on(HeroCore.events, 'browser-launched', this.onNewBrowser);
@@ -133,6 +135,7 @@ export default class ChromeAliveCore {
 
     const script = heroSession.options.scriptInstanceMeta?.entrypoint;
     if (!script) return;
+    if (!this.isEnabled) return;
 
     if (heroSession.mode === 'timetravel' || heroSession.mode === 'production') {
       return;
@@ -337,6 +340,8 @@ export default class ChromeAliveCore {
         );
         await Fs.promises.writeFile(filePath, fileContents);
       } catch (err) {
+        this.isEnabled = false;
+        delete HeroCore.corePluginsById[HeroCorePlugin.id];
         throw new Error('Could not launch ChromeAlive! Chrome Extension not installed.');
       }
       args.push(`--coreServerAddress="${coreServerAddress}"`);
@@ -375,7 +380,7 @@ export default class ChromeAliveCore {
   }
 
   private static async onNewBrowser(): Promise<void> {
-    await this.launchApp();
+    await this.launchApp().catch(() => null);
   }
 
   private static closeApp(): void {
