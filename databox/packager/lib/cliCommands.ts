@@ -7,8 +7,9 @@ import { inspect } from 'util';
 import DataboxManifest from '@ulixee/databox-core/lib/DataboxManifest';
 import IDataboxManifest, {
   IVersionHistoryEntry,
-} from '@ulixee/databox-interfaces/IDataboxManifest';
+} from '@ulixee/specification/types/IDataboxManifest';
 import { findProjectPathSync } from '@ulixee/commons/lib/dirUtils';
+import Identity from '@ulixee/crypto/lib/Identity';
 import DbxFile from './DbxFile';
 import DataboxPackager from '../index';
 import { version } from '../package.json';
@@ -20,13 +21,22 @@ export async function upload(
   args: {
     uploadHost?: string;
     allowNewVersionHistory?: boolean;
+    identityPath?: string;
+    identityPassphrase?: string;
   },
 ): Promise<void> {
   const { uploadHost } = args;
   dbxPath = Path.resolve(dbxPath);
   const dbx = await new DbxFile(dbxPath);
   const manifest = await dbx.getEmbeddedManifest();
-  await uploadPackage(dbx, manifest, uploadHost, args.allowNewVersionHistory);
+  await uploadPackage(
+    dbx,
+    manifest,
+    uploadHost,
+    args.allowNewVersionHistory,
+    args.identityPath,
+    args.identityPassphrase,
+  );
 }
 
 export async function deploy(
@@ -36,6 +46,8 @@ export async function deploy(
     compiledSourcePath?: string;
     clearVersionHistory?: boolean;
     uploadHost?: string;
+    identityPath?: string;
+    identityPassphrase?: string;
   },
 ): Promise<void> {
   const packager = new DataboxPackager(entrypoint, null, true);
@@ -45,7 +57,14 @@ export async function deploy(
     compiledSourcePath: options.compiledSourcePath,
   });
   console.log('Uploading...');
-  await uploadPackage(dbx, packager.manifest, options.uploadHost, options.clearVersionHistory);
+  await uploadPackage(
+    dbx,
+    packager.manifest,
+    options.uploadHost,
+    options.clearVersionHistory,
+    options.identityPath,
+    options.identityPassphrase,
+  );
   await dbx.delete();
 }
 
@@ -70,6 +89,8 @@ export async function buildPackage(
     clearVersionHistory?: boolean;
     uploadHost?: string;
     upload?: boolean;
+    identityPath?: string;
+    identityPassphrase?: string;
   },
 ): Promise<void> {
   const packager = new DataboxPackager(path, options?.outDir, true);
@@ -82,7 +103,14 @@ export async function buildPackage(
     console.log('Rolled up and hashed Databox', {
       dbxPath: dbx.dbxPath,
     });
-    await uploadPackage(dbx, packager.manifest, options.uploadHost, options.clearVersionHistory);
+    await uploadPackage(
+      dbx,
+      packager.manifest,
+      options.uploadHost,
+      options.clearVersionHistory,
+      options.identityPath,
+      options.identityPassphrase,
+    );
   } else {
     console.log('Rolled up and hashed Databox. The .dbx file was not uploaded to a server.', {
       dbxPath: dbx.dbxPath,
@@ -96,23 +124,40 @@ async function uploadPackage(
   manifest: DataboxManifest,
   uploadHost: string,
   clearVersionHistory: boolean,
+  identityPath: string | undefined,
+  identityPassphrase: string | undefined,
 ): Promise<void> {
-  uploadHost ??=
-    UlixeeConfig.load()?.serverHost ??
-    UlixeeConfig.global.serverHost ??
-    UlixeeServerConfig.global.getVersionHost(version);
+  if (!uploadHost) {
+    uploadHost =
+      UlixeeConfig.load()?.serverHost ??
+      UlixeeConfig.global.serverHost ??
+      UlixeeServerConfig.global.getVersionHost(version);
+
+    if (uploadHost?.startsWith('localhost')) {
+      uploadHost = await UlixeeServerConfig.global.checkLocalVersionHost(this.version, uploadHost);
+    }
+  }
 
   if (!uploadHost) {
     throw new Error(
       'Could not determine a Server host from Ulixee config files. Please provide one with the `--upload-host` option.',
     );
   }
+  let identity: Identity;
+  if (identityPath) {
+    identity = Identity.loadFromFile(identityPath, {
+      keyPassphrase: identityPassphrase,
+    });
+  }
 
   console.log('Uploading package to %s', uploadHost, {
     manifest: manifest.toJSON(),
   });
   try {
-    await dbxFile.upload(uploadHost, clearVersionHistory);
+    await dbxFile.upload(uploadHost, {
+      allowNewLinkedVersionHistory: clearVersionHistory,
+      identity,
+    });
     printUploadedMessage(uploadHost, manifest);
   } catch (error) {
     if (error.code === 'InvalidScriptVersionHistoryError' && error.versionHistory) {
@@ -162,7 +207,7 @@ function handleMissingLinkedVersions(
         printUploadedMessage(uploadHost, manifest);
       }
       if (answer.toLowerCase().includes('new')) {
-        await dbxFile.upload(uploadHost, true);
+        await dbxFile.upload(uploadHost, { allowNewLinkedVersionHistory: true });
         printUploadedMessage(uploadHost, manifest);
       }
       rl.close();
@@ -182,9 +227,11 @@ function handleInvalidScriptVersionHistory(
   });
   const projectPath = findProjectPathSync(dbxFile.dbxPath);
   const absoluteScriptPath = Path.join(projectPath, '..', manifest.scriptEntrypoint);
-  const customManifestPath = absoluteScriptPath.replace(Path.extname(absoluteScriptPath), '-manifest.json');
+  const customManifestPath = absoluteScriptPath.replace(
+    Path.extname(absoluteScriptPath),
+    '-manifest.json',
+  );
 
-  // TODO: compare tree to local tree to see how it differs and print out missing tree
   rl.question(
     `The uploaded Databox has a different version history than your local version. 
         

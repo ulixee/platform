@@ -6,8 +6,11 @@
   "license": "MIT",
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.8",
+    "@ulixee/crypto": "2.0.0-alpha.8",
     "@ulixee/databox": "2.0.0-alpha.9",
+    "@ulixee/sidechain": "2.0.0-alpha.8",
     "@ulixee/databox-interfaces": "2.0.0-alpha.9",
+    "@ulixee/specification": "2.0.0-alpha.8",
     "@ulixee/net": "2.0.0-alpha.8",
     "better-sqlite3": "^7.5.1",
     "nanoid": "^3.1.30",
@@ -18,6 +21,8 @@
     "@ulixee/databox-core-runtime": "2.0.0-alpha.9",
     "@ulixee/databox-packager": "2.0.0-alpha.9",
     "@ulixee/databox-testing": "2.0.0-alpha.9",
-    "ts-node": "^10.8.1"
+    "@ulixee/server": "2.0.0-alpha.9",
+    "ts-node": "^10.8.1",
+    "zod": "^3.17.10"
   }
 }

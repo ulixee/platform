@@ -1,4 +1,4 @@
-import IDataboxManifest from './IDataboxManifest';
+import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 
 export default interface IDataboxCoreRuntime {
   databoxRuntimeVersion: string;

@@ -48,6 +48,14 @@ jobs:
         run: yarn && yarn build
         working-directory: ../shared
 
+      - name: (TEMP) Clone ulixee/payments
+        run: git clone --recurse-submodules -j8 https://github.com/ulixee/payments.git
+        working-directory: ..
+
+      - name: (TEMP) Install ulixee/payments
+        run: yarn && yarn build
+        working-directory: ../payments
+
       - name: (TEMP) Clone unblocked
         run: git clone --recurse-submodules -j8 https://github.com/unblockable/unblocked.git
         working-directory: ..

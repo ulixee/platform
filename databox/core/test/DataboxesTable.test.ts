@@ -13,6 +13,9 @@ test('it can save a databox manifest', () => {
   });
 
   expect(db.databoxes.getByVersionHash('abc')).toEqual({
+    giftCardAddress: undefined,
+    paymentAddress: undefined,
+    pricePerQuery: 0,
     scriptEntrypoint: 'script/index.js',
     scriptHash: 'scr1',
     runtimeName: '@ulixee/databox-for-hero',

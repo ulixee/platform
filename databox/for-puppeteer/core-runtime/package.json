@@ -11,6 +11,7 @@
     "@ulixee/databox-for-puppeteer": "2.0.0-alpha.9",
     "@ulixee/databox-interfaces": "2.0.0-alpha.9",
     "@ulixee/net": "2.0.0-alpha.8",
+    "@ulixee/specification": "2.0.0-alpha.8",
     "vm2": "^3.9.9"
   },
   "devDependencies": {

@@ -3,7 +3,8 @@ import * as Fs from 'fs/promises';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import * as Path from 'path';
 import DataboxManifest from '@ulixee/databox-core/lib/DataboxManifest';
-import ConnectionToDataboxCore from './ConnectionToDataboxCore';
+import Identity from '@ulixee/crypto/lib/Identity';
+import DataboxApiClient from '@ulixee/databox/lib/DataboxApiClient';
 
 export default class DbxFile {
   public readonly workingDirectory: string;
@@ -68,20 +69,25 @@ export default class DbxFile {
     }
   }
 
+  public asBuffer(): Promise<Buffer> {
+    return Fs.readFile(this.dbxPath);
+  }
+
   public async upload(
     serverHost: string,
-    allowNewScriptHistory = false,
-    timeoutMs = 120e3,
-  ): Promise<void> {
-    const connection = ConnectionToDataboxCore.remote(serverHost);
-    const compressedPackage = await Fs.readFile(this.dbxPath);
+    options: {
+      allowNewLinkedVersionHistory?: boolean;
+      identity?: Identity;
+      timeoutMs?: number;
+    } = {},
+  ): Promise<{ success: boolean }> {
+    const compressedDatabox = await this.asBuffer();
+
+    const client = new DataboxApiClient(serverHost);
     try {
-      await connection.sendRequest(
-        { command: 'Databox.upload', args: [compressedPackage, allowNewScriptHistory] },
-        timeoutMs,
-      );
+      return await client.upload(compressedDatabox, options);
     } finally {
-      await connection.disconnect();
+      await client.disconnect();
     }
   }
 

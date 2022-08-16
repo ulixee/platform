@@ -7,17 +7,15 @@ let ulixeeServer: UlixeeServer;
 let koaServer: Helpers.ITestKoaServer;
 beforeAll(async () => {
   ulixeeServer = new UlixeeServer();
-  Helpers.needsClosing.push({
-    close: ulixeeServer.close.bind(ulixeeServer),
-    onlyCloseOnFinal: true,
-  });
+  Helpers.onClose(() => ulixeeServer.close(), true);
   koaServer = await Helpers.runKoaServer();
   await ulixeeServer.listen(null, false);
 });
 afterAll(Helpers.afterAll);
 
 test('it should be able to upload a databox and run it by hash', async () => {
-  if (Fs.existsSync(`${__dirname}/_testDatabox.dbx`)) Fs.unlinkSync(`${__dirname}/_testDatabox.dbx`);
+  if (Fs.existsSync(`${__dirname}/_testDatabox.dbx`))
+    Fs.unlinkSync(`${__dirname}/_testDatabox.dbx`);
   const packager = new Packager(require.resolve('./_testDatabox.js'));
   const dbx = await packager.build();
   const serverHost = await ulixeeServer.address;
@@ -29,12 +27,14 @@ test('it should be able to upload a databox and run it by hash', async () => {
     ctx.body = `<html><head><title>Databox!</title></head></html>`;
   });
   const remoteTransport = ConnectionToDataboxCore.remote(serverHost);
+  Helpers.onClose(() => remoteTransport.disconnect())
   await expect(
     remoteTransport.sendRequest({
       command: 'Databox.run',
-      args: [manifest.versionHash, { url: `${koaServer.baseUrl}/databox` }],
+      args: [{ versionHash: manifest.versionHash, input: { url: `${koaServer.baseUrl}/databox` } }],
     }),
   ).resolves.toEqual({
+    metadata: expect.any(Object),
     output: { title: 'Databox!' },
     latestVersionHash: manifest.versionHash,
   });

@@ -62,11 +62,13 @@
       "databox/for-puppeteer/*",
       "server/*",
       "cli",
+      "e2e",
       "stream/build/*",
       "hero/build/*",
       "hero/build/plugins/*",
       "playgrounds/*",
       "../shared/build/*",
+      "../payments/build/sidechain/client",
       "../unblocked/agent/build/*",
       "../unblocked/build/plugins/*",
       "../unblocked/specifications/build"

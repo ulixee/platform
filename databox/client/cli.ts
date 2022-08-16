@@ -6,6 +6,32 @@ const { version } = require('./package.json');
 export default function databoxCommands(): Command {
   const databoxCommand = new Command().version(version);
 
+  const identityPrivateKeyPathOption = databoxCommand
+    .createOption(
+      '-i, --identity-path <path>',
+      'A path to a Ulixee Identity. Necessary for signing if a Server has restricted allowed Uploaders.',
+    )
+    .env('ULX_IDENTITY_PATH');
+
+  const identityPrivateKeyPassphraseOption = databoxCommand
+    .createOption(
+      '-p, --identity-passphrase <path>',
+      'A decryption passphrase to the Ulixee identity (only necessary if specified during key creation).',
+    )
+    .env('ULX_IDENTITY_PASSPHRASE');
+
+  const uploadHostOption = databoxCommand.createOption(
+    '-h, --upload-host <host>',
+    'Upload this Databox to the given host server. Will try to auto-connect if none specified.',
+  );
+
+  const clearVersionHistoryOption = databoxCommand
+    .createOption(
+      '-c, --clear-version-history',
+      'Clear out any version history for this script entrypoint',
+    )
+    .default(false);
+
   databoxCommand
     .command('deploy')
     .description('Build and deploy a Databox.')
@@ -13,15 +39,8 @@ export default function databoxCommands(): Command {
       '<path>',
       'The path of the entrypoint to the Databox. Must have a default export that is a DataboxWrapper.',
     )
-    .option(
-      '-h, --upload-host <host>',
-      'Upload this Databox to the given host server. Will try to auto-connect if none specified.',
-    )
-    .option(
-      '-c, --clear-version-history',
-      'Clear out any version history for this script entrypoint',
-      false,
-    )
+    .addOption(uploadHostOption)
+    .addOption(clearVersionHistoryOption)
     .option(
       '-s, --compiled-source-path <path>',
       'Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).',
@@ -30,12 +49,24 @@ export default function databoxCommands(): Command {
       '-t, --tsconfig <path>',
       'A path to a TypeScript config file if needed. Will be auto-located based on the entrypoint if it ends in ".ts"',
     )
-    .action(async (path, { tsconfig, compiledSourcePath, uploadHost, clearVersionHistory }) => {
+    .addOption(identityPrivateKeyPathOption)
+    .addOption(identityPrivateKeyPassphraseOption)
+    .action(async (path, args) => {
+      const {
+        tsconfig,
+        compiledSourcePath,
+        uploadHost,
+        clearVersionHistory,
+        identityPath,
+        identityPassphrase,
+      } = args;
       await getPackagerCommands().deploy(path, {
         tsconfig,
         compiledSourcePath,
         uploadHost,
         clearVersionHistory,
+        identityPath,
+        identityPassphrase,
       });
     });
 
@@ -46,17 +77,13 @@ export default function databoxCommands(): Command {
       '<path>',
       'The path of the entrypoint to the Databox. Must have a default export that is a DataboxWrapper.',
     )
-    .option('-o, --out-dir <path>', 'A directory path where you want packaged .dbx files to be saved')
+    .option(
+      '-o, --out-dir <path>',
+      'A directory path where you want packaged .dbx files to be saved',
+    )
     .option('-u, --upload', 'Upload this package to a Ulixee Server after packaging.', false)
-    .option(
-      '-h, --upload-host <host>',
-      'Upload this package to the given host server. Will try to auto-connect if none specified.',
-    )
-    .option(
-      '-c, --clear-version-history',
-      'Clear out any version history for this script entrypoint',
-      false,
-    )
+    .addOption(uploadHostOption)
+    .addOption(clearVersionHistoryOption)
     .option(
       '-s, --compiled-source-path <path>',
       'Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).',
@@ -65,18 +92,28 @@ export default function databoxCommands(): Command {
       '-t, --tsconfig <path>',
       'A path to a TypeScript config file if needed. Will be auto-located based on the entrypoint if it ends in ".ts"',
     )
-    .action(
-      async (path, { tsconfig, outDir, compiledSourcePath, uploadHost, upload, clearVersionHistory }) => {
-        await getPackagerCommands().buildPackage(path, {
-          tsconfig,
-          compiledSourcePath,
-          outDir,
-          uploadHost,
-          upload,
-          clearVersionHistory,
-        });
-      },
-    );
+    .action(async (path, options) => {
+      const {
+        tsconfig,
+        outDir,
+        compiledSourcePath,
+        uploadHost,
+        upload,
+        clearVersionHistory,
+        identityPath,
+        identityPassphrase,
+      } = options;
+      await getPackagerCommands().buildPackage(path, {
+        tsconfig,
+        compiledSourcePath,
+        outDir,
+        uploadHost,
+        upload,
+        clearVersionHistory,
+        identityPath,
+        identityPassphrase,
+      });
+    });
 
   databoxCommand
     .command('open')
@@ -99,18 +136,25 @@ export default function databoxCommands(): Command {
     .command('upload')
     .description('Upload a Databox package to a server.')
     .argument('<dbxPath>', 'The path to the packaged .dbx file.')
-    .option(
-      '-u, --upload-host <host>',
-      'Upload this package to the given host server. Will try to auto-connect if none specified.',
-    )
+    .addOption(uploadHostOption)
     .option(
       '-a, --allow-new-version-history',
       'Allow uploaded Databox to create a new version history for the script entrypoint.',
       false,
     )
-    .action(async (packagePath, { uploadHost, allowNewVersionHistory }) => {
-      await getPackagerCommands().upload(packagePath, { uploadHost, allowNewVersionHistory });
-    });
+    .action(
+      async (
+        packagePath,
+        { uploadHost, allowNewVersionHistory, identityPath, identityPassphrase },
+      ) => {
+        await getPackagerCommands().upload(packagePath, {
+          uploadHost,
+          allowNewVersionHistory,
+          identityPath,
+          identityPassphrase,
+        });
+      },
+    );
 
   return databoxCommand;
 }

@@ -1,5 +1,9 @@
 {
   "name": "@ulixee/databox-interfaces",
   "version": "2.0.0-alpha.9",
-  "description": "Interfaces for the Databox specification."
+  "description": "Interfaces for the Databox specification.",
+  "dependencies": {
+    "@ulixee/specification": "2.0.0-alpha.8",
+    "@ulixee/crypto": "2.0.0-alpha.8"
+  }
 }

@@ -1,15 +1,17 @@
 import * as WebSocket from 'ws';
 import * as Http from 'http';
+import { IncomingMessage } from 'http';
 import DataboxCore from '@ulixee/databox-core';
 import HeroCore from '@ulixee/hero-core';
 import IDataboxCoreConfigureOptions from '@ulixee/databox-interfaces/IDataboxCoreConfigureOptions';
 import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
-import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
-import ChromeAliveUtils from './ChromeAliveUtils';
+import HttpTransportToClient from '@ulixee/net/lib/HttpTransportToClient';
+import { IDataboxApis } from '@ulixee/specification/databox';
 import Server from '../index';
+import ChromeAliveUtils from './ChromeAliveUtils';
 
 export default class CoreRouter {
   public static modulesToRegister = [
@@ -18,8 +20,7 @@ export default class CoreRouter {
   ];
 
   public heroConfiguration: ICoreConfigureOptions;
-  public databoxConfiguration: IDataboxCoreConfigureOptions;
-  s;
+  public databoxConfiguration: Partial<IDataboxCoreConfigureOptions>;
 
   public get dataDir(): string {
     return HeroCore.dataDir;
@@ -60,7 +61,7 @@ export default class CoreRouter {
     await HeroCore.start(this.heroConfiguration);
 
     if (this.databoxConfiguration) {
-      Object.assign(DataboxCore, this.databoxConfiguration);
+      Object.assign(DataboxCore.options, this.databoxConfiguration);
     }
 
     await DataboxCore.start();
@@ -84,8 +85,12 @@ export default class CoreRouter {
     await HeroCore.shutdown();
   }
 
-  private handleApi(connectionType: keyof CoreRouter['connectionTypes'], ws: WebSocket): void {
-    const transport = new WsTransportToClient(ws);
+  private handleApi(
+    connectionType: keyof CoreRouter['connectionTypes'],
+    ws: WebSocket,
+    req: IncomingMessage,
+  ): void {
+    const transport = new WsTransportToClient(ws, req);
     const connection = this.connectionTypes[connectionType](transport);
     if (!connection) throw new Error(`Unknown connection protocol attempted "${connectionType}"`);
     this.connections.add(connection);
@@ -97,17 +102,18 @@ export default class CoreRouter {
 
     const input: any = {};
     for (const [key, value] of url.searchParams.entries()) input[key] = value;
-    const hash = url.pathname.replace('/databox/', '');
+    const versionHash = url.pathname.replace('/databox/', '');
 
-    let status = 200;
-    const response = await DataboxCore.run(hash, input).catch(err => {
-      status = 500;
-      return err;
-    });
-    res.writeHead(status, {
-      'Content-Type': 'text/json',
-    });
-    res.end(TypeSerializer.stringify({ data: response }));
+    const httpTransport = new HttpTransportToClient<IDataboxApis, {}>(req, res);
+    const connection = DataboxCore.addConnection(httpTransport);
+    httpTransport.emit('message', {
+      command: 'Databox.run',
+      args: {
+        versionHash,
+        input,
+      },
+    } as any);
+    await connection.disconnect();
   }
 }
 

@@ -1,4 +1,4 @@
-import { IDataboxApis } from '@ulixee/databox-interfaces/IDataboxApis';
+import { IDataboxApis } from '@ulixee/specification/databox';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
 
 export default class ConnectionToDataboxCore extends ConnectionToCore<IDataboxApis, {}> {

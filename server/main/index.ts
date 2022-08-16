@@ -45,6 +45,7 @@ export default class Server {
     return pkg.version;
   }
 
+  private didAutoroute = false;
   private sockets = new Set<Socket>();
   private serverAddress = createPromise<AddressInfo>();
   private readonly addressHost: string;
@@ -103,6 +104,7 @@ export default class Server {
         this.version,
         `localhost:${serverAddress.port}`,
       );
+      this.didAutoroute = true;
       ShutdownHandler.register(() => UlixeeServerConfig.global.setVersionHost(this.version, null));
     }
 
@@ -126,7 +128,9 @@ export default class Server {
         sessionId: null,
       });
 
-      await UlixeeServerConfig.global.setVersionHost(this.version, null);
+      if (this.didAutoroute) {
+        await UlixeeServerConfig.global.setVersionHost(this.version, null);
+      }
 
       if (closeDependencies) {
         await this.router.close();

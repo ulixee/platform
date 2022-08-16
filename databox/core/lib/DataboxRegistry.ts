@@ -1,23 +1,30 @@
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import { promises as Fs } from 'fs';
 import * as HashUtils from '@ulixee/commons/lib/hashUtils';
+import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import * as Path from 'path';
-import IDataboxManifest from '@ulixee/databox-interfaces/IDataboxManifest';
+import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
 import DataboxesDb from './DataboxesDb';
 import { IDataboxRecord } from './DataboxesTable';
-import InvalidScriptVersionHistoryError from './InvalidScriptVersionHistoryError';
-import DataboxNotFoundError from './DataboxNotFoundError';
+import {
+  InvalidScriptVersionHistoryError,
+  DataboxNotFoundError,
+  MissingLinkedScriptVersionsError,
+} from './errors';
 import DataboxManifest from './DataboxManifest';
-import MissingLinkedScriptVersionsError from './MissingLinkedScriptVersionsError';
 import { unpackDbxFile } from './dbxUtils';
+import { IDataboxStatsRecord } from './DataboxStatsTable';
 
-export default class PackageRegistry {
-  private readonly databoxesDb: DataboxesDb;
-
-  constructor(readonly storageDir: string, readonly workingDir: string) {
-    this.databoxesDb = new DataboxesDb(storageDir);
+export default class DataboxRegistry {
+  private get databoxesDb(): DataboxesDb {
+    this.#databoxesDb ??= new DataboxesDb(this.storageDir);
+    return this.#databoxesDb;
   }
+
+  #databoxesDb: DataboxesDb;
+
+  constructor(readonly storageDir: string, readonly workingDir: string) {}
 
   public hasVersionHash(versionHash: string): boolean {
     return !!this.databoxesDb.databoxes.getByVersionHash(versionHash);
@@ -25,19 +32,28 @@ export default class PackageRegistry {
 
   public getByVersionHash(
     versionHash: string,
-  ): IDataboxRecord & { path: string; latestVersionHash: string } {
+  ): IDataboxRecord & { stats: IDataboxStatsRecord; path: string; latestVersionHash: string } {
     const path = this.getExtractedDataboxPath(versionHash);
     const entry = this.databoxesDb.databoxes.getByVersionHash(versionHash);
     const latestVersionHash = this.getLatestVersion(versionHash);
+    const stats = this.databoxesDb.databoxStats.getByVersionHash(versionHash);
 
     if (!entry) {
       throw new DataboxNotFoundError('Databox package not found on server.', latestVersionHash);
     }
     return {
       path,
+      stats,
       latestVersionHash,
       ...entry,
     };
+  }
+
+  public recordStats(
+    versionHash: string,
+    stats: { bytes: number; microgons: number; millis: number },
+  ): void {
+    this.databoxesDb.databoxStats.record(versionHash, stats.microgons, stats.bytes, stats.millis);
   }
 
   public async openDbx(manifest: IDataboxManifest): Promise<void> {
@@ -60,12 +76,15 @@ export default class PackageRegistry {
     const manifest = await readFileAsJson<IDataboxManifest>(
       `${databoxTmpPath}/databox-manifest.json`,
     );
+
+    await DataboxManifest.validate(manifest);
+
     if (!manifest) throw new Error('Could not read the provided .dbx manifest.');
     this.checkDataboxRuntimeInstalled(manifest.runtimeName, manifest.runtimeVersion);
     // validate hash
     const scriptBuffer = await Fs.readFile(`${databoxTmpPath}/databox.js`);
     const sha = HashUtils.sha3(Buffer.from(scriptBuffer));
-    const expectedScriptHash = HashUtils.encodeHash(sha, 'scr');
+    const expectedScriptHash = encodeBuffer(sha, 'scr');
     if (manifest.scriptHash !== expectedScriptHash) {
       throw new Error(
         'Mismatched Databox scriptHash provided. Should be SHA3 256 in Bech32m encoding.',
