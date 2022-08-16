@@ -10,7 +10,7 @@ test('should be able to specify which sidechain to use', async () => {
   const identity = Identity.createSync();
   const manager = new SidechainClientManager({
     identityWithSidechain: identity,
-    approvedSidechains: [{ rootIdentity: identity.bech32, url: '' }],
+    approvedSidechains: [{ rootIdentity: identity.bech32, url: 'http://localhost:1337' }],
     defaultSidechainHost: 'http://localhost:1337',
     defaultSidechainRootIdentity: identity.bech32,
   });

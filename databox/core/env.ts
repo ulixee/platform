@@ -17,12 +17,19 @@ export default {
   approvedSidechains: [],
   defaultSidechainHost: process.env.ULX_SIDECHAIN_HOST,
   defaultSidechainRootIdentity: process.env.ULX_SIDECHAIN_IDENTITY,
-  identityWithSidechain: loadIdentity(process.env.ULX_IDENTITY_PATH, process.env.ULX_IDENTITY_PASSPHRASE),
+  identityWithSidechain: loadIdentity(
+    process.env.ULX_IDENTITY_PEM,
+    process.env.ULX_IDENTITY_PATH,
+    process.env.ULX_IDENTITY_PASSPHRASE,
+  ),
 };
 
-function loadIdentity(path: string, keyPassphrase: string): Identity | null {
+function loadIdentity(identityPEM: string, path: string, keyPassphrase: string): Identity | null {
+  if (identityPEM) {
+    return Identity.loadFromPem(identityPEM, { keyPassphrase });
+  }
   if (!path) return null;
-  return Identity.loadFromFile(path, { keyPassphrase })
+  return Identity.loadFromFile(path, { keyPassphrase });
 }
 
 function parseIdentities(identities: string, type: string): string[] {

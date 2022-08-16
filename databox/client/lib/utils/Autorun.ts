@@ -21,9 +21,7 @@ let autorunBeforeExitFn: any;
 
 export function setupAutorunBeforeExitHook(DataboxWrapper: any): void {
   if (autorunBeforeExitFn) process.off('beforeExit', autorunBeforeExitFn);
-  autorunBeforeExitFn = async () => {
-    await DataboxWrapper.attemptAutorun();
-    process.exit(0);
-  };
+  autorunBeforeExitFn = async () => await DataboxWrapper.attemptAutorun();
+
   process.on('beforeExit', autorunBeforeExitFn);
 }

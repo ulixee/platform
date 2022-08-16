@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import UlixeeServer from './index';
 import UlixeeServerEnv from './env';
 
@@ -56,7 +57,7 @@ export default function cliCommands(): Command {
       const server = new UlixeeServer(host);
 
       const { unblockedPlugins, heroDataDir, maxConcurrentHeroes } = opts;
-      server.router.heroConfiguration = {
+      server.router.heroConfiguration = filterUndefined({
         maxConcurrentClientCount: maxConcurrentHeroes,
         dataDir: heroDataDir,
         defaultUnblockedPlugins: unblockedPlugins?.map(x => {
@@ -65,13 +66,14 @@ export default function cliCommands(): Command {
           if (mod.default) return mod.default;
           return mod;
         }),
-      };
-      server.router.databoxConfiguration = {
+      });
+
+      server.router.databoxConfiguration = filterUndefined({
         databoxesDir: opts.databoxStorageDir,
         databoxesTmpDir: opts.databoxTmpDir,
         maxRuntimeMs: opts.maxDataboxRuntimeMs,
         waitForDataboxCompletionOnShutdown: opts.databoxWaitForCompletion,
-      };
+      });
 
       await server.listen({ port });
       console.log('Ulixee Server listening at %s', await server.address);

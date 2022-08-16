@@ -11,6 +11,7 @@ import { assert } from '@ulixee/commons/lib/utils';
 import { promises as Fs } from 'fs';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
+import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 
 type IDataboxSources = [
   global: DataboxManifest,
@@ -330,16 +331,6 @@ export default class DataboxManifest implements IDataboxManifest {
     const path = Path.join(UlixeeConfig.global.directoryPath, 'databoxes.json');
     return new DataboxManifest(path, 'global', manifestPath);
   }
-}
-
-function filterUndefined<T>(object: T, omitKeys?: string[]): Partial<T> {
-  if (!object) return object;
-  const result: Partial<T> = {};
-  for (const [key, value] of Object.entries(object)) {
-    if (omitKeys?.includes(key)) continue;
-    if (value !== undefined) result[key] = value;
-  }
-  return result;
 }
 
 interface IDataboxManifestJson extends Partial<IDataboxManifest> {

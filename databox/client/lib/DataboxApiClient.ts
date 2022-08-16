@@ -15,6 +15,10 @@ export default class DataboxApiClient {
     this.connectionToCore = new ConnectionToCore(transport);
   }
 
+  public disconnect(): Promise<void> {
+    return this.connectionToCore.disconnect();
+  }
+
   public async getMeta(versionHash: string): Promise<IDataboxApiTypes['Databox.meta']['result']> {
     return await this.runRemote('Databox.meta', { versionHash });
   }
@@ -29,7 +33,11 @@ export default class DataboxApiClient {
 
   public async upload(
     compressedDatabox: Buffer,
-    options: { allowNewLinkedVersionHistory?: boolean; timeoutMs?: number; identity?: Identity } = {},
+    options: {
+      allowNewLinkedVersionHistory?: boolean;
+      timeoutMs?: number;
+      identity?: Identity;
+    } = {},
   ): Promise<{ success: boolean }> {
     options.allowNewLinkedVersionHistory ??= false;
     options.timeoutMs ??= 120e3;

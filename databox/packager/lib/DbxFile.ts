@@ -84,7 +84,11 @@ export default class DbxFile {
     const compressedDatabox = await this.asBuffer();
 
     const client = new DataboxApiClient(serverHost);
-    return await client.upload(compressedDatabox, options);
+    try {
+      return await client.upload(compressedDatabox, options);
+    } finally {
+      await client.disconnect();
+    }
   }
 
   private async createWorkingDirectory(): Promise<void> {

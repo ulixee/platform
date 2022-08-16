@@ -15,7 +15,7 @@ let server: UlixeeServer;
 let client: DataboxApiClient;
 
 beforeAll(async () => {
-  const packager = new DataboxPackager(`${__dirname}/databoxes/output.js`);
+  const packager = new DataboxPackager(`${__dirname}/databoxes/upload.js`);
   await packager.build();
   dbxFile = await packager.dbx.asBuffer();
   manifest = packager.manifest.toJSON();
@@ -33,7 +33,7 @@ afterAll(async () => {
 test('should be able upload a databox', async () => {
   await client.upload(dbxFile);
   expect(Fs.existsSync(storageDir)).toBeTruthy();
-  expect(Fs.existsSync(`${storageDir}/output@${manifest.versionHash}.dbx`)).toBeTruthy();
+  expect(Fs.existsSync(`${storageDir}/upload@${manifest.versionHash}.dbx`)).toBeTruthy();
 });
 
 test('should be able to restrict uploads', async () => {

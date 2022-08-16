@@ -30,6 +30,7 @@
     "@ulixee/databox-interfaces": "2.0.0-alpha.9",
     "@ulixee/hero-core": "2.0.0-alpha.9",
     "@ulixee/hero-interfaces": "2.0.0-alpha.9",
+    "@ulixee/specification": "2.0.0-alpha.8",
     "@ulixee/net": "2.0.0-alpha.8",
     "commander": "^9.3.0",
     "ws": "^7.4.6"

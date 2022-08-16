@@ -62,6 +62,7 @@
       "databox/for-puppeteer/*",
       "server/*",
       "cli",
+      "e2e",
       "stream/build/*",
       "hero/build/*",
       "hero/build/plugins/*",

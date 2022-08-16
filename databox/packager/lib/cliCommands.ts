@@ -232,7 +232,6 @@ function handleInvalidScriptVersionHistory(
     '-manifest.json',
   );
 
-  // TODO: compare tree to local tree to see how it differs and print out missing tree
   rl.question(
     `The uploaded Databox has a different version history than your local version. 
         

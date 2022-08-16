@@ -10,9 +10,7 @@ export default class SidechainClientManager {
     if (!this.options.defaultSidechainHost) {
       throw new Error('No default Ulixee Sidechain host set! Cannot use payments.');
     }
-    this._defaultClientPromise ??= this.createSidechainClient(
-      this.options.defaultSidechainRootIdentity,
-    );
+    this._defaultClientPromise ??= this.createSidechainClient(this.options.defaultSidechainHost);
     return this._defaultClientPromise;
   }
 
@@ -62,19 +60,13 @@ export default class SidechainClientManager {
   public async getApprovedSidechainsByIdentity(): Promise<IApprovedSidechainByRootIdentity> {
     if (this._approvedSidechainsResolvable) return this._approvedSidechainsResolvable.promise;
 
-    if (this.options.approvedSidechainsRefreshInterval) {
-      this.refreshApprovedSidechainsInterval = setTimeout(
-        () => (this._approvedSidechainsResolvable = null),
-        this.options.approvedSidechainsRefreshInterval,
-      ).unref();
-    }
-
     this._approvedSidechainsResolvable = new Resolvable();
     if (this.options.approvedSidechains?.length) {
       const approved = SidechainClientManager.parseApprovedSidechains(
         this.options.approvedSidechains,
       );
       this._approvedSidechainsResolvable.resolve(approved);
+      return this._approvedSidechainsResolvable;
     }
 
     try {
@@ -97,6 +89,13 @@ export default class SidechainClientManager {
       this._approvedSidechainsResolvable.resolve(approved);
     } catch (error) {
       this._approvedSidechainsResolvable.reject(error);
+    }
+
+    if (this.options.approvedSidechainsRefreshInterval) {
+      this.refreshApprovedSidechainsInterval = setTimeout(
+        () => (this._approvedSidechainsResolvable = null),
+        this.options.approvedSidechainsRefreshInterval,
+      ).unref();
     }
 
     return this._approvedSidechainsResolvable;
