@@ -17,11 +17,11 @@
   "license": "MIT",
   "dependencies": {
     "@ulixee/apps-chromealive-core": "2.0.0-alpha.10",
-    "@ulixee/commons": "2.0.0-alpha.9",
+    "@ulixee/commons": "2.0.0-alpha.10",
     "@ulixee/databox-core": "2.0.0-alpha.10",
     "@ulixee/databox-for-hero": "2.0.0-alpha.10",
     "@ulixee/server": "2.0.0-alpha.10",
-    "@unblocked-web/default-browser-emulator": "2.0.0-alpha.8",
+    "@unblocked-web/default-browser-emulator": "2.0.0-alpha.9",
     "electron-log": "^4.4.6",
     "electron-positioner": "^4.1.0",
     "electron-updater": "^5.0.1",

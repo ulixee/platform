@@ -1,5 +1,5 @@
-import { Helpers } from '@ulixee/hero-testing';
-import { ITestKoaServer } from '@ulixee/hero-testing/helpers';
+import { Helpers } from '@ulixee/databox-testing';
+import { ITestKoaServer } from '@ulixee/databox-testing/helpers';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import ResourceSearch from '../lib/ResourceSearch';
 

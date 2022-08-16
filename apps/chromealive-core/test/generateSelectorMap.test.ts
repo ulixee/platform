@@ -1,12 +1,8 @@
-import { Helpers } from '@ulixee/hero-testing';
 import { DOMParser } from 'linkedom';
 import generateSelectorMap, {
   decodeBitmask,
   getMaxBitmaskValue,
 } from '../injected-scripts/generateSelectorMap';
-
-afterAll(Helpers.afterAll);
-afterEach(Helpers.afterEach);
 
 test('bitmasks should convert', () => {
   expect(getMaxBitmaskValue([1, 2, 3])).toEqual(BigInt(0b111));

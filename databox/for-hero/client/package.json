@@ -11,12 +11,12 @@
     "./lib/*": "./lib/*.js"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.9",
+    "@ulixee/commons": "2.0.0-alpha.10",
     "@ulixee/databox": "2.0.0-alpha.10",
     "@ulixee/databox-interfaces": "2.0.0-alpha.10",
     "@ulixee/hero": "2.0.0-alpha.10",
     "@ulixee/hero-interfaces": "2.0.0-alpha.10",
-    "@ulixee/net": "2.0.0-alpha.9",
+    "@ulixee/net": "2.0.0-alpha.10",
     "@unblocked-web/specifications": "2.0.0-alpha.3",
     "awaited-dom": "1.4.0",
     "linkedom": "^0.14.11"

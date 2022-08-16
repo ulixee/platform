@@ -3344,6 +3344,30 @@
     progress "^2.0.3"
     tar "^6.1.11"
 
+"@ulixee/repo-tools@1.0.11":
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/@ulixee/repo-tools/-/repo-tools-1.0.11.tgz#57325e26adba2446a50c80c2cc7eddc7513b5c94"
+  integrity sha512-dphJpK2cX2+stYyx7kYk+gzNQgJr38R4SaU0ztZNpOQoj/1LmMyJrzni6wE5zgv2a1Qeh5ZzXxYvz3hnkspyfQ==
+  dependencies:
+    "@typescript-eslint/eslint-plugin" "^5.27.1"
+    "@typescript-eslint/parser" "^5.27.1"
+    copyfiles "^2.4.1"
+    eslint "^8.17.0"
+    eslint-config-airbnb-base "^15.0.0"
+    eslint-config-airbnb-typescript "^17.0.0"
+    eslint-config-prettier "^8.5.0"
+    eslint-import-resolver-typescript "^2.7.1"
+    eslint-plugin-eslint-comments "^3.2.0"
+    eslint-plugin-import "^2.26.0"
+    eslint-plugin-jest "^26.5.3"
+    eslint-plugin-jsx-a11y "^6.5.1"
+    eslint-plugin-monorepo-cop "^1.0.2"
+    eslint-plugin-prettier "^4.0.0"
+    eslint-plugin-promise "^6.0.0"
+    prettier "^2.6.2"
+    pretty-quick "^3.1.0"
+    typescript "^4.7.2"
+
 "@ulixee/repo-tools@^1.0.12":
   version "1.0.12"
   resolved "https://registry.yarnpkg.com/@ulixee/repo-tools/-/repo-tools-1.0.12.tgz#4701651cf3330a026927c68f45f6d22383c5e4bc"
@@ -12501,7 +12525,7 @@ nan@^2.12.1, nan@^2.13.2, nan@^2.15:
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.16.0.tgz#664f43e45460fb98faf00edca0bb0d7b8dce7916"
   integrity sha512-UdAqHyFngu7TfQKsCBgAA6pWDkT8MAO7d0jyOecVhN5354xbLqdn8mV9Tat9gepAupm0bt2DbeaSC8vS52MuFA==
 
-nanoid@^3.1.30, nanoid@^3.3.3, nanoid@^3.3.4:
+nanoid@^3.1.30, nanoid@^3.1.32, nanoid@^3.3.3, nanoid@^3.3.4:
   version "3.3.4"
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.4.tgz#730b67e3cd09e2deacf03c027c81c9d9dbc5e8ab"
   integrity sha512-MqBkQh/OHTS2egovRtLk45wEyNXwF+cokD+1YPf9u5VfJiRdAiRwB2froX5Co9Rh20xs4siNPm8naNotSD6RBw==
@@ -17398,6 +17422,14 @@ vm-browserify@^1.0.1:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.2.tgz#78641c488b8e6ca91a75f511e7a3b32a86e5dda0"
   integrity sha512-2ham8XPWTONajOR0ohOKOHXkm3+gaBmGut3SRuu75xLd/RRaY6vqgh8NBYYk7+RW3u5AtzPQZG8F10LHkl0lAQ==
+
+vm2@^3.9.10:
+  version "3.9.10"
+  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.10.tgz#c66543096b5c44c8861a6465805c23c7cc996a44"
+  integrity sha512-AuECTSvwu2OHLAZYhG716YzwodKCIJxB6u1zG7PgSQwIgAlEaoXH52bxdcvT8GkGjnYK7r7yWDW0m0sOsPuBjQ==
+  dependencies:
+    acorn "^8.7.0"
+    acorn-walk "^8.2.0"
 
 vm2@^3.9.9:
   version "3.9.9"

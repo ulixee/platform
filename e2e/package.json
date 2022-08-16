@@ -3,13 +3,13 @@
   "private": true,
   "version": "2.0.0-alpha.10",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.9",
-    "@ulixee/crypto": "2.0.0-alpha.9",
+    "@ulixee/commons": "2.0.0-alpha.10",
+    "@ulixee/crypto": "2.0.0-alpha.10",
     "@ulixee/databox": "2.0.0-alpha.10",
     "@ulixee/databox-packager": "2.0.0-alpha.10",
-    "@ulixee/net": "2.0.0-alpha.9",
+    "@ulixee/net": "2.0.0-alpha.10",
     "@ulixee/server": "2.0.0-alpha.10",
-    "@ulixee/sidechain": "2.0.0-alpha.9",
-    "@ulixee/specification": "2.0.0-alpha.9"
+    "@ulixee/sidechain": "2.0.0-alpha.10",
+    "@ulixee/specification": "2.0.0-alpha.10"
   }
 }
