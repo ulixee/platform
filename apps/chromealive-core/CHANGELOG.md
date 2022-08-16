@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.10](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.9...v2.0.0-alpha.10) (2022-08-16)
+
+
+### Bug Fixes
+
+* **chromealive:** turn off plugin if not installed ([a013cbd](https://github.com/ulixee/ulixee/commit/a013cbd3eed77262f82c95b86d5081c14bef56a0))
+
+
+
+
+
 # [2.0.0-alpha.9](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.8...v2.0.0-alpha.9) (2022-07-26)
 
 **Note:** Version bump only for package @ulixee/apps-chromealive-core

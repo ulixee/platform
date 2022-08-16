@@ -19,6 +19,7 @@ We should eventually automate this to test using the "published" versions of pac
 3. @unblocked/specifications (if needed)
 4. @unblocked/js-path (if needed)
 5. @unblocked/unblocked
+6. @ulixee/payments
 7. @ulixee/hero
 8. @ulixee/ulixee
    - Release Assets: Requires a draft release pre-created (ChromeAlive!, Desktop)

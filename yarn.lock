@@ -3319,12 +3319,12 @@
     "@typescript-eslint/types" "5.27.1"
     eslint-visitor-keys "^3.3.0"
 
-"@ulixee/chrome-98-0@^4758.102.4":
-  version "4758.102.4"
-  resolved "https://registry.yarnpkg.com/@ulixee/chrome-98-0/-/chrome-98-0-4758.102.4.tgz#a2192b6ebc1be8a1de371aa847dc8a0c6df83421"
-  integrity sha512-+MXP9pTPBOdkjDtrQNiib0pvXV3S/SZE6uwNfeP2TRNFOiZJX8XjCr9/v7Gj934JGzQGPAV10GMbe3yqaq/0oA==
+"@ulixee/chrome-98-0@^4758.109.6":
+  version "4758.109.6"
+  resolved "https://registry.yarnpkg.com/@ulixee/chrome-98-0/-/chrome-98-0-4758.109.6.tgz#d96ab324dbc79ab56df4ec69b04e672e5e2d0d05"
+  integrity sha512-jPrzdeuDOurIn403cBBd0Rb5ZmvZ2FD2ejl6R6+lF6NUy7ul48KM87xC+/azgTM6Dlvjr9/Bd6+V3Mm9y4Ew7w==
   dependencies:
-    "@ulixee/chrome-app" "^1.0.2"
+    "@ulixee/chrome-app" "^1.0.3"
 
 "@ulixee/chrome-app@1.0.2", "@ulixee/chrome-app@^1.0.2":
   version "1.0.2"
@@ -3334,6 +3334,15 @@
     https-proxy-agent "^5.0.0"
     progress "^2.0.3"
     tar "^6.1.0"
+
+"@ulixee/chrome-app@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@ulixee/chrome-app/-/chrome-app-1.0.3.tgz#259761fc324a33a4235a2439b005c16b5d8b2a1a"
+  integrity sha512-VhotXRa364M2aym8urvEJ0e1o55dV4gWttAVb0M20xWjpUCIpyBfvO6mz69J40+K/SAVa6ne9mXkiFBFz6g/8g==
+  dependencies:
+    https-proxy-agent "^5.0.0"
+    progress "^2.0.3"
+    tar "^6.1.11"
 
 "@ulixee/repo-tools@^1.0.12":
   version "1.0.12"

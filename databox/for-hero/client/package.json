@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/databox-for-hero",
-  "version": "2.0.0-alpha.9",
+  "version": "2.0.0-alpha.10",
   "description": "The Databox for Hero library.",
   "exports": {
     ".": {
@@ -11,19 +11,19 @@
     "./lib/*": "./lib/*.js"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.8",
-    "@ulixee/databox": "2.0.0-alpha.9",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.9",
-    "@ulixee/hero": "2.0.0-alpha.9",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.9",
-    "@ulixee/net": "2.0.0-alpha.8",
+    "@ulixee/commons": "2.0.0-alpha.9",
+    "@ulixee/databox": "2.0.0-alpha.10",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.10",
+    "@ulixee/hero": "2.0.0-alpha.10",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.10",
+    "@ulixee/net": "2.0.0-alpha.9",
     "@unblocked-web/specifications": "2.0.0-alpha.3",
     "awaited-dom": "1.4.0",
     "linkedom": "^0.14.11"
   },
   "devDependencies": {
     "@types/web": "^0.0.50",
-    "@ulixee/databox-testing": "2.0.0-alpha.9",
-    "@ulixee/hero-core": "2.0.0-alpha.9"
+    "@ulixee/databox-testing": "2.0.0-alpha.10",
+    "@ulixee/hero-core": "2.0.0-alpha.10"
   }
 }
