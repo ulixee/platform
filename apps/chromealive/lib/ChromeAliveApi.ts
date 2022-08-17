@@ -23,6 +23,12 @@ export default class ChromeAliveApi extends TypedEventEmitter<{ close: void }> {
     super();
     process.on('disconnect', () => this.onEvent('App.quit'));
     process.on('message', this.onMessage.bind(this));
+    try {
+      new URL(chromeAliveServerApi);
+    } catch (error) {
+      console.error('Invalid ChromeAliveApi URL', error, { chromeAliveServerApi });
+      throw error;
+    }
     this.transport = new WsTransportToCore(chromeAliveServerApi);
     this.connection = new ConnectionToCore(this.transport);
     this.connection.on('event', this.onMessage.bind(this));

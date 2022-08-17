@@ -36,6 +36,6 @@
     "ws": "^7.4.6"
   },
   "devDependencies": {
-    "@ulixee/hero-testing": "2.0.0-alpha.10"
+    "@ulixee/databox-testing": "2.0.0-alpha.10"
   }
 }

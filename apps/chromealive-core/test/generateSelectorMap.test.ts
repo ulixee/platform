@@ -21,10 +21,10 @@ test('should be able to find a shortest path', async () => {
   );
   const element = document.querySelector('span');
 
-  const results = generateSelectorMap(element, document);
+  const results = generateSelectorMap(element as any, document as any);
   const matches = results.selectors;
   expect(matches.length).toBeGreaterThanOrEqual(50);
-  expect(matches[0].selector).toBe('.link')
+  expect(matches[0].selector).toBe('.link');
 });
 
 test('should be able to find a nested path', async () => {
@@ -46,8 +46,8 @@ test('should be able to find a nested path', async () => {
   );
   const element = document.querySelectorAll('a')[1];
 
-  const results = generateSelectorMap(element, document);
+  const results = generateSelectorMap(element as any, document as any);
   const matches = results.selectors;
   expect(matches.length).toBeGreaterThanOrEqual(50);
-  expect(matches[0].selector).toBe('p > a.link:nth-child(2)')
+  expect(matches[0].selector).toBe('p > a.link:nth-child(2)');
 });

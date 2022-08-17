@@ -35,7 +35,8 @@ export class ChromeAlive extends EventEmitter {
     this.#toolbarIsVisible = false;
     this.coreServerAddress ??= process.argv
       .find(x => x.startsWith('--coreServerAddress='))
-      ?.replace('--coreServerAddress=', '');
+      ?.replace('--coreServerAddress=', '')
+      ?.replace(/"/g, '');
 
     this.#hideOnLaunch = process.argv.some(x => x === '--hide');
 

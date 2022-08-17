@@ -1,6 +1,7 @@
 import { Helpers } from '@ulixee/databox-testing';
 import { ITestKoaServer } from '@ulixee/databox-testing/helpers';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import { Session } from '@ulixee/hero-core';
 import ResourceSearch from '../lib/ResourceSearch';
 
 let koaServer: ITestKoaServer;
@@ -36,7 +37,7 @@ afterEach(Helpers.afterEach);
 describe('basic ResourceSearch tests', () => {
   it('can find a resource', async () => {
     const exampleUrl = `${koaServer.baseUrl}/resources-search`;
-    const { session, tab } = await Helpers.createSession();
+    const { session, tab } = await Session.create({});
     const resourceSearch = new ResourceSearch(session, new EventSubscriber());
     resourceSearch.onTabCreated({ tab });
 
