@@ -268,6 +268,7 @@ function interceptElementWasSelected(sendToCoreFnName, eventType): void {
     const payload = `{"event":"${  eventType  }","backendNodeId": ${  backendNodeId  }}`;
     const packedMessage =
       `:ContentScript       :N:{"origLocation":"DevtoolsPrivate","payload":${  payload  }}`;
+    // @ts-ignore
     globalWindow[sendToCoreFnName](packedMessage);
     inspectNodeRequestedOrig.call(this, { backendNodeId });
   };

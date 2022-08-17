@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.10](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.9...v2.0.0-alpha.10) (2022-08-16)
+
+
+### Bug Fixes
+
+* **chromealive:** turn off plugin if not installed ([a013cbd](https://github.com/ulixee/ulixee/commit/a013cbd3eed77262f82c95b86d5081c14bef56a0))
+* **databox:** autorun not working in playground ([2d67279](https://github.com/ulixee/ulixee/commit/2d67279f7f7f5150926eea4b4f1ed70efe0f679d))
+
+
+### Features
+
+* **databox:** invert databox settings ([e69edf6](https://github.com/ulixee/ulixee/commit/e69edf63453fe2a670b542a7691f4b1cf4c1028c))
+* **databox:** payments ([93af88c](https://github.com/ulixee/ulixee/commit/93af88c9a86115ee13cd6156a50405a26af8de7e))
+* end to end scripts (first one is gift cards) ([d737c6b](https://github.com/ulixee/ulixee/commit/d737c6b847ebb017ec1a766ab5d025153b17f331))
+
+
+
+
+
 # [2.0.0-alpha.9](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.8...v2.0.0-alpha.9) (2022-07-26)
 
 

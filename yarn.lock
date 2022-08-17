@@ -3319,12 +3319,12 @@
     "@typescript-eslint/types" "5.27.1"
     eslint-visitor-keys "^3.3.0"
 
-"@ulixee/chrome-98-0@^4758.102.4":
-  version "4758.102.4"
-  resolved "https://registry.yarnpkg.com/@ulixee/chrome-98-0/-/chrome-98-0-4758.102.4.tgz#a2192b6ebc1be8a1de371aa847dc8a0c6df83421"
-  integrity sha512-+MXP9pTPBOdkjDtrQNiib0pvXV3S/SZE6uwNfeP2TRNFOiZJX8XjCr9/v7Gj934JGzQGPAV10GMbe3yqaq/0oA==
+"@ulixee/chrome-98-0@^4758.109.6":
+  version "4758.109.6"
+  resolved "https://registry.yarnpkg.com/@ulixee/chrome-98-0/-/chrome-98-0-4758.109.6.tgz#d96ab324dbc79ab56df4ec69b04e672e5e2d0d05"
+  integrity sha512-jPrzdeuDOurIn403cBBd0Rb5ZmvZ2FD2ejl6R6+lF6NUy7ul48KM87xC+/azgTM6Dlvjr9/Bd6+V3Mm9y4Ew7w==
   dependencies:
-    "@ulixee/chrome-app" "^1.0.2"
+    "@ulixee/chrome-app" "^1.0.3"
 
 "@ulixee/chrome-app@1.0.2", "@ulixee/chrome-app@^1.0.2":
   version "1.0.2"
@@ -3334,6 +3334,39 @@
     https-proxy-agent "^5.0.0"
     progress "^2.0.3"
     tar "^6.1.0"
+
+"@ulixee/chrome-app@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@ulixee/chrome-app/-/chrome-app-1.0.3.tgz#259761fc324a33a4235a2439b005c16b5d8b2a1a"
+  integrity sha512-VhotXRa364M2aym8urvEJ0e1o55dV4gWttAVb0M20xWjpUCIpyBfvO6mz69J40+K/SAVa6ne9mXkiFBFz6g/8g==
+  dependencies:
+    https-proxy-agent "^5.0.0"
+    progress "^2.0.3"
+    tar "^6.1.11"
+
+"@ulixee/repo-tools@1.0.11":
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/@ulixee/repo-tools/-/repo-tools-1.0.11.tgz#57325e26adba2446a50c80c2cc7eddc7513b5c94"
+  integrity sha512-dphJpK2cX2+stYyx7kYk+gzNQgJr38R4SaU0ztZNpOQoj/1LmMyJrzni6wE5zgv2a1Qeh5ZzXxYvz3hnkspyfQ==
+  dependencies:
+    "@typescript-eslint/eslint-plugin" "^5.27.1"
+    "@typescript-eslint/parser" "^5.27.1"
+    copyfiles "^2.4.1"
+    eslint "^8.17.0"
+    eslint-config-airbnb-base "^15.0.0"
+    eslint-config-airbnb-typescript "^17.0.0"
+    eslint-config-prettier "^8.5.0"
+    eslint-import-resolver-typescript "^2.7.1"
+    eslint-plugin-eslint-comments "^3.2.0"
+    eslint-plugin-import "^2.26.0"
+    eslint-plugin-jest "^26.5.3"
+    eslint-plugin-jsx-a11y "^6.5.1"
+    eslint-plugin-monorepo-cop "^1.0.2"
+    eslint-plugin-prettier "^4.0.0"
+    eslint-plugin-promise "^6.0.0"
+    prettier "^2.6.2"
+    pretty-quick "^3.1.0"
+    typescript "^4.7.2"
 
 "@ulixee/repo-tools@^1.0.12":
   version "1.0.12"
@@ -12492,7 +12525,7 @@ nan@^2.12.1, nan@^2.13.2, nan@^2.15:
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.16.0.tgz#664f43e45460fb98faf00edca0bb0d7b8dce7916"
   integrity sha512-UdAqHyFngu7TfQKsCBgAA6pWDkT8MAO7d0jyOecVhN5354xbLqdn8mV9Tat9gepAupm0bt2DbeaSC8vS52MuFA==
 
-nanoid@^3.1.30, nanoid@^3.3.3, nanoid@^3.3.4:
+nanoid@^3.1.30, nanoid@^3.1.32, nanoid@^3.3.3, nanoid@^3.3.4:
   version "3.3.4"
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.4.tgz#730b67e3cd09e2deacf03c027c81c9d9dbc5e8ab"
   integrity sha512-MqBkQh/OHTS2egovRtLk45wEyNXwF+cokD+1YPf9u5VfJiRdAiRwB2froX5Co9Rh20xs4siNPm8naNotSD6RBw==
@@ -17389,6 +17422,14 @@ vm-browserify@^1.0.1:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.2.tgz#78641c488b8e6ca91a75f511e7a3b32a86e5dda0"
   integrity sha512-2ham8XPWTONajOR0ohOKOHXkm3+gaBmGut3SRuu75xLd/RRaY6vqgh8NBYYk7+RW3u5AtzPQZG8F10LHkl0lAQ==
+
+vm2@^3.9.10:
+  version "3.9.10"
+  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.10.tgz#c66543096b5c44c8861a6465805c23c7cc996a44"
+  integrity sha512-AuECTSvwu2OHLAZYhG716YzwodKCIJxB6u1zG7PgSQwIgAlEaoXH52bxdcvT8GkGjnYK7r7yWDW0m0sOsPuBjQ==
+  dependencies:
+    acorn "^8.7.0"
+    acorn-walk "^8.2.0"
 
 vm2@^3.9.9:
   version "3.9.9"

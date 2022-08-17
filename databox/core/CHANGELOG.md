@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.10](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.9...v2.0.0-alpha.10) (2022-08-16)
+
+
+### Features
+
+* **databox:** invert databox settings ([e69edf6](https://github.com/ulixee/ulixee/commit/e69edf63453fe2a670b542a7691f4b1cf4c1028c))
+* **databox:** payments ([93af88c](https://github.com/ulixee/ulixee/commit/93af88c9a86115ee13cd6156a50405a26af8de7e))
+* end to end scripts (first one is gift cards) ([d737c6b](https://github.com/ulixee/ulixee/commit/d737c6b847ebb017ec1a766ab5d025153b17f331))
+
+
+
+
+
 # [2.0.0-alpha.9](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.8...v2.0.0-alpha.9) (2022-07-26)
 
 **Note:** Version bump only for package @ulixee/databox-core
