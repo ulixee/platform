@@ -42,7 +42,7 @@
     "@commitlint/config-conventional": "^12.0.1",
     "@types/jest": "^28.1.0",
     "@types/node": "^14.18.18",
-    "@ulixee/repo-tools": "^1.0.12",
+    "@ulixee/repo-tools": "^1.0.15",
     "concurrently": "^6.2.2",
     "cross-env": "^7.0.3",
     "husky": "^7.0.1",

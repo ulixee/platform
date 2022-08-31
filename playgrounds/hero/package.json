@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/hero-playground",
-  "version": "2.0.0-alpha.10",
+  "version": "2.0.0-alpha.11",
   "description": "A Hero playground that creates a Client/Core connection out of the box",
   "exports": {
     ".": {
@@ -10,9 +10,9 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.10",
-    "@ulixee/hero": "2.0.0-alpha.10",
-    "@ulixee/hero-core": "2.0.0-alpha.10",
-    "@ulixee/server": "2.0.0-alpha.10"
+    "@ulixee/commons": "2.0.0-alpha.11",
+    "@ulixee/hero": "2.0.0-alpha.11",
+    "@ulixee/hero-core": "2.0.0-alpha.11",
+    "@ulixee/server": "2.0.0-alpha.11"
   }
 }

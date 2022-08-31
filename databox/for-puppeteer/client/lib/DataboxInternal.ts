@@ -37,6 +37,9 @@ export default class DataboxInternal<TInput, TOutput> extends DataboxInternalAbs
     const options: Puppeteer.LaunchOptions = {
       ...this.defaults.puppeteer,
       ...this.runOptions,
+      handleSIGTERM: true,
+      handleSIGHUP: true,
+      handleSIGINT: true
     };
     this.puppeteerBrowserPromise = Puppeteer.launch(options);
   }

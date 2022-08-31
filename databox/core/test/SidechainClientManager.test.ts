@@ -3,7 +3,7 @@ import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha3 } from '@ulixee/commons/lib/hashUtils';
 import SidechainClient from '@ulixee/sidechain';
 import { IBlockSettings } from '@ulixee/specification';
-import ISidechainSettingsApis from '@ulixee/specification/sidechain/SidechainSettingsApis';
+import ISidechainInfoApis from '@ulixee/specification/sidechain/SidechainInfoApis';
 import SidechainClientManager from '../lib/SidechainClientManager';
 
 test('should be able to specify which sidechain to use', async () => {
@@ -60,7 +60,7 @@ test('can update the approved sidechain list from the main sidechain', async () 
           batchDurationMinutes: 60 * 60e3 * 8,
           settlementFeeMicrogons: 5,
           version: '1.0.0',
-        } as ISidechainSettingsApis['Sidechain.settings']['result'];
+        } as ISidechainInfoApis['Sidechain.settings']['result'];
       }
     });
   await expect(manager.withIdentity(sidechainIdentity.bech32)).resolves.toBeTruthy();

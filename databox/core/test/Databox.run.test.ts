@@ -13,11 +13,11 @@ import { ISidechainApis } from '@ulixee/specification/sidechain';
 import IMicronoteApis from '@ulixee/specification/sidechain/MicronoteApis';
 import Address from '@ulixee/crypto/lib/Address';
 import IMicronoteBatchApis from '@ulixee/specification/sidechain/MicronoteBatchApis';
-import ISidechainSettingsApis from '@ulixee/specification/sidechain/SidechainSettingsApis';
 import { IBlockSettings } from '@ulixee/specification';
 import IGiftCardApis from '@ulixee/specification/sidechain/GiftCardApis';
 import { nanoid } from 'nanoid';
 import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
+import ISidechainInfoApis from '@ulixee/specification/sidechain/SidechainInfoApis';
 import DataboxCore from '../index';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Databox.run.test');
@@ -126,7 +126,7 @@ test('should be able run a databox with payments', async () => {
 
   expect(apiCalls.mock.calls.map(x => x[0].command)).toEqual([
     'Sidechain.settings',
-    'MicronoteBatch.get',
+    'Sidechain.openBatches',
     'MicronoteBatch.activeFunds',
     'MicronoteBatch.findFund',
     'Micronote.create',
@@ -226,7 +226,7 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
       batchDurationMinutes: 60 * 60e3 * 8,
       settlementFeeMicrogons: 5,
       version: '1.0.0',
-    } as ISidechainSettingsApis['Sidechain.settings']['result'];
+    } as ISidechainInfoApis['Sidechain.settings']['result'];
   }
   if (command === 'Micronote.lock') {
     return { accepted: true } as IMicronoteApis['Micronote.lock']['result'];
@@ -240,15 +240,15 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
   if (command === 'MicronoteBatch.findFund') {
     return {};
   }
-  if (command === 'MicronoteBatch.get') {
+  if (command === 'Sidechain.openBatches') {
     return {
-      active: {
+      micronote: [{
         batchSlug,
         isGiftCardBatch: false,
         micronoteBatchIdentity: batchIdentity.bech32,
         sidechainIdentity: sidechainIdentity.bech32,
         sidechainValidationSignature: sidechainIdentity.sign(sha3(batchIdentity.bech32)),
-      },
+      }],
       giftCard: {
         batchSlug: giftCardBatchSlug,
         isGiftCardBatch: true,
@@ -256,7 +256,7 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
         sidechainIdentity: sidechainIdentity.bech32,
         sidechainValidationSignature: sidechainIdentity.sign(sha3(giftCardBatchIdentity.bech32)),
       },
-    } as IMicronoteBatchApis['MicronoteBatch.get']['result'];
+    } as ISidechainInfoApis['Sidechain.openBatches']['result'];
   }
   if (command === 'Micronote.create') {
     const id = encodeBuffer(sha3('micronoteId'), 'mcr');
