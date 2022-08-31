@@ -1,5 +1,5 @@
 <template>
-  <div>    
+  <div>
     <form :id="id" class="SEARCH-FORM">
       <label>
         <input
@@ -34,7 +34,7 @@
     mounted() {
       this.$refs.input.focus()
     },
-    
+
     methods: {
       onFocus () {
         if (this.isLoaded) return;
@@ -43,7 +43,7 @@
           docsearch({
             indexName: 'ulixee',
             inputSelector: `#${this.id}-input`,
-            apiKey: 'b975ccd9d9a93db63dd14f8d0baee5eb',
+            apiKey: 'b22fc95296f5f3d60c8fbb6857fbdda7',
             debug: process.env.NODE_ENV === 'development'
           });
 
