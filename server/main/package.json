@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/server",
-  "version": "2.0.0-alpha.10",
+  "version": "2.0.0-alpha.11",
   "description": "The server",
   "exports": {
     ".": {
@@ -15,7 +15,7 @@
     "start:alive": "node -r @ulixee/apps-chromealive-core/register bin/cli.js start"
   },
   "peerDependencies": {
-    "@ulixee/apps-chromealive-core": "2.0.0-alpha.10"
+    "@ulixee/apps-chromealive-core": "2.0.0-alpha.11"
   },
   "peerDependenciesMeta": {
     "@ulixee/apps-chromealive-core": {
@@ -23,19 +23,19 @@
     }
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.10",
-    "@ulixee/databox-core": "2.0.0-alpha.10",
-    "@ulixee/databox-core-runtime": "2.0.0-alpha.10",
-    "@ulixee/databox-for-hero-core-runtime": "2.0.0-alpha.10",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.10",
-    "@ulixee/hero-core": "2.0.0-alpha.10",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.10",
-    "@ulixee/net": "2.0.0-alpha.10",
-    "@ulixee/specification": "2.0.0-alpha.10",
+    "@ulixee/commons": "2.0.0-alpha.11",
+    "@ulixee/databox-core": "2.0.0-alpha.11",
+    "@ulixee/databox-core-runtime": "2.0.0-alpha.11",
+    "@ulixee/databox-for-hero-core-runtime": "2.0.0-alpha.11",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.11",
+    "@ulixee/hero-core": "2.0.0-alpha.11",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.11",
+    "@ulixee/net": "2.0.0-alpha.11",
+    "@ulixee/specification": "2.0.0-alpha.11",
     "commander": "^9.3.0",
     "ws": "^7.4.6"
   },
   "devDependencies": {
-    "@ulixee/databox-testing": "2.0.0-alpha.10"
+    "@ulixee/databox-testing": "2.0.0-alpha.11"
   }
 }

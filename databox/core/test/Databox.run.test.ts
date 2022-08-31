@@ -13,7 +13,6 @@ import { ISidechainApis } from '@ulixee/specification/sidechain';
 import IMicronoteApis from '@ulixee/specification/sidechain/MicronoteApis';
 import Address from '@ulixee/crypto/lib/Address';
 import IMicronoteBatchApis from '@ulixee/specification/sidechain/MicronoteBatchApis';
-import ISidechainSettingsApis from '@ulixee/specification/sidechain/SidechainSettingsApis';
 import { IBlockSettings } from '@ulixee/specification';
 import IGiftCardApis from '@ulixee/specification/sidechain/GiftCardApis';
 import { nanoid } from 'nanoid';
@@ -227,7 +226,7 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
       batchDurationMinutes: 60 * 60e3 * 8,
       settlementFeeMicrogons: 5,
       version: '1.0.0',
-    } as ISidechainSettingsApis['Sidechain.settings']['result'];
+    } as ISidechainInfoApis['Sidechain.settings']['result'];
   }
   if (command === 'Micronote.lock') {
     return { accepted: true } as IMicronoteApis['Micronote.lock']['result'];
