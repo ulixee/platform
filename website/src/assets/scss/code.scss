@@ -60,7 +60,6 @@ pre[class*="language-"] {
 }
 
 .ulixeeTheme {
-  .token.comment
   .token.prolog,
   .token.doctype,
   .token.cdata {
@@ -69,6 +68,7 @@ pre[class*="language-"] {
 
   .token.comment {
     color: #8aa1b4;
+    white-space: break-spaces;
   }
 
   .token.punctuation {

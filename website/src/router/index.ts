@@ -1,5 +1,5 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
-import Index from "../pages/Index.vue";
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
+import Index from '../pages/Index.vue';
 import Documentation from '../pages/Documentation.vue';
 
 const roadmapNames = [
@@ -17,45 +17,39 @@ const roadmapNames = [
   'Stream',
   'ScraperReport',
   'Server',
-  'Sidechain'
+  'Sidechain',
 ];
 
-const releasedToolNames = [
-  'Hero',
-  'ChromeAlive',
-  'Databox',
-  'Server',
-  'Stream'
-];
+const releasedToolNames = ['Hero', 'ChromeAlive', 'Databox', 'Server', 'Stream'];
 
 const basicRoutes: Array<RouteRecordRaw> = [
   {
-    path: "/",
+    path: '/',
     component: Index,
   },
   {
-    path: "/getting-started",
-    component: () => import("../pages/GettingStarted.vue"),
+    path: '/getting-started',
+    component: () => import('../pages/GettingStarted.vue'),
   },
   {
-    path: "/developer-environment",
-    component: () => import("../pages/DeveloperEnvironment.vue"),
+    path: '/developer-environment',
+    component: () => import('../pages/DeveloperEnvironment.vue'),
   },
   {
-    path: "/unblocked",
-    component: () => import("../pages/Unblocked.vue"),
+    path: '/unblocked',
+    component: () => import('../pages/Unblocked.vue'),
   },
   {
-    path: "/roadmap",
-    component: () => import("../pages/roadmap/Index.vue"),
+    path: '/roadmap',
+    component: () => import('../pages/roadmap/Index.vue'),
   },
   {
-    path: "/code-of-conduct",
-    component: () => import("../pages/contribute/CodeOfConduct.vue"),
+    path: '/code-of-conduct',
+    component: () => import('../pages/contribute/CodeOfConduct.vue'),
   },
   {
-    path: "/how-to-contribute",
-    component: () => import("../pages/contribute/HowToContribute.vue"),
+    path: '/how-to-contribute',
+    component: () => import('../pages/contribute/HowToContribute.vue'),
   },
   {
     path: '/docs/:docsPath(.+)',
@@ -86,26 +80,37 @@ releasedToolNames.forEach(x => {
   });
 });
 
+async function tryScrollToAnchor(hash: string, timeout = 1000, delay = 100) {
+  while (timeout > 0) {
+    const el = document.querySelector(hash);
+    if (el) {
+      const offsetTop = el.getBoundingClientRect().top;
+      const top = offsetTop + window.scrollY - 70;
+
+      window.scrollTo({ top, behavior: 'auto' });
+      break;
+    }
+    await new Promise(resolve => setTimeout(resolve, delay));
+    timeout = timeout - delay;
+  }
+}
+
 const router = createRouter({
   scrollBehavior(to, from, savedPosition) {
     if (to.hash) {
-      return {
-        el: to.hash,
-        top: 70,
-      };
+      // Required because our <RouterView> is wrapped in a <Transition>
+      // So elements are mounted after a delay
+      return tryScrollToAnchor(to.hash, 1000, 100);
     }
 
     if (savedPosition) {
-      return savedPosition
+      return savedPosition;
     } else {
-      return { top: 0 }
+      return { top: 0 };
     }
   },
   history: createWebHistory(process.env.BASE_URL),
-  routes: [
-    ...basicRoutes,
-    ...productRoutes,
-  ],
+  routes: [...basicRoutes, ...productRoutes],
 });
 
 export default router;

@@ -43,6 +43,7 @@
           docsearch({
             indexName: 'ulixee',
             inputSelector: `#${this.id}-input`,
+            appId: 'CIMSXQ21FH',
             apiKey: 'b22fc95296f5f3d60c8fbb6857fbdda7',
             debug: process.env.NODE_ENV === 'development'
           });

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "generate": "node ./data-generator/index.mjs",
-    "start": "yarn generate && vue-cli-service serve",
+    "start": "yarn generate && vue-cli-service serve --watch",
     "deploy": "firebase deploy --only hosting",
     "build": "yarn generate && vue-cli-service build --mode production",
     "lint": "vue-cli-service lint",
