@@ -12,11 +12,11 @@ We need capabilities to deploy, remove and run remote Databoxes.
 - Docker that runs on AWS
 
 ## 2.2 - Support Payment Wall
-Long-term this will hold the code for creating, submitting, and tracking blocks on the chain. Short-term this will have a single latestBlock endpoint that returns the latest gens block. 
+Long-term this will hold the code for creating, submitting, and tracking blocks on the chain. Short-term this will have a single latestBlock endpoint that returns the latest generated block. 
 This adds support for Databoxes that want to add a payment. It will require Runner queries to contain a payment token, validate that payment tokens are from a trusted source before processing, and upon successful completion of the query, the Server will settle the transaction with the Sidechain.
-- Sidechain verification
-- Mainchain Module
-- Payments Module
+[x] Sidechain verification
+[x] Mainchain Module
+[x] Payments Module
 
 ## 2.3 - First Network Cluster
 Server should be able to operate as a load balancer for a series of other servers. You might also ask a server what other servers were available in the network. Each could operate as a load balancer and knew workloads of its cluster members so it could properly distribute new tasks. Some nodes may also operate as a “rig” and provide a set of services such as providing a public IP and connecting into the decentralized network.

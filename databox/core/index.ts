@@ -7,8 +7,8 @@ import * as Path from 'path';
 import * as Os from 'os';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
-import ApiRouter from '@ulixee/specification/utils/ApiRouter';
-import DataboxApiSchemas, { IDataboxApis } from '@ulixee/specification/databox';
+import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
+import { IDataboxApis } from '@ulixee/specification/databox';
 import IDataboxCoreConfigureOptions from '@ulixee/databox-interfaces/IDataboxCoreConfigureOptions';
 import env from './env';
 import DataboxRegistry from './lib/DataboxRegistry';
@@ -44,7 +44,7 @@ export default class DataboxCore {
     computePricePerKb: env.computePricePerKb ?? 0,
     defaultBytesForPaymentEstimates: 256,
     approvedSidechains: env.approvedSidechains ?? [],
-    defaultSidechainHost: env.defaultSidechainHost ?? 'https://greased-argon.com',
+    defaultSidechainHost: env.defaultSidechainHost ?? 'https://payments.ulixee.org',
     defaultSidechainRootIdentity: env.defaultSidechainRootIdentity,
     identityWithSidechain: env.identityWithSidechain,
     approvedSidechainsRefreshInterval: 60e3 * 60, // 1 hour
@@ -52,10 +52,11 @@ export default class DataboxCore {
 
   public static isClosing: Promise<void>;
   public static workTracker: WorkTracker;
-  public static apiRouter: ApiRouter<typeof DataboxApiSchemas, IDataboxApis> = new ApiRouter(
-    DataboxApiSchemas,
-    [DataboxUpload, DataboxRun, DataboxMeta],
-  );
+  public static apiRegistry = new ApiRegistry<IDataboxApiContext>([
+    DataboxUpload,
+    DataboxRun,
+    DataboxMeta,
+  ]);
 
   private static coreRuntimesByName: { [name: string]: IDataboxCoreRuntime } = {};
   private static databoxRegistry: DataboxRegistry;
@@ -66,9 +67,10 @@ export default class DataboxCore {
   public static addConnection(
     transport: ITransportToClient<IDataboxApis, never>,
   ): IDataboxConnectionToClient {
-    const connection = new ConnectionToClient(transport, this.apiRouter.handlers);
-    connection.handlerMetadata = this.getApiContext(transport.remoteId);
-
+    const connection = this.apiRegistry.createConnection(
+      transport,
+      this.getApiContext(transport.remoteId),
+    );
     connection.once('disconnected', () => this.connections.delete(connection));
     this.connections.add(connection);
     return connection;
@@ -96,7 +98,7 @@ export default class DataboxCore {
     this.workTracker = new WorkTracker(this.options.maxRuntimeMs);
 
     if (this.options.enableRunWithLocalPath) {
-      this.apiRouter.register(DataboxRunLocalScript);
+      this.apiRegistry.register(DataboxRunLocalScript);
     }
     this.sidechainClientManager = new SidechainClientManager(this.options);
 

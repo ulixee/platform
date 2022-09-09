@@ -7,6 +7,7 @@ import DataboxApiClient from '@ulixee/databox/lib/DataboxApiClient';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha3 } from '@ulixee/commons/lib/hashUtils';
 import MicronoteBatchFunding from '@ulixee/sidechain/lib/MicronoteBatchFunding';
+import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
 import SidechainClient from '@ulixee/sidechain';
 import ICoreRequestPayload from '@ulixee/net/interfaces/ICoreRequestPayload';
 import { ISidechainApis } from '@ulixee/specification/sidechain';
@@ -62,7 +63,7 @@ beforeAll(async () => {
     Fs.unlinkSync(`${__dirname}/databoxes/output.dbx`);
   }
   mock.MicronoteBatchFunding.fundBatch.mockImplementation(async function (batch, centagons) {
-    return this.recordBatchFund(1, centagons * 10e3, batch);
+    return this.recordBatchFund(1, ArgonUtils.centagonsToMicrogons(centagons), batch);
   });
 
   mock.sidechainClient.sendRequest.mockImplementation(mockSidechainServer);

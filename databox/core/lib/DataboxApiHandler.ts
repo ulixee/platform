@@ -1,10 +1,10 @@
-import ApiHandler from '@ulixee/specification/utils/ApiHandler';
+import ValidatingApiHandler from '@ulixee/specification/utils/ValidatingApiHandler';
 import IDataboxApis, { DataboxApiSchemas } from '@ulixee/specification/databox/DataboxApis';
 import IDataboxApiContext from '../interfaces/IDataboxApiContext';
 
 export default class DataboxApiHandler<
   Command extends keyof IDataboxApis & string,
-> extends ApiHandler<typeof DataboxApiSchemas, Command, IDataboxApis, IDataboxApiContext> {
+> extends ValidatingApiHandler<typeof DataboxApiSchemas, Command, IDataboxApis, IDataboxApiContext> {
   constructor(
     command: Command,
     args: {

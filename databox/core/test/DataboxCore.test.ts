@@ -87,5 +87,6 @@ function runApi<API extends keyof IDataboxApiTypes & string>(
 ): Promise<IDataboxApiTypes[API]['result']> {
   // @ts-expect-error
   const context = DataboxCore.getApiContext();
-  return DataboxCore.apiRouter.handlers[Api](args, context);
+  // @ts-expect-error
+  return DataboxCore.apiRegistry.handlersByCommand[Api](args, context);
 }
