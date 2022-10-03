@@ -1,14 +1,14 @@
 {
   "name": "@ulixee/databox-core",
-  "version": "2.0.0-alpha.11",
+  "version": "2.0.0-alpha.12",
   "main": "index.js",
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.12",
     "@ulixee/crypto": "2.0.0-alpha.12",
-    "@ulixee/databox": "2.0.0-alpha.11",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.11",
+    "@ulixee/databox": "2.0.0-alpha.12",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.12",
     "@ulixee/net": "2.0.0-alpha.12",
     "@ulixee/sidechain": "2.0.0-alpha.11",
     "@ulixee/specification": "2.0.0-alpha.12",
@@ -18,10 +18,10 @@
     "vm2": "^3.9.10"
   },
   "devDependencies": {
-    "@ulixee/databox-core-runtime": "2.0.0-alpha.11",
-    "@ulixee/databox-packager": "2.0.0-alpha.11",
-    "@ulixee/databox-testing": "2.0.0-alpha.11",
-    "@ulixee/server": "2.0.0-alpha.11",
+    "@ulixee/databox-core-runtime": "2.0.0-alpha.12",
+    "@ulixee/databox-packager": "2.0.0-alpha.12",
+    "@ulixee/databox-testing": "2.0.0-alpha.12",
+    "@ulixee/server": "2.0.0-alpha.12",
     "ts-node": "^10.8.1",
     "zod": "^3.17.10"
   }

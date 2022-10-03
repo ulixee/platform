@@ -1,14 +1,14 @@
 {
   "name": "@ulixee/e2e",
   "private": true,
-  "version": "2.0.0-alpha.11",
+  "version": "2.0.0-alpha.12",
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.12",
     "@ulixee/crypto": "2.0.0-alpha.12",
-    "@ulixee/databox": "2.0.0-alpha.11",
-    "@ulixee/databox-packager": "2.0.0-alpha.11",
+    "@ulixee/databox": "2.0.0-alpha.12",
+    "@ulixee/databox-packager": "2.0.0-alpha.12",
     "@ulixee/net": "2.0.0-alpha.12",
-    "@ulixee/server": "2.0.0-alpha.11",
+    "@ulixee/server": "2.0.0-alpha.12",
     "@ulixee/sidechain": "2.0.0-alpha.11",
     "@ulixee/specification": "2.0.0-alpha.12"
   }

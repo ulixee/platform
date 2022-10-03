@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/server",
-  "version": "2.0.0-alpha.11",
+  "version": "2.0.0-alpha.12",
   "description": "The server",
   "exports": {
     ".": {
@@ -24,10 +24,10 @@
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.12",
-    "@ulixee/databox-core": "2.0.0-alpha.11",
-    "@ulixee/databox-core-runtime": "2.0.0-alpha.11",
-    "@ulixee/databox-for-hero-core-runtime": "2.0.0-alpha.11",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.11",
+    "@ulixee/databox-core": "2.0.0-alpha.12",
+    "@ulixee/databox-core-runtime": "2.0.0-alpha.12",
+    "@ulixee/databox-for-hero-core-runtime": "2.0.0-alpha.12",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.12",
     "@ulixee/hero-core": "2.0.0-alpha.12",
     "@ulixee/hero-interfaces": "2.0.0-alpha.12",
     "@ulixee/net": "2.0.0-alpha.12",
@@ -36,6 +36,6 @@
     "ws": "^7.4.6"
   },
   "devDependencies": {
-    "@ulixee/databox-testing": "2.0.0-alpha.11"
+    "@ulixee/databox-testing": "2.0.0-alpha.12"
   }
 }

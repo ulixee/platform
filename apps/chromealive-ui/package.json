@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/apps-chromealive-ui",
-  "version": "2.0.0-alpha.11",
+  "version": "2.0.0-alpha.12",
   "private": true,
   "scripts": {
     "build": "vue-cli-service build",
@@ -16,7 +16,7 @@
     "@babel/runtime-corejs3": "^7.13.10",
     "@headlessui/vue": "^1.5.0",
     "@heroicons/vue": "^1.0.6",
-    "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.11",
+    "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.12",
     "@ulixee/commons": "2.0.0-alpha.12",
     "@ulixee/hero-interfaces": "2.0.0-alpha.12",
     "@unblocked-web/specifications": "2.0.0-alpha.11",

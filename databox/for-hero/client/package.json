@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/databox-for-hero",
-  "version": "2.0.0-alpha.11",
+  "version": "2.0.0-alpha.12",
   "description": "The Databox for Hero library.",
   "exports": {
     ".": {
@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.12",
-    "@ulixee/databox": "2.0.0-alpha.11",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.11",
+    "@ulixee/databox": "2.0.0-alpha.12",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.12",
     "@ulixee/hero": "2.0.0-alpha.12",
     "@ulixee/hero-interfaces": "2.0.0-alpha.12",
     "@ulixee/net": "2.0.0-alpha.12",
@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@types/web": "^0.0.50",
-    "@ulixee/databox-testing": "2.0.0-alpha.11",
+    "@ulixee/databox-testing": "2.0.0-alpha.12",
     "@ulixee/hero-core": "2.0.0-alpha.12"
   }
 }

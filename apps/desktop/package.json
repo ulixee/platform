@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/apps-desktop",
-  "version": "2.0.0-alpha.11",
+  "version": "2.0.0-alpha.12",
   "private": true,
   "main": "index.js",
   "scripts": {
@@ -16,11 +16,11 @@
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/apps-chromealive-core": "2.0.0-alpha.11",
+    "@ulixee/apps-chromealive-core": "2.0.0-alpha.12",
     "@ulixee/commons": "2.0.0-alpha.12",
-    "@ulixee/databox-core": "2.0.0-alpha.11",
-    "@ulixee/databox-for-hero": "2.0.0-alpha.11",
-    "@ulixee/server": "2.0.0-alpha.11",
+    "@ulixee/databox-core": "2.0.0-alpha.12",
+    "@ulixee/databox-for-hero": "2.0.0-alpha.12",
+    "@ulixee/server": "2.0.0-alpha.12",
     "@unblocked-web/default-browser-emulator": "2.0.0-alpha.11",
     "electron-log": "^4.4.6",
     "electron-positioner": "^4.1.0",
