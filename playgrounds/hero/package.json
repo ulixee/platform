@@ -10,9 +10,9 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.11",
-    "@ulixee/hero": "2.0.0-alpha.11",
-    "@ulixee/hero-core": "2.0.0-alpha.11",
+    "@ulixee/commons": "2.0.0-alpha.12",
+    "@ulixee/hero": "2.0.0-alpha.12",
+    "@ulixee/hero-core": "2.0.0-alpha.12",
     "@ulixee/server": "2.0.0-alpha.11"
   }
 }

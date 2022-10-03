@@ -126,7 +126,7 @@ export default class PaymentProcessor {
     const pricePerKb = this.pricePerKb;
 
     const minimumPrice =
-      pricePerQuery + Math.ceil((pricePerKb * this.config.anticipatedBytesPerQuery) / 1024);
+      pricePerQuery + Math.ceil((pricePerKb * this.config.anticipatedBytesPerQuery) / 1e3);
 
     const microgonsAllocated = this.payment.microgons - this.settlementFeeMicrogons;
 

@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@types/puppeteer": "^5.4.6",
-    "@ulixee/commons": "2.0.0-alpha.11",
+    "@ulixee/commons": "2.0.0-alpha.12",
     "@ulixee/databox": "2.0.0-alpha.11",
     "@ulixee/databox-interfaces": "2.0.0-alpha.11",
     "puppeteer": "^14.3.0"

@@ -3,7 +3,7 @@
   "version": "2.0.0-alpha.11",
   "description": "Interfaces for the Databox specification.",
   "dependencies": {
-    "@ulixee/crypto": "2.0.0-alpha.11",
-    "@ulixee/specification": "2.0.0-alpha.11"
+    "@ulixee/crypto": "2.0.0-alpha.12",
+    "@ulixee/specification": "2.0.0-alpha.12"
   }
 }
