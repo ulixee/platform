@@ -9,7 +9,7 @@
     "@ulixee/databox-packager": "2.0.0-alpha.12",
     "@ulixee/net": "2.0.0-alpha.12",
     "@ulixee/server": "2.0.0-alpha.12",
-    "@ulixee/sidechain": "2.0.0-alpha.11",
+    "@ulixee/sidechain": "2.0.0-alpha.12",
     "@ulixee/specification": "2.0.0-alpha.12"
   }
 }

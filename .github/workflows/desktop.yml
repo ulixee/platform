@@ -24,11 +24,15 @@ jobs:
           node-version: 14
           cache: 'yarn'
 
-      - name: (TEMP) Clone unblocked
+      - name: Install pcap
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: sudo apt-get install -y libpcap-dev
+
+      - name: Clone unblocked
         run: git clone --recurse-submodules -j8 https://github.com/unblocked-web/unblocked.git
         working-directory: ..
 
-      - name: (TEMP) Install unblocked
+      - name: Install unblocked
         run: yarn build:all
         working-directory: ../unblocked
 

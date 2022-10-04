@@ -68,13 +68,13 @@ jobs:
         run: yarn build
         working-directory: ../unblocked
 
-      - name: Relink Shared
-        run: yarn
-        working-directory: ../shared
-
       - name: Install Hero
         run: yarn build
         working-directory: ./hero
+
+      - name: Relink Shared
+        run: yarn build
+        working-directory: ../shared
 
       - name: Yarn build
         run: yarn && yarn build
