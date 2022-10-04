@@ -21,14 +21,18 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: 'true'
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'yarn'
+
+      - name: Install pcap
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: sudo apt-get install -y libpcap-dev
 
       - name: Chocolatey Install Action
         if: ${{ matrix.os == 'windows-latest' }}
@@ -40,32 +44,36 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
         if: ${{ matrix.os == 'windows-latest' }}
 
-      - name: (TEMP) Clone ulixee/shared
+      - name: Clone ulixee/shared
         run: git clone --recurse-submodules -j8 https://github.com/ulixee/shared.git
         working-directory: ..
 
-      - name: (TEMP) Install ulixee/shared
+      - name: Install ulixee/shared
         run: yarn && yarn build
         working-directory: ../shared
 
-      - name: (TEMP) Clone ulixee/payments
+      - name: Clone ulixee/payments
         run: git clone --recurse-submodules -j8 https://github.com/ulixee/payments.git
         working-directory: ..
 
-      - name: (TEMP) Install ulixee/payments
+      - name: Install ulixee/payments
         run: yarn && yarn build
         working-directory: ../payments
 
-      - name: (TEMP) Clone unblocked
-        run: git clone --recurse-submodules -j8 https://github.com/unblockable/unblocked.git
+      - name: Clone unblocked
+        run: git clone --recurse-submodules -j8 https://github.com/unblocked-web/unblocked.git
         working-directory: ..
 
-      - name: (TEMP) Install unblocked
-        run: yarn build:all
+      - name: Install unblocked
+        run: yarn build
         working-directory: ../unblocked
 
+      - name: Relink Shared
+        run: yarn
+        working-directory: ../shared
+
       - name: Install Hero
-        run: yarn && yarn build
+        run: yarn build
         working-directory: ./hero
 
       - name: Yarn build
@@ -79,7 +87,7 @@ jobs:
         run: sudo $(npx install-browser-deps)
 
       - name: Run Lint
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 14 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 16 }}
         run: NODE_OPTIONS=--max-old-space-size=4096 yarn lint
 
       - name: Run tests

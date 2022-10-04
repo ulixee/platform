@@ -25,7 +25,7 @@ jobs:
           cache: 'yarn'
 
       - name: (TEMP) Clone unblocked
-        run: git clone --recurse-submodules -j8 https://github.com/unblockable/unblocked.git
+        run: git clone --recurse-submodules -j8 https://github.com/unblocked-web/unblocked.git
         working-directory: ..
 
       - name: (TEMP) Install unblocked
