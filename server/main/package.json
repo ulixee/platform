@@ -15,7 +15,7 @@
     "start:alive": "node -r @ulixee/apps-chromealive-core/register bin/cli.js start"
   },
   "peerDependencies": {
-    "@ulixee/apps-chromealive-core": "2.0.0-alpha.11"
+    "@ulixee/apps-chromealive-core": "2.0.0-alpha.12"
   },
   "peerDependenciesMeta": {
     "@ulixee/apps-chromealive-core": {

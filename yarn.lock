@@ -3375,6 +3375,17 @@
     pretty-quick "^3.1.0"
     typescript "^4.7.2"
 
+"@ulixee/sidechain@2.0.0-alpha.12":
+  version "2.0.0-alpha.12"
+  resolved "https://registry.yarnpkg.com/@ulixee/sidechain/-/sidechain-2.0.0-alpha.12.tgz#7faf2fd9b6b4f606b796aeb0a4aa14ec2476e159"
+  integrity sha512-h1Ne9LGOH8o/5doAG26lRciqLvttkGR/qiFB61fuaQXmQgSfnp9D5E3Vz3xA6T4dTG0kwxVBaJhXgdLmxIOnSQ==
+  dependencies:
+    "@ulixee/commons" "2.0.0-alpha.12"
+    "@ulixee/crypto" "2.0.0-alpha.12"
+    "@ulixee/net" "2.0.0-alpha.12"
+    "@ulixee/specification" "2.0.0-alpha.12"
+    commander "^9.4.0"
+
 "@unblocked-web/js-path@2.0.0-alpha.1":
   version "2.0.0-alpha.1"
   resolved "https://registry.yarnpkg.com/@unblocked-web/js-path/-/js-path-2.0.0-alpha.1.tgz#39482400d582a1cb88197724f2b1efa339d9483f"

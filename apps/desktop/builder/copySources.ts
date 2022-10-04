@@ -58,10 +58,10 @@ function copyDir(baseDir: string, outDir: string): void {
 }
 
 copyDir(`${baseBuild}/build`, dest);
-copyDir(`${baseBuild}/hero/build`, `${dest}/hero`);
-copyDir(`${baseBuild}/../unblocked/agent/build`, `${dest}/agent`);
-copyDir(`${baseBuild}/../unblocked/specifications/build`, `${dest}/specifications`);
-copyDir(`${baseBuild}/../unblocked/build/plugins`, `${dest}/unblocked-plugins`);
+// copyDir(`${baseBuild}/hero/build`, `${dest}/hero`);
+// copyDir(`${baseBuild}/../unblocked/agent/build`, `${dest}/agent`);
+// copyDir(`${baseBuild}/../unblocked/specifications/build`, `${dest}/specifications`);
+// copyDir(`${baseBuild}/../unblocked/build/plugins`, `${dest}/unblocked-plugins`);
 
 // eslint-disable-next-line no-console
 console.log('Copied files to dest', dest);
