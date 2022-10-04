@@ -7,16 +7,24 @@
   },
   "references": [
     {
-      "path": "databox"
-    },
-    {
-      "path": "playgrounds/databox-for-hero"
+      "path": "playgrounds/databox-for-hero/tsconfig.json"
     },
     {
       "path": "apps/chromealive-core/injected-scripts/tsconfig.json"
     }
   ],
-  "include": ["server", "e2e", "apps", "playgrounds", "cli", "./*.js", "./*.json", ".eslintrc.js"],
+  "include": [
+    "server",
+    "e2e",
+    "apps",
+    "playgrounds",
+    "databox",
+    "databox/packager/*.json",
+    "cli",
+    "./*.js",
+    "./*.json",
+    ".eslintrc.js"
+  ],
   "exclude": [
     "**/tsconfig*.json",
     "build/**/*",
