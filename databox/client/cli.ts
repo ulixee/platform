@@ -34,10 +34,10 @@ export default function databoxCommands(): Command {
 
   databoxCommand
     .command('deploy')
-    .description('Build and deploy a Databox.')
+    .description('Build and upload a Databox.')
     .argument(
       '<path>',
-      'The path of the entrypoint to the Databox. Must have a default export that is a DataboxWrapper.',
+      'The path of the entrypoint to the Databox. Must have a default export that is a Databox.',
     )
     .addOption(uploadHostOption)
     .addOption(clearVersionHistoryOption)
@@ -75,7 +75,7 @@ export default function databoxCommands(): Command {
     .description('Build a Databox into a single ".dbx" file.')
     .argument(
       '<path>',
-      'The path of the entrypoint to the Databox. Must have a default export that is a DataboxWrapper.',
+      'The path of the entrypoint to the Databox. Must have a default export that is a Databox.',
     )
     .option(
       '-o, --out-dir <path>',

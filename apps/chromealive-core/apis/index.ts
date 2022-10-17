@@ -23,7 +23,7 @@ const ApiHandlers: IChromeAliveApis = {
   'Session.search': SessionApi.search,
   'Databox.getOutput': DataboxApi.getOutput,
   'Databox.getCollectedAssets': DataboxApi.getCollectedAssets,
-  'Databox.runExtract': DataboxApi.runExtract,
+  'Databox.execExtract': DataboxApi.execExtract,
   'DevtoolsBackdoor.toggleInspectElementMode': DevtoolsBackdoorApi.toggleInspectElementMode,
   'DevtoolsBackdoor.highlightNode': DevtoolsBackdoorApi.highlightNode,
   'DevtoolsBackdoor.hideHighlight': DevtoolsBackdoorApi.hideHighlight,

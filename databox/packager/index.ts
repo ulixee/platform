@@ -1,4 +1,5 @@
 import * as Path from 'path';
+import { IFetchMetaResponseData } from '@ulixee/databox-core/interfaces/ILocalDataboxProcess';
 import { sha3 } from '@ulixee/commons/lib/hashUtils';
 import LocalDataboxProcess from '@ulixee/databox-core/lib/LocalDataboxProcess';
 import DataboxManifest from '@ulixee/databox-core/lib/DataboxManifest';
@@ -66,12 +67,9 @@ export default class DataboxPackager {
     sourceMap: string,
     createNewVersionHistory = false,
   ): Promise<DataboxManifest> {
-    const runtime = await this.findDataboxRuntime();
-    if (!runtime || !runtime.name) {
-      throw new Error('The exported Databox object must specify a runtime');
-    }
-    if (!runtime.version) {
-      throw new Error('The Databox does not specify a runtime version');
+    const meta = await this.findDataboxMeta();
+    if (!meta.coreVersion) {
+      throw new Error('Databox must specify a coreVersion');
     }
 
     const hash = sha3(Buffer.from(sourceCode));
@@ -80,8 +78,8 @@ export default class DataboxPackager {
       this.entrypoint,
       scriptVersionHash,
       Date.now(),
-      runtime.name,
-      runtime.version,
+      meta.coreVersion,
+      meta.corePlugins,
       this.logToConsole ? console.log : undefined,
     );
     if (createNewVersionHistory) {
@@ -92,12 +90,12 @@ export default class DataboxPackager {
     return this.manifest;
   }
 
-  private async findDataboxRuntime(): Promise<{ name: string; version: string }> {
+  private async findDataboxMeta(): Promise<IFetchMetaResponseData> {
     const entrypoint = `${this.dbx.workingDirectory}/databox.js`;
     const databoxProcess = new LocalDataboxProcess(entrypoint);
-    const runtime = await databoxProcess.fetchRuntime();
+    const meta = await databoxProcess.fetchMeta();
     await new Promise(resolve => setTimeout(resolve, 1e3));
     await databoxProcess.close();
-    return runtime;
+    return meta;
   }
 }

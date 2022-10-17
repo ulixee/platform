@@ -1,0 +1,37 @@
+- title: Overview
+  items:
+    - Introduction
+    - Configuration
+    - Concepts
+    - Deployment
+
+- title: Databox Basics
+  items:
+    - Databox
+    - RunnerObject
+    - Input
+    - Output
+    - Plugins
+
+- title: Databox for Hero
+  items:
+    - Overview
+    - DataboxForHero
+    - RunnerObject
+    - ExtractorObject
+    - Output
+    - HeroExtensions
+    - CollectedElements
+    - CollectedResources
+    - CollectedSnippets
+
+- title: Databox for Puppeteer
+  items:
+    - DataboxForPuppeteer
+    - RunnerObject
+
+- title: Help
+  items:
+    - Prerequisites
+    - How to upgrade
+    - Troubleshooting

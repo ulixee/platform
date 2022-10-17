@@ -1,8 +1,8 @@
 import IComponentsBase, { IDefaultsObjBase, IRunFnBase } from "./IComponentsBase";
 
 export default interface IComponents<TRunnerObject, IDefaultsObj> extends IComponentsBase<TRunnerObject, IDefaultsObj> {
-  defaults?: IDefaultsObj;
   run: IRunFnBase<TRunnerObject>;
+  defaults?: IDefaultsObj;
   schema?: any;
 }
 

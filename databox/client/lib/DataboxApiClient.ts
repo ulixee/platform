@@ -27,8 +27,8 @@ export default class DataboxApiClient {
     versionHash: string,
     input: any,
     payment?: IPayment,
-  ): Promise<IDataboxApiTypes['Databox.run']['result']> {
-    return await this.runRemote('Databox.run', { versionHash, payment, input });
+  ): Promise<IDataboxApiTypes['Databox.exec']['result']> {
+    return await this.runRemote('Databox.exec', { versionHash, payment, input });
   }
 
   public async upload(

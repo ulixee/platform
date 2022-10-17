@@ -1,10 +1,16 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import IHeroCreateOptions from '@ulixee/hero/interfaces/IHeroCreateOptions';
+import RunnerObject from '@ulixee/databox/lib/RunnerObject'; 
 import { Observable } from './lib/ObjectObserver';
-import DataboxWrapper from './lib/DataboxWrapper';
-import RunnerObject from './lib/RunnerObject';
-import ExtractorObject from './lib/ExtractorObject';
+import DataboxForHeroPlugin from './lib/DataboxForHeroPlugin';
+import DataboxForHero from './lib/DataboxForHero';
 
-export { Observable, IHeroCreateOptions, RunnerObject, ExtractorObject };
+export { 
+  DataboxForHero,
+  DataboxForHeroPlugin, 
+  Observable, 
+  IHeroCreateOptions, 
+  RunnerObject,
+};
 
-export default DataboxWrapper;
+export default DataboxForHero;

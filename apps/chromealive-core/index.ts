@@ -147,9 +147,9 @@ export default class ChromeAliveCore {
 
     if (heroSession.mode === 'browserless') {
       // @ts-expect-error
-      const extractSessionId = heroSession.options.extractSessionId;
-      if (extractSessionId) {
-        const observer = this.sessionObserversById.get(extractSessionId);
+      const previousSessionId = heroSession.options.previousSessionId;
+      if (previousSessionId) {
+        const observer = this.sessionObserversById.get(previousSessionId);
         if (observer) observer.bindExtractor(heroSession);
         return;
       }

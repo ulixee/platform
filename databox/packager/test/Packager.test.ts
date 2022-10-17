@@ -51,8 +51,10 @@ test('it should generate a relative script entrypoint', async () => {
     linkedVersions: [],
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `historyTest.js`),
     scriptHash: expect.any(String),
-    runtimeName: '@ulixee/databox-for-hero',
-    runtimeVersion: require('../package.json').version,
+    coreVersion: require('../package.json').version,
+    corePlugins: {
+      '@ulixee/databox-for-hero': '2.0.0-alpha.12',
+    },
     versionHash: DataboxManifest.createVersionHash(packager.manifest),
     versionTimestamp: expect.any(Number),
     paymentAddress: undefined,
@@ -89,7 +91,7 @@ test('should be able to read a databox manifest next to an entrypoint', async ()
   dbxFile = packager.dbxPath;
 
   await packager.build();
-  expect(packager.manifest.runtimeVersion).toBe('1.1.1');
+  expect(packager.manifest.coreVersion).toBe('1.1.1');
 });
 
 test('should merge custom manifests', async () => {
@@ -103,8 +105,7 @@ test('should merge custom manifests', async () => {
     `${projectConfig}/databoxes.json`,
     JSON.stringify({
       [Path.join('..', 'test', 'assets', 'customManifest-manifest.json')]: {
-        runtimeVersion: '1.1.2',
-        runtimeName: 'projectOverrider',
+        coreVersion: '1.1.2',
       },
     }),
   );
@@ -112,8 +113,7 @@ test('should merge custom manifests', async () => {
   await packager.build();
   await Fs.unlink(`${projectConfig}/databoxes.json`);
   // should take the closest (entrypoint override) over the project config
-  expect(packager.manifest.runtimeVersion).toBe('1.1.1');
-  expect(packager.manifest.runtimeName).toBe('projectOverrider');
+  expect(packager.manifest.coreVersion).toBe('1.1.1');
 });
 
 test('should build a version history with a new version', async () => {

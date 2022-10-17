@@ -1,23 +1,26 @@
-import IDataboxCoreRuntime from '@ulixee/databox-interfaces/IDataboxCoreRuntime';
+import * as Os from 'os';
+import * as Path from 'path';
+import { promises as Fs } from 'fs';
+import { NodeVM, VMScript } from 'vm2';
+import IDataboxPluginCore from '@ulixee/databox-interfaces/IDataboxPluginCore';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import Logger from '@ulixee/commons/lib/Logger';
-import { promises as Fs } from 'fs';
-import * as Path from 'path';
-import * as Os from 'os';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import { IDataboxApis } from '@ulixee/specification/databox';
 import IDataboxCoreConfigureOptions from '@ulixee/databox-interfaces/IDataboxCoreConfigureOptions';
+import Databox from '@ulixee/databox';
+import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import env from './env';
 import DataboxRegistry from './lib/DataboxRegistry';
 import { unpackDbxFile } from './lib/dbxUtils';
 import DataboxUpload from './endpoints/Databox.upload';
 import WorkTracker from './lib/WorkTracker';
-import DataboxRun from './endpoints/Databox.run';
+import DataboxExec from './endpoints/Databox.exec';
 import IDataboxApiContext from './interfaces/IDataboxApiContext';
-import DataboxRunLocalScript from './endpoints/Databox.runLocalScript';
+import DataboxRunLocalScript from './endpoints/Databox.execLocalScript';
 import SidechainClientManager from './lib/SidechainClientManager';
 import DataboxMeta from './endpoints/Databox.meta';
 
@@ -54,15 +57,39 @@ export default class DataboxCore {
   public static workTracker: WorkTracker;
   public static apiRegistry = new ApiRegistry<IDataboxApiContext>([
     DataboxUpload,
-    DataboxRun,
+    DataboxExec,
     DataboxMeta,
   ]);
 
-  private static coreRuntimesByName: { [name: string]: IDataboxCoreRuntime } = {};
+  static #vm: NodeVM;
+
+  private static pluginCoresByName: { [name: string]: IDataboxPluginCore } = {};
   private static databoxRegistry: DataboxRegistry;
   private static sidechainClientManager: SidechainClientManager;
-
   private static isStarted = new Resolvable<void>();
+
+  private static compiledScriptsByPath = new Map<string, Promise<VMScript>>();
+
+  private static get vm(): NodeVM {
+    if (!this.#vm)  {
+      const whitelist: Set<string> = new Set(...Object.values(this.pluginCoresByName).map(x => x.nodeVmRequireWhitelist || []));
+      whitelist.add('@ulixee/*');
+
+      this.#vm = new NodeVM({
+        console: 'inherit',
+        sandbox: {},
+        wasm: false,
+        eval: false,
+        wrapper: 'commonjs',
+        strict: true,
+        require: {
+          external: Array.from(whitelist),
+        },
+      });
+    }
+
+    return this.#vm;
+  }
 
   public static addConnection(
     transport: ITransportToClient<IDataboxApis, never>,
@@ -76,8 +103,8 @@ export default class DataboxCore {
     return connection;
   }
 
-  public static registerRuntime(coreRuntime: IDataboxCoreRuntime): void {
-    this.coreRuntimesByName[coreRuntime.databoxRuntimeName] = coreRuntime;
+  public static registerPlugin(pluginCore: IDataboxPluginCore): void {
+    this.pluginCoresByName[pluginCore.name] = pluginCore;
   }
 
   public static async start(): Promise<void> {
@@ -92,30 +119,55 @@ export default class DataboxCore {
     );
     await this.installManuallyUploadedDbxFiles();
 
-    for (const runner of Object.values(this.coreRuntimesByName)) {
-      await runner.start(this.options.databoxesDir);
+    process.env.ULX_DATABOX_DISABLE_AUTORUN = 'true';
+    await new Promise(resolve => process.nextTick(resolve));
+
+    for (const plugin of Object.values(this.pluginCoresByName)) {
+      if (plugin.onCoreStart) await plugin.onCoreStart();
     }
+
     this.workTracker = new WorkTracker(this.options.maxRuntimeMs);
 
     if (this.options.enableRunWithLocalPath) {
       this.apiRegistry.register(DataboxRunLocalScript);
     }
     this.sidechainClientManager = new SidechainClientManager(this.options);
-
     this.isStarted.resolve();
+  }
+
+  public static async execDatabox(path: string, manifest: IDataboxManifest, input: any): Promise<{ output: any }> {
+    const script = await this.getVMScript(path, manifest);
+    const databoxExecutable = this.vm.run(script);
+
+    if (!(databoxExecutable instanceof Databox)) {
+      throw new Error(
+        'The default export from this script needs to inherit from "@ulixee/databox"',
+      );
+    }
+
+    const options = { input };
+    for (const plugin of Object.values(this.pluginCoresByName)) {
+      if (plugin.onBeforeExecDatabox) await plugin.onBeforeExecDatabox(options);
+    }
+
+    const output = await databoxExecutable.exec(options);
+    return { output };
   }
 
   public static async close(): Promise<void> {
     if (this.isClosing) return this.isClosing;
     const closingPromise = new Resolvable<void>();
     this.isClosing = closingPromise.promise;
-    try {
-      await this.workTracker.stop(this.options.waitForDataboxCompletionOnShutdown);
+    
+    this.compiledScriptsByPath.clear();
 
-      for (const runner of Object.values(this.coreRuntimesByName)) {
-        await runner.close();
+    try {
+      await this.workTracker?.stop(this.options.waitForDataboxCompletionOnShutdown);
+
+      for (const plugin of Object.values(this.pluginCoresByName)) {
+        if (plugin.onCoreStart) await plugin.onCoreClose();
       }
-      this.coreRuntimesByName = {};
+      this.pluginCoresByName = {};
 
       for (const connection of this.connections) {
         await connection.disconnect();
@@ -152,14 +204,32 @@ export default class DataboxCore {
     }
   }
 
+  private static getVMScript(path: string, manifest: IDataboxManifest): Promise<VMScript> {
+    if (this.compiledScriptsByPath.has(path)) {
+      return this.compiledScriptsByPath.get(path);
+    }
+
+    const script = new Promise<VMScript>(async resolve => {
+      const file = await Fs.readFile(path, 'utf8');
+      const vmScript = new VMScript(file, {
+        filename: manifest.scriptEntrypoint,
+      }).compile();
+      resolve(vmScript);
+    });
+
+    this.compiledScriptsByPath.set(path, script);
+    return script;
+  }
+
   private static getApiContext(remoteId?: string): IDataboxApiContext {
     return {
-      sidechainClientManager: this.sidechainClientManager,
-      workTracker: this.workTracker,
       logger: log.createChild(module, { remoteId }),
-      configuration: this.options,
       databoxRegistry: this.databoxRegistry,
-      coreRuntimesByName: this.coreRuntimesByName,
+      workTracker: this.workTracker,
+      configuration: this.options,
+      pluginCoresByName: this.pluginCoresByName,
+      sidechainClientManager: this.sidechainClientManager,
+      execDatabox: this.execDatabox.bind(this),
     };
   }
 }

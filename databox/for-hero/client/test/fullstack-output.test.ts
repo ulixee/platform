@@ -7,11 +7,11 @@ afterEach(Helpers.afterEach);
 
 describe('Full output tests', () => {
   it('records object changes', async () => {
-    const databoxInternal = await Helpers.createFullstackDataboxInternal<
+    const { databoxForHeroPlugin, databoxClose } = await Helpers.createFullstackDatabox<
       any,
       { started: Date; page: { url: string; title: string; data?: Buffer } }
     >();
-    const output = databoxInternal.output;
+    const output = databoxForHeroPlugin.output;
     output.started = new Date();
     const url = 'https://example.org';
     const title = 'Example Domain';
@@ -20,8 +20,9 @@ describe('Full output tests', () => {
       title,
     };
     output.page.data = Buffer.from('I am buffer');
-    const sessionId = await databoxInternal.sessionId;
-    await databoxInternal.close();
+    const sessionId = await databoxForHeroPlugin.sessionId;
+    await databoxClose();
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     const db = new SessionDb(sessionId, { readonly: true });
     const outputs = db.output.all();
@@ -60,11 +61,11 @@ describe('Full output tests', () => {
   });
 
   it('can add array-ish items to the main object', async () => {
-    const databoxInternal = await Helpers.createFullstackDataboxInternal<
+    const { databoxForHeroPlugin, databoxClose } = await Helpers.createFullstackDatabox<
       any,
       { url: string; title: string; date: Date; buffer: Buffer }[]
     >();
-    const output = databoxInternal.output;
+    const output = databoxForHeroPlugin.output;
     const date = new Date();
     output.push({
       url: 'https://url.com',
@@ -72,8 +73,9 @@ describe('Full output tests', () => {
       date,
       buffer: Buffer.from('whatever'),
     });
-    const sessionId = await databoxInternal.sessionId;
-    await databoxInternal.close();
+    const sessionId = await databoxForHeroPlugin.sessionId;
+    await databoxClose();
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     const db = new SessionDb(sessionId, { readonly: true });
     const outputs = db.output.all();
@@ -103,15 +105,16 @@ describe('Full output tests', () => {
   });
 
   it('can add observables directly', async () => {
-    const databoxInternal = await Helpers.createFullstackDataboxInternal<any, any>();
-    const output = databoxInternal.output;
+    const { databoxForHeroPlugin, databoxClose } = await Helpers.createFullstackDatabox<any, any>();
+    const output = databoxForHeroPlugin.output;
     const record = Observable({} as any);
     output.push(record);
     record.test = 1;
     record.watch = 2;
     record.any = { more: true };
-    const sessionId = await databoxInternal.sessionId;
-    await databoxInternal.close();
+    const sessionId = await databoxForHeroPlugin.sessionId;
+    await databoxClose();
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     const db = new SessionDb(sessionId, { readonly: true });
     const outputs = db.output.all();
@@ -135,14 +138,15 @@ describe('Full output tests', () => {
   });
 
   it('can replace the main object', async () => {
-    const databoxInternal = await Helpers.createFullstackDataboxInternal<any, { test: string }>();
-    databoxInternal.output.test = 'true';
-    databoxInternal.output = {
+    const { databoxForHeroPlugin, databoxClose } = await Helpers.createFullstackDatabox<any, { test: string }>();
+    databoxForHeroPlugin.output.test = 'true';
+    databoxForHeroPlugin.output = {
       try: true,
       another: false,
     };
-    const sessionId = await databoxInternal.sessionId;
-    await databoxInternal.close();
+    const sessionId = await databoxForHeroPlugin.sessionId;
+    await databoxClose();
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     const db = new SessionDb(sessionId, { readonly: true });
     const outputs = db.output.all();
@@ -168,7 +172,7 @@ describe('Full output tests', () => {
       lastCommandId: 0,
       path: '["try"]',
     });
-    expect(JSON.stringify(databoxInternal.output)).toEqual(
+    expect(JSON.stringify(databoxForHeroPlugin.output)).toEqual(
       JSON.stringify({
         try: true,
         another: false,

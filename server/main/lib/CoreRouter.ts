@@ -10,13 +10,13 @@ import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
 import HttpTransportToClient from '@ulixee/net/lib/HttpTransportToClient';
 import { IDataboxApis } from '@ulixee/specification/databox';
-import Server from '../index';
 import ChromeAliveUtils from './ChromeAliveUtils';
+import Server from '../index';
 
 export default class CoreRouter {
   public static modulesToRegister = [
-    '@ulixee/databox-core-runtime/register',
-    '@ulixee/databox-for-hero-core-runtime/register',
+    '@ulixee/databox-for-hero-plugin-core/register',
+    '@ulixee/databox-for-puppeteer-plugin-core/register',
   ];
 
   public heroConfiguration: ICoreConfigureOptions;
@@ -107,7 +107,7 @@ export default class CoreRouter {
     const httpTransport = new HttpTransportToClient<IDataboxApis, {}>(req, res);
     const connection = DataboxCore.addConnection(httpTransport);
     httpTransport.emit('message', {
-      command: 'Databox.run',
+      command: 'Databox.eec',
       args: {
         versionHash,
         input,

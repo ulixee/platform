@@ -1,7 +1,6 @@
 import { mkdirSync, promises as Fs, rmdirSync } from 'fs';
 import * as Path from 'path';
 import Packager from '@ulixee/databox-packager';
-import DataboxCoreRuntime from '@ulixee/databox-core-runtime';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import DbxFile from '@ulixee/databox-packager/lib/DbxFile';
 import { IDataboxApiTypes } from '@ulixee/specification/databox';
@@ -18,7 +17,6 @@ beforeAll(async () => {
   DataboxCore.options.databoxesTmpDir = tmpDir;
   DataboxCore.options.databoxesDir = storageDir;
   await DataboxCore.start();
-  await DataboxCore.registerRuntime(new DataboxCoreRuntime());
   packager = new Packager(require.resolve('./databoxes/bootup.ts'));
   dbx = await packager.build();
 });
@@ -51,7 +49,7 @@ test('can load a version from disk if not already open', async () => {
     recursive: true,
   });
 
-  await expect(runApi('Databox.run', packager.manifest)).resolves.toMatchObject({
+  await expect(runApi('Databox.exec', packager.manifest)).resolves.toMatchObject({
     output: { success: true },
     latestVersionHash: packager.manifest.versionHash,
   });

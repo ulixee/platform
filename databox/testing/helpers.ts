@@ -8,11 +8,14 @@ import * as net from 'net';
 import * as http2 from 'http2';
 import Core from '@ulixee/hero-core';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
-import { ConnectionToHeroCore } from '@ulixee/hero';
-import DataboxInternal from '@ulixee/databox-for-hero/lib/DataboxInternal';
-import IDataboxForHeroRunOptions from '@ulixee/databox-for-hero/interfaces/IDataboxForHeroRunOptions';
+import Hero, { ConnectionToHeroCore } from '@ulixee/hero';
+import IDataboxForHeroExecOptions from '@ulixee/databox-for-hero/interfaces/IDataboxForHeroExecOptions';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import Logger from '@ulixee/commons/lib/Logger';
+import DataboxForHero from '@ulixee/databox-for-hero';
+import IRunnerObject from '@ulixee/databox-for-hero/interfaces/IRunnerObject';
+import DataboxForHeroPlugin, { getDataboxForHeroPlugin } from '@ulixee/databox-for-hero/lib/DataboxForHeroPlugin';
+import { createPromise } from '@ulixee/commons/lib/utils';
 import { Helpers } from './index';
 
 const { log } = Logger(module);
@@ -133,13 +136,45 @@ function destroyServerFn(
     });
 }
 
-export function createFullstackDataboxInternal<IInput, IOutput>(
-  options: IDataboxForHeroRunOptions = {},
-): DataboxInternal<IInput, IOutput> {
+interface IFullstackDatabox<TInput, TOutput> {
+  databoxRunnerObject: IRunnerObject<TInput, TOutput, Hero>;
+  databoxForHeroPlugin: DataboxForHeroPlugin<TInput, TOutput>;
+  databoxClose: () => void;
+}
+
+export async function createFullstackDatabox<TInput, TOutput>(
+  options: IDataboxForHeroExecOptions = {},
+): Promise<IFullstackDatabox<TInput, TOutput>> {
   const bridge = new TransportBridge();
   Core.addConnection(bridge.transportToClient);
   options.connectionToCore = new ConnectionToHeroCore(bridge.transportToCore);
-  const databoxInternal = new DataboxInternal<IInput, IOutput>(options);
-  Helpers.needsClosing.push(databoxInternal);
-  return databoxInternal;
+  
+  let promiseResolve: () => void;
+  let databoxRunnerObject: IRunnerObject<TInput, TOutput, Hero>;
+  let databoxForHeroPlugin: DataboxForHeroPlugin<TInput, TOutput>;
+
+  const readyPromise = createPromise<void>();
+  const closedPromise = createPromise<void>();
+ 
+  new DataboxForHero<TInput, TOutput>({ 
+    run(runnerObject) {
+      databoxRunnerObject = runnerObject;
+      databoxForHeroPlugin = getDataboxForHeroPlugin(runnerObject.hero);
+      readyPromise.resolve();
+      return closedPromise.promise;
+    },
+  }).exec(options).catch(error => console.log(error));
+
+  function databoxClose() {
+    closedPromise.resolve();
+  }
+
+  Helpers.needsClosing.push({ close: databoxClose });
+  await readyPromise.promise;
+
+  return { 
+    databoxRunnerObject, 
+    databoxForHeroPlugin, 
+    databoxClose,
+  }
 }

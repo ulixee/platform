@@ -2,23 +2,28 @@
   items:
     - Introduction
     - Configuration
-    - Basic Concepts
+    - Concepts
     - Deployment
 
-- title: Basic Client
+- title: Databox Basics
   items:
     - Databox
-    - Databox Input
-    - Databox Output
-    - HeroExtensions
+    - RunnerObject
+    - Input
+    - Output
+    - Plugins
 
-- title: Advanced Client
+- title: Databox for Hero
   items:
-    - Runner
-    - Extractor
-    - CollectedElements
-    - CollectedResources
-    - CollectedSnippets
+    - Overview
+    - DataboxForHero
+    - RunnerObject
+    - Output
+
+- title: Databox for Puppeteer
+  items:
+    - DataboxForPuppeteer
+    - RunnerObject
 
 - title: Help
   items:

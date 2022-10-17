@@ -6,11 +6,11 @@ import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import { ChildProcess, fork } from 'child_process';
 import {
-  IFetchModuleMessage,
+  IFetchMetaMessage,
   IRunMessage,
   IResponse,
-  IFetchRuntimeResponseData,
-  IRunResponseData,
+  IFetchMetaResponseData,
+  IExecResponseData,
 } from '../interfaces/ILocalDataboxProcess';
 
 const databoxProcessJsPath = require.resolve('../bin/databox-process.js');
@@ -27,20 +27,20 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
     this.scriptPath = scriptPath;
   }
 
-  public async fetchRuntime(): Promise<{ name: string; version: string }> {
-    const data = await this.sendMessageToChild<IFetchModuleMessage, IFetchRuntimeResponseData>({
-      action: 'fetchRuntime',
+  public async fetchMeta(): Promise<IFetchMetaResponseData> {
+    const data = await this.sendMessageToChild<IFetchMetaMessage, IFetchMetaResponseData>({
+      action: 'fetchMeta',
       scriptPath: this.scriptPath,
     });
     return {
-      name: data.name,
-      version: data.version,
+      coreVersion: data.coreVersion,
+      corePlugins: data.corePlugins,
     };
   }
 
-  public async run(input: any): Promise<{ output: any }> {
-    const data = await this.sendMessageToChild<IRunMessage, IRunResponseData>({
-      action: 'run',
+  public async exec(input: any): Promise<{ output: any }> {
+    const data = await this.sendMessageToChild<IRunMessage, IExecResponseData>({
+      action: 'exec',
       scriptPath: this.scriptPath,
       input,
     });

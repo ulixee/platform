@@ -1,6 +1,7 @@
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
 import IDataboxCoreConfigureOptions from '@ulixee/databox-interfaces/IDataboxCoreConfigureOptions';
-import IDataboxCoreRuntime from '@ulixee/databox-interfaces/IDataboxCoreRuntime';
+import IDataboxPluginCore from '@ulixee/databox-interfaces/IDataboxPluginCore';
+import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import DataboxRegistry from '../lib/DataboxRegistry';
 import WorkTracker from '../lib/WorkTracker';
 import SidechainClientManager from '../lib/SidechainClientManager';
@@ -10,6 +11,7 @@ export default interface IDataboxApiContext {
   databoxRegistry: DataboxRegistry;
   workTracker: WorkTracker;
   configuration: IDataboxCoreConfigureOptions;
-  coreRuntimesByName: { [name: string]: IDataboxCoreRuntime };
+  pluginCoresByName: { [name: string]: IDataboxPluginCore };
   sidechainClientManager: SidechainClientManager;
+  execDatabox(path: string, manifest: IDataboxManifest, input: any): Promise<{ output: any }>;
 }

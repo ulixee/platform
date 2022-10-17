@@ -188,7 +188,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     if (startLocation === 'extraction') {
       args.length = 0;
       this.resetExtraction();
-      args.push(`--extractSessionId="${this.heroSession.id}"`, '--mode="browserless"');
+      args.push(`--previousSessionId="${this.heroSession.id}"`, '--mode="browserless"');
     }
 
     try {

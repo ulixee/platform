@@ -33,7 +33,7 @@
       <a
         class="underline text-purple-700"
         href="/rerun-extract"
-        @click.prevent="runExtract"
+        @click.prevent="execExtract"
       >Re-run Extract</a>
     </div>
     <slot v-if="collectedAssets.collectedResources.length">
@@ -375,8 +375,8 @@ const databox: any = Vue.defineComponent({
         .then(this.onCollectedAssets)
         .catch(err => console.error(err));
     },
-    runExtract(): void {
-      Client.send('Databox.runExtract', { heroSessionId: this.sessionId }).catch(err =>
+    execExtract(): void {
+      Client.send('Databox.execExtract', { heroSessionId: this.sessionId }).catch(err =>
         console.error(err),
       );
     },

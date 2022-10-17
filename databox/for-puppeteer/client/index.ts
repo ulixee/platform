@@ -1,7 +1,11 @@
 import '@ulixee/commons/lib/SourceMapSupport';
-import DataboxWrapper from './lib/DataboxWrapper';
-import RunnerObject from './lib/RunnerObject';
+import RunnerObject from '@ulixee/databox/lib/RunnerObject'; 
+import DataboxForPuppeteer from './lib/DataboxForPuppeteer';
+import DataboxForPuppeteerPlugin from './lib/DataboxForPuppeteerPlugin';
 
-export { RunnerObject };
+export { 
+  RunnerObject,
+  DataboxForPuppeteerPlugin,
+};
 
-export default DataboxWrapper;
+export default DataboxForPuppeteer;

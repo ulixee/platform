@@ -1,7 +1,6 @@
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import '@ulixee/commons/lib/SourceMapSupport';
-import DataboxWrapper, {
-  ExtractorObject,
+import DataboxForHero, {
   IHeroCreateOptions,
   Observable,
   RunnerObject,
@@ -10,15 +9,14 @@ import readCommandLineArgs from '@ulixee/databox/lib/utils/readCommandLineArgs';
 import HeroCore from '@ulixee/hero-core';
 import UlixeeServer from '@ulixee/server';
 import UlixeeServerConfig from '@ulixee/commons/config/servers';
-import { setupAutorunBeforeExitHook } from '@ulixee/databox/lib/utils/Autorun';
 
 const { version } = require('./package.json');
 
-export { Observable, IHeroCreateOptions, RunnerObject, ExtractorObject };
+export { Observable, IHeroCreateOptions, RunnerObject };
 
-export default class DataboxPlayground extends DataboxWrapper {
-  public static override async run<TOutput>(
-    databoxWrapper: DataboxWrapper,
+export default class DataboxPlayground extends DataboxForHero {
+  public static override async commandLineExec<TOutput>(
+    databoxForHero: DataboxForHero,
   ): Promise<TOutput | Error> {
     let serverHost = UlixeeServer.getHost(version);
 
@@ -44,8 +42,6 @@ export default class DataboxPlayground extends DataboxWrapper {
 
     const options = readCommandLineArgs();
     options.connectionToCore = { host: serverHost };
-    return databoxWrapper.run(options).catch(err => err);
+    return databoxForHero.exec(options).catch(err => err);
   }
 }
-
-setupAutorunBeforeExitHook(DataboxPlayground);

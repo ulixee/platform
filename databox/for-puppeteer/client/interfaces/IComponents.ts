@@ -1,8 +1,8 @@
 import { LaunchOptions as IPuppeteerLaunchOptions } from 'puppeteer';
 import IComponentsBase, { IDefaultsObjBase, IRunFnBase } from '@ulixee/databox/interfaces/IComponentsBase';
-import RunnerObject from '../lib/RunnerObject';
+import IRunnerObject from './IRunnerObject';
 
-type IComponents<TInput, TOutput> = IComponentsBase<RunnerObject<TInput, TOutput>, IDefaultsObj<TInput, TOutput>>;
+type IComponents<TInput, TOutput> = IComponentsBase<IRunnerObject<TInput, TOutput>, IDefaultsObj<TInput, TOutput>>;
 
 export default IComponents;
 
@@ -10,4 +10,4 @@ export interface IDefaultsObj<TInput, TOutput> extends IDefaultsObjBase<TInput, 
   puppeteer?: Partial<IPuppeteerLaunchOptions>;
 }
 
-export type IRunFn<TInput, TOutput> = IRunFnBase<RunnerObject<TInput, TOutput>>;
+export type IRunFn<TInput, TOutput> = IRunFnBase<IRunnerObject<TInput, TOutput>>;

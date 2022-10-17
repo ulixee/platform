@@ -37,7 +37,6 @@ export default class DataboxRegistry {
     const entry = this.databoxesDb.databoxes.getByVersionHash(versionHash);
     const latestVersionHash = this.getLatestVersion(versionHash);
     const stats = this.databoxesDb.databoxStats.getByVersionHash(versionHash);
-
     if (!entry) {
       throw new DataboxNotFoundError('Databox package not found on server.', latestVersionHash);
     }
@@ -80,7 +79,7 @@ export default class DataboxRegistry {
     await DataboxManifest.validate(manifest);
 
     if (!manifest) throw new Error('Could not read the provided .dbx manifest.');
-    this.checkDataboxRuntimeInstalled(manifest.runtimeName, manifest.runtimeVersion);
+    this.checkDataboxCoreInstalled(manifest.coreVersion);
     // validate hash
     const scriptBuffer = await Fs.readFile(`${databoxTmpPath}/databox.js`);
     const sha = HashUtils.sha3(Buffer.from(scriptBuffer));
@@ -119,20 +118,20 @@ export default class DataboxRegistry {
     return { dbxPath };
   }
 
-  private checkDataboxRuntimeInstalled(name: string, version: string): void {
-    let installedRuntimeVersion: string;
+  private checkDataboxCoreInstalled(requiredVersion: string): void {
+    let installedVersion: string;
     try {
       // eslint-disable-next-line global-require,import/no-dynamic-require
-      const databoxPackageJson = require(`${name}-core-runtime/package.json`);
-      installedRuntimeVersion = databoxPackageJson.version;
+      const databoxPackageJson = require(`@ulixee/databox-core/package.json`);
+      installedVersion = databoxPackageJson.version;
     } catch (error) {
       throw new Error(
-        `The requested Databox runtime (${name}) is not installed.\n${error.message}`,
+        `The requested Databox Core is not installed.\n${error.message}`,
       );
     }
-    if (!isSemverSatisfied(version, installedRuntimeVersion)) {
+    if (!isSemverSatisfied(requiredVersion, installedVersion)) {
       throw new Error(
-        `The installed Databox Runtime Version (${installedRuntimeVersion}) is not compatible with the required version from your Databox Package (${name}).\n
+        `The installed Databox Core (${installedVersion}) is not compatible with the version required by your Databox Package (${requiredVersion}).\n
 Please try to re-upload after testing with the version available on this server.`,
       );
     }

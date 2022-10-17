@@ -8,7 +8,7 @@ export function IDataboxApiStatics(constructor: IDataboxApi) {}
 export default interface IDataboxApi {
   getOutput(args?: IHeroSessionArgs): IDataboxOutputEvent;
   getCollectedAssets(args?: IHeroSessionArgs): Promise<IDataboxCollectedAssets>;
-  runExtract(args: IHeroSessionArgs): Promise<{
+  execExtract(args: IHeroSessionArgs): Promise<{
     success: boolean;
     error?: Error;
   }>;
