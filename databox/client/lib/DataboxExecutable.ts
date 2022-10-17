@@ -1,39 +1,36 @@
-import IDataboxExecutable from '@ulixee/databox-interfaces/IDataboxExecutable';
-import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
 import IDataboxExecOptions from '@ulixee/databox-interfaces/IDataboxExecOptions';
+import IDataboxSchema, { ExtractSchemaType } from '@ulixee/databox-interfaces/IDataboxSchema';
+import IDataboxObject from '@ulixee/databox-interfaces/IDataboxObject';
 import DataboxInternal from './DataboxInternal';
 import DataboxObject from './DataboxObject';
 import Autorun from './utils/Autorun';
-import IComponents, { IRunFn } from '../interfaces/IComponents';
+import IComponents, { IDefaultsObj } from '../interfaces/IComponents';
 import readCommandLineArgs from './utils/readCommandLineArgs';
 import Plugins from './Plugins';
 
 const pkg = require('../package.json');
 
-export default class DataboxExecutable<
-    TInput = IBasicInput,
-    TOutput = any,
-    TDataboxExecOptions = IDataboxExecOptions<any>,
-  > implements IDataboxExecutable
-{
+type TComponents<ISchema> = IComponents<ISchema, IDataboxObject<ISchema>, IDefaultsObj<ISchema>>;
+
+export default class DataboxExecutable<ISchema extends IDataboxSchema = IDataboxSchema<any, any>> {
   #isRunning = false;
   public readonly coreVersion = pkg.version;
   public readonly corePlugins: { [name: string]: string } = {};
-  public readonly plugins: Plugins<TInput, TOutput>;
+  public readonly plugins: Plugins<ISchema>;
 
   public disableAutorun: boolean;
   public successCount = 0;
   public errorCount = 0;
 
-  private readonly components: IComponents<TInput, TOutput, any, any>;
+  private readonly components: TComponents<ISchema>;
 
-  constructor(components: IRunFn<any> | IComponents<TInput, TOutput, any, any>) {
+  constructor(components: TComponents<ISchema>['run'] | TComponents<ISchema>) {
     this.components =
       typeof components === 'function'
-        ? ({
+        ? {
             run: components,
-          } as IComponents<TInput, TOutput, any, any>)
-        : ({ ...components } as IComponents<TInput, TOutput, any, any>);
+          }
+        : { ...components };
 
     this.plugins = new Plugins(this.components, this.corePlugins);
     this.disableAutorun = Boolean(
@@ -41,23 +38,27 @@ export default class DataboxExecutable<
     );
   }
 
-  public async exec(options: TDataboxExecOptions): Promise<TOutput> {
+  public async exec(
+    options: IDataboxExecOptions<ISchema>,
+  ): Promise<ExtractSchemaType<ISchema['output']>> {
     if (this.#isRunning) {
       throw new Error('Databox already running');
     }
     this.#isRunning = true;
-    const databoxInternal = this.createDataboxInternal(options);
+    const databoxInternal = new DataboxInternal<ISchema>(options, this.components);
 
     try {
+      databoxInternal.validateInput();
       await this.plugins.onExec(databoxInternal, options, this.components.defaults);
 
       if (this.components.run && this.plugins.shouldRun) {
-        const databoxObject = new DataboxObject<TInput, TOutput>(databoxInternal);
+        const databoxObject = new DataboxObject<ISchema>(databoxInternal);
         await this.plugins.onBeforeRun(databoxObject);
         await databoxInternal.execRunner(databoxObject, this.components.run);
       }
 
       await this.plugins.onBeforeClose();
+      databoxInternal.validateOutput();
 
       this.successCount++;
       return databoxInternal.output;
@@ -72,12 +73,8 @@ export default class DataboxExecutable<
     }
   }
 
-  private createDataboxInternal(options: TDataboxExecOptions): DataboxInternal<TInput, TOutput> {
-    return new DataboxInternal(options, this.components.defaults);
-  }
-
   public static commandLineExec<TOutput>(
-    databoxExecutable: DataboxExecutable<any, any>,
+    databoxExecutable: DataboxExecutable<any>,
   ): Promise<TOutput | Error> {
     const options = readCommandLineArgs();
     return databoxExecutable.exec(options).catch(err => err);

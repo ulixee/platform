@@ -123,4 +123,12 @@ describe('basic Databox tests', () => {
     expect(runFn).not.toHaveBeenCalled();
     expect(onAfterHeroCompletesFn).toHaveBeenCalledTimes(1);
   });
+
+
+  it('receives DataboxMeta', async () => {
+    const { databoxObject, databoxClose } = await Helpers.createFullstackDatabox();
+    const sessionId = await databoxObject.hero.sessionId;
+    expect(sessionId).toBeTruthy();
+    await databoxClose();
+  });
 });

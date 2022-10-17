@@ -1,3 +1,3 @@
-export default interface IDataboxInternal<TInput, TOutput> {
+import IDataboxSchema from './IDataboxSchema';
 
-}
+export default interface IDataboxInternal<ISchema extends IDataboxSchema> {}

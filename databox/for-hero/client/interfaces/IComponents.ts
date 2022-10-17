@@ -1,16 +1,19 @@
 import { IHeroCreateOptions } from '@ulixee/hero';
-import IComponentsBase, { 
-  IDefaultsObj as IDefaultsObjBase, 
-  IRunFn as IRunFnBase 
+import IComponentsBase, {
+  IDefaultsObj as IDefaultsObjBase,
 } from '@ulixee/databox/interfaces/IComponents';
 import IDataboxObject, { IDataboxObjectForReplay } from './IDataboxObject';
 
-export default interface IComponents<TInput, TOutput> extends IComponentsBase<TInput, TOutput, IDataboxObject<TInput, TOutput>, IDefaultsObj<TInput, TOutput>> {
-  onAfterHeroCompletes?: IRunFnBase<IDataboxObjectForReplay<TInput, TOutput>>;
-}
+type IComponents<ISchema> = IComponentsBase<
+  ISchema,
+  IDataboxObject<ISchema>,
+  IDefaultsObj<ISchema>
+> & {
+  onAfterHeroCompletes?: (databox: IDataboxObjectForReplay<ISchema>) => Promise<void> | void;
+};
 
-export interface IDefaultsObj<TInput, TOutput> extends IDefaultsObjBase<TInput, TOutput> {
+export default IComponents;
+
+export type IDefaultsObj<ISchema> = IDefaultsObjBase<ISchema> & {
   hero?: Partial<IHeroCreateOptions>;
-}
-
-export type IRunFn<TInput, TOutput> = IRunFnBase<IDataboxObject<TInput, TOutput>>;
+};

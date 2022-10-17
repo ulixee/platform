@@ -1,6 +1,5 @@
-import { DataboxObject as DataboxObjectBase } from "@ulixee/databox";
+import IDataboxObjectBase from '@ulixee/databox-interfaces/IDataboxObject'
 import { Browser as PuppeteerBrowser } from 'puppeteer';
 
-export default interface IDataboxObject<TInput, TOutput> extends DataboxObjectBase<TInput, TOutput> {
-  browser: PuppeteerBrowser;
-}
+type IDataboxObject<T> = IDataboxObjectBase<T> & { browser: PuppeteerBrowser };
+export default IDataboxObject;

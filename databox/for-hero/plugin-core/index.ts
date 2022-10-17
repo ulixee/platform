@@ -21,7 +21,7 @@ export default class DataboxForHeroPluginCore implements IDataboxPluginCore {
     this.connectionToHeroCore = new ConnectionToHeroCore(bridge.transportToCore);
   }
 
-  public onBeforeExecDatabox(options: IDataboxForHeroExecOptions): void {
+  public onBeforeExecDatabox(options: IDataboxForHeroExecOptions<unknown>): void {
     options.connectionToCore = this.connectionToHeroCore;
   }
 

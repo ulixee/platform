@@ -1,15 +1,20 @@
 import Databox from '@ulixee/databox';
-import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
-import IDataboxExecutable from '@ulixee/databox-interfaces/IDataboxExecutable';
-import IComponents, { IRunFn } from '../interfaces/IComponents';
+import IDataboxSchema, { ExtractSchemaType } from '@ulixee/databox-interfaces/IDataboxSchema';
+import IComponents from '../interfaces/IComponents';
 import IDataboxForPuppeteerExecOptions from '../interfaces/IDataboxForPuppeteerExecOptions';
 import DataboxForPuppeteerPlugin from './DataboxForPuppeteerPlugin';
 
-export default class DataboxForPuppeteer<TInput = IBasicInput, TOutput = any>
-extends Databox<TInput, TOutput, IDataboxForPuppeteerExecOptions> 
-implements IDataboxExecutable<TOutput, IDataboxForPuppeteerExecOptions> {
-  constructor(components: IRunFn<TInput, TOutput> | IComponents<TInput, TOutput>) {
+export default class DataboxForPuppeteer<
+  ISchema extends IDataboxSchema = IDataboxSchema<any, any>,
+> extends Databox<ISchema> {
+  constructor(components: IComponents<ISchema>['run'] | IComponents<ISchema>) {
     super(components);
     this.plugins.add(DataboxForPuppeteerPlugin);
+  }
+
+  override exec(
+    options: IDataboxForPuppeteerExecOptions<ISchema>,
+  ): Promise<ExtractSchemaType<ISchema['output']>> {
+    return super.exec(options);
   }
 }

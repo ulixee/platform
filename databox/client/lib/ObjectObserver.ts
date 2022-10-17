@@ -13,9 +13,7 @@
  OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
  NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-import IObservableChange, {
-  ObservableChangeType,
-} from '../interfaces/IObservableChange';
+import IObservableChange, { ObservableChangeType } from '../interfaces/IObservableChange';
 
 export default class ObjectObserver implements ProxyHandler<any> {
   private static key = Symbol.for('object-observer-key-v0');
@@ -141,6 +139,9 @@ export default class ObjectObserver implements ProxyHandler<any> {
     if (!object) return object;
     const type = typeof object;
     if (type === 'string' || type === 'number' || type === 'boolean') return object;
+    if (Buffer.isBuffer(object)) return Buffer.from(object);
+    if (ArrayBuffer.isView(object)) return Buffer.from(object.buffer);
+    if (object instanceof Date) return new Date(object);
 
     if (type === 'object') {
       if (Array.isArray(object)) {
@@ -436,14 +437,9 @@ export default class ObjectObserver implements ProxyHandler<any> {
   private observeChild(item: any, key: PropertyKey): any {
     if (!item || typeof item !== 'object') return item;
 
-    if (Buffer.isBuffer(item)) {
-      return item.toString('base64');
-    }
-    if (ArrayBuffer.isView(item)) {
-      return Buffer.from(item.buffer).toString('base64');
-    }
-    if (item instanceof Date) {
-      return item.toISOString();
+    // A bit heavy handed but since we can't observe these, we just freeze them
+    if (Buffer.isBuffer(item) || ArrayBuffer.isView(item) || item instanceof Date) {
+      return this.deepClone(item);
     }
 
     const existing = item[ObjectObserver.key] as ObjectObserver;

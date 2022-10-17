@@ -1,5 +1,6 @@
-export default interface IDataboxExecOptions<TInput = any> {
-  action?: string;
-  input?: TInput;
-  fields?: {};
+import IDataboxSchema, { ExtractSchemaType } from './IDataboxSchema';
+
+export default interface IDataboxExecOptions<ISchema extends IDataboxSchema> {
+  input?: ExtractSchemaType<ISchema['input']>;
+  output?: ExtractSchemaType<ISchema['output']>;
 }

@@ -180,7 +180,7 @@ test('verify date - changes', () => {
   const o = ObjectObserver.create([{ name: 'test', date: new Date() }], cs => {
     changes.push(...cs);
   });
-  expect(o[0].date).toEqual(expect.any(String));
+  expect(o[0].date).toEqual(expect.any(Date));
   const date2 = new Date();
   date2.setTime(new Date().getTime() - 100000);
 
@@ -189,27 +189,31 @@ test('verify date - changes', () => {
   expect(changes[0]).toEqual({
     type: 'update',
     path: [0, 'date'],
-    value: date2.toISOString(),
+    value: date2,
   });
 });
 
 test('buffer - records changes', () => {
   const events = [];
   const buffer = Buffer.from('This is a test');
-  const po = ObjectObserver.create({ buffer }, changes => events.push(...changes));
+  const po = ObjectObserver.create({ buffer }, changes => {
+    events.push(...changes)
+  });
 
-  expect(po.buffer).toBe(buffer.toString('base64'));
-  expect(po.buffer).not.toEqual(buffer);
+  expect(po.buffer.toString('utf8')).toBe('This is a test');
+
+  // WILL NOT DETECT! This part of the test is just confirming that
+  po.buffer.write('Mo');
 
   buffer.write('More');
-  expect(po.buffer).not.toBe(buffer.toString('base64'));
+  expect(po.buffer.toString()).not.toBe(buffer.toString());
 
   po.buffer = buffer;
   expect(events).toHaveLength(1);
   expect(events[0]).toEqual({
     type: 'update',
     path: ['buffer'],
-    value: Buffer.from('More is a test').toString('base64'),
+    value: buffer,
   });
 });
 

@@ -1,15 +1,17 @@
-import IDataboxPlugin from "@ulixee/databox-interfaces/IDataboxPlugin";
+import IDataboxSchema, { ExtractSchemaType } from '@ulixee/databox-interfaces/IDataboxSchema';
+import IDataboxObject from '@ulixee/databox-interfaces/IDataboxObject';
 
-export default interface IComponents<TInput, TOutput, TDataboxObject, TDefaultsObj> {
-  run: IRunFn<TDataboxObject>;
+export default interface IComponentsBase<
+  ISchema extends IDataboxSchema,
+  TDataboxObject extends IDataboxObject<ISchema>,
+  TDefaultsObj extends IDefaultsObj<ISchema>,
+  > {
+  run(databox: TDataboxObject): void | Promise<void>;
   defaults?: TDefaultsObj;
-  schema?: any;
-  plugins?: IDataboxPlugin<TInput, TOutput>[];
+  schema?: ISchema;
 }
 
-export interface IDefaultsObj<TInput, TOutput> {
-  input?: Partial<TInput>;
-  output?: Partial<TOutput>;
+export interface IDefaultsObj<ISchema extends IDataboxSchema> {
+  input?: Partial<ExtractSchemaType<ISchema['input']>>;
+  output?: Partial<ExtractSchemaType<ISchema['output']>>;
 }
-
-export type IRunFn<TDataboxObject> = (databox: TDataboxObject) => void | Promise<void>;
