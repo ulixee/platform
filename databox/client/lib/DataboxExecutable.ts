@@ -2,9 +2,9 @@ import IDataboxExecutable from '@ulixee/databox-interfaces/IDataboxExecutable';
 import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
 import IDataboxExecOptions from '@ulixee/databox-interfaces/IDataboxExecOptions';
 import DataboxInternal from './DataboxInternal';
-import RunnerObject from './RunnerObject';
+import DataboxObject from './DataboxObject';
 import Autorun from './utils/Autorun';
-import IComponentsBase, { IRunFnBase } from '../interfaces/IComponentsBase';
+import IComponents, { IRunFn } from '../interfaces/IComponents';
 import readCommandLineArgs from './utils/readCommandLineArgs';
 import Plugins from './Plugins';
 
@@ -25,15 +25,15 @@ export default class DataboxExecutable<
   public successCount = 0;
   public errorCount = 0;
 
-  private readonly components: IComponentsBase<any, any>;
+  private readonly components: IComponents<TInput, TOutput, any, any>;
 
-  constructor(components: IRunFnBase<any> | IComponentsBase<any, any>) {
+  constructor(components: IRunFn<any> | IComponents<TInput, TOutput, any, any>) {
     this.components =
       typeof components === 'function'
         ? ({
             run: components,
-          } as IComponentsBase<any, any>)
-        : ({ ...components } as IComponentsBase<any, any>);
+          } as IComponents<TInput, TOutput, any, any>)
+        : ({ ...components } as IComponents<TInput, TOutput, any, any>);
 
     this.plugins = new Plugins(this.components, this.corePlugins);
     this.disableAutorun = Boolean(
@@ -52,9 +52,9 @@ export default class DataboxExecutable<
       await this.plugins.onExec(databoxInternal, options, this.components.defaults);
 
       if (this.components.run && this.plugins.shouldRun) {
-        const runnerObject = new RunnerObject<TInput, TOutput>(databoxInternal);
-        await this.plugins.onBeforeRun(runnerObject);
-        await databoxInternal.execRunner(runnerObject, this.components.run);
+        const databoxObject = new DataboxObject<TInput, TOutput>(databoxInternal);
+        await this.plugins.onBeforeRun(databoxObject);
+        await databoxInternal.execRunner(databoxObject, this.components.run);
       }
 
       await this.plugins.onBeforeClose();

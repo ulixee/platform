@@ -13,7 +13,7 @@ import IDataboxForHeroExecOptions from '@ulixee/databox-for-hero/interfaces/IDat
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import Logger from '@ulixee/commons/lib/Logger';
 import DataboxForHero from '@ulixee/databox-for-hero';
-import IRunnerObject from '@ulixee/databox-for-hero/interfaces/IRunnerObject';
+import IDataboxObject from '@ulixee/databox-for-hero/interfaces/IDataboxObject';
 import DataboxForHeroPlugin, { getDataboxForHeroPlugin } from '@ulixee/databox-for-hero/lib/DataboxForHeroPlugin';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import { Helpers } from './index';
@@ -137,7 +137,7 @@ function destroyServerFn(
 }
 
 interface IFullstackDatabox<TInput, TOutput> {
-  databoxRunnerObject: IRunnerObject<TInput, TOutput, Hero>;
+  databoxObject: IDataboxObject<TInput, TOutput>;
   databoxForHeroPlugin: DataboxForHeroPlugin<TInput, TOutput>;
   databoxClose: () => void;
 }
@@ -150,16 +150,16 @@ export async function createFullstackDatabox<TInput, TOutput>(
   options.connectionToCore = new ConnectionToHeroCore(bridge.transportToCore);
   
   let promiseResolve: () => void;
-  let databoxRunnerObject: IRunnerObject<TInput, TOutput, Hero>;
+  let databoxObject: IDataboxObject<TInput, TOutput>;
   let databoxForHeroPlugin: DataboxForHeroPlugin<TInput, TOutput>;
 
   const readyPromise = createPromise<void>();
   const closedPromise = createPromise<void>();
  
   new DataboxForHero<TInput, TOutput>({ 
-    run(runnerObject) {
-      databoxRunnerObject = runnerObject;
-      databoxForHeroPlugin = getDataboxForHeroPlugin(runnerObject.hero);
+    run(databox) {
+      databoxObject = databox;
+      databoxForHeroPlugin = getDataboxForHeroPlugin(databox.hero);
       readyPromise.resolve();
       return closedPromise.promise;
     },
@@ -173,7 +173,7 @@ export async function createFullstackDatabox<TInput, TOutput>(
   await readyPromise.promise;
 
   return { 
-    databoxRunnerObject, 
+    databoxObject, 
     databoxForHeroPlugin, 
     databoxClose,
   }

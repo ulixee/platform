@@ -6,7 +6,7 @@ export default new Databox({
   async run({ hero }) {
     await hero.goto('https://news.ycombinator.com/');
     await hero.waitForPaintingStable();
-    await hero.document.querySelector('#hnmain').$collect('table');
+    await hero.document.querySelector('#hnmain').$detach('table');
 
     const links = await hero.document.querySelectorAll('.subtext > a');
 
@@ -24,9 +24,9 @@ export default new Databox({
       // });
     }
   },
-  async runExtractor({ output, hero }) {
-    const { collectedElements } = hero;
-    const storyElement = await collectedElements.get('table');
+  async onAfterHeroCompletes({ output, heroReplay }) {
+    const { detachedElements } = heroReplay;
+    const storyElement = await detachedElements.get('table');
     const stories = storyElement.querySelectorAll('.athing');
     for (const story of stories) {
       const extraElem = story.nextElementSibling;

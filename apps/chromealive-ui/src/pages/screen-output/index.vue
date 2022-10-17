@@ -27,7 +27,7 @@
         class="p-5 text-sm text-gray-600"
       />
     </div>
-    {{ collectedResourcesString }}, {{ collectedElementsString }}, {{ collectedSnippetsString }}
+    {{ detachedResourcesString }}, {{ detachedElementsString }}, {{ dataSnippetsString }}
 
     <div class="text-center my-10">
       <a
@@ -36,10 +36,10 @@
         @click.prevent="execExtract"
       >Re-run Extract</a>
     </div>
-    <slot v-if="collectedAssets.collectedResources.length">
+    <slot v-if="collectedAssets.detachedResources.length">
       <h2>Collected Resources</h2>
       <div
-        v-for="resource of collectedAssets.collectedResources"
+        v-for="resource of collectedAssets.detachedResources"
         :key="resource.resource.id"
         class="box border border-gray-100 p-10 mb-20"
       >
@@ -81,10 +81,10 @@
       </div>
     </slot>
 
-    <slot v-if="collectedAssets.collectedSnippets.length">
+    <slot v-if="collectedAssets.dataSnippets.length">
       <h2>Collected Snippets</h2>
       <div
-        v-for="snippet of collectedAssets.collectedSnippets"
+        v-for="snippet of collectedAssets.dataSnippets"
         :key="snippet.commandId"
         class="box border border-gray-100 p-10 mb-20"
       >
@@ -118,10 +118,10 @@
       </div>
     </slot>
 
-    <slot v-if="collectedAssets.collectedElements.length">
+    <slot v-if="collectedAssets.detachedElements.length">
       <h2>Collected Elements</h2>
       <div
-        v-for="element of collectedAssets.collectedElements"
+        v-for="element of collectedAssets.detachedElements"
         :key="element.id"
         class="box border border-gray-100 p-10 mb-20"
       >
@@ -180,8 +180,8 @@ import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/
 import IDataboxCollectedAssetsResponse from '@ulixee/apps-chromealive-interfaces/IDataboxCollectedAssets';
 import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxCollectedAssetEvent';
 import IResourceMeta from '@unblocked-web/specifications/agent/net/IResourceMeta';
-import ICollectedResource from '@ulixee/hero-interfaces/ICollectedResource';
-import ICollectedElement from '@ulixee/hero-interfaces/ICollectedElement';
+import IDetachedResource from '@ulixee/hero-interfaces/IDetachedResource';
+import IDetachedElement from '@ulixee/hero-interfaces/IDetachedElement';
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
 
 const databox: any = Vue.defineComponent({
@@ -196,9 +196,9 @@ const databox: any = Vue.defineComponent({
       scrollToRecordId: Vue.ref<number>(null),
       scriptEntrypoint: Vue.ref<string>(null),
       collectedAssets: Vue.reactive<IDataboxCollectedAssetsResponse>({
-        collectedElements: [],
-        collectedSnippets: [],
-        collectedResources: [],
+        detachedElements: [],
+        detachedResources: [],
+        dataSnippets: [],
       }),
       resourceDataUrlsById: Vue.ref<Record<number, string>>({}),
       startTime: Vue.ref<string>(''),
@@ -207,16 +207,16 @@ const databox: any = Vue.defineComponent({
     };
   },
   computed: {
-    collectedElementsString(): string {
-      const count = this.collectedAssets.collectedElements.length;
+    detachedElementsString(): string {
+      const count = this.collectedAssets.detachedElements.length;
       return `${count} Collected Element${count === 1 ? '' : 's'}`;
     },
-    collectedSnippetsString(): string {
-      const count = this.collectedAssets.collectedSnippets.length;
+    dataSnippetsString(): string {
+      const count = this.collectedAssets.dataSnippets.length;
       return `${count} Collected Snippet${count === 1 ? '' : 's'}`;
     },
-    collectedResourcesString(): string {
-      const count = this.collectedAssets.collectedResources.length;
+    detachedResourcesString(): string {
+      const count = this.collectedAssets.detachedResources.length;
       return `${count} Collected Resource${count === 1 ? '' : 's'}`;
     },
   },
@@ -224,10 +224,10 @@ const databox: any = Vue.defineComponent({
     byteSize(buffer: Uint8Array): string {
       return humanizeBytes(buffer.byteLength);
     },
-    resourceFilename(resource: ICollectedResource & ISourceCodeReference): string {
+    resourceFilename(resource: IDetachedResource & ISourceCodeReference): string {
       const url = new URL(resource.resource.url);
       const postfix = url.pathname.split('.').pop() ?? 'html';
-      const matchingName = this.collectedAssets.collectedResources.filter(
+      const matchingName = this.collectedAssets.detachedResources.filter(
         x => x.name === resource.name,
       );
       const index = matchingName.indexOf(resource);
@@ -279,26 +279,26 @@ const databox: any = Vue.defineComponent({
       this.endTime = moment(data.endTime ?? Date.now()).format(`LL [at] LTS z`);
     },
     onCollectedAssets(assets: IDataboxCollectedAssetsResponse): void {
-      this.collectedAssets.collectedResources = assets.collectedResources;
-      this.collectedAssets.collectedElements = assets.collectedElements;
-      this.collectedAssets.collectedSnippets = assets.collectedSnippets;
-      for (const resource of assets.collectedResources) {
+      this.collectedAssets.detachedResources = assets.detachedResources;
+      this.collectedAssets.detachedElements = assets.detachedElements;
+      this.collectedAssets.dataSnippets = assets.dataSnippets;
+      for (const resource of assets.detachedResources) {
         this.updateDataUrl(resource.resource);
       }
     },
     onCollectedAsset(asset: IDataboxCollectedAssetEvent): void {
-      if (asset.collectedElement) {
-        this.collectedAssets.collectedElements.push(asset.collectedElement);
+      if (asset.detachedElement) {
+        this.collectedAssets.detachedElements.push(asset.detachedElement);
       }
-      if (asset.collectedResource) {
-        this.collectedAssets.collectedResources.push(asset.collectedResource);
-        this.updateDataUrl(asset.collectedResource.resource);
+      if (asset.detachedResource) {
+        this.collectedAssets.detachedResources.push(asset.detachedResource);
+        this.updateDataUrl(asset.detachedResource.resource);
       }
-      if (asset.collectedSnippet) {
-        this.collectedAssets.collectedSnippets.push(asset.collectedSnippet);
+      if (asset.dataSnippet) {
+        this.collectedAssets.dataSnippets.push(asset.dataSnippet);
       }
     },
-    async inspectResource(resource: ICollectedResource): Promise<void> {
+    async inspectResource(resource: IDetachedResource): Promise<void> {
       const blob = this.resourceToBlob(resource.resource);
       const data: any = {
         name: resource.name,
@@ -330,7 +330,7 @@ const databox: any = Vue.defineComponent({
       // eslint-disable-next-line no-console
       console.log('Collected Resource (%s)', resource.name, data);
     },
-    inspectElement(element: ICollectedElement): void {
+    inspectElement(element: IDetachedElement): void {
       const renderer = document.createElement('template');
       renderer.innerHTML = element.outerHTML;
       const data: any = {
@@ -342,7 +342,7 @@ const databox: any = Vue.defineComponent({
       // eslint-disable-next-line no-console
       console.log('Collected Element (%s)', element.name, data);
     },
-    timetravelToElement(element: ICollectedElement): void {
+    timetravelToElement(element: IDetachedElement): void {
       Client.send('Session.timetravel', {
         heroSessionId: null,
         commandId: element.commandId,

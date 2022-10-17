@@ -7,10 +7,10 @@ export default new DataboxForHero({
     await hero.goto('https://ulixee.org');
     const h1 = await hero.querySelector('h1').$waitForVisible();
     // Extract the DOM Element at this moment in time.
-    await h1.$collect('h1');
+    await h1.$detach('h1');
   },
-  async runExtractor({ hero, output }) {
-    const h1 = await hero.collectedElements.get('h1');
+  async onAfterHeroCompletes({ heroReplay, output }) {
+    const h1 = await heroReplay.detachedElements.get('h1');
     // NOTE: synchronous APIs. No longer running in browser.
     output.text = h1.textContent;
     const divs = h1.querySelectorAll('div');

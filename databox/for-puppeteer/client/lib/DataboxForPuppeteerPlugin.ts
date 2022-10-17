@@ -3,7 +3,7 @@ import DataboxInternal from '@ulixee/databox/lib/DataboxInternal';
 import IDataboxPlugin from "@ulixee/databox-interfaces/IDataboxPlugin";
 import IDataboxForPuppeteerExecOptions from '../interfaces/IDataboxForPuppeteerExecOptions';
 import { IDefaultsObj } from '../interfaces/IComponents';
-import IRunnerObject from "../interfaces/IRunnerObject";
+import IDataboxObject from "../interfaces/IDataboxObject";
 
 const pkg = require('../package.json');
 
@@ -28,9 +28,9 @@ export default class DataboxForPuppeteerPlugin<TInput, TOutput> implements IData
     this.initializePuppeteer();
   }
 
-  public async onBeforeRun(runnerObject: IRunnerObject<TInput, TOutput>): Promise<void> {
+  public async onBeforeRun(databoxObject: IDataboxObject<TInput, TOutput>): Promise<void> {
     this.puppeteerBrowser = await this.puppeteerBrowserPromise;
-    runnerObject.browser = this.puppeteerBrowser;
+    databoxObject.browser = this.puppeteerBrowser;
   }
 
   public async onClose(): Promise<void> {

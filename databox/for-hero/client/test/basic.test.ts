@@ -14,13 +14,13 @@ function createConnectionToHeroCore() {
         data: { sessionId: 'session-id' },
       };
     }
-    if (command === 'Session.getCollectedElements') {
+    if (command === 'Session.getDetachedElements') {
       return {
         responseId,
         data: [],
       };
     }
-    if (command === 'Session.getCollectedResources') {
+    if (command === 'Session.getDetachedResources') {
       return {
         responseId,
         data: [],
@@ -113,14 +113,14 @@ describe('basic Databox tests', () => {
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
 
     const runFn = jest.fn();
-    const extractFn = jest.fn();
+    const onAfterHeroCompletesFn = jest.fn();
     const databoxForHero = new DataboxForHero({
       run: runFn,
-      runExtractor: extractFn,
+      onAfterHeroCompletes: onAfterHeroCompletesFn,
     });
     await databoxForHero.exec({ previousSessionId: '123' });
 
     expect(runFn).not.toHaveBeenCalled();
-    expect(extractFn).toHaveBeenCalledTimes(1);
+    expect(onAfterHeroCompletesFn).toHaveBeenCalledTimes(1);
   });
 });

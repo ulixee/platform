@@ -1,16 +1,16 @@
 import IDataboxExecOptions from "@ulixee/databox-interfaces/IDataboxExecOptions";
 import IDataboxPlugin from "@ulixee/databox-interfaces/IDataboxPlugin";
-import IComponentsBase from "../interfaces/IComponentsBase";
+import IComponents from "../interfaces/IComponents";
 import DataboxInternal from "./DataboxInternal";
-import RunnerObject from './RunnerObject';
+import DataboxObject from './DataboxObject';
 
 export default class Plugins<TInput, TOutput> {
-  #components: IComponentsBase<any, any>;
+  #components: IComponents<TInput, TOutput, any, any>;
 
   private clientPlugins: IDataboxPlugin<TInput, TOutput>[] = [];
   private corePlugins: { [name: string]: string };
 
-  constructor(components: IComponentsBase<any, any>, corePlugins) {
+  constructor(components: IComponents<TInput, TOutput, any, any>, corePlugins) {
     this.#components = components;
     this.corePlugins = corePlugins;
   }
@@ -35,8 +35,8 @@ export default class Plugins<TInput, TOutput> {
     await Promise.all(promises);
   }
   
-  public async onBeforeRun(runnerObject: RunnerObject<TInput, TOutput>): Promise<void> {
-    const promises = this.clientPlugins.map(x => x.onBeforeRun && x.onBeforeRun(runnerObject));
+  public async onBeforeRun(databoxObject: DataboxObject<TInput, TOutput>): Promise<void> {
+    const promises = this.clientPlugins.map(x => x.onBeforeRun && x.onBeforeRun(databoxObject));
     await Promise.all(promises);
   }
 

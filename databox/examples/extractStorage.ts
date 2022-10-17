@@ -6,17 +6,16 @@ export default new Databox({
   async run({ hero }) {
       await hero.goto('https://ulixee.org');
       await hero.waitForPaintingStable();
-      await hero.collect('localStorage', await hero.getJsValue('JSON.stringify(localStorage)'));
-      await hero.collect('sessionStorage', await hero.getJsValue('JSON.stringify(sessionStorage)'));
-      await hero.collect('cookies', await hero.activeTab.cookieStorage.getItems());
-      await hero.collect('history', await hero.getJsValue(`history.length`));
+      await hero.setData('localStorage', await hero.getJsValue('JSON.stringify(localStorage)'));
+      await hero.setData('sessionStorage', await hero.getJsValue('JSON.stringify(sessionStorage)'));
+      await hero.setData('cookies', await hero.activeTab.cookieStorage.getItems());
+      await hero.setData('history', await hero.getJsValue(`history.length`));
     },
-  async runExtractor({ hero, output }) {
-    const { collectedSnippets } = hero;
-    const localStorage = await collectedSnippets.get('localStorage');
-    const sessionStorage = await collectedSnippets.get('sessionStorage');
-    const cookies = await collectedSnippets.get('cookies');
-    const history = await collectedSnippets.get('history');
+  async onAfterHeroCompletes({ heroReplay, output }) {
+    const localStorage = await heroReplay.getData('localStorage');
+    const sessionStorage = await heroReplay.getData('sessionStorage');
+    const cookies = await heroReplay.getData('cookies');
+    const history = await heroReplay.getData('history');
 
     output.rootStorage = {
       local: localStorage,

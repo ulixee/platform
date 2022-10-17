@@ -3,7 +3,7 @@ import '@ulixee/commons/lib/SourceMapSupport';
 import DataboxForHero, {
   IHeroCreateOptions,
   Observable,
-  RunnerObject,
+  DataboxObject,
 } from '@ulixee/databox-for-hero';
 import readCommandLineArgs from '@ulixee/databox/lib/utils/readCommandLineArgs';
 import HeroCore from '@ulixee/hero-core';
@@ -12,7 +12,7 @@ import UlixeeServerConfig from '@ulixee/commons/config/servers';
 
 const { version } = require('./package.json');
 
-export { Observable, IHeroCreateOptions, RunnerObject };
+export { Observable, IHeroCreateOptions, DataboxObject };
 
 export default class DataboxPlayground extends DataboxForHero {
   public static override async commandLineExec<TOutput>(

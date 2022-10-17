@@ -7,11 +7,11 @@ export default new Databox({
     await hero.goto('https://ulixee.org');
 
     const resources = await hero.activeTab.waitForResources({ url: 'index.json' });
-    for (const resource of resources) await resource.$collect('xhr');
+    for (const resource of resources) await resource.$detach('xhr');
   },
-  async runExtractor({ hero, output }) {
-    const { collectedResources } = hero;
-    const xhrs = await collectedResources.getAll('xhr');
+  async onAfterHeroCompletes({ heroReplay, output }) {
+    const { detachedResources } = heroReplay;
+    const xhrs = await detachedResources.getAll('xhr');
     output.gridsomeData = [];
     console.log(xhrs);
     for (const xhr of xhrs) {

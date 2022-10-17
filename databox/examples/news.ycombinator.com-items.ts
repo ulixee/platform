@@ -7,9 +7,9 @@ export default new Databox({
     await hero.goto('https://news.ycombinator.com/');
     await hero.waitForPaintingStable();
     const records = await hero.document.querySelectorAll('.athing');
-    await records.$collect('titles');
+    await records.$detach('titles');
     for (const record of records) {
-      await record.nextElementSibling.$collect('subtitles');
+      await record.nextElementSibling.$detach('subtitles');
     }
 
     const links = await hero.document.querySelectorAll('.subtext > a');
@@ -28,9 +28,9 @@ export default new Databox({
       // });
     }
   },
-  async runExtractor({ output, hero }) {
-    const titles = await hero.collectedElements.getAll('titles');
-    const subtitles = await hero.collectedElements.getAll('subtitles');
+  async onAfterHeroCompletes({ output, heroReplay }) {
+    const titles = await heroReplay.detachedElements.getAll('titles');
+    const subtitles = await heroReplay.detachedElements.getAll('subtitles');
     for (let i = 0; i < titles.length; i += 1) {
       const story = titles[i];
       const extraElem = subtitles[i];

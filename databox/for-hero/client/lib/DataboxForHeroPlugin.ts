@@ -1,11 +1,11 @@
-import Hero, { HeroExtractor, IHeroCreateOptions, IHeroExtractorCreateOptions } from '@ulixee/hero';
-import { RunnerObject } from '@ulixee/databox';
+import Hero, { HeroReplay, IHeroCreateOptions, IHeroReplayCreateOptions } from '@ulixee/hero';
+import { DataboxObject } from '@ulixee/databox';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
 import IDataboxPlugin from "@ulixee/databox-interfaces/IDataboxPlugin";
 import DataboxInternal from "@ulixee/databox/lib/DataboxInternal";
 import { InternalPropertiesSymbol } from '@ulixee/hero/lib/internal';
 import IDataboxForHeroExecOptions from "../interfaces/IDataboxForHeroExecOptions";
-import IRunnerObject from "../interfaces/IRunnerObject";
+import IDataboxObject, { IDataboxObjectForReplay } from "../interfaces/IDataboxObject";
 import { createObservableOutput } from './Output';
 import IComponents, {
   IDefaultsObj,
@@ -21,14 +21,14 @@ export default class DataboxForHeroPlugin<TInput, TOutput> implements IDataboxPl
   public name = pkg.name;
   public version = pkg.version;
   public hero: Hero;
-  public heroExtractor: HeroExtractor;
+  public heroReplay: HeroReplay;
   public databoxInternal: DataboxInternal<TInput, TOutput>;
 
   private execOptions: IDataboxForHeroExecOptions;
   private defaults: IDefaultsObj<TInput, TOutput>;
-  private components:  IComponents<any, any>;
+  private components:  IComponents<TInput, TOutput>;
 
-  constructor(components: IComponents<any, any>) {
+  constructor(components: IComponents<TInput, TOutput>) {
     this.components = components;
   }
 
@@ -46,11 +46,11 @@ export default class DataboxForHeroPlugin<TInput, TOutput> implements IDataboxPl
     return !this.previousSessionId;
   }
 
-  public onBeforeRun(runnerObject: IRunnerObject<TInput, TOutput, Hero>): void {
+  public onBeforeRun(databoxObject: IDataboxObject<TInput, TOutput>): void {
     this.initializeHero();
-    runnerObject.hero = this.hero;
-    runnerObject.sessionId = this.sessionId;
-    Object.defineProperty(runnerObject, 'output', {
+    databoxObject.hero = this.hero;
+    databoxObject.sessionId = this.sessionId;
+    Object.defineProperty(databoxObject, 'output', {
       get: () => this.output,
       set: value => {
         this.output = value;
@@ -59,26 +59,26 @@ export default class DataboxForHeroPlugin<TInput, TOutput> implements IDataboxPl
   }
 
   public async onBeforeClose(): Promise<void> {
-    if (!this.components.runExtractor) return;
+    if (!this.components.onAfterHeroCompletes) return;
 
-    this.initializeHeroExtractor();
-    const runnerObject = new RunnerObject<TInput, TOutput>(this.databoxInternal) as IRunnerObject<TInput, TOutput, HeroExtractor>;
-    runnerObject.hero = this.heroExtractor;
-    runnerObject.sessionId = this.sessionId;
-    Object.defineProperty(runnerObject, 'output', {
+    this.initializeHeroReplay();
+    const databoxObject = new DataboxObject<TInput, TOutput>(this.databoxInternal) as IDataboxObjectForReplay<TInput, TOutput>;
+    databoxObject.heroReplay = this.heroReplay;
+    databoxObject.sessionId = this.sessionId;
+    Object.defineProperty(databoxObject, 'output', {
       get: () => this.output,
       set: value => {
         this.output = value;
       }
     });
 
-    await this.components.runExtractor(runnerObject);
+    await this.components.onAfterHeroCompletes(databoxObject);
   }
 
   public async onClose(): Promise<void> {
     await Promise.all(this.#extractorPromises).catch(err => err);
     await this.hero?.close();
-    await this.heroExtractor?.close();
+    await this.heroReplay?.close();
   }
 
   // INTERNALS ///////////////////////
@@ -112,7 +112,7 @@ export default class DataboxForHeroPlugin<TInput, TOutput> implements IDataboxPl
     Object.assign(databoxInternal.output, value);
   }
 
-  public get sessionId(): IRunnerObject<TInput, TOutput, Hero>['sessionId'] {
+  public get sessionId(): IDataboxObject<TInput, TOutput>['sessionId'] {
     return this.hero?.sessionId;
   }
 
@@ -126,14 +126,14 @@ export default class DataboxForHeroPlugin<TInput, TOutput> implements IDataboxPl
     pluginInstancesByHero.set(this.hero, this);
   }
 
-  private initializeHeroExtractor(): void {
-    const heroOptions: IHeroExtractorCreateOptions = {
-      ...this.defaults.hero as IHeroExtractorCreateOptions,
+  private initializeHeroReplay(): void {
+    const heroOptions: IHeroReplayCreateOptions = {
+      ...this.defaults.hero as IHeroReplayCreateOptions,
       ...this.execOptions,
       input: this.databoxInternal.input,
       hero: this.hero,
     };
-    this.heroExtractor = new HeroExtractor(heroOptions);
+    this.heroReplay = new HeroReplay(heroOptions);
   }
 }
 

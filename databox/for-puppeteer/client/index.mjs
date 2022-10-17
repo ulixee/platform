@@ -1,9 +1,9 @@
 import { setupAutorunMjsHack } from '@ulixee/databox/lib/utils/Autorun.mjs';
 import cjsImport from './index.js';
 
-const { RunnerObject } = cjsImport;
+const { DataboxObject } = cjsImport;
 
-export { RunnerObject };
+export { DataboxObject };
 
 export default cjsImport.default;
 

@@ -1,6 +1,6 @@
 import IDataboxExecOptions from "@ulixee/databox-interfaces/IDataboxExecOptions";
 import DataboxInternal from "../lib/DataboxInternal";
-import RunnerObject from "../lib/RunnerObject";
+import DataboxObject from "../lib/DataboxObject";
 
 export default interface IDataboxPlugin<TInput, TOutput> {
   shouldRun?: boolean;
@@ -9,7 +9,7 @@ export default interface IDataboxPlugin<TInput, TOutput> {
     options: IDataboxExecOptions, 
     defaults: any, 
   ): void | Promise<void>;
-  onBeforeRun?(runnerObject: RunnerObject<TInput, TOutput>): void | Promise<void>;
+  onBeforeRun?(databoxObject: DataboxObject<TInput, TOutput>): void | Promise<void>;
   onBeforeClose?(): void | Promise<void>;
   onClose?(): void | Promise<void>;
 }

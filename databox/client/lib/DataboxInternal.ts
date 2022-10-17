@@ -1,9 +1,9 @@
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import IDataboxExecOptions from '@ulixee/databox-interfaces/IDataboxExecOptions';
 import { IDefaultsObj } from '../interfaces/IComponents';
-import RunnerObject from './RunnerObject';
+import DataboxObject from './DataboxObject';
 import ISchema from '../interfaces/ISchema';
-import { IRunFnBase } from '../interfaces/IComponentsBase';
+import { IRunFn } from '../interfaces/IComponents';
 
 export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<{
   close: void;
@@ -59,11 +59,11 @@ export default class DataboxInternal<TInput, TOutput> extends TypedEventEmitter<
   }
 
   public async execRunner(
-    runnerObject: RunnerObject<TInput, TOutput>,
-    runFn: IRunFnBase<RunnerObject<any, any>>
+    databoxObject: DataboxObject<TInput, TOutput>,
+    runFn: IRunFn<DataboxObject<any, any>>
   ): Promise<void> {
     try {
-      await runFn(runnerObject);
+      await runFn(databoxObject);
     } catch (error) {
       if (error.stack.includes('at async DataboxInternal.execRunner')) {
         error.stack = error.stack.split('at async DataboxInternal.execRunner').shift().trim();

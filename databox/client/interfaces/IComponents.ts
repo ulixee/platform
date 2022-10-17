@@ -1,10 +1,15 @@
-import IComponentsBase, { IDefaultsObjBase, IRunFnBase } from "./IComponentsBase";
+import IDataboxPlugin from "@ulixee/databox-interfaces/IDataboxPlugin";
 
-export default interface IComponents<TRunnerObject, IDefaultsObj> extends IComponentsBase<TRunnerObject, IDefaultsObj> {
-  run: IRunFnBase<TRunnerObject>;
-  defaults?: IDefaultsObj;
+export default interface IComponents<TInput, TOutput, TDataboxObject, TDefaultsObj> {
+  run: IRunFn<TDataboxObject>;
+  defaults?: TDefaultsObj;
   schema?: any;
+  plugins?: IDataboxPlugin<TInput, TOutput>[];
 }
 
-export type IDefaultsObj<TInput, TOutput> = IDefaultsObjBase<TInput, TOutput>;
+export interface IDefaultsObj<TInput, TOutput> {
+  input?: Partial<TInput>;
+  output?: Partial<TOutput>;
+}
 
+export type IRunFn<TDataboxObject> = (databox: TDataboxObject) => void | Promise<void>;
