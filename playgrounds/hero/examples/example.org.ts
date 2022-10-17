@@ -1,5 +1,4 @@
-import Hero from '@ulixee/hero-playground';
-import { LocationTrigger } from '@unblocked-web/specifications/agent/browser/Location';
+import Hero, { LocationTrigger } from '@ulixee/hero-playground';
 
 // NOTE: You need to start a Ulixee Server to run this example
 async function run() {
@@ -32,4 +31,3 @@ async function run() {
 }
 
 run().catch(error => console.log(error));
-

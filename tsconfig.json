@@ -15,7 +15,7 @@
   ],
   "include": [
     "server",
-    "e2e",
+    "end-to-end",
     "apps",
     "playgrounds",
     "databox",

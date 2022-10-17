@@ -9,8 +9,17 @@ const { version } = require('./package.json');
 export * from '@ulixee/hero';
 export { Core };
 
+let counter = 0;
 export default class Hero extends DefaultHero {
   constructor(createOptions: IHeroCreateOptions = {}) {
+    counter += 1;
+    if (counter > 1) {
+      console.warn(`You've launched multiple instances of Hero using Hero Playgrounds. @ulixee/hero-playgrounds is intended to help you get started with examples, but will automatically shut down after the first example is run. 
+      
+If you're starting to run real production scenarios, you likely want to look into converting to a Client/Core setup: 
+
+https://ulixee.org/docs/hero/advanced-concepts/client-vs-core`);
+    }
     createOptions.connectionToCore = { host: getCoreServerHost() };
     super(createOptions);
   }
