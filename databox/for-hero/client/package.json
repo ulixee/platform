@@ -17,9 +17,11 @@
     "@ulixee/hero": "2.0.0-alpha.12",
     "@ulixee/hero-interfaces": "2.0.0-alpha.12",
     "@ulixee/net": "2.0.0-alpha.12",
+    "@ulixee/schema": "2.0.0-alpha.12",
     "@unblocked-web/specifications": "2.0.0-alpha.11"
   },
   "devDependencies": {
+    "linkedom": "^0.14.17",
     "@types/web": "^0.0.50",
     "@ulixee/databox-testing": "2.0.0-alpha.12",
     "@ulixee/hero-core": "2.0.0-alpha.12"

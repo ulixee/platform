@@ -1,12 +1,12 @@
-import { DataboxObject as DataboxObjectBase } from "@ulixee/databox";
-import Hero, { HeroReplay } from "@ulixee/hero";
+import IDataboxObjectBase from '@ulixee/databox-interfaces/IDataboxObject';
+import Hero, { HeroReplay } from '@ulixee/hero';
 
-export default interface IDataboxObject<TInput, TOutput> extends DataboxObjectBase<TInput, TOutput> {
+export default interface IDataboxObject<ISchema> extends IDataboxObjectBase<ISchema> {
   hero: Hero;
   sessionId: Promise<string>;
 }
 
-export interface IDataboxObjectForReplay<TInput, TOutput> extends DataboxObjectBase<TInput, TOutput> {
+export interface IDataboxObjectForReplay<ISchema> extends IDataboxObjectBase<ISchema> {
   heroReplay: HeroReplay;
   sessionId: Promise<string>;
 }

@@ -1,33 +1,27 @@
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import IBasicInput from '@ulixee/databox-interfaces/IBasicInput';
 import IDataboxObject from '@ulixee/databox-interfaces/IDataboxObject';
-import ISchema from '../interfaces/ISchema';
+import IDataboxSchema from '@ulixee/databox-interfaces/IDataboxSchema';
 import DataboxInternal from './DataboxInternal';
 
-export default class DataboxObject<TInput extends IBasicInput, TOutput> 
-extends TypedEventEmitter<{ close: void; error: Error }> 
-implements IDataboxObject<TInput, TOutput>
+export default class DataboxObject<
+  ISchema extends IDataboxSchema,
+  TDataboxInternal extends DataboxInternal<ISchema> = DataboxInternal<ISchema>,
+> implements IDataboxObject<ISchema>
 {
-  protected readonly databoxInternal: DataboxInternal<any, any>;
+  protected readonly databoxInternal: DataboxInternal<ISchema>;
 
-  constructor(databoxInternal: DataboxInternal<any, any>) {
-    super();
+  constructor(databoxInternal: DataboxInternal<ISchema>) {
     this.databoxInternal = databoxInternal;
   }
 
-  public get action(): string {
-    return this.databoxInternal.action;
+  public get input(): TDataboxInternal['input'] {
+    return this.databoxInternal.input;
   }
 
-  public get input(): TInput {
-    return this.databoxInternal.input as TInput;
-  }
-
-  public get output(): TOutput {
+  public get output(): TDataboxInternal['output'] {
     return this.databoxInternal.output;
   }
 
-  public set output(value: any | any[]) {
+  public set output(value: TDataboxInternal['output']) {
     this.databoxInternal.output = value;
   }
 

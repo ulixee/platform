@@ -1,43 +1,46 @@
 import Hero, { HeroReplay, IHeroCreateOptions, IHeroReplayCreateOptions } from '@ulixee/hero';
 import { DataboxObject } from '@ulixee/databox';
 import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
-import IDataboxPlugin from "@ulixee/databox-interfaces/IDataboxPlugin";
-import DataboxInternal from "@ulixee/databox/lib/DataboxInternal";
+import IDataboxPlugin from '@ulixee/databox-interfaces/IDataboxPlugin';
+import DataboxInternal from '@ulixee/databox/lib/DataboxInternal';
 import { InternalPropertiesSymbol } from '@ulixee/hero/lib/internal';
-import IDataboxForHeroExecOptions from "../interfaces/IDataboxForHeroExecOptions";
-import IDataboxObject, { IDataboxObjectForReplay } from "../interfaces/IDataboxObject";
-import { createObservableOutput } from './Output';
-import IComponents, {
-  IDefaultsObj,
-} from '../interfaces/IComponents';
+import IDataboxSchema from '@ulixee/databox-interfaces/IDataboxSchema';
+import IObservableChange from '@ulixee/databox/interfaces/IObservableChange';
+import IDataboxForHeroExecOptions from '../interfaces/IDataboxForHeroExecOptions';
+import IComponents, { IDefaultsObj } from '../interfaces/IComponents';
+import IDataboxObject, { IDataboxObjectForReplay } from '../interfaces/IDataboxObject';
 
 const pkg = require('../package.json');
 
-const pluginInstancesByHero: WeakMap<Hero, DataboxForHeroPlugin<any, any>> = new WeakMap();
+const pluginInstancesByHero: WeakMap<Hero, DataboxForHeroPlugin<any>> = new WeakMap();
 
-export default class DataboxForHeroPlugin<TInput, TOutput> implements IDataboxPlugin<TInput, TOutput> {
+export default class DataboxForHeroPlugin<ISchema extends IDataboxSchema>
+  implements IDataboxPlugin<ISchema>
+{
   #extractorPromises: Promise<any>[] = [];
 
   public name = pkg.name;
   public version = pkg.version;
   public hero: Hero;
   public heroReplay: HeroReplay;
-  public databoxInternal: DataboxInternal<TInput, TOutput>;
 
-  private execOptions: IDataboxForHeroExecOptions;
-  private defaults: IDefaultsObj<TInput, TOutput>;
-  private components:  IComponents<TInput, TOutput>;
+  public databoxInternal: DataboxInternal<ISchema>;
 
-  constructor(components: IComponents<TInput, TOutput>) {
+  private execOptions: IDataboxForHeroExecOptions<ISchema>;
+  private defaults: IDefaultsObj<ISchema>;
+  private components: IComponents<ISchema>;
+
+  constructor(components: IComponents<ISchema>) {
     this.components = components;
   }
 
   public onExec(
-    databoxInternal: DataboxInternal<TInput, TOutput>,
-    execOptions: IDataboxForHeroExecOptions, 
-    defaults: IDefaultsObj<TInput, TOutput>, 
+    databoxInternal: DataboxInternal<ISchema>,
+    execOptions: IDataboxForHeroExecOptions<ISchema>,
+    defaults: IDefaultsObj<ISchema>,
   ): void {
     this.databoxInternal = databoxInternal;
+    this.databoxInternal.onOutputChanges = this.onOutputChanged.bind(this);
     this.execOptions = execOptions;
     this.defaults = defaults;
   }
@@ -46,31 +49,21 @@ export default class DataboxForHeroPlugin<TInput, TOutput> implements IDataboxPl
     return !this.previousSessionId;
   }
 
-  public onBeforeRun(databoxObject: IDataboxObject<TInput, TOutput>): void {
+  public onBeforeRun(databoxObject: IDataboxObject<ISchema>): void {
     this.initializeHero();
     databoxObject.hero = this.hero;
     databoxObject.sessionId = this.sessionId;
-    Object.defineProperty(databoxObject, 'output', {
-      get: () => this.output,
-      set: value => {
-        this.output = value;
-      }
-    });
   }
 
   public async onBeforeClose(): Promise<void> {
     if (!this.components.onAfterHeroCompletes) return;
 
     this.initializeHeroReplay();
-    const databoxObject = new DataboxObject<TInput, TOutput>(this.databoxInternal) as IDataboxObjectForReplay<TInput, TOutput>;
+    const databoxObject = new DataboxObject<ISchema>(
+      this.databoxInternal,
+    ) as unknown as IDataboxObjectForReplay<ISchema>;
     databoxObject.heroReplay = this.heroReplay;
     databoxObject.sessionId = this.sessionId;
-    Object.defineProperty(databoxObject, 'output', {
-      get: () => this.output,
-      set: value => {
-        this.output = value;
-      }
-    });
 
     await this.components.onAfterHeroCompletes(databoxObject);
   }
@@ -83,7 +76,7 @@ export default class DataboxForHeroPlugin<TInput, TOutput> implements IDataboxPl
 
   // INTERNALS ///////////////////////
 
-  public get coreSessionPromise(): Promise<ICoreSession> {
+  public get coreSessionPromise(): Promise<ICoreSession> | undefined {
     if (!this.hero) return;
     return this.hero[InternalPropertiesSymbol].coreSessionPromise;
   }
@@ -92,27 +85,7 @@ export default class DataboxForHeroPlugin<TInput, TOutput> implements IDataboxPl
     return this.execOptions.previousSessionId ?? process.env.ULX_OLD_SESSION_ID;
   }
 
-  public get output(): TOutput {
-    const databoxInternal = this.databoxInternal;
-    if (!databoxInternal.output) {
-      databoxInternal.output = createObservableOutput(this.coreSessionPromise) as unknown as TOutput;
-      for (const [key, value] of Object.entries(this.defaults.output || {})) {
-        databoxInternal.output[key] = value;
-      }
-    }
-    return databoxInternal.output as unknown as TOutput;
-  }
-
-  public set output(value: any | any[]) {
-    const databoxInternal = this.databoxInternal;
-    const output = databoxInternal.output;
-    for (const key of Object.keys(output)) {
-      delete output[key];
-    }
-    Object.assign(databoxInternal.output, value);
-  }
-
-  public get sessionId(): IDataboxObject<TInput, TOutput>['sessionId'] {
+  public get sessionId(): IDataboxObject<ISchema>['sessionId'] {
     return this.hero?.sessionId;
   }
 
@@ -128,15 +101,28 @@ export default class DataboxForHeroPlugin<TInput, TOutput> implements IDataboxPl
 
   private initializeHeroReplay(): void {
     const heroOptions: IHeroReplayCreateOptions = {
-      ...this.defaults.hero as IHeroReplayCreateOptions,
+      ...(this.defaults.hero as IHeroReplayCreateOptions),
       ...this.execOptions,
       input: this.databoxInternal.input,
       hero: this.hero,
     };
     this.heroReplay = new HeroReplay(heroOptions);
   }
+
+  private onOutputChanged(changes: IObservableChange[]): void {
+    const changesToRecord = changes.map(change => ({
+      type: change.type as string,
+      value: change.value,
+      path: JSON.stringify(change.path),
+      timestamp: Date.now(),
+    }));
+
+    this.coreSessionPromise
+      ?.then(coreSession => coreSession.recordOutput(changesToRecord))
+      .catch(() => null);
+  }
 }
 
-export function getDataboxForHeroPlugin(hero: Hero): DataboxForHeroPlugin<any, any> {
+export function getDataboxForHeroPlugin(hero: Hero): DataboxForHeroPlugin<any> {
   return pluginInstancesByHero.get(hero);
 }

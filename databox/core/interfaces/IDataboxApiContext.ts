@@ -11,7 +11,7 @@ export default interface IDataboxApiContext {
   databoxRegistry: DataboxRegistry;
   workTracker: WorkTracker;
   configuration: IDataboxCoreConfigureOptions;
-  pluginCoresByName: { [name: string]: IDataboxPluginCore };
+  pluginCoresByName: { [name: string]: IDataboxPluginCore<unknown> };
   sidechainClientManager: SidechainClientManager;
   execDatabox(path: string, manifest: IDataboxManifest, input: any): Promise<{ output: any }>;
 }
