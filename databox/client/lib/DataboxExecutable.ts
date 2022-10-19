@@ -18,6 +18,10 @@ export default class DataboxExecutable<ISchema extends IDataboxSchema = IDatabox
   public readonly corePlugins: { [name: string]: string } = {};
   public readonly plugins: Plugins<ISchema>;
 
+  public get schema(): ISchema {
+    return this.components.schema;
+  }
+
   public disableAutorun: boolean;
   public successCount = 0;
   public errorCount = 0;

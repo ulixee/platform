@@ -1,5 +1,8 @@
 import { Command } from 'commander';
 import type * as CliCommands from '@ulixee/databox-packager/lib/cliCommands';
+import UlixeeServerConfig from '@ulixee/commons/config/servers';
+import UlixeeConfig from '@ulixee/commons/config';
+import DataboxApiClient from './lib/DataboxApiClient';
 
 const { version } = require('./package.json');
 
@@ -77,10 +80,7 @@ export default function databoxCommands(): Command {
       '<path>',
       'The path of the entrypoint to the Databox. Must have a default export that is a Databox.',
     )
-    .option(
-      '-o, --out-dir <path>',
-      'A directory path where you want packaged .dbx files to be saved',
-    )
+    .option('-o, --out-dir <path>', 'A directory path where you want .dbx packages to be saved')
     .option('-u, --upload', 'Upload this package to a Ulixee Server after packaging.', false)
     .addOption(uploadHostOption)
     .addOption(clearVersionHistoryOption)
@@ -118,7 +118,7 @@ export default function databoxCommands(): Command {
   databoxCommand
     .command('open')
     .description('Open a Databox package in the local working directory.')
-    .argument('<dbxPath>', 'The path to the packaged .dbx file.')
+    .argument('<dbxPath>', 'The path to the .dbx package.')
     .action(async dbxPath => {
       await getPackagerCommands().unpack(dbxPath);
     });
@@ -126,16 +126,36 @@ export default function databoxCommands(): Command {
   databoxCommand
     .command('close')
     .description('Close the Databox package and save or discard the local changes.')
-    .argument('<dbxPath>', 'The path to the packaged .dbx file.')
+    .argument('<dbxPath>', 'The path to the .dbx package.')
     .option('-x, --discard-changes', 'Remove the working directory without saving any changes')
     .action(async (dbxPath, { discardChanges }) => {
       await getPackagerCommands().closeDbx(dbxPath, discardChanges);
     });
 
   databoxCommand
+    .command('install')
+    .description(
+      'Install a Databox and corresponding Schema into your project. Enables type-checking for Databox.exec.',
+    )
+    .argument('<versionHash>', 'The version hash of the Databox.')
+    .option('-a, --alias <name>', 'Add a shortcut name to reference this Databox hash.')
+    .option('-h, --host <host>', 'Connect to the given host server. Will try to automatically connect if omitted.')
+    .action(async (versionHash, { alias, host }) => {
+      host ??=
+        UlixeeConfig.load()?.serverHost ??
+        UlixeeConfig.global.serverHost ??
+        UlixeeServerConfig.global.getVersionHost(version);
+
+      if (!host) throw new Error('Please provide a server host to connect to.');
+
+      const client = new DataboxApiClient(host);
+      await client.install(versionHash, alias);
+    });
+
+  databoxCommand
     .command('upload')
     .description('Upload a Databox package to a server.')
-    .argument('<dbxPath>', 'The path to the packaged .dbx file.')
+    .argument('<dbxPath>', 'The path to the .dbx package.')
     .addOption(uploadHostOption)
     .option(
       '-a, --allow-new-version-history',

@@ -10,6 +10,27 @@ test('it can extract the databox runtime', async () => {
   expect(meta.coreVersion).toBe('1.0.0');
 });
 
+test('it can extract the databox schema', async () => {
+  const scriptPath = Path.resolve(__dirname, 'databoxes/schema.js');
+  const databoxProcess = new LocalDataboxProcess(scriptPath);
+  const meta = await databoxProcess.fetchMeta();
+  await databoxProcess.close();
+
+  expect(meta.schema).toEqual({
+    input: {
+      field: {
+        typeName: 'string',
+        minLength: 1,
+        description: 'a field you should use',
+      },
+    },
+    output: {
+      success: {
+        typeName: 'boolean',
+      },
+    },
+  });
+});
 
 test('it can run the databox and return output', async () => {
   const scriptPath = Path.resolve(__dirname, 'databoxes/output.js');

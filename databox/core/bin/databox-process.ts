@@ -24,6 +24,7 @@ process.on('message', async (message: IMessage) => {
       data: {
         coreVersion: databoxExecutable.coreVersion,
         corePlugins: databoxExecutable.corePlugins || {},
+        schema: databoxExecutable.schema,
       },
     });
   }

@@ -89,7 +89,7 @@ test('should be able run a databox', async () => {
   const packager = new DataboxPackager(`${__dirname}/databoxes/output.js`);
   await packager.build();
   await client.upload(await packager.dbx.asBuffer());
-  await expect(client.run(packager.manifest.versionHash, null)).resolves.toEqual({
+  await expect(client.exec(packager.manifest.versionHash, null)).resolves.toEqual({
     output: { success: true },
     metadata: expect.any(Object),
     latestVersionHash: expect.any(String),
@@ -112,7 +112,7 @@ test('should be able run a databox with payments', async () => {
   expect(manifest.pricePerQuery).toBe(1250);
   await client.upload(await dbx.asBuffer());
 
-  await expect(client.run(manifest.versionHash, null)).rejects.toThrowError('requires payment');
+  await expect(client.exec(manifest.versionHash, null)).rejects.toThrowError('requires payment');
   const sidechainClient = new SidechainClient('http://localhost:1337', {
     identity: clientIdentity,
     address,
@@ -135,7 +135,7 @@ test('should be able run a databox with payments', async () => {
 
   apiCalls.mockClear();
 
-  await expect(client.run(manifest.versionHash, null, payment)).resolves.toEqual({
+  await expect(client.exec(manifest.versionHash, null, payment)).resolves.toEqual({
     output: { success: true },
     metadata: {
       microgons: 1255,
@@ -196,7 +196,7 @@ test('should be able run a databox with a GiftCard', async () => {
   const payment = await userSidechainClient.createMicroPayment(meta);
   expect(payment.microgons).toBeGreaterThan(1250);
   expect(payment.isGiftCardBatch).toBe(true);
-  await expect(client.run(manifest.versionHash, null, payment)).resolves.toEqual({
+  await expect(client.exec(manifest.versionHash, null, payment)).resolves.toEqual({
     output: { success: true },
     metadata: expect.any(Object),
     latestVersionHash: expect.any(String),
@@ -204,7 +204,7 @@ test('should be able run a databox with a GiftCard', async () => {
 
   // follow-on test that you can disable giftCards
   DataboxCore.options.giftCardAddress = null;
-  await expect(client.run(manifest.versionHash, null, payment)).rejects.toThrowError(
+  await expect(client.exec(manifest.versionHash, null, payment)).rejects.toThrowError(
     'not accepting gift cards',
   );
 });

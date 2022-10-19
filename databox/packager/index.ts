@@ -5,6 +5,10 @@ import LocalDataboxProcess from '@ulixee/databox-core/lib/LocalDataboxProcess';
 import DataboxManifest from '@ulixee/databox-core/lib/DataboxManifest';
 import UlixeeConfig from '@ulixee/commons/config';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
+import schemaFromJson from '@ulixee/schema/lib/schemaFromJson';
+import schemaToInterface, { printNode } from '@ulixee/schema/lib/schemaToInterface';
+import { object } from '@ulixee/schema';
+import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import rollupDatabox from './lib/rollupDatabox';
 import DbxFile from './lib/DbxFile';
 
@@ -72,6 +76,18 @@ export default class DataboxPackager {
       throw new Error('Databox must specify a coreVersion');
     }
 
+    let interfaceString: string;
+    if (meta.schema) {
+      const fields = filterUndefined({
+        input: schemaFromJson(meta.schema?.input),
+        output: schemaFromJson(meta.schema?.output),
+      });
+      if (Object.keys(fields).length) {
+        const schemaInterface = object(fields);
+        interfaceString = printNode(schemaToInterface(schemaInterface));
+      }
+    }
+
     const hash = sha3(Buffer.from(sourceCode));
     const scriptVersionHash = encodeBuffer(hash, 'scr');
     await this.manifest.update(
@@ -80,6 +96,7 @@ export default class DataboxPackager {
       Date.now(),
       meta.coreVersion,
       meta.corePlugins,
+      interfaceString,
       this.logToConsole ? console.log : undefined,
     );
     if (createNewVersionHistory) {

@@ -39,7 +39,7 @@ export default async function main(
   const databoxClient = new DataboxApiClient(databoxHost);
   const databoxMeta = await databoxClient.getMeta(databoxHash);
   const payment = await sidechainClient.createMicroPayment(databoxMeta);
-  const result = await databoxClient.run(databoxHash, { test: 1 }, payment);
+  const result = await databoxClient.exec(databoxHash, { test: 1 }, payment);
 
   console.log('Result of databox query is:', result);
 

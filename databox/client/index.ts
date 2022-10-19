@@ -3,6 +3,8 @@ import Databox from './lib/DataboxExecutable';
 import DataboxObject from './lib/DataboxObject';
 import { Observable } from './lib/ObjectObserver';
 
+export * as schema from '@ulixee/schema';
+
 export { Databox, Observable, DataboxObject };
 
 export default Databox;

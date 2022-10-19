@@ -264,6 +264,7 @@ You can choose from the options below to link to the existing server versions or
           manifest.versionTimestamp,
           manifest.coreVersion,
           manifest.corePlugins,
+          manifest.schemaInterface,
           console.log,
         );
         await newManifest.save();

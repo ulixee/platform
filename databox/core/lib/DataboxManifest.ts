@@ -26,6 +26,7 @@ export default class DataboxManifest implements IDataboxManifest {
   public scriptEntrypoint: string;
   public coreVersion: string;
   public corePlugins: { [name: string]: string };
+  public schemaInterface: string;
 
   // Payment details
   public pricePerQuery?: number;
@@ -77,6 +78,7 @@ export default class DataboxManifest implements IDataboxManifest {
     versionTimestamp: number,
     coreVersion: string,
     corePlugins: { [name: string]: string },
+    schemaInterface: string | undefined,
     logger?: (message: string, ...args: any[]) => any,
   ): Promise<void> {
     await this.load();
@@ -89,6 +91,7 @@ export default class DataboxManifest implements IDataboxManifest {
     this.linkedVersions ??= [];
     this.coreVersion = coreVersion;
     this.corePlugins = corePlugins;
+    this.schemaInterface = schemaInterface;
     // allow manifest to override above values
     await this.loadExplicitSettings(manifestSources, logger);
 
@@ -182,6 +185,7 @@ export default class DataboxManifest implements IDataboxManifest {
       paymentAddress: this.paymentAddress,
       giftCardAddress: this.giftCardAddress,
       pricePerQuery: this.pricePerQuery,
+      schemaInterface: this.schemaInterface,
     };
   }
 

@@ -12,6 +12,7 @@
     "@ulixee/databox-core": "2.0.0-alpha.12",
     "@ulixee/databox-interfaces": "2.0.0-alpha.12",
     "@ulixee/net": "2.0.0-alpha.12",
+    "@ulixee/schema": "2.0.0-alpha.12",
     "@ulixee/specification": "2.0.0-alpha.12",
     "rollup": "^2.74.1",
     "rollup-plugin-terser": "^7.0.2",
