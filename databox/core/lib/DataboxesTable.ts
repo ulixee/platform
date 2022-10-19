@@ -19,8 +19,9 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
         ['pricePerQuery', 'INTEGER'],
         ['scriptHash', 'TEXT'],
         ['scriptEntrypoint', 'TEXT'],
-        ['runtimeName', 'TEXT'],
-        ['runtimeVersion', 'TEXT'],
+        ['schemaInterface', 'TEXT'],
+        ['coreVersion', 'TEXT'],
+        ['corePlugins', 'TEXT'],
         ['storedDate', 'DATETIME'],
       ],
       true,
@@ -39,8 +40,9 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
       manifest.pricePerQuery,
       manifest.scriptHash,
       manifest.scriptEntrypoint,
-      manifest.runtimeName,
-      manifest.runtimeVersion,
+      manifest.schemaInterface,
+      manifest.coreVersion,
+      JSON.stringify(manifest.corePlugins),
       storedDate,
     ]);
 
@@ -52,8 +54,9 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
       pricePerQuery: manifest.pricePerQuery,
       scriptHash: manifest.scriptHash,
       scriptEntrypoint: manifest.scriptEntrypoint,
-      runtimeName: manifest.runtimeName,
-      runtimeVersion: manifest.runtimeVersion,
+      schemaInterface: manifest.schemaInterface,
+      coreVersion: manifest.coreVersion,
+      corePlugins: manifest.corePlugins,
       storedDate,
     };
   }
@@ -62,11 +65,19 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
     const query = this.db.prepare(
       `select * from ${this.tableName} where scriptEntrypoint = ? limit 1`,
     );
-    return query.get(entrypoint);
+    const record = query.get(entrypoint);
+    if (!record) return;
+    record.corePlugins = JSON.parse(record.corePlugins);
+    return record;
   }
 
   public getByVersionHash(versionHash: string): IDataboxRecord {
-    DataboxesTable.byVersionHash[versionHash] ??= this.getQuery.get(versionHash);
+    if (!DataboxesTable.byVersionHash[versionHash]) {
+      const record = this.getQuery.get(versionHash);
+      if (!record) return;
+      record.corePlugins = JSON.parse(record.corePlugins);
+      DataboxesTable.byVersionHash[versionHash] = record;
+    }
     return DataboxesTable.byVersionHash[versionHash];
   }
 }
@@ -77,9 +88,10 @@ export interface IDataboxRecord {
   pricePerQuery: number;
   paymentAddress: string;
   giftCardAddress: string;
+  schemaInterface: string;
   scriptHash: string;
   scriptEntrypoint: string;
-  runtimeName: string;
-  runtimeVersion: string;
+  coreVersion: string;
+  corePlugins: { [name: string]: string };
   storedDate: number;
 }

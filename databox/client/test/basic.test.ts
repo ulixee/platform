@@ -1,27 +1,28 @@
 import readCommandLineArgs from '../lib/utils/readCommandLineArgs';
-import DataboxWrapper from '../index';
+import Autorun from '../lib/utils/Autorun';
+import Databox from '../index';
 
 describe('basic Databox tests', () => {
   it('automatically runs and closes a databox', async () => {
     let databoxWasRun = false;
-    DataboxWrapper.defaultExport = new DataboxWrapper(async databox => {
+    Autorun.defaultExport = new Databox(async databox => {
       databox.output = 'success';
       databoxWasRun = true;
     });
 
-    await DataboxWrapper.attemptAutorun();
+    await Autorun.attemptAutorun(Databox);
     await new Promise(resolve => process.nextTick(resolve));
     expect(await databoxWasRun).toBe(true);
   });
 
   it('waits until run method is explicitly called', async () => {
     let databoxWasRun = false;
-    const databoxWrapper = new DataboxWrapper(async databox => {
+    const databoxExecutable = new Databox(async databox => {
       databox.output = 'success';
       databoxWasRun = true;
     });
 
-    await databoxWrapper.run({});
+    await databoxExecutable.exec({});
     await new Promise(resolve => process.nextTick(resolve));
     expect(await databoxWasRun).toBe(true);
   });

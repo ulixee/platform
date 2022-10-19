@@ -2,19 +2,40 @@ import * as Path from 'path';
 import LocalDataboxProcess from '../lib/LocalDataboxProcess';
 
 test('it can extract the databox runtime', async () => {
-  const scriptPath = Path.resolve(__dirname, 'databoxes/runtime.js');
+  const scriptPath = Path.resolve(__dirname, 'databoxes/meta.js');
   const databoxProcess = new LocalDataboxProcess(scriptPath);
-  const runtime = await databoxProcess.fetchRuntime();
+  const meta = await databoxProcess.fetchMeta();
   await databoxProcess.close();
 
-  expect(runtime.name).toBe('@ulixee/test-database');
+  expect(meta.coreVersion).toBe('1.0.0');
 });
 
+test('it can extract the databox schema', async () => {
+  const scriptPath = Path.resolve(__dirname, 'databoxes/schema.js');
+  const databoxProcess = new LocalDataboxProcess(scriptPath);
+  const meta = await databoxProcess.fetchMeta();
+  await databoxProcess.close();
+
+  expect(meta.schema).toEqual({
+    input: {
+      field: {
+        typeName: 'string',
+        minLength: 1,
+        description: 'a field you should use',
+      },
+    },
+    output: {
+      success: {
+        typeName: 'boolean',
+      },
+    },
+  });
+});
 
 test('it can run the databox and return output', async () => {
   const scriptPath = Path.resolve(__dirname, 'databoxes/output.js');
   const databoxProcess = new LocalDataboxProcess(scriptPath);
-  const { output } = await databoxProcess.run({});
+  const { output } = await databoxProcess.exec({});
   await databoxProcess.close();
 
   expect(output).toMatchObject({ success: true });

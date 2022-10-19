@@ -1,4 +1,5 @@
 import { IOutputChangeRecord } from '@ulixee/hero-core/models/OutputTable';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 
 export interface IOutputSnapshot {
   output: any;
@@ -111,7 +112,7 @@ export default class OutputRebuilder {
 
 function parseIfNeeded(json: string | unknown): unknown {
   if (typeof json === 'string') {
-    return JSON.parse(json);
+    return TypeSerializer.parse(json);
   }
   return json;
 }

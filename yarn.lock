@@ -3351,6 +3351,21 @@
     progress "^2.0.3"
     tar "^6.1.11"
 
+"@ulixee/databox-core-runtime@2.0.0-alpha.12":
+  version "2.0.0-alpha.12"
+  resolved "https://registry.yarnpkg.com/@ulixee/databox-core-runtime/-/databox-core-runtime-2.0.0-alpha.12.tgz#f4ef77fe28463be0f0d706fcd5ec7f428fd5ba9b"
+  integrity sha512-nWgDRZjGNMVCM0VbH5Z53+kCl43XkvUv2LN/xZ7k541nTSE1mttWbNx5Bh3o9Pm285shScxKFX0Boq7EnsMHtw==
+  dependencies:
+    "@ulixee/commons" "2.0.0-alpha.12"
+    "@ulixee/databox" "2.0.0-alpha.12"
+    "@ulixee/databox-core" "2.0.0-alpha.12"
+    "@ulixee/databox-interfaces" "2.0.0-alpha.12"
+    "@ulixee/net" "2.0.0-alpha.12"
+    "@ulixee/specification" "2.0.0-alpha.12"
+    better-sqlite3 "^7.5.1"
+    nanoid "^3.1.30"
+    vm2 "^3.9.9"
+
 "@ulixee/repo-tools@^1.0.20":
   version "1.0.20"
   resolved "https://registry.yarnpkg.com/@ulixee/repo-tools/-/repo-tools-1.0.20.tgz#7b784eb6295f30dc8865175bc8e2784ae9bca412"
@@ -11551,6 +11566,17 @@ linkedom@^0.14.11:
     htmlparser2 "^8.0.1"
     uhyphen "^0.1.0"
 
+linkedom@^0.14.17:
+  version "0.14.17"
+  resolved "https://registry.yarnpkg.com/linkedom/-/linkedom-0.14.17.tgz#5f2e9b03094437ec38a1eda7cd2c40a8092f1dff"
+  integrity sha512-PD6GQKvZ4s6Ai4/WkpyHc8MhiZdCz4hWmMOWJk+MO3/kl1QvPUbo4nQWS9+VHO7lRBk1ucIa9ONS9qzCUcBAmQ==
+  dependencies:
+    css-select "^5.1.0"
+    cssom "^0.5.0"
+    html-escaper "^3.0.3"
+    htmlparser2 "^8.0.1"
+    uhyphen "^0.1.0"
+
 lint-staged@^10.5.2:
   version "10.5.4"
   resolved "https://registry.yarnpkg.com/lint-staged/-/lint-staged-10.5.4.tgz#cd153b5f0987d2371fc1d2847a409a2fe705b665"
@@ -16992,6 +17018,11 @@ typescript@^4.5.5, typescript@^4.7.2, typescript@~4.7.3:
   version "4.7.3"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.7.3.tgz#8364b502d5257b540f9de4c40be84c98e23a129d"
   integrity sha512-WOkT3XYvrpXx4vMMqlD+8R8R37fZkjyLGlxavMc4iB8lrl8L0DeTcHbYgw/v0N/z9wAFsgBhcsF0ruoySS22mA==
+
+typescript@^4.7.4:
+  version "4.8.4"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.8.4.tgz#c464abca159669597be5f96b8943500b238e60e6"
+  integrity sha512-QCh+85mCy+h0IGff8r5XWzOVSbBO+KfeYrMQh7NJ58QujwcE22u+NUSmUxqF+un70P9GXKxa2HCNiTTMJknyjQ==
 
 ua-parser-js@0.7.28, ua-parser-js@^0.7.18, ua-parser-js@^0.7.22, ua-parser-js@^0.7.24:
   version "0.7.28"

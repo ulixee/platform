@@ -1,31 +1,37 @@
-export interface IFetchModuleMessage {
+import IDataboxSchema from '@ulixee/databox-interfaces/IDataboxSchema';
+import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
+
+export interface IFetchMetaMessage {
   messageId: string;
-  action: 'fetchRuntime';
+  action: 'fetchMeta';
   scriptPath: string;
 }
 
 export interface IRunMessage {
   messageId: string;
-  action: 'run';
+  action: 'exec';
   scriptPath: string;
   input: any;
 }
 
-export type IMessage = IFetchModuleMessage | IRunMessage;
+export type IMessage = IFetchMetaMessage | IRunMessage;
 
-export interface IRunResponseData {
+export interface IExecResponseData {
   output: any;
 }
 
-export interface IFetchRuntimeResponseData {
-  name: string;
-  version: string;
+export interface IFetchMetaResponseData {
+  coreVersion: string;
+  corePlugins: { [name: string]: string };
+  schema?: Omit<IDataboxSchema, 'input' | 'output'> & {
+    input?: Record<string, IAnySchemaJson>;
+    output?: Record<string, IAnySchemaJson> | IAnySchemaJson;
+  };
 }
 
-export type IResponseData = IRunResponseData | IFetchRuntimeResponseData;
+export type IResponseData = IExecResponseData | IFetchMetaResponseData;
 
 export interface IResponse {
   responseId: string;
   data: IResponseData;
 }
-

@@ -188,7 +188,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     if (startLocation === 'extraction') {
       args.length = 0;
       this.resetExtraction();
-      args.push(`--extractSessionId="${this.heroSession.id}"`, '--mode="browserless"');
+      args.push(`--previousSessionId="${this.heroSession.id}"`, '--mode="browserless"');
     }
 
     try {
@@ -448,29 +448,29 @@ export default class SessionObserver extends TypedEventEmitter<{
     const sessionId = fromSessionId ?? this.heroSession.id;
     const assetNames = await this.heroSession.getCollectedAssetNames(sessionId);
     const result: IDataboxCollectedAssets = {
-      collectedElements: [],
-      collectedResources: [],
-      collectedSnippets: [],
+      detachedElements: [],
+      detachedResources: [],
+      snippets: [],
     };
     for (const name of assetNames.elements) {
-      const elements = await this.heroSession.getCollectedElements(sessionId, name);
-      for (const element of elements as IDataboxCollectedAssets['collectedElements']) {
+      const elements = await this.heroSession.getDetachedElements(sessionId, name);
+      for (const element of elements as IDataboxCollectedAssets['detachedElements']) {
         this.addSourceCodeLocation(element);
-        result.collectedElements.push(element);
+        result.detachedElements.push(element);
       }
     }
     for (const name of assetNames.resources) {
-      const resources = await this.heroSession.getCollectedResources(sessionId, name);
-      for (const resource of resources as IDataboxCollectedAssets['collectedResources']) {
+      const resources = await this.heroSession.getDetachedResources(sessionId, name);
+      for (const resource of resources as IDataboxCollectedAssets['detachedResources']) {
         this.addSourceCodeLocation(resource);
-        result.collectedResources.push(resource);
+        result.detachedResources.push(resource);
       }
     }
     for (const name of assetNames.snippets) {
-      const snippets = await this.heroSession.getCollectedSnippets(sessionId, name);
-      for (const snippet of snippets as IDataboxCollectedAssets['collectedSnippets']) {
+      const snippets = await this.heroSession.getSnippets(sessionId, name);
+      for (const snippet of snippets as IDataboxCollectedAssets['snippets']) {
         this.addSourceCodeLocation(snippet);
-        result.collectedSnippets.push(snippet);
+        result.snippets.push(snippet);
       }
     }
     return result;
@@ -522,16 +522,16 @@ export default class SessionObserver extends TypedEventEmitter<{
     const sendEvent: IDataboxCollectedAssetEvent = {};
 
     if (event.type === 'resource') {
-      sendEvent.collectedResource = event.asset as any;
-      this.addSourceCodeLocation(sendEvent.collectedResource);
+      sendEvent.detachedResource = event.asset as any;
+      this.addSourceCodeLocation(sendEvent.detachedResource);
     }
     if (event.type === 'element') {
-      sendEvent.collectedElement = event.asset as any;
-      this.addSourceCodeLocation(sendEvent.collectedElement);
+      sendEvent.detachedElement = event.asset as any;
+      this.addSourceCodeLocation(sendEvent.detachedElement);
     }
     if (event.type === 'snippet') {
-      sendEvent.collectedSnippet = event.asset as any;
-      this.addSourceCodeLocation(sendEvent.collectedSnippet);
+      sendEvent.snippet = event.asset as any;
+      this.addSourceCodeLocation(sendEvent.snippet);
     }
     this.emit('databox:asset', sendEvent);
   }

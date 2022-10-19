@@ -1,0 +1,32 @@
+- title: Overview
+  items:
+    - Introduction
+    - Configuration
+    - Concepts
+    - Deployment
+
+- title: Databox Basics
+  items:
+    - Databox
+    - DataboxObject
+    - Input
+    - Output
+    - Plugins
+
+- title: Databox for Hero
+  items:
+    - Overview
+    - DataboxForHero
+    - DataboxObject
+    - Output
+
+- title: Databox for Puppeteer
+  items:
+    - DataboxForPuppeteer
+    - DataboxObject
+
+- title: Help
+  items:
+    - Prerequisites
+    - How to upgrade
+    - Troubleshooting

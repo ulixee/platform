@@ -1,27 +1,34 @@
-export async function attemptAutorun(
-  parent: NodeJS.Module,
-  main: NodeJS.Module,
-  DataboxWrapper: any,
-): Promise<void> {
-  let databoxWrapper = DataboxWrapper.defaultExport;
+export default class Autorun {
+  static defaultExport: any;
+  static parentModule: NodeJS.Module;
+  static mainModule: NodeJS.Module;
+  static autorunBeforeExitFn: any;
 
-  while (!databoxWrapper && parent) {
-    if (parent === main && parent.exports?.default instanceof DataboxWrapper) {
-      databoxWrapper = parent.exports?.default;
+  static async attemptAutorun(Databox: any): Promise<void> {
+    let databox = this.defaultExport;
+    let { parentModule } = this;
+
+    while (!databox && parentModule) {
+      if (parentModule === this.mainModule && parentModule.exports?.default instanceof Databox) {
+        databox = parentModule.exports?.default;
+      }
+      parentModule = parentModule.parent;
     }
-    parent = parent.parent;
+    if (!databox) return;
+    if (databox.disableAutorun) return;
+    if (databox.successCount || databox.errorCount) return;
+
+    await databox.constructor.commandLineExec(databox);
   }
-  if (!databoxWrapper) return;
-  if (databoxWrapper.disableAutorun) return;
-  if (databoxWrapper.successCount || databoxWrapper.errorCount) return;
-  await DataboxWrapper.run(databoxWrapper);
-}
 
-let autorunBeforeExitFn: any;
-
-export function setupAutorunBeforeExitHook(DataboxWrapper: any): void {
-  if (autorunBeforeExitFn) process.off('beforeExit', autorunBeforeExitFn);
-  autorunBeforeExitFn = async () => await DataboxWrapper.attemptAutorun();
-
-  process.on('beforeExit', autorunBeforeExitFn);
+  static setupAutorunBeforeExitHook(
+    DataboxBase: any,
+    parentModule: NodeJS.Module,
+    mainModule: NodeJS.Module,
+  ): void {
+    if (this.autorunBeforeExitFn) return;
+    this.parentModule = parentModule;
+    this.mainModule = mainModule;
+    process.on('beforeExit', async () => await this.attemptAutorun(DataboxBase));
+  }
 }

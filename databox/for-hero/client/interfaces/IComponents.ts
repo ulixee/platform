@@ -1,31 +1,19 @@
 import { IHeroCreateOptions } from '@ulixee/hero';
-import IComponentsBase, { IDefaultsObjBase, IRunFnBase } from '@ulixee/databox/interfaces/IComponentsBase';
-import RunnerObject from '../lib/RunnerObject';
-import ExtractorObject from '../lib/ExtractorObject';
+import IComponentsBase, {
+  IDefaultsObj as IDefaultsObjBase,
+} from '@ulixee/databox/interfaces/IComponents';
+import IDataboxObject, { IDataboxObjectForReplay } from './IDataboxObject';
 
-export default interface IComponents<TInput, TOutput> extends IComponentsBase<RunnerObject<TInput, TOutput>, IDefaultsObj<TInput, TOutput>> {
-  extract?: IExtractFn<TInput, TOutput>;
-}
+type IComponents<ISchema> = IComponentsBase<
+  ISchema,
+  IDataboxObject<ISchema>,
+  IDefaultsObj<ISchema>
+> & {
+  onAfterHeroCompletes?: (databox: IDataboxObjectForReplay<ISchema>) => Promise<void> | void;
+};
 
-export interface IDefaultsObj<TInput, TOutput> extends IDefaultsObjBase<TInput, TOutput> {
+export default IComponents;
+
+export type IDefaultsObj<ISchema> = IDefaultsObjBase<ISchema> & {
   hero?: Partial<IHeroCreateOptions>;
-}
-
-export type IRunFn<TInput, TOutput> = IRunFnBase<RunnerObject<TInput, TOutput>>;
-
-export type IExtractFn<TInput, TOutput> = (
-  databox: ExtractorObject<TInput, TOutput>,
-) => void | Promise<void>;
-
-export type IExtractElementFn<T, TInput = any, TOutput = any> = (
-  element: Element,
-  databox: ExtractorObject<TInput, TOutput>,
-) => T | Promise<T>;
-export type IExtractElementsFn<T, TInput = any, TOutput = any> = (
-  elements: Element[],
-  databox: ExtractorObject<TInput, TOutput>,
-) => T | Promise<T>;
-
-export interface IExtractElementOptions {
-  name?: string;
-}
+};

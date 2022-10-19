@@ -1,10 +1,10 @@
-import ICollectedElement from '@ulixee/hero-interfaces/ICollectedElement';
-import ICollectedResource from '@ulixee/hero-interfaces/ICollectedResource';
-import ICollectedSnippet from '@ulixee/hero-interfaces/ICollectedSnippet';
+import IDetachedElement from '@ulixee/hero-interfaces/IDetachedElement';
+import IDetachedResource from '@ulixee/hero-interfaces/IDetachedResource';
+import IDataSnippet from '@ulixee/hero-interfaces/IDataSnippet';
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
 
 export default interface IDataboxCollectedAssetsResponse {
-  collectedElements: (ICollectedElement & ISourceCodeReference)[];
-  collectedSnippets: (ICollectedSnippet & ISourceCodeReference)[];
-  collectedResources: (ICollectedResource & ISourceCodeReference)[];
+  detachedElements: (IDetachedElement & ISourceCodeReference)[];
+  detachedResources: (IDetachedResource & ISourceCodeReference)[];
+  snippets: (IDataSnippet & ISourceCodeReference)[];
 }

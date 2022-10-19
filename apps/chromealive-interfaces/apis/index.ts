@@ -18,7 +18,7 @@ export type IChromeAliveApis = {
   'Session.getActive': ISessionApi['getActive'];
   'Session.getMeta': ISessionApi['getMeta'];
   'Session.search': ISessionApi['search'];
-  'Databox.runExtract': IDataboxApi['runExtract'];
+  'Databox.execExtract': IDataboxApi['execExtract'];
   'Databox.getOutput': IDataboxApi['getOutput'];
   'Databox.getCollectedAssets': IDataboxApi['getCollectedAssets'];
   'App.boundsChanged': IAppApi['boundsChanged'];

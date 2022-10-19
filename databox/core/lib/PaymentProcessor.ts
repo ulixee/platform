@@ -64,7 +64,7 @@ export default class PaymentProcessor {
   }
 
   public async lock(
-    clientStipulations?: IDataboxApiTypes['Databox.run']['args']['pricingPreferences'],
+    clientStipulations?: IDataboxApiTypes['Databox.exec']['args']['pricingPreferences'],
   ): Promise<boolean> {
     this.validateQueryPrice(clientStipulations?.maxComputePricePerKb);
     verifyPayment(

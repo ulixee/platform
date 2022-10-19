@@ -4,6 +4,7 @@ import { addressValidation, identityValidation } from '@ulixee/specification/com
 import Identity from '@ulixee/crypto/lib/Identity';
 
 export default {
+  databoxStorageDir: process.env.ULX_DATABOX_DIR ?? Path.join(getCacheDirectory(), 'ulixee', 'databoxes'),
   databoxesDir:
     process.env.ULX_DATABOX_DIR ?? Path.join(getCacheDirectory(), 'ulixee', 'databoxes'),
   // list of identities who can upload to this server [@ulixee/crypto/lib/Identity.bech32]

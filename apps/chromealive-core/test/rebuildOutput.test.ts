@@ -1,5 +1,5 @@
-import Output from '@ulixee/databox-for-hero/lib/Output';
-import ObjectObserver from '@ulixee/databox-for-hero/lib/ObjectObserver';
+import Output from '@ulixee/databox/lib/Output';
+import ObjectObserver from '@ulixee/databox/lib/ObjectObserver';
 import OutputRebuilder from '../lib/OutputRebuilder';
 
 describe('basic OutputRebuilder tests', () => {

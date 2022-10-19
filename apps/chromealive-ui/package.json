@@ -9,7 +9,7 @@
     "serve": "vue-cli-service serve"
   },
   "engines": {
-    "node": ">=14.17.0"
+    "node": ">=14.20.0"
   },
   "dependencies": {
     "@babel/core": "^7.0.0",

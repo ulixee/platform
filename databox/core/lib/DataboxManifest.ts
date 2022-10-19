@@ -24,8 +24,9 @@ export default class DataboxManifest implements IDataboxManifest {
   public versionTimestamp: number;
   public scriptHash: string;
   public scriptEntrypoint: string;
-  public runtimeName: string;
-  public runtimeVersion: string;
+  public coreVersion: string;
+  public corePlugins: { [name: string]: string };
+  public schemaInterface: string;
 
   // Payment details
   public pricePerQuery?: number;
@@ -75,8 +76,9 @@ export default class DataboxManifest implements IDataboxManifest {
     absoluteScriptEntrypoint: string,
     scriptHash: string,
     versionTimestamp: number,
-    runtimeName: string,
-    runtimeVersion: string,
+    coreVersion: string,
+    corePlugins: { [name: string]: string },
+    schemaInterface: string | undefined,
     logger?: (message: string, ...args: any[]) => any,
   ): Promise<void> {
     await this.load();
@@ -87,8 +89,9 @@ export default class DataboxManifest implements IDataboxManifest {
     const manifestSources = DataboxManifest.getCustomSources(absoluteScriptEntrypoint);
     await this.loadGeneratedManifests(manifestSources);
     this.linkedVersions ??= [];
-    this.runtimeName = runtimeName;
-    this.runtimeVersion = runtimeVersion;
+    this.coreVersion = coreVersion;
+    this.corePlugins = corePlugins;
+    this.schemaInterface = schemaInterface;
     // allow manifest to override above values
     await this.loadExplicitSettings(manifestSources, logger);
 
@@ -177,11 +180,12 @@ export default class DataboxManifest implements IDataboxManifest {
       linkedVersions: this.linkedVersions,
       scriptEntrypoint: this.scriptEntrypoint,
       scriptHash: this.scriptHash,
-      runtimeName: this.runtimeName,
-      runtimeVersion: this.runtimeVersion,
+      coreVersion: this.coreVersion,
+      corePlugins: this.corePlugins,
       paymentAddress: this.paymentAddress,
       giftCardAddress: this.giftCardAddress,
       pricePerQuery: this.pricePerQuery,
+      schemaInterface: this.schemaInterface,
     };
   }
 

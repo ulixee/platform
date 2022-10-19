@@ -12,7 +12,7 @@ Your Databox will be packaged into a file with the same name and path as your sc
 
 A `.dbx` file has the following files in it:
 
-- `databox.js` The single file containing all your javascript code and a default export containing a `DataboxWrapper` instance.
+- `databox.js` The single file containing all your javascript code and a default export containing a `DataboxExecutable` instance.
 - `databox.js.map` A source map for your javascript.
 - `databox-manifest.json` A manifest file with a valid hash code. See Manifest section.
 
@@ -76,8 +76,8 @@ When you package a Databox, a Manifest is created with the following properties:
 - scriptHash `string`. A Sha3-256 hash of the rolled-up script. The encoding uses a base32 format called Bech32m so that it's file-path friendly.
 - linkedVersions `{ versionHash: string, versionTimestamp: number }[]`. The history of linked versions with newest first. NOTE: this will be automatically maintained by the packager.
 - scriptEntrypoint `string`. The relative path to your file (from the closest package.json).
-- runtimeName `string`. The "type" of Databox runtime used internally.
-- runtimeVersion `string`. The version of the Databox module. Your script will be checked for compatibility with the Server npm modules before it runs.
+- coreVersion `string`. The version of the Databox module. Your script will be checked for compatibility with the Server npm modules before it runs.
+- corePlugins `string`. An object containing a list of npm packages/versions that are core Databox plugins.
 - paymentAddress `string`. Optional address to use with the Ulixee Sidechain for payments.
 - pricePerQuery `number`. Optional price per query (in Ulixee Sidechain microgons - 1 microgon = ~1/1,000,000 of a dollar).
 - creditAddress `string`. Optional Ulixee Sidechain address that is valid for credits issued to developers.
@@ -159,7 +159,7 @@ To build and upload a Databox, you can use the embedded CLI tool to point at you
  ulixee databox deploy [path to databox entrypoint]
 ```
 
-You must provide a path to the entrypoint of your Databox. The default export of the node module needs to be an instance of a `DataboxWrapper`.
+You must provide a path to the entrypoint of your Databox. The default export of the node module needs to be an instance of a `DataboxExecutable`.
 
 Your Databox will be built and uploaded transparently. No `.dbx` or working directory is persisted to the file system.
 
@@ -189,7 +189,7 @@ NOTE: this option is most useful when you plan to deploy your `.dbx` files to ma
  ulixee databox build [path to databox entrypoint]
 ```
 
-You must provide a path to the entrypoint of your Databox. The default export of the node module needs to be an instance of a `DataboxWrapper`.
+You must provide a path to the entrypoint of your Databox. The default export of the node module needs to be an instance of a `DataboxExecutable`.
 
 Your Databox will be compiled into a folder called `.dbx.build` directly next to your script. The folder contains your rolled up script, a sourcemap, and a manifest.json file. These files will be Tar Gzipped into a `.dbx` file with your script name appended with `.dbx`.
 
@@ -271,8 +271,8 @@ Options below show a short and long form.
 
 ## Databox Core Sandboxes
 
-When Databoxes are run on a Server, they are initialized into a virtual machine sandbox that has no access to Node.js modules beyond the `Hero`, `Databox` and `Unblocked` modules. Your dependencies will be imported into your package, but you should not expect NodeJs core xs to be available. Your script will also be fully isolated between runs - any shared state must be provided in via the `input` variables. This isolation ensures your script can be reproduced, re-run and troubleshooted reliably.
+When Databoxes are run on a Server, they are initialized into a virtual machine sandbox that has no default access to Node.js, other than those explicity allowed by a [Databox Plugin](/docs/databox/databox-basics/plugins). Any dependencies imported by your script will be packaged into your script, but you should not expect NodeJs core modules to be available. Your script will also be fully isolated between runs - any shared state must be provided in via the `input` variables. This isolation ensures your script can be reproduced, re-run and troubleshooted reliably.
 
 ## Efficient Units
 
-Once Databoxes have been deployed, the can be remotely queried using only the unique "Hash" of the databox and any input configuration. The output will be the only information transmitted in response.
+Once Databoxes are deployed, the can be remotely queried using only the unique "Hash" of the databox and any input configuration. The output will be the only information transmitted in response.

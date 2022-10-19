@@ -1,6 +1,7 @@
 // NOTE: you must start your own Ulixee Server to run this example.
 
 import Databox from '@ulixee/databox-for-hero';
+import { string } from '@ulixee/schema';
 
 // configure input.url by running as node example.org.js --input.url="https://ulixee.org"
 
@@ -20,5 +21,14 @@ export default new Databox({
     output.body = await hero.document.body.textContent;
     console.log(`LOADED ${input.url}: ${title}`);
     await hero.close();
+  },
+  schema: {
+    input: {
+      url: string({ format: 'url' }),
+    },
+    output: {
+      title: string(),
+      body: string(),
+    },
   },
 });

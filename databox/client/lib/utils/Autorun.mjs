@@ -1,10 +1,12 @@
-// this hack allows DataboxWrapper's beforeExit to know if the mjs script has a default export
+import Autorun from './Autorun';
 
-export function setupAutorunMjsHack(DataboxWrapper) {
+// this hack allows DataboxExecutable's beforeExit to know if the mjs script has a default export
+
+export function setupAutorunMjsHack(DataboxExecutable) {
   const module = import(process.argv[1]);
   module.then(x => {
-    if (x.default instanceof DataboxWrapper) {
-      DataboxWrapper.defaultExport = x.default;
+    if (x.default instanceof DataboxExecutable) {
+      Autorun.defaultExport = x.default;
     }
   });
 }

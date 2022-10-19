@@ -1,10 +1,17 @@
-import IComponentsBase, { IDefaultsObjBase, IRunFnBase } from "./IComponentsBase";
+import IDataboxSchema, { ExtractSchemaType } from '@ulixee/databox-interfaces/IDataboxSchema';
+import IDataboxObject from '@ulixee/databox-interfaces/IDataboxObject';
 
-export default interface IComponents<TRunnerObject, IDefaultsObj> extends IComponentsBase<TRunnerObject, IDefaultsObj> {
-  defaults?: IDefaultsObj;
-  run: IRunFnBase<TRunnerObject>;
-  schema?: any;
+export default interface IComponentsBase<
+  ISchema extends IDataboxSchema,
+  TDataboxObject extends IDataboxObject<ISchema>,
+  TDefaultsObj extends IDefaultsObj<ISchema>,
+  > {
+  run(databox: TDataboxObject): void | Promise<void>;
+  defaults?: TDefaultsObj;
+  schema?: ISchema;
 }
 
-export type IDefaultsObj<TInput, TOutput> = IDefaultsObjBase<TInput, TOutput>;
-
+export interface IDefaultsObj<ISchema extends IDataboxSchema> {
+  input?: Partial<ExtractSchemaType<ISchema['input']>>;
+  output?: Partial<ExtractSchemaType<ISchema['output']>>;
+}

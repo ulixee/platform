@@ -23,7 +23,7 @@ function hashScript(script: string): string {
   return encodeBuffer(sha, 'scr');
 }
 
-test('should throw an error if the databox runtime is not installed', async () => {
+test('should throw an error if the required databox core version is not installed', async () => {
   const registry = new DataboxRegistry(storageDir, tmpDir);
   const databoxTmpDir = `${storageDir}/tmp/dbx1`;
   mkdirSync(databoxTmpDir, { recursive: true });
@@ -32,8 +32,7 @@ test('should throw an error if the databox runtime is not installed', async () =
     JSON.stringify(<IDataboxManifest>{
       versionHash: encodeBuffer(sha3('dbx123'), 'dbx'),
       scriptHash: encodeBuffer(sha3('scr123'), 'scr'),
-      runtimeName: '@ulixee/not-here',
-      runtimeVersion: '2.0.0-alpha.1',
+      coreVersion: '5.0.0',
       versionTimestamp: Date.now(),
       scriptEntrypoint: 'here.js',
       linkedVersions: [],
@@ -41,7 +40,7 @@ test('should throw an error if the databox runtime is not installed', async () =
   );
   await Fs.writeFile(`${databoxTmpDir}/databox.js`, 'function(){}');
   await expect(registry.save(databoxTmpDir, Buffer.from('dbx file'))).rejects.toThrow(
-    'not installed',
+    'not compatible with the version required by your Databox',
   );
 });
 
@@ -64,8 +63,7 @@ test('should be able to upload and retrieve the databox', async () => {
       scriptHash,
       versionTimestamp,
       versionHash,
-      runtimeName: '@ulixee/databox-for-hero',
-      runtimeVersion: '2.0.0-alpha.1',
+      coreVersion: '2.0.0-alpha.1',
       scriptEntrypoint: 'here.js',
       linkedVersions: [],
     }),
@@ -88,8 +86,7 @@ test('should allow a user to override updating with no history', async () => {
     await Fs.mkdir(databoxTmpDir, { recursive: true });
     const script = 'function 1(){}';
     const manifest = <IDataboxManifest>{
-      runtimeName: '@ulixee/databox-for-hero',
-      runtimeVersion: '2.0.0-alpha.1',
+      coreVersion: '2.0.0-alpha.1',
       scriptEntrypoint: 'override.js',
       versionTimestamp: Date.now(),
       scriptHash: hashScript(script),
@@ -108,8 +105,7 @@ test('should allow a user to override updating with no history', async () => {
     await Fs.mkdir(databoxTmpDir, { recursive: true });
     const script = 'function 2(){}';
     const manifest = <IDataboxManifest>{
-      runtimeName: '@ulixee/databox-for-hero',
-      runtimeVersion: '2.0.0-alpha.1',
+      coreVersion: '2.0.0-alpha.1',
       scriptEntrypoint: 'override.js',
       scriptHash: hashScript(script),
       versionTimestamp: Date.now(),
@@ -140,8 +136,7 @@ test('should throw an error with version history if current versions are unmatch
   const script2VersionHash = hashScript(script2);
 
   const scriptDetails = {
-    runtimeName: '@ulixee/databox-for-hero',
-    runtimeVersion: '2.0.0-alpha.1',
+    coreVersion: '2.0.0-alpha.1',
     scriptEntrypoint: 'unmatched.js',
   };
 

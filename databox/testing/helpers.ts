@@ -9,10 +9,16 @@ import * as http2 from 'http2';
 import Core from '@ulixee/hero-core';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { ConnectionToHeroCore } from '@ulixee/hero';
-import DataboxInternal from '@ulixee/databox-for-hero/lib/DataboxInternal';
-import IDataboxForHeroRunOptions from '@ulixee/databox-for-hero/interfaces/IDataboxForHeroRunOptions';
+import IDataboxForHeroExecOptions from '@ulixee/databox-for-hero/interfaces/IDataboxForHeroExecOptions';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import Logger from '@ulixee/commons/lib/Logger';
+import DataboxForHero from '@ulixee/databox-for-hero';
+import IDataboxObject from '@ulixee/databox-for-hero/interfaces/IDataboxObject';
+import DataboxForHeroPlugin, {
+  getDataboxForHeroPlugin,
+} from '@ulixee/databox-for-hero/lib/DataboxForHeroPlugin';
+import { createPromise } from '@ulixee/commons/lib/utils';
+import IDataboxSchema from '@ulixee/databox-interfaces/IDataboxSchema';
 import { Helpers } from './index';
 
 const { log } = Logger(module);
@@ -133,13 +139,48 @@ function destroyServerFn(
     });
 }
 
-export function createFullstackDataboxInternal<IInput, IOutput>(
-  options: IDataboxForHeroRunOptions = {},
-): DataboxInternal<IInput, IOutput> {
+interface IFullstackDatabox<ISchema extends IDataboxSchema> {
+  databoxObject: IDataboxObject<ISchema>;
+  databoxForHeroPlugin: DataboxForHeroPlugin<ISchema>;
+  databoxClose: () => void;
+}
+
+export async function createFullstackDatabox<ISchema extends IDataboxSchema = any>(
+  schema?: ISchema,
+  options: IDataboxForHeroExecOptions<ISchema> = {},
+): Promise<IFullstackDatabox<ISchema>> {
   const bridge = new TransportBridge();
   Core.addConnection(bridge.transportToClient);
   options.connectionToCore = new ConnectionToHeroCore(bridge.transportToCore);
-  const databoxInternal = new DataboxInternal<IInput, IOutput>(options);
-  Helpers.needsClosing.push(databoxInternal);
-  return databoxInternal;
+
+  let databoxObject: IDataboxObject<ISchema>;
+  let databoxForHeroPlugin: DataboxForHeroPlugin<ISchema>;
+
+  const readyPromise = createPromise<void>();
+  const closedPromise = createPromise<void>();
+
+  new DataboxForHero({
+    run(databox) {
+      databoxObject = databox;
+      databoxForHeroPlugin = getDataboxForHeroPlugin(databox.hero);
+      readyPromise.resolve();
+      return closedPromise.promise;
+    },
+    schema,
+  })
+    .exec(options)
+    .catch(error => console.log(error));
+
+  function databoxClose() {
+    closedPromise.resolve();
+  }
+
+  Helpers.needsClosing.push({ close: databoxClose });
+  await readyPromise.promise;
+
+  return {
+    databoxObject,
+    databoxForHeroPlugin,
+    databoxClose,
+  };
 }

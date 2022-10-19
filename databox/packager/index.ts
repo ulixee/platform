@@ -1,9 +1,14 @@
 import * as Path from 'path';
+import { IFetchMetaResponseData } from '@ulixee/databox-core/interfaces/ILocalDataboxProcess';
 import { sha3 } from '@ulixee/commons/lib/hashUtils';
 import LocalDataboxProcess from '@ulixee/databox-core/lib/LocalDataboxProcess';
 import DataboxManifest from '@ulixee/databox-core/lib/DataboxManifest';
 import UlixeeConfig from '@ulixee/commons/config';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
+import schemaFromJson from '@ulixee/schema/lib/schemaFromJson';
+import schemaToInterface, { printNode } from '@ulixee/schema/lib/schemaToInterface';
+import { object } from '@ulixee/schema';
+import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import rollupDatabox from './lib/rollupDatabox';
 import DbxFile from './lib/DbxFile';
 
@@ -66,12 +71,21 @@ export default class DataboxPackager {
     sourceMap: string,
     createNewVersionHistory = false,
   ): Promise<DataboxManifest> {
-    const runtime = await this.findDataboxRuntime();
-    if (!runtime || !runtime.name) {
-      throw new Error('The exported Databox object must specify a runtime');
+    const meta = await this.findDataboxMeta();
+    if (!meta.coreVersion) {
+      throw new Error('Databox must specify a coreVersion');
     }
-    if (!runtime.version) {
-      throw new Error('The Databox does not specify a runtime version');
+
+    let interfaceString: string;
+    if (meta.schema) {
+      const fields = filterUndefined({
+        input: schemaFromJson(meta.schema?.input),
+        output: schemaFromJson(meta.schema?.output),
+      });
+      if (Object.keys(fields).length) {
+        const schemaInterface = object(fields);
+        interfaceString = printNode(schemaToInterface(schemaInterface));
+      }
     }
 
     const hash = sha3(Buffer.from(sourceCode));
@@ -80,8 +94,9 @@ export default class DataboxPackager {
       this.entrypoint,
       scriptVersionHash,
       Date.now(),
-      runtime.name,
-      runtime.version,
+      meta.coreVersion,
+      meta.corePlugins,
+      interfaceString,
       this.logToConsole ? console.log : undefined,
     );
     if (createNewVersionHistory) {
@@ -92,12 +107,12 @@ export default class DataboxPackager {
     return this.manifest;
   }
 
-  private async findDataboxRuntime(): Promise<{ name: string; version: string }> {
+  private async findDataboxMeta(): Promise<IFetchMetaResponseData> {
     const entrypoint = `${this.dbx.workingDirectory}/databox.js`;
     const databoxProcess = new LocalDataboxProcess(entrypoint);
-    const runtime = await databoxProcess.fetchRuntime();
+    const meta = await databoxProcess.fetchMeta();
     await new Promise(resolve => setTimeout(resolve, 1e3));
     await databoxProcess.close();
-    return runtime;
+    return meta;
   }
 }

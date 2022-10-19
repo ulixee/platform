@@ -5,6 +5,11 @@ import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
 import { IPayment } from '@ulixee/specification';
+import IDataboxInputOutput from '@ulixee/databox-interfaces/IDataboxInputOutput';
+import ITypes from '../types';
+import installSchemaType, { addSchemaAlias } from '../types/installSchemaType';
+
+type IDataboxExecResult = Omit<IDataboxApiTypes['Databox.exec']['result'], 'output'>;
 
 export default class DataboxApiClient {
   public connectionToCore: ConnectionToCore<IDataboxApis, {}>;
@@ -23,12 +28,31 @@ export default class DataboxApiClient {
     return await this.runRemote('Databox.meta', { versionHash });
   }
 
-  public async run(
+  public async install(
     versionHash: string,
-    input: any,
+    alias?: string,
+  ): Promise<IDataboxApiTypes['Databox.meta']['result']> {
+    const meta = await this.getMeta(versionHash);
+    if (meta.schemaInterface) {
+      installSchemaType(meta.schemaInterface, versionHash);
+    }
+    if (alias) {
+      addSchemaAlias(versionHash, alias);
+    }
+
+    return meta;
+  }
+
+  public async exec<
+    IO extends IDataboxInputOutput,
+    IVersionHash extends keyof ITypes & string = any,
+    ISchemaDbx extends ITypes[IVersionHash] = IO,
+  >(
+    versionHash: IVersionHash,
+    input: ISchemaDbx['input'],
     payment?: IPayment,
-  ): Promise<IDataboxApiTypes['Databox.run']['result']> {
-    return await this.runRemote('Databox.run', { versionHash, payment, input });
+  ): Promise<IDataboxExecResult & { output?: ISchemaDbx['output'] }> {
+    return await this.runRemote('Databox.exec', { versionHash, payment, input });
   }
 
   public async upload(

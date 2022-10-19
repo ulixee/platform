@@ -21,7 +21,7 @@ export default class DataboxApi {
     return sessionObserver.getCollectedAssets();
   }
 
-  static async runExtract(args: IHeroSessionArgs): Promise<{
+  static async execExtract(args: IHeroSessionArgs): Promise<{
     success: boolean;
     error?: Error;
   }> {

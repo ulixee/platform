@@ -1,4 +1,4 @@
-const { parseHTML } = require('linkedom');
+import { parseHTML } from 'linkedom';
 
 test('can parse html', async () => {
   const fragment = `<tr class="athing" id="30070425">
