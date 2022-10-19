@@ -75,7 +75,12 @@ test('can get metadata about an uploaded databox', async () => {
     maxBytesPerQuery: expect.any(Number),
     maxPricePerQuery: 0,
     maxMilliseconds: expect.any(Number),
-    schema: null,
+    schemaInterface: `{
+  output: {
+    "is-valid"?: boolean;
+    success: boolean;
+  };
+}`,
   });
 });
 

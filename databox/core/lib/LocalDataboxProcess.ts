@@ -35,6 +35,7 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
     return {
       coreVersion: data.coreVersion,
       corePlugins: data.corePlugins,
+      schema: data.schema,
     };
   }
 

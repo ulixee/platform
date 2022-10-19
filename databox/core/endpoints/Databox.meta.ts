@@ -26,7 +26,7 @@ export default new DataboxApiHandler('Databox.meta', {
       maxBytesPerQuery: databox.stats.maxBytes,
       basePricePerQuery: databox.pricePerQuery,
       computePricePerKb: context.configuration.computePricePerKb,
-      schema: null,
+      schemaInterface: databox.schemaInterface,
     };
   },
 });

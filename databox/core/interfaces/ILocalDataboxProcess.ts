@@ -1,3 +1,6 @@
+import IDataboxSchema from '@ulixee/databox-interfaces/IDataboxSchema';
+import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
+
 export interface IFetchMetaMessage {
   messageId: string;
   action: 'fetchMeta';
@@ -20,6 +23,10 @@ export interface IExecResponseData {
 export interface IFetchMetaResponseData {
   coreVersion: string;
   corePlugins: { [name: string]: string };
+  schema?: Omit<IDataboxSchema, 'input' | 'output'> & {
+    input?: Record<string, IAnySchemaJson>;
+    output?: Record<string, IAnySchemaJson> | IAnySchemaJson;
+  };
 }
 
 export type IResponseData = IExecResponseData | IFetchMetaResponseData;
@@ -28,4 +35,3 @@ export interface IResponse {
   responseId: string;
   data: IResponseData;
 }
-

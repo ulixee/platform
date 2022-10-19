@@ -33,6 +33,14 @@ afterAll(async () => {
 test('should be able upload a databox', async () => {
   await client.upload(dbxFile);
   expect(Fs.existsSync(storageDir)).toBeTruthy();
+  expect(manifest.schemaInterface).toBe(`{
+  output: {
+    /**
+     * Whether or not this test succeeded
+     */
+    upload: boolean;
+  };
+}`)
   expect(Fs.existsSync(`${storageDir}/upload@${manifest.versionHash}.dbx`)).toBeTruthy();
 });
 

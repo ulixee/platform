@@ -19,6 +19,7 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
         ['pricePerQuery', 'INTEGER'],
         ['scriptHash', 'TEXT'],
         ['scriptEntrypoint', 'TEXT'],
+        ['schemaInterface', 'TEXT'],
         ['coreVersion', 'TEXT'],
         ['corePlugins', 'TEXT'],
         ['storedDate', 'DATETIME'],
@@ -39,6 +40,7 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
       manifest.pricePerQuery,
       manifest.scriptHash,
       manifest.scriptEntrypoint,
+      manifest.schemaInterface,
       manifest.coreVersion,
       JSON.stringify(manifest.corePlugins),
       storedDate,
@@ -52,6 +54,7 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
       pricePerQuery: manifest.pricePerQuery,
       scriptHash: manifest.scriptHash,
       scriptEntrypoint: manifest.scriptEntrypoint,
+      schemaInterface: manifest.schemaInterface,
       coreVersion: manifest.coreVersion,
       corePlugins: manifest.corePlugins,
       storedDate,
@@ -85,6 +88,7 @@ export interface IDataboxRecord {
   pricePerQuery: number;
   paymentAddress: string;
   giftCardAddress: string;
+  schemaInterface: string;
   scriptHash: string;
   scriptEntrypoint: string;
   coreVersion: string;

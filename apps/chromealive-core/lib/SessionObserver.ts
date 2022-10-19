@@ -467,7 +467,7 @@ export default class SessionObserver extends TypedEventEmitter<{
       }
     }
     for (const name of assetNames.snippets) {
-      const snippets = await this.heroSession.getDataSnippets(sessionId, name);
+      const snippets = await this.heroSession.getSnippets(sessionId, name);
       for (const snippet of snippets as IDataboxCollectedAssets['dataSnippets']) {
         this.addSourceCodeLocation(snippet);
         result.dataSnippets.push(snippet);
