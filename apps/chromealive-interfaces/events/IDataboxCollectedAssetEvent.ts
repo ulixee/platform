@@ -6,5 +6,5 @@ import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
 export default interface IDataboxCollectedAssetEvent {
   detachedResource?: IDetachedResource & ISourceCodeReference;
   detachedElement?: IDetachedElement & ISourceCodeReference;
-  dataSnippet?: IDataSnippet & ISourceCodeReference;
+  snippet?: IDataSnippet & ISourceCodeReference;
 }

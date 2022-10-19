@@ -450,7 +450,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     const result: IDataboxCollectedAssets = {
       detachedElements: [],
       detachedResources: [],
-      dataSnippets: [],
+      snippets: [],
     };
     for (const name of assetNames.elements) {
       const elements = await this.heroSession.getDetachedElements(sessionId, name);
@@ -468,9 +468,9 @@ export default class SessionObserver extends TypedEventEmitter<{
     }
     for (const name of assetNames.snippets) {
       const snippets = await this.heroSession.getSnippets(sessionId, name);
-      for (const snippet of snippets as IDataboxCollectedAssets['dataSnippets']) {
+      for (const snippet of snippets as IDataboxCollectedAssets['snippets']) {
         this.addSourceCodeLocation(snippet);
-        result.dataSnippets.push(snippet);
+        result.snippets.push(snippet);
       }
     }
     return result;
@@ -530,8 +530,8 @@ export default class SessionObserver extends TypedEventEmitter<{
       this.addSourceCodeLocation(sendEvent.detachedElement);
     }
     if (event.type === 'snippet') {
-      sendEvent.dataSnippet = event.asset as any;
-      this.addSourceCodeLocation(sendEvent.dataSnippet);
+      sendEvent.snippet = event.asset as any;
+      this.addSourceCodeLocation(sendEvent.snippet);
     }
     this.emit('databox:asset', sendEvent);
   }

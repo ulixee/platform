@@ -8,7 +8,7 @@
 - title: Databox Basics
   items:
     - Databox
-    - RunnerObject
+    - DataboxObject
     - Input
     - Output
     - Plugins
@@ -17,18 +17,13 @@
   items:
     - Overview
     - DataboxForHero
-    - RunnerObject
-    - ExtractorObject
+    - DataboxObject
     - Output
-    - HeroExtensions
-    - CollectedElements
-    - CollectedResources
-    - CollectedSnippets
 
 - title: Databox for Puppeteer
   items:
     - DataboxForPuppeteer
-    - RunnerObject
+    - DataboxObject
 
 - title: Help
   items:

@@ -1,4 +1,12 @@
+<<<<<<< Updated upstream:databox/docs/DataboxBasics/Input.md
 # Input
+=======
+<<<<<<< Updated upstream:databox/docs/BasicClient/DataboxInput.md
+# Databox Input
+=======
+# InputObject
+>>>>>>> Stashed changes:databox/docs/BasicClient/InputObject.md
+>>>>>>> Stashed changes:databox/docs/DataboxBasics/InputObject.md
 
 Every databox accepts input, which it then passes into the `run` and `extract` callbacks.
 

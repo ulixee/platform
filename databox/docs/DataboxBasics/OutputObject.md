@@ -1,4 +1,12 @@
+<<<<<<< Updated upstream:databox/docs/DataboxBasics/Output.md
 # Output
+=======
+<<<<<<< Updated upstream:databox/docs/BasicClient/DataboxOutput.md
+# Databoxes Output
+=======
+# OutputObject
+>>>>>>> Stashed changes:databox/docs/BasicClient/OutputObject.md
+>>>>>>> Stashed changes:databox/docs/DataboxBasics/OutputObject.md
 
 Databox output is an object used to create a "result" for your Databox function.
 

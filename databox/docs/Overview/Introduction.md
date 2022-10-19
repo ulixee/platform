@@ -48,7 +48,7 @@ When using the non-playground version, it's your responsibility to ensure your U
 
 ## Usage Example
 
-Writing a Databox is very similar to writing a normal Hero script, except it must be contained within a callback, and you have make it the default export.
+Writing a Databox is very similar to writing a normal scraper script, except it must be contained within a callback, and you must make it the default export.
 
 The simplist Databox is initialized with a single `run` callback:
 

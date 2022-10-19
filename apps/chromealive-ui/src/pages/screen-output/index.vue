@@ -27,7 +27,7 @@
         class="p-5 text-sm text-gray-600"
       />
     </div>
-    {{ detachedResourcesString }}, {{ detachedElementsString }}, {{ dataSnippetsString }}
+    {{ detachedResourcesString }}, {{ detachedElementsString }}, {{ snippetsString }}
 
     <div class="text-center my-10">
       <a
@@ -81,10 +81,10 @@
       </div>
     </slot>
 
-    <slot v-if="collectedAssets.dataSnippets.length">
+    <slot v-if="collectedAssets.snippets.length">
       <h2>Collected Snippets</h2>
       <div
-        v-for="snippet of collectedAssets.dataSnippets"
+        v-for="snippet of collectedAssets.snippets"
         :key="snippet.commandId"
         class="box border border-gray-100 p-10 mb-20"
       >
@@ -198,7 +198,7 @@ const databox: any = Vue.defineComponent({
       collectedAssets: Vue.reactive<IDataboxCollectedAssetsResponse>({
         detachedElements: [],
         detachedResources: [],
-        dataSnippets: [],
+        snippets: [],
       }),
       resourceDataUrlsById: Vue.ref<Record<number, string>>({}),
       startTime: Vue.ref<string>(''),
@@ -211,8 +211,8 @@ const databox: any = Vue.defineComponent({
       const count = this.collectedAssets.detachedElements.length;
       return `${count} Collected Element${count === 1 ? '' : 's'}`;
     },
-    dataSnippetsString(): string {
-      const count = this.collectedAssets.dataSnippets.length;
+    snippetsString(): string {
+      const count = this.collectedAssets.snippets.length;
       return `${count} Collected Snippet${count === 1 ? '' : 's'}`;
     },
     detachedResourcesString(): string {
@@ -281,7 +281,7 @@ const databox: any = Vue.defineComponent({
     onCollectedAssets(assets: IDataboxCollectedAssetsResponse): void {
       this.collectedAssets.detachedResources = assets.detachedResources;
       this.collectedAssets.detachedElements = assets.detachedElements;
-      this.collectedAssets.dataSnippets = assets.dataSnippets;
+      this.collectedAssets.snippets = assets.snippets;
       for (const resource of assets.detachedResources) {
         this.updateDataUrl(resource.resource);
       }
@@ -294,8 +294,8 @@ const databox: any = Vue.defineComponent({
         this.collectedAssets.detachedResources.push(asset.detachedResource);
         this.updateDataUrl(asset.detachedResource.resource);
       }
-      if (asset.dataSnippet) {
-        this.collectedAssets.dataSnippets.push(asset.dataSnippet);
+      if (asset.snippet) {
+        this.collectedAssets.snippets.push(asset.snippet);
       }
     },
     async inspectResource(resource: IDetachedResource): Promise<void> {

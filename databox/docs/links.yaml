@@ -8,22 +8,21 @@
 - title: Databox Basics
   items:
     - Databox
-    - RunnerObject
-    - Input
-    - Output
+    - DataboxObject
+    - InputObject
+    - OutputObject
     - Plugins
 
 - title: Databox for Hero
   items:
-    - Overview
-    - DataboxForHero
-    - RunnerObject
-    - Output
+    - Using the Plugin
+    - Changes to Databox
+    - Changes to DataboxObject
 
 - title: Databox for Puppeteer
   items:
-    - DataboxForPuppeteer
-    - RunnerObject
+    - Using the Plugin
+    - Changes to DataboxObject
 
 - title: Help
   items:
