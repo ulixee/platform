@@ -12,23 +12,23 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'true'
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: 14
           cache: 'yarn'
 
       - name: Chocolatey Install Action
         if: ${{ matrix.os == 'windows-latest' }}
-        uses: crazy-max/ghaction-chocolatey@v1.4.2
+        uses: crazy-max/ghaction-chocolatey@v2
         with:
           args: install python2 visualcpp-build-tools -y
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild@v1.1
         if: ${{ matrix.os == 'windows-latest' }}
 
       - name: Install Hero
@@ -62,7 +62,7 @@ jobs:
 
       - name: Upload Chromealive
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: 'chromealive'
           path: ./build/apps/chromealive/dist/assets/*

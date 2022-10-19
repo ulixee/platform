@@ -36,12 +36,12 @@ jobs:
 
       - name: Chocolatey Install Action
         if: ${{ matrix.os == 'windows-latest' }}
-        uses: crazy-max/ghaction-chocolatey@v1.4.2
+        uses: crazy-max/ghaction-chocolatey@v2
         with:
           args: install python2 visualcpp-build-tools -y
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild@v1.1
         if: ${{ matrix.os == 'windows-latest' }}
 
       - name: Clone ulixee/shared
@@ -99,7 +99,7 @@ jobs:
 
       - name: Upload Databases
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: test-dbs-${{matrix.os}}-${{ matrix.node-version }}
           path: test-dbs.tar
