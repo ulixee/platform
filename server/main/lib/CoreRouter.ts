@@ -58,6 +58,7 @@ export default class CoreRouter {
   }
 
   public async start(serverAddress: string): Promise<void> {
+    HeroCore.onShutdown = () => this.server.close();
     await HeroCore.start(this.heroConfiguration);
 
     if (this.databoxConfiguration) {

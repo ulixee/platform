@@ -67,6 +67,7 @@ export default class Server {
     this.httpRoutes = [];
     this.router = new CoreRouter(this);
     this.addHttpRoute('/', 'GET', this.handleHome.bind(this));
+    ShutdownHandler.register(() => this.close());
   }
 
   public get dataDir(): string {
