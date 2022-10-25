@@ -1,12 +1,12 @@
-import * as Path from 'path';
 import { getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
 import { addressValidation, identityValidation } from '@ulixee/specification/common';
 import Identity from '@ulixee/crypto/lib/Identity';
+import { loadEnv, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
+
+loadEnv(__dirname);
 
 export default {
-  databoxStorageDir: process.env.ULX_DATABOX_DIR ?? Path.join(getCacheDirectory(), 'ulixee', 'databoxes'),
-  databoxesDir:
-    process.env.ULX_DATABOX_DIR ?? Path.join(getCacheDirectory(), 'ulixee', 'databoxes'),
+  databoxesDir: parseEnvPath(process.env.ULX_DATABOX_DIR?.replace('<CACHE>', getCacheDirectory())),
   // list of identities who can upload to this server [@ulixee/crypto/lib/Identity.bech32]
   uploaderIdentities: parseIdentities(
     process.env.ULX_DBX_UPLOADER_IDENTITIES,
@@ -20,7 +20,7 @@ export default {
   defaultSidechainRootIdentity: process.env.ULX_SIDECHAIN_IDENTITY,
   identityWithSidechain: loadIdentity(
     process.env.ULX_IDENTITY_PEM,
-    process.env.ULX_IDENTITY_PATH,
+    parseEnvPath(process.env.ULX_IDENTITY_PATH),
     process.env.ULX_IDENTITY_PASSPHRASE,
   ),
 };
@@ -62,9 +62,4 @@ function parseAddress(address: string): string {
     );
   }
   return address;
-}
-
-function parseEnvInt(value: string): number | null {
-  if (!value) return null;
-  return parseInt(value, 10);
 }

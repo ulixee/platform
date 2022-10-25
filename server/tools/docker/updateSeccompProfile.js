@@ -19,7 +19,7 @@ Https.get('https://raw.githubusercontent.com/docker/engine/master/profiles/secco
     const defaultProfile = JSON.parse(json);
     defaultProfile.syscalls.unshift(extraPermissions);
     Fs.writeFileSync(
-      `${__dirname}/docker_seccomp_profile.json`,
+      `${__dirname}/seccomp_profile.json`,
       JSON.stringify(defaultProfile, null, 2),
     );
   })

@@ -1,7 +1,7 @@
 ## 2.1
 Packaged databox will need to be manually uploaded to the server.
 
-- Package Databoxes
+[x] Package Databoxes
 
 ## 2.3 - 
 Manager needs to be able to trigger the Databox packaging logic to create and upload Databoxes.

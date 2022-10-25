@@ -35,7 +35,7 @@ export default async function main(
       ULX_GIFT_CARD_ADDRESS: giftCardAddress,
       ULX_SIDECHAIN_HOST: sidechainHost,
       ULX_IDENTITY_PATH: identityPath,
-      DISABLE_CHROMEALIVE: 'true'
+      ULX_DISABLE_CHROMEALIVE: 'true'
     },
   });
   const databoxHost = await getServerHost(databoxServer);

@@ -3053,13 +3053,6 @@
   dependencies:
     "@types/node" "*"
 
-"@types/puppeteer@^5.4.6":
-  version "5.4.6"
-  resolved "https://registry.yarnpkg.com/@types/puppeteer/-/puppeteer-5.4.6.tgz#afc438e41dcbc27ca1ba0235ea464a372db2b21c"
-  integrity sha512-98Kghehs7+/GD9b56qryhqdqVCXUTbetTv3PlvDnmFRTHQH0j9DIp1f7rkAW3BAj4U3yoeSEQnKgdW8bDq0Y0Q==
-  dependencies:
-    "@types/node" "*"
-
 "@types/q@^1.5.1":
   version "1.5.5"
   resolved "https://registry.yarnpkg.com/@types/q/-/q-1.5.5.tgz#75a2a8e7d8ab4b230414505d92335d1dcb53a6df"
@@ -3366,10 +3359,10 @@
     nanoid "^3.1.30"
     vm2 "^3.9.9"
 
-"@ulixee/repo-tools@^1.0.20":
-  version "1.0.20"
-  resolved "https://registry.yarnpkg.com/@ulixee/repo-tools/-/repo-tools-1.0.20.tgz#7b784eb6295f30dc8865175bc8e2784ae9bca412"
-  integrity sha512-j1dBE5DlwE25YR7G1qHQruY3qygJ/eUK8U/uqYskzFAgtMHFytzvEJX8KbbjHUicSK1g4E0sO0O2NeBwyCJmJg==
+"@ulixee/repo-tools@^1.0.21":
+  version "1.0.21"
+  resolved "https://registry.yarnpkg.com/@ulixee/repo-tools/-/repo-tools-1.0.21.tgz#357808c570872494fdf9c8255b23038b36d3992e"
+  integrity sha512-Oflv3YtPAYnZWA291PZ7X1AP1HbqHR4HSm+yrOIfUqQ2r97Un5eYdU7f/ZRqd0SGkj9/A/9i+Ad09XKXOHeBBg==
   dependencies:
     "@typescript-eslint/eslint-plugin" "^5.27.1"
     "@typescript-eslint/parser" "^5.27.1"
@@ -14561,9 +14554,9 @@ pupa@^2.0.1, pupa@^2.1.1:
     escape-goat "^2.0.0"
 
 puppeteer@^14.3.0:
-  version "14.3.0"
-  resolved "https://registry.yarnpkg.com/puppeteer/-/puppeteer-14.3.0.tgz#0099cabf97767461aca02486313e84fcfc776af6"
-  integrity sha512-pDtg1+vyw1UPIhUjh2/VW1HUdQnaZJHfMacrJciR3AVm+PBiqdCEcFeFb3UJ/CDEQlHOClm3/WFa7IjY25zIGg==
+  version "14.4.1"
+  resolved "https://registry.yarnpkg.com/puppeteer/-/puppeteer-14.4.1.tgz#6c7437a65f7ba98ef8ad7c2b0f1cf808e91617bb"
+  integrity sha512-+H0Gm84aXUvSLdSiDROtLlOofftClgw2TdceMvvCU9UvMryappoeS3+eOLfKvoy4sm8B8MWnYmPhWxVFudAOFQ==
   dependencies:
     cross-fetch "3.1.5"
     debug "4.3.4"

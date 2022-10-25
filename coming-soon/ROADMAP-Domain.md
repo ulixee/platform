@@ -1,5 +1,5 @@
 ## 2.8 - Schemas
-- Integrate Schema protocol from Ulixee 1.x
+[x] Integrate Schema protocol from Ulixee 1.x
   When writing a number of Databoxes inside the same Domain, it can be beneficial to validate the data format of the results. These “schemas” validate formats and can help identify when a querySelector did not work.
 - Domain documentation
   Each Domain comes with a documentation website containing pricing information, example usage and input/output details.

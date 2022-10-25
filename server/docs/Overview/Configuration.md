@@ -12,4 +12,4 @@ A Server can provide ListenInfo on [`listen(listenInfo)`](/docs/server/basic-int
 
 ChromeAlive! will be automatically enabled for Hero and DataboxForHero sessions if `@ulixee/apps-chromealive-core` is installed locally.
 
-To disable launching ChromeAlive!, you can include `process.env.DISABLE_CHROMEALIVE='true'` at the top of your script, or set the corresponding variable in your shell environment.
+To disable launching ChromeAlive!, you can include `process.env.ULX_DISABLE_CHROMEALIVE='true'` at the top of your script, or set the corresponding variable in your shell environment.
