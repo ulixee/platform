@@ -1,4 +1,4 @@
-name: Build a Docker
+name: Containers
 
 on:
   release:
@@ -32,7 +32,7 @@ jobs:
         env:
           GITHUB_URL: https://github.com/${{ github.repository }}
           BUILD_DATE: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          ADD_CHROME_VERSION: '@ulixee/chrome-104-0'
+          ADD_CHROME_VERSION: 104
         run: |
           docker build \
             --progress tty \
@@ -41,7 +41,7 @@ jobs:
             \
             --build-arg BUILD_DATE=${BUILD_DATE} \
             --build-arg GITHUB_SHA=${GITHUB_SHA} \
-            --build-arg ADD_TO_INSTALL="yarn add $ADD_CHROME_VERSION" \
+            --build-arg ADD_TO_INSTALL="yarn add "@ulixee/chrome-$ADD_CHROME_VERSION-0"" \
             --build-arg VERSION=${VERSION} \
             \
             --tag ghcr.io/ulixee:v${VERSION} \
