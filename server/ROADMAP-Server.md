@@ -9,7 +9,7 @@ The initial “Cloud” service will be deployed as a network of hosted Rigs (th
 We need capabilities to deploy, remove and run remote Databoxes.
 [x] Endpoint uploading and installing a Databox
 [x] Endpoint for running a local-on-the-service databox using the Packaged Databox hash
-- Docker that runs on AWS
+[x] Docker that runs on Cloud
 
 ## 2.2 - Support Payment Wall
 Long-term this will hold the code for creating, submitting, and tracking blocks on the chain. Short-term this will have a single latestBlock endpoint that returns the latest generated block. 

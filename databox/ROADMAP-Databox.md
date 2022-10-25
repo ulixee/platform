@@ -4,7 +4,7 @@ We want to be able to “build” a databox into a package that can be deployed 
 
 ## 2.6 - Virtual Machines
 For a community of servers to exist that can host Hero scripts, we need a secure environment to run in. This environment might also need to measure or constrain processing time and memory used.
-- Security Sandboxing
+[x] Security Sandboxing
 - Measure CPU/Memory
 - Constrain CPU/Memory
 

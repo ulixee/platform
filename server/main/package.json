@@ -12,7 +12,8 @@
   "bin": "./bin/cli.js",
   "scripts": {
     "start": "node bin/cli.js start",
-    "start:alive": "node -r @ulixee/apps-chromealive-core/register bin/cli.js start"
+    "start:alive": "node -r @ulixee/apps-chromealive-core/register bin/cli.js start",
+    "preversion": "node ../../build/server/main/scripts/gatherEnvSettings.js"
   },
   "peerDependencies": {
     "@ulixee/apps-chromealive-core": "2.0.0-alpha.12"

@@ -1,5 +1,8 @@
+import { loadEnv, parseEnvBool } from '@ulixee/commons/lib/envUtils';
+
+loadEnv(__dirname);
+const env = process.env;
+
 export default {
-  disableChromeAlive:
-    process.env.NODE_ENV === 'test' ||
-    Boolean(JSON.parse(process.env.DISABLE_CHROMEALIVE ?? 'false')),
+  disableChromeAlive: env.NODE_ENV === 'test' || parseEnvBool(env.ULX_DISABLE_CHROMEALIVE),
 };

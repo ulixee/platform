@@ -21,6 +21,7 @@
     "databox",
     "databox/packager/*.json",
     "cli",
+    "server/**/*.json",
     "./*.js",
     "./*.json",
     ".eslintrc.js"
