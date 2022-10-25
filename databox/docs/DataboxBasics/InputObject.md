@@ -1,14 +1,6 @@
-<<<<<<< Updated upstream:databox/docs/DataboxBasics/Input.md
-# Input
-=======
-<<<<<<< Updated upstream:databox/docs/BasicClient/DataboxInput.md
-# Databox Input
-=======
 # InputObject
->>>>>>> Stashed changes:databox/docs/BasicClient/InputObject.md
->>>>>>> Stashed changes:databox/docs/DataboxBasics/InputObject.md
 
-Every databox accepts input, which it then passes into the `run` and `extract` callbacks.
+Every databox accepts input, which is attached to the [DataboxObject](/docs/databox/databox-basics/databox-object).
 
 When running the Databox as a NodeJs script from the command line, you can pass the input as CLI variables. These are parsed using [yargs-parser](https://github.com/yargs/yargs-parser). Variables containing a '.' will be converted into objects, and dashes are camel-cased.
 

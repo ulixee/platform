@@ -52,7 +52,6 @@ export default class DataboxForHeroPlugin<ISchema extends IDataboxSchema>
   public onBeforeRun(databoxObject: IDataboxObject<ISchema>): void {
     this.initializeHero();
     databoxObject.hero = this.hero;
-    databoxObject.sessionId = this.sessionId;
   }
 
   public async onBeforeClose(): Promise<void> {
@@ -63,7 +62,6 @@ export default class DataboxForHeroPlugin<ISchema extends IDataboxSchema>
       this.databoxInternal,
     ) as unknown as IDataboxObjectForReplay<ISchema>;
     databoxObject.heroReplay = this.heroReplay;
-    databoxObject.sessionId = this.sessionId;
 
     await this.components.onAfterHeroCompletes(databoxObject);
   }
@@ -83,10 +81,6 @@ export default class DataboxForHeroPlugin<ISchema extends IDataboxSchema>
 
   public get previousSessionId(): string | undefined {
     return this.execOptions.previousSessionId ?? process.env.ULX_OLD_SESSION_ID;
-  }
-
-  public get sessionId(): IDataboxObject<ISchema>['sessionId'] {
-    return this.hero?.sessionId;
   }
 
   private initializeHero(): void {

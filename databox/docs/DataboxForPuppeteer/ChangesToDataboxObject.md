@@ -1,6 +1,6 @@
 # Changes to DataboxObject
 
-Databox for Puppeteer adds a single property to the DataboxObject...
+Databox for Puppeteer adds a single property to the  [DataboxObject](/docs/databox/databox-basics/databox-object).
 
 ### databoxObject.puppeteer
 

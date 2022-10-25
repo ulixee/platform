@@ -7,9 +7,9 @@ export default new Databox({
     await hero.goto('https://news.ycombinator.com/');
     await hero.waitForPaintingStable();
     const records = await hero.document.querySelectorAll('.athing');
-    await records.$detach('titles');
+    await records.$addToDetachedElements('titles');
     for (const record of records) {
-      await record.nextElementSibling.$detach('subtitles');
+      await record.nextElementSibling.$addToDetachedElements('subtitles');
     }
 
     const links = await hero.document.querySelectorAll('.subtext > a');

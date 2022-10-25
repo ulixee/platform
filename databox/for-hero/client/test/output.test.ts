@@ -70,7 +70,7 @@ describe('basic output tests', () => {
       title,
     };
     output.page.data = Buffer.from('I am buffer');
-    const sessionId = await databoxForHeroPlugin.sessionId;
+    const sessionId = await databoxForHeroPlugin.hero.sessionId;
     await databoxClose();
     await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -133,7 +133,7 @@ describe('basic output tests', () => {
       date: dt,
       buffer: Buffer.from('whatever'),
     });
-    const sessionId = await databoxForHeroPlugin.sessionId;
+    const sessionId = await databoxForHeroPlugin.hero.sessionId;
     await databoxClose();
     await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -173,7 +173,7 @@ describe('basic output tests', () => {
     record.test = 1;
     record.watch = 2;
     record.any = { more: true };
-    const sessionId = await databoxForHeroPlugin.sessionId;
+    const sessionId = await databoxForHeroPlugin.hero.sessionId;
     await databoxClose();
     await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -206,7 +206,7 @@ describe('basic output tests', () => {
       try: true,
       another: false,
     } as any;
-    const sessionId = await databoxForHeroPlugin.sessionId;
+    const sessionId = await databoxForHeroPlugin.hero.sessionId;
     await databoxClose();
     await new Promise(resolve => setTimeout(resolve, 100));
 

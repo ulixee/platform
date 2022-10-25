@@ -1,39 +1,39 @@
 # Databox
 
-> Databoxes are self-contained data extraction scripts defined so they can be configured many ways and re-run many times.
-
-Each databox takes in Input provided by tooling or a CLI, performs an extraction and returns Output. 
-
-The default format for a Databox is to export a default object that provides a single callback with your logic. Your callback will be supplied with [input](#input) parameters and an [output](#output) object to assemble your collected data.
+This is the primary class used to create a databox. The following is a simple example:
 
 ```js
 import Databox from '@ulixee/databox-playground';
 
-export default new Databox(databox => {
-  databox.output = `Hello ${databox.input.firstName}`;
+export default new Databox(databoxObject => {
+  databoxObject.output = `Hello ${databoxObject.input.firstName}`;
 });
 ```
 
-If you directly execute a javascript/typescript file from the command and that file contains a default Databox export (like the scripts listed above), the databox's [run()](#run) function will automatially be invoked. You can disable this autorun feature by setting the environment variable `ULX_DATABOX_DISABLE_AUTORUN` to `true`.
+Saving the above code to a file allows you to execute it directly from the command line as a normal node script:
+
+```bash
+node example.ts --input.firstName=Caleb
+```
+
+The callback method supplied to Databox's constructor recieves a [DataboxObject](/docs/databox/databox-basics/databox-object) as its first argument. This includes special [input](/docs/databox/databox-basics/input-object) and [output](/docs/databox/databox-basics/output-object) objects.
 
 ## Constructor
 
-### new Databox<InputType,OutputType>_(function | databoxComponents)_ {#constructor}
+### new Databox _(function | databoxComponents)_ {#constructor}
 
 Creates a new Databox instance. 
-
-A databox can be constructed with a generic type argument to type (in Typescript) the Input and Output parameters passed into your callback function(s).
 
 #### **Arguments**:
 
 Arguments can be a single callback function matching the `run` callback below, or an object containing the following properties.
 
-- run `function`(runner: [Runner](/docs/databox-basics/runner-object)): `Promise<any>`. A function that contains your script to run. The parameter is a [DataboxObject](/docs/databox/databox-basics/runner-object) that provides access to [input](/docs/databox//advanced-client/runner#input) and [output](/docs/databox/advanced-client/runner#output)
+- run `function`(runner: [Runner](/docs/databox-basics/runner-object)): `Promise<any>`. A function that contains your script to run. The parameter is a [DataboxObject](/docs/databox/databox-basics/runner-object) that provides access to [InputObject](/docs/databox/databox-basics/input-object) and [OutputObject](/docs/databox/databox-basics/output-object)
 - defaults `object`. Optional. Default settings to provide.
   - input `object`. Default input values to use.
   - output `object`. Optionally construct a default output object - for instance, to initialize a results array.
-- plugins `Array<Plugin>`. Optional. A list of plugin classes.
+- plugins `Array<Plugin>`. Optional. A list of [plugin-compatible classes](/docs/databox/databox-basics/plugins).
 
 ## Methods
 
-There are no public methods on the Databox instance. The databox is automatically executed when you run the file as a normal node script.
+There are no public methods on this instance.
