@@ -16,6 +16,10 @@ This repository is the development home to several of the tools that make it eas
 
 Try out Ulixee Desktop! The Alpha release is available for download under [Assets](https://github.com/ulixee/ulixee/releases/latest).
 
+### Docker
+
+We publish a Docker image of the latest Ulixee Server to Github Containers: `ghcr.io/ulixee/ulixee-server:latest`. To use the image, we have a [run.sh](./server/tools/docker/run.sh) script that will run with a non-root user on your choice of port. All environmental configurations are listed [here](./server/main/.env.defaults).
+
 ## Developer Environment
 
 This project serves as a Monorepo for developing the Ulixee Apps, Hero, Databox and Server. To install this project, you'll need to:

@@ -35,10 +35,6 @@ RUN echo "deb http://httpredir.debian.org/debian buster main contrib non-free" >
 #  && find /tmp/goog-fonts/ -type f -name "*.ttf" -exec cp {} "/usr/local/share/fonts/" \; \
 #  && rm -rf /tmp/goog-fonts
 
-
-# Set XVFB display in case user uses headed
-ENV DISPLAY :99
-
 RUN mkdir -p /opt/bin && chmod +x /dev/shm
 
 WORKDIR /app/ulixee
@@ -58,8 +54,6 @@ RUN cd /app/ulixee && yarn init -yp \
 
 # Add below to run as unprivileged user.
 USER ulixee
-
-ENV DEBUG=ubk*,ulx*
 
 CMD npx @ulixee/server start
 # To run this docker, please see ./run.sh
