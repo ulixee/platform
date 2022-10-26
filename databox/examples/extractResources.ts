@@ -7,7 +7,7 @@ export default new Databox({
     await hero.goto('https://ulixee.org');
 
     const resources = await hero.activeTab.waitForResources({ url: 'index.json' });
-    for (const resource of resources) await resource.$detach('xhr');
+    for (const resource of resources) await resource.$addToDetachedResources('xhr');
   },
   async onAfterHeroCompletes({ heroReplay, output }) {
     const { detachedResources } = heroReplay;

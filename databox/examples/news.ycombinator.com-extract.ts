@@ -6,7 +6,7 @@ export default new Databox({
   async run({ hero }) {
     await hero.goto('https://news.ycombinator.com/');
     await hero.waitForPaintingStable();
-    await hero.document.querySelector('#hnmain').$detach('table');
+    await hero.document.querySelector('#hnmain').$addToDetachedElements('table');
 
     const links = await hero.document.querySelectorAll('.subtext > a');
 

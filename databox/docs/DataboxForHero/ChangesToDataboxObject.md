@@ -1,16 +1,19 @@
 # Changes to DataboxObject
 
-Databox for Hero adds two additional properties to the DataboxObject...
+Databox for Hero adds two additional properties to the  [DataboxObject](/docs/databox/databox-basics/databox-object), depending on which callback method is being executed.
+
+## In the Standard run() Callback
 
 ### databoxObject.hero
 
-Readonly access to a pre-initialized [Hero](/docs/hero) instance.
+Readonly access to a pre-initialized [Hero](/docs/hero/basic-client/hero) instance.
 
-#### **Returns** [`Hero`](/docs/hero)
+#### **Returns** [`Hero`](/docs/hero/basic-client/hero)
 
-### databoxObject.sessionId
+## In The onAfterHeroCompletes() Callback
 
-Readonly access to [Hero's](/docs/hero) sessionId for the current Session.
+### databoxObject.heroReplay
 
-#### **Returns** Promise<string>
+Readonly access to a pre-initialized [HeroReplay](/docs/hero/basic-client/hero-replay) instance.
 
+#### **Returns** [`HeroReplay`](/docs/hero/basic-client/hero-replay)

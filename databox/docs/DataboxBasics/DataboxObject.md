@@ -1,8 +1,8 @@
 # DataboxObject
 
-> DataboxObject provides access to metadata about your Databox execution, along with a pre-initialized Hero instance.
+> DataboxObject provides access to metadata about your execution's input and output environment.
 
-The DataboxObject class is passed into the [`run`](/docs/databox/basic-client/databox#constructor) callback provided to a Databox. It cannot be constructed.
+A pre-initialized DataboxObject instance is passed into the [`run`](/docs/databox/databox-basics/databox#constructor) callback. It cannot be constructed.
 
 ```js
 export default new Databox(databoxObject => {
@@ -32,3 +32,5 @@ Get or set the output data. See [`OutputObject`](/docs/databox/databox-basics/ou
 #### **Returns** [`OutputObject`](/docs/databox/databox-basics/output)
 
 ## Methods
+
+There are no public methods on this instance.
