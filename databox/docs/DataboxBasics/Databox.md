@@ -13,7 +13,7 @@ export default new Databox(databoxObject => {
 Saving the above code to a file allows you to execute it directly from the command line as a normal node script:
 
 ```bash
-node example.ts --input.firstName=Caleb
+node example.js --input.firstName=Caleb
 ```
 
 The callback method supplied to Databox's constructor recieves a [DataboxObject](/docs/databox/databox-basics/databox-object) as its first argument. This includes special [input](/docs/databox/databox-basics/input-object) and [output](/docs/databox/databox-basics/output-object) objects.

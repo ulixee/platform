@@ -20,7 +20,7 @@ export default new Databox(async databox => {
   for (const link of await hero.querySelectorAll('a')) {
     output.push({
       // will be added to the output array
-      id: await link.name.replace(/[^a-z]+/g, '-'),
+      id: (await link.name).replace(/[^a-z]+/g, '-'),
       href: await link.href,
     });
   }
