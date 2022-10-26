@@ -1,4 +1,4 @@
-name: Containers
+name: Docker
 
 on:
   release:
@@ -8,35 +8,38 @@ on:
 jobs:
   release:
     name: Build latest docker release
-
     runs-on: ubuntu-latest
+    env:
+      GITHUB_URL: https://github.com/${{ github.repository }}
+      ADD_CHROME_VERSION: 104
+      IMAGE: ulixee/ulixee-server
 
     steps:
       - uses: actions/checkout@v3
-        with:
-          submodules: 'true'
+
       - name: Read version
         shell: bash
-        working_directory: server/main
-        run: export VERSION=$(node -p "require('package.json').version")
-      - name: Login to Container Repository
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Using $(docker -v)"
-          echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+        working-directory: server/main
+        run: export VERSION=$(node -p "require('./package.json').version") && echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build Image
         shell: bash
-        working_directory: server/tools/docker
-        env:
-          GITHUB_URL: https://github.com/${{ github.repository }}
-          BUILD_DATE: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          ADD_CHROME_VERSION: 104
+        working-directory: server/tools/docker
         run: |
+          export BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          echo "Building Docker image: ${VERSION}"
+
           docker build \
             --progress tty \
-            --cache-from ghcr.io/ulixee:latest \
+            --cache-from ghcr.io/${IMAGE}:latest \
             --build-arg BUILDKIT_INLINE_CACHE=1 \
             \
             --build-arg BUILD_DATE=${BUILD_DATE} \
@@ -44,8 +47,10 @@ jobs:
             --build-arg ADD_TO_INSTALL="yarn add "@ulixee/chrome-$ADD_CHROME_VERSION-0"" \
             --build-arg VERSION=${VERSION} \
             \
-            --tag ghcr.io/ulixee:v${VERSION} \
-            --tag docker.io/ulixee:v${VERSION} \
+            --tag ghcr.io/${IMAGE}:v${VERSION} \
+            --tag ghcr.io/${IMAGE}:latest \
+            --tag docker.io/${IMAGE}:v${VERSION} \
+            --tag docker.io/${IMAGE}:latest \
             \
             --label org.label-schema.build-date=${BUILD_DATE} \
             --label org.label-schema.vcs-url=${GITHUB_URL} \
@@ -55,17 +60,15 @@ jobs:
             --label org.opencontainers.image.source=${GITHUB_URL} \
             --label org.opencontainers.image.revision=${GITHUB_SHA} \
             .
-      - name: Push Image to GHCR
-        shell: bash
-        working_directory: server/tools/docker
-        run: docker push -a ghcr.io/ulixee
 
-      - name: Push Image to Dockerhub
-        if: ${{secrets.DOCKER_IO_TOKEN}}
-        shell: bash
-        working_directory: server/tools/docker
-        env:
-          DOCKER_IO_TOKEN: ${{ secrets.DOCKER_IO_TOKEN }}
-        run: |
-          echo "${DOCKER_IO_TOKEN}" | docker login docker.io -u "${{ github.actor }}" --password-stdin
-          >&0 docker push -a docker.io/ulixee
+      - name: Push Image to GHCR
+        run: docker push -a ghcr.io/${IMAGE}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+#      - name: Push Image to Dockerhub
+#        run: docker push -a docker.io/${IMAGE}
