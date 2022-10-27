@@ -35,9 +35,10 @@ RUN echo "deb http://httpredir.debian.org/debian buster main contrib non-free" >
 #  && find /tmp/goog-fonts/ -type f -name "*.ttf" -exec cp {} "/usr/local/share/fonts/" \; \
 #  && rm -rf /tmp/goog-fonts
 
-RUN mkdir -p /opt/bin && chmod +x /dev/shm
+RUN mkdir -p /opt/bin && chmod +x /dev/shm && mkdir -p /ulixee/browsers
 
 WORKDIR /app/ulixee
+ENV BROWSERS_DIR /ulixee/browsers
 
 RUN cd /app/ulixee && yarn init -yp \
     && yarn add @ulixee/server@$VERSION \
@@ -45,11 +46,12 @@ RUN cd /app/ulixee && yarn init -yp \
     && $(npx install-browser-deps) \
     && groupadd -r ulixee && useradd -r -g ulixee -G audio,video ulixee \
     && mkdir -p /home/ulixee/Downloads \
-    && mkdir -p /home/ulixee/.cache \
+    && mkdir -p /home/ulixee/.cache/ulixee \
     && chown -R ulixee:ulixee /home/ulixee \
+    && chown -R ulixee:ulixee /ulixee \
     && chown -R ulixee:ulixee /app/ulixee \
-    && mv ~/.cache/ulixee /home/ulixee/.cache/ \
     && chmod 777 /tmp \
+    && chmod 777 /ulixee/browsers \
     && chmod -R 777 /home/ulixee/.cache/ulixee
 
 # Add below to run as unprivileged user.

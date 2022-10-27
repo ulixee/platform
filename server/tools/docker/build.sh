@@ -12,7 +12,7 @@ else
 fi
 
 
-docker build -t ulixee:$VERSION -t ulixee:latest \
+docker build -t ulixee-server:$VERSION -t ulixee-server:latest \
   --build-arg ADD_TO_INSTALL="$ADD_TO_INSTALL" \
   --build-arg VERSION="$VERSION" \
   .
