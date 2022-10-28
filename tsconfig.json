@@ -14,14 +14,14 @@
     }
   ],
   "include": [
-    "server",
+    "miner",
     "end-to-end",
     "apps",
     "playgrounds",
     "databox",
     "databox/packager/*.json",
     "cli",
-    "server/**/*.json",
+    "miner/**/*.json",
     "./*.js",
     "./*.json",
     ".eslintrc.js"

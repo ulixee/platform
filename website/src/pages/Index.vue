@@ -149,7 +149,7 @@
         <h3>The Interactive Developer Tool<br /> That Makes Writing Scrapers Pure Joy</h3>
         <p class="px-64">
           As anyone who has written scraper scripts knows, debugging can be one helluva experience, and not in a good way.
-          One moment your script works and the next moment it's broken. Why? What changed? What did 
+          One moment your script works and the next moment it's broken. Why? What changed? What did
           the website look like the precise moment your script broke? What about five milliseconds before? ChromeAlive connects
           your script to the website in a way that will forever change how scrapers are written.</p>
         <ul class="mx-1">
@@ -169,12 +169,12 @@
           </ul>
         </div>
         <div class="BOX !mx-0 !ml-3 w-1/2">
-          <h2><inline-svg :src="require('@/assets/tool-icons/server.svg')" height="30" />ULIXEE SERVER</h2>
+          <h2><inline-svg :src="require('@/assets/tool-icons/server.svg')" height="30" />ULIXEE MINER</h2>
           <h3>Easily Scale Your Databoxes<br /> Across Multiple Clouds</h3>
-          <p class="px-20">Server is our answer to running your scripts in production, scaling horizontally and breaking free of any single cloud stack.</p>
+          <p class="px-20">Miner is our answer to running your scripts in production, scaling horizontally and breaking free of any single cloud stack.</p>
           <ul class="mx-1">
-            <li><router-link to="/server">Learn More</router-link></li>
-            <li><a href="//docs.ulixee.org/server">Go to Documentation</a></li>
+            <li><router-link to="/miner">Learn More</router-link></li>
+            <li><a href="//docs.ulixee.org/miner">Go to Documentation</a></li>
           </ul>
         </div>
       </div>
@@ -186,8 +186,8 @@
           Many Different Sources and Formats
         </h3>
         <p class="px-52">
-          Stream is a uniform library for querying and retrieving datasets across any scraper script wrapped in a Databox. You 
-          can make a single query or large querysets in parallel. And you can pipe, transform, reduce and explode datasets from 
+          Stream is a uniform library for querying and retrieving datasets across any scraper script wrapped in a Databox. You
+          can make a single query or large querysets in parallel. And you can pipe, transform, reduce and explode datasets from
           the output of one Databox to the input of another.
           </p>
         <ul class="mx-1">

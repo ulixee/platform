@@ -12,7 +12,7 @@ import { InvalidPermissionsError } from '../lib/errors';
 export default new DataboxApiHandler('Databox.upload', {
   async handler(request, context): Promise<{ success: boolean }> {
     if (DataboxCore.isClosing)
-      throw new CanceledPromiseError('Server shutting down. Not accepting uploads.');
+      throw new CanceledPromiseError('Miner shutting down. Not accepting uploads.');
 
     await DataboxCore.start();
 
@@ -23,7 +23,7 @@ export default new DataboxApiHandler('Databox.upload', {
     if (configuration.uploaderIdentities.length) {
       if (!uploaderIdentity || !configuration.uploaderIdentities.includes(uploaderIdentity)) {
         throw new InvalidPermissionsError(
-          `Your Identity is not approved to upload Databoxes to this server (${
+          `Your Identity is not approved to upload Databoxes to this Miner (${
             uploaderIdentity ?? 'none provided'
           }).`,
         );

@@ -1,5 +1,5 @@
 {
-  "name": "@ulixee/ulixee-monorepo",
+  "name": "@ulixee/platform",
   "private": true,
   "description": "The internal developer environment that we use for building and running the Ulixee platform",
   "scripts": {
@@ -15,7 +15,7 @@
     "tsc:all": "yarn tsc:hero && yarn tsc",
     "watch": "yarn tsc && tsc -b -w tsconfig.json",
     "watch:all": "concurrently -n hero,devenv \"cd hero && yarn watch\" \"yarn watch\"",
-    "start": "yarn workspace @ulixee/server start",
+    "start": "yarn workspace @ulixee/miner start",
     "test": "yarn copy:build && yarn test:build",
     "test:build": "cd ./build && cross-env ULX_DATA_DIR=.data-test ULX_DATABOX_DIR=.data-test NODE_ENV=test jest",
     "test:all": "yarn copy:build && cross-env ULX_DATA_DIR=.data-test ULX_DATABOX_DIR=.data-test NODE_ENV=test jest",
@@ -60,7 +60,7 @@
       "databox/*",
       "databox/for-hero/*",
       "databox/for-puppeteer/*",
-      "server/*",
+      "miner/*",
       "cli",
       "end-to-end",
       "stream/build/*",

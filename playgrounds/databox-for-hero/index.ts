@@ -6,8 +6,8 @@ import DataboxForHero, {
 } from '@ulixee/databox-for-hero';
 import readCommandLineArgs from '@ulixee/databox/lib/utils/readCommandLineArgs';
 import HeroCore from '@ulixee/hero-core';
-import UlixeeServer from '@ulixee/server';
-import UlixeeServerConfig from '@ulixee/commons/config/servers';
+import UlixeeMiner from '@ulixee/miner';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 
 const { version } = require('./package.json');
 
@@ -17,18 +17,18 @@ export default class DataboxPlayground extends DataboxForHero {
   public static override async commandLineExec<TOutput>(
     databoxForHero: DataboxForHero,
   ): Promise<TOutput | Error> {
-    let serverHost = UlixeeServer.getHost(version);
+    let minerHost = UlixeeMiner.getHost(version);
 
-    if (serverHost?.startsWith('localhost')) {
-      serverHost = await UlixeeServerConfig.global.checkLocalVersionHost(version, serverHost);
+    if (minerHost?.startsWith('localhost')) {
+      minerHost = await UlixeeHostsConfig.global.checkLocalVersionHost(version, minerHost);
     }
 
-    // start a server if none already started
-    if (!serverHost) {
-      const server = new UlixeeServer();
-      await server.listen();
-      serverHost = await server.address;
-      console.log('Started Ulixee server at %s', serverHost);
+    // start a miner if none already started
+    if (!minerHost) {
+      const miner = new UlixeeMiner();
+      await miner.listen();
+      minerHost = await miner.address;
+      console.log('Started Ulixee Miner at %s', minerHost);
     }
 
     HeroCore.events.once('browser-has-no-open-windows', ({ browser }) => browser.close());
@@ -38,7 +38,7 @@ export default class DataboxPlayground extends DataboxForHero {
     });
 
     const options = readCommandLineArgs();
-    options.connectionToCore = { host: serverHost };
+    options.connectionToCore = { host: minerHost };
     return databoxForHero.exec(options).catch(err => err);
   }
 }

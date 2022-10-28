@@ -41,9 +41,9 @@
               </router-link>
             </li>
             <li>
-              <router-link to="/server">
+              <router-link to="/miner">
                 <inline-svg :src="require('@/assets/tool-icons/server.svg')" />
-                <label>Server</label>
+                <label>Miner</label>
               </router-link>
             </li>
             <li class="COMING-SOON">
@@ -117,7 +117,7 @@
           </ul>
         </div>
       </section>
-      
+
       <div class="HORIZONTAL-LINE my-6"></div>
 
       <section class="mb-16 mt-10">
@@ -144,7 +144,7 @@
         </div>
       </section>
     </div> -->
-    
+
     <!-- <section class="bg-[#E0E6EA] items-end shadow shadow-inner border-t border-b border-[#B0A9B1]">
       <div class="mt-10 mb-7 pl-5 max-w-6xl mx-auto">
         <header class="font-bold text-xl  mb-2">We Believe the Web Must Be Open and Accessible</header>

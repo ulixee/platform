@@ -10,7 +10,7 @@ Getting Started
 
 Writing a Databox is very similar to writing a normal Hero script, except it must be contained within a callback, and you have make it the default export.
 
-You can run this script as a regular node script and it will run the callback. However, this structure also allows us to load it into a server and run it on demand.
+You can run this script as a regular node script and it will run the callback. However, this structure also allows us to load it into a server (Miner) and run it on demand.
 
 ```js
 export default new Databox(async databox => {

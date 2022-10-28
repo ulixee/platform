@@ -16,11 +16,11 @@ const roadmapNames = [
   'NFTs',
   'Stream',
   'ScraperReport',
-  'Server',
+  'Miner',
   'Sidechain',
 ];
 
-const releasedToolNames = ['Hero', 'ChromeAlive', 'Databox', 'Server', 'Stream'];
+const releasedToolNames = ['Hero', 'ChromeAlive', 'Databox', 'Miner', 'Stream'];
 
 const basicRoutes: Array<RouteRecordRaw> = [
   {

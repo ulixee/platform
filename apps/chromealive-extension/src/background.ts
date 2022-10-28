@@ -6,7 +6,7 @@ import './lib/background/BackgroundListeners';
 
 // variable injected!
 // eslint-disable-next-line @typescript-eslint/naming-convention
-const __CORE_SERVER_ADDRESS__ = '';
+const __MINER_ADDRESS__ = '';
 
 const RuntimeActions = {
   hideTabs,
@@ -30,8 +30,8 @@ onMessagePayload((payload, sendResponseFn) => {
       })
       .catch(error => console.error('chrome.runtime.onMessageResponse:ERROR', { payload, error }));
     return true;
-  } if (payload.action === 'getCoreServerAddress') {
-    sendResponseFn(__CORE_SERVER_ADDRESS__);
+  } if (payload.action === 'getMinerAddress') {
+    sendResponseFn(__MINER_ADDRESS__);
     return true;
   }
   console.log('UNHANDLED MESSAGE: ', payload);

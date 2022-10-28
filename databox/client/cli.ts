@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import type * as CliCommands from '@ulixee/databox-packager/lib/cliCommands';
-import UlixeeServerConfig from '@ulixee/commons/config/servers';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import UlixeeConfig from '@ulixee/commons/config';
 import DataboxApiClient from './lib/DataboxApiClient';
 
@@ -12,7 +12,7 @@ export default function databoxCommands(): Command {
   const identityPrivateKeyPathOption = databoxCommand
     .createOption(
       '-i, --identity-path <path>',
-      'A path to a Ulixee Identity. Necessary for signing if a Server has restricted allowed Uploaders.',
+      'A path to a Ulixee Identity. Necessary for signing if a Miner has restricted allowed Uploaders.',
     )
     .env('ULX_IDENTITY_PATH');
 
@@ -25,7 +25,7 @@ export default function databoxCommands(): Command {
 
   const uploadHostOption = databoxCommand.createOption(
     '-h, --upload-host <host>',
-    'Upload this Databox to the given host server. Will try to auto-connect if none specified.',
+    'Upload this Databox to the given host Miner. Will try to auto-connect if none specified.',
   );
 
   const clearVersionHistoryOption = databoxCommand
@@ -81,7 +81,7 @@ export default function databoxCommands(): Command {
       'The path of the entrypoint to the Databox. Must have a default export that is a Databox.',
     )
     .option('-o, --out-dir <path>', 'A directory path where you want .dbx packages to be saved')
-    .option('-u, --upload', 'Upload this package to a Ulixee Server after packaging.', false)
+    .option('-u, --upload', 'Upload this package to a Ulixee Miner after packaging.', false)
     .addOption(uploadHostOption)
     .addOption(clearVersionHistoryOption)
     .option(
@@ -139,14 +139,14 @@ export default function databoxCommands(): Command {
     )
     .argument('<versionHash>', 'The version hash of the Databox.')
     .option('-a, --alias <name>', 'Add a shortcut name to reference this Databox hash.')
-    .option('-h, --host <host>', 'Connect to the given host server. Will try to automatically connect if omitted.')
+    .option('-h, --host <host>', 'Connect to the given host Miner. Will try to automatically connect if omitted.')
     .action(async (versionHash, { alias, host }) => {
       host ??=
-        UlixeeConfig.load()?.serverHost ??
-        UlixeeConfig.global.serverHost ??
-        UlixeeServerConfig.global.getVersionHost(version);
+        UlixeeConfig.load()?.defaultMinerHost ??
+        UlixeeConfig.global.defaultMinerHost ??
+        UlixeeHostsConfig.global.getVersionHost(version);
 
-      if (!host) throw new Error('Please provide a server host to connect to.');
+      if (!host) throw new Error('Please provide a Miner host to connect to.');
 
       const client = new DataboxApiClient(host);
       await client.install(versionHash, alias);
@@ -154,7 +154,7 @@ export default function databoxCommands(): Command {
 
   databoxCommand
     .command('upload')
-    .description('Upload a Databox package to a server.')
+    .description('Upload a Databox package to a miner.')
     .argument('<dbxPath>', 'The path to the .dbx package.')
     .addOption(uploadHostOption)
     .option(

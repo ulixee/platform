@@ -19,7 +19,7 @@
     "@ulixee/hero": "2.0.0-alpha.12",
     "@ulixee/hero-core": "2.0.0-alpha.12",
     "@ulixee/net": "2.0.0-alpha.12",
-    "@ulixee/server": "2.0.0-alpha.12",
+    "@ulixee/miner": "2.0.0-alpha.12",
     "vm2": "^3.9.9"
   }
 }

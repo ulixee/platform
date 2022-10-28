@@ -1,5 +1,5 @@
 import UlixeeConfig from '@ulixee/commons/config';
-import UlixeeServerConfig from '@ulixee/commons/config/servers';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { createInterface } from 'readline';
 import * as Path from 'path';
 import { existsSync } from 'fs';
@@ -112,7 +112,7 @@ export async function buildPackage(
       options.identityPassphrase,
     );
   } else {
-    console.log('Rolled up and hashed Databox. The .dbx file was not uploaded to a server.', {
+    console.log('Rolled up and hashed Databox. The .dbx file was not uploaded to a Miner.', {
       dbxPath: dbx.dbxPath,
       manifest: packager.manifest.toJSON(),
     });
@@ -129,18 +129,18 @@ async function uploadPackage(
 ): Promise<void> {
   if (!uploadHost) {
     uploadHost =
-      UlixeeConfig.load()?.serverHost ??
-      UlixeeConfig.global.serverHost ??
-      UlixeeServerConfig.global.getVersionHost(version);
+      UlixeeConfig.load()?.defaultMinerHost ??
+      UlixeeConfig.global.defaultMinerHost ??
+      UlixeeHostsConfig.global.getVersionHost(version);
 
     if (uploadHost?.startsWith('localhost')) {
-      uploadHost = await UlixeeServerConfig.global.checkLocalVersionHost(this.version, uploadHost);
+      uploadHost = await UlixeeHostsConfig.global.checkLocalVersionHost(this.version, uploadHost);
     }
   }
 
   if (!uploadHost) {
     throw new Error(
-      'Could not determine a Server host from Ulixee config files. Please provide one with the `--upload-host` option.',
+      'Could not determine a Miner host from Ulixee config files. Please provide one with the `--upload-host` option.',
     );
   }
   let identity: Identity;
@@ -190,9 +190,9 @@ function handleMissingLinkedVersions(
   });
 
   rl.question(
-    `You uploaded a script without any linked versions, but the entrypoint "${manifest.scriptEntrypoint}" matches an existing Databox on the server. 
+    `You uploaded a script without any linked versions, but the entrypoint "${manifest.scriptEntrypoint}" matches an existing Databox on the Miner. 
         
->> To link versions on the server with your local Databox, please type "link".
+>> To link versions on the Miner with your local Databox, please type "link".
 >> To create a new version list, please type "new".
 
 `,
@@ -235,11 +235,11 @@ function handleInvalidScriptVersionHistory(
   rl.question(
     `The uploaded Databox has a different version history than your local version. 
         
-You can choose from the options below to link to the existing server versions or create a new Databox manifest at:
+You can choose from the options below to link to the existing Miner versions or create a new Databox manifest at:
 
   ${customManifestPath}
   
->> To link the version history on the server with your local Databox, please type "link".
+>> To link the version history on the Miner with your local Databox, please type "link".
 >> To add a custom manifest to your project, type "custom".
 
 `,

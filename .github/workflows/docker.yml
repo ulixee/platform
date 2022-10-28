@@ -12,14 +12,14 @@ jobs:
     env:
       GITHUB_URL: https://github.com/${{ github.repository }}
       ADD_CHROME_VERSION: 104
-      IMAGE: ulixee/ulixee-server
+      IMAGE: ulixee/ulixee-miner
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Read version
         shell: bash
-        working-directory: server/main
+        working-directory: miner/main
         run: export VERSION=$(node -p "require('./package.json').version") && echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Login to GitHub Container Registry
@@ -31,7 +31,7 @@ jobs:
 
       - name: Build Image
         shell: bash
-        working-directory: server/tools/docker
+        working-directory: miner/tools/docker
         run: |
           export BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 

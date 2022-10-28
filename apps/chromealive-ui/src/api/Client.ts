@@ -11,8 +11,8 @@ type EventType = keyof IChromeAliveEvents;
 
 declare global {
   interface Window {
-    setHeroServerUrl(url: string): void;
-    heroServerUrl: string | undefined;
+    setMinerAddress(url: string): void;
+    minerAddress: string | undefined;
     defaultClient: Client;
   }
 }
@@ -38,10 +38,10 @@ class Client {
     if (this.connectedPromise) {
       return this.connectedPromise;
     }
-    if (!window.heroServerUrl) {
+    if (!window.minerAddress) {
       return Promise.resolve();
     }
-    this.connection = new WebSocket(window.heroServerUrl);
+    this.connection = new WebSocket(window.minerAddress);
     this.connection.onclose = this.onClose.bind(this);
     this.connectedPromise = new Promise((resolve) => {
       this.connection.onopen = () => resolve();
@@ -128,7 +128,7 @@ class Client {
   }
 }
 
-window.heroServerUrl = process.env.VUE_APP_BASE_URI ?? "";
+window.minerAddress = process.env.VUE_APP_BASE_URI ?? "";
 
 // eslint-disable-next-line import/no-mutable-exports
 let defaultClient: Client;
@@ -138,13 +138,13 @@ if (window.opener) {
   defaultClient = new Client();
 }
 
-window.setHeroServerUrl = function setHeroServerUrl(url: string) {
-  window.heroServerUrl = url;
+window.setMinerAddress = function setMinerAddress(url: string) {
+  window.minerAddress = url;
   defaultClient.connect().catch(console.error);
 };
 
 // if already set, connect now
-if (window.heroServerUrl) {
+if (window.minerAddress) {
   defaultClient.connect().catch(console.error);
 }
 window.defaultClient = defaultClient;

@@ -17,7 +17,7 @@ export interface IPage {
 const repoLinks: { [key: string]: string } = {
   hero: 'https://github.com/ulixee/hero/tree/main/docs/main',
   databox: 'https://github.com/ulixee/ulixee/tree/main/databox/docs',
-  server: 'https://github.com/ulixee/ulixee/tree/main/server/docs',
+  miner: 'https://github.com/ulixee/ulixee/tree/main/miner/docs',
 }
 
 export default class Data {
@@ -44,7 +44,7 @@ export default class Data {
     if (!path.startsWith('/docs')) {
       path = '/docs' + path;
     }
-    
+
     if (path === `/docs/${toolKey}`) {
       path += '/index';
     } else if (path.endsWith('/')) {

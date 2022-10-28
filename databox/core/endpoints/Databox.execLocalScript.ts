@@ -7,7 +7,7 @@ export default new DataboxApiHandler('Databox.execLocalScript', {
     const meta = await databoxProcess.fetchMeta();
     for (const pluginName of Object.keys(meta.corePlugins)) {
       if (!context.pluginCoresByName[pluginName]) {
-        throw new Error(`Server does not support required databox plugin: ${pluginName}`);
+        throw new Error(`Miner does not support required databox plugin: ${pluginName}`);
       }
     }
 

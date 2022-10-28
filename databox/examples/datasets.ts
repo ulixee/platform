@@ -1,4 +1,4 @@
-// NOTE: you must start your own Ulixee Server to run this example.
+// NOTE: you must start your own Ulixee Miner to run this example.
 
 import Databox from '@ulixee/databox-for-hero';
 

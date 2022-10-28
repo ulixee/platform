@@ -45,12 +45,12 @@ export default class VueScreen extends TypedEventEmitter<{ close: void }> {
       const page = await this.openPage();
       await page.navigate(this.pageUrl);
       await page.mainFrame.waitForLifecycleEvent('load');
-      const coreApiServerAddress = await ChromeAliveCore.coreServerAddress;
+      const minerAddress = await ChromeAliveCore.minerAddress;
       await page.evaluate(
         `((url) => {
-        window.heroServerUrl = url;
-        if ('setHeroServerUrl' in window) window.setHeroServerUrl(url);
-      })(${JSON.stringify(coreApiServerAddress)})`,
+        window.minerAddress = url;
+        if ('setMinerAddress' in window) window.setMinerAddress(url);
+      })(${JSON.stringify(minerAddress)})`,
         false,
       );
     }

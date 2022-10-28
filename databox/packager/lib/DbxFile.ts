@@ -74,7 +74,7 @@ export default class DbxFile {
   }
 
   public async upload(
-    serverHost: string,
+    host: string,
     options: {
       allowNewLinkedVersionHistory?: boolean;
       identity?: Identity;
@@ -83,7 +83,7 @@ export default class DbxFile {
   ): Promise<{ success: boolean }> {
     const compressedDatabox = await this.asBuffer();
 
-    const client = new DataboxApiClient(serverHost);
+    const client = new DataboxApiClient(host);
     try {
       return await client.upload(compressedDatabox, options);
     } finally {

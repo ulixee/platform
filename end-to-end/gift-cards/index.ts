@@ -30,7 +30,7 @@ async function main(): Promise<void> {
   });
 
   console.log('Starting Sidechain', sidechainRoot);
-  const server = fork(`index.js`, {
+  const sidechainServer = fork(`index.js`, {
     stdio: 'inherit',
     cwd: sidechainRoot,
     env: {
@@ -38,7 +38,7 @@ async function main(): Promise<void> {
       SIDECHAIN_HOST: sidechainHost,
     },
   });
-  needsClosing.push(() => server.kill());
+  needsClosing.push(() => sidechainServer.kill());
 
   const buildDir = Path.join(root, 'build');
   const result = await databoxDev(sidechainHost, needsClosing, buildDir);

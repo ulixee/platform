@@ -8,7 +8,7 @@
         :class="[open ? 'text-gray-600 rotate-180' : 'text-purple-900', 'h-4 w-4 ml-1 stroke-1 duration-100 group-hover:text-gray-500']"
         aria-hidden="true"
       />
-      
+
     </PopoverButton>
     <transition
       enter-active-class="transition ease-out duration-200"
@@ -53,10 +53,10 @@
                   </router-link>
                 </NavItem>
                 <NavItem>
-                  <router-link to="/server">
+                  <router-link to="/miner">
                     <inline-svg :src="require('@/assets/tool-icons/server.svg')" />
                     <div>
-                      <header>Server</header>
+                      <header>Miner</header>
                       <p>Easily run and scale your Databoxes across production and localhost.</p>
                     </div>
                   </router-link>

@@ -1,17 +1,17 @@
 <template>
   <MainLayout class="ChromeAlive" :showPadding="false">
     <AboveTheFold>
-      <MainHeader productKey="server">Ulixee Server</MainHeader>
+      <MainHeader productKey="miner">Ulixee Miner</MainHeader>
 
       <AlertDevelopmentEnvironment />
 
       <h2 class="font-bold mt-8">Just Launch It</h2>
       <p>
-        The easiest way to start Ulixee Server is with our one-line NPX command -- you don't even need to install it through NPM or Yarn beforehand.
+        The easiest way to start Ulixee Miner is with our one-line NPX command -- you don't even need to install it through NPM or Yarn beforehand.
       </p>
 
       <Prism language="shell">
-        npx @ulixee/server start
+        npx @ulixee/miner start
       </Prism>
 
       <p>There are several flags you can add to the start command. Below are two of them:</p>

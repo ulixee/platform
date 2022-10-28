@@ -26,7 +26,7 @@
     <p class="w-8/12">You can install most of the Developer Desktop tools as individual npm packages. You won't get the tight OS integrations and UI enhacements, but hey, at least you have options.</p>
 
     <Prism language="shell" class="w-7/12">
-      npm install @ulixee/server
+      npm install @ulixee/miner
     </Prism>
     <Prism language="shell" class="w-7/12">
       npm install @ulixee/chromealive

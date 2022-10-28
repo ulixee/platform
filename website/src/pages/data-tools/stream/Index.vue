@@ -6,11 +6,11 @@
         Query and Transform Data Across<br />
         Many Different Sources and Formats
       </SubHeader>
-  
+
       <p class="w-10/12">
-        Stream is a uniform library for querying and retrieving datasets across any scraper script wrapped in a Databox. You can make a single query or large querysets in parallel. And you can pipe, transform, reduce and explode datasets from the output of one Databox to the input of another. 
+        Stream is a uniform library for querying and retrieving datasets across any scraper script wrapped in a Databox. You can make a single query or large querysets in parallel. And you can pipe, transform, reduce and explode datasets from the output of one Databox to the input of another.
       </p>
-      
+
       <ActionButtons productKey="stream" />
 
       <div class="relative h-60">
@@ -26,12 +26,12 @@
 
     <section>
       <header>Script Locally, Run Remotely</header>
-      <p>Add as many queries and Servers, and let Stream handle manaing the parallell operation.</p>
+      <p>Add as many queries and Miners, and let Stream handle managing the parallel operation.</p>
     </section>
 
     <section>
       <header>Intelligent Parallelization</header>
-      <p>Stream monitors each Server’s load capacity to distribute your queries in the most effecient manner possible.</p>
+      <p>Stream monitors each Server’s load capacity to distribute your queries in the most efficient manner possible.</p>
     </section>
 
     <section>

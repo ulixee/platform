@@ -36,14 +36,14 @@ export default class ChromeAliveCore {
 
   public static restartingHeroSessionId: string;
   public static activeHeroSessionId: string;
-  public static coreServerAddress?: Promise<string>;
+  public static minerAddress?: Promise<string>;
   private static connections: IConnectionToChromeAliveClient[] = [];
   private static app: ChildProcess;
   private static events = new EventSubscriber();
   private static isEnabled = false;
 
-  public static setCoreServerAddress(address: Promise<string>): void {
-    this.coreServerAddress = address;
+  public static setMinerAddress(address: Promise<string>): void {
+    this.minerAddress = address;
     this.launchApp(true).catch(err => {
       console.error('Cannot launch ChromeAlive app', err);
     });
@@ -181,8 +181,8 @@ export default class ChromeAliveCore {
     heroSession.options.disableIncognito = true;
     heroSession.options.viewport ??= { width: 0, height: 0 };
     const sessionObserver = new SessionObserver(heroSession);
-    const coreServerAddress = await this.coreServerAddress;
-    heroSession.bypassResourceRegistrationForHost = new URL(coreServerAddress);
+    const minerAddress = await this.minerAddress;
+    heroSession.bypassResourceRegistrationForHost = new URL(minerAddress);
 
 
     this.sessionObserversById.set(sessionId, sessionObserver);
@@ -328,15 +328,15 @@ export default class ChromeAliveCore {
     if (this.app && !this.app.killed) return;
 
     const args: string[] = hideOnLaunch ? ['--hide'] : [];
-    if (this.coreServerAddress) {
-      const coreServerAddress = await this.coreServerAddress;
+    if (this.minerAddress) {
+      const minerAddress = await this.minerAddress;
       const filePath = `${extensionPath}/background.js`;
 
       try {
         let fileContents = await Fs.promises.readFile(filePath, 'utf8');
         fileContents = fileContents.replace(
-          /__CORE_SERVER_ADDRESS__ = '.*';/,
-          `__CORE_SERVER_ADDRESS__ = '${coreServerAddress}';`,
+          /__MINER_ADDRESS__ = '.*';/,
+          `__MINER_ADDRESS__ = '${minerAddress}';`,
         );
         await Fs.promises.writeFile(filePath, fileContents);
       } catch (err) {
@@ -344,7 +344,7 @@ export default class ChromeAliveCore {
         delete HeroCore.corePluginsById[HeroCorePlugin.id];
         throw new Error('Could not launch ChromeAlive! Chrome Extension not installed.');
       }
-      args.push(`--coreServerAddress="${coreServerAddress}"`);
+      args.push(`--minerAddress="${minerAddress}"`);
     }
 
     this.app = launchChromeAlive(...args);

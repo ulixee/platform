@@ -1,27 +1,26 @@
-import { getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
 import { addressValidation, identityValidation } from '@ulixee/specification/common';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { loadEnv, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
 
 loadEnv(__dirname);
+const env = process.env;
+if (env.ULX_DATABOX_DIR) env.ULX_DATABOX_DIR = parseEnvPath(env.ULX_DATABOX_DIR);
+if (env.ULX_IDENTITY_PATH) env.ULX_IDENTITY_PATH = parseEnvPath(env.ULX_IDENTITY_PATH);
 
 export default {
-  databoxesDir: parseEnvPath(process.env.ULX_DATABOX_DIR?.replace('<CACHE>', getCacheDirectory())),
-  // list of identities who can upload to this server [@ulixee/crypto/lib/Identity.bech32]
-  uploaderIdentities: parseIdentities(
-    process.env.ULX_DBX_UPLOADER_IDENTITIES,
-    'Uploader Identities',
-  ),
-  paymentAddress: parseAddress(process.env.ULX_PAYMENT_ADDRESS),
-  giftCardAddress: parseAddress(process.env.ULX_GIFT_CARD_ADDRESS),
-  computePricePerKb: parseEnvInt(process.env.ULX_PRICE_PER_KB),
+  databoxesDir: env.ULX_DATABOX_DIR,
+  // list of identities who can upload to this Miner [@ulixee/crypto/lib/Identity.bech32]
+  uploaderIdentities: parseIdentities(env.ULX_DBX_UPLOADER_IDENTITIES, 'Uploader Identities'),
+  paymentAddress: parseAddress(env.ULX_PAYMENT_ADDRESS),
+  giftCardAddress: parseAddress(env.ULX_GIFT_CARD_ADDRESS),
+  computePricePerKb: parseEnvInt(env.ULX_PRICE_PER_KB),
   approvedSidechains: [],
-  defaultSidechainHost: process.env.ULX_SIDECHAIN_HOST,
-  defaultSidechainRootIdentity: process.env.ULX_SIDECHAIN_IDENTITY,
+  defaultSidechainHost: env.ULX_SIDECHAIN_HOST,
+  defaultSidechainRootIdentity: env.ULX_SIDECHAIN_IDENTITY,
   identityWithSidechain: loadIdentity(
-    process.env.ULX_IDENTITY_PEM,
-    parseEnvPath(process.env.ULX_IDENTITY_PATH),
-    process.env.ULX_IDENTITY_PASSPHRASE,
+    env.ULX_IDENTITY_PEM,
+    env.ULX_IDENTITY_PATH,
+    env.ULX_IDENTITY_PASSPHRASE,
   ),
 };
 

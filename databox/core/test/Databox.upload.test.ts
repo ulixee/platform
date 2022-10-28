@@ -1,33 +1,35 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import DataboxPackager from '@ulixee/databox-packager';
-import UlixeeServer from '@ulixee/server';
+import UlixeeMiner from '@ulixee/miner';
 import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DataboxApiClient from '@ulixee/databox/lib/DataboxApiClient';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import DataboxCore from '../index';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Databox.upload.test');
 
 let dbxFile: Buffer;
 let manifest: IDataboxManifest;
-let server: UlixeeServer;
+let miner: UlixeeMiner;
 let client: DataboxApiClient;
 
 beforeAll(async () => {
+  jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
   const packager = new DataboxPackager(`${__dirname}/databoxes/upload.js`);
   await packager.build();
   dbxFile = await packager.dbx.asBuffer();
   manifest = packager.manifest.toJSON();
-  server = new UlixeeServer();
-  server.router.databoxConfiguration = { databoxesDir: storageDir };
-  await server.listen();
-  client = new DataboxApiClient(await server.address);
+  miner = new UlixeeMiner();
+  miner.router.databoxConfiguration = { databoxesDir: storageDir };
+  await miner.listen();
+  client = new DataboxApiClient(await miner.address);
 });
 
 afterAll(async () => {
   Fs.rmdirSync(storageDir, { recursive: true });
-  await server.close();
+  await miner.close();
 });
 
 test('should be able upload a databox', async () => {

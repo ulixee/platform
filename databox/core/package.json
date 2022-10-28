@@ -22,7 +22,7 @@
     "@ulixee/databox-core-runtime": "2.0.0-alpha.12",
     "@ulixee/databox-packager": "2.0.0-alpha.12",
     "@ulixee/databox-testing": "2.0.0-alpha.12",
-    "@ulixee/server": "2.0.0-alpha.12",
+    "@ulixee/miner": "2.0.0-alpha.12",
     "ts-node": "^10.8.1",
     "zod": "^3.17.10"
   }

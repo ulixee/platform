@@ -1,15 +1,15 @@
 <template>
   <MainLayout class="ChromeAlive" :showPadding="false">
     <AboveTheFold>
-      <MainHeader productKey="server">Ulixee Server</MainHeader>
+      <MainHeader productKey="miner">Ulixee Miner</MainHeader>
       <SubHeader>
         Easily Scale Data Extraction Across<br />
         Multiple Clouds and Environments
       </SubHeader>
 
-      <p class="w-10/12">Ulixee Server is designed to easily run and scale your production scripts across one or more clouds. At their most basic level, they host and serve your databoxes. As we build out Ulixee's decentralized cloud, these Servers can be connected as miners in the broader data economy.</p>
+      <p class="w-10/12">Ulixee Miner is designed to easily run and scale your production scripts across one or more clouds. At their most basic level, they host and serve your databoxes. As we build out Ulixee's decentralized cloud, these Servers can be connected as miners in the broader data economy.</p>
 
-      <ActionButtons productKey="server" />
+      <ActionButtons productKey="miner" />
 
       <img src="/illustrations/overview-server.png" class="w-8/12 m-auto my-20" />
     </AboveTheFold>
@@ -22,7 +22,7 @@
 
       <section class="mt-20 w-6/12 ml-auto">
         <h3 class="font-light text-2xl">Localhost is Production</h3>
-        <p>It's frustrating when your code works locally but not in production, and you can’t figure out why. Ulixee Server power your local development with all the same options as production, which simplifies your go-to-market and your debugging.</p>
+        <p>It's frustrating when your code works locally but not in production, and you can’t figure out why. Ulixee Miner power your local development with all the same options as production, which simplifies your go-to-market and your debugging.</p>
       </section>
 
       <section class="mt-20">

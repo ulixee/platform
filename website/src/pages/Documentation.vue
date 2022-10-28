@@ -78,7 +78,7 @@ import { Prism } from '@/main';
 const toolNames: { [key: string]: string } = {
   hero: 'Hero',
   databox: 'Databox',
-  server: 'Server',
+  miner: 'Miner',
 };
 
 export default Vue.defineComponent<any>({

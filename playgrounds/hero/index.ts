@@ -1,8 +1,8 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import Core from '@ulixee/hero-core';
 import DefaultHero, { IHeroCreateOptions } from '@ulixee/hero';
-import UlixeeServer from '@ulixee/server';
-import UlixeeServerConfig from '@ulixee/commons/config/servers';
+import UlixeeMiner from '@ulixee/miner';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 
 const { version } = require('./package.json');
 
@@ -21,26 +21,26 @@ If you're starting to run real production scenarios, you likely want to look int
 https://ulixee.org/docs/hero/advanced-concepts/client-vs-core
 `);
     }
-    createOptions.connectionToCore = { host: getCoreServerHost() };
+    createOptions.connectionToCore = { host: getCoreHost() };
     super(createOptions);
   }
 }
 
-async function getCoreServerHost(): Promise<string> {
-  let serverHost = UlixeeServer.getHost(version);
+async function getCoreHost(): Promise<string> {
+  let minerHost = UlixeeMiner.getHost(version);
 
-  if (serverHost?.startsWith('localhost')) {
-    serverHost = await UlixeeServerConfig.global.checkLocalVersionHost(version, serverHost);
+  if (minerHost?.startsWith('localhost')) {
+    minerHost = await UlixeeHostsConfig.global.checkLocalVersionHost(version, minerHost);
   }
 
-  // start a server if none already started
-  if (!serverHost) {
-    const server = new UlixeeServer();
-    await server.listen();
-    serverHost = await server.address;
-    console.log('Started Ulixee server at %s', serverHost);
+  // start a miner if none already started
+  if (!minerHost) {
+    const miner = new UlixeeMiner();
+    await miner.listen();
+    minerHost = await miner.address;
+    console.log('Started Ulixee Miner at %s', minerHost);
   } else {
-    console.log('Connecting to Ulixee server at %s', serverHost);
+    console.log('Connecting to Ulixee Miner at %s', minerHost);
   }
 
   Core.events.once('browser-has-no-open-windows', ({ browser }) => browser.close());
@@ -48,5 +48,5 @@ async function getCoreServerHost(): Promise<string> {
     console.log('Automatically shutting down Hero Core (Browser Closed)');
     return Core.shutdown();
   });
-  return serverHost;
+  return minerHost;
 }

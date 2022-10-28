@@ -5,14 +5,14 @@ import {
   ExecSyncOptionsWithStringEncoding,
 } from 'child_process';
 
-export function getServerHost(databoxServer: ChildProcess): Promise<string> {
+export function getMinerHost(minerProcess: ChildProcess): Promise<string> {
   return new Promise<string>(resolve => {
-    databoxServer.stderr.setEncoding('utf8');
-    databoxServer.stderr.on('data', console.error);
-    databoxServer.stdout.setEncoding('utf8');
-    databoxServer.stdout.on('data', (message: string) => {
+    minerProcess.stderr.setEncoding('utf8');
+    minerProcess.stderr.on('data', console.error);
+    minerProcess.stdout.setEncoding('utf8');
+    minerProcess.stdout.on('data', (message: string) => {
       console.log('[DATABOX CORE]', message.trim());
-      const match = message.match(/Ulixee Server listening at (.+)/);
+      const match = message.match(/Ulixee Miner listening at (.+)/);
       if (match?.length) resolve(match[1]);
     });
   });

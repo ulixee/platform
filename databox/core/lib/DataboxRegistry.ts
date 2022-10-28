@@ -38,7 +38,7 @@ export default class DataboxRegistry {
     const latestVersionHash = this.getLatestVersion(versionHash);
     const stats = this.databoxesDb.databoxStats.getByVersionHash(versionHash);
     if (!entry) {
-      throw new DataboxNotFoundError('Databox package not found on server.', latestVersionHash);
+      throw new DataboxNotFoundError('Databox package not found on Miner.', latestVersionHash);
     }
     return {
       path,
@@ -132,7 +132,7 @@ export default class DataboxRegistry {
     if (!isSemverSatisfied(requiredVersion, installedVersion)) {
       throw new Error(
         `The installed Databox Core (${installedVersion}) is not compatible with the version required by your Databox Package (${requiredVersion}).\n
-Please try to re-upload after testing with the version available on this server.`,
+Please try to re-upload after testing with the version available on this Miner.`,
       );
     }
   }

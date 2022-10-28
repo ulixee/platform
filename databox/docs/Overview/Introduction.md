@@ -13,7 +13,7 @@ Databoxes create structure -- boundaries -- around a single "scrape", which make
 
 ## How Databoxes Works
 
-Each Databox is a wrapper for defining a composable scraper script. You can run databoxes directly from the command line or upload them to a [Server](/docs/server).
+Each Databox is a wrapper for defining a composable scraper script. You can run databoxes directly from the command line or upload them to a [Miner](/docs/miner).
 
 ## Installation
 
@@ -44,7 +44,7 @@ or
 yarn add @ulixee/databox-playground
 ```
 
-When using the non-playground version, it's your responsibility to ensure your Ulixee development environment is setup, such as installing and running [`@ulixee/server`](/docs/server).
+When using the non-playground version, it's your responsibility to ensure your Ulixee development environment is setup, such as installing and running [`@ulixee/miner`](/docs/miner).
 
 ## Usage Example
 
@@ -64,7 +64,7 @@ Save that script to your filesystem (i.e., simple.js), and run it as a regular n
 node ./simple.js --input.firstName=Me
 ```
 
- However, this Databox structure also allows us to load it into a server and run it on demand:
+However, this Databox structure also allows us to load it onto a Miner and run it on demand:
 
 ```bash
 npx @ulixee/databox-playground deploy ./simple.js

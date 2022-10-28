@@ -11,7 +11,7 @@
       "databox/*",
       "databox/for-hero/*",
       "databox/for-puppeteer/*",
-      "server/*",
+      "miner/*",
       "cli",
       "playgrounds/*"
     ]

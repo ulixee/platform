@@ -4,7 +4,7 @@
       <MainHeader productKey="databox">
         Ulixee Databox
       </MainHeader>
-      
+
       <SubHeader>
         Package Your Data Scripts As Discrete<br />
         Composable Units Ready for Deployment
@@ -21,7 +21,7 @@
     <div class="px-24 mb-40">
       <section class="mt-24">
         <h3>Discrete & Composable</h3>
-        <p>At the core, Databoxes are incredibly simple. It’s just a basic protocol to ensure your script is self-contained and stateless. The idea is that scraper scripts should be deployable as discrete components, each of which can then be built, scaled, and maintained independently. The biggest thing about Databxoes is that it ensourages you to design scraper architecure that scales horizontally.</p>      
+        <p>At the core, Databoxes are incredibly simple. It’s just a basic protocol to ensure your script is self-contained and stateless. The idea is that scraper scripts should be deployable as discrete components, each of which can then be built, scaled, and maintained independently. The biggest thing about Databxoes is that it ensourages you to design scraper architecure that scales horizontally.</p>
       </section>
 
       <section class="mt-24">
@@ -31,12 +31,12 @@
 
       <section class="mt-24">
         <h3>Intelligent Handling of Failure</h3>
-        <p>The more you run scrapers, the more likely you are to find failures, Databoxes make it easy to categorize the outcomes intelligently. You can setup rules that allow Server Overlaod failures to be retried in x mnutes while Recaptchas should be retried only on a new IP Address.</p>
+        <p>The more you run scrapers, the more likely you are to find failures, Databoxes make it easy to categorize the outcomes intelligently. You can setup rules that allow Server Overload failures to be retried in x mnutes while Recaptchas should be retried only on a new IP Address.</p>
       </section>
 
       <section class="mt-24">
         <h3>Payment Walls</h3>
-        <p>Databox was designed with payments as a first class concept.  It’s as simple as setting a price and wallet address in the configuration settings of your Databox. That’s it, so long as you’re using Ulixee Server you can open it to the public, and anyone can query it. Every time they do, you get paid.</p>
+        <p>Databox was designed with payments as a first class concept.  It’s as simple as setting a price and wallet address in the configuration settings of your Databox. That’s it, so long as you’re using Ulixee Miner you can open it to the public, and anyone can query it. Every time they do, you get paid.</p>
       </section>
 
       <section class="mt-24">
@@ -51,11 +51,11 @@
           </li>
           <li>
             <header>Databox for Puppeteer</header>
-            <p>Databox for Puppeteer is an easy way to connect existing Puppeteer scrapers into the Ulixee platform. It allows them to run on Ulixee Server and accept payments in the new economy.</p>
+            <p>Databox for Puppeteer is an easy way to connect existing Puppeteer scrapers into the Ulixee platform. It allows them to run on Ulixee Miner and accept payments in the new economy.</p>
           </li>
           <li>
             <header>Databox for Playwright</header>
-            <p>Similar to the Puppeteer implementation, this is an easy way to connect existing Playwright scrapers into Ulixee’s platform. It allows your scripts to run on Ulixee Server and begin accepting payments</p>
+            <p>Similar to the Puppeteer implementation, this is an easy way to connect existing Playwright scrapers into Ulixee’s platform. It allows your scripts to run on Ulixee Miner and begin accepting payments</p>
           </li>
         </ul>
       </section>

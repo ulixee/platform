@@ -1,14 +1,14 @@
 # Ulixee
 
-Ulixee is a scraping [engine][hero] with a built-in deployment [unit][databox] that enables out-of-the-box [querying][stream] across a horizontal [deployment][server].
+Ulixee is a scraping [engine][hero] with a built-in deployment [unit][databox] that enables out-of-the-box [querying][stream] across a horizontal [deployment][miner].
 
-This repository is the development home to several of the tools that make it easy to build and manage these scripts, including [ChromeAlive!](apps/chromealive), [Server][server] and [Databox for Hero][databox].
+This repository is the development home to several of the tools that make it easy to build and manage these scripts, including [ChromeAlive!](apps/chromealive), [Miner][miner] and [Databox for Hero][databox].
 
 ## Projects
 
 - Hero `/hero`. The Automated Browser Engine built for scraping. (repository home - https://github.com/ulixee/hero).
 - Databox for Hero `/databox/for-hero`. A discrete, composable unit for data extraction scripts.
-- Server `/server`. Run Ulixee tooling on a remote machine.
+- Miner `/miner`. Run Ulixee tooling on a remote machine.
 - Stream `/stream`. Query, transform and compose Databoxes running on any machine.
 - ChromeAlive! `/apps/chromealive*`. Supercharge scraper script development using the Chrome browser.
 
@@ -18,11 +18,11 @@ Try out Ulixee Desktop! The Alpha release is available for download under [Asset
 
 ### Docker
 
-We publish a Docker image of the latest Ulixee Server to Github Containers: `ghcr.io/ulixee/ulixee-server:latest`. To use the image, we have a [run.sh](./server/tools/docker/run.sh) script that will run with a non-root user on your choice of port. All environmental configurations are listed [here](./server/main/.env.defaults).
+We publish a Docker image of the latest Ulixee Miner to Github Container Registry: `ghcr.io/ulixee/ulixee-miner:latest`. To use the image, we have a [run.sh](./miner/tools/docker/run.sh) script that will run with a non-root user on your choice of port. All environmental configurations are listed [here](./miner/main/.env.defaults).
 
 ## Developer Environment
 
-This project serves as a Monorepo for developing the Ulixee Apps, Hero, Databox and Server. To install this project, you'll need to:
+This project serves as a Monorepo for developing the Ulixee Apps, Hero, Databox and Miner. To install this project, you'll need to:
 
 1. Clone with `--recursive` so that submodules are initialized.
 2. Run `yarn build:all` from the main repository.
@@ -44,4 +44,4 @@ We'd love your help in making Ulixee a better set of tools. Please don't hesitat
 [hero]: https://github.com/ulixee/hero
 [databox]: databox/for-hero
 [stream]: stream
-[server]: server
+[miner]: miner

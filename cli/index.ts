@@ -19,9 +19,9 @@ export default function cliCommands(): Command {
       module: '@ulixee/crypto/cli',
     },
     {
-      name: 'server',
-      description: 'launch Ulixee Servers',
-      module: '@ulixee/server/cli',
+      name: 'miner',
+      description: 'launch Ulixee Miners',
+      module: '@ulixee/miner/cli',
     },
     {
       name: 'sidechain',

@@ -65,7 +65,7 @@
           Setup Your Project
         </header>
         <p>Creating a Ulixee project is the same as any other Node project — make the directory, initialize npm and install your depdencies.</p>
-        
+
         <label>Run These Commands:</label>
         <Prism language="shell" :useUlixeeTheme="false">
           mkdir everyone-needs-a-hero
@@ -75,10 +75,10 @@
 
         <div class="mt-5">
           <div class="text-3xl">Oh, and One More Thing</div>
-          <p>If you haven't installed <router-link to="developer-desktop">Ulixee Developer Desktop</router-link> then you'll need to manually setup Server:</p>
+          <p>If you haven't installed <router-link to="developer-desktop">Ulixee Developer Desktop</router-link> then you'll need to manually setup Miner:</p>
 
           <Prism language="shell" :useUlixeeTheme="false">
-            npm install @ulixee/server
+            npm install @ulixee/miner
           </Prism>
         </div>
       </section>
@@ -88,7 +88,7 @@
           <div class="border border-white rounded-full absolute bottom-[200%] left-0 w-10 h-10 text-center">B</div>
           Add Hero to Package.json
         </header>
-                
+
         <Prism language="shell" :useUlixeeTheme="false" class="w-6/12">
           npm install @ulixee/hero
         </Prism>
@@ -102,7 +102,7 @@
         <p class="mt-10">Create a file in your project called example.js and add the following code:</p>
         <Prism language="javascript" :useUlixeeTheme="false" class="w-6/12">
           import Hero from '@ulixee/hero';
-          
+
           async function extractor(url) {
             const hero = new Hero();
             await hero.goto(url);
@@ -130,7 +130,7 @@
 
         <Prism language="javascript" :useUlixeeTheme="false">
           import Hero from '@ulixee/hero';
-          
+
           async function extractor(url) {
             const hero = new Hero({ showChromeAlive: true });
             await hero.goto(url);
@@ -150,7 +150,7 @@
         <header class="text-3xl">Simplify With a Databox</header>
         <Prism language="javascript" :useUlixeeTheme="false">
           import DataboxForHero from '@ulixee/databox-for-hero';
-          
+
           export default new DataboxForHero(async { hero } => {
           &nbsp; const hero = new Hero();
           &nbsp; await hero.goto('https://ulixee.org/getting-started/hero');
@@ -162,7 +162,7 @@
         <header class="text-3xl">Query Your Databox with Stream</header>
         <Prism language="javascript" :useUlixeeTheme="false">
           import Stream from '@ulixee/stream';
-          
+
           const stream = new Stream('databox-example.js');
         </Prism>
       </section>
@@ -185,7 +185,7 @@ import Prism from "@/components/Prism.vue";
 import { ChevronDownIcon } from '@heroicons/vue/outline'
 
 export default Vue.defineComponent({
-  components: { 
+  components: {
     Prism,
     ChevronDownIcon,
   },
@@ -204,7 +204,7 @@ export default Vue.defineComponent({
   },
   created() {
     this.observer = new IntersectionObserver(
-      this.onSectionObserved, 
+      this.onSectionObserved,
       {
         root: window.document,
         threshold: 0,
@@ -225,7 +225,7 @@ export default Vue.defineComponent({
       entries.forEach(async (entry: any) => {
         const { target, isIntersecting} = entry;
         if (!isIntersecting) return;
-      
+
         if (target === this.section1) {
           this.selectedSection = 1;
           hasIntersection = true;

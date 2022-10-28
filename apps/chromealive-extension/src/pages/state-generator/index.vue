@@ -213,8 +213,8 @@ export default Vue.defineComponent({
   },
 
   mounted() {
-    sendToBackgroundScript({ action: 'getCoreServerAddress' }, serverAddress => {
-      window.setHeroServerUrl(serverAddress);
+    sendToBackgroundScript({ action: 'getMinerAddress' }, address => {
+      window.setMinerAddress(address);
       Client.send('Session.getDom')
         .then(this.onDomResponse)
         .catch(err => alert(err.stack));

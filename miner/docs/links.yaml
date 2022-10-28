@@ -1,0 +1,15 @@
+- title: Overview
+  items:
+    - Introduction
+    - Configuration
+
+- title: Modules
+  items:
+    - Miner
+#    - ChromeAlive
+
+- title: Help
+  items:
+    - Prerequisites
+    - How to upgrade
+    - Troubleshooting

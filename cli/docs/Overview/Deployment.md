@@ -8,7 +8,7 @@ We provide a packaging tool out of the box to combine your Databox and included 
 
 ### Packaged .dbx Files
 
-Your Databox will be packaged into a file with the same name and path as your script, but with the extension `.dbx`. These files are safe to check-in to source control so other developers on your team can package and deploy the databoxes without a need to re-build them. You can also drop them onto a server to [deploy](#deploying) them.
+Your Databox will be packaged into a file with the same name and path as your script, but with the extension `.dbx`. These files are safe to check-in to source control so other developers on your team can package and deploy the databoxes without a need to re-build them. You can also drop them onto a Miner to [deploy](#deploying) them.
 
 A `.dbx` file has the following files in it:
 
@@ -18,7 +18,7 @@ A `.dbx` file has the following files in it:
 
 #### Out Directory
 
-If you want to build all your `.dbx` files so they can be deployed manually onto a server (eg, if you have a Docker image and wish to pre-deploy `.dbx` files), you can do so in two ways:
+If you want to build all your `.dbx` files so they can be deployed manually onto a Miner (eg, if you have a Docker image and wish to pre-deploy `.dbx` files), you can do so in two ways:
 1. `Configuration`. You can add a `databoxOutDir` parameter to a Ulixee config file (`.ulixee/config.json` in the hierarchy of your project). The path should be relative to the `config.json` file.
 2. `npx @ulixee/databox build --out-dir=<path>`. During build, you can specify an out directory. 
 
@@ -43,7 +43,7 @@ Packaged Databox files are simply GZIP compressed Tar files. You can use normal 
 
 #### Deploying {#deploying}
 
-You can copy `.dbx` files into the configured [`Databox Storage`](/docs/databox/overview/configuration#storage) directory of your server before boot-up, and the server will automatically unpack and install them.
+You can copy `.dbx` files into the configured [`Databox Storage`](/docs/databox/overview/configuration#storage) directory of your Miner before boot-up, and the Miner will automatically unpack and install them.
 
 NOTE: If you want to configure all your `.dbx` files to be output to the same directory, you can use the `outDir` option of the build command.
 
@@ -53,30 +53,30 @@ The packager can optionally process Typescript files for you. If you have a uniq
 
 ### ES Modules vs CommonJS
 
-The packager can process ES Modules or CommonJS. It will output a commonjs file so that Ulixee Server can import it on a server. The server will run your Databox in an isolated Sandbox for each run. No memory or variables are shared between runs. ES Modules will result in more compact deployments by tree-shaking unneeded code.
+The packager can process ES Modules or CommonJS. It will output a commonjs file so that Ulixee Miner can import it on the remote machine. The Miner will run your Databox in an isolated Sandbox for each run. No memory or variables are shared between runs. ES Modules will result in more compact deployments by tree-shaking unneeded code.
 
 ### Versioning
 
 Every version of your script is hashed using a SHA3 256 algorithm, and encoded using Bech32m (a standard formalized by the Bitcoin working group to create file and url-safe base32 hash encodings).
 
-When you package up a new version of your Databox, it will maintain a list of the sequence of versions. Anytime your Databox is used on a Core Server, it will return the latest version hash. This helps inform users of your Databox when they're using an out-of-date version.
+When you package up a new version of your Databox, it will maintain a list of the sequence of versions. Anytime your Databox is used on a Miner, it will return the latest version hash. This helps inform users of your Databox when they're using an out-of-date version.
 
-If you ever get out of sync with the versions that are on your server, you have two options.
+If you ever get out of sync with the versions that are on your Miner, you have two options.
 
 1. Clear or add an empty `linkedVersions` field to a [manifest]{#manifest} file.
-2. You'll also be prompted to link the server version history when you try to upload an out of date script.
+2. You'll also be prompted to link the Miner version history when you try to upload an out of date script.
 3. You can also choose the CLI prompts to start a new version history.
 
 ## Manifest {#manifest}
 
 When you package a Databox, a Manifest is created with the following properties:
 
-- versionHash `string`. The unique "hash" of your Databox, used to version your script and refer to it in queries to remote Servers. It includes all properties of the manifest excluding the versionHash. Hashing uses Sha3-256 encoded in a base32 format called bech32m.
+- versionHash `string`. The unique "hash" of your Databox, used to version your script and refer to it in queries to remote Miners. It includes all properties of the manifest excluding the versionHash. Hashing uses Sha3-256 encoded in a base32 format called bech32m.
 - versionTimestamp `number`. A unix timestamp when a version was created.
 - scriptHash `string`. A Sha3-256 hash of the rolled-up script. The encoding uses a base32 format called Bech32m so that it's file-path friendly.
 - linkedVersions `{ versionHash: string, versionTimestamp: number }[]`. The history of linked versions with newest first. NOTE: this will be automatically maintained by the packager.
 - scriptEntrypoint `string`. The relative path to your file (from the closest package.json).
-- coreVersion `string`. The version of the Databox module. Your script will be checked for compatibility with the Server npm modules before it runs.
+- coreVersion `string`. The version of the Databox module. Your script will be checked for compatibility with the Miner npm modules before it runs.
 - corePlugins `string`. An object containing a list of npm packages/versions that are core Databox plugins.
 - paymentAddress `string`. Optional address to use with the Ulixee Sidechain for payments.
 - pricePerQuery `number`. Optional price per query (in Ulixee Sidechain microgons - 1 microgon = ~1/1,000,000 of a dollar).
@@ -88,7 +88,7 @@ Setting any of the above properties into the manifest will be incorporated into 
 
 ### __GENERATED_LAST_VERSION__
 
-This file will be automatically generated by the CLI. The full settings from the previous version will be added as a field called `__GENERATED_LAST_VERSION__`. The `versionHash` in this section is a good sanity check to compare versions on your local machine vs a Server. By default, Ulixee Servers store Databoxes in the `<OS Cache Directory>/ulixee/databoxes` directory ([details](/docs/databox/overview/configuration#storage)).
+This file will be automatically generated by the CLI. The full settings from the previous version will be added as a field called `__GENERATED_LAST_VERSION__`. The `versionHash` in this section is a good sanity check to compare versions on your local machine vs a Miner. By default, Ulixee Miners store Databoxes in the `<OS Cache Directory>/ulixee/databoxes` directory ([details](/docs/databox/overview/configuration#storage)).
 
 ### Setting Manifest Values
 
@@ -167,7 +167,7 @@ Your Databox will be built and uploaded transparently. No `.dbx` or working dire
 
 Options below show a short and long form.
 
-- `-h, --upload-host <host>`. Upload this package to the given host server. Will try to auto-connect if none specified.
+- `-h, --upload-host <host>`. Upload this package to the given Miner host. Will try to auto-connect if none specified.
 - `-c, --clear-version-history` Clear out any version history for this script entrypoint (default: false)
 - `-s, --compiled-source-path <path>` Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).
 - `-t, --tsconfig <path>`. A path to a TypeScript config file (if needed). Will be auto-located based on the entrypoint if it ends in ".ts"
@@ -199,8 +199,8 @@ The build directory is automatically cleaned up after your upload.
 
 Options below show a short and long form.
 
-- `-u, --upload` `Boolean`. Upload this package to a Ulixee Server after packaging. (default: false)
-- `-h, --upload-host <host>`. Upload this package to the given host server. Will try to auto-connect if none specified.
+- `-u, --upload` `Boolean`. Upload this package to a Ulixee Miner after packaging. (default: false)
+- `-h, --upload-host <host>`. Upload this package to the given Miner host. Will try to auto-connect if none specified.
 - `-o, --out-dir <path>` A directory path where you want packaged .dbx files to be saved
 - `-c, --clear-version-history` Clear out any version history for this script entrypoint (default: false)
 - `-s, --compiled-source-path <path>` Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).
@@ -208,7 +208,7 @@ Options below show a short and long form.
 
 ### Uploading a .dbx
 
-You can upload Databoxes to a Ulixee Server automatically when you package them. If you decide to first examine the package, you can also choose to upload later (or deploy directly to the [Databoxes directory](/docs/databox/overview/configuration#storage) during your Server installation).
+You can upload Databoxes to a Ulixee Miner automatically when you package them. If you decide to first examine the package, you can also choose to upload later (or deploy directly to the [Databoxes directory](/docs/databox/overview/configuration#storage) during your Miner installation).
 
 If you upload using the CLI, you can use the following command:
 
@@ -228,7 +228,7 @@ You must provide a path to the pre-packaged `.dbx` file (eg, `<pathToScript/scri
 
 Options below show a short and long form.
 
-- `-h, --upload-host <host>`. Upload this package to the given host server. Will try to auto-connect if none specified.
+- `-h, --upload-host <host>`. Upload this package to the given Miner host. Will try to auto-connect if none specified.
 - `-a, --allow-new-version-history` Allow uploaded Databox to create a new version history for the script entrypoint. (default: false)
 
 ### Opening a .dbx
@@ -271,7 +271,7 @@ Options below show a short and long form.
 
 ## Databox Core Sandboxes
 
-When Databoxes are run on a Server, they are initialized into a virtual machine sandbox that has no access to Node.js modules beyond the `Hero`, `Databox` and `Unblocked` modules. Your dependencies will be imported into your package, but you should not expect NodeJs core xs to be available. Your script will also be fully isolated between runs - any shared state must be provided in via the `input` variables. This isolation ensures your script can be reproduced, re-run and troubleshooted reliably.
+When Databoxes are run on a Miner, they are initialized into a virtual machine sandbox that has no access to Node.js modules beyond the `Hero`, `Databox` and `Unblocked` modules. Your dependencies will be imported into your package, but you should not expect NodeJs core xs to be available. Your script will also be fully isolated between runs - any shared state must be provided in via the `input` variables. This isolation ensures your script can be reproduced, re-run and troubleshooted reliably.
 
 ## Efficient Units
 

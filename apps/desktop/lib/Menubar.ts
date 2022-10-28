@@ -2,7 +2,7 @@ import ChromeAliveCore from '@ulixee/apps-chromealive-core';
 import { app, BrowserWindow, shell, systemPreferences, Tray } from 'electron';
 import log from 'electron-log';
 import { EventEmitter } from 'events';
-import UlixeeServer from '@ulixee/server';
+import UlixeeMiner from '@ulixee/miner';
 import * as Positioner from 'electron-positioner';
 import * as Path from 'path';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
@@ -29,7 +29,7 @@ export class Menubar extends EventEmitter {
   #nsEventMonitor: unknown;
   #positioner: Positioner | undefined;
   #vueServer: VueServer;
-  #ulixeeServer: UlixeeServer;
+  #ulixeeMiner: UlixeeMiner;
   #ulixeeConfig: UlixeeConfig;
   #isClosing = false;
   #updateInfoPromise: Promise<UpdateInfo>;
@@ -144,7 +144,7 @@ export class Menubar extends EventEmitter {
     console.warn('Quitting Ulixee Menubar');
     this.#tray.removeAllListeners();
     this.hideWindow();
-    await this.stopServer();
+    await this.stopMiner();
   }
 
   private async appExit(): Promise<void> {
@@ -160,7 +160,7 @@ export class Menubar extends EventEmitter {
   private appReady(): void {
     try {
       // for now auto-start
-      this.startServer().catch(console.error);
+      this.startMiner().catch(console.error);
       ShutdownHandler.exitOnSignal = false;
       ShutdownHandler.register(() => this.appExit());
 
@@ -346,19 +346,19 @@ export class Menubar extends EventEmitter {
         }
 
         if (api === 'App.openDataDirectory') {
-          await shell.openPath(this.#ulixeeServer.dataDir);
+          await shell.openPath(this.#ulixeeMiner.dataDir);
         }
 
-        if (api === 'Server.stop' || api === 'Server.restart') {
-          await this.stopServer();
+        if (api === 'Miner.stop' || api === 'Miner.restart') {
+          await this.stopMiner();
         }
 
-        if (api === 'Server.start' || api === 'Server.restart') {
-          await this.startServer();
+        if (api === 'Miner.start' || api === 'Miner.restart') {
+          await this.startMiner();
         }
 
-        if (api === 'Server.getStatus') {
-          await this.updateServerStatus();
+        if (api === 'Miner.getStatus') {
+          await this.updateMinerStatus();
         }
 
         if (api === 'Version.check') {
@@ -379,8 +379,8 @@ export class Menubar extends EventEmitter {
     if (!app.isPackaged || process.env.OPEN_DEVTOOLS) {
       this.#browserWindow.webContents.openDevTools({ mode: 'undocked' });
     }
-    if (this.#ulixeeServer) {
-      await this.updateServerStatus();
+    if (this.#ulixeeMiner) {
+      await this.updateMinerStatus();
     }
   }
 
@@ -388,45 +388,45 @@ export class Menubar extends EventEmitter {
     this.#browserWindow = undefined;
   }
 
-  /// //// SERVER MANAGEMENT ////////////////////////////////////////////////////////////////////////////////////////////
+  /// //// MINER MANAGEMENT ////////////////////////////////////////////////////////////////////////////////////////////
 
-  private async stopServer(): Promise<void> {
-    if (!this.#ulixeeServer) return;
+  private async stopMiner(): Promise<void> {
+    if (!this.#ulixeeMiner) return;
 
     // eslint-disable-next-line no-console
-    console.log(`CLOSING ULIXEE SERVER`);
-    const server = this.#ulixeeServer;
-    this.#ulixeeServer = null;
-    await server.close();
-    await this.updateServerStatus();
+    console.log(`CLOSING ULIXEE MINER`);
+    const miner = this.#ulixeeMiner;
+    this.#ulixeeMiner = null;
+    await miner.close();
+    await this.updateMinerStatus();
   }
 
-  private async startServer(): Promise<void> {
-    if (this.#ulixeeServer) return;
+  private async startMiner(): Promise<void> {
+    if (this.#ulixeeMiner) return;
     ChromeAliveCore.register();
-    this.#ulixeeServer = new UlixeeServer();
-    const address = UlixeeConfig.global?.serverHost;
+    this.#ulixeeMiner = new UlixeeMiner();
+    const address = UlixeeConfig.global?.defaultMinerHost;
     let port = 0;
     if (address) {
       port = Number(address.split(':').pop());
     }
-    await this.#ulixeeServer.listen({ port });
+    await this.#ulixeeMiner.listen({ port });
 
     await installDefaultChrome();
 
     // eslint-disable-next-line no-console
-    console.log(`STARTED ULIXEE SERVER at ${await this.#ulixeeServer.address}`);
-    await this.updateServerStatus();
+    console.log(`STARTED ULIXEE MINER at ${await this.#ulixeeMiner.address}`);
+    await this.updateMinerStatus();
   }
 
-  private async updateServerStatus(): Promise<void> {
+  private async updateMinerStatus(): Promise<void> {
     if (this.#isClosing) return;
     let address: string = null;
-    if (this.#ulixeeServer) {
-      address = await this.#ulixeeServer.address;
+    if (this.#ulixeeMiner) {
+      address = await this.#ulixeeMiner.address;
     }
-    await this.sendToVueApp('Server.status', {
-      started: !!this.#ulixeeServer,
+    await this.sendToVueApp('Miner.status', {
+      started: !!this.#ulixeeMiner,
       address,
     });
   }

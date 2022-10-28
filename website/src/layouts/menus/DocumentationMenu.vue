@@ -9,7 +9,7 @@
           <router-link to="/docs/databox" class="block px-5">Databox</router-link>
         </div>
         <div class="relative bg-white">
-          <router-link to="/docs/server" class="block px-5">Server</router-link>
+          <router-link to="/docs/miner" class="block px-5">Miner</router-link>
         </div>
         <div class="relative bg-white">
           <router-link to="/docs/cli" class="block px-5">CLI</router-link>

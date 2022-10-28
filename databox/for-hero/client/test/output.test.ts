@@ -11,7 +11,7 @@ afterAll(Helpers.afterAll);
 afterEach(Helpers.afterEach);
 
 describe('basic output tests', () => {
-  it('sends output changes to server', async () => {
+  it('sends output changes to core', async () => {
     const connection = new MockConnectionToHeroCore(({ command, messageId: responseId }) => {
       const response = {
         responseId,

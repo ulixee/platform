@@ -2,7 +2,7 @@ import { safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import { spawn } from 'child_process';
 import * as Path from 'path';
-import { execAndLog, getServerHost } from '../utils';
+import { execAndLog, getMinerHost } from '../utils';
 
 export default async function main(
   sidechainHost: string,
@@ -25,8 +25,8 @@ export default async function main(
   });
   const giftCardAddress = addressResult.split('Wrote address: ').pop().split(' ')[0].trim();
 
-  // BOOT UP A SERVER WITH GIFT CARD RESTRICTIONS
-  const databoxServer = spawn(`npx @ulixee/server start`, {
+  // BOOT UP A MINER WITH GIFT CARD RESTRICTIONS
+  const miner = spawn(`npx @ulixee/miner start`, {
     stdio: 'pipe',
     cwd: rootDir,
     shell: true,
@@ -38,8 +38,8 @@ export default async function main(
       ULX_DISABLE_CHROMEALIVE: 'true'
     },
   });
-  const databoxHost = await getServerHost(databoxServer);
-  needsClosing.push(() => databoxServer.kill());
+  const databoxHost = await getMinerHost(miner);
+  needsClosing.push(() => miner.kill());
 
   const giftCardResult = execAndLog(
     `npx @ulixee/sidechain gift-card create -m 500c -h ${sidechainHost}`,

@@ -27,13 +27,13 @@
       <a @click.prevent="quit()">Shutdown Ulixee</a>
     </div>
     <div class="section">
-      <div class="server-status">
-        <span class="circle" :class="{ stopped: !serverStarted }"></span>
-        <span v-if="serverStarted" class="text">Server is running on {{ address }}</span>
-        <span v-else class="text">Server is not running</span>
+      <div class="miner-status">
+        <span class="circle" :class="{ stopped: !minerStarted }"></span>
+        <span v-if="minerStarted" class="text">Miner is running on {{ address }}</span>
+        <span v-else class="text">Miner is not running</span>
       </div>
-      <div class="server-actions">
-        <button v-if="serverStarted" @click.prevent="stop()">Stop</button>
+      <div class="miner-actions">
+        <button v-if="minerStarted" @click.prevent="stop()">Stop</button>
         <button v-else @click.prevent="start()">Start</button>
         <button @click.prevent="restart()">Restart</button>
       </div>
@@ -49,7 +49,7 @@ export default Vue.defineComponent({
   components: {},
   setup() {
     return {
-      serverStarted: Vue.ref(false),
+      minerStarted: Vue.ref(false),
       address: Vue.ref(''),
       onLatestVersion: Vue.ref(false),
       isInstalling: Vue.ref(false),
@@ -63,9 +63,9 @@ export default Vue.defineComponent({
         console.log('desktop:event', evt);
       } catch (err) {}
       const { eventType, data } = (evt as CustomEvent).detail;
-      if (eventType === 'Server.status') {
+      if (eventType === 'Miner.status') {
         this.address = data.address;
-        this.serverStarted = data.started;
+        this.minerStarted = data.started;
       }
       if (eventType === 'Version.onLatest') {
         this.onLatestVersion = true;
@@ -83,20 +83,20 @@ export default Vue.defineComponent({
       }
     });
 
-    this.sendApi('Server.getStatus');
+    this.sendApi('Miner.getStatus');
   },
   methods: {
     quit() {
       this.sendApi('App.quit');
     },
     restart() {
-      this.sendApi('Server.restart');
+      this.sendApi('Miner.restart');
     },
     start() {
-      this.sendApi('Server.start');
+      this.sendApi('Miner.start');
     },
     stop() {
-      this.sendApi('Server.stop');
+      this.sendApi('Miner.stop');
     },
     openLogsDirectory() {
       this.sendApi('App.openLogsDirectory');
@@ -219,7 +219,7 @@ button {
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
   }
-  .server-status {
+  .miner-status {
     padding: 8px 10px;
     font-weight: bold;
     .circle {
@@ -237,7 +237,7 @@ button {
       }
     }
   }
-  .server-actions {
+  .miner-actions {
     padding: 8px 10px;
     display: flex;
     flex-direction: row;

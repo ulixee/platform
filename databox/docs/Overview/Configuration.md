@@ -26,7 +26,7 @@ const options = {
 
 If no connectionToCore is provided to a Databox:
 
-1. a local Server connection will attempt to be automatically discovered.
+1. a local Miner connection will attempt to be automatically discovered.
 2. if none is found, it will look for a Ulixee Configuration file.
 
 This process starts in the directory of your script and looks upwards to the root for a folder called '.ulixee'. The configuration file inside this folder is expected to be called 'config.json';
@@ -42,7 +42,7 @@ This process starts in the directory of your script and looks upwards to the roo
 
 Current supported configurations are:
 
-- serverHost `string`. A "host:port" combination to access your default [Server](/docs/server)
+- defaultMinerHost `string`. A "host:port" combination to access your default [Miner](/docs/miner)
 
 ### Defer Running Databox
 

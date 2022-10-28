@@ -39,10 +39,10 @@
               </router-link>
             </NavItem>
             <NavItem>
-              <router-link :to="`/server${subPath}`">
+              <router-link :to="`/miner${subPath}`">
                 <inline-svg :src="require('@/assets/tool-icons/server.svg')" />
                 <div>
-                  <header>Server</header>
+                  <header>Miner</header>
                   <p>Easily run and scale your Databoxes across production and localhost.</p>
                 </div>
               </router-link>

@@ -30,12 +30,12 @@ export class ChromeAlive extends EventEmitter {
   #savedVisibleWindowIds = new Set<number>();
   #apiWantsToShowToolbar = false;
 
-  constructor(readonly coreServerAddress?: string) {
+  constructor(readonly minerAddress?: string) {
     super();
     this.#toolbarIsVisible = false;
-    this.coreServerAddress ??= process.argv
-      .find(x => x.startsWith('--coreServerAddress='))
-      ?.replace('--coreServerAddress=', '')
+    this.minerAddress ??= process.argv
+      .find(x => x.startsWith('--minerAddress='))
+      ?.replace('--minerAddress=', '')
       ?.replace(/"/g, '');
 
     this.#hideOnLaunch = process.argv.some(x => x === '--hide');
@@ -44,7 +44,7 @@ export class ChromeAlive extends EventEmitter {
     if (process.platform === 'darwin') {
       app.setActivationPolicy('accessory');
     }
-    this.#api = new ChromeAliveApi(this.coreServerAddress, this.onChromeAliveEvent.bind(this));
+    this.#api = new ChromeAliveApi(this.minerAddress, this.onChromeAliveEvent.bind(this));
     this.#api.once('close', () => this.appExit());
 
     ContextMenu({
@@ -320,7 +320,7 @@ export class ChromeAlive extends EventEmitter {
     const vueServerAddress = await this.#vueAddress;
     await this.#toolbarWindow.loadURL(`http://localhost:${vueServerAddress.port}/toolbar.html`);
 
-    await this.injectCoreServer(this.#toolbarWindow);
+    await this.injectMinerAddress(this.#toolbarWindow);
 
     const workareaBounds = {
       left: workarea.x,
@@ -379,13 +379,13 @@ export class ChromeAlive extends EventEmitter {
     });
   }
 
-  private async injectCoreServer(window: BrowserWindow): Promise<void> {
+  private async injectMinerAddress(window: BrowserWindow): Promise<void> {
     await window.webContents.executeJavaScript(
       `(() => {
-        const coreServerAddress = '${this.coreServerAddress ?? ''}';
-        if (coreServerAddress) {
-          window.heroServerUrl = coreServerAddress;
-          if ('setHeroServerUrl' in window) window.setHeroServerUrl(coreServerAddress);
+        const minerAddress = '${this.minerAddress ?? ''}';
+        if (minerAddress) {
+          window.minerAddress = minerAddress;
+          if ('setMinerAddress' in window) window.setMinerAddress(minerAddress);
         }
       })()`,
     );

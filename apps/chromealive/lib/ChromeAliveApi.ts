@@ -17,19 +17,19 @@ export default class ChromeAliveApi extends TypedEventEmitter<{ close: void }> {
   private readonly transport: ITransportToCore;
 
   constructor(
-    private chromeAliveServerApi: string,
+    private chromeAliveApiUrl: string,
     public onEvent: (event: IEvent, data?: IChromeAliveEvents[IEvent]) => any,
   ) {
     super();
     process.on('disconnect', () => this.onEvent('App.quit'));
     process.on('message', this.onMessage.bind(this));
     try {
-      new URL(chromeAliveServerApi);
+      new URL(chromeAliveApiUrl);
     } catch (error) {
-      console.error('Invalid ChromeAliveApi URL', error, { chromeAliveServerApi });
+      console.error('Invalid ChromeAliveApi URL', error, { chromeAliveApiUrl });
       throw error;
     }
-    this.transport = new WsTransportToCore(chromeAliveServerApi);
+    this.transport = new WsTransportToCore(chromeAliveApiUrl);
     this.connection = new ConnectionToCore(this.transport);
     this.connection.on('event', this.onMessage.bind(this));
     this.connection.on('disconnected', this.onDisconnected.bind(this));
@@ -42,7 +42,6 @@ export default class ChromeAliveApi extends TypedEventEmitter<{ close: void }> {
   public async disconnect(): Promise<void> {
     await this.connection.disconnect();
   }
-
 
   public async send<T extends keyof IChromeAliveApis>(
     command: T,

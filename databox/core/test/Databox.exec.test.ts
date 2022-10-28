@@ -1,7 +1,7 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import DataboxPackager from '@ulixee/databox-packager';
-import UlixeeServer from '@ulixee/server';
+import UlixeeMiner from '@ulixee/miner';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DataboxApiClient from '@ulixee/databox/lib/DataboxApiClient';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
@@ -19,11 +19,12 @@ import IGiftCardApis from '@ulixee/specification/sidechain/GiftCardApis';
 import { nanoid } from 'nanoid';
 import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import ISidechainInfoApis from '@ulixee/specification/sidechain/SidechainInfoApis';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import DataboxCore from '../index';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Databox.exec.test');
 
-let server: UlixeeServer;
+let miner: UlixeeMiner;
 let client: DataboxApiClient;
 const sidechainIdentity = Identity.createSync();
 const batchIdentity = Identity.createSync();
@@ -33,18 +34,19 @@ const batchSlug = 'micro_12345123';
 const giftCardBatchSlug = 'gifts_12345123';
 
 const address = Address.createFromSigningIdentities([clientIdentity]);
-const serverIdentity = Identity.createSync();
-const serverGiftCardAddress = Address.createFromSigningIdentities([serverIdentity]);
+const minerIdentity = Identity.createSync();
+const minerGiftCardAddress = Address.createFromSigningIdentities([minerIdentity]);
 
 const apiCalls = jest.fn();
 DataboxCore.options.identityWithSidechain = Identity.createSync();
-DataboxCore.options.giftCardAddress = serverGiftCardAddress.bech32;
+DataboxCore.options.giftCardAddress = minerGiftCardAddress.bech32;
 DataboxCore.options.defaultSidechainHost = 'http://localhost:1337';
 DataboxCore.options.defaultSidechainRootIdentity = sidechainIdentity.bech32;
 DataboxCore.options.approvedSidechains = [
   { rootIdentity: sidechainIdentity.bech32, url: 'http://localhost:1337' },
 ];
 
+jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
 const mock = {
   sidechainClient: {
     sendRequest: jest.spyOn<any, any>(SidechainClient.prototype, 'sendRequest'),
@@ -68,10 +70,10 @@ beforeAll(async () => {
 
   mock.sidechainClient.sendRequest.mockImplementation(mockSidechainServer);
 
-  server = new UlixeeServer();
-  server.router.databoxConfiguration = { databoxesDir: storageDir };
-  await server.listen();
-  client = new DataboxApiClient(await server.address);
+  miner = new UlixeeMiner();
+  miner.router.databoxConfiguration = { databoxesDir: storageDir };
+  await miner.listen();
+  client = new DataboxApiClient(await miner.address);
 });
 
 beforeEach(() => {
@@ -82,7 +84,7 @@ beforeEach(() => {
 
 afterAll(async () => {
   Fs.rmdirSync(storageDir, { recursive: true });
-  await server.close();
+  await miner.close();
 });
 
 test('should be able run a databox', async () => {
@@ -164,7 +166,7 @@ test('should be able run a databox with a GiftCard', async () => {
     `${__dirname}/databoxes/output-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
-      giftCardAddress: serverGiftCardAddress.bech32,
+      giftCardAddress: minerGiftCardAddress.bech32,
       pricePerQuery: 1250,
     } as IDataboxManifest),
   );
@@ -174,8 +176,8 @@ test('should be able run a databox with a GiftCard', async () => {
   await client.upload(await dbx.asBuffer());
 
   const devSidechainClient = new SidechainClient('http://localhost:1337', {
-    identity: serverIdentity,
-    address: serverGiftCardAddress,
+    identity: minerIdentity,
+    address: minerGiftCardAddress,
   });
   const giftCard = await devSidechainClient.createGiftCard(5000);
 
@@ -277,7 +279,7 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
     return {
       microgons: 5000,
       fundsId: 1,
-      redeemableWithAddresses: [serverGiftCardAddress.bech32],
+      redeemableWithAddresses: [minerGiftCardAddress.bech32],
     } as IGiftCardApis['GiftCard.claim']['result'];
   }
   if (command === 'MicronoteBatch.activeFunds') {
@@ -285,7 +287,7 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
     if ((args as any).batchSlug === giftCardBatchSlug) {
       funds.push({
         fundsId: 1,
-        allowedRecipientAddresses: [serverGiftCardAddress.bech32],
+        allowedRecipientAddresses: [minerGiftCardAddress.bech32],
         microgonsRemaining: 5000,
       });
     }

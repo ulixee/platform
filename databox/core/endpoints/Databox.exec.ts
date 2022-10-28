@@ -14,7 +14,7 @@ import { IDataboxStatsRecord } from '../lib/DataboxStatsTable';
 export default new DataboxApiHandler('Databox.exec', {
   async handler(request, context) {
     if (DataboxCore.isClosing)
-      throw new CanceledPromiseError('Server shutting down. Not accepting new work.');
+      throw new CanceledPromiseError('Miner shutting down. Not accepting new work.');
     await DataboxCore.start();
 
     const startTime = Date.now();
@@ -24,14 +24,14 @@ export default new DataboxApiHandler('Databox.exec', {
     for (const [pluginName, pluginVersion] of Object.entries(corePlugins)) {
       const pluginCore = context.pluginCoresByName[pluginName];
       if (!pluginCore) {
-        throw new Error(`Server does not support required runtime dependency: ${pluginName}`);
+        throw new Error(`Miner does not support required runtime dependency: ${pluginName}`);
       }
-  
+
       if (!isSemverSatisfied(coreVersion, pluginVersion)) {
         throw new Error(
           `The current version of ${pluginName} (${pluginVersion}) is incompatible with this Databox version (${coreVersion})`,
         );
-      }  
+      }
     }
 
     const paymentProcessor = await processPayments(context, request, registryEntry);
@@ -115,7 +115,7 @@ async function processPayments(
 
   if (request.payment.isGiftCardBatch) {
     if (!configuration.giftCardAddress || !databox.giftCardAddress) {
-      const rejector = !databox.giftCardAddress ? 'databox' : 'server';
+      const rejector = !databox.giftCardAddress ? 'databox' : 'Miner';
       throw new InvalidMicronoteError(`This ${rejector} is not accepting gift cards.`);
     }
     paymentProcessor.addAddressPayable(configuration.giftCardAddress, {
