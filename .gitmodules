@@ -2,7 +2,3 @@
 	path = hero
 	url = git@github.com:ulixee/hero.git
 	branch = main
-[submodule "stream"]
-	path = stream
-	url = git@github.com:ulixee/stream.git
-	branch = main
