@@ -181,14 +181,14 @@ export default class SessionObserver extends TypedEventEmitter<{
     const execPath = this.scriptInstanceMeta.execPath;
     const execArgv = this.scriptInstanceMeta.execArgv ?? [];
     const args = [
-      `--sessionResume.startLocation="${startLocation}"`,
-      `--sessionResume.sessionId="${this.heroSession.id}"`,
-      '--show-chrome-alive',
+      `--resumeSessionStartLocation="${startLocation}"`,
+      `--resumeSessionId="${this.heroSession.id}"`,
+      '--showChromeAlive',
     ];
     if (startLocation === 'extraction') {
       args.length = 0;
       this.resetExtraction();
-      args.push(`--previousSessionId="${this.heroSession.id}"`, '--mode="browserless"');
+      args.push(`--replaySessionId="${this.heroSession.id}"`, '--mode="browserless"');
     }
 
     try {

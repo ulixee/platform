@@ -6,7 +6,7 @@ To use DataboxForPuppeteer, import the plugin and include it in the `plugins` ar
 
 ```js
 import Databox from '@ulixee/databox';
-import { DataboxForPuppeteerPlugin } = '@ulixee/databox-for-puppeteer';
+import { DataboxForPuppeteerPlugin } from '@ulixee/databox-for-puppeteer';
 
 export default new Databox({
   plugins: [DataboxForPuppeteerPlugin],
@@ -25,7 +25,7 @@ export default new Databox({
 A simpler approach is use the DataboxForPuppeteer's default export, which automatically bundles the plugin. You can use it almost exactly the same as the standard Databox:
 
 ```js
-import DataboxForPuppeteer = '@ulixee/databox-for-puppeteer';
+import DataboxForPuppeteer from '@ulixee/databox-for-puppeteer';
 
 export default new DataboxForPuppeteer(async databox => {
   const { input, output, browser } = databox;

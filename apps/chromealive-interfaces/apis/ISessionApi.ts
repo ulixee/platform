@@ -7,7 +7,7 @@ import IAppModeEvent from '../events/IAppModeEvent';
 import ISessionSearchResult from '../ISessionSearchResult';
 
 export interface ISessionResumeArgs extends IHeroSessionArgs {
-  startLocation: ISessionCreateOptions['sessionResume']['startLocation'];
+  startLocation: ISessionCreateOptions['resumeSessionStartLocation'];
   startFromNavigationId?: number;
 }
 

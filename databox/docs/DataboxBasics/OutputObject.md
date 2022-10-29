@@ -33,7 +33,7 @@ NOTE: you cannot "re-assign" the output variable and have it be observed. You sh
 import Databox from '@ulixee/databox-playground';
 
 export default new Databox(async databox => {
-  const { output } = databox;
+  let { output } = databox;
   
   // Setting a variable is ok
   output.whoop = 'This will work!';

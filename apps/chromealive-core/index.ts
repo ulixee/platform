@@ -141,15 +141,14 @@ export default class ChromeAliveCore {
       return;
     }
 
-    if (heroSession.options.sessionResume?.sessionId) {
+    if (heroSession.options.resumeSessionId || heroSession.options.replaySessionId) {
       SourceMapSupport.resetCache();
     }
 
     if (heroSession.mode === 'browserless') {
-      // @ts-expect-error
-      const previousSessionId = heroSession.options.previousSessionId;
-      if (previousSessionId) {
-        const observer = this.sessionObserversById.get(previousSessionId);
+      const replaySessionId = heroSession.options.replaySessionId;
+      if (replaySessionId) {
+        const observer = this.sessionObserversById.get(replaySessionId);
         if (observer) observer.bindExtractor(heroSession);
         return;
       }
@@ -211,7 +210,7 @@ export default class ChromeAliveCore {
 
     const isRestartedSessionId =
       !!this.restartingHeroSessionId &&
-      this.restartingHeroSessionId === heroSession.options.sessionResume?.sessionId;
+      this.restartingHeroSessionId === heroSession.options.resumeSessionId;
     this.restartingHeroSessionId = null;
 
     if (!this.activeHeroSessionId || isRestartedSessionId) {
