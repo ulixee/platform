@@ -53,7 +53,7 @@ export default class DataboxExecutable<ISchema extends IDataboxSchema = IDatabox
 
     try {
       databoxInternal.validateInput();
-      await this.plugins.onExec(databoxInternal, options, this.components.defaults);
+      await this.plugins.onStart(databoxInternal, options, this.components.defaults);
 
       if (this.components.run && this.plugins.shouldRun) {
         const databoxObject = new DataboxObject<ISchema>(databoxInternal);

@@ -1,11 +1,10 @@
 import { setupAutorunMjsHack } from './lib/utils/Autorun.mjs';
 import cjsImport from './index.js';
 
-const { DataboxObject } = cjsImport;
+const { DataboxObject, Schema } = cjsImport;
 
-export { DataboxObject };
+export { DataboxObject, Schema, Databox, Observable };
 
 export default cjsImport.default;
 
 setupAutorunMjsHack(cjsImport.default);
-

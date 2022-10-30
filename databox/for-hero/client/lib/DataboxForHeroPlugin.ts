@@ -34,7 +34,7 @@ export default class DataboxForHeroPlugin<ISchema extends IDataboxSchema>
     this.components = components;
   }
 
-  public onExec(
+  public onStart(
     databoxInternal: DataboxInternal<ISchema>,
     execOptions: IDataboxForHeroExecOptions<ISchema>,
     defaults: IDefaultsObj<ISchema>,
