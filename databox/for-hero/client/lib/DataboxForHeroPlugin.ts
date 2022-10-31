@@ -17,8 +17,6 @@ const pluginInstancesByHero: WeakMap<Hero, DataboxForHeroPlugin<any>> = new Weak
 export default class DataboxForHeroPlugin<ISchema extends IDataboxSchema>
   implements IDataboxPlugin<ISchema>
 {
-  #extractorPromises: Promise<any>[] = [];
-
   public name = pkg.name;
   public version = pkg.version;
   public hero: Hero;
@@ -46,7 +44,7 @@ export default class DataboxForHeroPlugin<ISchema extends IDataboxSchema>
   }
 
   public get shouldRun(): boolean {
-    return !this.previousSessionId;
+    return !this.replaySessionId;
   }
 
   public onBeforeRun(databoxObject: IDataboxObject<ISchema>): void {
@@ -67,7 +65,6 @@ export default class DataboxForHeroPlugin<ISchema extends IDataboxSchema>
   }
 
   public async onClose(): Promise<void> {
-    await Promise.all(this.#extractorPromises).catch(err => err);
     await this.hero?.close();
     await this.heroReplay?.close();
   }
@@ -79,8 +76,8 @@ export default class DataboxForHeroPlugin<ISchema extends IDataboxSchema>
     return this.hero[InternalPropertiesSymbol].coreSessionPromise;
   }
 
-  public get previousSessionId(): string | undefined {
-    return this.execOptions.previousSessionId ?? process.env.ULX_OLD_SESSION_ID;
+  public get replaySessionId(): string | undefined {
+    return this.execOptions.replaySessionId ?? process.env.ULX_REPLAY_SESSION_ID;
   }
 
   private initializeHero(): void {
@@ -94,13 +91,16 @@ export default class DataboxForHeroPlugin<ISchema extends IDataboxSchema>
   }
 
   private initializeHeroReplay(): void {
-    const heroOptions: IHeroReplayCreateOptions = {
-      ...(this.defaults.hero as IHeroReplayCreateOptions),
-      ...this.execOptions,
-      input: this.databoxInternal.input,
-      hero: this.hero,
-    };
-    this.heroReplay = new HeroReplay(heroOptions);
+    if (this.hero) {
+      this.heroReplay = new HeroReplay({ hero: this.hero });
+    } else {
+      const heroOptions: IHeroReplayCreateOptions = {
+        ...(this.defaults.hero as IHeroReplayCreateOptions),
+        ...this.execOptions,
+        input: this.databoxInternal.input,
+      };
+      this.heroReplay = new HeroReplay(heroOptions);
+    }
   }
 
   private onOutputChanged(changes: IObservableChange[]): void {

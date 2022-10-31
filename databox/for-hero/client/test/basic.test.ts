@@ -118,12 +118,11 @@ describe('basic Databox tests', () => {
       run: runFn,
       onAfterHeroCompletes: onAfterHeroCompletesFn,
     });
-    await databoxForHero.exec({ previousSessionId: '123' });
+    await databoxForHero.exec({ replaySessionId: '123' });
 
     expect(runFn).not.toHaveBeenCalled();
     expect(onAfterHeroCompletesFn).toHaveBeenCalledTimes(1);
   });
-
 
   it('receives DataboxMeta', async () => {
     const { databoxObject, databoxClose } = await Helpers.createFullstackDatabox();

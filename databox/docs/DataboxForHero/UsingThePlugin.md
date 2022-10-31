@@ -6,7 +6,7 @@ To use DataboxForHero, import the plugin and include it in the `plugins` array o
 
 ```js
 import Databox from '@ulixee/databox';
-import { DataboxForHeroPlugin } = '@ulixee/databox-for-hero';
+import { DataboxForHeroPlugin } from '@ulixee/databox-for-hero';
 
 export default new Databox({
   plugins: [DataboxForHeroPlugin],
@@ -20,7 +20,7 @@ export default new Databox({
 A simpler approach is use the DataboxForHero's default export, which automatically bundles the plugin. You can use it almost exactly the same as the standard Databox:
 
 ```js
-import DataboxForHero = '@ulixee/databox-for-hero';
+import DataboxForHero from '@ulixee/databox-for-hero';
 
 export default new DataboxForHero(async databox => {
   const { input, output, hero } = databox;
