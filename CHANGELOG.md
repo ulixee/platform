@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.13](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.12...v2.0.0-alpha.13) (2022-10-31)
+
+
+### Bug Fixes
+
+* add development mode for desktop app ([603b35e](https://github.com/ulixee/ulixee/commit/603b35e27a1e6b1ea3b14a7b0d29af8cd2c5612a))
+* **databox:** fix databox replay w/o chromealive ([80fe511](https://github.com/ulixee/ulixee/commit/80fe511b00be92d074f872904fc72108267139be))
+* github action ([5c8d31c](https://github.com/ulixee/ulixee/commit/5c8d31c0ac4ab0a7089c4b25cfd4d713c080e670))
+* github action errors ([9122fcb](https://github.com/ulixee/ulixee/commit/9122fcb572cbdeb7884c0ad7ff2385c55ed8b0c9))
+* lint issue ([ae94176](https://github.com/ulixee/ulixee/commit/ae94176c237c8c729b426c783e3918ed460c6c0e))
+* **server:** fix docker permissions ([435dc45](https://github.com/ulixee/ulixee/commit/435dc45cd415d99a85ba00a5771f1d38d8c5a2ba))
+
+
+### Features
+
+* add schemas to databoxes ([6f49377](https://github.com/ulixee/ulixee/commit/6f493774ebd760e52c7986b2ad3e0b45abab90e8))
+* allow installing a databox schema ([b73da83](https://github.com/ulixee/ulixee/commit/b73da83fc04728d9b575aea541126758e76556ee))
+* **databox:** add docs for Databox Schema ([e72fdfd](https://github.com/ulixee/ulixee/commit/e72fdfd0740905dd06084fee66ad318acde9aad3))
+* finished barebones documentation for new simplified Databox ([02342f9](https://github.com/ulixee/ulixee/commit/02342f93557624ffab5f13c0f114853a0d20e86e))
+* major simplification of Databox into a basic version with plugin capabilities ([22ad672](https://github.com/ulixee/ulixee/commit/22ad672e06135049ab82fc8b3af274d9e72c278a))
+* publish docker images ([d10ee25](https://github.com/ulixee/ulixee/commit/d10ee257406633805d15d21d7ebd4b043246b6c4))
+* updated to reflect hero change from dataSnippets to just snippets ([a5fcd64](https://github.com/ulixee/ulixee/commit/a5fcd64b0e2fbd4fec77a539b65e4382bc259001))
+* updated to work with latest changes to Hero ([0152be1](https://github.com/ulixee/ulixee/commit/0152be1267af472767b7c31d98739f950ffc99e9))
+
+
+
+
+
 # [2.0.0-alpha.12](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.11...v2.0.0-alpha.12) (2022-10-03)
 
 

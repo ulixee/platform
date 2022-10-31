@@ -1,12 +1,12 @@
 {
   "name": "@ulixee/cli",
-  "version": "2.0.0-alpha.12",
+  "version": "2.0.0-alpha.13",
   "main": "index.js",
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "bin": "./bin/cli.js",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.12",
+    "@ulixee/commons": "2.0.0-alpha.13",
     "commander": "^9.3.0"
   }
 }

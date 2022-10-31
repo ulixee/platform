@@ -63,7 +63,6 @@
       "miner/*",
       "cli",
       "end-to-end",
-      "stream/build/*",
       "hero/build/*",
       "hero/build/plugins/*",
       "playgrounds/*",

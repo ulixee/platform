@@ -3,6 +3,21 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.13](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.12...v2.0.0-alpha.13) (2022-10-31)
+
+
+### Features
+
+* add schemas to databoxes ([6f49377](https://github.com/ulixee/ulixee/commit/6f493774ebd760e52c7986b2ad3e0b45abab90e8))
+* **databox:** add docs for Databox Schema ([e72fdfd](https://github.com/ulixee/ulixee/commit/e72fdfd0740905dd06084fee66ad318acde9aad3))
+* major simplification of Databox into a basic version with plugin capabilities ([22ad672](https://github.com/ulixee/ulixee/commit/22ad672e06135049ab82fc8b3af274d9e72c278a))
+* publish docker images ([d10ee25](https://github.com/ulixee/ulixee/commit/d10ee257406633805d15d21d7ebd4b043246b6c4))
+* updated to work with latest changes to Hero ([0152be1](https://github.com/ulixee/ulixee/commit/0152be1267af472767b7c31d98739f950ffc99e9))
+
+
+
+
+
 # [2.0.0-alpha.12](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.11...v2.0.0-alpha.12) (2022-10-03)
 
 **Note:** Version bump only for package @ulixee/databox-for-puppeteer
