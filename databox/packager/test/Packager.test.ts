@@ -53,7 +53,7 @@ test('it should generate a relative script entrypoint', async () => {
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
     corePlugins: {
-      '@ulixee/databox-for-hero': '2.0.0-alpha.12',
+      '@ulixee/databox-for-hero': require('../package.json').version,
     },
     versionHash: DataboxManifest.createVersionHash(packager.manifest),
     versionTimestamp: expect.any(Number),

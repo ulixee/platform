@@ -3344,6 +3344,28 @@
     progress "^2.0.3"
     tar "^6.1.11"
 
+"@ulixee/commons@2.0.0-alpha.12":
+  version "2.0.0-alpha.12"
+  resolved "https://registry.yarnpkg.com/@ulixee/commons/-/commons-2.0.0-alpha.12.tgz#e8cdbeb5af86419ce25890a872e01e3fe426b700"
+  integrity sha512-UWUg1X/5mJ9am3vfianSKcHDP8q1w7qBJJi4L6dfoKXX8X9rECIlsTGa+LvQ661NGU0a50eiUcAeczQpd1PTYA==
+  dependencies:
+    bech32 "^2.0.0"
+    devtools-protocol "^0.0.981744"
+    https-proxy-agent "^5.0.0"
+    semver "^7.3.7"
+    source-map-js "^1.0.1"
+
+"@ulixee/crypto@2.0.0-alpha.12":
+  version "2.0.0-alpha.12"
+  resolved "https://registry.yarnpkg.com/@ulixee/crypto/-/crypto-2.0.0-alpha.12.tgz#c5dc5f0ec9f184e5850b27e7eeca12919c5f4fac"
+  integrity sha512-qVfjKzDuYpLrpb91ayk1f7BY6yQ1Q2Osq+1XF/qRnk9axUHvo5x+C26ACNeYm1NURhV9VGk7k53xSUx+1zU3Ew==
+  dependencies:
+    "@ulixee/commons" "2.0.0-alpha.12"
+    "@ulixee/crypto" "2.0.0-alpha.12"
+    "@ulixee/specification" "2.0.0-alpha.12"
+    bignumber.js "^9.0.2"
+    commander "^9.3.0"
+
 "@ulixee/databox-core-runtime@2.0.0-alpha.12":
   version "2.0.0-alpha.12"
   resolved "https://registry.yarnpkg.com/@ulixee/databox-core-runtime/-/databox-core-runtime-2.0.0-alpha.12.tgz#f4ef77fe28463be0f0d706fcd5ec7f428fd5ba9b"
@@ -3358,6 +3380,52 @@
     better-sqlite3 "^7.5.1"
     nanoid "^3.1.30"
     vm2 "^3.9.9"
+
+"@ulixee/databox-core@2.0.0-alpha.12":
+  version "2.0.0-alpha.12"
+  resolved "https://registry.yarnpkg.com/@ulixee/databox-core/-/databox-core-2.0.0-alpha.12.tgz#0c32241095593964e180cdb248f22c0c07282d82"
+  integrity sha512-M0V9cQCoTpE3jDcHn9SbO/BcFvjbMP7P8VosECIoqlIHKJjnT+OSaV/MDH+fdNsSs6flvLJOrhyAcG7xomvQ2w==
+  dependencies:
+    "@ulixee/commons" "2.0.0-alpha.12"
+    "@ulixee/crypto" "2.0.0-alpha.12"
+    "@ulixee/databox" "2.0.0-alpha.12"
+    "@ulixee/databox-interfaces" "2.0.0-alpha.12"
+    "@ulixee/net" "2.0.0-alpha.12"
+    "@ulixee/sidechain" "2.0.0-alpha.12"
+    "@ulixee/specification" "2.0.0-alpha.12"
+    better-sqlite3 "^7.5.1"
+    nanoid "^3.1.32"
+    tar "^6.1.11"
+    vm2 "^3.9.10"
+
+"@ulixee/databox-interfaces@2.0.0-alpha.12":
+  version "2.0.0-alpha.12"
+  resolved "https://registry.yarnpkg.com/@ulixee/databox-interfaces/-/databox-interfaces-2.0.0-alpha.12.tgz#101998d7aedcfd5acec73c74e91ca2d25a343fb0"
+  integrity sha512-hYISIEntSg2S153EfVS0yhmi7wdrZ6tBlu9R4SdxAeHZjoxEa4i8S4Th1h3EWFuy7qpbPyu9a5WCLSUiEfNcKw==
+  dependencies:
+    "@ulixee/crypto" "2.0.0-alpha.12"
+    "@ulixee/specification" "2.0.0-alpha.12"
+
+"@ulixee/databox@2.0.0-alpha.12":
+  version "2.0.0-alpha.12"
+  resolved "https://registry.yarnpkg.com/@ulixee/databox/-/databox-2.0.0-alpha.12.tgz#fefa88ec5479366a9d2318c50ad835022ad0c22c"
+  integrity sha512-2g+jyxhCJWtkH2dn6ZCoHVBJiRQvZn+gyLQuGMbCYwU+iR14ENEQAOxdDSX+VUAoLuYWKHYViIqpoEMnKHo/yw==
+  dependencies:
+    "@ulixee/commons" "2.0.0-alpha.12"
+    "@ulixee/crypto" "2.0.0-alpha.12"
+    "@ulixee/databox-interfaces" "2.0.0-alpha.12"
+    "@ulixee/net" "2.0.0-alpha.12"
+    "@ulixee/specification" "2.0.0-alpha.12"
+    commander "^9.3.0"
+    yargs-parser "^20.2.9"
+
+"@ulixee/net@2.0.0-alpha.12":
+  version "2.0.0-alpha.12"
+  resolved "https://registry.yarnpkg.com/@ulixee/net/-/net-2.0.0-alpha.12.tgz#b0e93be03a9b273d02e94fcda043cc3a84e7c546"
+  integrity sha512-+vkTS2mzMVnUzOO0lMfUsBVSUoGrJRLAY7xjGFUS83yJEU8zz0iwD/vGi6hHGNjAWlAjdBNal5wlfgFivxHYrg==
+  dependencies:
+    "@ulixee/commons" "2.0.0-alpha.12"
+    ws "^7.4.6"
 
 "@ulixee/repo-tools@^1.0.21":
   version "1.0.21"
@@ -3394,17 +3462,24 @@
     "@ulixee/specification" "2.0.0-alpha.12"
     commander "^9.4.0"
 
+"@ulixee/specification@2.0.0-alpha.12":
+  version "2.0.0-alpha.12"
+  resolved "https://registry.yarnpkg.com/@ulixee/specification/-/specification-2.0.0-alpha.12.tgz#65293e4926a8ac13826f2e00d48c4af8bfd2345d"
+  integrity sha512-NTXEKxsKWtI8Uq9z9LcPF/hgJ+Hv1LUaWbVMymJ5EqQhKWQzFM1AGvNERoqdh4MBbyTFvkthbnRkoDtdHRoFBQ==
+  dependencies:
+    zod "^3.17.3"
+
 "@unblocked-web/js-path@2.0.0-alpha.1":
   version "2.0.0-alpha.1"
   resolved "https://registry.yarnpkg.com/@unblocked-web/js-path/-/js-path-2.0.0-alpha.1.tgz#39482400d582a1cb88197724f2b1efa339d9483f"
   integrity sha512-59FWvS1XRD862CLm2/9ZPiJlylolwkhe3HRH+aIes7dRXHSlpdwOLQG1V6NN1W//TXh9ars3f3TJqr4XLSaAcg==
 
-"@unblocked-web/real-user-agents@2.0.0-alpha.11":
-  version "2.0.0-alpha.11"
-  resolved "https://registry.yarnpkg.com/@unblocked-web/real-user-agents/-/real-user-agents-2.0.0-alpha.11.tgz#4a9c03c80a19c990299314299125d8fa9d57cd55"
-  integrity sha512-uGv25+Ff6JeSCxsZxSnDD0hJ6usn9SFudu69Q2Aq/yufkqnHCK1g4/5P20thIr6nAhm/kN+Duzxb672eGzioqQ==
+"@unblocked-web/real-user-agents@2.0.0-alpha.12":
+  version "2.0.0-alpha.12"
+  resolved "https://registry.yarnpkg.com/@unblocked-web/real-user-agents/-/real-user-agents-2.0.0-alpha.12.tgz#3467e5ed348c12709fea36845d10f9050470bfb3"
+  integrity sha512-CM1hmlz3z+IdPDVobo8PPdqa+Wxvtl5lQnOwVBnuRCRLeE5vja4MPVELJIQRFac8EFz5Aa+6bjTGe+WgYvR7mg==
   dependencies:
-    "@ulixee/commons" "2.0.0-alpha.12"
+    "@ulixee/commons" "2.0.0-alpha.13"
     "@unblocked-web/specifications" "2.0.0-alpha.11"
     compare-versions "^3.6.0"
     ua-parser-js "^0.7.24"

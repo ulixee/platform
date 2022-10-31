@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.13](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.12...v2.0.0-alpha.13) (2022-10-31)
+
+
+### Bug Fixes
+
+* add development mode for desktop app ([603b35e](https://github.com/ulixee/ulixee/commit/603b35e27a1e6b1ea3b14a7b0d29af8cd2c5612a))
+
+
+
+
+
 # [2.0.0-alpha.12](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.11...v2.0.0-alpha.12) (2022-10-03)
 
 **Note:** Version bump only for package @ulixee/apps-desktop
