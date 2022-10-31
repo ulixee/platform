@@ -7,7 +7,7 @@ export default interface IDataboxPlugin<ISchema extends IDataboxSchema> {
   name: string;
   version: string;
   shouldRun?: boolean;
-  onExec?(
+  onStart?(
     databoxInternal: IDataboxInternal<ISchema>,
     execOptions: IDataboxExecOptions<ISchema>,
     defaults: any,

@@ -1,9 +1,9 @@
 import { setupAutorunMjsHack } from '@ulixee/databox/lib/utils/Autorun.mjs';
 import cjsImport from './index.js';
 
-const { DataboxObject } = cjsImport;
+const { DataboxObject, DataboxForPuppeteer, DataboxForPuppeteerPlugin, Observable, Schema } = cjsImport;
 
-export { DataboxObject };
+export { DataboxObject, DataboxForPuppeteer, DataboxForPuppeteerPlugin, Observable, Schema };
 
 export default cjsImport.default;
 

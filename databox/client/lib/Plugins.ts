@@ -29,13 +29,13 @@ export default class Plugins<ISchema extends IDataboxSchema> {
     this.corePlugins[plugin.name] = plugin.version;
   }
 
-  public async onExec(
+  public async onStart(
     databoxInternal: DataboxInternal<ISchema>,
     execOptions: IDataboxExecOptions<ISchema>,
     defaults: any,
   ): Promise<void> {
     const promises = this.clientPlugins.map(
-      x => x.onExec && x.onExec(databoxInternal, execOptions || {}, defaults || {}),
+      x => x.onStart && x.onStart(databoxInternal, execOptions || {}, defaults || {}),
     );
     await Promise.all(promises);
   }

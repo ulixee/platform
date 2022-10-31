@@ -21,7 +21,7 @@ export default class DataboxForPuppeteerPlugin<ISchema extends IDataboxSchema>
   private execOptions: IDataboxForPuppeteerExecOptions<ISchema>;
   private defaults: IDefaultsObj<ISchema>;
 
-  public onExec(
+  public onStart(
     databoxInternal: DataboxInternal<ISchema>,
     execOptions: IDataboxForPuppeteerExecOptions<ISchema>,
     defaults: IDefaultsObj<ISchema>,

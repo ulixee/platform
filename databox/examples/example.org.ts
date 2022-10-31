@@ -1,7 +1,7 @@
 // NOTE: you must start your own Ulixee Miner to run this example.
 
-import Databox from '@ulixee/databox-for-hero';
-import { string } from '@ulixee/schema';
+import Databox, { Schema } from '@ulixee/databox-for-hero';
+const { string } = Schema;
 
 // configure input.url by running as node example.org.js --input.url="https://ulixee.org"
 

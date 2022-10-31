@@ -11,7 +11,11 @@
     - DataboxObject
     - InputObject
     - OutputObject
+
+- title: Databox Advanced
     - Plugins
+    - Databox Schemas
+    - Schemas
 
 - title: Databox for Hero
   items:
