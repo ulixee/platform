@@ -1,9 +1,9 @@
 {
   "name": "@ulixee/miner-examples",
-  "version": "2.0.0-alpha.13",
+  "version": "2.0.0-alpha.14",
   "private": true,
   "dependencies": {
     "@ulixee/hero": "2.0.0-alpha.14",
-    "@ulixee/miner": "2.0.0-alpha.13"
+    "@ulixee/miner": "2.0.0-alpha.14"
   }
 }

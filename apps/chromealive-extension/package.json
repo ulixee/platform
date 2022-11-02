@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/apps-chromealive-extension",
-  "version": "2.0.0-alpha.13",
+  "version": "2.0.0-alpha.14",
   "private": true,
   "license": "MIT",
   "description": "Chrome extension helps ChromeAlive work",
@@ -19,8 +19,8 @@
     "@babel/runtime-corejs3": "^7.13.10",
     "@headlessui/vue": "^1.5.0",
     "@heroicons/vue": "^1.0.6",
-    "@ulixee/apps-chromealive-core": "2.0.0-alpha.13",
-    "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.13",
+    "@ulixee/apps-chromealive-core": "2.0.0-alpha.14",
+    "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.14",
     "@ulixee/commons": "2.0.0-alpha.14",
     "@ulixee/hero-interfaces": "2.0.0-alpha.14",
     "@webcomponents/custom-elements": "^1.5.0",

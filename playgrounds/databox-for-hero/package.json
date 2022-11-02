@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/databox-for-hero-playground",
-  "version": "2.0.0-alpha.13",
+  "version": "2.0.0-alpha.14",
   "exports": {
     ".": {
       "import": "./index.mjs",
@@ -12,13 +12,13 @@
   "license": "MIT",
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.14",
-    "@ulixee/databox": "2.0.0-alpha.13",
-    "@ulixee/databox-core": "2.0.0-alpha.13",
-    "@ulixee/databox-for-hero": "2.0.0-alpha.13",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.13",
+    "@ulixee/databox": "2.0.0-alpha.14",
+    "@ulixee/databox-core": "2.0.0-alpha.14",
+    "@ulixee/databox-for-hero": "2.0.0-alpha.14",
+    "@ulixee/databox-interfaces": "2.0.0-alpha.14",
     "@ulixee/hero": "2.0.0-alpha.14",
     "@ulixee/hero-core": "2.0.0-alpha.14",
-    "@ulixee/miner": "2.0.0-alpha.13",
+    "@ulixee/miner": "2.0.0-alpha.14",
     "@ulixee/net": "2.0.0-alpha.14",
     "vm2": "^3.9.9"
   }
