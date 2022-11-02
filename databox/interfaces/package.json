@@ -1,10 +1,10 @@
 {
   "name": "@ulixee/databox-interfaces",
-  "version": "2.0.0-alpha.13",
+  "version": "2.0.0-alpha.14",
   "description": "Interfaces for the Databox specification.",
   "dependencies": {
-    "@ulixee/crypto": "2.0.0-alpha.13",
-    "@ulixee/schema": "2.0.0-alpha.13",
-    "@ulixee/specification": "2.0.0-alpha.13"
+    "@ulixee/crypto": "2.0.0-alpha.14",
+    "@ulixee/schema": "2.0.0-alpha.14",
+    "@ulixee/specification": "2.0.0-alpha.14"
   }
 }

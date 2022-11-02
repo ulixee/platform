@@ -2,7 +2,7 @@ FROM node:16-slim
 
 ARG ADD_TO_INSTALL=true
 ARG VERSION
-LABEL org.opencontainers.image.source=https://github.com/ulixee/ulixee
+LABEL org.opencontainers.image.source=https://github.com/ulixee/platform
 LABEL org.opencontainers.image.description="The open data platform. This image packages Ulixee Miner, Hero and the last 2 Chrome versions."
 LABEL org.opencontainers.image.licenses=MIT
 
