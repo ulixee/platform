@@ -31,7 +31,7 @@
 
       <section class="mt-24">
         <h3>Intelligent Handling of Failure</h3>
-        <p>The more you run scrapers, the more likely you are to find failures, Databoxes make it easy to categorize the outcomes intelligently. You can setup rules that allow Server Overload failures to be retried in x mnutes while Recaptchas should be retried only on a new IP Address.</p>
+        <p>The more you run scrapers, the more likely you are to find failures, Databoxes make it easy to categorize the outcomes intelligently. You can setup rules that allow Miner Overload failures to be retried in x minutes while Recaptchas should be retried only on a new IP Address.</p>
       </section>
 
       <section class="mt-24">

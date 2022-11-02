@@ -13,6 +13,7 @@
     - OutputObject
 
 - title: Databox Advanced
+  items:
     - Plugins
     - Databox Schemas
     - Schemas

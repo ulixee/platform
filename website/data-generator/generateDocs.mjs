@@ -29,9 +29,9 @@ const rootDir = Path.resolve(__dirname, '../../');
 }
 
 {
-  const mdDocsRootPath = `${rootDir}/server/docs`;
+  const mdDocsRootPath = `${rootDir}/miner/docs`;
   walkDirectory(mdDocsRootPath, async filePath => {
-    await saveToWebsite(mdDocsRootPath, filePath, 'server');
+    await saveToWebsite(mdDocsRootPath, filePath, 'miner');
   });
-  ensureIndexFile(mdDocsRootPath, 'server');
+  ensureIndexFile(mdDocsRootPath, 'miner');
 }

@@ -4,7 +4,7 @@
 
 Schemas are generally created via the exported methods from the `@ulixee/schema` module.
 
-```typescript
+```js
 import { object, boolean, string, number } from '@ulixee/schema';
 
 const record = object({
@@ -114,7 +114,7 @@ Arguments is an object containing the following properties:
 - optional: `boolean`. Field to set to true of the boolean is an optional field.
 - description: `string`. Optional description of this field to add to documentation and runtime types.
 
-```typescript
+```js
 import { record, string, number } from '@ulixee/schema';
 
 const schema = record({
@@ -139,7 +139,7 @@ The default argument structure for `object` takes the following properties:
 - optional: `boolean`. Field to set to true of the boolean is an optional field.
 - description: `string`. Optional description of this field to add to documentation and runtime types.
 
-```typescript
+```js
 import { object, string, number } from '@ulixee/schema';
 
 const schema = object({
@@ -163,7 +163,7 @@ schema.validate({
 
 If you are not providing a description or optional value, you can shorten a definition to directly supply the `fields`.
 
-```typescript
+```js
 import { object, string, number } from '@ulixee/schema';
 
 const schema = object({
@@ -182,7 +182,7 @@ The default argument structure for `array` takes the following properties:
 - optional: `boolean`. Field to set to true of the boolean is an optional field.
 - description: `string`. Optional description of this field to add to documentation and runtime types.
 
-```typescript
+```js
 import { array, number } from '@ulixee/schema';
 
 const schema = array({
@@ -195,7 +195,7 @@ schema.validate([1, 2, '3']); // INVALID!
 
 If you are not providing a description or optional value, you can shorten a definition to directly supply the `element`.
 
-```typescript
+```js
 import { array, number } from '@ulixee/schema';
 
 const schema = array(number());

@@ -31,7 +31,7 @@
 
     <section>
       <header>Intelligent Parallelization</header>
-      <p>Stream monitors each Server’s load capacity to distribute your queries in the most efficient manner possible.</p>
+      <p>Stream monitors each Miner’s load capacity to distribute your queries in the most efficient manner possible.</p>
     </section>
 
     <section>

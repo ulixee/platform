@@ -24,8 +24,8 @@ Fs.mkdirSync(tocDataDir, { recursive: true });
 }
 
 {
-  const yamlLinks = Fs.readFileSync(`${rootDir}/server/docs/links.yaml`, 'utf-8');
+  const yamlLinks = Fs.readFileSync(`${rootDir}/miner/docs/links.yaml`, 'utf-8');
   const links = JsYaml.load(yamlLinks);
-  const saveToFilePath = Path.join(tocDataDir, `server.json`);
+  const saveToFilePath = Path.join(tocDataDir, `miner.json`);
   Fs.writeFileSync(saveToFilePath, JSON.stringify(links, null, 2));
 }

@@ -8,7 +8,7 @@ DataboxSchemas are not a runtime class, but an interface of a few properties to 
 - Runtime validation is performed when parsing input parameters or returning results
 - Realtime validation occurs as you add output properties. If a type is wrong, your script will halt and notify you immediately so you don't waste any extra work.
 
-```typescript
+```js
 import Databox from '@ulixee/databox-for-hero';
 import { string } from '@ulixee/schema';
 
@@ -55,14 +55,14 @@ When you package a `Databox` for [deployment](/docs/databox/overview/deployment)
   npx @ulixee/databox deploy ./index.js; // Databox Version hash is dbx12343
   ```
 
-  ```typescript
+  ```js
   import ITypes from '@ulixee/databox/types';
 
   type IIndexDataboxSchema = ITypes['dbx12343'];
   ```
 
 - Typing of parameters and results are automatically referenced when running a Databox.
-  ```typescript
+  ```js
   import DataboxClient from '@ulixee/databox/lib/DataboxApiClient';
   const client = new DataboxClient('localhost:8080');
   const result = client.exec('dbx12343', { url: 'https://ulixee.org ' });
@@ -104,7 +104,7 @@ Optional array of example input field combinations. Each record contains an obje
 - `dateAdd(quantity: number, units: IUnits)`: Add to the current date. Units options are `'seconds' | 'minutes' | 'hours' | 'days' | 'months' | 'years'`.
 - `dateSubtract(quantity: number, units: IUnits)`: Subtract from the current date. Units options are `'seconds' | 'minutes' | 'hours' | 'days' | 'months' | 'years'`.
 
-```typescript
+```js
 import Databox from '@ulixee/databox-for-hero';
 import { string, dateAdd } from '@ulixee/schema';
 

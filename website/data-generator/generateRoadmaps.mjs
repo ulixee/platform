@@ -14,14 +14,14 @@ const rawMilestones = Fs.readFileSync(milestonesPath, 'utf-8');
 const milestones = JSON.parse(rawMilestones);
 
 const roadmapPaths = [
-  'server/ROADMAP-Server.md',
+  'miner/ROADMAP-Miner.md',
   'stream/ROADMAP-Stream.md',
   'hero/ROADMAP-Hero.md',
   'databox/ROADMAP-Databox.md',
-  // '../payments/ROADMAP-Argon.md',
-  // '../payments/mainchain/ROADMAP-Mainchain.md',
-  // '../payments/sidechain/ROADMAP-Sidechain.md',
-  // '../unblocked/double-agent/ROADMAP-DoubleAgent.md',
+  '../payments/ROADMAP-Argon.md',
+  '../payments/mainchain/ROADMAP-Mainchain.md',
+  '../payments/sidechain/ROADMAP-Sidechain.md',
+  '../unblocked/ROADMAP-DoubleAgent.md',
   '../unblocked/ROADMAP-ScraperReport.md',
   'coming-soon/ROADMAP-Pipeline.md',
   'coming-soon/ROADMAP-Domain.md',
@@ -44,11 +44,11 @@ for (const roadmapPath of roadmapPaths) {
   const intro = [];
   const minorReleases = {};
   const unversionedFeatures = {};
-  let activeVersion;
+  let activeVersion = null;
   let unversionedHeader;
 
   for (const item of data.children) {
-    if (item.type === 'heading' && activeVersion == UNVERSIONED) {
+    if (item.type === 'heading' && activeVersion === UNVERSIONED) {
       const heading = item.children.map(x => x.value).join(' ');
 
       if (unversionedFeatures[heading]) {

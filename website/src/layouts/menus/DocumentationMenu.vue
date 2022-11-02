@@ -11,9 +11,9 @@
         <div class="relative bg-white">
           <router-link to="/docs/miner" class="block px-5">Miner</router-link>
         </div>
-        <div class="relative bg-white">
-          <router-link to="/docs/cli" class="block px-5">CLI</router-link>
-        </div>
+<!--        <div class="relative bg-white">-->
+<!--          <router-link to="/docs/cli" class="block px-5">CLI</router-link>-->
+<!--        </div>-->
       </div>
     </PopoverPanel>
   </transition>
