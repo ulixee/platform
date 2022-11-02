@@ -18,12 +18,12 @@
           <p class="text-3xl mt-9 opacity-90 leading-relaxed font-light">
             It's a global problem. Corporate behemoths are <strong>trying to stop entrepreneurs</strong> from using automated
             scripts to read the web's data. These corporations are deploying tools called “bot blockers”, and their goal is to
-            <strong>shut down the open web</strong>. They want to ensure new products have no chance of competing against 
+            <strong>shut down the open web</strong>. They want to ensure new products have no chance of competing against
             their entrenched monopolies.
           </p>
           <p class="text-3xl mt-5 leading-relaxed">
             Innovators must <strong>unite together</strong> to stop these bot blockers. The web was invented with <strong>public
-            tax dollars</strong> for the purpose of an open sharing platform, and these <strong>bot blockers are 
+            tax dollars</strong> for the purpose of an open sharing platform, and these <strong>bot blockers are
             threatening to ruin it</strong>. The web must be kept open or the internet as we know it will disappear.
           </p>
         </div>
@@ -76,7 +76,7 @@
         <div class="flex flex-row items-stretch space-x-10 border-b border-gray-500 pb-5">
           <ul class="grid grid-cols-2 gap-x-20 TOOLS">
             <li>
-              <a href="https://github.com/unblocked-web/secret-agent">
+              <a href="https://github.com/ulixee/secret-agent">
                 <inline-svg :src="require('@/assets/unblocked/logos/secret-agent.svg')" />
                 <div>
                   <header>Unblocked Agent</header>
@@ -85,7 +85,7 @@
               </a>
             </li>
             <li>
-              <a href="https://github.com/unblocked-web/double-agent">
+              <a href="https://github.com/ulixee/double-agent">
                 <inline-svg :src="require('@/assets/unblocked/logos/double-agent.svg')" />
                 <div>
                   <header>Double Agent</header>
@@ -94,7 +94,7 @@
               </a>
             </li>
             <li>
-              <a href="https://github.com/unblocked-web/unblocked/tree/main/emulator-plugins">
+              <a href="https://github.com/ulixee/unblocked/tree/main/emulator-plugins">
                 <inline-svg :src="require('@/assets/unblocked/logos/emulator-plugins.svg')" />
                 <div>
                   <header>Unblocked Plugins</header>
@@ -103,7 +103,7 @@
               </a>
             </li>
             <li>
-              <a href="https://github.com/unblocked-web/browser-vault">
+              <a href="https://github.com/ulixee/browser-vault">
                 <inline-svg :src="require('@/assets/unblocked/logos/browser-vault.svg')" />
                 <div>
                   <header>Browser Vault</header>
@@ -112,7 +112,7 @@
               </a>
             </li>
             <li>
-              <a href="https://github.com/unblocked-web/mission-impossible">
+              <a href="https://github.com/ulixee/mission-impossible">
                 <inline-svg :src="require('@/assets/unblocked/logos/mission-impossible.svg')" />
                 <div>
                   <header>Mission Impossible</header>
@@ -121,7 +121,7 @@
               </a>
             </li>
             <li>
-              <a href="https://github.com/unblocked-web/scraper-report">
+              <a href="https://github.com/ulixee/scraper-report">
                 <inline-svg :src="require('@/assets/unblocked/logos/scraper-report.svg')" />
                 <div>
                   <header>Scraper Report</header>

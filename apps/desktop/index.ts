@@ -3,7 +3,7 @@ import { app } from 'electron';
 import { Menubar } from './lib/Menubar';
 
 if (app.isPackaged) {
-  process.env.DEBUG = [process.env.DEBUG ?? '', 'ulx:*', 'ubk'].filter(Boolean).join(',');
+  process.env.DEBUG = [process.env.DEBUG ?? '', 'ulx:*'].filter(Boolean).join(',');
 }
 
 require('./lib/util/UlixeeLogger');

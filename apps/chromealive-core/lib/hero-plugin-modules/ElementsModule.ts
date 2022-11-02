@@ -1,4 +1,4 @@
-import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
+import { IPage } from '@ulixee/unblocked-specification/agent/browser/IPage';
 import * as fs from 'fs';
 import { ISelectorMap } from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
 import highlightConfig from './highlightConfig';

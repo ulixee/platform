@@ -68,9 +68,11 @@
       "playgrounds/*",
       "../shared/build/*",
       "../payments/build/sidechain/client",
-      "../unblocked/agent/build/*",
+      "../unblocked/build/agent/*",
       "../unblocked/build/plugins/*",
-      "../unblocked/specifications/build"
+      "../unblocked/build/specification",
+      "../unblocked/build/js-path",
+      "../unblocked/build/real-user-agents"
     ],
     "nohoist": [
       "**/babel-loader",

@@ -6,7 +6,7 @@
       Ulixee is an open-source project built by core maintainers and contributors. We want to make
       it easy for anyone to participate. Contribute to our Apps, Miner, Databox, Stream, Hero,
       improve documentation or improve detections and evasions in the
-      <a href="https://github.com/unblocked-web">Unblocked project</a>. It all helps Ulixee on its
+      <a href="https://github.com/ulixee">Unblocked project</a>. It all helps Ulixee on its
       mission to create a data economy.
     </blockquote>
 

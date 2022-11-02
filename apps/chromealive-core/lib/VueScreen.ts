@@ -1,12 +1,12 @@
 import { URL } from 'url';
 import { Session as HeroSession } from '@ulixee/hero-core';
 import * as http from 'http';
-import { Protocol } from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
+import { Protocol } from '@ulixee/unblocked-specification/agent/browser/IDevtoolsSession';
 import { httpGet } from '@ulixee/commons/lib/downloadFile';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { ISessionSummary } from '@ulixee/hero-interfaces/ICorePlugin';
 import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
-import Page from '@unblocked-web/agent/lib/Page';
+import Page from '@ulixee/unblocked-agent/lib/Page';
 import ChromeAliveCore from '../index';
 
 export default class VueScreen extends TypedEventEmitter<{ close: void }> {

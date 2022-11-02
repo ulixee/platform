@@ -1,8 +1,8 @@
 import * as Fs from 'fs';
 import { rootDir } from '../paths';
 
-const AgentEnv = Fs.readFileSync(require.resolve('@unblocked-web/agent/.env.defaults'), 'utf8');
-const MitmEnv = Fs.readFileSync(require.resolve('@unblocked-web/agent-mitm/.env.defaults'), 'utf8');
+const AgentEnv = Fs.readFileSync(require.resolve('@ulixee/unblocked-agent/.env.defaults'), 'utf8');
+const MitmEnv = Fs.readFileSync(require.resolve('@ulixee/unblocked-agent-mitm/.env.defaults'), 'utf8');
 const HeroEnv = Fs.readFileSync(
   require.resolve('@ulixee/hero-core').replace(/index.*js/, '.env.defaults'),
   'utf8',
@@ -38,5 +38,4 @@ function clean(env: string): string {
   return env
     .replace(/\n## Sub-tool env settings\n/g, '')
     .replace(/# @ulixee.*\n/g, '')
-    .replace(/# @unblocked-web.*\n/g, '');
 }

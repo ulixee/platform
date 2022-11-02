@@ -1,9 +1,9 @@
 import * as fs from 'fs';
-import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
+import { IPage } from '@ulixee/unblocked-specification/agent/browser/IPage';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import IDevtoolsSession, {
   Protocol,
-} from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
+} from '@ulixee/unblocked-specification/agent/browser/IDevtoolsSession';
 import IElementSummary from '@ulixee/apps-chromealive-interfaces/IElementSummary';
 import {
   ___emitFromDevtoolsToCore,

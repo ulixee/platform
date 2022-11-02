@@ -1,4 +1,4 @@
-import { defaultBrowserEngine } from '@unblocked-web/default-browser-emulator';
+import { defaultBrowserEngine } from '@ulixee/default-browser-emulator';
 
 let hasUnpackedChrome = false;
 export default async function installDefaultChrome(): Promise<void> {

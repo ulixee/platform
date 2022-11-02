@@ -179,7 +179,7 @@ import { convertJsonToFlat } from '@/utils/flattenJson';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import IDataboxCollectedAssetsResponse from '@ulixee/apps-chromealive-interfaces/IDataboxCollectedAssets';
 import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxCollectedAssetEvent';
-import IResourceMeta from '@unblocked-web/specifications/agent/net/IResourceMeta';
+import IResourceMeta from '@ulixee/unblocked-specification/agent/net/IResourceMeta';
 import IDetachedResource from '@ulixee/hero-interfaces/IDetachedResource';
 import IDetachedElement from '@ulixee/hero-interfaces/IDetachedElement';
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';

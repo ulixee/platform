@@ -1,6 +1,6 @@
 import Log from '@ulixee/commons/lib/Logger';
 import { IBounds } from '@ulixee/apps-chromealive-interfaces/IBounds';
-import { defaultScreen } from '@unblocked-web/default-browser-emulator/lib/Viewports';
+import { defaultScreen } from '@ulixee/default-browser-emulator/lib/Viewports';
 import ChromeAliveCore from '../index';
 
 const { log } = Log(module);

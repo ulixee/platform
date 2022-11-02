@@ -15,13 +15,13 @@ import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import TimelineWatch from '@ulixee/hero-timetravel/lib/TimelineWatch';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
-import { IPage } from '@unblocked-web/specifications/agent/browser/IPage';
+import { IPage } from '@ulixee/unblocked-specification/agent/browser/IPage';
 import SourceLoader from '@ulixee/commons/lib/SourceLoader';
 import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation';
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
 import MirrorPage from '@ulixee/hero-timetravel/lib/MirrorPage';
 import CommandTimeline from '@ulixee/hero-timetravel/lib/CommandTimeline';
-import { LoadStatus } from '@unblocked-web/specifications/agent/browser/Location';
+import { LoadStatus } from '@ulixee/unblocked-specification/agent/browser/Location';
 import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import ISessionSearchResult, {

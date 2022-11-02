@@ -10,7 +10,7 @@ const pkg = require('@ulixee/databox-for-hero/package.json');
 export default class DataboxForHeroPluginCore implements IDataboxPluginCore {
   public name = pkg.name;
   public version = pkg.version;
-  public nodeVmRequireWhitelist = ['@ulixee/*', '@unblocked-web/*', 'awaited-dom'];
+  public nodeVmRequireWhitelist = ['@ulixee/*', 'awaited-dom'];
 
   private connectionToHeroCore: ConnectionToHeroCore;
 

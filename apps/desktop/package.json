@@ -21,7 +21,7 @@
     "@ulixee/databox-core": "2.0.0-alpha.13",
     "@ulixee/databox-for-hero": "2.0.0-alpha.13",
     "@ulixee/miner": "2.0.0-alpha.13",
-    "@unblocked-web/default-browser-emulator": "2.0.0-alpha.12",
+    "@ulixee/default-browser-emulator": "2.0.0-alpha.12",
     "electron-log": "^4.4.6",
     "electron-positioner": "^4.1.0",
     "electron-updater": "^5.0.1",

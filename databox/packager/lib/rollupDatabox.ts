@@ -15,7 +15,6 @@ export default async function rollupDatabox(
     nodeResolve({
       resolveOnly: module =>
         !module.startsWith('@ulixee') &&
-        !module.startsWith('@unblocked-web') &&
         !module.includes('/databox-for-') &&
         module !== 'awaited-dom',
     }),

@@ -61,7 +61,7 @@ jobs:
         working-directory: ../payments
 
       - name: Clone unblocked
-        run: git clone --recurse-submodules -j8 https://github.com/unblocked-web/unblocked.git
+        run: git clone --recurse-submodules -j8 https://github.com/ulixee/unblocked.git
         working-directory: ..
 
       - name: Install unblocked

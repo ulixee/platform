@@ -1,4 +1,4 @@
-import { Protocol } from "@unblocked-web/specifications/agent/browser/IDevtoolsSession";
+import { Protocol } from "@ulixee/unblocked-specification/agent/browser/IDevtoolsSession";
 
 const highlightConfig = {
   showInfo: true,

@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
-import IDevtoolsSession, { Protocol } from '@unblocked-web/specifications/agent/browser/IDevtoolsSession';
+import IDevtoolsSession, { Protocol } from '@ulixee/unblocked-specification/agent/browser/IDevtoolsSession';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { extensionId } from '../ExtensionUtils';
 import {

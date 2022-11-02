@@ -151,19 +151,19 @@
         <p class="font-extralight mb-2">We're the creators and maintainers of <router-link to="/unblocked">Unblocked</router-link>, a suite of tools for evading and destroying the world's bot blockers.</p>
         <ul class="font-extralight grid grid-cols-3 mt-5 text-[#FBCBFF]">
           <li class="h-10">
-            <a href="https://github.com/unblocked-web/secret-agent">Unblocked Agent</a>
+            <a href="https://github.com/ulixee/unblocked/main/tree/agent">Unblocked Agent</a>
           </li>
           <li class="h-10">
-            <a href="https://github.com/unblocked-web/double-agent">Double Agent</a>
+            <a href="https://github.com/ulixee/unblocked/main/tree/double-agent">Double Agent</a>
           </li>
           <li class="h-10">
-            <a href="https://github.com/unblocked-web/data-vault">Browser Vault</a>
+            <a href="https://github.com/ulixee/browser-profiler-data">Browser Vault</a>
           </li>
           <li class="h-10">
-            <a href="https://github.com/unblocked-web/emulator-plugins">Unblocked Plugins</a>
+            <a href="https://github.com/ulixee/unblocked/main/tree/plugins">Unblocked Plugins</a>
           </li>
           <li class="h-10">
-            <a href="https://github.com/unblocked-web/emulator-plugins">Mission Impossible</a>
+            <a href="https://github.com/ulixee/unblocked">Mission Impossible</a>
           </li>
           <li class="h-10">
             <router-link to="/unblocked">And More...</router-link>
