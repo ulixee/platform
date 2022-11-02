@@ -14,11 +14,7 @@ We should eventually automate this to test using the "published" versions of pac
 
 ## Bump versions in this order
 1. @ulixee/shared
-2. @unblocked/agent
-  - Release Asset: connect (mitm-socket). A draft release will be created. You need to publish it. 
-3. @unblocked/specifications (if needed)
-4. @unblocked/js-path (if needed)
-5. @unblocked/unblocked
+5. @ulixee/unblocked
 6. @ulixee/payments
 7. @ulixee/hero
 8. @ulixee/ulixee
