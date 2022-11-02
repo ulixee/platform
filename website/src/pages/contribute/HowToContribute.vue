@@ -28,7 +28,7 @@
 
     <ol>
       <li>
-        Clone the `https://github.com/ulixee/ulixee.git` repository with --recursive (to ensure it
+        Clone the `https://github.com/ulixee/platform.git` repository with --recursive (to ensure it
         installs submodules).
       </li>
     </ol>
@@ -51,8 +51,8 @@
     <p>
       Every project in Ulixee has a `/docs` folder. If you want to add/modify any documentation,
       you can go any of these folders on
-      <a href="https://github.com/ulixee/ulixee">GitHub</a> (eg,
-      <a href="https://github.com/ulixee/ulixee/tree/main/databox/docs">Databox docs</a>) and use
+      <a href="https://github.com/ulixee/platform">GitHub</a> (eg,
+      <a href="https://github.com/ulixee/platform/tree/main/databox/docs">Databox docs</a>) and use
       the file editor to edit and then preview your changes.
     </p>
     <p>
@@ -61,7 +61,7 @@
     </p>
 
     <p>
-      You can also clone <a href="https://github.com/ulixee/ulixee">the Ulixee monorepo</a> and work
+      You can also clone <a href="https://github.com/ulixee/platform">the Ulixee monorepo</a> and work
       locally on documentation.
     </p>
   </MainLayout>

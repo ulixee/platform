@@ -23,7 +23,7 @@
     "version:check": "ulx-repo-version-check fix",
     "version:bump": "ulx-repo-version-bump"
   },
-  "repository": "git@github.com:ulixee/ulixee.git",
+  "repository": "git@github.com:ulixee/platform.git",
   "author": "Data Liberation Foundation",
   "contributors": [
     "Caleb Clark",
@@ -31,7 +31,7 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ulixee/ulixee/issues"
+    "url": "https://github.com/ulixee/platform/issues"
   },
   "homepage": "https://ulixee.org",
   "engines": {

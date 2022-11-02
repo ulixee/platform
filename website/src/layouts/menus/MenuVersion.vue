@@ -1,6 +1,6 @@
 <template>
   <Popover class="relative" v-slot="{ open }">
-    
+
     <div class="px-[2px] border-l border-gray-300">
       <PopoverButton :class="[open ? 'text-gray-900' : 'text-purple-900', 'h-[34px] px-3 relative -mr-3 font-light group inline-flex items-center rounded hover:bg-ulixee-verylight']">
         <span class="hidden md:inline-block whitespace-nowrap">v2.0-alpha</span>
@@ -15,7 +15,7 @@
               <div class="column text-right">
                 <ul>
                   <!-- <li>
-                    <a href="https://github.com/ulixee/ulixee/CHANGELOG.md" class="no-underline">Changelog</a>
+                    <a href="https://github.com/ulixee/platform/CHANGELOG.md" class="no-underline">Changelog</a>
                   </li>
                   <li>
                     <router-link to="/roadmap" class="no-underline">Platform Roadmap</router-link>

@@ -70,5 +70,5 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-#      - name: Push Image to Dockerhub
-#        run: docker push -a docker.io/${IMAGE}
+      - name: Push Image to Dockerhub
+

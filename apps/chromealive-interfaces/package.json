@@ -2,10 +2,10 @@
   "name": "@ulixee/apps-chromealive-interfaces",
   "version": "2.0.0-alpha.13",
   "scripts": {},
-  "repository": "git@github.com:ulixee/ulixee.git",
+  "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/hero-interfaces": "2.0.0-alpha.13",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.14",
     "@ulixee/unblocked-specification": "2.0.0-alpha.11"
   }
 }

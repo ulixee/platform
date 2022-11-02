@@ -14,11 +14,11 @@ This repository is the development home to several of the tools that make it eas
 
 ## Tooling
 
-Try out Ulixee Desktop! The Alpha release is available for download under [Assets](https://github.com/ulixee/ulixee/releases/latest).
+Try out Ulixee Desktop! The Alpha release is available for download under [Assets](https://github.com/ulixee/platform/releases/latest).
 
 ### Docker
 
-We publish a Docker image of the latest Ulixee Miner to Github Container Registry: `ghcr.io/ulixee/ulixee-miner:latest`. To use the image, we have a [run.sh](./miner/tools/docker/run.sh) script that will run with a non-root user on your choice of port. All environmental configurations are listed [here](./miner/main/.env.defaults).
+We publish a Docker image of the latest Ulixee Miner to Github Container Registry: `ghcr.io/ulixee/platform-miner:latest`. To use the image, we have a [run.sh](./miner/tools/docker/run.sh) script that will run with a non-root user on your choice of port. All environmental configurations are listed [here](./miner/main/.env.defaults).
 
 ## Developer Environment
 

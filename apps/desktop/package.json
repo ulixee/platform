@@ -13,11 +13,11 @@
     "dist:basic": "yarn build:basic && cd ../../build/apps/desktop && electron-builder",
     "start": "yarn copy:build && cd ../../build/apps/desktop && npx electron ."
   },
-  "repository": "git@github.com:ulixee/ulixee.git",
+  "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
     "@ulixee/apps-chromealive-core": "2.0.0-alpha.13",
-    "@ulixee/commons": "2.0.0-alpha.13",
+    "@ulixee/commons": "2.0.0-alpha.14",
     "@ulixee/databox-core": "2.0.0-alpha.13",
     "@ulixee/databox-for-hero": "2.0.0-alpha.13",
     "@ulixee/miner": "2.0.0-alpha.13",

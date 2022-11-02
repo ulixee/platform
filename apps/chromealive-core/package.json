@@ -5,18 +5,18 @@
   "scripts": {
     "build": "tsc -b -i"
   },
-  "repository": "git@github.com:ulixee/ulixee.git",
+  "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
     "@ulixee/apps-chromealive": "2.0.0-alpha.13",
     "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.13",
-    "@ulixee/commons": "2.0.0-alpha.13",
+    "@ulixee/commons": "2.0.0-alpha.14",
     "@ulixee/databox": "2.0.0-alpha.13",
     "@ulixee/databox-for-hero": "2.0.0-alpha.13",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.13",
-    "@ulixee/hero-plugin-utils": "2.0.0-alpha.13",
-    "@ulixee/hero-timetravel": "2.0.0-alpha.13",
-    "@ulixee/net": "2.0.0-alpha.13",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.14",
+    "@ulixee/hero-plugin-utils": "2.0.0-alpha.14",
+    "@ulixee/hero-timetravel": "2.0.0-alpha.14",
+    "@ulixee/net": "2.0.0-alpha.14",
     "@ulixee/unblocked-agent": "2.0.0-alpha.12",
     "@ulixee/default-browser-emulator": "2.0.0-alpha.12",
     "@ulixee/unblocked-specification": "2.0.0-alpha.11",
@@ -24,7 +24,7 @@
     "nanoid": "^3.1.30"
   },
   "peerDependencies": {
-    "@ulixee/hero-core": "2.0.0-alpha.13"
+    "@ulixee/hero-core": "2.0.0-alpha.14"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.154",

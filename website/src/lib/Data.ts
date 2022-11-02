@@ -16,8 +16,8 @@ export interface IPage {
 
 const repoLinks: { [key: string]: string } = {
   hero: 'https://github.com/ulixee/hero/tree/main/docs/main',
-  databox: 'https://github.com/ulixee/ulixee/tree/main/databox/docs',
-  miner: 'https://github.com/ulixee/ulixee/tree/main/miner/docs',
+  databox: 'https://github.com/ulixee/platform/tree/main/databox/docs',
+  miner: 'https://github.com/ulixee/platform/tree/main/miner/docs',
 }
 
 export default class Data {
