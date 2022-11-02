@@ -33,7 +33,7 @@ jobs:
         working-directory: ..
 
       - name: Install unblocked
-        run: yarn build:all
+        run: yarn build
         working-directory: ../unblocked
 
       - name: Chocolatey Install Action
