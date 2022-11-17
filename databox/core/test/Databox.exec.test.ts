@@ -20,6 +20,8 @@ import { nanoid } from 'nanoid';
 import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import ISidechainInfoApis from '@ulixee/specification/sidechain/SidechainInfoApis';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import Ed25519 from '@ulixee/crypto/lib/Ed25519';
+import GiftCards from '@ulixee/sidechain/lib/GiftCards';
 import DataboxCore from '../index';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Databox.exec.test');
@@ -35,18 +37,21 @@ const giftCardBatchSlug = 'gifts_12345123';
 
 const address = Address.createFromSigningIdentities([clientIdentity]);
 const minerIdentity = Identity.createSync();
-const minerGiftCardAddress = Address.createFromSigningIdentities([minerIdentity]);
+const minerGiftCardIssuer = Identity.createSync();
 
 const apiCalls = jest.fn();
 DataboxCore.options.identityWithSidechain = Identity.createSync();
-DataboxCore.options.giftCardAddress = minerGiftCardAddress.bech32;
 DataboxCore.options.defaultSidechainHost = 'http://localhost:1337';
 DataboxCore.options.defaultSidechainRootIdentity = sidechainIdentity.bech32;
+DataboxCore.options.giftCardsRequiredIssuerIdentity = minerGiftCardIssuer.bech32;
 DataboxCore.options.approvedSidechains = [
   { rootIdentity: sidechainIdentity.bech32, url: 'http://localhost:1337' },
 ];
 
+jest.spyOn(GiftCards.prototype, 'saveToDisk').mockImplementation(() => null);
+jest.spyOn(GiftCards.prototype, 'getStored').mockImplementation(() => Promise.resolve({}));
 jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
+
 const mock = {
   sidechainClient: {
     sendRequest: jest.spyOn<any, any>(SidechainClient.prototype, 'sendRequest'),
@@ -61,6 +66,7 @@ beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/databoxes/output-manifest.json`)) {
     Fs.unlinkSync(`${__dirname}/databoxes/output-manifest.json`);
   }
+
   if (Fs.existsSync(`${__dirname}/databoxes/output.dbx`)) {
     Fs.unlinkSync(`${__dirname}/databoxes/output.dbx`);
   }
@@ -87,7 +93,7 @@ afterAll(async () => {
   await miner.close();
 });
 
-test('should be able run a databox', async () => {
+test('should be able to run a databox', async () => {
   const packager = new DataboxPackager(`${__dirname}/databoxes/output.js`);
   await packager.build();
   await client.upload(await packager.dbx.asBuffer());
@@ -98,7 +104,7 @@ test('should be able run a databox', async () => {
   });
 });
 
-test('should be able run a databox with payments', async () => {
+test('should be able to run a databox with payments', async () => {
   apiCalls.mockClear();
   const packager = new DataboxPackager(`${__dirname}/databoxes/output.js`);
   await Fs.writeFileSync(
@@ -125,18 +131,16 @@ test('should be able run a databox with payments', async () => {
   const meta = await client.getMeta(manifest.versionHash);
 
   const payment = await sidechainClient.createMicroPayment(meta);
-  expect(payment.microgons).toBeGreaterThanOrEqual(1255);
+  expect(payment.micronote.microgons).toBeGreaterThanOrEqual(1255);
 
   expect(apiCalls.mock.calls.map(x => x[0].command)).toEqual([
     'Sidechain.settings',
     'Sidechain.openBatches',
-    'MicronoteBatch.activeFunds',
     'MicronoteBatch.findFund',
     'Micronote.create',
   ]);
 
   apiCalls.mockClear();
-
   await expect(client.exec(manifest.versionHash, null, payment)).resolves.toEqual({
     output: { success: true },
     metadata: {
@@ -162,11 +166,12 @@ test('should be able run a databox with payments', async () => {
 test('should be able run a databox with a GiftCard', async () => {
   apiCalls.mockClear();
   const packager = new DataboxPackager(`${__dirname}/databoxes/output.js`);
+  const databoxGiftCardIssuer = Identity.createSync();
   await Fs.writeFileSync(
     `${__dirname}/databoxes/output-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
-      giftCardAddress: minerGiftCardAddress.bech32,
+      giftCardIssuerIdentity: databoxGiftCardIssuer.bech32,
       pricePerQuery: 1250,
     } as IDataboxManifest),
   );
@@ -176,40 +181,107 @@ test('should be able run a databox with a GiftCard', async () => {
   await client.upload(await dbx.asBuffer());
 
   const devSidechainClient = new SidechainClient('http://localhost:1337', {
-    identity: minerIdentity,
-    address: minerGiftCardAddress,
+    identity: databoxGiftCardIssuer,
   });
-  const giftCard = await devSidechainClient.createGiftCard(5000);
+  giftCardIssuerIdentities = [
+    minerGiftCardIssuer.bech32,
+    databoxGiftCardIssuer.bech32,
+  ]
+  const giftCardDraft = await devSidechainClient.giftCards.createUnsaved(5000, giftCardIssuerIdentities);
+  const giftCard = await devSidechainClient.giftCards.save(
+    devSidechainClient.giftCards.signWithIssuers(giftCardDraft, minerGiftCardIssuer),
+  );
 
   const userSidechainClient = new SidechainClient('http://localhost:1337', {
     identity: clientIdentity,
     address,
   });
-  const micronote = await userSidechainClient.claimGiftCard(
+  const giftCardBalance = await userSidechainClient.giftCards.store(
     giftCard.giftCardId,
-    giftCard.batchSlug,
+    giftCard.redemptionKey,
   );
-  expect(micronote.batchSlug).toBe(giftCardBatchSlug);
-  expect(micronote.isGiftCardBatch).toBe(true);
+  expect(giftCardBalance.microgonsRemaining).toBe(5000);
 
   const meta = await client.getMeta(manifest.versionHash);
-  expect(meta.giftCardPaymentAddresses).toHaveLength(1);
+  expect(meta.giftCardIssuerIdentities).toHaveLength(2);
 
-  const payment = await userSidechainClient.createMicroPayment(meta);
-  expect(payment.microgons).toBeGreaterThan(1250);
-  expect(payment.isGiftCardBatch).toBe(true);
-  await expect(client.exec(manifest.versionHash, null, payment)).resolves.toEqual({
-    output: { success: true },
-    metadata: expect.any(Object),
-    latestVersionHash: expect.any(String),
-  });
+  // should be able to run with a gift card required issuer
+  {
+    const payment = await userSidechainClient.createMicroPayment(meta);
+    expect(payment.giftCard.id).toBe(giftCard.giftCardId);
+    await expect(client.exec(manifest.versionHash, null, payment)).resolves.toEqual({
+      output: { success: true },
+      metadata: expect.any(Object),
+      latestVersionHash: expect.any(String),
+    });
+  }
+  // should be able to run with no gift card required issuer
+  {
+    DataboxCore.options.giftCardsRequiredIssuerIdentity = null;
+    const payment = await userSidechainClient.createMicroPayment(meta);
+    expect(payment.giftCard.id).toBe(giftCard.giftCardId);
+    await expect(client.exec(manifest.versionHash, null, payment)).resolves.toEqual({
+      output: { success: true },
+      metadata: expect.any(Object),
+      latestVersionHash: expect.any(String),
+    });
+  }
 
   // follow-on test that you can disable giftCards
-  DataboxCore.options.giftCardAddress = null;
+  DataboxCore.options.giftCardsAllowed = false;
+  const payment = await userSidechainClient.createMicroPayment(meta);
   await expect(client.exec(manifest.versionHash, null, payment)).rejects.toThrowError(
     'not accepting gift cards',
   );
+  DataboxCore.options.giftCardsAllowed = true;
 });
+
+test('should remove an empty GiftCard', async () => {
+  apiCalls.mockClear();
+  const packager = new DataboxPackager(`${__dirname}/databoxes/output.js`);
+  await Fs.writeFileSync(
+    `${__dirname}/databoxes/output-manifest.json`,
+    JSON.stringify({
+      paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
+      giftCardIssuerIdentity: minerGiftCardIssuer.bech32,
+      pricePerQuery: 1250,
+    } as IDataboxManifest),
+  );
+
+  DataboxCore.options.giftCardsRequiredIssuerIdentity = null;
+  const dbx = await packager.build();
+  const manifest = packager.manifest;
+  await client.upload(await dbx.asBuffer());
+
+  const devSidechainClient = new SidechainClient('http://localhost:1337', {
+    identity: minerIdentity,
+  });
+  const giftCard = await devSidechainClient.giftCards.create(5000);
+
+  const userSidechainClient = new SidechainClient('http://localhost:1337', {
+    identity: clientIdentity,
+    address,
+  });
+  const giftCardBalance = await userSidechainClient.giftCards.store(
+    giftCard.giftCardId,
+    giftCard.redemptionKey,
+  );
+  expect(giftCardBalance.microgonsRemaining).toBe(5000);
+
+  const meta = await client.getMeta(manifest.versionHash);
+  expect(meta.giftCardIssuerIdentities).toHaveLength(1);
+
+  const payment = await userSidechainClient.createMicroPayment(meta);
+  expect(payment.giftCard.id).toBe(giftCard.giftCardId);
+  emptyGiftCardId = payment.giftCard.id;
+
+  expect(userSidechainClient.giftCards.byId[emptyGiftCardId]).toBeTruthy();
+  await expect(client.exec(manifest.versionHash, null, payment)).rejects.toThrowError();
+  expect(userSidechainClient.giftCards.byId[emptyGiftCardId]).not.toBeTruthy();
+});
+
+let emptyGiftCardId: string = null;
+let giftCardIssuerIdentities: string[] = [minerGiftCardIssuer.bech32];
 
 async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, any>) {
   const { command, args } = message;
@@ -245,13 +317,15 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
   }
   if (command === 'Sidechain.openBatches') {
     return {
-      micronote: [{
-        batchSlug,
-        isGiftCardBatch: false,
-        micronoteBatchIdentity: batchIdentity.bech32,
-        sidechainIdentity: sidechainIdentity.bech32,
-        sidechainValidationSignature: sidechainIdentity.sign(sha3(batchIdentity.bech32)),
-      }],
+      micronote: [
+        {
+          batchSlug,
+          isGiftCardBatch: false,
+          micronoteBatchIdentity: batchIdentity.bech32,
+          sidechainIdentity: sidechainIdentity.bech32,
+          sidechainValidationSignature: sidechainIdentity.sign(sha3(batchIdentity.bech32)),
+        },
+      ],
       giftCard: {
         batchSlug: giftCardBatchSlug,
         isGiftCardBatch: true,
@@ -272,42 +346,54 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
       guaranteeBlockHeight: 0,
       fundsId: 1,
       fundMicrogonsRemaining: 5000,
-      micronoteSignature: identity.sign(sha3(concatAsBuffer(id, (args as any).microgons))),
+      micronoteSignature: identity.sign(sha3(concatAsBuffer(id, args.microgons))),
     } as IMicronoteApis['Micronote.create']['result'];
   }
-  if (command === 'GiftCard.claim') {
+  if (command === 'GiftCard.get') {
     return {
-      microgons: 5000,
-      fundsId: 1,
-      redeemableWithAddresses: [minerGiftCardAddress.bech32],
-    } as IGiftCardApis['GiftCard.claim']['result'];
+      balance: args.giftCardId === emptyGiftCardId ? 0 : 5000,
+      id: args.giftCardId,
+      issuerIdentities: giftCardIssuerIdentities,
+    } as IGiftCardApis['GiftCard.get']['result'];
   }
   if (command === 'MicronoteBatch.activeFunds') {
     const funds = [] as IMicronoteBatchApis['MicronoteBatch.activeFunds']['result'];
     if ((args as any).batchSlug === giftCardBatchSlug) {
       funds.push({
         fundsId: 1,
-        allowedRecipientAddresses: [minerGiftCardAddress.bech32],
+        allowedRecipientAddresses: [],
         microgonsRemaining: 5000,
       });
     }
     return funds;
   }
   if (command === 'GiftCard.create') {
-    const giftCardId = nanoid(32);
+    const key = Ed25519.getPrivateKeyBytes((await Ed25519.create()).privateKey);
+    const giftCardId = nanoid(12);
     return {
       batchSlug,
       giftCardId,
-      blockHeight: 0,
-      guaranteeBlockHeight: 0,
-      fundsId: 1,
-      fundMicrogonsRemaining: 5000,
-      micronoteSignature: giftCardBatchIdentity.sign(
-        sha3(concatAsBuffer(giftCardId, (args as any).microgons)),
-      ),
-      sidechainIdentity: sidechainIdentity.bech32,
-      sidechainValidationSignature: sidechainIdentity.sign(sha3(giftCardBatchIdentity.bech32)),
+      redemptionKey: encodeBuffer(key, 'gft'),
     } as IGiftCardApis['GiftCard.create']['result'];
+  }
+
+  if (command === 'GiftCard.createHold') {
+    if (args.giftCardId === emptyGiftCardId) {
+      const error: any = new Error('Insufficient Funds Error');
+      error.code = 'ERR_NSF';
+      throw error;
+    }
+    return {
+      holdId: nanoid(32),
+      giftCardBalance: 10,
+    } as IGiftCardApis['GiftCard.createHold']['result'];
+  }
+  if (command === 'GiftCard.settleHold') {
+    return {
+      giftCardBalance: 10,
+      microgonsAllowed: args.microgons,
+      success: true,
+    } as IGiftCardApis['GiftCard.settleHold']['result'];
   }
   throw new Error(`unknown request ${command}`);
 }

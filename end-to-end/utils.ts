@@ -1,9 +1,4 @@
-import {
-  ChildProcess, execSync,
-  ExecSyncOptions,
-  ExecSyncOptionsWithBufferEncoding,
-  ExecSyncOptionsWithStringEncoding,
-} from 'child_process';
+import { ChildProcess, execSync, ExecSyncOptions } from 'child_process';
 
 export function getMinerHost(minerProcess: ChildProcess): Promise<string> {
   return new Promise<string>(resolve => {
@@ -18,10 +13,9 @@ export function getMinerHost(minerProcess: ChildProcess): Promise<string> {
   });
 }
 
-export function execAndLog(command: string): Buffer;
-export function execAndLog(command: string, options: ExecSyncOptionsWithStringEncoding): string;
-export function execAndLog(command: string, options: ExecSyncOptionsWithBufferEncoding): Buffer;
-export function execAndLog(command: string, options?: ExecSyncOptions): string | Buffer {
+export function execAndLog(command: string, options?: ExecSyncOptions): string {
   console.log(`--------\n\n\n${command}\n\n\n-------`);
-  return execSync(command, options);
+  options ??= {};
+  options.encoding ??= 'utf8';
+  return execSync(command, options) as string;
 }

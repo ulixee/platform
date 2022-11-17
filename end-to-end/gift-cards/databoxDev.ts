@@ -1,7 +1,6 @@
-import { safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
-import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import { spawn } from 'child_process';
 import * as Path from 'path';
+import * as Fs from 'fs';
 import { execAndLog, getMinerHost } from '../utils';
 
 export default async function main(
@@ -9,21 +8,21 @@ export default async function main(
   needsClosing: (() => Promise<any> | any)[],
   rootDir: string,
 ): Promise<{
-  claimGiftCard: string;
+  storeGiftCardCommand: string;
   databoxHost: string;
   databoxHash: string;
 }> {
   // CREATE IDENTITIES
-  const addressPath = Path.resolve(`${__dirname}/addresses/DataboxDevGiftCard.json`);
   const identityPath = Path.resolve(`${__dirname}/identities/DataboxDev.json`);
-
   execAndLog(`npx @ulixee/crypto identity --filename="${identityPath}"`, {
     stdio: 'inherit',
   });
-  const addressResult = execAndLog(`npx @ulixee/crypto address U "${addressPath}"`, {
-    encoding: 'utf8',
-  });
-  const giftCardAddress = addressResult.split('Wrote address: ').pop().split(' ')[0].trim();
+  await Fs.promises.writeFile(
+    `${__dirname}/databox/index-manifest.json`,
+    JSON.stringify({
+      pricePerQuery: 50e4, // ~50 cents
+    }),
+  );
 
   // BOOT UP A MINER WITH GIFT CARD RESTRICTIONS
   const miner = spawn(`npx @ulixee/miner start`, {
@@ -32,41 +31,28 @@ export default async function main(
     shell: true,
     env: {
       ...process.env,
-      ULX_GIFT_CARD_ADDRESS: giftCardAddress,
       ULX_SIDECHAIN_HOST: sidechainHost,
       ULX_IDENTITY_PATH: identityPath,
-      ULX_DISABLE_CHROMEALIVE: 'true'
+      ULX_DISABLE_CHROMEALIVE: 'true',
     },
   });
   const databoxHost = await getMinerHost(miner);
   needsClosing.push(() => miner.kill());
 
   const giftCardResult = execAndLog(
-    `npx @ulixee/sidechain gift-card create -m 500c -h ${sidechainHost}`,
+    `npx @ulixee/databox gift-cards create ./databox/index.js -m 500c -h ${sidechainHost}`,
     {
-      encoding: 'utf8',
-      env: {
-        ...process.env,
-        ULX_ADDRESS: addressPath,
-      },
+      cwd: __dirname,
     },
   );
-  const claimGiftCard = giftCardResult.split(': "').pop().replace('"', '').trim();
-  if (!claimGiftCard) throw new Error('Did not create a gift card');
-  console.log('Claim gift card instructions:', claimGiftCard);
+  const storeGiftCardCommand = giftCardResult.split(': "').pop().replace(/"/g, '').trim();
+  if (!storeGiftCardCommand) throw new Error('Did not create a gift card');
+  console.log('Store gift card instructions:', storeGiftCardCommand);
 
-  await safeOverwriteFile(
-    `${__dirname}/databox/index-manifest.json`,
-    JSON.stringify({
-      giftCardAddress,
-      pricePerQuery: 50e4, // ~50 cents
-    } as Partial<IDataboxManifest>),
-  );
   const databoxResult = execAndLog(
     `npx @ulixee/databox deploy ./databox/index.js -h ${databoxHost}`,
     {
       cwd: __dirname,
-      encoding: 'utf8',
     },
   );
 
@@ -76,7 +62,7 @@ export default async function main(
   console.log('Databox VersionHash', databoxHash);
 
   return {
-    claimGiftCard,
+    storeGiftCardCommand,
     databoxHash,
     databoxHost,
   };

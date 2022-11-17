@@ -19,7 +19,7 @@ beforeAll(async () => {
   await DataboxCore.start();
   packager = new Packager(require.resolve('./databoxes/bootup.ts'));
   dbx = await packager.build();
-});
+}, 30e3);
 
 afterAll(() => {
   rmdirSync(storageDir, { recursive: true });
@@ -66,7 +66,7 @@ test('can get metadata about an uploaded databox', async () => {
     runApi('Databox.meta', { versionHash: packager.manifest.versionHash }),
   ).resolves.toEqual({
     latestVersionHash: packager.manifest.versionHash,
-    giftCardPaymentAddresses: [],
+    giftCardIssuerIdentities: [],
     averageBytesPerQuery: expect.any(Number),
     averageMilliseconds: expect.any(Number),
     averageTotalPricePerQuery: 0,

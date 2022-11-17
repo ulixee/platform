@@ -2,40 +2,41 @@ import { Command } from 'commander';
 import type * as CliCommands from '@ulixee/databox-packager/lib/cliCommands';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import UlixeeConfig from '@ulixee/commons/config';
-import DataboxApiClient from './lib/DataboxApiClient';
+import DataboxApiClient from '../lib/DataboxApiClient';
+import giftCardCommands from './giftCardCommands';
 
-const { version } = require('./package.json');
+const { version } = require('../package.json');
 
 export default function databoxCommands(): Command {
-  const databoxCommand = new Command().version(version);
+  const cli = new Command().version(version);
 
-  const identityPrivateKeyPathOption = databoxCommand
+  const identityPrivateKeyPathOption = cli
     .createOption(
       '-i, --identity-path <path>',
       'A path to a Ulixee Identity. Necessary for signing if a Miner has restricted allowed Uploaders.',
     )
     .env('ULX_IDENTITY_PATH');
 
-  const identityPrivateKeyPassphraseOption = databoxCommand
+  const identityPrivateKeyPassphraseOption = cli
     .createOption(
       '-p, --identity-passphrase <path>',
       'A decryption passphrase to the Ulixee identity (only necessary if specified during key creation).',
     )
     .env('ULX_IDENTITY_PASSPHRASE');
 
-  const uploadHostOption = databoxCommand.createOption(
+  const uploadHostOption = cli.createOption(
     '-h, --upload-host <host>',
     'Upload this Databox to the given host Miner. Will try to auto-connect if none specified.',
   );
 
-  const clearVersionHistoryOption = databoxCommand
+  const clearVersionHistoryOption = cli
     .createOption(
       '-c, --clear-version-history',
       'Clear out any version history for this script entrypoint',
     )
     .default(false);
 
-  databoxCommand
+  cli
     .command('deploy')
     .description('Build and upload a Databox.')
     .argument(
@@ -73,7 +74,7 @@ export default function databoxCommands(): Command {
       });
     });
 
-  databoxCommand
+  cli
     .command('build')
     .description('Build a Databox into a single ".dbx" file.')
     .argument(
@@ -115,7 +116,7 @@ export default function databoxCommands(): Command {
       });
     });
 
-  databoxCommand
+  cli
     .command('open')
     .description('Open a Databox package in the local working directory.')
     .argument('<dbxPath>', 'The path to the .dbx package.')
@@ -123,7 +124,7 @@ export default function databoxCommands(): Command {
       await getPackagerCommands().unpack(dbxPath);
     });
 
-  databoxCommand
+  cli
     .command('close')
     .description('Close the Databox package and save or discard the local changes.')
     .argument('<dbxPath>', 'The path to the .dbx package.')
@@ -132,14 +133,17 @@ export default function databoxCommands(): Command {
       await getPackagerCommands().closeDbx(dbxPath, discardChanges);
     });
 
-  databoxCommand
+  cli
     .command('install')
     .description(
       'Install a Databox and corresponding Schema into your project. Enables type-checking for Databox.exec.',
     )
     .argument('<versionHash>', 'The version hash of the Databox.')
     .option('-a, --alias <name>', 'Add a shortcut name to reference this Databox hash.')
-    .option('-h, --host <host>', 'Connect to the given host Miner. Will try to automatically connect if omitted.')
+    .option(
+      '-h, --host <host>',
+      'Connect to the given host Miner. Will try to automatically connect if omitted.',
+    )
     .action(async (versionHash, { alias, host }) => {
       host ??=
         UlixeeConfig.load()?.defaultMinerHost ??
@@ -152,7 +156,7 @@ export default function databoxCommands(): Command {
       await client.install(versionHash, alias);
     });
 
-  databoxCommand
+  cli
     .command('upload')
     .description('Upload a Databox package to a miner.')
     .argument('<dbxPath>', 'The path to the .dbx package.')
@@ -176,7 +180,8 @@ export default function databoxCommands(): Command {
       },
     );
 
-  return databoxCommand;
+  cli.addCommand(giftCardCommands());
+  return cli;
 }
 
 function getPackagerCommands(): typeof CliCommands {

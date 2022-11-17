@@ -40,14 +40,15 @@ export default class DataboxCore {
     databoxesTmpDir: Path.join(Os.tmpdir(), '.ulixee', 'databox'),
     maxRuntimeMs: 10 * 60e3,
     waitForDataboxCompletionOnShutdown: false,
-    enableRunWithLocalPath: true,
+    enableRunWithLocalPath: process.env.NODE_ENV !== 'production',
     paymentAddress: env.paymentAddress,
-    giftCardAddress: env.giftCardAddress,
+    giftCardsAllowed: env.giftCardsAllowed,
+    giftCardsRequiredIssuerIdentity: env.giftCardsRequiredIssuerIdentity,
     uploaderIdentities: env.uploaderIdentities,
-    computePricePerKb: env.computePricePerKb ?? 0,
+    computePricePerKb: env.computePricePerKb,
     defaultBytesForPaymentEstimates: 256,
-    approvedSidechains: env.approvedSidechains ?? [],
-    defaultSidechainHost: env.defaultSidechainHost ?? 'https://payments.ulixee.org',
+    approvedSidechains: env.approvedSidechains,
+    defaultSidechainHost: env.defaultSidechainHost,
     defaultSidechainRootIdentity: env.defaultSidechainRootIdentity,
     identityWithSidechain: env.identityWithSidechain,
     approvedSidechainsRefreshInterval: 60e3 * 60, // 1 hour
@@ -71,8 +72,10 @@ export default class DataboxCore {
   private static compiledScriptsByPath = new Map<string, Promise<VMScript>>();
 
   private static get vm(): NodeVM {
-    if (!this.#vm)  {
-      const whitelist: Set<string> = new Set(...Object.values(this.pluginCoresByName).map(x => x.nodeVmRequireWhitelist || []));
+    if (!this.#vm) {
+      const whitelist: Set<string> = new Set(
+        ...Object.values(this.pluginCoresByName).map(x => x.nodeVmRequireWhitelist || []),
+      );
       whitelist.add('@ulixee/*');
 
       this.#vm = new NodeVM({
@@ -135,7 +138,11 @@ export default class DataboxCore {
     this.isStarted.resolve();
   }
 
-  public static async execDatabox(path: string, manifest: IDataboxManifest, input: any): Promise<{ output: any }> {
+  public static async execDatabox(
+    path: string,
+    manifest: IDataboxManifest,
+    input: any,
+  ): Promise<{ output: any }> {
     const script = await this.getVMScript(path, manifest);
     const databoxExecutable = this.vm.run(script);
 
@@ -158,7 +165,7 @@ export default class DataboxCore {
     if (this.isClosing) return this.isClosing;
     const closingPromise = new Resolvable<void>();
     this.isClosing = closingPromise.promise;
-    
+
     this.compiledScriptsByPath.clear();
 
     try {
