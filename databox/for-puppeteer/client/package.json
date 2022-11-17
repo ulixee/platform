@@ -11,7 +11,7 @@
     "./lib/*": "./lib/*.js"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.14",
+    "@ulixee/commons": "2.0.0-alpha.15",
     "@ulixee/databox": "2.0.0-alpha.14",
     "@ulixee/databox-interfaces": "2.0.0-alpha.14",
     "puppeteer": "^14.3.0"
