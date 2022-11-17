@@ -1,7 +1,7 @@
 import { IBlockSettings, IPayment } from '@ulixee/specification';
 import SidechainClient from '@ulixee/sidechain';
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
-import verifyPayment from '@ulixee/sidechain/lib/verifyPayment';
+import verifyMicronote from '@ulixee/sidechain/lib/verifyMicronote';
 import { IDataboxApiTypes } from '@ulixee/specification/databox';
 import { InsufficientMicronoteFundsError, InsufficientQueryPriceError } from './errors';
 
@@ -25,7 +25,17 @@ export default class PaymentProcessor {
     return this.addressesPayable.reduce((total, res) => total + (res.pricePerKb ?? 0), 0);
   }
 
+  private get giftCardId(): string {
+    return this.payment.giftCard?.id;
+  }
+
+  private get giftCardRedemptionKey(): string {
+    return this.payment.giftCard?.redemptionKey;
+  }
+
+  private giftCardHoldId: string;
   private addressesPayable: { address: string; pricePerQuery?: number; pricePerKb?: number }[] = [];
+  private microgonsAllocated: number;
 
   constructor(
     private payment: IPayment,
@@ -63,18 +73,31 @@ export default class PaymentProcessor {
     }
   }
 
+  public async createGiftCardHold(): Promise<boolean> {
+    this.microgonsAllocated = this.calculateMinimumPrice();
+    const hold = await this.sidechain.giftCards.createHold(
+      this.giftCardId,
+      this.giftCardRedemptionKey,
+      this.microgonsAllocated,
+    );
+    this.giftCardHoldId = hold.holdId;
+    return true;
+  }
+
   public async lock(
     clientStipulations?: IDataboxApiTypes['Databox.exec']['args']['pricingPreferences'],
   ): Promise<boolean> {
     this.validateQueryPrice(clientStipulations?.maxComputePricePerKb);
-    verifyPayment(
-      this.payment,
+    this.microgonsAllocated = this.payment.micronote.microgons;
+    verifyMicronote(
+      this.payment.micronote,
       this.config.approvedSidechainRootIdentities,
       this.blockSettings.height ?? 0,
     );
+    const { micronoteId, batchSlug } = this.payment.micronote;
     await this.sidechain.lockMicronote(
-      this.payment.micronoteId,
-      this.payment.batchSlug,
+      micronoteId,
+      batchSlug,
       this.addressesPayable.map(x => x.address),
     );
     return true;
@@ -84,7 +107,7 @@ export default class PaymentProcessor {
     const cacheMultiplier = isCached ? this.config.cachedResultDiscount : 1;
     const payments: { [address: string]: number } = {};
     // NOTE: don't claim the settlement cost!!
-    const maxMicrogons = this.payment.microgons - this.settlementFeeMicrogons;
+    const maxMicrogons = this.microgonsAllocated - this.settlementFeeMicrogons;
     let allocatedMicrogons = 0;
     let totalMicrogons = 0;
     for (const addressPayable of this.addressesPayable) {
@@ -107,28 +130,40 @@ export default class PaymentProcessor {
       payments[addressPayable.address] += microgons;
     }
 
+    if (this.giftCardId && this.giftCardHoldId) {
+      const total = Object.values(payments).reduce((a, b) => a + b, 0);
+      await this.sidechain.giftCards.settleHold(this.giftCardId, this.giftCardHoldId, total);
+      return total;
+    }
+
     const { finalCost } = await this.sidechain.claimMicronote(
-      this.payment.micronoteId,
-      this.payment.batchSlug,
+      this.payment.micronote.micronoteId,
+      this.payment.micronote.batchSlug,
       payments,
     );
 
     // if nsf, claim the funds that are allocated, but do not return the query result
     if (totalMicrogons > maxMicrogons) {
-      throw new InsufficientMicronoteFundsError(this.payment.microgons, totalMicrogons);
+      throw new InsufficientMicronoteFundsError(this.payment.micronote.microgons, totalMicrogons);
     }
 
     return finalCost;
+  }
+
+  private calculateMinimumPrice(): number {
+    const pricePerQuery = this.pricePerQuery;
+    const pricePerKb = this.pricePerKb;
+
+    return pricePerQuery + Math.ceil((pricePerKb * this.config.anticipatedBytesPerQuery) / 1e3);
   }
 
   private validateQueryPrice(maxComputePricePerKb: number | undefined): void {
     const pricePerQuery = this.pricePerQuery;
     const pricePerKb = this.pricePerKb;
 
-    const minimumPrice =
-      pricePerQuery + Math.ceil((pricePerKb * this.config.anticipatedBytesPerQuery) / 1e3);
+    const minimumPrice = this.calculateMinimumPrice();
 
-    const microgonsAllocated = this.payment.microgons - this.settlementFeeMicrogons;
+    const microgonsAllocated = this.payment.micronote.microgons - this.settlementFeeMicrogons;
 
     let isAcceptablePrice = true;
     if (microgonsAllocated < minimumPrice) {

@@ -1,7 +1,8 @@
 import { addressValidation, identityValidation } from '@ulixee/specification/common';
 import Identity from '@ulixee/crypto/lib/Identity';
-import { loadEnv, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
+import { loadEnv, parseEnvBool, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
 
+loadEnv(process.cwd());
 loadEnv(__dirname);
 const env = process.env;
 if (env.ULX_DATABOX_DIR) env.ULX_DATABOX_DIR = parseEnvPath(env.ULX_DATABOX_DIR);
@@ -12,7 +13,11 @@ export default {
   // list of identities who can upload to this Miner [@ulixee/crypto/lib/Identity.bech32]
   uploaderIdentities: parseIdentities(env.ULX_DBX_UPLOADER_IDENTITIES, 'Uploader Identities'),
   paymentAddress: parseAddress(env.ULX_PAYMENT_ADDRESS),
-  giftCardAddress: parseAddress(env.ULX_GIFT_CARD_ADDRESS),
+  giftCardsAllowed: parseEnvBool(env.ULX_GIFT_CARDS_ALLOWED),
+  giftCardsRequiredIssuerIdentity: parseIdentity(
+    env.ULX_GIFT_CARDS_REQUIRED_ISSUER_IDENTITY,
+    'Gift Card Issuer',
+  ),
   computePricePerKb: parseEnvInt(env.ULX_PRICE_PER_KB),
   approvedSidechains: [],
   defaultSidechainHost: env.ULX_SIDECHAIN_HOST,
@@ -32,6 +37,18 @@ function loadIdentity(identityPEM: string, path: string, keyPassphrase: string):
   return Identity.loadFromFile(path, { keyPassphrase });
 }
 
+function parseIdentity(identity: string, type: string): string {
+  if (!identity) return identity;
+  try {
+    identityValidation.parse(identity);
+    return identity;
+  } catch (error) {
+    throw new Error(
+      `Invalid Identity "${identity}" provided to the ${type} environment variable. (Identities are Bech32m encoded and start with "id1").`,
+    );
+  }
+}
+
 function parseIdentities(identities: string, type: string): string[] {
   if (!identities) return [];
   const identityList = identities
@@ -39,13 +56,7 @@ function parseIdentities(identities: string, type: string): string[] {
     .map(x => x.trim())
     .filter(Boolean);
   for (const identity of identityList) {
-    try {
-      identityValidation.parse(identity);
-    } catch (error) {
-      throw new Error(
-        `Invalid Identity "${identity}" provided to the ${type} environment variable. (Identities are Bech32m encoded and start with "id1").`,
-      );
-    }
+    parseIdentity(identity, type);
   }
   return identityList;
 }

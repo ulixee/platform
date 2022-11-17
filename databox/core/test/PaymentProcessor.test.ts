@@ -15,26 +15,28 @@ const lockSpy = jest.spyOn(sidechainClient, 'lockMicronote');
 const claimSpy = jest.spyOn(sidechainClient, 'claimMicronote');
 
 const payment = {
-  microgons: 1000,
-  sidechainIdentity: sidechainIdentity.bech32,
-  micronoteBatchIdentity: micronoteBatchIdentity.bech32,
-  guaranteeBlockHeight: 0,
-  micronoteSignature: micronoteBatchIdentity.sign(sha3(concatAsBuffer('1', 1000))),
-  isGiftCardBatch: false,
-  micronoteId: '1',
-  batchSlug: '123',
-  blockHeight: 0,
-  micronoteBatchUrl: '',
-  sidechainValidationSignature: sidechainIdentity.sign(sha3(micronoteBatchIdentity.bech32)),
+  micronote: {
+    microgons: 1000,
+    sidechainIdentity: sidechainIdentity.bech32,
+    micronoteBatchIdentity: micronoteBatchIdentity.bech32,
+    guaranteeBlockHeight: 0,
+    micronoteSignature: micronoteBatchIdentity.sign(sha3(concatAsBuffer('1', 1000))),
+    micronoteId: '1',
+    batchSlug: '123',
+    blockHeight: 0,
+    micronoteBatchUrl: '',
+    sidechainValidationSignature: sidechainIdentity.sign(sha3(micronoteBatchIdentity.bech32)),
+  }
 };
 
 test('it should ensure a payment has enough microgons', async () => {
   const processor = new PaymentProcessor(
     {
-      microgons: 100,
-      sidechainIdentity,
-      isGiftCardBatch: false,
-    } as any,
+      micronote: {
+        microgons: 100,
+        sidechainIdentity: sidechainIdentity.bech32,
+      } as any
+    },
     {
       anticipatedBytesPerQuery: 100,
       approvedSidechainRootIdentities: new Set([sidechainIdentity.bech32]),

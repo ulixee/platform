@@ -43,6 +43,9 @@ export default class DataboxApiClient {
     return meta;
   }
 
+  /**
+   * NOTE: any caller must handle tracking local balances of gift cards and removing them if they're depleted!
+   */
   public async exec<
     IO extends IDataboxInputOutput,
     IVersionHash extends keyof ITypes & string = any,
@@ -50,9 +53,26 @@ export default class DataboxApiClient {
   >(
     versionHash: IVersionHash,
     input: ISchemaDbx['input'],
-    payment?: IPayment,
+    microPayment: IPayment & {
+      onFinalized?(metadata: IDataboxExecResult['metadata'], error?: Error): void;
+    } = {},
   ): Promise<IDataboxExecResult & { output?: ISchemaDbx['output'] }> {
-    return await this.runRemote('Databox.exec', { versionHash, payment, input });
+    try {
+      const result = await this.runRemote('Databox.exec', {
+        versionHash,
+        input,
+        payment: microPayment,
+      });
+      if (microPayment?.onFinalized) {
+        microPayment.onFinalized(result.metadata);
+      }
+      return result;
+    } catch (error) {
+      if (microPayment?.onFinalized) {
+        microPayment.onFinalized(null, error);
+      }
+      throw error;
+    }
   }
 
   public async upload(

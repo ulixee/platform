@@ -11,6 +11,8 @@ import { IDataboxRecord } from '../lib/DataboxesTable';
 import { InvalidMicronoteError, MicronotePaymentRequiredError } from '../lib/errors';
 import { IDataboxStatsRecord } from '../lib/DataboxStatsTable';
 
+const giftCardIssuersById: { [giftCardId: string]: string[] } = {};
+
 export default new DataboxApiHandler('Databox.exec', {
   async handler(request, context) {
     if (DataboxCore.isClosing)
@@ -81,7 +83,7 @@ async function processPayments(
 ): Promise<PaymentProcessor> {
   const { sidechainClientManager, configuration } = context;
 
-  if (!request.payment) {
+  if (!request.payment?.giftCard && !request.payment?.micronote) {
     if (databox.pricePerQuery || configuration.computePricePerKb) {
       throw new MicronotePaymentRequiredError(
         'This databox requires payment',
@@ -93,9 +95,12 @@ async function processPayments(
 
   if (!configuration.paymentAddress && !configuration.defaultSidechainHost) return null;
 
-  const sidechainClient = await sidechainClientManager.withIdentity(
-    request.payment.sidechainIdentity,
-  );
+  const { giftCard, micronote } = request.payment;
+
+  const sidechainClient = micronote
+    ? await sidechainClientManager.withIdentity(micronote.sidechainIdentity)
+    : sidechainClientManager.defaultClient;
+
   const approvedSidechainRootIdentities =
     await sidechainClientManager.getApprovedSidechainRootIdentities();
   const settings = await sidechainClient.getSettings(true);
@@ -113,17 +118,38 @@ async function processPayments(
     context.logger,
   );
 
-  if (request.payment.isGiftCardBatch) {
-    if (!configuration.giftCardAddress || !databox.giftCardAddress) {
-      const rejector = !databox.giftCardAddress ? 'databox' : 'Miner';
+  if (giftCard) {
+    if (!configuration.giftCardsAllowed || !databox.giftCardIssuerIdentity) {
+      const rejector = !databox.giftCardIssuerIdentity ? 'databox' : 'Miner';
       throw new InvalidMicronoteError(`This ${rejector} is not accepting gift cards.`);
     }
-    paymentProcessor.addAddressPayable(configuration.giftCardAddress, {
-      pricePerKb: configuration.computePricePerKb,
-    });
-    paymentProcessor.addAddressPayable(databox.giftCardAddress, {
+
+    let giftCardIssuers = giftCardIssuersById[giftCard.id];
+    if (!giftCardIssuers) {
+      giftCardIssuers =
+        (await sidechainClient.giftCards.get(giftCard.id)?.then(x => x.issuerIdentities)) ?? [];
+      giftCardIssuersById[giftCard.id] = giftCardIssuers;
+    }
+
+    // ensure gift card is valid for this server
+    for (const issuer of [
+      databox.giftCardIssuerIdentity,
+      configuration.giftCardsRequiredIssuerIdentity,
+    ]) {
+      if (!issuer) continue;
+      if (!giftCardIssuers.includes(issuer))
+        throw new Error(`This gift card does not include all required issuers (${issuer})`);
+    }
+
+    if (configuration.giftCardsRequiredIssuerIdentity) {
+      paymentProcessor.addAddressPayable(configuration.giftCardsRequiredIssuerIdentity, {
+        pricePerKb: configuration.computePricePerKb,
+      });
+    }
+    paymentProcessor.addAddressPayable(databox.giftCardIssuerIdentity, {
       pricePerQuery: databox.pricePerQuery,
     });
+    await paymentProcessor.createGiftCardHold();
   } else {
     paymentProcessor.addAddressPayable(configuration.paymentAddress, {
       pricePerKb: configuration.computePricePerKb,
@@ -131,8 +157,8 @@ async function processPayments(
     paymentProcessor.addAddressPayable(databox.paymentAddress, {
       pricePerQuery: databox.pricePerQuery,
     });
+    await paymentProcessor.lock(request.pricingPreferences);
   }
 
-  await paymentProcessor.lock(request.pricingPreferences);
   return paymentProcessor;
 }

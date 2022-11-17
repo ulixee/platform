@@ -1,5 +1,6 @@
 import { loadEnv, parseEnvBool } from '@ulixee/commons/lib/envUtils';
 
+loadEnv(process.cwd());
 loadEnv(__dirname);
 const env = process.env;
 

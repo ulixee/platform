@@ -24,9 +24,6 @@ async function main(): Promise<void> {
     shell: true,
     stdio: 'inherit',
     cwd: sidechainRoot,
-    env: {
-      ...process.env,
-    },
   });
 
   console.log('Starting Sidechain', sidechainRoot);

@@ -20,6 +20,7 @@
     "@ulixee/crypto": "2.0.0-alpha.14",
     "@ulixee/databox-interfaces": "2.0.0-alpha.14",
     "@ulixee/net": "2.0.0-alpha.14",
+    "@ulixee/sidechain": "2.0.0-alpha.14",
     "@ulixee/schema": "2.0.0-alpha.14",
     "@ulixee/specification": "2.0.0-alpha.14",
     "commander": "^9.3.0",

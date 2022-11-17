@@ -183,7 +183,6 @@ export default class ChromeAliveCore {
     const minerAddress = await this.minerAddress;
     heroSession.bypassResourceRegistrationForHost = new URL(minerAddress);
 
-
     this.sessionObserversById.set(sessionId, sessionObserver);
     const sourceCode = sessionObserver.sourceCodeTimeline;
     const timetravel = sessionObserver.timetravelPlayer;
@@ -361,6 +360,12 @@ export default class ChromeAliveCore {
     if (!event.browser.engine.isHeaded) return;
 
     const browserId = event.browser.id;
+
+    const hasSessionObservers = HeroSession.sessionsWithBrowserId(browserId).some(x =>
+      this.sessionObserversById.has(x.id),
+    );
+    if (!hasSessionObservers) return;
+
     const restartedSessionId = this.restartingHeroSessionId;
     const checkForBrowserClose = (): any => {
       if (
