@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.15](https://github.com/ulixee/platform/compare/v2.0.0-alpha.14...v2.0.0-alpha.15) (2022-11-17)
+
+
+### Features
+
+* simplified gift cards ([a9ccca7](https://github.com/ulixee/platform/commit/a9ccca76dfaffd789602f3bb3cacac5d5d75c82c))
+
+
+
+
+
 # [2.0.0-alpha.14](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.13...v2.0.0-alpha.14) (2022-11-02)
 
 **Note:** Version bump only for package @ulixee/databox-interfaces

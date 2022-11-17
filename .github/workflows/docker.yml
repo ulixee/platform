@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_URL: https://github.com/${{ github.repository }}
-      ADD_CHROME_VERSION: 104
+      ADD_CHROME_VERSION: 106
       IMAGE: ulixee/ulixee-miner
 
     steps:

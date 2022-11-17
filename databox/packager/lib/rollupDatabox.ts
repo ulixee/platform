@@ -15,8 +15,7 @@ export default async function rollupDatabox(
     nodeResolve({
       resolveOnly: module =>
         !module.startsWith('@ulixee') &&
-        !module.includes('/databox-for-') &&
-        module !== 'awaited-dom',
+        !module.includes('/databox-for-'),
     }),
     commonjs({ transformMixedEsModules: true, extensions: ['.js', '.ts'] }), // the ".ts" extension is required }),
     terser({ compress: false, mangle: false, format: { comments: false }, ecma: 2020 }),
