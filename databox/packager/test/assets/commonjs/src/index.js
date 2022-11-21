@@ -1,10 +1,13 @@
-const Databox = require('@ulixee/databox-for-hero');
+const { Function, HeroFunctionPlugin } = require('@ulixee/databox-for-hero');
 const { testFunction } = require('./helper');
 
-module.exports = new Databox({
-  async run(databox) {
-    const { hero, output } = databox;
-    output.text = testFunction();
-    await hero.close();
+module.exports = new Function(
+  {
+    async run(ctx) {
+      const { hero, output } = ctx;
+      output.text = testFunction();
+      await hero.close();
+    },
   },
-});
+  HeroFunctionPlugin,
+);

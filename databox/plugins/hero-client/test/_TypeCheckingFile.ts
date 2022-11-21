@@ -9,14 +9,18 @@ export function typeChecking(): void {
       async run(context) {
         const { hero, input } = context;
         await hero.goto('t');
+        // @ts-expect-error - make sure hero is type checked (not any)
+        await hero.unsupportedMethod();
         // @ts-expect-error
         const s: number = input.text;
       },
       afterHeroCompletes(ctx) {
         const detached = ctx.heroReplay.detachedElements.getAll('test');
         assert(detached, 'should exist');
+        // @ts-expect-error - make sure heroReplay is type checked (not any)
+        await ctx.heroReplay.goto();
         // // @ts-expect-error
-        // ctx.input.text = 1;
+        ctx.input.text = 1;
       },
       schema: {
         input: {
@@ -32,6 +36,8 @@ export function typeChecking(): void {
     functions: {
       hero: new Function(async ({ hero }) => {
         await hero.goto('place');
+        // @ts-expect-error - make sure hero is type checked (not any)
+        await hero.unsupportedMethod();
       }, HeroFunctionPlugin),
 
       heroSchema: new Function(
@@ -47,6 +53,8 @@ export function typeChecking(): void {
           async run({ hero, input, output }) {
             await hero.goto(input.url);
             output.html = await hero.document.body.outerHTML;
+            // @ts-expect-error: value isn't on input
+            const x = input.value;
           },
         },
         HeroFunctionPlugin,
