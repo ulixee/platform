@@ -2,9 +2,9 @@ import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 import SqliteTable from '@ulixee/commons/lib/SqliteTable';
 
 export default class DataboxStatsTable extends SqliteTable<IDataboxStatsRecord> {
-  private static byVersionHash: { [hash: string]: IDataboxStatsRecord } = {};
+  private static byVersionHashAndName: { [hash_functionName: string]: IDataboxStatsRecord } = {};
 
-  private getQuery: Statement<string>;
+  private getQuery: Statement<[string, string]>;
 
   constructor(db: SqliteDatabase) {
     super(
@@ -12,6 +12,7 @@ export default class DataboxStatsTable extends SqliteTable<IDataboxStatsRecord> 
       'DataboxStats',
       [
         ['versionHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
+        ['functionName', 'TEXT', 'NOT NULL PRIMARY KEY'],
         ['lastRunTimestamp', 'DATETIME'],
         ['averageBytes', 'INTEGER'],
         ['minBytes', 'INTEGER'],
@@ -24,13 +25,21 @@ export default class DataboxStatsTable extends SqliteTable<IDataboxStatsRecord> 
       ],
       true,
     );
-    this.getQuery = db.prepare(`select * from ${this.tableName} where versionHash = ? limit 1`);
+    this.getQuery = db.prepare(
+      `select * from ${this.tableName} where versionHash = ? and functionName = ? limit 1`,
+    );
   }
 
-  public record(versionHash: string, price: number, bytes: number, milliseconds: number): void {
-    price ??=0;
+  public record(
+    versionHash: string,
+    functionName: string,
+    price: number,
+    bytes: number,
+    milliseconds: number,
+  ): void {
+    price ??= 0;
 
-    const stats = this.getByVersionHash(versionHash);
+    const stats = this.getByVersionHash(versionHash, functionName);
     stats.runs += 1;
     stats.lastRunTimestamp = Date.now();
     stats.maxPrice = Math.max(stats.maxPrice, price);
@@ -45,11 +54,27 @@ export default class DataboxStatsTable extends SqliteTable<IDataboxStatsRecord> 
     stats.maxBytes = Math.max(stats.maxBytes, bytes);
     stats.minBytes = Math.min(stats.minBytes, bytes);
     stats.averageBytes = calculateNewAverage(stats.averageBytes, bytes, stats.runs);
-    this.queuePendingInsert([versionHash]);
+    this.queuePendingInsert([
+      versionHash,
+      functionName,
+      stats.runs,
+      stats.lastRunTimestamp,
+      stats.averageBytes,
+      stats.maxBytes,
+      stats.minBytes,
+      stats.minPrice,
+      stats.averageBytes,
+      stats.maxPrice,
+      stats.averageMilliseconds,
+      stats.maxMilliseconds,
+    ]);
   }
 
-  public getByVersionHash(versionHash: string): IDataboxStatsRecord {
-    DataboxStatsTable.byVersionHash[versionHash] ??= this.getQuery.get(versionHash) ?? {
+  public getByVersionHash(versionHash: string, functionName: string): IDataboxStatsRecord {
+    DataboxStatsTable.byVersionHashAndName[`${versionHash}_${functionName}`] ??= this.getQuery.get(
+      versionHash,
+      functionName,
+    ) ?? {
       lastRunTimestamp: Date.now(),
       runs: 0,
       averageBytes: 0,
@@ -62,7 +87,7 @@ export default class DataboxStatsTable extends SqliteTable<IDataboxStatsRecord> 
       maxMilliseconds: 0,
       versionHash,
     };
-    return DataboxStatsTable.byVersionHash[versionHash];
+    return DataboxStatsTable.byVersionHashAndName[`${versionHash}_${functionName}`];
   }
 }
 
@@ -73,6 +98,7 @@ function calculateNewAverage(oldAverage: number, value: number, newTotalValues: 
 
 export interface IDataboxStatsRecord {
   versionHash: string;
+  functionName: string;
   runs: number;
   lastRunTimestamp: number;
   averageBytes: number;

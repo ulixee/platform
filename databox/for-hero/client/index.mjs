@@ -2,20 +2,18 @@ import { setupAutorunMjsHack } from '@ulixee/databox/lib/utils/Autorun.mjs';
 import cjsImport from './index.js';
 
 const {
-  DataboxForHero,
-  DataboxForHeroPlugin,
+  HeroFunctionPlugin,
   Observable,
-  IHeroCreateOptions,
-  DataboxObject,
+  Databox,
+  Function,
   Schema,
 } = cjsImport;
 
 export {
-  DataboxForHero,
-  DataboxForHeroPlugin,
+  HeroFunctionPlugin,
   Observable,
-  IHeroCreateOptions,
-  DataboxObject,
+  Databox,
+  Function,
   Schema,
 };
 

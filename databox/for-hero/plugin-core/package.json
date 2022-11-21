@@ -1,5 +1,5 @@
 {
-  "name": "@ulixee/databox-for-hero-plugin-core",
+  "name": "@ulixee/databox-plugins-hero-core",
   "version": "2.0.0-alpha.15",
   "main": "index.js",
   "repository": "git@github.com:ulixee/ulixee.git",
@@ -8,8 +8,7 @@
     "@ulixee/commons": "2.0.0-alpha.15",
     "@ulixee/databox": "2.0.0-alpha.15",
     "@ulixee/databox-core": "2.0.0-alpha.15",
-    "@ulixee/databox-for-hero": "2.0.0-alpha.15",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.15",
+    "@ulixee/databox-plugins-hero": "2.0.0-alpha.15",
     "@ulixee/hero": "2.0.0-alpha.15",
     "@ulixee/hero-core": "2.0.0-alpha.15",
     "@ulixee/net": "2.0.0-alpha.15",

@@ -1,40 +1,40 @@
 import { array, boolean, number, object, string } from '@ulixee/schema';
-import Databox from '../index';
+import { Function } from '../index';
 
 describe('Schemas', () => {
-  it('will validate input to a databox', async () => {
+  it('will validate input to a function', async () => {
     const schema = {
       input: {
         req: string(),
       },
     };
 
-    const dbx = new Databox({
-      async run(databox) {
-        databox.output = { test: true };
+    const func = new Function({
+      async run(ctx) {
+        ctx.output = { test: true };
       },
       schema,
     });
 
-    await expect(dbx.exec({ input: {} as any })).rejects.toThrowError('input did not match');
+    await expect(func.exec({ input: {} as any })).rejects.toThrowError('input did not match');
   });
 
-  it('will validate output errors for a databox', async () => {
+  it('will validate output errors for a function', async () => {
     const schema = {
       output: {
         test: string(),
       },
     };
 
-    const dbx = new Databox({
-      async run(databox) {
+    const func = new Function({
+      async run(ctx) {
         // @ts-expect-error
-        databox.output = { test: 1 };
+        ctx.output = { test: 1 };
       },
       schema,
     });
 
-    await expect(dbx.exec({})).rejects.toThrowError('output did not match');
+    await expect(func.exec({})).rejects.toThrowError('output did not match');
   });
 
   it('will validate output and abort at the first error', async () => {
@@ -51,7 +51,7 @@ describe('Schemas', () => {
     };
 
     let counter = 0;
-    const dbx = new Databox({
+    const func = new Function({
       schema,
       async run({ output }) {
         output.str = 'test';
@@ -64,7 +64,7 @@ describe('Schemas', () => {
       },
     });
 
-    await expect(dbx.exec({})).rejects.toThrowError('output did not match');
+    await expect(func.exec({})).rejects.toThrowError('output did not match');
     expect(counter).toBe(2);
   });
 
@@ -78,14 +78,14 @@ describe('Schemas', () => {
       },
     };
 
-    const dbx = new Databox({
-      async run(databox) {
-        databox.output.test = 'good to go';
+    const func = new Function({
+      async run(ctx) {
+        ctx.output.test = 'good to go';
       },
       schema,
     });
 
-    await expect(dbx.exec({ input: { url: 'https://url.com' } })).resolves.toEqual(
+    await expect(func.exec({ input: { url: 'https://url.com' } })).resolves.toEqual(
       expect.objectContaining({
         test: 'good to go',
       }),

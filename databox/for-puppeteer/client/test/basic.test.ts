@@ -1,60 +1,60 @@
 import { Helpers } from '@ulixee/databox-testing';
 import Autorun from '@ulixee/databox/lib/utils/Autorun';
 import { Browser as PuppeteerBrowser } from 'puppeteer';
-import DataboxForPuppeteer from '../index';
+import { Function, PuppeteerFunctionPlugin } from '../index';
 
 afterAll(Helpers.afterAll);
 
-describe('basic DataboxForPuppeteer tests', () => {
-  it('automatically runs and closes a databox', async () => {
+describe('basic puppeteerFunction tests', () => {
+  it('automatically runs and closes a function', async () => {
     const ranScript = new Promise(resolve => {
-      Autorun.defaultExport = new DataboxForPuppeteer(async databox => {
+      Autorun.defaultExport = new Function(async ctx => {
         resolve(true);
-      });
+      }, PuppeteerFunctionPlugin);
     });
     Autorun.defaultExport.disableAutorun = false;
-    await Autorun.attemptAutorun(DataboxForPuppeteer);
+    await Autorun.attemptAutorun(Function);
     await new Promise(resolve => process.nextTick(resolve));
     expect(await ranScript).toBe(true);
   });
 
   it('waits until run method is explicitly called', async () => {
-    let databaseHasCompleted = false;
-    const databoxForPuppeteer = new DataboxForPuppeteer(async databox => {
-      const { browser } = databox;
+    let hasCompleted = false;
+    const puppeteerFunction = new Function(async ctx => {
+      const { browser } = ctx;
       const page = await browser.newPage();
       await page.goto('https://example.org');
       await page.close();
-      databaseHasCompleted = true;
-    });
-    databoxForPuppeteer.disableAutorun = true;
-    await databoxForPuppeteer.exec({});
-    expect(databaseHasCompleted).toBe(true);
+      hasCompleted = true;
+    }, PuppeteerFunctionPlugin);
+    puppeteerFunction.disableAutorun = true;
+    await puppeteerFunction.exec({});
+    expect(hasCompleted).toBe(true);
   }, 30e3);
 
   it('should call close on puppeteer automatically', async () => {
     let browser: PuppeteerBrowser;
-    const databoxForPuppeteer = new DataboxForPuppeteer(async databox => {
-      browser = databox.browser;
+    const puppeteerFunction = new Function(async ctx => {
+      browser = ctx.browser;
       const page = await browser.newPage();
       await page.goto('https://example.org');
-    });
-    databoxForPuppeteer.disableAutorun = true;
-    await databoxForPuppeteer.exec({});
+    }, PuppeteerFunctionPlugin);
+    puppeteerFunction.disableAutorun = true;
+    await puppeteerFunction.exec({});
     const pages = await browser.pages();
     expect(pages.length).toBe(0);
   });
 
-  it('should emit close hero on error', async () => {
-    const databoxForPuppeteer = new DataboxForPuppeteer(async databox => {
-      const browser = databox.browser;
+  it('should emit close puppeteer on error', async () => {
+    const puppeteerFunction = new Function(async ctx => {
+      const browser = ctx.browser;
       const page = await browser.newPage();
       await page.goto('https://example.org').then(() => {
         throw new Error('test');
       });
-    });
-    databoxForPuppeteer.disableAutorun = true;
+    }, PuppeteerFunctionPlugin);
+    puppeteerFunction.disableAutorun = true;
 
-    await expect(databoxForPuppeteer.exec({})).rejects.toThrowError();
+    await expect(puppeteerFunction.exec({})).rejects.toThrowError();
   });
 });

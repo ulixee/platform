@@ -1,9 +1,9 @@
 // NOTE: you must start your own Ulixee Miner to run this example.
 
-import Databox from '@ulixee/databox-for-hero';
+import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
-export default new Databox(async databox => {
-  const { input, output, hero } = databox;
+export default new Function(async ctx => {
+  const { input, output, hero } = ctx;
   input.url ??= 'https://ulixee.org';
 
   await hero.goto('https://ulixee.org');
@@ -24,4 +24,4 @@ export default new Databox(async databox => {
   // // step 3 - look at the first one
   // await hero.click(datasets[0]);
   // await hero.waitForLocation('change');
-});
+}, HeroFunctionPlugin);

@@ -2,7 +2,7 @@ import * as Os from 'os';
 import * as Path from 'path';
 import { promises as Fs } from 'fs';
 import { NodeVM, VMScript } from 'vm2';
-import IDataboxPluginCore from '@ulixee/databox-interfaces/IDataboxPluginCore';
+import IFunctionPluginCore from '@ulixee/databox/interfaces/IFunctionPluginCore';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import Logger from '@ulixee/commons/lib/Logger';
@@ -10,9 +10,9 @@ import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import { IDataboxApis } from '@ulixee/specification/databox';
-import IDataboxCoreConfigureOptions from '@ulixee/databox-interfaces/IDataboxCoreConfigureOptions';
 import Databox from '@ulixee/databox';
 import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
+import IDataboxCoreConfigureOptions from './interfaces/IDataboxCoreConfigureOptions';
 import env from './env';
 import DataboxRegistry from './lib/DataboxRegistry';
 import { unpackDbxFile } from './lib/dbxUtils';
@@ -64,7 +64,7 @@ export default class DataboxCore {
 
   static #vm: NodeVM;
 
-  private static pluginCoresByName: { [name: string]: IDataboxPluginCore } = {};
+  private static pluginCoresByName: { [name: string]: IFunctionPluginCore } = {};
   private static databoxRegistry: DataboxRegistry;
   private static sidechainClientManager: SidechainClientManager;
   private static isStarted = new Resolvable<void>();
@@ -106,7 +106,7 @@ export default class DataboxCore {
     return connection;
   }
 
-  public static registerPlugin(pluginCore: IDataboxPluginCore): void {
+  public static registerPlugin(pluginCore: IFunctionPluginCore): void {
     this.pluginCoresByName[pluginCore.name] = pluginCore;
   }
 
@@ -138,15 +138,16 @@ export default class DataboxCore {
     this.isStarted.resolve();
   }
 
-  public static async execDatabox(
+  public static async execDataboxFunction(
     path: string,
+    functionName: string,
     manifest: IDataboxManifest,
     input: any,
   ): Promise<{ output: any }> {
     const script = await this.getVMScript(path, manifest);
-    const databoxExecutable = this.vm.run(script);
+    const databox = this.vm.run(script);
 
-    if (!(databoxExecutable instanceof Databox)) {
+    if (!(databox instanceof Databox)) {
       throw new Error(
         'The default export from this script needs to inherit from "@ulixee/databox"',
       );
@@ -154,10 +155,10 @@ export default class DataboxCore {
 
     const options = { input };
     for (const plugin of Object.values(this.pluginCoresByName)) {
-      if (plugin.onBeforeExecDatabox) await plugin.onBeforeExecDatabox(options);
+      if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);
     }
 
-    const output = await databoxExecutable.exec(options);
+    const output = await databox.functions[functionName].exec(options);
     return { output };
   }
 
@@ -236,7 +237,7 @@ export default class DataboxCore {
       configuration: this.options,
       pluginCoresByName: this.pluginCoresByName,
       sidechainClientManager: this.sidechainClientManager,
-      execDatabox: this.execDatabox.bind(this),
+      execDataboxFunction: this.execDataboxFunction.bind(this),
     };
   }
 }

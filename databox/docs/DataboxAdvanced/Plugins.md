@@ -1,6 +1,6 @@
 # Plugins
 
-Databoxes can easily be extended to include custom functionality. Examples of plugins are included in this repository for [Puppeteer](/docs/databox/databox-for-puppeteer) and [Hero](/docs/databox/databox-for-hero).
+Databoxes can easily be extended to include custom functionality. Examples of plugins are included in this repository for [Puppeteer](/docs/databox/databox-for-puppeteer) and [Hero](/docs/databox/databox-plugins-hero).
 
 ## Installing a Plugin
 

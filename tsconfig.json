@@ -7,9 +7,6 @@
   },
   "references": [
     {
-      "path": "playgrounds/databox-for-hero/tsconfig.json"
-    },
-    {
       "path": "apps/chromealive-core/injected-scripts/tsconfig.json"
     }
   ],
@@ -37,7 +34,6 @@
     "apps/menubar-ui",
     "apps/chromealive-extension",
     "apps/chromealive-core/injected-scripts",
-    "playgrounds/databox-for-hero",
     "hero",
     "**/website",
     "**/docs",

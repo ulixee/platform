@@ -5,7 +5,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # [2.0.0-alpha.15](https://github.com/ulixee/platform/compare/v2.0.0-alpha.14...v2.0.0-alpha.15) (2022-11-17)
 
-**Note:** Version bump only for package @ulixee/databox-for-hero
+**Note:** Version bump only for package @ulixee/databox-plugins-hero
 
 
 
@@ -13,7 +13,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # [2.0.0-alpha.14](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.13...v2.0.0-alpha.14) (2022-11-02)
 
-**Note:** Version bump only for package @ulixee/databox-for-hero
+**Note:** Version bump only for package @ulixee/databox-plugins-hero
 
 
 
@@ -41,7 +41,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # [2.0.0-alpha.12](https://github.com/ulixee/platform/compare/v2.0.0-alpha.11...v2.0.0-alpha.12) (2022-10-03)
 
-**Note:** Version bump only for package @ulixee/databox-for-hero
+**Note:** Version bump only for package @ulixee/databox-plugins-hero
 
 
 
@@ -49,7 +49,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # [2.0.0-alpha.11](https://github.com/ulixee/platform/compare/v2.0.0-alpha.10...v2.0.0-alpha.11) (2022-08-31)
 
-**Note:** Version bump only for package @ulixee/databox-for-hero
+**Note:** Version bump only for package @ulixee/databox-plugins-hero
 
 
 
@@ -57,7 +57,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # [2.0.0-alpha.10](https://github.com/ulixee/platform/compare/v2.0.0-alpha.9...v2.0.0-alpha.10) (2022-08-16)
 
-**Note:** Version bump only for package @ulixee/databox-for-hero
+**Note:** Version bump only for package @ulixee/databox-plugins-hero
 
 
 
@@ -65,7 +65,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # [2.0.0-alpha.9](https://github.com/ulixee/platform/compare/v2.0.0-alpha.8...v2.0.0-alpha.9) (2022-07-26)
 
-**Note:** Version bump only for package @ulixee/databox-for-hero
+**Note:** Version bump only for package @ulixee/databox-plugins-hero
 
 
 
@@ -131,7 +131,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 ### Features
 
 * **databox:** add databox cores ([36e4fd8](https://github.com/ulixee/platform/commit/36e4fd802175985755394751dd09a8ceabc5bfa4))
-* playgrounds for hero and databox-for-hero ([34eca22](https://github.com/ulixee/platform/commit/34eca2237aa92e73794a3b5ea6bcc6eef41a1572))
+* playgrounds for hero and databox-plugins-hero ([34eca22](https://github.com/ulixee/platform/commit/34eca2237aa92e73794a3b5ea6bcc6eef41a1572))
 * renamed DataboxPackage.ts in databox/for-hero to DataboxExecutable.ts ([cfc625e](https://github.com/ulixee/platform/commit/cfc625ef8adffc9967429a24cabe8d0872d29263))
 
 
@@ -150,7 +150,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 ### Features
 
 * **databox:** add databox cores ([36e4fd8](https://github.com/ulixee/platform/commit/36e4fd802175985755394751dd09a8ceabc5bfa4))
-* playgrounds for hero and databox-for-hero ([34eca22](https://github.com/ulixee/platform/commit/34eca2237aa92e73794a3b5ea6bcc6eef41a1572))
+* playgrounds for hero and databox-plugins-hero ([34eca22](https://github.com/ulixee/platform/commit/34eca2237aa92e73794a3b5ea6bcc6eef41a1572))
 * renamed DataboxPackage.ts in databox/for-hero to DataboxExecutable.ts ([cfc625e](https://github.com/ulixee/platform/commit/cfc625ef8adffc9967429a24cabe8d0872d29263))
 
 
@@ -159,7 +159,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # [2.0.0-alpha.3](https://github.com/ulixee/platform/compare/v2.0.0-alpha.2...v2.0.0-alpha.3) (2022-05-19)
 
-**Note:** Version bump only for package @ulixee/databox-for-hero
+**Note:** Version bump only for package @ulixee/databox-plugins-hero
 
 
 
@@ -167,7 +167,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # [2.0.0-alpha.2](https://github.com/ulixee/platform/compare/v2.0.0-alpha.1...v2.0.0-alpha.2) (2022-05-17)
 
-**Note:** Version bump only for package @ulixee/databox-for-hero
+**Note:** Version bump only for package @ulixee/databox-plugins-hero
 
 
 
@@ -175,4 +175,4 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # 2.0.0-alpha.1 (2022-05-16)
 
-**Note:** Version bump only for package @ulixee/databox-for-hero
+**Note:** Version bump only for package @ulixee/databox-plugins-hero

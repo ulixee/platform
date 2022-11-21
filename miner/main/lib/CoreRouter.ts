@@ -3,7 +3,7 @@ import * as Http from 'http';
 import { IncomingMessage } from 'http';
 import DataboxCore from '@ulixee/databox-core';
 import HeroCore from '@ulixee/hero-core';
-import IDataboxCoreConfigureOptions from '@ulixee/databox-interfaces/IDataboxCoreConfigureOptions';
+import IDataboxCoreConfigureOptions from '@ulixee/databox-core/interfaces/IDataboxCoreConfigureOptions';
 import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
@@ -15,8 +15,8 @@ import Miner from '../index';
 
 export default class CoreRouter {
   public static modulesToRegister = [
-    '@ulixee/databox-for-hero-plugin-core/register',
-    '@ulixee/databox-for-puppeteer-plugin-core/register',
+    '@ulixee/databox-plugins-hero-core/register',
+    '@ulixee/databox-plugins-puppeteer-core/register',
   ];
 
   public heroConfiguration: ICoreConfigureOptions;

@@ -1,8 +1,8 @@
 // NOTE: you must start your own Ulixee Miner to run this example.
 
-import Databox from '@ulixee/databox-for-hero';
+import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
-export default new Databox({
+export default new Function({
   async run({ hero }) {
     await hero.goto('https://news.ycombinator.com/');
     await hero.waitForPaintingStable();
@@ -24,7 +24,7 @@ export default new Databox({
       // });
     }
   },
-  async onAfterHeroCompletes({ output, heroReplay }) {
+  async afterHeroCompletes({ output, heroReplay }) {
     const { detachedElements } = heroReplay;
     const storyElement = await detachedElements.get('table');
     const stories = storyElement.querySelectorAll('.athing');
@@ -51,4 +51,4 @@ export default new Databox({
       record.url = titleElem.getAttribute('href');
     }
   },
-});
+},HeroFunctionPlugin);

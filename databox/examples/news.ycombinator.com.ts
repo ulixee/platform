@@ -1,8 +1,8 @@
 // NOTE: you must start your own Ulixee Miner to run this example.
 
-import Databox from '@ulixee/databox-for-hero';
+import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
-export default new Databox(async ({ hero, output }) => {
+export default new Function(async ({ hero, output }) => {
   await hero.goto('https://news.ycombinator.com/');
   await hero.waitForPaintingStable();
 
@@ -51,4 +51,4 @@ export default new Databox(async ({ hero, output }) => {
   }
 
   await hero.close();
-});
+}, HeroFunctionPlugin);

@@ -1,9 +1,9 @@
-import IDataboxPluginCore from '@ulixee/databox-interfaces/IDataboxPluginCore';
+import IFunctionPluginCore from '@ulixee/databox/interfaces/IFunctionPluginCore';
 import DataboxCore from '@ulixee/databox-core';
 
-const pkg = require('@ulixee/databox-for-puppeteer/package.json');
+const pkg = require('@ulixee/databox-plugins-puppeteer/package.json');
 
-export default class DataboxForPuppeteerCore implements IDataboxPluginCore {
+export default class DataboxForPuppeteerCore implements IFunctionPluginCore {
   public name = pkg.name;
   public version = pkg.version;
   public nodeVmRequireWhitelist = ['@ulixee/*', 'puppeteer']

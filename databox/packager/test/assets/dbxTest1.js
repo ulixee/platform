@@ -1,3 +1,5 @@
-const Databox = require('@ulixee/databox-for-hero');
+const Databox = require('@ulixee/databox');
 
-exports.default = new Databox();
+exports.default = new Databox({
+  functions: {},
+});

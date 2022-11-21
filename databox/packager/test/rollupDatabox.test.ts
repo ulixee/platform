@@ -6,7 +6,7 @@ test('it should support packaging a typescript project', async () => {
   });
   // should import tslib, helpers.ts, index.ts, lodash-es
   expect(bundled.modules).toHaveLength(4);
-  expect(bundled.modules).not.toContain('@ulixee/databox-for-hero');
+  expect(bundled.modules).not.toContain('@ulixee/databox-plugins-hero');
 }, 45e3);
 
 test('it should support packaging an esmodule project', async () => {
@@ -15,7 +15,7 @@ test('it should support packaging an esmodule project', async () => {
   });
   // should import helpers.ts, index.ts, lodash-es
   expect(bundled.modules).toHaveLength(3);
-  expect(bundled.modules).not.toContain('@ulixee/databox-for-hero');
+  expect(bundled.modules).not.toContain('@ulixee/databox-plugins-hero');
 }, 45e3);
 
 test('it should support packaging an commonjs project', async () => {
@@ -24,7 +24,7 @@ test('it should support packaging an commonjs project', async () => {
   });
   // should import helpers.ts, index.ts, lodash-es. Needs a second pass of commonjs exports
   expect(bundled.modules).toHaveLength(6);
-  expect(bundled.modules).not.toContain('@ulixee/databox-for-hero');
+  expect(bundled.modules).not.toContain('@ulixee/databox-plugins-hero');
 }, 45e3);
 
 test('it should support packaging a prebuilt project', async () => {
@@ -33,5 +33,5 @@ test('it should support packaging a prebuilt project', async () => {
   });
   // should import helpers.ts, index.ts, lodash-es. Needs a second pass of commonjs exports
   expect(bundled.modules).toHaveLength(7);
-  expect(bundled.modules).not.toContain('@ulixee/databox-for-hero');
+  expect(bundled.modules).not.toContain('@ulixee/databox-plugins-hero');
 }, 45e3);

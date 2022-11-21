@@ -16,7 +16,7 @@ test('it can extract the databox schema', async () => {
   const meta = await databoxProcess.fetchMeta();
   await databoxProcess.close();
 
-  expect(meta.schema).toEqual({
+  expect(meta.functionsByName.default.schema).toEqual({
     input: {
       field: {
         typeName: 'string',
@@ -35,7 +35,7 @@ test('it can extract the databox schema', async () => {
 test('it can run the databox and return output', async () => {
   const scriptPath = Path.resolve(__dirname, 'databoxes/output.js');
   const databoxProcess = new LocalDataboxProcess(scriptPath);
-  const { output } = await databoxProcess.exec({});
+  const { output } = await databoxProcess.exec('default', {});
   await databoxProcess.close();
 
   expect(output).toMatchObject({ success: true });

@@ -8,14 +8,17 @@ import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
 import DataboxesDb from './DataboxesDb';
 import { IDataboxRecord } from './DataboxesTable';
 import {
-  InvalidScriptVersionHistoryError,
   DataboxNotFoundError,
+  InvalidScriptVersionHistoryError,
   MissingLinkedScriptVersionsError,
 } from './errors';
 import DataboxManifest from './DataboxManifest';
 import { unpackDbxFile } from './dbxUtils';
 import { IDataboxStatsRecord } from './DataboxStatsTable';
 
+export interface IStatsByFunctionName {
+  [functionName: string]: IDataboxStatsRecord;
+}
 export default class DataboxRegistry {
   private get databoxesDb(): DataboxesDb {
     this.#databoxesDb ??= new DataboxesDb(this.storageDir);
@@ -30,19 +33,25 @@ export default class DataboxRegistry {
     return !!this.databoxesDb.databoxes.getByVersionHash(versionHash);
   }
 
-  public getByVersionHash(
-    versionHash: string,
-  ): IDataboxRecord & { stats: IDataboxStatsRecord; path: string; latestVersionHash: string } {
+  public getByVersionHash(versionHash: string): IDataboxRecord & {
+    statsByFunction: IStatsByFunctionName;
+    path: string;
+    latestVersionHash: string;
+  } {
     const path = this.getExtractedDataboxPath(versionHash);
     const entry = this.databoxesDb.databoxes.getByVersionHash(versionHash);
     const latestVersionHash = this.getLatestVersion(versionHash);
-    const stats = this.databoxesDb.databoxStats.getByVersionHash(versionHash);
+
     if (!entry) {
       throw new DataboxNotFoundError('Databox package not found on Miner.', latestVersionHash);
     }
+    const statsByFunction: IStatsByFunctionName = {};
+    for (const name of Object.keys(entry.functionsByName)) {
+      statsByFunction[name] = this.databoxesDb.databoxStats.getByVersionHash(versionHash, name);
+    }
     return {
       path,
-      stats,
+      statsByFunction,
       latestVersionHash,
       ...entry,
     };
@@ -50,9 +59,10 @@ export default class DataboxRegistry {
 
   public recordStats(
     versionHash: string,
+    functionName: string,
     stats: { bytes: number; microgons: number; millis: number },
   ): void {
-    this.databoxesDb.databoxStats.record(versionHash, stats.microgons, stats.bytes, stats.millis);
+    this.databoxesDb.databoxStats.record(versionHash, functionName, stats.microgons, stats.bytes, stats.millis);
   }
 
   public async openDbx(manifest: IDataboxManifest): Promise<void> {
@@ -125,9 +135,7 @@ export default class DataboxRegistry {
       const databoxPackageJson = require(`@ulixee/databox-core/package.json`);
       installedVersion = databoxPackageJson.version;
     } catch (error) {
-      throw new Error(
-        `The requested Databox Core is not installed.\n${error.message}`,
-      );
+      throw new Error(`The requested Databox Core is not installed.\n${error.message}`);
     }
     if (!isSemverSatisfied(requiredVersion, installedVersion)) {
       throw new Error(

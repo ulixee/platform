@@ -1,11 +1,15 @@
-import Databox from '@ulixee/databox';
+import Databox, { Function } from '@ulixee/databox';
 import { boolean } from '@ulixee/schema';
 
 export default new Databox({
-  run(databox) {
-    databox.output = { upload: true };
-  },
-  schema: {
-    output: { upload: boolean({ description: 'Whether or not this test succeeded' }) },
+  functions: {
+    upTest: new Function({
+      run(ctx) {
+        ctx.output = { upload: true };
+      },
+      schema: {
+        output: { upload: boolean({ description: 'Whether or not this test succeeded' }) },
+      },
+    }),
   },
 });

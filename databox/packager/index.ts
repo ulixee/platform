@@ -7,7 +7,7 @@ import UlixeeConfig from '@ulixee/commons/config';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import schemaFromJson from '@ulixee/schema/lib/schemaFromJson';
 import schemaToInterface, { printNode } from '@ulixee/schema/lib/schemaToInterface';
-import { object } from '@ulixee/schema';
+import { ISchemaAny, object } from '@ulixee/schema';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import rollupDatabox from './lib/rollupDatabox';
 import DbxFile from './lib/DbxFile';
@@ -77,13 +77,19 @@ export default class DataboxPackager {
     }
 
     let interfaceString: string;
-    if (meta.schema) {
-      const fields = filterUndefined({
-        input: schemaFromJson(meta.schema?.input),
-        output: schemaFromJson(meta.schema?.output),
-      });
-      if (Object.keys(fields).length) {
-        const schemaInterface = object(fields);
+    if (meta.functionsByName) {
+      const schemaInterface: Record<string, ISchemaAny> = {};
+      for (const [name, func] of Object.entries(meta.functionsByName)) {
+        if (!func.schema) continue;
+        const fields = filterUndefined({
+          input: schemaFromJson(func.schema?.input),
+          output: schemaFromJson(func.schema?.output),
+        });
+        if (Object.keys(fields).length) {
+          schemaInterface[name] = object(fields);
+        }
+      }
+      if (Object.keys(schemaInterface).length) {
         interfaceString = printNode(schemaToInterface(schemaInterface));
       }
     }
@@ -95,8 +101,8 @@ export default class DataboxPackager {
       scriptVersionHash,
       Date.now(),
       meta.coreVersion,
-      meta.corePlugins,
       interfaceString,
+      meta.functionsByName,
       this.logToConsole ? console.log : undefined,
     );
     if (createNewVersionHistory) {

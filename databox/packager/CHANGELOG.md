@@ -129,7 +129,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 * **databox:** add databox cores ([36e4fd8](https://github.com/ulixee/ulixee/commit/36e4fd802175985755394751dd09a8ceabc5bfa4))
 * **databox:** packaging ([4303a87](https://github.com/ulixee/ulixee/commit/4303a8731ab3aaa6d3f5f859e760948c54305e69))
-* playgrounds for hero and databox-for-hero ([34eca22](https://github.com/ulixee/ulixee/commit/34eca2237aa92e73794a3b5ea6bcc6eef41a1572))
+* playgrounds for hero and databox-plugins-hero ([34eca22](https://github.com/ulixee/ulixee/commit/34eca2237aa92e73794a3b5ea6bcc6eef41a1572))
 * ulixee cli ([767f0a9](https://github.com/ulixee/ulixee/commit/767f0a955587755df2f6a2e7042092023e68f7c6))
 
 
@@ -149,5 +149,5 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 * **databox:** add databox cores ([36e4fd8](https://github.com/ulixee/ulixee/commit/36e4fd802175985755394751dd09a8ceabc5bfa4))
 * **databox:** packaging ([4303a87](https://github.com/ulixee/ulixee/commit/4303a8731ab3aaa6d3f5f859e760948c54305e69))
-* playgrounds for hero and databox-for-hero ([34eca22](https://github.com/ulixee/ulixee/commit/34eca2237aa92e73794a3b5ea6bcc6eef41a1572))
+* playgrounds for hero and databox-plugins-hero ([34eca22](https://github.com/ulixee/ulixee/commit/34eca2237aa92e73794a3b5ea6bcc6eef41a1572))
 * ulixee cli ([767f0a9](https://github.com/ulixee/ulixee/commit/767f0a955587755df2f6a2e7042092023e68f7c6))

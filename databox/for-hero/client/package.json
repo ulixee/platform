@@ -1,5 +1,5 @@
 {
-  "name": "@ulixee/databox-for-hero",
+  "name": "@ulixee/databox-plugins-hero",
   "version": "2.0.0-alpha.15",
   "description": "The Databox for Hero library.",
   "exports": {
@@ -13,7 +13,6 @@
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.15",
     "@ulixee/databox": "2.0.0-alpha.15",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.15",
     "@ulixee/hero": "2.0.0-alpha.15",
     "@ulixee/hero-interfaces": "2.0.0-alpha.15",
     "@ulixee/net": "2.0.0-alpha.15",

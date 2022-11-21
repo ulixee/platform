@@ -7,17 +7,29 @@ test('it can save a databox manifest', () => {
     scriptHash: 'scr1',
     scriptEntrypoint: 'script/index.js',
     linkedVersions: [],
+    functionsByName: {
+      default: {
+        pricePerQuery: 100,
+      },
+    },
     coreVersion: '2.0.0-alpha.1',
     versionHash: 'abc',
   });
 
   expect(db.databoxes.getByVersionHash('abc')).toEqual({
-    giftCardAddress: undefined,
+    giftCardIssuerIdentity: undefined,
     paymentAddress: undefined,
-    pricePerQuery: 0,
+    schemaInterface: undefined,
     scriptEntrypoint: 'script/index.js',
     scriptHash: 'scr1',
     coreVersion: '2.0.0-alpha.1',
+    functionsByName: {
+      default: {
+        name: 'default',
+        corePlugins: {},
+        pricePerQuery: 100,
+      },
+    },
     versionHash: 'abc',
     versionTimestamp: expect.any(Number),
     storedDate: expect.any(Number),

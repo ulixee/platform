@@ -1,17 +1,17 @@
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import IDataboxExecOptions from '@ulixee/databox-interfaces/IDataboxExecOptions';
-import IDataboxSchema, { ExtractSchemaType } from '@ulixee/databox-interfaces/IDataboxSchema';
 import BaseSchema from '@ulixee/schema/lib/BaseSchema';
 import { ObjectSchema } from '@ulixee/schema';
-import DataboxSchemaError from '@ulixee/databox-interfaces/DataboxSchemaError';
 import { IValidationError } from '@ulixee/schema/interfaces/IValidationResult';
-import { IDefaultsObj } from '../interfaces/IComponents';
-import DataboxObject from './DataboxObject';
+import DataboxSchemaError from './DataboxSchemaError';
+import IFunctionSchema, { ExtractSchemaType } from '../interfaces/IFunctionSchema';
+import IFunctionExecOptions from '../interfaces/IFunctionExecOptions';
+import FunctionContext from './FunctionContext';
 import Output, { createObservableOutput } from './Output';
 import IObservableChange from '../interfaces/IObservableChange';
 
-export default class DataboxInternal<
-  ISchema extends IDataboxSchema,
+export default class FunctionInternal<
+  ISchema extends IFunctionSchema,
+  TOptions extends IFunctionExecOptions<ISchema> = IFunctionExecOptions<ISchema>,
   TInput = ExtractSchemaType<ISchema['input']>,
   TOutput = ExtractSchemaType<ISchema['output']>,
 > extends TypedEventEmitter<{
@@ -19,8 +19,7 @@ export default class DataboxInternal<
 }> {
   #isClosing: Promise<void>;
 
-  readonly runOptions: IDataboxExecOptions<ISchema>;
-  readonly defaults: IDefaultsObj<ISchema>;
+  readonly options: TOptions;
   readonly schema: ISchema;
 
   public onOutputChanges: (changes: IObservableChange[]) => any;
@@ -28,22 +27,12 @@ export default class DataboxInternal<
   protected _output: Output<TOutput>;
   protected readonly outputSchema: BaseSchema<any>;
 
-  constructor(
-    runOptions: IDataboxExecOptions<ISchema>,
-    components: { defaults?: IDefaultsObj<ISchema>; schema?: ISchema },
-  ) {
+  constructor(options: TOptions, components: { schema?: ISchema }) {
     super();
-    this.runOptions = runOptions;
-    this.defaults = components.defaults ?? {};
+    this.options = options;
     this.schema = components.schema;
-    this._input = (this.defaults.input ?? {}) as TInput;
-    if (runOptions.input) {
-      if (typeof runOptions.input === 'object') {
-        Object.assign(this._input, runOptions.input);
-      } else {
-        this._input = runOptions.input;
-      }
-    }
+    this._input = (options.input ?? {}) as TInput;
+
     if (this.schema?.output) {
       let outputSchema = this.schema.output as unknown as BaseSchema<any>;
       if (!(outputSchema instanceof BaseSchema)) {
@@ -65,14 +54,7 @@ export default class DataboxInternal<
   }
 
   public get output(): TOutput {
-    if (!this._output) {
-      this._output = createObservableOutput(this.defaultOnOutputChanges.bind(this)) as any;
-      if (this.defaults.output && typeof this.defaults.output === 'object') {
-        for (const [key, value] of Object.entries(this.defaults.output)) {
-          (this._output as any)[key] = value;
-        }
-      }
-    }
+    this._output ??= createObservableOutput(this.defaultOnOutputChanges.bind(this)) as any;
     return this._output as any;
   }
 
@@ -85,14 +67,14 @@ export default class DataboxInternal<
   }
 
   public async execRunner(
-    databoxObject: DataboxObject<ISchema>,
-    runFn: (databoxObject: DataboxObject<ISchema>) => void | Promise<void>,
+    context: FunctionContext<ISchema>,
+    runFn: (context: FunctionContext<ISchema>) => void | Promise<void>,
   ): Promise<void> {
     try {
-      await runFn(databoxObject);
+      await runFn(context);
     } catch (error) {
-      if (error.stack.includes('at async DataboxInternal.execRunner')) {
-        error.stack = error.stack.split('at async DataboxInternal.execRunner').shift().trim();
+      if (error.stack.includes('at async FunctionInternal.execRunner')) {
+        error.stack = error.stack.split('at async FunctionInternal.execRunner').shift().trim();
       }
       throw error;
     }
@@ -118,7 +100,7 @@ export default class DataboxInternal<
     const inputValidation = schema.validate(this.input);
     if (!inputValidation.success) {
       throw new DataboxSchemaError(
-        'The Databox input did not match its Schema',
+        'The Function input did not match its Schema',
         inputValidation.errors,
       );
     }
@@ -129,7 +111,7 @@ export default class DataboxInternal<
     const outputValidation = this.outputSchema.validate(this.output);
     if (!outputValidation.success) {
       throw new DataboxSchemaError(
-        'The Databox output did not match its Schema',
+        'The Function output did not match its Schema',
         outputValidation.errors,
       );
     }

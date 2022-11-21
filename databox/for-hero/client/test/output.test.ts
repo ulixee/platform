@@ -2,9 +2,8 @@ import { Helpers } from '@ulixee/databox-testing';
 import ConnectionFactory from '@ulixee/hero/connections/ConnectionFactory';
 import { array, buffer, date, object, string } from '@ulixee/schema';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
-import { Schema } from '@ulixee/databox-interfaces/IDataboxSchema';
-import { Observable } from '@ulixee/databox/lib/ObjectObserver';
-import DataboxForHero from '../index';
+import { Function, Observable,FunctionSchema } from '@ulixee/databox';
+import { HeroFunctionPlugin } from '../index';
 import MockConnectionToHeroCore from './_MockConnectionToHeroCore';
 
 afterAll(Helpers.afterAll);
@@ -23,9 +22,9 @@ describe('basic output tests', () => {
     });
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
 
-    await new DataboxForHero(databox => {
-      databox.output.test = true;
-    }).exec({});
+    await new Function(ctx => {
+      ctx.output.test = true;
+    }, HeroFunctionPlugin).exec({});
 
     const outgoingCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingCommands.map(c => c[0].command)).toMatchObject([
@@ -59,9 +58,9 @@ describe('basic output tests', () => {
         }),
       },
     };
-    const { databoxObject, databoxForHeroPlugin, databoxClose } =
+    const { functionContext, databoxForHeroPlugin, databoxClose } =
       await Helpers.createFullstackDatabox(schema);
-    const output = databoxObject.output;
+    const output = functionContext.output;
     output.started = new Date();
     const url = 'https://example.org';
     const title = 'Example Domain';
@@ -111,7 +110,7 @@ describe('basic output tests', () => {
   });
 
   it('can add array-ish items to the main object', async () => {
-    const schema = Schema({
+    const schema = FunctionSchema({
       output: array({
         element: object({
           fields: {
@@ -123,9 +122,9 @@ describe('basic output tests', () => {
         }),
       }),
     });
-    const { databoxObject, databoxForHeroPlugin, databoxClose } =
+    const { functionContext, databoxForHeroPlugin, databoxClose } =
       await Helpers.createFullstackDatabox(schema);
-    const output = databoxObject.output;
+    const output = functionContext.output;
     const dt = new Date();
     output.push({
       url: 'https://url.com',
@@ -165,9 +164,9 @@ describe('basic output tests', () => {
   });
 
   it('can add observables directly', async () => {
-    const { databoxObject, databoxForHeroPlugin, databoxClose } =
+    const { functionContext, databoxForHeroPlugin, databoxClose } =
       await Helpers.createFullstackDatabox();
-    const output = databoxObject.output;
+    const output = functionContext.output;
     const record = Observable({} as any);
     output.push(record);
     record.test = 1;
@@ -199,10 +198,10 @@ describe('basic output tests', () => {
   });
 
   it('can replace the main object', async () => {
-    const { databoxObject, databoxForHeroPlugin, databoxClose } =
+    const { functionContext, databoxForHeroPlugin, databoxClose } =
       await Helpers.createFullstackDatabox();
-    databoxObject.output.test = 'true';
-    databoxObject.output = {
+    functionContext.output.test = 'true';
+    functionContext.output = {
       try: true,
       another: false,
     } as any;
@@ -234,7 +233,7 @@ describe('basic output tests', () => {
       lastCommandId: 0,
       path: '["try"]',
     });
-    expect(JSON.stringify(databoxObject.output)).toEqual(
+    expect(JSON.stringify(functionContext.output)).toEqual(
       JSON.stringify({
         try: true,
         another: false,

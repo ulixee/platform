@@ -2,12 +2,12 @@ import HeroCore from '@ulixee/hero-core';
 import DataboxCore from '@ulixee/databox-core';
 import { ConnectionToHeroCore } from '@ulixee/hero';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
-import IDataboxForHeroExecOptions from '@ulixee/databox-for-hero/interfaces/IDataboxForHeroExecOptions';
-import IDataboxPluginCore from '@ulixee/databox-interfaces/IDataboxPluginCore';
+import { IHeroFunctionExecOptions } from '@ulixee/databox-plugins-hero';
+import IFunctionPluginCore from '@ulixee/databox/interfaces/IFunctionPluginCore';
 
-const pkg = require('@ulixee/databox-for-hero/package.json');
+const pkg = require('@ulixee/databox-plugins-hero/package.json');
 
-export default class DataboxForHeroPluginCore implements IDataboxPluginCore {
+export default class DataboxForHeroPluginCore implements IFunctionPluginCore {
   public name = pkg.name;
   public version = pkg.version;
   public nodeVmRequireWhitelist = ['@ulixee/*'];
@@ -21,7 +21,7 @@ export default class DataboxForHeroPluginCore implements IDataboxPluginCore {
     this.connectionToHeroCore = new ConnectionToHeroCore(bridge.transportToCore);
   }
 
-  public onBeforeExecDatabox(options: IDataboxForHeroExecOptions<unknown>): void {
+  public beforeExecFunction(options: IHeroFunctionExecOptions<unknown>): void {
     options.connectionToCore = this.connectionToHeroCore;
   }
 

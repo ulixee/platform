@@ -1,34 +1,39 @@
+import Function from '../Function';
+
 export default class Autorun {
-  static defaultExport: any;
+  static defaultExport: Function<any>;
   static parentModule: NodeJS.Module;
   static mainModule: NodeJS.Module;
   static autorunBeforeExitFn: any;
 
-  static async attemptAutorun(Databox: any): Promise<void> {
-    let databox = this.defaultExport;
+  static async attemptAutorun(FunctionModule: any): Promise<void> {
+    let func = this.defaultExport;
     let { parentModule } = this;
 
-    while (!databox && parentModule) {
-      if (parentModule === this.mainModule && parentModule.exports?.default instanceof Databox) {
-        databox = parentModule.exports?.default;
+    while (!func && parentModule) {
+      if (
+        parentModule === this.mainModule &&
+        parentModule.exports?.default instanceof FunctionModule
+      ) {
+        func = parentModule.exports?.default;
       }
       parentModule = parentModule.parent;
     }
-    if (!databox) return;
-    if (databox.disableAutorun) return;
-    if (databox.successCount || databox.errorCount) return;
+    if (!func) return;
+    if (func.disableAutorun) return;
+    if (func.successCount || func.errorCount) return;
 
-    await databox.constructor.commandLineExec(databox);
+    await (func.constructor as typeof Function).commandLineExec(func);
   }
 
   static setupAutorunBeforeExitHook(
-    DataboxBase: any,
+    FunctionModule: typeof Function,
     parentModule: NodeJS.Module,
     mainModule: NodeJS.Module,
   ): void {
     if (this.autorunBeforeExitFn) return;
     this.parentModule = parentModule;
     this.mainModule = mainModule;
-    process.on('beforeExit', async () => await this.attemptAutorun(DataboxBase));
+    process.on('beforeExit', async () => await this.attemptAutorun(FunctionModule));
   }
 }

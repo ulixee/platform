@@ -24,12 +24,12 @@ export default class DataboxManifest implements IDataboxManifest {
   public versionTimestamp: number;
   public scriptHash: string;
   public scriptEntrypoint: string;
+
   public coreVersion: string;
-  public corePlugins: { [name: string]: string };
   public schemaInterface: string;
+  public functionsByName: IDataboxManifest['functionsByName'] = {};
 
   // Payment details
-  public pricePerQuery?: number;
   public paymentAddress?: string;
   public giftCardIssuerIdentity?: string;
 
@@ -77,8 +77,8 @@ export default class DataboxManifest implements IDataboxManifest {
     scriptHash: string,
     versionTimestamp: number,
     coreVersion: string,
-    corePlugins: { [name: string]: string },
-    schemaInterface: string | undefined,
+    schemaInterface: string,
+    functionsByName: IDataboxManifest['functionsByName'],
     logger?: (message: string, ...args: any[]) => any,
   ): Promise<void> {
     await this.load();
@@ -90,8 +90,8 @@ export default class DataboxManifest implements IDataboxManifest {
     await this.loadGeneratedManifests(manifestSources);
     this.linkedVersions ??= [];
     this.coreVersion = coreVersion;
-    this.corePlugins = corePlugins;
     this.schemaInterface = schemaInterface;
+    this.functionsByName = functionsByName;
     // allow manifest to override above values
     await this.loadExplicitSettings(manifestSources, logger);
 
@@ -181,11 +181,10 @@ export default class DataboxManifest implements IDataboxManifest {
       scriptEntrypoint: this.scriptEntrypoint,
       scriptHash: this.scriptHash,
       coreVersion: this.coreVersion,
-      corePlugins: this.corePlugins,
+      schemaInterface: this.schemaInterface,
+      functionsByName: this.functionsByName,
       paymentAddress: this.paymentAddress,
       giftCardIssuerIdentity: this.giftCardIssuerIdentity,
-      pricePerQuery: this.pricePerQuery,
-      schemaInterface: this.schemaInterface,
     };
   }
 
@@ -260,24 +259,27 @@ export default class DataboxManifest implements IDataboxManifest {
       | 'linkedVersions'
       | 'paymentAddress'
       | 'giftCardIssuerIdentity'
-      | 'pricePerQuery'
+      | 'functionsByName'
     >,
   ): string {
     const {
       scriptHash,
       versionTimestamp,
       scriptEntrypoint,
-      pricePerQuery,
+      functionsByName,
       paymentAddress,
       giftCardIssuerIdentity,
       linkedVersions,
     } = manifest;
     linkedVersions.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
+    const functions = Object.keys(functionsByName ?? {}).sort();
+    const functionPrices: (string | number)[] = [];
+    for (const func of functions) functionPrices.push(func, functionsByName[func].pricePerQuery);
     const hashMessage = concatAsBuffer(
       scriptHash,
       versionTimestamp,
       scriptEntrypoint,
-      pricePerQuery,
+      ...functionPrices,
       paymentAddress,
       giftCardIssuerIdentity,
       JSON.stringify(linkedVersions),

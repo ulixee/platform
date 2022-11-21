@@ -10,7 +10,7 @@ export { ExtractSchemaType };
 
 type IOutputType = Record<string, ISchemaAny> | ObjectSchema<any> | ArraySchema<any>;
 
-export default interface IDataboxSchema<
+export default interface IFunctionSchema<
   Input extends Record<string, ISchemaAny> = Record<string, ISchemaAny>,
   Output extends IOutputType = IOutputType,
 > {
@@ -22,9 +22,9 @@ export default interface IDataboxSchema<
   inputExamples?: IInputSchemaType<this['input']>[];
 }
 
-export const Schema = <Input extends Record<string, ISchemaAny>, Output extends IOutputType>(
-  schema: IDataboxSchema<Input, Output>,
-): IDataboxSchema<Input, Output> => schema;
+export const FunctionSchema = <Input extends Record<string, ISchemaAny>, Output extends IOutputType>(
+  schema: IFunctionSchema<Input, Output>,
+): IFunctionSchema<Input, Output> => schema;
 
 type IInputSchemaType<T extends Record<string, ISchemaAny>> = {
   [P in keyof T]?: T[P]['type'] | DateUtilities;

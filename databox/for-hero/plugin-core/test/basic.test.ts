@@ -26,11 +26,17 @@ test('it should be able to upload a databox and run it by hash', async () => {
     ctx.body = `<html><head><title>Databox!</title></head></html>`;
   });
   const remoteTransport = ConnectionToDataboxCore.remote(host);
-  Helpers.onClose(() => remoteTransport.disconnect())
+  Helpers.onClose(() => remoteTransport.disconnect());
   await expect(
     remoteTransport.sendRequest({
       command: 'Databox.exec',
-      args: [{ versionHash: manifest.versionHash, input: { url: `${koaServer.baseUrl}/databox` } }],
+      args: [
+        {
+          versionHash: manifest.versionHash,
+          functionName: 'default',
+          input: { url: `${koaServer.baseUrl}/databox` },
+        },
+      ],
     }),
   ).resolves.toEqual({
     metadata: expect.any(Object),

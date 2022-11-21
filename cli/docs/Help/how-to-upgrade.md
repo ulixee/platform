@@ -2,8 +2,8 @@
 
 Follow **one** of these steps to upgrade Hero to latest version.
 
-- With **yarn** run `yarn upgrade @ulixee/databox-for-hero --latest`
-- With **npm** run `npm install @ulixee/databox-for-hero@latest`
+- With **yarn** run `yarn upgrade @ulixee/databox-plugins-hero --latest`
+- With **npm** run `npm install @ulixee/databox-plugins-hero@latest`
 
 ### Problems after upgrading
 

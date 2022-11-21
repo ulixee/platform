@@ -10,7 +10,6 @@
     "@ulixee/crypto": "2.0.0-alpha.15",
     "@ulixee/databox": "2.0.0-alpha.15",
     "@ulixee/databox-core": "2.0.0-alpha.15",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.15",
     "@ulixee/net": "2.0.0-alpha.15",
     "@ulixee/schema": "2.0.0-alpha.15",
     "@ulixee/specification": "2.0.0-alpha.15",

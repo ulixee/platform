@@ -6,13 +6,13 @@ To use DataboxForPuppeteer, import the plugin and include it in the `plugins` ar
 
 ```js
 import Databox from '@ulixee/databox';
-import { DataboxForPuppeteerPlugin } from '@ulixee/databox-for-puppeteer';
+import { PuppeteerFunctionPlugin } from '@ulixee/databox-for-puppeteer';
 
 export default new Databox({
-  plugins: [DataboxForPuppeteerPlugin],
+  plugins: [PuppeteerFunctionPlugin],
   async run(databox) {
     const { input, output, browser } = databox;
-
+    
     const page = await browser.newPage();
     await page.goto(`https://en.wikipedia.org/wiki/${input.pageSlug || 'Web_scraping'}`);
     output.title = await page.evaluate(() => {

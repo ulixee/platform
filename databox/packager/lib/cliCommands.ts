@@ -263,8 +263,8 @@ You can choose from the options below to link to the existing Miner versions or 
           manifest.scriptHash,
           manifest.versionTimestamp,
           manifest.coreVersion,
-          manifest.corePlugins,
           manifest.schemaInterface,
+          manifest.functionsByName,
           console.log,
         );
         await newManifest.save();
