@@ -5,9 +5,7 @@ import * as Path from 'path';
 import { existsSync } from 'fs';
 import { inspect } from 'util';
 import DataboxManifest from '@ulixee/databox-core/lib/DataboxManifest';
-import IDataboxManifest, {
-  IVersionHistoryEntry,
-} from '@ulixee/specification/types/IDataboxManifest';
+import { IVersionHistoryEntry } from '@ulixee/specification/types/IDataboxManifest';
 import { findProjectPathSync } from '@ulixee/commons/lib/dirUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DbxFile from './DbxFile';
@@ -158,7 +156,7 @@ async function uploadPackage(
       allowNewLinkedVersionHistory: clearVersionHistory,
       identity,
     });
-    printUploadedMessage(uploadHost, manifest);
+    console.log('Your Databox has been uploaded!');
   } catch (error) {
     if (error.code === 'InvalidScriptVersionHistoryError' && error.versionHistory) {
       handleInvalidScriptVersionHistory(manifest, dbxFile, error.versionHistory, uploadHost);
@@ -169,13 +167,6 @@ async function uploadPackage(
       process.exit(1);
     }
   }
-}
-
-function printUploadedMessage(uploadHost: string, manifest: IDataboxManifest): void {
-  console.log(
-    'Your Databox has been uploaded! You can test it out using the following url:\n\n%s\n\n',
-    `http://${uploadHost}/databox/${manifest.versionHash}`,
-  );
 }
 
 function handleMissingLinkedVersions(
@@ -204,11 +195,11 @@ function handleMissingLinkedVersions(
         await manifest.setLinkedVersions(absoluteScriptPath, versionHistory);
         await dbxFile.save();
         await dbxFile.upload(uploadHost);
-        printUploadedMessage(uploadHost, manifest);
+        console.log('Your Databox has been linked to the Miner version!');
       }
       if (answer.toLowerCase().includes('new')) {
         await dbxFile.upload(uploadHost, { allowNewLinkedVersionHistory: true });
-        printUploadedMessage(uploadHost, manifest);
+        console.log('Your updated Databox has been uploaded with a new history.');
       }
       rl.close();
     },
@@ -249,7 +240,9 @@ You can choose from the options below to link to the existing Miner versions or 
         await manifest.setLinkedVersions(absoluteScriptPath, versionHistory);
         await dbxFile.save();
         await dbxFile.upload(uploadHost);
-        printUploadedMessage(uploadHost, manifest);
+        console.log(
+          'Your updated Databox has been uploaded and linked to the Miner version history!',
+        );
       }
       if (answer.toLowerCase().includes('custom')) {
         if (!existsSync(Path.dirname(absoluteScriptPath))) {

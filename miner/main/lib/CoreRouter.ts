@@ -1,5 +1,4 @@
 import * as WebSocket from 'ws';
-import * as Http from 'http';
 import { IncomingMessage } from 'http';
 import DataboxCore from '@ulixee/databox-core';
 import HeroCore from '@ulixee/hero-core';
@@ -8,8 +7,6 @@ import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
-import HttpTransportToClient from '@ulixee/net/lib/HttpTransportToClient';
-import { IDataboxApis } from '@ulixee/specification/databox';
 import ChromeAliveUtils from './ChromeAliveUtils';
 import Miner from '../index';
 
@@ -46,7 +43,6 @@ export default class CoreRouter {
 
     miner.addWsRoute('/', this.handleApi.bind(this, 'hero'));
     miner.addWsRoute('/databox', this.handleApi.bind(this, 'databox'));
-    miner.addHttpRoute(/\/databox\/(.+)/, 'GET', this.runDataboxApi.bind(this));
 
     for (const module of CoreRouter.modulesToRegister) {
       safeRegisterModule(module);
@@ -96,25 +92,6 @@ export default class CoreRouter {
     if (!connection) throw new Error(`Unknown connection protocol attempted "${connectionType}"`);
     this.connections.add(connection);
     connection.once('disconnected', () => this.connections.delete(connection));
-  }
-
-  private async runDataboxApi(req: Http.IncomingMessage, res: Http.ServerResponse): Promise<void> {
-    const url = new URL(req.url, 'http://localhost/');
-
-    const input: any = {};
-    for (const [key, value] of url.searchParams.entries()) input[key] = value;
-    const versionHash = url.pathname.replace('/databox/', '');
-
-    const httpTransport = new HttpTransportToClient<IDataboxApis, {}>(req, res);
-    const connection = DataboxCore.addConnection(httpTransport);
-    httpTransport.emit('message', {
-      command: 'Databox.eec',
-      args: {
-        versionHash,
-        input,
-      },
-    } as any);
-    await connection.disconnect();
   }
 }
 
