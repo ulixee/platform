@@ -26,6 +26,7 @@
     "yargs-parser": "^20.2.9"
   },
   "devDependencies": {
-    "@ulixee/databox-packager": "2.0.0-alpha.15"
+    "@ulixee/databox-packager": "2.0.0-alpha.15",
+    "moment": "^2.29.4"
   }
 }

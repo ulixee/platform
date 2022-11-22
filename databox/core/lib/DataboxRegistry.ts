@@ -16,6 +16,8 @@ import DataboxManifest from './DataboxManifest';
 import { unpackDbxFile } from './dbxUtils';
 import { IDataboxStatsRecord } from './DataboxStatsTable';
 
+const databoxPackageJson = require(`../package.json`);
+
 export interface IStatsByFunctionName {
   [functionName: string]: IDataboxStatsRecord;
 }
@@ -62,7 +64,13 @@ export default class DataboxRegistry {
     functionName: string,
     stats: { bytes: number; microgons: number; millis: number },
   ): void {
-    this.databoxesDb.databoxStats.record(versionHash, functionName, stats.microgons, stats.bytes, stats.millis);
+    this.databoxesDb.databoxStats.record(
+      versionHash,
+      functionName,
+      stats.microgons,
+      stats.bytes,
+      stats.millis,
+    );
   }
 
   public async openDbx(manifest: IDataboxManifest): Promise<void> {
@@ -129,14 +137,7 @@ export default class DataboxRegistry {
   }
 
   private checkDataboxCoreInstalled(requiredVersion: string): void {
-    let installedVersion: string;
-    try {
-      // eslint-disable-next-line global-require,import/no-dynamic-require
-      const databoxPackageJson = require(`@ulixee/databox-core/package.json`);
-      installedVersion = databoxPackageJson.version;
-    } catch (error) {
-      throw new Error(`The requested Databox Core is not installed.\n${error.message}`);
-    }
+    const installedVersion = databoxPackageJson.version;
     if (!isSemverSatisfied(requiredVersion, installedVersion)) {
       throw new Error(
         `The installed Databox Core (${installedVersion}) is not compatible with the version required by your Databox Package (${requiredVersion}).\n

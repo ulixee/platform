@@ -1,4 +1,4 @@
-const { Function, HeroFunctionPlugin } = require('@ulixee/databox-for-hero');
+const { Function, HeroFunctionPlugin } = require('@ulixee/databox-plugins-hero');
 const { testFunction } = require('./helper');
 
 module.exports = new Function(

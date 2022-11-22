@@ -45,6 +45,13 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
       functionName,
       input,
     });
+    if (data.error) {
+      const { message, stack, ...other } = data.error;
+      const error = new Error(message);
+      if (stack) error.stack += `\n${stack}`;
+      Object.assign(error, other);
+      throw error;
+    }
     return { output: data.output };
   }
 

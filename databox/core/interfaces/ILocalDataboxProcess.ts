@@ -18,7 +18,8 @@ export interface IRunMessage {
 export type IMessage = IFetchMetaMessage | IRunMessage;
 
 export interface IExecResponseData {
-  output: any;
+  output?: any;
+  error?: { message: string; stack?: string };
 }
 
 export interface IFetchMetaResponseData {

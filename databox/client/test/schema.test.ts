@@ -1,5 +1,7 @@
-import { array, boolean, number, object, string } from '@ulixee/schema';
-import { Function } from '../index';
+import { array, boolean, dateAdd, number, object, string , ExtractSchemaType } from '@ulixee/schema';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
+import * as moment from 'moment';
+import { Function, FunctionSchema } from '../index';
 
 describe('Schemas', () => {
   it('will validate input to a function', async () => {
@@ -17,6 +19,38 @@ describe('Schemas', () => {
     });
 
     await expect(func.exec({ input: {} as any })).rejects.toThrowError('input did not match');
+  });
+
+  it('will supply defaults to params if not given', async () => {
+    const schema = FunctionSchema({
+      input: {
+        plan: boolean(),
+        for: number(),
+        a: string({ optional: true }),
+        date: string({ format: 'date' }),
+      },
+      inputExamples: [
+        {
+          date: dateAdd(1, 'days'),
+          plan: true,
+        },
+      ],
+    });
+
+    const runResolver = new Resolvable<ExtractSchemaType<typeof schema>>();
+    const func = new Function({
+      async run(ctx) {
+        runResolver.resolve(ctx.input);
+        ctx.output = { test: true };
+      },
+      schema,
+    });
+
+    await expect(func.exec({ input: { plan: false, for: 1 } } as any)).resolves.toBeTruthy();
+    const input = await runResolver;
+    expect(input.date).toBe(moment().add(1, 'days').format('YYYY-MM-DD'));
+    expect(input.plan).toBe(false);
+    expect(input.a).toBeUndefined();
   });
 
   it('will validate output errors for a function', async () => {

@@ -1,7 +1,9 @@
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import BaseSchema from '@ulixee/schema/lib/BaseSchema';
-import { ObjectSchema } from '@ulixee/schema';
+import { DateUtilities, ObjectSchema } from '@ulixee/schema';
 import { IValidationError } from '@ulixee/schema/interfaces/IValidationResult';
+import { pickRandom } from '@ulixee/commons/lib/utils';
+import StringSchema from '@ulixee/schema/lib/StringSchema';
 import DataboxSchemaError from './DataboxSchemaError';
 import IFunctionSchema, { ExtractSchemaType } from '../interfaces/IFunctionSchema';
 import IFunctionExecOptions from '../interfaces/IFunctionExecOptions';
@@ -32,6 +34,23 @@ export default class FunctionInternal<
     this.options = options;
     this.schema = components.schema;
     this._input = (options.input ?? {}) as TInput;
+
+    if (components.schema?.inputExamples?.length && components.schema.input) {
+      const randomEntry = pickRandom(components.schema.inputExamples);
+      for (const [key, schema] of Object.entries(components.schema.input)) {
+        if (this._input[key] === undefined) {
+          let value = randomEntry[key];
+          if (
+            value instanceof DateUtilities &&
+            schema instanceof StringSchema &&
+            (schema.format === 'date' || schema.format === 'time')
+          ) {
+            value = value.evaluate(schema.format);
+          }
+          this._input[key] = value;
+        }
+      }
+    }
 
     if (this.schema?.output) {
       let outputSchema = this.schema.output as unknown as BaseSchema<any>;

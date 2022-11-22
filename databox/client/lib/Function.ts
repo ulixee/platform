@@ -71,14 +71,14 @@ export default class Function<
       throw new Error('Databox already running');
     }
     this.#isRunning = true;
-    const functionInternal = new FunctionInternal<ISchema, any>(options, this.components);
+    const functionInternal = new FunctionInternal(options, this.components);
 
     try {
       functionInternal.validateInput();
       await this.plugins.onStart(functionInternal);
 
       if (this.components.run && this.plugins.shouldRun) {
-        const context = new FunctionContext<ISchema>(functionInternal);
+        const context = new FunctionContext(functionInternal);
         await this.plugins.beforeRun(context);
         await functionInternal.execRunner(context, this.components.run as any);
       }

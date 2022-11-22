@@ -1,4 +1,4 @@
-import Databox from '@ulixee/databox';
+import Databox, { Function } from '@ulixee/databox';
 import { IFetchMetaResponseData, IMessage, IResponse } from '../interfaces/ILocalDataboxProcess';
 
 function sendToParent(response: IResponse): void {
@@ -17,31 +17,55 @@ process.on('exit', exit);
 process.on('message', async (message: IMessage) => {
   await new Promise(process.nextTick);
   if (message.action === 'fetchMeta') {
-    const databoxExecutable = loadDataboxExport(message.scriptPath);
+    let databox = loadDataboxExport(message.scriptPath);
+    // wrap function in a default databox
+    if (databox instanceof Function) {
+      databox = new Databox<any, any>({
+        functions: { default: databox },
+      });
+    }
 
     const functionsByName: IFetchMetaResponseData['functionsByName'] = {};
-    for (const [name, func] of Object.entries(databoxExecutable.functions ?? {})) {
+    for (const [name, func] of Object.entries(databox.functions ?? {})) {
       functionsByName[name] = { corePlugins: func.plugins.corePlugins ?? {}, schema: func.schema };
     }
 
     return sendToParent({
       responseId: message.messageId,
       data: {
-        coreVersion: databoxExecutable.coreVersion,
+        coreVersion: databox.coreVersion,
         functionsByName,
       },
     });
   }
   if (message.action === 'exec') {
-    const databoxExecutable = loadDataboxExport(message.scriptPath);
-    const output = await databoxExecutable.functions[message.functionName].exec(message.input);
+    const databox = loadDataboxExport(message.scriptPath);
+    const func = databox.functions[message.functionName];
+    if (!func)
+      return sendToParent({
+        responseId: message.messageId,
+        data: {
+          error: { message: `Database function "${message.functionName}" not found.` },
+        },
+      });
 
-    return sendToParent({
-      responseId: message.messageId,
-      data: {
-        output,
-      },
-    });
+    try {
+      const output = await func.exec(message.input);
+
+      return sendToParent({
+        responseId: message.messageId,
+        data: {
+          output,
+        },
+      });
+    } catch (error) {
+      sendToParent({
+        responseId: message.messageId,
+        data: {
+          error: { ...error },
+        },
+      });
+    }
   }
 
   // @ts-ignore

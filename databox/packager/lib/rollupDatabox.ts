@@ -13,9 +13,7 @@ export default async function rollupDatabox(
   const outDir = options.outDir ?? `${__dirname}/../`;
   const plugins = [
     nodeResolve({
-      resolveOnly: module =>
-        !module.startsWith('@ulixee') &&
-        !module.includes('/databox-for-'),
+      resolveOnly: module => !module.startsWith('@ulixee'),
     }),
     commonjs({ transformMixedEsModules: true, extensions: ['.js', '.ts'] }), // the ".ts" extension is required }),
     terser({ compress: false, mangle: false, format: { comments: false }, ecma: 2020 }),

@@ -91,7 +91,13 @@ export default class DataboxManifest implements IDataboxManifest {
     this.linkedVersions ??= [];
     this.coreVersion = coreVersion;
     this.schemaInterface = schemaInterface;
-    this.functionsByName = functionsByName;
+    this.functionsByName = functionsByName ?? {};
+    for (const [funcName, funcMeta] of Object.entries(this.functionsByName)) {
+      this.functionsByName[funcName] = {
+        corePlugins: funcMeta.corePlugins ?? {},
+        pricePerQuery: funcMeta.pricePerQuery ?? 0,
+      };
+    }
     // allow manifest to override above values
     await this.loadExplicitSettings(manifestSources, logger);
 

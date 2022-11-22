@@ -10,7 +10,7 @@ import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import { IDataboxApis } from '@ulixee/specification/databox';
-import Databox from '@ulixee/databox';
+import Databox, { Function } from '@ulixee/databox';
 import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import IDataboxCoreConfigureOptions from './interfaces/IDataboxCoreConfigureOptions';
 import env from './env';
@@ -147,10 +147,18 @@ export default class DataboxCore {
     const script = await this.getVMScript(path, manifest);
     const databox = this.vm.run(script);
 
-    if (!(databox instanceof Databox)) {
+    let databoxFunction: Function = databox.functions?.[functionName];
+
+    if (databox instanceof Function) {
+      databoxFunction = databox;
+    } else if (!(databox instanceof Databox)) {
       throw new Error(
         'The default export from this script needs to inherit from "@ulixee/databox"',
       );
+    }
+
+    if (!databoxFunction) {
+      throw new Error(`${functionName} is not a valid Function name for this Databox.`)
     }
 
     const options = { input };
@@ -158,7 +166,7 @@ export default class DataboxCore {
       if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);
     }
 
-    const output = await databox.functions[functionName].exec(options);
+    const output = await databoxFunction.exec(options);
     return { output };
   }
 
