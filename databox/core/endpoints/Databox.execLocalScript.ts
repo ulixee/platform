@@ -18,6 +18,8 @@ export default new DataboxApiHandler('Databox.execLocalScript', {
     }
 
     const { output } = await context.workTracker.trackRun(databoxProcess.exec(request.functionName, request.input));
+    await databoxProcess.close();
+
     return { output, latestVersionHash: null };
   },
 });

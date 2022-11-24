@@ -17,7 +17,7 @@ process.on('exit', exit);
 process.on('message', async (message: IMessage) => {
   await new Promise(process.nextTick);
   if (message.action === 'fetchMeta') {
-    let databox = loadDataboxExport(message.scriptPath);
+    let databox = requireDatabox(message.scriptPath);
     // wrap function in a default databox
     if (databox instanceof Function) {
       databox = new Databox<any, any>({
@@ -30,24 +30,34 @@ process.on('message', async (message: IMessage) => {
       functionsByName[name] = { corePlugins: func.plugins.corePlugins ?? {}, schema: func.schema };
     }
 
+    const tablesByName: IFetchMetaResponseData['tablesByName'] = {};
+    for (const [name, table] of Object.entries(databox.tables ?? {})) {
+      tablesByName[name] = {
+        schema: table.schema,
+        seedlings: table.seedlings,
+      };
+    }
+
     return sendToParent({
       responseId: message.messageId,
       data: {
         coreVersion: databox.coreVersion,
         functionsByName,
+        tablesByName,
       },
     });
   }
   if (message.action === 'exec') {
-    const databox = loadDataboxExport(message.scriptPath);
+    const databox = requireDatabox(message.scriptPath);
     const func = databox.functions[message.functionName];
-    if (!func)
+    if (!func) {
       return sendToParent({
         responseId: message.messageId,
         data: {
           error: { message: `Database function "${message.functionName}" not found.` },
         },
       });
+    }
 
     try {
       const output = await func.exec(message.input);
@@ -72,7 +82,7 @@ process.on('message', async (message: IMessage) => {
   throw new Error(`unknown action: ${message.action}`);
 });
 
-function loadDataboxExport(scriptPath: string): Databox<any, any> {
+function requireDatabox(scriptPath: string): Databox<any, any> {
   const imported = require(scriptPath); // eslint-disable-line import/no-dynamic-require
   const defaultExport = imported.default || imported;
   if (!defaultExport) throw new Error(`Databox script has no default export`);

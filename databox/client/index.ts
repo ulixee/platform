@@ -9,15 +9,19 @@ import IFunctionPlugin from './interfaces/IFunctionPlugin';
 import IFunctionComponents from './interfaces/IFunctionComponents';
 import IFunctionExecOptions from './interfaces/IFunctionExecOptions';
 import IFunctionSchema, { FunctionSchema } from './interfaces/IFunctionSchema';
+import Table from './lib/Table';
+import ConnectionToDataboxCore from './connections/ConnectionToDataboxCore';
 
 export * as Schema from '@ulixee/schema';
 
 export {
+  Table,
   Databox,
   Observable,
   FunctionSchema,
   FunctionContext,
   Function,
+  ConnectionToDataboxCore,
   IFunctionComponents,
   IFunctionExecOptions,
   IFunctionSchema,

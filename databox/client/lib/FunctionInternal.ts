@@ -19,25 +19,25 @@ export default class FunctionInternal<
   close: void;
 }> {
   #isClosing: Promise<void>;
+  #input: TInput;
+  #output: Output<TOutput>;
+  #outputSchema: BaseSchema<any>;
 
-  readonly options: TOptions;
-  readonly schema: ISchema;
+  public readonly options: TOptions;
+  public readonly schema: ISchema;
 
   public onOutputChanges: (changes: IObservableChange[]) => any;
-  protected readonly _input: TInput;
-  protected _output: Output<TOutput>;
-  protected readonly outputSchema: BaseSchema<any>;
 
   constructor(options: TOptions, components: { schema?: ISchema }) {
     super();
     this.options = options;
     this.schema = components.schema;
-    this._input = (options.input ?? {}) as TInput;
+    this.#input = (options.input ?? {}) as TInput;
 
     if (components.schema?.inputExamples?.length && components.schema.input) {
       const randomEntry = pickRandom(components.schema.inputExamples);
       for (const [key, schema] of Object.entries(components.schema.input)) {
-        if (this._input[key] === undefined) {
+        if (this.#input[key] === undefined) {
           let value = randomEntry[key];
           if (
             value instanceof DateUtilities &&
@@ -46,7 +46,7 @@ export default class FunctionInternal<
           ) {
             value = value.evaluate(schema.format);
           }
-          this._input[key] = value;
+          this.#input[key] = value;
         }
       }
     }
@@ -56,7 +56,7 @@ export default class FunctionInternal<
       if (!(outputSchema instanceof BaseSchema)) {
         outputSchema = new ObjectSchema({ fields: outputSchema as any });
       }
-      this.outputSchema = outputSchema;
+      this.#outputSchema = outputSchema;
     }
   }
 
@@ -65,15 +65,15 @@ export default class FunctionInternal<
   }
 
   public get input(): TInput {
-    if (this._input && typeof this._input === 'object') {
-      return { ...this._input };
+    if (this.#input && typeof this.#input === 'object') {
+      return { ...this.#input };
     }
-    return this._input;
+    return this.#input;
   }
 
   public get output(): TOutput {
-    this._output ??= createObservableOutput(this.defaultOnOutputChanges.bind(this)) as any;
-    return this._output as any;
+    this.#output ??= createObservableOutput(this.defaultOnOutputChanges.bind(this)) as any;
+    return this.#output as any;
   }
 
   public set output(value: TOutput) {
@@ -111,8 +111,8 @@ export default class FunctionInternal<
   }
 
   public validateOutput(): void {
-    if (!this.outputSchema) return;
-    const outputValidation = this.outputSchema.validate(this.output);
+    if (!this.#outputSchema) return;
+    const outputValidation = this.#outputSchema.validate(this.output);
     if (!outputValidation.success) {
       throw new DataboxSchemaError(
         'The Function output did not match its Schema',

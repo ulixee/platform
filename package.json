@@ -60,6 +60,7 @@
       "databox/*",
       "databox/plugins/*",
       "miner/*",
+      "sql/*",
       "cli",
       "end-to-end",
       "hero/build/*",

@@ -12,13 +12,15 @@
     "@ulixee/schema": "2.0.0-alpha.15",
     "@ulixee/sidechain": "2.0.0-alpha.15",
     "@ulixee/specification": "2.0.0-alpha.15",
+    "@ulixee/sql-ast": "2.0.0-alpha.15",
+    "@ulixee/sql-parser": "2.0.0-alpha.15",
+    "@ulixee/sql-generator": "2.0.0-alpha.15",
     "better-sqlite3": "^7.5.1",
     "nanoid": "^3.1.32",
     "tar": "^6.1.11",
     "vm2": "^3.9.10"
   },
   "devDependencies": {
-    "@ulixee/databox-core-runtime": "2.0.0-alpha.12",
     "@ulixee/databox-packager": "2.0.0-alpha.15",
     "@ulixee/databox-testing": "2.0.0-alpha.15",
     "@ulixee/miner": "2.0.0-alpha.15",

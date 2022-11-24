@@ -16,6 +16,7 @@
     "apps",
     "playgrounds",
     "databox",
+    "sql",
     "databox/packager/*.json",
     "cli",
     "miner/**/*.json",
@@ -37,7 +38,6 @@
     "hero",
     "**/website",
     "**/docs",
-    "**/stream",
     "**/*.d.ts"
   ]
 }

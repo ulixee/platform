@@ -1,4 +1,5 @@
 import { ExtractSchemaType } from '@ulixee/schema';
+import SqlParser from '@ulixee/sql-parser';
 import FunctionInternal from './FunctionInternal';
 import Autorun from './utils/Autorun';
 import readCommandLineArgs from './utils/readCommandLineArgs';
@@ -8,6 +9,8 @@ import IFunctionSchema from '../interfaces/IFunctionSchema';
 import IFunctionExecOptions from '../interfaces/IFunctionExecOptions';
 import IFunctionComponents from '../interfaces/IFunctionComponents';
 import FunctionPlugins from './FunctionPlugins';
+import DataboxInternal from './DataboxInternal';
+import Databox from './Databox';
 
 export default class Function<
   ISchema extends IFunctionSchema = IFunctionSchema<any, any>,
@@ -28,6 +31,12 @@ export default class Function<
     IPlugin3['afterRunContextAddons'],
 > {
   #isRunning = false;
+  #databox: Databox<any, any>;
+  #databoxInternal: DataboxInternal;
+
+  public disableAutorun: boolean;
+  public successCount = 0;
+  public errorCount = 0;
   public readonly plugins: FunctionPlugins<
     ISchema,
     IRunContext,
@@ -39,9 +48,24 @@ export default class Function<
     return this.components.schema;
   }
 
-  public disableAutorun: boolean;
-  public successCount = 0;
-  public errorCount = 0;
+  public get name(): string {
+    return this.components.name;
+  }
+
+  public get databox(): Databox<any, any> {
+    if (!this.#databox) {
+      this.#databox = new Databox({}, this.databoxInternal);
+    }
+    return this.#databox;
+  }
+
+  public get databoxInternal(): DataboxInternal {
+    if (!this.#databoxInternal) {
+      this.#databoxInternal = new DataboxInternal();
+      this.#databoxInternal.onCreateInMemoryDatabase(this.createInMemoryFunction.bind(this));
+    }
+    return this.#databoxInternal;
+  }
 
   private readonly components: IFunctionComponents<
     ISchema,
@@ -70,6 +94,7 @@ export default class Function<
           }
         : { ...components };
 
+    this.components.name ??= 'default';
     this.plugins = new FunctionPlugins(this.components);
     this.plugins.add(...plugins);
 
@@ -117,7 +142,7 @@ export default class Function<
       functionInternal.validateOutput();
 
       this.successCount++;
-      return functionInternal.output;
+      return (functionInternal.output as any).toJSON();
     } catch (error) {
       error.stack = error.stack.split('at async Function.exec').shift().trim();
       console.error(`ERROR running databox: `, error);
@@ -127,6 +152,56 @@ export default class Function<
       await functionInternal.close();
       this.#isRunning = false;
     }
+  }
+
+  public async query(sql: string | any, boundValues: any[] = []): Promise<any> {
+    await this.databoxInternal.ensureDatabaseExists();
+    const name = this.components.name;
+    const databoxInstanceId = this.databoxInternal.instanceId;
+    const databoxVersionHash = this.databoxInternal.manifest?.versionHash;
+    
+    const sqlParser = new SqlParser(sql, { function: name });
+    const schemas = { [name]: this.schema.input };
+    const inputsByFunction = sqlParser.extractFunctionInputs<ISchema['input']>(schemas, boundValues);
+    const input = inputsByFunction[name];
+    const output = await this.exec({ input });
+
+    const args = {
+      name,
+      sql,
+      boundValues,
+      functionRecords: Array.isArray(output) ? output : [output],
+      databoxInstanceId,
+      databoxVersionHash,
+    };
+    return await this.databoxInternal.sendRequest({ command: 'Databox.queryInternalFunction', args: [args] });
+  }
+
+  public attachToDatabox(
+    databoxInternal: DataboxInternal, 
+    functionName: string,
+  ): void {
+    this.components.name = functionName;
+    if (this.#databoxInternal && this.#databoxInternal === databoxInternal) return;
+    if (this.#databoxInternal) {
+      throw new Error(`${functionName} Function is already attached to a Databox`);
+    }
+    
+    this.#databoxInternal = databoxInternal;
+    if (!databoxInternal.manifest?.versionHash) {
+      this.#databoxInternal.onCreateInMemoryDatabase(this.createInMemoryFunction.bind(this));
+    }
+  }
+
+  private async createInMemoryFunction(): Promise<void> {
+    const databoxInstanceId = this.databoxInternal.instanceId;
+    const name = this.components.name;
+    const args = {
+      name,
+      databoxInstanceId,
+      schema: this.components.schema,
+    };
+    await this.databoxInternal.sendRequest({ command: 'Databox.createInMemoryFunction', args: [args] });
   }
 
   public static commandLineExec<TOutput>(

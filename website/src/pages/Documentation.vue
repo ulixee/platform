@@ -79,6 +79,7 @@ const toolNames: { [key: string]: string } = {
   hero: 'Hero',
   databox: 'Databox',
   miner: 'Miner',
+  sql: 'SQL',
 };
 
 export default Vue.defineComponent<any>({

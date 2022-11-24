@@ -4,6 +4,7 @@ export default interface IFunctionComponents<
   IBeforeRunContext = IContext,
   IAfterRunContext = IContext,
 > {
+  name?: string;
   schema?: ISchema;
   beforeRun?(context: IBeforeRunContext): void | Promise<void>;
   run(context: IContext): void | Promise<void>;
