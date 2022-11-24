@@ -59,23 +59,6 @@ export function typeChecking(): void {
         },
         HeroFunctionPlugin,
       ),
-
-      generic: ({ output }) => {
-        output.test = '1';
-      },
-
-      struct: {
-        schema: {
-          output: {
-            url: string({ format: 'url' }),
-          },
-        },
-        run({ output }) {
-          output.url = 'test';
-          // // @ts-expect-error
-          // output.url = 1;
-        },
-      },
     },
   });
 
@@ -83,12 +66,5 @@ export function typeChecking(): void {
     await databox.functions.hero.exec({ replaySessionId: '1' }).catch();
     // @ts-expect-error
     await databox.functions.hero.exec({ showChrome: '1,', replaySessionId: '1' }).catch();
-
-    await databox.functions.generic.exec({});
-
-    const result = await databox.functions.struct.exec({});
-    const s: string = result.url;
-    // @ts-expect-error
-    const n: number = result.url;
   })();
 }

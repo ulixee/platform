@@ -13,6 +13,8 @@
     "@ulixee/net": "2.0.0-alpha.16",
     "@ulixee/schema": "2.0.0-alpha.16",
     "@ulixee/specification": "2.0.0-alpha.16",
+    "@ulixee/sql-generator": "2.0.0-alpha.16",
+    "better-sqlite3": "^7.5.1",
     "rollup": "^2.74.1",
     "rollup-plugin-terser": "^7.0.2",
     "tar": "^6.1.11",

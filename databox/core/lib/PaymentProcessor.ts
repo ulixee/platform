@@ -21,7 +21,7 @@ export default class PaymentProcessor {
   }
 
   public get pricePerKb(): number {
-    // TODO: this should possibly average out once we have multiple servers participating.
+    // TODO: this should possibly average out once we have multiple miners participating.
     return this.addressesPayable.reduce((total, res) => total + (res.pricePerKb ?? 0), 0);
   }
 

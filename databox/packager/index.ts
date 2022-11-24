@@ -17,6 +17,7 @@ export default class DataboxPackager {
   public script: string;
   public sourceMap: string;
   public dbx: DbxFile;
+  public meta: IFetchMetaResponseData;
 
   public get dbxPath(): string {
     return Path.join(this.outDir, `${this.filename}.dbx`);
@@ -49,6 +50,9 @@ export default class DataboxPackager {
 
     const { sourceCode, sourceMap } = await this.rollup(options);
 
+    this.meta ??= await this.findDataboxMeta();
+    dbx.createOrUpdateDatabase(this.meta.tablesByName);
+
     await this.createOrUpdateManifest(sourceCode, sourceMap, options?.createNewVersionHistory);
     await dbx.save(options?.keepOpen);
 
@@ -71,15 +75,15 @@ export default class DataboxPackager {
     sourceMap: string,
     createNewVersionHistory = false,
   ): Promise<DataboxManifest> {
-    const meta = await this.findDataboxMeta();
-    if (!meta.coreVersion) {
+    this.meta ??= await this.findDataboxMeta();
+    if (!this.meta.coreVersion) {
       throw new Error('Databox must specify a coreVersion');
     }
 
     let interfaceString: string;
-    if (meta.functionsByName) {
+    if (this.meta.functionsByName) {
       const schemaInterface: Record<string, ISchemaAny> = {};
-      for (const [name, func] of Object.entries(meta.functionsByName)) {
+      for (const [name, func] of Object.entries(this.meta.functionsByName)) {
         if (!func.schema) continue;
         const fields = filterUndefined({
           input: schemaFromJson(func.schema?.input),
@@ -100,9 +104,9 @@ export default class DataboxPackager {
       this.entrypoint,
       scriptVersionHash,
       Date.now(),
-      meta.coreVersion,
+      this.meta.coreVersion,
       interfaceString,
-      meta.functionsByName,
+      this.meta.functionsByName,
       this.logToConsole ? console.log : undefined,
     );
     if (createNewVersionHistory) {

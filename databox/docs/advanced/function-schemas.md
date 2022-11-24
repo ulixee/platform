@@ -77,18 +77,6 @@ TODO: This feature will come in a follow-on release, and will auto-generate a we
 
 ## Properties
 
-### name `string`
-
-Optional name to label this FunctionSchema in Documentation.
-
-### description `string`
-
-Optional longer form description to describe the usage or details of this FunctionSchema in Documentation.
-
-### icon `string`
-
-Optional icon name to use in the auto-generated website documentation. NOTE: This feature is not yet in use in Ulixee 2.0.
-
 ### input `Record<string, Any Schema>` {#input}
 
 Optional input fields definition containing and object of string Keys to [Schema](./schema) values.

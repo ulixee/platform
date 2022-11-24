@@ -17,13 +17,18 @@ import IDataboxCoreConfigureOptions from './interfaces/IDataboxCoreConfigureOpti
 import env from './env';
 import DataboxRegistry from './lib/DataboxRegistry';
 import { unpackDbxFile } from './lib/dbxUtils';
-import DataboxUpload from './endpoints/Databox.upload';
 import WorkTracker from './lib/WorkTracker';
-import DataboxExec from './endpoints/Databox.exec';
 import IDataboxApiContext from './interfaces/IDataboxApiContext';
-import DataboxRunLocalScript from './endpoints/Databox.execLocalScript';
 import SidechainClientManager from './lib/SidechainClientManager';
+import DataboxUpload from './endpoints/Databox.upload';
+import DataboxExec from './endpoints/Databox.exec';
+import DataboxExecLocalScript from './endpoints/Databox.execLocalScript';
 import DataboxMeta from './endpoints/Databox.meta';
+import DataboxQueryInternal from './endpoints/Databox.queryInternal';
+import DataboxQueryInternalTable from './endpoints/Databox.queryInternalTable';
+import DataboxQueryInternalFunction from './endpoints/Databox.queryInternalFunction';
+import DataboxInitializeInMemoryTable from './endpoints/Databox.createInMemoryTable';
+import DataboxInitializeInMemoryFunction from './endpoints/Databox.createInMemoryFunction';
 
 const { log } = Logger(module);
 
@@ -61,6 +66,11 @@ export default class DataboxCore {
     DataboxUpload,
     DataboxExec,
     DataboxMeta,
+    DataboxQueryInternal,
+    DataboxQueryInternalTable,
+    DataboxQueryInternalFunction,
+    DataboxInitializeInMemoryTable,
+    DataboxInitializeInMemoryFunction,
   ]);
 
   static #vm: NodeVM;
@@ -115,6 +125,11 @@ export default class DataboxCore {
     if (this.isStarted.isResolved) return this.isStarted.promise;
 
     this.close = this.close.bind(this);
+
+    if (this.options.enableRunWithLocalPath) {
+      this.apiRegistry.register(DataboxExecLocalScript);
+    }
+    
     if (!(await existsAsync(this.options.databoxesTmpDir))) {
       await Fs.mkdir(this.options.databoxesTmpDir, { recursive: true });
     }
@@ -133,9 +148,6 @@ export default class DataboxCore {
 
     this.workTracker = new WorkTracker(this.options.maxRuntimeMs);
 
-    if (this.options.enableRunWithLocalPath) {
-      this.apiRegistry.register(DataboxRunLocalScript);
-    }
     this.sidechainClientManager = new SidechainClientManager(this.options);
     this.isStarted.resolve();
   }
@@ -147,12 +159,13 @@ export default class DataboxCore {
     input: any,
   ): Promise<{ output: any }> {
     const script = await this.getVMScript(path, manifest);
-    const databox = this.vm.run(script);
-
+    
+    let databox = this.vm.run(script);
     let databoxFunction: Function = databox.functions?.[functionName];
 
     if (databox instanceof Function) {
       databoxFunction = databox;
+      databox = databoxFunction.databox;
     } else if (!(databox instanceof Databox)) {
       throw new Error(
         'The default export from this script needs to inherit from "@ulixee/databox"',
@@ -162,6 +175,8 @@ export default class DataboxCore {
     if (!databoxFunction) {
       throw new Error(`${functionName} is not a valid Function name for this Databox.`)
     }
+
+    databox.addManifest(manifest);
 
     const options = { input };
     for (const plugin of Object.values(this.pluginCoresByName)) {
@@ -243,6 +258,9 @@ export default class DataboxCore {
   }
 
   private static getApiContext(remoteId?: string): IDataboxApiContext {
+    if (!this.workTracker) {
+      throw new Error('DataboxCore has not started')
+    }
     return {
       logger: log.createChild(module, { remoteId }),
       databoxRegistry: this.databoxRegistry,

@@ -33,6 +33,12 @@ export interface IFetchMetaResponseData {
       };
     };
   };
+  tablesByName: {
+    [name: string]: {
+      schema: Record<string, IAnySchemaJson>;
+      seedlings: Record<string, any>;
+    }
+  }
 }
 
 export type IResponseData = IExecResponseData | IFetchMetaResponseData;

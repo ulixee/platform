@@ -14,9 +14,6 @@ export default interface IFunctionSchema<
   Input extends Record<string, ISchemaAny> = Record<string, ISchemaAny>,
   Output extends IOutputType = IOutputType,
 > {
-  name?: string;
-  description?: string;
-  icon?: string;
   input?: Input;
   output?: Output;
   inputExamples?: IInputSchemaType<this['input']>[];

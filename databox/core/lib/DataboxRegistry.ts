@@ -85,6 +85,11 @@ export default class DataboxRegistry {
     await unpackDbxFile(dbxPath, workingDir);
   }
 
+  public getStoragePath(versionHash: string): string {
+    const workingDir = this.getDataboxWorkingDirectory(versionHash);
+    return Path.join(workingDir, 'storage.db');
+  }
+
   public getLatestVersion(hash: string): string {
     return this.databoxesDb.databoxVersions.getLatestVersion(hash);
   }

@@ -1,7 +1,8 @@
-import UlixeeMiner from '@ulixee/miner';
-import { Helpers, ConnectionToDataboxCore } from '@ulixee/databox-testing';
-import Packager from '@ulixee/databox-packager';
 import * as Fs from 'fs';
+import UlixeeMiner from '@ulixee/miner';
+import { Helpers } from '@ulixee/databox-testing';
+import Packager from '@ulixee/databox-packager';
+import { ConnectionToDataboxCore } from '@ulixee/databox';
 
 let ulixeeMiner: UlixeeMiner;
 let koaServer: Helpers.ITestKoaServer;

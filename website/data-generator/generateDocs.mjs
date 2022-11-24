@@ -25,6 +25,14 @@ const rootDir = Path.resolve(__dirname, '../../');
 }
 
 {
+  const mdDocsRootPath = `${rootDir}/sql/docs`;
+  walkDirectory(mdDocsRootPath, async filePath => {
+    await saveToWebsite(mdDocsRootPath, filePath, 'sql');
+  });
+  ensureIndexFile(mdDocsRootPath, 'sql');
+}
+
+{
   const mdDocsRootPath = `${rootDir}/miner/docs`;
   walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'miner');

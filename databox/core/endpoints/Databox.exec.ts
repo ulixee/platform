@@ -16,8 +16,9 @@ const { version } = require('../package.json');
 
 export default new DataboxApiHandler('Databox.exec', {
   async handler(request, context) {
-    if (DataboxCore.isClosing)
+    if (DataboxCore.isClosing) {
       throw new CanceledPromiseError('Miner shutting down. Not accepting new work.');
+    }
     await DataboxCore.start();
 
     const startTime = Date.now();
@@ -28,7 +29,6 @@ export default new DataboxApiHandler('Databox.exec', {
         `The current version of Core (${version}) is incompatible with this Databox version (${coreVersion})`,
       );
     }
-
     const functionName = request.functionName ?? 'default';
     if (!registryEntry.functionsByName[functionName])
       throw new Error(`${functionName} is not a valid function name for this Databox`);
@@ -101,7 +101,7 @@ async function processPayments(
   const { sidechainClientManager, configuration } = context;
   const stats = databox.statsByFunction[functionName];
   const pricePerQuery = databox.functionsByName[functionName].pricePerQuery;
-
+  
   if (!request.payment?.giftCard && !request.payment?.micronote) {
     if (pricePerQuery || configuration.computePricePerKb) {
       throw new MicronotePaymentRequiredError('This databox requires payment', stats.averagePrice);
