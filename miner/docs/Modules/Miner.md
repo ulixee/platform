@@ -20,13 +20,14 @@ import UlixeeMiner from '@ulixee/miner';
 
 ## Constructor
 
-### new Miner *(addressHost)* {#constructor}
+### new Miner _(addressHost, shouldShutdownOnSignals)_ {#constructor}
 
 Creates a new Miner instance.
 
 #### **Arguments**:
 
 - addressHost `string`. A "hostname" that will be used to access the miner. This will be used in the Websocket address of the miner.
+- shouldShutdownOnSignals `boolean`. Default `true`. Set to false to disable automatically shutting down the Miner and all dependent services on process signals (eg, 'exit', `SIGINT`, `SIGTERM`, `SIGQUIT`). If you disable this process, you should calls [miner.close()](#close) in your own process handling. 
 
 ## Properties
 
@@ -40,7 +41,7 @@ NOTE: will not return until `listen` is called.
 
 ### miner.port {#port}
 
-Returns the port the miner, ie `1778`. 
+Returns the port the miner, ie `1778`.
 
 NOTE: will not return until `listen` is called.
 
@@ -54,7 +55,7 @@ Returns true if the miner has active connections
 
 ## Methods
 
-### miner.listen *(listenOptions)* {#listen}
+### miner.listen _(listenOptions)_ {#listen}
 
 Start the miner and any installed modules (eg, Hero, ChromeAlive)
 
@@ -64,7 +65,7 @@ Start the miner and any installed modules (eg, Hero, ChromeAlive)
 
 #### **Returns**: `Promise<AddressInfo>` - returns the address the miner has been started on.
 
-### miner.close *(closeDependencies)* {#close}
+### miner.close _(closeDependencies)_ {#close}
 
 Closes the miner and all dependencies.
 

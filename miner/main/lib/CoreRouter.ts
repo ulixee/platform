@@ -5,6 +5,8 @@ import HeroCore from '@ulixee/hero-core';
 import IDataboxCoreConfigureOptions from '@ulixee/databox-core/interfaces/IDataboxCoreConfigureOptions';
 import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
 import ChromeAliveUtils from './ChromeAliveUtils';
@@ -27,6 +29,7 @@ export default class CoreRouter {
     return DataboxCore.databoxesDir;
   }
 
+  private isClosing: Promise<void>;
   private miner: Miner;
   private readonly connections = new Set<IConnectionToClient<any, any>>();
 
@@ -72,14 +75,26 @@ export default class CoreRouter {
   }
 
   public async close(): Promise<void> {
-    for (const connection of this.connections) {
-      await connection.disconnect();
+    if (this.isClosing) return this.isClosing;
+    const closeResolvable = new Resolvable<void>();
+    this.isClosing = closeResolvable.promise;
+    HeroCore.onShutdown = null;
+    ShutdownHandler.unregister(this.close);
+    try {
+      for (const connection of this.connections) {
+        await connection.disconnect();
+      }
+      if (ChromeAliveUtils.isInstalled()) {
+        await ChromeAliveUtils.getChromeAlive().shutdown();
+      }
+      await DataboxCore.close();
+      await HeroCore.shutdown();
+      await ShutdownHandler.run();
+      closeResolvable.resolve();
+    } catch (error) {
+      closeResolvable.reject(error);
     }
-    if (ChromeAliveUtils.isInstalled()) {
-      await ChromeAliveUtils.getChromeAlive().shutdown();
-    }
-    await DataboxCore.close();
-    await HeroCore.shutdown();
+    return closeResolvable.promise;
   }
 
   private handleApi(
