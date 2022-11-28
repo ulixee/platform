@@ -15,13 +15,12 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
         ['versionHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
         ['versionTimestamp', 'DATETIME'],
         ['paymentAddress', 'TEXT'],
+        ['coreVersion', 'TEXT'],
         ['giftCardIssuerIdentity', 'TEXT'],
-        ['pricePerQuery', 'INTEGER'],
+        ['schemaInterface', 'TEXT'],
+        ['functionsByName', 'TEXT'],
         ['scriptHash', 'TEXT'],
         ['scriptEntrypoint', 'TEXT'],
-        ['schemaInterface', 'TEXT'],
-        ['coreVersion', 'TEXT'],
-        ['corePlugins', 'TEXT'],
         ['storedDate', 'DATETIME'],
       ],
       true,
@@ -30,19 +29,25 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
   }
 
   public save(manifest: IDataboxManifest): void {
-    manifest.pricePerQuery ??= 0;
     const storedDate = Date.now();
+    const functionsByName: IDataboxRecord['functionsByName'] = {};
+    for (const [name, func] of Object.entries(manifest.functionsByName)) {
+      functionsByName[name] = {
+        name,
+        pricePerQuery: func.pricePerQuery ?? 0,
+        corePlugins: func.corePlugins ?? {},
+      };
+    }
     this.insertNow([
       manifest.versionHash,
       manifest.versionTimestamp,
       manifest.paymentAddress,
+      manifest.coreVersion,
       manifest.giftCardIssuerIdentity,
-      manifest.pricePerQuery,
+      manifest.schemaInterface,
+      JSON.stringify(functionsByName),
       manifest.scriptHash,
       manifest.scriptEntrypoint,
-      manifest.schemaInterface,
-      manifest.coreVersion,
-      JSON.stringify(manifest.corePlugins),
       storedDate,
     ]);
 
@@ -50,13 +55,12 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
       versionHash: manifest.versionHash,
       versionTimestamp: manifest.versionTimestamp,
       paymentAddress: manifest.paymentAddress,
+      schemaInterface: manifest.schemaInterface,
       giftCardIssuerIdentity: manifest.giftCardIssuerIdentity,
-      pricePerQuery: manifest.pricePerQuery,
+      coreVersion: manifest.coreVersion,
+      functionsByName,
       scriptHash: manifest.scriptHash,
       scriptEntrypoint: manifest.scriptEntrypoint,
-      schemaInterface: manifest.schemaInterface,
-      coreVersion: manifest.coreVersion,
-      corePlugins: manifest.corePlugins,
       storedDate,
     };
   }
@@ -67,7 +71,7 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
     );
     const record = query.get(entrypoint);
     if (!record) return;
-    record.corePlugins = JSON.parse(record.corePlugins);
+    record.functionsByName = JSON.parse(record.functionsByName);
     return record;
   }
 
@@ -75,7 +79,7 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
     if (!DataboxesTable.byVersionHash[versionHash]) {
       const record = this.getQuery.get(versionHash);
       if (!record) return;
-      record.corePlugins = JSON.parse(record.corePlugins);
+      record.functionsByName = JSON.parse(record.functionsByName);
       DataboxesTable.byVersionHash[versionHash] = record;
     }
     return DataboxesTable.byVersionHash[versionHash];
@@ -85,13 +89,18 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
 export interface IDataboxRecord {
   versionHash: string;
   versionTimestamp: number;
-  pricePerQuery: number;
+  coreVersion: string;
+  schemaInterface: string;
+  functionsByName: {
+    [name: string]: {
+      name: string;
+      pricePerQuery: number;
+      corePlugins: { [name: string]: string };
+    };
+  };
   paymentAddress: string;
   giftCardIssuerIdentity: string;
-  schemaInterface: string;
   scriptHash: string;
   scriptEntrypoint: string;
-  coreVersion: string;
-  corePlugins: { [name: string]: string };
   storedDate: number;
 }

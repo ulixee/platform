@@ -52,14 +52,19 @@ test('it should generate a relative script entrypoint', async () => {
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `historyTest.js`),
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
-    corePlugins: {
-      '@ulixee/databox-for-hero': require('../package.json').version,
+    giftCardIssuerIdentity: undefined,
+    schemaInterface: undefined,
+    functionsByName: {
+      default: {
+        pricePerQuery: 0,
+        corePlugins: {
+          '@ulixee/databox-plugins-hero': require('../package.json').version,
+        },
+      },
     },
     versionHash: DataboxManifest.createVersionHash(packager.manifest),
     versionTimestamp: expect.any(Number),
     paymentAddress: undefined,
-    pricePerQuery: undefined,
-    averageBytesPerQuery: undefined,
   });
   expect((await Fs.stat(`${__dirname}/assets/historyTest.dbx`)).isFile()).toBeTruthy();
 
@@ -127,10 +132,11 @@ test('should build a version history with a new version', async () => {
   dbxFile = packager.dbxPath;
   await Fs.writeFile(
     `${__dirname}/assets/_historytestManual.js`,
-    `const Databox=require("@ulixee/databox-for-hero");
-module.exports=new Databox(({output}) => {
+    `const {Databox, Function, HeroFunctionPlugin }=require("@ulixee/databox-plugins-hero");
+const heroFunction = new Function(({output}) => {
    output.text=1;
-});`,
+},HeroFunctionPlugin);
+module.exports = new Databox({ functions: { heroFunction }});`,
   );
   const packager2 = new DataboxPackager(`${__dirname}/assets/historyTest.js`);
   await packager2.build({
@@ -143,10 +149,11 @@ module.exports=new Databox(({output}) => {
 test('should be able to "link" the version history', async () => {
   await Fs.writeFile(
     `${__dirname}/assets/historyTest2.js`,
-    `const Databox=require("@ulixee/databox-for-hero");
-module.exports=new Databox(({output}) => {
+    `const { Databox, Function, HeroFunctionPlugin }=require("@ulixee/databox-plugins-hero");
+const heroFunction = new Function(({output}) => {
    output.text=1;
-});`,
+},HeroFunctionPlugin);
+module.exports = new Databox({ functions: { heroFunction }})`,
   );
   const entrypoint = `${__dirname}/assets/historyTest2.js`;
   const packager = new DataboxPackager(entrypoint);
@@ -172,4 +179,83 @@ test('should be able to change the output directory', async () => {
   expect(dbx.dbxPath).toBe(Path.resolve(`${__dirname}/build/historyTest.dbx`));
   expect(dbx.workingDirectory).toBe(Path.resolve(`${__dirname}/build/historyTest.dbx.build`));
   expect(existsSync(dbx.dbxPath)).toBe(true);
+});
+
+test('should be able to package a multi-function Databox', async () => {
+  const packager = new DataboxPackager(`${__dirname}/assets/multiFunctionTest.js`);
+  await packager.build();
+  dbxFile = packager.dbxPath;
+  const dbx = new DbxFile(dbxFile);
+  expect(packager.manifest.toJSON()).toEqual({
+    linkedVersions: [],
+    scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `multiFunctionTest.js`),
+    scriptHash: expect.any(String),
+    coreVersion: require('../package.json').version,
+    giftCardIssuerIdentity: undefined,
+    schemaInterface: `{
+  funcWithInput: {
+    input: {
+      /**
+       * @format url
+       */
+      url: string;
+    };
+  };
+  funcWithOutput: {
+    output: {
+      title: string;
+      html: string;
+    };
+  };
+}`,
+    functionsByName: {
+      funcWithInput: {
+        pricePerQuery: 0,
+        corePlugins: {
+          '@ulixee/databox-plugins-hero': require('../package.json').version,
+        },
+      },
+      funcWithOutput: {
+        pricePerQuery: 0,
+        corePlugins: {},
+      },
+    },
+    versionHash: DataboxManifest.createVersionHash(packager.manifest),
+    versionTimestamp: expect.any(Number),
+    paymentAddress: undefined,
+  });
+  expect((await Fs.stat(`${__dirname}/assets/multiFunctionTest.dbx`)).isFile()).toBeTruthy();
+
+  await Fs.rmdir(dbx.workingDirectory, { recursive: true });
+  await Fs.unlink(`${__dirname}/assets/multiFunctionTest.dbx`);
+});
+
+test('should be able to package an exported Function without a Databox', async () => {
+  const packager = new DataboxPackager(`${__dirname}/assets/rawFunctionTest.js`);
+  await packager.build();
+  dbxFile = packager.dbxPath;
+  const dbx = new DbxFile(dbxFile);
+  expect(packager.manifest.toJSON()).toEqual({
+    linkedVersions: [],
+    scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `rawFunctionTest.js`),
+    scriptHash: expect.any(String),
+    coreVersion: require('../package.json').version,
+    giftCardIssuerIdentity: undefined,
+    schemaInterface: undefined,
+    functionsByName: {
+      default: {
+        pricePerQuery: 0,
+        corePlugins: {
+          '@ulixee/databox-plugins-hero': require('../package.json').version,
+        },
+      },
+    },
+    versionHash: DataboxManifest.createVersionHash(packager.manifest),
+    versionTimestamp: expect.any(Number),
+    paymentAddress: undefined,
+  });
+  expect((await Fs.stat(`${__dirname}/assets/rawFunctionTest.dbx`)).isFile()).toBeTruthy();
+
+  await Fs.rmdir(dbx.workingDirectory, { recursive: true });
+  await Fs.unlink(`${__dirname}/assets/rawFunctionTest.dbx`);
 });

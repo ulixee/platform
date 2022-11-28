@@ -5,7 +5,7 @@ import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
 import { IPayment } from '@ulixee/specification';
-import IDataboxInputOutput from '@ulixee/databox-interfaces/IDataboxInputOutput';
+import IFunctionInputOutput from '../interfaces/IFunctionInputOutput';
 import ITypes from '../types';
 import installSchemaType, { addSchemaAlias } from '../types/installSchemaType';
 
@@ -28,12 +28,33 @@ export default class DataboxApiClient {
     return await this.runRemote('Databox.meta', { versionHash });
   }
 
+  public async getFunctionPricing(
+    versionHash: string,
+    functionName: string,
+  ): Promise<
+    Omit<IDataboxApiTypes['Databox.meta']['result']['functionsByName'][0], 'name'> &
+      Pick<
+        IDataboxApiTypes['Databox.meta']['result'],
+        'computePricePerKb' | 'giftCardIssuerIdentities'
+      >
+  > {
+    const meta = await this.getMeta(versionHash);
+    const stats = meta.functionsByName[functionName];
+
+    return {
+      ...stats,
+      computePricePerKb: meta.computePricePerKb,
+      giftCardIssuerIdentities: meta.giftCardIssuerIdentities,
+    };
+  }
+
   public async install(
     versionHash: string,
     alias?: string,
   ): Promise<IDataboxApiTypes['Databox.meta']['result']> {
     const meta = await this.getMeta(versionHash);
-    if (meta.schemaInterface) {
+
+    if (meta.functionsByName && meta.schemaInterface) {
       installSchemaType(meta.schemaInterface, versionHash);
     }
     if (alias) {
@@ -47,11 +68,13 @@ export default class DataboxApiClient {
    * NOTE: any caller must handle tracking local balances of gift cards and removing them if they're depleted!
    */
   public async exec<
-    IO extends IDataboxInputOutput,
+    IO extends IFunctionInputOutput,
     IVersionHash extends keyof ITypes & string = any,
-    ISchemaDbx extends ITypes[IVersionHash] = IO,
+    IFunctionName extends keyof ITypes[IVersionHash] & string = 'default',
+    ISchemaDbx extends ITypes[IVersionHash][IFunctionName] = IO,
   >(
     versionHash: IVersionHash,
+    functionName: IFunctionName,
     input: ISchemaDbx['input'],
     microPayment: IPayment & {
       onFinalized?(metadata: IDataboxExecResult['metadata'], error?: Error): void;
@@ -60,6 +83,7 @@ export default class DataboxApiClient {
     try {
       const result = await this.runRemote('Databox.exec', {
         versionHash,
+        functionName,
         input,
         payment: microPayment,
       });

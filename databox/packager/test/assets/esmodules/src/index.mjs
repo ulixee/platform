@@ -1,11 +1,17 @@
-import Databox from '@ulixee/databox-for-hero';
+import Databox, { Function } from '@ulixee/databox';
+import { HeroFunctionPlugin } from '@ulixee/databox-for-hero';
+
 import { testFunction } from './helper';
 
 export default new Databox({
-  async run(databox) {
-    const { hero, output } = databox;
-    output.text = testFunction();
-    await hero.close();
+  functions: {
+    default: new Function({
+      async run(databox) {
+        const { hero, output } = databox;
+        output.text = testFunction();
+        await hero.close();
+      },
+    }, HeroFunctionPlugin),
   },
 });
 // test exporting another thing

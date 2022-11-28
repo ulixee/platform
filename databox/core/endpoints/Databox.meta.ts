@@ -1,3 +1,4 @@
+import { IDataboxApiTypes } from '@ulixee/specification/databox';
 import DataboxApiHandler from '../lib/DataboxApiHandler';
 import DataboxCore from '../index';
 
@@ -19,19 +20,27 @@ export default new DataboxApiHandler('Databox.meta', {
         giftCardIssuerIdentities.push(giftCardsRequiredIssuerIdentity);
       }
     }
+    const functionsByName: IDataboxApiTypes['Databox.meta']['result']['functionsByName'] = {};
+
+    for (const [name, stats] of Object.entries(databox.statsByFunction)) {
+      const { pricePerQuery } = databox.functionsByName[name];
+      functionsByName[name] = {
+        averageMilliseconds: stats.averageMilliseconds,
+        maxMilliseconds: stats.maxMilliseconds,
+        averageTotalPricePerQuery: stats.averagePrice,
+        maxPricePerQuery: stats.maxPrice,
+        averageBytesPerQuery: stats.averageBytes,
+        maxBytesPerQuery: stats.maxBytes,
+        basePricePerQuery: pricePerQuery,
+      };
+    }
 
     return {
       latestVersionHash: databox.latestVersionHash,
       giftCardIssuerIdentities,
-      averageMilliseconds: databox.stats.averageMilliseconds,
-      maxMilliseconds: databox.stats.maxMilliseconds,
-      averageTotalPricePerQuery: databox.stats.averagePrice,
-      maxPricePerQuery: databox.stats.maxPrice,
-      averageBytesPerQuery: databox.stats.averageBytes,
-      maxBytesPerQuery: databox.stats.maxBytes,
-      basePricePerQuery: databox.pricePerQuery,
-      computePricePerKb,
       schemaInterface: databox.schemaInterface,
+      functionsByName,
+      computePricePerKb,
     };
   },
 });

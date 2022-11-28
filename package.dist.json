@@ -6,14 +6,6 @@
     "lerna": "^4.0.0"
   },
   "workspaces": {
-    "packages": [
-      "apps/*",
-      "databox/*",
-      "databox/for-hero/*",
-      "databox/for-puppeteer/*",
-      "miner/*",
-      "cli",
-      "playgrounds/*"
-    ]
+    "packages": ["apps/*", "databox/*", "databox/plugins/*", "miner/*", "cli", "playgrounds/*"]
   }
 }

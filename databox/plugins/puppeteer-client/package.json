@@ -1,0 +1,21 @@
+{
+  "name": "@ulixee/databox-plugins-puppeteer",
+  "version": "2.0.0-alpha.15",
+  "description": "The Databox for Puppeteer library.",
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.cjs"
+    },
+    "./package.json": "./package.json",
+    "./lib/*": "./lib/*.js"
+  },
+  "dependencies": {
+    "@ulixee/commons": "2.0.0-alpha.15",
+    "@ulixee/databox": "2.0.0-alpha.15",
+    "puppeteer": "^14.3.0"
+  },
+  "devDependencies": {
+    "@ulixee/databox-testing": "2.0.0-alpha.15"
+  }
+}

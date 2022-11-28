@@ -1,3 +1,3 @@
-import IDataboxInputOutput from '@ulixee/databox-interfaces/IDataboxInputOutput';
+import IFunctionInputOutput from '../interfaces/IFunctionInputOutput';
 
-export default interface ITypes extends Record<string, IDataboxInputOutput> {}
+export default interface ITypes extends Record<string, Record<string, IFunctionInputOutput>> {}

@@ -9,7 +9,7 @@ DataboxSchemas are not a runtime class, but an interface of a few properties to 
 - Realtime validation occurs as you add output properties. If a type is wrong, your script will halt and notify you immediately so you don't waste any extra work.
 
 ```js
-import Databox from '@ulixee/databox-for-hero';
+import Databox from '@ulixee/databox-plugins-hero';
 import { string } from '@ulixee/schema';
 
 export default new Databox({
@@ -105,7 +105,7 @@ Optional array of example input field combinations. Each record contains an obje
 - `dateSubtract(quantity: number, units: IUnits)`: Subtract from the current date. Units options are `'seconds' | 'minutes' | 'hours' | 'days' | 'months' | 'years'`.
 
 ```js
-import Databox from '@ulixee/databox-for-hero';
+import Databox from '@ulixee/databox-plugins-hero';
 import { string, dateAdd } from '@ulixee/schema';
 
 export default new Databox({

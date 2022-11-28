@@ -58,8 +58,7 @@
     "packages": [
       "apps/*",
       "databox/*",
-      "databox/for-hero/*",
-      "databox/for-puppeteer/*",
+      "databox/plugins/*",
       "miner/*",
       "cli",
       "end-to-end",

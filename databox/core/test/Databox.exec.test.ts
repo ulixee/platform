@@ -70,6 +70,9 @@ beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/databoxes/output.dbx`)) {
     Fs.unlinkSync(`${__dirname}/databoxes/output.dbx`);
   }
+  if (Fs.existsSync(`${__dirname}/databoxes/directFunction.dbx`)) {
+    Fs.unlinkSync(`${__dirname}/databoxes/directFunction.dbx`);
+  }
   mock.MicronoteBatchFunding.fundBatch.mockImplementation(async function (batch, centagons) {
     return this.recordBatchFund(1, ArgonUtils.centagonsToMicrogons(centagons), batch);
   });
@@ -97,30 +100,49 @@ test('should be able to run a databox', async () => {
   const packager = new DataboxPackager(`${__dirname}/databoxes/output.js`);
   await packager.build();
   await client.upload(await packager.dbx.asBuffer());
-  await expect(client.exec(packager.manifest.versionHash, null)).resolves.toEqual({
+  await expect(client.exec(packager.manifest.versionHash, 'putout', null)).resolves.toEqual({
     output: { success: true },
     metadata: expect.any(Object),
     latestVersionHash: expect.any(String),
   });
 });
 
-test('should be able to run a databox with payments', async () => {
+test('should be able to run a function packaged without a databox', async () => {
+  const packager = new DataboxPackager(`${__dirname}/databoxes/directFunction.js`);
+  await packager.build();
+  await client.upload(await packager.dbx.asBuffer());
+  await expect(
+    client.exec(packager.manifest.versionHash, 'default', { tester: false }),
+  ).resolves.toEqual({
+    output: { testerEcho: false },
+    metadata: expect.any(Object),
+    latestVersionHash: expect.any(String),
+  });
+});
+
+test('should be able to run a databox function with payments', async () => {
   apiCalls.mockClear();
   const packager = new DataboxPackager(`${__dirname}/databoxes/output.js`);
   await Fs.writeFileSync(
     `${__dirname}/databoxes/output-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
-      pricePerQuery: 1250,
-    }),
+      functionsByName: {
+        putout: {
+          pricePerQuery: 1250,
+        },
+      },
+    } as Partial<IDataboxManifest>),
   );
 
   const dbx = await packager.build();
   const manifest = packager.manifest;
-  expect(manifest.pricePerQuery).toBe(1250);
+  expect(manifest.functionsByName.putout.pricePerQuery).toBe(1250);
   await client.upload(await dbx.asBuffer());
 
-  await expect(client.exec(manifest.versionHash, null)).rejects.toThrowError('requires payment');
+  await expect(client.exec(manifest.versionHash, 'putout', null)).rejects.toThrowError(
+    'requires payment',
+  );
   const sidechainClient = new SidechainClient('http://localhost:1337', {
     identity: clientIdentity,
     address,
@@ -128,8 +150,7 @@ test('should be able to run a databox with payments', async () => {
   const settings = await sidechainClient.getSettings(false);
   expect(settings.settlementFeeMicrogons).toBe(5);
 
-  const meta = await client.getMeta(manifest.versionHash);
-
+  const meta = await client.getFunctionPricing(manifest.versionHash, 'putout');
   const payment = await sidechainClient.createMicroPayment(meta);
   expect(payment.micronote.microgons).toBeGreaterThanOrEqual(1255);
 
@@ -141,7 +162,7 @@ test('should be able to run a databox with payments', async () => {
   ]);
 
   apiCalls.mockClear();
-  await expect(client.exec(manifest.versionHash, null, payment)).resolves.toEqual({
+  await expect(client.exec(manifest.versionHash, 'putout', null, payment)).resolves.toEqual({
     output: { success: true },
     metadata: {
       microgons: 1255,
@@ -159,8 +180,8 @@ test('should be able to run a databox with payments', async () => {
   // @ts-ignore
   const registry = DataboxCore.databoxRegistry;
   const entry = registry.getByVersionHash(manifest.versionHash);
-  expect(entry.stats.runs).toBe(1);
-  expect(entry.stats.maxPrice).toBe(1255);
+  expect(entry.statsByFunction.putout.runs).toBe(1);
+  expect(entry.statsByFunction.putout.maxPrice).toBe(1255);
 });
 
 test('should be able run a databox with a GiftCard', async () => {
@@ -172,8 +193,12 @@ test('should be able run a databox with a GiftCard', async () => {
     JSON.stringify({
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
       giftCardIssuerIdentity: databoxGiftCardIssuer.bech32,
-      pricePerQuery: 1250,
-    } as IDataboxManifest),
+      functionsByName: {
+        putout: {
+          pricePerQuery: 1250,
+        },
+      },
+    } as Partial<IDataboxManifest>),
   );
 
   const dbx = await packager.build();
@@ -183,11 +208,11 @@ test('should be able run a databox with a GiftCard', async () => {
   const devSidechainClient = new SidechainClient('http://localhost:1337', {
     identity: databoxGiftCardIssuer,
   });
-  giftCardIssuerIdentities = [
-    minerGiftCardIssuer.bech32,
-    databoxGiftCardIssuer.bech32,
-  ]
-  const giftCardDraft = await devSidechainClient.giftCards.createUnsaved(5000, giftCardIssuerIdentities);
+  giftCardIssuerIdentities = [minerGiftCardIssuer.bech32, databoxGiftCardIssuer.bech32];
+  const giftCardDraft = await devSidechainClient.giftCards.createUnsaved(
+    5000,
+    giftCardIssuerIdentities,
+  );
   const giftCard = await devSidechainClient.giftCards.save(
     devSidechainClient.giftCards.signWithIssuers(giftCardDraft, minerGiftCardIssuer),
   );
@@ -202,14 +227,14 @@ test('should be able run a databox with a GiftCard', async () => {
   );
   expect(giftCardBalance.microgonsRemaining).toBe(5000);
 
-  const meta = await client.getMeta(manifest.versionHash);
+  const meta = await client.getFunctionPricing(manifest.versionHash, 'putout');
   expect(meta.giftCardIssuerIdentities).toHaveLength(2);
 
   // should be able to run with a gift card required issuer
   {
     const payment = await userSidechainClient.createMicroPayment(meta);
     expect(payment.giftCard.id).toBe(giftCard.giftCardId);
-    await expect(client.exec(manifest.versionHash, null, payment)).resolves.toEqual({
+    await expect(client.exec(manifest.versionHash, 'putout', null, payment)).resolves.toEqual({
       output: { success: true },
       metadata: expect.any(Object),
       latestVersionHash: expect.any(String),
@@ -220,7 +245,7 @@ test('should be able run a databox with a GiftCard', async () => {
     DataboxCore.options.giftCardsRequiredIssuerIdentity = null;
     const payment = await userSidechainClient.createMicroPayment(meta);
     expect(payment.giftCard.id).toBe(giftCard.giftCardId);
-    await expect(client.exec(manifest.versionHash, null, payment)).resolves.toEqual({
+    await expect(client.exec(manifest.versionHash, 'putout', null, payment)).resolves.toEqual({
       output: { success: true },
       metadata: expect.any(Object),
       latestVersionHash: expect.any(String),
@@ -230,7 +255,7 @@ test('should be able run a databox with a GiftCard', async () => {
   // follow-on test that you can disable giftCards
   DataboxCore.options.giftCardsAllowed = false;
   const payment = await userSidechainClient.createMicroPayment(meta);
-  await expect(client.exec(manifest.versionHash, null, payment)).rejects.toThrowError(
+  await expect(client.exec(manifest.versionHash, 'putout', null, payment)).rejects.toThrowError(
     'not accepting gift cards',
   );
   DataboxCore.options.giftCardsAllowed = true;
@@ -242,10 +267,14 @@ test('should remove an empty GiftCard', async () => {
   await Fs.writeFileSync(
     `${__dirname}/databoxes/output-manifest.json`,
     JSON.stringify({
+      functionsByName: {
+        putout: {
+          pricePerQuery: 1250,
+        },
+      },
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
       giftCardIssuerIdentity: minerGiftCardIssuer.bech32,
-      pricePerQuery: 1250,
-    } as IDataboxManifest),
+    } as Partial<IDataboxManifest>),
   );
 
   DataboxCore.options.giftCardsRequiredIssuerIdentity = null;
@@ -268,7 +297,7 @@ test('should remove an empty GiftCard', async () => {
   );
   expect(giftCardBalance.microgonsRemaining).toBe(5000);
 
-  const meta = await client.getMeta(manifest.versionHash);
+  const meta = await client.getFunctionPricing(manifest.versionHash, 'putout');
   expect(meta.giftCardIssuerIdentities).toHaveLength(1);
 
   const payment = await userSidechainClient.createMicroPayment(meta);
@@ -276,7 +305,7 @@ test('should remove an empty GiftCard', async () => {
   emptyGiftCardId = payment.giftCard.id;
 
   expect(userSidechainClient.giftCards.byId[emptyGiftCardId]).toBeTruthy();
-  await expect(client.exec(manifest.versionHash, null, payment)).rejects.toThrowError();
+  await expect(client.exec(manifest.versionHash, 'putout', null, payment)).rejects.toThrowError();
   expect(userSidechainClient.giftCards.byId[emptyGiftCardId]).not.toBeTruthy();
 });
 

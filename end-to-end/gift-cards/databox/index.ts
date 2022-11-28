@@ -1,5 +1,9 @@
-import Databox from '@ulixee/databox';
+import Databox, { Function } from '@ulixee/databox';
 
-export default new Databox(databox => {
-  databox.output = { success: true, input: databox.input };
+export default new Databox({
+  functions: {
+    default: new Function(ctx => {
+      ctx.output = { success: true, input: ctx.input };
+    }),
+  },
 });

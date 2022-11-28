@@ -12,13 +12,13 @@ Databox for Hero is a simple wrapper for your Hero scraper script that converts 
 ## Installation
 
 ```shell script
-npm install @ulixee/databox-for-hero
+npm install @ulixee/databox-plugins-hero
 ```
 
 or
 
 ```shell script
-yarn add @ulixee/databox-for-hero
+yarn add @ulixee/databox-plugins-hero
 ```
 
 ## Usage
@@ -27,7 +27,7 @@ Wrapping your script in a Databox gives it instant access to the input and outpu
 
 script.ts
 ```js
-const Databox = require('@ulixee/databox-for-hero');
+const Databox = require('@ulixee/databox-plugins-hero');
 
 new Databox(async databox => {
   const { input, output, hero } = databox;

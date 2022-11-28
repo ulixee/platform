@@ -34,6 +34,7 @@ test('should throw an error if the required databox core version is not installe
       scriptHash: encodeBuffer(sha3('scr123'), 'scr'),
       coreVersion: '5.0.0',
       versionTimestamp: Date.now(),
+      functionsByName: {},
       scriptEntrypoint: 'here.js',
       linkedVersions: [],
     }),
@@ -56,6 +57,7 @@ test('should be able to upload and retrieve the databox', async () => {
     versionTimestamp,
     scriptEntrypoint: 'here.js',
     linkedVersions: [],
+    functionsByName: { default: {} },
   });
   await Fs.writeFile(
     `${databoxTmpDir}/databox-manifest.json`,
@@ -65,6 +67,7 @@ test('should be able to upload and retrieve the databox', async () => {
       versionHash,
       coreVersion: '2.0.0-alpha.1',
       scriptEntrypoint: 'here.js',
+      functionsByName: { default: {} },
       linkedVersions: [],
     }),
   );
@@ -91,6 +94,7 @@ test('should allow a user to override updating with no history', async () => {
       versionTimestamp: Date.now(),
       scriptHash: hashScript(script),
       versionHash: null,
+      functionsByName: { default: {} },
       linkedVersions: [],
     };
 
@@ -109,6 +113,7 @@ test('should allow a user to override updating with no history', async () => {
       scriptEntrypoint: 'override.js',
       scriptHash: hashScript(script),
       versionTimestamp: Date.now(),
+      functionsByName: { default: {} },
       versionHash: null,
       linkedVersions: [],
     };
@@ -152,6 +157,7 @@ test('should throw an error with version history if current versions are unmatch
       scriptHash,
       versionTimestamp: Date.now(),
       versionHash: null,
+      functionsByName: { default: {} },
       linkedVersions: [],
     };
     manifest.versionHash = DataboxManifest.createVersionHash(manifest);
@@ -172,6 +178,7 @@ test('should throw an error with version history if current versions are unmatch
       scriptHash,
       versionTimestamp: Date.now(),
       versionHash: null,
+      functionsByName: { default: {} },
       linkedVersions: [...versions],
     };
     manifest.versionHash = DataboxManifest.createVersionHash(manifest);
@@ -196,6 +203,7 @@ test('should throw an error with version history if current versions are unmatch
       scriptHash,
       versionTimestamp: Date.now(),
       versionHash: null,
+      functionsByName: { default: {} },
       linkedVersions: [versions[1]],
     };
     manifest.versionHash = DataboxManifest.createVersionHash(manifest);

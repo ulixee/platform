@@ -8,7 +8,6 @@
     "@ulixee/commons": "2.0.0-alpha.15",
     "@ulixee/crypto": "2.0.0-alpha.15",
     "@ulixee/databox": "2.0.0-alpha.15",
-    "@ulixee/databox-interfaces": "2.0.0-alpha.15",
     "@ulixee/net": "2.0.0-alpha.15",
     "@ulixee/schema": "2.0.0-alpha.15",
     "@ulixee/sidechain": "2.0.0-alpha.15",

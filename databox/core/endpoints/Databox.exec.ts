@@ -12,6 +12,7 @@ import { InvalidMicronoteError, MicronotePaymentRequiredError } from '../lib/err
 import { IDataboxStatsRecord } from '../lib/DataboxStatsTable';
 
 const giftCardIssuersById: { [giftCardId: string]: string[] } = {};
+const { version } = require('../package.json');
 
 export default new DataboxApiHandler('Databox.exec', {
   async handler(request, context) {
@@ -21,22 +22,32 @@ export default new DataboxApiHandler('Databox.exec', {
 
     const startTime = Date.now();
     const registryEntry = context.databoxRegistry.getByVersionHash(request.versionHash);
-    const { coreVersion, corePlugins } = registryEntry;
+    const { coreVersion } = registryEntry;
+    if (!isSemverSatisfied(coreVersion, version)) {
+      throw new Error(
+        `The current version of Core (${version}) is incompatible with this Databox version (${coreVersion})`,
+      );
+    }
 
-    for (const [pluginName, pluginVersion] of Object.entries(corePlugins)) {
+    const functionName = request.functionName ?? 'default';
+    if (!registryEntry.functionsByName[functionName])
+      throw new Error(`${functionName} is not a valid function name for this Databox`);
+
+    const { corePlugins } = registryEntry.functionsByName[functionName] ?? {};
+    for (const [pluginName, pluginVersion] of Object.entries(corePlugins ?? {})) {
       const pluginCore = context.pluginCoresByName[pluginName];
       if (!pluginCore) {
         throw new Error(`Miner does not support required runtime dependency: ${pluginName}`);
       }
 
-      if (!isSemverSatisfied(coreVersion, pluginVersion)) {
+      if (!isSemverSatisfied(pluginVersion, pluginCore.version)) {
         throw new Error(
-          `The current version of ${pluginName} (${pluginVersion}) is incompatible with this Databox version (${coreVersion})`,
+          `The current version of ${pluginName} (${pluginVersion}) is incompatible with this Databox version (${pluginVersion})`,
         );
       }
     }
 
-    const paymentProcessor = await processPayments(context, request, registryEntry);
+    const paymentProcessor = await processPayments(context, request, functionName, registryEntry);
 
     const manifest: IDataboxManifest = {
       ...registryEntry,
@@ -48,7 +59,12 @@ export default new DataboxApiHandler('Databox.exec', {
     }
 
     const { output } = await context.workTracker.trackRun(
-      context.execDatabox(registryEntry.path, manifest, request.input),
+      context.execDataboxFunction(
+        registryEntry.path,
+        request.functionName,
+        manifest,
+        request.input,
+      ),
     );
 
     const resultBytes = Buffer.byteLength(Buffer.from(JSON.stringify(output), 'utf8'));
@@ -58,7 +74,7 @@ export default new DataboxApiHandler('Databox.exec', {
     }
 
     const millis = Date.now() - startTime;
-    context.databoxRegistry.recordStats(registryEntry.versionHash, {
+    context.databoxRegistry.recordStats(registryEntry.versionHash, request.functionName, {
       bytes: resultBytes,
       microgons,
       millis,
@@ -79,16 +95,16 @@ export default new DataboxApiHandler('Databox.exec', {
 async function processPayments(
   context: IDataboxApiContext,
   request: IDataboxApiTypes['Databox.exec']['args'],
-  databox: IDataboxRecord & { stats: IDataboxStatsRecord },
+  functionName: string,
+  databox: IDataboxRecord & { statsByFunction: { [name: string]: IDataboxStatsRecord } },
 ): Promise<PaymentProcessor> {
   const { sidechainClientManager, configuration } = context;
+  const stats = databox.statsByFunction[functionName];
+  const pricePerQuery = databox.functionsByName[functionName].pricePerQuery;
 
   if (!request.payment?.giftCard && !request.payment?.micronote) {
-    if (databox.pricePerQuery || configuration.computePricePerKb) {
-      throw new MicronotePaymentRequiredError(
-        'This databox requires payment',
-        databox.stats.averagePrice,
-      );
+    if (pricePerQuery || configuration.computePricePerKb) {
+      throw new MicronotePaymentRequiredError('This databox requires payment', stats.averagePrice);
     }
     return;
   }
@@ -108,7 +124,7 @@ async function processPayments(
   const paymentProcessor = new PaymentProcessor(
     request.payment,
     {
-      anticipatedBytesPerQuery: databox.stats.averageBytes,
+      anticipatedBytesPerQuery: stats.averageBytes,
       approvedSidechainRootIdentities,
       cachedResultDiscount: 0.2,
     },
@@ -147,7 +163,7 @@ async function processPayments(
       });
     }
     paymentProcessor.addAddressPayable(databox.giftCardIssuerIdentity, {
-      pricePerQuery: databox.pricePerQuery,
+      pricePerQuery,
     });
     await paymentProcessor.createGiftCardHold();
   } else {
@@ -155,7 +171,7 @@ async function processPayments(
       pricePerKb: configuration.computePricePerKb,
     });
     paymentProcessor.addAddressPayable(databox.paymentAddress, {
-      pricePerQuery: databox.pricePerQuery,
+      pricePerQuery,
     });
     await paymentProcessor.lock(request.pricingPreferences);
   }

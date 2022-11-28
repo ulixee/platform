@@ -34,17 +34,24 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
     });
     return {
       coreVersion: data.coreVersion,
-      corePlugins: data.corePlugins,
-      schema: data.schema,
+      functionsByName: data.functionsByName,
     };
   }
 
-  public async exec(input: any): Promise<{ output: any }> {
+  public async exec(functionName: string, input: any): Promise<{ output: any }> {
     const data = await this.sendMessageToChild<IRunMessage, IExecResponseData>({
       action: 'exec',
       scriptPath: this.scriptPath,
+      functionName,
       input,
     });
+    if (data.error) {
+      const { message, stack, ...other } = data.error;
+      const error = new Error(message);
+      if (stack) error.stack += `\n${stack}`;
+      Object.assign(error, other);
+      throw error;
+    }
     return { output: data.output };
   }
 

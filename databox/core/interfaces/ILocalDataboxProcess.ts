@@ -1,4 +1,4 @@
-import IDataboxSchema from '@ulixee/databox-interfaces/IDataboxSchema';
+import IFunctionSchema from '@ulixee/databox/interfaces/IFunctionSchema';
 import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
 
 export interface IFetchMetaMessage {
@@ -10,6 +10,7 @@ export interface IFetchMetaMessage {
 export interface IRunMessage {
   messageId: string;
   action: 'exec';
+  functionName: string;
   scriptPath: string;
   input: any;
 }
@@ -17,15 +18,20 @@ export interface IRunMessage {
 export type IMessage = IFetchMetaMessage | IRunMessage;
 
 export interface IExecResponseData {
-  output: any;
+  output?: any;
+  error?: { message: string; stack?: string };
 }
 
 export interface IFetchMetaResponseData {
   coreVersion: string;
-  corePlugins: { [name: string]: string };
-  schema?: Omit<IDataboxSchema, 'input' | 'output'> & {
-    input?: Record<string, IAnySchemaJson>;
-    output?: Record<string, IAnySchemaJson> | IAnySchemaJson;
+  functionsByName: {
+    [name: string]: {
+      corePlugins: { [name: string]: string };
+      schema?: Omit<IFunctionSchema, 'input' | 'output'> & {
+        input?: Record<string, IAnySchemaJson>;
+        output?: Record<string, IAnySchemaJson> | IAnySchemaJson;
+      };
+    };
   };
 }
 

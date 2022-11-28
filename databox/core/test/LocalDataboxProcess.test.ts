@@ -16,7 +16,7 @@ test('it can extract the databox schema', async () => {
   const meta = await databoxProcess.fetchMeta();
   await databoxProcess.close();
 
-  expect(meta.schema).toEqual({
+  expect(meta.functionsByName.default.schema).toEqual({
     input: {
       field: {
         typeName: 'string',
@@ -32,10 +32,17 @@ test('it can extract the databox schema', async () => {
   });
 });
 
+test('returns databox errors', async () => {
+  const scriptPath = Path.resolve(__dirname, 'databoxes/output.js');
+  const databoxProcess = new LocalDataboxProcess(scriptPath);
+  await expect(databoxProcess.exec('default', {})).rejects.toThrowError('not found');
+  await databoxProcess.close();
+});
+
 test('it can run the databox and return output', async () => {
   const scriptPath = Path.resolve(__dirname, 'databoxes/output.js');
   const databoxProcess = new LocalDataboxProcess(scriptPath);
-  const { output } = await databoxProcess.exec({});
+  const { output } = await databoxProcess.exec('putout', {});
   await databoxProcess.close();
 
   expect(output).toMatchObject({ success: true });

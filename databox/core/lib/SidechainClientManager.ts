@@ -1,9 +1,9 @@
 import SidechainClient from '@ulixee/sidechain';
 import { InvalidIdentityError } from '@ulixee/crypto/lib/errors';
-import IDataboxCoreConfigureOptions from '@ulixee/databox-interfaces/IDataboxCoreConfigureOptions';
 import { UnapprovedSidechainError } from '@ulixee/sidechain/lib/errors';
 import { IBlockSettings } from '@ulixee/specification';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
+import IDataboxCoreConfigureOptions from '../interfaces/IDataboxCoreConfigureOptions';
 
 export default class SidechainClientManager {
   public get defaultClient(): SidechainClient {

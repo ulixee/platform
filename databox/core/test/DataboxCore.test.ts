@@ -49,7 +49,13 @@ test('can load a version from disk if not already open', async () => {
     recursive: true,
   });
 
-  await expect(runApi('Databox.exec', packager.manifest)).resolves.toMatchObject({
+  await expect(
+    runApi('Databox.exec', {
+      input: {},
+      versionHash: packager.manifest.versionHash,
+      functionName: 'bootup',
+    }),
+  ).resolves.toMatchObject({
     output: { success: true },
     latestVersionHash: packager.manifest.versionHash,
   });
@@ -67,18 +73,24 @@ test('can get metadata about an uploaded databox', async () => {
   ).resolves.toEqual({
     latestVersionHash: packager.manifest.versionHash,
     giftCardIssuerIdentities: [],
-    averageBytesPerQuery: expect.any(Number),
-    averageMilliseconds: expect.any(Number),
-    averageTotalPricePerQuery: 0,
-    basePricePerQuery: 0,
     computePricePerKb: 0,
-    maxBytesPerQuery: expect.any(Number),
-    maxPricePerQuery: 0,
-    maxMilliseconds: expect.any(Number),
+    functionsByName: {
+      bootup: {
+        averageBytesPerQuery: expect.any(Number),
+        averageMilliseconds: expect.any(Number),
+        averageTotalPricePerQuery: 0,
+        basePricePerQuery: 0,
+        maxBytesPerQuery: expect.any(Number),
+        maxPricePerQuery: 0,
+        maxMilliseconds: expect.any(Number),
+      },
+    },
     schemaInterface: `{
-  output: {
-    "is-valid"?: boolean;
-    success: boolean;
+  bootup: {
+    output: {
+      "is-valid"?: boolean;
+      success: boolean;
+    };
   };
 }`,
   });

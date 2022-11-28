@@ -1,30 +1,30 @@
 import readCommandLineArgs from '../lib/utils/readCommandLineArgs';
 import Autorun from '../lib/utils/Autorun';
-import Databox from '../index';
+import { Function } from '../index';
 
-describe('basic Databox tests', () => {
-  it('automatically runs and closes a databox', async () => {
-    let databoxWasRun = false;
-    Autorun.defaultExport = new Databox(async databox => {
-      databox.output = 'success';
-      databoxWasRun = true;
+describe('basic Function tests', () => {
+  it('automatically runs and closes a function', async () => {
+    let functionWasRun = false;
+    Autorun.defaultExport = new Function(async ctx => {
+      ctx.output = 'success';
+      functionWasRun = true;
     });
 
-    await Autorun.attemptAutorun(Databox);
+    await Autorun.attemptAutorun(Function);
     await new Promise(resolve => process.nextTick(resolve));
-    expect(await databoxWasRun).toBe(true);
+    expect(await functionWasRun).toBe(true);
   });
 
   it('waits until run method is explicitly called', async () => {
-    let databoxWasRun = false;
-    const databoxExecutable = new Databox(async databox => {
-      databox.output = 'success';
-      databoxWasRun = true;
+    let wasRun = false;
+    const func = new Function(async ctx => {
+      ctx.output = 'success';
+      wasRun = true;
     });
 
-    await databoxExecutable.exec({});
+    await func.exec({});
     await new Promise(resolve => process.nextTick(resolve));
-    expect(await databoxWasRun).toBe(true);
+    expect(await wasRun).toBe(true);
   });
 
   it('can read command line args', async () => {

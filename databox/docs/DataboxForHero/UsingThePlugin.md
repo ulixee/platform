@@ -6,10 +6,10 @@ To use DataboxForHero, import the plugin and include it in the `plugins` array o
 
 ```js
 import Databox from '@ulixee/databox';
-import { DataboxForHeroPlugin } from '@ulixee/databox-for-hero';
+import { HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
 export default new Databox({
-  plugins: [DataboxForHeroPlugin],
+  plugins: [HeroFunctionPlugin],
   async run(databox) {
     const { input, output, hero } = databox;
     // use hero however you want
@@ -20,7 +20,7 @@ export default new Databox({
 A simpler approach is use the DataboxForHero's default export, which automatically bundles the plugin. You can use it almost exactly the same as the standard Databox:
 
 ```js
-import DataboxForHero from '@ulixee/databox-for-hero';
+import DataboxForHero from '@ulixee/databox-plugins-hero';
 
 export default new DataboxForHero(async databox => {
   const { input, output, hero } = databox;
@@ -39,7 +39,7 @@ You can use [Hero](/docs/hero/basic-client/hero) in the `run()` step to interact
 The `onAfterHeroCompletes()` callback step has access to [HeroReplay](/docs/hero/basic-client/hero-replay) and therefore all the DetachedElments and DetachedResources that have been collected. This allows you to pull data from a synchronous set of assets (ie, you don't have to run your logic browser-side). It also allows you to run your extraction logic as a unit, which enables you to keep running it on assets collected from your last `run` until your logic works correctly. 
 
 ```js
-import Databox from '@ulixee/databox-for-hero-playground';
+import Databox from '@ulixee/databox-plugins-hero-playground';
 
 export default new Databox({
   async run(databox) {
@@ -70,7 +70,7 @@ export default new Databox({
 You can configure the supplied [Hero](/docs/hero) instance through the defaults object:
 
 ```js
-import Databox from '@ulixee/databox-for-hero-playground';
+import Databox from '@ulixee/databox-plugins-hero-playground';
 
 export default new Databox({
   defaults: {

@@ -9,16 +9,17 @@ import * as http2 from 'http2';
 import Core from '@ulixee/hero-core';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { ConnectionToHeroCore } from '@ulixee/hero';
-import IDataboxForHeroExecOptions from '@ulixee/databox-for-hero/interfaces/IDataboxForHeroExecOptions';
+import { Function } from '@ulixee/databox';
+import {
+  HeroFunctionPlugin,
+  IHeroFunctionContext,
+  IHeroFunctionExecOptions,
+} from '@ulixee/databox-plugins-hero';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import Logger from '@ulixee/commons/lib/Logger';
-import DataboxForHero from '@ulixee/databox-for-hero';
-import IDataboxObject from '@ulixee/databox-for-hero/interfaces/IDataboxObject';
-import DataboxForHeroPlugin, {
-  getDataboxForHeroPlugin,
-} from '@ulixee/databox-for-hero/lib/DataboxForHeroPlugin';
+import { getDataboxForHeroPlugin } from '@ulixee/databox-plugins-hero/lib/HeroFunctionPlugin';
 import { createPromise } from '@ulixee/commons/lib/utils';
-import IDataboxSchema from '@ulixee/databox-interfaces/IDataboxSchema';
+import IFunctionSchema from '@ulixee/databox/interfaces/IFunctionSchema';
 import { Helpers } from './index';
 
 const { log } = Logger(module);
@@ -139,35 +140,38 @@ function destroyServerFn(
     });
 }
 
-interface IFullstackDatabox<ISchema extends IDataboxSchema> {
-  databoxObject: IDataboxObject<ISchema>;
-  databoxForHeroPlugin: DataboxForHeroPlugin<ISchema>;
+interface IFullstackDatabox<ISchema extends IFunctionSchema> {
+  functionContext: IHeroFunctionContext<ISchema>;
+  databoxForHeroPlugin: HeroFunctionPlugin<ISchema>;
   databoxClose: () => void;
 }
 
-export async function createFullstackDatabox<ISchema extends IDataboxSchema = any>(
+export async function createFullstackDatabox<ISchema extends IFunctionSchema = any>(
   schema?: ISchema,
-  options: IDataboxForHeroExecOptions<ISchema> = {},
+  options: IHeroFunctionExecOptions<ISchema> = {},
 ): Promise<IFullstackDatabox<ISchema>> {
   const bridge = new TransportBridge();
   Core.addConnection(bridge.transportToClient);
   options.connectionToCore = new ConnectionToHeroCore(bridge.transportToCore);
 
-  let databoxObject: IDataboxObject<ISchema>;
-  let databoxForHeroPlugin: DataboxForHeroPlugin<ISchema>;
+  let functionContext: IHeroFunctionContext<ISchema>;
+  let databoxForHeroPlugin: HeroFunctionPlugin<ISchema>;
 
   const readyPromise = createPromise<void>();
   const closedPromise = createPromise<void>();
 
-  new DataboxForHero({
-    run(databox) {
-      databoxObject = databox;
-      databoxForHeroPlugin = getDataboxForHeroPlugin(databox.hero);
-      readyPromise.resolve();
-      return closedPromise.promise;
+  new Function(
+    {
+      run(ctx) {
+        functionContext = ctx;
+        databoxForHeroPlugin = getDataboxForHeroPlugin(ctx.hero);
+        readyPromise.resolve();
+        return closedPromise.promise;
+      },
+      schema,
     },
-    schema,
-  })
+    HeroFunctionPlugin,
+  )
     .exec(options)
     .catch(error => console.log(error));
 
@@ -179,7 +183,7 @@ export async function createFullstackDatabox<ISchema extends IDataboxSchema = an
   await readyPromise.promise;
 
   return {
-    databoxObject,
+    functionContext,
     databoxForHeroPlugin,
     databoxClose,
   };
