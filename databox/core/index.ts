@@ -12,6 +12,7 @@ import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import { IDataboxApis } from '@ulixee/specification/databox';
 import Databox, { Function } from '@ulixee/databox';
 import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import IDataboxCoreConfigureOptions from './interfaces/IDataboxCoreConfigureOptions';
 import env from './env';
 import DataboxRegistry from './lib/DataboxRegistry';
@@ -113,6 +114,7 @@ export default class DataboxCore {
   public static async start(): Promise<void> {
     if (this.isStarted.isResolved) return this.isStarted.promise;
 
+    this.close = this.close.bind(this);
     if (!(await existsAsync(this.options.databoxesTmpDir))) {
       await Fs.mkdir(this.options.databoxesTmpDir, { recursive: true });
     }
@@ -174,6 +176,8 @@ export default class DataboxCore {
     if (this.isClosing) return this.isClosing;
     const closingPromise = new Resolvable<void>();
     this.isClosing = closingPromise.promise;
+
+    ShutdownHandler.unregister(this.close);
 
     this.compiledScriptsByPath.clear();
 

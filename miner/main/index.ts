@@ -3,11 +3,12 @@ import * as Http from 'http';
 import { IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo, ListenOptions, Socket } from 'net';
 import Log from '@ulixee/commons/lib/Logger';
-import { createPromise } from '@ulixee/commons/lib/utils';
+import { bindFunctions, createPromise } from '@ulixee/commons/lib/utils';
 import { isWsOpen } from '@ulixee/net/lib/WsUtils';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import UlixeeConfig from '@ulixee/commons/config';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
 import CoreRouter from './lib/CoreRouter';
 
 const pkg = require('./package.json');
@@ -45,6 +46,7 @@ export default class Miner {
     return pkg.version;
   }
 
+  private isClosing: Promise<any>;
   private didAutoroute = false;
   private sockets = new Set<Socket>();
   private finalAddressHostPromise = createPromise<AddressInfo>();
@@ -53,21 +55,24 @@ export default class Miner {
   private readonly httpRoutes: [url: RegExp | string, method: string, handler: IHttpHandleFn][];
   private readonly wsRoutes: [RegExp | string, IWsHandleFn][] = [];
 
-  constructor(addressHost = 'localhost') {
+  constructor(addressHost = 'localhost', shouldShutdownOnSignals = true) {
     this.httpServer = new Http.Server();
-    this.httpServer.on('error', this.onHttpError.bind(this));
-    this.httpServer.on('request', this.handleHttpRequest.bind(this));
-    this.httpServer.on('connection', this.handleHttpConnection.bind(this));
+    bindFunctions(this);
+    this.httpServer.on('error', this.onHttpError);
+    this.httpServer.on('request', this.handleHttpRequest);
+    this.httpServer.on('connection', this.handleHttpConnection);
     this.addressHost = addressHost;
     this.wsServer = new WebSocket.Server({
       server: this.httpServer,
       perMessageDeflate: { threshold: 500, serverNoContextTakeover: false },
     });
-    this.wsServer.on('connection', this.handleWsConnection.bind(this));
+    this.wsServer.on('connection', this.handleWsConnection);
     this.httpRoutes = [];
     this.router = new CoreRouter(this);
-    this.addHttpRoute('/', 'GET', this.handleHome.bind(this));
-    ShutdownHandler.register(() => this.close());
+
+    this.addHttpRoute('/', 'GET', this.handleHome);
+    if (!shouldShutdownOnSignals) ShutdownHandler.disableSignals = true;
+    ShutdownHandler.register(this.autoClose);
   }
 
   public get dataDir(): string {
@@ -101,10 +106,7 @@ export default class Miner {
     // if we're dealing with local or no configuration, set the local version host
     if (isLocalhost && !options?.port && shouldAutoRouteToHost) {
       // publish port with the version
-      await UlixeeHostsConfig.global.setVersionHost(
-        this.version,
-        `localhost:${addressHost.port}`,
-      );
+      await UlixeeHostsConfig.global.setVersionHost(this.version, `localhost:${addressHost.port}`);
       this.didAutoroute = true;
       ShutdownHandler.register(() => UlixeeHostsConfig.global.setVersionHost(this.version, null));
     }
@@ -123,14 +125,18 @@ export default class Miner {
   }
 
   public async close(closeDependencies = true): Promise<void> {
+    if (this.isClosing) return this.isClosing;
+    const resolvable = new Resolvable<void>();
     try {
+      this.isClosing = resolvable.promise;
+      ShutdownHandler.unregister(this.autoClose);
       const logid = log.stats('Miner.Closing', {
         closeDependencies,
         sessionId: null,
       });
 
       if (this.didAutoroute) {
-        await UlixeeHostsConfig.global.setVersionHost(this.version, null);
+        UlixeeHostsConfig.global.setVersionHost(this.version, null);
       }
 
       if (closeDependencies) {
@@ -148,12 +154,19 @@ export default class Miner {
 
       if (this.httpServer.listening) this.httpServer.unref().close();
       log.stats('Miner.Closed', { parentLogId: logid, sessionId: null });
+      resolvable.resolve();
     } catch (error) {
       log.error('Error closing socket connections', {
         error,
         sessionId: null,
       });
+      resolvable.reject(error);
     }
+    return resolvable.promise;
+  }
+
+  private autoClose(): Promise<void> {
+    return this.close(true)
   }
 
   private handleHome(req: IncomingMessage, res: ServerResponse): void {
