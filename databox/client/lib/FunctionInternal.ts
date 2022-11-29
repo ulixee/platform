@@ -7,7 +7,6 @@ import StringSchema from '@ulixee/schema/lib/StringSchema';
 import DataboxSchemaError from './DataboxSchemaError';
 import IFunctionSchema, { ExtractSchemaType } from '../interfaces/IFunctionSchema';
 import IFunctionExecOptions from '../interfaces/IFunctionExecOptions';
-import FunctionContext from './FunctionContext';
 import Output, { createObservableOutput } from './Output';
 import IObservableChange from '../interfaces/IObservableChange';
 
@@ -83,20 +82,6 @@ export default class FunctionInternal<
       delete output[key];
     }
     Object.assign(output, value);
-  }
-
-  public async execRunner(
-    context: FunctionContext<ISchema>,
-    runFn: (context: FunctionContext<ISchema>) => void | Promise<void>,
-  ): Promise<void> {
-    try {
-      await runFn(context);
-    } catch (error) {
-      if (error.stack.includes('at async FunctionInternal.execRunner')) {
-        error.stack = error.stack.split('at async FunctionInternal.execRunner').shift().trim();
-      }
-      throw error;
-    }
   }
 
   public close(closeFn?: () => Promise<void>): Promise<void> {

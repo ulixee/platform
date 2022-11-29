@@ -7,6 +7,8 @@ export type IFunctionPluginConstructor<
   ISchema,
   IExtraAddons = object,
   TContextAddons = object,
+  TBeforeContextAddons = object,
+  TAfterContextAddons = object,
   TComponentAddons = object,
 > = {
   new (
@@ -14,11 +16,15 @@ export type IFunctionPluginConstructor<
   ): IFunctionPlugin<
     ISchema,
     IFunctionExecOptions<ISchema> & IExtraAddons,
-    IFunctionContext<ISchema> & TContextAddons
+    IFunctionContext<ISchema> & TContextAddons,
+    IFunctionContext<ISchema> & TBeforeContextAddons,
+    IFunctionContext<ISchema> & TAfterContextAddons
   >;
   readonly execArgAddons: IExtraAddons;
   readonly componentAddons: TContextAddons;
-  readonly contextAddons: TComponentAddons;
+  readonly runContextAddons?: TComponentAddons;
+  readonly beforeRunContextAddons?: TBeforeContextAddons;
+  readonly afterRunContextAddons?: TAfterContextAddons;
 };
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type,@typescript-eslint/no-unused-vars

@@ -116,18 +116,18 @@ describe('basic Databox tests', () => {
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
 
     const runFn = jest.fn();
-    const afterHeroCompletesFn = jest.fn();
+    const afterRunFn = jest.fn();
     const heroFunction = new Function(
       {
         run: runFn,
-        afterHeroCompletes: afterHeroCompletesFn,
+        afterRun: afterRunFn,
       },
       HeroFunctionPlugin,
     );
     await heroFunction.exec({ replaySessionId: '123' });
 
     expect(runFn).not.toHaveBeenCalled();
-    expect(afterHeroCompletesFn).toHaveBeenCalledTimes(1);
+    expect(afterRunFn).toHaveBeenCalledTimes(1);
   });
 
   it('receives DataboxMeta', async () => {

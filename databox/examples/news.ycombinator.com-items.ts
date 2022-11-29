@@ -29,7 +29,7 @@ export default new Function(
         // });
       }
     },
-    async afterHeroCompletes({ output, heroReplay }) {
+    async afterRun({ output, heroReplay }) {
       const titles = await heroReplay.detachedElements.getAll('titles');
       const subtitles = await heroReplay.detachedElements.getAll('subtitles');
       for (let i = 0; i < titles.length; i += 1) {

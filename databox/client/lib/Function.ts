@@ -1,27 +1,39 @@
 import { ExtractSchemaType } from '@ulixee/schema';
 import FunctionInternal from './FunctionInternal';
-import FunctionContext from './FunctionContext';
 import Autorun from './utils/Autorun';
 import readCommandLineArgs from './utils/readCommandLineArgs';
-import FunctionPlugins from './FunctionPlugins';
 import { IFunctionPluginConstructor } from '../interfaces/IFunctionPluginStatics';
 import IFunctionContext from '../interfaces/IFunctionContext';
 import IFunctionSchema from '../interfaces/IFunctionSchema';
 import IFunctionExecOptions from '../interfaces/IFunctionExecOptions';
 import IFunctionComponents from '../interfaces/IFunctionComponents';
+import FunctionPlugins from './FunctionPlugins';
 
 export default class Function<
   ISchema extends IFunctionSchema = IFunctionSchema<any, any>,
   IPlugin1 extends IFunctionPluginConstructor<ISchema> = IFunctionPluginConstructor<ISchema>,
   IPlugin2 extends IFunctionPluginConstructor<ISchema> = IFunctionPluginConstructor<ISchema>,
   IPlugin3 extends IFunctionPluginConstructor<ISchema> = IFunctionPluginConstructor<ISchema>,
-  IContext extends IFunctionContext<ISchema> = IFunctionContext<ISchema> &
-    IPlugin1['contextAddons'] &
-    IPlugin2['contextAddons'] &
-    IPlugin3['contextAddons'],
+  IRunContext extends IFunctionContext<ISchema> = IFunctionContext<ISchema> &
+    IPlugin1['runContextAddons'] &
+    IPlugin2['runContextAddons'] &
+    IPlugin3['runContextAddons'],
+  IBeforeRunContext extends IFunctionContext<ISchema> = IFunctionContext<ISchema> &
+    IPlugin1['beforeRunContextAddons'] &
+    IPlugin2['beforeRunContextAddons'] &
+    IPlugin3['beforeRunContextAddons'],
+  IAfterRunContext extends IFunctionContext<ISchema> = IFunctionContext<ISchema> &
+    IPlugin1['afterRunContextAddons'] &
+    IPlugin2['afterRunContextAddons'] &
+    IPlugin3['afterRunContextAddons'],
 > {
   #isRunning = false;
-  public readonly plugins: FunctionPlugins<ISchema>;
+  public readonly plugins: FunctionPlugins<
+    ISchema,
+    IRunContext,
+    IBeforeRunContext,
+    IAfterRunContext
+  >;
 
   public get schema(): ISchema {
     return this.components.schema;
@@ -31,15 +43,20 @@ export default class Function<
   public successCount = 0;
   public errorCount = 0;
 
-  private readonly components: IFunctionComponents<ISchema, IContext> &
+  private readonly components: IFunctionComponents<
+    ISchema,
+    IRunContext,
+    IBeforeRunContext,
+    IAfterRunContext
+  > &
     IPlugin1['componentAddons'] &
     IPlugin2['componentAddons'] &
     IPlugin3['componentAddons'];
 
   constructor(
     components: (
-      | IFunctionComponents<ISchema, IContext>
-      | IFunctionComponents<ISchema, IContext>['run']
+      | IFunctionComponents<ISchema, IRunContext, IBeforeRunContext, IAfterRunContext>
+      | IFunctionComponents<ISchema, IRunContext, IBeforeRunContext, IAfterRunContext>['run']
     ) &
       IPlugin1['componentAddons'] &
       IPlugin2['componentAddons'] &
@@ -75,26 +92,39 @@ export default class Function<
 
     try {
       functionInternal.validateInput();
-      await this.plugins.onStart(functionInternal);
 
-      if (this.components.run && this.plugins.shouldRun) {
-        const context = new FunctionContext(functionInternal);
-        await this.plugins.beforeRun(context);
-        await functionInternal.execRunner(context, this.components.run as any);
+      const lifecycle = await this.plugins.initialize(functionInternal);
+
+      let execError: Error;
+      try {
+        if (this.components.beforeRun && lifecycle.beforeRun.isEnabled) {
+          await this.components.beforeRun(lifecycle.beforeRun.context);
+        }
+        if (this.components.run && lifecycle.run.isEnabled) {
+          await this.components.run(lifecycle.run.context);
+        }
+        if (this.components.afterRun && lifecycle.afterRun.isEnabled) {
+          await this.components.afterRun(lifecycle.afterRun.context);
+        }
+      } catch (error) {
+        execError = error;
       }
 
-      await this.plugins.beforeClose();
+      await this.plugins.setResolution(functionInternal.output, execError);
+
+      if (execError) throw execError;
+
       functionInternal.validateOutput();
 
       this.successCount++;
       return functionInternal.output;
     } catch (error) {
+      error.stack = error.stack.split('at async Function.exec').shift().trim();
       console.error(`ERROR running databox: `, error);
       this.errorCount++;
       throw error;
     } finally {
       await functionInternal.close();
-      await this.plugins.onClose();
       this.#isRunning = false;
     }
   }

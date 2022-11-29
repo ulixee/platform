@@ -46,7 +46,7 @@ export default new DataboxApiHandler('Databox.upload', {
           await databoxRegistry.save(tmpDir, compressedDatabox, allowNewLinkedVersionHistory);
         } finally {
           // remove tmp dir in case of errors
-          await Fs.rmdir(tmpDir, { recursive: true }).catch(() => null);
+          await Fs.rm(tmpDir, { recursive: true }).catch(() => null);
         }
         return { success: true };
       })(),

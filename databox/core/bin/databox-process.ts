@@ -26,7 +26,7 @@ process.on('message', async (message: IMessage) => {
     }
 
     const functionsByName: IFetchMetaResponseData['functionsByName'] = {};
-    for (const [name, func] of Object.entries(databox.functions ?? {})) {
+    for (const [name, func] of Object.entries(databox.functions ?? {} as Record<string, Function>)) {
       functionsByName[name] = { corePlugins: func.plugins.corePlugins ?? {}, schema: func.schema };
     }
 

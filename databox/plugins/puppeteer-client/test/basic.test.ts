@@ -1,6 +1,5 @@
 import { Helpers } from '@ulixee/databox-testing';
 import Autorun from '@ulixee/databox/lib/utils/Autorun';
-import { Browser as PuppeteerBrowser } from 'puppeteer';
 import { Function, PuppeteerFunctionPlugin } from '../index';
 
 afterAll(Helpers.afterAll);
@@ -33,28 +32,30 @@ describe('basic puppeteerFunction tests', () => {
   }, 30e3);
 
   it('should call close on puppeteer automatically', async () => {
-    let browser: PuppeteerBrowser;
+    let closeSpy: jest.SpyInstance;
     const puppeteerFunction = new Function(async ctx => {
-      browser = ctx.browser;
-      const page = await browser.newPage();
+      closeSpy = jest.spyOn(ctx.browser, 'close');
+      const page = await ctx.browser.newPage();
       await page.goto('https://example.org');
     }, PuppeteerFunctionPlugin);
     puppeteerFunction.disableAutorun = true;
     await puppeteerFunction.exec({});
-    const pages = await browser.pages();
-    expect(pages.length).toBe(0);
+    expect(closeSpy).toBeCalledTimes(1);
   });
 
   it('should emit close puppeteer on error', async () => {
+    let closeSpy: jest.SpyInstance;
     const puppeteerFunction = new Function(async ctx => {
+      closeSpy = jest.spyOn(ctx.browser, 'close');
       const browser = ctx.browser;
       const page = await browser.newPage();
       await page.goto('https://example.org').then(() => {
-        throw new Error('test');
+        throw new Error('testy');
       });
     }, PuppeteerFunctionPlugin);
     puppeteerFunction.disableAutorun = true;
 
-    await expect(puppeteerFunction.exec({})).rejects.toThrowError();
+    await expect(puppeteerFunction.exec({})).rejects.toThrowError('testy');
+    expect(closeSpy).toBeCalledTimes(1);
   });
 });

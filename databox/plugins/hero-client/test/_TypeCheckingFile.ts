@@ -14,12 +14,12 @@ export function typeChecking(): void {
         // @ts-expect-error
         const s: number = input.text;
       },
-      afterHeroCompletes(ctx) {
+      afterRun(ctx) {
         const detached = ctx.heroReplay.detachedElements.getAll('test');
         assert(detached, 'should exist');
         // @ts-expect-error - make sure heroReplay is type checked (not any)
         await ctx.heroReplay.goto();
-        // // @ts-expect-error
+        // @ts-expect-error
         ctx.input.text = 1;
       },
       schema: {

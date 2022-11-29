@@ -19,15 +19,15 @@ beforeEach(async () => {
 let workingDirectory: string;
 let dbxFile: string;
 afterEach(async () => {
-  if (workingDirectory) await Fs.rmdir(workingDirectory, { recursive: true }).catch(() => null);
-  if (dbxFile) await Fs.unlink(dbxFile).catch(() => null);
+  if (workingDirectory && existsSync(workingDirectory)) await Fs.rm(workingDirectory, { recursive: true }).catch(() => null);
+  if (dbxFile && existsSync(dbxFile)) await Fs.unlink(dbxFile).catch(() => null);
   workingDirectory = null;
   dbxFile = null;
 });
 
 afterAll(async () => {
-  if (workingDirectory) await Fs.rmdir(workingDirectory, { recursive: true }).catch(() => null);
-  if (dbxFile) await Fs.unlink(dbxFile).catch(() => null);
+  if (workingDirectory && existsSync(workingDirectory)) await Fs.rm(workingDirectory, { recursive: true }).catch(() => null);
+  if (dbxFile && existsSync(dbxFile)) await Fs.unlink(dbxFile).catch(() => null);
 });
 
 test('it should generate a relative script entrypoint', async () => {
@@ -68,7 +68,7 @@ test('it should generate a relative script entrypoint', async () => {
   });
   expect((await Fs.stat(`${__dirname}/assets/historyTest.dbx`)).isFile()).toBeTruthy();
 
-  await Fs.rmdir(dbx.workingDirectory, { recursive: true });
+  await Fs.rm(dbx.workingDirectory, { recursive: true });
   await Fs.unlink(`${__dirname}/assets/historyTest.dbx`);
 }, 45e3);
 
@@ -185,6 +185,7 @@ test('should be able to package a multi-function Databox', async () => {
   const packager = new DataboxPackager(`${__dirname}/assets/multiFunctionTest.js`);
   await packager.build();
   dbxFile = packager.dbxPath;
+  workingDirectory = packager.dbx.workingDirectory;
   const dbx = new DbxFile(dbxFile);
   expect(packager.manifest.toJSON()).toEqual({
     linkedVersions: [],
@@ -226,7 +227,6 @@ test('should be able to package a multi-function Databox', async () => {
   });
   expect((await Fs.stat(`${__dirname}/assets/multiFunctionTest.dbx`)).isFile()).toBeTruthy();
 
-  await Fs.rmdir(dbx.workingDirectory, { recursive: true });
   await Fs.unlink(`${__dirname}/assets/multiFunctionTest.dbx`);
 });
 
@@ -234,6 +234,7 @@ test('should be able to package an exported Function without a Databox', async (
   const packager = new DataboxPackager(`${__dirname}/assets/rawFunctionTest.js`);
   await packager.build();
   dbxFile = packager.dbxPath;
+  workingDirectory = packager.dbx.workingDirectory;
   const dbx = new DbxFile(dbxFile);
   expect(packager.manifest.toJSON()).toEqual({
     linkedVersions: [],
@@ -256,6 +257,5 @@ test('should be able to package an exported Function without a Databox', async (
   });
   expect((await Fs.stat(`${__dirname}/assets/rawFunctionTest.dbx`)).isFile()).toBeTruthy();
 
-  await Fs.rmdir(dbx.workingDirectory, { recursive: true });
   await Fs.unlink(`${__dirname}/assets/rawFunctionTest.dbx`);
 });

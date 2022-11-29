@@ -1,4 +1,4 @@
-import { mkdirSync, promises as Fs, rmdirSync } from 'fs';
+import { mkdirSync, promises as Fs, rmSync } from 'fs';
 import * as Path from 'path';
 import Packager from '@ulixee/databox-packager';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
@@ -22,7 +22,7 @@ beforeAll(async () => {
 }, 30e3);
 
 afterAll(() => {
-  rmdirSync(storageDir, { recursive: true });
+  rmSync(storageDir, { recursive: true });
 });
 
 test('should install new databoxes on startup', async () => {
@@ -45,7 +45,7 @@ test('can load a version from disk if not already open', async () => {
 
   const registry = new DataboxRegistry(storageDir, tmpDir);
   // @ts-ignore
-  await Fs.rmdir(registry.getDataboxWorkingDirectory(packager.manifest.versionHash), {
+  await Fs.rm(registry.getDataboxWorkingDirectory(packager.manifest.versionHash), {
     recursive: true,
   });
 

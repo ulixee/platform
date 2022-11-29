@@ -54,7 +54,7 @@
     "@vue/cli-plugin-eslint": "~5.0.4",
     "@vue/cli-plugin-router": "~5.0.4",
     "@vue/cli-plugin-typescript": "~5.0.1",
-    "@vue/cli-service": "~5.0.1",
+    "@vue/cli-service": "~5.0.8",
     "@vue/compiler-sfc": "^3.0.0",
     "@vue/eslint-config-standard": "^5.1.2",
     "@vue/eslint-config-typescript": "^7.0.0",
@@ -81,5 +81,8 @@
     "**/vue-loader",
     "**/vue-template-compiler",
     "**/postcss"
-  ]
+  ],
+  "resolutions": {
+    "**/@achrinza/node-ipc": "10.1.6"
+  }
 }
