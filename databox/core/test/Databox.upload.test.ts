@@ -28,7 +28,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  Fs.rmdirSync(storageDir, { recursive: true });
+  Fs.rmSync(storageDir, { recursive: true });
   await miner.close();
 });
 

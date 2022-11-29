@@ -2,7 +2,7 @@ import * as HashUtils from '@ulixee/commons/lib/hashUtils';
 import IDataboxManifest, {
   IVersionHistoryEntry,
 } from '@ulixee/specification/types/IDataboxManifest';
-import { mkdirSync, promises as Fs, readFileSync, rmdirSync } from 'fs';
+import { mkdirSync, promises as Fs, readFileSync, rmSync } from 'fs';
 import { Helpers } from '@ulixee/databox-testing';
 import * as Path from 'path';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
@@ -15,7 +15,7 @@ const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DataboxRegistr
 const tmpDir = `${storageDir}/tmp`;
 
 afterAll(() => {
-  rmdirSync(storageDir, { recursive: true });
+  rmSync(storageDir, { recursive: true });
 });
 
 function hashScript(script: string): string {
@@ -81,7 +81,7 @@ test('should be able to upload and retrieve the databox', async () => {
 
 test('should allow a user to override updating with no history', async () => {
   const databoxTmpDir = `${storageDir}/tmp/test`;
-  Helpers.needsClosing.push({ close: () => rmdirSync(databoxTmpDir), onlyCloseOnFinal: false });
+  Helpers.needsClosing.push({ close: () => rmSync(databoxTmpDir), onlyCloseOnFinal: false });
   const registry = new DataboxRegistry(storageDir, tmpDir);
 
   let originalVersionHash: string;
