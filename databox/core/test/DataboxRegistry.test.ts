@@ -14,7 +14,9 @@ import DataboxManifest from '../lib/DataboxManifest';
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DataboxRegistry.test');
 const tmpDir = `${storageDir}/tmp`;
 
-afterAll(() => {
+afterEach(Helpers.afterEach);
+afterAll(async () => {
+  await Helpers.afterAll();
   rmSync(storageDir, { recursive: true });
 });
 
@@ -25,6 +27,7 @@ function hashScript(script: string): string {
 
 test('should throw an error if the required databox core version is not installed', async () => {
   const registry = new DataboxRegistry(storageDir, tmpDir);
+  Helpers.needsClosing.push()
   const databoxTmpDir = `${storageDir}/tmp/dbx1`;
   mkdirSync(databoxTmpDir, { recursive: true });
   await Fs.writeFile(

@@ -193,6 +193,7 @@ export default class DataboxCore {
         await connection.disconnect();
       }
       this.connections.clear();
+      this.databoxRegistry?.close();
     } finally {
       closingPromise.resolve();
     }

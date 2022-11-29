@@ -31,6 +31,10 @@ export default class DataboxRegistry {
 
   constructor(readonly storageDir: string, readonly workingDir: string) {}
 
+  public close(): void {
+    this.#databoxesDb?.close();
+  }
+
   public hasVersionHash(versionHash: string): boolean {
     return !!this.databoxesDb.databoxes.getByVersionHash(versionHash);
   }
