@@ -14,10 +14,10 @@ import {
   HeroFunctionPlugin,
   IHeroFunctionContext,
   IHeroFunctionExecOptions,
+  getDataboxForHeroPlugin,
 } from '@ulixee/databox-plugins-hero';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import Logger from '@ulixee/commons/lib/Logger';
-import { getDataboxForHeroPlugin } from '@ulixee/databox-plugins-hero/lib/HeroFunctionPlugin';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import IFunctionSchema from '@ulixee/databox/interfaces/IFunctionSchema';
 import { Helpers } from './index';
@@ -160,26 +160,26 @@ export async function createFullstackDatabox<ISchema extends IFunctionSchema = a
   const readyPromise = createPromise<void>();
   const closedPromise = createPromise<void>();
 
+  // eslint-disable-next-line promise/catch-or-return
   new Function(
     {
       run(ctx) {
         functionContext = ctx;
         databoxForHeroPlugin = getDataboxForHeroPlugin(ctx.hero);
         readyPromise.resolve();
-        return closedPromise.promise;
       },
       schema,
     },
     HeroFunctionPlugin,
   )
     .exec(options)
-    .catch(error => console.log(error));
+    .catch(error => console.log(error))
+    .finally(() => closedPromise.resolve());
 
   function databoxClose() {
-    closedPromise.resolve();
+    return closedPromise.promise;
   }
 
-  Helpers.needsClosing.push({ close: databoxClose });
   await readyPromise.promise;
 
   return {

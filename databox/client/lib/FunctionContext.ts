@@ -5,25 +5,25 @@ export default class FunctionContext<
   ISchema extends IFunctionSchema,
   TFunctionInternal extends FunctionInternal<ISchema> = FunctionInternal<ISchema>,
 > {
-  protected readonly functionInternal: FunctionInternal<ISchema>;
+  #functionInternal: FunctionInternal<ISchema>;
 
   constructor(functionInternal: FunctionInternal<ISchema>) {
-    this.functionInternal = functionInternal;
+    this.#functionInternal = functionInternal;
   }
 
   public get input(): TFunctionInternal['input'] {
-    return this.functionInternal.input;
+    return this.#functionInternal.input;
   }
 
   public get output(): TFunctionInternal['output'] {
-    return this.functionInternal.output;
+    return this.#functionInternal.output;
   }
 
   public set output(value: TFunctionInternal['output']) {
-    this.functionInternal.output = value;
+    this.#functionInternal.output = value;
   }
 
   public get schema(): ISchema {
-    return this.functionInternal.schema;
+    return this.#functionInternal.schema;
   }
 }

@@ -24,7 +24,7 @@ export default new Function({
       // });
     }
   },
-  async afterHeroCompletes({ output, heroReplay }) {
+  async afterRun({ output, heroReplay }) {
     const { detachedElements } = heroReplay;
     const storyElement = await detachedElements.get('table');
     const stories = storyElement.querySelectorAll('.athing');

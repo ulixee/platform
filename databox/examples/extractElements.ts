@@ -10,7 +10,7 @@ export default new Function(
       // Extract the DOM Element at this moment in time.
       await h1.$addToDetachedElements('h1');
     },
-    async afterHeroCompletes({ heroReplay, output }) {
+    async afterRun({ heroReplay, output }) {
       const h1 = await heroReplay.detachedElements.get('h1');
       // NOTE: synchronous APIs. No longer running in browser.
       output.text = h1.textContent;

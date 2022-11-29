@@ -15,7 +15,7 @@ export default new Function(
       await hero.setSnippet('cookies', await hero.activeTab.cookieStorage.getItems());
       await hero.setSnippet('history', await hero.getJsValue(`history.length`));
     },
-    async afterHeroCompletes({ heroReplay, output }) {
+    async afterRun({ heroReplay, output }) {
       const localStorage = await heroReplay.getSnippet('localStorage');
       const sessionStorage = await heroReplay.getSnippet('sessionStorage');
       const cookies = await heroReplay.getSnippet('cookies');
