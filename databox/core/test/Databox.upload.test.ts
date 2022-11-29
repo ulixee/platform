@@ -28,8 +28,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  Fs.rmSync(storageDir, { recursive: true });
   await miner.close();
+  Fs.rmSync(storageDir, { recursive: true });
 });
 
 test('should be able upload a databox', async () => {
