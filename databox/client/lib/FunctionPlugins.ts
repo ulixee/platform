@@ -55,7 +55,7 @@ export default class FunctionPlugins<
         },
       };
 
-    // 1. Plugin `run` phases
+    // plugin `run` phases
     for (const plugin of this.clientPlugins) {
       const outputPromise = new Resolvable<ISchema['output']>();
       this.pluginNextPromises.push(outputPromise);

@@ -8,26 +8,18 @@
 - title: Databox Basics
   items:
     - Databox
-    - DataboxObject
-    - InputObject
-    - OutputObject
+    - Function
+    - FunctionContext
+    - Input
+    - Output
 
 - title: Databox Advanced
   items:
-    - Plugins
-    - Databox Schemas
+    - Function Schemas
     - Schemas
-
-- title: Databox for Hero
-  items:
-    - Using the Plugin
-    - Changes to Databox
-    - Changes to DataboxObject
-
-- title: Databox for Puppeteer
-  items:
-    - Using the Plugin
-    - Changes to DataboxObject
+    - Plugins
+    - Hero Plugin
+    - Puppeteer Plugin
 
 - title: Help
   items:

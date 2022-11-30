@@ -1,60 +1,51 @@
 # Introduction
 
-> Databoxes are specialized containers that package and run your scraper scripts. They provide your scripts a uniform input and output interface, and they return uniform results across any cloud.
+> Databoxes are deployable "databases" that have functions and tables, support native payment, and can be cloned and expanded as you see fit. Databox Functions contain data retrieval functions, like Hero scraper scripts, with structured input and output. Deploying a Databox provides you with a structured Data API that can be privately consumed, or sold "out of the box".
 
-## Why Create a Databox?
+## What is a Databox?
 
-Databoxes create structure -- boundaries -- around a single "scrape", which make your scripts are far easier to test, re-try, scale and compose. It allows us to do things like:
+Databoxes create databases of specialized data structures - for instance, a Travel database, or a Jobs database. They're a combination of static metadata tables, dynamically retrieved web data and cached aggregated data that make up a data category. They support payment out of the box, so a client can pay per query without any setup or contracts. Databoxes also support PostgreSQL natively (including payment), so can be tested out and integrated across programming languages.
+
+## Databox Functions
+
+Databox Functions create structure -- boundaries -- around a single "scrape", which make your scripts are far easier to test, re-try, scale and compose. It allows us to do things like:
 
 - Restart a script during development as you change it.
 - Rotate inputs to try out a variety of IPs, parameters, and more to make sure you can handle edge cases.
 - Test the extraction of 100s of different potential results pages and ensure your Output follows the same structure.
-- Spawn new Databoxes from the current one if you need to parallelize following links.
+- Spawn new Functions from the current one if you need to parallelize following links.
 
-## How Databoxes Works
+## How Databoxes Work
 
 Each Databox is a wrapper for defining a composable scraper script. You can run databoxes directly from the command line or upload them to a [Miner](/docs/miner).
 
 ## Installation
 
-To get started using Databox in your project, we have a "playground" that allows you to run examples out of the box. It can be installed using the following commands:
+To get started using Databox in your project, use the following commands:
 
 ```bash
-npm i --save @ulixee/databox-playground
+npm i --save @ulixee/databox
 ```
 
 or
 
 ```bash
-yarn add @ulixee/databox-playground
+yarn add @ulixee/databox
 ```
 
-## The Non-Playground Version
-
-You can drop "-playground" whenever you want and use Databox directly (the playground makes getting started easier, but the core functionality is exactly the same):
-
-
-```bash
-npm i --save @ulixee/databox-playgrond
-```
-
-or
-
-```bash
-yarn add @ulixee/databox-playground
-```
-
-When using the non-playground version, it's your responsibility to ensure your Ulixee development environment is setup, such as installing and running [`@ulixee/miner`](/docs/miner).
+It's your responsibility to ensure your Ulixee development environment is setup, such as installing and running [`@ulixee/miner`](/docs/miner).
 
 ## Usage Example
 
-Writing a Databox is very similar to writing a normal scraper script, except it must be contained within a callback, and you must make it the default export.
-
-The simplist Databox is initialized with a single `run` callback:
+The simplest Databox is initialized with a single Function:
 
 ```js
-export default new Databox(databox => {
-  databox.output = `Hello ${databox.input.firstName}`;
+export default new Databox({
+  functions: {
+    default: new Function(ctx => {
+      ctx.output = `Hello ${ctx.input.firstName}`;
+    }),
+  },
 });
 ```
 
@@ -67,7 +58,7 @@ node ./simple.js --input.firstName=Me
 However, this Databox structure also allows us to load it onto a Miner and run it on demand:
 
 ```bash
-npx @ulixee/databox-playground deploy ./simple.js
-npx @ulixee/databox-playground run simple.js --input.firstName=Me
+npx @ulixee/databox deploy ./simple.js
+npx @ulixee/databox run simple.js --input.firstName=Me
 
 ```
