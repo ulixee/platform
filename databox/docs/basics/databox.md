@@ -14,7 +14,7 @@ export default new Databox({
 });
 ```
 
-A Databox is constructed with one or more [Functions](/docs/databox/function).
+A Databox is constructed with one or more [Functions](/docs/databox/basics/function).
 
 ## Constructor
 
@@ -24,9 +24,9 @@ Creates a new Databox instance.
 
 #### **Arguments**:
 
-- functions: `object`. An object mapping names to [Functions](/docs/databox/databox-basics/function).
+- functions: `object`. An object mapping names to [Functions](/docs/databox/basics/function).
   - key `string`. A unique name of the function.
-  - definition [Functions](/docs/databox/databox-basics/function). A Function instance.
+  - value `Function`. A [Function](/docs/databox/basics/function) instance.
 
 ```js
 import Databox from '@ulixee/databox';
@@ -58,7 +58,7 @@ Version of DataboxCore that is in use. This will be compiled into the Databox.
 
 ### functions `{ [name:string]: Function}`
 
-Object containing [Functions](/docs/databox/databox-basics/function) keyed by their name.
+Object containing [Functions](/docs/databox/basics/function) keyed by their name.
 
 ## Methods
 

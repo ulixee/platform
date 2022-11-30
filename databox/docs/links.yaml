@@ -5,18 +5,18 @@
     - Concepts
     - Deployment
 
-- title: Databox Basics
+- title: Basics
   items:
     - Databox
     - Function
-    - FunctionContext
+    - Function Context
     - Input
     - Output
 
-- title: Databox Advanced
+- title: Advanced
   items:
     - Function Schemas
-    - Schemas
+    - Schema
     - Plugins
     - Hero Plugin
     - Puppeteer Plugin

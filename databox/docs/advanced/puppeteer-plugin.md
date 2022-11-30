@@ -25,21 +25,20 @@ export default new Databox({
 
 ## Changes to FunctionContext
 
-PuppeteerFunctionPlugin adds a single property to the [FunctionContext](/docs/databox/databox-basics/function-context).
+The PuppeteerFunctionPlugin adds a single property to the [FunctionContext](/docs/databox/basics/function-context).
 
-### FunctionContext.browser
+### run _(functionContext)_ {#run-hero}
 
-Readonly access to a pre-initialize [Puppeteer](https://pptr.dev/api) instance.
-
-#### **Returns** [`Puppeteer`](https://pptr.dev/api)
+- functionContext.browser `Puppeteer`. Readonly access to a pre-initialize [Puppeteer](https://pptr.dev/api) instance.
 
 ## Changes to Function Components
 
-PuppeteerFunctionPlugin adds an optional parameter to the Function Components [object](/docs/databox/databox-basics/function#constructor)) to configure Puppeteer options.
+PuppeteerFunctionPlugin adds an optional parameter to the Function Components [object](/docs/databox/basics/function#constructor)) to configure Puppeteer options.
 
-### Function Constructor Object: defaultPuppeteerOptions
+### new Function _(runCallback | functionComponents)_ {#constructor}
 
-Configure the [Puppeteer](https://pptr.dev/api) instance with [LaunchOptions](https://pptr.dev/api/puppeteer.launchoptions).
+#### **Added Arguments**:
+- defaultPuppeteerOptions [LaunchOptions](https://pptr.dev/api/puppeteer.launchoptions). Configure the [Puppeteer](https://pptr.dev/api) instance with [LaunchOptions](https://pptr.dev/api/puppeteer.launchoptions).
 
 ```js
 import Databox from '@ulixee/databox';

@@ -91,11 +91,11 @@ Optional icon name to use in the auto-generated website documentation. NOTE: Thi
 
 ### input `Record<string, Any Schema>` {#input}
 
-Optional input fields definition containing and object of string Keys to [Schema](/docs/databox/databox-advanced/schema) values.
+Optional input fields definition containing and object of string Keys to [Schema](/docs/databox/advanced/schema) values.
 
 ### output `Record<string, Any Schema>` | ObjectSchema | ArraySchema
 
-Optional definition of Key/[Any Schema](/docs/databox/databox-advanced/schema), [Object](/docs/databox/databox-advanced/schema#object) or [Array](/docs/databox/databox-advanced/schema#array) to be returned.
+Optional definition of Key/[Any Schema](/docs/databox/advanced/schema), [Object](/docs/databox/advanced/schema#object) or [Array](/docs/databox/advanced/schema#array) to be returned.
 
 ### inputExamples: `Record<string, Example Value or DataUtilities Function>[]`
 

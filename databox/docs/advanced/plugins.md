@@ -1,10 +1,6 @@
 # Plugins
 
-Databox Functions can easily be extended to include custom functionality. Examples of plugins are included in this repository for [Puppeteer](/docs/databox/databox-advanced/puppeteer-plugin) and [Hero](/docs/databox/databox-advanced/hero-plugin).
-
-## Installing a Plugin
-
-To install a plugin, you simply need to add a class implementing any of the following callbacks to a [Function constructor](/docs/databox/databox-basics/function) `plugins` argument.
+Databox Functions can easily be extended to include custom functionality. Examples of plugins are included in this repository for [Puppeteer](/docs/databox/advanced/puppeteer-plugin) and [Hero](/docs/databox/advanced/hero-plugin).
 
 ```js
 import { HeroFunctionPlugin, Function } from '@ulixee/databox-plugins-hero';
@@ -13,11 +9,16 @@ export default new Function(
   {
     run(ctx) {
       // add functionality
+      const { hero } = ctx;
     },
   },
   HeroFunctionPlugin,
 );
 ```
+
+## Creating a Plugin
+
+To create a plugin, you simply need to create a class implementing the run callback. You can use it by passing it to the [Function constructor](/docs/databox/basics/function#constructor) `plugins` argument.
 
 ## Properties
 
@@ -37,7 +38,7 @@ The following method is called during Databox Function setup:
 
 Called when a Databox Function instance starts execution. This function gives you access to the Function lifecycle.
 
-A plugin can manipulate the lifecycle [FunctionContext](/docs/databox/databox-basics/function-context) of each phase of a Function (`beforeRun`, `run` and `afterRun`). For instance, the [Hero plugin](/docs/databox/databox-advanced/hero-plugin) initializes and adds a [Hero](/docs/hero/basic-client/hero) instance to the `run` context and a [HeroReplay](/docs/hero/basic-client/hero-replay) instance to the `afterRun` callback.
+A plugin can manipulate the lifecycle [FunctionContext](/docs/databox/basics/function-context) of each phase of a Function (`beforeRun`, `run` and `afterRun`). For instance, the [Hero plugin](/docs/databox/advanced/hero-plugin) initializes and adds a [Hero](/docs/hero/basic-client/hero) instance to the `run` context and a [HeroReplay](/docs/hero/basic-client/hero-replay) instance to the `afterRun` callback.
 
 The lifecycle object passed in will indicate if a Function has defined a callback for each phase by marking the phase as `isEnabled`. Each plugin can choose to activate or deactivate a phase, so long as the Function has a callback to run.
 

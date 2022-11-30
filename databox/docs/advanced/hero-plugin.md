@@ -61,25 +61,17 @@ If you have a prior Hero SessionId to replay, you can run ONLY the `afterRun` ph
 node ./heroFunction.js --replaySessionId=session123
 ```
 
-# Changes to FunctionContext
+## Changes to FunctionContext
 
 The HeroFunctionPlugin for Hero adds automatically initialized Hero instances to the `run` and `afterRun` phases of a Function.
 
-## In run _(functionContext)_ Callback {#run-hero}
+### run _(functionContext)_ {#run-hero}
 
-### functionContext.hero
+- functionContext.hero `Hero`. Readonly access to a pre-initialized [Hero](/docs/hero/basic-client/hero) instance.
 
-Readonly access to a pre-initialized [Hero](/docs/hero/basic-client/hero) instance.
+### runAfter _(functionContext)_ {#runafter-hero}
 
-#### **Returns** [`Hero`](/docs/hero/basic-client/hero)
-
-## In the runAfter _(functionContext)_ Callback {#runafter-hero}
-
-### functionContext.heroReplay
-
-Readonly access to a pre-initialized [HeroReplay](/docs/hero/basic-client/hero-replay) instance.
-
-#### **Returns** [`HeroReplay`](/docs/hero/basic-client/hero-replay)
+- functionContext.heroReplay `HeroReplay`. Readonly access to a pre-initialized [HeroReplay](/docs/hero/basic-client/hero-replay) instance.
 
 ## Constructor
 

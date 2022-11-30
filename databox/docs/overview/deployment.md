@@ -304,7 +304,7 @@ Options below show a short and long form.
 
 ## Databox Core Sandboxes
 
-When Databoxes are run on a Miner, they are initialized into a virtual machine sandbox that has no default access to Node.js, other than those explicitly allowed by a [Databox Plugin](/docs/databox/databox-advanced/plugins). Any dependencies imported by your script will be packaged into your script, but you should not expect NodeJs core modules to be available. Your script will also be fully isolated between runs - any shared state must be provided in via the `input` variables. This isolation ensures your script can be reproduced, re-run and troubleshooted reliably.
+When Databoxes are run on a Miner, they are initialized into a virtual machine sandbox that has no default access to Node.js, other than those explicitly allowed by a [Databox Plugin](/docs/databox/advanced/plugins). Any dependencies imported by your script will be packaged into your script, but you should not expect NodeJs core modules to be available. Your script will also be fully isolated between runs - any shared state must be provided in via the `input` variables. This isolation ensures your script can be reproduced, re-run and troubleshooted reliably.
 
 ## Efficient Units
 

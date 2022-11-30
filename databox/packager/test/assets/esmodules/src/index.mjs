@@ -1,5 +1,5 @@
 import Databox, { Function } from '@ulixee/databox';
-import { HeroFunctionPlugin } from '@ulixee/databox-for-hero';
+import { HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
 import { testFunction } from './helper';
 

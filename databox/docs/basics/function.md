@@ -16,7 +16,7 @@ Saving the above code to a file allows you to execute it directly from the comma
 node example.js --input.firstName=Caleb
 ```
 
-The callback method supplied to Function's constructor receives a [FunctionContext](/docs/databox/databox-basics/function-context) as its first argument. This includes special [input](/docs/databox/databox-basics/input) and [output](/docs/databox/databox-basics/output) objects.
+The callback method supplied to Function's constructor receives a [FunctionContext](/docs/databox/basics/function-context) as its first argument. This includes special [input](/docs/databox/basics/input) and [output](/docs/databox/basics/output) objects.
 
 ### Lifecycle
 
@@ -26,7 +26,7 @@ A databox Function has a main callback called `run`. Functions have built-in lif
 - `run(ctx)`. A callback that contains the main function to perform.
 - `afterRun(ctx)`. A callback that will be triggered after the run occurs.
 
-[Plugins](/docs/databox/databox-advanced/plugins) like the Hero plugin add functionality to these phases. In the case of Hero, a HeroReplay instance will be provided to the `afterRun`.
+[Plugins](/docs/databox/advanced/plugins) like the Hero plugin add functionality to these phases. In the case of Hero, a HeroReplay instance will be provided to the `afterRun`.
 
 ```js
 import { Function } from '@ulixee/databox';
@@ -54,13 +54,13 @@ Creates a new Function instance.
 
 The first argument can be a single callback function matching the `run` callback below, or an object containing the following properties.
 
-- run `function`(context: [FunctionContext](/docs/databox-basics/function-context)): `Promise<schema['output]>`. A function that contains your script to run. The parameter is a [FunctionContext](/docs/databox/databox-basics/function-context) that provides access to [Input](/docs/databox/databox-basics/input) and [Output](/docs/databox/databox-basics/output)
-- beforeRun `function`(context: [FunctionContext](/docs/databox-basics/function-context)): `Promise<any>`. Optional function that contains any logic you wish to perform "before" the run phase.
-- afterRun `function`(context: [FunctionContext](/docs/databox-basics/function-context)): `Promise<any>`. Optional function that contains any logic you wish to perform "before" the run phase.
-- schema `IFunctionSchema`. Optional [schema](/docs/databox/databox-advanced/function-schema) defining the type-checked input and output parameters for the function.
+- run `function`(context: [FunctionContext](/docs/databox/basics/function-context)): `Promise<schema['output]>`. A function that contains your script to run. The parameter is a [FunctionContext](/docs/databox/basics/function-context) that provides access to [Input](/docs/databox/basics/input) and [Output](/docs/databox/basics/output)
+- beforeRun `function`(context: [FunctionContext](/docs/databox/basics/function-context)): `Promise<any>`. Optional function that contains any logic you wish to perform "before" the run phase.
+- afterRun `function`(context: [FunctionContext](/docs/databox/basics/function-context)): `Promise<any>`. Optional function that contains any logic you wish to perform "before" the run phase.
+- schema `IFunctionSchema`. Optional [schema](/docs/databox/advanced/function-schema) defining the type-checked input and output parameters for the function.
 
 The second argument is a list of zero or more plugins.
-- plugins `Array<Plugin>`. Optional. A list of [plugin-compatible classes](/docs/databox/databox-advanced/plugins).
+- plugins `Array<Plugin>`. Optional. A list of [plugin-compatible classes](/docs/databox/advanced/plugins).
 
 ## Methods
 
