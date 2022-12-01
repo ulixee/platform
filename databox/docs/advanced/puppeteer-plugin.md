@@ -25,7 +25,7 @@ export default new Databox({
 
 ## Changes to FunctionContext
 
-The PuppeteerFunctionPlugin adds a single property to the [FunctionContext](/docs/databox/basics/function-context).
+The PuppeteerFunctionPlugin adds a single property to the [FunctionContext](../basics/function-context.md).
 
 ### run _(functionContext)_ {#run-hero}
 
@@ -33,7 +33,7 @@ The PuppeteerFunctionPlugin adds a single property to the [FunctionContext](/doc
 
 ## Changes to Function Components
 
-PuppeteerFunctionPlugin adds an optional parameter to the Function Components [object](/docs/databox/basics/function#constructor)) to configure Puppeteer options.
+PuppeteerFunctionPlugin adds an optional parameter to the Function Components [object](../basics/function#constructor)) to configure Puppeteer options.
 
 ### new Function _(runCallback | functionComponents)_ {#constructor}
 

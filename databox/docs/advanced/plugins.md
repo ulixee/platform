@@ -1,6 +1,6 @@
 # Plugins
 
-Databox Functions can easily be extended to include custom functionality. Examples of plugins are included in this repository for [Puppeteer](/docs/databox/advanced/puppeteer-plugin) and [Hero](/docs/databox/advanced/hero-plugin).
+Databox Functions can easily be extended to include custom functionality. Examples of plugins are included in this repository for [Puppeteer](./puppeteer-plugin.md) and [Hero](./hero-plugin.md).
 
 ```js
 import { HeroFunctionPlugin, Function } from '@ulixee/databox-plugins-hero';
@@ -18,7 +18,7 @@ export default new Function(
 
 ## Creating a Plugin
 
-To create a plugin, you simply need to create a class implementing the run callback. You can use it by passing it to the [Function constructor](/docs/databox/basics/function#constructor) `plugins` argument.
+To create a plugin, you simply need to create a class implementing the run callback. You can use it by passing it to the [Function constructor](../basics/function#constructor) `plugins` argument.
 
 ## Properties
 
@@ -38,7 +38,7 @@ The following method is called during Databox Function setup:
 
 Called when a Databox Function instance starts execution. This function gives you access to the Function lifecycle.
 
-A plugin can manipulate the lifecycle [FunctionContext](/docs/databox/basics/function-context) of each phase of a Function (`beforeRun`, `run` and `afterRun`). For instance, the [Hero plugin](/docs/databox/advanced/hero-plugin) initializes and adds a [Hero](/docs/hero/basic-client/hero) instance to the `run` context and a [HeroReplay](/docs/hero/basic-client/hero-replay) instance to the `afterRun` callback.
+A plugin can manipulate the lifecycle [FunctionContext](../basics/function-context.md) of each phase of a Function (`beforeRun`, `run` and `afterRun`). For instance, the [Hero plugin](./hero-plugin.md) initializes and adds a [Hero](https://ulixee.org/docs/hero/basic-client/hero) instance to the `run` context and a [HeroReplay](https://ulixee.org/docs/hero/basic-client/hero-replay) instance to the `afterRun` callback.
 
 The lifecycle object passed in will indicate if a Function has defined a callback for each phase by marking the phase as `isEnabled`. Each plugin can choose to activate or deactivate a phase, so long as the Function has a callback to run.
 

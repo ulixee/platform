@@ -6,7 +6,7 @@
 
 Each Ulixee tool creates connection details to handle its internal connections.
 
-Ulixee Miner currently uses Websockets and allows each tool's Core to handle details of what is transported. Connections can optionally be shared by many operations. For instance, Hero allows a single connection to host multiple [Sessions](/docs/hero/advanced/session) if the [`ConnectionToCore`](/docs/hero/advanced/connection-to-core) is reused by many Hero instances.
+Ulixee Miner currently uses Websockets and allows each tool's Core to handle details of what is transported. Connections can optionally be shared by many operations. For instance, Hero allows a single connection to host multiple [Sessions](https://ulixee.org/docs/hero/advanced/session) if the [`ConnectionToCore`](https://ulixee.org/docs/hero/advanced/connection-to-core) is reused by many Hero instances.
 
 ## Installation
 
@@ -22,7 +22,7 @@ or
 yarn add @ulixee/miner
 ```
 
-When you install Miner, it requires PeerDependencies of [`Hero`](//ulixee.org/docs/hero) and [`Databox`](//ulixee.org/docs/databox).
+When you install Miner, it requires PeerDependencies of [`Hero`](https://ulixee.org/docs/hero) and [`Databox`](https://ulixee.org/docs/databox).
 
 It will also optionally use a PeerDependency `ChromeAlive!` Core (`@ulixee/apps-chromealive-core`). This tool enhances the Hero Development process.
 

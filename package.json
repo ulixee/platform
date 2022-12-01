@@ -101,7 +101,6 @@
     ]
   },
   "resolutions": {
-    "remark-slug": "https://github.com/ulixee/remark-slug.git",
     "tough-cookie": "^4.0.0",
     "**/ua-parser-js": "0.7.28"
   },

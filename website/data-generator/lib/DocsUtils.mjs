@@ -18,7 +18,7 @@ export function ensureIndexFile(originalBasePath, toolKey, relativeWebsiteDir) {
 
 export async function saveToWebsite(mdDocsRootPath, absoluteFilePath, toolKey) {
   const relativePath = Path.relative(mdDocsRootPath, absoluteFilePath);
-  const converter = new MarkdownConverter(absoluteFilePath);
+  const converter = new MarkdownConverter(absoluteFilePath, '/docs/' + toolKey + '/' + relativePath);
   const content = await converter.run();
   const jsonRelativePath = convertToSlugPath(relativePath.replace(/\.md$/, '')) + '.json';
   const jsonAbsolutePath = Path.join(websiteDir, `public/data/docs/${toolKey}/${jsonRelativePath}`);

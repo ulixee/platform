@@ -2,7 +2,7 @@
 
 > Ulixee is an open-source project built by core maintainers and contributors. We want to make it easy for anyone to participate. Contribute to core, build plugins, improve documentation or write a blog post. It all helps Ulixee on its mission to keep the web open for innovation.
 
-Read the [code of conduct](./code-of-conduct).
+Read the [code of conduct](./code-of-conduct.md).
 
 ## Contributing to the Code
 
@@ -21,7 +21,7 @@ Install [Node.js 14](https://nodejs.org/en/download/) or higher and [Yarn](https
 We are a strong believer that documentation is very important for any open-source projects. Ulixee uses Gridsome for its documentation.
 
 1. If you want to add/modify any Databox documentation, go to the
-   [docs folder on GitHub](https://github.com/ulixee/platform/tree/databox/docs) and
+   [docs folder on GitHub](https://github.com/ulixee/platform/tree/main/databox/docs) and
    use the file editor to edit and then preview your changes.
 2. GitHub then allows you to commit the change and raise a PR right in the UI. This is the _easiest_ way you can contribute to Ulixee!
 
