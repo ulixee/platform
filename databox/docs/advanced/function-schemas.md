@@ -1,18 +1,18 @@
-# DataboxSchema
+# FunctionSchema
 
-> DataboxSchemas provide a way to add Typescript types, validation and documentation for the Input and Output of a Databox.
+> FunctionSchemas provide a way to add Typescript types, validation and documentation for the Input and Output of a databox Function.
 
-DataboxSchemas are not a runtime class, but an interface of a few properties to define the Databox Input/Output structure. When you define the input and output of a Databox, a few things happen:
+FunctionSchemas are not a runtime class, but an interface of a few properties to define a Databox Function's Input/Output structure. When you define the input and output of a Function, a few things happen:
 
 - Typescript types will be generated and input/output will emit compilation errors
 - Runtime validation is performed when parsing input parameters or returning results
 - Realtime validation occurs as you add output properties. If a type is wrong, your script will halt and notify you immediately so you don't waste any extra work.
 
 ```js
-import Databox from '@ulixee/databox-plugins-hero';
+import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 import { string } from '@ulixee/schema';
 
-export default new Databox({
+export default new Function({
   async run(databox) {
     const { input, output, hero } = databox;
 
@@ -24,7 +24,7 @@ export default new Databox({
     // ERROR: body expects a string, not a Promise<string>!
     output.body = hero.document.body.textContent;
   },
-  // DataboxSchema definition
+  // FunctionSchema definition
   schema: {
     name: 'TitleAndHtmlPageResolver',
     input: {
@@ -44,12 +44,12 @@ export default new Databox({
       },
     ],
   },
-});
+}, HeroFunctionPlugin);
 ```
 
-When you package a `Databox` for [deployment](/docs/databox/overview/deployment), a few other type utilities are added:
+When you package a `Databox` (or a `Function` auto-wrapped into a `Databox`) for [deployment](/docs/databox/overview/deployment), a few other type utilities are added:
 
-- Types are automatically created so that you can import Databox types.
+- Types are automatically created so that you can import Databox Function types.
 
   ```bash
   npx @ulixee/databox deploy ./index.js; // Databox Version hash is dbx12343
@@ -58,14 +58,14 @@ When you package a `Databox` for [deployment](/docs/databox/overview/deployment)
   ```js
   import ITypes from '@ulixee/databox/types';
 
-  type IIndexDataboxSchema = ITypes['dbx12343'];
+  type IIndexFunctionSchema = ITypes['dbx12343']['default']; // default is the name if auto-packaged
   ```
 
-- Typing of parameters and results are automatically referenced when running a Databox.
+- Typing of parameters and results are automatically referenced when running a Databox function.
   ```js
   import DataboxClient from '@ulixee/databox/lib/DataboxApiClient';
   const client = new DataboxClient('localhost:8080');
-  const result = client.exec('dbx12343', { url: 'https://ulixee.org ' });
+  const result = client.exec('dbx12343', 'default', { url: 'https://ulixee.org ' });
   // result has type inferred automatically.
   ```
 
@@ -73,17 +73,17 @@ When you package a `Databox` for [deployment](/docs/databox/overview/deployment)
 
 ## Documentation Generation
 
-TODO: This feature will come in a follow-on release, and will auto-generate a website with documentation for using a Databox. Details come from this DataboxSchema definition.
+TODO: This feature will come in a follow-on release, and will auto-generate a website with documentation for using a Databox Function. Details come from this FunctionSchema definition.
 
 ## Properties
 
 ### name `string`
 
-Optional name to label this DataboxSchema in Documentation.
+Optional name to label this FunctionSchema in Documentation.
 
 ### description `string`
 
-Optional longer form description to describe the usage or details of this DataboxSchema in Documentation.
+Optional longer form description to describe the usage or details of this FunctionSchema in Documentation.
 
 ### icon `string`
 
@@ -91,11 +91,11 @@ Optional icon name to use in the auto-generated website documentation. NOTE: Thi
 
 ### input `Record<string, Any Schema>` {#input}
 
-Optional input fields definition containing and object of string Keys to [Schema](/docs/databox/databox-advanced/schema) values.
+Optional input fields definition containing and object of string Keys to [Schema](/docs/databox/advanced/schema) values.
 
 ### output `Record<string, Any Schema>` | ObjectSchema | ArraySchema
 
-Optional definition of Key/[Any Schema](/docs/databox/databox-advanced/schema), [Object](/docs/databox/databox-advanced/schema#object) or [Array](/docs/databox/databox-advanced/schema#array) to be returned.
+Optional definition of Key/[Any Schema](/docs/databox/advanced/schema), [Object](/docs/databox/advanced/schema#object) or [Array](/docs/databox/advanced/schema#array) to be returned.
 
 ### inputExamples: `Record<string, Example Value or DataUtilities Function>[]`
 
@@ -105,12 +105,12 @@ Optional array of example input field combinations. Each record contains an obje
 - `dateSubtract(quantity: number, units: IUnits)`: Subtract from the current date. Units options are `'seconds' | 'minutes' | 'hours' | 'days' | 'months' | 'years'`.
 
 ```js
-import Databox from '@ulixee/databox-plugins-hero';
+import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 import { string, dateAdd } from '@ulixee/schema';
 
-export default new Databox({
-  async run(databox) {
-    const { input, output, hero } = databox;
+export default new Function({
+  async run(ctx) {
+    const { input, output, hero } = ctx;
   },
   schema: {
     input: {
@@ -118,5 +118,5 @@ export default new Databox({
     },
     inputExamples: [{ when: (1, 'days') }],
   },
-});
+}, HeroFunctionPlugin);
 ```

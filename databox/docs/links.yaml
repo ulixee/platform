@@ -5,29 +5,21 @@
     - Concepts
     - Deployment
 
-- title: Databox Basics
+- title: Basics
   items:
     - Databox
-    - DataboxObject
-    - InputObject
-    - OutputObject
+    - Function
+    - Function Context
+    - Input
+    - Output
 
-- title: Databox Advanced
+- title: Advanced
   items:
+    - Function Schemas
+    - Schema
     - Plugins
-    - Databox Schemas
-    - Schemas
-
-- title: Databox for Hero
-  items:
-    - Using the Plugin
-    - Changes to Databox
-    - Changes to DataboxObject
-
-- title: Databox for Puppeteer
-  items:
-    - Using the Plugin
-    - Changes to DataboxObject
+    - Hero Plugin
+    - Puppeteer Plugin
 
 - title: Help
   items:

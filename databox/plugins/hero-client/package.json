@@ -1,28 +1,24 @@
 {
   "name": "@ulixee/databox-plugins-hero",
   "version": "2.0.0-alpha.15",
-  "description": "The Databox for Hero library.",
+  "description": "The Databox Hero Plugin",
   "exports": {
     ".": {
       "import": "./index.mjs",
       "require": "./index.cjs"
     },
-    "./package.json": "./package.json",
-    "./lib/*": "./lib/*.js"
+    "./package.json": "./package.json"
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.15",
     "@ulixee/databox": "2.0.0-alpha.15",
-    "@ulixee/hero": "2.0.0-alpha.15",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.15",
-    "@ulixee/net": "2.0.0-alpha.15",
-    "@ulixee/schema": "2.0.0-alpha.15",
-    "@ulixee/unblocked-specification": "2.0.0-alpha.14"
+    "@ulixee/hero": "2.0.0-alpha.15"
   },
   "devDependencies": {
-    "@types/web": "^0.0.50",
     "@ulixee/databox-testing": "2.0.0-alpha.15",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.15",
     "@ulixee/hero-core": "2.0.0-alpha.15",
-    "linkedom": "^0.14.17"
+    "@ulixee/net": "2.0.0-alpha.15",
+    "@ulixee/schema": "2.0.0-alpha.15"
   }
 }

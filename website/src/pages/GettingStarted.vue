@@ -149,7 +149,7 @@
       <section class="h-screen px-24"  ref="section4">
         <header class="text-3xl">Simplify With a Databox</header>
         <Prism language="javascript" :useUlixeeTheme="false">
-          import DataboxForHero from '@ulixee/databox-for-hero';
+          import DataboxForHero from '@ulixee/databoxx';
 
           export default new DataboxForHero(async { hero } => {
           &nbsp; const hero = new Hero();

@@ -5,12 +5,7 @@ import FunctionInternal from '@ulixee/databox/lib/FunctionInternal';
 import { InternalPropertiesSymbol } from '@ulixee/hero/lib/internal';
 import IFunctionSchema from '@ulixee/databox/interfaces/IFunctionSchema';
 import IObservableChange from '@ulixee/databox/interfaces/IObservableChange';
-import {
-  FunctionPluginStatics,
-  IFunctionComponents,
-  IFunctionExecOptions,
-  IFunctionPlugin,
-} from '@ulixee/databox';
+import { FunctionPluginStatics, IFunctionComponents, IFunctionExecOptions } from '@ulixee/databox';
 import IFunctionContextBase from '@ulixee/databox/interfaces/IFunctionContext';
 import { IFunctionLifecycle } from '@ulixee/databox/interfaces/IFunctionPlugin';
 
@@ -34,21 +29,14 @@ type IHeroFunctionComponentsAddons = {
 
 export type IHeroFunctionComponents<ISchema> = IFunctionComponents<
   ISchema,
-  IHeroFunctionContext<ISchema>
+  IHeroFunctionContext<ISchema>,
+  IFunctionContextBase<ISchema>,
+  IHeroReplayFunctionContext<ISchema>
 > &
   IHeroFunctionComponentsAddons;
 
 @FunctionPluginStatics
-export class HeroFunctionPlugin<ISchema extends IFunctionSchema>
-  implements
-    IFunctionPlugin<
-      ISchema,
-      IHeroFunctionExecOptions<ISchema>,
-      IHeroFunctionContext<ISchema>,
-      IFunctionContextBase<ISchema>,
-      IHeroReplayFunctionContext<ISchema>
-    >
-{
+export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
   public static execArgAddons: IHeroCreateOptions;
   public static componentAddons: IHeroFunctionComponentsAddons;
   public static runContextAddons: {

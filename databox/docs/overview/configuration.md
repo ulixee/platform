@@ -1,11 +1,11 @@
 # Configuration
 
-Databoxes are dynamically configurable via a command line, and each Databox allows you to define [default configurations](#defaults) if none are provided.
+Databoxes are dynamically configurable via a command line, and each Databox Function allows you to define default configurations if none are provided (schemas can define default inputs, Plugins can add default configurations (eg, HeroFunctionPlugin adds `defaultHeroOptions` to a Function constructor).
 
 Command line variables are parsed using [yargs-parser](https://github.com/yargs/yargs-parser). Variables containing a '.' will be converted into objects, and dashes are camel-cased.
 
 ```shell
-  node ./script.js --input.foo=99 --input.bar=9987930 --connection-to-core.host=ws://localhost:1228
+  node ./function.js --input.foo=99 --input.bar=9987930 --connectionToCore.host=ws://localhost:1228
 ```
 
 Options will be read as:
