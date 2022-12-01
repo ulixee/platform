@@ -22,6 +22,12 @@ docker pull ghcr.io/ulixee/ulixee-miner:latest
 docker tag ghcr.io/ulixee/ulixee-miner:latest ulixee-miner
 ```
 
+## Pull Docker image from Dockerhub
+```bash
+docker pull ulixee/ulixee-miner:latest
+docker tag ulixee/ulixee-miner ulixee-miner
+```
+
 # Copy/modify run.sh On Your Server
 The [run.sh](./run.sh) file can be a starting point to run the docker on your server. It configures docker as follows:
 * `--init` Register a process cleanup service.

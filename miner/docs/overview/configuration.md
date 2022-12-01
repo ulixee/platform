@@ -6,7 +6,7 @@ A Miner addressHost can be specified on creation. This would allow you to create
 
 ### Miner Server ListenInfo
 
-A Miner can be provided ListenInfo on [`listen(listenInfo)`](/docs/miner/basic-interfaces/miner). The data follows the Node.js [net.ListenInfo](https://nodejs.org/api/net.html#serverlistenoptions-callback) spec.
+A Miner can be provided ListenInfo on [`listen(listenInfo)`](../modules/miner.md). The data follows the Node.js [net.ListenInfo](https://nodejs.org/api/net.html#serverlistenoptions-callback) spec.
 
 ### Disable ChromeAlive!
 

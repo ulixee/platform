@@ -47,7 +47,7 @@ export default new Function({
 }, HeroFunctionPlugin);
 ```
 
-When you package a `Databox` (or a `Function` auto-wrapped into a `Databox`) for [deployment](/docs/databox/overview/deployment), a few other type utilities are added:
+When you package a `Databox` (or a `Function` auto-wrapped into a `Databox`) for [deployment](../overview/deployment), a few other type utilities are added:
 
 - Types are automatically created so that you can import Databox Function types.
 
@@ -91,11 +91,11 @@ Optional icon name to use in the auto-generated website documentation. NOTE: Thi
 
 ### input `Record<string, Any Schema>` {#input}
 
-Optional input fields definition containing and object of string Keys to [Schema](/docs/databox/advanced/schema) values.
+Optional input fields definition containing and object of string Keys to [Schema](./schema) values.
 
 ### output `Record<string, Any Schema>` | ObjectSchema | ArraySchema
 
-Optional definition of Key/[Any Schema](/docs/databox/advanced/schema), [Object](/docs/databox/advanced/schema#object) or [Array](/docs/databox/advanced/schema#array) to be returned.
+Optional definition of Key/[Any Schema](./schema), [Object](./schema#object) or [Array](./schema#array) to be returned.
 
 ### inputExamples: `Record<string, Example Value or DataUtilities Function>[]`
 

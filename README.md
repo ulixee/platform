@@ -2,12 +2,12 @@
 
 Ulixee is a scraping [engine][hero] with a built-in deployment [unit][databox] that enables out-of-the-box [querying][stream] across a horizontal [deployment][miner].
 
-This repository is the development home to several of the tools that make it easy to build and manage these scripts, including [ChromeAlive!](apps/chromealive), [Miner][miner] and [Databox for Hero][databox].
+This repository is the development home to several of the tools that make it easy to build and manage these scripts, including [ChromeAlive!](apps/chromealive), [Miner][miner] and [Databox][databox].
 
 ## Projects
 
 - Hero `/hero`. The Automated Browser Engine built for scraping. (repository home - https://github.com/ulixee/hero).
-- Databox for Hero `/databox/for-hero`. A discrete, composable unit for data extraction scripts.
+- Databox `/databox`. Discrete, composable units for interconnected data extraction scripts.
 - Miner `/miner`. Run Ulixee tooling on a remote machine.
 - Stream `/stream`. Query, transform and compose Databoxes running on any machine.
 - ChromeAlive! `/apps/chromealive*`. Supercharge scraper script development using the Chrome browser.
@@ -35,9 +35,9 @@ Learn more about Ulixee at [ulixee.org](https://ulixee.org).
 
 ## Contributing
 
-See [How to Contribute](//ulixee.org/how-to-contribute) for ways to get started.
+See [How to Contribute](https://ulixee.org/how-to-contribute) for ways to get started.
 
-This project has a [Code of Conduct](//ulixee.org/code-of-conduct). By interacting with this repository, organization, or community you agree to abide by its terms.
+This project has a [Code of Conduct](https://ulixee.org/code-of-conduct). By interacting with this repository, organization, or community you agree to abide by its terms.
 
 We'd love your help in making Ulixee a better set of tools. Please don't hesitate to send a pull request.
 
@@ -46,6 +46,6 @@ We'd love your help in making Ulixee a better set of tools. Please don't hesitat
 [MIT](LICENSE.md)
 
 [hero]: https://github.com/ulixee/hero
-[databox]: databox/for-hero
-[stream]: stream
+[databox]: databox
+[stream]: ./
 [miner]: miner

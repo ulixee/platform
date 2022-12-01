@@ -52,10 +52,6 @@ export default class Data {
     }
     path += '.json';
 
-    if (toolKey === 'hero' && path.startsWith(`/docs/${toolKey}`) && !path.startsWith(`/docs/${toolKey}/awaited-dom`)) {
-      path = path.replace(`/docs/${toolKey}`, `/docs/${toolKey}/main`);
-    }
-
     const response = await Axios.get(`/data${path}`);
     return response.data;
   }

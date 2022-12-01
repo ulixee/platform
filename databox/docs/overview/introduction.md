@@ -17,7 +17,7 @@ Databox Functions create structure -- boundaries -- around a single "scrape", wh
 
 ## How Databoxes Work
 
-Each Databox is a wrapper for defining a composable scraper script. You can run databoxes directly from the command line or upload them to a [Miner](/docs/miner).
+Each Databox is a wrapper for defining a composable scraper script. You can run databoxes directly from the command line or upload them to a [Miner](https://ulixee.org/docs/miner).
 
 ## Installation
 
@@ -33,7 +33,7 @@ or
 yarn add @ulixee/databox
 ```
 
-It's your responsibility to ensure your Ulixee development environment is setup, such as installing and running [`@ulixee/miner`](/docs/miner).
+It's your responsibility to ensure your Ulixee development environment is setup, such as installing and running [`@ulixee/miner`](https://ulixee.org/docs/miner).
 
 ## Usage Example
 

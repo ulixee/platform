@@ -14,4 +14,4 @@ When you combine these two ideas, it means your "Scraper scripts" can become sim
 
 ## Deployable
 
-Databoxes can be packaged up and deployed as a "unit" to a Ulixee Miner. You can query using the [Stream](/docs/stream) library. By deploying to a Miner, Databoxes are able to run very efficiently - the code is cached, all individual commands for the Databox Functions are run on the Miner and do not need serialization/transport to a Client. The only necessary communications are an "input" and the resulting "output" as a response.
+Databoxes can be packaged up and deployed as a "unit" to a Ulixee Miner. You can query using the [Stream](https://ulixee.org/docs/stream) library. By deploying to a Miner, Databoxes are able to run very efficiently - the code is cached, all individual commands for the Databox Functions are run on the Miner and do not need serialization/transport to a Client. The only necessary communications are an "input" and the resulting "output" as a response.

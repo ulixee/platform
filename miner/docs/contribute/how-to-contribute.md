@@ -21,7 +21,7 @@ Install [Node.js 14](https://nodejs.org/en/download/) or higher and [Yarn](https
 We are a strong believer that documentation is very important for any open-source projects. Ulixee uses Gridsome for its website and documentation.
 
 1. If you want to add/modify any Ulixee Miner documentation, go to the
-   [docs folder on GitHub](https://github.com/ulixee/platform/tree/miner/docs) and
+   [docs folder on GitHub](https://github.com/ulixee/platform/tree/main/miner/docs) and
    use the file editor to edit and then preview your changes.
 2. GitHub then allows you to commit the change and raise a PR right in the UI. This is the _easiest_ way you can contribute to Ulixee!
 

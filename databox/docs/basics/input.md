@@ -1,6 +1,6 @@
 # Input
 
-Every Function accepts input, which is attached to the [FunctionContext](/docs/databox/basics/function-context).
+Every Function accepts input, which is attached to the [FunctionContext](./function-context.md).
 
 When running the Function as a NodeJs script from the command line, you can pass the input as CLI variables. These are parsed using [yargs-parser](https://github.com/yargs/yargs-parser). Variables containing a '.' will be converted into objects, and dashes are camel-cased.
 

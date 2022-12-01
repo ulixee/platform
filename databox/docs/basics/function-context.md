@@ -2,7 +2,7 @@
 
 > FunctionContext provides access to metadata about your Function execution, along with Plugin-created variables.
 
-The FunctionContext class is passed into the [`run`](/docs/databox/basics/function#constructor), [`beforeRun`](/docs/databox/basics/function#constructor) and [`afterRun`](/docs/databox/basics/function#constructor) callbacks provided to a Function. It cannot be constructed.
+The FunctionContext class is passed into the [`run`](./function#constructor), [`beforeRun`](./function#constructor) and [`afterRun`](./function#constructor) callbacks provided to a Function. It cannot be constructed.
 
 ## Properties
 
@@ -10,19 +10,19 @@ The FunctionContext class is passed into the [`run`](/docs/databox/basics/functi
 
 Readonly input.
 
-#### **Returns** [`Input`](/docs/databox/basics/input)
+#### **Returns** [`Input`](./input.md)
 
 ### output
 
 Get or set the output data.
 
-#### **Returns** [`Output`](/docs/databox/basics/output)
+#### **Returns** [`Output`](./output.md)
 
 ### schema
 
 A schema defining inputs and outputs for the function.
 
-#### **Returns** [`IFunctionSchema`](/docs/databox/advanced/function-schema)
+#### **Returns** [`IFunctionSchema`](../advanced/function-schemas.md)
 
 ## Methods
 

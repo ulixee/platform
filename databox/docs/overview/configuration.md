@@ -42,7 +42,7 @@ This process starts in the directory of your script and looks upwards to the roo
 
 Current supported configurations are:
 
-- defaultMinerHost `string`. A "host:port" combination to access your default [Miner](/docs/miner)
+- defaultMinerHost `string`. A "host:port" combination to access your default [Miner](https://ulixee.org/docs/miner)
 
 ### Defer Running Databox
 
@@ -52,7 +52,7 @@ Any script you run from the command line that default exports a Databox instance
 
 ### Databox Core Storage {#storage}
 
-Databox Core stores and retrieves [packaged Databoxes](/docs/databox/overview/deployment) from a configurable location on a machine. This directory will contain:
+Databox Core stores and retrieves [packaged Databoxes](./deployment) from a configurable location on a machine. This directory will contain:
 
 1. `dbx*`. Packaged databoxes organized into folders by their Bech32m encoded hashes.
 2. `index.db`. A sqlite3 file containing an index of all Databoxes installed locally. This index will be automatically updated if new files are added to the folder and requested in a query.
