@@ -86,6 +86,7 @@ test('should allow a user to override updating with no history', async () => {
   const databoxTmpDir = `${storageDir}/tmp/test`;
   Helpers.needsClosing.push({ close: () => rmSync(databoxTmpDir), onlyCloseOnFinal: false });
   const registry = new DataboxRegistry(storageDir, tmpDir);
+  Helpers.needsClosing.push(registry);
 
   let originalVersionHash: string;
   {
