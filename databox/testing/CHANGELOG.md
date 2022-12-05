@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.16](https://github.com/ulixee/platform/compare/v2.0.0-alpha.15...v2.0.0-alpha.16) (2022-12-05)
+
+
+### Features
+
+* convert databox plugins to new structure ([1705030](https://github.com/ulixee/platform/commit/1705030ec91461b166c9bfafbcc9b1e3c12f0854))
+* databox functions ([b14352d](https://github.com/ulixee/platform/commit/b14352d8160de6667e05bdbf86b6b6df32d056e4))
+
+
+
+
+
 # [2.0.0-alpha.15](https://github.com/ulixee/platform/compare/v2.0.0-alpha.14...v2.0.0-alpha.15) (2022-11-17)
 
 **Note:** Version bump only for package @ulixee/databox-testing

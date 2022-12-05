@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/apps-desktop",
-  "version": "2.0.0-alpha.15",
+  "version": "2.0.0-alpha.16",
   "private": true,
   "main": "index.js",
   "scripts": {
@@ -16,12 +16,12 @@
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/apps-chromealive-core": "2.0.0-alpha.15",
-    "@ulixee/commons": "2.0.0-alpha.15",
-    "@ulixee/databox-core": "2.0.0-alpha.15",
-    "@ulixee/databox-plugins-hero": "2.0.0-alpha.15",
-    "@ulixee/default-browser-emulator": "2.0.0-alpha.14",
-    "@ulixee/miner": "2.0.0-alpha.15",
+    "@ulixee/apps-chromealive-core": "2.0.0-alpha.16",
+    "@ulixee/commons": "2.0.0-alpha.16",
+    "@ulixee/databox-core": "2.0.0-alpha.16",
+    "@ulixee/databox-plugins-hero": "2.0.0-alpha.16",
+    "@ulixee/default-browser-emulator": "2.0.0-alpha.15",
+    "@ulixee/miner": "2.0.0-alpha.16",
     "electron-log": "^4.4.6",
     "electron-positioner": "^4.1.0",
     "electron-updater": "^5.0.1",

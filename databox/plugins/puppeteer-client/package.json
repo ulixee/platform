@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/databox-plugins-puppeteer",
-  "version": "2.0.0-alpha.15",
+  "version": "2.0.0-alpha.16",
   "description": "The Databox Puppeteer Plugin.",
   "exports": {
     ".": {
@@ -10,11 +10,11 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.15",
-    "@ulixee/databox": "2.0.0-alpha.15",
+    "@ulixee/commons": "2.0.0-alpha.16",
+    "@ulixee/databox": "2.0.0-alpha.16",
     "puppeteer": "^14.3.0"
   },
   "devDependencies": {
-    "@ulixee/databox-testing": "2.0.0-alpha.15"
+    "@ulixee/databox-testing": "2.0.0-alpha.16"
   }
 }
