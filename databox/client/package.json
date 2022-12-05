@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/databox",
-  "version": "2.0.0-alpha.15",
+  "version": "2.0.0-alpha.16",
   "main": "index.js",
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
@@ -16,17 +16,17 @@
     "./types/*": "./types/*"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.15",
-    "@ulixee/crypto": "2.0.0-alpha.15",
-    "@ulixee/net": "2.0.0-alpha.15",
-    "@ulixee/schema": "2.0.0-alpha.15",
-    "@ulixee/sidechain": "2.0.0-alpha.15",
-    "@ulixee/specification": "2.0.0-alpha.15",
+    "@ulixee/commons": "2.0.0-alpha.16",
+    "@ulixee/crypto": "2.0.0-alpha.16",
+    "@ulixee/net": "2.0.0-alpha.16",
+    "@ulixee/schema": "2.0.0-alpha.16",
+    "@ulixee/sidechain": "2.0.0-alpha.16",
+    "@ulixee/specification": "2.0.0-alpha.16",
     "commander": "^9.3.0",
     "yargs-parser": "^20.2.9"
   },
   "devDependencies": {
-    "@ulixee/databox-packager": "2.0.0-alpha.15",
+    "@ulixee/databox-packager": "2.0.0-alpha.16",
     "moment": "^2.29.4"
   }
 }

@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.16](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.15...v2.0.0-alpha.16) (2022-12-05)
+
+
+### Features
+
+* **databox:** updated structure documentation ([4dbfe0b](https://github.com/ulixee/ulixee/commit/4dbfe0b5379417fc86de3c5b5885a1592d2c81fe))
+
+
+
+
+
 # [2.0.0-alpha.15](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.14...v2.0.0-alpha.15) (2022-11-17)
 
 **Note:** Version bump only for package @ulixee/databox-plugins-hero-plugin-core

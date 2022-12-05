@@ -3093,11 +3093,6 @@
   resolved "https://registry.yarnpkg.com/@types/ua-parser-js/-/ua-parser-js-0.7.36.tgz#9bd0b47f26b5a3151be21ba4ce9f5fa457c5f190"
   integrity sha512-N1rW+njavs70y2cApeIw1vLMYXRwfBy+7trgavGuuTfOd7j1Yh7QTRc/yqsPl6ncokt72ZXuxEU0PiCp9bSwNQ==
 
-"@types/unist@^2.0.0":
-  version "2.0.6"
-  resolved "https://registry.yarnpkg.com/@types/unist/-/unist-2.0.6.tgz#250a7b16c3b91f672a24552ec64678eeb1d3a08d"
-  integrity sha512-PBjIUxZHOuj0R15/xuwJYjFi+KZdNFrehocChv4g5hu6aFroHue8m0lBP0POdK2nKzbw0cgV1mws8+V/JAcEkQ==
-
 "@types/verror@^1.10.3":
   version "1.10.6"
   resolved "https://registry.yarnpkg.com/@types/verror/-/verror-1.10.6.tgz#3e600c62d210c5826460858f84bcbb65805460bb"
@@ -3263,89 +3258,6 @@
     progress "^2.0.3"
     tar "^6.1.11"
 
-"@ulixee/commons@2.0.0-alpha.12":
-  version "2.0.0-alpha.12"
-  resolved "https://registry.yarnpkg.com/@ulixee/commons/-/commons-2.0.0-alpha.12.tgz#e8cdbeb5af86419ce25890a872e01e3fe426b700"
-  integrity sha512-UWUg1X/5mJ9am3vfianSKcHDP8q1w7qBJJi4L6dfoKXX8X9rECIlsTGa+LvQ661NGU0a50eiUcAeczQpd1PTYA==
-  dependencies:
-    bech32 "^2.0.0"
-    devtools-protocol "^0.0.981744"
-    https-proxy-agent "^5.0.0"
-    semver "^7.3.7"
-    source-map-js "^1.0.1"
-
-"@ulixee/crypto@2.0.0-alpha.12":
-  version "2.0.0-alpha.12"
-  resolved "https://registry.yarnpkg.com/@ulixee/crypto/-/crypto-2.0.0-alpha.12.tgz#c5dc5f0ec9f184e5850b27e7eeca12919c5f4fac"
-  integrity sha512-qVfjKzDuYpLrpb91ayk1f7BY6yQ1Q2Osq+1XF/qRnk9axUHvo5x+C26ACNeYm1NURhV9VGk7k53xSUx+1zU3Ew==
-  dependencies:
-    "@ulixee/commons" "2.0.0-alpha.12"
-    "@ulixee/crypto" "2.0.0-alpha.12"
-    "@ulixee/specification" "2.0.0-alpha.12"
-    bignumber.js "^9.0.2"
-    commander "^9.3.0"
-
-"@ulixee/databox-core-runtime@2.0.0-alpha.12":
-  version "2.0.0-alpha.12"
-  resolved "https://registry.yarnpkg.com/@ulixee/databox-core-runtime/-/databox-core-runtime-2.0.0-alpha.12.tgz#f4ef77fe28463be0f0d706fcd5ec7f428fd5ba9b"
-  integrity sha512-nWgDRZjGNMVCM0VbH5Z53+kCl43XkvUv2LN/xZ7k541nTSE1mttWbNx5Bh3o9Pm285shScxKFX0Boq7EnsMHtw==
-  dependencies:
-    "@ulixee/commons" "2.0.0-alpha.12"
-    "@ulixee/databox" "2.0.0-alpha.12"
-    "@ulixee/databox-core" "2.0.0-alpha.12"
-    "@ulixee/databox-interfaces" "2.0.0-alpha.12"
-    "@ulixee/net" "2.0.0-alpha.12"
-    "@ulixee/specification" "2.0.0-alpha.12"
-    better-sqlite3 "^7.5.1"
-    nanoid "^3.1.30"
-    vm2 "^3.9.9"
-
-"@ulixee/databox-core@2.0.0-alpha.12":
-  version "2.0.0-alpha.12"
-  resolved "https://registry.yarnpkg.com/@ulixee/databox-core/-/databox-core-2.0.0-alpha.12.tgz#0c32241095593964e180cdb248f22c0c07282d82"
-  integrity sha512-M0V9cQCoTpE3jDcHn9SbO/BcFvjbMP7P8VosECIoqlIHKJjnT+OSaV/MDH+fdNsSs6flvLJOrhyAcG7xomvQ2w==
-  dependencies:
-    "@ulixee/commons" "2.0.0-alpha.12"
-    "@ulixee/crypto" "2.0.0-alpha.12"
-    "@ulixee/databox" "2.0.0-alpha.12"
-    "@ulixee/databox-interfaces" "2.0.0-alpha.12"
-    "@ulixee/net" "2.0.0-alpha.12"
-    "@ulixee/sidechain" "2.0.0-alpha.12"
-    "@ulixee/specification" "2.0.0-alpha.12"
-    better-sqlite3 "^7.5.1"
-    nanoid "^3.1.32"
-    tar "^6.1.11"
-    vm2 "^3.9.10"
-
-"@ulixee/databox-interfaces@2.0.0-alpha.12":
-  version "2.0.0-alpha.12"
-  resolved "https://registry.yarnpkg.com/@ulixee/databox-interfaces/-/databox-interfaces-2.0.0-alpha.12.tgz#101998d7aedcfd5acec73c74e91ca2d25a343fb0"
-  integrity sha512-hYISIEntSg2S153EfVS0yhmi7wdrZ6tBlu9R4SdxAeHZjoxEa4i8S4Th1h3EWFuy7qpbPyu9a5WCLSUiEfNcKw==
-  dependencies:
-    "@ulixee/crypto" "2.0.0-alpha.12"
-    "@ulixee/specification" "2.0.0-alpha.12"
-
-"@ulixee/databox@2.0.0-alpha.12":
-  version "2.0.0-alpha.12"
-  resolved "https://registry.yarnpkg.com/@ulixee/databox/-/databox-2.0.0-alpha.12.tgz#fefa88ec5479366a9d2318c50ad835022ad0c22c"
-  integrity sha512-2g+jyxhCJWtkH2dn6ZCoHVBJiRQvZn+gyLQuGMbCYwU+iR14ENEQAOxdDSX+VUAoLuYWKHYViIqpoEMnKHo/yw==
-  dependencies:
-    "@ulixee/commons" "2.0.0-alpha.12"
-    "@ulixee/crypto" "2.0.0-alpha.12"
-    "@ulixee/databox-interfaces" "2.0.0-alpha.12"
-    "@ulixee/net" "2.0.0-alpha.12"
-    "@ulixee/specification" "2.0.0-alpha.12"
-    commander "^9.3.0"
-    yargs-parser "^20.2.9"
-
-"@ulixee/net@2.0.0-alpha.12":
-  version "2.0.0-alpha.12"
-  resolved "https://registry.yarnpkg.com/@ulixee/net/-/net-2.0.0-alpha.12.tgz#b0e93be03a9b273d02e94fcda043cc3a84e7c546"
-  integrity sha512-+vkTS2mzMVnUzOO0lMfUsBVSUoGrJRLAY7xjGFUS83yJEU8zz0iwD/vGi6hHGNjAWlAjdBNal5wlfgFivxHYrg==
-  dependencies:
-    "@ulixee/commons" "2.0.0-alpha.12"
-    ws "^7.4.6"
-
 "@ulixee/repo-tools@^1.0.22":
   version "1.0.22"
   resolved "https://registry.yarnpkg.com/@ulixee/repo-tools/-/repo-tools-1.0.22.tgz#b906737cf464b5fc3ea0be5b2c958e0fedb76921"
@@ -3369,24 +3281,6 @@
     prettier "^2.6.2"
     pretty-quick "^3.1.0"
     typescript "^4.7.2"
-
-"@ulixee/sidechain@2.0.0-alpha.12":
-  version "2.0.0-alpha.12"
-  resolved "https://registry.yarnpkg.com/@ulixee/sidechain/-/sidechain-2.0.0-alpha.12.tgz#7faf2fd9b6b4f606b796aeb0a4aa14ec2476e159"
-  integrity sha512-h1Ne9LGOH8o/5doAG26lRciqLvttkGR/qiFB61fuaQXmQgSfnp9D5E3Vz3xA6T4dTG0kwxVBaJhXgdLmxIOnSQ==
-  dependencies:
-    "@ulixee/commons" "2.0.0-alpha.12"
-    "@ulixee/crypto" "2.0.0-alpha.12"
-    "@ulixee/net" "2.0.0-alpha.12"
-    "@ulixee/specification" "2.0.0-alpha.12"
-    commander "^9.4.0"
-
-"@ulixee/specification@2.0.0-alpha.12":
-  version "2.0.0-alpha.12"
-  resolved "https://registry.yarnpkg.com/@ulixee/specification/-/specification-2.0.0-alpha.12.tgz#65293e4926a8ac13826f2e00d48c4af8bfd2345d"
-  integrity sha512-NTXEKxsKWtI8Uq9z9LcPF/hgJ+Hv1LUaWbVMymJ5EqQhKWQzFM1AGvNERoqdh4MBbyTFvkthbnRkoDtdHRoFBQ==
-  dependencies:
-    zod "^3.17.3"
 
 "@vue/babel-helper-vue-jsx-merge-props@^1.4.0":
   version "1.4.0"
@@ -7765,11 +7659,6 @@ github-from-package@0.0.0:
   resolved "https://registry.yarnpkg.com/github-from-package/-/github-from-package-0.0.0.tgz#97fb5d96bfde8973313f20e8288ef9a167fa64ce"
   integrity sha512-SyHy3T1v2NUXn29OsWdxmK6RwHD+vkj3v8en8AOBZ1wBQ/hCAQ5bAQTD02kW4W9tUp/3Qh6J8r9EvntiyCmOOw==
 
-github-slugger@^1.0.0:
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/github-slugger/-/github-slugger-1.5.0.tgz#17891bbc73232051474d68bd867a34625c955f7d"
-  integrity sha512-wIh+gKBI9Nshz2o46B0B3f5k/W+WI9ZAv6y5Dn5WJ5SK1t0TnDimB4WE5rmTD05ZAIn8HALCZVmCsvj0w0v0lw==
-
 glob-parent@^5.1.1, glob-parent@^5.1.2, glob-parent@~5.1.2:
   version "5.1.2"
   resolved "https://registry.yarnpkg.com/glob-parent/-/glob-parent-5.1.2.tgz#869832c58034fe68a4093c17dc15e8340d8401c4"
@@ -9931,11 +9820,6 @@ matcher@^3.0.0:
   integrity sha512-OkeDaAZ/bQCxeFAozM55PKcKU0yJMPGifLwV4Qgjitu+5MoAfSQN4lsLJeXZ1b8w0x+/Emda6MZgXS1jvsapng==
   dependencies:
     escape-string-regexp "^4.0.0"
-
-mdast-util-to-string@^1.0.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/mdast-util-to-string/-/mdast-util-to-string-1.1.0.tgz#27055500103f51637bd07d01da01eb1967a43527"
-  integrity sha512-jVU0Nr2B9X3MU4tSK7JP1CMkSvOj7X5l/GboG1tKRw52lLF1x2Ju92Ms9tNetCcbfX3hzlM73zYo2NKkWSfF/A==
 
 mdn-data@2.0.14:
   version "2.0.14"
@@ -12111,14 +11995,6 @@ relateurl@^0.2.7:
   resolved "https://registry.yarnpkg.com/relateurl/-/relateurl-0.2.7.tgz#54dbf377e51440aca90a4cd274600d3ff2d888a9"
   integrity sha512-G08Dxvm4iDN3MLM0EsP62EDV9IuhXPR6blNz6Utcp7zyV3tr4HVNINt6MpaRWbxoOHT3Q7YN2P+jaHX8vUbgog==
 
-"remark-slug@https://github.com/ulixee/remark-slug.git":
-  version "6.0.0"
-  resolved "https://github.com/ulixee/remark-slug.git#29da3adcab6a3adc75e25b0f9439b3e1d5b228ce"
-  dependencies:
-    github-slugger "^1.0.0"
-    mdast-util-to-string "^1.0.0"
-    unist-util-visit "^2.0.0"
-
 renderkid@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/renderkid/-/renderkid-3.0.0.tgz#5fd823e4d6951d37358ecc9a58b1f06836b6268a"
@@ -13780,28 +13656,6 @@ unique-string@^2.0.0:
   dependencies:
     crypto-random-string "^2.0.0"
 
-unist-util-is@^4.0.0:
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/unist-util-is/-/unist-util-is-4.1.0.tgz#976e5f462a7a5de73d94b706bac1b90671b57797"
-  integrity sha512-ZOQSsnce92GrxSqlnEEseX0gi7GH9zTJZ0p9dtu87WRb/37mMPO2Ilx1s/t9vBHrFhbgweUwb+t7cIn5dxPhZg==
-
-unist-util-visit-parents@^3.0.0:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/unist-util-visit-parents/-/unist-util-visit-parents-3.1.1.tgz#65a6ce698f78a6b0f56aa0e88f13801886cdaef6"
-  integrity sha512-1KROIZWo6bcMrZEwiH2UrXDyalAa0uqzWCxCJj6lPOvTve2WkfgCytoDTPaMnodXh1WrXOq0haVYHj99ynJlsg==
-  dependencies:
-    "@types/unist" "^2.0.0"
-    unist-util-is "^4.0.0"
-
-unist-util-visit@^2.0.0:
-  version "2.0.3"
-  resolved "https://registry.yarnpkg.com/unist-util-visit/-/unist-util-visit-2.0.3.tgz#c3703893146df47203bb8a9795af47d7b971208c"
-  integrity sha512-iJ4/RczbJMkD0712mGktuGpm/U4By4FfDonL7N/9tATGIF4imikjOuagyMY53tnZq3NP6BcmlrHhEKAfGWjh7Q==
-  dependencies:
-    "@types/unist" "^2.0.0"
-    unist-util-is "^4.0.0"
-    unist-util-visit-parents "^3.0.0"
-
 universal-user-agent@^6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/universal-user-agent/-/universal-user-agent-6.0.0.tgz#3381f8503b251c0d9cd21bc1de939ec9df5480ee"
@@ -13994,7 +13848,7 @@ verror@^1.10.0:
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
 
-vm2@^3.9.10, vm2@^3.9.9:
+vm2@^3.9.10:
   version "3.9.12"
   resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.12.tgz#9bfa6d913a8b467861524e5a11c3b038cc967ec4"
   integrity sha512-OMmRsKh1gmdosFzuqmj6O43hqIStqXA24YbwjtUTO0TkOBP8yLNHLplbr4odnAzEcMnm9lt2r3R8kTivn8urMg==
