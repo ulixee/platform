@@ -29,3 +29,4 @@ connect
 /databox/examples/creep.ts
 /databox/examples/frame.ts
 /.rollup.cache/
+/website/firebase-debug.log
