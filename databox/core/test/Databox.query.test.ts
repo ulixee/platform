@@ -74,7 +74,11 @@ beforeAll(async () => {
     Fs.unlinkSync(`${__dirname}/databoxes/directFunction.dbx`);
   }
   mock.MicronoteBatchFunding.fundBatch.mockImplementation(async function (batch, centagons) {
-    return this.recordBatchFund(1, ArgonUtils.centagonsToMicrogons(centagons), batch);
+    return this.recordBatchFund(
+      '1'.padEnd(30, '0'),
+      ArgonUtils.centagonsToMicrogons(centagons),
+      batch,
+    );
   });
 
   mock.sidechainClient.sendRequest.mockImplementation(mockSidechainServer);
@@ -100,11 +104,36 @@ test('should be able to run a databox', async () => {
   const packager = new DataboxPackager(`${__dirname}/databoxes/output.js`);
   await packager.build();
   await client.upload(await packager.dbx.asBuffer());
-  await expect(client.query(packager.manifest.versionHash, 'SELECT success FROM putout()')).resolves.toEqual({
+  await expect(
+    client.query(packager.manifest.versionHash, 'SELECT success FROM putout()'),
+  ).resolves.toEqual({
     output: [{ success: true }],
     metadata: expect.any(Object),
     latestVersionHash: expect.any(String),
   });
+});
+
+test('should be able to require authentication for a databox', async () => {
+  const id = Identity.createSync();
+  Fs.writeFileSync(
+    `${__dirname}/databoxes/auth.js`,
+    Fs.readFileSync(`${__dirname}/databoxes/auth.js`, 'utf8').replace(
+      /const allowedId = 'id1.+';/,
+      `const allowedId = '${id.bech32}';`,
+    ),
+  );
+
+  const packager = new DataboxPackager(`${__dirname}/databoxes/auth.js`);
+  await packager.build();
+  await client.upload(await packager.dbx.asBuffer());
+  const auth = DataboxApiClient.createExecAuthentication(null, id);
+  await expect(
+    client.query(packager.manifest.versionHash, 'select * from authme()'),
+  ).rejects.toThrowError('authentication');
+
+  await expect(
+    client.query(packager.manifest.versionHash, 'select * from authme()', { authentication: auth }),
+  ).resolves.toBeTruthy();
 });
 
 test('should be able to run a function packaged without a databox', async () => {
@@ -112,7 +141,9 @@ test('should be able to run a function packaged without a databox', async () => 
   await packager.build();
   await client.upload(await packager.dbx.asBuffer());
   await expect(
-    client.query(packager.manifest.versionHash, 'SELECT testerEcho FROM default(tester => $1)', [false]),
+    client.query(packager.manifest.versionHash, 'SELECT testerEcho FROM default(tester => $1)', {
+      boundValues: [false],
+    }),
   ).resolves.toEqual({
     output: [{ testerEcho: false }],
     metadata: expect.any(Object),
@@ -129,7 +160,11 @@ test('should be able to run a databox function with payments', async () => {
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
       functionsByName: {
         putout: {
-          pricePerQuery: 1250,
+          prices: [
+            {
+              perQuery: 1250,
+            },
+          ],
         },
       },
     } as Partial<IDataboxManifest>),
@@ -137,7 +172,7 @@ test('should be able to run a databox function with payments', async () => {
 
   const dbx = await packager.build();
   const manifest = packager.manifest;
-  expect(manifest.functionsByName.putout.pricePerQuery).toBe(1250);
+  expect(manifest.functionsByName.putout.prices[0].perQuery).toBe(1250);
   await client.upload(await dbx.asBuffer());
 
   await expect(client.query(manifest.versionHash, 'SELECT * FROM putout()')).rejects.toThrowError(
@@ -149,9 +184,13 @@ test('should be able to run a databox function with payments', async () => {
   });
   const settings = await sidechainClient.getSettings(false);
   expect(settings.settlementFeeMicrogons).toBe(5);
+  apiCalls.mockClear();
 
   const meta = await client.getFunctionPricing(manifest.versionHash, 'putout');
-  const payment = await sidechainClient.createMicroPayment(meta);
+  const payment = await sidechainClient.createMicroPayment({
+    microgons: meta.minimumPrice,
+    ...meta,
+  });
   expect(payment.micronote.microgons).toBeGreaterThanOrEqual(1255);
 
   expect(apiCalls.mock.calls.map(x => x[0].command)).toEqual([
@@ -162,7 +201,9 @@ test('should be able to run a databox function with payments', async () => {
   ]);
 
   apiCalls.mockClear();
-  await expect(client.query(manifest.versionHash, 'SELECT success FROM putout()', [], payment)).resolves.toEqual({
+  await expect(
+    client.query(manifest.versionHash, 'SELECT success FROM putout()', { payment }),
+  ).resolves.toEqual({
     output: [{ success: true }],
     metadata: {
       microgons: 1255,
@@ -174,14 +215,14 @@ test('should be able to run a databox function with payments', async () => {
   expect(apiCalls.mock.calls.map(x => x[0].command)).toEqual([
     // from DataboxCore
     'Sidechain.settings',
-    'Micronote.lock',
-    'Micronote.claim',
+    'Micronote.hold',
+    'Micronote.settle',
   ]);
   // @ts-ignore
   const registry = DataboxCore.databoxRegistry;
   const entry = registry.getByVersionHash(manifest.versionHash);
   expect(entry.statsByFunction.putout.runs).toBe(1);
-  expect(entry.statsByFunction.putout.maxPrice).toBe(1255);
+  expect(entry.statsByFunction.putout.maxPrice).toBe(1250);
 });
 
 test('should be able run a databox with a GiftCard', async () => {
@@ -195,7 +236,7 @@ test('should be able run a databox with a GiftCard', async () => {
       giftCardIssuerIdentity: databoxGiftCardIssuer.bech32,
       functionsByName: {
         putout: {
-          pricePerQuery: 1250,
+          prices: [{ perQuery: 1250 }],
         },
       },
     } as Partial<IDataboxManifest>),
@@ -232,9 +273,14 @@ test('should be able run a databox with a GiftCard', async () => {
 
   // should be able to run with a gift card required issuer
   {
-    const payment = await userSidechainClient.createMicroPayment(meta);
+    const payment = await userSidechainClient.createMicroPayment({
+      microgons: meta.minimumPrice,
+      ...meta,
+    });
     expect(payment.giftCard.id).toBe(giftCard.giftCardId);
-    await expect(client.query(manifest.versionHash, 'SELECT success FROM putout()', [], payment)).resolves.toEqual({
+    await expect(
+      client.query(manifest.versionHash, 'SELECT success FROM putout()', { payment }),
+    ).resolves.toEqual({
       output: [{ success: true }],
       metadata: expect.any(Object),
       latestVersionHash: expect.any(String),
@@ -243,9 +289,14 @@ test('should be able run a databox with a GiftCard', async () => {
   // should be able to run with no gift card required issuer
   {
     DataboxCore.options.giftCardsRequiredIssuerIdentity = null;
-    const payment = await userSidechainClient.createMicroPayment(meta);
+    const payment = await userSidechainClient.createMicroPayment({
+      microgons: meta.minimumPrice,
+      ...meta,
+    });
     expect(payment.giftCard.id).toBe(giftCard.giftCardId);
-    await expect(client.query(manifest.versionHash, 'SELECT success FROM putout()', [], payment)).resolves.toEqual({
+    await expect(
+      client.query(manifest.versionHash, 'SELECT success FROM putout()', { payment }),
+    ).resolves.toEqual({
       output: [{ success: true }],
       metadata: expect.any(Object),
       latestVersionHash: expect.any(String),
@@ -254,10 +305,13 @@ test('should be able run a databox with a GiftCard', async () => {
 
   // follow-on test that you can disable giftCards
   DataboxCore.options.giftCardsAllowed = false;
-  const payment = await userSidechainClient.createMicroPayment(meta);
-  await expect(client.query(manifest.versionHash, 'SELECT * FROM putout()', [], payment)).rejects.toThrowError(
-    'not accepting gift cards',
-  );
+  const payment = await userSidechainClient.createMicroPayment({
+    microgons: meta.minimumPrice,
+    ...meta,
+  });
+  await expect(
+    client.query(manifest.versionHash, 'SELECT * FROM putout()', { payment }),
+  ).rejects.toThrowError('not accepting gift cards');
   DataboxCore.options.giftCardsAllowed = true;
 });
 
@@ -269,7 +323,7 @@ test('should remove an empty GiftCard', async () => {
     JSON.stringify({
       functionsByName: {
         putout: {
-          pricePerQuery: 1250,
+          prices: [{ perQuery: 1250 }],
         },
       },
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
@@ -300,12 +354,17 @@ test('should remove an empty GiftCard', async () => {
   const meta = await client.getFunctionPricing(manifest.versionHash, 'putout');
   expect(meta.giftCardIssuerIdentities).toHaveLength(1);
 
-  const payment = await userSidechainClient.createMicroPayment(meta);
+  const payment = await userSidechainClient.createMicroPayment({
+    ...meta,
+    microgons: meta.minimumPrice,
+  });
   expect(payment.giftCard.id).toBe(giftCard.giftCardId);
   emptyGiftCardId = payment.giftCard.id;
 
   expect(userSidechainClient.giftCards.byId[emptyGiftCardId]).toBeTruthy();
-  await expect(client.query(manifest.versionHash, 'SELECT * FROM putout()', [], payment)).rejects.toThrowError();
+  await expect(
+    client.query(manifest.versionHash, 'SELECT * FROM putout()', { payment }),
+  ).rejects.toThrowError();
   expect(userSidechainClient.giftCards.byId[emptyGiftCardId]).not.toBeTruthy();
 });
 
@@ -332,14 +391,14 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
       version: '1.0.0',
     } as ISidechainInfoApis['Sidechain.settings']['result'];
   }
-  if (command === 'Micronote.lock') {
-    return { accepted: true } as IMicronoteApis['Micronote.lock']['result'];
+  if (command === 'Micronote.hold') {
+    return { accepted: true, holdId: '1234'.padEnd(30, '0') } as IMicronoteApis['Micronote.hold']['result'];
   }
-  if (command === 'Micronote.claim') {
+  if (command === 'Micronote.settle') {
     const payments = Object.values(
-      (args as IMicronoteApis['Micronote.claim']['args']).tokenAllocation,
+      (args as IMicronoteApis['Micronote.settle']['args']).tokenAllocation,
     ).reduce((x, t) => x + t, 0);
-    return { finalCost: payments + 5 } as IMicronoteApis['Micronote.claim']['result'];
+    return { finalCost: payments + 5 } as IMicronoteApis['Micronote.settle']['result'];
   }
   if (command === 'MicronoteBatch.findFund') {
     return {};
@@ -373,7 +432,7 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
       id,
       blockHeight: 0,
       guaranteeBlockHeight: 0,
-      fundsId: 1,
+      fundsId: '1'.padEnd(30, '0'),
       fundMicrogonsRemaining: 5000,
       micronoteSignature: identity.sign(sha3(concatAsBuffer(id, args.microgons))),
     } as IMicronoteApis['Micronote.create']['result'];
@@ -389,7 +448,7 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
     const funds = [] as IMicronoteBatchApis['MicronoteBatch.activeFunds']['result'];
     if ((args as any).batchSlug === giftCardBatchSlug) {
       funds.push({
-        fundsId: 1,
+        fundsId: '1'.padEnd(30, '0'),
         allowedRecipientAddresses: [],
         microgonsRemaining: 5000,
       });
@@ -414,12 +473,12 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
     }
     return {
       holdId: nanoid(32),
-      giftCardBalance: 10,
+      remainingBalance: 10,
     } as IGiftCardApis['GiftCard.createHold']['result'];
   }
   if (command === 'GiftCard.settleHold') {
     return {
-      giftCardBalance: 10,
+      remainingBalance: 10,
       microgonsAllowed: args.microgons,
       success: true,
     } as IGiftCardApis['GiftCard.settleHold']['result'];

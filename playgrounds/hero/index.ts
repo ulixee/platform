@@ -27,7 +27,7 @@ https://ulixee.org/docs/hero/advanced-concepts/client-vs-core
 }
 
 async function getCoreHost(): Promise<string> {
-  let minerHost = UlixeeMiner.getHost(version);
+  let minerHost = UlixeeHostsConfig.global.getVersionHost(version);
 
   if (minerHost?.startsWith('localhost')) {
     minerHost = await UlixeeHostsConfig.global.checkLocalVersionHost(version, minerHost);

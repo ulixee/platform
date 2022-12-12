@@ -5,6 +5,7 @@ import IFunctionContext from '../interfaces/IFunctionContext';
 import IFunctionComponents from '../interfaces/IFunctionComponents';
 import FunctionInternal from './FunctionInternal';
 import FunctionContext from './FunctionContext';
+import Databox from './Databox';
 
 export default class FunctionPlugins<
   ISchema extends IFunctionSchema,
@@ -38,20 +39,21 @@ export default class FunctionPlugins<
 
   public async initialize(
     functionInternal: FunctionInternal<ISchema>,
+    databox: Databox<any, any>,
   ): Promise<IFunctionLifecycle<ISchema, IRunContext, IBeforeRunContext, IAfterRunContext>> {
     const lifecycle: IFunctionLifecycle<ISchema, IRunContext, IBeforeRunContext, IAfterRunContext> =
       {
         beforeRun: {
           isEnabled: !!this.#components.beforeRun,
-          context: new FunctionContext(functionInternal) as any,
+          context: new FunctionContext(functionInternal, databox) as any,
         },
         run: {
           isEnabled: !!this.#components.run,
-          context: new FunctionContext(functionInternal) as any,
+          context: new FunctionContext(functionInternal, databox) as any,
         },
         afterRun: {
           isEnabled: !!this.#components.afterRun,
-          context: new FunctionContext(functionInternal) as any,
+          context: new FunctionContext(functionInternal, databox) as any,
         },
       };
 

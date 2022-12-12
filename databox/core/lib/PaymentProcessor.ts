@@ -1,9 +1,16 @@
-import { IBlockSettings, IPayment } from '@ulixee/specification';
+import { IPayment } from '@ulixee/specification';
 import SidechainClient from '@ulixee/sidechain';
-import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
 import verifyMicronote from '@ulixee/sidechain/lib/verifyMicronote';
-import { IDataboxApiTypes } from '@ulixee/specification/databox';
-import { InsufficientMicronoteFundsError, InsufficientQueryPriceError } from './errors';
+import { UnapprovedSidechainError } from '@ulixee/sidechain/lib/errors';
+import {
+  InsufficientMicronoteFundsError,
+  InsufficientQueryPriceError,
+  InvalidMicronoteError,
+  MaxSurgePricePerQueryExceeededError,
+  MicronotePaymentRequiredError,
+} from './errors';
+import IDataboxApiContext from '../interfaces/IDataboxApiContext';
+import { IDataboxRecord } from './DataboxesTable';
 
 /**
  * 50 microgons for 1KB means:
@@ -16,108 +23,135 @@ import { InsufficientMicronoteFundsError, InsufficientQueryPriceError } from './
  *
  */
 export default class PaymentProcessor {
-  public get pricePerQuery(): number {
-    return this.addressesPayable.reduce((total, res) => total + (res.pricePerQuery ?? 0), 0);
-  }
+  static giftCardIssuersById: { [giftCardId: string]: string[] } = {};
 
-  public get pricePerKb(): number {
-    // TODO: this should possibly average out once we have multiple miners participating.
-    return this.addressesPayable.reduce((total, res) => total + (res.pricePerKb ?? 0), 0);
-  }
+  private microgonsToHold = 0;
+  private holdId: string;
+  private holdAuthorizationCode?: string;
+  private fundingBalance: number;
+  private sidechain: SidechainClient;
+  private sidechainSettings: { settlementFeeMicrogons: number; blockHeight: number };
+  private readonly functionHolds: {
+    id: number;
+    heldMicrogons: number;
+    didRelease: boolean;
+    payouts: {
+      address: string;
+      pricePerKb?: number;
+      pricePerQuery?: number;
+    }[];
+  }[] = [];
 
-  private get giftCardId(): string {
-    return this.payment.giftCard?.id;
-  }
-
-  private get giftCardRedemptionKey(): string {
-    return this.payment.giftCard?.redemptionKey;
-  }
-
-  private giftCardHoldId: string;
-  private addressesPayable: { address: string; pricePerQuery?: number; pricePerKb?: number }[] = [];
-  private microgonsAllocated: number;
+  private readonly payouts: { address: string; microgons: number }[] = [];
 
   constructor(
     private payment: IPayment,
-    readonly config: {
-      anticipatedBytesPerQuery: number;
-      cachedResultDiscount: number; // eg, 0.2 - used as a multiplier
-      approvedSidechainRootIdentities: Set<string>;
-    },
-    private sidechain: SidechainClient,
-    private settlementFeeMicrogons: number,
-    private blockSettings: IBlockSettings,
-    readonly logger: IBoundLog,
+    readonly context: Pick<IDataboxApiContext, 'configuration' | 'sidechainClientManager'>,
   ) {}
 
-  public addAddressPayable(
-    address: string,
-    payment: { pricePerQuery?: number; pricePerKb?: number },
-  ): void {
-    if (!address) return;
-    const { pricePerQuery, pricePerKb } = payment;
-    if (!pricePerQuery && !pricePerKb) return;
-
-    const existing = this.addressesPayable.find(x => x.address === address);
-    if (existing) {
-      if (pricePerKb) {
-        existing.pricePerKb ??= 0;
-        existing.pricePerKb += pricePerKb;
-      }
-      if (pricePerQuery) {
-        existing.pricePerQuery ??= 0;
-        existing.pricePerQuery += pricePerQuery;
-      }
-    } else {
-      this.addressesPayable.push({ address, pricePerQuery, pricePerKb });
-    }
-  }
-
-  public async createGiftCardHold(): Promise<boolean> {
-    this.microgonsAllocated = this.calculateMinimumPrice();
-    const hold = await this.sidechain.giftCards.createHold(
-      this.giftCardId,
-      this.giftCardRedemptionKey,
-      this.microgonsAllocated,
-    );
-    this.giftCardHoldId = hold.holdId;
-    return true;
-  }
-
-  public async lock(
-    clientStipulations?: IDataboxApiTypes['Databox.query']['args']['pricingPreferences'],
+  public async createHold(
+    databox: IDataboxRecord,
+    functionCalls: { id: number; functionName: string }[],
+    pricingPreferences: { maxComputePricePerQuery?: number } = { maxComputePricePerQuery: 0 },
   ): Promise<boolean> {
-    this.validateQueryPrice(clientStipulations?.maxComputePricePerKb);
-    this.microgonsAllocated = this.payment.micronote.microgons;
-    verifyMicronote(
-      this.payment.micronote,
-      this.config.approvedSidechainRootIdentities,
-      this.blockSettings.height ?? 0,
-    );
-    const { micronoteId, batchSlug } = this.payment.micronote;
-    await this.sidechain.lockMicronote(
-      micronoteId,
-      batchSlug,
-      this.addressesPayable.map(x => x.address),
-    );
+    const configuration = this.context.configuration;
+    const computePricePerQuery = configuration.computePricePerQuery ?? 0;
+
+    if (computePricePerQuery > 0) {
+      const maxComputePricePerQuery = pricingPreferences.maxComputePricePerQuery;
+      if (
+        maxComputePricePerQuery &&
+        maxComputePricePerQuery > 0 &&
+        maxComputePricePerQuery < computePricePerQuery
+      ) {
+        throw new MaxSurgePricePerQueryExceeededError(
+          maxComputePricePerQuery,
+          computePricePerQuery,
+        );
+      }
+
+      this.payouts.push({
+        address: configuration.paymentAddress,
+        microgons: computePricePerQuery,
+      });
+      this.microgonsToHold += computePricePerQuery;
+    }
+
+    let minimumPrice = computePricePerQuery;
+    for (const functionCall of functionCalls) {
+      // no one to pay!
+      if (!databox.giftCardIssuerIdentity && !databox.paymentAddress) continue;
+      const prices = databox.functionsByName[functionCall.functionName].prices;
+      const pricePerQuery = prices[0]?.perQuery ?? 0;
+      const pricePerKb = prices[0]?.addOns?.perKb ?? 0;
+      const holdMicrogons = prices[0]?.minimum ?? 0;
+      this.microgonsToHold += holdMicrogons;
+
+      const payouts: PaymentProcessor['functionHolds'][0]['payouts'] = [];
+      if (pricePerQuery > 0 || pricePerKb > 0) {
+        payouts.push({ address: databox.paymentAddress, pricePerKb, pricePerQuery });
+      }
+      if (payouts.length) {
+        this.functionHolds.push({
+          id: functionCall.id,
+          didRelease: false,
+          payouts,
+          heldMicrogons: holdMicrogons,
+        });
+      }
+      for (const price of prices) minimumPrice += price.minimum ?? 0;
+    }
+
+    if (minimumPrice > 0 && !this.payment?.giftCard && !this.payment?.micronote) {
+      throw new MicronotePaymentRequiredError('This databox requires payment', minimumPrice);
+    }
+    if (!this.payment?.giftCard && !this.payment?.micronote) return true;
+    if (this.microgonsToHold === 0) return true;
+
+    await this.loadSidechain();
+
+    if (this.payment.giftCard) {
+      await this.canUseGiftCard(databox);
+      await this.holdGiftCardMinimum();
+    } else {
+      await this.canUseMicronote();
+      await this.holdMicronoteMinimum();
+    }
     return true;
   }
 
-  public async claim(resultBytes: number, isCached = false): Promise<number> {
-    const cacheMultiplier = isCached ? this.config.cachedResultDiscount : 1;
-    const payments: { [address: string]: number } = {};
-    // NOTE: don't claim the settlement cost!!
-    const maxMicrogons = this.microgonsAllocated - this.settlementFeeMicrogons;
-    let allocatedMicrogons = 0;
+  public releaseLocalFunctionHold(functionId: number, resultBytes: number): number {
+    if (!this.holdId) return 0;
+
     let totalMicrogons = 0;
-    for (const addressPayable of this.addressesPayable) {
-      let microgons = addressPayable.pricePerQuery ?? 0;
-      if (addressPayable.pricePerKb) {
-        microgons += Math.floor(resultBytes * addressPayable.pricePerKb);
+    const functionCall = this.functionHolds.find(x => x.id === functionId);
+    if (functionCall.didRelease)
+      throw new Error(`This function call was already released! (id=${functionId})`);
+
+    for (const payout of functionCall.payouts) {
+      let microgons = payout.pricePerQuery ?? 0;
+      if (payout.pricePerKb) {
+        microgons += Math.floor((resultBytes / 1000) * payout.pricePerKb);
       }
       if (microgons === 0) continue;
-      microgons *= cacheMultiplier;
+      totalMicrogons += microgons;
+      this.payouts.push({ microgons, address: payout.address });
+    }
+    functionCall.didRelease = true;
+    return totalMicrogons;
+  }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async settle(finalResultBytes: number): Promise<number> {
+    if (!this.holdId) return 0;
+
+    const payments: { [address: string]: number } = {};
+    // NOTE: don't claim the settlement cost!!
+    const maxMicrogons = this.fundingBalance - this.sidechainSettings.settlementFeeMicrogons;
+    let allocatedMicrogons = 0;
+    let totalMicrogons = 0;
+    for (const payout of this.payouts) {
+      let microgons = payout.microgons;
       totalMicrogons += microgons;
       if (allocatedMicrogons + microgons > maxMicrogons) {
         microgons = maxMicrogons - allocatedMicrogons;
@@ -126,20 +160,23 @@ export default class PaymentProcessor {
         allocatedMicrogons += microgons;
       }
 
-      payments[addressPayable.address] ??= 0;
-      payments[addressPayable.address] += microgons;
+      payments[payout.address] ??= 0;
+      payments[payout.address] += microgons;
     }
 
-    if (this.giftCardId && this.giftCardHoldId) {
+    if (this.payment?.giftCard && this.holdId) {
       const total = Object.values(payments).reduce((a, b) => a + b, 0);
-      await this.sidechain.giftCards.settleHold(this.giftCardId, this.giftCardHoldId, total);
+      await this.sidechain.giftCards.settleHold(this.payment.giftCard.id, this.holdId, total);
       return total;
     }
 
-    const { finalCost } = await this.sidechain.claimMicronote(
+    const isFinal = !!this.holdAuthorizationCode;
+    const result = await this.sidechain.settleMicronote(
       this.payment.micronote.micronoteId,
       this.payment.micronote.batchSlug,
+      this.holdId,
       payments,
+      isFinal,
     );
 
     // if nsf, claim the funds that are allocated, but do not return the query result
@@ -147,39 +184,114 @@ export default class PaymentProcessor {
       throw new InsufficientMicronoteFundsError(this.payment.micronote.microgons, totalMicrogons);
     }
 
-    return finalCost;
+    return result?.finalCost ?? totalMicrogons;
   }
 
-  private calculateMinimumPrice(): number {
-    const pricePerQuery = this.pricePerQuery;
-    const pricePerKb = this.pricePerKb;
+  private async canUseGiftCard(databox: IDataboxRecord): Promise<boolean> {
+    if (!this.context.configuration.giftCardsAllowed || !databox.giftCardIssuerIdentity) {
+      const rejector = !databox.giftCardIssuerIdentity ? 'databox' : 'Miner';
+      throw new InvalidMicronoteError(`This ${rejector} is not accepting gift cards.`);
+    }
 
-    return pricePerQuery + Math.ceil((pricePerKb * this.config.anticipatedBytesPerQuery) / 1e3);
+    // load allowed issuer list
+    const giftCardIssuers = await PaymentProcessor.getGiftCardIssuers(
+      this.sidechain,
+      this.payment?.giftCard?.id,
+    );
+
+    // ensure gift card is valid for this server
+    for (const issuer of [
+      databox.giftCardIssuerIdentity,
+      this.context.configuration.giftCardsRequiredIssuerIdentity,
+    ]) {
+      if (!issuer) continue;
+      if (!giftCardIssuers.includes(issuer))
+        throw new Error(`This gift card does not include all required issuers (${issuer})`);
+    }
+    return true;
   }
 
-  private validateQueryPrice(maxComputePricePerKb: number | undefined): void {
-    const pricePerQuery = this.pricePerQuery;
-    const pricePerKb = this.pricePerKb;
+  private async holdGiftCardMinimum(): Promise<boolean> {
+    const hold = await this.sidechain.giftCards.createHold(
+      this.payment.giftCard.id,
+      this.payment.giftCard.redemptionKey,
+      this.microgonsToHold,
+    );
+    this.fundingBalance = hold.remainingBalance + this.microgonsToHold;
+    this.holdId = hold.holdId;
+    return true;
+  }
 
-    const minimumPrice = this.calculateMinimumPrice();
+  private async canUseMicronote(): Promise<boolean> {
+    const microgonsAllocated =
+      this.payment.micronote.microgons - this.sidechainSettings.settlementFeeMicrogons;
 
-    const microgonsAllocated = this.payment.micronote.microgons - this.settlementFeeMicrogons;
-
-    let isAcceptablePrice = true;
-    if (microgonsAllocated < minimumPrice) {
-      isAcceptablePrice = false;
-    } else if (maxComputePricePerKb && maxComputePricePerKb < pricePerKb) {
-      isAcceptablePrice = false;
+    if (microgonsAllocated < this.microgonsToHold) {
+      throw new InsufficientQueryPriceError(microgonsAllocated, this.microgonsToHold);
     }
 
-    if (!isAcceptablePrice) {
-      throw new InsufficientQueryPriceError(
-        maxComputePricePerKb,
-        pricePerQuery,
-        pricePerKb,
-        microgonsAllocated,
-        minimumPrice,
-      );
+    verifyMicronote(
+      this.payment.micronote,
+      await this.context.sidechainClientManager.getApprovedSidechainRootIdentities(),
+      this.sidechainSettings.blockHeight,
+    );
+    return true;
+  }
+
+  private async holdMicronoteMinimum(): Promise<boolean> {
+    const { micronoteId, batchSlug, holdAuthorizationCode } = this.payment.micronote;
+    const hold = await this.sidechain.holdMicronoteFunds(
+      micronoteId,
+      batchSlug,
+      this.microgonsToHold,
+      holdAuthorizationCode,
+    );
+    if (hold.holdAuthorizationCode) {
+      this.holdAuthorizationCode = hold.holdAuthorizationCode;
+      // Add to the payments. This will active it for follow-on functions
+      this.payment.micronote.holdAuthorizationCode = hold.holdAuthorizationCode;
     }
+    if (hold.accepted) {
+      this.holdId = hold.holdId;
+      this.fundingBalance = hold.remainingBalance + this.microgonsToHold;
+    } else {
+      throw new InsufficientMicronoteFundsError(hold.remainingBalance, this.microgonsToHold);
+    }
+    return true;
+  }
+
+  private async loadSidechain(): Promise<void> {
+    const sidechainIdentity =
+      this.payment?.micronote?.sidechainIdentity ?? this.payment?.giftCard?.sidechainIdentity;
+    const approvedSidechains =
+      await this.context.sidechainClientManager.getApprovedSidechainRootIdentities();
+
+    if (!approvedSidechains.has(sidechainIdentity)) {
+      throw new UnapprovedSidechainError();
+    }
+
+    this.sidechain = await this.context.sidechainClientManager.withIdentity(sidechainIdentity);
+    const settings = await this.sidechain.getSettings(true);
+    this.sidechainSettings = {
+      settlementFeeMicrogons: settings.settlementFeeMicrogons,
+      blockHeight: settings.latestBlockSettings?.height ?? 0,
+    };
+  }
+
+  public static getOfficialBytes(output: any): number {
+    return Buffer.byteLength(Buffer.from(JSON.stringify(output), 'utf8'));
+  }
+
+  private static async getGiftCardIssuers(
+    sidechain: SidechainClient,
+    giftCardId: string,
+  ): Promise<string[]> {
+    let giftCardIssuers = PaymentProcessor.giftCardIssuersById[giftCardId];
+    if (!giftCardIssuers) {
+      giftCardIssuers =
+        (await sidechain.giftCards.get(giftCardId)?.then(x => x.issuerIdentities)) ?? [];
+      PaymentProcessor.giftCardIssuersById[giftCardId] = giftCardIssuers;
+    }
+    return giftCardIssuers;
   }
 }

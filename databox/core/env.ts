@@ -20,7 +20,7 @@ export default {
     env.ULX_GIFT_CARDS_REQUIRED_ISSUER_IDENTITY,
     'Gift Card Issuer',
   ),
-  computePricePerKb: parseEnvInt(env.ULX_PRICE_PER_KB),
+  computePricePerQuery: parseEnvInt(env.ULX_PRICE_PER_QUERY),
   approvedSidechains: [],
   defaultSidechainHost: env.ULX_SIDECHAIN_HOST,
   defaultSidechainRootIdentity: env.ULX_SIDECHAIN_IDENTITY,

@@ -22,6 +22,13 @@ const databoxPackageJson = require(`../package.json`);
 export interface IStatsByFunctionName {
   [functionName: string]: IDataboxStatsRecord;
 }
+
+type TDataboxRecordAndStats = IDataboxRecord & {
+  statsByFunction: IStatsByFunctionName;
+  path: string;
+  latestVersionHash: string;
+};
+
 export default class DataboxRegistry {
   private get databoxesDb(): DataboxesDb {
     this.#databoxesDb ??= new DataboxesDb(this.storageDir);
@@ -40,11 +47,23 @@ export default class DataboxRegistry {
     return !!this.databoxesDb.databoxes.getByVersionHash(versionHash);
   }
 
-  public getByVersionHash(versionHash: string): IDataboxRecord & {
-    statsByFunction: IStatsByFunctionName;
-    path: string;
-    latestVersionHash: string;
-  } {
+  public async loadVersion(
+    versionHash: string,
+  ): Promise<{ registryEntry: TDataboxRecordAndStats; manifest: IDataboxManifest }> {
+    const registryEntry = this.getByVersionHash(versionHash);
+
+    const manifest: IDataboxManifest = {
+      ...registryEntry,
+      linkedVersions: [],
+    };
+
+    if (!(await existsAsync(registryEntry.path))) {
+      await this.openDbx(manifest);
+    }
+    return { registryEntry, manifest };
+  }
+
+  public getByVersionHash(versionHash: string): TDataboxRecordAndStats {
     const path = this.getExtractedDataboxPath(versionHash);
     const entry = this.databoxesDb.databoxes.getByVersionHash(versionHash);
     const latestVersionHash = this.getLatestVersion(versionHash);

@@ -16,11 +16,12 @@ export type IFunctions<
   TTable extends Table<any>,
   TFunction extends Function<any>,
   TComponents extends IDataboxComponents<TTable, TFunction> = IDataboxComponents<TTable, TFunction>,
-  TFunctionNames extends keyof TComponents['functions'] & string = keyof TComponents['functions'] &string,
+  TFunctionNames extends keyof TComponents['functions'] & string = keyof TComponents['functions'] &
+    string,
 > = {
   [T in TFunctionNames]: TComponents['functions'][T] extends Function<any>
-  ? TComponents['functions'][T]
-  : never;
+    ? TComponents['functions'][T]
+    : never;
 };
 
 export type ITables<
@@ -30,8 +31,8 @@ export type ITables<
   TTableNames extends keyof TComponents['tables'] & string = keyof TComponents['tables'] & string,
 > = {
   [T in TTableNames]: TComponents['tables'][T] extends Table<any>
-  ? TComponents['tables'][T]
-  : never;
+    ? TComponents['tables'][T]
+    : never;
 };
 
 export default class DataboxInternal<
@@ -51,6 +52,14 @@ export default class DataboxInternal<
   public components: TComponents;
   public readonly functions: IFunctions<TTable, TFunction> = {} as any;
   public readonly tables: ITables<TTable, TFunction> = {} as any;
+
+  public get remoteDataboxes(): IDataboxComponents<TTable, TFunction>['remoteDataboxes'] {
+    return this.components.remoteDataboxes;
+  }
+
+  public get authenticateIdentity(): IDataboxComponents<TTable, TFunction>['authenticateIdentity'] {
+    return this.components.authenticateIdentity;
+  }
 
   constructor(components: TComponents) {
     lastInstanceId++;
@@ -90,7 +99,7 @@ export default class DataboxInternal<
       try {
         await Promise.all(this.#createInMemoryDatabaseCallbacks.map(x => x()));
         resolve();
-      } catch(error) {
+      } catch (error) {
         reject(error);
       }
     }));
@@ -108,9 +117,13 @@ export default class DataboxInternal<
     }));
   }
 
-  public attachFunction(func: Function, nameOverride?: string, isAlreadyAttachedToDatabox?: boolean): void {
+  public attachFunction(
+    func: Function,
+    nameOverride?: string,
+    isAlreadyAttachedToDatabox?: boolean,
+  ): void {
     const isFunction = func instanceof Function;
-    const name = nameOverride || func.name
+    const name = nameOverride || func.name;
     if (!name) throw new Error(`Function requires a name`);
     if (!isFunction) throw new Error(`${name} must be an instance of Function`);
     if (this.tables[name]) throw new Error(`Function already exists with name: ${name}`);
@@ -119,9 +132,13 @@ export default class DataboxInternal<
     this.functions[name] = func as any;
   }
 
-  public attachTable(table: Table, nameOverride?: string, isAlreadyAttachedToDatabox?: boolean): void {
+  public attachTable(
+    table: Table,
+    nameOverride?: string,
+    isAlreadyAttachedToDatabox?: boolean,
+  ): void {
     const isTable = table instanceof Table;
-    const name = nameOverride || table.name
+    const name = nameOverride || table.name;
     if (!name) throw new Error(`Table requires a name`);
     if (!isTable) throw new Error(`${name || 'table'} must be an instance of Table`);
     if (this.tables[name]) throw new Error(`Table already exists with name: ${name}`);

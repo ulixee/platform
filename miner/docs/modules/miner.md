@@ -10,8 +10,8 @@ import UlixeeMiner from '@ulixee/miner';
 (async () => {
   const miner = new UlixeeMiner();
   await miner.listen({ port: 8080 });
-  return miner;
   console.log(`Miner started on port ${await miner.port}`);
+  return miner;
 })().catch(error => {
   console.log('ERROR starting Ulixee Miner', error);
   process.exit(1);

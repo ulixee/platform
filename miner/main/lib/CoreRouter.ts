@@ -1,17 +1,14 @@
 import * as WebSocket from 'ws';
-import * as Http from 'http';
 import { IncomingMessage } from 'http';
 import DataboxCore from '@ulixee/databox-core';
 import HeroCore from '@ulixee/hero-core';
 import IDataboxCoreConfigureOptions from '@ulixee/databox-core/interfaces/IDataboxCoreConfigureOptions';
 import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
-import HttpTransportToClient from '@ulixee/net/lib/HttpTransportToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
-import { IDataboxApis } from '@ulixee/specification/databox';
 import ChromeAliveUtils from './ChromeAliveUtils';
 import Miner from '../index';
 
@@ -61,6 +58,8 @@ export default class CoreRouter {
 
   public async start(minerAddress: string): Promise<void> {
     HeroCore.onShutdown = () => this.miner.close();
+    this.heroConfiguration ??= {};
+    this.heroConfiguration.shouldShutdownOnSignals ??= this.miner.shouldShutdownOnSignals;
     await HeroCore.start(this.heroConfiguration);
 
     if (this.databoxConfiguration) {
@@ -110,25 +109,6 @@ export default class CoreRouter {
     if (!connection) throw new Error(`Unknown connection protocol attempted "${connectionType}"`);
     this.connections.add(connection);
     connection.once('disconnected', () => this.connections.delete(connection));
-  }
-
-  private async runDataboxApi(req: Http.IncomingMessage, res: Http.ServerResponse): Promise<void> {
-    const url = new URL(req.url, 'http://localhost/');
-
-    const input: any = {};
-    for (const [key, value] of url.searchParams.entries()) input[key] = value;
-    const versionHash = url.pathname.replace('/databox/', '');
-
-    const httpTransport = new HttpTransportToClient<IDataboxApis, {}>(req, res);
-    const connection = DataboxCore.addConnection(httpTransport);
-    httpTransport.emit('message', {
-      command: 'Databox.query',
-      args: {
-        versionHash,
-        input,
-      },
-    } as any);
-    await connection.disconnect();
   }
 }
 

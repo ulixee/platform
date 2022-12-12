@@ -15,17 +15,12 @@ export default class Databox<
 > {
   #databoxInternal: DataboxInternal<TTable, TFunction, TComponents>;
 
-  public readonly coreVersion = pkg.version;
+  public get paymentAddress(): string | undefined {
+    return this.#databoxInternal.components.paymentAddress;
+  }
 
-  constructor(components: TComponents, databoxInternal?: DataboxInternal<TTable, TFunction, TComponents>) {
-    this.#databoxInternal = databoxInternal ?? new DataboxInternal(components);
-    this.#databoxInternal.databox = this;
-    for (const [name, func] of Object.entries(components.functions || [])) {
-      this.#databoxInternal.attachFunction(func, name);
-    }
-    for (const [name, table] of Object.entries(components.tables || [])) {
-      this.#databoxInternal.attachTable(table, name);
-    }
+  public get giftCardIssuerIdentity(): string | undefined {
+    return this.#databoxInternal.components.giftCardIssuerIdentity;
   }
 
   public get functions(): IFunctions<TTable, TFunction> {
@@ -36,11 +31,35 @@ export default class Databox<
     return this.#databoxInternal.tables;
   }
 
+  public get remoteDataboxes(): IDataboxComponents<TTable, TFunction>['remoteDataboxes'] {
+    return this.#databoxInternal.remoteDataboxes;
+  }
+
+  public get authenticateIdentity(): IDataboxComponents<TTable, TFunction>['authenticateIdentity'] {
+    return this.#databoxInternal.authenticateIdentity;
+  }
+
+  public readonly coreVersion = pkg.version;
+
+  constructor(
+    components: TComponents,
+    databoxInternal?: DataboxInternal<TTable, TFunction, TComponents>,
+  ) {
+    this.#databoxInternal = databoxInternal ?? new DataboxInternal(components);
+    this.#databoxInternal.databox = this;
+    for (const [name, func] of Object.entries(components.functions || [])) {
+      this.#databoxInternal.attachFunction(func, name);
+    }
+    for (const [name, table] of Object.entries(components.tables || [])) {
+      this.#databoxInternal.attachTable(table, name);
+    }
+  }
+
   public async query(sql: string, boundValues: any[] = []): Promise<any> {
     await this.#databoxInternal.ensureDatabaseExists();
     const databoxInstanceId = this.#databoxInternal.instanceId;
     const databoxVersionHash = this.#databoxInternal.manifest?.versionHash;
-    
+
     const sqlParser = new SqlParser(sql);
     const schemas = Object.keys(this.functions).reduce((obj, k) => {
       return Object.assign(obj, { [k]: this.functions[k].schema.input });
@@ -62,10 +81,16 @@ export default class Databox<
       databoxInstanceId,
       databoxVersionHash,
     };
-    return await this.#databoxInternal.sendRequest({ command: 'Databox.queryInternal', args: [args] });
+    return await this.#databoxInternal.sendRequest({
+      command: 'Databox.queryInternal',
+      args: [args],
+    });
   }
 
-  public addConnectionToDataboxCore(connectionToCore: ConnectionToDataboxCore, manifest?: IDataboxManifest): void {
+  public addConnectionToDataboxCore(
+    connectionToCore: ConnectionToDataboxCore,
+    manifest?: IDataboxManifest,
+  ): void {
     this.#databoxInternal.manifest = manifest;
     this.#databoxInternal.connectionToCore = connectionToCore;
   }

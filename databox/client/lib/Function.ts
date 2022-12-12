@@ -1,5 +1,7 @@
 import { ExtractSchemaType } from '@ulixee/schema';
 import { SqlParser } from '@ulixee/sql-engine';
+import * as util from 'util';
+import { parseEnvBool } from '@ulixee/commons/lib/envUtils';
 import FunctionInternal from './FunctionInternal';
 import Autorun from './utils/Autorun';
 import readCommandLineArgs from './utils/readCommandLineArgs';
@@ -36,6 +38,12 @@ export default class Function<
   public disableAutorun: boolean;
   public successCount = 0;
   public errorCount = 0;
+  public pricePerQuery = 0;
+  public minimumPrice?: number;
+  public addOnPricing?: {
+    perKb?: number;
+  };
+
   public readonly plugins: FunctionPlugins<
     ISchema,
     IRunContext,
@@ -65,7 +73,7 @@ export default class Function<
     return this.#databoxInternal;
   }
 
-  private readonly components: IFunctionComponents<
+  protected readonly components: IFunctionComponents<
     ISchema,
     IRunContext,
     IBeforeRunContext,
@@ -95,6 +103,9 @@ export default class Function<
     this.components.name ??= 'default';
     this.plugins = new FunctionPlugins(this.components);
     this.plugins.add(...plugins);
+    this.pricePerQuery = this.components.pricePerQuery ?? 0;
+    this.addOnPricing = this.components.addOnPricing;
+    this.minimumPrice = this.components.minimumPrice;
 
     this.disableAutorun = Boolean(
       JSON.parse(process.env.ULX_DATABOX_DISABLE_AUTORUN?.toLowerCase() ?? 'false'),
@@ -116,7 +127,7 @@ export default class Function<
     try {
       functionInternal.validateInput();
 
-      const lifecycle = await this.plugins.initialize(functionInternal);
+      const lifecycle = await this.plugins.initialize(functionInternal, this.databox);
 
       let execError: Error;
       try {
@@ -140,7 +151,19 @@ export default class Function<
       functionInternal.validateOutput();
 
       this.successCount++;
-      return (functionInternal.output as any).toJSON();
+      const result = (functionInternal.output as any).toJSON();
+
+      if (options.isFromCommandLine) {
+        if (typeof result === 'string') {
+          // eslint-disable-next-line no-console
+          console.log(result);
+        } else {
+          const disableColors = parseEnvBool(process.env.NODE_DISABLE_COLORS) ?? false;
+          // eslint-disable-next-line no-console
+          console.log(util.inspect(result, false, null, !disableColors));
+        }
+      }
+      return result;
     } catch (error) {
       error.stack = error.stack.split('at async Function.exec').shift().trim();
       console.error(`ERROR running databox: `, error);
@@ -157,10 +180,13 @@ export default class Function<
     const name = this.components.name;
     const databoxInstanceId = this.databoxInternal.instanceId;
     const databoxVersionHash = this.databoxInternal.manifest?.versionHash;
-    
+
     const sqlParser = new SqlParser(sql, { function: name });
     const schemas = { [name]: this.schema.input };
-    const inputsByFunction = sqlParser.extractFunctionInputs<ISchema['input']>(schemas, boundValues);
+    const inputsByFunction = sqlParser.extractFunctionInputs<ISchema['input']>(
+      schemas,
+      boundValues,
+    );
     const input = inputsByFunction[name];
     const output = await this.exec({ input });
 
@@ -173,19 +199,19 @@ export default class Function<
       databoxInstanceId,
       databoxVersionHash,
     };
-    return await this.databoxInternal.sendRequest({ command: 'Databox.queryInternalFunction', args: [args] });
+    return await this.databoxInternal.sendRequest({
+      command: 'Databox.queryInternalFunction',
+      args: [args],
+    });
   }
 
-  public attachToDatabox(
-    databoxInternal: DataboxInternal<any, any>, 
-    functionName: string,
-  ): void {
+  public attachToDatabox(databoxInternal: DataboxInternal<any, any>, functionName: string): void {
     this.components.name = functionName;
     if (this.#databoxInternal && this.#databoxInternal === databoxInternal) return;
     if (this.#databoxInternal) {
       throw new Error(`${functionName} Function is already attached to a Databox`);
     }
-    
+
     this.#databoxInternal = databoxInternal;
     if (!databoxInternal.manifest?.versionHash) {
       this.#databoxInternal.onCreateInMemoryDatabase(this.createInMemoryFunction.bind(this));
@@ -200,13 +226,17 @@ export default class Function<
       databoxInstanceId,
       schema: this.components.schema,
     };
-    await this.databoxInternal.sendRequest({ command: 'Databox.createInMemoryFunction', args: [args] });
+    await this.databoxInternal.sendRequest({
+      command: 'Databox.createInMemoryFunction',
+      args: [args],
+    });
   }
 
   public static commandLineExec<TOutput>(
     databoxFunction: Function<any, any, any>,
   ): Promise<TOutput | Error> {
     const options = readCommandLineArgs();
+    options.isFromCommandLine = true;
     return databoxFunction.exec(options).catch(err => err);
   }
 }

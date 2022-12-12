@@ -22,12 +22,21 @@ process.on('message', async (message: IMessage) => {
     if (databox instanceof Function) {
       databox = new Databox<any, any>({
         functions: { default: databox },
+        remoteDataboxes: {},
       });
     }
-
     const functionsByName: IFetchMetaResponseData['functionsByName'] = {};
-    for (const [name, func] of Object.entries(databox.functions ?? {} as Record<string, Function>)) {
-      functionsByName[name] = { corePlugins: func.plugins.corePlugins ?? {}, schema: func.schema };
+    for (const [name, func] of Object.entries(
+      databox.functions ?? ({} as Record<string, Function>),
+    )) {
+      functionsByName[name] = {
+        corePlugins: func.plugins.corePlugins ?? {},
+        schema: func.schema,
+        pricePerQuery: func.pricePerQuery,
+        addOnPricing: func.addOnPricing,
+        minimumPrice: func.minimumPrice,
+        ...(func.components ?? {}),
+      };
     }
 
     const tablesByName: IFetchMetaResponseData['tablesByName'] = {};
@@ -42,6 +51,9 @@ process.on('message', async (message: IMessage) => {
       responseId: message.messageId,
       data: {
         coreVersion: databox.coreVersion,
+        remoteDataboxes: databox.remoteDataboxes,
+        paymentAddress: databox.paymentAddress,
+        giftCardIssuerIdentity: databox.giftCardIssuerIdentity,
         functionsByName,
         tablesByName,
       },

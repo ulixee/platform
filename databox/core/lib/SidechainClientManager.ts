@@ -21,7 +21,7 @@ export default class SidechainClientManager {
   private refreshApprovedSidechainsInterval: NodeJS.Timeout;
 
   constructor(
-    private options: Partial<
+    private readonly options: Partial<
       Pick<
         IDataboxCoreConfigureOptions,
         | 'identityWithSidechain'

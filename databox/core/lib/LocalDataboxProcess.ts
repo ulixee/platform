@@ -28,15 +28,10 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
   }
 
   public async fetchMeta(): Promise<IFetchMetaResponseData> {
-    const data = await this.sendMessageToChild<IFetchMetaMessage, IFetchMetaResponseData>({
+    return await this.sendMessageToChild<IFetchMetaMessage, IFetchMetaResponseData>({
       action: 'fetchMeta',
       scriptPath: this.scriptPath,
     });
-    return {
-      coreVersion: data.coreVersion,
-      functionsByName: data.functionsByName,
-      tablesByName: data.tablesByName,
-    };
   }
 
   public async exec(functionName: string, input: any): Promise<{ output: any }> {

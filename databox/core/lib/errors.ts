@@ -51,10 +51,9 @@ export class MicronotePaymentRequiredError extends UlixeeError {
     return 'ERR_NEEDS_PAYMENT';
   }
 
-  constructor(message: string, readonly estimatedMicrogonsPerQuery: number) {
+  constructor(message: string, readonly minimumMicrogonsRequired: number) {
     super(message, MicronotePaymentRequiredError.code);
   }
-
 }
 
 export class InvalidMicronoteError extends UlixeeError {
@@ -72,20 +71,31 @@ export class InsufficientQueryPriceError extends UlixeeError {
     return 'ERR_PRICE_TOO_LOW';
   }
 
-  constructor(
-    clientMaxComputePricePerKb: number,
-    pricePerQuery: number,
-    pricePerKb: number,
-    microgonsAllocated: number,
-    minimumMicrogonsAccepted: number,
-  ) {
-    super('This Micronote has insufficient funding allocated for this Data query.', InsufficientQueryPriceError.code);
+  constructor(microgonsAllocated: number, minimumMicrogonsAccepted: number) {
+    super(
+      'This Micronote has insufficient funding allocated for this Data query.',
+      InsufficientQueryPriceError.code,
+    );
     this.data = {
-      clientMaxComputePricePerKb,
-      pricePerQuery,
-      pricePerKb,
       microgonsAllocated,
       minimumMicrogonsAccepted,
+    };
+  }
+}
+
+export class MaxSurgePricePerQueryExceeededError extends UlixeeError {
+  static get code(): string {
+    return 'ERR_MAX_PRICE_EXCEEDED';
+  }
+
+  constructor(clientMaxPricePerQuery: number, minerPricePerQuery: number) {
+    super(
+      'The maximum surge price per query requested was not accepted by this Miner.',
+      MaxSurgePricePerQueryExceeededError.code,
+    );
+    this.data = {
+      clientMaxPricePerQuery,
+      minerPricePerQuery,
     };
   }
 }
@@ -93,3 +103,5 @@ export class InsufficientQueryPriceError extends UlixeeError {
 registerSerializableErrorType(MissingLinkedScriptVersionsError);
 registerSerializableErrorType(InvalidScriptVersionHistoryError);
 registerSerializableErrorType(DataboxNotFoundError);
+registerSerializableErrorType(MaxSurgePricePerQueryExceeededError);
+registerSerializableErrorType(InsufficientQueryPriceError);
