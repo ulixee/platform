@@ -29,7 +29,9 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await miner.close();
-  Fs.rmSync(storageDir, { recursive: true });
+  if (Fs.existsSync(storageDir)) {
+    Fs.rmSync(storageDir, { recursive: true });
+  }
 });
 
 test('should be able upload a databox', async () => {
