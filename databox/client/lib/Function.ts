@@ -1,5 +1,5 @@
 import { ExtractSchemaType } from '@ulixee/schema';
-import SqlParser from '@ulixee/sql-parser';
+import { SqlParser } from '@ulixee/sql-engine';
 import FunctionInternal from './FunctionInternal';
 import Autorun from './utils/Autorun';
 import readCommandLineArgs from './utils/readCommandLineArgs';
@@ -32,7 +32,7 @@ export default class Function<
 > {
   #isRunning = false;
   #databox: Databox<any, any>;
-  #databoxInternal: DataboxInternal;
+  #databoxInternal: DataboxInternal<any, any>;
 
   public disableAutorun: boolean;
   public successCount = 0;
@@ -55,13 +55,14 @@ export default class Function<
   public get databox(): Databox<any, any> {
     if (!this.#databox) {
       this.#databox = new Databox({}, this.databoxInternal);
+      this.databoxInternal.attachFunction(this, null, false);
     }
     return this.#databox;
   }
 
-  public get databoxInternal(): DataboxInternal {
+  public get databoxInternal(): DataboxInternal<any, any> {
     if (!this.#databoxInternal) {
-      this.#databoxInternal = new DataboxInternal();
+      this.#databoxInternal = new DataboxInternal({});
       this.#databoxInternal.onCreateInMemoryDatabase(this.createInMemoryFunction.bind(this));
     }
     return this.#databoxInternal;
@@ -154,7 +155,7 @@ export default class Function<
     }
   }
 
-  public async query(sql: string | any, boundValues: any[] = []): Promise<any> {
+  public async query(sql: string, boundValues: any[] = []): Promise<any> {
     await this.databoxInternal.ensureDatabaseExists();
     const name = this.components.name;
     const databoxInstanceId = this.databoxInternal.instanceId;
@@ -170,7 +171,8 @@ export default class Function<
       name,
       sql,
       boundValues,
-      functionRecords: Array.isArray(output) ? output : [output],
+      input,
+      output: Array.isArray(output) ? output : [output],
       databoxInstanceId,
       databoxVersionHash,
     };
@@ -178,7 +180,7 @@ export default class Function<
   }
 
   public attachToDatabox(
-    databoxInternal: DataboxInternal, 
+    databoxInternal: DataboxInternal<any, any>, 
     functionName: string,
   ): void {
     this.components.name = functionName;

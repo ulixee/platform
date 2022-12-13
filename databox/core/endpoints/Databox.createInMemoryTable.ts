@@ -1,11 +1,16 @@
-import SqlGenerator from '@ulixee/sql-generator';
+import { SqlGenerator } from '@ulixee/sql-engine';
 import DataboxApiHandler from '../lib/DataboxApiHandler';
-import DataboxInMemoryStorage from '../lib/DataboxInMemoryStorage';
+import DataboxStorage from '../lib/DataboxStorage';
 
 export default new DataboxApiHandler('Databox.createInMemoryTable', {
-  handler(request) {
+  handler(request, context) {
+    if (!context.connectionToClient?.isInternal) {
+      throw new Error('You do not have permission to access this endpoint');
+    }
+    context.connectionToClient.databoxStorage ??= new DataboxStorage();
+    const storage = context.connectionToClient?.databoxStorage;
     const { name, seedlings, schema } = request;
-    const storage = new DataboxInMemoryStorage(request.databoxInstanceId);
+
     storage.addTableSchema(name, request.schema);
 
     SqlGenerator.createTableFromSchema(name, schema, sql => {

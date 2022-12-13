@@ -1493,14 +1493,16 @@ const grammar: Grammar = {
     {"name": "expr_fn_name$subexpression$1$ebnf$1$subexpression$1", "symbols": ["word", (lexerAny.has("dot") ? {type: "dot"} : dot)]},
     {"name": "expr_fn_name$subexpression$1$ebnf$1", "symbols": ["expr_fn_name$subexpression$1$ebnf$1$subexpression$1"], "postprocess": id},
     {"name": "expr_fn_name$subexpression$1$ebnf$1", "symbols": [], "postprocess": () => null},
-    {"name": "expr_fn_name$subexpression$1", "symbols": ["expr_fn_name$subexpression$1$ebnf$1", "word_or_keyword"], "postprocess":  x => track(x, {
-            name: unbox(unwrap(x[1])),
-            ...x[0] && { schema: toStr(x[0][0]) },
-        })  },
+    {"name": "expr_fn_name$subexpression$1", "symbols": ["expr_fn_name$subexpression$1$ebnf$1", "word_or_keyword"], "postprocess":  x => {
+        return track(x, {
+                name: unbox(unwrap(x[1])),
+                ...x[0] && { schema: toStr(x[0][0]) },
+            }); } },
     {"name": "expr_fn_name", "symbols": ["expr_fn_name$subexpression$1"]},
     {"name": "expr_fn_name$subexpression$2$subexpression$1", "symbols": [(lexerAny.has("kw_any") ? {type: "kw_any"} : kw_any)]},
     {"name": "expr_fn_name$subexpression$2$subexpression$1", "symbols": [(lexerAny.has("kw_some") ? {type: "kw_some"} : kw_some)]},
     {"name": "expr_fn_name$subexpression$2$subexpression$1", "symbols": [(lexerAny.has("kw_all") ? {type: "kw_all"} : kw_all)]},
+    {"name": "expr_fn_name$subexpression$2$subexpression$1", "symbols": [(lexerAny.has("kw_default") ? {type: "kw_default"} : kw_default)]},
     {"name": "expr_fn_name$subexpression$2", "symbols": ["expr_fn_name$subexpression$2$subexpression$1"], "postprocess":  x => track(x, {
             name: toStr(unwrap(x)),
         })},

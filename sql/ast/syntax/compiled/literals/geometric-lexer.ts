@@ -4,8 +4,8 @@ import { compile } from 'moo';
 export const lexer = compile({
   comma: ',',
   space: { match: /[\s\t\n\v\f\r]+/, lineBreaks: true, },
-  int: /\-?\d+(?![\.\d])/,
-  float: /\-?(?:(?:\d*\.\d+)|(?:\d+\.\d*))/,
+  int: /-?\d+(?![.\d])/,
+  float: /-?(?:(?:\d*\.\d+)|(?:\d+\.\d*))/,
   lcurl: '{',
   rcurl: '}',
   lparen: '(',
@@ -18,6 +18,7 @@ export const lexer = compile({
 
 lexer.next = (next => () => {
   let tok;
+  // eslint-disable-next-line no-cond-assign
   while ((tok = next.call(lexer)) && (tok.type === 'space')) {
   }
   return tok;

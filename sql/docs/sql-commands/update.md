@@ -3,13 +3,13 @@
 > UPDATE updates rows of a table
 
 ```
-UPDATE [ ONLY ] table_name [ * ] [ [ AS ] alias ]
+UPDATE table_name [ [ AS ] alias ]
     SET { column_name = { expression | DEFAULT } |
           ( column_name [, ...] ) = [ ROW ] ( { expression | DEFAULT } [, ...] ) |
           ( column_name [, ...] ) = ( sub-SELECT )
         } [, ...]
     [ FROM from_item [, ...] ]
-    [ WHERE condition | WHERE CURRENT OF cursor_name ]
+    [ WHERE condition ]
     [ RETURNING * | output_expression [ [ AS ] output_name ] [, ...] ]
 ```
 

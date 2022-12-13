@@ -85,7 +85,7 @@ export default class PaymentProcessor {
   }
 
   public async lock(
-    clientStipulations?: IDataboxApiTypes['Databox.exec']['args']['pricingPreferences'],
+    clientStipulations?: IDataboxApiTypes['Databox.query']['args']['pricingPreferences'],
   ): Promise<boolean> {
     this.validateQueryPrice(clientStipulations?.maxComputePricePerKb);
     this.microgonsAllocated = this.payment.micronote.microgons;

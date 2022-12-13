@@ -4,7 +4,7 @@
 @include "select.ne"
 
 array_of[EXP] -> $EXP (%comma $EXP {% last %}):* {% ([head, tail]) => {
-    return [unwrap(head), ...(tail.map(unwrap) || [])];
+  return [unwrap(head), ...(tail.map(unwrap) || [])];
 } %}
 
 

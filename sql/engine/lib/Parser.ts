@@ -1,5 +1,5 @@
 import { parseFirst, IStatement, astVisitor, astMapper, toSql } from '@ulixee/sql-ast';
-import SqlGenerator from '@ulixee/sql-generator';
+import { SqlGenerator } from '@ulixee/sql-engine';
 import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
 
 export enum SupportedCommandType {
@@ -108,7 +108,7 @@ export default class SqlParser {
       const schema = schemasByName[functionName];
       const input = this.extractFunctionInput(functionName, boundValues);
       for (const key of Object.keys(input)) { 
-        input[key] = SqlGenerator.convertFromSqliteValue(schema[key].typeName, input[key]);
+        input[key] = SqlGenerator.convertFromSqliteValue(schema[key]?.typeName, input[key]);
       }
       inputByFunction[functionName] = input;
     }

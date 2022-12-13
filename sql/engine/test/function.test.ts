@@ -1,6 +1,6 @@
 import { ISelectFromStatement } from '@ulixee/sql-ast';
 import { number, string } from '@ulixee/schema';
-import SqlParser from '../index';
+import SqlParser from '../lib/Parser';
 
 test('support named args', () => {
   const sqlParser = new SqlParser(`SELECT * FROM func(count => 0, success => 'yes')`);

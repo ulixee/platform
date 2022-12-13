@@ -5,7 +5,7 @@ import * as Path from 'path';
 import DataboxManifest from '@ulixee/databox-core/lib/DataboxManifest';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DataboxApiClient from '@ulixee/databox/lib/DataboxApiClient';
-import SqlGenerator from '@ulixee/sql-generator';
+import { SqlGenerator } from '@ulixee/sql-engine';
 import * as Database from 'better-sqlite3';
 import { IFetchMetaResponseData } from '@ulixee/databox-core/interfaces/ILocalDataboxProcess';
 

@@ -63,6 +63,7 @@ export function typeChecking(): void {
   });
 
   void (async () => {
+    // @ts-expect-error
     await databox.functions.hero.exec({ replaySessionId: '1' }).catch();
     // @ts-expect-error
     await databox.functions.hero.exec({ showChrome: '1,', replaySessionId: '1' }).catch();

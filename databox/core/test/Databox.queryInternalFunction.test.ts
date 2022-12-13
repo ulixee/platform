@@ -2,16 +2,16 @@ import * as Fs from 'fs';
 import * as Path from 'path';
 import UlixeeMiner from '@ulixee/miner';
 import DataboxApiClient from '@ulixee/databox/lib/DataboxApiClient';
-import directTable from './databoxes/directTable';
+import directFunction from './databoxes/directFunction';
 
-const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Databox.exec.test');
+const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Databox.query.test');
 
 let miner: UlixeeMiner;
 let client: DataboxApiClient;
 
 beforeAll(async () => {
-  if (Fs.existsSync(`${__dirname}/databoxes/directTable.dbx`)) {
-    Fs.unlinkSync(`${__dirname}/databoxes/directTable.dbx`);
+  if (Fs.existsSync(`${__dirname}/databoxes/directFunction.dbx`)) {
+    Fs.unlinkSync(`${__dirname}/databoxes/directFunction.dbx`);
   }
   miner = new UlixeeMiner();
   miner.router.databoxConfiguration = { databoxesDir: storageDir };
@@ -24,11 +24,10 @@ afterAll(async () => {
   await miner.close();
 });
 
-test('should be able to query table directly', async () => {
-  const data = await directTable.query('SELECT * FROM self');
-
-  expect(data).toMatchObject([
-    { title: 'Hello', success: true }, 
-    { title: 'World', success: false } 
+test('should be able to query function directly', async () => {
+  const data = await directFunction.query('SELECT * FROM self(tester => true)');
+  expect(data).toMatchObject([ 
+    { testerEcho: true },
   ]);
-});
+}, 30e3);
+

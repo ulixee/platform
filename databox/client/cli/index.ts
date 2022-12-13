@@ -136,7 +136,7 @@ export default function databoxCommands(): Command {
   cli
     .command('install')
     .description(
-      'Install a Databox and corresponding Schema into your project. Enables type-checking for Databox.exec.',
+      'Install a Databox and corresponding Schema into your project. Enables type-checking for Databox.query.',
     )
     .argument('<versionHash>', 'The version hash of the Databox.')
     .option('-a, --alias <name>', 'Add a shortcut name to reference this Databox hash.')

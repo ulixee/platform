@@ -5,11 +5,10 @@ import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
 import { IPayment } from '@ulixee/specification';
-import IFunctionInputOutput from '../interfaces/IFunctionInputOutput';
 import ITypes from '../types';
 import installSchemaType, { addSchemaAlias } from '../types/installSchemaType';
 
-type IDataboxExecResult = Omit<IDataboxApiTypes['Databox.exec']['result'], 'output'>;
+type IDataboxExecResult = Omit<IDataboxApiTypes['Databox.query']['result'], 'output'>;
 
 export default class DataboxApiClient {
   public connectionToCore: ConnectionToCore<IDataboxApis, {}>;
@@ -67,24 +66,21 @@ export default class DataboxApiClient {
   /**
    * NOTE: any caller must handle tracking local balances of gift cards and removing them if they're depleted!
    */
-  public async exec<
-    IO extends IFunctionInputOutput,
+  public async query<
     IVersionHash extends keyof ITypes & string = any,
-    IFunctionName extends keyof ITypes[IVersionHash] & string = 'default',
-    ISchemaDbx extends ITypes[IVersionHash][IFunctionName] = IO,
   >(
     versionHash: IVersionHash,
-    functionName: IFunctionName,
-    input: ISchemaDbx['input'],
+    sql: string,
+    boundValues?: any[],
     microPayment: IPayment & {
       onFinalized?(metadata: IDataboxExecResult['metadata'], error?: Error): void;
     } = {},
-  ): Promise<IDataboxExecResult & { output?: ISchemaDbx['output'] }> {
+  ): Promise<IDataboxExecResult & { output?: any[] }> {
     try {
-      const result = await this.runRemote('Databox.exec', {
+      const result = await this.runRemote('Databox.query', {
         versionHash,
-        functionName,
-        input,
+        sql,
+        boundValues: boundValues || [],
         payment: microPayment,
       });
       if (microPayment?.onFinalized) {

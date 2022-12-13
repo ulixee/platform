@@ -22,7 +22,7 @@
     "@ulixee/schema": "2.0.0-alpha.16",
     "@ulixee/sidechain": "2.0.0-alpha.16",
     "@ulixee/specification": "2.0.0-alpha.16",
-    "@ulixee/sql-parser": "2.0.0-alpha.16",
+    "@ulixee/sql-engine": "2.0.0-alpha.16",
     "commander": "^9.3.0",
     "yargs-parser": "^20.2.9"
   },

@@ -182,7 +182,7 @@ function checkTree<T>(value: string | string[], expected: T, mapper: (parsed: T,
       // reparse the generated sql...
       let reparsed: any;
       try {
-        expect(newSql).toBe(String);
+        expect(typeof newSql).toBe('string');
         reparsed = checkLocations
           ? tracking(() => doParse(newSql))
           : doParse(newSql);

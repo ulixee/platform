@@ -5,10 +5,10 @@ export const lexer = compile({
   valueString: {
     match: /"(?:\\["\\]|[^\n"\\])*"/,
     value: x => JSON.parse(x),
-    type: x => 'value',
+    type: () => 'value',
   },
   valueRaw: {
-    match: /[^\s,\{\}"](?:[^,\{\}"]*[^\s,\{\}"])?/,
+    match: /[^\s,{}"](?:[^,{}"]*[^\s,{}"])?/,
     type: () => 'value',
   },
   comma: ',',
@@ -19,6 +19,7 @@ export const lexer = compile({
 
 lexer.next = (next => () => {
   let tok;
+  // eslint-disable-next-line no-cond-assign
   while ((tok = next.call(lexer)) && (tok.type === 'space')) {
   }
   return tok;

@@ -2,7 +2,7 @@
   items:
     - Introduction
 
-- title: Commands
+- title: SQL Commands
   items:
     - Insert
     - Select

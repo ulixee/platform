@@ -1,4 +1,4 @@
-import SqlParser, { SupportedCommandType } from '../index';
+import SqlParser, { SupportedCommandType } from '../lib/Parser';
 
 test('extracts functions from SELECT', () => {
   const sqlParser = new SqlParser('SELECT * FROM funcName()');

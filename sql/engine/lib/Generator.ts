@@ -31,11 +31,19 @@ export default class SqlGenerator {
   }
 
   public static createFunctionFromSchema(
+    input: any,
+    outputRecords: any[],
     schema: IFunctionSchema,
     callback: (parameters: string[], columns: string[]) => void
   ): void {
-    const parameters = Object.keys(schema.input);
-    const columns = Object.keys(schema.output);
+    const parameters = Array.from(new Set([
+      ...Object.keys(schema?.input || {}),
+      ...Object.keys(input || {}),
+    ]));
+    const columns = Array.from(new Set([
+      ...Object.keys(schema?.output || {}),
+      ...Object.keys(outputRecords[0])
+    ]));
     callback(parameters, columns);
   }
 
@@ -50,11 +58,54 @@ export default class SqlGenerator {
       const record = { ...x };
       const fields = Object.keys(record);
       for (const field of fields) {
-        record[field] = this.convertToSqliteValue(schema[field].typeName, record[field]);
+        const [convertedValue] = this.convertToSqliteValue(schema[field].typeName, record[field]);
+        record[field] = convertedValue;
       }
       const sql = `INSERT INTO "${name}" (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
       callback(sql, Object.values(record));
     });
+  }
+
+  public static convertTableRecordToSqlite(record: any, schema: Record<string, IAnySchemaJson>): any {
+    for (const key of Object.keys(record)) {
+      const [convertedValue] = SqlGenerator.convertToSqliteValue(schema[key].typeName, record[key]);
+      record[key] = convertedValue;
+    }
+    return record;
+  }
+
+  public static convertFunctionRecordToSqliteRow(record: any, schema: Record<string, IAnySchemaJson>, tmpSchema: any = {}): any {
+    for (const key of Object.keys(record)) {
+      const { input, output } = schema;
+      const schemaItem = input && input[key] || output && output[key];
+      const typeName = schemaItem?.typeName;
+      const [convertedValue, tmpType] = SqlGenerator.convertToSqliteValue(typeName, record[key]);
+      record[key] = convertedValue;
+      if (tmpType) tmpSchema[key] = tmpType;
+    }
+    for (const key of Object.keys(schema.output || {})) {
+      if (key in record) continue;
+      record[key] = null;
+    }
+    return record;
+  }
+  
+  public static convertRecordsFromSqlite(records: any[], schemas: Record<string, IAnySchemaJson>[], tmpSchema: any = {}): any {
+    for (const record of records) {
+      for (const key of Object.keys(record)) {
+        const typeNames = schemas.map(schema => {
+          const types = [(schema.input || {})[key], (schema.output || {})[key], schema[key]].filter(x => x);
+          return types[0]?.typeName;
+        }).filter(x => x);
+        // TODO: intelligently handle multiple typeNames
+        record[key] = SqlGenerator.convertFromSqliteValue(typeNames[0] || tmpSchema[key], record[key]);
+      }
+    }
+    return records;
+  }
+
+  public static convertToSqliteType(type: string): string {
+    return zodToSqliteTypes[type];
   }
 
   public static convertFromSqliteValue(type: string, value: any): any {
@@ -70,56 +121,29 @@ export default class SqlGenerator {
     if (['record', 'object', 'array'].includes(type)) {
       return value ? JSON.parse(value) : null;
     }
-    
+
     return value;
   }
 
-  public static convertTableRecordToSqlite(record: any, schema: Record<string, IAnySchemaJson>): any {
-    for (const key of Object.keys(record)) {
-      record[key] = SqlGenerator.convertToSqliteValue(schema[key].typeName, record[key]);
-    }
-    return record;
-  }
-
-  public static convertFunctionRecordToSqlite(record: any, schema: Record<string, IAnySchemaJson>): any {
-    for (const key of Object.keys(record)) {
-      const typeName = (schema.input[key] || schema.output[key]).typeName;
-      record[key] = SqlGenerator.convertToSqliteValue(typeName, record[key]);
-    }
-    return record;
-  }
-  
-  public static convertRecordsFromSqlite(records: any[], schemas: Record<string, IAnySchemaJson>[]): any {
-    for (const record of records) {
-      for (const key of Object.keys(record)) {
-        const typeNames = schemas.map(schema => {
-          const types = [(schema.input || {})[key], (schema.output || {})[key], schema[key]].filter(x => x);
-          return types[0]?.typeName;
-        }).filter(x => x);
-        // TODO: intelligently handle multiple typeNames
-        record[key] = SqlGenerator.convertFromSqliteValue(typeNames[0], record[key]);
-      }
-    }
-    return records;
-  }
-
-  public static convertToSqliteType(type: string): string {
-    return zodToSqliteTypes[type];
-  }
-
-  private static convertToSqliteValue(type: string, value: any): any {
-    if (value === undefined || value === null) return null;
+  public static convertToSqliteValue(type: string, value: any): [any, (string | undefined)?] {
+    if (value === undefined || value === null) return [null];
 
     if (type === 'boolean') {
-      return value ? 1 : 0;
+      return [value ? 1 : 0];
     } 
     if (type === 'date') {
-      return value ? (value as Date).toISOString() : null;
+      return [value ? (value as Date).toISOString() : null];
     }
     if (['record', 'object', 'array'].includes(type)) {
-      return value ? JSON.stringify(value) : null;
+      return [value ? JSON.stringify(value) : null];
     }
     
-    return value;
+    if (type === undefined || type === null) {
+      if (typeof value === 'boolean') {
+        return [value ? 1 : 0, 'boolean'];
+      }
+    }
+
+    return [value];
   }
 }

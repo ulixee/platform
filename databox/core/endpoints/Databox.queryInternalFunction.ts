@@ -1,18 +1,20 @@
-import SqlParser from '@ulixee/sql-parser';
-import SqlGenerator from '@ulixee/sql-generator';
+import { SqlParser, SqlGenerator } from '@ulixee/sql-engine';
 import DataboxApiHandler from '../lib/DataboxApiHandler';
-import DataboxInMemoryStorage from '../lib/DataboxInMemoryStorage';
-import DataboxPackagedStorage from '../lib/DataboxPackagedStorage';
 import DataboxStorage from '../lib/DataboxStorage';
 
 export default new DataboxApiHandler('Databox.queryInternalFunction', {
   handler(request, context) {
+    if (!context.connectionToClient?.isInternal) {
+      throw new Error('You do not have permission to access this endpoint');
+    }
+
     let storage: DataboxStorage;
     if (request.databoxVersionHash) {
       const storagePath = context.databoxRegistry.getStoragePath(request.databoxVersionHash);
-      storage = new DataboxPackagedStorage(storagePath);
+      storage = new DataboxStorage(storagePath);
     } else {
-      storage = new DataboxInMemoryStorage(request.databoxInstanceId);
+      context.connectionToClient.databoxStorage ??= new DataboxStorage();
+      storage = context.connectionToClient?.databoxStorage;
     }
 
     const db = storage.db;
@@ -29,14 +31,14 @@ export default new DataboxApiHandler('Databox.queryInternalFunction', {
       throw new Error('Invalid SQL command');
     }
 
-    const functionRecords = request.functionRecords;
-    SqlGenerator.createFunctionFromSchema(schema, (parameters, columns) => {
+    const { input, output } = request;
+    SqlGenerator.createFunctionFromSchema(input, output, schema, (parameters, columns) => {
       db.table(functionName, {
         parameters,
         columns,
         *rows() {
-          const record = functionRecords.shift();
-          if (record) yield SqlGenerator.convertFunctionRecordToSqlite(record, schema);
+          const record = output.shift();
+          if (record) yield SqlGenerator.convertFunctionRecordToSqliteRow(record, schema);
         },
       });
     });

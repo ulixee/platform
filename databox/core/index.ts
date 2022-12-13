@@ -1,17 +1,13 @@
 import * as Os from 'os';
 import * as Path from 'path';
 import { promises as Fs } from 'fs';
-import { NodeVM, VMScript } from 'vm2';
 import IFunctionPluginCore from '@ulixee/databox/interfaces/IFunctionPluginCore';
-import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import { IDataboxApis } from '@ulixee/specification/databox';
-import Databox, { Function } from '@ulixee/databox';
-import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import IDataboxCoreConfigureOptions from './interfaces/IDataboxCoreConfigureOptions';
 import env from './env';
@@ -21,18 +17,17 @@ import WorkTracker from './lib/WorkTracker';
 import IDataboxApiContext from './interfaces/IDataboxApiContext';
 import SidechainClientManager from './lib/SidechainClientManager';
 import DataboxUpload from './endpoints/Databox.upload';
-import DataboxExec from './endpoints/Databox.exec';
-import DataboxExecLocalScript from './endpoints/Databox.execLocalScript';
+import DataboxQuery from './endpoints/Databox.query';
+import DataboxQueryLocalScript from './endpoints/Databox.queryLocalScript';
 import DataboxMeta from './endpoints/Databox.meta';
 import DataboxQueryInternal from './endpoints/Databox.queryInternal';
 import DataboxQueryInternalTable from './endpoints/Databox.queryInternalTable';
 import DataboxQueryInternalFunction from './endpoints/Databox.queryInternalFunction';
 import DataboxInitializeInMemoryTable from './endpoints/Databox.createInMemoryTable';
 import DataboxInitializeInMemoryFunction from './endpoints/Databox.createInMemoryFunction';
+import IDataboxConnectionToClient from './interfaces/IDataboxConnectionToClient';
 
 const { log } = Logger(module);
-
-type IDataboxConnectionToClient = ConnectionToClient<IDataboxApis, never, IDataboxApiContext>;
 
 export default class DataboxCore {
   public static connections = new Set<IDataboxConnectionToClient>();
@@ -60,11 +55,12 @@ export default class DataboxCore {
     approvedSidechainsRefreshInterval: 60e3 * 60, // 1 hour
   };
 
+  public static pluginCoresByName: { [name: string]: IFunctionPluginCore } = {};  
   public static isClosing: Promise<void>;
   public static workTracker: WorkTracker;
   public static apiRegistry = new ApiRegistry<IDataboxApiContext>([
     DataboxUpload,
-    DataboxExec,
+    DataboxQuery,
     DataboxMeta,
     DataboxQueryInternal,
     DataboxQueryInternalTable,
@@ -72,47 +68,19 @@ export default class DataboxCore {
     DataboxInitializeInMemoryTable,
     DataboxInitializeInMemoryFunction,
   ]);
-
-  static #vm: NodeVM;
-
-  private static pluginCoresByName: { [name: string]: IFunctionPluginCore } = {};
+  
   private static databoxRegistry: DataboxRegistry;
   private static sidechainClientManager: SidechainClientManager;
   private static isStarted = new Resolvable<void>();
 
-  private static compiledScriptsByPath = new Map<string, Promise<VMScript>>();
-
-  private static get vm(): NodeVM {
-    if (!this.#vm) {
-      const whitelist: Set<string> = new Set(
-        ...Object.values(this.pluginCoresByName).map(x => x.nodeVmRequireWhitelist || []),
-      );
-      whitelist.add('@ulixee/*');
-
-      this.#vm = new NodeVM({
-        console: 'inherit',
-        sandbox: {},
-        wasm: false,
-        eval: false,
-        wrapper: 'commonjs',
-        strict: true,
-        require: {
-          external: Array.from(whitelist),
-        },
-      });
-    }
-
-    return this.#vm;
-  }
-
   public static addConnection(
     transport: ITransportToClient<IDataboxApis, never>,
   ): IDataboxConnectionToClient {
-    const connection = this.apiRegistry.createConnection(
-      transport,
-      this.getApiContext(transport.remoteId),
-    );
+    const context = this.getApiContext(transport.remoteId);
+    const connection: IDataboxConnectionToClient = this.apiRegistry.createConnection(transport, context);
+    context.connectionToClient = connection;
     connection.once('disconnected', () => this.connections.delete(connection));
+    connection.isInternal = ['development', 'test'].includes(process.env.NODE_ENV);
     this.connections.add(connection);
     return connection;
   }
@@ -127,7 +95,7 @@ export default class DataboxCore {
     this.close = this.close.bind(this);
 
     if (this.options.enableRunWithLocalPath) {
-      this.apiRegistry.register(DataboxExecLocalScript);
+      this.apiRegistry.register(DataboxQueryLocalScript);
     }
     
     if (!(await existsAsync(this.options.databoxesTmpDir))) {
@@ -152,49 +120,12 @@ export default class DataboxCore {
     this.isStarted.resolve();
   }
 
-  public static async execDataboxFunction(
-    path: string,
-    functionName: string,
-    manifest: IDataboxManifest,
-    input: any,
-  ): Promise<{ output: any }> {
-    const script = await this.getVMScript(path, manifest);
-    
-    let databox = this.vm.run(script);
-    let databoxFunction: Function = databox.functions?.[functionName];
-
-    if (databox instanceof Function) {
-      databoxFunction = databox;
-      databox = databoxFunction.databox;
-    } else if (!(databox instanceof Databox)) {
-      throw new Error(
-        'The default export from this script needs to inherit from "@ulixee/databox"',
-      );
-    }
-
-    if (!databoxFunction) {
-      throw new Error(`${functionName} is not a valid Function name for this Databox.`)
-    }
-
-    databox.addManifest(manifest);
-
-    const options = { input };
-    for (const plugin of Object.values(this.pluginCoresByName)) {
-      if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);
-    }
-
-    const output = await databoxFunction.exec(options);
-    return { output };
-  }
-
   public static async close(): Promise<void> {
     if (this.isClosing) return this.isClosing;
     const closingPromise = new Resolvable<void>();
     this.isClosing = closingPromise.promise;
 
     ShutdownHandler.unregister(this.close);
-
-    this.compiledScriptsByPath.clear();
 
     try {
       await this.workTracker?.stop(this.options.waitForDataboxCompletionOnShutdown);
@@ -240,23 +171,6 @@ export default class DataboxCore {
     }
   }
 
-  private static getVMScript(path: string, manifest: IDataboxManifest): Promise<VMScript> {
-    if (this.compiledScriptsByPath.has(path)) {
-      return this.compiledScriptsByPath.get(path);
-    }
-
-    const script = new Promise<VMScript>(async resolve => {
-      const file = await Fs.readFile(path, 'utf8');
-      const vmScript = new VMScript(file, {
-        filename: manifest.scriptEntrypoint,
-      }).compile();
-      resolve(vmScript);
-    });
-
-    this.compiledScriptsByPath.set(path, script);
-    return script;
-  }
-
   private static getApiContext(remoteId?: string): IDataboxApiContext {
     if (!this.workTracker) {
       throw new Error('DataboxCore has not started')
@@ -268,7 +182,6 @@ export default class DataboxCore {
       configuration: this.options,
       pluginCoresByName: this.pluginCoresByName,
       sidechainClientManager: this.sidechainClientManager,
-      execDataboxFunction: this.execDataboxFunction.bind(this),
     };
   }
 }

@@ -122,7 +122,7 @@ export default class CoreRouter {
     const httpTransport = new HttpTransportToClient<IDataboxApis, {}>(req, res);
     const connection = DataboxCore.addConnection(httpTransport);
     httpTransport.emit('message', {
-      command: 'Databox.exec',
+      command: 'Databox.query',
       args: {
         versionHash,
         input,

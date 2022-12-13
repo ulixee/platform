@@ -1,43 +1,46 @@
 import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
 import { Database as SqliteDatabase } from 'better-sqlite3';
+import * as Database from 'better-sqlite3';
 
 type ISchema = Record<string, IAnySchemaJson>;
-
-export interface IStorage { 
-  db: SqliteDatabase,
-  tableSchemaByName: {
-    [name: string]: ISchema;
-  };
-  functionSchemaByName: {
-    [name: string]: ISchema;
-  };
-}
 
 export default class DataboxStorage {
   public readonly db: SqliteDatabase;
   public readonly path: string;
-  protected tableSchemaByName: { [name: string]: ISchema };
-  protected functionSchemaByName: { [name: string]: ISchema };
+  #schemasByTableName: { [name: string]: ISchema } = {};
+  #schemasByFunctionName: { [name: string]: ISchema } = {};
 
-  constructor(storage: IStorage) {
-    this.db = storage.db;
-    this.tableSchemaByName = storage.tableSchemaByName;
-    this.functionSchemaByName = storage.functionSchemaByName;
+  constructor(storagePath?: string) {
+    if (storagePath) {
+      this.db = new Database(storagePath);
+    } else {
+      this.db = new Database(':memory:');
+    }
+    this.#schemasByTableName = {};
+    this.#schemasByFunctionName = {};
   }
 
-  public addTableSchema(name: string, schema?: ISchema): void {
-    this.tableSchemaByName[name] = schema;
+  public get schemasByTableName(): { [name: string]: ISchema } {
+    return { ...this.#schemasByTableName}
+  }
+
+  public get schemasByFunctionName(): { [name: string]: ISchema } {
+    return { ...this.#schemasByFunctionName}
+  }
+
+  public addTableSchema(name: string, schema: ISchema): void {
+    this.#schemasByTableName[name] = schema;
   }
 
   public getTableSchema(name: string): ISchema {
-    return this.tableSchemaByName[name];
+    return this.#schemasByTableName[name];
   }
 
-  public addFunctionSchema(name: string, schema?: ISchema): void {
-    this.functionSchemaByName[name] = schema;
+  public addFunctionSchema(name: string, schema: ISchema): void {
+    this.#schemasByFunctionName[name] = schema;
   }
 
   public getFunctionSchema(name: string): ISchema {
-    return this.functionSchemaByName[name];
+    return this.#schemasByFunctionName[name];
   }
 }

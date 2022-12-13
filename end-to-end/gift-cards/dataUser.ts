@@ -22,7 +22,7 @@ export default async function main(
   const databoxClient = new DataboxApiClient(databoxHost);
   const pricing = await databoxClient.getFunctionPricing(databoxHash, 'default');
   const payment = await sidechainClient.createMicroPayment(pricing);
-  const result = await databoxClient.exec(databoxHash, 'default', { test: 1 }, payment);
+  const result = await databoxClient.query(databoxHash, 'SELECT * FROM default(test => $1)', [1], payment);
 
   console.log('Result of databox query is:', result);
 

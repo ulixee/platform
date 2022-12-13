@@ -49,14 +49,18 @@ test('can load a version from disk if not already open', async () => {
     recursive: true,
   });
 
+  await runApi('Databox.query', {
+    sql: 'SELECT * FROM bootup()',
+    versionHash: packager.manifest.versionHash,
+  });
+  
   await expect(
-    runApi('Databox.exec', {
-      input: {},
+    runApi('Databox.query', {
+      sql: 'SELECT * FROM bootup()',
       versionHash: packager.manifest.versionHash,
-      functionName: 'bootup',
     }),
   ).resolves.toMatchObject({
-    output: { success: true },
+    output: [{ success: true }],
     latestVersionHash: packager.manifest.versionHash,
   });
 });

@@ -18,6 +18,7 @@ export const lexer = compile({
 
 lexer.next = (next => () => {
   let tok;
+  // eslint-disable-next-line no-cond-assign
   while ((tok = next.call(lexer)) && (tok.type === 'space')) {
   }
   return tok;

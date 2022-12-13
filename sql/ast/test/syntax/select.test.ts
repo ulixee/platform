@@ -16,6 +16,11 @@ describe('Select statements', () => {
     }),
   });
 
+  checkSelect(['select * from default'], {
+    type: 'select',
+    from: [{ type: 'table', name: qname('default') }],
+    columns: columns({ type: 'ref', name: '*' }),
+  });
 
   function aliased(alias: string): ISelectStatement {
     return {
@@ -33,7 +38,6 @@ describe('Select statements', () => {
   checkSelect(['select 42 as primary'], aliased('primary'));
 
   checkSelect(['select 42 as unique'], aliased('unique'));
-
 
   checkSelect(['select count(*)'], {
     type: 'select',
