@@ -37,11 +37,12 @@ export default class DataboxCore {
 
   // SETTINGS
   public static options: IDataboxCoreConfigureOptions = {
+    serverEnvironment: env.serverEnvironment,
     databoxesDir: env.databoxesDir,
     databoxesTmpDir: Path.join(Os.tmpdir(), '.ulixee', 'databox'),
     maxRuntimeMs: 10 * 60e3,
     waitForDataboxCompletionOnShutdown: false,
-    enableRunWithLocalPath: process.env.NODE_ENV !== 'production',
+    enableRunWithLocalPath: env.serverEnvironment === 'development',
     paymentAddress: env.paymentAddress,
     giftCardsAllowed: env.giftCardsAllowed,
     giftCardsRequiredIssuerIdentity: env.giftCardsRequiredIssuerIdentity,
@@ -80,7 +81,7 @@ export default class DataboxCore {
     const connection: IDataboxConnectionToClient = this.apiRegistry.createConnection(transport, context);
     context.connectionToClient = connection;
     connection.once('disconnected', () => this.connections.delete(connection));
-    connection.isInternal = ['development', 'test'].includes(process.env.NODE_ENV);
+    connection.isInternal = this.options.serverEnvironment === 'development';
     this.connections.add(connection);
     return connection;
   }
