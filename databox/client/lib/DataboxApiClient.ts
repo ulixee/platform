@@ -67,7 +67,8 @@ export default class DataboxApiClient {
    * NOTE: any caller must handle tracking local balances of gift cards and removing them if they're depleted!
    */
   public async query<
-    IVersionHash extends keyof ITypes & string = any,
+  ISchemaOutput = any,
+  IVersionHash extends keyof ITypes & string = any,
   >(
     versionHash: IVersionHash,
     sql: string,
@@ -75,7 +76,7 @@ export default class DataboxApiClient {
     microPayment: IPayment & {
       onFinalized?(metadata: IDataboxExecResult['metadata'], error?: Error): void;
     } = {},
-  ): Promise<IDataboxExecResult & { output?: any[] }> {
+  ): Promise<IDataboxExecResult & { output?: ISchemaOutput[] }> {
     try {
       const result = await this.runRemote('Databox.query', {
         versionHash,

@@ -9,6 +9,7 @@ import DisconnectedFromCoreError from '../connections/DisconnectedFromCoreError'
 import IDataboxComponents from '../interfaces/IDataboxComponents';
 import Function from './Function';
 import Table from './Table';
+import Databox from './Databox';
 
 let lastInstanceId = 0;
 
@@ -44,6 +45,7 @@ export default class DataboxInternal<
   #createInMemoryDatabaseCallbacks: (() => void)[] = [];
   #createInMemoryDatabasePromise: Promise<void>;
 
+  public databox: Databox<TTable, TFunction>;
   public manifest: IDataboxManifest;
   public instanceId: string;
   public loadingPromises: PromiseLike<void>[] = [];
@@ -51,7 +53,7 @@ export default class DataboxInternal<
   public readonly functions: IFunctions<TTable, TFunction> = {} as any;
   public readonly tables: ITables<TTable, TFunction> = {} as any;
 
-  constructor(components) {
+  constructor(components: TComponents) {
     lastInstanceId++;
     this.instanceId = `${process.pid}-${lastInstanceId}`;
     this.components = components;

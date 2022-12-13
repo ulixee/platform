@@ -19,6 +19,7 @@ export default class Databox<
 
   constructor(components: TComponents, databoxInternal?: DataboxInternal<TTable, TFunction, TComponents>) {
     this.#databoxInternal = databoxInternal ?? new DataboxInternal(components);
+    this.#databoxInternal.databox = this;
     for (const [name, func] of Object.entries(components.functions || [])) {
       this.#databoxInternal.attachFunction(func, name);
     }

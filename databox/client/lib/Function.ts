@@ -31,7 +31,6 @@ export default class Function<
     IPlugin3['afterRunContextAddons'],
 > {
   #isRunning = false;
-  #databox: Databox<any, any>;
   #databoxInternal: DataboxInternal<any, any>;
 
   public disableAutorun: boolean;
@@ -53,16 +52,14 @@ export default class Function<
   }
 
   public get databox(): Databox<any, any> {
-    if (!this.#databox) {
-      this.#databox = new Databox({}, this.databoxInternal);
-      this.databoxInternal.attachFunction(this, null, false);
-    }
-    return this.#databox;
+    return this.databoxInternal.databox;
   }
 
   public get databoxInternal(): DataboxInternal<any, any> {
     if (!this.#databoxInternal) {
       this.#databoxInternal = new DataboxInternal({});
+      this.#databoxInternal.databox = new Databox({}, this.databoxInternal);
+      this.databoxInternal.attachFunction(this, null, false);
       this.#databoxInternal.onCreateInMemoryDatabase(this.createInMemoryFunction.bind(this));
     }
     return this.#databoxInternal;

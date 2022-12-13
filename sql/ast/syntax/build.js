@@ -9,9 +9,7 @@ const rawGrammar = require('nearley/lib/nearley-language-bootstrapped.js');
 const nearleyGrammar = nearley.Grammar.fromCompiled(rawGrammar);
 const nearleyFilesToLoad = ['main.ne', 'array.ne', 'geometric.ne', 'interval.ne', 'interval-iso.ne'];
 
-function loadNearlyFile(filePath) {
-  console.log('PARSING', filePath);
-  
+function loadNearlyFile(filePath) {  
   const input = Fs.readFileSync(filePath, 'utf-8');
   const parser = new nearley.Parser(nearleyGrammar);
   parser.feed(input);

@@ -7,7 +7,6 @@ export default class Table<
   TSchema extends ITableSchema = ITableSchema,
 > {
   #seedlings: any[];
-  #databox: Databox<any, any>;
   #databoxInternal: DataboxInternal<any, any>;
 
   private readonly components: ITableComponents<TSchema>;
@@ -26,16 +25,14 @@ export default class Table<
   }
 
   public get databox(): Databox<any, any> {
-    if (!this.#databox) {
-      this.#databox = new Databox({}, this.databoxInternal);
-      this.databoxInternal.attachTable(this, null, false);
-    }
-    return this.#databox;
+    return this.#databoxInternal.databox;
   }
 
   public get databoxInternal(): DataboxInternal<any, any> {
     if (!this.#databoxInternal) {
       this.#databoxInternal = new DataboxInternal<any, any>({});
+      this.#databoxInternal.databox = new Databox({}, this.databoxInternal);
+      this.#databoxInternal.attachTable(this, null, false);
       this.#databoxInternal.onCreateInMemoryDatabase(this.createInMemoryTable.bind(this));
     }
     return this.#databoxInternal;
