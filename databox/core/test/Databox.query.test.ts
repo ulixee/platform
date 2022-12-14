@@ -93,7 +93,7 @@ beforeEach(() => {
 
 afterAll(async () => {
   await miner.close();
-  Fs.rmSync(storageDir, { recursive: true });
+  if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
 });
 
 test('should be able to run a databox', async () => {

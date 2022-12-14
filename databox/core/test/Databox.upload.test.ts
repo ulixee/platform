@@ -28,13 +28,14 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await miner.close();
+  await miner?.close();
   if (Fs.existsSync(storageDir)) {
-    Fs.rmSync(storageDir, { recursive: true });
+    if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
   }
 });
 
 test('should be able upload a databox', async () => {
+  try {
   await client.upload(dbxFile);
   expect(Fs.existsSync(storageDir)).toBeTruthy();
   expect(manifest.schemaInterface).toBe(`{
@@ -48,6 +49,10 @@ test('should be able upload a databox', async () => {
   };
 }`)
   expect(Fs.existsSync(`${storageDir}/upload@${manifest.versionHash}.dbx`)).toBeTruthy();
+} catch (error) {
+  console.log('TEST ERROR: ', error);
+  throw error;
+}
 });
 
 test('should be able to restrict uploads', async () => {

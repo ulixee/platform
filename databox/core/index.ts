@@ -26,6 +26,7 @@ import DataboxQueryInternalFunction from './endpoints/Databox.queryInternalFunct
 import DataboxInitializeInMemoryTable from './endpoints/Databox.createInMemoryTable';
 import DataboxInitializeInMemoryFunction from './endpoints/Databox.createInMemoryFunction';
 import IDataboxConnectionToClient from './interfaces/IDataboxConnectionToClient';
+import DataboxStorage from './lib/DataboxStorage';
 
 const { log } = Logger(module);
 
@@ -80,7 +81,10 @@ export default class DataboxCore {
     const context = this.getApiContext(transport.remoteId);
     const connection: IDataboxConnectionToClient = this.apiRegistry.createConnection(transport, context);
     context.connectionToClient = connection;
-    connection.once('disconnected', () => this.connections.delete(connection));
+    connection.once('disconnected', () => {
+      connection.databoxStorage?.db.close();
+      this.connections.delete(connection);
+    });
     connection.isInternal = this.options.serverEnvironment === 'development';
     this.connections.add(connection);
     return connection;
@@ -141,6 +145,7 @@ export default class DataboxCore {
       }
       this.connections.clear();
       this.databoxRegistry?.close();
+      DataboxStorage.closeAll();
     } finally {
       closingPromise.resolve();
     }

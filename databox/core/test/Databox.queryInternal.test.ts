@@ -1,30 +1,28 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import UlixeeMiner from '@ulixee/miner';
-import DataboxApiClient from '@ulixee/databox/lib/DataboxApiClient';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import directDatabox from './databoxes/direct';
 
-const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Databox.query.test');
+const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Databox.queryInternal.test');
 
 let miner: UlixeeMiner;
-let client: DataboxApiClient;
 
 beforeAll(async () => {
   jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
+  
   if (Fs.existsSync(`${__dirname}/databoxes/direct.dbx`)) {
     Fs.unlinkSync(`${__dirname}/databoxes/direct.dbx`);
   }
   miner = new UlixeeMiner();
   miner.router.databoxConfiguration = { databoxesDir: storageDir };
   await miner.listen();
-  client = new DataboxApiClient(await miner.address);
 });
 
 afterAll(async () => {
   if (Fs.existsSync(storageDir)) Fs.rmdirSync(storageDir, { recursive: true });
   await miner.close();
-});
+}); 
 
 test('query databox table', async () => {
   const records = await directDatabox.query('SELECT * FROM testers');

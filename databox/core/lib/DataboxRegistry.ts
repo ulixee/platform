@@ -15,6 +15,7 @@ import {
 import DataboxManifest from './DataboxManifest';
 import { unpackDbxFile } from './dbxUtils';
 import { IDataboxStatsRecord } from './DataboxStatsTable';
+import DataboxStorage from './DataboxStorage';
 
 const databoxPackageJson = require(`../package.json`);
 
@@ -107,6 +108,7 @@ export default class DataboxRegistry {
 
     if (!manifest) throw new Error('Could not read the provided .dbx manifest.');
     this.checkDataboxCoreInstalled(manifest.coreVersion);
+        
     // validate hash
     const scriptBuffer = await Fs.readFile(`${databoxTmpPath}/databox.js`);
     const sha = HashUtils.sha3(Buffer.from(scriptBuffer));
@@ -123,8 +125,14 @@ export default class DataboxRegistry {
       );
     }
 
+    const storagePath = this.getStoragePath(manifest.versionHash);
+    DataboxStorage.close(storagePath);
+    try { await Fs.unlink(storagePath); } catch(e) {}
+
     const dbxPath = this.getDbxPath(manifest);
-    if (this.hasVersionHash(manifest.versionHash)) return { dbxPath };
+    if (this.hasVersionHash(manifest.versionHash)) {
+      return { dbxPath };
+    }
 
     if (!allowNewLinkedVersionHistory) this.checkMatchingEntrypointVersions(manifest);
 

@@ -7,7 +7,7 @@ import { IDataboxApiTypes } from '@ulixee/specification/databox';
 import DataboxRegistry from '../lib/DataboxRegistry';
 import DataboxCore from '../index';
 
-const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'databox.core.test');
+const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DataboxCore.test');
 const tmpDir = `${storageDir}/tmp`;
 let packager: Packager;
 let dbx: DbxFile;

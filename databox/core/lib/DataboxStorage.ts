@@ -5,6 +5,8 @@ import * as Database from 'better-sqlite3';
 type ISchema = Record<string, IAnySchemaJson>;
 
 export default class DataboxStorage {
+  private static databasesByPath: { [path: string]: SqliteDatabase } = {};
+
   public readonly db: SqliteDatabase;
   public readonly path: string;
   #schemasByTableName: { [name: string]: ISchema } = {};
@@ -12,7 +14,8 @@ export default class DataboxStorage {
 
   constructor(storagePath?: string) {
     if (storagePath) {
-      this.db = new Database(storagePath);
+      DataboxStorage.databasesByPath[storagePath] ??= new Database(storagePath);
+      this.db = DataboxStorage.databasesByPath[storagePath];
     } else {
       this.db = new Database(':memory:');
     }
@@ -42,5 +45,18 @@ export default class DataboxStorage {
 
   public getFunctionSchema(name: string): ISchema {
     return this.#schemasByFunctionName[name];
+  }
+
+  public static close(path: string): void {
+    if (!this.databasesByPath[path]) return;
+    this.databasesByPath[path].close();
+    delete this.databasesByPath[path];
+  }
+
+  public static closeAll(): void {
+    for (const path of Object.keys(this.databasesByPath)) {
+      this.databasesByPath[path].close();
+      delete this.databasesByPath[path];
+    }
   }
 }
