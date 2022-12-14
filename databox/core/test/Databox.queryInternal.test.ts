@@ -22,7 +22,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  Fs.rmdirSync(storageDir, { recursive: true });
+  if (Fs.existsSync(storageDir)) Fs.rmdirSync(storageDir, { recursive: true });
   await miner.close();
 });
 
