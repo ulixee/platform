@@ -5,7 +5,6 @@ import { IApiSpec } from '@ulixee/net/interfaces/IApiHandlers';
 import IUnixTime from '@ulixee/net/interfaces/IUnixTime';
 import ConnectionFactory from '../connections/ConnectionFactory';
 import ConnectionToDataboxCore from '../connections/ConnectionToDataboxCore';
-import DisconnectedFromCoreError from '../connections/DisconnectedFromCoreError';
 import IDataboxComponents from '../interfaces/IDataboxComponents';
 import Function from './Function';
 import Table from './Table';
@@ -103,7 +102,7 @@ export default class DataboxInternal<
         const connectionToCore = await this.#connectionToCore;
         await connectionToCore?.disconnect();
       } catch (error) {
-        if (!(error instanceof DisconnectedFromCoreError)) return reject(error);
+        return reject(error);
       }
       resolve();
     }));
