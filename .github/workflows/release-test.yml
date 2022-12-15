@@ -41,8 +41,6 @@ jobs:
       - name: Install Hero
         run: yarn && yarn build
         working-directory: ./hero
-        env:
-          HERO_SKIP_CHROME_DOWNLOAD: 1
 
       - name: Yarn build
         run: yarn && yarn build
