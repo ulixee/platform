@@ -16,7 +16,7 @@
     "preversion": "node ../../build/miner/main/scripts/gatherEnvSettings.js"
   },
   "peerDependencies": {
-    "@ulixee/apps-chromealive-core": "2.0.0-alpha.15"
+    "@ulixee/apps-chromealive-core": "2.0.0-alpha.16"
   },
   "peerDependenciesMeta": {
     "@ulixee/apps-chromealive-core": {
@@ -24,13 +24,13 @@
     }
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.16",
+    "@ulixee/commons": "2.0.0-alpha.17",
     "@ulixee/databox-core": "2.0.0-alpha.16",
     "@ulixee/databox-plugins-hero-core": "2.0.0-alpha.16",
-    "@ulixee/hero-core": "2.0.0-alpha.16",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.16",
-    "@ulixee/net": "2.0.0-alpha.16",
-    "@ulixee/specification": "2.0.0-alpha.16",
+    "@ulixee/hero-core": "2.0.0-alpha.17",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.17",
+    "@ulixee/net": "2.0.0-alpha.17",
+    "@ulixee/specification": "2.0.0-alpha.17",
     "commander": "^9.3.0",
     "ws": "^7.4.6"
   },

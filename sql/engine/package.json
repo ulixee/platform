@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {},
   "dependencies": {
-    "@ulixee/schema": "2.0.0-alpha.16",
+    "@ulixee/schema": "2.0.0-alpha.17",
     "@ulixee/databox": "2.0.0-alpha.16",
     "@ulixee/sql-ast": "2.0.0-alpha.16",
     "@ulixee/sql-engine": "2.0.0-alpha.16"

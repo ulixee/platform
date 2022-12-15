@@ -5,13 +5,13 @@
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.16",
+    "@ulixee/commons": "2.0.0-alpha.17",
     "@ulixee/databox": "2.0.0-alpha.16",
     "@ulixee/databox-core": "2.0.0-alpha.16",
     "@ulixee/databox-plugins-hero": "2.0.0-alpha.16",
-    "@ulixee/hero": "2.0.0-alpha.16",
-    "@ulixee/hero-core": "2.0.0-alpha.16",
-    "@ulixee/net": "2.0.0-alpha.16"
+    "@ulixee/hero": "2.0.0-alpha.17",
+    "@ulixee/hero-core": "2.0.0-alpha.17",
+    "@ulixee/net": "2.0.0-alpha.17"
   },
   "devDependencies": {
     "@types/node": "14.14.31",
