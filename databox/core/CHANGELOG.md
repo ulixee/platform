@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.17](https://github.com/ulixee/platform/compare/v2.0.0-alpha.16...v2.0.0-alpha.17) (2022-12-15)
+
+
+### Bug Fixes
+
+* added some jest mocks ([c915472](https://github.com/ulixee/platform/commit/c915472bccd85bb8385ccbe5419f29a9990d4f9f))
+* fixed some tests by ensuring the dir exits before removing ([54c0e4d](https://github.com/ulixee/platform/commit/54c0e4dba27e207507b88be70d485c9dd73b9058))
+* resolved some file issues in tests ([a707427](https://github.com/ulixee/platform/commit/a707427db410b03e82240cda516d16a87a2e40e5))
+
+
+### Features
+
+* added tables + sql ([8be5f7e](https://github.com/ulixee/platform/commit/8be5f7e31ca4c63cbb02f81eb7ca29dbb8e5b2aa))
+* added ULX_SERVER_ENVIRONMENT env ([a3b28a6](https://github.com/ulixee/platform/commit/a3b28a68a21378cdccbea1d49b851201cda8db10))
+* **databox:** passthrough functions ([c84ba16](https://github.com/ulixee/platform/commit/c84ba168265ebdb167e6ceeb5e3f6bd116760710))
+* finished converting Databox to SQL ([3765917](https://github.com/ulixee/platform/commit/37659171fe2c5c1488c4ab0209939421894c4e1b))
+
+
+
+
+
 # [2.0.0-alpha.16](https://github.com/ulixee/platform/compare/v2.0.0-alpha.15...v2.0.0-alpha.16) (2022-12-05)
 
 
