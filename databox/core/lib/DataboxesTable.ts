@@ -32,11 +32,14 @@ export default class DataboxesTable extends SqliteTable<IDataboxRecord> {
     const storedDate = Date.now();
     const functionsByName: IDataboxRecord['functionsByName'] = {};
     for (const [name, func] of Object.entries(manifest.functionsByName)) {
-      functionsByName[name] = {
-        name,
-        pricePerQuery: func.pricePerQuery ?? 0,
-        corePlugins: func.corePlugins ?? {},
-      };
+      const prices: IDataboxRecord['functionsByName'][0]['prices'] = (func.prices ?? []) as any;
+      if (prices.length === 0) prices.push({ perQuery: 0 } as any);
+      for (const price of prices) {
+        price.perQuery ??= 0;
+        price.minimum ??= price.perQuery;
+        price.addOns ??= { perKb: 0 };
+      }
+      functionsByName[name] = { corePlugins: func.corePlugins ?? {}, prices };
     }
     this.insertNow([
       manifest.versionHash,
@@ -93,9 +96,19 @@ export interface IDataboxRecord {
   schemaInterface: string;
   functionsByName: {
     [name: string]: {
-      name: string;
-      pricePerQuery: number;
-      corePlugins: { [name: string]: string };
+      corePlugins: Record<string, string>;
+      prices: {
+        perQuery: number;
+        minimum: number;
+        addOns: {
+          perKb: number;
+        };
+        remoteMeta?: {
+          host: string;
+          databoxVersionHash: string;
+          functionName: string;
+        };
+      }[];
     };
   };
   paymentAddress: string;

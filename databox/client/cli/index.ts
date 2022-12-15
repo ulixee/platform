@@ -1,7 +1,6 @@
 import { Command } from 'commander';
 import type * as CliCommands from '@ulixee/databox-packager/lib/cliCommands';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import UlixeeConfig from '@ulixee/commons/config';
 import DataboxApiClient from '../lib/DataboxApiClient';
 import giftCardCommands from './giftCardCommands';
 
@@ -136,7 +135,7 @@ export default function databoxCommands(): Command {
   cli
     .command('install')
     .description(
-      'Install a Databox and corresponding Schema into your project. Enables type-checking for Databox.exec.',
+      'Install a Databox and corresponding Schema into your project. Enables type-checking for Databox.query.',
     )
     .argument('<versionHash>', 'The version hash of the Databox.')
     .option('-a, --alias <name>', 'Add a shortcut name to reference this Databox hash.')
@@ -145,10 +144,7 @@ export default function databoxCommands(): Command {
       'Connect to the given host Miner. Will try to automatically connect if omitted.',
     )
     .action(async (versionHash, { alias, host }) => {
-      host ??=
-        UlixeeConfig.load()?.defaultMinerHost ??
-        UlixeeConfig.global.defaultMinerHost ??
-        UlixeeHostsConfig.global.getVersionHost(version);
+      host ??= UlixeeHostsConfig.global.getVersionHost(version);
 
       if (!host) throw new Error('Please provide a Miner host to connect to.');
 

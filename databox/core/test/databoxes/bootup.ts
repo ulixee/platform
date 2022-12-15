@@ -1,10 +1,9 @@
 import { boolean } from '@ulixee/schema';
-
-const Databox = require('@ulixee/databox');
+import Databox, { Function } from '@ulixee/databox';
 
 module.exports = new Databox({
   functions: {
-    bootup: {
+    bootup: new Function({
       run({ output }) {
         output.success = true;
       },
@@ -14,6 +13,6 @@ module.exports = new Databox({
           success: boolean(),
         },
       },
-    },
+    }),
   },
 });

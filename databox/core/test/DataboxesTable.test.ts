@@ -9,7 +9,11 @@ test('it can save a databox manifest', () => {
     linkedVersions: [],
     functionsByName: {
       default: {
-        pricePerQuery: 100,
+        prices: [
+          {
+            perQuery: 100,
+          },
+        ],
       },
     },
     coreVersion: '2.0.0-alpha.1',
@@ -25,9 +29,14 @@ test('it can save a databox manifest', () => {
     coreVersion: '2.0.0-alpha.1',
     functionsByName: {
       default: {
-        name: 'default',
         corePlugins: {},
-        pricePerQuery: 100,
+        prices: [
+          {
+            perQuery: 100,
+            minimum: 100,
+            addOns: { perKb: 0 },
+          },
+        ],
       },
     },
     versionHash: 'abc',

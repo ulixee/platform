@@ -1,5 +1,7 @@
 import IFunctionSchema from '@ulixee/databox/interfaces/IFunctionSchema';
+import { IPassthroughFunctionComponents } from '@ulixee/databox/lib/PassthroughFunction';
 import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
+import { IFunctionComponents } from '@ulixee/databox';
 
 export interface IFetchMetaMessage {
   messageId: string;
@@ -24,6 +26,9 @@ export interface IExecResponseData {
 
 export interface IFetchMetaResponseData {
   coreVersion: string;
+  remoteDataboxes?: Record<string, string>;
+  paymentAddress?: string;
+  giftCardIssuerIdentity?: string;
   functionsByName: {
     [name: string]: {
       corePlugins: { [name: string]: string };
@@ -31,8 +36,15 @@ export interface IFetchMetaResponseData {
         input?: Record<string, IAnySchemaJson>;
         output?: Record<string, IAnySchemaJson> | IAnySchemaJson;
       };
-    };
+    } & Omit<IFunctionComponents<any, any>, 'schema'> &
+      IPassthroughFunctionComponents<any, any>;
   };
+  tablesByName: {
+    [name: string]: {
+      schema: Record<string, IAnySchemaJson>;
+      seedlings: Record<string, any>;
+    }
+  }
 }
 
 export type IResponseData = IExecResponseData | IFetchMetaResponseData;

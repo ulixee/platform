@@ -5,6 +5,9 @@ import * as Path from 'path';
 import DataboxManifest from '@ulixee/databox-core/lib/DataboxManifest';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DataboxApiClient from '@ulixee/databox/lib/DataboxApiClient';
+import { SqlGenerator } from '@ulixee/sql-engine';
+import * as Database from 'better-sqlite3';
+import { IFetchMetaResponseData } from '@ulixee/databox-core/interfaces/ILocalDataboxProcess';
 
 export default class DbxFile {
   public readonly workingDirectory: string;
@@ -46,6 +49,23 @@ export default class DbxFile {
     return manifest;
   }
 
+  public createOrUpdateDatabase(tableByName: IFetchMetaResponseData['tablesByName']): void {
+    const dbPath = Path.join(this.workingDirectory, 'databox-storage.db');
+    const db = new Database(dbPath);
+
+    for (const name of Object.keys(tableByName)) {
+      const { schema, seedlings } = tableByName[name];
+      SqlGenerator.createTableFromSchema(name, schema, sql => {
+        db.prepare(sql).run();
+      });
+
+      SqlGenerator.createInsertsFromSeedlings(name, seedlings, schema, (sql, values) => {
+        db.prepare(sql).run(values);
+      });
+    }
+    db.close();
+  }
+
   public async save(keepOpen = false): Promise<void> {
     if (!(await existsAsync(this.workingDirectory))) return;
     await Tar.create(
@@ -54,7 +74,7 @@ export default class DbxFile {
         cwd: this.workingDirectory,
         file: this.dbxPath,
       },
-      ['databox.js', 'databox.js.map', 'databox-manifest.json'],
+      ['databox.js', 'databox.js.map', 'databox-manifest.json', 'databox-storage.db'],
     );
     if (!keepOpen) await this.close();
   }

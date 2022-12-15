@@ -1,10 +1,14 @@
-import IFunctionContext from './IFunctionContext';
 import Function from '../lib/Function';
-import IFunctionComponents from './IFunctionComponents';
+import Table from '../lib/Table';
 
 export default interface IDataboxComponents<
-  Fns extends Function<any>,
-  TContext extends IFunctionComponents<any, IFunctionContext<any>>,
+  TTable extends Table<any>,
+  TFunction extends Function<any>,
 > {
-  functions: Record<string, Fns | TContext | TContext['run']>;
+  authenticateIdentity?(identity: string, nonce: string): Promise<boolean> | boolean;
+  remoteDataboxes?: { [source: string]: string };
+  tables?: Record<string, TTable>;
+  functions?: Record<string, TFunction>;
+  paymentAddress?: string;
+  giftCardIssuerIdentity?: string;
 }

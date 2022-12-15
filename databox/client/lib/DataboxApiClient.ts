@@ -5,11 +5,15 @@ import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
 import { IPayment } from '@ulixee/specification';
-import IFunctionInputOutput from '../interfaces/IFunctionInputOutput';
+import { nanoid } from 'nanoid';
 import ITypes from '../types';
 import installSchemaType, { addSchemaAlias } from '../types/installSchemaType';
 
-type IDataboxExecResult = Omit<IDataboxApiTypes['Databox.exec']['result'], 'output'>;
+export type IDataboxExecResult = Omit<IDataboxApiTypes['Databox.query']['result'], 'output'>;
+export type IDataboxExecRelayArgs = Pick<
+  IDataboxApiTypes['Databox.query']['args'],
+  'authentication' | 'payment'
+>;
 
 export default class DataboxApiClient {
   public connectionToCore: ConnectionToCore<IDataboxApis, {}>;
@@ -28,14 +32,17 @@ export default class DataboxApiClient {
     return await this.runRemote('Databox.meta', { versionHash });
   }
 
-  public async getFunctionPricing(
-    versionHash: string,
-    functionName: string,
+  public async getFunctionPricing<
+    IVersionHash extends keyof ITypes & string = any,
+    IFunctionName extends keyof ITypes[IVersionHash] & string = 'default',
+  >(
+    versionHash: IVersionHash,
+    functionName: IFunctionName,
   ): Promise<
-    Omit<IDataboxApiTypes['Databox.meta']['result']['functionsByName'][0], 'name'> &
+    Omit<IDataboxApiTypes['Databox.meta']['result']['functionsByName'][IFunctionName], 'name'> &
       Pick<
         IDataboxApiTypes['Databox.meta']['result'],
-        'computePricePerKb' | 'giftCardIssuerIdentities'
+        'computePricePerQuery' | 'giftCardIssuerIdentities'
       >
   > {
     const meta = await this.getMeta(versionHash);
@@ -43,7 +50,7 @@ export default class DataboxApiClient {
 
     return {
       ...stats,
-      computePricePerKb: meta.computePricePerKb,
+      computePricePerQuery: meta.computePricePerQuery,
       giftCardIssuerIdentities: meta.giftCardIssuerIdentities,
     };
   }
@@ -67,33 +74,32 @@ export default class DataboxApiClient {
   /**
    * NOTE: any caller must handle tracking local balances of gift cards and removing them if they're depleted!
    */
-  public async exec<
-    IO extends IFunctionInputOutput,
-    IVersionHash extends keyof ITypes & string = any,
-    IFunctionName extends keyof ITypes[IVersionHash] & string = 'default',
-    ISchemaDbx extends ITypes[IVersionHash][IFunctionName] = IO,
-  >(
+  public async query<ISchemaOutput = any, IVersionHash extends keyof ITypes & string = any>(
     versionHash: IVersionHash,
-    functionName: IFunctionName,
-    input: ISchemaDbx['input'],
-    microPayment: IPayment & {
-      onFinalized?(metadata: IDataboxExecResult['metadata'], error?: Error): void;
+    sql: string,
+    options: {
+      boundValues?: any[];
+      payment?: IPayment & {
+        onFinalized?(metadata: IDataboxExecResult['metadata'], error?: Error): void;
+      };
+      authentication?: IDataboxExecRelayArgs['authentication'];
     } = {},
-  ): Promise<IDataboxExecResult & { output?: ISchemaDbx['output'] }> {
+  ): Promise<IDataboxExecResult & { output?: ISchemaOutput[] }> {
     try {
-      const result = await this.runRemote('Databox.exec', {
+      const result = await this.runRemote('Databox.query', {
         versionHash,
-        functionName,
-        input,
-        payment: microPayment,
+        sql,
+        boundValues: options.boundValues ?? [],
+        payment: options.payment,
+        authentication: options.authentication,
       });
-      if (microPayment?.onFinalized) {
-        microPayment.onFinalized(result.metadata);
+      if (options.payment?.onFinalized) {
+        options.payment.onFinalized(result.metadata);
       }
       return result;
     } catch (error) {
-      if (microPayment?.onFinalized) {
-        microPayment.onFinalized(null, error);
+      if (options.payment?.onFinalized) {
+        options.payment.onFinalized(null, error);
       }
       throw error;
     }
@@ -116,8 +122,9 @@ export default class DataboxApiClient {
     if (options.identity) {
       const identity = options.identity;
       uploaderIdentity = identity.bech32;
-      const message = sha3(
-        concatAsBuffer('Databox.upload', compressedDatabox, String(allowNewLinkedVersionHistory)),
+      const message = DataboxApiClient.createUploadSignatureMessage(
+        compressedDatabox,
+        allowNewLinkedVersionHistory,
       );
       uploaderSignature = identity.sign(message);
     }
@@ -151,5 +158,34 @@ export default class DataboxApiClient {
     }
 
     return await this.connectionToCore.sendRequest({ command, args: [args] as any }, timeoutMs);
+  }
+
+  public static createExecSignatureMessage(payment: IPayment, nonce: string): Buffer {
+    return sha3(
+      concatAsBuffer('Databox.exec', payment?.giftCard?.id, payment?.micronote?.micronoteId, nonce),
+    );
+  }
+
+  public static createExecAuthentication(
+    payment: IPayment,
+    authenticationIdentity: Identity,
+    nonce?: string,
+  ): IDataboxExecRelayArgs['authentication'] {
+    nonce ??= nanoid(10);
+    const message = DataboxApiClient.createExecSignatureMessage(payment, nonce);
+    return {
+      identity: authenticationIdentity.bech32,
+      signature: authenticationIdentity.sign(message),
+      nonce,
+    };
+  }
+
+  public static createUploadSignatureMessage(
+    compressedDatabox: Buffer,
+    allowNewLinkedVersionHistory: boolean,
+  ): Buffer {
+    return sha3(
+      concatAsBuffer('Databox.upload', compressedDatabox, String(allowNewLinkedVersionHistory)),
+    );
   }
 }

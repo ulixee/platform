@@ -17,7 +17,7 @@ export default class WorkTracker {
         this.runPromises.delete(promise);
       }
     } else {
-      log.info('Waiting for completing of remaining Databox.execs', {
+      log.info('Waiting for completing of remaining Databox.query calls', {
         count: this.runPromises.size,
       } as any);
       await Promise.all([...this.runPromises].map(x => x.promise.catch(err => err)));

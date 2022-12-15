@@ -405,12 +405,7 @@ export class Menubar extends EventEmitter {
     if (this.#ulixeeMiner) return;
     ChromeAliveCore.register();
     this.#ulixeeMiner = new UlixeeMiner();
-    const address = UlixeeConfig.global?.defaultMinerHost;
-    let port = 0;
-    if (address) {
-      port = Number(address.split(':').pop());
-    }
-    await this.#ulixeeMiner.listen({ port });
+    await this.#ulixeeMiner.listen();
 
     await installDefaultChrome();
 

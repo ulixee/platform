@@ -58,6 +58,8 @@ export default class CoreRouter {
 
   public async start(minerAddress: string): Promise<void> {
     HeroCore.onShutdown = () => this.miner.close();
+    this.heroConfiguration ??= {};
+    this.heroConfiguration.shouldShutdownOnSignals ??= this.miner.shouldShutdownOnSignals;
     await HeroCore.start(this.heroConfiguration);
 
     if (this.databoxConfiguration) {

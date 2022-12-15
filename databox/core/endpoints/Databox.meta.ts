@@ -6,7 +6,7 @@ export default new DataboxApiHandler('Databox.meta', {
   async handler(request, context) {
     await DataboxCore.start();
 
-    const { giftCardsRequiredIssuerIdentity, giftCardsAllowed, computePricePerKb } =
+    const { giftCardsRequiredIssuerIdentity, giftCardsAllowed, computePricePerQuery } =
       context.configuration;
 
     const databox = context.databoxRegistry.getByVersionHash(request.versionHash);
@@ -20,18 +20,35 @@ export default new DataboxApiHandler('Databox.meta', {
         giftCardIssuerIdentities.push(giftCardsRequiredIssuerIdentity);
       }
     }
+
+    const sidechainSettings = await context.sidechainClientManager.defaultClient.getSettings(
+      false,
+      false,
+    );
     const functionsByName: IDataboxApiTypes['Databox.meta']['result']['functionsByName'] = {};
 
     for (const [name, stats] of Object.entries(databox.statsByFunction)) {
-      const { pricePerQuery } = databox.functionsByName[name];
+      const { prices } = databox.functionsByName[name];
+      let minimumPrice = 0;
+      let pricePerQuery = 0;
+      for (const price of prices) {
+        minimumPrice += price.minimum;
+        pricePerQuery += price.perQuery;
+      }
+      if (minimumPrice > 0) minimumPrice += sidechainSettings.settlementFeeMicrogons;
+
       functionsByName[name] = {
-        averageMilliseconds: stats.averageMilliseconds,
-        maxMilliseconds: stats.maxMilliseconds,
-        averageTotalPricePerQuery: stats.averagePrice,
-        maxPricePerQuery: stats.maxPrice,
-        averageBytesPerQuery: stats.averageBytes,
-        maxBytesPerQuery: stats.maxBytes,
-        basePricePerQuery: pricePerQuery,
+        stats: {
+          averageMilliseconds: stats.averageMilliseconds,
+          maxMilliseconds: stats.maxMilliseconds,
+          averageTotalPricePerQuery: stats.averagePrice,
+          maxPricePerQuery: stats.maxPrice,
+          averageBytesPerQuery: stats.averageBytes,
+          maxBytesPerQuery: stats.maxBytes,
+        },
+        pricePerQuery,
+        minimumPrice,
+        priceBreakdown: prices,
       };
     }
 
@@ -40,7 +57,7 @@ export default new DataboxApiHandler('Databox.meta', {
       giftCardIssuerIdentities,
       schemaInterface: databox.schemaInterface,
       functionsByName,
-      computePricePerKb,
+      computePricePerQuery,
     };
   },
 });

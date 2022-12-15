@@ -4,10 +4,12 @@ import Packager from '@ulixee/databox-packager';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import DbxFile from '@ulixee/databox-packager/lib/DbxFile';
 import { IDataboxApiTypes } from '@ulixee/specification/databox';
+import Identity from '@ulixee/crypto/lib/Identity';
+import SidechainClient from '@ulixee/sidechain';
 import DataboxRegistry from '../lib/DataboxRegistry';
 import DataboxCore from '../index';
 
-const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'databox.core.test');
+const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DataboxCore.test');
 const tmpDir = `${storageDir}/tmp`;
 let packager: Packager;
 let dbx: DbxFile;
@@ -16,13 +18,17 @@ beforeAll(async () => {
   mkdirSync(storageDir, { recursive: true });
   DataboxCore.options.databoxesTmpDir = tmpDir;
   DataboxCore.options.databoxesDir = storageDir;
+  DataboxCore.options.identityWithSidechain = Identity.createSync();
   await DataboxCore.start();
   packager = new Packager(require.resolve('./databoxes/bootup.ts'));
   dbx = await packager.build();
 }, 30e3);
 
-afterAll(() => {
-  rmSync(storageDir, { recursive: true });
+afterAll(async () => {
+  await DataboxCore.close();
+  try {
+    rmSync(storageDir, { recursive: true });
+  } catch (err) {}
 });
 
 test('should install new databoxes on startup', async () => {
@@ -49,19 +55,28 @@ test('can load a version from disk if not already open', async () => {
     recursive: true,
   });
 
+  await runApi('Databox.query', {
+    sql: 'SELECT * FROM bootup()',
+    versionHash: packager.manifest.versionHash,
+  });
+
   await expect(
-    runApi('Databox.exec', {
-      input: {},
+    runApi('Databox.query', {
+      sql: 'SELECT * FROM bootup()',
       versionHash: packager.manifest.versionHash,
-      functionName: 'bootup',
     }),
   ).resolves.toMatchObject({
-    output: { success: true },
+    output: [{ success: true }],
     latestVersionHash: packager.manifest.versionHash,
   });
 });
 
 test('can get metadata about an uploaded databox', async () => {
+  jest.spyOn(SidechainClient.prototype, 'getSettings').mockImplementationOnce(() => {
+    return Promise.resolve({
+      settlementFeeMicrogons: 10,
+    } as any);
+  });
   await expect(
     runApi('Databox.upload', {
       compressedDatabox: await Fs.readFile(dbx.dbxPath),
@@ -70,19 +85,29 @@ test('can get metadata about an uploaded databox', async () => {
   ).resolves.toEqual({ success: true });
   await expect(
     runApi('Databox.meta', { versionHash: packager.manifest.versionHash }),
-  ).resolves.toEqual({
+  ).resolves.toEqual(<IDataboxApiTypes['Databox.meta']['result']>{
     latestVersionHash: packager.manifest.versionHash,
     giftCardIssuerIdentities: [],
-    computePricePerKb: 0,
+    computePricePerQuery: 0,
     functionsByName: {
       bootup: {
-        averageBytesPerQuery: expect.any(Number),
-        averageMilliseconds: expect.any(Number),
-        averageTotalPricePerQuery: 0,
-        basePricePerQuery: 0,
-        maxBytesPerQuery: expect.any(Number),
-        maxPricePerQuery: 0,
-        maxMilliseconds: expect.any(Number),
+        stats: {
+          averageBytesPerQuery: expect.any(Number),
+          averageMilliseconds: expect.any(Number),
+          averageTotalPricePerQuery: 0,
+          maxBytesPerQuery: expect.any(Number),
+          maxPricePerQuery: 0,
+          maxMilliseconds: expect.any(Number),
+        },
+        pricePerQuery: 0,
+        minimumPrice: 0,
+        priceBreakdown: [
+          {
+            perQuery: 0,
+            minimum: 0,
+            addOns: { perKb: 0 },
+          },
+        ],
       },
     },
     schemaInterface: `{

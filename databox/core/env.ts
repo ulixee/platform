@@ -1,6 +1,7 @@
 import { addressValidation, identityValidation } from '@ulixee/specification/common';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { loadEnv, parseEnvBool, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
+import IDataboxCoreConfigureOptions from './interfaces/IDataboxCoreConfigureOptions';
 
 loadEnv(process.cwd());
 loadEnv(__dirname);
@@ -9,6 +10,7 @@ if (env.ULX_DATABOX_DIR) env.ULX_DATABOX_DIR = parseEnvPath(env.ULX_DATABOX_DIR)
 if (env.ULX_IDENTITY_PATH) env.ULX_IDENTITY_PATH = parseEnvPath(env.ULX_IDENTITY_PATH);
 
 export default {
+  serverEnvironment: (env.ULX_SERVER_ENVIRONMENT || 'development') as IDataboxCoreConfigureOptions['serverEnvironment'],
   databoxesDir: env.ULX_DATABOX_DIR,
   // list of identities who can upload to this Miner [@ulixee/crypto/lib/Identity.bech32]
   uploaderIdentities: parseIdentities(env.ULX_DBX_UPLOADER_IDENTITIES, 'Uploader Identities'),
@@ -18,7 +20,7 @@ export default {
     env.ULX_GIFT_CARDS_REQUIRED_ISSUER_IDENTITY,
     'Gift Card Issuer',
   ),
-  computePricePerKb: parseEnvInt(env.ULX_PRICE_PER_KB),
+  computePricePerQuery: parseEnvInt(env.ULX_PRICE_PER_QUERY),
   approvedSidechains: [],
   defaultSidechainHost: env.ULX_SIDECHAIN_HOST,
   defaultSidechainRootIdentity: env.ULX_SIDECHAIN_IDENTITY,

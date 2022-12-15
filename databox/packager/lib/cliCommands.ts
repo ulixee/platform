@@ -1,4 +1,3 @@
-import UlixeeConfig from '@ulixee/commons/config';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { createInterface } from 'readline';
 import * as Path from 'path';
@@ -126,10 +125,7 @@ async function uploadPackage(
   identityPassphrase: string | undefined,
 ): Promise<void> {
   if (!uploadHost) {
-    uploadHost =
-      UlixeeConfig.load()?.defaultMinerHost ??
-      UlixeeConfig.global.defaultMinerHost ??
-      UlixeeHostsConfig.global.getVersionHost(version);
+    uploadHost = UlixeeHostsConfig.global.getVersionHost(version);
 
     if (uploadHost?.startsWith('localhost')) {
       uploadHost = await UlixeeHostsConfig.global.checkLocalVersionHost(this.version, uploadHost);
@@ -258,6 +254,9 @@ You can choose from the options below to link to the existing Miner versions or 
           manifest.coreVersion,
           manifest.schemaInterface,
           manifest.functionsByName,
+          manifest.remoteDataboxes,
+          manifest.paymentAddress,
+          manifest.giftCardIssuerIdentity,
           console.log,
         );
         await newManifest.save();
