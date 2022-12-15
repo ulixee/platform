@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/miner",
-  "version": "2.0.0-alpha.16",
+  "version": "2.0.0-alpha.17",
   "description": "The Ulixee Miner is an out-of-the box tool to host and deploy Ulixee Databoxes and Hero scripts. It allows you to easily create a paid API service.",
   "exports": {
     ".": {
@@ -25,8 +25,8 @@
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.17",
-    "@ulixee/databox-core": "2.0.0-alpha.16",
-    "@ulixee/databox-plugins-hero-core": "2.0.0-alpha.16",
+    "@ulixee/databox-core": "2.0.0-alpha.17",
+    "@ulixee/databox-plugins-hero-core": "2.0.0-alpha.17",
     "@ulixee/hero-core": "2.0.0-alpha.17",
     "@ulixee/hero-interfaces": "2.0.0-alpha.17",
     "@ulixee/net": "2.0.0-alpha.17",
@@ -35,6 +35,6 @@
     "ws": "^7.4.6"
   },
   "devDependencies": {
-    "@ulixee/databox-testing": "2.0.0-alpha.16"
+    "@ulixee/databox-testing": "2.0.0-alpha.17"
   }
 }

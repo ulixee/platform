@@ -1,13 +1,13 @@
 {
   "name": "@ulixee/e2e",
   "private": true,
-  "version": "2.0.0-alpha.16",
+  "version": "2.0.0-alpha.17",
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.17",
     "@ulixee/crypto": "2.0.0-alpha.17",
-    "@ulixee/databox": "2.0.0-alpha.16",
-    "@ulixee/databox-packager": "2.0.0-alpha.16",
-    "@ulixee/miner": "2.0.0-alpha.16",
+    "@ulixee/databox": "2.0.0-alpha.17",
+    "@ulixee/databox-packager": "2.0.0-alpha.17",
+    "@ulixee/miner": "2.0.0-alpha.17",
     "@ulixee/net": "2.0.0-alpha.17",
     "@ulixee/sidechain": "2.0.0-alpha.17",
     "@ulixee/specification": "2.0.0-alpha.17"
