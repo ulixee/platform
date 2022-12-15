@@ -12,7 +12,7 @@ export enum SupportedCommandType {
 type ISupportedCommandType = keyof typeof SupportedCommandType;
 type ILimitedTo = { table?: string; function?: string };
 
-interface IInputSchemasByName<T = Record<string, IAnySchemaJson>> { 
+interface IInputSchemasByName<T = Record<string, IAnySchemaJson>> {
   [name: string]: T;
 }
 
@@ -71,7 +71,7 @@ export default class SqlParser {
 
   public isInsert(): boolean {
     return this.ast.type === 'insert';
-  }  
+  }
 
   public convertToBoundValuesMap(values: any[]): { [k: string]: any } {
     return values.reduce((a, v, i) => ({ ...a, [i+1]: v}), {});
@@ -97,7 +97,7 @@ export default class SqlParser {
     return input;
   }
 
-  public extractFunctionInputs<T>(schemasByName: IInputSchemasByName<T>, boundValues: any[]): any {
+  public extractFunctionInputs<T>(schemasByName: IInputSchemasByName<T>, boundValues: any[]): { [name: string]: any } {
     if (!this.isSelect()) throw new Error('Invalid SQL command');
 
     const inputByFunction: { [name: string]: any } = {};
@@ -107,7 +107,7 @@ export default class SqlParser {
       }
       const schema = schemasByName[functionName];
       const input = this.extractFunctionInput(functionName, boundValues);
-      for (const key of Object.keys(input)) { 
+      for (const key of Object.keys(input)) {
         input[key] = SqlGenerator.convertFromSqliteValue(schema[key]?.typeName, input[key]);
       }
       inputByFunction[functionName] = input;

@@ -63,6 +63,7 @@ export default class DbxFile {
         db.prepare(sql).run(values);
       });
     }
+    db.close();
   }
 
   public async save(keepOpen = false): Promise<void> {

@@ -6,7 +6,6 @@ import Log from '@ulixee/commons/lib/Logger';
 import { bindFunctions, createPromise } from '@ulixee/commons/lib/utils';
 import { isWsOpen } from '@ulixee/net/lib/WsUtils';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import UlixeeConfig from '@ulixee/commons/config';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import CoreRouter from './lib/CoreRouter';
@@ -55,7 +54,7 @@ export default class Miner {
   private readonly httpRoutes: [url: RegExp | string, method: string, handler: IHttpHandleFn][];
   private readonly wsRoutes: [RegExp | string, IWsHandleFn][] = [];
 
-  constructor(addressHost = 'localhost', shouldShutdownOnSignals = true) {
+  constructor(addressHost = 'localhost', readonly shouldShutdownOnSignals = true) {
     this.httpServer = new Http.Server();
     bindFunctions(this);
     this.httpServer.on('error', this.onHttpError);
@@ -83,12 +82,6 @@ export default class Miner {
     if (this.finalAddressHostPromise.isResolved) return this.finalAddressHostPromise.promise;
 
     const listenOptions = { ...(options ?? { port: 0 }) };
-    if (!options?.port && shouldAutoRouteToHost) {
-      const address = Miner.getHost(this.version);
-      if (address) {
-        listenOptions.port = Number(address.split(':').pop());
-      }
-    }
 
     this.httpServer.once('error', this.finalAddressHostPromise.reject);
     this.httpServer
@@ -110,7 +103,6 @@ export default class Miner {
       this.didAutoroute = true;
       ShutdownHandler.register(() => UlixeeHostsConfig.global.setVersionHost(this.version, null));
     }
-
     await this.router.start(`${this.addressHost}:${addressHost.port}`);
 
     return addressHost;
@@ -166,7 +158,7 @@ export default class Miner {
   }
 
   private autoClose(): Promise<void> {
-    return this.close(true)
+    return this.close(true);
   }
 
   private handleHome(req: IncomingMessage, res: ServerResponse): void {
@@ -214,13 +206,5 @@ export default class Miner {
       error,
       sessionId: null,
     });
-  }
-
-  public static getHost(version: string): string {
-    return (
-      UlixeeConfig.load()?.defaultMinerHost ??
-      UlixeeConfig.global.defaultMinerHost ??
-      UlixeeHostsConfig.global.getVersionHost(version)
-    );
   }
 }

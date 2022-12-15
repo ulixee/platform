@@ -27,7 +27,7 @@ function hashScript(script: string): string {
 
 test('should throw an error if the required databox core version is not installed', async () => {
   const registry = new DataboxRegistry(storageDir, tmpDir);
-  Helpers.needsClosing.push()
+  Helpers.needsClosing.push(registry);
   const databoxTmpDir = `${storageDir}/tmp/dbx1`;
   mkdirSync(databoxTmpDir, { recursive: true });
   await Fs.writeFile(
@@ -50,6 +50,7 @@ test('should throw an error if the required databox core version is not installe
 
 test('should be able to upload and retrieve the databox', async () => {
   const registry = new DataboxRegistry(storageDir, tmpDir);
+  Helpers.needsClosing.push(registry);
   const script = 'function(){}';
   const scriptHash = hashScript(script);
   const databoxTmpDir = `${storageDir}/tmp/dbx2`;
@@ -139,6 +140,7 @@ test('should allow a user to override updating with no history', async () => {
 
 test('should throw an error with version history if current versions are unmatched', async () => {
   const registry = new DataboxRegistry(storageDir, tmpDir);
+  Helpers.needsClosing.push(registry);
   const script1 = 'function 1(){}';
   const script1VersionHash = hashScript(script1);
   const script2 = 'function 2(){}';
@@ -221,6 +223,7 @@ test('should throw an error with version history if current versions are unmatch
 
 test('should provide a newer version hash if old script not available', async () => {
   const registry = new DataboxRegistry(storageDir, tmpDir);
+  Helpers.needsClosing.push(registry);
   // @ts-ignore
   registry.databoxesDb.databoxVersions.save('maybe-there', Date.now(), 'not-there', null);
   try {

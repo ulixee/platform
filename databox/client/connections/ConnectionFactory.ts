@@ -1,6 +1,5 @@
 import Log from '@ulixee/commons/lib/Logger';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
-import UlixeeConfig from '@ulixee/commons/config';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { WsTransportToCore } from '@ulixee/net';
 import ConnectionToDataboxCore from './ConnectionToDataboxCore';
@@ -14,10 +13,7 @@ export default class ConnectionFactory {
 
   public static createConnection(): ConnectionToDataboxCore {
     let connection: ConnectionToDataboxCore;
-    const host =
-      UlixeeConfig.load()?.defaultMinerHost ??
-      UlixeeConfig.global.defaultMinerHost ??
-      UlixeeHostsConfig.global.getVersionHost(version);
+    const host = UlixeeHostsConfig.global.getVersionHost(version);
 
     if (host) {
       const transport = new WsTransportToCore(`${host}/databox`);
@@ -41,9 +37,7 @@ npx @ulixee/miner start
 
     if (!connection) {
       throw new Error(
-        'Hero Core could not be found locally' +
-          '\n' +
-          'If you meant to connect to a remote host, include the "host" parameter for your connection',
+        'Hero Core could not be found locally\nIf you meant to connect to a remote host, include the "host" parameter for your connection',
       );
     }
 

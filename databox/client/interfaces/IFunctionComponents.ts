@@ -5,6 +5,11 @@ export default interface IFunctionComponents<
   IAfterRunContext = IContext,
 > {
   name?: string;
+  pricePerQuery?: number;
+  addOnPricing?: {
+    perKb?: number;
+  };
+  minimumPrice?: number;
   schema?: ISchema;
   beforeRun?(context: IBeforeRunContext): void | Promise<void>;
   run(context: IContext): void | Promise<void>;

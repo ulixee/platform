@@ -19,14 +19,16 @@ beforeEach(async () => {
 let workingDirectory: string;
 let dbxFile: string;
 afterEach(async () => {
-  if (workingDirectory && existsSync(workingDirectory)) await Fs.rm(workingDirectory, { recursive: true }).catch(() => null);
+  if (workingDirectory && existsSync(workingDirectory))
+    await Fs.rm(workingDirectory, { recursive: true }).catch(() => null);
   if (dbxFile && existsSync(dbxFile)) await Fs.unlink(dbxFile).catch(() => null);
   workingDirectory = null;
   dbxFile = null;
 });
 
 afterAll(async () => {
-  if (workingDirectory && existsSync(workingDirectory)) await Fs.rm(workingDirectory, { recursive: true }).catch(() => null);
+  if (workingDirectory && existsSync(workingDirectory))
+    await Fs.rm(workingDirectory, { recursive: true }).catch(() => null);
   if (dbxFile && existsSync(dbxFile)) await Fs.unlink(dbxFile).catch(() => null);
 });
 
@@ -56,7 +58,7 @@ test('it should generate a relative script entrypoint', async () => {
     schemaInterface: undefined,
     functionsByName: {
       default: {
-        pricePerQuery: 0,
+        prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {
           '@ulixee/databox-plugins-hero': require('../package.json').version,
         },
@@ -211,13 +213,13 @@ test('should be able to package a multi-function Databox', async () => {
 }`,
     functionsByName: {
       funcWithInput: {
-        pricePerQuery: 0,
+        prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {
           '@ulixee/databox-plugins-hero': require('../package.json').version,
         },
       },
       funcWithOutput: {
-        pricePerQuery: 0,
+        prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {},
       },
     },
@@ -245,7 +247,7 @@ test('should be able to package an exported Function without a Databox', async (
     schemaInterface: undefined,
     functionsByName: {
       default: {
-        pricePerQuery: 0,
+        prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {
           '@ulixee/databox-plugins-hero': require('../package.json').version,
         },

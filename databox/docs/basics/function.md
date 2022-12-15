@@ -32,17 +32,19 @@ A databox Function has a main callback called `run`. Functions have built-in lif
 import { Function } from '@ulixee/databox';
 import { HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
-export default new Function({
-  run(ctx) {
-    ctx.output = `Hello ${ctx.input.firstName}`;
+export default new Function(
+  {
+    run(ctx) {
+      ctx.output = `Hello ${ctx.input.firstName}`;
+    },
+    async afterRun(ctx) {
+      const resource = await ctx.heroReplay.detachedResources.get('x');
+      ctx.output.responceCode = resource.response.statusCode;
+    },
   },
-  async afterRun(ctx) {
-    const resource = await ctx.heroReplay.detachedResources.get('x');
-    ctx.output.responceCode = resource.response.statusCode;
-  }
-}, HeroFunctionPlugin);
+  HeroFunctionPlugin,
+);
 ```
-
 
 ## Constructor
 
@@ -60,6 +62,7 @@ The first argument can be a single callback function matching the `run` callback
 - schema `IFunctionSchema`. Optional [schema](../advanced/function-schemas.md) defining the type-checked input and output parameters for the function.
 
 The second argument is a list of zero or more plugins.
+
 - plugins `Array<Plugin>`. Optional. A list of [plugin-compatible classes](../advanced/plugins).
 
 ## Methods
@@ -68,6 +71,4 @@ The second argument is a list of zero or more plugins.
 
 Execute the function. Options can include `input` parameters defined in the schema.
 
-#### Return Promise<schema['output']> Returns a promise of the defined schema values. 
-
-There are no public methods on this instance.
+#### Return Promise<schema['output']> Returns a promise of the defined schema values.

@@ -1,9 +1,8 @@
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { promises as Fs } from 'fs';
 import Identity from '@ulixee/crypto/lib/Identity';
-import { sha3 } from '@ulixee/commons/lib/hashUtils';
-import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { InvalidSignatureError } from '@ulixee/crypto/lib/errors';
+import DataboxApiClient from '@ulixee/databox/lib/DataboxApiClient';
 import DataboxApiHandler from '../lib/DataboxApiHandler';
 import { unpackDbx } from '../lib/dbxUtils';
 import DataboxCore from '../index';
@@ -28,8 +27,9 @@ export default new DataboxApiHandler('Databox.upload', {
           }).`,
         );
       }
-      const message = sha3(
-        concatAsBuffer(this.command, compressedDatabox, String(allowNewLinkedVersionHistory)),
+      const message = DataboxApiClient.createUploadSignatureMessage(
+        compressedDatabox,
+        allowNewLinkedVersionHistory,
       );
       if (!Identity.verify(uploaderIdentity, message, uploaderSignature)) {
         throw new InvalidSignatureError(

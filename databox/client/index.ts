@@ -11,6 +11,7 @@ import IFunctionExecOptions from './interfaces/IFunctionExecOptions';
 import IFunctionSchema, { FunctionSchema } from './interfaces/IFunctionSchema';
 import Table from './lib/Table';
 import ConnectionToDataboxCore from './connections/ConnectionToDataboxCore';
+import PassthroughFunction from './lib/PassthroughFunction';
 
 export * as Schema from '@ulixee/schema';
 
@@ -22,6 +23,7 @@ export {
   FunctionContext,
   Function,
   ConnectionToDataboxCore,
+  PassthroughFunction,
   IFunctionComponents,
   IFunctionExecOptions,
   IFunctionSchema,

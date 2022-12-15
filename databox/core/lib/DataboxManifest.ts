@@ -12,6 +12,7 @@ import { promises as Fs } from 'fs';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
+import { databoxVersionHashValidation } from '@ulixee/specification/common';
 
 type IDataboxSources = [
   global: DataboxManifest,
@@ -28,6 +29,7 @@ export default class DataboxManifest implements IDataboxManifest {
   public coreVersion: string;
   public schemaInterface: string;
   public functionsByName: IDataboxManifest['functionsByName'] = {};
+  public remoteDataboxes: Record<string, string>;
 
   // Payment details
   public paymentAddress?: string;
@@ -79,6 +81,9 @@ export default class DataboxManifest implements IDataboxManifest {
     coreVersion: string,
     schemaInterface: string,
     functionsByName: IDataboxManifest['functionsByName'],
+    remoteDataboxes: Record<string, string>,
+    paymentAddress: string,
+    giftCardIssuerIdentity: string,
     logger?: (message: string, ...args: any[]) => any,
   ): Promise<void> {
     await this.load();
@@ -89,13 +94,18 @@ export default class DataboxManifest implements IDataboxManifest {
     const manifestSources = DataboxManifest.getCustomSources(absoluteScriptEntrypoint);
     await this.loadGeneratedManifests(manifestSources);
     this.linkedVersions ??= [];
-    this.coreVersion = coreVersion;
-    this.schemaInterface = schemaInterface;
-    this.functionsByName = functionsByName ?? {};
-    for (const [funcName, funcMeta] of Object.entries(this.functionsByName)) {
+    this.functionsByName = {};
+    Object.assign(this, {
+      coreVersion,
+      schemaInterface,
+      remoteDataboxes,
+      paymentAddress,
+      giftCardIssuerIdentity,
+    });
+    for (const [funcName, funcMeta] of Object.entries(functionsByName)) {
       this.functionsByName[funcName] = {
         corePlugins: funcMeta.corePlugins ?? {},
-        pricePerQuery: funcMeta.pricePerQuery ?? 0,
+        prices: funcMeta.prices ?? [{ perQuery: 0, minimum: 0 }],
       };
     }
     // allow manifest to override above values
@@ -280,7 +290,13 @@ export default class DataboxManifest implements IDataboxManifest {
     linkedVersions.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
     const functions = Object.keys(functionsByName ?? {}).sort();
     const functionPrices: (string | number)[] = [];
-    for (const func of functions) functionPrices.push(func, functionsByName[func].pricePerQuery);
+    for (const name of functions) {
+      const func = functionsByName[name];
+      func.prices ??= [{ perQuery: 0, minimum: 0 }];
+      for (const price of func.prices) {
+        functionPrices.push(price.perQuery, price.minimum, price.addOns?.perKb);
+      }
+    }
     const hashMessage = concatAsBuffer(
       scriptHash,
       versionTimestamp,
@@ -302,6 +318,14 @@ export default class DataboxManifest implements IDataboxManifest {
         'This Manifest has errors that need to be fixed.',
         error,
       );
+    }
+  }
+
+  public static validateVersionHash(versionHash: string): void {
+    try {
+      databoxVersionHashValidation.parse(versionHash);
+    } catch (error) {
+      throw ValidationError.fromZodValidation('This is not a valid databox versionHash', error);
     }
   }
 

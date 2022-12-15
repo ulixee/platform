@@ -13,7 +13,7 @@ export default interface IDataboxCoreConfigureOptions {
   enableRunWithLocalPath: boolean;
   uploaderIdentities: string[];
   defaultBytesForPaymentEstimates: number;
-  computePricePerKb: number;
+  computePricePerQuery: number;
   approvedSidechains: IBlockSettings['sidechains'];
   approvedSidechainsRefreshInterval: number;
   defaultSidechainHost: string;

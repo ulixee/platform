@@ -48,7 +48,7 @@ export default class DataboxCore {
     giftCardsAllowed: env.giftCardsAllowed,
     giftCardsRequiredIssuerIdentity: env.giftCardsRequiredIssuerIdentity,
     uploaderIdentities: env.uploaderIdentities,
-    computePricePerKb: env.computePricePerKb,
+    computePricePerQuery: env.computePricePerQuery,
     defaultBytesForPaymentEstimates: 256,
     approvedSidechains: env.approvedSidechains,
     defaultSidechainHost: env.defaultSidechainHost,
@@ -57,7 +57,7 @@ export default class DataboxCore {
     approvedSidechainsRefreshInterval: 60e3 * 60, // 1 hour
   };
 
-  public static pluginCoresByName: { [name: string]: IFunctionPluginCore } = {};  
+  public static pluginCoresByName: { [name: string]: IFunctionPluginCore } = {};
   public static isClosing: Promise<void>;
   public static workTracker: WorkTracker;
   public static apiRegistry = new ApiRegistry<IDataboxApiContext>([
@@ -70,7 +70,7 @@ export default class DataboxCore {
     DataboxInitializeInMemoryTable,
     DataboxInitializeInMemoryFunction,
   ]);
-  
+
   private static databoxRegistry: DataboxRegistry;
   private static sidechainClientManager: SidechainClientManager;
   private static isStarted = new Resolvable<void>();
@@ -102,7 +102,7 @@ export default class DataboxCore {
     if (this.options.enableRunWithLocalPath) {
       this.apiRegistry.register(DataboxQueryLocalScript);
     }
-    
+
     if (!(await existsAsync(this.options.databoxesTmpDir))) {
       await Fs.mkdir(this.options.databoxesTmpDir, { recursive: true });
     }
