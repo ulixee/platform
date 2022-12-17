@@ -9,7 +9,7 @@ import { nanoid } from 'nanoid';
 import ITypes from '../types';
 import installSchemaType, { addSchemaAlias } from '../types/installSchemaType';
 
-export type IDataboxExecResult = Omit<IDataboxApiTypes['Databox.query']['result'], 'output'>;
+export type IDataboxExecResult = Omit<IDataboxApiTypes['Databox.query']['result'], 'outputs'>;
 export type IDataboxExecRelayArgs = Pick<
   IDataboxApiTypes['Databox.query']['args'],
   'authentication' | 'payment'
@@ -84,7 +84,7 @@ export default class DataboxApiClient {
       };
       authentication?: IDataboxExecRelayArgs['authentication'];
     } = {},
-  ): Promise<IDataboxExecResult & { output?: ISchemaOutput[] }> {
+  ): Promise<IDataboxExecResult & { outputs?: ISchemaOutput[] }> {
     try {
       const result = await this.runRemote('Databox.query', {
         versionHash,

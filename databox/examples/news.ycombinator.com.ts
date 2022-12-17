@@ -2,18 +2,16 @@
 
 import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
-export default new Function(async ({ hero, output }) => {
+export default new Function(async ({ hero, Output }) => {
   await hero.goto('https://news.ycombinator.com/');
   await hero.waitForPaintingStable();
 
   const stories = await hero.document.querySelectorAll('.athing');
-  const records = output;
   let lastStory;
 
   for (const story of stories) {
     const extraElem = await story.nextElementSibling;
-    records.push({});
-    const record = records[records.length - 1];
+    const record = new Output();
 
     const titleElem = await story.querySelector('a.titlelink');
 
@@ -36,6 +34,7 @@ export default new Function(async ({ hero, output }) => {
 
     lastStory = commentsLink;
     record.url = await titleElem.getAttribute('href');
+    record.emit();
   }
 
   if (lastStory) {

@@ -7,32 +7,38 @@ import StringSchema from '@ulixee/schema/lib/StringSchema';
 import DataboxSchemaError from './DataboxSchemaError';
 import IFunctionSchema, { ExtractSchemaType } from '../interfaces/IFunctionSchema';
 import IFunctionExecOptions from '../interfaces/IFunctionExecOptions';
-import Output, { createObservableOutput } from './Output';
+import createOutputGenerator, { IOutputClass } from './Output';
 import IObservableChange from '../interfaces/IObservableChange';
 
 export default class FunctionInternal<
-  ISchema extends IFunctionSchema,
-  TOptions extends IFunctionExecOptions<ISchema> = IFunctionExecOptions<ISchema>,
-  TInput = ExtractSchemaType<ISchema['input']>,
-  TOutput = ExtractSchemaType<ISchema['output']>,
+  TSchema extends IFunctionSchema,
+  TOptions extends IFunctionExecOptions<TSchema> = IFunctionExecOptions<TSchema>,
+  TInput = ExtractSchemaType<TSchema['input']>,
+  TOutput = ExtractSchemaType<TSchema['output']>,
 > extends TypedEventEmitter<{
   close: void;
 }> {
   #isClosing: Promise<void>;
   #input: TInput;
-  #output: Output<TOutput>;
   #outputSchema: BaseSchema<any>;
 
+  public readonly outputs: (TOutput & { emit(): void })[] = [];
   public readonly options: TOptions;
-  public readonly schema: ISchema;
+  public readonly schema: TSchema;
 
+  public readonly Output: IOutputClass<TOutput>;
   public onOutputChanges: (changes: IObservableChange[]) => any;
 
-  constructor(options: TOptions, components: { schema?: ISchema }) {
+  constructor(options: TOptions, components: { schema?: TSchema }) {
     super();
     this.options = options;
     this.schema = components.schema;
     this.#input = (options.input ?? {}) as TInput;
+    this.Output = createOutputGenerator({
+      outputs: this.outputs,
+      onOutputChanges: this.defaultOnOutputChanges.bind(this),
+      onOutputEmitted: this.onOutputEmitted.bind(this),
+    });
 
     if (components.schema?.inputExamples?.length && components.schema.input) {
       const randomEntry = pickRandom(components.schema.inputExamples);
@@ -71,19 +77,6 @@ export default class FunctionInternal<
     return this.#input;
   }
 
-  public get output(): TOutput {
-    this.#output ??= createObservableOutput(this.defaultOnOutputChanges.bind(this)) as any;
-    return this.#output as any;
-  }
-
-  public set output(value: TOutput) {
-    const output = this.output;
-    for (const key of Object.keys(output)) {
-      delete output[key];
-    }
-    Object.assign(output, value);
-  }
-
   public close(closeFn?: () => Promise<void>): Promise<void> {
     if (this.#isClosing) return this.#isClosing;
     this.emit('close');
@@ -110,21 +103,25 @@ export default class FunctionInternal<
     }
   }
 
-  public validateOutput(): void {
+  public validateOutput(output: TOutput, outputContext = ' '): void {
     if (!this.#outputSchema) return;
-    const outputValidation = this.#outputSchema.validate(this.output);
+    const outputValidation = this.#outputSchema.validate(output);
     if (!outputValidation.success) {
       throw new DataboxSchemaError(
-        'The Function output did not match its Schema',
+        `The Function${outputContext}Output did not match its Schema`,
         outputValidation.errors,
       );
     }
   }
 
-  protected defaultOnOutputChanges(changes: IObservableChange[]): void {
+  protected onOutputEmitted(output: TOutput): void {
+    // TODO: send this to connection!
+  }
+
+  protected defaultOnOutputChanges(output: TOutput, changes: IObservableChange[]): void {
     if (this.onOutputChanges) this.onOutputChanges(changes);
     try {
-      this.validateOutput();
+      this.validateOutput(output);
     } catch (err) {
       // NOTE: filter errors to only changed schema elements. Otherwise, we get incomplete object errors
       if (err instanceof DataboxSchemaError) {

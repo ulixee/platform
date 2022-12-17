@@ -9,7 +9,7 @@ export default new Databox({
   functions: {
     authme: new Function({
       run(ctx) {
-        ctx.output = { youreIn: true };
+        ctx.Output.emit({ youreIn: true });
       },
     }),
   },

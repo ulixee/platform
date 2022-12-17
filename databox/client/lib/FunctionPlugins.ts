@@ -17,7 +17,7 @@ export default class FunctionPlugins<
 
   #components: IFunctionComponents<ISchema, IFunctionContext<ISchema>>;
   private clientPlugins: IFunctionPlugin<ISchema>[] = [];
-  private pluginNextPromises: Resolvable<ISchema['output']>[] = [];
+  private pluginNextPromises: Resolvable<IFunctionContext<ISchema>['outputs']>[] = [];
   private pluginRunPromises: Promise<Error | void>[] = [];
 
   constructor(components: IFunctionComponents<ISchema, IFunctionContext<ISchema>>) {
@@ -59,7 +59,7 @@ export default class FunctionPlugins<
 
     // plugin `run` phases
     for (const plugin of this.clientPlugins) {
-      const outputPromise = new Resolvable<ISchema['output']>();
+      const outputPromise = new Resolvable<IFunctionContext<ISchema>['outputs']>();
       this.pluginNextPromises.push(outputPromise);
 
       await new Promise<void>((resolve, reject) => {
@@ -83,11 +83,11 @@ export default class FunctionPlugins<
     return lifecycle;
   }
 
-  public async setResolution(output: ISchema['output'], error: Error): Promise<void> {
+  public async setResolution(outputs: IFunctionContext<ISchema>['outputs'], error: Error): Promise<void> {
     // Resolve plugin next promises
     for (const promise of this.pluginNextPromises) {
       if (error) promise.reject(error);
-      else promise.resolve(output);
+      else promise.resolve(outputs);
     }
 
     // wait for all plugins to complete

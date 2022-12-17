@@ -13,21 +13,21 @@ export default class SqlQuery {
     this.db = db;
   }
 
-  public execute(inputByFunctionName, outputByFunctionName, boundValues): any[] {
+  public execute(inputByFunctionName, outputsByFunctionName, boundValues): any[] {
     const schemas = this.sqlParser.tableNames.map(x => this.storage.getTableSchema(x));
     const tmpSchemas = {};
     for (const functionName of this.sqlParser.functionNames) {
       const input = inputByFunctionName[functionName];
-      const output = outputByFunctionName[functionName];
+      const outputs = outputsByFunctionName[functionName];
       const schema = this.storage.getFunctionSchema(functionName);
       schemas.push(schema);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
-      SqlGenerator.createFunctionFromSchema(input, output, schema, (parameters, columns) => {
+      SqlGenerator.createFunctionFromSchema(input, outputs, schema, (parameters, columns) => {
         this.db.table(functionName, {
           parameters,
           columns,
           *rows() {
-            const record = output.shift();
+            const record = outputs.shift();
             if (record) yield SqlGenerator.convertFunctionRecordToSqliteRow(record, schema, tmpSchemas);
           },
         });
@@ -41,7 +41,7 @@ export default class SqlQuery {
     }, {});
     const records = this.db.prepare(sql).all(convertedValues);
     SqlGenerator.convertRecordsFromSqlite(records, schemas, tmpSchemas);
-    
+
     return records;
   }
 }

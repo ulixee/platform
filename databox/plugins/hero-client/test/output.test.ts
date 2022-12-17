@@ -1,8 +1,8 @@
 import { Helpers } from '@ulixee/databox-testing';
 import ConnectionFactory from '@ulixee/hero/connections/ConnectionFactory';
-import { array, buffer, date, object, string } from '@ulixee/schema';
+import { buffer, date, object, string } from '@ulixee/schema';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
-import { Function, Observable,FunctionSchema } from '@ulixee/databox';
+import { Function, Observable } from '@ulixee/databox';
 import { HeroFunctionPlugin } from '../index';
 import MockConnectionToHeroCore from './_MockConnectionToHeroCore';
 
@@ -23,7 +23,8 @@ describe('basic output tests', () => {
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
 
     await new Function(ctx => {
-      ctx.output.test = true;
+      const output = new ctx.Output();
+      output.test = true;
     }, HeroFunctionPlugin).exec({});
 
     const outgoingCommands = connection.outgoingSpy.mock.calls;
@@ -60,7 +61,7 @@ describe('basic output tests', () => {
     };
     const { functionContext, databoxForHeroPlugin, databoxClose } =
       await Helpers.createFullstackDatabox(schema);
-    const output = functionContext.output;
+    const output = new functionContext.Output();
     output.started = new Date();
     const url = 'https://example.org';
     const title = 'Example Domain';
@@ -109,66 +110,12 @@ describe('basic output tests', () => {
     );
   });
 
-  it('can add array-ish items to the main object', async () => {
-    const schema = FunctionSchema({
-      output: array({
-        element: object({
-          fields: {
-            url: string(),
-            title: string(),
-            date: date(),
-            buffer: buffer(),
-          },
-        }),
-      }),
-    });
-    const { functionContext, databoxForHeroPlugin, databoxClose } =
-      await Helpers.createFullstackDatabox(schema);
-    const output = functionContext.output;
-    const dt = new Date();
-    output.push({
-      url: 'https://url.com',
-      title: 'Page',
-      date: dt,
-      buffer: Buffer.from('whatever'),
-    });
-    const sessionId = await databoxForHeroPlugin.hero.sessionId;
-    await databoxClose();
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    const db = new SessionDb(sessionId, { readonly: true });
-    const outputs = db.output.all();
-    expect(outputs).toHaveLength(1);
-    expect(outputs[0]).toEqual({
-      type: 'insert',
-      value: {
-        url: 'https://url.com',
-        title: 'Page',
-        date: dt,
-        buffer: Buffer.from('whatever'),
-      },
-      timestamp: expect.any(Number),
-      lastCommandId: 0,
-      path: '[0]',
-    });
-    expect(JSON.stringify(output)).toEqual(
-      JSON.stringify([
-        {
-          url: 'https://url.com',
-          title: 'Page',
-          date: dt,
-          buffer: Buffer.from('whatever'),
-        },
-      ]),
-    );
-  });
-
   it('can add observables directly', async () => {
     const { functionContext, databoxForHeroPlugin, databoxClose } =
       await Helpers.createFullstackDatabox();
-    const output = functionContext.output;
+    const output = new functionContext.Output();
     const record = Observable({} as any);
-    output.push(record);
+    output.records = [record];
     record.test = 1;
     record.watch = 2;
     record.any = { more: true };
@@ -181,62 +128,20 @@ describe('basic output tests', () => {
     expect(outputs).toHaveLength(4);
     expect(outputs[0]).toEqual({
       type: 'insert',
-      value: {},
+      value: [{}],
       timestamp: expect.any(Number),
       lastCommandId: 0,
-      path: '[0]',
+      path: '["records"]',
     });
     expect(JSON.stringify(output)).toEqual(
-      JSON.stringify([
-        {
-          test: 1,
-          watch: 2,
-          any: { more: true },
-        },
-      ]),
-    );
-  });
-
-  it('can replace the main object', async () => {
-    const { functionContext, databoxForHeroPlugin, databoxClose } =
-      await Helpers.createFullstackDatabox();
-    functionContext.output.test = 'true';
-    functionContext.output = {
-      try: true,
-      another: false,
-    } as any;
-    const sessionId = await databoxForHeroPlugin.hero.sessionId;
-    await databoxClose();
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    const db = new SessionDb(sessionId, { readonly: true });
-    const outputs = db.output.all();
-    expect(outputs).toHaveLength(4);
-    expect(outputs[0]).toEqual({
-      type: 'insert',
-      value: 'true',
-      timestamp: expect.any(Number),
-      lastCommandId: 0,
-      path: '["test"]',
-    });
-    expect(outputs[1]).toEqual({
-      type: 'delete',
-      value: null,
-      timestamp: expect.any(Number),
-      lastCommandId: 0,
-      path: '["test"]',
-    });
-    expect(outputs[2]).toEqual({
-      type: 'insert',
-      value: true,
-      timestamp: expect.any(Number),
-      lastCommandId: 0,
-      path: '["try"]',
-    });
-    expect(JSON.stringify(functionContext.output)).toEqual(
       JSON.stringify({
-        try: true,
-        another: false,
+        records: [
+          {
+            test: 1,
+            watch: 2,
+            any: { more: true },
+          },
+        ],
       }),
     );
   });

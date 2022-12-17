@@ -49,7 +49,11 @@ export async function validateAuthentication(
     authentication?.nonce,
   );
   if (isValid !== true)
-    throw new Error(`The supplied authentication was rejected by this Databox. ${JSON.stringify(authentication) ?? '(nothing supplied)'}`);
+    throw new Error(
+      `The supplied authentication was rejected by this Databox. ${
+        JSON.stringify(authentication) ?? '(nothing supplied)'
+      }`,
+    );
 
   // if callback didn't reject lack of identity, allow it
   if (isValid && !authentication) return;
@@ -67,7 +71,7 @@ export async function execDataboxFunction(
   functionName: string,
   input: any,
   requestRelayArgs: IDataboxExecRelayArgs,
-): Promise<{ output: any }> {
+): Promise<{ outputs: any[] }> {
   const databoxFunction: Function = databox.functions?.[functionName];
 
   if (!databoxFunction) {
@@ -79,6 +83,6 @@ export async function execDataboxFunction(
     if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);
   }
 
-  const output = await databoxFunction.exec(options);
-  return { output };
+  const outputs = await databoxFunction.exec(options);
+  return { outputs };
 }

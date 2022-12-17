@@ -34,7 +34,7 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
     });
   }
 
-  public async exec(functionName: string, input: any): Promise<{ output: any }> {
+  public async exec(functionName: string, input: any): Promise<{ outputs: any[] }> {
     const data = await this.sendMessageToChild<IRunMessage, IExecResponseData>({
       action: 'exec',
       scriptPath: this.scriptPath,
@@ -48,7 +48,7 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
       Object.assign(error, other);
       throw error;
     }
-    return { output: data.output };
+    return { outputs: data.outputs };
   }
 
   public close(): Promise<void> {

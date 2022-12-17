@@ -20,7 +20,7 @@ export interface IRunMessage {
 export type IMessage = IFetchMetaMessage | IRunMessage;
 
 export interface IExecResponseData {
-  output?: any;
+  outputs?: any[];
   error?: { message: string; stack?: string };
 }
 

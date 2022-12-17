@@ -66,7 +66,7 @@ test('can load a version from disk if not already open', async () => {
       versionHash: packager.manifest.versionHash,
     }),
   ).resolves.toMatchObject({
-    output: [{ success: true }],
+    outputs: [{ success: true }],
     latestVersionHash: packager.manifest.versionHash,
   });
 });

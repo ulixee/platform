@@ -19,11 +19,12 @@ To use HeroFunctionPlugin, import the plugin and include it in the `plugins` var
 ```js
 import { HeroFunctionPlugin, Function } from '@ulixee/databox-plugins-hero';
 export default new Function(async context => {
-  const { input, output, hero } = context;
+  const { input, Output, hero } = context;
 
   await hero.goto(input.url);
   const title = await hero.document.title;
 
+  const output = new Output();
   output.title = title;
   output.body = await hero.document.body.textContent;
   await hero.close();
@@ -46,8 +47,9 @@ export default new Function(
       await document.querySelector('h1').$addToDetachedElements('h1');
     },
     async afterRun(context) {
-      const { input, output, heroReplay } = context;
+      const { input, Output, heroReplay } = context;
       const h1 = await hero.detachedElements.get('h1');
+      const output = new Output();
       output.title = h1.textContent;
     },
   },

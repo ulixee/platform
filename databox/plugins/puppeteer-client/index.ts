@@ -61,7 +61,7 @@ export class PuppeteerFunctionPlugin<ISchema extends IFunctionSchema>
   async run(
     functionInternal: FunctionInternal<ISchema, IPuppeteerFunctionExecOptions<ISchema>>,
     lifecycle: IFunctionLifecycle<ISchema, IPuppeteerFunctionContext<ISchema>>,
-    next: () => Promise<ISchema['output']>,
+    next: () => Promise<IFunctionContext<ISchema>['outputs']>,
   ): Promise<void> {
     this.execOptions = functionInternal.options;
     this.initializePuppeteer();
@@ -81,6 +81,7 @@ export class PuppeteerFunctionPlugin<ISchema extends IFunctionSchema>
       handleSIGTERM: true,
       handleSIGHUP: true,
       handleSIGINT: true,
+      pipe: true
     };
     this.puppeteerBrowserPromise = Puppeteer.launch(options);
   }

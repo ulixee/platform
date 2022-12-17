@@ -1,4 +1,3 @@
-import { ExtractSchemaType } from '@ulixee/schema';
 import { SqlParser } from '@ulixee/sql-engine';
 import * as util from 'util';
 import { parseEnvBool } from '@ulixee/commons/lib/envUtils';
@@ -121,7 +120,7 @@ export default class Function<
       IPlugin1['execArgAddons'] &
       IPlugin2['execArgAddons'] &
       IPlugin3['execArgAddons'],
-  ): Promise<ExtractSchemaType<ISchema['output']>> {
+  ): Promise<IFunctionContext<ISchema>['outputs']> {
     if (this.#isRunning) {
       throw new Error('Databox already running');
     }
@@ -148,26 +147,29 @@ export default class Function<
         execError = error;
       }
 
-      await this.plugins.setResolution(functionInternal.output, execError);
+      const results = functionInternal.outputs.map(x => x.toJSON?.() ?? x);
+      await this.plugins.setResolution(results, execError);
 
       if (execError) throw execError;
 
-      functionInternal.validateOutput();
+      let counter = 1;
+      for (const result of results) {
+        let humanCounter = '1st';
+        if (counter === 2) humanCounter = '2nd';
+        if (counter === 3) humanCounter = '3rd';
+        if (counter >= 4) humanCounter = `${counter}th`;
+        functionInternal.validateOutput(result, `'s ${humanCounter} `);
+        counter += 1;
+      }
 
       this.successCount++;
-      const result = (functionInternal.output as any).toJSON();
 
-      if (options.isFromCommandLine) {
-        if (typeof result === 'string') {
-          // eslint-disable-next-line no-console
-          console.log(result);
-        } else {
-          const disableColors = parseEnvBool(process.env.NODE_DISABLE_COLORS) ?? false;
-          // eslint-disable-next-line no-console
-          console.log(util.inspect(result, false, null, !disableColors));
-        }
+      if (options.isFromCommandLine && process.env.NODE_ENV !== 'test') {
+        const disableColors = parseEnvBool(process.env.NODE_DISABLE_COLORS) ?? false;
+        // eslint-disable-next-line no-console
+        console.log(util.inspect(results, false, null, !disableColors));
       }
-      return result;
+      return results;
     } catch (error) {
       error.stack = error.stack.split('at async Function.exec').shift().trim();
       console.error(`ERROR running databox: `, error);
@@ -192,14 +194,14 @@ export default class Function<
       boundValues,
     );
     const input = inputsByFunction[name];
-    const output = await this.exec({ input });
+    const outputs = await this.exec({ input });
 
     const args = {
       name,
       sql,
       boundValues,
       input,
-      output: Array.isArray(output) ? output : [output],
+      outputs,
       databoxInstanceId,
       databoxVersionHash,
     };

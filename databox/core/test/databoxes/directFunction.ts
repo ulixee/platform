@@ -3,7 +3,7 @@ import { boolean } from '@ulixee/schema';
 
 export default new Function({
   run(ctx) {
-    ctx.output = { testerEcho: ctx.input.tester };
+    ctx.Output.emit({ testerEcho: ctx.input.tester });
   },
   schema: {
     input: {

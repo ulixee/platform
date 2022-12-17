@@ -29,14 +29,14 @@ export default new Function(
         // });
       }
     },
-    async afterRun({ output, heroReplay }) {
+    async afterRun({ Output, heroReplay }) {
       const titles = await heroReplay.detachedElements.getAll('titles');
       const subtitles = await heroReplay.detachedElements.getAll('subtitles');
       for (let i = 0; i < titles.length; i += 1) {
         const story = titles[i];
         const extraElem = subtitles[i];
-        output.push({});
-        const record = output[output.length - 1];
+
+        const record = new Output();
 
         const titleElem = story.querySelector('a.titlelink');
 
@@ -54,6 +54,7 @@ export default new Function(
           : 0;
 
         record.url = titleElem.getAttribute('href');
+        record.emit();
       }
     },
   },

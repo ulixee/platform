@@ -1,13 +1,12 @@
 # Databox for Hero
 
-Databox for Hero is a simple wrapper for your Hero scraper script that converts it into a discrete, composable, and deployable unit. 
+Databox for Hero is a simple wrapper for your Hero scraper script that converts it into a discrete, composable, and deployable unit.
 
 - [x] **Production Proof Your Script** - Production proof your script a thousand different ways.
 - [x] **Breaking Notifications** - Get notified when your scripts break.
 - [x] **Runs Anywhere** - Containerize your scripts to run everywhere
 - [x] **Works with Chrome Alive!** - Progressively build your scripts with Chrome Alive!
 - [x] **Easy Management** - Manage your databoxes like a boss.
-
 
 ## Installation
 
@@ -23,30 +22,31 @@ yarn add @ulixee/databox-plugins-hero
 
 ## Usage
 
-Wrapping your script in a Databox gives it instant access to the input and output objects, along with a Hero instance: 
+Wrapping your script in a Databox gives it instant access to the input and output objects, along with a Hero instance:
 
 script.ts
+
 ```js
 const Databox = require('@ulixee/databox-plugins-hero');
 
 new Databox(async databox => {
-  const { input, output, hero } = databox;
+  const { input, Output, hero } = databox;
   await hero.goto('https://example.org');
-  output.data = `I went to example.org. Your input was: ${input.params.name}`;
+  Output.emit({ text: `I went to example.org. Your input was: ${input.params.name}` });
 });
 ```
 
 You can call your script in several ways.
 
-1) Directly from the command line:
+1. Directly from the command line:
 
 ```shell script
 % node script.js --params.name=Alfonso
 ```
 
-2) Through Stream:
+2. Through Stream:
 
-__COMING SOON__
+**COMING SOON**
 
 ```js
 import Stream from '@ulixee/stream';

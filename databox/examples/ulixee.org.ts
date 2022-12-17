@@ -3,7 +3,7 @@
 import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
 export default new Function(async ctx => {
-  const { input, output, hero } = ctx;
+  const { input, Output, hero } = ctx;
   input.url ??= 'https://ulixee.org';
 
   await hero.goto('https://ulixee.org');
@@ -16,9 +16,9 @@ export default new Function(async ctx => {
   const datasets = await document.querySelectorAll('.datasets .title');
 
   // step 2 - start collecting datasets
-  output.datasets = [];
+
   for (const dataset of datasets) {
-    output.datasets.push(await dataset.textContent);
+    new Output({ dataset: await dataset.textContent }).emit();
   }
 
   // step 3 - look at the first one

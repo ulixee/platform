@@ -50,8 +50,9 @@ export function typeChecking(): void {
               html: string(),
             },
           },
-          async run({ hero, input, output }) {
+          async run({ hero, input, Output }) {
             await hero.goto(input.url);
+            const output = new Output();
             output.html = await hero.document.body.outerHTML;
             // @ts-expect-error: value isn't on input
             const x = input.value;

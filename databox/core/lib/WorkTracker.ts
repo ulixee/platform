@@ -5,7 +5,7 @@ import Logger from '@ulixee/commons/lib/Logger';
 const { log } = Logger(module);
 
 export default class WorkTracker {
-  private runPromises = new Set<Resolvable<{ output: any }>>();
+  private runPromises = new Set<Resolvable<{ outputs: any[] }>>();
   private uploadPromises = new Set<Resolvable<any>>();
 
   constructor(public maxRuntimeMs: number) {}
@@ -39,8 +39,8 @@ export default class WorkTracker {
     return resolvable.promise;
   }
 
-  public trackRun(outputPromise: Promise<{ output: any }>): Promise<{ output: any }> {
-    const resolvable = new Resolvable<{ output: any }>(this.maxRuntimeMs);
+  public trackRun(outputPromise: Promise<{ outputs: any[] }>): Promise<{ outputs: any[] }> {
+    const resolvable = new Resolvable<{ outputs: any[] }>(this.maxRuntimeMs);
     this.runPromises.add(resolvable);
 
     void outputPromise

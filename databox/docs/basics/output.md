@@ -10,7 +10,7 @@ Output is able to act like an Array or an Object. It will serialize properly in 
 import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
 export default new Function(async ctx => {
-  const { output, hero } = ctx;
+  const { Output, hero } = ctx;
 
   const links = [
     { name: 'Google', href: 'https://www.google.com' },
@@ -18,7 +18,7 @@ export default new Function(async ctx => {
   ];
 
   for (const link of await hero.querySelectorAll('a')) {
-    output.push({
+    new Output({
       // will be added to the output array
       id: (await link.name).replace(/[^a-z]+/g, '-'),
       href: await link.href,

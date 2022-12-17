@@ -107,7 +107,7 @@ test('should be able to run a databox', async () => {
   await expect(
     client.query(packager.manifest.versionHash, 'SELECT success FROM putout()'),
   ).resolves.toEqual({
-    output: [{ success: true }],
+    outputs: [{ success: true }],
     metadata: expect.any(Object),
     latestVersionHash: expect.any(String),
   });
@@ -145,7 +145,7 @@ test('should be able to run a function packaged without a databox', async () => 
       boundValues: [false],
     }),
   ).resolves.toEqual({
-    output: [{ testerEcho: false }],
+    outputs: [{ testerEcho: false }],
     metadata: expect.any(Object),
     latestVersionHash: expect.any(String),
   });
@@ -204,7 +204,7 @@ test('should be able to run a databox function with payments', async () => {
   await expect(
     client.query(manifest.versionHash, 'SELECT success FROM putout()', { payment }),
   ).resolves.toEqual({
-    output: [{ success: true }],
+    outputs: [{ success: true }],
     metadata: {
       microgons: 1255,
       bytes: expect.any(Number),
@@ -281,7 +281,7 @@ test('should be able run a databox with a GiftCard', async () => {
     await expect(
       client.query(manifest.versionHash, 'SELECT success FROM putout()', { payment }),
     ).resolves.toEqual({
-      output: [{ success: true }],
+      outputs: [{ success: true }],
       metadata: expect.any(Object),
       latestVersionHash: expect.any(String),
     });
@@ -297,7 +297,7 @@ test('should be able run a databox with a GiftCard', async () => {
     await expect(
       client.query(manifest.versionHash, 'SELECT success FROM putout()', { payment }),
     ).resolves.toEqual({
-      output: [{ success: true }],
+      outputs: [{ success: true }],
       metadata: expect.any(Object),
       latestVersionHash: expect.any(String),
     });

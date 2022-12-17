@@ -5,10 +5,10 @@ export default new Databox({
   functions: {
     test: new Function({
       run(ctx) {
-        ctx.output = { 
+        new ctx.Output({
           testerEcho: ctx.input.shouldTest,
           greeting: 'Hello world',
-        };
+        });
       },
       schema: {
         input: {

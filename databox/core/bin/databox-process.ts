@@ -76,12 +76,12 @@ process.on('message', async (message: IMessage) => {
     }
 
     try {
-      const output = await func.exec(message.input);
+      const outputs = await func.exec(message.input);
 
       return sendToParent({
         responseId: message.messageId,
         data: {
-          output,
+          outputs,
         },
       });
     } catch (error) {

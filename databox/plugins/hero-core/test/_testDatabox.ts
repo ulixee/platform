@@ -4,10 +4,10 @@ import { HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 export default new Databox({
   functions: {
     default: new Function({
-      async run({ hero, input, output }) {
+      async run({ hero, input, Output }) {
         await hero.goto(input.url);
         await hero.waitForPaintingStable();
-        output.title = await hero.document.title;
+        new Output({ title:  await hero.document.title });
       }
     }, HeroFunctionPlugin),
   },

@@ -10,9 +10,10 @@ export default new Function(
       // Extract the DOM Element at this moment in time.
       await h1.$addToDetachedElements('h1');
     },
-    async afterRun({ heroReplay, output }) {
+    async afterRun({ heroReplay, Output }) {
       const h1 = await heroReplay.detachedElements.get('h1');
       // NOTE: synchronous APIs. No longer running in browser.
+      const output = new Output();
       output.text = h1.textContent;
       const divs = h1.querySelectorAll('div');
       output.divs = { count: divs.length, textLengths: [...divs].map(x => x.textContent.length) };

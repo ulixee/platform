@@ -15,7 +15,7 @@ export default interface IFunctionPlugin<
   run(
     functionInternal: FunctionInternal<ISchema, IOptions>,
     lifecycle: IFunctionLifecycle<ISchema, IContext, IBeforeContext, IAfterContext>,
-    next: () => Promise<ISchema['output']>,
+    next: () => Promise<IFunctionContext<ISchema>['outputs']>,
   ): Promise<void>;
 }
 

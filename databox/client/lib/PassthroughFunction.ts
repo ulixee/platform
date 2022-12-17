@@ -84,14 +84,11 @@ export default class PassthroughFunction<
 
     if (queryResult.error) throw queryResult.error;
 
-    const upstreamOutput = queryResult.output;
-    if (upstreamOutput) {
-      if (this.components.schema?.output?.typeName === 'array') {
-        context.output = upstreamOutput as any;
-      } else {
-        context.output = upstreamOutput[0];
-      }
+    for (const result of queryResult.outputs ?? []) {
+      // don't emit yet in case the "afterRun" function needs to enhance output
+      new context.Output(result);
     }
+
     if (queryResult.latestVersionHash !== this.databoxVersionHash) {
       console.warn('Newer Databox VersionHash is available', {
         newVersionHash: queryResult.latestVersionHash,

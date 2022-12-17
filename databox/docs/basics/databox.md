@@ -36,7 +36,8 @@ import Databox, { Function } from '@ulixee/databox';
 export default new Databox({
   functions: {
     instance: new Function({
-      run({ input, output }) {
+      run({ input, Output }) {
+        const output = new Output();
         output.urlLength = input.url.length;
       },
       schema: {

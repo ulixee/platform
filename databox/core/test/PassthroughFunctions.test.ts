@@ -103,7 +103,7 @@ test('should be able to have a passthrough function', async () => {
   await expect(
     client.query(remoteVersionHash, 'select * from remote(test => $1)', { boundValues: ['123d'] }),
   ).resolves.toEqual({
-    output: [{ iAmRemote: true, echo: '123d' }],
+    outputs: [{ iAmRemote: true, echo: '123d' }],
     metadata: expect.any(Object),
     latestVersionHash: expect.any(String),
   });
@@ -132,7 +132,7 @@ export default new Databox({
         },
       },
       afterRun(context) {
-        context.output.addOn = 'phew';
+        context.outputs[0].addOn = 'phew';
       },
     }),
   },
@@ -148,7 +148,7 @@ export default new Databox({
       boundValues: ['123d'],
     }),
   ).resolves.toEqual({
-    output: [{ iAmRemote: true, echo: '123d', addOn: 'phew' }],
+    outputs: [{ iAmRemote: true, echo: '123d', addOn: 'phew' }],
     metadata: expect.any(Object),
     latestVersionHash: expect.any(String),
   });
@@ -170,7 +170,7 @@ export default new Databox({
       upcharge: 400,
       remoteFunction: 'source.remote',
       afterRun(context) {
-        context.output.addOn = 'phew';
+        context.outputs[0].addOn = 'phew';
       },
     }),
   },
@@ -202,7 +202,8 @@ export default new Databox({
   functions: {
     source: new Databox.Function({
       pricePerQuery: 6,
-      run({ input, output }) {
+      run({ input, Output }) {
+        const output = new Output();
         output.calls = 1;
         output.lastRun = 'source';
       }
@@ -239,8 +240,8 @@ export default new Databox({
       upcharge: 11,
       remoteFunction: 'hop0.source',
       afterRun(context) {
-        context.output.calls += 1;
-        context.output.lastRun = 'hop1';
+        context.outputs[0].calls += 1;
+        context.outputs[0].lastRun = 'hop1';
       },
     }),
   },
@@ -273,8 +274,8 @@ export default new Databox({
       upcharge: 3,
       remoteFunction: 'hop1.source2',
       afterRun(context) {
-        context.output.calls += 1;
-        context.output.lastRun = 'hop2';
+        context.outputs[0].calls += 1;
+        context.outputs[0].lastRun = 'hop2';
       },
     }),
   },
@@ -300,8 +301,8 @@ export default new Databox({
   const result = await client.query(lastHop.manifest.versionHash, 'select * from last()', {
     payment,
   });
-  expect(result.output[0].calls).toBe(3);
-  expect(result.output[0].lastRun).toBe('hop2');
+  expect(result.outputs[0].calls).toBe(3);
+  expect(result.outputs[0].lastRun).toBe('hop2');
 
   // reverse order of holds
   expect(holdAmounts).toEqual([3, 11, 6]);

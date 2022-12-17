@@ -56,7 +56,7 @@ export default new DataboxApiHandler('Databox.query', {
       storage.schemasByFunctionName,
       request.boundValues,
     );
-    const outputByFunctionName: { [name: string]: any[] } = {};
+    const outputsByFunctionName: { [name: string]: any[] } = {};
 
     const paymentProcessor = new PaymentProcessor(request.payment, context);
 
@@ -78,13 +78,13 @@ export default new DataboxApiHandler('Databox.query', {
       const functionInput = inputByFunctionName[functionName];
       validateFunctionCoreVersions(registryEntry, functionName, context);
 
-      const { output } = await context.workTracker.trackRun(
+      const { outputs } = await context.workTracker.trackRun(
         execDataboxFunction(databox, manifest, functionName, functionInput, request),
       );
-      outputByFunctionName[functionName] = Array.isArray(output) ? output : [output];
+      outputsByFunctionName[functionName] = outputs;
 
       // release the hold
-      const bytes = PaymentProcessor.getOfficialBytes(output);
+      const bytes = PaymentProcessor.getOfficialBytes(outputs);
       const microgons = paymentProcessor.releaseLocalFunctionHold(id, bytes);
 
       const millis = Date.now() - functionStart;
@@ -97,12 +97,12 @@ export default new DataboxApiHandler('Databox.query', {
 
     const boundValues = sqlParser.convertToBoundValuesMap(request.boundValues);
     const sqlQuery = new SqlQuery(sqlParser, storage, db);
-    const output = sqlQuery.execute(inputByFunctionName, outputByFunctionName, boundValues);
+    const outputs = sqlQuery.execute(inputByFunctionName, outputsByFunctionName, boundValues);
 
-    const resultBytes = PaymentProcessor.getOfficialBytes(output);
+    const resultBytes = PaymentProcessor.getOfficialBytes(outputs);
     const microgons = await paymentProcessor.settle(resultBytes);
     return {
-      output,
+      outputs,
       latestVersionHash: registryEntry.latestVersionHash,
       metadata: {
         bytes: resultBytes,

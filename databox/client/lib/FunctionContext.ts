@@ -2,11 +2,13 @@ import { IDataboxApiTypes } from '@ulixee/specification/databox';
 import IFunctionSchema from '../interfaces/IFunctionSchema';
 import FunctionInternal from './FunctionInternal';
 import Databox from './Databox';
+import IFunctionContext from '../interfaces/IFunctionContext';
 
 export default class FunctionContext<
   ISchema extends IFunctionSchema,
   TFunctionInternal extends FunctionInternal<ISchema> = FunctionInternal<ISchema>,
-> {
+> implements IFunctionContext<ISchema>
+{
   #functionInternal: FunctionInternal<ISchema>;
 
   constructor(functionInternal: FunctionInternal<ISchema>, readonly databox: Databox<any, any>) {
@@ -25,12 +27,12 @@ export default class FunctionContext<
     return this.#functionInternal.input;
   }
 
-  public get output(): TFunctionInternal['output'] {
-    return this.#functionInternal.output;
+  public get outputs(): TFunctionInternal['outputs'] {
+    return this.#functionInternal.outputs;
   }
 
-  public set output(value: TFunctionInternal['output']) {
-    this.#functionInternal.output = value;
+  public get Output(): TFunctionInternal['Output'] {
+    return this.#functionInternal.Output;
   }
 
   public get schema(): ISchema {

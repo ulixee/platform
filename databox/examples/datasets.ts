@@ -3,14 +3,13 @@
 import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
 export default new Function(async databox => {
-  const { output, hero } = databox;
+  const { Output, hero } = databox;
   await hero.goto('https://ulixee.org');
   await hero.querySelector('.datasets').$waitForVisible();
 
   const { document } = hero;
   const datasets = await document.querySelectorAll('.datasets .title');
 
-  output.datasets = [];
   const length = await datasets.length;
   for (let i = 0; i < length; i += 1) {
     const dataset = await document.querySelectorAll('.datasets .title')[i];
@@ -22,7 +21,7 @@ export default new Function(async databox => {
       assert(hero.querySelector('.cost .large-text').$isVisible);
     });
     const cost = await hero.querySelector('.cost .large-text').innerText;
-    output.push({ cost, title });
+    new Output({ cost, title });
     await hero.goBack();
     await hero.waitForLocation('change');
   }

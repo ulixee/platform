@@ -42,8 +42,8 @@ test('returns databox errors', async () => {
 test('it can run the databox and return output', async () => {
   const scriptPath = Path.resolve(__dirname, 'databoxes/output.js');
   const databoxProcess = new LocalDataboxProcess(scriptPath);
-  const { output } = await databoxProcess.exec('putout', {});
+  const { outputs } = await databoxProcess.exec('putout', {});
   await databoxProcess.close();
 
-  expect(output).toMatchObject({ success: true });
+  expect(outputs).toEqual([{ success: true }]);
 });

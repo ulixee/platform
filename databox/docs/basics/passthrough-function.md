@@ -14,7 +14,8 @@ import Databox, { Function } from '@ulixee/databox';
 export default new Databox({
   functions: {
     function1: new Function({
-      run({ input, output }) {
+      run({ input, Output }) {
+        const output = new Output();
         output.didRun = true;
         output.echo = input.toEcho;
       },
@@ -35,7 +36,8 @@ export default new Databox({
   functions: {
     function2: new PassthroughFunction({
       remoteFunction: `source.function1`,
-      afterRun({ output }) {
+      afterRun({ Output }) {
+        const output = new Output();
         output.didPasshthrough = true;
       },
     }),

@@ -15,18 +15,20 @@ export default new Function(
       await hero.setSnippet('cookies', await hero.activeTab.cookieStorage.getItems());
       await hero.setSnippet('history', await hero.getJsValue(`history.length`));
     },
-    async afterRun({ heroReplay, output }) {
+    async afterRun({ heroReplay, Output }) {
       const localStorage = await heroReplay.getSnippet('localStorage');
       const sessionStorage = await heroReplay.getSnippet('sessionStorage');
       const cookies = await heroReplay.getSnippet('cookies');
       const history = await heroReplay.getSnippet('history');
 
-      output.rootStorage = {
-        local: localStorage,
-        session: sessionStorage,
-        cookies,
-        history,
-      };
+      Output.emit({
+        rootStorage: {
+          local: localStorage,
+          session: sessionStorage,
+          cookies,
+          history,
+        },
+      });
     },
   },
   HeroFunctionPlugin,

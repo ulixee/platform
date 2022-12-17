@@ -1,36 +1,60 @@
+// eslint-disable-next-line max-classes-per-file
 import { inspect } from 'util';
 import ObjectObserver from './ObjectObserver';
 import IObservableChange from '../interfaces/IObservableChange';
 
-export default class Output<T = any> extends Array<T> {
-  [key: string]: any;
-
-  toJSON(): any {
-    // checks if all keys are numbers (eg, an array), in which case, we will return a copy of the properties
-    if (
-      this.length &&
-      Object.keys(this)
-        .map(Number)
-        .every(x => Number.isInteger(x) && x >= 0)
-    ) {
-      return [...this];
-    }
-    const result: any = {};
-    for (const [key, value] of Object.entries(this)) {
-      result[key] = value;
-    }
-    return result;
-  }
-
-  [inspect.custom](): any {
-    return this.toJSON();
-  }
+export interface IOutputClass<T> {
+  new (data?: T): T & { emit(): void };
+  emit(data: T);
 }
 
-export function createObservableOutput<T>(
-  onChanges: (changes: IObservableChange[]) => void,
-): Output<T> {
-  const observable = new ObjectObserver(new Output());
-  observable.onChanges = onChanges;
-  return observable.proxy;
+interface IInternalOutputOptions<TOutput> {
+  outputs: TOutput[];
+  onOutputEmitted(output: TOutput);
+  onOutputChanges(output: TOutput, changes: IObservableChange[]): void;
+}
+
+export default function createOutputGenerator<TOutput>(
+  internal: IInternalOutputOptions<TOutput>,
+): IOutputClass<TOutput> {
+  return class Output {
+    #observable: ObjectObserver;
+
+    constructor(data?: TOutput) {
+      this.#observable = new ObjectObserver({});
+      this.#observable.proxiedFunctions.emit = this.emit.bind(this);
+      this.#observable.proxiedFunctions.toJSON = this.toJSON.bind(this);
+      this.#observable.onChanges = internal.onOutputChanges.bind(null, this.#observable.target);
+
+      if (data) Object.assign(this.#observable.proxy, data);
+      internal.outputs.push(this.#observable.proxy);
+      // eslint-disable-next-line no-constructor-return
+      return this.#observable.proxy;
+    }
+
+    toJSON(): TOutput {
+      const target = this.#observable.target;
+      const result: any = {};
+      if (!target) return result;
+
+      for (const [key, value] of Object.entries(target)) {
+        result[key] = JSON.parse(JSON.stringify(value));
+      }
+      return result;
+    }
+
+    [inspect.custom](): TOutput {
+      return this.toJSON();
+    }
+
+    emit(): void {
+      const target = this.#observable.target;
+      Object.freeze(target);
+      internal.onOutputEmitted(target);
+    }
+
+    static emit(data: TOutput): void {
+      new Output(data).emit();
+    }
+  } as unknown as IOutputClass<TOutput>;
 }

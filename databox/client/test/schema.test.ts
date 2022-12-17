@@ -13,7 +13,7 @@ describe('Schemas', () => {
 
     const func = new Function({
       async run(ctx) {
-        ctx.output = { test: true };
+        ctx.Output.emit({ test: true });
       },
       schema,
     });
@@ -41,7 +41,7 @@ describe('Schemas', () => {
     const func = new Function({
       async run(ctx) {
         runResolver.resolve(ctx.input);
-        ctx.output = { test: true };
+        ctx.Output.emit({ test: true });
       },
       schema,
     });
@@ -63,12 +63,12 @@ describe('Schemas', () => {
     const func = new Function({
       async run(ctx) {
         // @ts-expect-error
-        ctx.output = { test: 1 };
+        ctx.Output.emit({ test: 1 });
       },
       schema,
     });
 
-    await expect(func.exec({})).rejects.toThrowError('output did not match');
+    await expect(func.exec({})).rejects.toThrowError('Output did not match');
   });
 
   it('will validate output and abort at the first error', async () => {
@@ -87,7 +87,8 @@ describe('Schemas', () => {
     let counter = 0;
     const func = new Function({
       schema,
-      async run({ output }) {
+      async run({ Output }) {
+        const output = new Output();
         output.str = 'test';
         counter += 1;
         output.arr = [];
@@ -98,7 +99,7 @@ describe('Schemas', () => {
       },
     });
 
-    await expect(func.exec({})).rejects.toThrowError('output did not match');
+    await expect(func.exec({})).rejects.toThrowError('Output did not match');
     expect(counter).toBe(2);
   });
 
@@ -114,15 +115,15 @@ describe('Schemas', () => {
 
     const func = new Function({
       async run(ctx) {
-        ctx.output.test = 'good to go';
+        new ctx.Output({ test: 'good to go' });
       },
       schema,
     });
 
     await expect(func.exec({ input: { url: 'https://url.com' } })).resolves.toEqual(
-      expect.objectContaining({
+      [{
         test: 'good to go',
-      }),
+      }],
     );
   });
 });

@@ -10,11 +10,13 @@ export default new Function(
       const resources = await hero.activeTab.waitForResources({ url: 'index.json' });
       for (const resource of resources) await resource.$addToDetachedResources('xhr');
     },
-    async afterRun({ heroReplay, output }) {
+    async afterRun({ heroReplay, Output }) {
       const { detachedResources } = heroReplay;
       const xhrs = await detachedResources.getAll('xhr');
-      output.gridsomeData = [];
+
       console.log(xhrs);
+      const output = new Output();
+      output.gridsomeData = [];
       for (const xhr of xhrs) {
         // NOTE: synchronous APIs.
         const jsonObject = xhr.json;

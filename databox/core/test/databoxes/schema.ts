@@ -5,7 +5,7 @@ export default new Databox({
   functions: {
     default: new Function({
       run(ctx) {
-        ctx.output = { success: true };
+        ctx.Output.emit({ success: true });
       },
       schema: {
         input: {

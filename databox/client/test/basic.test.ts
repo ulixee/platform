@@ -6,7 +6,7 @@ describe('basic Function tests', () => {
   it('automatically runs and closes a function', async () => {
     let functionWasRun = false;
     Autorun.defaultExport = new Function(async ctx => {
-      ctx.output = [{ ran: 'success'}];
+      new ctx.Output({ ran: 'success' });
       functionWasRun = true;
     });
 
@@ -18,7 +18,7 @@ describe('basic Function tests', () => {
   it('waits until run method is explicitly called', async () => {
     let wasRun = false;
     const func = new Function(async ctx => {
-      ctx.output = [{ ran: 'success'}];
+      new ctx.Output({ ran: 'success' });
       wasRun = true;
     });
 

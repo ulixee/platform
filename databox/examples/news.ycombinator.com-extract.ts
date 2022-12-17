@@ -24,14 +24,13 @@ export default new Function({
       // });
     }
   },
-  async afterRun({ output, heroReplay }) {
+  async afterRun({ Output, heroReplay }) {
     const { detachedElements } = heroReplay;
     const storyElement = await detachedElements.get('table');
     const stories = storyElement.querySelectorAll('.athing');
     for (const story of stories) {
       const extraElem = story.nextElementSibling;
-      output.push({});
-      const record = output[output.length - 1];
+      const record = new Output();
 
       const titleElem = story.querySelector('a.titlelink');
 
@@ -49,6 +48,7 @@ export default new Function({
         : 0;
 
       record.url = titleElem.getAttribute('href');
+      record.emit();
     }
   },
 },HeroFunctionPlugin);

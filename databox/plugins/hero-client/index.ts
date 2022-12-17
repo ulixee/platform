@@ -69,7 +69,7 @@ export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
       IFunctionContextBase<ISchema>,
       IHeroReplayFunctionContext<ISchema>
     >,
-    next: () => Promise<ISchema['output']>,
+    next: () => Promise<IHeroFunctionContext<ISchema>['outputs']>,
   ): Promise<void> {
     this.execOptions = functionInternal.options;
     this.functionInternal = functionInternal;
