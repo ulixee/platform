@@ -86,14 +86,14 @@ export default class DataboxRegistry {
   public recordStats(
     versionHash: string,
     functionName: string,
-    stats: { bytes: number; microgons: number; millis: number },
+    stats: { bytes: number; microgons: number; milliseconds: number },
   ): void {
     this.databoxesDb.databoxStats.record(
       versionHash,
       functionName,
       stats.microgons,
       stats.bytes,
-      stats.millis,
+      stats.milliseconds,
     );
   }
 
@@ -127,7 +127,7 @@ export default class DataboxRegistry {
 
     if (!manifest) throw new Error('Could not read the provided .dbx manifest.');
     this.checkDataboxCoreInstalled(manifest.coreVersion);
-        
+
     // validate hash
     const scriptBuffer = await Fs.readFile(`${databoxTmpPath}/databox.js`);
     const sha = HashUtils.sha3(Buffer.from(scriptBuffer));
@@ -146,7 +146,9 @@ export default class DataboxRegistry {
 
     const storagePath = this.getStoragePath(manifest.versionHash);
     DataboxStorage.close(storagePath);
-    try { await Fs.unlink(storagePath); } catch(e) {}
+    try {
+      await Fs.unlink(storagePath);
+    } catch (e) {}
 
     const dbxPath = this.getDbxPath(manifest);
     if (this.hasVersionHash(manifest.versionHash)) {

@@ -1,13 +1,14 @@
+// eslint-disable-next-line max-classes-per-file
 import '@ulixee/commons/lib/SourceMapSupport';
 import Hero, { HeroReplay, IHeroCreateOptions, IHeroReplayCreateOptions } from '@ulixee/hero';
-import ICoreSession from '@ulixee/hero/interfaces/ICoreSession';
+import ICoreSession, { IOutputChangeToRecord } from '@ulixee/hero/interfaces/ICoreSession';
 import FunctionInternal from '@ulixee/databox/lib/FunctionInternal';
 import { InternalPropertiesSymbol } from '@ulixee/hero/lib/internal';
 import IFunctionSchema from '@ulixee/databox/interfaces/IFunctionSchema';
 import IObservableChange from '@ulixee/databox/interfaces/IObservableChange';
 import { FunctionPluginStatics, IFunctionComponents, IFunctionExecOptions } from '@ulixee/databox';
 import IFunctionContextBase from '@ulixee/databox/interfaces/IFunctionContext';
-import { IFunctionLifecycle } from '@ulixee/databox/interfaces/IFunctionPlugin';
+import ICrawlerOutputSchema from '@ulixee/databox/interfaces/ICrawlerOutputSchema';
 
 export * from '@ulixee/databox';
 
@@ -15,82 +16,99 @@ const pkg = require('./package.json');
 
 export type IHeroFunctionExecOptions<ISchema> = IFunctionExecOptions<ISchema> & IHeroCreateOptions;
 
+declare module '@ulixee/hero/lib/extendables' {
+  interface Hero {
+    toCrawlerOutput(): Promise<ICrawlerOutputSchema>;
+  }
+}
+
 export type IHeroFunctionContext<ISchema> = IFunctionContextBase<ISchema> & {
-  hero: Hero;
-};
-
-export type IHeroReplayFunctionContext<ISchema> = IFunctionContextBase<ISchema> & {
-  heroReplay: HeroReplay;
-};
-
-type IHeroFunctionComponentsAddons = {
-  defaultHeroOptions?: IHeroCreateOptions;
+  Hero: typeof Hero;
+  HeroReplay: typeof HeroReplay;
 };
 
 export type IHeroFunctionComponents<ISchema> = IFunctionComponents<
   ISchema,
-  IHeroFunctionContext<ISchema>,
-  IFunctionContextBase<ISchema>,
-  IHeroReplayFunctionContext<ISchema>
-> &
-  IHeroFunctionComponentsAddons;
+  IHeroFunctionContext<ISchema>
+>;
 
 @FunctionPluginStatics
 export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
   public static execArgAddons: IHeroCreateOptions;
-  public static componentAddons: IHeroFunctionComponentsAddons;
-  public static runContextAddons: {
-    hero: Hero;
-  };
-
-  public static afterRunContextAddons: {
-    heroReplay: HeroReplay;
+  public static contextAddons: {
+    Hero: typeof Hero;
+    HeroReplay: { new (options: IHeroReplayCreateOptions | ICrawlerOutputSchema): HeroReplay };
   };
 
   public name = pkg.name;
   public version = pkg.version;
   public hero: Hero;
-  public heroReplay: HeroReplay;
+  public heroReplays = new Set<HeroReplay>();
 
   public functionInternal: FunctionInternal<ISchema, IHeroFunctionExecOptions<ISchema>>;
-
   public execOptions: IHeroFunctionExecOptions<ISchema>;
   public components: IHeroFunctionComponents<ISchema>;
 
+  private pendingOutputs: IOutputChangeToRecord[] = [];
+
   constructor(components: IHeroFunctionComponents<ISchema>) {
     this.components = components;
+    this.uploadOutputs = this.uploadOutputs.bind(this);
   }
 
   public async run(
     functionInternal: FunctionInternal<ISchema, IHeroFunctionExecOptions<ISchema>>,
-    lifecycle: IFunctionLifecycle<
-      ISchema,
-      IHeroFunctionContext<ISchema>,
-      IFunctionContextBase<ISchema>,
-      IHeroReplayFunctionContext<ISchema>
-    >,
+    context: IHeroFunctionContext<ISchema>,
     next: () => Promise<IHeroFunctionContext<ISchema>['outputs']>,
   ): Promise<void> {
     this.execOptions = functionInternal.options;
     this.functionInternal = functionInternal;
     this.functionInternal.onOutputChanges = this.onOutputChanged.bind(this);
 
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const container = this;
     try {
-      lifecycle.run.isEnabled = !this.replaySessionId;
+      const HeroReplayBase = HeroReplay;
+      const heroOptions: IHeroCreateOptions = {
+        ...this.execOptions,
+        input: this.functionInternal.input,
+      };
 
-      if (lifecycle.run.isEnabled) {
-        this.initializeHero();
-        lifecycle.run.context.hero = this.hero;
-      }
+      const HeroBase = Hero;
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+      context.Hero = class Hero extends HeroBase {
+        constructor(options?: IHeroCreateOptions) {
+          if (container.hero) {
+            throw new Error('Multiple Hero instances are not supported in a Databox Function.');
+          }
+          super({ ...heroOptions, ...(options ?? {}) });
+          container.hero = this;
+          this.toCrawlerOutput = async (): Promise<ICrawlerOutputSchema> => {
+            return {
+              sessionId: await this.sessionId,
+              crawler: 'Hero',
+              version: this.version,
+            };
+          };
+          void this[InternalPropertiesSymbol].coreSessionPromise.then(container.uploadOutputs);
+        }
+      };
 
-      if (lifecycle.afterRun.isEnabled) {
-        this.initializeHeroReplay();
-        lifecycle.afterRun.context.heroReplay = this.heroReplay;
-      }
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+      context.HeroReplay = class HeroReplay extends HeroReplayBase {
+        constructor(options?: IHeroReplayCreateOptions | ICrawlerOutputSchema) {
+          super({
+            replaySessionId: ((options as ICrawlerOutputSchema) ?? {}).sessionId,
+            ...heroOptions,
+            ...(options ?? {}),
+          });
+          container.heroReplays.add(this);
+        }
+      };
+
       await next();
     } finally {
-      await this.hero?.close();
-      await this.heroReplay?.close();
+      await Promise.all([this.hero, ...this.heroReplays].filter(Boolean).map(x => x.close().catch(() => null)));
     }
   }
 
@@ -105,40 +123,25 @@ export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
     return this.execOptions.replaySessionId ?? process.env.ULX_REPLAY_SESSION_ID;
   }
 
-  private initializeHero(): void {
-    const heroOptions: IHeroCreateOptions = {
-      ...(this.components.defaultHeroOptions ?? {}),
-      ...this.execOptions,
-      input: this.functionInternal.input,
-    };
-    this.hero = new Hero(heroOptions);
-    pluginInstancesByHero.set(this.hero, this);
-  }
+  protected uploadOutputs(): void {
+    if (!this.pendingOutputs.length || !this.coreSessionPromise) return;
 
-  private initializeHeroReplay(): void {
-    if (this.hero) {
-      this.heroReplay = new HeroReplay({ hero: this.hero });
-    } else {
-      const heroOptions: IHeroReplayCreateOptions = {
-        ...(this.components.defaultHeroOptions ?? {}),
-        ...this.execOptions,
-        input: this.functionInternal.input,
-      };
-      this.heroReplay = new HeroReplay(heroOptions);
-    }
+    const records = [...this.pendingOutputs];
+    this.pendingOutputs.length = 0;
+    this.coreSessionPromise.then(x => x.recordOutput(records)).catch(() => null);
   }
 
   private onOutputChanged(changes: IObservableChange[]): void {
-    const changesToRecord = changes.map(change => ({
+    const changesToRecord: IOutputChangeToRecord[] = changes.map(change => ({
       type: change.type as string,
       value: change.value,
       path: JSON.stringify(change.path),
       timestamp: Date.now(),
     }));
 
-    this.coreSessionPromise
-      ?.then(coreSession => coreSession.recordOutput(changesToRecord))
-      .catch(() => null);
+    this.pendingOutputs.push(...changesToRecord);
+
+    this.uploadOutputs();
   }
 }
 

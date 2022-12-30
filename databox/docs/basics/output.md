@@ -10,13 +10,14 @@ Output is able to act like an Array or an Object. It will serialize properly in 
 import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
 export default new Function(async ctx => {
-  const { Output, hero } = ctx;
+  const { Output, Hero } = ctx;
 
   const links = [
     { name: 'Google', href: 'https://www.google.com' },
     { name: 'Hacker News', href: 'https://news.ycombinator.com' },
   ];
 
+  const hero = new Hero();
   for (const link of await hero.querySelectorAll('a')) {
     new Output({
       // will be added to the output array
@@ -33,8 +34,10 @@ NOTE: you cannot "re-assign" the output variable and have it be observed. You sh
 import { Function } from '@ulixee/databox';
 
 export default new Function(async ctx => {
-  let { output } = ctx;
-
+  let { Output } = ctx;
+  
+  let output = new Output();
+  
   // Setting a variable is ok
   output.whoop = 'This will work!';
 
@@ -51,10 +54,11 @@ Any object you assign into Output is "copied" into the Output object. To create 
 import { Observable, Function } from '@ulixee/databox';
 
 export default new Function(async ctx => {
-  const { output } = ctx;
+  const { Output } = ctx;
 
   let result = Observable({});
-  output.push(result);
+  const output = new Output({ results: [] });
+  output.results.push(result);
 
   result.text = 'Got it!';
 });
@@ -66,10 +70,10 @@ If you do not use `Observable` or re-retrieve your object, you should NOT expect
 import { Function } from '@ulixee/databox';
 
 export default new Function(async ctx => {
-  const { output } = databox;
+  const { Output } = databox;
 
   let result = {};
-  output.push(result);
+  const output = new Output({ result });
 
   result.text = 'Not going to be there!'; // WILL NOT TRACK!
 });

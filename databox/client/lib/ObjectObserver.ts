@@ -145,7 +145,9 @@ export default class ObjectObserver implements ProxyHandler<any> {
     if (type === 'string' || type === 'number' || type === 'boolean') return object;
     if (Buffer.isBuffer(object)) return Buffer.from(object);
     if (ArrayBuffer.isView(object)) return Buffer.from(object.buffer);
-    if (object instanceof Date) return new Date(object);
+    if (object instanceof Date) {
+      return new Date(object.getTime());
+    }
 
     if (type === 'object') {
       if (Array.isArray(object)) {

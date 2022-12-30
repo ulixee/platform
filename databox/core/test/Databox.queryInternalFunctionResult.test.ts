@@ -4,7 +4,7 @@ import UlixeeMiner from '@ulixee/miner';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import directFunction from './databoxes/directFunction';
 
-const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Databox.queryInternalFunction.test');
+const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Databox.queryInternalFunctionResult.test');
 
 let miner: UlixeeMiner;
 
@@ -25,7 +25,7 @@ afterAll(async () => {
 
 test('should be able to query function directly', async () => {
   const data = await directFunction.query('SELECT * FROM self(tester => true)');
-  expect(data).toMatchObject([ 
+  expect(data).toMatchObject([
     { testerEcho: true },
   ]);
 }, 30e3);

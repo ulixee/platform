@@ -2,7 +2,7 @@ import { SqlParser, SqlGenerator } from '@ulixee/sql-engine';
 import DataboxApiHandler from '../lib/DataboxApiHandler';
 import DataboxStorage from '../lib/DataboxStorage';
 
-export default new DataboxApiHandler('Databox.queryInternalFunction', {
+export default new DataboxApiHandler('Databox.queryInternalFunctionResult', {
   handler(request, context) {
     if (!context.connectionToClient?.isInternal) {
       throw new Error('You do not have permission to access this endpoint');

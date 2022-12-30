@@ -8,8 +8,8 @@ export default new Databox({
       {
         async run(ctx) {
           const text = testFunction();
-          const { input, Output, hero } = ctx;
-
+          const { input, Output, Hero } = ctx;
+          const hero = new Hero();
           await hero.goto('https://example.org');
           const title = await hero.document.title;
 

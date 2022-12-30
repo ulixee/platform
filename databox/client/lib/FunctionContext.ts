@@ -1,19 +1,16 @@
 import { IDataboxApiTypes } from '@ulixee/specification/databox';
 import IFunctionSchema from '../interfaces/IFunctionSchema';
 import FunctionInternal from './FunctionInternal';
-import Databox from './Databox';
 import IFunctionContext from '../interfaces/IFunctionContext';
+import DataboxInternal from './DataboxInternal';
+import IDataboxMetadata from '../interfaces/IDataboxMetadata';
 
 export default class FunctionContext<
   ISchema extends IFunctionSchema,
   TFunctionInternal extends FunctionInternal<ISchema> = FunctionInternal<ISchema>,
 > implements IFunctionContext<ISchema>
 {
-  #functionInternal: FunctionInternal<ISchema>;
-
-  constructor(functionInternal: FunctionInternal<ISchema>, readonly databox: Databox<any, any>) {
-    this.#functionInternal = functionInternal;
-  }
+  public databoxMetadata: IDataboxMetadata;
 
   public get authentication(): IDataboxApiTypes['Databox.query']['args']['authentication'] {
     return this.#functionInternal.options.authentication;
@@ -37,5 +34,12 @@ export default class FunctionContext<
 
   public get schema(): ISchema {
     return this.#functionInternal.schema;
+  }
+
+  #functionInternal: FunctionInternal<ISchema>;
+
+  constructor(functionInternal: FunctionInternal<ISchema>, databoxInternal: DataboxInternal) {
+    this.#functionInternal = functionInternal;
+    this.databoxMetadata = databoxInternal.metadata;
   }
 }

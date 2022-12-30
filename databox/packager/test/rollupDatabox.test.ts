@@ -4,8 +4,8 @@ test('it should support packaging a typescript project', async () => {
   const bundled = await rollupDatabox(`${__dirname}/assets/typescript/src/index.ts`, {
     dryRun: true,
   });
-  // should import tslib, helpers.ts, index.ts, lodash-es
-  expect(bundled.modules).toHaveLength(4);
+  // should import helpers.ts, index.ts, lodash-es
+  expect(bundled.modules).toHaveLength(3);
   expect(bundled.modules).not.toContain('@ulixee/databox-plugins-hero');
 }, 45e3);
 

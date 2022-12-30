@@ -14,7 +14,8 @@ exports.default = new databox.default({
         },
         async run(ctx) {
           const text = (0, helper_1.testFunction)();
-          const { input, output, hero } = ctx;
+          const { input, output, Hero } = ctx;
+          const hero = new Hero();
           await hero.goto(input.url);
           const title = await hero.document.title;
           output.text = text;

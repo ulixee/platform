@@ -1,4 +1,3 @@
-// eslint-disable-next-line max-classes-per-file
 import { inspect } from 'util';
 import ObjectObserver from './ObjectObserver';
 import IObservableChange from '../interfaces/IObservableChange';
@@ -19,6 +18,7 @@ export default function createOutputGenerator<TOutput>(
 ): IOutputClass<TOutput> {
   return class Output {
     #observable: ObjectObserver;
+    #isEmitted = false;
 
     constructor(data?: TOutput) {
       this.#observable = new ObjectObserver({});
@@ -38,7 +38,7 @@ export default function createOutputGenerator<TOutput>(
       if (!target) return result;
 
       for (const [key, value] of Object.entries(target)) {
-        result[key] = JSON.parse(JSON.stringify(value));
+        result[key] = value;
       }
       return result;
     }
@@ -48,9 +48,11 @@ export default function createOutputGenerator<TOutput>(
     }
 
     emit(): void {
+      if (this.#isEmitted) return;
+      this.#isEmitted = true;
       const target = this.#observable.target;
       Object.freeze(target);
-      internal.onOutputEmitted(target);
+      internal.onOutputEmitted(this.toJSON());
     }
 
     static emit(data: TOutput): void {

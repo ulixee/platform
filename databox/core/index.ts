@@ -12,6 +12,7 @@ import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import { IDataboxApis } from '@ulixee/specification/databox';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import IDataboxEvents from '@ulixee/databox/interfaces/IDataboxEvents';
 import IDataboxCoreConfigureOptions from './interfaces/IDataboxCoreConfigureOptions';
 import env from './env';
 import DataboxRegistry from './lib/DataboxRegistry';
@@ -25,11 +26,12 @@ import DataboxQueryLocalScript from './endpoints/Databox.queryLocalScript';
 import DataboxMeta from './endpoints/Databox.meta';
 import DataboxQueryInternal from './endpoints/Databox.queryInternal';
 import DataboxQueryInternalTable from './endpoints/Databox.queryInternalTable';
-import DataboxQueryInternalFunction from './endpoints/Databox.queryInternalFunction';
+import DataboxQueryInternalFunctionResult from './endpoints/Databox.queryInternalFunctionResult';
 import DataboxInitializeInMemoryTable from './endpoints/Databox.createInMemoryTable';
 import DataboxInitializeInMemoryFunction from './endpoints/Databox.createInMemoryFunction';
 import IDataboxConnectionToClient from './interfaces/IDataboxConnectionToClient';
 import DataboxStorage from './lib/DataboxStorage';
+import DataboxStream from './endpoints/Databox.stream';
 
 const { log } = Logger(module);
 
@@ -66,10 +68,11 @@ export default class DataboxCore {
   public static apiRegistry = new ApiRegistry<IDataboxApiContext>([
     DataboxUpload,
     DataboxQuery,
+    DataboxStream,
     DataboxMeta,
     DataboxQueryInternal,
     DataboxQueryInternalTable,
-    DataboxQueryInternalFunction,
+    DataboxQueryInternalFunctionResult,
     DataboxInitializeInMemoryTable,
     DataboxInitializeInMemoryFunction,
   ]);
@@ -79,7 +82,7 @@ export default class DataboxCore {
   private static isStarted = new Resolvable<void>();
 
   public static addConnection(
-    transport: ITransportToClient<IDataboxApis, never>,
+    transport: ITransportToClient<IDataboxApis, IDataboxEvents>,
   ): IDataboxConnectionToClient {
     const context = this.getApiContext(transport.remoteId);
     const connection: IDataboxConnectionToClient = this.apiRegistry.createConnection(transport, context);

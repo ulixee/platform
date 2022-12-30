@@ -3,9 +3,20 @@ import ConnectionFactory from '@ulixee/hero/connections/ConnectionFactory';
 import { buffer, date, object, string } from '@ulixee/schema';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import { Function, Observable } from '@ulixee/databox';
-import { HeroFunctionPlugin } from '../index';
+import TransportBridge from '@ulixee/net/lib/TransportBridge';
+import Core from '@ulixee/hero-core';
+import { ConnectionToHeroCore } from '@ulixee/hero';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
 import MockConnectionToHeroCore from './_MockConnectionToHeroCore';
+import { HeroFunctionPlugin } from '../index';
 
+let connectionToCore: ConnectionToHeroCore;
+beforeAll(() => {
+  const bridge = new TransportBridge();
+  Core.addConnection(bridge.transportToClient);
+  connectionToCore = new ConnectionToHeroCore(bridge.transportToCore);
+  Helpers.onClose(() => connectionToCore.disconnect(), true);
+});
 afterAll(Helpers.afterAll);
 afterEach(Helpers.afterEach);
 
@@ -22,10 +33,12 @@ describe('basic output tests', () => {
     });
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
 
-    await new Function(ctx => {
+    await new Function(async ctx => {
       const output = new ctx.Output();
       output.test = true;
-    }, HeroFunctionPlugin).exec({});
+      const hero = new ctx.Hero();
+      await hero.sessionId;
+    }, HeroFunctionPlugin).stream({});
 
     const outgoingCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingCommands.map(c => c[0].command)).toMatchObject([
@@ -53,27 +66,41 @@ describe('basic output tests', () => {
         page: object({
           fields: {
             url: string(),
-            title: string(),
+            title: string({ optional: false }),
             data: buffer({ optional: true }),
           },
         }),
       },
     };
-    const { functionContext, databoxForHeroPlugin, databoxClose } =
-      await Helpers.createFullstackDatabox(schema);
-    const output = new functionContext.Output();
-    output.started = new Date();
+
+    const sessionIdPromise = new Resolvable<string>();
+    const started = new Date();
+    let stringified: string;
     const url = 'https://example.org';
     const title = 'Example Domain';
-    output.page = {
-      url,
-      title,
-    };
-    output.page.data = Buffer.from('I am buffer');
-    const sessionId = await databoxForHeroPlugin.hero.sessionId;
-    await databoxClose();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    const func = new Function(
+      {
+        async run({ Output, Hero }) {
+          const output = new Output();
+          output.started = started;
+          output.page = {
+            url,
+            title,
+          };
+          output.page.data = Buffer.from('I am buffer');
+          stringified = JSON.stringify(output);
+          const hero = new Hero();
+          const sessionId = await hero.sessionId;
 
+          sessionIdPromise.resolve(sessionId);
+        },
+        schema,
+      },
+      HeroFunctionPlugin,
+    );
+    await func.stream({ connectionToCore });
+
+    const sessionId = await sessionIdPromise;
     const db = new SessionDb(sessionId, { readonly: true });
     const outputs = db.output.all();
     expect(outputs).toHaveLength(3);
@@ -98,9 +125,9 @@ describe('basic output tests', () => {
       lastCommandId: 0,
       path: '["page","data"]',
     });
-    expect(JSON.stringify(output)).toEqual(
+    expect(stringified).toEqual(
       JSON.stringify({
-        started: output.started,
+        started,
         page: {
           url,
           title,
@@ -111,17 +138,25 @@ describe('basic output tests', () => {
   });
 
   it('can add observables directly', async () => {
-    const { functionContext, databoxForHeroPlugin, databoxClose } =
-      await Helpers.createFullstackDatabox();
-    const output = new functionContext.Output();
-    const record = Observable({} as any);
-    output.records = [record];
-    record.test = 1;
-    record.watch = 2;
-    record.any = { more: true };
-    const sessionId = await databoxForHeroPlugin.hero.sessionId;
-    await databoxClose();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    const sessionIdPromise = new Resolvable<string>();
+    let stringified: string;
+
+    const func = new Function(async ({ Output, Hero }) => {
+      const output = new Output();
+      const record = Observable({} as any);
+      output.records = [record];
+      record.test = 1;
+      record.watch = 2;
+      record.any = { more: true };
+      stringified = JSON.stringify(output)
+      const hero = new Hero();
+      const sessionId = await hero.sessionId;
+
+      sessionIdPromise.resolve(sessionId);
+    }, HeroFunctionPlugin);
+    await func.stream({ connectionToCore });
+
+    const sessionId = await sessionIdPromise;
 
     const db = new SessionDb(sessionId, { readonly: true });
     const outputs = db.output.all();
@@ -133,7 +168,7 @@ describe('basic output tests', () => {
       lastCommandId: 0,
       path: '["records"]',
     });
-    expect(JSON.stringify(output)).toEqual(
+    expect(stringified).toEqual(
       JSON.stringify({
         records: [
           {

@@ -1,9 +1,4 @@
-export default interface IFunctionComponents<
-  ISchema,
-  IContext,
-  IBeforeRunContext = IContext,
-  IAfterRunContext = IContext,
-> {
+export default interface IFunctionComponents<ISchema, IContext> {
   name?: string;
   description?: string;
   pricePerQuery?: number;
@@ -12,7 +7,5 @@ export default interface IFunctionComponents<
   };
   minimumPrice?: number;
   schema?: ISchema;
-  beforeRun?(context: IBeforeRunContext): void | Promise<void>;
   run(context: IContext): void | Promise<void>;
-  afterRun?(context: IAfterRunContext): void | Promise<void>;
 }

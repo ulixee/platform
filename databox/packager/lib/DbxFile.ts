@@ -50,16 +50,20 @@ export default class DbxFile {
     return manifest;
   }
 
-  public createOrUpdateDatabase(tableByName: IFetchMetaResponseData['tablesByName']): void {
-    const dbPath = Path.join(this.workingDirectory, 'databox-storage.db');
+  public createOrUpdateDatabase(
+    tableByName: IFetchMetaResponseData['tablesByName'],
+    seedlingsByName: IFetchMetaResponseData['tableSeedlingsByName'],
+  ): void {
+    const dbPath = Path.join(this.workingDirectory, 'storage.db');
     const db = new Database(dbPath);
 
     for (const name of Object.keys(tableByName)) {
-      const { schema, seedlings } = tableByName[name];
+      const { schema } = tableByName[name];
       SqlGenerator.createTableFromSchema(name, schema, sql => {
         db.prepare(sql).run();
       });
 
+      const seedlings = seedlingsByName[name];
       SqlGenerator.createInsertsFromSeedlings(name, seedlings, schema, (sql, values) => {
         db.prepare(sql).run(values);
       });
@@ -106,7 +110,7 @@ export default class DbxFile {
         cwd: this.workingDirectory,
         file: this.dbxPath,
       },
-      ['databox.js', 'databox.js.map', 'databox-manifest.json', 'databox-storage.db', 'docpage'],
+      ['databox.js', 'databox.js.map', 'databox-manifest.json', 'storage.db', 'docpage'],
     );
     if (!keepOpen) await this.close();
   }

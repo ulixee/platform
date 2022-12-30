@@ -2,8 +2,9 @@
 
 import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
-export default new Function(async databox => {
-  const { Output, hero } = databox;
+export default new Function(async context => {
+  const { Output, Hero } = context;
+  const hero = new Hero();
   await hero.goto('https://ulixee.org');
   await hero.querySelector('.datasets').$waitForVisible();
 

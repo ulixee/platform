@@ -2,7 +2,8 @@
 
 import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
-export default new Function(async ({ hero, Output }) => {
+export default new Function(async ({ Hero, Output }) => {
+  const hero = new Hero();
   await hero.goto('https://news.ycombinator.com/');
   await hero.waitForPaintingStable();
 

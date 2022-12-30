@@ -8,9 +8,9 @@ const { string } = Schema;
 
 export default new Function(
   {
-    async run(databox) {
-      const { input, Output, hero } = databox;
-
+    async run(context) {
+      const { input, Output, Hero } = context;
+      const hero = new Hero();
       await hero.goto(input.url);
       const title = await hero.document.title;
 

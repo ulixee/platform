@@ -1,7 +1,8 @@
 import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import { NodeVM, VMScript } from 'vm2';
 import { promises as Fs } from 'fs';
-import Databox, { ConnectionToDataboxCore, Function } from '@ulixee/databox';
+import Databox, { ConnectionToDataboxCore } from '@ulixee/databox';
+import Function from '@ulixee/databox/lib/Function';
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import DataboxCore from '../index';
@@ -22,7 +23,7 @@ export default class DataboxVm {
     return this._connectionToDataboxCore;
   }
 
-  public static async open(path: string, manifest: IDataboxManifest): Promise<Databox<any, any>> {
+  public static async open(path: string, manifest: IDataboxManifest): Promise<Databox> {
     if (!isSemverSatisfied(manifest.coreVersion, version)) {
       throw new Error(
         `The current version of Core (${version}) is incompatible with this Databox version (${manifest.coreVersion})`,
@@ -31,9 +32,10 @@ export default class DataboxVm {
 
     const script = await this.getVMScript(path, manifest);
 
-    let databox = this.getVm().run(script) as Databox<any, any>;
+    let databox = this.getVm().run(script) as Databox;
     if (databox instanceof Function) {
-      databox = databox.databox;
+      const func = databox as Function;
+      databox = new Databox({ functions: { [func.name ?? 'default']: func } }) as Databox;
     }
     if (!(databox instanceof Databox)) {
       throw new Error(

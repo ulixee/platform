@@ -9,7 +9,7 @@ export default new Function(
   {
     run(ctx) {
       // add functionality
-      const { hero } = ctx;
+      const { Hero } = ctx;
     },
   },
   HeroFunctionPlugin,

@@ -7,8 +7,9 @@ const func = new Function(
   {
     async run(context) {
       const text = testFunction();
-      const { input, Output, hero } = context;
+      const { input, Output, Hero } = context;
 
+      const hero = new Hero();
       await hero.goto(input.url);
       const title = await hero.document.title;
       const body = await hero.document.body.textContent;

@@ -31,10 +31,9 @@ export default new DataboxApiHandler('Databox.queryLocalScript', {
         }
       }
 
-      const { outputs } = await context.workTracker.trackRun(
-        databoxProcess.exec(functionName, input),
+      outputByFunctionName[functionName] = await context.workTracker.trackRun(
+        databoxProcess.stream(functionName, input).then(x => x),
       );
-      outputByFunctionName[functionName] = outputs;
     }
 
     if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');

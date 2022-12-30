@@ -1,14 +1,11 @@
 import IFunctionSchema, { ExtractSchemaType } from './IFunctionSchema';
-import Databox from '../lib/Databox';
 import { IOutputClass } from '../lib/Output';
+import IDataboxMetadata from './IDataboxMetadata';
 
-export default interface IFunctionContext<
-  ISchema extends IFunctionSchema,
-  TOutput = ExtractSchemaType<ISchema['output']>,
-> {
-  input?: ExtractSchemaType<ISchema['input']>;
-  readonly outputs?: TOutput[];
-  readonly Output?: IOutputClass<TOutput>;
-  schema?: ISchema;
-  databox: Databox<any, any>;
+export default interface IFunctionContext<TSchema extends IFunctionSchema> {
+  input?: ExtractSchemaType<TSchema['input']>;
+  readonly outputs?: ExtractSchemaType<TSchema['output']>[];
+  readonly Output?: IOutputClass<ExtractSchemaType<TSchema['output']>>;
+  schema?: TSchema;
+  databoxMetadata: IDataboxMetadata;
 }

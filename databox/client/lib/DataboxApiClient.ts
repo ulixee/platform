@@ -6,8 +6,12 @@ import Identity from '@ulixee/crypto/lib/Identity';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
 import { IPayment } from '@ulixee/specification';
 import { nanoid } from 'nanoid';
+import ICoreEventPayload from '@ulixee/net/interfaces/ICoreEventPayload';
 import ITypes from '../types';
 import installSchemaType, { addSchemaAlias } from '../types/installSchemaType';
+import IFunctionInputOutput from '../interfaces/IFunctionInputOutput';
+import ResultIterable from './ResultIterable';
+import IDataboxEvents from '../interfaces/IDataboxEvents';
 
 export type IDataboxExecResult = Omit<IDataboxApiTypes['Databox.query']['result'], 'outputs'>;
 export type IDataboxExecRelayArgs = Pick<
@@ -16,12 +20,14 @@ export type IDataboxExecRelayArgs = Pick<
 >;
 
 export default class DataboxApiClient {
-  public connectionToCore: ConnectionToCore<IDataboxApis, {}>;
+  public connectionToCore: ConnectionToCore<IDataboxApis, IDataboxEvents>;
   public validateApiParameters = true;
+  protected activeIterableByStreamId = new Map<string, ResultIterable<any, any>>();
 
   constructor(host: string) {
     const transport = new WsTransportToCore(`${host}/databox`);
     this.connectionToCore = new ConnectionToCore(transport);
+    this.connectionToCore.on('event', this.onEvent.bind(this));
   }
 
   public disconnect(): Promise<void> {
@@ -69,6 +75,56 @@ export default class DataboxApiClient {
     }
 
     return meta;
+  }
+
+  /**
+   * NOTE: any caller must handle tracking local balances of gift cards and removing them if they're depleted!
+   */
+  public stream<
+    IO extends IFunctionInputOutput,
+    IVersionHash extends keyof ITypes & string = any,
+    IFunctionName extends keyof ITypes[IVersionHash] & string = 'default',
+    ISchemaDbx extends ITypes[IVersionHash][IFunctionName] = IO,
+  >(
+    versionHash: IVersionHash,
+    functionName: IFunctionName,
+    input: ISchemaDbx['input'],
+    options: {
+      payment?: IPayment & {
+        onFinalized?(metadata: IDataboxExecResult['metadata'], error?: Error): void;
+      };
+      authentication?: IDataboxExecRelayArgs['authentication'];
+    } = {},
+  ): ResultIterable<ISchemaDbx['output'], IDataboxApiTypes['Databox.stream']['result']> {
+    const streamId = nanoid(12);
+    const results = new ResultIterable<
+      ISchemaDbx['output'],
+      IDataboxApiTypes['Databox.stream']['result']
+    >();
+    this.activeIterableByStreamId.set(streamId, results);
+
+    const onFinalized = options.payment?.onFinalized;
+
+    void this.runRemote('Databox.stream', {
+      versionHash,
+      streamId,
+      functionName,
+      input,
+      payment: options.payment,
+      authentication: options.authentication,
+    })
+      .then(result => {
+        onFinalized?.(result.metadata);
+        results.done(result);
+        this.activeIterableByStreamId.delete(streamId);
+        return null;
+      })
+      .catch(error => {
+        onFinalized?.(null, error);
+        results.reject(error);
+      });
+
+    return results;
   }
 
   /**
@@ -139,6 +195,15 @@ export default class DataboxApiClient {
       },
       timeoutMs,
     );
+  }
+
+  protected onEvent<T extends keyof IDataboxEvents>(
+    event: ICoreEventPayload<IDataboxEvents, T>,
+  ): void {
+    if (event.eventType === 'FunctionStream.output') {
+      const data = event.data as IDataboxEvents['FunctionStream.output'];
+      this.activeIterableByStreamId.get(event.listenerId)?.push(data);
+    }
   }
 
   protected async runRemote<T extends keyof IDataboxApiTypes & string>(

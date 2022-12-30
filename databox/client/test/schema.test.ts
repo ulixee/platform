@@ -1,4 +1,4 @@
-import { array, boolean, dateAdd, number, object, string , ExtractSchemaType } from '@ulixee/schema';
+import { array, boolean, dateAdd, number, object, string, ExtractSchemaType } from '@ulixee/schema';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import * as moment from 'moment';
 import { Function, FunctionSchema } from '../index';
@@ -18,7 +18,7 @@ describe('Schemas', () => {
       schema,
     });
 
-    await expect(func.exec({ input: {} as any })).rejects.toThrowError('input did not match');
+    await expect(func.stream({ input: {} as any })).rejects.toThrowError('input did not match');
   });
 
   it('will supply defaults to params if not given', async () => {
@@ -37,7 +37,7 @@ describe('Schemas', () => {
       ],
     });
 
-    const runResolver = new Resolvable<ExtractSchemaType<typeof schema>>();
+    const runResolver = new Resolvable<ExtractSchemaType<typeof schema['input']>>();
     const func = new Function({
       async run(ctx) {
         runResolver.resolve(ctx.input);
@@ -46,7 +46,7 @@ describe('Schemas', () => {
       schema,
     });
 
-    await expect(func.exec({ input: { plan: false, for: 1 } } as any)).resolves.toBeTruthy();
+    await expect(func.stream({ input: { plan: false, for: 1 } } as any)).resolves.toBeTruthy();
     const input = await runResolver;
     expect(input.date).toBe(moment().add(1, 'days').format('YYYY-MM-DD'));
     expect(input.plan).toBe(false);
@@ -68,7 +68,7 @@ describe('Schemas', () => {
       schema,
     });
 
-    await expect(func.exec({})).rejects.toThrowError('Output did not match');
+    await expect(func.stream({})).rejects.toThrowError('Output did not match');
   });
 
   it('will validate output and abort at the first error', async () => {
@@ -99,7 +99,7 @@ describe('Schemas', () => {
       },
     });
 
-    await expect(func.exec({})).rejects.toThrowError('Output did not match');
+    await expect(func.stream({})).rejects.toThrowError('Output did not match');
     expect(counter).toBe(2);
   });
 
@@ -120,10 +120,10 @@ describe('Schemas', () => {
       schema,
     });
 
-    await expect(func.exec({ input: { url: 'https://url.com' } })).resolves.toEqual(
-      [{
+    await expect(func.stream({ input: { url: 'https://url.com' } })).resolves.toEqual([
+      {
         test: 'good to go',
-      }],
-    );
+      },
+    ]);
   });
 });

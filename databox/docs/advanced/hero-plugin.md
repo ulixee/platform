@@ -19,8 +19,9 @@ To use HeroFunctionPlugin, import the plugin and include it in the `plugins` var
 ```js
 import { HeroFunctionPlugin, Function } from '@ulixee/databox-plugins-hero';
 export default new Function(async context => {
-  const { input, Output, hero } = context;
+  const { input, Output, Hero } = context;
 
+  const hero = new Hero();
   await hero.goto(input.url);
   const title = await hero.document.title;
 
@@ -41,7 +42,8 @@ import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 export default new Function(
   {
     async run(context) {
-      const { hero } = context;
+      const { Hero } = context;
+      const hero = new Hero();
       await hero.goto('https://ulixee.org');
       console.log(await hero.sessionId);
       await document.querySelector('h1').$addToDetachedElements('h1');
@@ -95,7 +97,8 @@ export default new Databox({
   functions: {
     hero: new Function(
       {
-        async run({ hero }) {
+        async run({ Hero }) {
+          const hero = new Hero();
           const page = await hero.goto('https://ulixee.org');
           await page.$addToDetachedResources('default');
         },

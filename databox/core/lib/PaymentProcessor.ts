@@ -141,9 +141,12 @@ export default class PaymentProcessor {
     return totalMicrogons;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async settle(finalResultBytes: number): Promise<number> {
     if (!this.holdId) return 0;
+
+    if (this.functionHolds.length === 1 && !this.functionHolds[0].didRelease) {
+      this.releaseLocalFunctionHold(this.functionHolds[0].id, finalResultBytes);
+    }
 
     const payments: { [address: string]: number } = {};
     // NOTE: don't claim the settlement cost!!

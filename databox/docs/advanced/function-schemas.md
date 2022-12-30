@@ -14,8 +14,9 @@ import { string } from '@ulixee/schema';
 
 export default new Function({
   async run(databox) {
-    const { input, Output, hero } = databox;
+    const { input, Output, Hero } = databox;
 
+    const hero = new Hero();
     await hero.goto(input.url);
     const title = await hero.document.title;
 

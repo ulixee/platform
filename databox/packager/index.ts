@@ -54,8 +54,11 @@ export default class DataboxPackager {
     const { sourceCode, sourceMap } = await this.rollup(options);
 
     this.meta ??= await this.findDataboxMeta();
-    dbx.createOrUpdateDatabase(this.meta.tablesByName);
-    
+    if (!this.meta.coreVersion) {
+      throw new Error('Databox must specify a coreVersion');
+    }
+    dbx.createOrUpdateDatabase(this.meta.tablesByName, this.meta.tableSeedlingsByName);
+        
     await dbx.createOrUpdateDocpage(this.meta, this.entrypoint);
     await this.createOrUpdateManifest(sourceCode, sourceMap, options?.createNewVersionHistory);
     await dbx.save(options?.keepOpen);
@@ -83,7 +86,6 @@ export default class DataboxPackager {
     if (!this.meta.coreVersion) {
       throw new Error('Databox must specify a coreVersion');
     }
-
     let interfaceString: string;
     const functionsByName: IDataboxManifest['functionsByName'] = {};
     if (this.meta.functionsByName) {
@@ -112,7 +114,10 @@ export default class DataboxPackager {
 
         // lookup upstream pricing
         if (functionMeta.remoteFunction) {
-          const functionDetails = await this.lookupRemoteDataboxFunctionPricing(this.meta, functionMeta);
+          const functionDetails = await this.lookupRemoteDataboxFunctionPricing(
+            this.meta,
+            functionMeta,
+          );
           functionsByName[name].prices.push(...functionDetails.priceBreakdown);
         }
       }
@@ -147,8 +152,8 @@ export default class DataboxPackager {
     meta: IFetchMetaResponseData,
     func: IFetchMetaResponseData['functionsByName'][0],
   ): Promise<IDataboxApiTypes['Databox.meta']['result']['functionsByName'][0]> {
-    const [remoteDataboxName, functionName] = func.remoteFunction.split('.');
-    const url = meta.remoteDataboxes[remoteDataboxName];
+    const functionName = func.remoteFunction;
+    const url = meta.remoteDataboxes[func.remoteSource];
     if (!url)
       throw new Error(
         `The remoteDatabox could not be found for the key - ${func.remoteFunction}. It should be defined in remoteDataboxes on your Databox.`,

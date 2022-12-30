@@ -3,8 +3,10 @@
 import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
 export default new Function(async ctx => {
-  const { input, Output, hero } = ctx;
+  const { input, Output, Hero } = ctx;
   input.url ??= 'https://ulixee.org';
+
+  const hero = new Hero();
 
   await hero.goto('https://ulixee.org');
   await hero.waitForPaintingStable();

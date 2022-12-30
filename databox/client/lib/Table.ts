@@ -1,18 +1,26 @@
+import { ExtractSchemaType } from '@ulixee/schema';
 import ITableSchema from '../interfaces/ITableSchema';
 import ITableComponents from '../interfaces/ITableComponents';
 import DataboxInternal from './DataboxInternal';
-import Databox from './Databox';
+
+type IExpandedSchema<T> = T extends ITableSchema
+  ? {
+      [K in keyof T]: T[K];
+    }
+  : never;
 
 export default class Table<
-  TSchema extends ITableSchema = ITableSchema,
+  TSchema extends IExpandedSchema<any> = IExpandedSchema<any>,
+  TRecords extends ExtractSchemaType<ITableSchema> = ExtractSchemaType<ITableSchema>,
 > {
-  #seedlings: any[];
-  #databoxInternal: DataboxInternal<any, any>;
+  seedlings: TRecords[];
+  #databoxInternal: DataboxInternal;
+  #isInMemoryTableCreated = false;
 
-  private readonly components: ITableComponents<TSchema>;
+  private readonly components: ITableComponents<TSchema, TRecords>;
 
-  constructor(components: ITableComponents<TSchema>) {
-    this.#seedlings = components.seedlings;
+  constructor(components: ITableComponents<TSchema, TRecords>) {
+    this.seedlings = components.seedlings;
     this.components = { ...components };
   }
 
@@ -28,21 +36,15 @@ export default class Table<
     return this.components.description;
   }
   
-  public get databox(): Databox<any, any> {
-    return this.#databoxInternal.databox;
-  }
-
-  public get databoxInternal(): DataboxInternal<any, any> {
+private get databoxInternal(): DataboxInternal {
     if (!this.#databoxInternal) {
-      this.#databoxInternal = new DataboxInternal<any, any>({});
-      this.#databoxInternal.databox = new Databox({}, this.databoxInternal);
-      this.#databoxInternal.attachTable(this, null, false);
+      this.#databoxInternal = new DataboxInternal({ tables: { [this.name]: this } });
       this.#databoxInternal.onCreateInMemoryDatabase(this.createInMemoryTable.bind(this));
     }
     return this.#databoxInternal;
   }
 
-  public async query(sql: string, boundValues: any[] = []): Promise<any> {
+  public async query(sql: string, boundValues: any[] = []): Promise<ExtractSchemaType<TSchema>[]> {
     await this.databoxInternal.ensureDatabaseExists();
     const name = this.components.name;
     const databoxInstanceId = this.databoxInternal.instanceId;
@@ -54,13 +56,13 @@ export default class Table<
       databoxInstanceId,
       databoxVersionHash,
     };
-    return await this.databoxInternal.sendRequest({ command: 'Databox.queryInternalTable', args: [args] });
+    return await this.databoxInternal.sendRequest({
+      command: 'Databox.queryInternalTable',
+      args: [args],
+    });
   }
 
-  public attachToDatabox(
-    databoxInternal: DataboxInternal<any, any>, 
-    tableName: string,
-  ): void {
+  public attachToDatabox(databoxInternal: DataboxInternal<any, any>, tableName: string): void {
     this.components.name = tableName;
     if (this.#databoxInternal && this.#databoxInternal === databoxInternal) return;
     if (this.#databoxInternal) {
@@ -74,15 +76,19 @@ export default class Table<
   }
 
   private async createInMemoryTable(): Promise<void> {
+    if (this.#isInMemoryTableCreated) return;
+    this.#isInMemoryTableCreated = true;
     const databoxInstanceId = this.databoxInternal.instanceId;
     const name = this.components.name ?? 'this';
     const args = {
       name,
       databoxInstanceId,
       schema: this.components.schema,
-      seedlings: this.#seedlings,
+      seedlings: this.seedlings,
     };
-    await this.databoxInternal.sendRequest({ command: 'Databox.createInMemoryTable', args: [args] });
+    await this.databoxInternal.sendRequest({
+      command: 'Databox.createInMemoryTable',
+      args: [args],
+    });
   }
 }
-

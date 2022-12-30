@@ -1,40 +1,115 @@
-import Databox, { Function } from '@ulixee/databox/index';
+import Databox, { Crawler, Function } from '@ulixee/databox/index';
 import * as assert from 'assert';
-import { string } from '@ulixee/schema';
-import { HeroFunctionPlugin, IHeroReplayFunctionContext } from '../index';
+import { boolean, number, string } from '@ulixee/schema';
+import { HeroFunctionPlugin } from '../index';
 
 export function typeChecking(): void {
   const func = new Function(
     {
       async run(context) {
-        const { hero, input } = context;
+        const { Hero, input } = context;
+        const hero = new Hero();
         await hero.goto('t');
         // @ts-expect-error - make sure hero is type checked (not any)
         await hero.unsupportedMethod();
         // @ts-expect-error
         const s: number = input.text;
-      },
-      afterRun(ctx) {
-        const detached = ctx.heroReplay.detachedElements.getAll('test');
+
+        const heroReplay = new context.HeroReplay({ replaySessionId: '1' });
+        const detached = heroReplay.detachedElements.getAll('test');
         assert(detached, 'should exist');
         // @ts-expect-error - make sure heroReplay is type checked (not any)
-        await ctx.heroReplay.goto();
+        await heroReplay.goto();
         // @ts-expect-error
-        ctx.input.text = 1;
+        input.text = 1;
       },
       schema: {
         input: {
           text: string(),
+          field2: boolean({ optional: true }),
         },
       },
     },
     HeroFunctionPlugin,
   );
-  void func.exec({ showChrome: true });
+  void func.stream({ showChrome: true, input: { text: '123' } });
+
+  const crawler = new Crawler(
+    {
+      async run(ctx) {
+        // @ts-expect-error
+        const num: number = ctx.input.colBool;
+
+        return {
+          toCrawlerOutput() {
+            return Promise.resolve({
+              sessionId: ctx.input.sessionId,
+              crawler: 'none',
+              version: '1',
+            });
+          },
+        };
+      },
+      schema: {
+        input: {
+          sessionId: string(),
+          colBool: boolean({ optional: true }),
+          colNum: number(),
+        },
+      },
+    },
+    HeroFunctionPlugin,
+  );
+  // @ts-expect-error
+  void crawler.stream({ showChrome: true, input: { text: '123' } });
+  void crawler.stream({ showChrome: true, input: { colNum: 1, sessionId: '123' } });
+  const crawlerWithoutSchema = new Crawler({
+    async run(ctx) {
+      // Can't get typescript to check this field when no schema  // @ts-expect-error
+      const num: boolean = ctx.input.maxTimeInCache;
+
+      return {
+        toCrawlerOutput() {
+          return Promise.resolve({
+            sessionId: ctx.input.sessionId,
+            crawler: 'none',
+            version: '1',
+          });
+        },
+      };
+    },
+  });
+  // Can't get typescript to check this field when no schema  // @ts-expect-error
+  void crawlerWithoutSchema.stream({ input: { maxTimeInCache: new Date() } });
 
   const databox = new Databox({
+    crawlers: {
+      plain: new Crawler(async ({ Hero }) => {
+        return new Hero();
+      }, HeroFunctionPlugin),
+      crawlerSchema: new Crawler(
+        {
+          async run({ Hero, input }) {
+            const hero = new Hero();
+            await hero.goto(input.url);
+
+            // @ts-expect-error: value isn't on input
+            const x = input.value;
+            return hero;
+          },
+          schema: {
+            input: {
+              url: string({ format: 'url' }),
+            },
+          },
+        },
+        HeroFunctionPlugin,
+      ),
+    },
+
     functions: {
-      hero: new Function(async ({ hero }) => {
+      hero: new Function(async ({ Hero }) => {
+        const hero = new Hero();
         await hero.goto('place');
         // @ts-expect-error - make sure hero is type checked (not any)
         await hero.unsupportedMethod();
@@ -48,9 +123,11 @@ export function typeChecking(): void {
             },
             output: {
               html: string(),
+              title: boolean({ optional: true }),
             },
           },
-          async run({ hero, input, Output }) {
+          async run({ Hero, input, Output }) {
+            const hero = new Hero();
             await hero.goto(input.url);
             const output = new Output();
             output.html = await hero.document.body.outerHTML;
@@ -64,9 +141,23 @@ export function typeChecking(): void {
   });
 
   void (async () => {
+    await databox.functions.hero.stream({ replaySessionId: '1' }).catch();
     // @ts-expect-error
-    await databox.functions.hero.exec({ replaySessionId: '1' }).catch();
+    await databox.functions.hero.stream({ showChrome: '1,', replaySessionId: '1' }).catch();
+
+    await databox.crawl('plain', { maxTimeInCache: 500, anyTest: 1 }).catch();
+    await databox.crawlers.plain
+      // Can't get typescript to check this field when no schema // @ts-expect-error
+      .stream({ input: { maxTimeInCache: new Date(), anyTest: 1 } })
+      .catch();
+
+    await databox.crawl('crawlerSchema', { url: '1', maxTimeInCache: 100 }).catch();
+    await databox.crawlers.crawlerSchema
+      // @ts-expect-error
+      .stream({ input: { urls: '1', maxTimeInCache: 100 } })
+      .catch();
+
     // @ts-expect-error
-    await databox.functions.hero.exec({ showChrome: '1,', replaySessionId: '1' }).catch();
+    await databox.crawl('crawlerSchema', { urls: '1', maxTimeInCache: 100 }).catch();
   })();
 }

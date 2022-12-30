@@ -7,6 +7,7 @@
   "scripts": {},
   "dependencies": {
     "@ulixee/databox": "2.0.0-alpha.17",
+    "@ulixee/commons": "2.0.0-alpha.17",
     "@ulixee/schema": "2.0.0-alpha.17",
     "@ulixee/sql-ast": "2.0.0-alpha.17",
     "@ulixee/sql-engine": "2.0.0-alpha.17"

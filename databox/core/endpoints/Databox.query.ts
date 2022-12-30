@@ -6,11 +6,7 @@ import DataboxCore from '../index';
 import PaymentProcessor from '../lib/PaymentProcessor';
 import DataboxStorage from '../lib/DataboxStorage';
 import DataboxVm from '../lib/DataboxVm';
-import {
-  execDataboxFunction,
-  validateAuthentication,
-  validateFunctionCoreVersions,
-} from '../lib/databoxUtils';
+import { validateAuthentication, validateFunctionCoreVersions } from '../lib/databoxUtils';
 
 export default new DataboxApiHandler('Databox.query', {
   async handler(request, context) {
@@ -42,13 +38,14 @@ export default new DataboxApiHandler('Databox.query', {
     const sqlParser = new SqlParser(request.sql);
     if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
 
+    const metadata = databox.metadata;
     sqlParser.functionNames.forEach(functionName => {
-      const schema = databox.functions[functionName].schema || {};
+      const schema = metadata.functionsByName[functionName].schema || {};
       storage.addFunctionSchema(functionName, schema);
     });
 
     sqlParser.tableNames.forEach(functionName => {
-      const schema = databox.tables[functionName].schema || {};
+      const schema = metadata.tablesByName[functionName].schema || {};
       storage.addTableSchema(functionName, schema);
     });
 
@@ -78,8 +75,19 @@ export default new DataboxApiHandler('Databox.query', {
       const functionInput = inputByFunctionName[functionName];
       validateFunctionCoreVersions(registryEntry, functionName, context);
 
-      const { outputs } = await context.workTracker.trackRun(
-        execDataboxFunction(databox, manifest, functionName, functionInput, request),
+      const outputs = await context.workTracker.trackRun(
+        (async () => {
+          const options = {
+            input: functionInput,
+            payment: request.payment,
+            authentication: request.authentication,
+          };
+          for (const plugin of Object.values(DataboxCore.pluginCoresByName)) {
+            if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);
+          }
+
+          return await databox.functions[functionName].stream(options);
+        })(),
       );
       outputsByFunctionName[functionName] = outputs;
 
@@ -87,11 +95,11 @@ export default new DataboxApiHandler('Databox.query', {
       const bytes = PaymentProcessor.getOfficialBytes(outputs);
       const microgons = paymentProcessor.releaseLocalFunctionHold(id, bytes);
 
-      const millis = Date.now() - functionStart;
+      const milliseconds = Date.now() - functionStart;
       context.databoxRegistry.recordStats(request.versionHash, functionName, {
         bytes,
         microgons,
-        millis,
+        milliseconds,
       });
     }
 

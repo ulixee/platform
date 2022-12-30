@@ -30,7 +30,8 @@ script.ts
 const Databox = require('@ulixee/databox-plugins-hero');
 
 new Databox(async databox => {
-  const { input, Output, hero } = databox;
+  const { input, Output, Hero } = databox;
+  const hero = new Hero();
   await hero.goto('https://example.org');
   Output.emit({ text: `I went to example.org. Your input was: ${input.params.name}` });
 });

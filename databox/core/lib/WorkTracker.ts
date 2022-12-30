@@ -5,7 +5,7 @@ import Logger from '@ulixee/commons/lib/Logger';
 const { log } = Logger(module);
 
 export default class WorkTracker {
-  private runPromises = new Set<Resolvable<{ outputs: any[] }>>();
+  private runPromises = new Set<Resolvable<any[]>>();
   private uploadPromises = new Set<Resolvable<any>>();
 
   constructor(public maxRuntimeMs: number) {}
@@ -13,7 +13,7 @@ export default class WorkTracker {
   public async stop(waitForDataboxCompletionOnShutdown: boolean): Promise<void> {
     if (!waitForDataboxCompletionOnShutdown) {
       for (const promise of this.runPromises) {
-        promise.reject(new CanceledPromiseError('Shutting down Miner'));
+        promise.reject(new CanceledPromiseError('Shutting down Miner'), true);
         this.runPromises.delete(promise);
       }
     } else {
@@ -39,8 +39,8 @@ export default class WorkTracker {
     return resolvable.promise;
   }
 
-  public trackRun(outputPromise: Promise<{ outputs: any[] }>): Promise<{ outputs: any[] }> {
-    const resolvable = new Resolvable<{ outputs: any[] }>(this.maxRuntimeMs);
+  public trackRun(outputPromise: Promise<any[]>): Promise<any[]> {
+    const resolvable = new Resolvable<any[]>(this.maxRuntimeMs);
     this.runPromises.add(resolvable);
 
     void outputPromise
