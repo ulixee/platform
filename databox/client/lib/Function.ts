@@ -59,6 +59,10 @@ export default class Function<
     return this.components.name;
   }
 
+  public get description(): string | undefined {
+    return this.components.description;
+  }
+
   public get databox(): Databox<any, any> {
     return this.databoxInternal.databox;
   }

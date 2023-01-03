@@ -10,6 +10,7 @@
     "@ulixee/crypto": "2.0.0-alpha.17",
     "@ulixee/databox": "2.0.0-alpha.17",
     "@ulixee/databox-core": "2.0.0-alpha.17",
+    "@ulixee/databox-docpage": "2.0.0-alpha.17",
     "@ulixee/net": "2.0.0-alpha.17",
     "@ulixee/schema": "2.0.0-alpha.17",
     "@ulixee/specification": "2.0.0-alpha.17",

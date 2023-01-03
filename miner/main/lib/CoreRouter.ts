@@ -1,5 +1,5 @@
 import * as WebSocket from 'ws';
-import { IncomingMessage } from 'http';
+import { IncomingMessage, ServerResponse } from 'http';
 import DataboxCore from '@ulixee/databox-core';
 import HeroCore from '@ulixee/hero-core';
 import IDataboxCoreConfigureOptions from '@ulixee/databox-core/interfaces/IDataboxCoreConfigureOptions';
@@ -33,7 +33,7 @@ export default class CoreRouter {
   private miner: Miner;
   private readonly connections = new Set<IConnectionToClient<any, any>>();
 
-  private connectionTypes: {
+  private wsConnectionByType: {
     [key: string]: (transport: ITransportToClient<any>) => IConnectionToClient<any, any>;
   } = {
     hero: transport => HeroCore.addConnection(transport),
@@ -41,18 +41,25 @@ export default class CoreRouter {
     chromealive: transport => ChromeAliveUtils.getChromeAlive().addConnection(transport) as any,
   };
 
+  private httpRoutersByType: {
+    [key: string]: (req: IncomingMessage, res: ServerResponse, params: string[]) => void;
+  } = {
+    databox: DataboxCore.routeHttp.bind(DataboxCore),
+  };
+
   constructor(miner: Miner) {
     this.miner = miner;
 
-    miner.addWsRoute('/', this.handleApi.bind(this, 'hero'));
-    miner.addWsRoute('/databox', this.handleApi.bind(this, 'databox'));
-
+    miner.addWsRoute('/', this.handleSocketRequest.bind(this, 'hero'));
+    miner.addWsRoute('/databox', this.handleSocketRequest.bind(this, 'databox'));
+    miner.addHttpRoute(/\/databox\/(.+)/, 'GET', this.handleHttpRequest.bind(this, 'databox'));
+    
     for (const module of CoreRouter.modulesToRegister) {
       safeRegisterModule(module);
     }
 
     if (ChromeAliveUtils.isInstalled()) {
-      miner.addWsRoute('/chromealive', this.handleApi.bind(this, 'chromealive'));
+      miner.addWsRoute('/chromealive', this.handleSocketRequest.bind(this, 'chromealive'));
     }
   }
 
@@ -99,16 +106,25 @@ export default class CoreRouter {
     return closeResolvable.promise;
   }
 
-  private handleApi(
-    connectionType: keyof CoreRouter['connectionTypes'],
+  private handleSocketRequest(
+    connectionType: keyof CoreRouter['wsConnectionByType'],
     ws: WebSocket,
     req: IncomingMessage,
   ): void {
     const transport = new WsTransportToClient(ws, req);
-    const connection = this.connectionTypes[connectionType](transport);
+    const connection = this.wsConnectionByType[connectionType](transport);
     if (!connection) throw new Error(`Unknown connection protocol attempted "${connectionType}"`);
     this.connections.add(connection);
     connection.once('disconnected', () => this.connections.delete(connection));
+  }
+
+  private async handleHttpRequest(
+    connectionType: keyof CoreRouter['wsConnectionByType'],
+    req: IncomingMessage,
+    res: ServerResponse,
+    params: string[],
+  ): Promise<void> {
+    await this.httpRoutersByType[connectionType](req, res, params);
   }
 }
 

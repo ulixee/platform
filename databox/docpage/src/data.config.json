@@ -1,0 +1,44 @@
+{
+  "name": "Testing",
+  "description": "A database of various testers. See below for a full documentation of the database tables and functions.",
+  "createdAt": "2023-01-02T21:43:14.125Z",
+  "functionsByName": {
+    "test": {
+      "name": "test",
+      "description": "Run a test of the system",
+      "schema": {
+        "input": {
+          "shouldTest": {
+            "typeName": "boolean"
+          }
+        },
+        "output": {
+          "testerEcho": {
+            "typeName": "boolean"
+          },
+          "greeting": {
+            "typeName": "string"
+          }
+        }
+      },
+      "pricePerQuery": 0
+    }
+  },
+  "tablesByName": {
+    "testers": {
+      "name": "testers",
+      "description": "A list of all the people who have helped test over the years",
+      "schema": {
+        "firstName": {
+          "typeName": "string"
+        },
+        "lastName": {
+          "typeName": "string"
+        },
+        "isTester": {
+          "typeName": "boolean"
+        }
+      }
+    }
+  }
+}

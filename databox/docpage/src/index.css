@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  background-color: #F2F4F5;
+}
+
+a {
+  color: #B700C0;
+  text-decoration: underline dashed;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 1px;
+}

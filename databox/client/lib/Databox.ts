@@ -15,6 +15,14 @@ export default class Databox<
 > {
   #databoxInternal: DataboxInternal<TTable, TFunction, TComponents>;
 
+  public get name(): string | undefined {
+    return this.#databoxInternal.components.name;
+  }
+
+  public get description(): string | undefined {
+    return this.#databoxInternal.components.description;
+  }
+
   public get paymentAddress(): string | undefined {
     return this.#databoxInternal.components.paymentAddress;
   }

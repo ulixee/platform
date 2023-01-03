@@ -36,6 +36,7 @@
     "apps/chromealive-extension",
     "apps/chromealive-core/injected-scripts",
     "hero",
+    "databox/docpage/src",
     "**/website",
     "**/docs",
     "**/*.d.ts"

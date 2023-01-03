@@ -5,10 +5,12 @@ export default interface IDataboxComponents<
   TTable extends Table<any>,
   TFunction extends Function<any>,
 > {
-  authenticateIdentity?(identity: string, nonce: string): Promise<boolean> | boolean;
+  name?: string;
+  description?: string;
   remoteDataboxes?: { [source: string]: string };
   tables?: Record<string, TTable>;
   functions?: Record<string, TFunction>;
   paymentAddress?: string;
   giftCardIssuerIdentity?: string;
+  authenticateIdentity?(identity: string, nonce: string): Promise<boolean> | boolean;
 }
