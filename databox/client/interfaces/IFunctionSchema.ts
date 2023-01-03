@@ -24,5 +24,5 @@ export const FunctionSchema = <Input extends Record<string, ISchemaAny>, Output 
 ): IFunctionSchema<Input, Output> => schema;
 
 type IInputSchemaType<T extends Record<string, ISchemaAny>> = {
-  [P in keyof T]?: T[P]['type'] | DateUtilities;
+  [P in keyof T]?: T[P]['$type'] | DateUtilities;
 };
