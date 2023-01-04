@@ -27,7 +27,7 @@ module.exports = {
         options.compilerOptions.whitespace = 'preserve'
         return options
       });
-    if (process.env.NODE_ENV === 'production') {
+    if (['production', 'test'].includes(process.env.NODE_ENV)) {
       config.plugin('ReplaceConfigFile').use(ReplaceConfigFile, [ ['$DATABOX_CONFIG_DATA'] ]);
     }
   }

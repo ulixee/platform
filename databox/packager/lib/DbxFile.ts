@@ -69,7 +69,7 @@ export default class DbxFile {
 
   public async createOrUpdateDocpage(meta: IFetchMetaResponseData, entrypoint: string): Promise<void> {
     const docpageDir = Path.join(this.workingDirectory, 'docpage');
-    const name = meta.name || entrypoint.match(/([^/]+)\.(js|ts)$/)[1] || 'Untitled';
+    const name = meta.name || entrypoint.match(/([^/\\]+)\.(js|ts)$/)[1] || 'Untitled';
 
     const config = {
       name: name.charAt(0).toUpperCase() + name.slice(1),

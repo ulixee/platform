@@ -26,12 +26,3 @@ module.exports=new Function(({output}) => {
   expect(scriptContents).toBe(newScript);
   await dbxFile.close();
 });
-
-test('can load docpage', async () => {
-  const packager = new DataboxPackager(`${__dirname}/assets/dbxTest2.js`);
-  await packager.build();
-
-  console.log(JSON.stringify(packager.meta, null, 2));
-
-  expect(true).toBe(true);
-});

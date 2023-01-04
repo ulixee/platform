@@ -5,7 +5,7 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build --mode production",
-    "build:dist": "cross-env BUILD_DIR=\"build-dist\" yarn build",
+    "build:dist": "cross-env BUILD_DIR=\"build-dist\" yarn build --mode production",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {

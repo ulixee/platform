@@ -18,7 +18,7 @@ module.exports = class ReplaceConfigFile {
   }
 
   tapCallback(_, normalModule) {
-    if (!normalModule.resource.endsWith('docpage/src/data.config.json')) return;
+    if (!normalModule.resource.endsWith('data.config.json')) return;
     const loader = require.resolve('./dataLoader.js');
     normalModule.loaders.push({
       loader,
