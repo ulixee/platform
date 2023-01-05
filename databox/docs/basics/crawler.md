@@ -1,6 +1,6 @@
 # Crawler
 
-A Crawler is a specialized [Functino](./Function.md) that allows you to scrape a webpage and automatically cache results. The following is a simple example:
+A Crawler is a specialized [Functino](./function.md) that allows you to scrape a webpage and automatically cache results. The following is a simple example:
 
 ```js
 import { Crawler, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
