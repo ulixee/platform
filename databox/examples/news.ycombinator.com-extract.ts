@@ -32,7 +32,7 @@ const databox = new Databox({
   functions: {
     hackernews: new Function(async ({ Output, HeroReplay }) => {
       const lastCrawl = await databox.crawl('hackernews', {
-        maxTimeInCache: 24 * 60 * 60e3,
+        maxTimeInCache: 24 * 60 * 60,
       });
       const { detachedElements } = new HeroReplay(lastCrawl);
       const storyElement = await detachedElements.get('table');

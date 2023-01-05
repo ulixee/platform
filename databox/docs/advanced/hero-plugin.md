@@ -1,12 +1,13 @@
 # HeroFunctionPlugin
 
-> HeroFunctionPlugin supercharges your databox Function with full Hero capabilities. It also allow you to organize your script into two execution stages - the "live" `run` callback and a second "replayed" `afterRun` callback.
+> HeroFunctionPlugin supercharges your databox Function with full Hero capabilities. It also allow you to organize your script into two execution stages - the "live" Crawler Function and a second Function operating on the cacheable Crawler output.
 
-Databox Functions with HeroFunctionPlugin allow you break down your script into a "live" (run) phase and an "offline extraction" (afterRun) phase.
+Databox Functions with HeroFunctionPlugin allow you break down a script into a "live" Crawler Function and a second "offline" Function operating on the cacheable Crawler output.
 
-The 'run' step is passed a pre-initialized [Hero](https://ulixee.org/docs/hero) instance to interact with a website. You can collect all output in this phase, or you can choose to detach assets like [Resources](https://ulixee.org/docs/hero/docs/hero/advanced-client/detached-resources), [HTML Elements](https://ulixee.org/docs/hero/docs/hero/advanced-client/detached-elements) and [Data Snippets](https://ulixee.org/docs/hero/basic-client/hero-replay#getSnippet) that can be extracted later.
+The HeroFunctionPlugin adds two options to a Function's `run` callback:
 
-The 'afterRun' step is passed in a [HeroReplay](https://ulixee.org/docs/hero/docs/hero/basics-client/hero-replay) instance instead of a "live" Hero. You can use this function to pull out data from your [Detached assets](https://ulixee.org/docs/hero/docs/hero/basics-client/hero-replay) (ie, you don't have to run your logic browser-side). It also allows you to run your extraction logic as a unit, which enables you to re-run it on assets collected from your last `run` until your logic works correctly.
+- A [Hero](https://ulixee.org/docs/hero) constructor to interact with a website. The constructor will automatically connect to the local Hero Core. You can collect all output in this phase, or you can choose to detach assets like [Resources](https://ulixee.org/docs/hero/docs/hero/advanced-client/detached-resources), [HTML Elements](https://ulixee.org/docs/hero/docs/hero/advanced-client/detached-elements) and [Data Snippets](https://ulixee.org/docs/hero/basic-client/hero-replay#getSnippet) that can be extracted later.
+- A [HeroReplay](https://ulixee.org/docs/hero/docs/hero/basics-client/hero-replay) constructor that can be supplied with the sessionId of a previous Hero run. A constructed instance will automatically connect to the local Hero Core. You can use this class to pull out data from your [Detached assets](https://ulixee.org/docs/hero/docs/hero/basics-client/hero-replay) (ie, you don't have to run your logic browser-side). It also allows you to run your extraction logic as a unit, which enables you to re-run it on assets collected from your Crawler until your logic works correctly.
 
 ## Getting Started
 
@@ -17,8 +18,8 @@ You can run this script as a regular node script and it will run the callback. H
 To use HeroFunctionPlugin, import the plugin and include it in the `plugins` vararg array of your Databox Function constructor.
 
 ```js
-import { HeroFunctionPlugin, Function } from '@ulixee/databox-plugins-hero';
-export default new Function(async context => {
+import { HeroFunctionPlugin, Crawler } from '@ulixee/databox-plugins-hero';
+export default new Crawler(async context => {
   const { input, Output, Hero } = context;
 
   const hero = new Hero();
@@ -28,7 +29,7 @@ export default new Function(async context => {
   const output = new Output();
   output.title = title;
   output.body = await hero.document.body.textContent;
-  await hero.close();
+  return hero;
 }, HeroFunctionPlugin);
 ```
 
@@ -37,45 +38,47 @@ export default new Function(async context => {
 To use the [HeroReplay](https://ulixee.org/docs/hero/basics-client/hero-replay) extraction phase, you'll simply add an additional afterRun callback:
 
 ```js
-import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
+import { Crawler, Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
-export default new Function(
-  {
-    async run(context) {
+const databox = new Databox({
+  crawlers: {
+    ulixee: new Crawler(async context => {
       const { Hero } = context;
       const hero = new Hero();
       await hero.goto('https://ulixee.org');
       console.log(await hero.sessionId);
       await document.querySelector('h1').$addToDetachedElements('h1');
-    },
-    async afterRun(context) {
-      const { input, Output, heroReplay } = context;
-      const h1 = await hero.detachedElements.get('h1');
+    }, HeroFunctionPlugin),
+  },
+  functions: {
+    ulixee: new Function(async context => {
+      const { input, Output, HeroReplay } = context;
+      const maxTimeInCache = input.maxTimeInCache || 5 * 60;
+      const crawledContent = await databox.crawl('ulixee', { maxTimeInCache });
+      const heroReplay = new HeroReplay(crawledContent);
+      const h1 = await heroReplay.detachedElements.get('h1');
       const output = new Output();
       output.title = h1.textContent;
-    },
+    }, HeroFunctionPlugin),
   },
-  HeroFunctionPlugin,
-);
+});
+export default databox;
 ```
 
-If you have a prior Hero SessionId to replay, you can run ONLY the `afterRun` phase by running your function as follows:
+If you have a prior Hero SessionId to replay, you can run ONLY the `Function` phase by running as follows:
 
 ```bash
-node ./heroFunction.js --replaySessionId=session123
+node ./heroFunction.js --maxTimeInCache=30
 ```
 
 ## Changes to FunctionContext
 
-The HeroFunctionPlugin for Hero adds automatically initialized Hero instances to the `run` and `afterRun` phases of a Function.
+The HeroFunctionPlugin for Hero adds "automatically connecting" Hero and Hero Replay constructors.
 
 ### run _(functionContext)_ {#run-hero}
 
-- functionContext.hero `Hero`. Readonly access to a pre-initialized [Hero](https://ulixee.org/docs/hero/basic-client/hero) instance.
-
-### runAfter _(functionContext)_ {#runafter-hero}
-
-- functionContext.heroReplay `HeroReplay`. Readonly access to a pre-initialized [HeroReplay](https://ulixee.org/docs/hero/basic-client/hero-replay) instance.
+- functionContext.Hero `Hero`. [Hero](https://ulixee.org/docs/hero/basic-client/hero) constructor that is automatically connected and cleaned up.
+- functionContext.HeroReplay `HeroReplay`. [HeroReplay](https://ulixee.org/docs/hero/basic-client/hero-replay) constructor that's automatically connected and cleaned up.
 
 ## Constructor
 
@@ -85,55 +88,4 @@ The HeroFunctionPlugin modifies the Function constructor with the following chan
 
 #### **Arguments**:
 
-- run: `function`(functionContext): `Promise<any>`. Adds a hero instance to the run function as per [above](#run-hero).
-- runAfter: `function`(functionContext): `Promise<any>`. An optional function where you can transform collected assets into your desired output structure. The only difference between this callback and `run` is that the FunctionContext supplies a [heroReplay](https://ulixee.org/docs/hero/basic-client/hero-replay) instance instead of `hero`.
-- defaultHeroOptions [`IHeroCreateOptions`](https://ulixee.org/docs/hero/basic-client/hero#constructor). Configure Hero with any default options.
-
-```js
-import Databox, { Function } from '@ulixee/databox';
-import { HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
-
-export default new Databox({
-  functions: {
-    hero: new Function(
-      {
-        async run({ Hero }) {
-          const hero = new Hero();
-          const page = await hero.goto('https://ulixee.org');
-          await page.$addToDetachedResources('default');
-        },
-        async afterRun({ heroReplay }) {
-          const collected = await heroReplay.detachedResources.get('default');
-        },
-        defaultHeroOptions: {
-          showChrome: true,
-        },
-      },
-      HeroFunctionPlugin,
-    ),
-  },
-});
-```
-
-## Passing In Hero-Specific Configuration
-
-You can configure the supplied [Hero](https://ulixee.org/docs/hero) instance through the defaultHeroOptions added to the Function constructor. This can be helpful to supply common configurations to your :
-
-```js
-import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
-
-export default new Function(
-  {
-    defaultHeroOptions: {
-      locale: 'en-GB,en',
-    },
-    async run(databox) {
-      const { hero, input } = databox;
-      await hero.goto(input.url);
-      // expect en-GB
-      const locale = await hero.getJsValue('navigator.language');
-    },
-  },
-  HeroFunctionPlugin,
-);
-```
+- run: `function`(functionContext): `Promise<any>`. Adds a Hero and HeroReplay constructor to the run function as per [above](#run-hero).

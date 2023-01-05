@@ -37,7 +37,7 @@ const databox = new Databox({
   functions: {
     news: new Function(async ({ Output, HeroReplay }) => {
       const lastCrawl = await databox.crawl('news', {
-        maxTimeInCache: 24 * 60 * 60e3,
+        maxTimeInCache: 24 * 60 * 60,
       });
       const heroReplay = new HeroReplay(lastCrawl);
       const titles = await heroReplay.detachedElements.getAll('titles');

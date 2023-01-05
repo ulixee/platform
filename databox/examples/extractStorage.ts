@@ -22,7 +22,7 @@ const databox = new Databox({
   },
   functions: {
     extract: new Function(async ({ HeroReplay, Output }) => {
-      const lastRun = await databox.crawl('crawl', { maxTimeInCache: 24 * 60 * 60e3 });
+      const lastRun = await databox.crawl('crawl', { maxTimeInCache: 24 * 60 * 60 });
 
       const heroReplay = new HeroReplay(lastRun);
       const localStorage = await heroReplay.getSnippet('localStorage');

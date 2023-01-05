@@ -11,12 +11,15 @@ import { Function, PuppeteerFunctionPlugin } from '@ulixee/databox-plugins-puppe
 export default new Databox({
   functions: {
     pupp: new Function(async ctx => {
-      const { input, output, browser } = ctx;
+      const { input, Output, launchBrowser } = ctx;
 
+      const browser = await launchBrowser();
       const page = await browser.newPage();
       await page.goto(`https://en.wikipedia.org/wiki/${input.pageSlug || 'Web_scraping'}`);
-      output.title = await page.evaluate(() => {
-        return document.querySelector('#firstHeading').textContent;
+      Output.emit({
+        title: await page.evaluate(() => {
+          return document.querySelector('#firstHeading').textContent;
+        }),
       });
     }, PuppeteerFunctionPlugin),
   },
@@ -29,45 +32,9 @@ The PuppeteerFunctionPlugin adds a single property to the [FunctionContext](../b
 
 ### run _(functionContext)_ {#run-hero}
 
-- functionContext.browser `Puppeteer`. Readonly access to a pre-initialize [Puppeteer](https://pptr.dev/api) instance.
+- functionContext.launchBrowser: () => Promise<`Puppeteer`>. Function to launch a new [Puppeteer](https://pptr.dev/api) Browser instance.
 
-## Changes to Function Components
-
-PuppeteerFunctionPlugin adds an optional parameter to the Function Components [object](../basics/function#constructor)) to configure Puppeteer options.
-
-### new Function _(runCallback | functionComponents)_ {#constructor}
-
-#### **Added Arguments**:
-- defaultPuppeteerOptions [LaunchOptions](https://pptr.dev/api/puppeteer.launchoptions). Configure the [Puppeteer](https://pptr.dev/api) instance with [LaunchOptions](https://pptr.dev/api/puppeteer.launchoptions).
-
-```js
-import Databox from '@ulixee/databox';
-import { Function, PuppeteerFunctionPlugin } from '@ulixee/databox-plugins-puppeteer';
-
-export default new Databox({
-  functions: {
-    pupp: new Function(
-      {
-        async run(ctx) {
-          const { input, output, browser } = ctx;
-
-          const page = await browser.newPage();
-          await page.goto(`https://en.wikipedia.org/wiki/${input.pageSlug || 'Web_scraping'}`);
-          output.title = await page.evaluate(() => {
-            return document.querySelector('#firstHeading').textContent;
-          });
-        },
-        defaultPuppeteerOptions: {
-          timeout: 60e3,
-        },
-      },
-      PuppeteerFunctionPlugin,
-    ),
-  },
-});
-```
-
-### Function.exec(... puppeteerLaunchArgs)
+### Function.stream(... puppeteerLaunchArgs)
 
 Configure the [Puppeteer](https://pptr.dev/api) instance with [LaunchOptions](https://pptr.dev/api/puppeteer.launchoptions).
 
@@ -85,5 +52,5 @@ const databox = new Databox({
     }, PuppeteerFunctionPlugin),
   },
 });
-await databox.functions.pupp.exec({ waitForInitialPage: false });
+await databox.functions.pupp.stream({ waitForInitialPage: false });
 ```

@@ -22,9 +22,9 @@ Readonly input.
 
 #### **Returns** [`Input`](./input.md)
 
-### output
+### Output
 
-Get or set the output data.
+Output class. Can be constructed into a new Output instance, or can use the static `emit()` function to emit Output directly.
 
 #### **Returns** [`Output`](./output.md)
 

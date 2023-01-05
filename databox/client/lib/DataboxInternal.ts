@@ -193,16 +193,12 @@ export default class DataboxInternal<
     }
 
     for (const [name, func] of Object.entries(this.crawlers)) {
-      const passThrough = func as unknown as PassthroughFunction<any, any>;
       metadata.crawlersByName[name] = {
         corePlugins: func.corePlugins ?? {},
         schema: func.schema,
         pricePerQuery: func.pricePerQuery,
         addOnPricing: func.addOnPricing,
         minimumPrice: func.minimumPrice,
-        remoteSource: passThrough?.remoteSource,
-        remoteFunction: passThrough?.remoteFunction,
-        remoteDataboxVersionHash: passThrough?.databoxVersionHash,
       };
     }
 

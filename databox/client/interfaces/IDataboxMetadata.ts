@@ -17,9 +17,6 @@ export default interface IDataboxMetadata {
   crawlersByName: {
     [name: string]: {
       corePlugins: { [name: string]: string };
-      remoteFunction?: string;
-      remoteSource?: string;
-      remoteDataboxVersionHash?: string;
     } & Omit<IFunctionComponents<any, any>, 'run'>;
   };
   tablesByName: {
