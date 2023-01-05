@@ -5,6 +5,7 @@ export default interface IFunctionComponents<
   IAfterRunContext = IContext,
 > {
   name?: string;
+  description?: string;
   pricePerQuery?: number;
   addOnPricing?: {
     perKb?: number;

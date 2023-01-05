@@ -15,7 +15,9 @@
     "@ulixee/sql-ast": "2.0.0-alpha.17",
     "@ulixee/sql-engine": "2.0.0-alpha.17",
     "better-sqlite3": "^7.5.1",
+    "finalhandler": "^1.2.0",
     "nanoid": "^3.1.32",
+    "serve-static": "^1.15.0",
     "tar": "^6.1.11",
     "vm2": "^3.9.10"
   },
@@ -23,6 +25,7 @@
     "@ulixee/databox-packager": "2.0.0-alpha.17",
     "@ulixee/databox-testing": "2.0.0-alpha.17",
     "@ulixee/miner": "2.0.0-alpha.17",
+    "axios": "^0.26.1",
     "ts-node": "^10.8.1",
     "zod": "^3.17.10"
   }

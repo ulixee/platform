@@ -55,7 +55,8 @@ export default class DataboxPackager {
 
     this.meta ??= await this.findDataboxMeta();
     dbx.createOrUpdateDatabase(this.meta.tablesByName);
-
+    
+    await dbx.createOrUpdateDocpage(this.meta, this.entrypoint);
     await this.createOrUpdateManifest(sourceCode, sourceMap, options?.createNewVersionHistory);
     await dbx.save(options?.keepOpen);
 

@@ -11,20 +11,18 @@ module.exports=new Function(({output}) => {
   output.text='test';
 }, HeroFunctionPlugin);`;
 
-  {
-    const dbxFile = new DbxFile(packager.dbxPath);
-    await dbxFile.open();
-    await Fs.writeFile(`${dbxFile.workingDirectory}/databox.js`, newScript);
-    await dbxFile.save();
-    expect(existsSync(`${__dirname}/assets/dbxTest1.dbx`)).toBeTruthy();
-    await dbxFile.close();
-    expect(existsSync(dbxFile.workingDirectory)).toBeFalsy();
+  const dbxFile = new DbxFile(packager.dbxPath);
+  await dbxFile.open();
+  await Fs.writeFile(`${dbxFile.workingDirectory}/databox.js`, newScript);
+  await dbxFile.save();
+  expect(existsSync(`${__dirname}/assets/dbxTest1.dbx`)).toBeTruthy();
+  await dbxFile.close();
+  expect(existsSync(dbxFile.workingDirectory)).toBeFalsy();
 
-    await dbxFile.open();
+  await dbxFile.open();
 
-    const scriptContents = await Fs.readFile(`${dbxFile.workingDirectory}/databox.js`, 'utf8');
+  const scriptContents = await Fs.readFile(`${dbxFile.workingDirectory}/databox.js`, 'utf8');
 
-    expect(scriptContents).toBe(newScript);
-    await dbxFile.close();
-  }
+  expect(scriptContents).toBe(newScript);
+  await dbxFile.close();
 });

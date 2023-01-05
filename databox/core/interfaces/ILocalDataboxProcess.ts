@@ -25,12 +25,15 @@ export interface IExecResponseData {
 }
 
 export interface IFetchMetaResponseData {
+  name: string;
+  description: string;
   coreVersion: string;
   remoteDataboxes?: Record<string, string>;
   paymentAddress?: string;
   giftCardIssuerIdentity?: string;
   functionsByName: {
     [name: string]: {
+      description?: string;
       corePlugins: { [name: string]: string };
       schema?: Omit<IFunctionSchema, 'input' | 'output'> & {
         input?: Record<string, IAnySchemaJson>;
@@ -41,6 +44,7 @@ export interface IFetchMetaResponseData {
   };
   tablesByName: {
     [name: string]: {
+      description?: string;
       schema: Record<string, IAnySchemaJson>;
       seedlings: Record<string, any>;
     }

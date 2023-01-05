@@ -30,6 +30,7 @@ process.on('message', async (message: IMessage) => {
       databox.functions ?? ({} as Record<string, Function>),
     )) {
       functionsByName[name] = {
+        description: func.description,
         corePlugins: func.plugins.corePlugins ?? {},
         schema: func.schema,
         pricePerQuery: func.pricePerQuery,
@@ -42,6 +43,7 @@ process.on('message', async (message: IMessage) => {
     const tablesByName: IFetchMetaResponseData['tablesByName'] = {};
     for (const [name, table] of Object.entries(databox.tables ?? {})) {
       tablesByName[name] = {
+        description: table.description,
         schema: table.schema,
         seedlings: table.seedlings,
       };
@@ -50,6 +52,8 @@ process.on('message', async (message: IMessage) => {
     return sendToParent({
       responseId: message.messageId,
       data: {
+        name: databox.name,
+        description: databox.description,
         coreVersion: databox.coreVersion,
         remoteDataboxes: databox.remoteDataboxes,
         paymentAddress: databox.paymentAddress,

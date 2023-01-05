@@ -1,6 +1,9 @@
 import * as Os from 'os';
 import * as Path from 'path';
 import { promises as Fs } from 'fs';
+import { IncomingMessage, ServerResponse } from 'http';
+import * as Finalhandler from 'finalhandler';
+import * as ServeStatic from 'serve-static';
 import IFunctionPluginCore from '@ulixee/databox/interfaces/IFunctionPluginCore';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import Logger from '@ulixee/commons/lib/Logger';
@@ -88,6 +91,17 @@ export default class DataboxCore {
     connection.isInternal = this.options.serverEnvironment === 'development';
     this.connections.add(connection);
     return connection;
+  }
+
+  public static async routeHttp(req: IncomingMessage, res: ServerResponse, params: string[]): Promise<void> {
+    const pathParts = params[0].match(/([^/]+)(\/(.+)?)?/);
+    const versionHash = pathParts[1];
+    const reqPath = pathParts[3] ? pathParts[2] : '/index.html';
+    const { registryEntry } = await this.databoxRegistry.loadVersion(versionHash);
+    const docpagePath = registryEntry.path.replace(/databox.js$/, 'docpage');
+    req.url = reqPath;
+    const done = Finalhandler(req, res);
+    ServeStatic(docpagePath)(req, res, done);
   }
 
   public static registerPlugin(pluginCore: IFunctionPluginCore): void {
