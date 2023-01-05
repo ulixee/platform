@@ -166,9 +166,12 @@ export default class DataboxInternal<
   }
 
   private createMetadata(): IDataboxMetadata {
-    const { paymentAddress, giftCardIssuerIdentity, remoteDataboxes } = this.components;
+    const { name, description, paymentAddress, giftCardIssuerIdentity, remoteDataboxes } =
+      this.components;
 
     const metadata = {
+      name,
+      description,
       paymentAddress,
       remoteDataboxes,
       giftCardIssuerIdentity,
@@ -178,9 +181,11 @@ export default class DataboxInternal<
       crawlersByName: {},
     };
 
-    for (const [name, func] of Object.entries(this.functions)) {
+    for (const [funcName, func] of Object.entries(this.functions)) {
       const passThrough = func as unknown as PassthroughFunction<any, any>;
-      metadata.functionsByName[name] = {
+      metadata.functionsByName[funcName] = {
+        name: func.name,
+        description: func.description,
         corePlugins: func.corePlugins ?? {},
         schema: func.schema,
         pricePerQuery: func.pricePerQuery,
@@ -192,18 +197,22 @@ export default class DataboxInternal<
       };
     }
 
-    for (const [name, func] of Object.entries(this.crawlers)) {
-      metadata.crawlersByName[name] = {
-        corePlugins: func.corePlugins ?? {},
-        schema: func.schema,
-        pricePerQuery: func.pricePerQuery,
-        addOnPricing: func.addOnPricing,
-        minimumPrice: func.minimumPrice,
+    for (const [crawlerName, crawler] of Object.entries(this.crawlers)) {
+      metadata.crawlersByName[crawlerName] = {
+        name: crawler.name,
+        description: crawler.description,
+        corePlugins: crawler.corePlugins ?? {},
+        schema: crawler.schema,
+        pricePerQuery: crawler.pricePerQuery,
+        addOnPricing: crawler.addOnPricing,
+        minimumPrice: crawler.minimumPrice,
       };
     }
 
-    for (const [name, table] of Object.entries(this.tables ?? {})) {
-      metadata.tablesByName[name] = {
+    for (const [funcName, table] of Object.entries(this.tables ?? {})) {
+      metadata.tablesByName[funcName] = {
+        name: table.name,
+        description: table.description,
         schema: table.schema,
       };
     }

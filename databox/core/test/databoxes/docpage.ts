@@ -5,10 +5,10 @@ export default new Databox({
   functions: {
     test: new Function({
       run(ctx) {
-        ctx.output = { 
+        ctx.Output.emit({
           testerEcho: ctx.input.shouldTest,
           greeting: 'Hello world',
-        };
+        });
       },
       schema: {
         input: {
@@ -30,8 +30,8 @@ export default new Databox({
       },
       seedlings: [
         { firstName: 'Caleb', lastName: 'Clark', isTester: true },
-        { firstName: 'Blake', lastName: 'Byrnes' }
-      ]
+        { firstName: 'Blake', lastName: 'Byrnes' },
+      ],
     }),
-  }
+  },
 });
