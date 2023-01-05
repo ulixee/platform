@@ -58,9 +58,9 @@ export default class DataboxPackager {
       throw new Error('Databox must specify a coreVersion');
     }
     dbx.createOrUpdateDatabase(this.meta.tablesByName, this.meta.tableSeedlingsByName);
-        
-    await dbx.createOrUpdateDocpage(this.meta, this.entrypoint);
+
     await this.createOrUpdateManifest(sourceCode, sourceMap, options?.createNewVersionHistory);
+    await dbx.createOrUpdateDocpage(this.meta, this.manifest, this.entrypoint);
     await dbx.save(options?.keepOpen);
 
     return dbx;

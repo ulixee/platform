@@ -71,7 +71,7 @@ export default class DbxFile {
     db.close();
   }
 
-  public async createOrUpdateDocpage(meta: IFetchMetaResponseData, entrypoint: string): Promise<void> {
+  public async createOrUpdateDocpage(meta: IFetchMetaResponseData, manifest: DataboxManifest, entrypoint: string): Promise<void> {
     const docpageDir = Path.join(this.workingDirectory, 'docpage');
     const name = meta.name || entrypoint.match(/([^/\\]+)\.(js|ts)$/)[1] || 'Untitled';
 
@@ -80,17 +80,17 @@ export default class DbxFile {
       description: meta.description,
       createdAt: new Date().toISOString(),
       functionsByName: Object.keys(meta.functionsByName).reduce((obj, n) => {
-        return Object.assign(obj, { 
+        return Object.assign(obj, {
           [n]: {
             name: n,
             description: meta.functionsByName[n].description || '',
             schema: meta.functionsByName[n].schema,
-            pricePerQuery: meta.functionsByName[n].pricePerQuery,
+            prices: manifest.functionsByName[n].prices
           }
         });
       }, {}),
       tablesByName: Object.keys(meta.tablesByName).reduce((obj, n) => {
-        return Object.assign(obj, { 
+        return Object.assign(obj, {
           [n]: {
             name: n,
             description: meta.tablesByName[n].description || '',
