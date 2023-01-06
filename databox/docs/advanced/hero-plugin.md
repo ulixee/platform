@@ -35,7 +35,7 @@ export default new Crawler(async context => {
 
 ## Utilizing Two-Part Extraction
 
-To use the [HeroReplay](https://ulixee.org/docs/hero/basics-client/hero-replay) extraction phase, you'll simply add an additional afterRun callback:
+To use the [HeroReplay](https://ulixee.org/docs/hero/basics-client/hero-replay) extraction phase, you'll simply add an additional Function that uses a crawler:
 
 ```js
 import { Crawler, Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
@@ -48,6 +48,7 @@ const databox = new Databox({
       await hero.goto('https://ulixee.org');
       console.log(await hero.sessionId);
       await document.querySelector('h1').$addToDetachedElements('h1');
+      return hero;
     }, HeroFunctionPlugin),
   },
   functions: {

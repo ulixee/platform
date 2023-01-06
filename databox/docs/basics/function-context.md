@@ -2,7 +2,7 @@
 
 > FunctionContext provides access to metadata about your Function execution, along with Plugin-created variables.
 
-The FunctionContext class is passed into the [`run`](./function#constructor), [`beforeRun`](./function#constructor) and [`afterRun`](./function#constructor) callbacks provided to a Function. It cannot be constructed.
+The FunctionContext class is passed into the [`run`](./function#constructor) callback provided to a Function. It cannot be constructed.
 
 ## Properties
 

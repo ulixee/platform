@@ -1,6 +1,6 @@
 # Passthrough Function
 
-A PassthroughFunction allows you to extend other Databox Functions published across the web. Passthrough Functions don't have their own `run` callback - it has been delegated to the remote function. Input and Output can be manipulated before data is sent to the remote function using the `beforeRun` callback, or afterwards in the `afterRun` function.
+A PassthroughFunction allows you to extend other Databox Functions published across the web. Passthrough Functions don't have their own `run` callback - it has been delegated to the remote function. Input and Output can be manipulated before data is sent to the remote function using the `onRequest` callback, or afterwards in the `onResponse` function.
 
 ### An Example
 
