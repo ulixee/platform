@@ -5,9 +5,9 @@ import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import type { IOutputChangeRecord } from '@ulixee/hero-core/models/OutputTable';
-import IDataboxOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxOutputEvent';
-import IDataboxCollectedAssets from '@ulixee/apps-chromealive-interfaces/IDataboxCollectedAssets';
-import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxCollectedAssetEvent';
+import IDatastoreOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDatastoreOutputEvent';
+import IDatastoreCollectedAssets from '@ulixee/apps-chromealive-interfaces/IDatastoreCollectedAssets';
+import IDatastoreCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDatastoreCollectedAssetEvent';
 import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
 import { spawn } from 'child_process';
 import Log from '@ulixee/commons/lib/Logger';
@@ -46,8 +46,8 @@ const { log } = Log(module);
 
 export default class SessionObserver extends TypedEventEmitter<{
   'hero:updated': void;
-  'databox:output': void;
-  'databox:asset': IDataboxCollectedAssetEvent;
+  'datastore:output': void;
+  'datastore:asset': IDatastoreCollectedAssetEvent;
   'app:mode': void;
   closed: void;
 }> {
@@ -196,7 +196,7 @@ export default class SessionObserver extends TypedEventEmitter<{
       const child = spawn(execPath, [...execArgv, script, ...args], {
         cwd: this.scriptInstanceMeta.workingDirectory,
         stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-        env: { ...process.env, ULX_CLI_NOPROMPT: 'true', ULX_DATABOX_DISABLE_AUTORUN: 'false' },
+        env: { ...process.env, ULX_CLI_NOPROMPT: 'true', ULX_DATASTORE_DISABLE_AUTORUN: 'false' },
       });
       child.stderr.setEncoding('utf8');
       child.stdout.setEncoding('utf8');
@@ -444,31 +444,31 @@ export default class SessionObserver extends TypedEventEmitter<{
     };
   }
 
-  public async getCollectedAssets(fromSessionId?: string): Promise<IDataboxCollectedAssets> {
+  public async getCollectedAssets(fromSessionId?: string): Promise<IDatastoreCollectedAssets> {
     const sessionId = fromSessionId ?? this.heroSession.id;
     const assetNames = await this.heroSession.getCollectedAssetNames(sessionId);
-    const result: IDataboxCollectedAssets = {
+    const result: IDatastoreCollectedAssets = {
       detachedElements: [],
       detachedResources: [],
       snippets: [],
     };
     for (const name of assetNames.elements) {
       const elements = await this.heroSession.getDetachedElements(sessionId, name);
-      for (const element of elements as IDataboxCollectedAssets['detachedElements']) {
+      for (const element of elements as IDatastoreCollectedAssets['detachedElements']) {
         this.addSourceCodeLocation(element);
         result.detachedElements.push(element);
       }
     }
     for (const name of assetNames.resources) {
       const resources = await this.heroSession.getDetachedResources(sessionId, name);
-      for (const resource of resources as IDataboxCollectedAssets['detachedResources']) {
+      for (const resource of resources as IDatastoreCollectedAssets['detachedResources']) {
         this.addSourceCodeLocation(resource);
         result.detachedResources.push(resource);
       }
     }
     for (const name of assetNames.snippets) {
       const snippets = await this.heroSession.getSnippets(sessionId, name);
-      for (const snippet of snippets as IDataboxCollectedAssets['snippets']) {
+      for (const snippet of snippets as IDatastoreCollectedAssets['snippets']) {
         this.addSourceCodeLocation(snippet);
         result.snippets.push(snippet);
       }
@@ -476,7 +476,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     return result;
   }
 
-  public getDataboxEvent(): IDataboxOutputEvent {
+  public getDatastoreEvent(): IDatastoreOutputEvent {
     const output: IOutputSnapshot = this.outputRebuilder.getLatestSnapshot() ?? {
       bytes: 0,
       output: null,
@@ -519,7 +519,7 @@ export default class SessionObserver extends TypedEventEmitter<{
   }
 
   public onCollectedAsset(event: HeroSession['EventTypes']['collected-asset']): void {
-    const sendEvent: IDataboxCollectedAssetEvent = {};
+    const sendEvent: IDatastoreCollectedAssetEvent = {};
 
     if (event.type === 'resource') {
       sendEvent.detachedResource = event.asset as any;
@@ -533,7 +533,7 @@ export default class SessionObserver extends TypedEventEmitter<{
       sendEvent.snippet = event.asset as any;
       this.addSourceCodeLocation(sendEvent.snippet);
     }
-    this.emit('databox:asset', sendEvent);
+    this.emit('datastore:asset', sendEvent);
   }
 
   public onTabCreated(event: HeroSession['EventTypes']['tab-created']): void {
@@ -643,7 +643,7 @@ export default class SessionObserver extends TypedEventEmitter<{
     this.sourceCodeTimeline.clearCache();
     this.hasScriptUpdatesSinceLastRun = false;
     this.emit('hero:updated');
-    this.emit('databox:output');
+    this.emit('datastore:output');
   }
 
   private onCommandsPaused(): void {
@@ -664,11 +664,11 @@ export default class SessionObserver extends TypedEventEmitter<{
 
   private resetExtraction(): void {
     this.outputRebuilder = new OutputRebuilder();
-    this.emit('databox:output');
+    this.emit('datastore:output');
   }
 
   private onOutputUpdated(event: { changes: IOutputChangeRecord[] }): void {
     this.outputRebuilder.applyChanges(event.changes);
-    this.emit('databox:output');
+    this.emit('datastore:output');
   }
 }

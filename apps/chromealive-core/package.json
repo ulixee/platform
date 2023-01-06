@@ -11,8 +11,8 @@
     "@ulixee/apps-chromealive": "2.0.0-alpha.17",
     "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.17",
     "@ulixee/commons": "2.0.0-alpha.17",
-    "@ulixee/databox": "2.0.0-alpha.17",
-    "@ulixee/databox-plugins-hero": "2.0.0-alpha.17",
+    "@ulixee/datastore": "2.0.0-alpha.17",
+    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.17",
     "@ulixee/default-browser-emulator": "2.0.0-alpha.17",
     "@ulixee/hero-interfaces": "2.0.0-alpha.17",
     "@ulixee/hero-plugin-utils": "2.0.0-alpha.17",
@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.154",
-    "@ulixee/databox-testing": "2.0.0-alpha.17",
+    "@ulixee/datastore-testing": "2.0.0-alpha.17",
     "linkedom": "^0.14.11"
   }
 }

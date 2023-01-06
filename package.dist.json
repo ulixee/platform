@@ -7,11 +7,11 @@
   },
   "workspaces": {
     "packages": [
-      "apps/*", 
-      "databox/*", 
-      "databox/plugins/*", 
-      "miner/*", 
-      "sql/*", 
+      "apps/*",
+      "datastore/*",
+      "datastore/plugins/*",
+      "miner/*",
+      "sql/*",
       "cli",
       "playgrounds/*"
     ]

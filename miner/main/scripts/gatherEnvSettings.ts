@@ -7,8 +7,8 @@ const HeroEnv = Fs.readFileSync(
   require.resolve('@ulixee/hero-core').replace(/index.*js/, '.env.defaults'),
   'utf8',
 );
-const DataboxEnv = Fs.readFileSync(
-  require.resolve('@ulixee/databox-core').replace(/index.*js/, '.env.defaults'),
+const DatastoreEnv = Fs.readFileSync(
+  require.resolve('@ulixee/datastore-core').replace(/index.*js/, '.env.defaults'),
   'utf8',
 );
 const MinerEnv = Fs.readFileSync(
@@ -24,8 +24,8 @@ Fs.writeFileSync(
 
 ## Miner
 ${MinerEnv}
-## Databox
-${DataboxEnv}
+## Datastore
+${DatastoreEnv}
 ## Hero
 ${HeroEnv}
 ## Agent

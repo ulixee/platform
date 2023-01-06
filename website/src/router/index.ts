@@ -7,7 +7,7 @@ const roadmapNames = [
   'Bonds',
   'ChromeAlive',
   'Pipeline',
-  'Databox',
+  'Datastore',
   'Domain',
   'DoubleAgent',
   'Hero',
@@ -20,7 +20,7 @@ const roadmapNames = [
   'Sidechain',
 ];
 
-const releasedToolNames = ['Hero', 'ChromeAlive', 'Databox', 'Miner', 'Stream'];
+const releasedToolNames = ['Hero', 'ChromeAlive', 'Datastore', 'Miner', 'Stream'];
 
 const basicRoutes: Array<RouteRecordRaw> = [
   {

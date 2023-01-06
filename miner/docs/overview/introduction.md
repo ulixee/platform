@@ -22,7 +22,7 @@ or
 yarn add @ulixee/miner
 ```
 
-When you install Miner, it requires PeerDependencies of [`Hero`](https://ulixee.org/docs/hero) and [`Databox`](https://ulixee.org/docs/databox).
+When you install Miner, it requires PeerDependencies of [`Hero`](https://ulixee.org/docs/hero) and [`Datastore`](https://ulixee.org/docs/datastore).
 
 It will also optionally use a PeerDependency `ChromeAlive!` Core (`@ulixee/apps-chromealive-core`). This tool enhances the Hero Development process.
 
@@ -45,13 +45,13 @@ You can run the start command from the command line as `npx @ulixee/miner start`
 - `-p, --port <number>` The port to use. Defaults to any available port.
 - `-h, --host <host>` The host the miner should listen on. (default: localhost)
 - `-x, --disable-chrome-alive` Do not enable ChromeAlive! even if installed locally.
-- `-m, --max-concurrent-heroes <count>` Max number of concurrent Databoxes/Heroes to run at a time. (default: 10)
-- `-r, --max-databox-runtime-ms <millis>` Max runtime allowed for a Databox to complete. (default: 10 mins)
+- `-m, --max-concurrent-heroes <count>` Max number of concurrent Datastores/Heroes to run at a time. (default: 10)
+- `-r, --max-datastore-runtime-ms <millis>` Max runtime allowed for a Datastore to complete. (default: 10 mins)
 - `-u, --unblocked-plugins <plugins...>` Register default Unblocked Plugin npm module names for all Hero instances to load.
 - `-d, --hero-data-dir <dir>` Override the default data directory for Hero sessions and dbs.
-- `-s, --databox-storage-dir <dir>` Override the default storage directory where Databoxes are located.
-- `-t, --databox-tmp-dir <dir>` Override the default temp directory where uploaded Databoxes are processed.
-- `-w, --databox-wait-for-completion` Wait for all in-process Databoxes to complete before shutting down a Miner. (default: false)
+- `-s, --datastore-storage-dir <dir>` Override the default storage directory where Datastores are located.
+- `-t, --datastore-tmp-dir <dir>` Override the default temp directory where uploaded Datastores are processed.
+- `-w, --datastore-wait-for-completion` Wait for all in-process Datastores to complete before shutting down a Miner. (default: false)
 
 ### Global CLI
 
@@ -76,7 +76,7 @@ import Miner from '@ulixee/miner';
 
 To refer to this Miner in a Hero client, you can supply the host string to the constructor.
 
-NOTE: connection details on a local machine are optional. If you don't supply any connection detail, Hero and Databox will connect to the local host.
+NOTE: connection details on a local machine are optional. If you don't supply any connection detail, Hero and Datastore will connect to the local host.
 
 ```js
 import Hero from '@ulixee/hero';

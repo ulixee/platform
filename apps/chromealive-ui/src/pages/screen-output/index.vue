@@ -17,7 +17,7 @@
     </ul>
 
     <h2>
-      Databox Output <span>{{ dataSize }}</span>:
+      Datastore Output <span>{{ dataSize }}</span>:
     </h2>
     <div class="box bg-gray-50 border border-gray-200 min-h-[200px] max-h-[500px] overflow-auto">
       <Json
@@ -172,30 +172,30 @@ import json5 from 'json5';
 import * as Vue from 'vue';
 import moment from 'moment';
 import Client from '@/api/Client';
-import IDataboxOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxOutputEvent';
+import IDatastoreOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDatastoreOutputEvent';
 import humanizeBytes from '@/utils/humanizeBytes';
 import Json from '@/components/Json.vue';
 import { convertJsonToFlat } from '@/utils/flattenJson';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
-import IDataboxCollectedAssetsResponse from '@ulixee/apps-chromealive-interfaces/IDataboxCollectedAssets';
-import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxCollectedAssetEvent';
+import IDatastoreCollectedAssetsResponse from '@ulixee/apps-chromealive-interfaces/IDatastoreCollectedAssets';
+import IDatastoreCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDatastoreCollectedAssetEvent';
 import IResourceMeta from '@ulixee/unblocked-specification/agent/net/IResourceMeta';
 import IDetachedResource from '@ulixee/hero-interfaces/IDetachedResource';
 import IDetachedElement from '@ulixee/hero-interfaces/IDetachedElement';
 import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
 
-const databox: any = Vue.defineComponent({
-  name: 'Databox',
+const datastore: any = Vue.defineComponent({
+  name: 'Datastore',
   components: { Json },
   setup() {
-    document.title = 'Databox Panel';
+    document.title = 'Datastore Panel';
 
     return {
       dataSize: Vue.ref<string>(humanizeBytes(0)),
       output: Vue.reactive(convertJsonToFlat({})),
       scrollToRecordId: Vue.ref<number>(null),
       scriptEntrypoint: Vue.ref<string>(null),
-      collectedAssets: Vue.reactive<IDataboxCollectedAssetsResponse>({
+      collectedAssets: Vue.reactive<IDatastoreCollectedAssetsResponse>({
         detachedElements: [],
         detachedResources: [],
         snippets: [],
@@ -243,7 +243,7 @@ const databox: any = Vue.defineComponent({
     formatTimestamp(timestamp: number): string {
       return moment(timestamp).format('HH:mm:ss.SSS');
     },
-    onDataboxOutput(data: IDataboxOutputEvent) {
+    onDatastoreOutput(data: IDatastoreOutputEvent) {
       const { bytes, changes } = data;
 
       this.dataSize = humanizeBytes(bytes);
@@ -271,14 +271,14 @@ const databox: any = Vue.defineComponent({
 
       const entrypoint = data.scriptEntrypointTs ?? data.scriptEntrypoint;
       if (this.scriptEntrypoint && !entrypoint.endsWith(this.scriptEntrypoint)) {
-        this.onDataboxOutput({} as IDataboxOutputEvent);
+        this.onDatastoreOutput({} as IDatastoreOutputEvent);
       }
       const divider = entrypoint.includes('/') ? '/' : '\\';
       this.scriptEntrypoint = entrypoint.split(divider).slice(-2).join(divider);
       this.startTime = moment(data.startTime).format(`LL [at] LTS z`);
       this.endTime = moment(data.endTime ?? Date.now()).format(`LL [at] LTS z`);
     },
-    onCollectedAssets(assets: IDataboxCollectedAssetsResponse): void {
+    onCollectedAssets(assets: IDatastoreCollectedAssetsResponse): void {
       this.collectedAssets.detachedResources = assets.detachedResources;
       this.collectedAssets.detachedElements = assets.detachedElements;
       this.collectedAssets.snippets = assets.snippets;
@@ -286,7 +286,7 @@ const databox: any = Vue.defineComponent({
         this.updateDataUrl(resource.resource);
       }
     },
-    onCollectedAsset(asset: IDataboxCollectedAssetEvent): void {
+    onCollectedAsset(asset: IDatastoreCollectedAssetEvent): void {
       if (asset.detachedElement) {
         this.collectedAssets.detachedElements.push(asset.detachedElement);
       }
@@ -368,15 +368,15 @@ const databox: any = Vue.defineComponent({
       Client.send('Session.getActive')
         .then(this.onSessionActive)
         .catch(err => console.error(err));
-      Client.send('Databox.getOutput')
-        .then(x => this.onDataboxOutput({ ...x, changes: undefined }))
+      Client.send('Datastore.getOutput')
+        .then(x => this.onDatastoreOutput({ ...x, changes: undefined }))
         .catch(err => console.error(err));
-      Client.send('Databox.getCollectedAssets')
+      Client.send('Datastore.getCollectedAssets')
         .then(this.onCollectedAssets)
         .catch(err => console.error(err));
     },
     execExtract(): void {
-      Client.send('Databox.execExtract', { heroSessionId: this.sessionId }).catch(err =>
+      Client.send('Datastore.execExtract', { heroSessionId: this.sessionId }).catch(err =>
         console.error(err),
       );
     },
@@ -384,12 +384,12 @@ const databox: any = Vue.defineComponent({
   mounted() {
     Client.connect().catch(err => console.error(err));
     this.refreshData();
-    Client.on('Databox.output', this.onDataboxOutput);
-    Client.on('Databox.collected-asset', this.onCollectedAsset);
+    Client.on('Datastore.output', this.onDatastoreOutput);
+    Client.on('Datastore.collected-asset', this.onCollectedAsset);
     Client.on('Session.active', this.onSessionActive);
   },
 });
-export default databox;
+export default datastore;
 </script>
 
 <style lang="scss" scoped="scoped">

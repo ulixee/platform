@@ -10,14 +10,14 @@ module.exports.overrides.push(
     },
   },
   {
-    files: ['databox/packager/**'],
+    files: ['datastore/packager/**'],
     rules: {
       'no-console': 'off',
       'import/no-dynamic-require': 'off',
     },
   },
   {
-    files: ['**/DataboxWrapper.ts'],
+    files: ['**/DatastoreWrapper.ts'],
     rules: {
       'import/no-import-module-exports': 'off',
     },

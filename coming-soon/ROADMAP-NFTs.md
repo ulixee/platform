@@ -1,8 +1,8 @@
 ## 2.7 
-NFTs will be deployed as standard ERC721 contracts, initially on Ethereum. We might do a multichain deployment, but current thinking is Ethereum to start. We’ll create a simple mechanism to associate a Databox or Domain with a created NFT via the CLI/UI tooling. We will associate Databox and Domain earnings with a registered Argon address. To transfer funds out of an Argon “owner” address, a user will need to lock their NFT ownership for a number of blocks to initiate a transfer out of that Argon address into a normal address.
+NFTs will be deployed as standard ERC721 contracts, initially on Ethereum. We might do a multichain deployment, but current thinking is Ethereum to start. We’ll create a simple mechanism to associate a Datastore or Domain with a created NFT via the CLI/UI tooling. We will associate Datastore and Domain earnings with a registered Argon address. To transfer funds out of an Argon “owner” address, a user will need to lock their NFT ownership for a number of blocks to initiate a transfer out of that Argon address into a normal address.
 
 - ERC 721 Contract
-- Register NFT to Databox
+- Register NFT to Datastore
 - Sidechain Specialized Addresses
 - Ownership
 - Transfer Funds out of Specialized Addresses

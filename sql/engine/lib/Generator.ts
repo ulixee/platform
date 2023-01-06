@@ -1,5 +1,5 @@
 import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
-import { IFunctionSchema } from '@ulixee/databox';
+import { IFunctionSchema } from '@ulixee/datastore';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 
 const zodToSqliteTypes = {

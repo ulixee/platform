@@ -2,7 +2,7 @@
   <div class="Menu">
     <ul>
       <li class="info">
-        Chrome is bound to <strong>{{ scriptEntrypoint }}</strong>, a <strong>Hero</strong> script wrapped as a <strong>Databox</strong>.
+        Chrome is bound to <strong>{{ scriptEntrypoint }}</strong>, a <strong>Hero</strong> script wrapped as a <strong>Datastore</strong>.
       </li>
       <li class="separator" />
       <li class="item" @click.prevent="continueScript">

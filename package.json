@@ -7,7 +7,7 @@
     "build": "yarn && yarn tsc && yarn build:docpage && cd ./build && yarn",
     "build:hero": "cd hero && yarn build",
     "build:chromealive": "yarn workspace @ulixee/apps-chromealive build:ui",
-    "build:docpage": "yarn workspace @ulixee/databox-docpage build",
+    "build:docpage": "yarn workspace @ulixee/datastore-docpage build",
     "build:all": "yarn build:hero && yarn build:chromealive && yarn build",
     "build:dist": "shx rm -rf build-dist && tsc -b tsconfig.dist.json && yarn copy:dist && yarn workspace @ulixee/apps-chromealive-extension build:dist",
     "copy:build": "ulx-repo-after-build && ulx-repo-adjust-paths",
@@ -19,8 +19,8 @@
     "watch:all": "concurrently -n hero,devenv \"cd hero && yarn watch\" \"yarn watch\"",
     "start": "yarn workspace @ulixee/miner start",
     "test": "yarn copy:build && yarn test:build",
-    "test:build": "cd ./build && cross-env ULX_DATA_DIR=.data-test ULX_DATABOX_DIR=.data-test NODE_ENV=test jest",
-    "test:all": "yarn copy:build && cross-env ULX_DATA_DIR=.data-test ULX_DATABOX_DIR=.data-test NODE_ENV=test jest",
+    "test:build": "cd ./build && cross-env ULX_DATA_DIR=.data-test ULX_DATASTORE_DIR=.data-test NODE_ENV=test jest",
+    "test:all": "yarn copy:build && cross-env ULX_DATA_DIR=.data-test ULX_DATASTORE_DIR=.data-test NODE_ENV=test jest",
     "lint": "eslint --cache ./",
     "version:check": "ulx-repo-version-check fix",
     "version:bump": "ulx-repo-version-bump"
@@ -59,8 +59,8 @@
   "workspaces": {
     "packages": [
       "apps/*",
-      "databox/*",
-      "databox/plugins/*",
+      "datastore/*",
+      "datastore/plugins/*",
       "miner/*",
       "sql/*",
       "cli",

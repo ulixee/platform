@@ -8,7 +8,7 @@
     "packages": [
       "packages/*",
       "packages/*/*",
-      "packages/databox/plugins/hero-*",
+      "packages/datastore/plugins/hero-*",
       "packages/hero/plugins/*"
     ]
   }

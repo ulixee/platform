@@ -6,7 +6,7 @@ export function getMinerHost(minerProcess: ChildProcess): Promise<string> {
     minerProcess.stderr.on('data', console.error);
     minerProcess.stdout.setEncoding('utf8');
     minerProcess.stdout.on('data', (message: string) => {
-      console.log('[DATABOX CORE]', message.trim());
+      console.log('[DATASTORE CORE]', message.trim());
       const match = message.match(/Ulixee Miner listening at (.+)/);
       if (match?.length) resolve(match[1]);
     });

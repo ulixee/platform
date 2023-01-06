@@ -9,9 +9,9 @@ export default function cliCommands(): Command {
 
   const modules = [
     {
-      name: 'databox',
-      description: 'package and upload Databoxes',
-      module: '@ulixee/databox/cli',
+      name: 'datastore',
+      description: 'package and upload Datastores',
+      module: '@ulixee/datastore/cli',
     },
     {
       name: 'crypto',

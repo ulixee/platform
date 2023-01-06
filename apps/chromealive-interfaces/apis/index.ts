@@ -4,7 +4,7 @@ import ISessionApi from './ISessionApi';
 import IDevtoolsBackdoorApi from './IDevtoolsBackdoorApi';
 import IAppApi from './IAppApi';
 import IMouseApi from './IMouseApi';
-import IDataboxApi from './IDataboxApi';
+import IDatastoreApi from './IDatastoreApi';
 
 export type IChromeAliveApis = {
   'Session.quit': ISessionApi['quit'];
@@ -18,9 +18,9 @@ export type IChromeAliveApis = {
   'Session.getActive': ISessionApi['getActive'];
   'Session.getMeta': ISessionApi['getMeta'];
   'Session.search': ISessionApi['search'];
-  'Databox.execExtract': IDataboxApi['execExtract'];
-  'Databox.getOutput': IDataboxApi['getOutput'];
-  'Databox.getCollectedAssets': IDataboxApi['getCollectedAssets'];
+  'Datastore.execExtract': IDatastoreApi['execExtract'];
+  'Datastore.getOutput': IDatastoreApi['getOutput'];
+  'Datastore.getCollectedAssets': IDatastoreApi['getCollectedAssets'];
   'App.boundsChanged': IAppApi['boundsChanged'];
   'App.ready': IAppApi['ready'];
   'App.focus': IAppApi['focus'];

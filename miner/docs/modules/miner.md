@@ -1,6 +1,6 @@
 # Ulixee Miner
 
-Ulixee Miner is an out-of-the-box way to publish and deploy Ulixee Hero scripts and Databoxes. Websockets are used as the underlying protocol.
+Ulixee Miner is an out-of-the-box way to publish and deploy Ulixee Hero scripts and Datastores. Websockets are used as the underlying protocol.
 
 You should start `Ulixee Miner` in a node process that you intend to keep alive. This process will automatically integrate `@ulixee/hero-core` and `ChromeAlive!` if it's installed.
 

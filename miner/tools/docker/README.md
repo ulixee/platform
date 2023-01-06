@@ -37,7 +37,7 @@ The [run.sh](./run.sh) file can be a starting point to run the docker on your se
 * `--restart unless-stopped` Reboot the process on crash unless you explicitly call docker stop.
 * `--log-opt max-size=50m --log-opt max-file=3 --log-driver local` Add rotating log files.
 * `--security-opt seccomp="$SECURE_PROFILE"` Clones the default Docker seccomp profile to run reduced linux permissions. It adds user namespace permissions to enable Chrome Sandboxing without root user. NOTE: You MUST use the seccomp settings or turn off Chrome sandboxes.
-* `-v $DATABOXES_MOUNT:/home/ulixee/.cache/ulixee/databoxes` Mount and chmod 777 a directory on the host OS where Databoxes can be packaged for deployment.
+* `-v $DATASTORES_MOUNT:/home/ulixee/.cache/ulixee/datastores` Mount and chmod 777 a directory on the host OS where Datastores can be packaged for deployment.
 * `-v $DATADIR_MOUNT:/tmp/.ulixee` Mount a tmp directory and chmod 777 so that the `ulixee` user can store Session databases in this directory.
 * `-e DISPLAY=:99`, `xvfb-run` Allows headed Chrome with a virtual display.
 * `-e DEBUG=ubk*,ulx*` Configures Ulixee to emit very verbose logs to the console. Removing ubk* will remove devtools logging.

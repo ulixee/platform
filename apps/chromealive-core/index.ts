@@ -10,7 +10,7 @@ import { IPage } from '@ulixee/unblocked-specification/agent/browser/IPage';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
-import IDataboxCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxCollectedAssetEvent';
+import IDatastoreCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDatastoreCollectedAssetEvent';
 import { URL } from 'url';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
@@ -190,11 +190,11 @@ export default class ChromeAliveCore {
     const sessionEvents = [
       on(sessionObserver, 'hero:updated', this.sendActiveSession.bind(this, sessionId)),
       on(sessionObserver, 'app:mode', this.sendAppModeEvent.bind(this, sessionId)),
-      on(sessionObserver, 'databox:output', this.sendDataboxUpdatedEvent.bind(this, sessionId)),
+      on(sessionObserver, 'datastore:output', this.sendDatastoreUpdatedEvent.bind(this, sessionId)),
       on(
         sessionObserver,
-        'databox:asset',
-        this.sendDataboxCollectedAssetsEvent.bind(this, sessionId),
+        'datastore:asset',
+        this.sendDatastoreCollectedAssetsEvent.bind(this, sessionId),
       ),
       on(sessionObserver, 'closed', this.onSessionObserverClosed.bind(this, sessionObserver)),
       on(sourceCode, 'command', this.sendAppEvent.bind(this, 'Command.updated')),
@@ -232,7 +232,7 @@ export default class ChromeAliveCore {
     });
     if (this.activeHeroSessionId) {
       this.sendActiveSession(this.activeHeroSessionId);
-      this.sendDataboxUpdatedEvent(this.activeHeroSessionId);
+      this.sendDatastoreUpdatedEvent(this.activeHeroSessionId);
     }
   }
 
@@ -240,7 +240,7 @@ export default class ChromeAliveCore {
     sessionId: string,
     event: TimetravelPlayer['EventTypes']['new-tick-command'],
   ): void {
-    this.sendDataboxUpdatedEvent(sessionId);
+    this.sendDatastoreUpdatedEvent(sessionId);
     this.sendAppEvent('Command.focused', event);
   }
 
@@ -286,7 +286,7 @@ export default class ChromeAliveCore {
         this.sendAppEvent('Session.active', null);
       }
 
-      this.sendAppEvent('Databox.output', {
+      this.sendAppEvent('Datastore.output', {
         changes: [],
         output: null,
         bytes: 0,
@@ -301,19 +301,19 @@ export default class ChromeAliveCore {
     this.sendAppEvent('Session.active', sessionObserver.getHeroSessionEvent());
   }
 
-  private static sendDataboxUpdatedEvent(heroSessionId: string): void {
+  private static sendDatastoreUpdatedEvent(heroSessionId: string): void {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
-    this.sendAppEvent('Databox.output', sessionObserver.getDataboxEvent());
+    this.sendAppEvent('Datastore.output', sessionObserver.getDatastoreEvent());
   }
 
-  private static sendDataboxCollectedAssetsEvent(
+  private static sendDatastoreCollectedAssetsEvent(
     heroSessionId: string,
-    event: IDataboxCollectedAssetEvent,
+    event: IDatastoreCollectedAssetEvent,
   ): void {
     const sessionObserver = this.sessionObserversById.get(heroSessionId);
     if (!sessionObserver) return;
-    this.sendAppEvent('Databox.collected-asset', event);
+    this.sendAppEvent('Datastore.collected-asset', event);
   }
 
   private static sendAppModeEvent(heroSessionId: string): void {

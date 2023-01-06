@@ -8,14 +8,14 @@
       </SubHeader>
 
       <p class="w-10/12">
-        Stream is a uniform library for querying and retrieving datasets across any scraper script wrapped in a Databox. You can make a single query or large querysets in parallel. And you can pipe, transform, reduce and explode datasets from the output of one Databox to the input of another.
+        Stream is a uniform library for querying and retrieving datasets across any scraper script wrapped in a Datastore. You can make a single query or large querysets in parallel. And you can pipe, transform, reduce and explode datasets from the output of one Datastore to the input of another.
       </p>
 
       <ActionButtons productKey="stream" />
 
       <div class="relative h-60">
-        <inline-svg :src="require('@/assets/illustrations/databox.svg')" height="65" class="absolute top-0 left-[20%]" />
-        <inline-svg :src="require('@/assets/illustrations/databox.svg')" height="65" class="absolute top-0 right-[25%]" />
+        <inline-svg :src="require('@/assets/illustrations/datastore.svg')" height="65" class="absolute top-0 left-[20%]" />
+        <inline-svg :src="require('@/assets/illustrations/datastore.svg')" height="65" class="absolute top-0 right-[25%]" />
         <inline-svg :src="require('@/assets/illustrations/transformer.svg')" height="70" class="absolute bottom-[-3px] right-[25%]" />
         <!-- <div class="PIPE w-10/12"></div> -->
         <div class="OUTSIDE-CIRCLE"></div>
@@ -39,14 +39,14 @@
       <ul>
         <li>
           <title>Transform (1 to 1)</title>
-          <p>These are custom functions that attach to the output of databoxes, instantly transforming their output into a different data structure. It’s especially powerful when used in combination with one of the other transformations.</p>
+          <p>These are custom functions that attach to the output of datastores, instantly transforming their output into a different data structure. It’s especially powerful when used in combination with one of the other transformations.</p>
         </li>
 
         Pipe (1 to 1)
-        Seamlessly connect the output of one databox (or transform function) into the input of another databox. For example, query a list of OpenTable restaurants then pass the output of those results into an OpenTable availability Databox to see what times are available tonight.
+        Seamlessly connect the output of one datastore (or transform function) into the input of another datastore. For example, query a list of OpenTable restaurants then pass the output of those results into an OpenTable availability Datastore to see what times are available tonight.
 
         Explode (1 to n)
-        Similar to Pipe, except the output of each Databox is split into muliple inputs to the next Databox. For example, explode the OpenTable restaurant list into multiple availability checks for each restaurant — i.e, perhaps you want to see which days have a 6:30pm - 7:30pm availability over the next two weeks.
+        Similar to Pipe, except the output of each Datastore is split into muliple inputs to the next Datastore. For example, explode the OpenTable restaurant list into multiple availability checks for each restaurant — i.e, perhaps you want to see which days have a 6:30pm - 7:30pm availability over the next two weeks.
 
         Collapse (n to 1)
         This is the exact opposite of Explode, allowing multiple outputs to be condensed into a smaller collection of inputs. For example, if you want to query concert listings only on the days with 6:30-7:30pm restaurant availability, use Collapse to send only the available days through to the concert query.

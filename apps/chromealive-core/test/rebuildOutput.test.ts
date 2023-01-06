@@ -1,4 +1,4 @@
-import ObjectObserver from '@ulixee/databox/lib/ObjectObserver';
+import ObjectObserver from '@ulixee/datastore/lib/ObjectObserver';
 import OutputRebuilder from '../lib/OutputRebuilder';
 
 describe('basic OutputRebuilder tests', () => {

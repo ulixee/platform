@@ -7,7 +7,7 @@
         Multiple Clouds and Environments
       </SubHeader>
 
-      <p class="w-10/12">Ulixee Miner is designed to easily run and scale your production scripts across one or more clouds. At their most basic level, they host and serve your Databoxes. As we build out Ulixee's decentralized cloud, these Miners can be connected as miners in the broader data economy.</p>
+      <p class="w-10/12">Ulixee Miner is designed to easily run and scale your production scripts across one or more clouds. At their most basic level, they host and serve your Datastores. As we build out Ulixee's decentralized cloud, these Miners can be connected as miners in the broader data economy.</p>
 
       <ActionButtons productKey="miner" />
 

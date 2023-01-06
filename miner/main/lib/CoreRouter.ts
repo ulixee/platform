@@ -1,8 +1,8 @@
 import * as WebSocket from 'ws';
 import { IncomingMessage, ServerResponse } from 'http';
-import DataboxCore from '@ulixee/databox-core';
+import DatastoreCore from '@ulixee/datastore-core';
 import HeroCore from '@ulixee/hero-core';
-import IDataboxCoreConfigureOptions from '@ulixee/databox-core/interfaces/IDataboxCoreConfigureOptions';
+import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
@@ -14,19 +14,19 @@ import Miner from '../index';
 
 export default class CoreRouter {
   public static modulesToRegister = [
-    '@ulixee/databox-plugins-hero-core/register',
-    '@ulixee/databox-plugins-puppeteer-core/register',
+    '@ulixee/datastore-plugins-hero-core/register',
+    '@ulixee/datastore-plugins-puppeteer-core/register',
   ];
 
   public heroConfiguration: ICoreConfigureOptions;
-  public databoxConfiguration: Partial<IDataboxCoreConfigureOptions>;
+  public datastoreConfiguration: Partial<IDatastoreCoreConfigureOptions>;
 
   public get dataDir(): string {
     return HeroCore.dataDir;
   }
 
-  public get databoxesDir(): string {
-    return DataboxCore.databoxesDir;
+  public get datastoresDir(): string {
+    return DatastoreCore.datastoresDir;
   }
 
   private isClosing: Promise<void>;
@@ -37,23 +37,23 @@ export default class CoreRouter {
     [key: string]: (transport: ITransportToClient<any>) => IConnectionToClient<any, any>;
   } = {
     hero: transport => HeroCore.addConnection(transport),
-    databox: transport => DataboxCore.addConnection(transport) as any,
+    datastore: transport => DatastoreCore.addConnection(transport) as any,
     chromealive: transport => ChromeAliveUtils.getChromeAlive().addConnection(transport) as any,
   };
 
   private httpRoutersByType: {
     [key: string]: (req: IncomingMessage, res: ServerResponse, params: string[]) => void;
   } = {
-    databox: DataboxCore.routeHttp.bind(DataboxCore),
+    datastore: DatastoreCore.routeHttp.bind(DatastoreCore),
   };
 
   constructor(miner: Miner) {
     this.miner = miner;
 
     miner.addWsRoute('/', this.handleSocketRequest.bind(this, 'hero'));
-    miner.addWsRoute('/databox', this.handleSocketRequest.bind(this, 'databox'));
-    miner.addHttpRoute(/\/databox\/(.+)/, 'GET', this.handleHttpRequest.bind(this, 'databox'));
-    
+    miner.addWsRoute('/datastore', this.handleSocketRequest.bind(this, 'datastore'));
+    miner.addHttpRoute(/\/datastore\/(.+)/, 'GET', this.handleHttpRequest.bind(this, 'datastore'));
+
     for (const module of CoreRouter.modulesToRegister) {
       safeRegisterModule(module);
     }
@@ -69,11 +69,11 @@ export default class CoreRouter {
     this.heroConfiguration.shouldShutdownOnSignals ??= this.miner.shouldShutdownOnSignals;
     await HeroCore.start(this.heroConfiguration);
 
-    if (this.databoxConfiguration) {
-      Object.assign(DataboxCore.options, this.databoxConfiguration);
+    if (this.datastoreConfiguration) {
+      Object.assign(DatastoreCore.options, this.datastoreConfiguration);
     }
 
-    await DataboxCore.start();
+    await DatastoreCore.start();
 
     if (ChromeAliveUtils.isInstalled()) {
       const chromeAliveCore = ChromeAliveUtils.getChromeAlive();
@@ -96,7 +96,7 @@ export default class CoreRouter {
       if (ChromeAliveUtils.isInstalled()) {
         await ChromeAliveUtils.getChromeAlive().shutdown();
       }
-      await DataboxCore.close();
+      await DatastoreCore.close();
       await HeroCore.shutdown();
       await ShutdownHandler.run();
       closeResolvable.resolve();

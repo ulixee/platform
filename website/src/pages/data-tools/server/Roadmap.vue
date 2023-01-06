@@ -5,7 +5,7 @@
       <SubHeader>Roadmap</SubHeader>
 
       <p class="font-light mb-5">
-        Ulixee Miner is designed to easily run and scale your production scripts across one or more clouds. They run Databoxes and, when the blockchain is turned on, will participate in a consensus algorithm to close blocks.
+        Ulixee Miner is designed to easily run and scale your production scripts across one or more clouds. They run Datastores and, when the blockchain is turned on, will participate in a consensus algorithm to close blocks.
       </p>
 
       <CurrentStatus version="2.0-alpha" source="ulixee/miner" package="@ulixee/miner">

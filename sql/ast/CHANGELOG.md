@@ -14,5 +14,5 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 ### Features
 
 * added tables + sql ([8be5f7e](https://github.com/ulixee/platform/commit/8be5f7e31ca4c63cbb02f81eb7ca29dbb8e5b2aa))
-* **databox:** passthrough functions ([c84ba16](https://github.com/ulixee/platform/commit/c84ba168265ebdb167e6ceeb5e3f6bd116760710))
-* finished converting Databox to SQL ([3765917](https://github.com/ulixee/platform/commit/37659171fe2c5c1488c4ab0209939421894c4e1b))
+* **datastore:** passthrough functions ([c84ba16](https://github.com/ulixee/platform/commit/c84ba168265ebdb167e6ceeb5e3f6bd116760710))
+* finished converting Datastore to SQL ([3765917](https://github.com/ulixee/platform/commit/37659171fe2c5c1488c4ab0209939421894c4e1b))

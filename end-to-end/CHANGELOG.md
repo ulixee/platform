@@ -8,8 +8,8 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Features
 
-* **databox:** passthrough functions ([c84ba16](https://github.com/ulixee/platform/commit/c84ba168265ebdb167e6ceeb5e3f6bd116760710))
-* finished converting Databox to SQL ([3765917](https://github.com/ulixee/platform/commit/37659171fe2c5c1488c4ab0209939421894c4e1b))
+* **datastore:** passthrough functions ([c84ba16](https://github.com/ulixee/platform/commit/c84ba168265ebdb167e6ceeb5e3f6bd116760710))
+* finished converting Datastore to SQL ([3765917](https://github.com/ulixee/platform/commit/37659171fe2c5c1488c4ab0209939421894c4e1b))
 
 
 
@@ -20,7 +20,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Features
 
-* databox functions ([b14352d](https://github.com/ulixee/platform/commit/b14352d8160de6667e05bdbf86b6b6df32d056e4))
+* datastore functions ([b14352d](https://github.com/ulixee/platform/commit/b14352d8160de6667e05bdbf86b6b6df32d056e4))
 
 
 
@@ -50,7 +50,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Features
 
-* allow installing a databox schema ([b73da83](https://github.com/ulixee/platform/commit/b73da83fc04728d9b575aea541126758e76556ee))
+* allow installing a datastore schema ([b73da83](https://github.com/ulixee/platform/commit/b73da83fc04728d9b575aea541126758e76556ee))
 * publish docker images ([d10ee25](https://github.com/ulixee/platform/commit/d10ee257406633805d15d21d7ebd4b043246b6c4))
 
 

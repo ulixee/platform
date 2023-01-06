@@ -10,6 +10,6 @@ A Miner can be provided ListenInfo on [`listen(listenInfo)`](../modules/miner.md
 
 ### Disable ChromeAlive!
 
-ChromeAlive! will be automatically enabled for Hero and DataboxForHero sessions if `@ulixee/apps-chromealive-core` is installed locally.
+ChromeAlive! will be automatically enabled for Hero and DatastoreForHero sessions if `@ulixee/apps-chromealive-core` is installed locally.
 
 To disable launching ChromeAlive!, you can include `process.env.ULX_DISABLE_CHROMEALIVE='true'` at the top of your script, or set the corresponding variable in your shell environment.

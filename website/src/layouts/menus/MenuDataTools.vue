@@ -44,10 +44,10 @@
                   </router-link>
                 </NavItem>
                 <NavItem>
-                  <router-link to="/databox">
-                    <inline-svg :src="require('@/assets/tool-icons/databox.svg')" />
+                  <router-link to="/datastore">
+                    <inline-svg :src="require('@/assets/tool-icons/datastore.svg')" />
                     <div>
-                      <header>Databoxes</header>
+                      <header>Datastores</header>
                       <p>Package your data scripts as discrete, composable units ready to deploy.</p>
                     </div>
                   </router-link>
@@ -57,7 +57,7 @@
                     <inline-svg :src="require('@/assets/tool-icons/server.svg')" />
                     <div>
                       <header>Miner</header>
-                      <p>Easily run and scale your Databoxes across production and localhost.</p>
+                      <p>Easily run and scale your Datastores across production and localhost.</p>
                     </div>
                   </router-link>
                 </NavItem>

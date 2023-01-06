@@ -60,7 +60,7 @@
                       <inline-svg :src="require('@/assets/tool-icons/nfts.svg')" />
                       <div>
                         <header>Revenue Generating NFTs</header>
-                        <p>Domains and Databoxes as self-contained tradable business.</p>
+                        <p>Domains and Datastores as self-contained tradable business.</p>
                       </div>
                     </div>
                   </NavItem>

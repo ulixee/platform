@@ -21,11 +21,11 @@ port="${PORT:=8080}"
 ## Enable verbose logs
 DEBUG=ubk*,ulx*
 ## NOTE: these are unix oriented. adjust as needed for Windows
-DATABOXES_MOUNT=$HOME/.cache/ulixee/databoxes
+DATASTORES_MOUNT=$HOME/.cache/ulixee/datastores
 DATADIR_MOUNT=/tmp/.ulixee
 
 chmod 777 $DATADIR_MOUNT
-chmod 777 $DATABOXES_MOUNT
+chmod 777 $DATASTORES_MOUNT
 
 # To add an environment configuration file:
 # `--env-file ./.env`
@@ -39,7 +39,7 @@ docker run -it --init \
     --log-opt max-size=50m --log-opt max-file=3 \
     --log-driver local \
     --security-opt seccomp="$SECURE_PROFILE" \
-    -v $DATABOXES_MOUNT:/home/ulixee/.cache/ulixee/databoxes \
+    -v $DATASTORES_MOUNT:/home/ulixee/.cache/ulixee/datastores \
     -v $DATADIR_MOUNT:/tmp/.ulixee \
     -p "$port:$port" \
     -e DEBUG=$DEBUG \

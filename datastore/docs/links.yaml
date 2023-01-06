@@ -1,0 +1,30 @@
+- title: Overview
+  items:
+    - Introduction
+    - Configuration
+    - Concepts
+    - Deployment
+
+- title: Basics
+  items:
+    - Datastore
+    - Function
+    - Crawler
+    - Passthrough Function
+    - Function Context
+    - Input
+    - Output
+
+- title: Advanced
+  items:
+    - Function Schemas
+    - Schema
+    - Plugins
+    - Hero Plugin
+    - Puppeteer Plugin
+
+- title: Help
+  items:
+    - Prerequisites
+    - How to upgrade
+    - Troubleshooting

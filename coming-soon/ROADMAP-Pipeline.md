@@ -1,5 +1,5 @@
 ## 2.10 Data Feeds
-- We need to show all the Databoxes and Domains that have been installed
+- We need to show all the Datastores and Domains that have been installed
 - List local and remote installations
 - Trigger runs
 - Show spend per unit

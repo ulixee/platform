@@ -1,15 +1,15 @@
 # Ulixee
 
-Ulixee is a scraping [engine][hero] with a built-in deployment [unit][databox] that enables out-of-the-box [querying][stream] across a horizontal [deployment][miner].
+Ulixee is a scraping [engine][hero] with a built-in deployment [unit][datastore] that enables out-of-the-box [querying][stream] across a horizontal [deployment][miner].
 
-This repository is the development home to several of the tools that make it easy to build and manage these scripts, including [ChromeAlive!](apps/chromealive), [Miner][miner] and [Databox][databox].
+This repository is the development home to several of the tools that make it easy to build and manage these scripts, including [ChromeAlive!](apps/chromealive), [Miner][miner] and [Datastore][datastore].
 
 ## Projects
 
 - Hero `/hero`. The Automated Browser Engine built for scraping. (repository home - https://github.com/ulixee/hero).
-- Databox `/databox`. Discrete, composable units for interconnected data extraction scripts.
+- Datastore `/datastore`. Discrete, composable units for interconnected data extraction scripts.
 - Miner `/miner`. Run Ulixee tooling on a remote machine.
-- Stream `/stream`. Query, transform and compose Databoxes running on any machine.
+- Stream `/stream`. Query, transform and compose Datastores running on any machine.
 - ChromeAlive! `/apps/chromealive*`. Supercharge scraper script development using the Chrome browser.
 
 ## Tooling
@@ -26,7 +26,7 @@ To use the image, we have a [run.sh](./miner/tools/docker/run.sh) script that wi
 
 ## Developer Environment
 
-This project serves as a Monorepo for developing the Ulixee Apps, Hero, Databox and Miner. To install this project, you'll need to:
+This project serves as a Monorepo for developing the Ulixee Apps, Hero, Datastore and Miner. To install this project, you'll need to:
 
 1. Clone with `--recursive` so that submodules are initialized.
 2. Run `yarn build:all` from the main repository.
@@ -46,6 +46,6 @@ We'd love your help in making Ulixee a better set of tools. Please don't hesitat
 [MIT](LICENSE.md)
 
 [hero]: https://github.com/ulixee/hero
-[databox]: databox
+[datastore]: datastore
 [stream]: ./
 [miner]: miner

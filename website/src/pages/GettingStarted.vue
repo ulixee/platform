@@ -19,7 +19,7 @@
             </h2>
           </div>
           <p class="text-left mt-24 w-5/12 text-xl font-light opacity-90 leading-relaxed">
-            This tutorial introduces the four horsemen of Ulixee -- Hero, ChromeAlive, Databox and Stream. We'll give
+            This tutorial introduces the four horsemen of Ulixee -- Hero, ChromeAlive, Datastore and Stream. We'll give
             you easy <em>copy-and-paste</em> code at every step along the journey.
           </p>
         </div>
@@ -147,9 +147,9 @@
       </section>
 
       <section class="h-screen px-24"  ref="section4">
-        <header class="text-3xl">Simplify With a Databox</header>
+        <header class="text-3xl">Simplify With a Datastore</header>
         <Prism language="javascript" :useUlixeeTheme="false">
-          import DataboxForHero from '@ulixee/databoxx';
+          import DatastoreForHero from '@ulixee/datastorex';
 
           export default new Function(async { Hero } => {
           &nbsp; const hero = new Hero();
@@ -159,11 +159,11 @@
       </section>
 
       <section class="h-screen px-24"  ref="section5">
-        <header class="text-3xl">Query Your Databox with Stream</header>
+        <header class="text-3xl">Query Your Datastore with Stream</header>
         <Prism language="javascript" :useUlixeeTheme="false">
           import Stream from '@ulixee/stream';
 
-          const stream = new Stream('databox-example.js');
+          const stream = new Stream('datastore-example.js');
         </Prism>
       </section>
 
@@ -171,8 +171,8 @@
         <header class="text-3xl">And That's Only the Start</header>
         <p>Coming soon...</p>
         <ul>
-          <li>Attach payment to your databox</li>
-          <li>Package and deploy your databox to multiple clouds</li>
+          <li>Attach payment to your datastore</li>
+          <li>Package and deploy your datastore to multiple clouds</li>
         </ul>
       </section>
     </div>

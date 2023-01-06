@@ -1,4 +1,4 @@
-import IDataboxOutputEvent from './IDataboxOutputEvent';
+import IDatastoreOutputEvent from './IDatastoreOutputEvent';
 import IHeroSessionActiveEvent from './IHeroSessionActiveEvent';
 import IDomStateUpdateEvent from './IDomStateUpdatedEvent';
 import IAppMoveEvent from './IAppMoveEvent';
@@ -10,7 +10,7 @@ import IDomFocusEvent from './IDomFocusEvent';
 import IDomUpdatedEvent from './IDomUpdatedEvent';
 import ISessionTimetravelEvent from './ISessionTimetravelEvent';
 import IInterceptInspectElementMode from './IInterceptInspectElementMode';
-import IDataboxCollectedAssetEvent from './IDataboxCollectedAssetEvent';
+import IDatastoreCollectedAssetEvent from './IDatastoreCollectedAssetEvent';
 import IElementSummary from '../IElementSummary';
 
 export default interface IChromeAliveEvents {
@@ -26,8 +26,8 @@ export default interface IChromeAliveEvents {
   'Session.active': IHeroSessionActiveEvent;
   'Session.timetravel': ISessionTimetravelEvent;
   'Session.interceptInspectElementMode': IInterceptInspectElementMode;
-  'Databox.output': IDataboxOutputEvent;
-  'Databox.collected-asset': IDataboxCollectedAssetEvent;
+  'Datastore.output': IDatastoreOutputEvent;
+  'Datastore.collected-asset': IDatastoreCollectedAssetEvent;
   'Dom.updated': IDomUpdatedEvent;
   'Dom.focus': IDomFocusEvent;
   'DomState.updated': IDomStateUpdateEvent;

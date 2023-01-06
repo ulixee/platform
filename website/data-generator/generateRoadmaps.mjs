@@ -17,7 +17,7 @@ const roadmapPaths = [
   'miner/ROADMAP-Miner.md',
   'stream/ROADMAP-Stream.md',
   'hero/ROADMAP-Hero.md',
-  'databox/ROADMAP-Databox.md',
+  'datastore/ROADMAP-Datastore.md',
   '../payments/ROADMAP-Argon.md',
   '../payments/mainchain/ROADMAP-Mainchain.md',
   '../payments/sidechain/ROADMAP-Sidechain.md',

@@ -1,7 +1,7 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import { fork, spawnSync } from 'child_process';
 import * as Path from 'path';
-import databoxDev from './databoxDev';
+import datastoreDev from './datastoreDev';
 import dataUser from './dataUser';
 
 async function main(): Promise<void> {
@@ -38,7 +38,7 @@ async function main(): Promise<void> {
   needsClosing.push(() => sidechainServer.kill());
 
   const buildDir = Path.join(root, 'build');
-  const result = await databoxDev(sidechainHost, needsClosing, buildDir);
+  const result = await datastoreDev(sidechainHost, needsClosing, buildDir);
   await dataUser(sidechainHost, result, buildDir);
 
   for (const closer of needsClosing) {

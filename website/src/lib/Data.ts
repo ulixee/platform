@@ -16,7 +16,7 @@ export interface IPage {
 
 const repoLinks: { [key: string]: string } = {
   hero: 'https://github.com/ulixee/hero/tree/main/docs/main',
-  databox: 'https://github.com/ulixee/platform/tree/main/databox/docs',
+  datastore: 'https://github.com/ulixee/platform/tree/main/datastore/docs',
   miner: 'https://github.com/ulixee/platform/tree/main/miner/docs',
 }
 

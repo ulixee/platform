@@ -77,7 +77,7 @@ import { Prism } from '@/main';
 
 const toolNames: { [key: string]: string } = {
   hero: 'Hero',
-  databox: 'Databox',
+  datastore: 'Datastore',
   miner: 'Miner',
   sql: 'SQL',
 };

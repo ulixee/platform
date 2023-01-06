@@ -35,9 +35,9 @@
               </router-link>
             </li>
             <li>
-              <router-link to="/databox">
-                <inline-svg :src="require('@/assets/tool-icons/databox.svg')" />
-                <label>Databoxes</label>
+              <router-link to="/datastore">
+                <inline-svg :src="require('@/assets/tool-icons/datastore.svg')" />
+                <label>Datastores</label>
               </router-link>
             </li>
             <li>

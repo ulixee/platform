@@ -16,10 +16,10 @@ jobs:
         with:
           args: ./README.md
 
-      - name: Check Databox Docs
+      - name: Check Datastore Docs
         uses: becheran/mlc@v0.15.4
         with:
-          args: ./databox/docs
+          args: ./datastore/docs
 
       - name: Check Miner Docs
         uses: becheran/mlc@v0.15.4

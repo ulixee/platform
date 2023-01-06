@@ -40,7 +40,7 @@ export default function cliCommands(): Command {
       program
         .createOption(
           '-m, --max-concurrent-heroes <count>',
-          'Max number of concurrent Databoxes/Heroes to run at a time.',
+          'Max number of concurrent Datastores/Heroes to run at a time.',
         )
         .argParser(parseInt)
         .default(10),
@@ -48,8 +48,8 @@ export default function cliCommands(): Command {
     .addOption(
       program
         .createOption(
-          '-r, --max-databox-runtime-ms <millis>',
-          'Max runtime allowed for a Databox to complete. (default: 10 mins)',
+          '-r, --max-datastore-runtime-ms <millis>',
+          'Max runtime allowed for a Datastore to complete. (default: 10 mins)',
         )
         .argParser(parseInt),
     )
@@ -70,22 +70,22 @@ export default function cliCommands(): Command {
     .addOption(
       program
         .createOption(
-          '-s, --databox-storage-dir <dir>',
-          'Override the default storage directory where Databoxes are located.',
+          '-s, --datastore-storage-dir <dir>',
+          'Override the default storage directory where Datastores are located.',
         )
-        .env('ULX_DATABOX_DIR'),
+        .env('ULX_DATASTORE_DIR'),
     )
     .addOption(
       program.createOption(
-        '-t, --databox-tmp-dir <dir>',
-        'Override the default temp directory where uploaded Databoxes are processed.',
+        '-t, --datastore-tmp-dir <dir>',
+        'Override the default temp directory where uploaded Datastores are processed.',
       ),
     )
     .addOption(
       program
         .createOption(
-          '-w, --databox-wait-for-completion',
-          'Wait for all in-process Databoxes to complete before shutting down the Miner.',
+          '-w, --datastore-wait-for-completion',
+          'Wait for all in-process Datastores to complete before shutting down the Miner.',
         )
         .default(false),
     )
@@ -112,11 +112,11 @@ export default function cliCommands(): Command {
         }),
       });
 
-      miner.router.databoxConfiguration = filterUndefined({
-        databoxesDir: opts.databoxStorageDir,
-        databoxesTmpDir: opts.databoxTmpDir,
-        maxRuntimeMs: opts.maxDataboxRuntimeMs,
-        waitForDataboxCompletionOnShutdown: opts.databoxWaitForCompletion,
+      miner.router.datastoreConfiguration = filterUndefined({
+        datastoresDir: opts.datastoreStorageDir,
+        datastoresTmpDir: opts.datastoreTmpDir,
+        maxRuntimeMs: opts.maxDatastoreRuntimeMs,
+        waitForDatastoreCompletionOnShutdown: opts.datastoreWaitForCompletion,
       });
 
       await miner.listen({ port });

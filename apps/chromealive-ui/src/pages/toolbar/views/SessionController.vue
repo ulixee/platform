@@ -44,7 +44,7 @@ import * as Vue from 'vue';
 import Client from '@/api/Client';
 import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
 import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
-import IDataboxOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDataboxOutputEvent';
+import IDatastoreOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDatastoreOutputEvent';
 import { ChevronDownIcon } from '@heroicons/vue/outline';
 import humanizeBytes from '@/utils/humanizeBytes';
 import ISessionTimetravelEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionTimetravelEvent';
@@ -173,7 +173,7 @@ export default Vue.defineComponent({
       this.inputSize = humanizeBytes(message.inputBytes);
     },
 
-    onDataboxUpdated(message: IDataboxOutputEvent) {
+    onDatastoreUpdated(message: IDatastoreOutputEvent) {
       this.outputSize = humanizeBytes(message?.bytes);
     },
 
@@ -186,14 +186,14 @@ export default Vue.defineComponent({
   mounted() {
     Client.on('Session.timetravel', this.onSessionTimetravel);
     Client.on('Session.active', this.onSessionActiveEvent);
-    Client.on('Databox.output', this.onDataboxUpdated);
+    Client.on('Datastore.output', this.onDatastoreUpdated);
     Client.on('App.mode', this.onAppModeEvent);
   },
 
   beforeUnmount() {
     Client.off('Session.timetravel', this.onSessionTimetravel);
     Client.off('Session.active', this.onSessionActiveEvent);
-    Client.off('Databox.output', this.onDataboxUpdated);
+    Client.off('Datastore.output', this.onDatastoreUpdated);
     Client.off('App.mode', this.onAppModeEvent);
   },
 });

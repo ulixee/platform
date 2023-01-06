@@ -3,7 +3,7 @@ import MouseApi from './MouseApi';
 import AppApi from './AppApi';
 import SessionApi from './SessionApi';
 import DevtoolsBackdoorApi from './DevtoolsBackdoorApi';
-import DataboxApi from './DataboxApi';
+import DatastoreApi from './DatastoreApi';
 
 const ApiHandlers: IChromeAliveApis = {
   'App.boundsChanged': AppApi.boundsChanged,
@@ -21,9 +21,9 @@ const ApiHandlers: IChromeAliveApis = {
   'Session.getActive': SessionApi.getActive,
   'Session.getMeta': SessionApi.getMeta,
   'Session.search': SessionApi.search,
-  'Databox.getOutput': DataboxApi.getOutput,
-  'Databox.getCollectedAssets': DataboxApi.getCollectedAssets,
-  'Databox.execExtract': DataboxApi.execExtract,
+  'Datastore.getOutput': DatastoreApi.getOutput,
+  'Datastore.getCollectedAssets': DatastoreApi.getCollectedAssets,
+  'Datastore.execExtract': DatastoreApi.execExtract,
   'DevtoolsBackdoor.toggleInspectElementMode': DevtoolsBackdoorApi.toggleInspectElementMode,
   'DevtoolsBackdoor.highlightNode': DevtoolsBackdoorApi.highlightNode,
   'DevtoolsBackdoor.hideHighlight': DevtoolsBackdoorApi.hideHighlight,

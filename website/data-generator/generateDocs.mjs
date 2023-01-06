@@ -17,11 +17,11 @@ const rootDir = Path.resolve(__dirname, '../../');
 }
 
 {
-  const mdDocsRootPath = `${rootDir}/databox/docs`;
+  const mdDocsRootPath = `${rootDir}/datastore/docs`;
   walkDirectory(mdDocsRootPath, async filePath => {
-    await saveToWebsite(mdDocsRootPath, filePath, 'databox');
+    await saveToWebsite(mdDocsRootPath, filePath, 'datastore');
   });
-  ensureIndexFile(mdDocsRootPath, 'databox');
+  ensureIndexFile(mdDocsRootPath, 'datastore');
 }
 
 {

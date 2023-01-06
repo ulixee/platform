@@ -4,7 +4,7 @@
 
     <blockquote class="border-l-4 my-5 border-slate-300 pl-5">
       Ulixee is an open-source project built by core maintainers and contributors. We want to make
-      it easy for anyone to participate. Contribute to our Apps, Miner, Databox, Stream, Hero,
+      it easy for anyone to participate. Contribute to our Apps, Miner, Datastore, Stream, Hero,
       improve documentation or improve detections and evasions in the
       <a href="https://github.com/ulixee">Unblocked project</a>. It all helps Ulixee on its
       mission to create a data economy.
@@ -52,7 +52,7 @@
       Every project in Ulixee has a `/docs` folder. If you want to add/modify any documentation,
       you can go any of these folders on
       <a href="https://github.com/ulixee/platform">GitHub</a> (eg,
-      <a href="https://github.com/ulixee/platform/tree/main/databox/docs">Databox docs</a>) and use
+      <a href="https://github.com/ulixee/platform/tree/main/datastore/docs">Datastore docs</a>) and use
       the file editor to edit and then preview your changes.
     </p>
     <p>

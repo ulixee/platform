@@ -15,7 +15,7 @@
       </li>
     </ul>
 
-    <h2>Databox Input:</h2>
+    <h2>Datastore Input:</h2>
     <div class="box bg-gray-50 border border-gray-200">
       <Json :json="input" class="p-5 text-sm text-gray-600" />
     </div>

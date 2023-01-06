@@ -2,25 +2,25 @@
 We want SecretAgent users to be able to start playing with Hero and understand the unique advancements of FlowHandlers, DOM Extensions, and understand where we are going.
 
 ## 2.1 - First Network Deployment
-Someone should be able to stand up a single Miner on an AWS machine, push a Databox to that machine and query it. Nothing more. No UI.
+Someone should be able to stand up a single Miner on an AWS machine, push a Datastore to that machine and query it. Nothing more. No UI.
 
 ## 2.2 - First Payment
-Allow payment to be attached to a Databox and when queried it forces payment to be included. This includes the minimum ecosystem needed for acquiring Argons and using them. It should also cement the conceptual idea that Ulixee’s sidechain is built to run “on top of a blockchain”.
+Allow payment to be attached to a Datastore and when queried it forces payment to be included. This includes the minimum ecosystem needed for acquiring Argons and using them. It should also cement the conceptual idea that Ulixee’s sidechain is built to run “on top of a blockchain”.
 
 ## 2.3 - First Network Cluster
 The goal is to make network deployment actually usable at a scale beyond a single Miner. This is also what we will use to stand up the alpha version of Ulixee Cloud.
 
 ## 2.4 - Promoted to Manager
-Add, remove and manage your Miners/clusters. Manage your databoxes, track errors and view your revenue. We also plan on adding an ability to plug in 3rd party services which will require support for approving and managing monthly subscriptions.
+Add, remove and manage your Miners/clusters. Manage your datastores, track errors and view your revenue. We also plan on adding an ability to plug in 3rd party services which will require support for approving and managing monthly subscriptions.
 
 ## 2.5 - Troubled Heroes
 Add tooling into ChromeAlive to step through scripts, see results of every command, and deeply inspect all parts of a session. This step also involves troubleshooting when a user is blocked (aka, finding probed APIs, reporting issues, etc).
 
 ## 2.6 - ULIXEE-CLOUD
-Add a button to ChromeAlive/Builder that allows packaging and deploying on the Cloud. We will run the Databox when queried and split the proceeds with the Databox/Domain.
+Add a button to ChromeAlive/Builder that allows packaging and deploying on the Cloud. We will run the Datastore when queried and split the proceeds with the Datastore/Domain.
 
 ## 2.7 - OWNERSHIP
-Allow Databoxes to be wrapped as NFTs so their revenue stream can be bought and sold on 3rd party NFT marketplaces.
+Allow Datastores to be wrapped as NFTs so their revenue stream can be bought and sold on 3rd party NFT marketplaces.
 
 ## 2.8 - DOMAINS-SCHEMAS
 

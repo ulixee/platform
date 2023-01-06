@@ -15,13 +15,13 @@
 
       <h2 class="font-bold mt-8">Create Your First Stream</h2>
       <p>
-        Each 
+        Each
       </p>
       <Prism language="javascript">
         import Stream from '@ulixee/stream';
-        
-        const stream = new Stream(`example-databox.js`);
-        stream.query({ 
+
+        const stream = new Stream(`example-datastore.js`);
+        stream.query({
 
         }).then(data => {
           console.log(data);

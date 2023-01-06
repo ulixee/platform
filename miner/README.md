@@ -24,7 +24,7 @@ or
 yarn add @ulixee/miner
 ```
 
-When you install Miner, it installs [`Hero`](//ulixee.org/docs/hero) and [`Databox`](//ulixee.org/docs/databox).
+When you install Miner, it installs [`Hero`](//ulixee.org/docs/hero) and [`Datastore`](//ulixee.org/docs/datastore).
 
 It will also optionally use a PeerDependency `ChromeAlive!` Core (`@ulixee/apps-chromealive-core`). This tool enhances the Hero Development process.
 
@@ -70,7 +70,7 @@ import Miner from '@ulixee/miner';
 
 To refer to this Miner in a Hero client, you can supply the host string to the constructor.
 
-NOTE: connection details on a local machine are optional. If you don't supply any connection detail, Hero and Databox will connect to the local host.
+NOTE: connection details on a local machine are optional. If you don't supply any connection detail, Hero and Datastore will connect to the local host.
 
 ```js
 import Hero from '@ulixee/hero';
