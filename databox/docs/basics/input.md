@@ -12,7 +12,7 @@ When running the Function as a NodeJs script from the command line, you can pass
 import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
 
 export default new Function(context => {
-  const { input, hero } = context;
+  const { input, Hero } = context;
   const foo = input.foo; //99
   const bar = input.bar; //9987930
 }, HeroFunctionPlugin);

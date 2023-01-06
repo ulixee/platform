@@ -10,6 +10,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
+    "@ulixee/schema": "2.0.0-alpha.17",
     "@ulixee/commons": "2.0.0-alpha.17",
     "@ulixee/databox": "2.0.0-alpha.17",
     "puppeteer": "^14.3.0"

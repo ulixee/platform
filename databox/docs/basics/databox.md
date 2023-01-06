@@ -27,6 +27,9 @@ Creates a new Databox instance.
 - functions: `object`. An object mapping names to [Functions](./function.md).
   - key `string`. A unique name of the function.
   - value `Function`. A [Function](./function.md) instance.
+- crawlers: `object`. An object mapping names to [Crawlers](./crawler.md).
+  - key `string`. A unique name of the Crawler.
+  - value `Crawler`. A [Crawler](./function.md) instance.
 - authenticateIdentity `function`. An optional function that can be used to secure access to this Databox. More details are [here](#authenticateIdentity)
 - remoteDataboxes `{ [name]: url }`. An optional key/value of remoteDatabox "names" to urls of the remoteDatabox used as part of [PassthroughFunctions](./passthrough-function.md).
 
@@ -36,7 +39,8 @@ import Databox, { Function } from '@ulixee/databox';
 export default new Databox({
   functions: {
     instance: new Function({
-      run({ input, output }) {
+      run({ input, Output }) {
+        const output = new Output();
         output.urlLength = input.url.length;
       },
       schema: {
@@ -61,6 +65,10 @@ Version of DataboxCore that is in use. This will be compiled into the Databox.
 ### functions `{ [name:string]: Function}`
 
 Object containing [Functions](./function.md) keyed by their name.
+
+### crawlers `{ [name:string]: Crawler}`
+
+Object containing [Crawlers](./function.md) keyed by their name.
 
 ### remoteDataboxes `{ [name]: url }` {#remote-databoxes}
 
@@ -109,3 +117,15 @@ The Databox Core will automatically ensure that any calling authentication messa
 - identity `string`. A bech32 encoded Identity of the caller.
 - signature `Buffer`. A valid Ed25519 signature providing proof of the Identity private key. The signature message is a sha3 of `Databox.exec` + any `GiftCard Id` + any `Micronote Id` + the included `nonce`.
 - nonce `string`. A unique nonce code. This nonce can be used for additional "unique" calls validation if desired.
+
+### crawl _ (crawlerName, input)_ {#crawl}
+
+Execute a crawler and return the resulting crawler metadata. Options can include `input` parameters defined in the schema.
+
+#### Return Promise<ICrawlerOutputSchema>. Returns a promise of the crawler output (version, sessionId and crawler).
+
+### stream _ (functionName, input)_ {#stream}
+
+Execute a function and stream results. Options can include `input` parameters defined in the schema.
+
+#### Return AsyncIterable | Promise<schema['output']>. Returns a promise of the defined schema values, which can be waited for as one result at a time.

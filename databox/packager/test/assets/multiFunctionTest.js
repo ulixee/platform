@@ -11,7 +11,8 @@ exports.default = new Databox({
             url: string({ format: 'url' }),
           },
         },
-        async run({ input, hero }) {
+        async run({ input, Hero }) {
+          const hero = new Hero();
           await hero.goto(input.url);
         },
       },
@@ -24,9 +25,11 @@ exports.default = new Databox({
           html: string(),
         },
       },
-      async run({ output }) {
-        output.html = '<body></body>';
-        output.title = 'This is the title';
+      async run({ Output }) {
+        Output.emit({
+          html: '<body></body>',
+          title: 'This is the title',
+        });
       },
     }),
   },

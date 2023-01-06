@@ -21,7 +21,12 @@
           }
         }
       },
-      "pricePerQuery": 0
+      "prices": [
+        {
+          "minimum": 0,
+          "perQuery": 0
+        }
+      ]
     }
   },
   "tablesByName": {

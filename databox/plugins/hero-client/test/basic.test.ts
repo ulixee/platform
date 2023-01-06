@@ -39,7 +39,7 @@ describe('basic Databox tests', () => {
 
     const ranScript = new Promise(resolve => {
       const func = new Function(async context => {
-        await context.hero;
+        await new context.Hero();
         resolve(true);
       }, HeroFunctionPlugin);
       Autorun.defaultExport = func;
@@ -60,14 +60,14 @@ describe('basic Databox tests', () => {
   it('waits until run method is explicitly called', async () => {
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
-    const databoxForHero = new Function(async context => {
-      const hero = context.hero;
+    const databoxFunction = new Function(async ({ Hero }) => {
+      const hero = new Hero();
       await hero.goto('https://news.ycombinator.org');
       await hero.close();
     }, HeroFunctionPlugin);
-    databoxForHero.disableAutorun = true;
+    databoxFunction.disableAutorun = true;
     expect(connection.outgoingSpy.mock.calls).toHaveLength(0);
-    await databoxForHero.exec({});
+    await databoxFunction.stream({});
     const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toMatchObject([
       'Core.connect',
@@ -81,12 +81,12 @@ describe('basic Databox tests', () => {
   it('should call close on hero automatically', async () => {
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
-    const databoxForHero = new Function(async context => {
-      const hero = context.hero;
+    const databoxFunction = new Function(async context => {
+      const hero = new context.Hero();
       await hero.goto('https://news.ycombinator.org');
     }, HeroFunctionPlugin);
-    databoxForHero.disableAutorun = true;
-    await databoxForHero.exec({});
+    databoxFunction.disableAutorun = true;
+    await databoxFunction.stream({});
 
     const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toContain('Session.close');
@@ -95,45 +95,19 @@ describe('basic Databox tests', () => {
   it('should emit close hero on error', async () => {
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
-    const databoxForHero = new Function(async context => {
-      const hero = context.hero;
+    const databoxFunction = new Function(async context => {
+      const hero = new context.Hero();
       await hero.goto('https://news.ycombinator.org').then(() => {
         throw new Error('test');
       });
 
       await hero.interact('click');
     }, HeroFunctionPlugin);
-    databoxForHero.disableAutorun = true;
+    databoxFunction.disableAutorun = true;
 
-    await expect(databoxForHero.exec({})).rejects.toThrowError();
+    await expect(databoxFunction.stream({})).rejects.toThrowError();
 
     const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toContain('Session.close');
-  });
-
-  it('should be able to bypass the interaction step', async () => {
-    const connection = createConnectionToHeroCore();
-    jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
-
-    const runFn = jest.fn();
-    const afterRunFn = jest.fn();
-    const heroFunction = new Function(
-      {
-        run: runFn,
-        afterRun: afterRunFn,
-      },
-      HeroFunctionPlugin,
-    );
-    await heroFunction.exec({ replaySessionId: '123' });
-
-    expect(runFn).not.toHaveBeenCalled();
-    expect(afterRunFn).toHaveBeenCalledTimes(1);
-  });
-
-  it('receives DataboxMeta', async () => {
-    const { functionContext, databoxClose } = await Helpers.createFullstackDatabox();
-    const sessionId = await functionContext.hero.sessionId;
-    expect(sessionId).toBeTruthy();
-    await databoxClose();
   });
 });

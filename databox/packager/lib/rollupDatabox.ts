@@ -29,6 +29,7 @@ export default async function rollupDatabox(
           inlineSources: true,
           declaration: false,
           checkJs: false,
+          target: 'es2020'
         },
         outputToFilesystem: false,
         tsconfig: options?.tsconfig,

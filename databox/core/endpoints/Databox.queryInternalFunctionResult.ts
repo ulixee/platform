@@ -2,7 +2,7 @@ import { SqlParser, SqlGenerator } from '@ulixee/sql-engine';
 import DataboxApiHandler from '../lib/DataboxApiHandler';
 import DataboxStorage from '../lib/DataboxStorage';
 
-export default new DataboxApiHandler('Databox.queryInternalFunction', {
+export default new DataboxApiHandler('Databox.queryInternalFunctionResult', {
   handler(request, context) {
     if (!context.connectionToClient?.isInternal) {
       throw new Error('You do not have permission to access this endpoint');
@@ -20,24 +20,24 @@ export default new DataboxApiHandler('Databox.queryInternalFunction', {
     const db = storage.db;
     const functionName = request.name;
     const schema = storage.getFunctionSchema(functionName);
-    
+
     const sqlParser = new SqlParser(request.sql, { function: request.name });
     const unknownNames = sqlParser.functionNames.filter(x => x !== functionName);
     if (unknownNames.length) {
       throw new Error(`Function${unknownNames.length === 1 ? ' does' : 's do'} not exist: ${unknownNames.join(', ')}`);
     }
-    
+
     if (!sqlParser.isSelect()) {
       throw new Error('Invalid SQL command');
     }
 
-    const { input, output } = request;
-    SqlGenerator.createFunctionFromSchema(input, output, schema, (parameters, columns) => {
+    const { input, outputs } = request;
+    SqlGenerator.createFunctionFromSchema(input, outputs, schema, (parameters, columns) => {
       db.table(functionName, {
         parameters,
         columns,
         *rows() {
-          const record = output.shift();
+          const record = outputs.shift();
           if (record) yield SqlGenerator.convertFunctionRecordToSqliteRow(record, schema);
         },
       });

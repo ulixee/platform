@@ -6,6 +6,8 @@ const {
   Observable,
   Databox,
   Function,
+  Crawler,
+  PassthroughFunction,
   Schema,
 } = cjsImport;
 
@@ -14,6 +16,8 @@ export {
   Observable,
   Databox,
   Function,
+  Crawler,
+  PassthroughFunction,
   Schema,
 };
 

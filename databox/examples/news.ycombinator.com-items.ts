@@ -1,10 +1,12 @@
 // NOTE: you must start your own Ulixee Miner to run this example.
 
-import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
+import { Crawler, Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
+import Databox from '@ulixee/databox';
 
-export default new Function(
-  {
-    async run({ hero }) {
+const databox = new Databox({
+  crawlers: {
+    news: new Crawler(async ({ Hero }) => {
+      const hero = new Hero();
       await hero.goto('https://news.ycombinator.com/');
       await hero.waitForPaintingStable();
       const records = await hero.document.querySelectorAll('.athing');
@@ -28,34 +30,43 @@ export default new Function(
         //   move: comments[comments.length - 1],
         // });
       }
-    },
-    async afterRun({ output, heroReplay }) {
+
+      return hero;
+    }, HeroFunctionPlugin),
+  },
+  functions: {
+    news: new Function(async ({ Output, HeroReplay }) => {
+      const lastCrawl = await databox.crawl('news', {
+        maxTimeInCache: 24 * 60 * 60,
+      });
+      const heroReplay = new HeroReplay(lastCrawl);
       const titles = await heroReplay.detachedElements.getAll('titles');
       const subtitles = await heroReplay.detachedElements.getAll('subtitles');
       for (let i = 0; i < titles.length; i += 1) {
         const story = titles[i];
         const extraElem = subtitles[i];
-        output.push({});
-        const record = output[output.length - 1];
+
+        const output = new Output();
 
         const titleElem = story.querySelector('a.titlelink');
 
-        record.score = parseInt(extraElem.querySelector('.score')?.textContent ?? '0', 10);
-        record.id = story.firstElementChild.getAttribute('id');
-        record.age = extraElem.querySelector('.age a').textContent;
-        record.subject = titleElem.textContent;
+        output.score = parseInt(extraElem.querySelector('.score')?.textContent ?? '0', 10);
+        output.id = story.firstElementChild.getAttribute('id');
+        output.age = extraElem.querySelector('.age a').textContent;
+        output.subject = titleElem.textContent;
         const contributor = extraElem.querySelector('.hnuser')?.textContent ?? '';
-        record.contributor = { id: contributor, username: contributor };
+        output.contributor = { id: contributor, username: contributor };
         const links = extraElem.querySelectorAll('.subtext > a');
         const commentsLink = links[links.length - 1];
         const commentText = commentsLink.textContent;
-        record.commentCount = commentText.includes('comment')
+        output.commentCount = commentText.includes('comment')
           ? parseInt(commentText.trim().match(/(\d+)\s/)[0], 10)
           : 0;
 
-        record.url = titleElem.getAttribute('href');
+        output.url = titleElem.getAttribute('href');
+        output.emit();
       }
-    },
+    }, HeroFunctionPlugin),
   },
-  HeroFunctionPlugin,
-);
+});
+export default databox;

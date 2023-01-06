@@ -7,14 +7,14 @@ const func = new Function(
   {
     async run(context) {
       const text = testFunction();
-      const { input, output, hero } = context;
+      const { input, Output, Hero } = context;
 
+      const hero = new Hero();
       await hero.goto(input.url);
       const title = await hero.document.title;
+      const body = await hero.document.body.textContent;
 
-      output.text = text;
-      output.title = title;
-      output.body = await hero.document.body.textContent;
+      Output.emit({ text, title, body });
       console.log(`LOADED ${input.url}: ${title}`);
       await hero.close();
     },

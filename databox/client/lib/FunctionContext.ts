@@ -1,17 +1,16 @@
 import { IDataboxApiTypes } from '@ulixee/specification/databox';
 import IFunctionSchema from '../interfaces/IFunctionSchema';
 import FunctionInternal from './FunctionInternal';
-import Databox from './Databox';
+import IFunctionContext from '../interfaces/IFunctionContext';
+import DataboxInternal from './DataboxInternal';
+import IDataboxMetadata from '../interfaces/IDataboxMetadata';
 
 export default class FunctionContext<
   ISchema extends IFunctionSchema,
   TFunctionInternal extends FunctionInternal<ISchema> = FunctionInternal<ISchema>,
-> {
-  #functionInternal: FunctionInternal<ISchema>;
-
-  constructor(functionInternal: FunctionInternal<ISchema>, readonly databox: Databox<any, any>) {
-    this.#functionInternal = functionInternal;
-  }
+> implements IFunctionContext<ISchema>
+{
+  public databoxMetadata: IDataboxMetadata;
 
   public get authentication(): IDataboxApiTypes['Databox.query']['args']['authentication'] {
     return this.#functionInternal.options.authentication;
@@ -25,15 +24,22 @@ export default class FunctionContext<
     return this.#functionInternal.input;
   }
 
-  public get output(): TFunctionInternal['output'] {
-    return this.#functionInternal.output;
+  public get outputs(): TFunctionInternal['outputs'] {
+    return this.#functionInternal.outputs;
   }
 
-  public set output(value: TFunctionInternal['output']) {
-    this.#functionInternal.output = value;
+  public get Output(): TFunctionInternal['Output'] {
+    return this.#functionInternal.Output;
   }
 
   public get schema(): ISchema {
     return this.#functionInternal.schema;
+  }
+
+  #functionInternal: FunctionInternal<ISchema>;
+
+  constructor(functionInternal: FunctionInternal<ISchema>, databoxInternal: DataboxInternal) {
+    this.#functionInternal = functionInternal;
+    this.databoxMetadata = databoxInternal.metadata;
   }
 }

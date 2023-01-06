@@ -41,7 +41,7 @@ test('it should be able to upload a databox and run it by hash', async () => {
     }),
   ).resolves.toEqual({
     metadata: expect.any(Object),
-    output: [{ title: 'Databox!' }],
+    outputs: [{ title: 'Databox!' }],
     latestVersionHash: manifest.versionHash,
   });
 }, 45e3);

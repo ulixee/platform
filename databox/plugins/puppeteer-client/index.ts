@@ -1,7 +1,6 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import {
   FunctionPluginStatics,
-  IFunctionComponents,
   IFunctionContext,
   IFunctionExecOptions,
   IFunctionPlugin,
@@ -10,19 +9,12 @@ import {
 import * as Puppeteer from 'puppeteer';
 import { Browser as PuppeteerBrowser, LaunchOptions as IPuppeteerLaunchOptions } from 'puppeteer';
 import FunctionInternal from '@ulixee/databox/lib/FunctionInternal';
-import { IFunctionLifecycle } from '@ulixee/databox/interfaces/IFunctionPlugin';
 
 const pkg = require('./package.json');
 
 export * from '@ulixee/databox';
-export type IPupppeteerFunctionComponents<ISchema> = IFunctionComponents<
-  ISchema,
-  IFunctionContext<ISchema>
-> & {
-  defaultPuppeteerOptions?: Partial<IPuppeteerLaunchOptions>;
-};
 
-type IContextAddons = { browser: PuppeteerBrowser };
+type IContextAddons = { launchBrowser(): Promise<PuppeteerBrowser> };
 export type IPuppeteerFunctionContext<ISchema> = IFunctionContext<ISchema> & IContextAddons;
 
 export type IPuppeteerFunctionExecOptions<ISchema> = IFunctionExecOptions<ISchema> &
@@ -37,51 +29,42 @@ export class PuppeteerFunctionPlugin<ISchema extends IFunctionSchema>
       IPuppeteerFunctionContext<ISchema>
     >
 {
-  public static readonly componentAddons: {
-    defaultPuppeteerOptions?: IPuppeteerLaunchOptions;
-  };
-
   public static readonly execArgAddons: IPuppeteerLaunchOptions;
-  public static readonly runContextAddons: IContextAddons;
+  public static readonly contextAddons: IContextAddons;
 
   public name = pkg.name;
   public version = pkg.version;
 
-  public puppeteerBrowser: Puppeteer.Browser;
   public puppeteerBrowserPromise: Promise<Puppeteer.Browser>;
-  public functionInternal: FunctionInternal<ISchema, IPuppeteerFunctionExecOptions<ISchema>>;
 
   private execOptions: IPuppeteerFunctionExecOptions<ISchema>;
-  private components: IPupppeteerFunctionComponents<ISchema>;
-
-  constructor(components: IPupppeteerFunctionComponents<ISchema>) {
-    this.components = components;
-  }
 
   async run(
     functionInternal: FunctionInternal<ISchema, IPuppeteerFunctionExecOptions<ISchema>>,
-    lifecycle: IFunctionLifecycle<ISchema, IPuppeteerFunctionContext<ISchema>>,
-    next: () => Promise<ISchema['output']>,
+    context: IPuppeteerFunctionContext<ISchema>,
+    next: () => Promise<IFunctionContext<ISchema>['outputs']>,
   ): Promise<void> {
     this.execOptions = functionInternal.options;
-    this.initializePuppeteer();
     try {
-      this.puppeteerBrowser = await this.puppeteerBrowserPromise;
-      lifecycle.run.context.browser = this.puppeteerBrowser;
+      context.launchBrowser = this.initializePuppeteer.bind(this);
       await next();
     } finally {
-      await this.puppeteerBrowser?.close();
+      if (this.puppeteerBrowserPromise) {
+        const browser = await this.puppeteerBrowserPromise;
+        await browser.close();
+      }
     }
   }
 
-  protected initializePuppeteer(): void {
+  protected initializePuppeteer(): Promise<PuppeteerBrowser> {
     const options: Puppeteer.LaunchOptions = {
-      ...(this.components.defaultPuppeteerOptions ?? {}),
       ...this.execOptions,
       handleSIGTERM: true,
       handleSIGHUP: true,
       handleSIGINT: true,
+      pipe: true,
     };
     this.puppeteerBrowserPromise = Puppeteer.launch(options);
+    return this.puppeteerBrowserPromise;
   }
 }

@@ -14,11 +14,13 @@ import { string } from '@ulixee/schema';
 
 export default new Function({
   async run(databox) {
-    const { input, output, hero } = databox;
+    const { input, Output, Hero } = databox;
 
+    const hero = new Hero();
     await hero.goto(input.url);
     const title = await hero.document.title;
 
+    const output = new Output();
     output.title = title;
     output.resolvedUrl = await hero.url;
     // ERROR: body expects a string, not a Promise<string>!
@@ -81,9 +83,9 @@ TODO: This feature will come in a follow-on release, and will auto-generate a we
 
 Optional input fields definition containing and object of string Keys to [Schema](./schema) values.
 
-### output `Record<string, Any Schema>` | ObjectSchema | ArraySchema
+### output `Record<string, Any Schema>` | ObjectSchema
 
-Optional definition of Key/[Any Schema](./schema), [Object](./schema#object) or [Array](./schema#array) to be returned.
+Optional definition of Key/[Any Schema](./schema), [Object](./schema#object) to be returned.
 
 ### inputExamples: `Record<string, Example Value or DataUtilities Function>[]`
 
@@ -98,7 +100,8 @@ import { string, dateAdd } from '@ulixee/schema';
 
 export default new Function({
   async run(ctx) {
-    const { input, output, hero } = ctx;
+    // prints 'YYYY-MM-DD' of tomorrow
+    console.log(ctx.input.when);
   },
   schema: {
     input: {
@@ -106,5 +109,5 @@ export default new Function({
     },
     inputExamples: [{ when: (1, 'days') }],
   },
-}, HeroFunctionPlugin);
+});
 ```

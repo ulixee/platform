@@ -5,7 +5,7 @@ export default new Databox({
   functions: {
     remote: new Function({
       run(ctx) {
-        ctx.output = { iAmRemote: true, echo: ctx.input.test };
+        new ctx.Output({ iAmRemote: true, echo: ctx.input.test });
       },
       schema: {
         input: {

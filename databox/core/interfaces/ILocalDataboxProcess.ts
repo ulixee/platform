@@ -1,7 +1,4 @@
-import IFunctionSchema from '@ulixee/databox/interfaces/IFunctionSchema';
-import { IPassthroughFunctionComponents } from '@ulixee/databox/lib/PassthroughFunction';
-import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
-import { IFunctionComponents } from '@ulixee/databox';
+import IDataboxMetadata from '@ulixee/databox/interfaces/IDataboxMetadata';
 
 export interface IFetchMetaMessage {
   messageId: string;
@@ -11,49 +8,30 @@ export interface IFetchMetaMessage {
 
 export interface IRunMessage {
   messageId: string;
-  action: 'exec';
+  action: 'stream';
   functionName: string;
   scriptPath: string;
   input: any;
+  streamId: number;
 }
 
 export type IMessage = IFetchMetaMessage | IRunMessage;
 
 export interface IExecResponseData {
-  output?: any;
+  outputs?: any[];
   error?: { message: string; stack?: string };
 }
 
-export interface IFetchMetaResponseData {
-  name: string;
-  description: string;
-  coreVersion: string;
-  remoteDataboxes?: Record<string, string>;
-  paymentAddress?: string;
-  giftCardIssuerIdentity?: string;
-  functionsByName: {
-    [name: string]: {
-      description?: string;
-      corePlugins: { [name: string]: string };
-      schema?: Omit<IFunctionSchema, 'input' | 'output'> & {
-        input?: Record<string, IAnySchemaJson>;
-        output?: Record<string, IAnySchemaJson> | IAnySchemaJson;
-      };
-    } & Omit<IFunctionComponents<any, any>, 'schema'> &
-      IPassthroughFunctionComponents<any, any>;
+export interface IFetchMetaResponseData extends IDataboxMetadata {
+  tableSeedlingsByName: {
+    [name: string]: Record<string, any>;
   };
-  tablesByName: {
-    [name: string]: {
-      description?: string;
-      schema: Record<string, IAnySchemaJson>;
-      seedlings: Record<string, any>;
-    }
-  }
 }
 
 export type IResponseData = IExecResponseData | IFetchMetaResponseData;
 
 export interface IResponse {
   responseId: string;
+  streamId?: number;
   data: IResponseData;
 }

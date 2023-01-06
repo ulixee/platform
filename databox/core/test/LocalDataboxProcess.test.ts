@@ -35,15 +35,39 @@ test('it can extract the databox schema', async () => {
 test('returns databox errors', async () => {
   const scriptPath = Path.resolve(__dirname, 'databoxes/output.js');
   const databoxProcess = new LocalDataboxProcess(scriptPath);
-  await expect(databoxProcess.exec('default', {})).rejects.toThrowError('not found');
+  await expect(databoxProcess.stream('default', {})).rejects.toThrowError('not found');
   await databoxProcess.close();
 });
 
 test('it can run the databox and return output', async () => {
   const scriptPath = Path.resolve(__dirname, 'databoxes/output.js');
   const databoxProcess = new LocalDataboxProcess(scriptPath);
-  const { output } = await databoxProcess.exec('putout', {});
+  const outputs = await databoxProcess.stream('putout', {});
   await databoxProcess.close();
 
-  expect(output).toMatchObject({ success: true });
+  expect(outputs).toEqual([{ success: true }]);
+});
+
+test('it can get streamed results as one promise', async () => {
+  const scriptPath = Path.resolve(__dirname, 'databoxes/stream.js');
+  const databoxProcess = new LocalDataboxProcess(scriptPath);
+  const outputs = await databoxProcess.stream('streamer', {});
+  await databoxProcess.close();
+
+  expect(outputs).toEqual([{ record: 0 }, { record: 1 }, { record: 2 }]);
+});
+
+test('it can  streamed results one at a time', async () => {
+  const scriptPath = Path.resolve(__dirname, 'databoxes/stream.js');
+  const databoxProcess = new LocalDataboxProcess(scriptPath);
+  let counter = 0;
+  const outputs = [];
+  for await (const record of databoxProcess.stream('streamer', {})) {
+    counter += 1;
+    outputs.push(record);
+  }
+  await databoxProcess.close();
+  expect(counter).toBe(3)
+
+  expect(outputs).toEqual([{ record: 0 }, { record: 1 }, { record: 2 }]);
 });

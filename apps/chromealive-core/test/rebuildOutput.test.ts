@@ -1,10 +1,9 @@
-import Output from '@ulixee/databox/lib/Output';
 import ObjectObserver from '@ulixee/databox/lib/ObjectObserver';
 import OutputRebuilder from '../lib/OutputRebuilder';
 
 describe('basic OutputRebuilder tests', () => {
   it('should be able to rebuild an output with snapshots at every external id', async () => {
-    const observable = new ObjectObserver(new Output());
+    const observable = new ObjectObserver({});
 
     const clientOutput = observable.proxy;
     const replayOutput = new OutputRebuilder();
@@ -21,39 +20,39 @@ describe('basic OutputRebuilder tests', () => {
     };
 
     clientOutput.test = 1;
-    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput.toJSON());
+    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput);
 
     id += 1;
     clientOutput.sub = { nested: true, str: 'test', num: 1 };
-    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput.toJSON());
+    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput);
 
     id += 1;
     delete clientOutput.sub.num;
-    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput.toJSON());
+    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput);
 
     id += 1;
     delete clientOutput.sub;
     delete clientOutput.test;
-    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput.toJSON());
+    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput);
 
     id += 1;
     clientOutput.array = [{ test: 1 }, { test: 2 }, { test: 3 }];
-    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput.toJSON());
+    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput);
 
     id += 1;
     clientOutput.array.splice(1, 1);
-    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput.toJSON());
+    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput);
 
     id += 1;
     clientOutput.array.push({ test: 0 });
     clientOutput.array.sort((a, b) => {
       return a.test - b.test;
     });
-    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput.toJSON());
+    expect(replayOutput.getLatestSnapshot(id).output).toEqual(clientOutput);
   });
 
   it('should be able to get the latest state of an output snapshot', async () => {
-    const observable = new ObjectObserver(new Output());
+    const observable = new ObjectObserver({});
 
     const clientOutput = observable.proxy;
     const replayOutput = new OutputRebuilder();
@@ -81,7 +80,7 @@ describe('basic OutputRebuilder tests', () => {
 
     const latest = replayOutput.getLatestSnapshot();
 
-    expect(latest.output).toEqual(clientOutput.toJSON());
+    expect(latest.output).toEqual(clientOutput);
     expect(latest.changes).toHaveLength(1);
   });
 });

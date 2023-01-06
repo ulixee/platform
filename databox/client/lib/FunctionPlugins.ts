@@ -1,71 +1,50 @@
 import Resolvable from '@ulixee/commons/lib/Resolvable';
-import IFunctionPlugin, { IFunctionLifecycle } from '../interfaces/IFunctionPlugin';
+import IFunctionPlugin from '../interfaces/IFunctionPlugin';
 import IFunctionSchema from '../interfaces/IFunctionSchema';
 import IFunctionContext from '../interfaces/IFunctionContext';
 import IFunctionComponents from '../interfaces/IFunctionComponents';
 import FunctionInternal from './FunctionInternal';
 import FunctionContext from './FunctionContext';
-import Databox from './Databox';
+import DataboxInternal from './DataboxInternal';
 
 export default class FunctionPlugins<
   ISchema extends IFunctionSchema,
   IRunContext extends IFunctionContext<ISchema> = IFunctionContext<ISchema>,
-  IBeforeRunContext extends IFunctionContext<ISchema> = IFunctionContext<ISchema>,
-  IAfterRunContext extends IFunctionContext<ISchema> = IFunctionContext<ISchema>,
 > {
-  public corePlugins: { [name: string]: string } = {};
-
   #components: IFunctionComponents<ISchema, IFunctionContext<ISchema>>;
   private clientPlugins: IFunctionPlugin<ISchema>[] = [];
-  private pluginNextPromises: Resolvable<ISchema['output']>[] = [];
+  private pluginNextPromises: Resolvable<IFunctionContext<ISchema>['outputs']>[] = [];
   private pluginRunPromises: Promise<Error | void>[] = [];
 
-  constructor(components: IFunctionComponents<ISchema, IFunctionContext<ISchema>>) {
+  constructor(
+    components: IFunctionComponents<ISchema, IFunctionContext<ISchema>>,
+    plugins: (new (
+      comps: IFunctionComponents<ISchema, IFunctionContext<ISchema>>,
+    ) => IFunctionPlugin<ISchema>)[],
+  ) {
     this.#components = components;
-  }
 
-  public add(
-    ...plugins: (new (
-      components: IFunctionComponents<ISchema, IFunctionContext<ISchema>>,
-    ) => IFunctionPlugin<ISchema>)[]
-  ): void {
     for (const Plugin of plugins) {
-      if (!Plugin) continue;
       const plugin = new Plugin(this.#components);
       this.clientPlugins.push(plugin);
-      this.corePlugins[plugin.name] = plugin.version;
     }
   }
 
   public async initialize(
     functionInternal: FunctionInternal<ISchema>,
-    databox: Databox<any, any>,
-  ): Promise<IFunctionLifecycle<ISchema, IRunContext, IBeforeRunContext, IAfterRunContext>> {
-    const lifecycle: IFunctionLifecycle<ISchema, IRunContext, IBeforeRunContext, IAfterRunContext> =
-      {
-        beforeRun: {
-          isEnabled: !!this.#components.beforeRun,
-          context: new FunctionContext(functionInternal, databox) as any,
-        },
-        run: {
-          isEnabled: !!this.#components.run,
-          context: new FunctionContext(functionInternal, databox) as any,
-        },
-        afterRun: {
-          isEnabled: !!this.#components.afterRun,
-          context: new FunctionContext(functionInternal, databox) as any,
-        },
-      };
+    databoxInternal: DataboxInternal,
+  ): Promise<IRunContext> {
+    const context = new FunctionContext(functionInternal, databoxInternal);
 
     // plugin `run` phases
     for (const plugin of this.clientPlugins) {
-      const outputPromise = new Resolvable<ISchema['output']>();
+      const outputPromise = new Resolvable<IFunctionContext<ISchema>['outputs']>();
       this.pluginNextPromises.push(outputPromise);
 
       await new Promise<void>((resolve, reject) => {
         try {
           const promise = plugin
-            .run(functionInternal, lifecycle, () => {
+            .run(functionInternal, context, () => {
               // wait for next to be called
               resolve();
               return outputPromise.promise;
@@ -80,20 +59,20 @@ export default class FunctionPlugins<
       });
     }
 
-    return lifecycle;
+    return context as any;
   }
 
-  public async setResolution(output: ISchema['output'], error: Error): Promise<void> {
+  public async setResolution(outputs: IRunContext['outputs'], error?: Error): Promise<void> {
     // Resolve plugin next promises
     for (const promise of this.pluginNextPromises) {
       if (error) promise.reject(error);
-      else promise.resolve(output);
+      else promise.resolve(outputs);
     }
 
     // wait for all plugins to complete
     const results = await Promise.all(this.pluginRunPromises);
     for (const result of results) {
-      if (result instanceof Error) throw result;
+      if (result instanceof Error && result !== error) throw result;
     }
   }
 }

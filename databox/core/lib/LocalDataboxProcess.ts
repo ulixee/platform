@@ -5,15 +5,18 @@ import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import { ChildProcess, fork } from 'child_process';
+import ResultIterable from '@ulixee/databox/lib/ResultIterable';
 import {
-  IFetchMetaMessage,
-  IRunMessage,
-  IResponse,
-  IFetchMetaResponseData,
   IExecResponseData,
+  IFetchMetaMessage,
+  IFetchMetaResponseData,
+  IResponse,
+  IRunMessage,
 } from '../interfaces/ILocalDataboxProcess';
 
 const databoxProcessJsPath = require.resolve('../bin/databox-process.js');
+
+let streamIdCounter = 0;
 
 export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Error }> {
   public scriptPath: string;
@@ -21,6 +24,7 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
   #isSpawned = false;
   #child: ChildProcess;
   #pendingById: { [id: string]: IResolvablePromise<any> } = {};
+  #streamsById: { [id: string]: (record: any) => void } = {};
 
   constructor(scriptPath: string) {
     super();
@@ -34,21 +38,33 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
     });
   }
 
-  public async exec(functionName: string, input: any): Promise<{ output: any }> {
-    const data = await this.sendMessageToChild<IRunMessage, IExecResponseData>({
-      action: 'exec',
-      scriptPath: this.scriptPath,
-      functionName,
-      input,
-    });
-    if (data.error) {
-      const { message, stack, ...other } = data.error;
-      const error = new Error(message);
-      if (stack) error.stack += `\n${stack}`;
-      Object.assign(error, other);
-      throw error;
-    }
-    return { output: data.output };
+  public stream(functionName: string, input: any): ResultIterable<any> {
+    const iterable = new ResultIterable();
+    streamIdCounter += 1;
+    const streamId = streamIdCounter;
+    this.#streamsById[streamId] = iterable.push.bind(iterable);
+    void (async () => {
+      const data = await this.sendMessageToChild<IRunMessage, IExecResponseData>({
+        action: 'stream',
+        scriptPath: this.scriptPath,
+        functionName,
+        input,
+        streamId,
+      });
+      if (data.error) {
+        const { message, stack, ...other } = data.error;
+        const error = new Error(message);
+        if (stack) error.stack += `\n${stack}`;
+        Object.assign(error, other);
+        throw error;
+      }
+      iterable.done();
+    })()
+      .catch(iterable.reject)
+      .finally(() => {
+        delete this.#streamsById[streamId];
+      });
+    return iterable;
   }
 
   public close(): Promise<void> {
@@ -97,9 +113,15 @@ export default class LocalDataboxProcess extends TypedEventEmitter<{ error: Erro
   }
 
   private handleMessageFromChild(response: IResponse): void {
+    if (response.streamId) {
+      this.#streamsById[response.streamId]?.(response.data);
+      return;
+    }
+
     const promise = this.#pendingById[response.responseId];
     if (!promise) return;
     promise.resolve(response.data);
+    delete this.#pendingById[response.responseId];
   }
 
   private sendMessageToChild<TMessage, TResponse>(

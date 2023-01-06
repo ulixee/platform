@@ -1,11 +1,9 @@
-import IDataboxManifest from '@ulixee/specification/types/IDataboxManifest';
 import { IDataboxApiTypes } from '@ulixee/specification/databox';
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
-import Databox, { Function } from '@ulixee/databox';
+import Databox from '@ulixee/databox';
 import { IPayment } from '@ulixee/specification';
 import Identity from '@ulixee/crypto/lib/Identity';
-import DataboxApiClient, { IDataboxExecRelayArgs } from '@ulixee/databox/lib/DataboxApiClient';
-import DataboxCore from '../index';
+import DataboxApiClient from '@ulixee/databox/lib/DataboxApiClient';
 import IDataboxApiContext from '../interfaces/IDataboxApiContext';
 import { IDataboxRecord } from './DataboxesTable';
 import { IStatsByFunctionName } from './DataboxRegistry';
@@ -38,7 +36,7 @@ export function validateFunctionCoreVersions(
 }
 
 export async function validateAuthentication(
-  databox: Databox<any, any>,
+  databox: Databox,
   payment: IPayment,
   authentication: IDataboxApiTypes['Databox.query']['args']['authentication'],
 ): Promise<void> {
@@ -49,7 +47,11 @@ export async function validateAuthentication(
     authentication?.nonce,
   );
   if (isValid !== true)
-    throw new Error(`The supplied authentication was rejected by this Databox. ${JSON.stringify(authentication) ?? '(nothing supplied)'}`);
+    throw new Error(
+      `The supplied authentication was rejected by this Databox. ${
+        JSON.stringify(authentication) ?? '(nothing supplied)'
+      }`,
+    );
 
   // if callback didn't reject lack of identity, allow it
   if (isValid && !authentication) return;
@@ -59,26 +61,4 @@ export async function validateAuthentication(
   if (!Identity.verify(identity, message, signature)) {
     throw new Error('The provided Databox.query authentication signature is invalid.');
   }
-}
-
-export async function execDataboxFunction(
-  databox: Databox<any, any>,
-  manifest: IDataboxManifest,
-  functionName: string,
-  input: any,
-  requestRelayArgs: IDataboxExecRelayArgs,
-): Promise<{ output: any }> {
-  const databoxFunction: Function = databox.functions?.[functionName];
-
-  if (!databoxFunction) {
-    throw new Error(`${functionName} is not a valid Function name for this Databox.`);
-  }
-
-  const options = { input, ...(requestRelayArgs ?? {}) };
-  for (const plugin of Object.values(DataboxCore.pluginCoresByName)) {
-    if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);
-  }
-
-  const output = await databoxFunction.exec(options);
-  return { output };
 }

@@ -2,11 +2,11 @@ import readCommandLineArgs from '../lib/utils/readCommandLineArgs';
 import Autorun from '../lib/utils/Autorun';
 import { Function } from '../index';
 
-describe('basic Function tests', () => {
+describe('basic Databox tests', () => {
   it('automatically runs and closes a function', async () => {
     let functionWasRun = false;
     Autorun.defaultExport = new Function(async ctx => {
-      ctx.output = [{ ran: 'success'}];
+      new ctx.Output({ ran: 'success' });
       functionWasRun = true;
     });
 
@@ -18,11 +18,11 @@ describe('basic Function tests', () => {
   it('waits until run method is explicitly called', async () => {
     let wasRun = false;
     const func = new Function(async ctx => {
-      ctx.output = [{ ran: 'success'}];
+      new ctx.Output({ ran: 'success' });
       wasRun = true;
     });
 
-    await func.exec({});
+    await func.stream({});
     await new Promise(resolve => process.nextTick(resolve));
     expect(await wasRun).toBe(true);
   });

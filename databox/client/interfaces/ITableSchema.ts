@@ -1,7 +1,4 @@
-import {
-  ExtractSchemaType,
-  ISchemaAny,
-} from '@ulixee/schema';
+import { ExtractSchemaType, ISchemaAny } from '@ulixee/schema';
 
 export { ExtractSchemaType };
 

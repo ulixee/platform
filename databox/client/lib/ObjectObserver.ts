@@ -22,6 +22,8 @@ export default class ObjectObserver implements ProxyHandler<any> {
   public readonly target: any;
   public readonly proxy: any;
 
+  public readonly proxiedFunctions: { [functionName: PropertyKey]: Function } = {};
+
   public get path(): PropertyKey[] {
     const path = [];
     if (this.parentPath.length) path.push(...this.parentPath);
@@ -118,8 +120,10 @@ export default class ObjectObserver implements ProxyHandler<any> {
       if (this.proxiedArrayMethods.hasOwnProperty(key) && this.isArray) {
         return this.proxiedArrayMethods[key].bind(this);
       }
-
       return target[key].bind(target);
+    }
+    if (this.proxiedFunctions.hasOwnProperty(key)) {
+      return this.proxiedFunctions[key].bind(target);
     }
     return target[key];
   }
@@ -141,7 +145,9 @@ export default class ObjectObserver implements ProxyHandler<any> {
     if (type === 'string' || type === 'number' || type === 'boolean') return object;
     if (Buffer.isBuffer(object)) return Buffer.from(object);
     if (ArrayBuffer.isView(object)) return Buffer.from(object.buffer);
-    if (object instanceof Date) return new Date(object);
+    if (object instanceof Date) {
+      return new Date(object.getTime());
+    }
 
     if (type === 'object') {
       if (Array.isArray(object)) {

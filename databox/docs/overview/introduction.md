@@ -15,6 +15,10 @@ Databox Functions create structure -- boundaries -- around a single "scrape", wh
 - Test the extraction of 100s of different potential results pages and ensure your Output follows the same structure.
 - Spawn new Functions from the current one if you need to parallelize following links.
 
+## Databox Crawlers
+
+Databox Crawlers allow you to write specialized Functions that only output a "cached" scrape. It comes with built-in caching, so you can automatically re-use results that have been recently recorded.
+
 ## How Databoxes Work
 
 Each Databox is a wrapper for defining a composable scraper script. You can run databoxes directly from the command line or upload them to a [Miner](https://ulixee.org/docs/miner).

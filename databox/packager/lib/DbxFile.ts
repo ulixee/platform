@@ -50,16 +50,20 @@ export default class DbxFile {
     return manifest;
   }
 
-  public createOrUpdateDatabase(tableByName: IFetchMetaResponseData['tablesByName']): void {
-    const dbPath = Path.join(this.workingDirectory, 'databox-storage.db');
+  public createOrUpdateDatabase(
+    tableByName: IFetchMetaResponseData['tablesByName'],
+    seedlingsByName: IFetchMetaResponseData['tableSeedlingsByName'],
+  ): void {
+    const dbPath = Path.join(this.workingDirectory, 'storage.db');
     const db = new Database(dbPath);
 
     for (const name of Object.keys(tableByName)) {
-      const { schema, seedlings } = tableByName[name];
+      const { schema } = tableByName[name];
       SqlGenerator.createTableFromSchema(name, schema, sql => {
         db.prepare(sql).run();
       });
 
+      const seedlings = seedlingsByName[name];
       SqlGenerator.createInsertsFromSeedlings(name, seedlings, schema, (sql, values) => {
         db.prepare(sql).run(values);
       });
@@ -67,7 +71,7 @@ export default class DbxFile {
     db.close();
   }
 
-  public async createOrUpdateDocpage(meta: IFetchMetaResponseData, entrypoint: string): Promise<void> {
+  public async createOrUpdateDocpage(meta: IFetchMetaResponseData, manifest: DataboxManifest, entrypoint: string): Promise<void> {
     const docpageDir = Path.join(this.workingDirectory, 'docpage');
     const name = meta.name || entrypoint.match(/([^/\\]+)\.(js|ts)$/)[1] || 'Untitled';
 
@@ -76,17 +80,17 @@ export default class DbxFile {
       description: meta.description,
       createdAt: new Date().toISOString(),
       functionsByName: Object.keys(meta.functionsByName).reduce((obj, n) => {
-        return Object.assign(obj, { 
+        return Object.assign(obj, {
           [n]: {
             name: n,
             description: meta.functionsByName[n].description || '',
             schema: meta.functionsByName[n].schema,
-            pricePerQuery: meta.functionsByName[n].pricePerQuery,
+            prices: manifest.functionsByName[n].prices
           }
         });
       }, {}),
       tablesByName: Object.keys(meta.tablesByName).reduce((obj, n) => {
-        return Object.assign(obj, { 
+        return Object.assign(obj, {
           [n]: {
             name: n,
             description: meta.tablesByName[n].description || '',
@@ -106,7 +110,7 @@ export default class DbxFile {
         cwd: this.workingDirectory,
         file: this.dbxPath,
       },
-      ['databox.js', 'databox.js.map', 'databox-manifest.json', 'databox-storage.db', 'docpage'],
+      ['databox.js', 'databox.js.map', 'databox-manifest.json', 'storage.db', 'docpage'],
     );
     if (!keepOpen) await this.close();
   }

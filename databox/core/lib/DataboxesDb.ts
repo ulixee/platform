@@ -15,6 +15,8 @@ export default class DataboxesDb {
   constructor(baseDir: string) {
     if (!Fs.existsSync(baseDir)) Fs.mkdirSync(baseDir, { recursive: true });
     this.db = new Database(`${baseDir}/index.db`);
+    this.db.unsafeMode(false);
+    this.db.pragma('journal_mode = WAL');
 
     this.databoxes = new DataboxesTable(this.db);
     this.databoxStats = new DataboxStatsTable(this.db);

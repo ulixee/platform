@@ -1,9 +1,7 @@
-import { ExtractSchemaType } from '@ulixee/schema';
 import { SqlParser } from '@ulixee/sql-engine';
-import * as util from 'util';
 import { parseEnvBool } from '@ulixee/commons/lib/envUtils';
+import { ExtractSchemaType } from '@ulixee/schema';
 import FunctionInternal from './FunctionInternal';
-import Autorun from './utils/Autorun';
 import readCommandLineArgs from './utils/readCommandLineArgs';
 import { IFunctionPluginConstructor } from '../interfaces/IFunctionPluginStatics';
 import IFunctionContext from '../interfaces/IFunctionContext';
@@ -12,29 +10,30 @@ import IFunctionExecOptions from '../interfaces/IFunctionExecOptions';
 import IFunctionComponents from '../interfaces/IFunctionComponents';
 import FunctionPlugins from './FunctionPlugins';
 import DataboxInternal from './DataboxInternal';
-import Databox from './Databox';
+import ResultIterable from './ResultIterable';
+
+const disableColors = parseEnvBool(process.env.NODE_DISABLE_COLORS) ?? false;
 
 export default class Function<
-  ISchema extends IFunctionSchema = IFunctionSchema<any, any>,
-  IPlugin1 extends IFunctionPluginConstructor<ISchema> = IFunctionPluginConstructor<ISchema>,
-  IPlugin2 extends IFunctionPluginConstructor<ISchema> = IFunctionPluginConstructor<ISchema>,
-  IPlugin3 extends IFunctionPluginConstructor<ISchema> = IFunctionPluginConstructor<ISchema>,
-  IRunContext extends IFunctionContext<ISchema> = IFunctionContext<ISchema> &
-    IPlugin1['runContextAddons'] &
-    IPlugin2['runContextAddons'] &
-    IPlugin3['runContextAddons'],
-  IBeforeRunContext extends IFunctionContext<ISchema> = IFunctionContext<ISchema> &
-    IPlugin1['beforeRunContextAddons'] &
-    IPlugin2['beforeRunContextAddons'] &
-    IPlugin3['beforeRunContextAddons'],
-  IAfterRunContext extends IFunctionContext<ISchema> = IFunctionContext<ISchema> &
-    IPlugin1['afterRunContextAddons'] &
-    IPlugin2['afterRunContextAddons'] &
-    IPlugin3['afterRunContextAddons'],
+  TSchema extends IFunctionSchema = IFunctionSchema,
+  TPlugin1 extends IFunctionPluginConstructor<TSchema> = IFunctionPluginConstructor<TSchema>,
+  TPlugin2 extends IFunctionPluginConstructor<TSchema> = IFunctionPluginConstructor<TSchema>,
+  TPlugin3 extends IFunctionPluginConstructor<TSchema> = IFunctionPluginConstructor<TSchema>,
+  TContext extends IFunctionContext<TSchema> = IFunctionContext<TSchema> &
+    TPlugin1['contextAddons'] &
+    TPlugin2['contextAddons'] &
+    TPlugin3['contextAddons'],
+  TOutput extends ExtractSchemaType<TSchema['output']> = ExtractSchemaType<TSchema['output']>,
 > {
   #isRunning = false;
-  #databoxInternal: DataboxInternal<any, any>;
+  #databoxInternal: DataboxInternal;
 
+  // dummy type holder
+  declare readonly schemaType: ExtractSchemaType<TSchema>;
+
+  public functionType = 'basic';
+  public corePlugins: { [name: string]: string } = {};
+  public pluginClasses: IFunctionPluginConstructor<TSchema>[] = [];
   public disableAutorun: boolean;
   public successCount = 0;
   public errorCount = 0;
@@ -44,14 +43,7 @@ export default class Function<
     perKb?: number;
   };
 
-  public readonly plugins: FunctionPlugins<
-    ISchema,
-    IRunContext,
-    IBeforeRunContext,
-    IAfterRunContext
-  >;
-
-  public get schema(): ISchema {
+  public get schema(): TSchema {
     return this.components.schema;
   }
 
@@ -63,39 +55,28 @@ export default class Function<
     return this.components.description;
   }
 
-  public get databox(): Databox<any, any> {
-    return this.databoxInternal.databox;
-  }
-
-  public get databoxInternal(): DataboxInternal<any, any> {
+  protected get databoxInternal(): DataboxInternal {
     if (!this.#databoxInternal) {
-      this.#databoxInternal = new DataboxInternal({});
-      this.#databoxInternal.databox = new Databox({}, this.databoxInternal);
-      this.databoxInternal.attachFunction(this, null, false);
+      this.#databoxInternal = new DataboxInternal({ functions: { [this.name]: this } });
       this.#databoxInternal.onCreateInMemoryDatabase(this.createInMemoryFunction.bind(this));
     }
     return this.#databoxInternal;
   }
 
-  protected readonly components: IFunctionComponents<
-    ISchema,
-    IRunContext,
-    IBeforeRunContext,
-    IAfterRunContext
-  > &
-    IPlugin1['componentAddons'] &
-    IPlugin2['componentAddons'] &
-    IPlugin3['componentAddons'];
+  protected readonly components: IFunctionComponents<TSchema, TContext> &
+    TPlugin1['componentAddons'] &
+    TPlugin2['componentAddons'] &
+    TPlugin3['componentAddons'];
 
   constructor(
     components: (
-      | IFunctionComponents<ISchema, IRunContext, IBeforeRunContext, IAfterRunContext>
-      | IFunctionComponents<ISchema, IRunContext, IBeforeRunContext, IAfterRunContext>['run']
+      | IFunctionComponents<TSchema, TContext>
+      | IFunctionComponents<TSchema, TContext>['run']
     ) &
-      IPlugin1['componentAddons'] &
-      IPlugin2['componentAddons'] &
-      IPlugin3['componentAddons'],
-    ...plugins: [plugin1?: IPlugin1, plugin2?: IPlugin2, plugin3?: IPlugin3]
+      TPlugin1['componentAddons'] &
+      TPlugin2['componentAddons'] &
+      TPlugin3['componentAddons'],
+    ...plugins: [plugin1?: TPlugin1, plugin2?: TPlugin2, plugin3?: TPlugin3]
   ) {
     this.components =
       typeof components === 'function'
@@ -105,8 +86,12 @@ export default class Function<
         : { ...components };
 
     this.components.name ??= 'default';
-    this.plugins = new FunctionPlugins(this.components);
-    this.plugins.add(...plugins);
+    for (const Plugin of plugins) {
+      if (!Plugin) continue;
+      this.pluginClasses.push(Plugin);
+      const plugin = new Plugin(this.components);
+      this.corePlugins[plugin.name] = plugin.version;
+    }
     this.pricePerQuery = this.components.pricePerQuery ?? 0;
     this.addOnPricing = this.components.addOnPricing;
     this.minimumPrice = this.components.minimumPrice;
@@ -116,67 +101,52 @@ export default class Function<
     );
   }
 
-  public async exec(
-    options: IFunctionExecOptions<ISchema> &
-      IPlugin1['execArgAddons'] &
-      IPlugin2['execArgAddons'] &
-      IPlugin3['execArgAddons'],
-  ): Promise<ExtractSchemaType<ISchema['output']>> {
+  public stream(
+    options: IFunctionExecOptions<TSchema> &
+      TPlugin1['execArgAddons'] &
+      TPlugin2['execArgAddons'] &
+      TPlugin3['execArgAddons'],
+    logOutputResult = false,
+  ): ResultIterable<TOutput> {
     if (this.#isRunning) {
       throw new Error('Databox already running');
     }
-    this.#isRunning = true;
-    const functionInternal = new FunctionInternal(options, this.components);
+    const resultsIterable = new ResultIterable<TOutput>();
 
-    try {
-      functionInternal.validateInput();
-
-      const lifecycle = await this.plugins.initialize(functionInternal, this.databox);
-
-      let execError: Error;
+    (async () => {
+      const functionInternal = new FunctionInternal<TSchema>(options, this.components);
+      const plugins = new FunctionPlugins<TSchema, TContext>(this.components, this.pluginClasses);
       try {
-        if (this.components.beforeRun && lifecycle.beforeRun.isEnabled) {
-          await this.components.beforeRun(lifecycle.beforeRun.context);
+        this.#isRunning = true;
+        functionInternal.validateInput();
+        const context = await plugins.initialize(functionInternal, this.databoxInternal);
+
+        const functionResults = functionInternal.run(context);
+
+        let counter = 0;
+        for await (const output of functionResults) {
+          functionInternal.validateOutput(output, counter++);
+          if (logOutputResult) {
+            // eslint-disable-next-line no-console
+            console.dir(output, { colors: !disableColors, depth: null, getters: false });
+          }
+          resultsIterable.push(output as TOutput);
         }
-        if (this.components.run && lifecycle.run.isEnabled) {
-          await this.components.run(lifecycle.run.context);
-        }
-        if (this.components.afterRun && lifecycle.afterRun.isEnabled) {
-          await this.components.afterRun(lifecycle.afterRun.context);
-        }
+
+        await plugins.setResolution(functionInternal.outputs);
+        this.successCount++;
       } catch (error) {
-        execError = error;
+        this.errorCount++;
+        error.stack = error.stack.split('at async Function.stream').shift().trim();
+        await plugins.setResolution(null, error).catch(() => null);
+        resultsIterable.reject(error);
+      } finally {
+        await functionInternal.close();
+        this.#isRunning = false;
+        resultsIterable.done();
       }
-
-      await this.plugins.setResolution(functionInternal.output, execError);
-
-      if (execError) throw execError;
-
-      functionInternal.validateOutput();
-
-      this.successCount++;
-      const result = (functionInternal.output as any).toJSON();
-
-      if (options.isFromCommandLine) {
-        if (typeof result === 'string') {
-          // eslint-disable-next-line no-console
-          console.log(result);
-        } else {
-          const disableColors = parseEnvBool(process.env.NODE_DISABLE_COLORS) ?? false;
-          // eslint-disable-next-line no-console
-          console.log(util.inspect(result, false, null, !disableColors));
-        }
-      }
-      return result;
-    } catch (error) {
-      error.stack = error.stack.split('at async Function.exec').shift().trim();
-      console.error(`ERROR running databox: `, error);
-      this.errorCount++;
-      throw error;
-    } finally {
-      await functionInternal.close();
-      this.#isRunning = false;
-    }
+    })().catch(err => console.error('Error streaming Function results', err));
+    return resultsIterable;
   }
 
   public async query(sql: string, boundValues: any[] = []): Promise<any> {
@@ -187,24 +157,27 @@ export default class Function<
 
     const sqlParser = new SqlParser(sql, { function: name });
     const schemas = { [name]: this.schema.input };
-    const inputsByFunction = sqlParser.extractFunctionInputs<ISchema['input']>(
+    const inputsByFunction = sqlParser.extractFunctionInputs<TSchema['input']>(
       schemas,
       boundValues,
     );
     const input = inputsByFunction[name];
-    const output = await this.exec({ input });
+    const outputs: any[] = [];
+
+    const results = await this.stream({ input });
+    for await (const result of results) outputs.push(result);
 
     const args = {
       name,
       sql,
       boundValues,
       input,
-      output: Array.isArray(output) ? output : [output],
+      outputs,
       databoxInstanceId,
       databoxVersionHash,
     };
     return await this.databoxInternal.sendRequest({
-      command: 'Databox.queryInternalFunction',
+      command: 'Databox.queryInternalFunctionResult',
       args: [args],
     });
   }
@@ -236,13 +209,8 @@ export default class Function<
     });
   }
 
-  public static commandLineExec<TOutput>(
-    databoxFunction: Function<any, any, any>,
-  ): Promise<TOutput | Error> {
+  public static commandLineExec<T>(databoxFunction: Function<any, any, any>): ResultIterable<T> {
     const options = readCommandLineArgs();
-    options.isFromCommandLine = true;
-    return databoxFunction.exec(options).catch(err => err);
+    return databoxFunction.stream(options, process.env.NODE_ENV !== 'test');
   }
 }
-
-Autorun.setupAutorunBeforeExitHook(Function, module.parent, require.main);

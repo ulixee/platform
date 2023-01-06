@@ -8,7 +8,7 @@ export default new DataboxApiHandler('Databox.createInMemoryTable', {
       throw new Error('You do not have permission to access this endpoint');
     }
     context.connectionToClient.databoxStorage ??= new DataboxStorage();
-    const storage = context.connectionToClient?.databoxStorage;
+    const storage = context.connectionToClient.databoxStorage;
     const { name, seedlings, schema } = request;
 
     storage.addTableSchema(name, request.schema);

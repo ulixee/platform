@@ -15,6 +15,7 @@ A `.dbx` file has the following files in it:
 - `databox.js` The single file containing all your javascript code and a default export containing a `Databox` instance.
 - `databox.js.map` A source map for your javascript.
 - `databox-manifest.json` A manifest file with a valid hash code. See Manifest section.
+- `storage.db` A Sqlite3 db containing your bootstrapped records and table structures.
 
 #### Out Directory
 
@@ -81,8 +82,11 @@ When you package a Databox, a Manifest is created with the following properties:
 - schemaInterface `string`. A string containing a typescript declaration interface for all functions in this Databox.
 - functionsByName `object`. A key value of Databox Function name to:
   - corePlugins `string`. An object containing a list of npm packages/versions that are core Function plugins.
-  - pricePerQuery `number`. Optional price per query for the given Function (in Ulixee Sidechain microgons - 1 microgon = ~1/1,000,000 of a dollar).
-  - addOnPricing `object`. Optional price add-ons. Currently only `perKb` is supported.
+  - prices `array`. Array of prices for each "step" in a function. The first entry is _this_ function's pricing.
+    - minimum `number`. Optional minimum microgons that must be held in a Micronote for the given function step.
+    - perQuery `number`. Optional price per query for the given Function (in Ulixee Sidechain microgons - 1 microgon = ~1/1,000,000 of a dollar).
+    - addOns `object`. Optional price add-ons. Currently only `perKb` is supported.
+    - remoteMeta `object`. Optional information about the remote Databox Function being invoked (if applicable). 
 - paymentAddress `string`. Optional address to use with the Ulixee Sidechain for payments.
 - giftCardIssuerIdentity `string`. Optional Gift Card issuer identity used to create GiftCards on the Ulixee Sidechain.
 

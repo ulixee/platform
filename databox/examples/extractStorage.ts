@@ -1,10 +1,12 @@
 // NOTE: you must start your own Ulixee Miner to run this example.
 
-import { Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
+import { Crawler, Databox, Function, HeroFunctionPlugin } from '@ulixee/databox-plugins-hero';
+import * as moment from 'moment';
 
-export default new Function(
-  {
-    async run({ hero }) {
+const databox = new Databox({
+  crawlers: {
+    crawl: new Crawler(async ({ Hero }) => {
+      const hero = new Hero();
       await hero.goto('https://ulixee.org');
       await hero.waitForPaintingStable();
       await hero.setSnippet('localStorage', await hero.getJsValue('JSON.stringify(localStorage)'));
@@ -14,20 +16,29 @@ export default new Function(
       );
       await hero.setSnippet('cookies', await hero.activeTab.cookieStorage.getItems());
       await hero.setSnippet('history', await hero.getJsValue(`history.length`));
-    },
-    async afterRun({ heroReplay, output }) {
+
+      return hero;
+    }, HeroFunctionPlugin),
+  },
+  functions: {
+    extract: new Function(async ({ HeroReplay, Output }) => {
+      const lastRun = await databox.crawl('crawl', { maxTimeInCache: 24 * 60 * 60 });
+
+      const heroReplay = new HeroReplay(lastRun);
       const localStorage = await heroReplay.getSnippet('localStorage');
       const sessionStorage = await heroReplay.getSnippet('sessionStorage');
       const cookies = await heroReplay.getSnippet('cookies');
       const history = await heroReplay.getSnippet('history');
 
-      output.rootStorage = {
-        local: localStorage,
-        session: sessionStorage,
-        cookies,
-        history,
-      };
-    },
+      Output.emit({
+        rootStorage: {
+          local: localStorage,
+          session: sessionStorage,
+          cookies,
+          history,
+        },
+      });
+    }, HeroFunctionPlugin),
   },
-  HeroFunctionPlugin,
-);
+});
+export default databox;

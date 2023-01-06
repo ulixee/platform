@@ -5,7 +5,7 @@ export default new Databox({
   functions: {
     upTest: new Function({
       run(ctx) {
-        ctx.output = { upload: true };
+        ctx.Output.emit({ upload: true });
       },
       schema: {
         output: { upload: boolean({ description: 'Whether or not this test succeeded' }) },

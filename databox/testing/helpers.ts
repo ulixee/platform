@@ -8,19 +8,7 @@ import * as net from 'net';
 import * as http2 from 'http2';
 import Core from '@ulixee/hero-core';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
-import { ConnectionToHeroCore } from '@ulixee/hero';
-import { Function } from '@ulixee/databox';
-import {
-  HeroFunctionPlugin,
-  IHeroFunctionContext,
-  IHeroFunctionExecOptions,
-  getDataboxForHeroPlugin,
-} from '@ulixee/databox-plugins-hero';
-import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import Logger from '@ulixee/commons/lib/Logger';
-import { createPromise } from '@ulixee/commons/lib/utils';
-import IFunctionSchema from '@ulixee/databox/interfaces/IFunctionSchema';
-import { Helpers } from './index';
 
 const { log } = Logger(module);
 
@@ -140,51 +128,3 @@ function destroyServerFn(
     });
 }
 
-interface IFullstackDatabox<ISchema extends IFunctionSchema> {
-  functionContext: IHeroFunctionContext<ISchema>;
-  databoxForHeroPlugin: HeroFunctionPlugin<ISchema>;
-  databoxClose: () => void;
-}
-
-export async function createFullstackDatabox<ISchema extends IFunctionSchema = any>(
-  schema?: ISchema,
-  options: IHeroFunctionExecOptions<ISchema> = {},
-): Promise<IFullstackDatabox<ISchema>> {
-  const bridge = new TransportBridge();
-  Core.addConnection(bridge.transportToClient);
-  options.connectionToCore = new ConnectionToHeroCore(bridge.transportToCore);
-
-  let functionContext: IHeroFunctionContext<ISchema>;
-  let databoxForHeroPlugin: HeroFunctionPlugin<ISchema>;
-
-  const readyPromise = createPromise<void>();
-  const closedPromise = createPromise<void>();
-
-  // eslint-disable-next-line promise/catch-or-return
-  new Function(
-    {
-      run(ctx) {
-        functionContext = ctx;
-        databoxForHeroPlugin = getDataboxForHeroPlugin(ctx.hero);
-        readyPromise.resolve();
-      },
-      schema,
-    },
-    HeroFunctionPlugin,
-  )
-    .exec(options)
-    .catch(error => console.log(error))
-    .finally(() => closedPromise.resolve());
-
-  function databoxClose() {
-    return closedPromise.promise;
-  }
-
-  await readyPromise.promise;
-
-  return {
-    functionContext,
-    databoxForHeroPlugin,
-    databoxClose,
-  };
-}

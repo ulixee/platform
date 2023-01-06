@@ -151,7 +151,7 @@
         <Prism language="javascript" :useUlixeeTheme="false">
           import DataboxForHero from '@ulixee/databoxx';
 
-          export default new DataboxForHero(async { hero } => {
+          export default new Function(async { Hero } => {
           &nbsp; const hero = new Hero();
           &nbsp; await hero.goto('https://ulixee.org/getting-started/hero');
           })();

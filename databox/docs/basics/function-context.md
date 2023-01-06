@@ -2,7 +2,7 @@
 
 > FunctionContext provides access to metadata about your Function execution, along with Plugin-created variables.
 
-The FunctionContext class is passed into the [`run`](./function#constructor), [`beforeRun`](./function#constructor) and [`afterRun`](./function#constructor) callbacks provided to a Function. It cannot be constructed.
+The FunctionContext class is passed into the [`run`](./function#constructor) callback provided to a Function. It cannot be constructed.
 
 ## Properties
 
@@ -22,9 +22,9 @@ Readonly input.
 
 #### **Returns** [`Input`](./input.md)
 
-### output
+### Output
 
-Get or set the output data.
+Output class. Can be constructed into a new Output instance, or can use the static `emit()` function to emit Output directly.
 
 #### **Returns** [`Output`](./output.md)
 

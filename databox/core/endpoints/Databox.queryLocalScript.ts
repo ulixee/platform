@@ -31,17 +31,18 @@ export default new DataboxApiHandler('Databox.queryLocalScript', {
         }
       }
 
-      const { output } = await context.workTracker.trackRun(databoxProcess.exec(functionName, input));
-      outputByFunctionName[functionName] = Array.isArray(output) ? output : [output];
+      outputByFunctionName[functionName] = await context.workTracker.trackRun(
+        databoxProcess.stream(functionName, input).then(x => x),
+      );
     }
 
     if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
 
     const boundValues = sqlParser.convertToBoundValuesMap(request.boundValues);
-    const sqlQuery = new SqlQuery(sqlParser, storage, db); 
+    const sqlQuery = new SqlQuery(sqlParser, storage, db);
     const records = sqlQuery.execute(inputByFunctionName, outputByFunctionName, boundValues);
     await databoxProcess.close();
 
-    return { output: records, latestVersionHash: null };
+    return { outputs: records, latestVersionHash: null };
   },
 });

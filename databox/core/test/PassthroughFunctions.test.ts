@@ -100,18 +100,13 @@ afterAll(async () => {
 });
 
 test('should be able to have a passthrough function', async () => {
-  await expect(
-    client.query(remoteVersionHash, 'select * from remote(test => $1)', { boundValues: ['123d'] }),
-  ).resolves.toEqual({
-    output: [{ iAmRemote: true, echo: '123d' }],
-    metadata: expect.any(Object),
-    latestVersionHash: expect.any(String),
-  });
+  await expect(client.stream(remoteVersionHash, 'remote', { test: '123d' })).resolves.toEqual([
+    { iAmRemote: true, echo: '123d' },
+  ]);
 
   Fs.writeFileSync(
     `${__dirname}/databoxes/passthroughFunction.js`,
-    `
-const Databox = require('@ulixee/databox');
+    `const Databox = require('@ulixee/databox');
 const { boolean, string } = require('@ulixee/schema');
 
 export default new Databox({
@@ -131,8 +126,10 @@ export default new Databox({
           addOn: string(),
         },
       },
-      afterRun(context) {
-        context.output.addOn = 'phew';
+      async onResponse({ stream, Output }) {
+        for await (const output of stream) {
+          Output.emit({ ...output, addOn: 'phew' })
+        }
       },
     }),
   },
@@ -144,14 +141,50 @@ export default new Databox({
   await client.upload(await passthrough.dbx.asBuffer());
 
   await expect(
-    client.query(passthrough.manifest.versionHash, 'select * from pass(test => $1)', {
-      boundValues: ['123d'],
+    client.stream(passthrough.manifest.versionHash, 'pass', { test: '123d' }),
+  ).resolves.toEqual([{ iAmRemote: true, echo: '123d', addOn: 'phew' }]);
+});
+
+test('should re-emit output automatically if no onResponse is provided', async () => {
+  await expect(client.stream(remoteVersionHash, 'remote', { test: '123d' })).resolves.toEqual([
+    { iAmRemote: true, echo: '123d' },
+  ]);
+
+  Fs.writeFileSync(
+    `${__dirname}/databoxes/passthroughFunctionNoOnresponse.js`,
+    `const Databox = require('@ulixee/databox');
+const { boolean, string } = require('@ulixee/schema');
+
+export default new Databox({
+  remoteDataboxes: {
+    source: 'ulx://${await miner.address}/${remoteVersionHash}',
+  },
+  functions: {
+    pass: new Databox.PassthroughFunction({
+      remoteFunction: 'source.remote',
+      schema: {
+        input: {
+          test: string(),
+        },
+        output: {
+          iAmRemote: boolean(),
+          echo: string(),
+        },
+      }
     }),
-  ).resolves.toEqual({
-    output: [{ iAmRemote: true, echo: '123d', addOn: 'phew' }],
-    metadata: expect.any(Object),
-    latestVersionHash: expect.any(String),
-  });
+  },
+});`,
+  );
+
+  const passthrough = new DataboxPackager(
+    `${__dirname}/databoxes/passthroughFunctionNoOnresponse.js`,
+  );
+  await passthrough.build();
+  await client.upload(await passthrough.dbx.asBuffer());
+
+  await expect(
+    client.stream(passthrough.manifest.versionHash, 'pass', { test: '123d' }),
+  ).resolves.toEqual([{ iAmRemote: true, echo: '123d' }]);
 });
 
 test('should be able to add upcharge to a function', async () => {
@@ -169,8 +202,10 @@ export default new Databox({
     pass: new Databox.PassthroughFunction({
       upcharge: 400,
       remoteFunction: 'source.remote',
-      afterRun(context) {
-        context.output.addOn = 'phew';
+      async onResponse({ stream, Output }) {
+        for await (const output of stream) {
+           Output.emit({ ...output, addOn: 'phew '})
+        }
       },
     }),
   },
@@ -185,7 +220,7 @@ export default new Databox({
   expect(meta.functionsByName.pass.minimumPrice).toBe(405);
 });
 
-test('should be able to add charge from multiple functions', async () => {
+test('should be able to add charges from multiple functions', async () => {
   apiCalls.mockReset();
   holdAmounts.length = 0;
   const address1 = Address.createFromSigningIdentities([Identity.createSync()]);
@@ -202,7 +237,8 @@ export default new Databox({
   functions: {
     source: new Databox.Function({
       pricePerQuery: 6,
-      run({ input, output }) {
+      run({ input, Output }) {
+        const output = new Output();
         output.calls = 1;
         output.lastRun = 'source';
       }
@@ -238,9 +274,10 @@ export default new Databox({
     source2: new Databox.PassthroughFunction({
       upcharge: 11,
       remoteFunction: 'hop0.source',
-      afterRun(context) {
-        context.output.calls += 1;
-        context.output.lastRun = 'hop1';
+      async onResponse({ stream, Output }) {
+        for await (const output of stream) {
+           Output.emit({ ...output, lastRun:'hop1', calls: output.calls +1 })
+        }
       },
     }),
   },
@@ -272,9 +309,10 @@ export default new Databox({
     last: new Databox.PassthroughFunction({
       upcharge: 3,
       remoteFunction: 'hop1.source2',
-      afterRun(context) {
-        context.output.calls += 1;
-        context.output.lastRun = 'hop2';
+      async onResponse({ stream, Output }) {
+        for await (const output of stream) {
+           Output.emit({ ...output, lastRun:'hop2', calls: output.calls +1 })
+        }
       },
     }),
   },
@@ -300,8 +338,8 @@ export default new Databox({
   const result = await client.query(lastHop.manifest.versionHash, 'select * from last()', {
     payment,
   });
-  expect(result.output[0].calls).toBe(3);
-  expect(result.output[0].lastRun).toBe('hop2');
+  expect(result.outputs[0].calls).toBe(3);
+  expect(result.outputs[0].lastRun).toBe('hop2');
 
   // reverse order of holds
   expect(holdAmounts).toEqual([3, 11, 6]);

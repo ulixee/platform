@@ -2,37 +2,47 @@ import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import BaseSchema from '@ulixee/schema/lib/BaseSchema';
 import { DateUtilities, ObjectSchema } from '@ulixee/schema';
 import { IValidationError } from '@ulixee/schema/interfaces/IValidationResult';
-import { pickRandom } from '@ulixee/commons/lib/utils';
+import { bindFunctions, pickRandom } from '@ulixee/commons/lib/utils';
 import StringSchema from '@ulixee/schema/lib/StringSchema';
 import DataboxSchemaError from './DataboxSchemaError';
 import IFunctionSchema, { ExtractSchemaType } from '../interfaces/IFunctionSchema';
 import IFunctionExecOptions from '../interfaces/IFunctionExecOptions';
-import Output, { createObservableOutput } from './Output';
+import createOutputGenerator, { IOutputClass } from './Output';
 import IObservableChange from '../interfaces/IObservableChange';
+import ResultIterable from './ResultIterable';
+import IFunctionComponents from '../interfaces/IFunctionComponents';
+import IFunctionContext from '../interfaces/IFunctionContext';
 
 export default class FunctionInternal<
-  ISchema extends IFunctionSchema,
-  TOptions extends IFunctionExecOptions<ISchema> = IFunctionExecOptions<ISchema>,
-  TInput = ExtractSchemaType<ISchema['input']>,
-  TOutput = ExtractSchemaType<ISchema['output']>,
+  TSchema extends IFunctionSchema<any, any>,
+  TOptions extends IFunctionExecOptions<TSchema> = IFunctionExecOptions<TSchema>,
+  TInput extends ExtractSchemaType<TSchema['input']> = ExtractSchemaType<TSchema['input']>,
+  TOutput extends ExtractSchemaType<TSchema['output']> = ExtractSchemaType<TSchema['output']>,
 > extends TypedEventEmitter<{
   close: void;
 }> {
   #isClosing: Promise<void>;
   #input: TInput;
-  #output: Output<TOutput>;
   #outputSchema: BaseSchema<any>;
 
+  public readonly outputs: (TOutput & { emit(): void })[] = [];
   public readonly options: TOptions;
-  public readonly schema: ISchema;
+  public readonly schema: TSchema;
 
+  public readonly Output: IOutputClass<TOutput>;
   public onOutputChanges: (changes: IObservableChange[]) => any;
+  public onOutputRecord: (output: TOutput) => void;
 
-  constructor(options: TOptions, components: { schema?: ISchema }) {
+  constructor(options: TOptions, private components: IFunctionComponents<TSchema, any>) {
     super();
     this.options = options;
     this.schema = components.schema;
     this.#input = (options.input ?? {}) as TInput;
+    this.Output = createOutputGenerator({
+      outputs: this.outputs,
+      onOutputChanges: this.defaultOnOutputChanges.bind(this),
+      onOutputEmitted: this.onOutputEmitted.bind(this),
+    });
 
     if (components.schema?.inputExamples?.length && components.schema.input) {
       const randomEntry = pickRandom(components.schema.inputExamples);
@@ -46,7 +56,7 @@ export default class FunctionInternal<
           ) {
             value = value.evaluate(schema.format);
           }
-          this.#input[key] = value;
+          (this.#input as any)[key] = value;
         }
       }
     }
@@ -58,6 +68,24 @@ export default class FunctionInternal<
       }
       this.#outputSchema = outputSchema;
     }
+    bindFunctions(this);
+  }
+
+  public run(context: IFunctionContext<TSchema>): ResultIterable<TOutput> {
+    const functionResults = new ResultIterable<TOutput>();
+    this.onOutputRecord = output => functionResults.push(output);
+
+    void Promise.resolve(this.components.run(context))
+      .then(this.emitPendingOutputs)
+      .then(functionResults.done)
+      .catch(functionResults.reject);
+
+    return functionResults;
+  }
+
+  public emitPendingOutputs(): void {
+    // emit all outputs
+    for (const output of this.outputs) output.emit();
   }
 
   public get isClosing(): boolean {
@@ -71,21 +99,9 @@ export default class FunctionInternal<
     return this.#input;
   }
 
-  public get output(): TOutput {
-    this.#output ??= createObservableOutput(this.defaultOnOutputChanges.bind(this)) as any;
-    return this.#output as any;
-  }
-
-  public set output(value: TOutput) {
-    const output = this.output;
-    for (const key of Object.keys(output)) {
-      delete output[key];
-    }
-    Object.assign(output, value);
-  }
-
   public close(closeFn?: () => Promise<void>): Promise<void> {
     if (this.#isClosing) return this.#isClosing;
+
     this.emit('close');
     this.#isClosing = new Promise(async (resolve, reject) => {
       try {
@@ -110,21 +126,41 @@ export default class FunctionInternal<
     }
   }
 
-  public validateOutput(): void {
+  public validateOutput(output: TOutput, counter: number): void {
     if (!this.#outputSchema) return;
-    const outputValidation = this.#outputSchema.validate(this.output);
+
+    let humanCounter = ' ';
+
+    if (counter !== null) {
+      humanCounter = '1st ';
+      if (counter === 2) humanCounter = '2nd ';
+      if (counter === 3) humanCounter = '3rd ';
+      if (counter >= 4) humanCounter = `${counter}th `;
+    }
+
+    const outputValidation = this.#outputSchema.validate(output);
     if (!outputValidation.success) {
       throw new DataboxSchemaError(
-        'The Function output did not match its Schema',
+        `The Function's ${humanCounter}Output did not match its Schema`,
         outputValidation.errors,
       );
     }
   }
 
-  protected defaultOnOutputChanges(changes: IObservableChange[]): void {
+  protected onOutputEmitted(output: TOutput): void {
+    if (this.schema?.output) {
+      // TODO: follow nested schema columns
+      for (const key of Object.keys(output)) {
+        if (!this.schema.output[key]) delete output[key];
+      }
+    }
+    this.onOutputRecord?.(output);
+  }
+
+  protected defaultOnOutputChanges(output: TOutput, changes: IObservableChange[]): void {
     if (this.onOutputChanges) this.onOutputChanges(changes);
     try {
-      this.validateOutput();
+      this.validateOutput(output, null);
     } catch (err) {
       // NOTE: filter errors to only changed schema elements. Otherwise, we get incomplete object errors
       if (err instanceof DataboxSchemaError) {

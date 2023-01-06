@@ -5,13 +5,14 @@ import { testFunction } from './helper';
 
 export default new Databox({
   functions: {
-    default: new Function({
-      async run(databox) {
-        const { hero, output } = databox;
-        output.text = testFunction();
-        await hero.close();
+    default: new Function(
+      {
+        async run({ Output }) {
+          Output.emit({ text: testFunction() });
+        },
       },
-    }, HeroFunctionPlugin),
+      HeroFunctionPlugin,
+    ),
   },
 });
 // test exporting another thing

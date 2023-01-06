@@ -8,12 +8,13 @@ const { string } = Schema;
 
 export default new Function(
   {
-    async run(databox) {
-      const { input, output, hero } = databox;
-
+    async run(context) {
+      const { input, Output, Hero } = context;
+      const hero = new Hero();
       await hero.goto(input.url);
       const title = await hero.document.title;
 
+      const output = new Output();
       output.title = title;
       output.body = await hero.document.body.textContent;
       console.log(`LOADED ${input.url}: ${title}`);

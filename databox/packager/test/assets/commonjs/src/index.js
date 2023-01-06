@@ -4,9 +4,8 @@ const { testFunction } = require('./helper');
 module.exports = new Function(
   {
     async run(ctx) {
-      const { hero, output } = ctx;
-      output.text = testFunction();
-      await hero.close();
+      const { Output } = ctx;
+      Output.emit({ text: testFunction() });
     },
   },
   HeroFunctionPlugin,

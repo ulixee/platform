@@ -4,7 +4,8 @@ import Databox, { Function } from '@ulixee/databox';
 module.exports = new Databox({
   functions: {
     bootup: new Function({
-      run({ output }) {
+      run({ Output }) {
+        const output = new Output();
         output.success = true;
       },
       schema: {

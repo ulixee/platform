@@ -1,28 +1,29 @@
-import {
-  ExtractSchemaType,
-  ISchemaAny,
-  ObjectSchema,
-  ArraySchema,
-  DateUtilities,
-} from '@ulixee/schema';
+import { DateUtilities, ExtractSchemaType, ISchemaAny } from '@ulixee/schema';
 
 export { ExtractSchemaType };
 
-type IOutputType = Record<string, ISchemaAny> | ObjectSchema<any> | ArraySchema<any>;
+export type ISchemaRecordType<T> = T extends Record<string, ISchemaAny>
+  ? {
+      [K in keyof T]: T[K];
+    }
+  : never;
 
 export default interface IFunctionSchema<
-  Input extends Record<string, ISchemaAny> = Record<string, ISchemaAny>,
-  Output extends IOutputType = IOutputType,
+  TInput extends ISchemaRecordType<any> = ISchemaRecordType<any>,
+  TOutput extends ISchemaRecordType<any> = ISchemaRecordType<any>,
 > {
-  input?: Input;
-  output?: Output;
+  input?: TInput;
+  output?: TOutput;
   inputExamples?: IInputSchemaType<this['input']>[];
 }
 
-export const FunctionSchema = <Input extends Record<string, ISchemaAny>, Output extends IOutputType>(
-  schema: IFunctionSchema<Input, Output>,
-): IFunctionSchema<Input, Output> => schema;
+export const FunctionSchema = <
+  TInput extends ISchemaRecordType<any>,
+  TOutput extends ISchemaRecordType<any>,
+>(
+  schema: IFunctionSchema<TInput, TOutput>,
+): IFunctionSchema<TInput, TOutput> => schema;
 
-type IInputSchemaType<T extends Record<string, ISchemaAny>> = {
+type IInputSchemaType<T extends ISchemaRecordType<any>> = {
   [P in keyof T]?: T[P]['$type'] | DateUtilities;
 };

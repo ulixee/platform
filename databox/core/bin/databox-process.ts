@@ -1,4 +1,5 @@
-import Databox, { Function } from '@ulixee/databox';
+import Databox from '@ulixee/databox';
+import Function from '@ulixee/databox/lib/Function';
 import { IFetchMetaResponseData, IMessage, IResponse } from '../interfaces/ILocalDataboxProcess';
 
 function sendToParent(response: IResponse): void {
@@ -20,53 +21,32 @@ process.on('message', async (message: IMessage) => {
     let databox = requireDatabox(message.scriptPath);
     // wrap function in a default databox
     if (databox instanceof Function) {
-      databox = new Databox<any, any>({
-        functions: { default: databox },
+      const functionName = databox.name ?? 'default';
+      databox = new Databox({
+        functions: { [functionName]: databox },
         remoteDataboxes: {},
-      });
-    }
-    const functionsByName: IFetchMetaResponseData['functionsByName'] = {};
-    for (const [name, func] of Object.entries(
-      databox.functions ?? ({} as Record<string, Function>),
-    )) {
-      functionsByName[name] = {
-        description: func.description,
-        corePlugins: func.plugins.corePlugins ?? {},
-        schema: func.schema,
-        pricePerQuery: func.pricePerQuery,
-        addOnPricing: func.addOnPricing,
-        minimumPrice: func.minimumPrice,
-        ...(func.components ?? {}),
-      };
+      }) as Databox;
     }
 
-    const tablesByName: IFetchMetaResponseData['tablesByName'] = {};
+    const metadata = databox.metadata;
+
+    const tableSeedlingsByName: IFetchMetaResponseData['tableSeedlingsByName'] = {};
     for (const [name, table] of Object.entries(databox.tables ?? {})) {
-      tablesByName[name] = {
-        description: table.description,
-        schema: table.schema,
-        seedlings: table.seedlings,
-      };
+      tableSeedlingsByName[name] = table.seedlings;
     }
 
     return sendToParent({
       responseId: message.messageId,
       data: {
-        name: databox.name,
-        description: databox.description,
-        coreVersion: databox.coreVersion,
-        remoteDataboxes: databox.remoteDataboxes,
-        paymentAddress: databox.paymentAddress,
-        giftCardIssuerIdentity: databox.giftCardIssuerIdentity,
-        functionsByName,
-        tablesByName,
+        ...metadata,
+        tableSeedlingsByName,
       },
     });
   }
-  if (message.action === 'exec') {
+  if (message.action === 'stream') {
     const databox = requireDatabox(message.scriptPath);
-    const func = databox.functions[message.functionName];
-    if (!func) {
+
+    if (!databox.metadata.functionsByName[message.functionName]) {
       return sendToParent({
         responseId: message.messageId,
         data: {
@@ -76,13 +56,18 @@ process.on('message', async (message: IMessage) => {
     }
 
     try {
-      const output = await func.exec(message.input);
+      const stream = databox.stream(message.functionName, message.input);
+      for await (const output of stream) {
+        sendToParent({
+          responseId: null,
+          streamId: message.streamId,
+          data: output,
+        });
+      }
 
       return sendToParent({
         responseId: message.messageId,
-        data: {
-          output,
-        },
+        data: {},
       });
     } catch (error) {
       sendToParent({
@@ -98,7 +83,7 @@ process.on('message', async (message: IMessage) => {
   throw new Error(`unknown action: ${message.action}`);
 });
 
-function requireDatabox(scriptPath: string): Databox<any, any> {
+function requireDatabox(scriptPath: string): Databox {
   const imported = require(scriptPath); // eslint-disable-line import/no-dynamic-require
   const defaultExport = imported.default || imported;
   if (!defaultExport) throw new Error(`Databox script has no default export`);

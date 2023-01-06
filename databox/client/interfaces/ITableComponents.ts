@@ -1,7 +1,7 @@
-export default interface ITableComponents<TSchema> {
+export default interface ITableComponents<TSchema, TSeedlings> {
   name?: string;
   description?: string;
   schema: TSchema;
-  seedlings?: any[];
+  seedlings?: TSeedlings[];
   isPublic?: boolean;
 }
