@@ -18,7 +18,7 @@ const crawler = new Crawler(async context => {
 Crawlers automatically create a local [Table] to cache results. This means you can re-use the last Crawl by default. A desired "age" can be specified by including a `maxTimeInCache` parameter. Omitting will cause a new crawl to initiate.
 
 ```js
-const crawl = await crawler.stream({ input: { maxTimeInCache: 60 } });
+const [crawl] = await crawler.stream({ input: { maxTimeInCache: 60 } });
 const heroReplay = await HeroReplay(crawl);
 ```
 
