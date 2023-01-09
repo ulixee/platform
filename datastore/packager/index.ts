@@ -110,6 +110,7 @@ export default class DatastorePackager {
               addOns: functionMeta.addOnPricing,
             },
           ],
+          schemaAsJson: schema,
         };
 
         // lookup upstream pricing

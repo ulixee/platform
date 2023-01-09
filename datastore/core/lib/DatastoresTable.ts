@@ -39,7 +39,11 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
         price.minimum ??= price.perQuery;
         price.addOns ??= { perKb: 0 };
       }
-      functionsByName[name] = { corePlugins: func.corePlugins ?? {}, prices };
+      functionsByName[name] = {
+        corePlugins: func.corePlugins ?? {},
+        prices,
+        schemaAsJson: func.schemaAsJson,
+      };
     }
     this.insertNow([
       manifest.versionHash,
@@ -97,6 +101,7 @@ export interface IDatastoreRecord {
   functionsByName: {
     [name: string]: {
       corePlugins: Record<string, string>;
+      schemaAsJson: any;
       prices: {
         perQuery: number;
         minimum: number;

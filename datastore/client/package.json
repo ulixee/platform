@@ -13,6 +13,7 @@
     "./package.json": "./package.json",
     "./lib/utils/Autorun.mjs": "./lib/utils/Autorun.mjs",
     "./lib/*": "./lib/*.js",
+    "./cli/*": "./cli/*.js",
     "./types/*": "./types/*"
   },
   "dependencies": {

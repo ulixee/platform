@@ -3,6 +3,7 @@ import type * as CliCommands from '@ulixee/datastore-packager/lib/cliCommands';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import DatastoreApiClient from '../lib/DatastoreApiClient';
 import giftCardCommands from './giftCardCommands';
+import cloneDatastore from './cloneDatastore';
 
 const { version } = require('../package.json');
 
@@ -34,6 +35,15 @@ export default function datastoreCommands(): Command {
       'Clear out any version history for this script entrypoint',
     )
     .default(false);
+
+  cli
+    .command('clone')
+    .description('Clone and add onto a Datastore.')
+    .argument('<url>', 'The url of the Datastore.')
+    .argument('<path>', 'The path to output your cloned Datastore.')
+    .action(async (url, path) => {
+      await cloneDatastore(url, path);
+    });
 
   cli
     .command('deploy')

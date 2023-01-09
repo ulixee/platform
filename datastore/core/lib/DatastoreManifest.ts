@@ -106,6 +106,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       this.functionsByName[funcName] = {
         corePlugins: funcMeta.corePlugins ?? {},
         prices: funcMeta.prices ?? [{ perQuery: 0, minimum: 0 }],
+        schemaAsJson: funcMeta.schemaAsJson,
       };
     }
     // allow manifest to override above values

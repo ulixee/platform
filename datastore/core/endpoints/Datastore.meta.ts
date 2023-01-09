@@ -21,10 +21,7 @@ export default new DatastoreApiHandler('Datastore.meta', {
       }
     }
 
-    const sidechainSettings = await context.sidechainClientManager.defaultClient.getSettings(
-      false,
-      false,
-    );
+    let settlementFeeMicrogons: number;
     const functionsByName: IDatastoreApiTypes['Datastore.meta']['result']['functionsByName'] = {};
 
     for (const [name, stats] of Object.entries(datastore.statsByFunction)) {
@@ -35,7 +32,12 @@ export default new DatastoreApiHandler('Datastore.meta', {
         minimumPrice += price.minimum;
         pricePerQuery += price.perQuery;
       }
-      if (minimumPrice > 0) minimumPrice += sidechainSettings.settlementFeeMicrogons;
+      if (minimumPrice > 0) {
+        settlementFeeMicrogons ??= (
+          await context.sidechainClientManager.defaultClient.getSettings(false, false)
+        ).settlementFeeMicrogons;
+        minimumPrice += settlementFeeMicrogons;
+      }
 
       functionsByName[name] = {
         stats: {
@@ -50,6 +52,10 @@ export default new DatastoreApiHandler('Datastore.meta', {
         minimumPrice,
         priceBreakdown: prices,
       };
+
+      if (request.includeSchemasAsJson) {
+        functionsByName[name].schemaJson = datastore.functionsByName[name]?.schemaAsJson;
+      }
     }
 
     return {
