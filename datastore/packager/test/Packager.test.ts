@@ -4,7 +4,6 @@ import { existsSync } from 'fs';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha3 } from '@ulixee/commons/lib/hashUtils';
-import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
 import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import DatastorePackager from '../index';
 import DbxFile from '../lib/DbxFile';
@@ -57,7 +56,11 @@ test('it should generate a relative script entrypoint', async () => {
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
     giftCardIssuerIdentity: undefined,
-    schemaInterface: undefined,
+    schemaInterface: `{
+  tables: {};
+  functions: {};
+}`,
+    tablesByName: {},
     functionsByName: {
       default: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
@@ -200,19 +203,23 @@ test('should be able to package a multi-function Datastore', async () => {
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
     giftCardIssuerIdentity: undefined,
+    tablesByName: {},
     schemaInterface: `{
-  funcWithInput: {
-    input: {
-      /**
-       * @format url
-       */
-      url: string;
+  tables: {};
+  functions: {
+    funcWithInput: {
+      input: {
+        /**
+         * @format url
+         */
+        url: string;
+      };
     };
-  };
-  funcWithOutput: {
-    output: {
-      title: string;
-      html: string;
+    funcWithOutput: {
+      output: {
+        title: string;
+        html: string;
+      };
     };
   };
 }`,
@@ -251,15 +258,20 @@ test('should be able to package an exported Function without a Datastore', async
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
     giftCardIssuerIdentity: undefined,
-    schemaInterface: undefined,
+    schemaInterface: `{
+  tables: {};
+  functions: {};
+}`,
     functionsByName: {
       default: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {
           '@ulixee/datastore-plugins-hero': require('../package.json').version,
         },
+        schemaAsJson: undefined,
       },
     },
+    tablesByName: {},
     versionHash: DatastoreManifest.createVersionHash(packager.manifest),
     versionTimestamp: expect.any(Number),
     paymentAddress: undefined,

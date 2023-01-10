@@ -12,37 +12,55 @@ export default async function cloneDatastore(
 ): Promise<void> {
   const parsedUrl = new URL(url);
   const datastoreApiClient = new DatastoreApiClient(parsedUrl.host);
-  const meta = await datastoreApiClient.getMeta(parsedUrl.pathname.slice(1));
+  const meta = await datastoreApiClient.getMeta(parsedUrl.pathname.slice(1), true);
   path = Path.resolve(path);
 
-  const schemas: Record<string, string> = {};
+  const schemasByName: Record<string, { isTable: boolean; schemaJson: any }> = {};
+  const imports = new Set<string>();
+
   const passthroughFunctions = Object.entries(meta.functionsByName).map(([x, func]) => {
     let schemaLine = '';
+    imports.add('PassthroughFunction');
     if (func.schemaJson) {
-      schemas[`${x}Schema`] = func.schemaJson;
-      schemaLine = `\n  schema: ${x}Schema,\n`;
+      schemasByName[`${x}FunctionSchema`] = { isTable: false, schemaJson: func.schemaJson };
+      schemaLine = `\n  schema: ${x}FunctionSchema(),\n`;
     }
     return `${x}: new PassthroughFunction({
   remoteFunction: 'source.${x}',${schemaLine}
 })`;
   });
 
-  const schemaImports = new Set<string>();
-  const schemaVars = Object.entries(schemas).map(([name, json]) => {
-    const schema = JSON.parse(json);
-    let js = `var ${name} = {\n`;
+  const passthroughTables = Object.entries(meta.tablesByName).map(([x, table]) => {
+    let schemaLine = '';
+    imports.add('PassthroughTable');
+    if (table.schemaJson) {
+      schemasByName[`${x}TableSchema`] = { isTable: true, schemaJson: table.schemaJson };
+      schemaLine = `\n  schema: ${x}TableSchema(),\n`;
+    }
+    return `${x}: new PassthroughTable({
+  remoteTable: 'source.${x}',${schemaLine}
+})`;
+  });
 
+  const schemaImports = new Set<string>();
+  const schemaVars = Object.entries(schemasByName).map(([name, record]) => {
+    const schema = record.schemaJson;
+    if (record.isTable) {
+      return `function ${name}() {\n  return ${jsonToSchemaCode(schema, schemaImports)};\n}\n`;
+    }
+
+    let js = `function ${name}() {\n return {\n`;
     if (schema.input) {
       js += `  input: ${jsonToSchemaCode(schema.input, schemaImports)}\n,`;
     }
     if (schema.output) {
       js += `  output: ${jsonToSchemaCode(schema.output, schemaImports)}`;
     }
-    return `${js}};\n`;
+    return `${js}};\n}\n`;
   });
 
   const script = `
-  import { Datastore, PassthroughFunction } from '@ulixee/datastore';
+  import { Datastore, ${[...imports].join(',')} } from '@ulixee/datastore';
   import schemaFromJson from '@ulixee/schema/lib/schemaFromJson';
   import { ${[...schemaImports].join(', ')} } from '@ulixee/schema';
   
@@ -52,6 +70,9 @@ export default async function cloneDatastore(
     },
     functions: {
       ${passthroughFunctions}
+    },
+    tables: {
+      ${passthroughTables}
     }
   });
 

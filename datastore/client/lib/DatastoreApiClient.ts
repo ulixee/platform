@@ -11,7 +11,7 @@ import { IPayment } from '@ulixee/specification';
 import { nanoid } from 'nanoid';
 import ICoreEventPayload from '@ulixee/net/interfaces/ICoreEventPayload';
 import ITypes from '../types';
-import installSchemaType, { addSchemaAlias } from '../types/installSchemaType';
+import installDatastoreSchema, { addDatastoreAlias } from '../types/installDatastoreSchema';
 import IFunctionInputOutput from '../interfaces/IFunctionInputOutput';
 import ResultIterable from './ResultIterable';
 import IDatastoreEvents from '../interfaces/IDatastoreEvents';
@@ -42,13 +42,14 @@ export default class DatastoreApiClient {
 
   public async getMeta(
     versionHash: string,
+    includeSchemas = false,
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
-    return await this.runRemote('Datastore.meta', { versionHash });
+    return await this.runRemote('Datastore.meta', { versionHash, includeSchemasAsJson: includeSchemas });
   }
 
   public async getFunctionPricing<
     IVersionHash extends keyof ITypes & string = any,
-    IFunctionName extends keyof ITypes[IVersionHash] & string = 'default',
+    IFunctionName extends keyof ITypes[IVersionHash]['functions'] & string = 'default',
   >(
     versionHash: IVersionHash,
     functionName: IFunctionName,
@@ -76,10 +77,10 @@ export default class DatastoreApiClient {
     const meta = await this.getMeta(versionHash);
 
     if (meta.functionsByName && meta.schemaInterface) {
-      installSchemaType(meta.schemaInterface, versionHash);
+      installDatastoreSchema(meta.schemaInterface, versionHash);
     }
     if (alias) {
-      addSchemaAlias(versionHash, alias);
+      addDatastoreAlias(versionHash, alias);
     }
 
     return meta;
@@ -91,8 +92,8 @@ export default class DatastoreApiClient {
   public stream<
     IO extends IFunctionInputOutput,
     IVersionHash extends keyof ITypes & string = any,
-    IFunctionName extends keyof ITypes[IVersionHash] & string = 'default',
-    ISchemaDbx extends ITypes[IVersionHash][IFunctionName] = IO,
+    IFunctionName extends keyof ITypes[IVersionHash]['functions'] & string = string,
+    ISchemaDbx extends ITypes[IVersionHash]['functions'][IFunctionName] = IO,
   >(
     versionHash: IVersionHash,
     functionName: IFunctionName,

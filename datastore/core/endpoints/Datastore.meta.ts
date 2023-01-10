@@ -23,6 +23,7 @@ export default new DatastoreApiHandler('Datastore.meta', {
 
     let settlementFeeMicrogons: number;
     const functionsByName: IDatastoreApiTypes['Datastore.meta']['result']['functionsByName'] = {};
+    const tablesByName: IDatastoreApiTypes['Datastore.meta']['result']['tablesByName'] = {};
 
     for (const [name, stats] of Object.entries(datastore.statsByFunction)) {
       const { prices } = datastore.functionsByName[name];
@@ -57,12 +58,34 @@ export default new DatastoreApiHandler('Datastore.meta', {
         functionsByName[name].schemaJson = datastore.functionsByName[name]?.schemaAsJson;
       }
     }
+    for (const [name, meta] of Object.entries(datastore.tablesByName)) {
+      const { prices } = meta;
+      let pricePerQuery = 0;
+      for (const price of prices) {
+        pricePerQuery += price.perQuery;
+      }
+      if (pricePerQuery > 0) {
+        settlementFeeMicrogons ??= (
+          await context.sidechainClientManager.defaultClient.getSettings(false, false)
+        ).settlementFeeMicrogons;
+        pricePerQuery += settlementFeeMicrogons;
+      }
 
+      tablesByName[name] = {
+        pricePerQuery,
+        priceBreakdown: prices,
+      };
+
+      if (request.includeSchemasAsJson) {
+        tablesByName[name].schemaJson = meta.schemaAsJson;
+      }
+    }
     return {
       latestVersionHash: datastore.latestVersionHash,
       giftCardIssuerIdentities,
       schemaInterface: datastore.schemaInterface,
       functionsByName,
+      tablesByName,
       computePricePerQuery,
     };
   },

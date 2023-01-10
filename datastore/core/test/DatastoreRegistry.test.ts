@@ -38,6 +38,7 @@ test('should throw an error if the required datastore core version is not instal
       coreVersion: '5.0.0',
       versionTimestamp: Date.now(),
       functionsByName: {},
+      tablesByName: {},
       scriptEntrypoint: 'here.js',
       linkedVersions: [],
     }),
@@ -62,6 +63,7 @@ test('should be able to upload and retrieve the datastore', async () => {
     scriptEntrypoint: 'here.js',
     linkedVersions: [],
     functionsByName: { default: {} },
+    tablesByName: {},
   });
   await Fs.writeFile(
     `${datastoreTmpDir}/datastore-manifest.json`,
@@ -72,6 +74,7 @@ test('should be able to upload and retrieve the datastore', async () => {
       coreVersion: '2.0.0-alpha.1',
       scriptEntrypoint: 'here.js',
       functionsByName: { default: {} },
+      tablesByName: {},
       linkedVersions: [],
     }),
   );
@@ -100,6 +103,7 @@ test('should allow a user to override updating with no history', async () => {
       scriptHash: hashScript(script),
       versionHash: null,
       functionsByName: { default: {} },
+      tablesByName: {},
       linkedVersions: [],
     };
 
@@ -119,6 +123,7 @@ test('should allow a user to override updating with no history', async () => {
       scriptHash: hashScript(script),
       versionTimestamp: Date.now(),
       functionsByName: { default: {} },
+      tablesByName: {},
       versionHash: null,
       linkedVersions: [],
     };
@@ -164,6 +169,7 @@ test('should throw an error with version history if current versions are unmatch
       versionTimestamp: Date.now(),
       versionHash: null,
       functionsByName: { default: {} },
+      tablesByName: {},
       linkedVersions: [],
     };
     manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
@@ -185,6 +191,7 @@ test('should throw an error with version history if current versions are unmatch
       versionTimestamp: Date.now(),
       versionHash: null,
       functionsByName: { default: {} },
+      tablesByName: {},
       linkedVersions: [...versions],
     };
     manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
@@ -210,6 +217,7 @@ test('should throw an error with version history if current versions are unmatch
       versionTimestamp: Date.now(),
       versionHash: null,
       functionsByName: { default: {} },
+      tablesByName: {},
       linkedVersions: [versions[1]],
     };
     manifest.versionHash = DatastoreManifest.createVersionHash(manifest);

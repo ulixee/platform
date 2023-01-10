@@ -29,6 +29,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
   public coreVersion: string;
   public schemaInterface: string;
   public functionsByName: IDatastoreManifest['functionsByName'] = {};
+  public tablesByName: IDatastoreManifest['tablesByName'] = {};
   public remoteDatastores: Record<string, string>;
 
   // Payment details
@@ -81,6 +82,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     coreVersion: string,
     schemaInterface: string,
     functionsByName: IDatastoreManifest['functionsByName'],
+    tablesByName: IDatastoreManifest['tablesByName'],
     remoteDatastores: Record<string, string>,
     paymentAddress: string,
     giftCardIssuerIdentity: string,
@@ -107,6 +109,12 @@ export default class DatastoreManifest implements IDatastoreManifest {
         corePlugins: funcMeta.corePlugins ?? {},
         prices: funcMeta.prices ?? [{ perQuery: 0, minimum: 0 }],
         schemaAsJson: funcMeta.schemaAsJson,
+      };
+    }
+    for (const [tableName, tableMeta] of Object.entries(tablesByName)) {
+      this.tablesByName[tableName] = {
+        prices: tableMeta.prices ?? [{ perQuery: 0 }],
+        schemaAsJson: tableMeta.schemaAsJson,
       };
     }
     // allow manifest to override above values
@@ -200,6 +208,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       coreVersion: this.coreVersion,
       schemaInterface: this.schemaInterface,
       functionsByName: this.functionsByName,
+      tablesByName: this.tablesByName,
       paymentAddress: this.paymentAddress,
       giftCardIssuerIdentity: this.giftCardIssuerIdentity,
     };
@@ -277,6 +286,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       | 'paymentAddress'
       | 'giftCardIssuerIdentity'
       | 'functionsByName'
+      | 'tablesByName'
     >,
   ): string {
     const {
@@ -284,6 +294,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       versionTimestamp,
       scriptEntrypoint,
       functionsByName,
+      tablesByName,
       paymentAddress,
       giftCardIssuerIdentity,
       linkedVersions,
@@ -298,11 +309,20 @@ export default class DatastoreManifest implements IDatastoreManifest {
         functionPrices.push(price.perQuery, price.minimum, price.addOns?.perKb);
       }
     }
+    const tablePrices: (string | number)[] = [];
+    for (const name of Object.keys(tablesByName ?? {}).sort()) {
+      const table = tablesByName[name];
+      table.prices ??= [{ perQuery: 0 }];
+      for (const price of table.prices) {
+        tablePrices.push(price.perQuery);
+      }
+    }
     const hashMessage = concatAsBuffer(
       scriptHash,
       versionTimestamp,
       scriptEntrypoint,
       ...functionPrices,
+      ...tablePrices,
       paymentAddress,
       giftCardIssuerIdentity,
       JSON.stringify(linkedVersions),

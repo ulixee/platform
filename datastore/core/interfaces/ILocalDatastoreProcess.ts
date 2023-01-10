@@ -19,7 +19,6 @@ export type IMessage = IFetchMetaMessage | IRunMessage;
 
 export interface IExecResponseData {
   outputs?: any[];
-  error?: { message: string; stack?: string };
 }
 
 export interface IFetchMetaResponseData extends IDatastoreMetadata {
@@ -33,5 +32,5 @@ export type IResponseData = IExecResponseData | IFetchMetaResponseData;
 export interface IResponse {
   responseId: string;
   streamId?: number;
-  data: IResponseData;
+  data: IResponseData | Error;
 }

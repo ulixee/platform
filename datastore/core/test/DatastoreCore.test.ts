@@ -110,11 +110,15 @@ test('can get metadata about an uploaded datastore', async () => {
         ],
       },
     },
+    tablesByName: {},
     schemaInterface: `{
-  bootup: {
-    output: {
-      "is-valid"?: boolean;
-      success: boolean;
+  tables: {};
+  functions: {
+    bootup: {
+      output: {
+        "is-valid"?: boolean;
+        success: boolean;
+      };
     };
   };
 }`,

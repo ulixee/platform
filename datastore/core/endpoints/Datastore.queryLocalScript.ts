@@ -13,6 +13,8 @@ export default new DatastoreApiHandler('Datastore.queryLocalScript', {
 
     const db = storage.db;
     const sqlParser = new SqlParser(request.sql);
+    if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
+
     const schemas = Object.keys(meta.functionsByName).reduce((obj, k) => {
       return Object.assign(obj, { [k]: meta.functionsByName[k].schema.input });
     }, {});
@@ -23,7 +25,9 @@ export default new DatastoreApiHandler('Datastore.queryLocalScript', {
       const input = inputByFunctionName[functionName];
       const func = meta.functionsByName[functionName];
       if (!func)
-        throw new DatastoreNotFoundError('This Function is not available on the requested datastore');
+        throw new DatastoreNotFoundError(
+          'This Function is not available on the requested datastore',
+        );
 
       for (const pluginName of Object.keys(func.corePlugins)) {
         if (!context.pluginCoresByName[pluginName]) {
@@ -36,11 +40,9 @@ export default new DatastoreApiHandler('Datastore.queryLocalScript', {
       );
     }
 
-    if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
-
     const boundValues = sqlParser.convertToBoundValuesMap(request.boundValues);
     const sqlQuery = new SqlQuery(sqlParser, storage, db);
-    const records = sqlQuery.execute(inputByFunctionName, outputByFunctionName, boundValues);
+    const records = sqlQuery.execute(inputByFunctionName, outputByFunctionName, {}, boundValues);
     await datastoreProcess.close();
 
     return { outputs: records, latestVersionHash: null };

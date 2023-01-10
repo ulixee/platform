@@ -19,6 +19,7 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
         ['giftCardIssuerIdentity', 'TEXT'],
         ['schemaInterface', 'TEXT'],
         ['functionsByName', 'TEXT'],
+        ['tablesByName', 'TEXT'],
         ['scriptHash', 'TEXT'],
         ['scriptEntrypoint', 'TEXT'],
         ['storedDate', 'DATETIME'],
@@ -31,6 +32,7 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
   public save(manifest: IDatastoreManifest): void {
     const storedDate = Date.now();
     const functionsByName: IDatastoreRecord['functionsByName'] = {};
+    const tablesByName: IDatastoreRecord['tablesByName'] = {};
     for (const [name, func] of Object.entries(manifest.functionsByName)) {
       const prices: IDatastoreRecord['functionsByName'][0]['prices'] = (func.prices ?? []) as any;
       if (prices.length === 0) prices.push({ perQuery: 0 } as any);
@@ -45,6 +47,18 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
         schemaAsJson: func.schemaAsJson,
       };
     }
+
+    for (const [name, table] of Object.entries(manifest.tablesByName)) {
+      const prices: IDatastoreRecord['tablesByName'][0]['prices'] = (table.prices ?? []) as any;
+      if (prices.length === 0) prices.push({ perQuery: 0 } as any);
+      for (const price of prices) {
+        price.perQuery ??= 0;
+      }
+      tablesByName[name] = {
+        prices,
+        schemaAsJson: table.schemaAsJson,
+      };
+    }
     this.insertNow([
       manifest.versionHash,
       manifest.versionTimestamp,
@@ -53,6 +67,7 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
       manifest.giftCardIssuerIdentity,
       manifest.schemaInterface,
       JSON.stringify(functionsByName),
+      JSON.stringify(tablesByName),
       manifest.scriptHash,
       manifest.scriptEntrypoint,
       storedDate,
@@ -66,6 +81,7 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
       giftCardIssuerIdentity: manifest.giftCardIssuerIdentity,
       coreVersion: manifest.coreVersion,
       functionsByName,
+      tablesByName,
       scriptHash: manifest.scriptHash,
       scriptEntrypoint: manifest.scriptEntrypoint,
       storedDate,
@@ -79,6 +95,7 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
     const record = query.get(entrypoint);
     if (!record) return;
     record.functionsByName = JSON.parse(record.functionsByName);
+    record.tablesByName = JSON.parse(record.tablesByName);
     return record;
   }
 
@@ -87,6 +104,7 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
       const record = this.getQuery.get(versionHash);
       if (!record) return;
       record.functionsByName = JSON.parse(record.functionsByName);
+      record.tablesByName = JSON.parse(record.tablesByName);
       DatastoresTable.byVersionHash[versionHash] = record;
     }
     return DatastoresTable.byVersionHash[versionHash];
@@ -112,6 +130,19 @@ export interface IDatastoreRecord {
           host: string;
           datastoreVersionHash: string;
           functionName: string;
+        };
+      }[];
+    };
+  };
+  tablesByName: {
+    [name: string]: {
+      schemaAsJson: any;
+      prices: {
+        perQuery: number;
+        remoteMeta?: {
+          host: string;
+          datastoreVersionHash: string;
+          tableName: string;
         };
       }[];
     };

@@ -15,6 +15,7 @@ import Table from './Table';
 import type Crawler from './Crawler';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
 import type PassthroughFunction from './PassthroughFunction';
+import PassthroughTable from './PassthroughTable';
 
 const pkg = require('../package.json');
 
@@ -210,10 +211,15 @@ export default class DatastoreInternal<
     }
 
     for (const [funcName, table] of Object.entries(this.tables ?? {})) {
+      if (!table.isPublic) continue;
+      const passThrough = table as unknown as PassthroughTable<any, any>;
       metadata.tablesByName[funcName] = {
         name: table.name,
         description: table.description,
         schema: table.schema,
+        remoteSource: passThrough?.remoteSource,
+        remoteTable: passThrough?.remoteTable,
+        remoteDatastoreVersionHash: passThrough?.datastoreVersionHash,
       };
     }
 

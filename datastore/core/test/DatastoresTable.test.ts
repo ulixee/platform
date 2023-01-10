@@ -16,6 +16,11 @@ test('it can save a datastore manifest', () => {
         ],
       },
     },
+    tablesByName: {
+      default: {
+        prices: [{ perQuery: 1 }],
+      },
+    },
     coreVersion: '2.0.0-alpha.1',
     versionHash: 'abc',
   });
@@ -35,6 +40,15 @@ test('it can save a datastore manifest', () => {
             perQuery: 100,
             minimum: 100,
             addOns: { perKb: 0 },
+          },
+        ],
+      },
+    },
+    tablesByName: {
+      default: {
+        prices: [
+          {
+            perQuery: 1,
           },
         ],
       },

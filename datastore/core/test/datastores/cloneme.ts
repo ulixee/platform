@@ -1,5 +1,5 @@
-import Datastore, { Function } from '@ulixee/datastore';
-import { boolean, object, string } from '@ulixee/schema';
+import Datastore, { Function, Table } from '@ulixee/datastore';
+import { boolean, date, object, string } from '@ulixee/schema';
 
 export default new Datastore({
   functions: {
@@ -20,6 +20,22 @@ export default new Datastore({
         output: {
           success: boolean(),
         },
+      },
+    }),
+  },
+  tables: {
+    users: new Table({
+      schema: {
+        name: string(),
+        birthdate: date(),
+      },
+      seedlings: [{ name: 'me', birthdate: new Date() }],
+    }),
+    private: new Table({
+      isPublic: false,
+      schema: {
+        secret: string(),
+        key: string(),
       },
     }),
   },

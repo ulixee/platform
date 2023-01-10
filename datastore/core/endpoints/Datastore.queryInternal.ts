@@ -21,7 +21,7 @@ export default new DatastoreApiHandler('Datastore.queryInternal', {
     const db = storage.db;
     const sqlParser = new SqlParser(request.sql);
 
-    if (sqlParser.isInsert()) {
+    if (sqlParser.isInsert() || sqlParser.isUpdate() || sqlParser.isDelete()) {
       const sql = sqlParser.toSql();
       const boundValues = sqlParser.convertToBoundValuesMap(request.boundValues);
       db.prepare(sql).run(boundValues);
@@ -32,7 +32,12 @@ export default new DatastoreApiHandler('Datastore.queryInternal', {
 
     const boundValues = sqlParser.convertToBoundValuesMap(request.boundValues);
     const sqlQuery = new SqlQuery(sqlParser, storage, db);
-    const records = sqlQuery.execute(request.inputByFunctionName, request.outputByFunctionName, boundValues);
+    const records = sqlQuery.execute(
+      request.inputByFunctionName,
+      request.outputByFunctionName,
+      request.recordsByVirtualTableName,
+      boundValues,
+    );
 
     return Promise.resolve(records);
   },
