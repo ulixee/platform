@@ -97,7 +97,7 @@ export default class SqlGenerator {
   }
 
   public static convertFunctionRecordToSqliteRow(
-    record: any,
+    record: Record<string, any>,
     schema: Record<string, IAnySchemaJson>,
     tmpSchema: any = {},
   ): any {

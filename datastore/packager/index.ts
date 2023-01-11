@@ -131,6 +131,8 @@ export default class DatastorePackager {
 
     if (this.meta.tablesByName) {
       for (const [name, tableMeta] of Object.entries(this.meta.tablesByName)) {
+        // don't publish private tables
+        if (tableMeta.isPublic === false) continue;
         const { schema } = tableMeta;
         if (schema) {
           schemaInterface.tables[name] = schemaFromJson(schema);

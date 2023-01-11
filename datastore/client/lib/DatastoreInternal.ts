@@ -170,7 +170,7 @@ export default class DatastoreInternal<
     const { name, description, paymentAddress, giftCardIssuerIdentity, remoteDatastores } =
       this.components;
 
-    const metadata = {
+    const metadata: IDatastoreMetadata = {
       name,
       description,
       paymentAddress,
@@ -211,11 +211,11 @@ export default class DatastoreInternal<
     }
 
     for (const [funcName, table] of Object.entries(this.tables ?? {})) {
-      if (!table.isPublic) continue;
       const passThrough = table as unknown as PassthroughTable<any, any>;
       metadata.tablesByName[funcName] = {
         name: table.name,
         description: table.description,
+        isPublic: table.isPublic !== false,
         schema: table.schema,
         remoteSource: passThrough?.remoteSource,
         remoteTable: passThrough?.remoteTable,

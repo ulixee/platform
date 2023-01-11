@@ -40,15 +40,16 @@ export default new DatastoreApiHandler('Datastore.query', {
     const sqlParser = new SqlParser(request.sql);
     if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
 
-    const metadata = datastore.metadata;
     sqlParser.functionNames.forEach(functionName => {
-      const schema = metadata.functionsByName[functionName].schema || {};
+      const schema = datastore.functions[functionName].schema ?? {};
       storage.addFunctionSchema(functionName, schema);
     });
 
     sqlParser.tableNames.forEach(name => {
-      const schema = metadata.tablesByName[name]?.schema || {};
-      storage.addTableSchema(name, schema, !!metadata.tablesByName[name]?.remoteSource);
+      const table = datastore.tables[name];
+      if (!table.isPublic) throw new Error(`Table ${name} is not publicly accessible.`);
+      const schema = table.schema ?? {};
+      storage.addTableSchema(name, schema, !!table?.remoteSource);
     });
 
     const inputByFunctionName = sqlParser.extractFunctionInputs(

@@ -10,6 +10,7 @@ const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.clon
 
 let miner: UlixeeMiner;
 let client: DatastoreApiClient;
+let versionHash: string;
 
 beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/cloneme.dbx`)) {
@@ -28,7 +29,12 @@ beforeAll(async () => {
   miner.router.datastoreConfiguration = { datastoresDir: storageDir };
   await miner.listen();
   client = new DatastoreApiClient(await miner.address);
-});
+
+  const packager = new DatastorePackager(`${__dirname}/datastores/cloneme.ts`);
+  await packager.build();
+  await client.upload(await packager.dbx.asBuffer());
+  versionHash = packager.manifest.versionHash;
+}, 45e3);
 
 afterEach(Helpers.afterEach);
 
@@ -38,14 +44,6 @@ afterAll(async () => {
 });
 
 test('should be able to clone a datastore', async () => {
-  let versionHash: string;
-  {
-    const packager = new DatastorePackager(`${__dirname}/datastores/cloneme.ts`);
-    await packager.build();
-    await client.upload(await packager.dbx.asBuffer());
-    versionHash = packager.manifest.versionHash;
-  }
-
   const url = `ulx://${await miner.address}/${versionHash}`;
   await expect(cloneDatastore(url, `${__dirname}/datastores/cloned.ts`)).resolves.toBeUndefined();
 
@@ -92,5 +90,9 @@ test('should be able to clone a datastore', async () => {
   // can query the passthrough table
   await expect(
     client.query(packager.manifest.versionHash, 'select * from users', {}),
-  ).resolves.toEqual([{ name: 'me', birthdate: expect.any(Date) }]);
-});
+  ).resolves.toEqual({
+    metadata: expect.any(Object),
+    outputs: [{ name: 'me', birthdate: expect.any(Date) }],
+    latestVersionHash: packager.manifest.versionHash,
+  });
+}, 45e3);

@@ -47,7 +47,7 @@ export default class SqlQuery {
         // eslint-disable-next-line @typescript-eslint/no-loop-func
         *rows() {
           for (const record of outputs)
-            yield SqlGenerator.convertFunctionRecordToSqliteRow(record, schema, tmpSchemas);
+            yield SqlGenerator.convertTableRecordToSqlite(record, schema);
         },
       });
     }

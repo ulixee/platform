@@ -21,7 +21,7 @@ export default new DatastoreApiHandler('Datastore.queryInternalTable', {
       );
       const datastore = await DatastoreVm.open(registryEntry.path, manifest);
       storage = new DatastoreStorage(storagePath);
-      schema = datastore.metadata.tablesByName[tableName].schema;
+      schema = datastore.tables[tableName].schema;
     } else {
       context.connectionToClient.datastoreStorage ??= new DatastoreStorage();
       storage = context.connectionToClient?.datastoreStorage;
