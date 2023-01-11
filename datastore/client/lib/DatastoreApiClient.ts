@@ -1,5 +1,8 @@
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
-import DatastoreApiSchemas, { IDatastoreApis, IDatastoreApiTypes } from '@ulixee/specification/datastore';
+import DatastoreApiSchemas, {
+  IDatastoreApis,
+  IDatastoreApiTypes,
+} from '@ulixee/specification/datastore';
 import { sha3 } from '@ulixee/commons/lib/hashUtils';
 import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
@@ -25,6 +28,9 @@ export default class DatastoreApiClient {
   protected activeIterableByStreamId = new Map<string, ResultIterable<any, any>>();
 
   constructor(host: string) {
+    if (host.startsWith('ulx://')) {
+      host = `ws://${host.slice('ulx://'.length)}`;
+    }
     const transport = new WsTransportToCore(`${host}/datastore`);
     this.connectionToCore = new ConnectionToCore(transport);
     this.connectionToCore.on('event', this.onEvent.bind(this));
@@ -34,7 +40,9 @@ export default class DatastoreApiClient {
     return this.connectionToCore.disconnect();
   }
 
-  public async getMeta(versionHash: string): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
+  public async getMeta(
+    versionHash: string,
+  ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
     return await this.runRemote('Datastore.meta', { versionHash });
   }
 
@@ -227,7 +235,12 @@ export default class DatastoreApiClient {
 
   public static createExecSignatureMessage(payment: IPayment, nonce: string): Buffer {
     return sha3(
-      concatAsBuffer('Datastore.exec', payment?.giftCard?.id, payment?.micronote?.micronoteId, nonce),
+      concatAsBuffer(
+        'Datastore.exec',
+        payment?.giftCard?.id,
+        payment?.micronote?.micronoteId,
+        nonce,
+      ),
     );
   }
 

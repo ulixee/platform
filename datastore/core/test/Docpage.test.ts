@@ -16,6 +16,10 @@ let client: DatastoreApiClient;
 
 beforeAll(async () => {
   jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
+
+  if (Fs.existsSync(`${__dirname}/datastores/docpage.dbx.build`)) {
+    Fs.rmSync(`${__dirname}/datastores/docpage.dbx.build`, { recursive: true });
+  }
   const packager = new DatastorePackager(`${__dirname}/datastores/docpage.js`);
   await packager.build();
   dbxFile = await packager.dbx.asBuffer();

@@ -16,6 +16,9 @@ beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/crawl.dbx`)) {
     Fs.unlinkSync(`${__dirname}/datastores/crawl.dbx`);
   }
+  if (Fs.existsSync(`${__dirname}/datastores/crawl.dbx.build`)) {
+    Fs.rmSync(`${__dirname}/datastores/crawl.dbx.build`, { recursive: true });
+  }
 
   miner = new UlixeeMiner();
   miner.router.datastoreConfiguration = { datastoresDir: storageDir };
@@ -60,7 +63,7 @@ test('should be able to ask a crawler for a cached result', async () => {
   await expect(
     client.stream(crawler.manifest.versionHash, 'crawlCall', {
       sessionId: '2',
-      maxTimeInCache: (Date.now() - result1[0].runCrawlerTime.getTime() / 1e3),
+      maxTimeInCache: Date.now() - result1[0].runCrawlerTime.getTime() / 1e3,
     }),
     // should use cached version
   ).resolves.toEqual([{ version: '1', crawler: 'none', sessionId: '1' }]);
@@ -88,7 +91,7 @@ test('should get cached result by serialized input if no schema', async () => {
   await expect(
     client.stream(crawler.manifest.versionHash, 'crawlCall', {
       sessionId: '2', // should not call the crawler
-      maxTimeInCache: (Date.now() - result1[0].runCrawlerTime.getTime() / 1e3),
+      maxTimeInCache: Date.now() - result1[0].runCrawlerTime.getTime() / 1e3,
       // change field order to test
       test2: 'abc',
       test1: true,
@@ -106,7 +109,7 @@ test('should get cached result by serialized input if no schema', async () => {
   await expect(
     client.stream(crawler.manifest.versionHash, 'crawlCall', {
       sessionId: '3',
-      maxTimeInCache: (Date.now() - result1[0].runCrawlerTime.getTime() / 1e3),
+      maxTimeInCache: Date.now() - result1[0].runCrawlerTime.getTime() / 1e3,
       test2: 'somethingElse',
       test1: false,
     }),
@@ -142,7 +145,7 @@ test('should get cached result individual input columns', async () => {
   await expect(
     client.stream(crawler.manifest.versionHash, 'crawlWithSchemaCall', {
       sessionId: '2', // should not call the crawler
-      maxTimeInCache: (Date.now() - result1[0].runCrawlerTime.getTime() / 1e3),
+      maxTimeInCache: Date.now() - result1[0].runCrawlerTime.getTime() / 1e3,
       colBool: true,
       colNum: 1,
     }),
@@ -159,7 +162,7 @@ test('should get cached result individual input columns', async () => {
   await expect(
     client.stream(crawler.manifest.versionHash, 'crawlWithSchemaCall', {
       sessionId: '3',
-      maxTimeInCache: (Date.now() - result1[0].runCrawlerTime.getTime() / 1e3),
+      maxTimeInCache: Date.now() - result1[0].runCrawlerTime.getTime() / 1e3,
       colBool: false,
       colNum: 1,
     }),

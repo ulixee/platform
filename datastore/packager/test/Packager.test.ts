@@ -4,6 +4,8 @@ import { existsSync } from 'fs';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha3 } from '@ulixee/commons/lib/hashUtils';
+import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
+import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import DatastorePackager from '../index';
 import DbxFile from '../lib/DbxFile';
 
@@ -173,7 +175,10 @@ module.exports = new Datastore({ functions: { heroFunction }})`,
 });
 
 test('should be able to change the output directory', async () => {
-  const packager = new DatastorePackager(`${__dirname}/assets/historyTest.js`, `${__dirname}/build`);
+  const packager = new DatastorePackager(
+    `${__dirname}/assets/historyTest.js`,
+    `${__dirname}/build`,
+  );
   workingDirectory = packager.dbx.workingDirectory;
   dbxFile = packager.dbxPath;
 
@@ -189,7 +194,7 @@ test('should be able to package a multi-function Datastore', async () => {
   dbxFile = packager.dbxPath;
   workingDirectory = packager.dbx.workingDirectory;
   const dbx = new DbxFile(dbxFile);
-  expect(packager.manifest.toJSON()).toEqual({
+  expect(packager.manifest.toJSON()).toEqual(<IDatastoreManifest>{
     linkedVersions: [],
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `multiFunctionTest.js`),
     scriptHash: expect.any(String),
@@ -217,10 +222,12 @@ test('should be able to package a multi-function Datastore', async () => {
         corePlugins: {
           '@ulixee/datastore-plugins-hero': require('../package.json').version,
         },
+        schemaAsJson: { input: { url: { format: 'url', typeName: 'string' } } },
       },
       funcWithOutput: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {},
+        schemaAsJson: { output: { title: { typeName: 'string' }, html: { typeName: 'string' } } },
       },
     },
     versionHash: DatastoreManifest.createVersionHash(packager.manifest),
