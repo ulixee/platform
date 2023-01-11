@@ -1,9 +1,11 @@
 import Datastore from '@ulixee/datastore';
 import Function from '@ulixee/datastore/lib/Function';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import { IFetchMetaResponseData, IMessage, IResponse } from '../interfaces/ILocalDatastoreProcess';
+import { DatastoreNotFoundError } from '../lib/errors';
 
 function sendToParent(response: IResponse): void {
-  process.send(response);
+  process.send(TypeSerializer.stringify(response));
 }
 
 function exit(): void {
@@ -15,47 +17,49 @@ process.on('SIGTERM', exit);
 process.on('SIGHUP', exit);
 process.on('exit', exit);
 
-process.on('message', async (message: IMessage) => {
+process.on('message', async (messageJson: string) => {
+  const message = TypeSerializer.parse(messageJson) as IMessage;
   await new Promise(process.nextTick);
-  if (message.action === 'fetchMeta') {
-    let datastore = requireDatastore(message.scriptPath);
-    // wrap function in a default datastore
-    if (datastore instanceof Function) {
-      const functionName = datastore.name ?? 'default';
-      datastore = new Datastore({
-        functions: { [functionName]: datastore },
-        remoteDatastores: {},
-      }) as Datastore;
-    }
+  try {
+    if (message.action === 'fetchMeta') {
+      let datastore = requireDatastore(message.scriptPath);
+      // wrap function in a default datastore
+      if (datastore instanceof Function) {
+        const functionName = datastore.name ?? 'default';
+        datastore = new Datastore({
+          functions: { [functionName]: datastore },
+          tables: {},
+          remoteDatastores: {},
+        }) as Datastore;
+      }
 
-    const metadata = datastore.metadata;
+      const metadata = datastore.metadata;
 
-    const tableSeedlingsByName: IFetchMetaResponseData['tableSeedlingsByName'] = {};
-    for (const [name, table] of Object.entries(datastore.tables ?? {})) {
-      tableSeedlingsByName[name] = table.seedlings;
-    }
+      const tableSeedlingsByName: IFetchMetaResponseData['tableSeedlingsByName'] = {};
+      for (const [name, table] of Object.entries(datastore.tables ?? {})) {
+        tableSeedlingsByName[name] = table.seedlings;
+      }
 
-    return sendToParent({
-      responseId: message.messageId,
-      data: {
-        ...metadata,
-        tableSeedlingsByName,
-      },
-    });
-  }
-  if (message.action === 'stream') {
-    const datastore = requireDatastore(message.scriptPath);
-
-    if (!datastore.metadata.functionsByName[message.functionName]) {
       return sendToParent({
         responseId: message.messageId,
         data: {
-          error: { message: `Database function "${message.functionName}" not found.` },
+          ...metadata,
+          tableSeedlingsByName,
         },
       });
     }
+    if (message.action === 'stream') {
+      const datastore = requireDatastore(message.scriptPath);
 
-    try {
+      if (!datastore.metadata.functionsByName[message.functionName]) {
+        return sendToParent({
+          responseId: message.messageId,
+          data: new DatastoreNotFoundError(
+            `Database function "${message.functionName}" not found.`,
+          ),
+        });
+      }
+
       const stream = datastore.stream(message.functionName, message.input);
       for await (const output of stream) {
         sendToParent({
@@ -69,18 +73,15 @@ process.on('message', async (message: IMessage) => {
         responseId: message.messageId,
         data: {},
       });
-    } catch (error) {
-      sendToParent({
-        responseId: message.messageId,
-        data: {
-          error: { ...error },
-        },
-      });
     }
+    // @ts-ignore
+    throw new Error(`unknown action: ${message.action}`);
+  } catch (error) {
+    sendToParent({
+      responseId: message.messageId,
+      data: error,
+    });
   }
-
-  // @ts-ignore
-  throw new Error(`unknown action: ${message.action}`);
 });
 
 function requireDatastore(scriptPath: string): Datastore {

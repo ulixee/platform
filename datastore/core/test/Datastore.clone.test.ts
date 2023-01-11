@@ -3,7 +3,8 @@ import * as Path from 'path';
 import DatastorePackager from '@ulixee/datastore-packager';
 import UlixeeMiner from '@ulixee/miner';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import cloneDatastore from "@ulixee/datastore/cli/cloneDatastore";
+import cloneDatastore from '@ulixee/datastore/cli/cloneDatastore';
+import { Helpers } from '@ulixee/datastore-testing';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.clone.test');
 
@@ -15,6 +16,10 @@ beforeAll(async () => {
     Fs.unlinkSync(`${__dirname}/datastores/cloneme.dbx`);
   }
 
+  if (Fs.existsSync(`${__dirname}/datastores/cloneme.dbx.build`)) {
+    Fs.rmSync(`${__dirname}/datastores/cloneme.dbx.build`, { recursive: true });
+  }
+
   if (Fs.existsSync(`${__dirname}/datastores/cloned.dbx`)) {
     Fs.unlinkSync(`${__dirname}/datastores/cloned.dbx`);
   }
@@ -24,6 +29,8 @@ beforeAll(async () => {
   await miner.listen();
   client = new DatastoreApiClient(await miner.address);
 });
+
+afterEach(Helpers.afterEach);
 
 afterAll(async () => {
   await miner.close();
@@ -47,6 +54,30 @@ test('should be able to clone a datastore', async () => {
   await packager.build();
   await client.upload(await packager.dbx.asBuffer());
 
+  // should not include a private table
+  expect(Object.entries(packager.manifest.tablesByName)).toHaveLength(1);
+  expect(packager.manifest.tablesByName.private).not.toBeTruthy();
+  expect(packager.manifest.tablesByName.users.schemaAsJson).toEqual({
+    name: { typeName: 'string' },
+    birthdate: { typeName: 'date' },
+  });
+  expect(Object.entries(packager.manifest.functionsByName)).toHaveLength(1);
+  expect(packager.manifest.functionsByName.cloneUpstream.schemaAsJson).toEqual({
+    input: {
+      field: { typeName: 'string', minLength: 1, description: 'a field you should use' },
+      nested: {
+        typeName: 'object',
+        fields: {
+          field2: { typeName: 'boolean' },
+        },
+        optional: true,
+      },
+    },
+    output: {
+      success: { typeName: 'boolean' },
+    },
+  });
+
   await expect(
     client.stream(packager.manifest.versionHash, 'cloneUpstream', {}),
   ).rejects.toThrowError('input');
@@ -57,4 +88,9 @@ test('should be able to clone a datastore', async () => {
       nested: { field2: true },
     }),
   ).resolves.toEqual([{ success: true }]);
+
+  // can query the passthrough table
+  await expect(
+    client.query(packager.manifest.versionHash, 'select * from users', {}),
+  ).resolves.toEqual([{ name: 'me', birthdate: expect.any(Date) }]);
 });

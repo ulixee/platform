@@ -39,12 +39,15 @@ test('should be able upload a datastore', async () => {
   await client.upload(dbxFile);
   expect(Fs.existsSync(storageDir)).toBeTruthy();
   expect(manifest.schemaInterface).toBe(`{
-  upTest: {
-    output: {
-      /**
-       * Whether or not this test succeeded
-       */
-      upload: boolean;
+  tables: {};
+  functions: {
+    upTest: {
+      output: {
+        /**
+         * Whether or not this test succeeded
+         */
+        upload: boolean;
+      };
     };
   };
 }`)

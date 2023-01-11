@@ -32,8 +32,8 @@ export default class SqlGenerator {
   }
 
   public static createFunctionFromSchema(
-    input: any,
-    outputRecords: any[],
+    input: Record<string, any>,
+    outputRecords: Record<string, any>[],
     schema: IFunctionSchema,
     callback: (parameters: string[], columns: string[]) => void,
   ): void {

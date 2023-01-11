@@ -6,6 +6,7 @@ import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import { ChildProcess, fork } from 'child_process';
 import ResultIterable from '@ulixee/datastore/lib/ResultIterable';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import {
   IExecResponseData,
   IFetchMetaMessage,
@@ -51,12 +52,8 @@ export default class LocalDatastoreProcess extends TypedEventEmitter<{ error: Er
         input,
         streamId,
       });
-      if (data.error) {
-        const { message, stack, ...other } = data.error;
-        const error = new Error(message);
-        if (stack) error.stack += `\n${stack}`;
-        Object.assign(error, other);
-        throw error;
+      if (data instanceof Error) {
+        throw data;
       }
       iterable.done();
     })()
@@ -100,10 +97,9 @@ export default class LocalDatastoreProcess extends TypedEventEmitter<{ error: Er
       env: { ...process.env, ULX_CLI_NOPROMPT: 'true' },
     });
 
-    this.#child.on('message', x => this.handleMessageFromChild(x as IResponse));
+    this.#child.on('message', x => this.handleMessageFromChild(x as string));
     this.#child.on('error', error => {
-      // eslint-disable-next-line no-console
-      console.log('ERROR in LocalDatastoreProcess', error);
+      console.error('ERROR in LocalDatastoreProcess', error);
       this.emit('error', error);
     });
     this.#child.on('spawn', () => (this.#isSpawned = true));
@@ -112,7 +108,8 @@ export default class LocalDatastoreProcess extends TypedEventEmitter<{ error: Er
     return this.#child;
   }
 
-  private handleMessageFromChild(response: IResponse): void {
+  private handleMessageFromChild(responseJson: string): void {
+    const response: IResponse = TypeSerializer.parse(responseJson);
     if (response.streamId) {
       this.#streamsById[response.streamId]?.(response.data);
       return;
@@ -120,7 +117,9 @@ export default class LocalDatastoreProcess extends TypedEventEmitter<{ error: Er
 
     const promise = this.#pendingById[response.responseId];
     if (!promise) return;
-    promise.resolve(response.data);
+
+    if (response.data instanceof Error) promise.reject(response.data);
+    else promise.resolve(response.data);
     delete this.#pendingById[response.responseId];
   }
 
@@ -130,7 +129,7 @@ export default class LocalDatastoreProcess extends TypedEventEmitter<{ error: Er
     const promise = createPromise<TResponse>();
     const messageId = nanoid();
     this.#pendingById[messageId] = promise;
-    this.child.send({ ...message, messageId });
+    this.child.send(TypeSerializer.stringify({ ...message, messageId }));
     return promise.promise;
   }
 }

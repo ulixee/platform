@@ -2,29 +2,29 @@ import { setupAutorunMjsHack } from './lib/utils/Autorun.mjs';
 import cjsImport from './index.js';
 
 const {
-  Datastore,
-  ExtractorFunction,
-  CrawlerFunction,
-  PassthroughFunction,
-  FunctionContext,
-  Schema,
-  FunctionSchema,
-  Observable,
-  ConnectionToDatastoreCore,
   Table,
+  Datastore,
+  Observable,
+  FunctionSchema,
+  FunctionContext,
+  Function,
+  Crawler,
+  ConnectionToDatastoreCore,
+  PassthroughFunction,
+  Schema,
 } = cjsImport;
 
 export {
-  Datastore,
-  ExtractorFunction,
-  Crawler,
-  PassthroughFunction,
-  FunctionContext,
-  Schema,
-  FunctionSchema,
-  Observable,
-  ConnectionToDatastoreCore,
   Table,
+  Datastore,
+  Observable,
+  FunctionSchema,
+  FunctionContext,
+  Function,
+  Crawler,
+  ConnectionToDatastoreCore,
+  PassthroughFunction,
+  Schema,
 };
 
 export default cjsImport.default;

@@ -1,4 +1,4 @@
-import { parseFirst, IStatement, astVisitor, astMapper, toSql } from '@ulixee/sql-ast';
+import { astMapper, astVisitor, IStatement, parseFirst, toSql } from '@ulixee/sql-ast';
 import { SqlGenerator } from '@ulixee/sql-engine';
 import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
 
@@ -20,11 +20,18 @@ export default class SqlParser {
   public ast: IStatement;
   private limitedTo: ILimitedTo = {};
 
-  constructor(sql: string, limitedTo: ILimitedTo = {}) {
+  constructor(
+    sql: string,
+    limitedTo: ILimitedTo = {},
+    replaceTableNames: { [name: string]: string } = {},
+  ) {
     const cleaner = astMapper(map => ({
       tableRef(t) {
         if (limitedTo.table && t.name === 'self') {
           t.name = limitedTo.table;
+        }
+        if (replaceTableNames[t.name]) {
+          t.name = replaceTableNames[t.name];
         }
         return map.super().tableRef(t);
       },
@@ -33,7 +40,7 @@ export default class SqlParser {
           t.function.name = limitedTo.function;
         }
         return map.super().call(t);
-      }
+      },
     }));
     this.ast = cleaner.statement(parseFirst(sql));
     this.limitedTo = limitedTo;
@@ -73,13 +80,21 @@ export default class SqlParser {
     return this.ast.type === 'insert';
   }
 
+  public isUpdate(): boolean {
+    return this.ast.type === 'update';
+  }
+
+  public isDelete(): boolean {
+    return this.ast.type === 'delete';
+  }
+
   public convertToBoundValuesMap(values: any[]): { [k: string]: any } {
-    return values.reduce((a, v, i) => ({ ...a, [i+1]: v}), {});
+    return values.reduce((a, v, i) => ({ ...a, [i + 1]: v }), {});
   }
 
   public extractFunctionInput(functionName: string, boundValues: any): { [key: string]: any } {
     const boundValuesMap = this.convertToBoundValuesMap(boundValues);
-    const input: any = {}
+    const input: any = {};
     const visitor = astVisitor(() => ({
       call(t: any) {
         if (t.function.name !== functionName) return;
@@ -90,14 +105,32 @@ export default class SqlParser {
             input[arg.key] = arg.value;
           }
         }
-      }
+      },
     }));
     visitor.statement(this.ast);
 
     return input;
   }
 
-  public extractFunctionInputs<T>(schemasByName: IInputSchemasByName<T>, boundValues: any[]): { [name: string]: any } {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public extractTableQuery(tableName: string, boundValues: any): { sql: string; args: any[] } {
+    // const boundValuesMap = this.convertToBoundValuesMap(boundValues);
+    // const input: any = {}
+    // let columns: string[];
+    // const visitor = astVisitor(() => ({
+    //   fromTable(t) {
+    //     // TODO: how do you pull out the right sql for this?
+    //   }
+    // }));
+    // visitor.statement(this.ast);
+    // return input;
+    return { sql: `select * from ${tableName}`, args: [] };
+  }
+
+  public extractFunctionInputs<T>(
+    schemasByName: IInputSchemasByName<T>,
+    boundValues: any[],
+  ): { [name: string]: any } {
     if (!this.isSelect()) throw new Error('Invalid SQL command');
 
     const inputByFunction: { [name: string]: any } = {};

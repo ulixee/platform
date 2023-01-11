@@ -1,7 +1,7 @@
 import * as Fs from 'fs';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha3 } from '@ulixee/commons/lib/hashUtils';
-import installSchemaType, { addSchemaAlias } from '../types/installSchemaType';
+import installDatastoreSchema, { addDatastoreAlias } from '../types/installDatastoreSchema';
 
 beforeEach(() => {
   Fs.writeFileSync(
@@ -20,7 +20,7 @@ it('can install a schema', async () => {
       test2?: string;
     };
   }`;
-  installSchemaType(schema, 'thisIsATest');
+  installDatastoreSchema(schema, 'thisIsATest');
 
   expect(Fs.existsSync(`${__dirname}/../types/thisIsATest.d.ts`)).toBe(true);
   expect(Fs.readFileSync(`${__dirname}/../types/index.d.ts`, 'utf8'))
@@ -50,8 +50,8 @@ it('can install multiple schemas', async () => {
   }`;
   const id1 = encodeBuffer(sha3('schema1'), 'dbx');
   const id2 = encodeBuffer(sha3('schema2'), 'dbx');
-  installSchemaType(schema1, id1);
-  installSchemaType(schema2, id2);
+  installDatastoreSchema(schema1, id1);
+  installDatastoreSchema(schema2, id2);
 
   expect(Fs.existsSync(`${__dirname}/../types/${id1}.d.ts`)).toBe(true);
   expect(Fs.existsSync(`${__dirname}/../types/${id2}.d.ts`)).toBe(true);
@@ -65,7 +65,7 @@ export default interface ITypes extends Record<string, IDatastoreInputOutput> {
 }`);
 
   // test an alias
-  addSchemaAlias(id2, 'short2');
+  addDatastoreAlias(id2, 'short2');
   expect(Fs.readFileSync(`${__dirname}/../types/index.d.ts`, 'utf8'))
     .toBe(`import IDatastoreInputOutput from '@ulixee/datastore-interfaces/IDatastoreInputOutput';
 import ${id1} from './${id1}';
@@ -77,7 +77,7 @@ export default interface ITypes extends Record<string, IDatastoreInputOutput> {
 }`);
 
   // test overwriting a value
-  addSchemaAlias(id1, 'short2');
+  addDatastoreAlias(id1, 'short2');
   expect(Fs.readFileSync(`${__dirname}/../types/index.d.ts`, 'utf8'))
     .toBe(`import IDatastoreInputOutput from '@ulixee/datastore-interfaces/IDatastoreInputOutput';
 import ${id1} from './${id1}';

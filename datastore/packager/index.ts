@@ -50,7 +50,6 @@ export default class DatastorePackager {
     if ((await dbx.exists()) && !(await dbx.isOpen())) {
       await dbx.open(true);
     }
-
     const { sourceCode, sourceMap } = await this.rollup(options);
 
     this.meta ??= await this.findDatastoreMeta();
@@ -86,10 +85,15 @@ export default class DatastorePackager {
     if (!this.meta.coreVersion) {
       throw new Error('Datastore must specify a coreVersion');
     }
-    let interfaceString: string;
+
     const functionsByName: IDatastoreManifest['functionsByName'] = {};
+    const tablesByName: IDatastoreManifest['tablesByName'] = {};
+    const schemaInterface: {
+      tables: Record<string, ISchemaAny>;
+      functions: Record<string, ISchemaAny>;
+    } = { tables: {}, functions: {} };
+
     if (this.meta.functionsByName) {
-      const schemaInterface: Record<string, ISchemaAny> = {};
       for (const [name, functionMeta] of Object.entries(this.meta.functionsByName)) {
         const { schema, pricePerQuery, minimumPrice, corePlugins } = functionMeta;
         if (schema) {
@@ -98,9 +102,10 @@ export default class DatastorePackager {
             output: schemaFromJson(schema?.output),
           });
           if (Object.keys(fields).length) {
-            schemaInterface[name] = object(fields);
+            schemaInterface.functions[name] = object(fields);
           }
         }
+
         functionsByName[name] = {
           corePlugins,
           prices: [
@@ -122,10 +127,29 @@ export default class DatastorePackager {
           functionsByName[name].prices.push(...functionDetails.priceBreakdown);
         }
       }
-      if (Object.keys(schemaInterface).length) {
-        interfaceString = printNode(schemaToInterface(schemaInterface));
+    }
+
+    if (this.meta.tablesByName) {
+      for (const [name, tableMeta] of Object.entries(this.meta.tablesByName)) {
+        const { schema } = tableMeta;
+        if (schema) {
+          schemaInterface.tables[name] = schemaFromJson(schema);
+        }
+
+        tablesByName[name] = {
+          schemaAsJson: schema,
+          prices: [{ perQuery: tableMeta.pricePerQuery ?? 0 }],
+        };
+
+        // lookup upstream pricing
+        if (tableMeta.remoteTable) {
+          const paymentDetails = await this.lookupRemoteDatastoreTablePricing(this.meta, tableMeta);
+          tablesByName[name].prices.push(...paymentDetails.priceBreakdown);
+        }
       }
     }
+
+    const interfaceString = printNode(schemaToInterface(schemaInterface));
 
     const hash = sha3(Buffer.from(sourceCode));
     const scriptVersionHash = encodeBuffer(hash, 'scr');
@@ -136,6 +160,7 @@ export default class DatastorePackager {
       this.meta.coreVersion,
       interfaceString,
       functionsByName,
+      tablesByName,
       this.meta.remoteDatastores,
       this.meta.paymentAddress,
       this.meta.giftCardIssuerIdentity,
@@ -183,6 +208,46 @@ export default class DatastorePackager {
       const remoteFunctionDetails = upstreamMeta.functionsByName[functionName];
       remoteFunctionDetails.priceBreakdown[0].remoteMeta = remoteMeta;
       return remoteFunctionDetails;
+    } catch (error) {
+      console.error('ERROR loading remote datastore pricing', remoteMeta, error);
+      throw error;
+    }
+  }
+
+  protected async lookupRemoteDatastoreTablePricing(
+    meta: IFetchMetaResponseData,
+    table: IFetchMetaResponseData['tablesByName'][0],
+  ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['tablesByName'][0]> {
+    const tableName = table.remoteTable;
+    const url = meta.remoteDatastores[table.remoteSource];
+    if (!url)
+      throw new Error(
+        `The remoteDatastore could not be found for the key - ${table.remoteTable}. It should be defined in remoteDatastores on your Datastore.`,
+      );
+
+    let remoteUrl: URL;
+    try {
+      remoteUrl = new URL(url);
+    } catch (err) {
+      throw new Error(
+        `The remoteDatastore url for "${table.remoteTable}" is not a valid url (${url})`,
+      );
+    }
+
+    const datastoreVersionHash = remoteUrl.pathname.slice(1);
+    DatastoreManifest.validateVersionHash(datastoreVersionHash);
+
+    const remoteMeta = {
+      host: remoteUrl.host,
+      datastoreVersionHash,
+      tableName,
+    };
+    const datastoreApiClient = new DatastoreApiClient(remoteUrl.host);
+    try {
+      const upstreamMeta = await datastoreApiClient.getMeta(datastoreVersionHash);
+      const remoteDetails = upstreamMeta.tablesByName[tableName];
+      remoteDetails.priceBreakdown[0].remoteMeta = remoteMeta;
+      return remoteDetails;
     } catch (error) {
       console.error('ERROR loading remote datastore pricing', remoteMeta, error);
       throw error;

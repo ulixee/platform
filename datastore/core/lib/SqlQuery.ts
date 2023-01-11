@@ -1,6 +1,6 @@
-import { SqlGenerator, SqlParser } from "@ulixee/sql-engine";
+import { SqlGenerator, SqlParser } from '@ulixee/sql-engine';
 import { Database as SqliteDatabase } from 'better-sqlite3';
-import DatastoreStorage from "./DatastoreStorage";
+import DatastoreStorage from './DatastoreStorage';
 
 export default class SqlQuery {
   sqlParser: SqlParser;
@@ -13,7 +13,12 @@ export default class SqlQuery {
     this.db = db;
   }
 
-  public execute(inputByFunctionName, outputsByFunctionName, boundValues): any[] {
+  public execute(
+    inputByFunctionName: { [name: string]: Record<string, any> },
+    outputsByFunctionName: { [name: string]: Record<string, any>[] },
+    recordsByVirtualTableName: { [name: string]: Record<string, any>[] },
+    boundValues: Record<string, any>,
+  ): any[] {
     const schemas = this.sqlParser.tableNames.map(x => this.storage.getTableSchema(x));
     const tmpSchemas = {};
     for (const functionName of this.sqlParser.functionNames) {
@@ -27,10 +32,23 @@ export default class SqlQuery {
           parameters,
           columns,
           *rows() {
-            const record = outputs.shift();
-            if (record) yield SqlGenerator.convertFunctionRecordToSqliteRow(record, schema, tmpSchemas);
+            for (const record of outputs)
+              yield SqlGenerator.convertFunctionRecordToSqliteRow(record, schema, tmpSchemas);
           },
         });
+      });
+    }
+    for (const tableName of Object.keys(recordsByVirtualTableName)) {
+      const schema = this.storage.getTableSchema(tableName);
+      schemas.push(schema);
+      const outputs = recordsByVirtualTableName[tableName];
+      this.db.table(tableName, {
+        columns: Object.keys(schema),
+        // eslint-disable-next-line @typescript-eslint/no-loop-func
+        *rows() {
+          for (const record of outputs)
+            yield SqlGenerator.convertFunctionRecordToSqliteRow(record, schema, tmpSchemas);
+        },
       });
     }
 

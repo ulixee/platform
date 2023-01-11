@@ -1,5 +1,7 @@
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { SqlParser } from '@ulixee/sql-engine';
+import Datastore from '@ulixee/datastore';
+import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
 import SqlQuery from '../lib/SqlQuery';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreCore from '../index';
@@ -44,9 +46,9 @@ export default new DatastoreApiHandler('Datastore.query', {
       storage.addFunctionSchema(functionName, schema);
     });
 
-    sqlParser.tableNames.forEach(functionName => {
-      const schema = metadata.tablesByName[functionName].schema || {};
-      storage.addTableSchema(functionName, schema);
+    sqlParser.tableNames.forEach(name => {
+      const schema = metadata.tablesByName[name]?.schema || {};
+      storage.addTableSchema(name, schema, !!metadata.tablesByName[name]?.remoteSource);
     });
 
     const inputByFunctionName = sqlParser.extractFunctionInputs(
@@ -76,18 +78,7 @@ export default new DatastoreApiHandler('Datastore.query', {
       validateFunctionCoreVersions(registryEntry, functionName, context);
 
       const outputs = await context.workTracker.trackRun(
-        (async () => {
-          const options = {
-            input: functionInput,
-            payment: request.payment,
-            authentication: request.authentication,
-          };
-          for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
-            if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);
-          }
-
-          return await datastore.functions[functionName].stream(options);
-        })(),
+        runDatastoreFunction(datastore, functionName, functionInput, request),
       );
       outputsByFunctionName[functionName] = outputs;
 
@@ -103,9 +94,24 @@ export default new DatastoreApiHandler('Datastore.query', {
       });
     }
 
+    const recordsByVirtualTableName: { [tableName: string]: Record<string, any>[] } = {};
+    for (const table of sqlParser.tableNames) {
+      if (storage.isVirtualTable(table)) {
+        const sqlInputs = sqlParser.extractTableQuery(table, request.boundValues);
+        recordsByVirtualTableName[table] = await context.workTracker.trackRun(
+          runDatastorePassthroughQuery(datastore, table, sqlInputs.sql, sqlInputs.args, request),
+        );
+      }
+    }
+
     const boundValues = sqlParser.convertToBoundValuesMap(request.boundValues);
     const sqlQuery = new SqlQuery(sqlParser, storage, db);
-    const outputs = sqlQuery.execute(inputByFunctionName, outputsByFunctionName, boundValues);
+    const outputs = sqlQuery.execute(
+      inputByFunctionName,
+      outputsByFunctionName,
+      recordsByVirtualTableName,
+      boundValues,
+    );
 
     const resultBytes = PaymentProcessor.getOfficialBytes(outputs);
     const microgons = await paymentProcessor.settle(resultBytes);
@@ -120,3 +126,35 @@ export default new DatastoreApiHandler('Datastore.query', {
     };
   },
 });
+
+async function runDatastoreFunction<T>(
+  datastore: Datastore,
+  functionName: string,
+  functionInput: any,
+  request: IDatastoreApiTypes['Datastore.query']['args'],
+): Promise<T> {
+  const options = {
+    input: functionInput,
+    payment: request.payment,
+    authentication: request.authentication,
+  };
+  for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
+    if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);
+  }
+
+  return await datastore.functions[functionName].stream(options);
+}
+
+async function runDatastorePassthroughQuery<T>(
+  datastore: Datastore,
+  tableName: string,
+  sql: string,
+  boundValues: any[],
+  request: IDatastoreApiTypes['Datastore.query']['args'],
+): Promise<T> {
+  const options = {
+    payment: request.payment,
+    authentication: request.authentication,
+  };
+  return await datastore.tables[tableName].query(sql, boundValues, options);
+}

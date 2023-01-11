@@ -11,6 +11,7 @@ export default class DatastoreStorage {
   public readonly path: string;
   #schemasByTableName: { [name: string]: ISchema } = {};
   #schemasByFunctionName: { [name: string]: ISchema } = {};
+  #virtualTableNames = new Set<string>();
 
   constructor(storagePath?: string) {
     if (storagePath) {
@@ -24,15 +25,20 @@ export default class DatastoreStorage {
   }
 
   public get schemasByTableName(): { [name: string]: ISchema } {
-    return { ...this.#schemasByTableName}
+    return { ...this.#schemasByTableName };
   }
 
   public get schemasByFunctionName(): { [name: string]: ISchema } {
-    return { ...this.#schemasByFunctionName}
+    return { ...this.#schemasByFunctionName };
   }
 
-  public addTableSchema(name: string, schema: ISchema): void {
+  public isVirtualTable(name: string): boolean {
+    return this.#virtualTableNames.has(name);
+  }
+
+  public addTableSchema(name: string, schema: ISchema, isVirtual = false): void {
     this.#schemasByTableName[name] = schema;
+    if (isVirtual) this.#virtualTableNames.add(name);
   }
 
   public getTableSchema(name: string): ISchema {

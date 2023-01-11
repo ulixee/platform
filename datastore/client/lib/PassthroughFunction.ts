@@ -41,7 +41,7 @@ export default class PassthroughFunction<
   public readonly remoteFunction: string;
   public datastoreVersionHash: string;
 
-  protected client: DatastoreApiClient;
+  protected upstreamClient: DatastoreApiClient;
   protected readonly passThroughComponents: IPassthroughFunctionComponents<
     TRemoteSources,
     TFunctionName,
@@ -76,7 +76,7 @@ export default class PassthroughFunction<
       await this.passThroughComponents.onRequest(context);
     }
 
-    const queryResult = this.client.stream(
+    const queryResult = this.upstreamClient.stream<{ output: TOutput; input: any }>(
       this.datastoreVersionHash,
       this.remoteFunction,
       context.input,
@@ -124,7 +124,7 @@ export default class PassthroughFunction<
   }
 
   protected createApiClient(context: TContext): void {
-    if (this.client) return;
+    if (this.upstreamClient) return;
     const remoteSource = this.remoteSource;
     // need lookup
     const remoteDatastore = context.datastoreMetadata.remoteDatastores[remoteSource];
@@ -134,7 +134,7 @@ export default class PassthroughFunction<
     try {
       const url = new URL(remoteDatastore);
       this.datastoreVersionHash = url.pathname.slice(1);
-      this.client = new DatastoreApiClient(url.host);
+      this.upstreamClient = new DatastoreApiClient(url.host);
     } catch (error) {
       throw new Error(
         'A valid url was not supplied for this remote datastore. Format should be ulx://<host>/<datastoreVersionHash>',

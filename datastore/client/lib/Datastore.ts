@@ -81,10 +81,10 @@ export default class Datastore<
     const datastoreVersionHash = this.#datastoreInternal.manifest?.versionHash;
 
     const sqlParser = new SqlParser(sql);
-    const schemas = Object.keys(this.#datastoreInternal.functions).reduce((obj, k) => {
+    const inputSchemas = Object.keys(this.#datastoreInternal.functions).reduce((obj, k) => {
       return Object.assign(obj, { [k]: this.#datastoreInternal.functions[k].schema.input });
     }, {});
-    const inputByFunctionName = sqlParser.extractFunctionInputs(schemas, boundValues);
+    const inputByFunctionName = sqlParser.extractFunctionInputs(inputSchemas, boundValues);
     const outputByFunctionName: { [name: string]: any[] } = {};
 
     for (const functionName of Object.keys(inputByFunctionName)) {
@@ -93,11 +93,23 @@ export default class Datastore<
       outputByFunctionName[functionName] = Array.isArray(output) ? output : [output];
     }
 
+    const recordsByVirtualTableName: { [name: string]: Record<string, any>[] } = {};
+    for (const tableName of sqlParser.tableNames) {
+      if (!this.#datastoreInternal.metadata.tablesByName[tableName].remoteSource) continue;
+
+      const sqlInputs = sqlParser.extractTableQuery(tableName, boundValues);
+      recordsByVirtualTableName[tableName] = await this.#datastoreInternal.tables[tableName].query(
+        sqlInputs.sql,
+        sqlInputs.args,
+      );
+    }
+
     const args = {
       sql,
       boundValues,
       inputByFunctionName,
       outputByFunctionName,
+      recordsByVirtualTableName,
       datastoreInstanceId,
       datastoreVersionHash,
     };

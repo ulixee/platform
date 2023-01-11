@@ -1,5 +1,5 @@
-import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
 import IFunctionComponents from './IFunctionComponents';
+import ITableComponents from './ITableComponents';
 
 export default interface IDatastoreMetadata {
   name?: string;
@@ -23,8 +23,9 @@ export default interface IDatastoreMetadata {
   };
   tablesByName: {
     [name: string]: {
-      schema: Record<string, IAnySchemaJson>;
-      description?: string;
-    };
+      remoteTable?: string;
+      remoteSource?: string;
+      remoteDatastoreVersionHash?: string;
+    } & Omit<ITableComponents<any, any>, 'seedlings'>;
   };
 }

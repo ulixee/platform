@@ -44,7 +44,9 @@ export default class DbxFile {
   public async getEmbeddedManifest(): Promise<DatastoreManifest> {
     // read from the dbx if from file
     await this.open();
-    const manifest = new DatastoreManifest(Path.join(this.workingDirectory, 'datastore-manifest.json'));
+    const manifest = new DatastoreManifest(
+      Path.join(this.workingDirectory, 'datastore-manifest.json'),
+    );
     await manifest.load();
     await this.close();
     return manifest;
@@ -58,7 +60,9 @@ export default class DbxFile {
     const db = new Database(dbPath);
 
     for (const name of Object.keys(tableByName)) {
-      const { schema } = tableByName[name];
+      const { schema, remoteSource } = tableByName[name];
+      // don't create a remote table
+      if (remoteSource) continue;
       SqlGenerator.createTableFromSchema(name, schema, sql => {
         db.prepare(sql).run();
       });
@@ -71,7 +75,11 @@ export default class DbxFile {
     db.close();
   }
 
-  public async createOrUpdateDocpage(meta: IFetchMetaResponseData, manifest: DatastoreManifest, entrypoint: string): Promise<void> {
+  public async createOrUpdateDocpage(
+    meta: IFetchMetaResponseData,
+    manifest: DatastoreManifest,
+    entrypoint: string,
+  ): Promise<void> {
     const docpageDir = Path.join(this.workingDirectory, 'docpage');
     const name = meta.name || entrypoint.match(/([^/\\]+)\.(js|ts)$/)[1] || 'Untitled';
 
@@ -85,8 +93,8 @@ export default class DbxFile {
             name: n,
             description: meta.functionsByName[n].description || '',
             schema: meta.functionsByName[n].schema,
-            prices: manifest.functionsByName[n].prices
-          }
+            prices: manifest.functionsByName[n].prices,
+          },
         });
       }, {}),
       tablesByName: Object.keys(meta.tablesByName).reduce((obj, n) => {
@@ -95,10 +103,10 @@ export default class DbxFile {
             name: n,
             description: meta.tablesByName[n].description || '',
             schema: meta.tablesByName[n].schema,
-          }
+          },
         });
       }, {}),
-    }
+    };
     await buildDocpage(config, docpageDir);
   }
 
