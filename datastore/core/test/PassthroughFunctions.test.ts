@@ -17,8 +17,10 @@ import { IBlockSettings } from '@ulixee/specification';
 import ISidechainInfoApis from '@ulixee/specification/sidechain/SidechainInfoApis';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import Address from '@ulixee/crypto/lib/Address';
-import GiftCards from '@ulixee/sidechain/lib/GiftCards';
+import UlixeeConfig from '@ulixee/commons/config';
+import { customAlphabet } from 'nanoid';
 import DatastoreCore from '../index';
+import DatastoreManifest from '../lib/DatastoreManifest';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughFunctions.test');
 
@@ -26,8 +28,7 @@ let miner: UlixeeMiner;
 let client: DatastoreApiClient;
 const sidechainIdentity = Identity.createSync();
 const batchIdentity = Identity.createSync();
-const giftCardBatchIdentity = Identity.createSync();
-const batchSlug = 'micro_12345123';
+const batchSlug = customAlphabet('0123456789ABCDEF', 14)();
 
 const apiCalls = jest.fn();
 DatastoreCore.options.identityWithSidechain = Identity.createSync();
@@ -36,8 +37,14 @@ DatastoreCore.options.defaultSidechainRootIdentity = sidechainIdentity.bech32;
 DatastoreCore.options.approvedSidechains = [
   { rootIdentity: sidechainIdentity.bech32, url: 'http://localhost:1337' },
 ];
-jest.spyOn(GiftCards.prototype, 'saveToDisk').mockImplementation(() => null);
-jest.spyOn(GiftCards.prototype, 'getStored').mockImplementation(() => Promise.resolve({}));
+
+// @ts-expect-error
+const write = DatastoreManifest.writeToDisk;
+// @ts-expect-error
+jest.spyOn(DatastoreManifest, 'writeToDisk').mockImplementation(async (path, data) => {
+  if (path.includes(UlixeeConfig.global.directoryPath)) return;
+  return write.call(DatastoreManifest, path, data);
+});
 jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
 
 const mock = {
@@ -53,15 +60,24 @@ const mock = {
 let remoteVersionHash: string;
 beforeAll(async () => {
   for (const file of [
-    'remoteFunction.dbx',
-    'passthroughFunction.js',
-    'passthroughFunction.dbx',
-    'passthroughFunctionUpcharge.js',
-    'passthroughFunctionUpcharge.dbx',
+    'passthroughFunction',
+    'passthroughFunctionUpcharge',
+    'passthroughFunctionNoOnresponse',
+    'hop2',
   ]) {
-    if (Fs.existsSync(`${__dirname}/datastores/${file}`)) {
-      Fs.unlinkSync(`${__dirname}/datastores/${file}`);
+    if (Fs.existsSync(`${__dirname}/datastores/${file}.js`)) {
+      Fs.unlinkSync(`${__dirname}/datastores/${file}.js`);
     }
+    if (Fs.existsSync(`${__dirname}/datastores/${file}.dbx`)) {
+      Fs.unlinkSync(`${__dirname}/datastores/${file}.dbx`);
+    }
+    if (Fs.existsSync(`${__dirname}/datastores/${file}.dbx.build`)) {
+      Fs.rmSync(`${__dirname}/datastores/${file}.dbx.build`, { recursive: true });
+    }
+  }
+
+  if (Fs.existsSync(`${__dirname}/datastores/remoteFunction.dbx`)) {
+    Fs.unlinkSync(`${__dirname}/datastores/remoteFunction.dbx`);
   }
 
   mock.MicronoteBatchFunding.fundBatch.mockImplementation(async function (batch, centagons) {
@@ -212,7 +228,9 @@ export default new Datastore({
 });`,
   );
 
-  const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughFunctionUpcharge.js`);
+  const passthrough = new DatastorePackager(
+    `${__dirname}/datastores/passthroughFunctionUpcharge.js`,
+  );
   await passthrough.build();
   await client.upload(await passthrough.dbx.asBuffer());
 
@@ -398,7 +416,6 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
       micronote: [
         {
           batchSlug,
-          isGiftCardBatch: false,
           micronoteBatchIdentity: batchIdentity.bech32,
           sidechainIdentity: sidechainIdentity.bech32,
           sidechainValidationSignature: sidechainIdentity.sign(sha3(batchIdentity.bech32)),
@@ -409,7 +426,6 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
   if (command === 'Micronote.create') {
     const id = encodeBuffer(sha3('micronoteId'), 'mcr');
     const mcrBatchSlug = (args as any).batchSlug;
-    const identity = mcrBatchSlug.startsWith('gifts') ? giftCardBatchIdentity : batchIdentity;
     return {
       batchSlug: mcrBatchSlug,
       id,
@@ -417,7 +433,7 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
       guaranteeBlockHeight: 0,
       fundsId: '1'.padEnd(30, '0'),
       fundMicrogonsRemaining: args.microgons,
-      micronoteSignature: identity.sign(sha3(concatAsBuffer(id, args.microgons))),
+      micronoteSignature: batchIdentity.sign(sha3(concatAsBuffer(id, args.microgons))),
     } as IMicronoteApis['Micronote.create']['result'];
   }
   throw new Error(`unknown request ${command}`);

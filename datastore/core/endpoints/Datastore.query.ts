@@ -1,4 +1,3 @@
-import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { SqlParser } from '@ulixee/sql-engine';
 import Datastore from '@ulixee/datastore';
 import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
@@ -12,10 +11,6 @@ import { validateAuthentication, validateFunctionCoreVersions } from '../lib/dat
 
 export default new DatastoreApiHandler('Datastore.query', {
   async handler(request, context) {
-    if (DatastoreCore.isClosing) {
-      throw new CanceledPromiseError('Miner shutting down. Not accepting new work.');
-    }
-    await DatastoreCore.start();
     request.boundValues ??= [];
 
     const startTime = Date.now();
@@ -58,7 +53,7 @@ export default new DatastoreApiHandler('Datastore.query', {
     );
     const outputsByFunctionName: { [name: string]: any[] } = {};
 
-    const paymentProcessor = new PaymentProcessor(request.payment, context);
+    const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
 
     const functionsWithTempIds = Object.keys(inputByFunctionName).map((x, i) => {
       return {

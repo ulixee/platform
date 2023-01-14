@@ -16,6 +16,7 @@ import type Crawler from './Crawler';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
 import type PassthroughFunction from './PassthroughFunction';
 import PassthroughTable from './PassthroughTable';
+import CreditsTable from './CreditsTable';
 
 const pkg = require('../package.json');
 
@@ -74,6 +75,8 @@ export default class DatastoreInternal<
     for (const [name, table] of Object.entries(components.tables || [])) {
       this.attachTable(table, name);
     }
+    this.attachTable(new CreditsTable());
+
     for (const [name, crawler] of Object.entries(components.crawlers || [])) {
       this.attachCrawler(crawler, name);
     }
@@ -167,7 +170,7 @@ export default class DatastoreInternal<
   }
 
   private createMetadata(): IDatastoreMetadata {
-    const { name, description, paymentAddress, giftCardIssuerIdentity, remoteDatastores } =
+    const { name, description, paymentAddress, remoteDatastores, adminIdentities } =
       this.components;
 
     const metadata: IDatastoreMetadata = {
@@ -175,7 +178,7 @@ export default class DatastoreInternal<
       description,
       paymentAddress,
       remoteDatastores,
-      giftCardIssuerIdentity,
+      adminIdentities,
       coreVersion: pkg.version,
       tablesByName: {},
       functionsByName: {},

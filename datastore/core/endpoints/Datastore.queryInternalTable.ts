@@ -39,11 +39,14 @@ export default new DatastoreApiHandler('Datastore.queryInternalTable', {
       );
     }
 
-    if (sqlParser.isInsert()) {
+    if (sqlParser.isInsert() || sqlParser.isDelete() || sqlParser.isUpdate()) {
       const sql = sqlParser.toSql();
       const boundValues = sqlParser.convertToBoundValuesMap(request.boundValues);
-      db.prepare(sql).run(boundValues);
-      return Promise.resolve();
+      if (sqlParser.hasReturn()) {
+        return db.prepare(sql).get(boundValues);
+      }
+      const result = db.prepare(sql).run(boundValues);
+      return { changes: result?.changes };
     }
 
     if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
@@ -52,7 +55,6 @@ export default new DatastoreApiHandler('Datastore.queryInternalTable', {
     const boundValues = sqlParser.convertToBoundValuesMap(request.boundValues);
     const records = db.prepare(sql).all(boundValues);
 
-    SqlGenerator.convertRecordsFromSqlite(records, [schema]);
-    return Promise.resolve(records);
+    return SqlGenerator.convertRecordsFromSqlite(records, [schema]);
   },
 });

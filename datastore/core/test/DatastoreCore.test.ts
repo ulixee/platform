@@ -87,7 +87,6 @@ test('can get metadata about an uploaded datastore', async () => {
     runApi('Datastore.meta', { versionHash: packager.manifest.versionHash }),
   ).resolves.toEqual(<IDatastoreApiTypes['Datastore.meta']['result']>{
     latestVersionHash: packager.manifest.versionHash,
-    giftCardIssuerIdentities: [],
     computePricePerQuery: 0,
     functionsByName: {
       bootup: {

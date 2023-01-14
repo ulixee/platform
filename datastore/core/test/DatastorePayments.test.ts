@@ -15,13 +15,11 @@ import IMicronoteApis from '@ulixee/specification/sidechain/MicronoteApis';
 import Address from '@ulixee/crypto/lib/Address';
 import IMicronoteBatchApis from '@ulixee/specification/sidechain/MicronoteBatchApis';
 import { IBlockSettings } from '@ulixee/specification';
-import IGiftCardApis from '@ulixee/specification/sidechain/GiftCardApis';
-import { nanoid } from 'nanoid';
 import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import ISidechainInfoApis from '@ulixee/specification/sidechain/SidechainInfoApis';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import Ed25519 from '@ulixee/crypto/lib/Ed25519';
-import GiftCards from '@ulixee/sidechain/lib/GiftCards';
+import { nanoid } from 'nanoid';
+import CreditsStore from '@ulixee/datastore/lib/CreditsStore';
 import DatastoreCore from '../index';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastorePayments.test');
@@ -30,26 +28,21 @@ let miner: UlixeeMiner;
 let client: DatastoreApiClient;
 const sidechainIdentity = Identity.createSync();
 const batchIdentity = Identity.createSync();
-const giftCardBatchIdentity = Identity.createSync();
 const clientIdentity = Identity.createSync();
-const batchSlug = 'micro_12345123';
-const giftCardBatchSlug = 'gifts_12345123';
+const adminIdentity = Identity.createSync();
+const batchSlug = 'ABCDEF12345125';
 
 const address = Address.createFromSigningIdentities([clientIdentity]);
-const minerIdentity = Identity.createSync();
-const minerGiftCardIssuer = Identity.createSync();
 
 const apiCalls = jest.fn();
 DatastoreCore.options.identityWithSidechain = Identity.createSync();
 DatastoreCore.options.defaultSidechainHost = 'http://localhost:1337';
 DatastoreCore.options.defaultSidechainRootIdentity = sidechainIdentity.bech32;
-DatastoreCore.options.giftCardsRequiredIssuerIdentity = minerGiftCardIssuer.bech32;
 DatastoreCore.options.approvedSidechains = [
   { rootIdentity: sidechainIdentity.bech32, url: 'http://localhost:1337' },
 ];
-
-jest.spyOn(GiftCards.prototype, 'saveToDisk').mockImplementation(() => null);
-jest.spyOn(GiftCards.prototype, 'getStored').mockImplementation(() => Promise.resolve({}));
+CreditsStore.storePath = Path.join(storageDir, `credits.json`);
+jest.spyOn<any, any>(CreditsStore, 'writeToDisk').mockImplementation(() => null);
 jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
 
 const mock = {
@@ -185,105 +178,58 @@ test('should be able to run a datastore function with payments', async () => {
   });
 });
 
-test('should be able run a datastore with a GiftCard', async () => {
-  apiCalls.mockClear();
+test('should be able run a Datastore with Credits', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/output.js`);
-  const datastoreGiftCardIssuer = Identity.createSync();
   await Fs.writeFileSync(
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
-      giftCardIssuerIdentity: datastoreGiftCardIssuer.bech32,
       functionsByName: {
         putout: {
           prices: [{ perQuery: 1000 }],
         },
       },
+      adminIdentities: [adminIdentity.bech32],
     } as Partial<IDatastoreManifest>),
   );
 
   const dbx = await packager.build();
   const manifest = packager.manifest;
-  await client.upload(await dbx.asBuffer());
+  await client.upload(await dbx.asBuffer(), { identity: adminIdentity });
 
-  const devSidechainClient = new SidechainClient('http://localhost:1337', {
-    identity: datastoreGiftCardIssuer,
-  });
-  giftCardIssuerIdentities = [minerGiftCardIssuer.bech32, datastoreGiftCardIssuer.bech32];
-  const giftCardDraft = await devSidechainClient.giftCards.createUnsaved(
-    5000,
-    giftCardIssuerIdentities,
-  );
-  const giftCard = await devSidechainClient.giftCards.save(
-    devSidechainClient.giftCards.signWithIssuers(giftCardDraft, minerGiftCardIssuer),
-  );
-
-  const userSidechainClient = new SidechainClient('http://localhost:1337', {
-    identity: clientIdentity,
-    address,
-  });
-  const giftCardBalance = await userSidechainClient.giftCards.store(
-    giftCard.giftCardId,
-    giftCard.redemptionKey,
-  );
-  expect(giftCardBalance.microgonsRemaining).toBe(5000);
-
-  const meta = await client.getFunctionPricing(manifest.versionHash, 'putout');
-  expect(meta.giftCardIssuerIdentities).toHaveLength(2);
-
-  // should be able to run with a gift card required issuer
-  {
-    const payment = await userSidechainClient.createMicroPayment({
-      microgons: meta.minimumPrice,
-      ...meta,
-    });
-    expect(payment.giftCard.id).toBe(giftCard.giftCardId);
-    await expect(
-      client.query(manifest.versionHash, 'SELECT success FROM putout()', { payment }),
-    ).resolves.toEqual({
-      outputs: [{ success: true }],
-      metadata: expect.any(Object),
-      latestVersionHash: expect.any(String),
-    });
-  }
-  // should be able to run with no gift card required issuer
-  {
-    DatastoreCore.options.giftCardsRequiredIssuerIdentity = null;
-    const payment = await userSidechainClient.createMicroPayment({
-      microgons: meta.minimumPrice,
-      ...meta,
-    });
-    expect(payment.giftCard.id).toBe(giftCard.giftCardId);
-    await expect(
-      client.query(manifest.versionHash, 'SELECT success FROM putout()', { payment }),
-    ).resolves.toEqual({
-      outputs: [{ success: true }],
-      metadata: expect.any(Object),
-      latestVersionHash: expect.any(String),
-    });
-
-    const streamed = client.stream(manifest.versionHash, 'putout', {}, { payment });
-    await expect(streamed.resultMetadata).resolves.toEqual({
-      metadata: expect.any(Object),
-      latestVersionHash: expect.any(String),
-    });
-  }
-
-  // follow-on test that you can disable giftCards
-  DatastoreCore.options.giftCardsAllowed = false;
-  const payment = await userSidechainClient.createMicroPayment({
-    microgons: meta.minimumPrice,
-    ...meta,
-  });
-  expect(payment.giftCard).toBeTruthy()
   await expect(
-    client.query(manifest.versionHash, 'SELECT * FROM putout()', { payment }),
-  ).rejects.toThrowError('not accepting gift cards');
-  DatastoreCore.options.giftCardsAllowed = true;
+    client.query(manifest.versionHash, 'SELECT * FROM putout()', {}),
+  ).rejects.toThrowError('requires payment');
+
+  const credits = await client.createCredits(manifest.versionHash, 1001, adminIdentity);
+  expect(credits).toEqual({
+    id: expect.any(String),
+    remainingCredits: 1001,
+    secret: expect.any(String),
+  });
+
+  await expect(
+    client.query(manifest.versionHash, 'SELECT * FROM putout()', { payment: { credits } }),
+  ).resolves.toEqual({
+    outputs: [{ success: true }],
+    metadata: {
+      microgons: 1000,
+      bytes: expect.any(Number),
+      milliseconds: expect.any(Number),
+    },
+    latestVersionHash: manifest.versionHash,
+  });
+
+  await expect(client.getCreditsBalance(manifest.versionHash, credits.id)).resolves.toEqual({
+    balance: 1,
+  });
+
+  await expect(
+    client.query(manifest.versionHash, 'SELECT * FROM putout()', { payment: { credits } }),
+  ).rejects.toThrowError('Could not hold funds');
 });
 
-test('should remove an empty GiftCard', async () => {
-  apiCalls.mockClear();
+test('should remove an empty Credits from the local cache', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/output.js`);
   await Fs.writeFileSync(
     `${__dirname}/datastores/output-manifest.json`,
@@ -294,49 +240,22 @@ test('should remove an empty GiftCard', async () => {
         },
       },
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
-      giftCardIssuerIdentity: minerGiftCardIssuer.bech32,
+      adminIdentities: [adminIdentity.bech32],
     } as Partial<IDatastoreManifest>),
   );
 
-  DatastoreCore.options.giftCardsRequiredIssuerIdentity = null;
   const dbx = await packager.build();
   const manifest = packager.manifest;
-  await client.upload(await dbx.asBuffer());
-
-  const devSidechainClient = new SidechainClient('http://localhost:1337', {
-    identity: minerIdentity,
-  });
-  const giftCard = await devSidechainClient.giftCards.create(5000);
-
-  const userSidechainClient = new SidechainClient('http://localhost:1337', {
-    identity: clientIdentity,
-    address,
-  });
-  const giftCardBalance = await userSidechainClient.giftCards.store(
-    giftCard.giftCardId,
-    giftCard.redemptionKey,
-  );
-  expect(giftCardBalance.microgonsRemaining).toBe(5000);
-
-  const meta = await client.getFunctionPricing(manifest.versionHash, 'putout');
-  expect(meta.giftCardIssuerIdentities).toHaveLength(1);
-
-  const payment = await userSidechainClient.createMicroPayment({
-    ...meta,
-    microgons: meta.minimumPrice,
-  });
-  expect(payment.giftCard.id).toBe(giftCard.giftCardId);
-  emptyGiftCardId = payment.giftCard.id;
-
-  expect(userSidechainClient.giftCards.byId[emptyGiftCardId]).toBeTruthy();
+  await client.upload(await dbx.asBuffer(), { identity: adminIdentity });
+  const credits = await client.createCredits(manifest.versionHash, 1250, adminIdentity);
+  await CreditsStore.store(await miner.address, manifest.versionHash, credits);
   await expect(
-    client.query(manifest.versionHash, 'SELECT * FROM putout()', { payment }),
-  ).rejects.toThrowError();
-  expect(userSidechainClient.giftCards.byId[emptyGiftCardId]).not.toBeTruthy();
+    CreditsStore.getPayment(await miner.address, manifest.versionHash, 1250),
+  ).resolves.toBeTruthy();
+  await expect(
+    CreditsStore.getPayment(await miner.address, manifest.versionHash, 1),
+  ).resolves.toBeUndefined();
 });
-
-let emptyGiftCardId: string = null;
-let giftCardIssuerIdentities: string[] = [minerGiftCardIssuer.bech32];
 
 async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, any>) {
   const { command, args } = message;
@@ -378,25 +297,16 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
       micronote: [
         {
           batchSlug,
-          isGiftCardBatch: false,
           micronoteBatchIdentity: batchIdentity.bech32,
           sidechainIdentity: sidechainIdentity.bech32,
           sidechainValidationSignature: sidechainIdentity.sign(sha3(batchIdentity.bech32)),
         },
       ],
-      giftCard: {
-        batchSlug: giftCardBatchSlug,
-        isGiftCardBatch: true,
-        micronoteBatchIdentity: giftCardBatchIdentity.bech32,
-        sidechainIdentity: sidechainIdentity.bech32,
-        sidechainValidationSignature: sidechainIdentity.sign(sha3(giftCardBatchIdentity.bech32)),
-      },
     } as ISidechainInfoApis['Sidechain.openBatches']['result'];
   }
   if (command === 'Micronote.create') {
     const id = encodeBuffer(sha3('micronoteId'), 'mcr');
     const mcrBatchSlug = (args as any).batchSlug;
-    const identity = mcrBatchSlug.startsWith('gifts') ? giftCardBatchIdentity : batchIdentity;
     return {
       batchSlug: mcrBatchSlug,
       id,
@@ -404,54 +314,12 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
       guaranteeBlockHeight: 0,
       fundsId: '1'.padEnd(30, '0'),
       fundMicrogonsRemaining: 5000,
-      micronoteSignature: identity.sign(sha3(concatAsBuffer(id, args.microgons))),
+      micronoteSignature: batchIdentity.sign(sha3(concatAsBuffer(id, args.microgons))),
     } as IMicronoteApis['Micronote.create']['result'];
   }
-  if (command === 'GiftCard.get') {
-    return {
-      balance: args.giftCardId === emptyGiftCardId ? 0 : 5000,
-      id: args.giftCardId,
-      issuerIdentities: giftCardIssuerIdentities,
-    } as IGiftCardApis['GiftCard.get']['result'];
-  }
-  if (command === 'MicronoteBatch.activeFunds') {
-    const funds = [] as IMicronoteBatchApis['MicronoteBatch.activeFunds']['result'];
-    if ((args as any).batchSlug === giftCardBatchSlug) {
-      funds.push({
-        fundsId: '1'.padEnd(30, '0'),
-        allowedRecipientAddresses: [],
-        microgonsRemaining: 5000,
-      });
-    }
-    return funds;
-  }
-  if (command === 'GiftCard.create') {
-    const key = Ed25519.getPrivateKeyBytes((await Ed25519.create()).privateKey);
-    const giftCardId = nanoid(12);
-    return {
-      batchSlug,
-      giftCardId,
-      redemptionKey: encodeBuffer(key, 'gft'),
-    } as IGiftCardApis['GiftCard.create']['result'];
-  }
 
-  if (command === 'GiftCard.createHold') {
-    if (args.giftCardId === emptyGiftCardId) {
-      const error: any = new Error('Insufficient Funds Error');
-      error.code = 'ERR_NSF';
-      throw error;
-    }
-    return {
-      holdId: nanoid(32),
-      remainingBalance: 10,
-    } as IGiftCardApis['GiftCard.createHold']['result'];
-  }
-  if (command === 'GiftCard.settleHold') {
-    return {
-      remainingBalance: 10,
-      microgonsAllowed: args.microgons,
-      success: true,
-    } as IGiftCardApis['GiftCard.settleHold']['result'];
+  if (command === 'MicronoteBatch.activeFunds') {
+    return [] as IMicronoteBatchApis['MicronoteBatch.activeFunds']['result'];
   }
   throw new Error(`unknown request ${command}`);
 }

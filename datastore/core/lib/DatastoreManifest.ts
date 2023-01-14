@@ -32,9 +32,9 @@ export default class DatastoreManifest implements IDatastoreManifest {
   public tablesByName: IDatastoreManifest['tablesByName'] = {};
   public remoteDatastores: Record<string, string>;
 
+  public adminIdentities: string[];
   // Payment details
   public paymentAddress?: string;
-  public giftCardIssuerIdentity?: string;
 
   public linkedVersions: IVersionHistoryEntry[];
   public allVersions: IVersionHistoryEntry[];
@@ -85,7 +85,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     tablesByName: IDatastoreManifest['tablesByName'],
     remoteDatastores: Record<string, string>,
     paymentAddress: string,
-    giftCardIssuerIdentity: string,
+    adminIdentities: string[],
     logger?: (message: string, ...args: any[]) => any,
   ): Promise<void> {
     await this.load();
@@ -97,12 +97,13 @@ export default class DatastoreManifest implements IDatastoreManifest {
     await this.loadGeneratedManifests(manifestSources);
     this.linkedVersions ??= [];
     this.functionsByName = {};
+    adminIdentities ??= [];
     Object.assign(this, {
       coreVersion,
       schemaInterface,
       remoteDatastores,
       paymentAddress,
-      giftCardIssuerIdentity,
+      adminIdentities,
     });
     for (const [funcName, funcMeta] of Object.entries(functionsByName)) {
       this.functionsByName[funcName] = {
@@ -184,10 +185,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     if (this.source !== 'dbx' && !(await this.exists())) {
       return;
     }
-    if (!(await existsAsync(Path.dirname(this.path)))) {
-      await Fs.mkdir(Path.dirname(this.path), { recursive: true });
-    }
-    await safeOverwriteFile(this.path, JSON.stringify(json, null, 2));
+    await DatastoreManifest.writeToDisk(this.path, json);
   }
 
   public toConfigManifest(): IDatastoreManifestJson {
@@ -210,7 +208,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       functionsByName: this.functionsByName,
       tablesByName: this.tablesByName,
       paymentAddress: this.paymentAddress,
-      giftCardIssuerIdentity: this.giftCardIssuerIdentity,
+      adminIdentities: this.adminIdentities,
     };
   }
 
@@ -284,9 +282,9 @@ export default class DatastoreManifest implements IDatastoreManifest {
       | 'scriptEntrypoint'
       | 'linkedVersions'
       | 'paymentAddress'
-      | 'giftCardIssuerIdentity'
       | 'functionsByName'
       | 'tablesByName'
+      | 'adminIdentities'
     >,
   ): string {
     const {
@@ -296,8 +294,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
       functionsByName,
       tablesByName,
       paymentAddress,
-      giftCardIssuerIdentity,
       linkedVersions,
+      adminIdentities,
     } = manifest;
     linkedVersions.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
     const functions = Object.keys(functionsByName ?? {}).sort();
@@ -324,7 +322,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       ...functionPrices,
       ...tablePrices,
       paymentAddress,
-      giftCardIssuerIdentity,
+      ...(adminIdentities ?? []),
       JSON.stringify(linkedVersions),
     );
     const sha = HashUtils.sha3(hashMessage);
@@ -349,6 +347,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       throw ValidationError.fromZodValidation('This is not a valid datastore versionHash', error);
     }
   }
+
 
   /// MANIFEST OVERRIDE FILES  /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -387,6 +386,13 @@ export default class DatastoreManifest implements IDatastoreManifest {
   private static loadGlobalManifest(manifestPath: string): DatastoreManifest {
     const path = Path.join(UlixeeConfig.global.directoryPath, 'datastores.json');
     return new DatastoreManifest(path, 'global', manifestPath);
+  }
+
+  private static async writeToDisk(path: string, json: any): Promise<void> {
+    if (!(await existsAsync(Path.dirname(path)))) {
+      await Fs.mkdir(Path.dirname(path), { recursive: true });
+    }
+    await safeOverwriteFile(path, JSON.stringify(json, null, 2));
   }
 }
 

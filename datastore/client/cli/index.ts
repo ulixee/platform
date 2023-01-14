@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import type * as CliCommands from '@ulixee/datastore-packager/lib/cliCommands';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import DatastoreApiClient from '../lib/DatastoreApiClient';
-import giftCardCommands from './giftCardCommands';
+import creditsCli from './creditsCli';
 import cloneDatastore from './cloneDatastore';
 
 const { version } = require('../package.json');
@@ -186,7 +186,7 @@ export default function datastoreCommands(): Command {
       },
     );
 
-  cli.addCommand(giftCardCommands());
+  cli.addCommand(creditsCli());
   return cli;
 }
 

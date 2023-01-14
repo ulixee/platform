@@ -8,10 +8,8 @@ export default interface IDatastoreCoreConfigureOptions {
   datastoresTmpDir: string;
   waitForDatastoreCompletionOnShutdown: boolean;
   paymentAddress: string;
-  giftCardsAllowed: boolean;
-  giftCardsRequiredIssuerIdentity: string;
   enableRunWithLocalPath: boolean;
-  uploaderIdentities: string[];
+  serverAdminIdentities: string[];
   defaultBytesForPaymentEstimates: number;
   computePricePerQuery: number;
   approvedSidechains: IBlockSettings['sidechains'];

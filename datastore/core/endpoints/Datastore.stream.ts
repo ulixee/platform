@@ -1,4 +1,3 @@
-import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreCore from '../index';
 import PaymentProcessor from '../lib/PaymentProcessor';
@@ -7,11 +6,6 @@ import { validateAuthentication, validateFunctionCoreVersions } from '../lib/dat
 
 export default new DatastoreApiHandler('Datastore.stream', {
   async handler(request, context) {
-    if (DatastoreCore.isClosing) {
-      throw new CanceledPromiseError('Miner shutting down. Not accepting new work.');
-    }
-    await DatastoreCore.start();
-
     const startTime = Date.now();
     const { registryEntry, manifest } = await context.datastoreRegistry.loadVersion(
       request.versionHash,
@@ -27,7 +21,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
 
     await validateAuthentication(datastore, request.payment, request.authentication);
 
-    const paymentProcessor = new PaymentProcessor(request.payment, context);
+    const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
 
     const { functionName, input } = request;
     await paymentProcessor.createHold(

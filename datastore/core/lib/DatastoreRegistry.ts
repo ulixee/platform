@@ -9,6 +9,7 @@ import DatastoresDb from './DatastoresDb';
 import { IDatastoreRecord } from './DatastoresTable';
 import {
   DatastoreNotFoundError,
+  InvalidPermissionsError,
   InvalidScriptVersionHistoryError,
   MissingLinkedScriptVersionsError,
 } from './errors';
@@ -117,7 +118,9 @@ export default class DatastoreRegistry {
   public async save(
     datastoreTmpPath: string,
     rawBuffer: Buffer,
+    adminIdentity?: string,
     allowNewLinkedVersionHistory = false,
+    hasServerAdminIdentity = false,
   ): Promise<{ dbxPath: string }> {
     const manifest = await readFileAsJson<IDatastoreManifest>(
       `${datastoreTmpPath}/datastore-manifest.json`,
@@ -159,6 +162,8 @@ export default class DatastoreRegistry {
 
     this.checkVersionHistoryMatch(manifest);
 
+    if (!hasServerAdminIdentity) this.verifyAdminIdentity(manifest, adminIdentity);
+
     // move to an active working dir path
     const workingDirectory = this.getDatastoreWorkingDirectory(manifest.versionHash);
     if (!(await existsAsync(workingDirectory))) {
@@ -172,6 +177,37 @@ export default class DatastoreRegistry {
     this.saveManifestMetadata(manifest);
 
     return { dbxPath };
+  }
+
+  private verifyAdminIdentity(manifest: IDatastoreManifest, adminIdentity: string): void {
+    // ensure admin is in the new list
+    if (manifest.adminIdentities.length && !manifest.adminIdentities.includes(adminIdentity)) {
+      if (adminIdentity)
+        throw new InvalidPermissionsError(
+          `Your AdminIdentity is not authorized to upload Datastores to this Miner (${adminIdentity}).`,
+        );
+      else {
+        throw new InvalidPermissionsError(
+          `You must sign this request with an AdminIdentity authorized for this Datastore or Miner.`,
+        );
+      }
+    }
+    // ensure admin is from the previous linked version
+    if (manifest.linkedVersions?.length) {
+      const previous = manifest.linkedVersions[manifest.linkedVersions.length - 1];
+      const previousEntry = this.datastoresDb.datastores.getByVersionHash(previous.versionHash);
+      // if there were admins, must be in previous list!
+      if (
+        previousEntry &&
+        previousEntry.adminIdentities.length &&
+        (!previousEntry.adminIdentities.includes(adminIdentity) || !adminIdentity)
+      ) {
+        throw new InvalidPermissionsError(
+          'You are trying to overwrite a previous version of this Datastore with an AdminIdentity that was not present in the previous version.\n\n' +
+            'You must sign this version with a previous AdminIdentity, or use an authorized Server AdminIdentity.',
+        );
+      }
+    }
   }
 
   private checkDatastoreCoreInstalled(requiredVersion: string): void {

@@ -7,13 +7,13 @@ export default async function main(
   datastore: {
     datastoreHost: string;
     datastoreHash: string;
-    storeGiftCardCommand: string;
+    storeCreditCommand: string;
   },
   rootDir: string,
 ): Promise<void> {
-  const { datastoreHash, datastoreHost, storeGiftCardCommand } = datastore;
+  const { datastoreHash, datastoreHost, storeCreditCommand } = datastore;
 
-  execAndLog(`${storeGiftCardCommand} -h ${sidechainHost}`, {
+  execAndLog(`${storeCreditCommand} -h ${sidechainHost}`, {
     cwd: rootDir,
     stdio: 'inherit',
   });

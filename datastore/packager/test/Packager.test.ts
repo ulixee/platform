@@ -52,23 +52,23 @@ test('it should generate a relative script entrypoint', async () => {
 
   expect(packager.manifest.toJSON()).toEqual({
     linkedVersions: [],
+    adminIdentities: [],
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `historyTest.js`),
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
-    giftCardIssuerIdentity: undefined,
     schemaInterface: `{
   tables: {};
   functions: {};
 }`,
     tablesByName: {},
-    functionsByName: {
+    functionsByName: expect.objectContaining({
       default: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {
           '@ulixee/datastore-plugins-hero': require('../package.json').version,
         },
       },
-    },
+    }),
     versionHash: DatastoreManifest.createVersionHash(packager.manifest),
     versionTimestamp: expect.any(Number),
     paymentAddress: undefined,
@@ -202,8 +202,8 @@ test('should be able to package a multi-function Datastore', async () => {
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `multiFunctionTest.js`),
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
-    giftCardIssuerIdentity: undefined,
     tablesByName: {},
+    adminIdentities: [],
     schemaInterface: `{
   tables: {};
   functions: {
@@ -223,7 +223,7 @@ test('should be able to package a multi-function Datastore', async () => {
     };
   };
 }`,
-    functionsByName: {
+    functionsByName: expect.objectContaining({
       funcWithInput: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {
@@ -236,7 +236,7 @@ test('should be able to package a multi-function Datastore', async () => {
         corePlugins: {},
         schemaAsJson: { output: { title: { typeName: 'string' }, html: { typeName: 'string' } } },
       },
-    },
+    }),
     versionHash: DatastoreManifest.createVersionHash(packager.manifest),
     versionTimestamp: expect.any(Number),
     paymentAddress: undefined,
@@ -257,12 +257,11 @@ test('should be able to package an exported Function without a Datastore', async
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `rawFunctionTest.js`),
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
-    giftCardIssuerIdentity: undefined,
     schemaInterface: `{
   tables: {};
   functions: {};
 }`,
-    functionsByName: {
+    functionsByName: expect.objectContaining({
       default: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {
@@ -270,11 +269,12 @@ test('should be able to package an exported Function without a Datastore', async
         },
         schemaAsJson: undefined,
       },
-    },
+    }),
     tablesByName: {},
     versionHash: DatastoreManifest.createVersionHash(packager.manifest),
     versionTimestamp: expect.any(Number),
     paymentAddress: undefined,
+    adminIdentities: [],
   });
   expect((await Fs.stat(`${__dirname}/assets/rawFunctionTest.dbx`)).isFile()).toBeTruthy();
 

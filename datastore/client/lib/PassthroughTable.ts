@@ -20,7 +20,7 @@ export default class PassthroughTable<
   TRemoteSources extends Record<string, string>,
   TTableName extends string,
   TSchema extends IExpandedTableSchema<any> = IExpandedTableSchema<any>,
-  TRecords extends ExtractSchemaType<ITableSchema> = ExtractSchemaType<ITableSchema>,
+  TRecords extends ExtractSchemaType<TSchema> = ExtractSchemaType<TSchema>,
   TComponents extends IPassthroughTableComponents<
     TRemoteSources,
     TTableName,
@@ -44,20 +44,20 @@ export default class PassthroughTable<
     this.remoteSource = source;
   }
 
-  public override async query(
+  public override async query<T = TRecords>(
     sql: string,
     boundValues: any[] = [],
     options: Omit<
       IDatastoreApiTypes['Datastore.query']['args'],
       'sql' | 'boundValues' | 'versionHash'
     > = {},
-  ): Promise<TRecords[]> {
+  ): Promise<T[]> {
     this.createApiClient();
     if (this.name !== this.remoteTable) {
       const sqlParser = new SqlParser(sql, {}, { [this.name]: this.remoteTable });
       sql = sqlParser.toSql();
     }
-    const result = await this.upstreamClient.query<TRecords>(this.datastoreVersionHash, sql, {
+    const result = await this.upstreamClient.query<T>(this.datastoreVersionHash, sql, {
       boundValues,
       ...options,
     });

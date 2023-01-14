@@ -165,7 +165,7 @@ export default class DatastorePackager {
       tablesByName,
       this.meta.remoteDatastores,
       this.meta.paymentAddress,
-      this.meta.giftCardIssuerIdentity,
+      this.meta.adminIdentities,
       this.logToConsole ? console.log : undefined,
     );
     if (createNewVersionHistory) {

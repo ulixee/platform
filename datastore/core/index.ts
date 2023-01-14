@@ -32,6 +32,8 @@ import DatastoreInitializeInMemoryFunction from './endpoints/Datastore.createInM
 import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
 import DatastoreStorage from './lib/DatastoreStorage';
 import DatastoreStream from './endpoints/Datastore.stream';
+import DatastoreAdmin from './endpoints/Datastore.admin';
+import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
 
 const { log } = Logger(module);
 
@@ -43,16 +45,14 @@ export default class DatastoreCore {
 
   // SETTINGS
   public static options: IDatastoreCoreConfigureOptions = {
-    serverEnvironment: env.serverEnvironment,
+    serverEnvironment: env.serverEnvironment as any,
     datastoresDir: env.datastoresDir,
     datastoresTmpDir: Path.join(Os.tmpdir(), '.ulixee', 'datastore'),
     maxRuntimeMs: 10 * 60e3,
     waitForDatastoreCompletionOnShutdown: false,
     enableRunWithLocalPath: env.serverEnvironment === 'development',
     paymentAddress: env.paymentAddress,
-    giftCardsAllowed: env.giftCardsAllowed,
-    giftCardsRequiredIssuerIdentity: env.giftCardsRequiredIssuerIdentity,
-    uploaderIdentities: env.uploaderIdentities,
+    serverAdminIdentities: env.serverAdminIdentities,
     computePricePerQuery: env.computePricePerQuery,
     defaultBytesForPaymentEstimates: 256,
     approvedSidechains: env.approvedSidechains,
@@ -69,6 +69,8 @@ export default class DatastoreCore {
     DatastoreUpload,
     DatastoreQuery,
     DatastoreStream,
+    DatastoreAdmin,
+    DatastoreCreditsBalance,
     DatastoreMeta,
     DatastoreQueryInternal,
     DatastoreQueryInternalTable,
@@ -85,7 +87,10 @@ export default class DatastoreCore {
     transport: ITransportToClient<IDatastoreApis, IDatastoreEvents>,
   ): IDatastoreConnectionToClient {
     const context = this.getApiContext(transport.remoteId);
-    const connection: IDatastoreConnectionToClient = this.apiRegistry.createConnection(transport, context);
+    const connection: IDatastoreConnectionToClient = this.apiRegistry.createConnection(
+      transport,
+      context,
+    );
     context.connectionToClient = connection;
     connection.once('disconnected', () => {
       connection.datastoreStorage?.db.close();
@@ -96,7 +101,11 @@ export default class DatastoreCore {
     return connection;
   }
 
-  public static async routeHttp(req: IncomingMessage, res: ServerResponse, params: string[]): Promise<void> {
+  public static async routeHttp(
+    req: IncomingMessage,
+    res: ServerResponse,
+    params: string[],
+  ): Promise<void> {
     const pathParts = params[0].match(/([^/]+)(\/(.+)?)?/);
     const versionHash = pathParts[1];
     const reqPath = pathParts[3] ? pathParts[2] : '/index.html';
@@ -114,32 +123,36 @@ export default class DatastoreCore {
   public static async start(): Promise<void> {
     if (this.isStarted.isResolved) return this.isStarted.promise;
 
-    this.close = this.close.bind(this);
+    try {
+      this.close = this.close.bind(this);
 
-    if (this.options.enableRunWithLocalPath) {
-      this.apiRegistry.register(DatastoreQueryLocalScript);
+      if (this.options.enableRunWithLocalPath) {
+        this.apiRegistry.register(DatastoreQueryLocalScript);
+      }
+
+      if (!(await existsAsync(this.options.datastoresTmpDir))) {
+        await Fs.mkdir(this.options.datastoresTmpDir, { recursive: true });
+      }
+      this.datastoreRegistry = new DatastoreRegistry(
+        this.options.datastoresDir,
+        this.options.datastoresTmpDir,
+      );
+      await this.installManuallyUploadedDbxFiles();
+
+      process.env.ULX_DATASTORE_DISABLE_AUTORUN = 'true';
+      await new Promise(resolve => process.nextTick(resolve));
+
+      for (const plugin of Object.values(this.pluginCoresByName)) {
+        if (plugin.onCoreStart) await plugin.onCoreStart();
+      }
+
+      this.workTracker = new WorkTracker(this.options.maxRuntimeMs);
+
+      this.sidechainClientManager = new SidechainClientManager(this.options);
+      this.isStarted.resolve();
+    } catch (error) {
+      this.isStarted.reject(error, true);
     }
-
-    if (!(await existsAsync(this.options.datastoresTmpDir))) {
-      await Fs.mkdir(this.options.datastoresTmpDir, { recursive: true });
-    }
-    this.datastoreRegistry = new DatastoreRegistry(
-      this.options.datastoresDir,
-      this.options.datastoresTmpDir,
-    );
-    await this.installManuallyUploadedDbxFiles();
-
-    process.env.ULX_DATASTORE_DISABLE_AUTORUN = 'true';
-    await new Promise(resolve => process.nextTick(resolve));
-
-    for (const plugin of Object.values(this.pluginCoresByName)) {
-      if (plugin.onCoreStart) await plugin.onCoreStart();
-    }
-
-    this.workTracker = new WorkTracker(this.options.maxRuntimeMs);
-
-    this.sidechainClientManager = new SidechainClientManager(this.options);
-    this.isStarted.resolve();
   }
 
   public static async close(): Promise<void> {
@@ -188,7 +201,7 @@ export default class DatastoreCore {
       const tmpDir = await Fs.mkdtemp(`${this.options.datastoresTmpDir}/`);
       await unpackDbxFile(path, tmpDir);
       const buffer = await Fs.readFile(path);
-      const { dbxPath } = await this.datastoreRegistry.save(tmpDir, buffer, true);
+      const { dbxPath } = await this.datastoreRegistry.save(tmpDir, buffer, null, true);
       if (dbxPath !== path) await Fs.unlink(path);
       if (await existsAsync(tmpDir)) await Fs.rm(tmpDir, { recursive: true });
     }
@@ -196,7 +209,7 @@ export default class DatastoreCore {
 
   private static getApiContext(remoteId?: string): IDatastoreApiContext {
     if (!this.workTracker) {
-      throw new Error('DatastoreCore has not started')
+      throw new Error('DatastoreCore has not started');
     }
     return {
       logger: log.createChild(module, { remoteId }),

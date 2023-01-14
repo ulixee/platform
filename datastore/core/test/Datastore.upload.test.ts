@@ -60,10 +60,10 @@ test('should be able upload a datastore', async () => {
 
 test('should be able to restrict uploads', async () => {
   const identity = await Identity.create();
-  DatastoreCore.options.uploaderIdentities = [identity.bech32];
+  DatastoreCore.options.serverAdminIdentities = [identity.bech32];
 
   await expect(client.upload(dbxFile)).rejects.toThrowError(
-    'Identity is not approved',
+    'valid AdminIdentity signature',
   );
   await expect(client.upload(dbxFile, { identity })).resolves.toBeTruthy();
 });

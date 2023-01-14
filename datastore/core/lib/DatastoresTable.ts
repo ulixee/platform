@@ -15,8 +15,8 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
         ['versionHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
         ['versionTimestamp', 'DATETIME'],
         ['paymentAddress', 'TEXT'],
+        ['adminIdentities', 'TEXT'],
         ['coreVersion', 'TEXT'],
-        ['giftCardIssuerIdentity', 'TEXT'],
         ['schemaInterface', 'TEXT'],
         ['functionsByName', 'TEXT'],
         ['tablesByName', 'TEXT'],
@@ -48,6 +48,8 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
       };
     }
 
+    manifest.adminIdentities ??= [];
+
     for (const [name, table] of Object.entries(manifest.tablesByName)) {
       const prices: IDatastoreRecord['tablesByName'][0]['prices'] = (table.prices ?? []) as any;
       if (prices.length === 0) prices.push({ perQuery: 0 } as any);
@@ -63,8 +65,8 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
       manifest.versionHash,
       manifest.versionTimestamp,
       manifest.paymentAddress,
+      JSON.stringify(manifest.adminIdentities),
       manifest.coreVersion,
-      manifest.giftCardIssuerIdentity,
       manifest.schemaInterface,
       JSON.stringify(functionsByName),
       JSON.stringify(tablesByName),
@@ -77,8 +79,8 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
       versionHash: manifest.versionHash,
       versionTimestamp: manifest.versionTimestamp,
       paymentAddress: manifest.paymentAddress,
+      adminIdentities: manifest.adminIdentities,
       schemaInterface: manifest.schemaInterface,
-      giftCardIssuerIdentity: manifest.giftCardIssuerIdentity,
       coreVersion: manifest.coreVersion,
       functionsByName,
       tablesByName,
@@ -96,6 +98,7 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
     if (!record) return;
     record.functionsByName = JSON.parse(record.functionsByName);
     record.tablesByName = JSON.parse(record.tablesByName);
+    record.adminIdentities = JSON.parse(record.adminIdentities);
     return record;
   }
 
@@ -105,6 +108,7 @@ export default class DatastoresTable extends SqliteTable<IDatastoreRecord> {
       if (!record) return;
       record.functionsByName = JSON.parse(record.functionsByName);
       record.tablesByName = JSON.parse(record.tablesByName);
+      record.adminIdentities = JSON.parse(record.adminIdentities);
       DatastoresTable.byVersionHash[versionHash] = record;
     }
     return DatastoresTable.byVersionHash[versionHash];
@@ -148,7 +152,7 @@ export interface IDatastoreRecord {
     };
   };
   paymentAddress: string;
-  giftCardIssuerIdentity: string;
+  adminIdentities: string[];
   scriptHash: string;
   scriptEntrypoint: string;
   storedDate: number;

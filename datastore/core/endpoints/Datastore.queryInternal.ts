@@ -24,8 +24,11 @@ export default new DatastoreApiHandler('Datastore.queryInternal', {
     if (sqlParser.isInsert() || sqlParser.isUpdate() || sqlParser.isDelete()) {
       const sql = sqlParser.toSql();
       const boundValues = sqlParser.convertToBoundValuesMap(request.boundValues);
-      db.prepare(sql).run(boundValues);
-      return Promise.resolve();
+      if (sqlParser.hasReturn()) {
+        return db.prepare(sql).get(boundValues);
+      }
+      const result = db.prepare(sql).run(boundValues);
+      return { changes: result?.changes };
     }
 
     if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');

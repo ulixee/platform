@@ -8,7 +8,7 @@ export default async function main(
   needsClosing: (() => Promise<any> | any)[],
   rootDir: string,
 ): Promise<{
-  storeGiftCardCommand: string;
+  storeCreditCommand: string;
   datastoreHost: string;
   datastoreHash: string;
 }> {
@@ -39,15 +39,15 @@ export default async function main(
   const datastoreHost = await getMinerHost(miner);
   needsClosing.push(() => miner.kill());
 
-  const giftCardResult = execAndLog(
+  const creditResult = execAndLog(
     `npx @ulixee/datastore gift-cards create ./datastore/index.js -m 500c -h ${sidechainHost}`,
     {
       cwd: __dirname,
     },
   );
-  const storeGiftCardCommand = giftCardResult.split(': "').pop().replace(/"/g, '').trim();
-  if (!storeGiftCardCommand) throw new Error('Did not create a gift card');
-  console.log('Store gift card instructions:', storeGiftCardCommand);
+  const storeCreditCommand = creditResult.split(': "').pop().replace(/"/g, '').trim();
+  if (!storeCreditCommand) throw new Error('Did not create a credit');
+  console.log('Store Credits instructions:', storeCreditCommand);
 
   const datastoreResult = execAndLog(
     `npx @ulixee/datastore deploy ./datastore/index.js -h ${datastoreHost}`,
@@ -62,7 +62,7 @@ export default async function main(
   console.log('Datastore VersionHash', datastoreHash);
 
   return {
-    storeGiftCardCommand,
+    storeCreditCommand,
     datastoreHash,
     datastoreHost,
   };

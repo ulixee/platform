@@ -1,6 +1,7 @@
 import Crawler from '../lib/Crawler';
 import Function from '../lib/Function';
 import Table from '../lib/Table';
+import CreditsTable from '../lib/CreditsTable';
 
 export default interface IDatastoreComponents<
   TTable extends TTables<any>,
@@ -10,11 +11,11 @@ export default interface IDatastoreComponents<
   name?: string;
   description?: string;
   remoteDatastores?: { [source: string]: string };
-  tables?: TTable;
+  tables?: TTable & { credits?: CreditsTable };
   functions?: TFunction;
   crawlers?: TCrawler;
   paymentAddress?: string;
-  giftCardIssuerIdentity?: string;
+  adminIdentities?: string[];
   authenticateIdentity?(identity: string, nonce: string): Promise<boolean> | boolean;
 }
 

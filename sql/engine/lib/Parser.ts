@@ -19,6 +19,7 @@ interface IInputSchemasByName<T = Record<string, IAnySchemaJson>> {
 export default class SqlParser {
   public ast: IStatement;
   private limitedTo: ILimitedTo = {};
+  private hasReturning = false;
 
   constructor(
     sql: string,
@@ -66,6 +67,22 @@ export default class SqlParser {
 
   get commandType(): ISupportedCommandType {
     return this.ast.type as ISupportedCommandType;
+  }
+
+  public hasReturn(): boolean {
+    let hasReturning = false;
+    const visitor = astVisitor(() => ({
+      insert(t) {
+        hasReturning = t.returning?.length > 0;
+        return t;
+      },
+      update(t) {
+        hasReturning = t.returning?.length > 0;
+        return t;
+      },
+    }));
+    visitor.statement(this.ast);
+    return hasReturning;
   }
 
   public toSql(): string {
