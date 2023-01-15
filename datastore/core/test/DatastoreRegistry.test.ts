@@ -85,7 +85,7 @@ test('should be able to upload and retrieve the datastore', async () => {
   await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script);
   await expect(registry.save(datastoreTmpDir, Buffer.from(script))).resolves.toBeTruthy();
 
-  const uploaded = registry.getByVersionHash(versionHash);
+  const uploaded = await registry.getByVersionHash(versionHash);
   expect(uploaded).toBeTruthy();
   expect(readFileSync(uploaded.path, 'utf8')).toBe(script);
 });
@@ -187,7 +187,7 @@ test('should throw an error with version history if current versions are unmatch
     await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script1);
     await expect(registry.save(datastoreTmpDir, Buffer.from(script1))).resolves.toBeTruthy();
 
-    expect(registry.getByVersionHash(manifest.versionHash)).toBeTruthy();
+    await expect(registry.getByVersionHash(manifest.versionHash)).resolves.toBeTruthy();
   }
   {
     const datastoreTmpDir = `${storageDir}/tmp/dbx4`;
@@ -211,7 +211,7 @@ test('should throw an error with version history if current versions are unmatch
     await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script2);
     await expect(registry.save(datastoreTmpDir, Buffer.from(script2))).resolves.toBeTruthy();
 
-    expect(registry.getByVersionHash(manifest.versionHash)).toBeTruthy();
+    await expect(registry.getByVersionHash(manifest.versionHash)).resolves.toBeTruthy();
     expect(registry.getLatestVersion(versions[1].versionHash)).toBe(manifest.versionHash);
     expect(registry.getLatestVersion(manifest.versionHash)).toBe(manifest.versionHash);
   }
@@ -246,7 +246,7 @@ test('should provide a newer version hash if old script not available', async ()
   // @ts-ignore
   registry.datastoresDb.datastoreVersions.save('maybe-there', Date.now(), 'not-there', null);
   try {
-    registry.getByVersionHash('not-there');
+    await registry.getByVersionHash('not-there');
   } catch (e) {
     expect(e).toBeInstanceOf(DatastoreNotFoundError);
     expect(e.latestVersionHash).toBe('maybe-there');

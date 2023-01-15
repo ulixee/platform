@@ -7,11 +7,9 @@ import { validateAuthentication, validateFunctionCoreVersions } from '../lib/dat
 export default new DatastoreApiHandler('Datastore.stream', {
   async handler(request, context) {
     const startTime = Date.now();
-    const { registryEntry, manifest } = await context.datastoreRegistry.loadVersion(
-      request.versionHash,
-    );
+    const datastoreVersion = await context.datastoreRegistry.getByVersionHash(request.versionHash);
 
-    const datastore = await DatastoreVm.open(registryEntry.path, manifest);
+    const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
 
     const datastoreFunction = datastore.metadata.functionsByName[request.functionName];
 
@@ -25,12 +23,12 @@ export default new DatastoreApiHandler('Datastore.stream', {
 
     const { functionName, input } = request;
     await paymentProcessor.createHold(
-      registryEntry,
+      datastoreVersion,
       [{ functionName, id: 1 }],
       request.pricingPreferences,
     );
 
-    validateFunctionCoreVersions(registryEntry, functionName, context);
+    validateFunctionCoreVersions(datastoreVersion, functionName, context);
 
     const outputs = await context.workTracker.trackRun(
       (async () => {
@@ -61,7 +59,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
     });
 
     return {
-      latestVersionHash: registryEntry.latestVersionHash,
+      latestVersionHash: datastoreVersion.latestVersionHash,
       metadata: {
         bytes,
         microgons,

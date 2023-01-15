@@ -254,7 +254,35 @@ export default class DatastoreManifest implements IDatastoreManifest {
           path: source.path,
           overrides: explicitSettings,
         });
-        Object.assign(this, explicitSettings);
+        const { functionsByName, tablesByName, ...otherSettings } = explicitSettings;
+        if (functionsByName) {
+          for (const [name, funcMeta] of Object.entries(functionsByName)) {
+            if (this.functionsByName[name]) {
+              Object.assign(this.functionsByName[name], funcMeta);
+            } else {
+              this.functionsByName[name] = funcMeta;
+            }
+            this.functionsByName[name].prices ??= [];
+            for (const price of this.functionsByName[name].prices) {
+              price.perQuery ??= 0;
+              price.minimum ??= price.perQuery;
+            }
+          }
+        }
+        if (tablesByName) {
+          for (const [name, meta] of Object.entries(tablesByName)) {
+            if (this.tablesByName[name]) {
+              Object.assign(this.tablesByName[name], meta);
+            } else {
+              this.tablesByName[name] = meta;
+            }
+            this.tablesByName[name].prices ??= [];
+            for (const price of this.tablesByName[name].prices) {
+              price.perQuery ??= 0;
+            }
+          }
+        }
+        Object.assign(this, otherSettings);
         if (explicitSettings.linkedVersions?.length === 0) {
           this.hasClearedLinkedVersions = true;
         }
@@ -347,7 +375,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
       throw ValidationError.fromZodValidation('This is not a valid datastore versionHash', error);
     }
   }
-
 
   /// MANIFEST OVERRIDE FILES  /////////////////////////////////////////////////////////////////////////////////////////
 

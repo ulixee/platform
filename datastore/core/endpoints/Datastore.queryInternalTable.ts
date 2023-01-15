@@ -16,10 +16,10 @@ export default new DatastoreApiHandler('Datastore.queryInternalTable', {
     if (request.datastoreVersionHash) {
       const storagePath = context.datastoreRegistry.getStoragePath(request.datastoreVersionHash);
 
-      const { registryEntry, manifest } = await context.datastoreRegistry.loadVersion(
+      const datastoreVersion = await context.datastoreRegistry.getByVersionHash(
         request.datastoreVersionHash,
       );
-      const datastore = await DatastoreVm.open(registryEntry.path, manifest);
+      const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
       storage = new DatastoreStorage(storagePath);
       schema = datastore.tables[tableName].schema;
     } else {

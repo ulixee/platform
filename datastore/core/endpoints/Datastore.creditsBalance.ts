@@ -8,10 +8,10 @@ export default new DatastoreApiHandler('Datastore.creditsBalance', {
     request,
     context,
   ): Promise<IDatastoreApiTypes['Datastore.creditsBalance']['result']> {
-    const { registryEntry, manifest } = await context.datastoreRegistry.loadVersion(
+    const datastoreVersion = await context.datastoreRegistry.getByVersionHash(
       request.datastoreVersionHash,
     );
-    const datastore = await DatastoreVm.open(registryEntry.path, manifest);
+    const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
     const credits = await datastore.tables[CreditsTable.tableName].get(request.creditId);
     return { balance: credits.remainingCredits };
   },

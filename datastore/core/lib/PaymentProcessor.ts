@@ -4,6 +4,7 @@ import verifyMicronote from '@ulixee/sidechain/lib/verifyMicronote';
 import { UnapprovedSidechainError } from '@ulixee/sidechain/lib/errors';
 import Datastore from '@ulixee/datastore';
 import CreditsTable from '@ulixee/datastore/lib/CreditsTable';
+import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import {
   InsufficientMicronoteFundsError,
   InsufficientQueryPriceError,
@@ -11,7 +12,6 @@ import {
   MicronotePaymentRequiredError,
 } from './errors';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
-import { IDatastoreRecord } from './DatastoresTable';
 
 /**
  * 50 microgons for 1KB means:
@@ -50,7 +50,7 @@ export default class PaymentProcessor {
   ) {}
 
   public async createHold(
-    datastoreRecord: IDatastoreRecord,
+    manifest: IDatastoreManifest,
     functionCalls: { id: number; functionName: string }[],
     pricingPreferences: { maxComputePricePerQuery?: number } = { maxComputePricePerQuery: 0 },
   ): Promise<boolean> {
@@ -79,15 +79,15 @@ export default class PaymentProcessor {
 
     let minimumPrice = computePricePerQuery;
     for (const functionCall of functionCalls) {
-      const prices = datastoreRecord.functionsByName[functionCall.functionName].prices;
+      const prices = manifest.functionsByName[functionCall.functionName].prices;
       const pricePerQuery = prices[0]?.perQuery ?? 0;
       const pricePerKb = prices[0]?.addOns?.perKb ?? 0;
-      const holdMicrogons = prices[0]?.minimum ?? 0;
+      const holdMicrogons = prices[0]?.minimum ?? pricePerQuery ?? 0;
       this.microgonsToHold += holdMicrogons;
 
       const payouts: PaymentProcessor['functionHolds'][0]['payouts'] = [];
       if (pricePerQuery > 0 || pricePerKb > 0) {
-        payouts.push({ address: datastoreRecord.paymentAddress, pricePerKb, pricePerQuery });
+        payouts.push({ address: manifest.paymentAddress, pricePerKb, pricePerQuery });
       }
       if (payouts.length) {
         this.functionHolds.push({

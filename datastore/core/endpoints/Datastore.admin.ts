@@ -10,12 +10,12 @@ export default new DatastoreApiHandler('Datastore.admin', {
   async handler(request, context): Promise<IDatastoreApiTypes['Datastore.admin']['result']> {
     const { adminSignature, adminIdentity, adminFunction, functionArgs } = request;
 
-    const { registryEntry, manifest } = await context.datastoreRegistry.loadVersion(
+    const datastoreVersion = await context.datastoreRegistry.getByVersionHash(
       request.versionHash,
     );
 
     const approvedAdmins = new Set<string>([
-      ...manifest.adminIdentities,
+      ...datastoreVersion.adminIdentities,
       ...context.configuration.serverAdminIdentities,
     ]);
 
@@ -38,7 +38,7 @@ export default new DatastoreApiHandler('Datastore.admin', {
       throw new InvalidSignatureError('Your Admin signature is invalid for this function call.');
     }
 
-    const datastore = await DatastoreVm.open(registryEntry.path, manifest);
+    const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
 
     if (adminFunction.ownerType === 'datastore') {
       if (typeof datastore[functionName] !== 'function')

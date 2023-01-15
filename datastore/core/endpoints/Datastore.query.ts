@@ -14,7 +14,7 @@ export default new DatastoreApiHandler('Datastore.query', {
     request.boundValues ??= [];
 
     const startTime = Date.now();
-    const { registryEntry, manifest } = await context.datastoreRegistry.loadVersion(
+    const datastoreVersion = await context.datastoreRegistry.getByVersionHash(
       request.versionHash,
     );
 
@@ -28,7 +28,7 @@ export default new DatastoreApiHandler('Datastore.query', {
     }
 
     const db = storage.db;
-    const datastore = await DatastoreVm.open(registryEntry.path, manifest);
+    const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
 
     await validateAuthentication(datastore, request.payment, request.authentication);
 
@@ -63,7 +63,7 @@ export default new DatastoreApiHandler('Datastore.query', {
     });
 
     await paymentProcessor.createHold(
-      registryEntry,
+      datastoreVersion,
       functionsWithTempIds,
       request.pricingPreferences,
     );
@@ -71,7 +71,7 @@ export default new DatastoreApiHandler('Datastore.query', {
     for (const { functionName, id } of functionsWithTempIds) {
       const functionStart = Date.now();
       const functionInput = inputByFunctionName[functionName];
-      validateFunctionCoreVersions(registryEntry, functionName, context);
+      validateFunctionCoreVersions(datastoreVersion, functionName, context);
 
       const outputs = await context.workTracker.trackRun(
         runDatastoreFunction(datastore, functionName, functionInput, request),
@@ -113,7 +113,7 @@ export default new DatastoreApiHandler('Datastore.query', {
     const microgons = await paymentProcessor.settle(resultBytes);
     return {
       outputs,
-      latestVersionHash: registryEntry.latestVersionHash,
+      latestVersionHash: datastoreVersion.latestVersionHash,
       metadata: {
         bytes: resultBytes,
         microgons,

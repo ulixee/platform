@@ -1,6 +1,6 @@
 import { addressValidation, identityValidation } from '@ulixee/specification/common';
 import Identity from '@ulixee/crypto/lib/Identity';
-import { loadEnv, parseEnvBool, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
+import { loadEnv, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
 
 loadEnv(process.cwd());
 loadEnv(__dirname);

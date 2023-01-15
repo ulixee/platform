@@ -4,7 +4,6 @@ import { writeFileSync } from 'fs';
 import * as Path from 'path';
 import jsonToSchemaCode from '@ulixee/schema/lib/jsonToSchemaCode';
 import DatastoreApiClient from '../lib/DatastoreApiClient';
-import CreditsTable from '../lib/CreditsTable';
 
 export default async function cloneDatastore(
   url: string,

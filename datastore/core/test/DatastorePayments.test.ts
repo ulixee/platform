@@ -163,7 +163,7 @@ test('should be able to run a datastore function with payments', async () => {
   ]);
   // @ts-ignore
   const registry = DatastoreCore.datastoreRegistry;
-  const entry = registry.getByVersionHash(manifest.versionHash);
+  const entry = await registry.getByVersionHash(manifest.versionHash);
   expect(entry.statsByFunction.putout.runs).toBe(1);
   expect(entry.statsByFunction.putout.maxPrice).toBe(1250);
 

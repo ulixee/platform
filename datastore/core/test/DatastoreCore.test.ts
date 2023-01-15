@@ -36,8 +36,8 @@ test('should install new datastores on startup', async () => {
   await DatastoreCore.installManuallyUploadedDbxFiles();
   const registry = new DatastoreRegistry(storageDir, tmpDir);
   expect(registry.hasVersionHash(packager.manifest.versionHash)).toBe(true);
-  // @ts-ignore
-  const dbxPath = registry.getDbxPath(packager.manifest);
+  // @ts-expect-error
+  const dbxPath = registry.getDbxPath(packager.manifest.scriptEntrypoint, packager.manifest.versionHash);
   await expect(existsAsync(dbxPath)).resolves.toBeTruthy();
 }, 45e3);
 
@@ -104,7 +104,6 @@ test('can get metadata about an uploaded datastore', async () => {
           {
             perQuery: 0,
             minimum: 0,
-            addOns: { perKb: 0 },
           },
         ],
       },

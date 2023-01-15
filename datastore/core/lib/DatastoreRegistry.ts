@@ -6,7 +6,6 @@ import * as Path from 'path';
 import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
 import DatastoresDb from './DatastoresDb';
-import { IDatastoreRecord } from './DatastoresTable';
 import {
   DatastoreNotFoundError,
   InvalidPermissionsError,
@@ -24,7 +23,7 @@ export interface IStatsByFunctionName {
   [functionName: string]: IDatastoreStatsRecord;
 }
 
-type TDatastoreRecordAndStats = IDatastoreRecord & {
+export type TDatastoreManifestWithStats = IDatastoreManifest & {
   statsByFunction: IStatsByFunctionName;
   path: string;
   latestVersionHash: string;
@@ -37,6 +36,7 @@ export default class DatastoreRegistry {
   }
 
   #datastoresDb: DatastoresDb;
+  #openedManifestsByPath = new Map<string, IDatastoreManifest>();
 
   constructor(readonly storageDir: string, readonly workingDir: string) {}
 
@@ -45,42 +45,46 @@ export default class DatastoreRegistry {
   }
 
   public hasVersionHash(versionHash: string): boolean {
-    return !!this.datastoresDb.datastores.getByVersionHash(versionHash);
+    return !!this.datastoresDb.datastoreVersions.getByHash(versionHash);
   }
 
-  public async loadVersion(
-    versionHash: string,
-  ): Promise<{ registryEntry: TDatastoreRecordAndStats; manifest: IDatastoreManifest }> {
-    const registryEntry = this.getByVersionHash(versionHash);
-
-    const manifest: IDatastoreManifest = {
-      ...registryEntry,
-      linkedVersions: [],
-    };
-
-    if (!(await existsAsync(registryEntry.path))) {
-      await this.openDbx(manifest);
-    }
-    return { registryEntry, manifest };
-  }
-
-  public getByVersionHash(versionHash: string): TDatastoreRecordAndStats {
+  public async getByVersionHash(versionHash: string): Promise<TDatastoreManifestWithStats> {
     const path = this.getExtractedDatastorePath(versionHash);
-    const entry = this.datastoresDb.datastores.getByVersionHash(versionHash);
+    const versionRecord = this.datastoresDb.datastoreVersions.getByHash(versionHash);
+
+    if (!versionRecord) return null;
+
+    let manifest = this.#openedManifestsByPath.get(path);
+
+    if (!manifest) {
+      const workingDir = this.getDatastoreWorkingDirectory(versionHash);
+
+      if (!(await existsAsync(workingDir))) {
+        const dbxPath = this.getDbxPath(versionRecord.scriptEntrypoint, versionHash);
+        if (!(await existsAsync(dbxPath))) return null;
+
+        await Fs.mkdir(workingDir, { recursive: true });
+
+        await unpackDbxFile(dbxPath, workingDir);
+      }
+
+      manifest = await this.getManifest(versionHash);
+      this.#openedManifestsByPath.set(path, manifest);
+    }
     const latestVersionHash = this.getLatestVersion(versionHash);
 
-    if (!entry) {
+    if (!manifest) {
       throw new DatastoreNotFoundError('Datastore package not found on Miner.', latestVersionHash);
     }
     const statsByFunction: IStatsByFunctionName = {};
-    for (const name of Object.keys(entry.functionsByName)) {
+    for (const name of Object.keys(manifest.functionsByName)) {
       statsByFunction[name] = this.datastoresDb.datastoreStats.getByVersionHash(versionHash, name);
     }
     return {
       path,
       statsByFunction,
       latestVersionHash,
-      ...entry,
+      ...manifest,
     };
   }
 
@@ -96,14 +100,6 @@ export default class DatastoreRegistry {
       stats.bytes,
       stats.milliseconds,
     );
-  }
-
-  public async openDbx(manifest: IDatastoreManifest): Promise<void> {
-    const dbxPath = this.getDbxPath(manifest);
-    const workingDir = this.getDatastoreWorkingDirectory(manifest.versionHash);
-    if (await existsAsync(workingDir)) return;
-    await Fs.mkdir(workingDir, { recursive: true });
-    await unpackDbxFile(dbxPath, workingDir);
   }
 
   public getStoragePath(versionHash: string): string {
@@ -153,7 +149,7 @@ export default class DatastoreRegistry {
       await Fs.unlink(storagePath);
     } catch (e) {}
 
-    const dbxPath = this.getDbxPath(manifest);
+    const dbxPath = this.getDbxPath(manifest.scriptEntrypoint, manifest.versionHash);
     if (this.hasVersionHash(manifest.versionHash)) {
       return { dbxPath };
     }
@@ -162,8 +158,7 @@ export default class DatastoreRegistry {
 
     this.checkVersionHistoryMatch(manifest);
 
-    if (!hasServerAdminIdentity) this.verifyAdminIdentity(manifest, adminIdentity);
-
+    if (!hasServerAdminIdentity) await this.verifyAdminIdentity(manifest, adminIdentity);
     // move to an active working dir path
     const workingDirectory = this.getDatastoreWorkingDirectory(manifest.versionHash);
     if (!(await existsAsync(workingDirectory))) {
@@ -179,7 +174,10 @@ export default class DatastoreRegistry {
     return { dbxPath };
   }
 
-  private verifyAdminIdentity(manifest: IDatastoreManifest, adminIdentity: string): void {
+  private async verifyAdminIdentity(
+    manifest: IDatastoreManifest,
+    adminIdentity: string,
+  ): Promise<void> {
     // ensure admin is in the new list
     if (manifest.adminIdentities.length && !manifest.adminIdentities.includes(adminIdentity)) {
       if (adminIdentity)
@@ -195,7 +193,7 @@ export default class DatastoreRegistry {
     // ensure admin is from the previous linked version
     if (manifest.linkedVersions?.length) {
       const previous = manifest.linkedVersions[manifest.linkedVersions.length - 1];
-      const previousEntry = this.datastoresDb.datastores.getByVersionHash(previous.versionHash);
+      const previousEntry = await this.getByVersionHash(previous.versionHash);
       // if there were admins, must be in previous list!
       if (
         previousEntry &&
@@ -222,7 +220,7 @@ Please try to re-upload after testing with the version available on this Miner.`
 
   private checkMatchingEntrypointVersions(manifest: IDatastoreManifest): void {
     if (manifest.linkedVersions.length) return;
-    const versionWithEntrypoint = this.datastoresDb.datastores.findWithEntrypoint(
+    const versionWithEntrypoint = this.datastoresDb.datastoreVersions.findWithEntrypoint(
       manifest.scriptEntrypoint,
     );
     if (versionWithEntrypoint) {
@@ -264,12 +262,16 @@ Please try to re-upload after testing with the version available on this Miner.`
     }
   }
 
-  private getDbxPath(manifest: IDatastoreManifest): string {
-    const entrypoint = Path.basename(
-      manifest.scriptEntrypoint,
-      Path.extname(manifest.scriptEntrypoint),
+  private getManifest(versionHash: string): Promise<IDatastoreManifest> {
+    const workingDirectory = Path.resolve(this.getDatastoreWorkingDirectory(versionHash));
+    return readFileAsJson<IDatastoreManifest>(
+      Path.join(workingDirectory, 'datastore-manifest.json'),
     );
-    return Path.resolve(this.storageDir, `${entrypoint}@${manifest.versionHash}.dbx`);
+  }
+
+  private getDbxPath(scriptEntrypoint: string, versionHash: string): string {
+    const entrypoint = Path.basename(scriptEntrypoint, Path.extname(scriptEntrypoint));
+    return Path.resolve(this.storageDir, `${entrypoint}@${versionHash}.dbx`);
   }
 
   private getDatastoreWorkingDirectory(versionHash: string): string {
@@ -280,8 +282,7 @@ Please try to re-upload after testing with the version available on this Miner.`
     return Path.resolve(this.getDatastoreWorkingDirectory(versionHash), 'datastore.js');
   }
 
-  private saveManifestMetadata(manifest: IDatastoreManifest): IDatastoreRecord {
-    this.datastoresDb.datastores.save(manifest);
+  private saveManifestMetadata(manifest: IDatastoreManifest): void {
     if (manifest.linkedVersions.length) {
       const baseVersionHash =
         manifest.linkedVersions[manifest.linkedVersions.length - 1].versionHash;
@@ -289,22 +290,24 @@ Please try to re-upload after testing with the version available on this Miner.`
         if (version.versionHash === baseVersionHash) continue;
         this.datastoresDb.datastoreVersions.save(
           version.versionHash,
+          manifest.scriptEntrypoint,
           version.versionTimestamp,
           baseVersionHash,
         );
       }
       this.datastoresDb.datastoreVersions.save(
         manifest.versionHash,
+        manifest.scriptEntrypoint,
         manifest.versionTimestamp,
         baseVersionHash,
       );
     } else {
       this.datastoresDb.datastoreVersions.save(
         manifest.versionHash,
+        manifest.scriptEntrypoint,
         manifest.versionTimestamp,
         manifest.versionHash,
       );
     }
-    return this.datastoresDb.datastores.getByVersionHash(manifest.versionHash);
   }
 }

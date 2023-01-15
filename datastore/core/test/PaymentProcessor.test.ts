@@ -3,10 +3,10 @@ import Identity from '@ulixee/crypto/lib/Identity';
 import { sha3 } from '@ulixee/commons/lib/hashUtils';
 import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import Datastore from '@ulixee/datastore';
+import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import PaymentProcessor from '../lib/PaymentProcessor';
 import SidechainClientManager from '../lib/SidechainClientManager';
 import IDatastoreCoreConfigureOptions from '../interfaces/IDatastoreCoreConfigureOptions';
-import { IDatastoreRecord } from '../lib/DatastoresTable';
 
 const identitySpy = jest.spyOn(Identity, 'verify');
 const sidechainIdentity = Identity.createSync();
@@ -67,7 +67,7 @@ test('it should ensure a payment has enough microgons', async () => {
           fun1: { prices: [{ perQuery: 100, minimum: 100 }] },
         },
         paymentAddress: 'ar1',
-      } as unknown as IDatastoreRecord,
+      } as unknown as IDatastoreManifest,
       [{ id: 1, functionName: 'fun1' }],
     ),
   ).rejects.toThrowError('insufficient');
@@ -92,7 +92,7 @@ test('it should allow adding multiple payees', async () => {
           fun2: { prices: [{ perQuery: 600, minimum: 600 }] },
         },
         paymentAddress: 'ar1',
-      } as unknown as IDatastoreRecord,
+      } as unknown as IDatastoreManifest,
       [
         { id: 1, functionName: 'fun1' },
         { id: 2, functionName: 'fun2' },
@@ -135,7 +135,7 @@ test('it should allow an function to charge per kb', async () => {
           fun2: { prices: [{ perQuery: 100, addOns: { perKb: 1 }, minimum: 100 }] },
         },
         paymentAddress: 'ar1',
-      } as any as IDatastoreRecord,
+      } as any as IDatastoreManifest,
       [
         { id: 1, functionName: 'fun1' },
         { id: 2, functionName: 'fun2' },
@@ -179,7 +179,7 @@ test('the processor should take all available funds if a query exceeds the micro
           fun2: { prices: [{ perQuery: 500, minimum: 500, addOns: { perKb: 1 } }] },
         },
         paymentAddress: 'ar1',
-      } as unknown as IDatastoreRecord,
+      } as unknown as IDatastoreManifest,
       [
         { id: 1, functionName: 'fun1' },
         { id: 2, functionName: 'fun2' },

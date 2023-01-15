@@ -5,7 +5,7 @@ export default new DatastoreApiHandler('Datastore.meta', {
   async handler(request, context) {
     const { computePricePerQuery } = context.configuration;
 
-    const datastore = context.datastoreRegistry.getByVersionHash(request.versionHash);
+    const datastore = await context.datastoreRegistry.getByVersionHash(request.versionHash);
 
     let settlementFeeMicrogons: number;
     const functionsByName: IDatastoreApiTypes['Datastore.meta']['result']['functionsByName'] = {};

@@ -2,7 +2,6 @@ import { ExtractSchemaType } from '@ulixee/schema';
 import * as assert from 'assert';
 import { SqlParser } from '@ulixee/sql-engine';
 import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
-import ITableSchema from '../interfaces/ITableSchema';
 import Table, { IExpandedTableSchema } from './Table';
 import ITableComponents from '../interfaces/ITableComponents';
 import DatastoreApiClient from './DatastoreApiClient';

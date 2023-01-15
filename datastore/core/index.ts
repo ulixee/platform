@@ -109,8 +109,8 @@ export default class DatastoreCore {
     const pathParts = params[0].match(/([^/]+)(\/(.+)?)?/);
     const versionHash = pathParts[1];
     const reqPath = pathParts[3] ? pathParts[2] : '/index.html';
-    const { registryEntry } = await this.datastoreRegistry.loadVersion(versionHash);
-    const docpagePath = registryEntry.path.replace(/datastore.js$/, 'docpage');
+    const { path } = await this.datastoreRegistry.getByVersionHash(versionHash);
+    const docpagePath = path.replace(/datastore.js$/, 'docpage');
     req.url = reqPath;
     const done = Finalhandler(req, res);
     ServeStatic(docpagePath)(req, res, done);
@@ -201,7 +201,7 @@ export default class DatastoreCore {
       const tmpDir = await Fs.mkdtemp(`${this.options.datastoresTmpDir}/`);
       await unpackDbxFile(path, tmpDir);
       const buffer = await Fs.readFile(path);
-      const { dbxPath } = await this.datastoreRegistry.save(tmpDir, buffer, null, true);
+      const { dbxPath } = await this.datastoreRegistry.save(tmpDir, buffer, null, true, true);
       if (dbxPath !== path) await Fs.unlink(path);
       if (await existsAsync(tmpDir)) await Fs.rm(tmpDir, { recursive: true });
     }
