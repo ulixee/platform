@@ -10,7 +10,9 @@
     - Datastore
     - Function
     - Crawler
+    - Table
     - Passthrough Function
+    - Cloning
     - Function Context
     - Input
     - Output
@@ -19,6 +21,7 @@
   items:
     - Function Schemas
     - Schema
+    - Credits
     - Plugins
     - Hero Plugin
     - Puppeteer Plugin

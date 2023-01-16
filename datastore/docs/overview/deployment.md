@@ -117,7 +117,7 @@ The file should have the following structure:
     "../src/sites/script1-manifest.json": {
        "linkedVersions": [],
        "__GENERATED_LAST_VERSION": {
-         "versionHash": "dbx1n553mdww3ce0vg06k7lmsh49cvfs6a6lqcjmv7h0hpseqn5knd6sxapkc6",
+         "versionHash": "dbx1n553mdww3ce0vg06k7",
          "versionTimestamp": 1657308272361,
          ...
       }
@@ -132,7 +132,7 @@ The file should have the following structure:
      "/Users/Projects/endoscrape/src/sites/script1-manifest.json": {
        "linkedVersions": [],
        "__GENERATED_LAST_VERSION": {
-         "versionHash": "dbx1n553mdww3ce0vg06k7lmsh49cvfs6a6lqcjmv7h0hpseqn5knd6sxapkc6",
+         "versionHash": "dbx1n553mdww3ce0vg06k7",
          "versionTimestamp": 1657308272361,
          ...
        }
@@ -179,7 +179,7 @@ Options below show a short and long form.
 - `-c, --clear-version-history` Clear out any version history for this script entrypoint (default: false)
 - `-s, --compiled-source-path <path>` Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).
 - `-t, --tsconfig <path>`. A path to a TypeScript config file (if needed). Will be auto-located based on the entrypoint if it ends in ".ts"
-- `-i, --identity-path <path>`. A path to a Ulixee Identity. Necessary for signing if a Miner has restricted allowed Uploaders. (env: ULX_IDENTITY_PATH)
+- `-i, --identity-path <path>`. A path to a Ulixee Identity. Necessary for signing if a Miner is running in `production` serverEnvironment - `NODE_ENV=production`. (env: ULX_IDENTITY_PATH)
 - `-p, --identity-passphrase <path>`. A decryption passphrase to the Ulixee identity (only necessary if specified during key creation). (env: ULX_IDENTITY_PASSPHRASE)
 
 ### Building a .dbx

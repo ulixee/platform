@@ -60,14 +60,14 @@ When you package a `Datastore` (or a `Function` auto-wrapped into a `Datastore`)
   ```js
   import ITypes from '@ulixee/datastore/types';
 
-  type IIndexFunctionSchema = ITypes['dbx12343']['default']; // default is the name if auto-packaged
+  type IIndexFunctionSchema = ITypes['dbx1tn43ect3qkwg0patvq']['default']; // default is the name if auto-packaged
   ```
 
 - Typing of parameters and results are automatically referenced when running a Datastore function.
   ```js
   import DatastoreClient from '@ulixee/datastore/lib/DatastoreApiClient';
   const client = new DatastoreClient('localhost:8080');
-  const result = client.exec('dbx12343', 'default', { url: 'https://ulixee.org ' });
+  const result = client.stream('dbx1tn43ect3qkwg0patvq', 'default', { url: 'https://ulixee.org ' });
   // result has type inferred automatically.
   ```
 
