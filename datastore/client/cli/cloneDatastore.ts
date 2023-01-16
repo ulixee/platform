@@ -3,12 +3,15 @@ import * as ts from 'typescript';
 import { writeFileSync } from 'fs';
 import * as Path from 'path';
 import jsonToSchemaCode from '@ulixee/schema/lib/jsonToSchemaCode';
+import { nanoid } from 'nanoid';
 import DatastoreApiClient from '../lib/DatastoreApiClient';
 
 export default async function cloneDatastore(
   url: string,
   path: string,
-  options: { emitModules: boolean } = { emitModules: false },
+  options: { emitModules?: boolean; embedCredits?: { id: string; secret: string } } = {
+    emitModules: false,
+  },
 ): Promise<void> {
   const parsedUrl = new URL(url);
   const datastoreApiClient = new DatastoreApiClient(parsedUrl.host);
@@ -59,15 +62,25 @@ export default async function cloneDatastore(
     return `${js}};\n}\n`;
   });
 
+  let remoteCredits = '';
+  if (options.embedCredits) {
+    const { id, secret } = options.embedCredits;
+    remoteCredits = `
+    remoteDatastoreEmbeddedCredits: {
+      source: ${JSON.stringify({ id, secret })},
+    },`;
+  }
+
   const script = `
   import { Datastore, ${[...imports].join(',')} } from '@ulixee/datastore';
   import schemaFromJson from '@ulixee/schema/lib/schemaFromJson';
   import { ${[...schemaImports].join(', ')} } from '@ulixee/schema';
   
   const datastore = new Datastore({
+    affiliateId: "aff${nanoid(12)}",
     remoteDatastores: {
-      source: "${url}"
-    },
+      source: "${url}",
+    },${remoteCredits}
     functions: {
       ${passthroughFunctions}
     },
@@ -105,7 +118,6 @@ export default async function cloneDatastore(
         lib: ['es2022'],
       },
     });
-    console.log(jsFile);
     writeFileSync(path, jsFile.outputText);
   }
 }

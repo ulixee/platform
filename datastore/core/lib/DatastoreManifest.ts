@@ -30,7 +30,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
   public schemaInterface: string;
   public functionsByName: IDatastoreManifest['functionsByName'] = {};
   public tablesByName: IDatastoreManifest['tablesByName'] = {};
-  public remoteDatastores: Record<string, string>;
 
   public adminIdentities: string[];
   // Payment details
@@ -83,7 +82,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
     schemaInterface: string,
     functionsByName: IDatastoreManifest['functionsByName'],
     tablesByName: IDatastoreManifest['tablesByName'],
-    remoteDatastores: Record<string, string>,
     paymentAddress: string,
     adminIdentities: string[],
     logger?: (message: string, ...args: any[]) => any,
@@ -101,7 +99,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
     Object.assign(this, {
       coreVersion,
       schemaInterface,
-      remoteDatastores,
       paymentAddress,
       adminIdentities,
     });

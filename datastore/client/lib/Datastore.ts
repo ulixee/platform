@@ -26,6 +26,10 @@ export default class Datastore<
 
   public disableAutorun: boolean;
 
+  public get affiliateId(): string {
+    return this.#datastoreInternal.affiliateId;
+  }
+
   public get metadata(): IDatastoreMetadata {
     return this.#datastoreInternal.metadata;
   }
@@ -61,14 +65,20 @@ export default class Datastore<
     name: T,
     input: ExtractSchemaType<TFunction[T]['schema']['input']> = {} as any,
   ): ResultIterable<ExtractSchemaType<TFunction[T]['schema']['output']>> {
-    return this.#datastoreInternal.functions[name].stream({ input });
+    return this.#datastoreInternal.functions[name].stream({
+      input,
+      affiliateId: this.#datastoreInternal.affiliateId,
+    });
   }
 
   public async crawl<T extends keyof TComponents['crawlers']>(
     name: T,
     input: ExtractSchemaType<TComponents['crawlers'][T]['schema']['input']>,
   ): Promise<ICrawlerOutputSchema> {
-    const [crawlResult] = await this.#datastoreInternal.crawlers[name].stream({ input });
+    const [crawlResult] = await this.#datastoreInternal.crawlers[name].stream({
+      input,
+      affiliateId: this.#datastoreInternal.affiliateId,
+    });
     return crawlResult;
   }
 

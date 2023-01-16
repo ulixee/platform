@@ -76,13 +76,23 @@ export default class PassthroughFunction<
       await this.passThroughComponents.onRequest(context);
     }
 
+    const payment = { ...(context.payment ?? {}) };
+    // don't want to pass through credit secrets
+    if (payment) delete payment.credits;
+    const embeddedCredit =
+      context.datastoreMetadata.remoteDatastoreEmbeddedCredits[this.remoteSource];
+    if (embeddedCredit) {
+      payment.credits = embeddedCredit;
+    }
+
     const queryResult = this.upstreamClient.stream<{ output: TOutput; input: any }>(
       this.datastoreVersionHash,
       this.remoteFunction,
       context.input,
       {
-        payment: context.payment,
+        payment,
         authentication: context.authentication,
+        affiliateId: context.datastoreAffiliateId,
       },
     );
 

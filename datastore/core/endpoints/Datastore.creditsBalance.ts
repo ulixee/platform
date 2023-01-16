@@ -13,6 +13,6 @@ export default new DatastoreApiHandler('Datastore.creditsBalance', {
     );
     const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
     const credits = await datastore.tables[CreditsTable.tableName].get(request.creditId);
-    return { balance: credits.remainingCredits };
+    return { balance: credits?.remainingCredits ?? 0 };
   },
 });

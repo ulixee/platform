@@ -163,7 +163,6 @@ export default class DatastorePackager {
       interfaceString,
       functionsByName,
       tablesByName,
-      this.meta.remoteDatastores,
       this.meta.paymentAddress,
       this.meta.adminIdentities,
       this.logToConsole ? console.log : undefined,

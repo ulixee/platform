@@ -10,11 +10,17 @@ export default interface IDatastoreComponents<
 > {
   name?: string;
   description?: string;
-  remoteDatastores?: { [source: string]: string };
+  remoteDatastores?: {
+    [source: string]: string;
+  };
+  remoteDatastoreEmbeddedCredits?: {
+    [source: string]: { id: string; secret: string };
+  };
   tables?: TTable & { credits?: CreditsTable };
   functions?: TFunction;
   crawlers?: TCrawler;
   paymentAddress?: string;
+  affiliateId?: string;
   adminIdentities?: string[];
   authenticateIdentity?(identity: string, nonce: string): Promise<boolean> | boolean;
 }

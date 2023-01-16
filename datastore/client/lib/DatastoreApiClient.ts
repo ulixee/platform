@@ -104,6 +104,7 @@ export default class DatastoreApiClient {
         onFinalized?(metadata: IDatastoreExecResult['metadata'], error?: Error): void;
       };
       authentication?: IDatastoreExecRelayArgs['authentication'];
+      affiliateId?: string;
     } = {},
   ): ResultIterable<ISchemaDbx['output'], IDatastoreApiTypes['Datastore.stream']['result']> {
     const streamId = nanoid(12);
@@ -122,6 +123,7 @@ export default class DatastoreApiClient {
       input,
       payment: options.payment,
       authentication: options.authentication,
+      affiliateId: options.affiliateId,
     })
       .then(result => {
         onFinalized?.(result.metadata);
@@ -149,6 +151,7 @@ export default class DatastoreApiClient {
         onFinalized?(metadata: IDatastoreExecResult['metadata'], error?: Error): void;
       };
       authentication?: IDatastoreExecRelayArgs['authentication'];
+      affiliateId?: string;
     } = {},
   ): Promise<IDatastoreExecResult & { outputs?: ISchemaOutput[] }> {
     try {
@@ -158,6 +161,7 @@ export default class DatastoreApiClient {
         boundValues: options.boundValues ?? [],
         payment: options.payment,
         authentication: options.authentication,
+        affiliateId: options.affiliateId,
       });
       if (options.payment?.onFinalized) {
         options.payment.onFinalized(result.metadata);
@@ -281,7 +285,7 @@ export default class DatastoreApiClient {
         args = await DatastoreApiSchemas[command].args.parseAsync(args);
       }
     } catch (error) {
-      console.error(error)
+      console.error(error);
       throw ValidationError.fromZodValidation(
         `The API parameters for ${command} have some issues`,
         error,

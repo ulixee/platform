@@ -255,7 +255,6 @@ You can choose from the options below to link to the existing Miner versions or 
           manifest.schemaInterface,
           manifest.functionsByName,
           manifest.tablesByName,
-          manifest.remoteDatastores,
           manifest.paymentAddress,
           manifest.adminIdentities,
           console.log,

@@ -20,6 +20,7 @@ import ISidechainInfoApis from '@ulixee/specification/sidechain/SidechainInfoApi
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { nanoid } from 'nanoid';
 import CreditsStore from '@ulixee/datastore/lib/CreditsStore';
+import cloneDatastore from '@ulixee/datastore/cli/cloneDatastore';
 import DatastoreCore from '../index';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastorePayments.test');
@@ -226,7 +227,7 @@ test('should be able run a Datastore with Credits', async () => {
 
   await expect(
     client.query(manifest.versionHash, 'SELECT * FROM putout()', { payment: { credits } }),
-  ).rejects.toThrowError('Could not hold funds');
+  ).rejects.toThrowError('insufficient balance');
 });
 
 test('should remove an empty Credits from the local cache', async () => {
@@ -255,6 +256,72 @@ test('should remove an empty Credits from the local cache', async () => {
   await expect(
     CreditsStore.getPayment(await miner.address, manifest.versionHash, 1),
   ).resolves.toBeUndefined();
+});
+
+test('should be able to embed Credits in a Datastore', async () => {
+  const packager = new DatastorePackager(`${__dirname}/datastores/output.js`);
+  await Fs.writeFileSync(
+    `${__dirname}/datastores/output-manifest.json`,
+    JSON.stringify({
+      paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
+      functionsByName: {
+        putout: {
+          prices: [{ perQuery: 1000 }],
+        },
+      },
+      adminIdentities: [adminIdentity.bech32],
+    } as Partial<IDatastoreManifest>),
+  );
+
+  const dbx = await packager.build();
+  const manifest = packager.manifest;
+  await client.upload(await dbx.asBuffer(), { identity: adminIdentity });
+  const credits = await client.createCredits(manifest.versionHash, 2001, adminIdentity);
+
+  await expect(
+    client.stream(manifest.versionHash, 'putout', {}, { payment: { credits } }),
+  ).resolves.toEqual([{ success: true }]);
+
+  await expect(client.getCreditsBalance(manifest.versionHash, credits.id)).resolves.toEqual({
+    balance: 1001,
+  });
+
+  await cloneDatastore(
+    `ulx://${await miner.address}/${manifest.versionHash}`,
+    `${__dirname}/datastores/clone-output.js`,
+    { embedCredits: credits },
+  );
+  await Fs.writeFileSync(
+    `${__dirname}/datastores/clone-output-manifest.json`,
+    JSON.stringify({
+      paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
+      functionsByName: {
+        putout: {
+          prices: [{ perQuery: 1000 }],
+        },
+      },
+      adminIdentities: [adminIdentity.bech32],
+    } as Partial<IDatastoreManifest>),
+  );
+
+  {
+    const packager2 = new DatastorePackager(`${__dirname}/datastores/clone-output.js`);
+    const dbx2 = await packager2.build();
+    const manifest2 = packager2.manifest;
+    await client.upload(await dbx2.asBuffer(), { identity: adminIdentity });
+    const credits2 = await client.createCredits(manifest2.versionHash, 1002, adminIdentity);
+
+    await expect(
+      client.stream(manifest2.versionHash, 'putout', {}, { payment: { credits: credits2 } }),
+    ).resolves.toEqual([{ success: true }]);
+
+    await expect(client.getCreditsBalance(manifest.versionHash, credits.id)).resolves.toEqual({
+      balance: 1,
+    });
+    await expect(client.getCreditsBalance(manifest2.versionHash, credits2.id)).resolves.toEqual({
+      balance: 2,
+    });
+  }
 });
 
 async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, any>) {

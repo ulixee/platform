@@ -133,6 +133,7 @@ async function runDatastoreFunction<T>(
     input: functionInput,
     payment: request.payment,
     authentication: request.authentication,
+    affiliateId: request.affiliateId,
   };
   for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
     if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);

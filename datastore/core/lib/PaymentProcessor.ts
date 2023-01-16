@@ -101,14 +101,14 @@ export default class PaymentProcessor {
     }
 
     if (minimumPrice > 0 && !this.payment?.credits && !this.payment?.micronote) {
-      throw new MicronotePaymentRequiredError('This datastore requires payment', minimumPrice);
+      throw new MicronotePaymentRequiredError('This Datastore requires payment.', minimumPrice);
     }
     if (!this.payment?.credits && !this.payment?.micronote) return true;
     if (this.microgonsToHold === 0) return true;
 
     if (this.payment.credits) {
       const credits = this.datastore.tables[CreditsTable.tableName];
-      if (!credits) throw new Error('This datastore does not support credits');
+      if (!credits) throw new Error('This Datastore does not support Credits.');
       const { id, secret } = this.payment.credits;
       const remainingBalance = await credits.hold(id, secret, this.microgonsToHold);
       this.fundingBalance = remainingBalance + this.microgonsToHold;

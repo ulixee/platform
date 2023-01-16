@@ -29,7 +29,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     secret ??= postgresFriendlyNanoid(12);
     const secretHash = sha3(concatAsBuffer(id, salt, secret));
     await this.query(
-      'INSERT INTO self (id, salt, secretHash, issuedCredits, heldCredits, remainingCredits) VALUES ($1, $2, $3, $4, 0, $4)',
+      'INSERT INTO self (id, salt, secretHash, issuedCredits, holdCredits, remainingCredits) VALUES ($1, $2, $3, $4, 0, $4)',
       [id, salt, secretHash, microgons],
     );
     return { id, secret, remainingCredits: microgons };
@@ -37,7 +37,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
 
   async get(id: string): Promise<Omit<ICredit, 'salt' | 'secretHash'>> {
     const [credit] = await this.query(
-      'SELECT id, issuedCredits, remainingCredits, heldCredits FROM self WHERE id = $1',
+      'SELECT id, issuedCredits, remainingCredits, holdCredits FROM self WHERE id = $1',
       [id],
     );
     return credit;
@@ -50,26 +50,29 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     const hash = sha3(concatAsBuffer(credit.id, credit.salt, secret));
     if (!hash.equals(credit.secretHash)) throw new Error('This is an invalid Credit secret.');
 
+    if (credit.remainingCredits < holdAmount)
+      throw new Error('This Credit has insufficient balance remaining to create a payment.');
+
     const result = (await this.query(
-      'UPDATE self SET heldCredits = heldCredits + $2 ' +
-        'WHERE id = $1 AND (remainingCredits - heldCredits - $2) >= 0 ' +
-        'RETURNING remainingCredits',
+      'UPDATE self SET holdCredits = holdCredits + $2 ' +
+        'WHERE id = $1 AND (remainingCredits - holdCredits - $2) >= 0 ' +
+        'RETURNING (remainingCredits - holdCredits) as balance',
       [id, holdAmount],
     )) as any;
 
-    if (result === undefined) throw new Error('Could not hold funds from the given Credits.');
-    return result.remainingCredits;
+    if (result === undefined) throw new Error('Could not create a payment from the given Credits.');
+    return result.balance;
   }
 
   async finalize(id: string, holdAmount: number, finalAmount: number): Promise<number> {
     const result = (await this.query(
-      'UPDATE self SET heldCredits = heldCredits + $2, remainingCredits = remainingCredits - $3 ' +
+      'UPDATE self SET holdCredits = holdCredits - $2, remainingCredits = remainingCredits - $3 ' +
         'WHERE id = $1 ' +
-        'RETURNING remainingCredits',
+        'RETURNING (remainingCredits - holdCredits) as balance',
       [id, holdAmount, finalAmount],
     )) as any;
     if (result === undefined) throw new Error('Could not finalize payment for the given Credits.');
-    return result.remainingCredits;
+    return result.balance;
   }
 }
 
@@ -78,7 +81,7 @@ export const CreditsSchema = {
   salt: string({ length: 16 }),
   secretHash: buffer(),
   issuedCredits: number(),
-  heldCredits: number(),
+  holdCredits: number(),
   remainingCredits: number(),
 };
 type ICredit = ExtractSchemaType<typeof CreditsSchema>;

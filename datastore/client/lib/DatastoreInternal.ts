@@ -45,6 +45,7 @@ export default class DatastoreInternal<
   public readonly functions: TFunction = {} as any;
   public readonly tables: TTable = {} as any;
   public readonly crawlers: TCrawler = {} as any;
+  public readonly affiliateId: string;
 
   public get remoteDatastores(): TComponents['remoteDatastores'] {
     return this.components.remoteDatastores;
@@ -81,6 +82,7 @@ export default class DatastoreInternal<
       this.attachCrawler(crawler, name);
     }
 
+    this.affiliateId = components.affiliateId;
     this.metadata = this.createMetadata();
   }
 
@@ -170,20 +172,28 @@ export default class DatastoreInternal<
   }
 
   private createMetadata(): IDatastoreMetadata {
-    const { name, description, paymentAddress, remoteDatastores, adminIdentities } =
-      this.components;
+    const {
+      name,
+      description,
+      paymentAddress,
+      remoteDatastores,
+      remoteDatastoreEmbeddedCredits,
+      adminIdentities,
+    } = this.components;
 
     const metadata: IDatastoreMetadata = {
       name,
       description,
       paymentAddress,
       remoteDatastores,
+      remoteDatastoreEmbeddedCredits,
       adminIdentities,
       coreVersion: pkg.version,
       tablesByName: {},
       functionsByName: {},
       crawlersByName: {},
     };
+    metadata.remoteDatastoreEmbeddedCredits ??= {};
 
     for (const [funcName, func] of Object.entries(this.functions)) {
       const passThrough = func as unknown as PassthroughFunction<any, any>;

@@ -1,3 +1,4 @@
+import { IFunctionExecOptions } from '@ulixee/datastore';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreCore from '../index';
 import PaymentProcessor from '../lib/PaymentProcessor';
@@ -32,7 +33,13 @@ export default new DatastoreApiHandler('Datastore.stream', {
 
     const outputs = await context.workTracker.trackRun(
       (async () => {
-        const options = { input, payment: request.payment, authentication: request.authentication };
+        const options: IFunctionExecOptions<any> = {
+          input,
+          authentication: request.authentication,
+          affiliateId: request.affiliateId,
+          payment: request.payment,
+        };
+
         for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
           if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);
         }
