@@ -30,10 +30,9 @@ export default class DatastoreApiClient {
   protected activeIterableByStreamId = new Map<string, ResultIterable<any, any>>();
 
   constructor(host: string) {
-    if (host.startsWith('ulx://')) {
-      host = `ws://${host.slice('ulx://'.length)}`;
-    }
-    const transport = new WsTransportToCore(`${host}/datastore`);
+    if (!host.includes('://')) host = `ulx://${host}`;
+    const url = new URL(host);
+    const transport = new WsTransportToCore(`ws://${url.host}/datastore`);
     this.connectionToCore = new ConnectionToCore(transport);
     this.connectionToCore.on('event', this.onEvent.bind(this));
   }
@@ -214,7 +213,7 @@ export default class DatastoreApiClient {
   public async getCreditsBalance(
     datastoreVersionHash: string,
     creditId: string,
-  ): Promise<{ balance: number }> {
+  ): Promise<IDatastoreApiTypes['Datastore.creditsBalance']['result']> {
     return await this.runRemote('Datastore.creditsBalance', {
       datastoreVersionHash,
       creditId,
@@ -285,7 +284,6 @@ export default class DatastoreApiClient {
         args = await DatastoreApiSchemas[command].args.parseAsync(args);
       }
     } catch (error) {
-      console.error(error);
       throw ValidationError.fromZodValidation(
         `The API parameters for ${command} have some issues`,
         error,

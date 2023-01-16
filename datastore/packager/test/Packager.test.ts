@@ -84,7 +84,7 @@ test('should be able to modify the local built files for uploading', async () =>
   workingDirectory = new DbxFile(dbxFile).workingDirectory;
   dbxFile = packager.dbxPath;
 
-  const versionHash = encodeBuffer(sha3('dbxExtra'), 'dbx');
+  const versionHash = encodeBuffer(sha3('dbxExtra'), 'dbx').substring(0, 22);
   await packager.build({ keepOpen: true });
   packager.manifest.linkedVersions.push({
     versionHash,
@@ -168,7 +168,9 @@ module.exports = new Datastore({ functions: { heroFunction }})`,
   workingDirectory = packager.dbx.workingDirectory;
   dbxFile = packager.dbxPath;
 
-  const [dbx1, dbx2, dbx3] = ['dbx1', 'dbx2', 'dbx3'].map(x => encodeBuffer(sha3(x), 'dbx'));
+  const [dbx1, dbx2, dbx3] = ['dbx1', 'dbx2', 'dbx3'].map(x =>
+    encodeBuffer(sha3(x), 'dbx').substring(0, 22),
+  );
   await packager.manifest.setLinkedVersions(entrypoint, [
     { versionHash: dbx1, versionTimestamp: Date.now() - 25e3 },
     { versionHash: dbx2, versionTimestamp: Date.now() - 30e3 },

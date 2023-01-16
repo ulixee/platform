@@ -34,7 +34,7 @@ test('should throw an error if the required datastore core version is not instal
   await Fs.writeFile(
     `${datastoreTmpDir}/datastore-manifest.json`,
     JSON.stringify(<IDatastoreManifest>{
-      versionHash: encodeBuffer(sha3('dbx123'), 'dbx'),
+      versionHash: encodeBuffer(sha3('dbx123'), 'dbx').substring(0, 22),
       scriptHash: encodeBuffer(sha3('scr123'), 'scr'),
       coreVersion: '5.0.0',
       versionTimestamp: Date.now(),
@@ -92,7 +92,10 @@ test('should be able to upload and retrieve the datastore', async () => {
 
 test('should allow a user to override updating with no history', async () => {
   const datastoreTmpDir = `${storageDir}/tmp/test`;
-  Helpers.needsClosing.push({ close: () => existsSync(datastoreTmpDir) && rmSync(datastoreTmpDir), onlyCloseOnFinal: false });
+  Helpers.needsClosing.push({
+    close: () => existsSync(datastoreTmpDir) && rmSync(datastoreTmpDir),
+    onlyCloseOnFinal: false,
+  });
   const registry = new DatastoreRegistry(storageDir, tmpDir);
   Helpers.needsClosing.push(registry);
 
@@ -255,7 +258,10 @@ test('should provide a newer version hash if old script not available', async ()
 
 test('should require a new upload to be signed by a previous admin identity', async () => {
   const datastoreTmpDir = `${storageDir}/tmp/testSigned`;
-  Helpers.needsClosing.push({ close: () => existsSync(datastoreTmpDir) && rmSync(datastoreTmpDir), onlyCloseOnFinal: false });
+  Helpers.needsClosing.push({
+    close: () => existsSync(datastoreTmpDir) && rmSync(datastoreTmpDir),
+    onlyCloseOnFinal: false,
+  });
   const registry = new DatastoreRegistry(storageDir, tmpDir);
   Helpers.needsClosing.push(registry);
 

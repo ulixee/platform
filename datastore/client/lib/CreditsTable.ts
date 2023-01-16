@@ -10,6 +10,7 @@ const postgresFriendlyNanoid = customAlphabet(
 
 export default class CreditsTable extends Table<typeof CreditsSchema> {
   public static tableName = 'ulx_credits';
+
   constructor() {
     super({
       name: CreditsTable.tableName,
@@ -24,6 +25,17 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     microgons: number,
     secret?: string,
   ): Promise<{ id: string; secret: string; remainingCredits: number }> {
+    const upstreamBalance = await this.getUpstreamCreditLimit();
+    if (upstreamBalance !== undefined) {
+      const allocated = (await this.query<{ total: number }>(
+        'SELECT SUM(issuedCredits) as total FROM self',
+      )) as any;
+      if (allocated.total + microgons > upstreamBalance) {
+        throw new Error(
+          `This credit amount would exceed the balance of the embedded Credits, which would make use of the Credits unstable. Please increase the limit of the credits.`,
+        );
+      }
+    }
     const salt = nanoid(16);
     const id = `cred${postgresFriendlyNanoid(8)}`;
     secret ??= postgresFriendlyNanoid(12);
@@ -73,6 +85,21 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     )) as any;
     if (result === undefined) throw new Error('Could not finalize payment for the given Credits.');
     return result.balance;
+  }
+
+  private async getUpstreamCreditLimit(): Promise<number | undefined> {
+    const embeddedCredits = this.datastoreInternal.metadata.remoteDatastoreEmbeddedCredits ?? {};
+    if (!Object.keys(embeddedCredits).length) return undefined;
+    let issuedCredits = 0;
+    for (const [source, credit] of Object.entries(embeddedCredits)) {
+      const url = this.datastoreInternal.metadata.remoteDatastores[source];
+      if (!source) continue;
+      const client = this.datastoreInternal.createApiClient(url);
+      const datastoreHash = url.split('/').pop();
+      const balance = await client.getCreditsBalance(datastoreHash, credit.id);
+      if (Number.isInteger(balance.issuedCredits)) issuedCredits += balance.issuedCredits;
+    }
+    return issuedCredits;
   }
 }
 

@@ -351,13 +351,14 @@ export default class DatastoreManifest implements IDatastoreManifest {
       JSON.stringify(linkedVersions),
     );
     const sha = HashUtils.sha3(hashMessage);
-    return encodeBuffer(sha, 'dbx');
+    return encodeBuffer(sha, 'dbx').substring(0, 22);
   }
 
   public static validate(json: IDatastoreManifest): void {
     try {
       DatastoreManifestSchema.parse(json);
     } catch (error) {
+      console.error('Error validating DatastoreManifest', error);
       throw ValidationError.fromZodValidation(
         'This Manifest has errors that need to be fixed.',
         error,

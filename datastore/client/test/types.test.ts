@@ -48,8 +48,8 @@ it('can install multiple schemas', async () => {
       nothing: boolean;
     };
   }`;
-  const id1 = encodeBuffer(sha3('schema1'), 'dbx');
-  const id2 = encodeBuffer(sha3('schema2'), 'dbx');
+  const id1 = encodeBuffer(sha3('schema1'), 'dbx').substring(0,22);
+  const id2 = encodeBuffer(sha3('schema2'), 'dbx').substring(0,22);;
   installDatastoreSchema(schema1, id1);
   installDatastoreSchema(schema2, id2);
 

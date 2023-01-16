@@ -22,6 +22,7 @@ import { nanoid } from 'nanoid';
 import CreditsStore from '@ulixee/datastore/lib/CreditsStore';
 import cloneDatastore from '@ulixee/datastore/cli/cloneDatastore';
 import DatastoreCore from '../index';
+import DatastoreVm from '../lib/DatastoreVm';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastorePayments.test');
 
@@ -284,6 +285,7 @@ test('should be able to embed Credits in a Datastore', async () => {
 
   await expect(client.getCreditsBalance(manifest.versionHash, credits.id)).resolves.toEqual({
     balance: 1001,
+    issuedCredits: 2001,
   });
 
   await cloneDatastore(
@@ -317,11 +319,18 @@ test('should be able to embed Credits in a Datastore', async () => {
 
     await expect(client.getCreditsBalance(manifest.versionHash, credits.id)).resolves.toEqual({
       balance: 1,
+      issuedCredits: 2001,
     });
     await expect(client.getCreditsBalance(manifest2.versionHash, credits2.id)).resolves.toEqual({
       balance: 2,
+      issuedCredits: 1002,
     });
   }
+  // @ts-expect-error
+  expect(DatastoreVm.apiClientCacheByUrl).toEqual({
+    [`ulx://${await miner.address}`]: expect.any(DatastoreApiClient),
+  });
+
 });
 
 async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, any>) {

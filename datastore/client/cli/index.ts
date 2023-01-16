@@ -13,14 +13,14 @@ export default function datastoreCommands(): Command {
   const identityPrivateKeyPathOption = cli
     .createOption(
       '-i, --identity-path <path>',
-      'A path to a Ulixee Identity. Necessary for signing if a Miner has restricted allowed Uploaders.',
+      'A path to an Admin Identity. Necessary for actions restricting access to Admins of a Datastore.',
     )
     .env('ULX_IDENTITY_PATH');
 
   const identityPrivateKeyPassphraseOption = cli
     .createOption(
       '-p, --identity-passphrase <path>',
-      'A decryption passphrase to the Ulixee identity (only necessary if specified during key creation).',
+      'A decryption passphrase to the Ulixee Admin Identity (only necessary if specified during key creation).',
     )
     .env('ULX_IDENTITY_PASSPHRASE');
 
@@ -164,9 +164,11 @@ export default function datastoreCommands(): Command {
 
   cli
     .command('upload')
-    .description('Upload a Datastore package to a miner.')
+    .description('Upload a Datastore package to a Miner.')
     .argument('<dbxPath>', 'The path to the .dbx package.')
     .addOption(uploadHostOption)
+    .addOption(identityPrivateKeyPathOption)
+    .addOption(identityPrivateKeyPassphraseOption)
     .option(
       '-a, --allow-new-version-history',
       'Allow uploaded Datastore to create a new version history for the script entrypoint.',

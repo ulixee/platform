@@ -17,6 +17,7 @@ import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
 import type PassthroughFunction from './PassthroughFunction';
 import PassthroughTable from './PassthroughTable';
 import CreditsTable from './CreditsTable';
+import DatastoreApiClient from './DatastoreApiClient';
 
 const pkg = require('../package.json');
 
@@ -111,6 +112,10 @@ export default class DatastoreInternal<
         reject(error);
       }
     }));
+  }
+
+  public createApiClient(host: string): DatastoreApiClient {
+    return new DatastoreApiClient(host);
   }
 
   public close(): Promise<void> {

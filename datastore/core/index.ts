@@ -13,6 +13,8 @@ import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import { IDatastoreApis } from '@ulixee/specification/datastore';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import IDatastoreEvents from '@ulixee/datastore/interfaces/IDatastoreEvents';
+import Identity from '@ulixee/crypto/lib/Identity';
+import Ed25519 from '@ulixee/crypto/lib/Ed25519';
 import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
 import env from './env';
 import DatastoreRegistry from './lib/DatastoreRegistry';
@@ -34,6 +36,7 @@ import DatastoreStorage from './lib/DatastoreStorage';
 import DatastoreStream from './endpoints/Datastore.stream';
 import DatastoreAdmin from './endpoints/Datastore.admin';
 import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
+import DatastoreVm from './lib/DatastoreVm';
 
 const { log } = Logger(module);
 
@@ -126,6 +129,38 @@ export default class DatastoreCore {
     try {
       this.close = this.close.bind(this);
 
+      if (this.options.serverEnvironment === 'production') {
+        if (!this.options.serverAdminIdentities.length) {
+          const tempIdentity = Identity.createSync();
+          this.options.serverAdminIdentities.push(tempIdentity.bech32);
+          const key = Ed25519.getPrivateKeyBytes(tempIdentity.privateKey);
+          console.warn(`\n
+############################################################################################
+############################################################################################
+###########################  TEMPORARY ADMIN IDENTITY  #####################################
+############################################################################################
+############################################################################################
+
+            A temporary adminIdentity has been installed on your server. 
+
+       To perform admin activities (like issuing Credits for a Datastore), you should 
+                 save and use this Identity from your local system:
+
+ npx @ulixee/crypto save-identity --privateKey=${key.toString('base64')}
+
+--------------------------------------------------------------------------------------------
+       
+           To dismiss this message, add the following environment variable:
+           
+ ULX_SERVER_ADMIN_IDENTITIES=${tempIdentity.bech32},
+
+############################################################################################
+############################################################################################
+############################################################################################
+\n\n`);
+        }
+      }
+
       if (this.options.enableRunWithLocalPath) {
         this.apiRegistry.register(DatastoreQueryLocalScript);
       }
@@ -176,6 +211,7 @@ export default class DatastoreCore {
       this.connections.clear();
       this.datastoreRegistry?.close();
       DatastoreStorage.closeAll();
+      await DatastoreVm.close();
     } finally {
       closingPromise.resolve();
     }

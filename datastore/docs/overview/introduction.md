@@ -19,6 +19,10 @@ Datastore Functions create structure -- boundaries -- around a single "scrape", 
 
 Datastore Crawlers allow you to write specialized Functions that only output a "cached" scrape. It comes with built-in caching, so you can automatically re-use results that have been recently recorded.
 
+## Datastore Tables
+
+Datastore Tables allow you to manage and deploy database tables as part of your "api". This can be useful to enhance your functions with metadata or cached data.
+
 ## How Datastores Work
 
 Each Datastore is a wrapper for defining a composable scraper script. You can run datastores directly from the command line or upload them to a [Miner](https://ulixee.org/docs/miner).
