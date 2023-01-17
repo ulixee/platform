@@ -3,6 +3,40 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.18](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.18) (2023-01-17)
+
+
+### Bug Fixes
+
+* **databox:** docs links ([f9d8c91](https://github.com/ulixee/platform/commit/f9d8c91e4577fda70e8e1328888fd7215ae9d70c))
+* **datastore:** failing private table tests ([e844ebe](https://github.com/ulixee/platform/commit/e844ebeac9d9720a54795066d1f3abf319bafbe7))
+* **datastore:** tweak cli to fix end-to-end test ([4355cd1](https://github.com/ulixee/platform/commit/4355cd1f428806e10cbd23d62c4d2c0b970ce30e))
+* docs pricing should include remote ([ca7bd07](https://github.com/ulixee/platform/commit/ca7bd07e0719a8a171ff53f5382d99f8a77ace50))
+* docs still referencing afterRun ([875d295](https://github.com/ulixee/platform/commit/875d295d038009bf88976235310f2cf45b4a0eb0))
+* download chrome in release tests ([27d8720](https://github.com/ulixee/platform/commit/27d8720c001d3c367418d0a7f38efd4bea905408))
+* incorrect syntax for crawler output in docs ([fb672f9](https://github.com/ulixee/platform/commit/fb672f90a43963e6bc0e68baea139bbf23d7929b))
+* lint issue and schema change ([b0fe5eb](https://github.com/ulixee/platform/commit/b0fe5ebb0b0ca187c19b1cae0f4766d2dce3313d))
+* merge issues ([de1f3b4](https://github.com/ulixee/platform/commit/de1f3b4da65979b1ef5e2a145b36175e852ba845))
+* slashes in windows file paths were breaking things ([9e40001](https://github.com/ulixee/platform/commit/9e40001dbad08203ab3414e345a62ff375cb6f61))
+
+
+### Features
+
+* added databox docpage ([57d0790](https://github.com/ulixee/platform/commit/57d07906dd711fa30997d1946cc3bbab1aeb3902))
+* convert outputs to an array of records ([a6f6ab4](https://github.com/ulixee/platform/commit/a6f6ab41acdaa947790636e008427f39978bb28e))
+* crawler documentation ([0615cd8](https://github.com/ulixee/platform/commit/0615cd86410163570b730c11db2fd67dc5f85091))
+* **databox:** stream output records as available ([a92da44](https://github.com/ulixee/platform/commit/a92da44710aabaf0c6be33cdb02cd99060a3d47c))
+* **datastore:** affiliateId and embedded credits ([e56a24d](https://github.com/ulixee/platform/commit/e56a24dbd33211f26d120e1c7fd5fc20e6e698a8))
+* **datastore:** cli to clone datastores ([cd9fd16](https://github.com/ulixee/platform/commit/cd9fd1641a0299365da4b4c1d6d8a24e2b58b4f5))
+* **datastore:** documentation ([6c607fe](https://github.com/ulixee/platform/commit/6c607fef9b032dd4593444d5379b96c126ffb61c))
+* **datastore:** enable credits ([972029e](https://github.com/ulixee/platform/commit/972029e93451e4dddd79f313527f5799aaf11260))
+* **datastore:** passthrough tables ([36f4cb6](https://github.com/ulixee/platform/commit/36f4cb6a7122ec0ab517ad051e61b5262d5c99d9))
+* **datastore:** shorten version hash length ([0e36ead](https://github.com/ulixee/platform/commit/0e36ead760356addb93340313458b92093e51c1b))
+
+
+
+
+
 # [2.0.0-alpha.17](https://github.com/ulixee/platform/compare/v2.0.0-alpha.16...v2.0.0-alpha.17) (2022-12-15)
 
 

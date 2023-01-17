@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.18](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.18) (2023-01-17)
+
+
+### Features
+
+* added databox docpage ([57d0790](https://github.com/ulixee/platform/commit/57d07906dd711fa30997d1946cc3bbab1aeb3902))
+* **databox:** stream output records as available ([a92da44](https://github.com/ulixee/platform/commit/a92da44710aabaf0c6be33cdb02cd99060a3d47c))
+* **datastore:** enable credits ([972029e](https://github.com/ulixee/platform/commit/972029e93451e4dddd79f313527f5799aaf11260))
+
+
+
+
+
 # [2.0.0-alpha.17](https://github.com/ulixee/platform/compare/v2.0.0-alpha.16...v2.0.0-alpha.17) (2022-12-15)
 
 

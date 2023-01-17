@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.18](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.18) (2023-01-17)
+
+
+### Features
+
+* convert outputs to an array of records ([a6f6ab4](https://github.com/ulixee/platform/commit/a6f6ab41acdaa947790636e008427f39978bb28e))
+
+
+
+
+
 # [2.0.0-alpha.17](https://github.com/ulixee/platform/compare/v2.0.0-alpha.16...v2.0.0-alpha.17) (2022-12-15)
 
 **Note:** Version bump only for package @ulixee/apps-chromealive-core
