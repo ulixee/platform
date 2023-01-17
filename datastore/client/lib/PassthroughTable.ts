@@ -2,7 +2,6 @@ import { ExtractSchemaType } from '@ulixee/schema';
 import * as assert from 'assert';
 import { SqlParser } from '@ulixee/sql-engine';
 import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
-import ITableSchema from '../interfaces/ITableSchema';
 import Table, { IExpandedTableSchema } from './Table';
 import ITableComponents from '../interfaces/ITableComponents';
 import DatastoreApiClient from './DatastoreApiClient';
@@ -20,7 +19,7 @@ export default class PassthroughTable<
   TRemoteSources extends Record<string, string>,
   TTableName extends string,
   TSchema extends IExpandedTableSchema<any> = IExpandedTableSchema<any>,
-  TRecords extends ExtractSchemaType<ITableSchema> = ExtractSchemaType<ITableSchema>,
+  TRecords extends ExtractSchemaType<TSchema> = ExtractSchemaType<TSchema>,
   TComponents extends IPassthroughTableComponents<
     TRemoteSources,
     TTableName,
@@ -44,24 +43,24 @@ export default class PassthroughTable<
     this.remoteSource = source;
   }
 
-  public override async query(
+  public override async query<T = TRecords[]>(
     sql: string,
     boundValues: any[] = [],
     options: Omit<
       IDatastoreApiTypes['Datastore.query']['args'],
       'sql' | 'boundValues' | 'versionHash'
     > = {},
-  ): Promise<TRecords[]> {
+  ): Promise<T> {
     this.createApiClient();
     if (this.name !== this.remoteTable) {
       const sqlParser = new SqlParser(sql, {}, { [this.name]: this.remoteTable });
       sql = sqlParser.toSql();
     }
-    const result = await this.upstreamClient.query<TRecords>(this.datastoreVersionHash, sql, {
+    const result = await this.upstreamClient.query<T>(this.datastoreVersionHash, sql, {
       boundValues,
       ...options,
     });
-    return result.outputs;
+    return result.outputs as any;
   }
 
   protected createApiClient(): void {
@@ -73,9 +72,8 @@ export default class PassthroughTable<
     assert(remoteDatastore, `A remote datastore source could not be found for ${remoteSource}`);
 
     try {
-      const url = new URL(remoteDatastore);
-      this.datastoreVersionHash = url.pathname.slice(1);
-      this.upstreamClient = new DatastoreApiClient(url.host);
+      this.datastoreVersionHash = remoteDatastore.split('/').pop();
+      this.upstreamClient = this.datastoreInternal.createApiClient(remoteDatastore);
     } catch (error) {
       throw new Error(
         'A valid url was not supplied for this remote datastore. Format should be ulx://<host>/<datastoreVersionHash>',

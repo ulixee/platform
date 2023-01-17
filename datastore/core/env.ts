@@ -1,7 +1,6 @@
 import { addressValidation, identityValidation } from '@ulixee/specification/common';
 import Identity from '@ulixee/crypto/lib/Identity';
-import { loadEnv, parseEnvBool, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
-import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
+import { loadEnv, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
 
 loadEnv(process.cwd());
 loadEnv(__dirname);
@@ -10,16 +9,11 @@ if (env.ULX_DATASTORE_DIR) env.ULX_DATASTORE_DIR = parseEnvPath(env.ULX_DATASTOR
 if (env.ULX_IDENTITY_PATH) env.ULX_IDENTITY_PATH = parseEnvPath(env.ULX_IDENTITY_PATH);
 
 export default {
-  serverEnvironment: (env.ULX_SERVER_ENVIRONMENT || 'development') as IDatastoreCoreConfigureOptions['serverEnvironment'],
+  serverEnvironment: env.ULX_SERVER_ENVIRONMENT,
   datastoresDir: env.ULX_DATASTORE_DIR,
   // list of identities who can upload to this Miner [@ulixee/crypto/lib/Identity.bech32]
-  uploaderIdentities: parseIdentities(env.ULX_DBX_UPLOADER_IDENTITIES, 'Uploader Identities'),
+  serverAdminIdentities: parseIdentities(env.ULX_SERVER_ADMIN_IDENTITIES, 'Admin Identities'),
   paymentAddress: parseAddress(env.ULX_PAYMENT_ADDRESS),
-  giftCardsAllowed: parseEnvBool(env.ULX_GIFT_CARDS_ALLOWED),
-  giftCardsRequiredIssuerIdentity: parseIdentity(
-    env.ULX_GIFT_CARDS_REQUIRED_ISSUER_IDENTITY,
-    'Gift Card Issuer',
-  ),
   computePricePerQuery: parseEnvInt(env.ULX_PRICE_PER_QUERY),
   approvedSidechains: [],
   defaultSidechainHost: env.ULX_SIDECHAIN_HOST,

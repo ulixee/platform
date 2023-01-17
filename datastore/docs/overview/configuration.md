@@ -41,6 +41,21 @@ Datastore Core stores and retrieves [packaged Datastores](./deployment) from a c
 
 During bootup, any Packaged Datastore files (`.dbx`) in this directory will be automatically unpacked and loaded.
 
+### Server Environment {#env}
+
+The server environment a Datastore runs in will alter a few default settings. Current environment options are `development` and `production`. Production mode imposes the following limitations:
+
+1. All [Admin](#admin) APIs require an AdminIdentity. The Server must install one by default. If none is provided, a temporary AdminIdentity will be output on the console during startup (configured via `options.serverAdminIdentities` or environment variable `ULX_SERVER_ADMIN_IDENTITIES`).
+2. You cannot run `localScripts` through a Datastore Core. They must be packaged and deployed to the server.
+
+### Server Admin Identities {#admin}
+
+Datastore Core installs some administrative features for built-in Datastores. This currently includes things like:
+
+- [Credits](./credits.md): issuing trial credits to consumers of your Datastore(s). An Admin Identity is required to create new Credits.
+- Access for an Admin to run private javascript functions on [Tables](../basics/table.md), [Functions](../basics/function.md) and [Crawlers](../basics/crawler.md).
+- Ability to "upload" packaged Datastores to a live server in `production` [mode](#env).
+
 #### Environment Variable
 
 - ULX_DATASTORE_DIR `string`. Absolute path to a directory containing Datastores. Defaults to `<CACHE>/ulixee/datastores`.

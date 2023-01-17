@@ -32,6 +32,9 @@ Creates a new Datastore instance.
   - value `Crawler`. A [Crawler](./function.md) instance.
 - authenticateIdentity `function`. An optional function that can be used to secure access to this Datastore. More details are [here](#authenticateIdentity)
 - remoteDatastores `{ [name]: url }`. An optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughFunctions](./passthrough-function.md).
+- remoteDatastoreEmbeddedCredits `{ [name]: ICredit }`. An optional key/value of remoteDatastore "names" to [credit](../advanced/credits.md) details (`id` and `secret`). If included, the embedded credits will be used for Payment to the remoteDatastore for consumers of this Datastore.
+- affiliateId `string`. An optional unique identifier to send with all remoteDatastore queries sent from this Datastore.
+- adminIdentity `string`. A bech32 encoded admin Identity. Grants access to this identity to perform signed `Datastore.admin` API calls (like managing [Credits](../advanced/credits.md)). If not included, the `adminIdentities` of your Miner server are the only valid admin Identities for your Datastore.
 
 ```js
 import Datastore, { Function } from '@ulixee/datastore';
@@ -95,7 +98,7 @@ let payment = null; // fill in with payment if needed
 // this authentication message will be passed to the Datastore queries.
 const authentication = DatastoreApiClient.createExecAuthentication(payment, identity);
 const client = new DatastoreApiClient();
-await client.exec(version, 'functionName', { authentication });
+await client.stream('dbx1tn43ect3qkwg0patvq', 'functionName', { authentication });
 ```
 
 Your Datastore can then only allow your distributed Identities:

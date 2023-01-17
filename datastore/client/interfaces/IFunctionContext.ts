@@ -8,4 +8,6 @@ export default interface IFunctionContext<TSchema extends IFunctionSchema> {
   readonly Output?: IOutputClass<ExtractSchemaType<TSchema['output']>>;
   schema?: TSchema;
   datastoreMetadata: IDatastoreMetadata;
+  datastoreAffiliateId?: string;
+  callerAffiliateId?: string;
 }

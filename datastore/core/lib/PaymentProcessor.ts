@@ -2,15 +2,16 @@ import { IPayment } from '@ulixee/specification';
 import SidechainClient from '@ulixee/sidechain';
 import verifyMicronote from '@ulixee/sidechain/lib/verifyMicronote';
 import { UnapprovedSidechainError } from '@ulixee/sidechain/lib/errors';
+import Datastore from '@ulixee/datastore';
+import CreditsTable from '@ulixee/datastore/lib/CreditsTable';
+import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import {
   InsufficientMicronoteFundsError,
   InsufficientQueryPriceError,
-  InvalidMicronoteError,
   MaxSurgePricePerQueryExceeededError,
   MicronotePaymentRequiredError,
 } from './errors';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
-import { IDatastoreRecord } from './DatastoresTable';
 
 /**
  * 50 microgons for 1KB means:
@@ -23,8 +24,6 @@ import { IDatastoreRecord } from './DatastoresTable';
  *
  */
 export default class PaymentProcessor {
-  static giftCardIssuersById: { [giftCardId: string]: string[] } = {};
-
   private microgonsToHold = 0;
   private holdId: string;
   private holdAuthorizationCode?: string;
@@ -46,11 +45,12 @@ export default class PaymentProcessor {
 
   constructor(
     private payment: IPayment,
+    private datastore: Datastore,
     readonly context: Pick<IDatastoreApiContext, 'configuration' | 'sidechainClientManager'>,
   ) {}
 
   public async createHold(
-    datastore: IDatastoreRecord,
+    manifest: IDatastoreManifest,
     functionCalls: { id: number; functionName: string }[],
     pricingPreferences: { maxComputePricePerQuery?: number } = { maxComputePricePerQuery: 0 },
   ): Promise<boolean> {
@@ -79,17 +79,15 @@ export default class PaymentProcessor {
 
     let minimumPrice = computePricePerQuery;
     for (const functionCall of functionCalls) {
-      // no one to pay!
-      if (!datastore.giftCardIssuerIdentity && !datastore.paymentAddress) continue;
-      const prices = datastore.functionsByName[functionCall.functionName].prices;
+      const prices = manifest.functionsByName[functionCall.functionName].prices;
       const pricePerQuery = prices[0]?.perQuery ?? 0;
       const pricePerKb = prices[0]?.addOns?.perKb ?? 0;
-      const holdMicrogons = prices[0]?.minimum ?? 0;
+      const holdMicrogons = prices[0]?.minimum ?? pricePerQuery ?? 0;
       this.microgonsToHold += holdMicrogons;
 
       const payouts: PaymentProcessor['functionHolds'][0]['payouts'] = [];
       if (pricePerQuery > 0 || pricePerKb > 0) {
-        payouts.push({ address: datastore.paymentAddress, pricePerKb, pricePerQuery });
+        payouts.push({ address: manifest.paymentAddress, pricePerKb, pricePerQuery });
       }
       if (payouts.length) {
         this.functionHolds.push({
@@ -102,18 +100,21 @@ export default class PaymentProcessor {
       for (const price of prices) minimumPrice += price.minimum ?? 0;
     }
 
-    if (minimumPrice > 0 && !this.payment?.giftCard && !this.payment?.micronote) {
-      throw new MicronotePaymentRequiredError('This datastore requires payment', minimumPrice);
+    if (minimumPrice > 0 && !this.payment?.credits && !this.payment?.micronote) {
+      throw new MicronotePaymentRequiredError('This Datastore requires payment.', minimumPrice);
     }
-    if (!this.payment?.giftCard && !this.payment?.micronote) return true;
+    if (!this.payment?.credits && !this.payment?.micronote) return true;
     if (this.microgonsToHold === 0) return true;
 
-    await this.loadSidechain();
-
-    if (this.payment.giftCard) {
-      await this.canUseGiftCard(datastore);
-      await this.holdGiftCardMinimum();
+    if (this.payment.credits) {
+      const credits = this.datastore.tables[CreditsTable.tableName];
+      if (!credits) throw new Error('This Datastore does not support Credits.');
+      const { id, secret } = this.payment.credits;
+      const remainingBalance = await credits.hold(id, secret, this.microgonsToHold);
+      this.fundingBalance = remainingBalance + this.microgonsToHold;
+      this.holdId = id;
     } else {
+      await this.loadSidechain();
       await this.canUseMicronote();
       await this.holdMicronoteMinimum();
     }
@@ -150,7 +151,7 @@ export default class PaymentProcessor {
 
     const payments: { [address: string]: number } = {};
     // NOTE: don't claim the settlement cost!!
-    const maxMicrogons = this.fundingBalance - this.sidechainSettings.settlementFeeMicrogons;
+    const maxMicrogons = this.fundingBalance - (this.sidechainSettings?.settlementFeeMicrogons ?? 0);
     let allocatedMicrogons = 0;
     let totalMicrogons = 0;
     for (const payout of this.payouts) {
@@ -167,9 +168,10 @@ export default class PaymentProcessor {
       payments[payout.address] += microgons;
     }
 
-    if (this.payment?.giftCard && this.holdId) {
+    if (this.payment?.credits && this.holdId) {
       const total = Object.values(payments).reduce((a, b) => a + b, 0);
-      await this.sidechain.giftCards.settleHold(this.payment.giftCard.id, this.holdId, total);
+      const { id } = this.payment.credits;
+      await this.datastore.tables[CreditsTable.tableName].finalize(id, this.microgonsToHold, total);
       return total;
     }
 
@@ -188,41 +190,6 @@ export default class PaymentProcessor {
     }
 
     return result?.finalCost ?? totalMicrogons;
-  }
-
-  private async canUseGiftCard(datastore: IDatastoreRecord): Promise<boolean> {
-    if (!this.context.configuration.giftCardsAllowed || !datastore.giftCardIssuerIdentity) {
-      const rejector = !datastore.giftCardIssuerIdentity ? 'datastore' : 'Miner';
-      throw new InvalidMicronoteError(`This ${rejector} is not accepting gift cards.`);
-    }
-
-    // load allowed issuer list
-    const giftCardIssuers = await PaymentProcessor.getGiftCardIssuers(
-      this.sidechain,
-      this.payment?.giftCard?.id,
-    );
-
-    // ensure gift card is valid for this server
-    for (const issuer of [
-      datastore.giftCardIssuerIdentity,
-      this.context.configuration.giftCardsRequiredIssuerIdentity,
-    ]) {
-      if (!issuer) continue;
-      if (!giftCardIssuers.includes(issuer))
-        throw new Error(`This gift card does not include all required issuers (${issuer})`);
-    }
-    return true;
-  }
-
-  private async holdGiftCardMinimum(): Promise<boolean> {
-    const hold = await this.sidechain.giftCards.createHold(
-      this.payment.giftCard.id,
-      this.payment.giftCard.redemptionKey,
-      this.microgonsToHold,
-    );
-    this.fundingBalance = hold.remainingBalance + this.microgonsToHold;
-    this.holdId = hold.holdId;
-    return true;
   }
 
   private async canUseMicronote(): Promise<boolean> {
@@ -264,8 +231,7 @@ export default class PaymentProcessor {
   }
 
   private async loadSidechain(): Promise<void> {
-    const sidechainIdentity =
-      this.payment?.micronote?.sidechainIdentity ?? this.payment?.giftCard?.sidechainIdentity;
+    const sidechainIdentity = this.payment?.micronote?.sidechainIdentity;
     const approvedSidechains =
       await this.context.sidechainClientManager.getApprovedSidechainRootIdentities();
 
@@ -283,18 +249,5 @@ export default class PaymentProcessor {
 
   public static getOfficialBytes(output: any): number {
     return Buffer.byteLength(Buffer.from(JSON.stringify(output), 'utf8'));
-  }
-
-  private static async getGiftCardIssuers(
-    sidechain: SidechainClient,
-    giftCardId: string,
-  ): Promise<string[]> {
-    let giftCardIssuers = PaymentProcessor.giftCardIssuersById[giftCardId];
-    if (!giftCardIssuers) {
-      giftCardIssuers =
-        (await sidechain.giftCards.get(giftCardId)?.then(x => x.issuerIdentities)) ?? [];
-      PaymentProcessor.giftCardIssuersById[giftCardId] = giftCardIssuers;
-    }
-    return giftCardIssuers;
   }
 }

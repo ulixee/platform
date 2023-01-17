@@ -5,7 +5,7 @@ export default new Datastore({
   functions: {
     cloneUpstream: new Function({
       run(ctx) {
-        ctx.Output.emit({ success: true });
+        ctx.Output.emit({ success: true, affiliateId: ctx.callerAffiliateId });
       },
       schema: {
         input: {
@@ -19,6 +19,7 @@ export default new Datastore({
         },
         output: {
           success: boolean(),
+          affiliateId: string(),
         },
       },
     }),

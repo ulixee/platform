@@ -5,6 +5,7 @@ import Datastore, { ConnectionToDatastoreCore } from '@ulixee/datastore';
 import Function from '@ulixee/datastore/lib/Function';
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import DatastoreCore from '../index';
 
 const { version } = require('../package.json');
@@ -13,6 +14,7 @@ export default class DatastoreVm {
   private static vm: NodeVM;
   private static compiledScriptsByPath = new Map<string, Promise<VMScript>>();
   private static _connectionToDatastoreCore: ConnectionToDatastoreCore;
+  private static apiClientCacheByUrl: { [url: string]: DatastoreApiClient } = {};
 
   private static get connectionToDatastoreCore(): ConnectionToDatastoreCore {
     if (this._connectionToDatastoreCore) {
@@ -42,9 +44,28 @@ export default class DatastoreVm {
         'The default export from this script needs to inherit from "@ulixee/datastore"',
       );
     }
-    datastore.addConnectionToDatastoreCore(this.connectionToDatastoreCore, manifest);
+    datastore.addConnectionToDatastoreCore(
+      this.connectionToDatastoreCore,
+      manifest,
+      this.getCachedApiClient.bind(this),
+    );
 
     return datastore;
+  }
+
+  public static async close(): Promise<void> {
+    for (const client of Object.values(this.apiClientCacheByUrl)) {
+      await client.disconnect();
+    }
+    this.apiClientCacheByUrl = {};
+  }
+
+  private static getCachedApiClient(host: string): DatastoreApiClient {
+    if (!host.includes('://')) host = `ulx://${host}`;
+    const url = new URL(host);
+    host = `ulx://${url.host}`;
+    this.apiClientCacheByUrl[host] ??= new DatastoreApiClient(host);
+    return this.apiClientCacheByUrl[host];
   }
 
   private static getVMScript(path: string, manifest: IDatastoreManifest): Promise<VMScript> {

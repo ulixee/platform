@@ -73,6 +73,7 @@ test('should be able to clone a datastore', async () => {
     },
     output: {
       success: { typeName: 'boolean' },
+      affiliateId: { typeName: 'string' },
     },
   });
 
@@ -85,7 +86,7 @@ test('should be able to clone a datastore', async () => {
       field: 'str',
       nested: { field2: true },
     }),
-  ).resolves.toEqual([{ success: true }]);
+  ).resolves.toEqual([{ success: true, affiliateId: expect.any(String) }]);
 
   // can query the passthrough table
   await expect(

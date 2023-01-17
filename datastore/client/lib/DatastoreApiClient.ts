@@ -10,11 +10,13 @@ import ValidationError from '@ulixee/specification/utils/ValidationError';
 import { IPayment } from '@ulixee/specification';
 import { nanoid } from 'nanoid';
 import ICoreEventPayload from '@ulixee/net/interfaces/ICoreEventPayload';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import ITypes from '../types';
 import installDatastoreSchema, { addDatastoreAlias } from '../types/installDatastoreSchema';
 import IFunctionInputOutput from '../interfaces/IFunctionInputOutput';
 import ResultIterable from './ResultIterable';
 import IDatastoreEvents from '../interfaces/IDatastoreEvents';
+import CreditsTable from './CreditsTable';
 
 export type IDatastoreExecResult = Omit<IDatastoreApiTypes['Datastore.query']['result'], 'outputs'>;
 export type IDatastoreExecRelayArgs = Pick<
@@ -28,10 +30,9 @@ export default class DatastoreApiClient {
   protected activeIterableByStreamId = new Map<string, ResultIterable<any, any>>();
 
   constructor(host: string) {
-    if (host.startsWith('ulx://')) {
-      host = `ws://${host.slice('ulx://'.length)}`;
-    }
-    const transport = new WsTransportToCore(`${host}/datastore`);
+    if (!host.includes('://')) host = `ulx://${host}`;
+    const url = new URL(host);
+    const transport = new WsTransportToCore(`ws://${url.host}/datastore`);
     this.connectionToCore = new ConnectionToCore(transport);
     this.connectionToCore.on('event', this.onEvent.bind(this));
   }
@@ -44,7 +45,10 @@ export default class DatastoreApiClient {
     versionHash: string,
     includeSchemas = false,
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
-    return await this.runRemote('Datastore.meta', { versionHash, includeSchemasAsJson: includeSchemas });
+    return await this.runRemote('Datastore.meta', {
+      versionHash,
+      includeSchemasAsJson: includeSchemas,
+    });
   }
 
   public async getFunctionPricing<
@@ -55,10 +59,7 @@ export default class DatastoreApiClient {
     functionName: IFunctionName,
   ): Promise<
     Omit<IDatastoreApiTypes['Datastore.meta']['result']['functionsByName'][IFunctionName], 'name'> &
-      Pick<
-        IDatastoreApiTypes['Datastore.meta']['result'],
-        'computePricePerQuery' | 'giftCardIssuerIdentities'
-      >
+      Pick<IDatastoreApiTypes['Datastore.meta']['result'], 'computePricePerQuery'>
   > {
     const meta = await this.getMeta(versionHash);
     const stats = meta.functionsByName[functionName];
@@ -66,7 +67,6 @@ export default class DatastoreApiClient {
     return {
       ...stats,
       computePricePerQuery: meta.computePricePerQuery,
-      giftCardIssuerIdentities: meta.giftCardIssuerIdentities,
     };
   }
 
@@ -87,7 +87,7 @@ export default class DatastoreApiClient {
   }
 
   /**
-   * NOTE: any caller must handle tracking local balances of gift cards and removing them if they're depleted!
+   * NOTE: any caller must handle tracking local balances of Credits and removing them if they're depleted!
    */
   public stream<
     IO extends IFunctionInputOutput,
@@ -103,6 +103,7 @@ export default class DatastoreApiClient {
         onFinalized?(metadata: IDatastoreExecResult['metadata'], error?: Error): void;
       };
       authentication?: IDatastoreExecRelayArgs['authentication'];
+      affiliateId?: string;
     } = {},
   ): ResultIterable<ISchemaDbx['output'], IDatastoreApiTypes['Datastore.stream']['result']> {
     const streamId = nanoid(12);
@@ -121,6 +122,7 @@ export default class DatastoreApiClient {
       input,
       payment: options.payment,
       authentication: options.authentication,
+      affiliateId: options.affiliateId,
     })
       .then(result => {
         onFinalized?.(result.metadata);
@@ -137,7 +139,7 @@ export default class DatastoreApiClient {
   }
 
   /**
-   * NOTE: any caller must handle tracking local balances of gift cards and removing them if they're depleted!
+   * NOTE: any caller must handle tracking local balances of Credits and removing them if they're depleted!
    */
   public async query<ISchemaOutput = any, IVersionHash extends keyof ITypes & string = any>(
     versionHash: IVersionHash,
@@ -148,6 +150,7 @@ export default class DatastoreApiClient {
         onFinalized?(metadata: IDatastoreExecResult['metadata'], error?: Error): void;
       };
       authentication?: IDatastoreExecRelayArgs['authentication'];
+      affiliateId?: string;
     } = {},
   ): Promise<IDatastoreExecResult & { outputs?: ISchemaOutput[] }> {
     try {
@@ -157,6 +160,7 @@ export default class DatastoreApiClient {
         boundValues: options.boundValues ?? [],
         payment: options.payment,
         authentication: options.authentication,
+        affiliateId: options.affiliateId,
       });
       if (options.payment?.onFinalized) {
         options.payment.onFinalized(result.metadata);
@@ -182,16 +186,16 @@ export default class DatastoreApiClient {
     options.timeoutMs ??= 120e3;
     const { allowNewLinkedVersionHistory, timeoutMs } = options;
 
-    let uploaderSignature: Buffer;
-    let uploaderIdentity: string;
+    let adminSignature: Buffer;
+    let adminIdentity: string;
     if (options.identity) {
       const identity = options.identity;
-      uploaderIdentity = identity.bech32;
+      adminIdentity = identity.bech32;
       const message = DatastoreApiClient.createUploadSignatureMessage(
         compressedDatastore,
         allowNewLinkedVersionHistory,
       );
-      uploaderSignature = identity.sign(message);
+      adminSignature = identity.sign(message);
     }
 
     return await this.runRemote(
@@ -199,11 +203,66 @@ export default class DatastoreApiClient {
       {
         compressedDatastore,
         allowNewLinkedVersionHistory,
-        uploaderSignature,
-        uploaderIdentity,
+        adminSignature,
+        adminIdentity,
       },
       timeoutMs,
     );
+  }
+
+  public async getCreditsBalance(
+    datastoreVersionHash: string,
+    creditId: string,
+  ): Promise<IDatastoreApiTypes['Datastore.creditsBalance']['result']> {
+    return await this.runRemote('Datastore.creditsBalance', {
+      datastoreVersionHash,
+      creditId,
+    });
+  }
+
+  public async createCredits(
+    datastoreVersionHash: string,
+    microgons: number,
+    adminIdentity: Identity,
+  ): Promise<{ id: string; remainingCredits: number; secret: string }> {
+    return await this.administer<ReturnType<CreditsTable['create']>>(
+      datastoreVersionHash,
+      adminIdentity,
+      {
+        ownerType: 'table',
+        ownerName: CreditsTable.tableName,
+        functionName: 'create',
+      },
+      [microgons],
+    );
+  }
+
+  public async administer<T>(
+    datastoreVersionHash: string,
+    adminIdentity: Identity,
+    adminFunction: {
+      ownerType: 'datastore' | 'crawler' | 'function' | 'table';
+      ownerName: string;
+      functionName: string;
+    },
+    functionArgs: any[],
+  ): Promise<T> {
+    const message = DatastoreApiClient.createAdminFunctionMessage(
+      adminIdentity.bech32,
+      adminFunction.ownerType,
+      adminFunction.ownerName,
+      adminFunction.functionName,
+      functionArgs,
+    );
+    const adminSignature = adminIdentity.sign(message);
+
+    return await this.runRemote('Datastore.admin', {
+      versionHash: datastoreVersionHash,
+      adminSignature,
+      adminFunction,
+      adminIdentity: adminIdentity.bech32,
+      functionArgs,
+    });
   }
 
   protected onEvent<T extends keyof IDatastoreEvents>(
@@ -238,7 +297,7 @@ export default class DatastoreApiClient {
     return sha3(
       concatAsBuffer(
         'Datastore.exec',
-        payment?.giftCard?.id,
+        payment?.credits?.id,
         payment?.micronote?.micronoteId,
         nonce,
       ),
@@ -257,6 +316,25 @@ export default class DatastoreApiClient {
       signature: authenticationIdentity.sign(message),
       nonce,
     };
+  }
+
+  public static createAdminFunctionMessage(
+    adminIdentity: string,
+    ownerType: string,
+    ownerName: string,
+    functionName: string,
+    args: any[],
+  ): Buffer {
+    return sha3(
+      concatAsBuffer(
+        'Datastore.admin',
+        adminIdentity,
+        ownerType,
+        ownerName,
+        functionName,
+        TypeSerializer.stringify(args, { sortKeys: true }),
+      ),
+    );
   }
 
   public static createUploadSignatureMessage(

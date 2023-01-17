@@ -16,6 +16,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
         ['versionHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
         ['baseVersionHash', 'TEXT'],
         ['versionTimestamp', 'DATETIME'],
+        ['scriptEntrypoint', 'TEXT'],
         ['lastUpdatedTimestamp', 'DATETIME'],
       ],
       true,
@@ -26,13 +27,28 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
     );
   }
 
-  public save(versionHash: string, versionTimestamp: number, baseVersionHash: string): void {
+  public findWithEntrypoint(entrypoint: string): IDatastoreVersionRecord {
+    const query = this.db.prepare(
+      `select * from ${this.tableName} where scriptEntrypoint = ? limit 1`,
+    );
+    const record = query.get(entrypoint);
+    if (!record) return;
+    return record;
+  }
+
+  public save(
+    versionHash: string,
+    scriptEntrypoint: string,
+    versionTimestamp: number,
+    baseVersionHash: string,
+  ): void {
     const now = Date.now();
-    this.insertNow([versionHash, baseVersionHash, versionTimestamp, now]);
+    this.insertNow([versionHash, baseVersionHash, versionTimestamp, scriptEntrypoint, now]);
     this.cacheByVersionHash[versionHash] = {
       versionHash,
       baseVersionHash,
       versionTimestamp,
+      scriptEntrypoint,
       lastUpdatedTimestamp: now,
     };
     this.versionsByBaseHash[baseVersionHash] ??= this.getPreviousVersions(baseVersionHash);
@@ -55,16 +71,17 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
     if (!this.versionsByBaseHash[baseVersionHash]) {
       const versionRecords: IDatastoreVersionRecord[] = this.findWithBaseHash.all(baseVersionHash);
       const seenVersions = new Set<string>();
-      this.versionsByBaseHash[baseVersionHash] = versionRecords.map(x => {
-        if (seenVersions.has(x.versionHash)) return null;
-        seenVersions.add(x.versionHash);
+      this.versionsByBaseHash[baseVersionHash] = versionRecords
+        .map(x => {
+          if (seenVersions.has(x.versionHash)) return null;
+          seenVersions.add(x.versionHash);
 
-        return {
-          versionHash: x.versionHash,
-          versionTimestamp: x.versionTimestamp,
-        };
-      }).filter(Boolean);
-
+          return {
+            versionHash: x.versionHash,
+            versionTimestamp: x.versionTimestamp,
+          };
+        })
+        .filter(Boolean);
     }
     return this.versionsByBaseHash[baseVersionHash];
   }
@@ -73,7 +90,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
     return this.getByHash(versionHash)?.baseVersionHash;
   }
 
-  private getByHash(versionHash: string): IDatastoreVersionRecord {
+  public getByHash(versionHash: string): IDatastoreVersionRecord {
     this.cacheByVersionHash[versionHash] ??= this.getQuery.get(versionHash);
     return this.cacheByVersionHash[versionHash];
   }
@@ -83,5 +100,6 @@ export interface IDatastoreVersionRecord {
   versionHash: string;
   versionTimestamp: number;
   baseVersionHash: string;
+  scriptEntrypoint: string;
   lastUpdatedTimestamp: number;
 }

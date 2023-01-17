@@ -30,11 +30,10 @@ export default class DatastoreManifest implements IDatastoreManifest {
   public schemaInterface: string;
   public functionsByName: IDatastoreManifest['functionsByName'] = {};
   public tablesByName: IDatastoreManifest['tablesByName'] = {};
-  public remoteDatastores: Record<string, string>;
 
+  public adminIdentities: string[];
   // Payment details
   public paymentAddress?: string;
-  public giftCardIssuerIdentity?: string;
 
   public linkedVersions: IVersionHistoryEntry[];
   public allVersions: IVersionHistoryEntry[];
@@ -83,9 +82,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
     schemaInterface: string,
     functionsByName: IDatastoreManifest['functionsByName'],
     tablesByName: IDatastoreManifest['tablesByName'],
-    remoteDatastores: Record<string, string>,
     paymentAddress: string,
-    giftCardIssuerIdentity: string,
+    adminIdentities: string[],
     logger?: (message: string, ...args: any[]) => any,
   ): Promise<void> {
     await this.load();
@@ -97,12 +95,12 @@ export default class DatastoreManifest implements IDatastoreManifest {
     await this.loadGeneratedManifests(manifestSources);
     this.linkedVersions ??= [];
     this.functionsByName = {};
+    adminIdentities ??= [];
     Object.assign(this, {
       coreVersion,
       schemaInterface,
-      remoteDatastores,
       paymentAddress,
-      giftCardIssuerIdentity,
+      adminIdentities,
     });
     for (const [funcName, funcMeta] of Object.entries(functionsByName)) {
       this.functionsByName[funcName] = {
@@ -184,10 +182,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     if (this.source !== 'dbx' && !(await this.exists())) {
       return;
     }
-    if (!(await existsAsync(Path.dirname(this.path)))) {
-      await Fs.mkdir(Path.dirname(this.path), { recursive: true });
-    }
-    await safeOverwriteFile(this.path, JSON.stringify(json, null, 2));
+    await DatastoreManifest.writeToDisk(this.path, json);
   }
 
   public toConfigManifest(): IDatastoreManifestJson {
@@ -210,7 +205,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       functionsByName: this.functionsByName,
       tablesByName: this.tablesByName,
       paymentAddress: this.paymentAddress,
-      giftCardIssuerIdentity: this.giftCardIssuerIdentity,
+      adminIdentities: this.adminIdentities,
     };
   }
 
@@ -256,7 +251,35 @@ export default class DatastoreManifest implements IDatastoreManifest {
           path: source.path,
           overrides: explicitSettings,
         });
-        Object.assign(this, explicitSettings);
+        const { functionsByName, tablesByName, ...otherSettings } = explicitSettings;
+        if (functionsByName) {
+          for (const [name, funcMeta] of Object.entries(functionsByName)) {
+            if (this.functionsByName[name]) {
+              Object.assign(this.functionsByName[name], funcMeta);
+            } else {
+              this.functionsByName[name] = funcMeta;
+            }
+            this.functionsByName[name].prices ??= [];
+            for (const price of this.functionsByName[name].prices) {
+              price.perQuery ??= 0;
+              price.minimum ??= price.perQuery;
+            }
+          }
+        }
+        if (tablesByName) {
+          for (const [name, meta] of Object.entries(tablesByName)) {
+            if (this.tablesByName[name]) {
+              Object.assign(this.tablesByName[name], meta);
+            } else {
+              this.tablesByName[name] = meta;
+            }
+            this.tablesByName[name].prices ??= [];
+            for (const price of this.tablesByName[name].prices) {
+              price.perQuery ??= 0;
+            }
+          }
+        }
+        Object.assign(this, otherSettings);
         if (explicitSettings.linkedVersions?.length === 0) {
           this.hasClearedLinkedVersions = true;
         }
@@ -284,9 +307,9 @@ export default class DatastoreManifest implements IDatastoreManifest {
       | 'scriptEntrypoint'
       | 'linkedVersions'
       | 'paymentAddress'
-      | 'giftCardIssuerIdentity'
       | 'functionsByName'
       | 'tablesByName'
+      | 'adminIdentities'
     >,
   ): string {
     const {
@@ -296,8 +319,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
       functionsByName,
       tablesByName,
       paymentAddress,
-      giftCardIssuerIdentity,
       linkedVersions,
+      adminIdentities,
     } = manifest;
     linkedVersions.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
     const functions = Object.keys(functionsByName ?? {}).sort();
@@ -324,17 +347,18 @@ export default class DatastoreManifest implements IDatastoreManifest {
       ...functionPrices,
       ...tablePrices,
       paymentAddress,
-      giftCardIssuerIdentity,
+      ...(adminIdentities ?? []),
       JSON.stringify(linkedVersions),
     );
     const sha = HashUtils.sha3(hashMessage);
-    return encodeBuffer(sha, 'dbx');
+    return encodeBuffer(sha, 'dbx').substring(0, 22);
   }
 
   public static validate(json: IDatastoreManifest): void {
     try {
       DatastoreManifestSchema.parse(json);
     } catch (error) {
+      console.error('Error validating DatastoreManifest', error);
       throw ValidationError.fromZodValidation(
         'This Manifest has errors that need to be fixed.',
         error,
@@ -387,6 +411,13 @@ export default class DatastoreManifest implements IDatastoreManifest {
   private static loadGlobalManifest(manifestPath: string): DatastoreManifest {
     const path = Path.join(UlixeeConfig.global.directoryPath, 'datastores.json');
     return new DatastoreManifest(path, 'global', manifestPath);
+  }
+
+  private static async writeToDisk(path: string, json: any): Promise<void> {
+    if (!(await existsAsync(Path.dirname(path)))) {
+      await Fs.mkdir(Path.dirname(path), { recursive: true });
+    }
+    await safeOverwriteFile(path, JSON.stringify(json, null, 2));
   }
 }
 

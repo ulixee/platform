@@ -32,7 +32,7 @@ import Datastore, { PassthroughFunction } from '@ulixee/datastore';
 export default new Datastore({
   // NOTE: this is not a real hosted Datastore
   remoteDatastores: {
-    source: `ulx://153.23.22.255:8080/dbx1tn43ect3qkwg0patvq9jev54s36kujv0szfrjqdh3uuuufrk2vvq40gg3x`,
+    source: `ulx://153.23.22.255:8080/dbx1tn43ect3qkwg0patvq`,
   },
   functions: {
     function2: new PassthroughFunction({

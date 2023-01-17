@@ -76,13 +76,24 @@ export default class PassthroughFunction<
       await this.passThroughComponents.onRequest(context);
     }
 
+    const payment = { ...(context.payment ?? {}) };
+    const embeddedCredit =
+      context.datastoreMetadata.remoteDatastoreEmbeddedCredits[this.remoteSource];
+    if (embeddedCredit && payment.credits) {
+      payment.credits = embeddedCredit;
+    } else {
+      // don't want to pass through credit secrets
+      delete payment.credits;
+    }
+
     const queryResult = this.upstreamClient.stream<{ output: TOutput; input: any }>(
       this.datastoreVersionHash,
       this.remoteFunction,
       context.input,
       {
-        payment: context.payment,
+        payment,
         authentication: context.authentication,
+        affiliateId: context.datastoreAffiliateId,
       },
     );
 
@@ -132,9 +143,8 @@ export default class PassthroughFunction<
     assert(remoteDatastore, `A remote datastore source could not be found for ${remoteSource}`);
 
     try {
-      const url = new URL(remoteDatastore);
-      this.datastoreVersionHash = url.pathname.slice(1);
-      this.upstreamClient = new DatastoreApiClient(url.host);
+      this.datastoreVersionHash = remoteDatastore.split('/').pop();
+      this.upstreamClient = this.datastoreInternal.createApiClient(remoteDatastore);
     } catch (error) {
       throw new Error(
         'A valid url was not supplied for this remote datastore. Format should be ulx://<host>/<datastoreVersionHash>',

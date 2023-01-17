@@ -1,39 +1,28 @@
-import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { promises as Fs } from 'fs';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { InvalidSignatureError } from '@ulixee/crypto/lib/errors';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import { unpackDbx } from '../lib/dbxUtils';
-import DatastoreCore from '../index';
-import { InvalidPermissionsError } from '../lib/errors';
 
 export default new DatastoreApiHandler('Datastore.upload', {
   async handler(request, context): Promise<{ success: boolean }> {
-    if (DatastoreCore.isClosing)
-      throw new CanceledPromiseError('Miner shutting down. Not accepting uploads.');
-
-    await DatastoreCore.start();
-
     const { workTracker, datastoreRegistry, configuration } = context;
-    const { compressedDatastore, allowNewLinkedVersionHistory, uploaderIdentity, uploaderSignature } =
+    const { compressedDatastore, allowNewLinkedVersionHistory, adminIdentity, adminSignature } =
       request;
 
-    if (configuration.uploaderIdentities.length) {
-      if (!uploaderIdentity || !configuration.uploaderIdentities.includes(uploaderIdentity)) {
-        throw new InvalidPermissionsError(
-          `Your Identity is not approved to upload Datastores to this Miner (${
-            uploaderIdentity ?? 'none provided'
-          }).`,
-        );
+    let hasServerAdminIdentity =  false;
+    if (configuration.serverAdminIdentities.length) {
+      if (adminIdentity && configuration.serverAdminIdentities.includes(adminIdentity)) {
+        hasServerAdminIdentity = true;
       }
       const message = DatastoreApiClient.createUploadSignatureMessage(
         compressedDatastore,
         allowNewLinkedVersionHistory,
       );
-      if (!Identity.verify(uploaderIdentity, message, uploaderSignature)) {
+      if (!Identity.verify(adminIdentity, message, adminSignature)) {
         throw new InvalidSignatureError(
-          'This uploaded Datastore did not have a valid Identity signature.',
+          'This uploaded Datastore did not have a valid AdminIdentity signature.',
         );
       }
     }
@@ -43,7 +32,13 @@ export default new DatastoreApiHandler('Datastore.upload', {
         const tmpDir = await Fs.mkdtemp(`${configuration.datastoresTmpDir}/`);
         try {
           await unpackDbx(compressedDatastore, tmpDir);
-          await datastoreRegistry.save(tmpDir, compressedDatastore, allowNewLinkedVersionHistory);
+          await datastoreRegistry.save(
+            tmpDir,
+            compressedDatastore,
+            adminIdentity,
+            allowNewLinkedVersionHistory,
+            hasServerAdminIdentity,
+          );
         } finally {
           // remove tmp dir in case of errors
           await Fs.rm(tmpDir, { recursive: true }).catch(() => null);

@@ -182,7 +182,10 @@ export default class Function<
     });
   }
 
-  public attachToDatastore(datastoreInternal: DatastoreInternal<any, any>, functionName: string): void {
+  public attachToDatastore(
+    datastoreInternal: DatastoreInternal<any, any>,
+    functionName: string,
+  ): void {
     this.components.name = functionName;
     if (this.#datastoreInternal && this.#datastoreInternal === datastoreInternal) return;
     if (this.#datastoreInternal) {

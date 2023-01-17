@@ -16,6 +16,8 @@ import type Crawler from './Crawler';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
 import type PassthroughFunction from './PassthroughFunction';
 import PassthroughTable from './PassthroughTable';
+import CreditsTable from './CreditsTable';
+import DatastoreApiClient from './DatastoreApiClient';
 
 const pkg = require('../package.json');
 
@@ -44,6 +46,7 @@ export default class DatastoreInternal<
   public readonly functions: TFunction = {} as any;
   public readonly tables: TTable = {} as any;
   public readonly crawlers: TCrawler = {} as any;
+  public readonly affiliateId: string;
 
   public get remoteDatastores(): TComponents['remoteDatastores'] {
     return this.components.remoteDatastores;
@@ -74,10 +77,13 @@ export default class DatastoreInternal<
     for (const [name, table] of Object.entries(components.tables || [])) {
       this.attachTable(table, name);
     }
+    this.attachTable(new CreditsTable());
+
     for (const [name, crawler] of Object.entries(components.crawlers || [])) {
       this.attachCrawler(crawler, name);
     }
 
+    this.affiliateId = components.affiliateId;
     this.metadata = this.createMetadata();
   }
 
@@ -106,6 +112,10 @@ export default class DatastoreInternal<
         reject(error);
       }
     }));
+  }
+
+  public createApiClient(host: string): DatastoreApiClient {
+    return new DatastoreApiClient(host);
   }
 
   public close(): Promise<void> {
@@ -167,20 +177,28 @@ export default class DatastoreInternal<
   }
 
   private createMetadata(): IDatastoreMetadata {
-    const { name, description, paymentAddress, giftCardIssuerIdentity, remoteDatastores } =
-      this.components;
+    const {
+      name,
+      description,
+      paymentAddress,
+      remoteDatastores,
+      remoteDatastoreEmbeddedCredits,
+      adminIdentities,
+    } = this.components;
 
     const metadata: IDatastoreMetadata = {
       name,
       description,
       paymentAddress,
       remoteDatastores,
-      giftCardIssuerIdentity,
+      remoteDatastoreEmbeddedCredits,
+      adminIdentities,
       coreVersion: pkg.version,
       tablesByName: {},
       functionsByName: {},
       crawlersByName: {},
     };
+    metadata.remoteDatastoreEmbeddedCredits ??= {};
 
     for (const [funcName, func] of Object.entries(this.functions)) {
       const passThrough = func as unknown as PassthroughFunction<any, any>;

@@ -11,7 +11,7 @@ export type IExpandedTableSchema<T> = T extends ITableSchema
 
 export default class Table<
   TSchema extends IExpandedTableSchema<any> = IExpandedTableSchema<any>,
-  TRecords extends ExtractSchemaType<ITableSchema> = ExtractSchemaType<ITableSchema>,
+  TRecords extends ExtractSchemaType<TSchema> = ExtractSchemaType<TSchema>,
   TComponents extends ITableComponents<TSchema, TRecords> = ITableComponents<TSchema, TRecords>,
 > {
   seedlings: TRecords[];
@@ -49,7 +49,7 @@ export default class Table<
     return this.#datastoreInternal;
   }
 
-  public async query(sql: string, boundValues: any[] = []): Promise<TRecords[]> {
+  public async query<T = TRecords[]>(sql: string, boundValues: any[] = []): Promise<T> {
     await this.datastoreInternal.ensureDatabaseExists();
     const name = this.components.name;
     const datastoreInstanceId = this.datastoreInternal.instanceId;

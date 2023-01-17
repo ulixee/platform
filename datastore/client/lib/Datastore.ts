@@ -1,6 +1,6 @@
 import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import { SqlParser } from '@ulixee/sql-engine';
-import { ExtractSchemaType } from '@ulixee/schema';
+import { ExtractSchemaType, ISchemaAny } from '@ulixee/schema';
 import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
 import IDatastoreComponents, {
   TCrawlers,
@@ -11,6 +11,7 @@ import DatastoreInternal from './DatastoreInternal';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
 import ResultIterable from './ResultIterable';
 import ICrawlerOutputSchema from '../interfaces/ICrawlerOutputSchema';
+import DatastoreApiClient from './DatastoreApiClient';
 
 export default class Datastore<
   TTable extends TTables = TTables,
@@ -25,6 +26,10 @@ export default class Datastore<
   #datastoreInternal: DatastoreInternal<TTable, TFunction, TCrawler, TComponents>;
 
   public disableAutorun: boolean;
+
+  public get affiliateId(): string {
+    return this.#datastoreInternal.affiliateId;
+  }
 
   public get metadata(): IDatastoreMetadata {
     return this.#datastoreInternal.metadata;
@@ -61,14 +66,20 @@ export default class Datastore<
     name: T,
     input: ExtractSchemaType<TFunction[T]['schema']['input']> = {} as any,
   ): ResultIterable<ExtractSchemaType<TFunction[T]['schema']['output']>> {
-    return this.#datastoreInternal.functions[name].stream({ input });
+    return this.#datastoreInternal.functions[name].stream({
+      input,
+      affiliateId: this.#datastoreInternal.affiliateId,
+    });
   }
 
   public async crawl<T extends keyof TComponents['crawlers']>(
     name: T,
     input: ExtractSchemaType<TComponents['crawlers'][T]['schema']['input']>,
   ): Promise<ICrawlerOutputSchema> {
-    const [crawlResult] = await this.#datastoreInternal.crawlers[name].stream({ input });
+    const [crawlResult] = await this.#datastoreInternal.crawlers[name].stream({
+      input,
+      affiliateId: this.#datastoreInternal.affiliateId,
+    });
     return crawlResult;
   }
 
@@ -81,16 +92,16 @@ export default class Datastore<
     const datastoreVersionHash = this.#datastoreInternal.manifest?.versionHash;
 
     const sqlParser = new SqlParser(sql);
-    const inputSchemas = Object.keys(this.#datastoreInternal.functions).reduce((obj, k) => {
-      return Object.assign(obj, { [k]: this.#datastoreInternal.functions[k].schema.input });
-    }, {});
+    const inputSchemas: { [functionName: string]: ISchemaAny } = {};
+    for (const [key, func] of Object.entries(this.functions)) {
+      if (func.schema) inputSchemas[key] = func.schema.input;
+    }
     const inputByFunctionName = sqlParser.extractFunctionInputs(inputSchemas, boundValues);
     const outputByFunctionName: { [name: string]: any[] } = {};
 
     for (const functionName of Object.keys(inputByFunctionName)) {
       const input = inputByFunctionName[functionName];
-      const output = await this.#datastoreInternal.functions[functionName].stream({ input });
-      outputByFunctionName[functionName] = Array.isArray(output) ? output : [output];
+      outputByFunctionName[functionName] = await this.functions[functionName].stream({ input });
     }
 
     const recordsByVirtualTableName: { [name: string]: Record<string, any>[] } = {};
@@ -98,7 +109,7 @@ export default class Datastore<
       if (!this.#datastoreInternal.metadata.tablesByName[tableName].remoteSource) continue;
 
       const sqlInputs = sqlParser.extractTableQuery(tableName, boundValues);
-      recordsByVirtualTableName[tableName] = await this.#datastoreInternal.tables[tableName].query(
+      recordsByVirtualTableName[tableName] = await this.tables[tableName].query(
         sqlInputs.sql,
         sqlInputs.args,
       );
@@ -122,8 +133,10 @@ export default class Datastore<
   public addConnectionToDatastoreCore(
     connectionToCore: ConnectionToDatastoreCore,
     manifest?: IDatastoreManifest,
+    apiClientLoader?: (url: string) => DatastoreApiClient,
   ): void {
     this.#datastoreInternal.manifest = manifest;
     this.#datastoreInternal.connectionToCore = connectionToCore;
+    if (apiClientLoader) this.#datastoreInternal.createApiClient = apiClientLoader;
   }
 }

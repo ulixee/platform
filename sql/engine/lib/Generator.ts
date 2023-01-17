@@ -25,7 +25,7 @@ export default class SqlGenerator {
     });
 
     callback(`
-      CREATE TABLE "${name}" (
+      CREATE TABLE IF NOT EXISTS "${name}" (
         ${columns.join(',\n')}
       )
     `);

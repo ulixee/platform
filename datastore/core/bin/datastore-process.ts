@@ -29,7 +29,6 @@ process.on('message', async (messageJson: string) => {
         datastore = new Datastore({
           functions: { [functionName]: datastore },
           tables: {},
-          remoteDatastores: {},
         }) as Datastore;
       }
 

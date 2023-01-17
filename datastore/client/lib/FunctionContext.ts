@@ -11,6 +11,8 @@ export default class FunctionContext<
 > implements IFunctionContext<ISchema>
 {
   public datastoreMetadata: IDatastoreMetadata;
+  public datastoreAffiliateId: string;
+  public callerAffiliateId: string;
 
   public get authentication(): IDatastoreApiTypes['Datastore.query']['args']['authentication'] {
     return this.#functionInternal.options.authentication;
@@ -38,8 +40,13 @@ export default class FunctionContext<
 
   #functionInternal: FunctionInternal<ISchema>;
 
-  constructor(functionInternal: FunctionInternal<ISchema>, datastoreInternal: DatastoreInternal) {
+  constructor(
+    functionInternal: FunctionInternal<ISchema>,
+    datastoreInternal: DatastoreInternal,
+  ) {
     this.#functionInternal = functionInternal;
     this.datastoreMetadata = datastoreInternal.metadata;
+    this.datastoreAffiliateId = datastoreInternal.affiliateId;
+    this.callerAffiliateId = functionInternal.options.affiliateId;
   }
 }

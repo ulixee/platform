@@ -1,4 +1,3 @@
-import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { SqlParser } from '@ulixee/sql-engine';
 import Datastore from '@ulixee/datastore';
 import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
@@ -12,14 +11,10 @@ import { validateAuthentication, validateFunctionCoreVersions } from '../lib/dat
 
 export default new DatastoreApiHandler('Datastore.query', {
   async handler(request, context) {
-    if (DatastoreCore.isClosing) {
-      throw new CanceledPromiseError('Miner shutting down. Not accepting new work.');
-    }
-    await DatastoreCore.start();
     request.boundValues ??= [];
 
     const startTime = Date.now();
-    const { registryEntry, manifest } = await context.datastoreRegistry.loadVersion(
+    const datastoreVersion = await context.datastoreRegistry.getByVersionHash(
       request.versionHash,
     );
 
@@ -33,7 +28,7 @@ export default new DatastoreApiHandler('Datastore.query', {
     }
 
     const db = storage.db;
-    const datastore = await DatastoreVm.open(registryEntry.path, manifest);
+    const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
 
     await validateAuthentication(datastore, request.payment, request.authentication);
 
@@ -58,7 +53,7 @@ export default new DatastoreApiHandler('Datastore.query', {
     );
     const outputsByFunctionName: { [name: string]: any[] } = {};
 
-    const paymentProcessor = new PaymentProcessor(request.payment, context);
+    const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
 
     const functionsWithTempIds = Object.keys(inputByFunctionName).map((x, i) => {
       return {
@@ -68,7 +63,7 @@ export default new DatastoreApiHandler('Datastore.query', {
     });
 
     await paymentProcessor.createHold(
-      registryEntry,
+      datastoreVersion,
       functionsWithTempIds,
       request.pricingPreferences,
     );
@@ -76,7 +71,7 @@ export default new DatastoreApiHandler('Datastore.query', {
     for (const { functionName, id } of functionsWithTempIds) {
       const functionStart = Date.now();
       const functionInput = inputByFunctionName[functionName];
-      validateFunctionCoreVersions(registryEntry, functionName, context);
+      validateFunctionCoreVersions(datastoreVersion, functionName, context);
 
       const outputs = await context.workTracker.trackRun(
         runDatastoreFunction(datastore, functionName, functionInput, request),
@@ -118,7 +113,7 @@ export default new DatastoreApiHandler('Datastore.query', {
     const microgons = await paymentProcessor.settle(resultBytes);
     return {
       outputs,
-      latestVersionHash: registryEntry.latestVersionHash,
+      latestVersionHash: datastoreVersion.latestVersionHash,
       metadata: {
         bytes: resultBytes,
         microgons,
@@ -138,6 +133,7 @@ async function runDatastoreFunction<T>(
     input: functionInput,
     payment: request.payment,
     authentication: request.authentication,
+    affiliateId: request.affiliateId,
   };
   for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
     if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);

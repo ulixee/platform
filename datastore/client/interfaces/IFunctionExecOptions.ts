@@ -7,4 +7,5 @@ export default interface IFunctionExecOptions<ISchema extends IFunctionSchema> {
   payment?: IDatastoreApiTypes['Datastore.query']['args']['payment'],
   authentication?: IDatastoreApiTypes['Datastore.query']['args']['authentication'],
   isFromCommandLine?: boolean;
+  affiliateId?: string;
 }

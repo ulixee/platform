@@ -4,12 +4,12 @@ import Datastore from '@ulixee/datastore';
 import { IPayment } from '@ulixee/specification';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
-import { IDatastoreRecord } from './DatastoresTable';
 import { IStatsByFunctionName } from './DatastoreRegistry';
 
 export function validateFunctionCoreVersions(
-  registryEntry: IDatastoreRecord & {
+  registryEntry: IDatastoreManifest & {
     statsByFunction: IStatsByFunctionName;
     path: string;
     latestVersionHash: string;

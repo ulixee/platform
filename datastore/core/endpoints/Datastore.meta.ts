@@ -1,25 +1,11 @@
 import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
-import DatastoreCore from '../index';
 
 export default new DatastoreApiHandler('Datastore.meta', {
   async handler(request, context) {
-    await DatastoreCore.start();
+    const { computePricePerQuery } = context.configuration;
 
-    const { giftCardsRequiredIssuerIdentity, giftCardsAllowed, computePricePerQuery } =
-      context.configuration;
-
-    const datastore = context.datastoreRegistry.getByVersionHash(request.versionHash);
-    const giftCardIssuerIdentities: string[] = [];
-    if ((giftCardsRequiredIssuerIdentity || giftCardsAllowed) && datastore.giftCardIssuerIdentity) {
-      giftCardIssuerIdentities.push(datastore.giftCardIssuerIdentity);
-      if (
-        giftCardsRequiredIssuerIdentity &&
-        giftCardsRequiredIssuerIdentity !== datastore.giftCardIssuerIdentity
-      ) {
-        giftCardIssuerIdentities.push(giftCardsRequiredIssuerIdentity);
-      }
-    }
+    const datastore = await context.datastoreRegistry.getByVersionHash(request.versionHash);
 
     let settlementFeeMicrogons: number;
     const functionsByName: IDatastoreApiTypes['Datastore.meta']['result']['functionsByName'] = {};
@@ -82,7 +68,6 @@ export default new DatastoreApiHandler('Datastore.meta', {
     }
     return {
       latestVersionHash: datastore.latestVersionHash,
-      giftCardIssuerIdentities,
       schemaInterface: datastore.schemaInterface,
       functionsByName,
       tablesByName,

@@ -1,13 +1,13 @@
 import IFunctionComponents from './IFunctionComponents';
 import ITableComponents from './ITableComponents';
+import IDatastoreComponents from './IDatastoreComponents';
 
-export default interface IDatastoreMetadata {
-  name?: string;
-  description?: string;
+export default interface IDatastoreMetadata
+  extends Omit<
+    IDatastoreComponents<any, any, any>,
+    'authenticateIdentity' | 'crawlers' | 'functions' | 'tables'
+  > {
   coreVersion: string;
-  remoteDatastores?: Record<string, string>;
-  paymentAddress?: string;
-  giftCardIssuerIdentity?: string;
   functionsByName: {
     [name: string]: {
       corePlugins: { [name: string]: string };
