@@ -109,6 +109,7 @@ export default class SqlGenerator {
       record[key] = convertedValue;
       if (tmpType) tmpSchema[key] = tmpType;
     }
+    console.log('Converting record', { record });
     for (const key of Object.keys(schema.output || {})) {
       if (key in record) continue;
       record[key] = null;
@@ -164,7 +165,10 @@ export default class SqlGenerator {
     return value;
   }
 
-  public static convertToSqliteValue(type: string, value: any): [any, (string | undefined)?] {
+  public static convertToSqliteValue(
+    type: string,
+    value: any,
+  ): [serialized: any, temporaryType?: string | undefined] {
     if (value === undefined || value === null) return [null];
 
     if (type === 'boolean') {
@@ -180,6 +184,14 @@ export default class SqlGenerator {
     if (type === undefined || type === null) {
       if (typeof value === 'boolean') {
         return [value ? 1 : 0, 'boolean'];
+      }
+
+      if (value && value instanceof Date) {
+        return [(value as Date).toISOString(), 'date'];
+      }
+
+      if (value && typeof value === 'object') {
+        return [value ? TypeSerializer.stringify(value, { sortKeys: true }) : null, 'object'];
       }
     }
 

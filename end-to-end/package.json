@@ -1,5 +1,5 @@
 {
-  "name": "@ulixee/e2e",
+  "name": "@ulixee/end-to-end",
   "private": true,
   "version": "2.0.0-alpha.17",
   "dependencies": {

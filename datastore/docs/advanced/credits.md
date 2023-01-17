@@ -8,7 +8,7 @@ Datastores automatically build-in a table (`ulx_credits`) to grant metered acces
 
 When you clone a Datastore, you can embed Credits you've been issued by an upstream Datastore. This enables you to issue Credits to your own users.
 
-To embed credits, you can configure the [remoteDatastoreEmbeddedCredits](./datastore.md#constructor) parameter on your Datastore.
+To embed credits, you can configure the [remoteDatastoreEmbeddedCredits](../basics/datastore.md#constructor) parameter on your Datastore.
 
 ## Denominations
 

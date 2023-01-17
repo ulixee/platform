@@ -52,7 +52,7 @@ The server environment a Datastore runs in will alter a few default settings. Cu
 
 Datastore Core installs some administrative features for built-in Datastores. This currently includes things like:
 
-- [Credits](./credits.md): issuing trial credits to consumers of your Datastore(s). An Admin Identity is required to create new Credits.
+- [Credits](../advanced/credits.md): issuing trial credits to consumers of your Datastore(s). An Admin Identity is required to create new Credits.
 - Access for an Admin to run private javascript functions on [Tables](../basics/table.md), [Functions](../basics/function.md) and [Crawlers](../basics/crawler.md).
 - Ability to "upload" packaged Datastores to a live server in `production` [mode](#env).
 

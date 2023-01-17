@@ -32,8 +32,8 @@ export default class DatastorePackager {
   constructor(entrypoint: string, private readonly outDir?: string, private logToConsole = false) {
     this.entrypoint = Path.resolve(entrypoint);
     this.outDir ??=
-      UlixeeConfig.load({ entrypoint, workingDirectory: process.cwd() })?.datastoreOutDir ??
-      Path.dirname(this.entrypoint);
+      UlixeeConfig.load({ entrypoint: this.entrypoint, workingDirectory: process.cwd() })
+        ?.datastoreOutDir ?? Path.dirname(this.entrypoint);
     this.outDir = Path.resolve(this.outDir);
     this.filename = Path.basename(this.entrypoint, Path.extname(this.entrypoint));
     this.dbx = new DbxFile(this.dbxPath);
