@@ -6,10 +6,10 @@
           <router-link to="/docs/hero" class="block px-5">Hero</router-link>
         </div>
         <div class="relative bg-white">
-          <router-link to="/docs/datastore" class="block px-5">Database</router-link>
+          <router-link to="/docs/datastore" class="block px-5">Datastore</router-link>
         </div>
         <div class="relative bg-white">
-          <router-link to="/docs/miner" class="block px-5">Server</router-link>
+          <router-link to="/docs/miner" class="block px-5">Miner</router-link>
         </div>
         <div class="relative bg-white">
           <router-link to="/docs/sql" class="block px-5">Ulixee SQL</router-link>
