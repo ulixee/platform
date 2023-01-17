@@ -8,25 +8,23 @@ export default class CreditsStore {
   private static creditsByDatastore: Promise<ICreditsStore>;
 
   public static async store(
-    minerHost: string,
     datastoreVersionHash: string,
     credits: { id: string; secret: string; remainingCredits: number },
   ): Promise<void> {
     const allCredits = await this.load();
-    allCredits[`${minerHost}/${datastoreVersionHash}`] ??= {};
-    allCredits[`${minerHost}/${datastoreVersionHash}`][credits.id] = credits;
+    allCredits[datastoreVersionHash] ??= {};
+    allCredits[datastoreVersionHash][credits.id] = credits;
     await this.writeToDisk(allCredits);
   }
 
   public static async getPayment(
-    minerHost: string,
     datastoreVersionHash: string,
     microgons: number,
   ): Promise<
     (IPayment & { onFinalized(result: { microgons: number; bytes: number }): void }) | undefined
   > {
     const credits = await this.load();
-    const datastoreCredits = credits[`${minerHost}/${datastoreVersionHash}`];
+    const datastoreCredits = credits[datastoreVersionHash];
     if (!datastoreCredits) return;
 
     for (const [creditId, credit] of Object.entries(datastoreCredits)) {
@@ -54,11 +52,11 @@ export default class CreditsStore {
 
   private static async load(): Promise<ICreditsStore> {
     this.creditsByDatastore ??= readFileAsJson<ICreditsStore>(this.storePath).catch(() => ({}));
-    return await this.creditsByDatastore;
+    return (await this.creditsByDatastore) ?? {};
   }
 
   private static writeToDisk(data: any): Promise<void> {
-    return safeOverwriteFile(this.storePath, data);
+    return safeOverwriteFile(this.storePath, JSON.stringify(data));
   }
 }
 interface ICreditsStore {

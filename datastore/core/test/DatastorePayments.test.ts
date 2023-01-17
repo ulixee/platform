@@ -224,6 +224,7 @@ test('should be able run a Datastore with Credits', async () => {
 
   await expect(client.getCreditsBalance(manifest.versionHash, credits.id)).resolves.toEqual({
     balance: 1,
+    issuedCredits: 1001,
   });
 
   await expect(
@@ -250,13 +251,9 @@ test('should remove an empty Credits from the local cache', async () => {
   const manifest = packager.manifest;
   await client.upload(await dbx.asBuffer(), { identity: adminIdentity });
   const credits = await client.createCredits(manifest.versionHash, 1250, adminIdentity);
-  await CreditsStore.store(await miner.address, manifest.versionHash, credits);
-  await expect(
-    CreditsStore.getPayment(await miner.address, manifest.versionHash, 1250),
-  ).resolves.toBeTruthy();
-  await expect(
-    CreditsStore.getPayment(await miner.address, manifest.versionHash, 1),
-  ).resolves.toBeUndefined();
+  await CreditsStore.store(manifest.versionHash, credits);
+  await expect(CreditsStore.getPayment(manifest.versionHash, 1250)).resolves.toBeTruthy();
+  await expect(CreditsStore.getPayment(manifest.versionHash, 1)).resolves.toBeUndefined();
 });
 
 test('should be able to embed Credits in a Datastore', async () => {
@@ -330,7 +327,6 @@ test('should be able to embed Credits in a Datastore', async () => {
   expect(DatastoreVm.apiClientCacheByUrl).toEqual({
     [`ulx://${await miner.address}`]: expect.any(DatastoreApiClient),
   });
-
 });
 
 async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, any>) {

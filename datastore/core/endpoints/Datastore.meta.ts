@@ -21,7 +21,9 @@ export default new DatastoreApiHandler('Datastore.meta', {
       }
       if (minimumPrice > 0) {
         settlementFeeMicrogons ??= (
-          await context.sidechainClientManager.defaultClient.getSettings(false, false)
+          await context.sidechainClientManager.defaultClient
+            .getSettings(false, false)
+            .catch(() => ({ settlementFeeMicrogons: 0 }))
         ).settlementFeeMicrogons;
         minimumPrice += settlementFeeMicrogons;
       }
@@ -52,7 +54,9 @@ export default new DatastoreApiHandler('Datastore.meta', {
       }
       if (pricePerQuery > 0) {
         settlementFeeMicrogons ??= (
-          await context.sidechainClientManager.defaultClient.getSettings(false, false)
+          await context.sidechainClientManager.defaultClient
+            .getSettings(false, false)
+            .catch(() => ({ settlementFeeMicrogons: 0 }))
         ).settlementFeeMicrogons;
         pricePerQuery += settlementFeeMicrogons;
       }
