@@ -16,7 +16,7 @@
     "preversion": "node ../../build/miner/main/scripts/gatherEnvSettings.js"
   },
   "peerDependencies": {
-    "@ulixee/apps-chromealive-core": "2.0.0-alpha.17"
+    "@ulixee/apps-chromealive-core": "2.0.0-alpha.18"
   },
   "peerDependenciesMeta": {
     "@ulixee/apps-chromealive-core": {
