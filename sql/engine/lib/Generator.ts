@@ -109,7 +109,6 @@ export default class SqlGenerator {
       record[key] = convertedValue;
       if (tmpType) tmpSchema[key] = tmpType;
     }
-    console.log('Converting record', { record });
     for (const key of Object.keys(schema.output || {})) {
       if (key in record) continue;
       record[key] = null;
