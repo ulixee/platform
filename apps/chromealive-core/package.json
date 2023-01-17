@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/apps-chromealive-core",
-  "version": "2.0.0-alpha.17",
+  "version": "2.0.0-alpha.18",
   "main": "index.js",
   "scripts": {
     "build": "tsc -b -i"
@@ -8,27 +8,27 @@
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/apps-chromealive": "2.0.0-alpha.17",
-    "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.17",
-    "@ulixee/commons": "2.0.0-alpha.17",
-    "@ulixee/datastore": "2.0.0-alpha.17",
-    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.17",
-    "@ulixee/default-browser-emulator": "2.0.0-alpha.17",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.17",
-    "@ulixee/hero-plugin-utils": "2.0.0-alpha.17",
-    "@ulixee/hero-timetravel": "2.0.0-alpha.17",
-    "@ulixee/net": "2.0.0-alpha.17",
-    "@ulixee/unblocked-agent": "2.0.0-alpha.17",
-    "@ulixee/unblocked-specification": "2.0.0-alpha.17",
+    "@ulixee/apps-chromealive": "2.0.0-alpha.18",
+    "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.18",
+    "@ulixee/commons": "2.0.0-alpha.18",
+    "@ulixee/datastore": "2.0.0-alpha.18",
+    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.18",
+    "@ulixee/default-browser-emulator": "2.0.0-alpha.18",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.18",
+    "@ulixee/hero-plugin-utils": "2.0.0-alpha.18",
+    "@ulixee/hero-timetravel": "2.0.0-alpha.18",
+    "@ulixee/net": "2.0.0-alpha.18",
+    "@ulixee/unblocked-agent": "2.0.0-alpha.18",
+    "@ulixee/unblocked-specification": "2.0.0-alpha.18",
     "fuse.js": "^6.5.3",
     "nanoid": "^3.1.30"
   },
   "peerDependencies": {
-    "@ulixee/hero-core": "2.0.0-alpha.17"
+    "@ulixee/hero-core": "2.0.0-alpha.18"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.154",
-    "@ulixee/datastore-testing": "2.0.0-alpha.17",
+    "@ulixee/datastore-testing": "2.0.0-alpha.18",
     "linkedom": "^0.14.11"
   }
 }

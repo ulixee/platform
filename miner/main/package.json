@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/miner",
-  "version": "2.0.0-alpha.17",
+  "version": "2.0.0-alpha.18",
   "description": "The Ulixee Miner is an out-of-the box tool to host and deploy Ulixee Datastores and Hero scripts. It allows you to easily create a paid API service.",
   "exports": {
     ".": {
@@ -16,7 +16,7 @@
     "preversion": "node ../../build/miner/main/scripts/gatherEnvSettings.js"
   },
   "peerDependencies": {
-    "@ulixee/apps-chromealive-core": "2.0.0-alpha.16"
+    "@ulixee/apps-chromealive-core": "2.0.0-alpha.17"
   },
   "peerDependenciesMeta": {
     "@ulixee/apps-chromealive-core": {
@@ -24,17 +24,17 @@
     }
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.17",
-    "@ulixee/datastore-core": "2.0.0-alpha.17",
-    "@ulixee/datastore-plugins-hero-core": "2.0.0-alpha.17",
-    "@ulixee/hero-core": "2.0.0-alpha.17",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.17",
-    "@ulixee/net": "2.0.0-alpha.17",
-    "@ulixee/specification": "2.0.0-alpha.17",
+    "@ulixee/commons": "2.0.0-alpha.18",
+    "@ulixee/datastore-core": "2.0.0-alpha.18",
+    "@ulixee/datastore-plugins-hero-core": "2.0.0-alpha.18",
+    "@ulixee/hero-core": "2.0.0-alpha.18",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.18",
+    "@ulixee/net": "2.0.0-alpha.18",
+    "@ulixee/specification": "2.0.0-alpha.18",
     "commander": "^9.3.0",
     "ws": "^7.4.6"
   },
   "devDependencies": {
-    "@ulixee/datastore-testing": "2.0.0-alpha.17"
+    "@ulixee/datastore-testing": "2.0.0-alpha.18"
   }
 }

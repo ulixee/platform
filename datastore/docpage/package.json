@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/datastore-docpage",
-  "version": "2.0.0-alpha.17",
+  "version": "2.0.0-alpha.18",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -37,6 +37,7 @@
     "js-yaml": "^4.1.0",
     "lint-staged": "^9.5.0",
     "lodash.kebabcase": "^4.1.1",
+    "moment": "^2.29.4",
     "onchange": "^7.1.0",
     "param-case": "^3.0.4",
     "postcss": "^8.4.7",
@@ -57,12 +58,11 @@
     "unist-util-visit": "^4.1.0",
     "vfile": "^5.3.2",
     "vue": "^3.2.45",
-    "moment": "^2.29.4",
     "vue-inline-svg": "^3.1.0",
     "vue-router": "^4.0.0-0"
   },
   "devDependencies": {
-    "@ulixee/datastore-packager": "2.0.0-alpha.17",
+    "@ulixee/datastore-packager": "2.0.0-alpha.18",
     "file-loader": "^6.2.0",
     "modify-source-webpack-plugin": "^4.0.0-beta.2",
     "typescript": "^4.5.5"
