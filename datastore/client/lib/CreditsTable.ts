@@ -37,7 +37,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
       }
     }
     const salt = nanoid(16);
-    const id = `cred${postgresFriendlyNanoid(8)}`;
+    const id = `crd${postgresFriendlyNanoid(8)}`;
     secret ??= postgresFriendlyNanoid(12);
     const secretHash = sha3(concatAsBuffer(id, salt, secret));
     await this.query(
@@ -104,7 +104,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
 }
 
 export const CreditsSchema = {
-  id: string({ regexp: /^cred[A-Za-z0-9_-]{8}$/ }),
+  id: string({ regexp: /^crd[A-Za-z0-9_]{8}$/ }),
   salt: string({ length: 16 }),
   secretHash: buffer(),
   issuedCredits: number(),

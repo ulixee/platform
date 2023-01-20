@@ -4,21 +4,18 @@ import { execAndLog } from '../utils';
 
 export default async function main(
   datastore: {
-    credits: { id: string; secret: string; remainingCredits: number };
+    creditUrl: string;
     minerHost: string;
     datastoreHash: string;
   },
   rootDir: string,
 ): Promise<void> {
-  const { datastoreHash, credits, minerHost } = datastore;
+  const { datastoreHash, creditUrl, minerHost } = datastore;
 
-  execAndLog(
-    `npx @ulixee/datastore credits install ${minerHost}/${datastoreHash}/credits/${credits.id} ${credits.secret}`,
-    {
-      cwd: rootDir,
-      stdio: 'inherit',
-    },
-  );
+  execAndLog(`npx @ulixee/datastore credits install ${creditUrl}`, {
+    cwd: rootDir,
+    stdio: 'inherit',
+  });
 
   const datastoreClient = new DatastoreApiClient(minerHost);
   const pricing = await datastoreClient.getFunctionPricing(datastoreHash, 'default');
@@ -31,7 +28,7 @@ export default async function main(
 
   console.log('Result of datastore query is:', result);
 
-  execAndLog(`npx @ulixee/datastore credits get ${minerHost}/${datastoreHash} ${credits.id}`, {
+  execAndLog(`npx @ulixee/datastore credits get ${creditUrl}`, {
     cwd: rootDir,
     stdio: 'inherit',
   });

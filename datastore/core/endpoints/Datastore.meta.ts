@@ -71,6 +71,7 @@ export default new DatastoreApiHandler('Datastore.meta', {
       }
     }
     return {
+      name: datastore.name,
       latestVersionHash: datastore.latestVersionHash,
       schemaInterface: datastore.schemaInterface,
       functionsByName,

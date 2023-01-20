@@ -2,6 +2,7 @@ import { boolean } from '@ulixee/schema';
 import Datastore, { Function } from '@ulixee/datastore';
 
 module.exports = new Datastore({
+  domain: 'bootup-datastore.com',
   functions: {
     bootup: new Function({
       run({ Output }) {

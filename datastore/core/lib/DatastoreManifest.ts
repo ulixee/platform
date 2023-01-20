@@ -13,6 +13,7 @@ import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import { datastoreVersionHashValidation } from '@ulixee/specification/common';
+import IDatastoreMetadata from '@ulixee/datastore/interfaces/IDatastoreMetadata';
 
 type IDatastoreSources = [
   global: DatastoreManifest,
@@ -21,6 +22,8 @@ type IDatastoreSources = [
 ];
 
 export default class DatastoreManifest implements IDatastoreManifest {
+  public name: string;
+  public domain: string;
   public versionHash: string;
   public versionTimestamp: number;
   public scriptHash: string;
@@ -78,12 +81,13 @@ export default class DatastoreManifest implements IDatastoreManifest {
     absoluteScriptEntrypoint: string,
     scriptHash: string,
     versionTimestamp: number,
-    coreVersion: string,
     schemaInterface: string,
     functionsByName: IDatastoreManifest['functionsByName'],
     tablesByName: IDatastoreManifest['tablesByName'],
-    paymentAddress: string,
-    adminIdentities: string[],
+    metadata: Pick<
+      IDatastoreMetadata,
+      'coreVersion' | 'paymentAddress' | 'adminIdentities' | 'domain' | 'name'
+    >,
     logger?: (message: string, ...args: any[]) => any,
   ): Promise<void> {
     await this.load();
@@ -95,13 +99,19 @@ export default class DatastoreManifest implements IDatastoreManifest {
     await this.loadGeneratedManifests(manifestSources);
     this.linkedVersions ??= [];
     this.functionsByName = {};
-    adminIdentities ??= [];
+
+    const { name, coreVersion, paymentAddress, adminIdentities, domain } = metadata;
+
     Object.assign(this, {
       coreVersion,
       schemaInterface,
       paymentAddress,
       adminIdentities,
+      domain,
+      name,
     });
+    this.adminIdentities ??= [];
+
     for (const [funcName, funcMeta] of Object.entries(functionsByName)) {
       this.functionsByName[funcName] = {
         corePlugins: funcMeta.corePlugins ?? {},
@@ -195,6 +205,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
 
   public toJSON(): IDatastoreManifest {
     return {
+      name: this.name,
+      domain: this.domain,
       versionHash: this.versionHash,
       versionTimestamp: this.versionTimestamp,
       linkedVersions: this.linkedVersions,

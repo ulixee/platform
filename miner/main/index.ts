@@ -14,11 +14,11 @@ const pkg = require('./package.json');
 
 const { log } = Log(module);
 
-type IHttpHandleFn = (
+export type IHttpHandleFn = (
   req: Http.IncomingMessage,
   res: Http.ServerResponse,
   params: string[],
-) => void;
+) => Promise<boolean | void> | void;
 type IWsHandleFn = (ws: WebSocket, request: Http.IncomingMessage, params: string[]) => void;
 
 export default class Miner {
@@ -165,16 +165,17 @@ export default class Miner {
     res.end(`Ulixee Miner v${this.version}`);
   }
 
-  private handleHttpRequest(req: IncomingMessage, res: ServerResponse): void {
+  private async handleHttpRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
     for (const [route, method, handlerFn] of this.httpRoutes) {
       if (req.method !== method) continue;
       if (route instanceof RegExp && route.test(req.url)) {
         const args = route.exec(req.url);
-        handlerFn(req, res, args?.length ? args.slice(1) : []);
-        return;
+        const handled = await handlerFn(req, res, args?.length ? args.slice(1) : []);
+        if (handled !== false) return;
       }
       if (req.url === route) {
-        return handlerFn(req, res, []);
+        const handled = await handlerFn(req, res, []);
+        if (handled !== false) return;
       }
     }
     res.writeHead(404);
