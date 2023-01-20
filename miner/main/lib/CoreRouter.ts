@@ -4,13 +4,12 @@ import DatastoreCore from '@ulixee/datastore-core';
 import HeroCore from '@ulixee/hero-core';
 import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
-import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
 import ChromeAliveUtils from './ChromeAliveUtils';
-import Miner from '../index';
+import Miner, { IHttpHandleFn } from '../index';
 
 export default class CoreRouter {
   public static modulesToRegister = [
@@ -33,26 +32,28 @@ export default class CoreRouter {
   private miner: Miner;
   private readonly connections = new Set<IConnectionToClient<any, any>>();
 
-  private wsConnectionByType: {
-    [key: string]: (transport: ITransportToClient<any>) => IConnectionToClient<any, any>;
-  } = {
+  private wsConnectionByType = {
     hero: transport => HeroCore.addConnection(transport),
     datastore: transport => DatastoreCore.addConnection(transport) as any,
     chromealive: transport => ChromeAliveUtils.getChromeAlive().addConnection(transport) as any,
-  };
+  } as const;
 
   private httpRoutersByType: {
-    [key: string]: (req: IncomingMessage, res: ServerResponse, params: string[]) => void;
+    [key: string]: IHttpHandleFn;
   } = {
     datastore: DatastoreCore.routeHttp.bind(DatastoreCore),
+    datastoreRoot: DatastoreCore.routeHttpRoot.bind(DatastoreCore),
+    datastoreOptions: DatastoreCore.routeOptions.bind(DatastoreCore),
   };
 
   constructor(miner: Miner) {
     this.miner = miner;
 
-    miner.addWsRoute('/', this.handleSocketRequest.bind(this, 'hero'));
+    miner.addWsRoute('/hero', this.handleSocketRequest.bind(this, 'hero'));
     miner.addWsRoute('/datastore', this.handleSocketRequest.bind(this, 'datastore'));
     miner.addHttpRoute(/\/datastore\/(.+)/, 'GET', this.handleHttpRequest.bind(this, 'datastore'));
+    miner.addHttpRoute(/\/(.*)/, 'GET', this.handleHttpRequest.bind(this, 'datastoreRoot'));
+    miner.addHttpRoute('/', 'OPTIONS', this.handleHttpRequest.bind(this, 'datastoreOptions'));
 
     for (const module of CoreRouter.modulesToRegister) {
       safeRegisterModule(module);
@@ -73,7 +74,8 @@ export default class CoreRouter {
       Object.assign(DatastoreCore.options, this.datastoreConfiguration);
     }
 
-    await DatastoreCore.start();
+    const [ipAddress, port] = minerAddress.split(':');
+    await DatastoreCore.start({ ipAddress, port: Number(port) });
 
     if (ChromeAliveUtils.isInstalled()) {
       const chromeAliveCore = ChromeAliveUtils.getChromeAlive();
@@ -119,12 +121,13 @@ export default class CoreRouter {
   }
 
   private async handleHttpRequest(
-    connectionType: keyof CoreRouter['wsConnectionByType'],
+    connectionType: keyof CoreRouter['httpRoutersByType'],
     req: IncomingMessage,
     res: ServerResponse,
     params: string[],
-  ): Promise<void> {
-    await this.httpRoutersByType[connectionType](req, res, params);
+  ): Promise<void | boolean> {
+    const result = await this.httpRoutersByType[connectionType](req, res, params);
+    return result;
   }
 }
 

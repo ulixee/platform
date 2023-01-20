@@ -159,12 +159,10 @@ export default class DatastorePackager {
       this.entrypoint,
       scriptVersionHash,
       Date.now(),
-      this.meta.coreVersion,
       interfaceString,
       functionsByName,
       tablesByName,
-      this.meta.paymentAddress,
-      this.meta.adminIdentities,
+      this.meta,
       this.logToConsole ? console.log : undefined,
     );
     if (createNewVersionHistory) {

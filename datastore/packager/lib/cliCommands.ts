@@ -7,6 +7,7 @@ import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import { IVersionHistoryEntry } from '@ulixee/specification/types/IDatastoreManifest';
 import { findProjectPathSync } from '@ulixee/commons/lib/dirUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
+import { execSync } from 'child_process';
 import DbxFile from './DbxFile';
 import DatastorePackager from '../index';
 import { version } from '../package.json';
@@ -45,6 +46,7 @@ export async function deploy(
     uploadHost?: string;
     identityPath?: string;
     identityPassphrase?: string;
+    dontAutoshowDocs?: boolean;
   },
 ): Promise<void> {
   const packager = new DatastorePackager(entrypoint, null, true);
@@ -62,6 +64,11 @@ export async function deploy(
     options.identityPath,
     options.identityPassphrase,
   );
+
+  if (!options.dontAutoshowDocs) {
+    openDocsPage(packager.manifest, options.uploadHost);
+  }
+
   await dbx.delete();
 }
 
@@ -165,6 +172,16 @@ async function uploadPackage(
   }
 }
 
+function openDocsPage(manifest: DatastoreManifest, uploadHost: string): void {
+  let url = `http://${uploadHost}/datastore/${manifest.versionHash}/`;
+  if (manifest.domain) url = `http://${manifest.domain}/`;
+  let openCommand = 'xdg-open';
+  if (process.platform === 'darwin') openCommand = 'open';
+  if (process.platform === 'win32') openCommand = 'start';
+
+  execSync(`${openCommand} ${url}`);
+}
+
 function handleMissingLinkedVersions(
   manifest: DatastoreManifest,
   dbxFile: DbxFile,
@@ -251,12 +268,10 @@ You can choose from the options below to link to the existing Miner versions or 
           absoluteScriptPath,
           manifest.scriptHash,
           manifest.versionTimestamp,
-          manifest.coreVersion,
           manifest.schemaInterface,
           manifest.functionsByName,
           manifest.tablesByName,
-          manifest.paymentAddress,
-          manifest.adminIdentities,
+          manifest,
           console.log,
         );
         await newManifest.save();

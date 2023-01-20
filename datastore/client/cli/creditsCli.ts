@@ -21,13 +21,10 @@ export default function creditsCli(): Command {
     .addOption(
       (() => {
         const option = cli.createOption(
-          '-m, --amount <value>',
-          'The value of this Credit. Amount can postfix "c" for centagons (eg, 50c) or "m" for microgons (5000000m).',
+          '-a, --argons <value>',
+          'The number of Argon Credits to give out.',
         );
         option.mandatory = true;
-        option.parseArg = ((arg): string => {
-          if (typeof arg === 'string' && /\d+[mc]?/.test(arg)) return arg as string;
-        }) as any;
         return option;
       })(),
     )
@@ -39,15 +36,19 @@ export default function creditsCli(): Command {
       ),
     )
     .addOption(identityPrivateKeyPassphraseOption)
-    .action(async (url, { identityPath, identityPassphrase, amount }) => {
-      const client = new DatastoreApiClient(url);
-      const microgons = ArgonUtils.parseUnits(amount, 'microgons');
+    .action(async (url, { identityPath, identityPassphrase, argons }) => {
+      const microgons = ArgonUtils.centagonsToMicrogons(parseFloat(argons) * 100);
       const identity = Identity.loadFromFile(identityPath, { keyPassphrase: identityPassphrase });
+      const { datastoreVersionHash, host } = await DatastoreApiClient.resolveDatastoreDomain(url);
+      const client = new DatastoreApiClient(host);
       try {
-        const result = await client.createCredits(url.split('/').pop().trim(), microgons, identity);
+        const result = await client.createCredits(datastoreVersionHash, microgons, identity);
 
-        // TODO: output a url to send the user to
-        console.log(JSON.stringify({ credit: result }));
+        if (!url.includes('://')) url = `http://${url}`;
+        if (url.endsWith('/')) url = url.substring(0, -1);
+        const domainUrl = `${url}/free-credit?${result.id}:${result.secret}`;
+
+        console.log(`Credit URL:\n\n${domainUrl}\n`);
       } finally {
         await client.disconnect();
       }
@@ -57,15 +58,14 @@ export default function creditsCli(): Command {
     .command('install')
     .description('Save to a local wallet.')
     .argument('<url>', 'The url of the Credit.')
-    .argument('<secret>', 'The Credit secret.')
-    .action(async (url, secret) => {
-      if (!url.includes('://')) url = `ulx://${url}`;
-      const client = new DatastoreApiClient(url);
+    .action(async url => {
+      const { datastoreVersionHash, host } = await DatastoreApiClient.resolveDatastoreDomain(url);
+      const client = new DatastoreApiClient(host);
       try {
-        const parsedUrl = new URL(url);
-        const [datastoreVersion, id] = parsedUrl.pathname.slice(1).split('/credits/');
-        const { balance } = await client.getCreditsBalance(datastoreVersion, id);
-        await CreditsStore.store(datastoreVersion.replace(/\//g, ''), {
+        const creditIdAndSecret = url.split('/free-credit?').pop();
+        const [id, secret] = creditIdAndSecret.split(':');
+        const { balance } = await client.getCreditsBalance(datastoreVersionHash, id);
+        await CreditsStore.store(datastoreVersionHash.replace(/\//g, ''), {
           id,
           secret,
           remainingCredits: balance,
@@ -78,14 +78,17 @@ export default function creditsCli(): Command {
   cli
     .command('get')
     .description('Get the current balance.')
-    .argument('<url>', 'The url of the Datastore.')
-    .argument('<id>', 'The Credit id.')
-    .action(async (url, id) => {
-      const client = new DatastoreApiClient(url);
+    .argument('<url>', 'The url of the Datastore Credit.')
+    .action(async url => {
+      const { datastoreVersionHash, host } = await DatastoreApiClient.resolveDatastoreDomain(url);
+      const client = new DatastoreApiClient(host);
       try {
-        const datastoreVersion = url.split('/').pop().trim();
-        const { balance, issuedCredits } = await client.getCreditsBalance(datastoreVersion, id);
-        console.log({ issuedCredits, balance });
+        const creditIdAndSecret = url.split('/free-credit?').pop();
+        const [id] = creditIdAndSecret.split(':');
+        const { balance } = await client.getCreditsBalance(datastoreVersionHash, id);
+        console.log(`Your current balance is ~${ArgonUtils.microgonsToArgons(balance)} argons.`, {
+          microgons: balance,
+        });
       } finally {
         await client.disconnect();
       }

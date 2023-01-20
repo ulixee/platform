@@ -16,6 +16,7 @@ import DatastoreManifest from './DatastoreManifest';
 import { unpackDbxFile } from './dbxUtils';
 import { IDatastoreStatsRecord } from './DatastoreStatsTable';
 import DatastoreStorage from './DatastoreStorage';
+import { IDatastoreVersionRecord } from './DatastoreVersionsTable';
 
 const datastorePackageJson = require(`../package.json`);
 
@@ -109,6 +110,10 @@ export default class DatastoreRegistry {
 
   public getLatestVersion(hash: string): string {
     return this.datastoresDb.datastoreVersions.getLatestVersion(hash);
+  }
+
+  public getByDomain(domain: string): IDatastoreVersionRecord {
+    return this.datastoresDb.datastoreVersions.findLatestByDomain(domain);
   }
 
   public async save(
@@ -220,14 +225,13 @@ Please try to re-upload after testing with the version available on this Miner.`
 
   private checkMatchingEntrypointVersions(manifest: IDatastoreManifest): void {
     if (manifest.linkedVersions.length) return;
-    const versionWithEntrypoint = this.datastoresDb.datastoreVersions.findWithEntrypoint(
+    const versionWithEntrypoint = this.datastoresDb.datastoreVersions.findAnyWithEntrypoint(
       manifest.scriptEntrypoint,
     );
     if (versionWithEntrypoint) {
-      const baseHash = this.datastoresDb.datastoreVersions.getBaseHash(
-        versionWithEntrypoint.versionHash,
+      const fullVersionHistory = this.datastoresDb.datastoreVersions.getPreviousVersions(
+        versionWithEntrypoint.baseVersionHash,
       );
-      const fullVersionHistory = this.datastoresDb.datastoreVersions.getPreviousVersions(baseHash);
       throw new MissingLinkedScriptVersionsError(
         `You uploaded a script without any link to previous version history.`,
         fullVersionHistory,
@@ -293,6 +297,7 @@ Please try to re-upload after testing with the version available on this Miner.`
           manifest.scriptEntrypoint,
           version.versionTimestamp,
           baseVersionHash,
+          manifest.domain,
         );
       }
       this.datastoresDb.datastoreVersions.save(
@@ -300,6 +305,7 @@ Please try to re-upload after testing with the version available on this Miner.`
         manifest.scriptEntrypoint,
         manifest.versionTimestamp,
         baseVersionHash,
+        manifest.domain,
       );
     } else {
       this.datastoresDb.datastoreVersions.save(
@@ -307,6 +313,7 @@ Please try to re-upload after testing with the version available on this Miner.`
         manifest.scriptEntrypoint,
         manifest.versionTimestamp,
         manifest.versionHash,
+        manifest.domain,
       );
     }
   }

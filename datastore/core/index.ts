@@ -15,6 +15,8 @@ import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import IDatastoreEvents from '@ulixee/datastore/interfaces/IDatastoreEvents';
 import Identity from '@ulixee/crypto/lib/Identity';
 import Ed25519 from '@ulixee/crypto/lib/Ed25519';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
+import IDatastoreDomainResponse from '@ulixee/datastore/interfaces/IDatastoreDomainResponse';
 import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
 import env from './env';
 import DatastoreRegistry from './lib/DatastoreRegistry';
@@ -37,6 +39,7 @@ import DatastoreStream from './endpoints/Datastore.stream';
 import DatastoreAdmin from './endpoints/Datastore.admin';
 import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
 import DatastoreVm from './lib/DatastoreVm';
+import { DatastoreNotFoundError } from './lib/errors';
 
 const { log } = Logger(module);
 
@@ -86,6 +89,8 @@ export default class DatastoreCore {
   private static sidechainClientManager: SidechainClientManager;
   private static isStarted = new Resolvable<void>();
 
+  private static serverAddress: { ipAddress: string; port: number };
+
   public static addConnection(
     transport: ITransportToClient<IDatastoreApis, IDatastoreEvents>,
   ): IDatastoreConnectionToClient {
@@ -104,12 +109,45 @@ export default class DatastoreCore {
     return connection;
   }
 
+  public static async routeOptions(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const host = req.headers.host.replace(`:${this.serverAddress.port}`, '').split('://').pop();
+
+    const domainVersion = await this.datastoreRegistry.getByDomain(host);
+    if (!domainVersion) {
+      res.writeHead(404);
+      res.end(
+        TypeSerializer.stringify(
+          new DatastoreNotFoundError(
+            `A datastore mapped to the domain ${host} could not be located.`,
+          ),
+        ),
+      );
+    } else {
+      res.end(
+        TypeSerializer.stringify(<IDatastoreDomainResponse>{
+          datastoreVersionHash: domainVersion.versionHash,
+          host: `${this.serverAddress.ipAddress}:${this.serverAddress.port}`,
+        }),
+      );
+    }
+  }
+
+  public static async routeHttpRoot(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+    const host = req.headers.host.replace(`:${this.serverAddress.port}`, '').split('://').pop();
+
+    const domainVersion = this.datastoreRegistry.getByDomain(host);
+    if (!domainVersion) return false;
+
+    const extra = req.url.length ? req.url : '';
+    await this.routeHttp(req, res, [domainVersion.versionHash + extra]);
+  }
+
   public static async routeHttp(
     req: IncomingMessage,
     res: ServerResponse,
     params: string[],
   ): Promise<void> {
-    const pathParts = params[0].match(/([^/]+)(\/(.+)?)?/);
+    const pathParts = params[0].match(/(dbx1[ac-hj-np-z02-9]{18})(\/(.+)?)?/);
     const versionHash = pathParts[1];
     const reqPath = pathParts[3] ? pathParts[2] : '/index.html';
     const { path } = await this.datastoreRegistry.getByVersionHash(versionHash);
@@ -123,9 +161,10 @@ export default class DatastoreCore {
     this.pluginCoresByName[pluginCore.name] = pluginCore;
   }
 
-  public static async start(): Promise<void> {
+  public static async start(config: { ipAddress: string; port: number }): Promise<void> {
     if (this.isStarted.isResolved) return this.isStarted.promise;
 
+    this.serverAddress = config;
     try {
       this.close = this.close.bind(this);
 

@@ -18,7 +18,6 @@ import { IBlockSettings } from '@ulixee/specification';
 import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import ISidechainInfoApis from '@ulixee/specification/sidechain/SidechainInfoApis';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import { nanoid } from 'nanoid';
 import CreditsStore from '@ulixee/datastore/lib/CreditsStore';
 import cloneDatastore from '@ulixee/datastore/cli/cloneDatastore';
 import DatastoreCore from '../index';
@@ -79,7 +78,7 @@ beforeAll(async () => {
   miner = new UlixeeMiner();
   miner.router.datastoreConfiguration = { datastoresDir: storageDir };
   await miner.listen();
-  client = new DatastoreApiClient(await miner.address);
+  client = new DatastoreApiClient(await miner.address, true);
 });
 
 beforeEach(() => {

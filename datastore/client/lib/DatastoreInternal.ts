@@ -180,7 +180,9 @@ export default class DatastoreInternal<
     const {
       name,
       description,
+      domain,
       paymentAddress,
+      affiliateId,
       remoteDatastores,
       remoteDatastoreEmbeddedCredits,
       adminIdentities,
@@ -189,6 +191,8 @@ export default class DatastoreInternal<
     const metadata: IDatastoreMetadata = {
       name,
       description,
+      domain,
+      affiliateId,
       paymentAddress,
       remoteDatastores,
       remoteDatastoreEmbeddedCredits,

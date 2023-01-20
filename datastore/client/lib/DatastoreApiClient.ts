@@ -11,12 +11,15 @@ import { IPayment } from '@ulixee/specification';
 import { nanoid } from 'nanoid';
 import ICoreEventPayload from '@ulixee/net/interfaces/ICoreEventPayload';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
+import * as Http from 'http';
+import * as Https from 'https';
 import ITypes from '../types';
 import installDatastoreSchema, { addDatastoreAlias } from '../types/installDatastoreSchema';
 import IFunctionInputOutput from '../interfaces/IFunctionInputOutput';
 import ResultIterable from './ResultIterable';
 import IDatastoreEvents from '../interfaces/IDatastoreEvents';
 import CreditsTable from './CreditsTable';
+import IDatastoreDomainResponse from '../interfaces/IDatastoreDomainResponse';
 
 export type IDatastoreExecResult = Omit<IDatastoreApiTypes['Datastore.query']['result'], 'outputs'>;
 export type IDatastoreExecRelayArgs = Pick<
@@ -29,7 +32,7 @@ export default class DatastoreApiClient {
   public validateApiParameters = true;
   protected activeIterableByStreamId = new Map<string, ResultIterable<any, any>>();
 
-  constructor(host: string) {
+  constructor(host: string, private logErrors: boolean = false) {
     if (!host.includes('://')) host = `ulx://${host}`;
     const url = new URL(host);
     const transport = new WsTransportToCore(`ws://${url.host}/datastore`);
@@ -284,6 +287,12 @@ export default class DatastoreApiClient {
         args = await DatastoreApiSchemas[command].args.parseAsync(args);
       }
     } catch (error) {
+      if (this.logErrors) {
+        console.error('ERROR running Api', error, {
+          command,
+          args,
+        });
+      }
       throw ValidationError.fromZodValidation(
         `The API parameters for ${command} have some issues`,
         error,
@@ -291,6 +300,39 @@ export default class DatastoreApiClient {
     }
 
     return await this.connectionToCore.sendRequest({ command, args: [args] as any }, timeoutMs);
+  }
+
+  public static resolveDatastoreDomain(domain: string): Promise<IDatastoreDomainResponse> {
+    const isFullDomain = domain.match(/(?:.+:\/\/)?([^/]+)\/datastore\/(dbx1[ac-hj-np-z02-9]{18})/);
+    if (isFullDomain) {
+      const [, host, datastoreVersionHash] = isFullDomain;
+      return Promise.resolve({ host, datastoreVersionHash });
+    }
+
+    if (!domain.includes('://')) domain = `http://${domain}`;
+    const httpModule = domain.startsWith('https') ? Https : Http;
+    return new Promise((resolve, reject) => {
+      const url = new URL(domain);
+      const request = httpModule.request(url.origin, { method: 'OPTIONS' }, async res => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          resolve(this.resolveDatastoreDomain(res.headers.location));
+          return;
+        }
+
+        res.on('error', reject);
+        res.setEncoding('utf8');
+        let result = '';
+        for await (const chunk of res) {
+          result += chunk;
+        }
+
+        const resultObject = TypeSerializer.parse(result);
+        if (resultObject instanceof Error) reject(resultObject);
+        resolve(resultObject);
+      });
+      request.on('error', reject);
+      request.end();
+    });
   }
 
   public static createExecSignatureMessage(payment: IPayment, nonce: string): Buffer {

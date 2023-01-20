@@ -7,7 +7,7 @@ export default async function main(
   needsClosing: (() => Promise<any> | any)[],
   rootDir: string,
 ): Promise<{
-  credits: { id: string; secret: string; remainingCredits: number };
+  creditUrl: string;
   minerHost: string;
   datastoreHash: string;
 }> {
@@ -49,13 +49,13 @@ export default async function main(
     },
   );
 
-  console.log(datastoreResult);
-  const datastoreMatch = datastoreResult.match(/'dbx1(?:[0-9a-z]+)'/g);
+  console.log('datastoreResult', datastoreResult);
+  const datastoreMatch = datastoreResult.match(/'dbx1(?:[02-9a-z]+)'/g);
   const datastoreHash = datastoreMatch[0].trim().replace(/'/g, '');
   console.log('Datastore VersionHash', datastoreHash);
 
   const creditResult = execAndLog(
-    `npx @ulixee/datastore credits create ${minerHost}/${datastoreHash} -m 500c`,
+    `npx @ulixee/datastore credits create ${minerHost}/datastore/${datastoreHash} --argons=5`,
     {
       cwd: __dirname,
       env: {
@@ -64,11 +64,12 @@ export default async function main(
       },
     },
   );
-  const credits = JSON.parse(creditResult);
-  console.log('Store Credits:', credits);
+
+  const creditUrl = creditResult.split('\n\n').filter(Boolean).pop().trim();
+  console.log('Store Credit URL:', creditUrl);
 
   return {
-    credits: credits.credit,
+    creditUrl,
     datastoreHash,
     minerHost,
   };
