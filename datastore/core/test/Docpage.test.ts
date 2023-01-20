@@ -21,7 +21,7 @@ beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/docpage.dbx.build`)) {
     Fs.rmSync(`${__dirname}/datastores/docpage.dbx.build`, { recursive: true });
   }
-  Hostile.set('127.0.0.1', 'docs.datastoresrus.com');
+  if (process.env.CI !== 'true') Hostile.set('127.0.0.1', 'docs.datastoresrus.com');
   const packager = new DatastorePackager(`${__dirname}/datastores/docpage.js`);
   await packager.build();
   dbxFile = await packager.dbx.asBuffer();
@@ -35,7 +35,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await miner?.close();
-  Hostile.remove('127.0.0.1', 'docs.datastoresrus.com');
+  if (process.env.CI !== 'true')  Hostile.remove('127.0.0.1', 'docs.datastoresrus.com');
   if (Fs.existsSync(storageDir)) {
     if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
   }
