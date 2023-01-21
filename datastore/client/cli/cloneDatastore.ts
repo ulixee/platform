@@ -1,6 +1,6 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as ts from 'typescript';
-import { writeFileSync } from 'fs';
+import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import * as Path from 'path';
 import jsonToSchemaCode from '@ulixee/schema/lib/jsonToSchemaCode';
 import { nanoid } from 'nanoid';
@@ -8,15 +8,16 @@ import DatastoreApiClient from '../lib/DatastoreApiClient';
 
 export default async function cloneDatastore(
   url: string,
-  path: string,
-  options: { emitModules?: boolean; embedCredits?: { id: string; secret: string } } = {
-    emitModules: false,
-  },
+  directoryPath?: string,
+  options: { embedCredits?: { id: string; secret: string } } = {},
 ): Promise<void> {
-  const parsedUrl = new URL(url);
-  const datastoreApiClient = new DatastoreApiClient(parsedUrl.host);
-  const meta = await datastoreApiClient.getMeta(parsedUrl.pathname.slice(1), true);
-  path = Path.resolve(path);
+  const { datastoreVersionHash, host } = await DatastoreApiClient.resolveDatastoreDomain(url);
+  if (url.includes('/free-credits')) {
+    const credit = new URL(url).search.split(':');
+    options.embedCredits = { id: credit[0], secret: credit[1] };
+  }
+  const datastoreApiClient = new DatastoreApiClient(host);
+  const meta = await datastoreApiClient.getMeta(datastoreVersionHash, true);
 
   const schemasByName: Record<string, { isTable: boolean; schemaJson: any }> = {};
   const imports = new Set<string>();
@@ -77,6 +78,7 @@ export default async function cloneDatastore(
   import { ${[...schemaImports].join(', ')} } from '@ulixee/schema';
   
   const datastore = new Datastore({
+    name: ${JSON.stringify(meta.name)},
     affiliateId: "aff${nanoid(12)}",
     remoteDatastores: {
       source: "${url}",
@@ -94,8 +96,26 @@ export default async function cloneDatastore(
 
   export default datastore;`;
 
+  let folder = Path.resolve(directoryPath || `./${meta.name ?? 'datastore'}`);
+  if (!directoryPath) {
+    let counter = 1;
+    const baseFolder = folder;
+    while (existsSync(folder)) folder += `${baseFolder}${counter++}`;
+  }
+
+  if (!existsSync(folder)) {
+    mkdirSync(folder, { recursive: true });
+  }
+  if (!existsSync(Path.join(folder, 'package.json'))) {
+    copyFileSync(`${__dirname}/cloned-package.json`, Path.join(folder, 'package.json'));
+  }
+  if (!existsSync(Path.join(folder, 'tsconfig.json'))) {
+    copyFileSync(`${__dirname}/cloned-tsconfig.json`, Path.join(folder, 'tsconfig.json'));
+  }
+
+  const datastoreFilepath = Path.join(folder, `datastore.ts`);
   const sourceFile = ts.createSourceFile(
-    path,
+    datastoreFilepath,
     script,
     ts.ScriptTarget.ES2020,
     false,
@@ -104,20 +124,5 @@ export default async function cloneDatastore(
 
   const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed, noEmitHelpers: true });
   const tsFile = printer.printFile(sourceFile);
-
-  if (path.endsWith('.ts')) {
-    writeFileSync(path, tsFile);
-  } else {
-    const jsFile = ts.transpileModule(tsFile, {
-      compilerOptions: {
-        target: ts.ScriptTarget.ES2022,
-        module: options.emitModules ? ts.ModuleKind.ES2022 : ts.ModuleKind.CommonJS,
-        esModuleInterop: false,
-        noImplicitUseStrict: true,
-        strict: false,
-        lib: ['es2022'],
-      },
-    });
-    writeFileSync(path, jsFile.outputText);
-  }
+  writeFileSync(datastoreFilepath, tsFile);
 }

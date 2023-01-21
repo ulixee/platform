@@ -285,12 +285,12 @@ test('should be able to embed Credits in a Datastore', async () => {
   });
 
   await cloneDatastore(
-    `ulx://${await miner.address}/${manifest.versionHash}`,
-    `${__dirname}/datastores/clone-output.js`,
+    `ulx://${await miner.address}/datastore/${manifest.versionHash}`,
+    `${__dirname}/datastores/clone-output`,
     { embedCredits: credits },
   );
   await Fs.writeFileSync(
-    `${__dirname}/datastores/clone-output-manifest.json`,
+    `${__dirname}/datastores/clone-output/datastore-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
       functionsByName: {
@@ -303,7 +303,7 @@ test('should be able to embed Credits in a Datastore', async () => {
   );
 
   {
-    const packager2 = new DatastorePackager(`${__dirname}/datastores/clone-output.js`);
+    const packager2 = new DatastorePackager(`${__dirname}/datastores/clone-output/datastore.ts`);
     const dbx2 = await packager2.build();
     const manifest2 = packager2.manifest;
     await client.upload(await dbx2.asBuffer(), { identity: adminIdentity });
