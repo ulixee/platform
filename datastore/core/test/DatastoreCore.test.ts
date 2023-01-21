@@ -28,12 +28,12 @@ beforeAll(async () => {
   await miner.listen();
   packager = new Packager(require.resolve('./datastores/bootup.ts'));
   dbx = await packager.build();
-  Hostile.set('127.0.0.1', 'bootup-datastore.com');
+  if (process.env.CI !== 'true') Hostile.set('127.0.0.1', 'bootup-datastore.com');
 }, 30e3);
 
 afterAll(async () => {
   await miner.close();
-  Hostile.remove('127.0.0.1', 'bootup-datastore.com');
+  if (process.env.CI !== 'true') Hostile.remove('127.0.0.1', 'bootup-datastore.com');
   try {
     rmSync(storageDir, { recursive: true });
   } catch (err) {}

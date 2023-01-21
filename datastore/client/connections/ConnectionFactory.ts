@@ -27,9 +27,9 @@ export default class ConnectionFactory {
       }
 
       // If Miners are launched, but none compatible, propose installing miner locally
-      throw new Error(`Your script is using version ${version} of Hero. A compatible Hero Core was not found on localhost. You can fix this by installing and running a Ulixee Miner in your project:
+      throw new Error(`Your script is using version ${version} of Datastore. A compatible Datastore Core was not found on localhost. You can fix this by installing and running a Ulixee Miner in your project:
 
-npm install --save-dev @ulixee/miner @ulixee/apps-chromealive-core
+npm install --save-dev @ulixee/miner
 
 npx @ulixee/miner start
       `);
@@ -37,7 +37,7 @@ npx @ulixee/miner start
 
     if (!connection) {
       throw new Error(
-        'Hero Core could not be found locally\nIf you meant to connect to a remote host, include the "host" parameter for your connection',
+        'Datastore Core could not be found locally\nIf you meant to connect to a remote host, include the "host" parameter for your connection',
       );
     }
 

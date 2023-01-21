@@ -86,9 +86,13 @@ export default function creditsCli(): Command {
         const creditIdAndSecret = url.split('/free-credit?').pop();
         const [id] = creditIdAndSecret.split(':');
         const { balance } = await client.getCreditsBalance(datastoreVersionHash, id);
-        console.log(`Your current balance is ~${ArgonUtils.format(balance, 'argons')} (argons).`, {
-          microgons: balance,
-        });
+
+        console.log(
+          `Your current balance is ~${ArgonUtils.format(balance, 'microgons', 'argons')} (argons).`,
+          {
+            microgons: balance,
+          },
+        );
       } finally {
         await client.disconnect();
       }

@@ -17,7 +17,7 @@ export default class DatastoreVm {
   private static apiClientCacheByUrl: { [url: string]: DatastoreApiClient } = {};
 
   private static get connectionToDatastoreCore(): ConnectionToDatastoreCore {
-    if (this._connectionToDatastoreCore) {
+    if (!this._connectionToDatastoreCore) {
       const bridge = new TransportBridge();
       this._connectionToDatastoreCore = new ConnectionToDatastoreCore(bridge.transportToCore);
       DatastoreCore.addConnection(bridge.transportToClient).isInternal = true;

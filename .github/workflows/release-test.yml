@@ -52,8 +52,24 @@ jobs:
         working-directory: ./build
         run: sudo $(npx install-browser-deps)
 
+      - name: /etc/hosts
+        if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest' }}
+        run: |
+          sudo echo "127.0.0.1 docs.datastoresrus.com" | sudo tee -a /etc/hosts
+          sudo echo "127.0.0.1 bootup-datastore.com" | sudo tee -a /etc/hosts
+        shell: bash
+
+      - name: C:/Windows/System32/drivers/etc/hosts
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          echo "127.0.0.1 docs.datastoresrus.com" | tee -a C:/Windows/System32/drivers/etc/hosts
+          echo "127.0.0.1 bootup-datastore.com" | tee -a C:/Windows/System32/drivers/etc/hosts
+        shell: bash
+
       - name: Run tests
         run: yarn test --testTimeout=60000 --maxWorkers=2
+        env:
+          CI: true
 
       - name: 'Tar files'
         if: ${{ failure() }}

@@ -416,6 +416,7 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
       micronote: [
         {
           batchSlug,
+          minimumFundingCentagons: 1n,
           micronoteBatchIdentity: batchIdentity.bech32,
           sidechainIdentity: sidechainIdentity.bech32,
           sidechainValidationSignature: sidechainIdentity.sign(sha3(batchIdentity.bech32)),
