@@ -94,7 +94,7 @@ beforeAll(async () => {
   miner.router.datastoreConfiguration = { datastoresDir: storageDir };
   await miner.listen();
   client = new DatastoreApiClient(await miner.address);
-  Helpers.onClose(() => client.disconnect());
+  Helpers.onClose(() => client.disconnect(), true);
 
   const packager = new DatastorePackager(`${__dirname}/datastores/remoteFunction.js`);
   await packager.build();

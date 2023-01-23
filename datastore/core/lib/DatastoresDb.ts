@@ -10,11 +10,13 @@ export default class DatastoresDb {
 
   private db: SqliteDatabase;
 
-  constructor(baseDir: string) {
+  constructor(baseDir: string, options?: { enableSqliteWAL: boolean }) {
     if (!Fs.existsSync(baseDir)) Fs.mkdirSync(baseDir, { recursive: true });
     this.db = new Database(`${baseDir}/index.db`);
-    this.db.unsafeMode(false);
-    this.db.pragma('journal_mode = WAL');
+    if (options?.enableSqliteWAL) {
+      this.db.unsafeMode(false);
+      this.db.pragma('journal_mode = WAL');
+    }
 
     this.datastoreStats = new DatastoreStatsTable(this.db);
     this.datastoreVersions = new DatastoreVersionsTable(this.db);

@@ -24,8 +24,7 @@ beforeAll(async () => {
   miner.router.datastoreConfiguration = { datastoresDir: storageDir };
   await miner.listen();
   client = new DatastoreApiClient(await miner.address);
-  Helpers.needsClosing.push(miner);
-  Helpers.onClose(() => client.disconnect());
+  Helpers.onClose(() => client.disconnect(), true);
 });
 
 beforeEach(() => {
@@ -35,6 +34,7 @@ beforeEach(() => {
 afterEach(Helpers.afterEach);
 
 afterAll(async () => {
+  await miner.close()
   await Helpers.afterAll();
   await Fs.promises.rm(storageDir, { recursive: true }).catch(() => null);
 });
