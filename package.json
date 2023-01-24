@@ -63,6 +63,7 @@
       "datastore/plugins/*",
       "miner/*",
       "sql/*",
+      "client/*",
       "cli",
       "end-to-end",
       "hero/build/*",

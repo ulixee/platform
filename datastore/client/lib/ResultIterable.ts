@@ -30,7 +30,7 @@ export default class ResultIterable<T, TMeta = never> implements AsyncIterable<T
     bindFunctions(this);
   }
 
-  push(value: T): void {
+  public push(value: T): void {
     if (this.resolvable.isResolved) return;
 
     this.results.push(value);
@@ -42,7 +42,7 @@ export default class ResultIterable<T, TMeta = never> implements AsyncIterable<T
     }
   }
 
-  done(resultMetadata?: TMeta): void {
+  public done(resultMetadata?: TMeta): void {
     if (this.resolvable.isResolved) return;
     this._resultMetadata = resultMetadata;
     this.resolvable.resolve(this.results);
@@ -55,7 +55,7 @@ export default class ResultIterable<T, TMeta = never> implements AsyncIterable<T
     this.pullQueue.length = 0;
   }
 
-  reject(error: Error): void {
+  public reject(error: Error): void {
     if (this.resolvable.isResolved) return;
     this.resolvable.reject(error);
     this.error = error;
@@ -78,7 +78,7 @@ export default class ResultIterable<T, TMeta = never> implements AsyncIterable<T
     }
   }
 
-  then<TResult1 = T[], TResult2 = never>(
+  public then<TResult1 = T[], TResult2 = never>(
     onfulfilled?: ((value: T[]) => PromiseLike<TResult1> | TResult1) | undefined | null,
     onrejected?: ((reason: any) => PromiseLike<TResult2> | TResult2) | undefined | null,
   ): Promise<TResult1 | TResult2> {
@@ -99,17 +99,17 @@ export default class ResultIterable<T, TMeta = never> implements AsyncIterable<T
     }).then(onfulfilled, onrejected);
   }
 
-  catch<TResult = never>(
+  public catch<TResult = never>(
     onrejected?: ((reason: any) => PromiseLike<TResult> | TResult) | undefined | null,
   ): Promise<T[] | TResult> {
     return this.resolvable.catch(onrejected);
   }
 
-  finally(onfinally?: (() => void) | undefined | null): Promise<T[]> {
+  public finally(onfinally?: (() => void) | undefined | null): Promise<T[]> {
     return this.resolvable.finally(onfinally);
   }
 
-  [Symbol.asyncIterator](): AsyncIterator<T> {
+  public [Symbol.asyncIterator](): AsyncIterator<T> {
     if (this.resolvable.isResolved) {
       const iterator = this.results[Symbol.iterator]();
       return {

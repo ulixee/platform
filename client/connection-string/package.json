@@ -1,0 +1,9 @@
+{
+  "name": "@ulixee/client-connection-string",
+  "version": "2.0.0-alpha.18",
+  "main": "index.js",
+  "repository": "git@github.com:ulixee/platform.git",
+  "license": "MIT",
+  "scripts": {},
+  "dependencies": {}
+}

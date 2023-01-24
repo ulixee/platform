@@ -24,7 +24,7 @@ export interface IStatsByFunctionName {
   [functionName: string]: IDatastoreStatsRecord;
 }
 
-export type TDatastoreManifestWithStats = IDatastoreManifest & {
+export type IDatastoreManifestWithStats = IDatastoreManifest & {
   statsByFunction: IStatsByFunctionName;
   path: string;
   latestVersionHash: string;
@@ -49,7 +49,7 @@ export default class DatastoreRegistry {
     return !!this.datastoresDb.datastoreVersions.getByHash(versionHash);
   }
 
-  public async getByVersionHash(versionHash: string): Promise<TDatastoreManifestWithStats> {
+  public async getByVersionHash(versionHash: string): Promise<IDatastoreManifestWithStats> {
     const path = this.getExtractedDatastorePath(versionHash);
     const versionRecord = this.datastoresDb.datastoreVersions.getByHash(versionHash);
 

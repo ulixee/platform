@@ -1,7 +1,10 @@
-import IFunctionInputOutput from '../interfaces/IFunctionInputOutput';
+import IItemInputOutput from '../interfaces/IItemInputOutput';
 
 export default interface ITypes
   extends Record<
     string,
-    { functions: Record<string, IFunctionInputOutput>; tables: Record<string, any> }
+    { 
+      functions: Record<string, IItemInputOutput>; 
+      tables: Record<string, IItemInputOutput>;
+    }
   > {}

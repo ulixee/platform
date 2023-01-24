@@ -10,8 +10,8 @@ export default class DatastoreApiHandler<
     args: {
       handler: (
         this: DatastoreApiHandler<Command>,
-        args: IDatastoreApis[Command]['args'],
-        options?: IDatastoreApiContext,
+        request: IDatastoreApis[Command]['args'],
+        context?: IDatastoreApiContext,
       ) => Promise<IDatastoreApis[Command]['result']>;
     },
   ) {

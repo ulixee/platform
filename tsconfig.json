@@ -17,6 +17,7 @@
     "playgrounds",
     "datastore",
     "sql",
+    "client",
     "datastore/packager/*.json",
     "cli",
     "miner/**/*.json",
