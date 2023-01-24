@@ -57,7 +57,7 @@ export default class Datastore<
   ) {
     this.#datastoreInternal = datastoreInternal ?? new DatastoreInternal(components);
 
-    this.disableAutorun = Boolean(
+    this.disableAutorun ??= Boolean(
       JSON.parse(process.env.ULX_DATASTORE_DISABLE_AUTORUN?.toLowerCase() ?? 'false'),
     );
   }
@@ -76,11 +76,10 @@ export default class Datastore<
     name: T,
     input: ExtractSchemaType<TComponents['crawlers'][T]['schema']['input']>,
   ): Promise<ICrawlerOutputSchema> {
-    const [crawlResult] = await this.#datastoreInternal.crawlers[name].stream({
+    return await this.#datastoreInternal.crawlers[name].crawl({
       input,
       affiliateId: this.#datastoreInternal.affiliateId,
     });
-    return crawlResult;
   }
 
   public async query<TResultType = any>(

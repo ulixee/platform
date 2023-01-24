@@ -12,6 +12,7 @@ import ICrawlerComponents from '../interfaces/ICrawlerComponents';
 import ICrawlerOutputSchema, { CrawlerOutputSchema } from '../interfaces/ICrawlerOutputSchema';
 import Table from './Table';
 import DatastoreInternal from './DatastoreInternal';
+import IFunctionExecOptions from '../interfaces/IFunctionExecOptions';
 
 export default class Crawler<
   TDisableCache extends boolean = false,
@@ -36,6 +37,8 @@ export default class Crawler<
     TPlugin2['contextAddons'] &
     TPlugin3['contextAddons'],
 > extends Function<TSchema, TPlugin1, TPlugin2, TPlugin3, TContext> {
+  public static defaultMaxTimeInCache = 10 * 60e3;
+
   public override functionType = 'crawler';
   public cache?: Table<{
     input: StringSchema<false>;
@@ -90,14 +93,24 @@ export default class Crawler<
     }
   }
 
+  public async crawl(
+    options: IFunctionExecOptions<TSchema> &
+      TPlugin1['execArgAddons'] &
+      TPlugin2['execArgAddons'] &
+      TPlugin3['execArgAddons'],
+  ): Promise<ICrawlerOutputSchema> {
+    options.affiliateId ??= this.datastoreInternal.affiliateId;
+    const [crawlResult] = await this.stream(options);
+    return crawlResult;
+  }
+
   protected async runWrapper(
     originalRun: ICrawlerComponents<TSchema, TContext>['run'],
     context: TContext,
   ): Promise<void> {
     const { outputs, Output, datastoreMetadata, input, schema, ...rest } =
       context as IFunctionContext<TSchema>;
-
-    const cached = await this.findCached(input);
+    const cached = await this.findCached(input as TContext['input']);
     if (cached) {
       Output.emit(cached as any);
       return;
@@ -106,7 +119,7 @@ export default class Crawler<
     const result = await originalRun({ input, schema, ...rest } as any);
     const output = await result.toCrawlerOutput();
     Output.emit(output as any);
-    await this.saveToCache(input, output);
+    await this.saveToCache(input as TContext['input'], output);
   }
 
   protected async saveToCache(
@@ -125,7 +138,8 @@ export default class Crawler<
   }
 
   protected async findCached(input: TContext['input']): Promise<ICrawlerOutputSchema> {
-    if (!input.maxTimeInCache || this.crawlerComponents.disableCache) return null;
+    if (this.crawlerComponents.disableCache) return null;
+    (input as ICrawlerInputSchema).maxTimeInCache ??= Crawler.defaultMaxTimeInCache;
 
     const maxAge = moment().add(-input.maxTimeInCache, 'seconds').toISOString();
     const serializedInput = this.getSerializedInput(input);
@@ -156,3 +170,7 @@ const CrawlerInputSchema = {
     description: 'The maximum age in seconds of a cached web session.',
   }),
 };
+
+interface ICrawlerInputSchema {
+  maxTimeInCache?: number;
+}

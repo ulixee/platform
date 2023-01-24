@@ -24,17 +24,23 @@ Creates a new Datastore instance.
 
 #### **Arguments**:
 
+- name `string`. Optional name for this Datastore to be used in Documentation websites.
+- description `string`. Optional description for this Datastore to be used in Documentation websites.
+- domain `string`. A dns name (eg, A record) that maps to the Datastore host. This domain will act as a virtual host mapped to the latest deployed version of this Datastore. Documentation sites and credit urls can be distributed to users with this domain. NOTE that this is unique _per_ Datastore. You may only use it for a single Datastore version. If you have a custom port, it should _not_ be added to this variable, but will be appended to any urls you distribute (eg, `mydns.com -> 192.168.1.1`, `npx @ulixee/datastore credits install https://mydns.com:1818/free-credits?crd2234343:234234ssd3234`).
 - functions: `object`. An object mapping names to [Functions](./function.md).
   - key `string`. A unique name of the function.
   - value `Function`. A [Function](./function.md) instance.
 - crawlers: `object`. An object mapping names to [Crawlers](./crawler.md).
   - key `string`. A unique name of the Crawler.
   - value `Crawler`. A [Crawler](./function.md) instance.
+- tables `object`. An object mapping names to [Tables](./table.md).
+  - key `string`. A unique name of the Table.
+  - value `Table`. A [Table](./table.md) instance.
+- affiliateId `string`. An optional unique identifier to send with all remoteDatastore queries sent from this Datastore.
+- adminIdentity `string`. A bech32 encoded admin Identity. Grants access to this identity to perform signed `Datastore.admin` API calls (like managing [Credits](../advanced/credits.md)). If not included, the `adminIdentities` of your Miner server are the only valid admin Identities for your Datastore.
 - authenticateIdentity `function`. An optional function that can be used to secure access to this Datastore. More details are [here](#authenticateIdentity)
 - remoteDatastores `{ [name]: url }`. An optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughFunctions](./passthrough-function.md).
 - remoteDatastoreEmbeddedCredits `{ [name]: ICredit }`. An optional key/value of remoteDatastore "names" to [credit](../advanced/credits.md) details (`id` and `secret`). If included, the embedded credits will be used for Payment to the remoteDatastore for consumers of this Datastore.
-- affiliateId `string`. An optional unique identifier to send with all remoteDatastore queries sent from this Datastore.
-- adminIdentity `string`. A bech32 encoded admin Identity. Grants access to this identity to perform signed `Datastore.admin` API calls (like managing [Credits](../advanced/credits.md)). If not included, the `adminIdentities` of your Miner server are the only valid admin Identities for your Datastore.
 
 ```js
 import Datastore, { Function } from '@ulixee/datastore';
@@ -61,9 +67,9 @@ export default new Datastore({
 
 ## Properties
 
-### coreVersion `string`
+### metadata `object`
 
-Version of DatastoreCore that is in use. This will be compiled into the Datastore.
+Object containing the definitions of nested Functions, Crawlers, Tables and settings for this Datastore.
 
 ### functions `{ [name:string]: Function}`
 
@@ -71,7 +77,11 @@ Object containing [Functions](./function.md) keyed by their name.
 
 ### crawlers `{ [name:string]: Crawler}`
 
-Object containing [Crawlers](./function.md) keyed by their name.
+Object containing [Crawlers](./crawler.md) keyed by their name.
+
+### tables `{ [name:string]: Table}`
+
+Object containing [Tables](./table.md) keyed by their name.
 
 ### remoteDatastores `{ [name]: url }` {#remote-datastores}
 
@@ -123,7 +133,7 @@ The Datastore Core will automatically ensure that any calling authentication mes
 
 ### crawl _ (crawlerName, input)_ {#crawl}
 
-Execute a crawler and return the resulting crawler metadata. Options can include `input` parameters defined in the schema.
+Execute a crawler and return the resulting crawler metadata. Second parameter is the `input` parameters defined in the schema.
 
 #### Return Promise<ICrawlerOutputSchema>. Returns a promise of the crawler output (version, sessionId and crawler).
 
