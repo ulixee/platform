@@ -2,6 +2,7 @@ import Datastore, { Function, Table } from '@ulixee/datastore';
 import { boolean, date, object, string } from '@ulixee/schema';
 
 export default new Datastore({
+  name: 'cloneme',
   functions: {
     cloneUpstream: new Function({
       run(ctx) {

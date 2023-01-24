@@ -28,7 +28,7 @@ beforeAll(async () => {
   miner = new UlixeeMiner();
   miner.router.datastoreConfiguration = { datastoresDir: storageDir };
   await miner.listen();
-  client = new DatastoreApiClient(await miner.address);
+  client = new DatastoreApiClient(await miner.address, true);
 
   const packager = new DatastorePackager(`${__dirname}/datastores/cloneme.ts`);
   await packager.build();
@@ -44,11 +44,11 @@ afterAll(async () => {
 });
 
 test('should be able to clone a datastore', async () => {
-  const url = `ulx://${await miner.address}/${versionHash}`;
-  await expect(cloneDatastore(url, `${__dirname}/datastores/cloned.ts`)).resolves.toBeUndefined();
+  const url = `ulx://${await miner.address}/datastore/${versionHash}`;
+  await expect(cloneDatastore(url, `${__dirname}/datastores/cloned`)).resolves.toBeUndefined();
 
-  expect(Fs.existsSync(`${__dirname}/datastores/cloned.ts`)).toBeTruthy();
-  const packager = new DatastorePackager(`${__dirname}/datastores/cloned.ts`);
+  expect(Fs.existsSync(`${__dirname}/datastores/cloned/datastore.ts`)).toBeTruthy();
+  const packager = new DatastorePackager(`${__dirname}/datastores/cloned/datastore.ts`);
   await packager.build();
   await client.upload(await packager.dbx.asBuffer());
 

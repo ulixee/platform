@@ -193,7 +193,7 @@ export default class DatastorePackager {
       );
     }
 
-    const datastoreVersionHash = remoteUrl.pathname.slice(1);
+    const [datastoreVersionHash] = remoteUrl.pathname.match(/dbx1[ac-hj-np-z02-9]{18}/)
     DatastoreManifest.validateVersionHash(datastoreVersionHash);
 
     const remoteMeta = {
@@ -201,7 +201,7 @@ export default class DatastorePackager {
       datastoreVersionHash,
       functionName,
     };
-    const datastoreApiClient = new DatastoreApiClient(remoteUrl.host);
+    const datastoreApiClient = new DatastoreApiClient(remoteUrl.host, this.logToConsole);
     try {
       const upstreamMeta = await datastoreApiClient.getMeta(datastoreVersionHash);
       const remoteFunctionDetails = upstreamMeta.functionsByName[functionName];
@@ -233,7 +233,7 @@ export default class DatastorePackager {
       );
     }
 
-    const datastoreVersionHash = remoteUrl.pathname.slice(1);
+    const [datastoreVersionHash] = remoteUrl.pathname.match(/dbx1[ac-hj-np-z02-9]{18}/)
     DatastoreManifest.validateVersionHash(datastoreVersionHash);
 
     const remoteMeta = {
@@ -241,7 +241,7 @@ export default class DatastorePackager {
       datastoreVersionHash,
       tableName,
     };
-    const datastoreApiClient = new DatastoreApiClient(remoteUrl.host);
+    const datastoreApiClient = new DatastoreApiClient(remoteUrl.host, this.logToConsole);
     try {
       const upstreamMeta = await datastoreApiClient.getMeta(datastoreVersionHash);
       const remoteDetails = upstreamMeta.tablesByName[tableName];

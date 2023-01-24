@@ -24,6 +24,7 @@ beforeAll(async () => {
   miner.router.datastoreConfiguration = { datastoresDir: storageDir };
   await miner.listen();
   client = new DatastoreApiClient(await miner.address);
+  Helpers.onClose(() => client.disconnect(), true);
 });
 
 beforeEach(() => {
@@ -33,8 +34,9 @@ beforeEach(() => {
 afterEach(Helpers.afterEach);
 
 afterAll(async () => {
+  await miner.close()
   await Helpers.afterAll();
-  Fs.rmSync(storageDir, { recursive: true });
+  await Fs.promises.rm(storageDir, { recursive: true }).catch(() => null);
 });
 
 test('should be able to run a crawler', async () => {

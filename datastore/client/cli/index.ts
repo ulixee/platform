@@ -40,7 +40,7 @@ export default function datastoreCommands(): Command {
     .command('clone')
     .description('Clone and add onto a Datastore.')
     .argument('<url>', 'The url of the Datastore.')
-    .argument('<path>', 'The path to output your cloned Datastore.')
+    .argument('[path]', 'The directory path to output your cloned Datastore.')
     .action(async (url, path) => {
       await cloneDatastore(url, path);
     });
