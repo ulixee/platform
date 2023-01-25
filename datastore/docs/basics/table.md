@@ -39,9 +39,9 @@ Components contains the following properties.
 
 ## Methods
 
-### query _ (sql, boundValues)_ {#query}
+### queryInternal _ (sql, boundValues)_ {#query}
 
-A table has a built-in query method. This method can be used without attaching a Table to any Datastore if you wish to test it out. Your table name can optionally be `self` in this method.
+Internal method to query the table. This method can be used without attaching a Table to any Datastore if you wish to test it out. Your table name can optionally be `self` in this method.
 
 #### **Arguments**:
 

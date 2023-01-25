@@ -86,13 +86,12 @@ export default class FunctionContext<
     return this.#datastoreInternal.queryInternal(sql, boundValues);
   }
 
-  public async run<T extends Function>(
+  public run<T extends Function>(
     func: T,
     options: T['runArgsType'],
-  ): Promise<ExtractSchemaType<T['schema']['output']>[]> {
+  ): ResultIterable<ExtractSchemaType<T['schema']['output']>> {
     const finalOptions = this.getMergedOptions(options);
-    const result = await func.runInternal(finalOptions);
-    return result as any;
+    return func.runInternal(finalOptions) as any;
   }
 
   private getMergedOptions<T extends IFunctionExecOptions<any>>(options: T): T {

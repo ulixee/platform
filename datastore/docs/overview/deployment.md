@@ -88,7 +88,6 @@ When you package a Datastore, a Manifest is created with the following propertie
     - addOns `object`. Optional price add-ons. Currently only `perKb` is supported.
     - remoteMeta `object`. Optional information about the remote Datastore Function being invoked (if applicable). 
 - paymentAddress `string`. Optional address to use with the Ulixee Sidechain for payments.
-- giftCardIssuerIdentity `string`. Optional Gift Card issuer identity used to create GiftCards on the Ulixee Sidechain.
 
 ### Setting values:
 

@@ -22,7 +22,7 @@ export default interface IFunctionContext<TSchema extends IFunctionSchema> {
   run<T extends Function>(
     func: T,
     options?: T['runArgsType'],
-  ): Promise<ExtractSchemaType<T['schema']['output']>[]>;
+  ): ResultIterable<ExtractSchemaType<T['schema']['output']>>;
   fetch<T extends Function>(
     func: T,
     options?: T['runArgsType'],
