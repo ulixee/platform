@@ -6,7 +6,12 @@ import FunctionInternal from '@ulixee/datastore/lib/FunctionInternal';
 import { InternalPropertiesSymbol } from '@ulixee/hero/lib/internal';
 import IFunctionSchema from '@ulixee/datastore/interfaces/IFunctionSchema';
 import IObservableChange from '@ulixee/datastore/interfaces/IObservableChange';
-import { FunctionPluginStatics, IFunctionComponents, IFunctionExecOptions } from '@ulixee/datastore';
+import {
+  Crawler,
+  FunctionPluginStatics,
+  IFunctionComponents,
+  IFunctionExecOptions,
+} from '@ulixee/datastore';
 import IFunctionContextBase from '@ulixee/datastore/interfaces/IFunctionContext';
 import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSchema';
 
@@ -22,9 +27,14 @@ declare module '@ulixee/hero/lib/extendables' {
   }
 }
 
+export type HeroReplayCrawler = typeof HeroReplay & {
+  new (options: IHeroReplayCreateOptions | ICrawlerOutputSchema): HeroReplay;
+  fromCrawler<T extends Crawler>(crawler: T, options?: T['runArgsType']): Promise<HeroReplay>;
+};
+
 export type IHeroFunctionContext<ISchema> = IFunctionContextBase<ISchema> & {
   Hero: typeof Hero;
-  HeroReplay: typeof HeroReplay;
+  HeroReplay: HeroReplayCrawler;
 };
 
 export type IHeroFunctionComponents<ISchema> = IFunctionComponents<
@@ -37,7 +47,7 @@ export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
   public static execArgAddons: IHeroCreateOptions;
   public static contextAddons: {
     Hero: typeof Hero;
-    HeroReplay: { new (options: IHeroReplayCreateOptions | ICrawlerOutputSchema): HeroReplay };
+    HeroReplay: HeroReplayCrawler;
   };
 
   public name = pkg.name;
@@ -69,8 +79,17 @@ export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
     const container = this;
     try {
       const HeroReplayBase = HeroReplay;
+      const {
+        input,
+        affiliateId,
+        payment,
+        authentication,
+        isFromCommandLine,
+        ...heroApplicableOptions
+      } = functionInternal.options as IFunctionExecOptions<ISchema>;
+
       const heroOptions: IHeroCreateOptions = {
-        ...this.execOptions,
+        ...heroApplicableOptions,
         input: this.functionInternal.input,
       };
 
@@ -104,11 +123,21 @@ export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
           });
           container.heroReplays.add(this);
         }
+
+        static async fromCrawler<T extends Crawler>(
+          crawler: T,
+          options: T['runArgsType'] = {},
+        ): Promise<HeroReplay> {
+          const crawl = await context.crawl(crawler, options);
+          return new HeroReplay(crawl);
+        }
       };
 
       await next();
     } finally {
-      await Promise.all([this.hero, ...this.heroReplays].filter(Boolean).map(x => x.close().catch(() => null)));
+      await Promise.all(
+        [this.hero, ...this.heroReplays].filter(Boolean).map(x => x.close().catch(() => null)),
+      );
     }
   }
 

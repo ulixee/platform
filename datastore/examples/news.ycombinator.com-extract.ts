@@ -1,7 +1,6 @@
 // NOTE: you must start your own Ulixee Miner to run this example.
 
 import { Crawler, Datastore, Function, HeroFunctionPlugin } from '@ulixee/datastore-plugins-hero';
-import { dateSubtract } from '@ulixee/schema';
 
 const datastore = new Datastore({
   crawlers: {
@@ -31,10 +30,11 @@ const datastore = new Datastore({
   },
   functions: {
     hackernews: new Function(async ({ Output, HeroReplay }) => {
-      const lastCrawl = await datastore.crawl('hackernews', {
-        maxTimeInCache: 24 * 60 * 60,
+      const { detachedElements } = await HeroReplay.fromCrawler(datastore.crawlers.hackernews, {
+        input: {
+          maxTimeInCache: 24 * 60 * 60,
+        },
       });
-      const { detachedElements } = new HeroReplay(lastCrawl);
       const storyElement = await detachedElements.get('table');
       const stories = storyElement.querySelectorAll('.athing');
       for (const story of stories) {

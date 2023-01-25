@@ -22,9 +22,10 @@ const datastore = new Datastore({
   },
   functions: {
     extract: new Function(async ({ HeroReplay, Output }) => {
-      const lastRun = await datastore.crawl('crawl', { maxTimeInCache: 24 * 60 * 60 });
+      const heroReplay = await HeroReplay.fromCrawler(datastore.crawlers.crawl, {
+        input: { maxTimeInCache: 24 * 60 * 60 },
+      });
 
-      const heroReplay = new HeroReplay(lastRun);
       const localStorage = await heroReplay.getSnippet('localStorage');
       const sessionStorage = await heroReplay.getSnippet('sessionStorage');
       const cookies = await heroReplay.getSnippet('cookies');

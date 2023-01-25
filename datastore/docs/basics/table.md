@@ -17,7 +17,7 @@ const table = new Table({
 });
 
 // will log { title: 'Hello', success: true }
-table.query(`select * from self where success=$1`, [true]).then(console.log);
+table.queryInternal(`select * from self where success=$1`, [true]).then(console.log);
 ```
 
 ## Constructor

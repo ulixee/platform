@@ -22,7 +22,7 @@ afterAll(async () => {
 });
 
 test('query datastore table', async () => {
-  const records = await directDatastore.query('SELECT * FROM testers');
+  const records = await directDatastore.queryInternal('SELECT * FROM testers');
   expect(records).toMatchObject([
     { firstName: 'Caleb', lastName: 'Clark', isTester: true },
     { firstName: 'Blake', lastName: 'Byrnes', isTester: null },
@@ -30,7 +30,7 @@ test('query datastore table', async () => {
 }, 30e3);
 
 test('query datastore function', async () => {
-  const records = await directDatastore.query('SELECT * FROM test(shouldTest => true)');
+  const records = await directDatastore.queryInternal('SELECT * FROM test(shouldTest => true)');
   expect(records).toMatchObject([
     {
       testerEcho: true,
@@ -40,7 +40,7 @@ test('query datastore function', async () => {
 }, 30e3);
 
 test('query specific fields on function', async () => {
-  const records = await directDatastore.query('SELECT greeting FROM test(shouldTest => true)');
+  const records = await directDatastore.queryInternal('SELECT greeting FROM test(shouldTest => true)');
   expect(records).toMatchObject([
     {
       greeting: 'Hello world',
@@ -50,7 +50,7 @@ test('query specific fields on function', async () => {
 
 test('left join table on functions', async () => {
   const sql = `SELECT greeting, firstName FROM test(shouldTest => true) LEFT JOIN testers ON testers.isTester=test.shouldTest`;
-  const records = await directDatastore.query(sql);
+  const records = await directDatastore.queryInternal(sql);
   expect(records).toMatchObject([
     {
       greeting: 'Hello world',

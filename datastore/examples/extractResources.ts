@@ -1,7 +1,6 @@
 // NOTE: you must start your own Ulixee Miner to run this example.
 
 import { Crawler, Datastore, Function, HeroFunctionPlugin } from '@ulixee/datastore-plugins-hero';
-import * as moment from 'moment';
 
 const datastore = new Datastore({
   crawlers: {
@@ -16,9 +15,9 @@ const datastore = new Datastore({
   },
   functions: {
     extract: new Function(async ({ HeroReplay, Output }) => {
-      const lastRun = await datastore.crawl('crawl', { maxTimeInCache: 24 * 60 * 60 });
-
-      const heroReplay = new HeroReplay(lastRun);
+      const heroReplay = await HeroReplay.fromCrawler(datastore.crawlers.crawl, {
+        input: { maxTimeInCache: 24 * 60 * 60 },
+      });
       const { detachedResources } = heroReplay;
       const xhrs = await detachedResources.getAll('xhr');
 

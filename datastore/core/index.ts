@@ -168,36 +168,11 @@ export default class DatastoreCore {
     try {
       this.close = this.close.bind(this);
 
-      if (this.options.serverEnvironment === 'production') {
-        if (!this.options.serverAdminIdentities.length) {
-          const tempIdentity = Identity.createSync();
-          this.options.serverAdminIdentities.push(tempIdentity.bech32);
-          const key = Ed25519.getPrivateKeyBytes(tempIdentity.privateKey);
-          console.warn(`\n
-############################################################################################
-############################################################################################
-###########################  TEMPORARY ADMIN IDENTITY  #####################################
-############################################################################################
-############################################################################################
-
-            A temporary adminIdentity has been installed on your server. 
-
-       To perform admin activities (like issuing Credits for a Datastore), you should 
-                 save and use this Identity from your local system:
-
- npx @ulixee/crypto save-identity --privateKey=${key.toString('base64')}
-
---------------------------------------------------------------------------------------------
-       
-           To dismiss this message, add the following environment variable:
-           
- ULX_SERVER_ADMIN_IDENTITIES=${tempIdentity.bech32},
-
-############################################################################################
-############################################################################################
-############################################################################################
-\n\n`);
-        }
+      if (
+        this.options.serverEnvironment === 'production' &&
+        !this.options.serverAdminIdentities.length
+      ) {
+        this.showTemporaryAdminIdentityPrompt();
       }
 
       if (this.options.enableRunWithLocalPath) {
@@ -283,7 +258,7 @@ export default class DatastoreCore {
   }
 
   private static getApiContext(remoteId?: string): IDatastoreApiContext {
-    if (!this.workTracker) {
+    if (!this.isStarted.isResolved) {
       throw new Error('DatastoreCore has not started');
     }
     return {
@@ -294,5 +269,35 @@ export default class DatastoreCore {
       pluginCoresByName: this.pluginCoresByName,
       sidechainClientManager: this.sidechainClientManager,
     };
+  }
+
+  private static showTemporaryAdminIdentityPrompt(): void {
+    const tempIdentity = Identity.createSync();
+    this.options.serverAdminIdentities.push(tempIdentity.bech32);
+    const key = Ed25519.getPrivateKeyBytes(tempIdentity.privateKey);
+    console.warn(`\n
+############################################################################################
+############################################################################################
+###########################  TEMPORARY ADMIN IDENTITY  #####################################
+############################################################################################
+############################################################################################
+
+            A temporary adminIdentity has been installed on your server. 
+
+       To perform admin activities (like issuing Credits for a Datastore), you should 
+                 save and use this Identity from your local system:
+
+ npx @ulixee/crypto save-identity --privateKey=${key.toString('base64')}
+
+--------------------------------------------------------------------------------------------
+       
+           To dismiss this message, add the following environment variable:
+           
+ ULX_SERVER_ADMIN_IDENTITIES=${tempIdentity.bech32},
+
+############################################################################################
+############################################################################################
+############################################################################################
+\n\n`);
   }
 }

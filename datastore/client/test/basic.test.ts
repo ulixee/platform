@@ -22,7 +22,7 @@ describe('basic Datastore tests', () => {
       wasRun = true;
     });
 
-    await func.stream({});
+    await func.runInternal({});
     await new Promise(resolve => process.nextTick(resolve));
     expect(await wasRun).toBe(true);
   });

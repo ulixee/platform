@@ -139,7 +139,7 @@ async function runDatastoreFunction<T>(
     if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);
   }
 
-  return await datastore.functions[functionName].stream(options);
+  return await datastore.functions[functionName].runInternal(options);
 }
 
 async function runDatastorePassthroughQuery<T>(
@@ -153,5 +153,5 @@ async function runDatastorePassthroughQuery<T>(
     payment: request.payment,
     authentication: request.authentication,
   };
-  return await datastore.tables[tableName].query(sql, boundValues, options);
+  return await datastore.tables[tableName].queryInternal(sql, boundValues, options);
 }

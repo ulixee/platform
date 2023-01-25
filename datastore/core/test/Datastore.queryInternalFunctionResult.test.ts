@@ -24,7 +24,7 @@ afterAll(async () => {
 });
 
 test('should be able to query function directly', async () => {
-  const data = await directFunction.query('SELECT * FROM self(tester => true)');
+  const data = await directFunction.queryInternal('SELECT * FROM self(tester => true)');
   expect(data).toMatchObject([
     { testerEcho: true },
   ]);

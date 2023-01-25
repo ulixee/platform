@@ -39,14 +39,14 @@ export default class LocalDatastoreProcess extends TypedEventEmitter<{ error: Er
     });
   }
 
-  public stream(functionName: string, input: any): ResultIterable<any> {
+  public run(functionName: string, input: any): ResultIterable<any> {
     const iterable = new ResultIterable();
     streamIdCounter += 1;
     const streamId = streamIdCounter;
     this.#streamsById[streamId] = iterable.push.bind(iterable);
     void (async () => {
       const data = await this.sendMessageToChild<IRunMessage, IExecResponseData>({
-        action: 'stream',
+        action: 'run',
         scriptPath: this.scriptPath,
         functionName,
         input,

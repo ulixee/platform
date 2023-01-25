@@ -47,10 +47,10 @@ process.on('message', async (messageJson: string) => {
         },
       });
     }
-    if (message.action === 'stream') {
+    if (message.action === 'run') {
       const datastore = requireDatastore(message.scriptPath);
 
-      if (!datastore.metadata.functionsByName[message.functionName]) {
+      if (!datastore.functions[message.functionName]) {
         return sendToParent({
           responseId: message.messageId,
           data: new DatastoreNotFoundError(
@@ -59,8 +59,8 @@ process.on('message', async (messageJson: string) => {
         });
       }
 
-      const stream = datastore.stream(message.functionName, message.input);
-      for await (const output of stream) {
+      const iterator = datastore.functions[message.functionName].runInternal(message.functionName, message.input);
+      for await (const output of iterator) {
         sendToParent({
           responseId: null,
           streamId: message.streamId,

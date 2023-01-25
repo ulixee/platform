@@ -24,10 +24,10 @@ afterAll(async () => {
 });
 
 test('should be able to query table directly', async () => {
-  const data = await directTable.query('SELECT * FROM self');
+  const data = await directTable.queryInternal('SELECT * FROM self');
 
   expect(data).toMatchObject([
-    { title: 'Hello', success: true }, 
-    { title: 'World', success: false } 
+    { title: 'Hello', success: true },
+    { title: 'World', success: false }
   ]);
 });

@@ -12,7 +12,6 @@ import ICrawlerComponents from '../interfaces/ICrawlerComponents';
 import ICrawlerOutputSchema, { CrawlerOutputSchema } from '../interfaces/ICrawlerOutputSchema';
 import Table from './Table';
 import DatastoreInternal from './DatastoreInternal';
-import IFunctionExecOptions from '../interfaces/IFunctionExecOptions';
 
 export default class Crawler<
   TDisableCache extends boolean = false,
@@ -93,17 +92,6 @@ export default class Crawler<
     }
   }
 
-  public async crawl(
-    options: IFunctionExecOptions<TSchema> &
-      TPlugin1['execArgAddons'] &
-      TPlugin2['execArgAddons'] &
-      TPlugin3['execArgAddons'],
-  ): Promise<ICrawlerOutputSchema> {
-    options.affiliateId ??= this.datastoreInternal.affiliateId;
-    const [crawlResult] = await this.stream(options);
-    return crawlResult;
-  }
-
   protected async runWrapper(
     originalRun: ICrawlerComponents<TSchema, TContext>['run'],
     context: TContext,
@@ -128,13 +116,13 @@ export default class Crawler<
   ): Promise<void> {
     if (this.crawlerComponents.disableCache) return null;
     const serializedInput = this.getSerializedInput(input);
-    await this.cache.query('DELETE FROM self WHERE input=$1', [serializedInput]);
+    await this.cache.queryInternal('DELETE FROM self WHERE input=$1', [serializedInput]);
     const { sql, values } = SqlGenerator.createInsertStatement('self', this.cache.schema, {
       input: serializedInput,
       ...output,
       runTime: new Date(),
     });
-    await this.cache.query(sql, values);
+    await this.cache.queryInternal(sql, values);
   }
 
   protected async findCached(input: TContext['input']): Promise<ICrawlerOutputSchema> {
@@ -144,7 +132,7 @@ export default class Crawler<
     const maxAge = moment().add(-input.maxTimeInCache, 'seconds').toISOString();
     const serializedInput = this.getSerializedInput(input);
 
-    const cached = await this.cache.query(
+    const cached = await this.cache.queryInternal(
       `select * from self where runTime >= $1 and input=$2 limit 1`,
       [maxAge, serializedInput],
     );

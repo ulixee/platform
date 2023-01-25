@@ -49,7 +49,7 @@ export default class Table<
     return this.#datastoreInternal;
   }
 
-  public async query<T = TRecords[]>(sql: string, boundValues: any[] = []): Promise<T> {
+  public async queryInternal<T = TRecords[]>(sql: string, boundValues: any[] = []): Promise<T> {
     await this.datastoreInternal.ensureDatabaseExists();
     const name = this.components.name;
     const datastoreInstanceId = this.datastoreInternal.instanceId;

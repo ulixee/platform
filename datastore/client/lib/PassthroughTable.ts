@@ -43,7 +43,7 @@ export default class PassthroughTable<
     this.remoteSource = source;
   }
 
-  public override async query<T = TRecords[]>(
+  public override async queryInternal<T = TRecords[]>(
     sql: string,
     boundValues: any[] = [],
     options: Omit<

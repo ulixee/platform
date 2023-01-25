@@ -39,6 +39,7 @@
     "datastore/docpage/src",
     "**/website",
     "**/docs",
-    "**/*.d.ts"
+    "**/*.d.ts",
+    "**/*.mjs"
   ]
 }

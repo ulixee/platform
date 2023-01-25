@@ -36,7 +36,7 @@ export default new DatastoreApiHandler('Datastore.queryLocalScript', {
       }
 
       outputByFunctionName[functionName] = await context.workTracker.trackRun(
-        datastoreProcess.stream(functionName, input).then(x => x),
+        datastoreProcess.run(functionName, input).then(x => x),
       );
     }
 
