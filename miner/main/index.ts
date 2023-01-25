@@ -83,29 +83,37 @@ export default class Miner {
 
     const listenOptions = { ...(options ?? { port: 0 }) };
 
-    this.httpServer.once('error', this.finalAddressHostPromise.reject);
-    this.httpServer
-      .listen(listenOptions, () => {
-        this.httpServer.off('error', this.finalAddressHostPromise.reject);
-        this.finalAddressHostPromise.resolve(this.httpServer.address() as AddressInfo);
-      })
-      .ref();
-    const addressHost = await this.finalAddressHostPromise.promise;
-    const isLocalhost =
-      addressHost.address === '127.0.0.1' ||
-      addressHost.address === '::' ||
-      addressHost.address === '::1';
+    try {
+      const addressHost = await new Promise<AddressInfo>((resolve, reject) => {
+        this.httpServer.once('error', reject);
+        this.httpServer
+          .listen(listenOptions, () => {
+            this.httpServer.off('error', reject);
+            resolve(this.httpServer.address() as AddressInfo);
+          })
+          .ref();
+      });
+      const isLocalhost =
+        addressHost.address === '127.0.0.1' ||
+        addressHost.address === '::' ||
+        addressHost.address === '::1';
 
-    // if we're dealing with local or no configuration, set the local version host
-    if (isLocalhost && !options?.port && shouldAutoRouteToHost) {
-      // publish port with the version
-      await UlixeeHostsConfig.global.setVersionHost(this.version, `localhost:${addressHost.port}`);
-      this.didAutoroute = true;
-      ShutdownHandler.register(() => UlixeeHostsConfig.global.setVersionHost(this.version, null));
+      // if we're dealing with local or no configuration, set the local version host
+      if (isLocalhost && !options?.port && shouldAutoRouteToHost) {
+        // publish port with the version
+        await UlixeeHostsConfig.global.setVersionHost(
+          this.version,
+          `localhost:${addressHost.port}`,
+        );
+        this.didAutoroute = true;
+        ShutdownHandler.register(() => UlixeeHostsConfig.global.setVersionHost(this.version, null));
+      }
+      await this.router.start(`${this.addressHost}:${addressHost.port}`);
+      this.finalAddressHostPromise.resolve(addressHost);
+    } catch (error) {
+      this.finalAddressHostPromise.reject(error);
     }
-    await this.router.start(`${this.addressHost}:${addressHost.port}`);
-
-    return addressHost;
+    return this.finalAddressHostPromise;
   }
 
   public addHttpRoute(route: RegExp | string, method: string, handleFn: IHttpHandleFn): void {
