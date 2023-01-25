@@ -95,6 +95,7 @@ export default function datastoreCommands(): Command {
     )
     .option('-o, --out-dir <path>', 'A directory path where you want .dbx packages to be saved')
     .option('-u, --upload', 'Upload this package to a Ulixee Miner after packaging.', false)
+    .option('-d, --no-docs', "Don't automatically display the deployed documentation website.", false)
     .addOption(uploadHostOption)
     .addOption(clearVersionHistoryOption)
     .option(
@@ -115,6 +116,7 @@ export default function datastoreCommands(): Command {
         clearVersionHistory,
         identityPath,
         identityPassphrase,
+        noDocs,
       } = options;
       await getPackagerCommands().buildPackage(path, {
         tsconfig,
@@ -125,6 +127,7 @@ export default function datastoreCommands(): Command {
         clearVersionHistory,
         identityPath,
         identityPassphrase,
+        dontAutoshowDocs: noDocs,
       });
     });
 

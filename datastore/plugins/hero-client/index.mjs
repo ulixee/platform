@@ -21,6 +21,4 @@ export {
   Schema,
 };
 
-export default cjsImport.default;
-
-setupAutorunMjsHack(cjsImport.default);
+setupAutorunMjsHack();

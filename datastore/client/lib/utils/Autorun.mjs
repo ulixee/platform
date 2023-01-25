@@ -1,12 +1,10 @@
-import Autorun from './Autorun';
+import Autorun from './Autorun.js';
 
 // this hack allows DatastoreExecutable's beforeExit to know if the mjs script has a default export
 
-export function setupAutorunMjsHack(DatastoreExecutable) {
+export function setupAutorunMjsHack() {
   const module = import(process.argv[1]);
   module.then(x => {
-    if (x.default instanceof DatastoreExecutable) {
-      Autorun.defaultExport = x.default;
-    }
+    Autorun.default.setupAutorunBeforeExitHook({ exports: x });
   });
 }

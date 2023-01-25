@@ -29,4 +29,4 @@ export {
 
 export default cjsImport.default;
 
-setupAutorunMjsHack(cjsImport.default);
+setupAutorunMjsHack();

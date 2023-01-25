@@ -17,6 +17,7 @@ import Identity from '@ulixee/crypto/lib/Identity';
 import Ed25519 from '@ulixee/crypto/lib/Ed25519';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import IDatastoreDomainResponse from '@ulixee/datastore/interfaces/IDatastoreDomainResponse';
+import Autorun from '@ulixee/datastore/lib/utils/Autorun';
 import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
 import env from './env';
 import DatastoreRegistry from './lib/DatastoreRegistry';
@@ -188,6 +189,7 @@ export default class DatastoreCore {
       );
       await this.installManuallyUploadedDbxFiles();
 
+      Autorun.isEnabled = false;
       process.env.ULX_DATASTORE_DISABLE_AUTORUN = 'true';
       await new Promise(resolve => process.nextTick(resolve));
 
