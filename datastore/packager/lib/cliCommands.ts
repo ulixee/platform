@@ -56,7 +56,7 @@ export async function deploy(
     compiledSourcePath: options.compiledSourcePath,
   });
   console.log('Uploading...');
-  await uploadPackage(
+  const result = await uploadPackage(
     dbx,
     packager.manifest,
     options.uploadHost,
@@ -66,7 +66,7 @@ export async function deploy(
   );
 
   if (!options.dontAutoshowDocs) {
-    openDocsPage(packager.manifest, options.uploadHost);
+    openDocsPage(packager.manifest, result.uploadHost);
   }
 
   await dbx.delete();
@@ -95,6 +95,7 @@ export async function buildPackage(
     upload?: boolean;
     identityPath?: string;
     identityPassphrase?: string;
+    dontAutoshowDocs?: boolean;
   },
 ): Promise<void> {
   const packager = new DatastorePackager(path, options?.outDir, true);
@@ -107,7 +108,7 @@ export async function buildPackage(
     console.log('Rolled up and hashed Datastore', {
       dbxPath: dbx.dbxPath,
     });
-    await uploadPackage(
+    const result = await uploadPackage(
       dbx,
       packager.manifest,
       options.uploadHost,
@@ -115,6 +116,9 @@ export async function buildPackage(
       options.identityPath,
       options.identityPassphrase,
     );
+    if (!options.dontAutoshowDocs) {
+      openDocsPage(packager.manifest, result.uploadHost);
+    }
   } else {
     console.log('Rolled up and hashed Datastore. The .dbx file was not uploaded to a Miner.', {
       dbxPath: dbx.dbxPath,
@@ -130,12 +134,12 @@ async function uploadPackage(
   clearVersionHistory: boolean,
   identityPath: string | undefined,
   identityPassphrase: string | undefined,
-): Promise<void> {
+): Promise<{ uploadHost: string }> {
   if (!uploadHost) {
     uploadHost = UlixeeHostsConfig.global.getVersionHost(version);
 
     if (uploadHost?.startsWith('localhost')) {
-      uploadHost = await UlixeeHostsConfig.global.checkLocalVersionHost(this.version, uploadHost);
+      uploadHost = await UlixeeHostsConfig.global.checkLocalVersionHost(version, uploadHost);
     }
   }
 
@@ -170,6 +174,7 @@ async function uploadPackage(
       process.exit(1);
     }
   }
+  return { uploadHost };
 }
 
 function openDocsPage(manifest: DatastoreManifest, uploadHost: string): void {

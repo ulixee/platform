@@ -3,22 +3,22 @@ import cjsImport from './index.js';
 
 const {
   PuppeteerFunctionPlugin,
+  Observable,
+  Datastore,
   Function,
   Crawler,
   PassthroughFunction,
-  Observable,
   Schema,
 } = cjsImport;
 
 export {
   PuppeteerFunctionPlugin,
+  Observable,
+  Datastore,
   Function,
   Crawler,
   PassthroughFunction,
-  Observable,
   Schema,
 };
 
-export default cjsImport.default;
-
-setupAutorunMjsHack(cjsImport.default);
+setupAutorunMjsHack();

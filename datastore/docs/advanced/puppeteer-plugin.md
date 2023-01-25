@@ -52,5 +52,5 @@ const datastore = new Datastore({
     }, PuppeteerFunctionPlugin),
   },
 });
-await datastore.functions.pupp.stream({ waitForInitialPage: false });
+await datastore.functions.pupp.runInternal({ waitForInitialPage: false });
 ```

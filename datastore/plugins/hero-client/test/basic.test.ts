@@ -42,9 +42,9 @@ describe('basic Datastore tests', () => {
         await new context.Hero();
         resolve(true);
       }, HeroFunctionPlugin);
-      Autorun.defaultExport = func;
+      Autorun.mainModuleExports = { func };
     });
-    await Autorun.attemptAutorun(Function);
+    await Autorun.attemptAutorun();
     await new Promise(resolve => process.nextTick(resolve));
     expect(await ranScript).toBe(true);
 
@@ -67,7 +67,7 @@ describe('basic Datastore tests', () => {
     }, HeroFunctionPlugin);
     datastoreFunction.disableAutorun = true;
     expect(connection.outgoingSpy.mock.calls).toHaveLength(0);
-    await datastoreFunction.stream({});
+    await datastoreFunction.runInternal({});
     const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toMatchObject([
       'Core.connect',
@@ -86,7 +86,7 @@ describe('basic Datastore tests', () => {
       await hero.goto('https://news.ycombinator.org');
     }, HeroFunctionPlugin);
     datastoreFunction.disableAutorun = true;
-    await datastoreFunction.stream({});
+    await datastoreFunction.runInternal({});
 
     const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toContain('Session.close');
@@ -105,7 +105,7 @@ describe('basic Datastore tests', () => {
     }, HeroFunctionPlugin);
     datastoreFunction.disableAutorun = true;
 
-    await expect(datastoreFunction.stream({})).rejects.toThrowError();
+    await expect(datastoreFunction.runInternal({})).rejects.toThrowError();
 
     const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toContain('Session.close');

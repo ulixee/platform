@@ -48,7 +48,7 @@ const datastore = new Datastore({
 });
 
 // will print records from `users` table `[{ firstName: 'John', lastName: 'Doe' }]`
-datastore.tables.table2.query(`select * from self`).then(console.log);
+datastore.tables.table2.queryInternal(`select * from self`).then(console.log);
 ```
 
 ## Constructor

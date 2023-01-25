@@ -24,12 +24,20 @@ export default class Function<
     TPlugin2['contextAddons'] &
     TPlugin3['contextAddons'],
   TOutput extends ExtractSchemaType<TSchema['output']> = ExtractSchemaType<TSchema['output']>,
+  TRunArgs extends IFunctionExecOptions<TSchema> &
+    TPlugin1['execArgAddons'] &
+    TPlugin2['execArgAddons'] &
+    TPlugin3['execArgAddons'] = IFunctionExecOptions<TSchema> &
+    TPlugin1['execArgAddons'] &
+    TPlugin2['execArgAddons'] &
+    TPlugin3['execArgAddons'],
 > {
   #isRunning = false;
   #datastoreInternal: DatastoreInternal;
 
-  // dummy type holder
+  // dummy type holders
   declare readonly schemaType: ExtractSchemaType<TSchema>;
+  declare readonly runArgsType: TRunArgs;
 
   public functionType = 'basic';
   public corePlugins: { [name: string]: string } = {};
@@ -101,13 +109,7 @@ export default class Function<
     );
   }
 
-  public stream(
-    options: IFunctionExecOptions<TSchema> &
-      TPlugin1['execArgAddons'] &
-      TPlugin2['execArgAddons'] &
-      TPlugin3['execArgAddons'],
-    logOutputResult = false,
-  ): ResultIterable<TOutput> {
+  public runInternal(options: TRunArgs, logOutputResult = false): ResultIterable<TOutput> {
     if (this.#isRunning) {
       throw new Error('Datastore already running');
     }
@@ -149,7 +151,7 @@ export default class Function<
     return resultsIterable;
   }
 
-  public async query(sql: string, boundValues: any[] = []): Promise<any> {
+  public async queryInternal(sql: string, boundValues: any[] = []): Promise<any> {
     await this.datastoreInternal.ensureDatabaseExists();
     const name = this.components.name;
     const datastoreInstanceId = this.datastoreInternal.instanceId;
@@ -164,7 +166,7 @@ export default class Function<
     const input = inputsByFunction[name];
     const outputs: any[] = [];
 
-    const results = await this.stream({ input });
+    const results = await this.runInternal({ input } as TRunArgs);
     for await (const result of results) outputs.push(result);
 
     const args = {
@@ -214,6 +216,6 @@ export default class Function<
 
   public static commandLineExec<T>(datastoreFunction: Function<any, any, any>): ResultIterable<T> {
     const options = readCommandLineArgs();
-    return datastoreFunction.stream(options, process.env.NODE_ENV !== 'test');
+    return datastoreFunction.runInternal(options, process.env.NODE_ENV !== 'test');
   }
 }

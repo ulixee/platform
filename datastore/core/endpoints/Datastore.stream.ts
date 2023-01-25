@@ -44,7 +44,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
           if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);
         }
 
-        const results = datastore.functions[functionName].stream(options);
+        const results = datastore.functions[functionName].runInternal(options);
         for await (const result of results) {
           context.connectionToClient.sendEvent({
             listenerId: request.streamId,

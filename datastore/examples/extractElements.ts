@@ -29,11 +29,11 @@ const datastore = new Datastore({
   },
   functions: {
     extract: new Function(async ({ HeroReplay, Output }) => {
-      const lastRun = await datastore.crawl('crawl', {
-        url: 'https://ulixee.org',
+      const heroReplay = await HeroReplay.fromCrawler(crawl, {
+        input: {
+          url: 'https://ulixee.org',
+        },
       });
-
-      const heroReplay = new HeroReplay(lastRun);
       const h1 = await heroReplay.detachedElements.get('h1');
       // NOTE: synchronous APIs. No longer running in browser.
       const output = new Output();

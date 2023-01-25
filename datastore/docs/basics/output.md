@@ -11,17 +11,17 @@ import { Function, HeroFunctionPlugin } from '@ulixee/datastore-plugins-hero';
 
 const func = new Function(async ctx => {
   const { Output, Hero } = ctx;
-
+  
   const links = [
     { name: 'Google', href: 'https://www.google.com' },
     { name: 'Hacker News', href: 'https://news.ycombinator.com' },
   ];
-
+  
   const hero = new Hero();
-
+  
   for (const page of links) {
     await hero.goto(page.href);
-
+    
     for (const link of await hero.querySelectorAll('a')) {
       const output = new Output({
         // will be added to the output array
@@ -35,7 +35,7 @@ const func = new Function(async ctx => {
 
 (async () => {
   // Records can be consumed as they are emitted
-  for await (const output of func.stream()) {
+  for await (const output of func.runInternal()) {
     console.log(output, new Date());
   }
 })();

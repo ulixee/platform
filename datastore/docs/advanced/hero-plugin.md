@@ -55,8 +55,8 @@ const datastore = new Datastore({
     ulixee: new Function(async context => {
       const { input, Output, HeroReplay } = context;
       const maxTimeInCache = input.maxTimeInCache || 5 * 60;
-      const crawledContent = await datastore.crawl('ulixee', { maxTimeInCache });
-      const heroReplay = new HeroReplay(crawledContent);
+      const crawler = datastore.crawlers.ulixee;
+      const heroReplay = await HeroReplay.fromCrawler(crawler, { input: { maxTimeInCache } });
       const h1 = await heroReplay.detachedElements.get('h1');
       const output = new Output();
       output.title = h1.textContent;
@@ -79,7 +79,8 @@ The HeroFunctionPlugin for Hero adds "automatically connecting" Hero and Hero Re
 ### run _(functionContext)_ {#run-hero}
 
 - functionContext.Hero `Hero`. [Hero](https://ulixee.org/docs/hero/basic-client/hero) constructor that is automatically connected and cleaned up.
-- functionContext.HeroReplay `HeroReplay`. [HeroReplay](https://ulixee.org/docs/hero/basic-client/hero-replay) constructor that's automatically connected and cleaned up.
+- functionContext.HeroReplay `HeroReplay`. [HeroReplay](https://ulixee.org/docs/hero/basic-client/hero-replay) constructor that's automatically connected and cleaned up. Includes an extra static function `fromCrawler` to create an instance from a [Crawler](../basics/crawler.md) instance.
+  - `static fromCrawler_(crawler, options)_`. Arguments: [crawler](../basics/crawler.md) - a Crawler instance, and options: all options that can be passed to a Function `run` callback. Options will be merged with the calling FunctionContext. Input values provided will be merged with existing input values.
 
 ## Constructor
 

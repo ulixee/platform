@@ -17,7 +17,7 @@ const table = new Table({
 });
 
 // will log { title: 'Hello', success: true }
-table.query(`select * from self where success=$1`, [true]).then(console.log);
+table.queryInternal(`select * from self where success=$1`, [true]).then(console.log);
 ```
 
 ## Constructor
@@ -39,9 +39,9 @@ Components contains the following properties.
 
 ## Methods
 
-### query _ (sql, boundValues)_ {#query}
+### queryInternal _ (sql, boundValues)_ {#query}
 
-A table has a built-in query method. This method can be used without attaching a Table to any Datastore if you wish to test it out. Your table name can optionally be `self` in this method.
+Internal method to query the table. This method can be used without attaching a Table to any Datastore if you wish to test it out. Your table name can optionally be `self` in this method.
 
 #### **Arguments**:
 

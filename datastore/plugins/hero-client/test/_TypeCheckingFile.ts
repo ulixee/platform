@@ -32,7 +32,7 @@ export function typeChecking(): void {
     },
     HeroFunctionPlugin,
   );
-  void func.stream({ showChrome: true, input: { text: '123' } });
+  void func.runInternal({ showChrome: true, input: { text: '123' } });
 
   const crawler = new Crawler(
     {
@@ -61,8 +61,8 @@ export function typeChecking(): void {
     HeroFunctionPlugin,
   );
   // @ts-expect-error
-  void crawler.stream({ showChrome: true, input: { text: '123' } });
-  void crawler.stream({ showChrome: true, input: { colNum: 1, sessionId: '123' } });
+  void crawler.runInternal({ showChrome: true, input: { text: '123' } });
+  void crawler.runInternal({ showChrome: true, input: { colNum: 1, sessionId: '123' } });
   const crawlerWithoutSchema = new Crawler({
     async run(ctx) {
       // Can't get typescript to check this field when no schema  // @ts-expect-error
@@ -80,7 +80,7 @@ export function typeChecking(): void {
     },
   });
   // Can't get typescript to check this field when no schema  // @ts-expect-error
-  void crawlerWithoutSchema.stream({ input: { maxTimeInCache: new Date() } });
+  void crawlerWithoutSchema.runInternal({ input: { maxTimeInCache: new Date() } });
 
   const datastore = new Datastore({
     crawlers: {
@@ -126,7 +126,17 @@ export function typeChecking(): void {
               title: boolean({ optional: true }),
             },
           },
-          async run({ Hero, input, Output }) {
+          async run({ Hero, input, Output, crawl }) {
+            const { plain, crawlerSchema } = datastore.crawlers;
+            await crawl(plain, {
+              input: { maxTimeInCache: 500, anyTest: 1 },
+            });
+            await crawl(crawlerSchema, {
+              input: { maxTimeInCache: 500, url: '1' },
+            });
+            // @ts-expect-error
+            await crawl(crawlerSchema, { input: { url: 1 } });
+
             const hero = new Hero();
             await hero.goto(input.url);
             const output = new Output();
@@ -141,23 +151,19 @@ export function typeChecking(): void {
   });
 
   void (async () => {
-    await datastore.functions.hero.stream({ replaySessionId: '1' }).catch();
+    await datastore.functions.hero.runInternal({ replaySessionId: '1' });
     // @ts-expect-error
-    await datastore.functions.hero.stream({ showChrome: '1,', replaySessionId: '1' }).catch();
+    await datastore.functions.hero.runInternal({ showChrome: '1,', replaySessionId: '1' });
 
-    await datastore.crawl('plain', { maxTimeInCache: 500, anyTest: 1 }).catch();
     await datastore.crawlers.plain
       // Can't get typescript to check this field when no schema // @ts-expect-error
-      .stream({ input: { maxTimeInCache: new Date(), anyTest: 1 } })
-      .catch();
+      .runInternal({ input: { maxTimeInCache: new Date(), anyTest: 1 } });
 
-    await datastore.crawl('crawlerSchema', { url: '1', maxTimeInCache: 100 }).catch();
     await datastore.crawlers.crawlerSchema
       // @ts-expect-error
-      .stream({ input: { urls: '1', maxTimeInCache: 100 } })
-      .catch();
+      .runInternal({ input: { urls: '1', maxTimeInCache: 100 } });
 
     // @ts-expect-error
-    await datastore.crawl('crawlerSchema', { urls: '1', maxTimeInCache: 100 }).catch();
+    await datastore.crawl('crawlerSchema', { urls: '1', maxTimeInCache: 100 });
   })();
 }

@@ -5,12 +5,14 @@ import { Function } from '../index';
 describe('basic Datastore tests', () => {
   it('automatically runs and closes a function', async () => {
     let functionWasRun = false;
-    Autorun.defaultExport = new Function(async ctx => {
-      new ctx.Output({ ran: 'success' });
-      functionWasRun = true;
-    });
+    Autorun.mainModuleExports = {
+      default: new Function(async ctx => {
+        new ctx.Output({ ran: 'success' });
+        functionWasRun = true;
+      }),
+    };
 
-    await Autorun.attemptAutorun(Function);
+    await Autorun.attemptAutorun();
     await new Promise(resolve => process.nextTick(resolve));
     expect(await functionWasRun).toBe(true);
   });
@@ -22,7 +24,7 @@ describe('basic Datastore tests', () => {
       wasRun = true;
     });
 
-    await func.stream({});
+    await func.runInternal({});
     await new Promise(resolve => process.nextTick(resolve));
     expect(await wasRun).toBe(true);
   });

@@ -61,8 +61,10 @@ The second argument is a list of zero or more plugins.
 
 ## Methods
 
-### stream _ (options)_ {#stream}
+### runInternal _ (options)_ {#stream}
 
-Stream Outputs from the Function as they're emitted. The result is an AsyncIterable, so can be used to get each Output record as it is emitted. Alternatively, if you await the result, it will wait for the process to complete and return all Output records as an array. Parameter options are the `input` schema, or any values if none is defined.
+Run the Function and get the resulting Outputs. The result is an AsyncIterable, so can be used to get each Output record as it is emitted. Alternatively, if you await the result, it will wait for the process to complete and return all Output records as an array. Parameter options are the `input` schema, or any values if none is defined.
+
+NOTE: this function is labeled "internal" because no context will be supplied to function from the calling context. If, for instance, you call this Function from inside another Function, you will lose payment, authentication, affiliateId, etc unless you explicitly provide them.
 
 #### Return Promise/AsyncIterable of schema['Output'] Returns an AsyncIterable streaming results one at a time, or a Promise waiting for all results. The objects are the defined Schema Output records.

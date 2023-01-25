@@ -14,7 +14,7 @@ import PassthroughFunction from './lib/PassthroughFunction';
 import PassthroughTable from './lib/PassthroughTable';
 import Function from './lib/Function';
 import Crawler from './lib/Crawler';
-import './lib/utils/Autorun';
+import Autorun from './lib/utils/Autorun';
 
 export * as Schema from '@ulixee/schema';
 
@@ -36,5 +36,7 @@ export {
   IFunctionContext,
   IFunctionPlugin,
 };
+
+Autorun.setupAutorunBeforeExitHook(require.main);
 
 export default Datastore;

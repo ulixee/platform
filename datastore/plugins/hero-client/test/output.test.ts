@@ -38,7 +38,7 @@ describe('basic output tests', () => {
       output.test = true;
       const hero = new ctx.Hero();
       await hero.sessionId;
-    }, HeroFunctionPlugin).stream({});
+    }, HeroFunctionPlugin).runInternal({});
 
     const outgoingCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingCommands.map(c => c[0].command)).toMatchObject([
@@ -98,7 +98,7 @@ describe('basic output tests', () => {
       },
       HeroFunctionPlugin,
     );
-    await func.stream({ connectionToCore });
+    await func.runInternal({ connectionToCore });
 
     const sessionId = await sessionIdPromise;
     const db = new SessionDb(sessionId, { readonly: true });
@@ -154,7 +154,7 @@ describe('basic output tests', () => {
 
       sessionIdPromise.resolve(sessionId);
     }, HeroFunctionPlugin);
-    await func.stream({ connectionToCore });
+    await func.runInternal({ connectionToCore });
 
     const sessionId = await sessionIdPromise;
 

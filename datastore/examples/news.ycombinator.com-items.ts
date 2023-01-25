@@ -36,10 +36,11 @@ const datastore = new Datastore({
   },
   functions: {
     news: new Function(async ({ Output, HeroReplay }) => {
-      const lastCrawl = await datastore.crawl('news', {
-        maxTimeInCache: 24 * 60 * 60,
+      const heroReplay = await HeroReplay.fromCrawler(datastore.crawlers.news, {
+        input: {
+          maxTimeInCache: 24 * 60 * 60,
+        },
       });
-      const heroReplay = new HeroReplay(lastCrawl);
       const titles = await heroReplay.detachedElements.getAll('titles');
       const subtitles = await heroReplay.detachedElements.getAll('subtitles');
       for (let i = 0; i < titles.length; i += 1) {

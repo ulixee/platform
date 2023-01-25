@@ -35,14 +35,14 @@ test('it can extract the datastore schema', async () => {
 test('returns datastore errors', async () => {
   const scriptPath = Path.resolve(__dirname, 'datastores/output.js');
   const datastoreProcess = new LocalDatastoreProcess(scriptPath);
-  await expect(datastoreProcess.stream('default', {})).rejects.toThrowError('not found');
+  await expect(datastoreProcess.run('default', {})).rejects.toThrowError('not found');
   await datastoreProcess.close();
 });
 
 test('it can run the datastore and return output', async () => {
   const scriptPath = Path.resolve(__dirname, 'datastores/output.js');
   const datastoreProcess = new LocalDatastoreProcess(scriptPath);
-  const outputs = await datastoreProcess.stream('putout', {});
+  const outputs = await datastoreProcess.run('putout', {});
   await datastoreProcess.close();
 
   expect(outputs).toEqual([{ success: true }]);
@@ -51,7 +51,7 @@ test('it can run the datastore and return output', async () => {
 test('it can get streamed results as one promise', async () => {
   const scriptPath = Path.resolve(__dirname, 'datastores/stream.js');
   const datastoreProcess = new LocalDatastoreProcess(scriptPath);
-  const outputs = await datastoreProcess.stream('streamer', {});
+  const outputs = await datastoreProcess.run('streamer', {});
   await datastoreProcess.close();
 
   expect(outputs).toEqual([{ record: 0 }, { record: 1 }, { record: 2 }]);
@@ -62,7 +62,7 @@ test('it can  streamed results one at a time', async () => {
   const datastoreProcess = new LocalDatastoreProcess(scriptPath);
   let counter = 0;
   const outputs = [];
-  for await (const record of datastoreProcess.stream('streamer', {})) {
+  for await (const record of datastoreProcess.run('streamer', {})) {
     counter += 1;
     outputs.push(record);
   }

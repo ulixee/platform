@@ -27,7 +27,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
   ): Promise<{ id: string; secret: string; remainingCredits: number }> {
     const upstreamBalance = await this.getUpstreamCreditLimit();
     if (upstreamBalance !== undefined) {
-      const allocated = (await this.query<{ total: number }>(
+      const allocated = (await this.queryInternal<{ total: number }>(
         'SELECT SUM(issuedCredits) as total FROM self',
       )) as any;
       if (allocated.total + microgons > upstreamBalance) {
@@ -40,7 +40,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     const id = `crd${postgresFriendlyNanoid(8)}`;
     secret ??= postgresFriendlyNanoid(12);
     const secretHash = sha3(concatAsBuffer(id, salt, secret));
-    await this.query(
+    await this.queryInternal(
       'INSERT INTO self (id, salt, secretHash, issuedCredits, holdCredits, remainingCredits) VALUES ($1, $2, $3, $4, 0, $4)',
       [id, salt, secretHash, microgons],
     );
@@ -48,7 +48,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
   }
 
   async get(id: string): Promise<Omit<ICredit, 'salt' | 'secretHash'>> {
-    const [credit] = await this.query(
+    const [credit] = await this.queryInternal(
       'SELECT id, issuedCredits, remainingCredits, holdCredits FROM self WHERE id = $1',
       [id],
     );
@@ -56,7 +56,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
   }
 
   async hold(id: string, secret: string, holdAmount: number): Promise<number> {
-    const [credit] = await this.query('SELECT * FROM self WHERE id=$1', [id]);
+    const [credit] = await this.queryInternal('SELECT * FROM self WHERE id=$1', [id]);
     if (!credit) throw new Error('This is an invalid Credit.');
 
     const hash = sha3(concatAsBuffer(credit.id, credit.salt, secret));
@@ -65,7 +65,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     if (credit.remainingCredits < holdAmount)
       throw new Error('This Credit has insufficient balance remaining to create a payment.');
 
-    const result = (await this.query(
+    const result = (await this.queryInternal(
       'UPDATE self SET holdCredits = holdCredits + $2 ' +
         'WHERE id = $1 AND (remainingCredits - holdCredits - $2) >= 0 ' +
         'RETURNING (remainingCredits - holdCredits) as balance',
@@ -77,7 +77,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
   }
 
   async finalize(id: string, holdAmount: number, finalAmount: number): Promise<number> {
-    const result = (await this.query(
+    const result = (await this.queryInternal(
       'UPDATE self SET holdCredits = holdCredits - $2, remainingCredits = remainingCredits - $3 ' +
         'WHERE id = $1 ' +
         'RETURNING (remainingCredits - holdCredits) as balance',

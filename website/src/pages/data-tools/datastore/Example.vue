@@ -11,15 +11,16 @@
       </p>
 
       <Prism language="shell">
-        npm install @ulixee/datastore-for-hero
+        npm install @ulixee/datastore-plugins-hero
       </Prism>
 
       <h2 class="font-bold mt-8">Create Your First Datastore</h2>
       <p>The following script is exactly the same as the <router-link to="/hero/example">Hero Example</router-link>  except this one is wrapped in a Datastore. </p>
       <Prism language="javascript">
-        import DatastoreForHero from '@ulixee/datastore-for-hero';
+        import { Function, HeroFunctionPlugin } from '@ulixee/datastore-plugins-hero';
 
-        export new DatastoreForHero(async { hero, output } => {
+        export new Function(async { Hero, Output } => {
+          const hero = new Hero();
           await hero.goto('https://ulixee.org/tryit/welcome-to-hero');
 
           output.title = await hero.querySelector('.title').innerText;
@@ -30,8 +31,8 @@
             assert(hero.querySelector('.loading').getAttribute('data-pct'), 100);
           });
 
-          output.description = await hero.querySelector('.description');
-        });
+          Output.emit({ description: await hero.querySelector('.description') });
+        }, HeroFunctionPlugin);
       </Prism>
 
       <p>You can run above code directly from the command line by using `node example-datastore.js`, but the real power

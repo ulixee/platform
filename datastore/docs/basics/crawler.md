@@ -60,14 +60,4 @@ A Table automatically created to store cached results. The table name is `crawle
 
 ## Methods
 
-### stream _ (options)_ {#stream}
-
-Stream Outputs from the Crawler as they're emitted. The result is an AsyncIterable, so can be used to get each Output record as it is emitted. Alternatively, if you await the result, it will wait for the process to complete and return all Output records as an array. Parameter options are the `input` schema, or any values if none is defined.
-
-#### Return Promise/AsyncIterable of schema['Output'] Returns an AsyncIterable streaming results one at a time, or a Promise waiting for all results. The objects are the defined Schema Output records.
-
-### crawl _ (input)_ {#crawl}
-
-Execute the Crawler and return the resulting metadata. Arguments are the `input` parameters defined in the schema.
-
-#### Return Promise<ICrawlerOutputSchema>. Returns a promise of the Crawler output (version, sessionId and crawler).
+No public methods added from [Function](./function.md).

@@ -1,22 +1,9 @@
 import { Helpers } from '@ulixee/datastore-testing';
-import Autorun from '@ulixee/datastore/lib/utils/Autorun';
 import { Function, PuppeteerFunctionPlugin } from '../index';
 
 afterAll(Helpers.afterAll);
 
 describe('basic puppeteerFunction tests', () => {
-  it('automatically runs and closes a function', async () => {
-    const ranScript = new Promise(resolve => {
-      Autorun.defaultExport = new Function(async ctx => {
-        resolve(true);
-      }, PuppeteerFunctionPlugin);
-    });
-    Autorun.defaultExport.disableAutorun = false;
-    await Autorun.attemptAutorun(Function);
-    await new Promise(resolve => process.nextTick(resolve));
-    expect(await ranScript).toBe(true);
-  });
-
   it('waits until run method is explicitly called', async () => {
     let hasCompleted = false;
     const puppeteerFunction = new Function(async ctx => {
@@ -27,7 +14,7 @@ describe('basic puppeteerFunction tests', () => {
       hasCompleted = true;
     }, PuppeteerFunctionPlugin);
     puppeteerFunction.disableAutorun = true;
-    await puppeteerFunction.stream({});
+    await puppeteerFunction.runInternal({});
     expect(hasCompleted).toBe(true);
   }, 30e3);
 
@@ -40,7 +27,7 @@ describe('basic puppeteerFunction tests', () => {
       await page.goto('https://example.org');
     }, PuppeteerFunctionPlugin);
     puppeteerFunction.disableAutorun = true;
-    await puppeteerFunction.stream({});
+    await puppeteerFunction.runInternal({});
     expect(closeSpy).toBeCalledTimes(1);
   });
 
@@ -56,7 +43,7 @@ describe('basic puppeteerFunction tests', () => {
     }, PuppeteerFunctionPlugin);
     puppeteerFunction.disableAutorun = true;
 
-    await expect(puppeteerFunction.stream({})).rejects.toThrowError('testy');
+    await expect(puppeteerFunction.runInternal({})).rejects.toThrowError('testy');
     expect(closeSpy).toBeCalledTimes(1);
   });
 });

@@ -42,12 +42,12 @@ const datastore = new Datastore({
   },
   functions: {
     crawlCall: new Function(async ctx => {
-      const crawl = await datastore.crawl('crawl', ctx.input);
+      const crawl = await ctx.crawl(datastore.crawlers.crawl, ctx.input);
       ctx.Output.emit({ ...crawl, runCrawlerTime });
     }),
     crawlWithSchemaCall: new Function({
       async run(ctx) {
-        const crawl = await datastore.crawl('crawlWithSchema', ctx.input);
+        const crawl = await ctx.crawl(datastore.crawlers.crawlWithSchema, ctx.input);
         ctx.Output.emit({ ...crawl, runCrawlerTime });
       },
       schema: {

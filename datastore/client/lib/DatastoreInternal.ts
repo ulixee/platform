@@ -3,6 +3,8 @@ import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import { IDatastoreApis } from '@ulixee/specification/datastore';
 import { IApiSpec } from '@ulixee/net/interfaces/IApiHandlers';
 import IUnixTime from '@ulixee/net/interfaces/IUnixTime';
+import { ISchemaAny } from '@ulixee/schema';
+import { SqlParser } from '@ulixee/sql-engine';
 import ConnectionFactory from '../connections/ConnectionFactory';
 import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
 import IDatastoreComponents, {
@@ -24,9 +26,9 @@ const pkg = require('../package.json');
 let lastInstanceId = 0;
 
 export default class DatastoreInternal<
-  TTable extends TTables<any> = TTables<any>,
-  TFunction extends TFunctions<any> = TFunctions<any>,
-  TCrawler extends TCrawlers<any> = TCrawlers<any>,
+  TTable extends TTables = TTables,
+  TFunction extends TFunctions = TFunctions,
+  TCrawler extends TCrawlers = TCrawlers,
   TComponents extends IDatastoreComponents<TTable, TFunction, TCrawler> = IDatastoreComponents<
     TTable,
     TFunction,
@@ -112,6 +114,55 @@ export default class DatastoreInternal<
         reject(error);
       }
     }));
+  }
+
+  public async queryInternal<TResultType = any>(
+    sql: string,
+    boundValues: any[] = [],
+  ): Promise<TResultType> {
+    await this.ensureDatabaseExists();
+    const datastoreInstanceId = this.instanceId;
+    const datastoreVersionHash = this.manifest?.versionHash;
+
+    const sqlParser = new SqlParser(sql);
+    const inputSchemas: { [functionName: string]: ISchemaAny } = {};
+    for (const [key, func] of Object.entries(this.functions)) {
+      if (func.schema) inputSchemas[key] = func.schema.input;
+    }
+    const inputByFunctionName = sqlParser.extractFunctionInputs(inputSchemas, boundValues);
+    const outputByFunctionName: { [name: string]: any[] } = {};
+
+    for (const functionName of Object.keys(inputByFunctionName)) {
+      const input = inputByFunctionName[functionName];
+      outputByFunctionName[functionName] = await this.functions[functionName].runInternal({
+        input,
+      });
+    }
+
+    const recordsByVirtualTableName: { [name: string]: Record<string, any>[] } = {};
+    for (const tableName of sqlParser.tableNames) {
+      if (!(this.tables[tableName] as PassthroughTable<any, any>).remoteSource) continue;
+
+      const sqlInputs = sqlParser.extractTableQuery(tableName, boundValues);
+      recordsByVirtualTableName[tableName] = await this.tables[tableName].queryInternal(
+        sqlInputs.sql,
+        sqlInputs.args,
+      );
+    }
+
+    const args = {
+      sql,
+      boundValues,
+      inputByFunctionName,
+      outputByFunctionName,
+      recordsByVirtualTableName,
+      datastoreInstanceId,
+      datastoreVersionHash,
+    };
+    return await this.sendRequest({
+      command: 'Datastore.queryInternal',
+      args: [args],
+    });
   }
 
   public createApiClient(host: string): DatastoreApiClient {

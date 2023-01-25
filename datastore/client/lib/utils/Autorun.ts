@@ -3,42 +3,52 @@ import Function from '../Function';
 import Datastore from '../Datastore';
 
 export default class Autorun {
-  static defaultExport: any;
-  static parentModule: NodeJS.Module;
-  static mainModule: NodeJS.Module;
-  static autorunBeforeExitFn: any;
+  static mainModuleExports: NodeJS.Module['exports'];
+  static isEnabled = true;
 
-  static async attemptAutorun(Module: any): Promise<void> {
-    let defaultExport = this.defaultExport;
-    let { parentModule } = this;
+  static async attemptAutorun(): Promise<void> {
+    if (!this.mainModuleExports || !this.isEnabled) return;
 
-    while (!defaultExport && parentModule) {
-      if (parentModule === this.mainModule && parentModule.exports?.default instanceof Module) {
-        defaultExport = parentModule.exports?.default;
+    const functionName = process.argv0 ?? 'default';
+    const filePath = Path.relative(process.cwd(), process.argv[1]);
+
+    let matchingModule = this.mainModuleExports.default;
+
+    if (functionName && this.mainModuleExports[functionName]) {
+      matchingModule = this.mainModuleExports[functionName];
+    } else {
+      // see if only single exported Function/Datastore
+      const allExports = Object.values(this.mainModuleExports);
+
+      const exportedDatastores = allExports.filter(x => x instanceof Datastore);
+      if (exportedDatastores.length === 1) matchingModule = exportedDatastores[0];
+      else {
+        const exportedFunctions = allExports.filter(x => x instanceof Function);
+        if (exportedFunctions.length === 1) matchingModule = exportedFunctions[0];
       }
-      parentModule = parentModule.parent;
     }
-    if (!defaultExport || defaultExport.disableAutorun) return;
 
     let func: Function;
-    if (defaultExport instanceof Function) {
-      func = defaultExport;
-    } else if (defaultExport instanceof Datastore) {
-      if (Object.keys(defaultExport.functions).length === 1) {
-        func = Object.values(defaultExport.functions)[0] as any;
-      } else {
-        const functionName = process.argv0 ?? 'default';
-        func = Object.values(defaultExport.functions)[functionName];
+    if (matchingModule) {
+      if (matchingModule.disableAutorun) return;
+      if (matchingModule instanceof Function) {
+        func = matchingModule;
+      } else if (matchingModule instanceof Datastore) {
+        func = matchingModule.functions[functionName] ?? matchingModule.crawlers[functionName];
       }
+    }
 
-      if (!func) {
-        const filePath = Path.basename(parentModule.filename);
+    if (!func) {
+      const firstExport = Object.keys(this.mainModuleExports)[0];
+      const example = `(eg: "node ${filePath} ${firstExport}")`;
+      if (!this.mainModuleExports.default) {
         throw new Error(
-          `Please provide a Function to run as the first argument to your script (eg: "node ./${filePath} ${
-            Object.keys(defaultExport.functions)[0]
-          }").`,
+          `The module at ${filePath} does not have a default export. Specify the export to run using the first argument to your script ${example}.`,
         );
       }
+      throw new Error(
+        `Please provide a Function to run as the first argument to your script ${example}.`,
+      );
     }
 
     if (func.successCount || func.errorCount) return;
@@ -46,21 +56,13 @@ export default class Autorun {
     try {
       await (func.constructor as typeof Function).commandLineExec(func);
     } catch (error) {
-      console.error(`ERROR running ${defaultExport.constructor.name}`, error);
+      console.error(`ERROR running ${func.name ?? functionName}`, error);
     }
   }
 
-  static setupAutorunBeforeExitHook(
-    AutorunModule: any,
-    parentModule: NodeJS.Module,
-    mainModule: NodeJS.Module,
-  ): void {
-    if (this.autorunBeforeExitFn) return;
-    this.parentModule = parentModule;
-    this.mainModule = mainModule;
-    process.on('beforeExit', async () => await this.attemptAutorun(AutorunModule));
+  static setupAutorunBeforeExitHook(mainModule: NodeJS.Module): void {
+    if (!mainModule) return;
+    this.mainModuleExports = mainModule.exports;
+    process.on('beforeExit', async () => await this.attemptAutorun());
   }
 }
-
-Autorun.setupAutorunBeforeExitHook(Function, module.parent, require.main);
-Autorun.setupAutorunBeforeExitHook(Datastore, module.parent, require.main);
