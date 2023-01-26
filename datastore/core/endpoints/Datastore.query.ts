@@ -100,7 +100,7 @@ export default new DatastoreApiHandler('Datastore.query', {
       }
     }
 
-    const boundValues = sqlParser.convertToBoundValuesMap(request.boundValues);
+    const boundValues = sqlParser.convertToBoundValuesSqliteMap(request.boundValues);
     const sqlQuery = new SqlQuery(sqlParser, storage, db);
     const outputs = sqlQuery.execute(
       inputByFunctionName,

@@ -7,8 +7,8 @@ Below is an example of using Ulixee Client:
 ```js
 import Client from '@ulixee/client-playground';
 
-const client = new Client('ulx://database');
+const client = new Client('ulx://USER:PASS@HOST:PORT/DB');
 const data = await client.query('SELECT * FROM table');
 ```
 
-You can find more information on Ulixee Client's documentation.
+You can find more information on [Ulixee Client's documentation](../../client).

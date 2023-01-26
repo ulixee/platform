@@ -1,18 +1,13 @@
 - title: Overview
   items:
     - Introduction
+    - SQL
+    - NoSQL
 
-- title: API
+- title: Interface
   items:
-    - Client
-    - ConnectionParameters
-
-- title: Features
-  items:
-    - Connecting
-    - Queries
-    - Data Types
-    - SQL Spec
+    - Remote Client
+    - Local Client
 
 - title: Help
   items:

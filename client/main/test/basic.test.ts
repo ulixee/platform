@@ -4,7 +4,16 @@ import defaults from '../lib/defaults';
 describe('basic Client tests', () => {
   it('automatically parses the connection string', async () => {
     const client = new Client('ulx://username:password@domain.com:1818/database');
-    // @ts-ignore
+    const { user, password, host, port, database } = client;
+    expect(user).toBe('username');
+    expect(password).toBe('password');
+    expect(host).toBe('domain.com');
+    expect(port).toBe(1818);
+    expect(database).toBe('database');
+  });
+
+  it('should parse a postgres string as well', async () => {
+    const client = new Client('postgres://username:password@domain.com:1818/database');
     const { user, password, host, port, database } = client;
     expect(user).toBe('username');
     expect(password).toBe('password');

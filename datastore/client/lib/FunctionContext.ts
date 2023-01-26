@@ -72,6 +72,19 @@ export default class FunctionContext<
     return funcOrTable.runInternal(finalOptions);
   }
 
+  public run<T extends Function>(
+    func: T,
+    options: T['runArgsType'],
+  ): ResultIterable<ExtractSchemaType<T['schema']['output']>>;
+  public run<T extends Table>(
+    table: T,
+    options: any,
+  ): ResultIterable<ExtractSchemaType<T['schema']>>;
+  public run(funcOrTable, options): any {
+    const finalOptions = this.getMergedOptions(options);
+    return funcOrTable.runInternal(finalOptions) as any;
+  }
+
   public async crawl<T extends Crawler>(
     crawler: T,
     options: T['runArgsType'] = {},
@@ -84,14 +97,6 @@ export default class FunctionContext<
   public query<TResult>(sql: string, boundValues: any[]): Promise<TResult> {
     // const finalOptions = this.#functionInternal.options;
     return this.#datastoreInternal.queryInternal(sql, boundValues);
-  }
-
-  public run<T extends Function>(
-    func: T,
-    options: T['runArgsType'],
-  ): ResultIterable<ExtractSchemaType<T['schema']['output']>> {
-    const finalOptions = this.getMergedOptions(options);
-    return func.runInternal(finalOptions) as any;
   }
 
   private getMergedOptions<T extends IFunctionExecOptions<any>>(options: T): T {

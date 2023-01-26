@@ -11,10 +11,10 @@ export type IExpandedTableSchema<T> = T extends ITableSchema
 
 export default class Table<
   TSchema extends IExpandedTableSchema<any> = IExpandedTableSchema<any>,
-  TRecords extends ExtractSchemaType<TSchema> = ExtractSchemaType<TSchema>,
-  TComponents extends ITableComponents<TSchema, TRecords> = ITableComponents<TSchema, TRecords>,
+  TOutput extends ExtractSchemaType<TSchema> = ExtractSchemaType<TSchema>,
+  TComponents extends ITableComponents<TSchema, TOutput> = ITableComponents<TSchema, TOutput>,
 > {
-  seedlings: TRecords[];
+  seedlings: TOutput[];
   #datastoreInternal: DatastoreInternal;
   #isInMemoryTableCreated = false;
 
@@ -49,7 +49,23 @@ export default class Table<
     return this.#datastoreInternal;
   }
 
-  public async queryInternal<T = TRecords[]>(sql: string, boundValues: any[] = []): Promise<T> {
+  public async fetchInternal(inputFilter: TOutput): Promise<TOutput> {
+    const name = this.components.name;
+    const datastoreInstanceId = this.datastoreInternal.instanceId;
+    const datastoreVersionHash = this.datastoreInternal.manifest?.versionHash;
+
+    return await this.datastoreInternal.sendRequest({
+      command: 'Datastore.fetchInternalTable',
+      args: [{
+        name,
+        input: inputFilter,
+        datastoreInstanceId,
+        datastoreVersionHash,
+      }],
+    });
+  }
+
+  public async queryInternal<T = TOutput[]>(sql: string, boundValues: any[] = []): Promise<T> {
     await this.datastoreInternal.ensureDatabaseExists();
     const name = this.components.name;
     const datastoreInstanceId = this.datastoreInternal.instanceId;

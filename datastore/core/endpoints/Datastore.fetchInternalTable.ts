@@ -4,7 +4,7 @@ import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreStorage from '../lib/DatastoreStorage';
 import DatastoreVm from '../lib/DatastoreVm';
 
-export default new DatastoreApiHandler('Datastore.queryInternalTable', {
+export default new DatastoreApiHandler('Datastore.fetchInternalTable', {
   async handler(request, context) {
     if (!context.connectionToClient?.isInternal) {
       throw new Error('You do not have permission to access this endpoint');
@@ -29,32 +29,22 @@ export default new DatastoreApiHandler('Datastore.queryInternalTable', {
     }
 
     const db = storage.db;
-    const sqlParser = new SqlParser(request.sql, { table: tableName });
-    const unknownNames = sqlParser.tableNames.filter(x => x !== tableName);
-    if (unknownNames.length) {
-      throw new Error(
-        `Table${unknownNames.length === 1 ? ' does' : 's do'} not exist: ${unknownNames.join(
-          ', ',
-        )}`,
-      );
+    const fields = ['*'];
+    const where: string[] = [];
+    const boundValues: string[] = [];
+
+    for (const field of Object.keys(request.input || {})) {
+      const value = request.input[field];
+      where.push(`"${field}"=?`);
+      boundValues.push(value);
     }
 
-    if (sqlParser.isInsert() || sqlParser.isDelete() || sqlParser.isUpdate()) {
-      const sql = sqlParser.toSql();
-      const boundValues = sqlParser.convertToBoundValuesSqliteMap(request.boundValues);
-      if (sqlParser.hasReturn()) {
-        return db.prepare(sql).get(boundValues);
-      }
-      const result = db.prepare(sql).run(boundValues);
-      return { changes: result?.changes };
-    }
+    const whereSql = where.length ? `WHERE ${where.join(', ')} ` : '';
+    const sql = `SELECT ${fields.join(',')} from "${request.name}" ${whereSql}LIMIT 1000`;  
+    
+    const sqlParser = new SqlParser(sql, { table: tableName });
+    const results = db.prepare(sql).all(sqlParser.convertToBoundValuesSqliteMap(boundValues));
 
-    if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
-
-    const sql = sqlParser.toSql();
-    const boundValues = sqlParser.convertToBoundValuesSqliteMap(request.boundValues);
-    const records = db.prepare(sql).all(boundValues);
-
-    return SqlGenerator.convertRecordsFromSqlite(records, [schema]);
+    return SqlGenerator.convertRecordsFromSqlite(results, [schema]);
   },
 });

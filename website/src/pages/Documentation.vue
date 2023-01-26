@@ -76,6 +76,7 @@ import Data, { extractToolKey, IPage } from '@/lib/Data';
 import { Prism } from '@/main';
 
 const toolNames: { [key: string]: string } = {
+  client: 'Client',
   hero: 'Hero',
   datastore: 'Datastore',
   miner: 'Miner',

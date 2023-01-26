@@ -310,7 +310,6 @@ export default class DatastoreApiClient {
           args,
         });
       }
-      console.log(error);
       throw ValidationError.fromZodValidation(
         `The API parameters for ${command} has some issues`,
         error,

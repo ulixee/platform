@@ -3,6 +3,7 @@ import defaults from './defaults';
 
 export default class ConnectionParameters {
   user: string;
+  password: string;
   database: string;
   port: number;
   host: string;
@@ -13,7 +14,7 @@ export default class ConnectionParameters {
 
   constructor(config) {
     // if a string is passed, it is a raw connection string so we parse it into a config
-    config = typeof config === 'string' ? ConnectionString.parse(config) : config || {}
+    config = typeof config === 'string' ? ConnectionString.parse(config) : config || {};
 
     // if the config has a connectionString defined, parse IT into the config we use
     // this will override other default values with what is stored in connectionString
@@ -21,15 +22,12 @@ export default class ConnectionParameters {
       config = { ...config, ...ConnectionString.parse(config.connectionString) };
     }
 
-    this.user = val('user', config)
-    this.database = val('database', config)
+    this.user = val('username', config) || val('user', config);
+    this.password = val('password', config);
+    this.database = val('database', config);
 
-    if (this.database === undefined) {
-      this.database = null;
-    }
-
-    this.port = parseInt(val('port', config), 10)
-    this.host = val('host', config)
+    this.port = parseInt(val('port', config), 10);
+    this.host = val('host', config);
 
     // "hiding" the password so it doesn't show up in stack traces
     // or if the client is console.logged

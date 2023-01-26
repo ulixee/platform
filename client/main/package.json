@@ -1,5 +1,5 @@
 {
-  "name": "@ulixee/sql",
+  "name": "@ulixee/client",
   "version": "2.0.0-alpha.18",
   "main": "index.js",
   "repository": "git@github.com:ulixee/platform.git",
@@ -9,7 +9,8 @@
     "@ulixee/client-connection-string": "2.0.0-alpha.18",
     "@ulixee/net": "2.0.0-alpha.18",
     "@ulixee/datastore": "2.0.0-alpha.18",
-    "@ulixee/commons": "2.0.0-alpha.18"
+    "@ulixee/commons": "2.0.0-alpha.18",
+    "@ulixee/schema": "2.0.0-alpha.18"
   },
   "devDependencies": {
     "@ulixee/schema": "2.0.0-alpha.18",
