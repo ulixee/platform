@@ -115,6 +115,9 @@ function extractTableOutputs(
 
   for (const field of Object.keys(request.input || {})) {
     const value = request.input[field];
+    if (!(field in schema)) {
+      throw new Error(`${field} does not exist in schema for table: ${request.name}`);
+    }
     where.push(`"${field}"=?`);
     boundValues.push(value);
   }
