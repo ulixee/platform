@@ -14,26 +14,26 @@ export default class SqlQuery {
   }
 
   public execute(
-    inputByFunctionName: { [name: string]: Record<string, any> },
-    outputsByFunctionName: { [name: string]: Record<string, any>[] },
+    inputByRunnerName: { [name: string]: Record<string, any> },
+    outputsByRunnerName: { [name: string]: Record<string, any>[] },
     recordsByVirtualTableName: { [name: string]: Record<string, any>[] },
     boundValues: Record<string, any>,
   ): any[] {
     const schemas = this.sqlParser.tableNames.map(x => this.storage.getTableSchema(x));
     const tmpSchemas = {};
-    for (const functionName of this.sqlParser.functionNames) {
-      const input = inputByFunctionName[functionName];
-      const outputs = outputsByFunctionName[functionName];
-      const schema = this.storage.getFunctionSchema(functionName);
+    for (const name of this.sqlParser.functionNames) {
+      const input = inputByRunnerName[name];
+      const outputs = outputsByRunnerName[name];
+      const schema = this.storage.getRunnerSchema(name);
       schemas.push(schema);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
-      SqlGenerator.createFunctionFromSchema(input, outputs, schema, (parameters, columns) => {
-        this.db.table(functionName, {
+      SqlGenerator.createRunnerFromSchema(input, outputs, schema, (parameters, columns) => {
+        this.db.table(name, {
           parameters,
           columns,
           *rows() {
             for (const record of outputs)
-              yield SqlGenerator.convertFunctionRecordToSqliteRow(record, schema, tmpSchemas);
+              yield SqlGenerator.convertRunnerRecordToSqliteRow(record, schema, tmpSchemas);
           },
         });
       });

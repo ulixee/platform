@@ -2,22 +2,22 @@ import { setupAutorunMjsHack } from '@ulixee/datastore/lib/utils/Autorun.mjs';
 import cjsImport from './index.js';
 
 const {
-  PuppeteerFunctionPlugin,
+  PuppeteerRunnerPlugin,
   Observable,
   Datastore,
-  Function,
+  Runner,
   Crawler,
-  PassthroughFunction,
+  PassthroughRunner,
   Schema,
 } = cjsImport;
 
 export {
-  PuppeteerFunctionPlugin,
+  PuppeteerRunnerPlugin,
   Observable,
   Datastore,
-  Function,
+  Runner,
   Crawler,
-  PassthroughFunction,
+  PassthroughRunner,
   Schema,
 };
 

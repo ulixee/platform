@@ -3,7 +3,7 @@
 A Crawler is a specialized [Functino](./function.md) that allows you to scrape a webpage and automatically cache results. The following is a simple example:
 
 ```js
-import { Crawler, HeroFunctionPlugin } from '@ulixee/datastore-plugins-hero';
+import { Crawler, HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
 
 const crawler = new Crawler(async context => {
   const hero = await new context.Hero();
@@ -12,7 +12,7 @@ const crawler = new Crawler(async context => {
   const resources = await hero.activeTab.waitForResources({ url: 'index.json' });
   for (const resource of resources) await resource.$addToDetachedResources('xhr');
   return hero;
-}, HeroFunctionPlugin);
+}, HeroRunnerPlugin);
 ```
 
 Crawlers automatically create a local [Table] to cache results. This means you can re-use the last Crawl by default. A desired "age" can be specified by including a `maxTimeInCache` parameter. `maxTimeInCache` defaults to 10 minutes. To skip the cache, you can supply 0, or include `disableCache: true` in the constructor arguments.
@@ -32,9 +32,9 @@ Creates a new Crawler instance.
 
 The first argument can be a single callback function matching the `run` callback below, or an object containing the following properties.
 
-- run `function`(context: [FunctionContext](./function-context.md)): `Promise<Crawler>`. A function that contains your script to run. The parameter is a [FunctionContext](./function-context.md) that provides access to [input](./input.md).
+- run `function`(context: [RunnerContext](./function-context.md)): `Promise<Crawler>`. A function that contains your script to run. The parameter is a [RunnerContext](./function-context.md) that provides access to [input](./input.md).
   - NOTE: Crawlers do not specify `Output`, but must return an object implementing `toCrawlerOutput(): Promise<ICrawlerOutputSchema>`. This is an object containing `version`, `sessionId` and `crawler`.
-- schema `IFunctionSchema`. Optional [schema](../advanced/function-schemas.md) defining the type-checked _input_ (only) parameters for the function. Output is not supported for Crawlers.
+- schema `IRunnerSchema`. Optional [schema](../advanced/function-schemas.md) defining the type-checked _input_ (only) parameters for the function. Output is not supported for Crawlers.
 - disableCache `boolean`. Optional parameter to disable automatic caching of results.
 - minimumPrice `number`. Optional minimum price that must be allocated in a Micronote for a caller.
 - pricePerQuery `number`. Optional charge price per query.
@@ -60,4 +60,4 @@ A Table automatically created to store cached results. The table name is `crawle
 
 ## Methods
 
-No public methods added from [Function](./function.md).
+No public methods added from [Runner](./function.md).

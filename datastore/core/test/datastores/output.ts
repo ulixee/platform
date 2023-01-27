@@ -1,8 +1,8 @@
-import Datastore, { Function } from '@ulixee/datastore';
+import Datastore, { Runner } from '@ulixee/datastore';
 
 export default new Datastore({
-  functions: {
-    putout: new Function(ctx => {
+  runners: {
+    putout: new Runner(ctx => {
       ctx.Output.emit({ success: true });
     }),
   },

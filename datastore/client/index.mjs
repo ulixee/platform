@@ -5,12 +5,12 @@ const {
   Table,
   Datastore,
   Observable,
-  FunctionSchema,
-  FunctionContext,
-  Function,
+  RunnerSchema,
+  RunnerContext,
+  Runner,
   Crawler,
   ConnectionToDatastoreCore,
-  PassthroughFunction,
+  PassthroughRunner,
   Schema,
 } = cjsImport;
 
@@ -18,12 +18,12 @@ export {
   Table,
   Datastore,
   Observable,
-  FunctionSchema,
-  FunctionContext,
-  Function,
+  RunnerSchema,
+  RunnerContext,
+  Runner,
   Crawler,
   ConnectionToDatastoreCore,
-  PassthroughFunction,
+  PassthroughRunner,
   Schema,
 };
 

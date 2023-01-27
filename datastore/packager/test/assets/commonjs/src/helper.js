@@ -1,5 +1,5 @@
 const isArray = require('lodash-es/isArray');
 
-module.exports.testFunction = function testFunction() {
+module.exports.testRunner = function testRunner() {
   return isArray([]) ? 'true' : 'not an array';
 };

@@ -30,7 +30,7 @@ export default class PaymentProcessor {
   private fundingBalance: number;
   private sidechain: SidechainClient;
   private sidechainSettings: { settlementFeeMicrogons: number; blockHeight: number };
-  private readonly functionHolds: {
+  private readonly runnerHolds: {
     id: number;
     heldMicrogons: number;
     didRelease: boolean;
@@ -51,7 +51,7 @@ export default class PaymentProcessor {
 
   public async createHold(
     manifest: IDatastoreManifest,
-    functionCalls: { id: number; functionName: string }[],
+    runnerCalls: { id: number; runnerName: string }[],
     pricingPreferences: { maxComputePricePerQuery?: number } = { maxComputePricePerQuery: 0 },
   ): Promise<boolean> {
     const configuration = this.context.configuration;
@@ -78,20 +78,20 @@ export default class PaymentProcessor {
     }
 
     let minimumPrice = computePricePerQuery;
-    for (const functionCall of functionCalls) {
-      const prices = manifest.functionsByName[functionCall.functionName].prices;
+    for (const runnerCall of runnerCalls) {
+      const prices = manifest.runnersByName[runnerCall.runnerName].prices;
       const pricePerQuery = prices[0]?.perQuery ?? 0;
       const pricePerKb = prices[0]?.addOns?.perKb ?? 0;
       const holdMicrogons = prices[0]?.minimum ?? pricePerQuery ?? 0;
       this.microgonsToHold += holdMicrogons;
 
-      const payouts: PaymentProcessor['functionHolds'][0]['payouts'] = [];
+      const payouts: PaymentProcessor['runnerHolds'][0]['payouts'] = [];
       if (pricePerQuery > 0 || pricePerKb > 0) {
         payouts.push({ address: manifest.paymentAddress, pricePerKb, pricePerQuery });
       }
       if (payouts.length) {
-        this.functionHolds.push({
-          id: functionCall.id,
+        this.runnerHolds.push({
+          id: runnerCall.id,
           didRelease: false,
           payouts,
           heldMicrogons: holdMicrogons,
@@ -121,15 +121,15 @@ export default class PaymentProcessor {
     return true;
   }
 
-  public releaseLocalFunctionHold(functionId: number, resultBytes: number): number {
+  public releaseLocalRunnerHold(runnerId: number, resultBytes: number): number {
     if (!this.holdId) return 0;
 
     let totalMicrogons = 0;
-    const functionCall = this.functionHolds.find(x => x.id === functionId);
-    if (functionCall.didRelease)
-      throw new Error(`This function call was already released! (id=${functionId})`);
+    const runnerCall = this.runnerHolds.find(x => x.id === runnerId);
+    if (runnerCall.didRelease)
+      throw new Error(`This function call was already released! (id=${runnerId})`);
 
-    for (const payout of functionCall.payouts) {
+    for (const payout of runnerCall.payouts) {
       let microgons = payout.pricePerQuery ?? 0;
       if (payout.pricePerKb) {
         microgons += Math.floor((resultBytes / 1000) * payout.pricePerKb);
@@ -138,15 +138,15 @@ export default class PaymentProcessor {
       totalMicrogons += microgons;
       this.payouts.push({ microgons, address: payout.address });
     }
-    functionCall.didRelease = true;
+    runnerCall.didRelease = true;
     return totalMicrogons;
   }
 
   public async settle(finalResultBytes: number): Promise<number> {
     if (!this.holdId) return 0;
 
-    if (this.functionHolds.length === 1 && !this.functionHolds[0].didRelease) {
-      this.releaseLocalFunctionHold(this.functionHolds[0].id, finalResultBytes);
+    if (this.runnerHolds.length === 1 && !this.runnerHolds[0].didRelease) {
+      this.releaseLocalRunnerHold(this.runnerHolds[0].id, finalResultBytes);
     }
 
     const payments: { [address: string]: number } = {};
@@ -218,7 +218,7 @@ export default class PaymentProcessor {
     );
     if (hold.holdAuthorizationCode) {
       this.holdAuthorizationCode = hold.holdAuthorizationCode;
-      // Add to the payments. This will active it for follow-on functions
+      // Add to the payments. This will active it for follow-on runners
       this.payment.micronote.holdAuthorizationCode = hold.holdAuthorizationCode;
     }
     if (hold.accepted) {

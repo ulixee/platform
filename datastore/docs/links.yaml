@@ -8,18 +8,18 @@
 - title: Basics
   items:
     - Datastore
-    - Function
-    - Crawler
     - Table
-    - Passthrough Function
+    - Runner
+    - Crawler
+    - Passthrough Runner
     - Cloning
-    - Function Context
+    - Runner Context
     - Input
     - Output
 
 - title: Advanced
   items:
-    - Function Schemas
+    - Runner Schemas
     - Schema
     - Credits
     - Plugins

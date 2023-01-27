@@ -1,21 +1,21 @@
 import * as assert from 'assert';
 import { ExtractSchemaType } from '@ulixee/schema';
-import Function from './Function';
-import IFunctionSchema from '../interfaces/IFunctionSchema';
-import IFunctionComponents from '../interfaces/IFunctionComponents';
-import IFunctionContext from '../interfaces/IFunctionContext';
+import Runner from './Runner';
+import IRunnerSchema from '../interfaces/IRunnerSchema';
+import IRunnerComponents from '../interfaces/IRunnerComponents';
+import IRunnerContext from '../interfaces/IRunnerContext';
 import DatastoreApiClient, { IDatastoreExecRelayArgs } from './DatastoreApiClient';
-import { IFunctionPluginConstructor } from '../interfaces/IFunctionPluginStatics';
+import { IRunnerPluginConstructor } from '../interfaces/IRunnerPluginStatics';
 import ResultIterable from './ResultIterable';
 
-export interface IPassthroughFunctionComponents<
+export interface IPassthroughRunnerComponents<
   TRemoteSources extends Record<string, string>,
-  TFunctionName extends string,
-  TSchema extends IFunctionSchema = IFunctionSchema<any, any>,
-  TContext extends IFunctionContext<TSchema> & IDatastoreExecRelayArgs = IFunctionContext<TSchema> &
+  TRunnerName extends string,
+  TSchema extends IRunnerSchema = IRunnerSchema<any, any>,
+  TContext extends IRunnerContext<TSchema> & IDatastoreExecRelayArgs = IRunnerContext<TSchema> &
     IDatastoreExecRelayArgs,
 > {
-  remoteFunction: `${keyof TRemoteSources & string}.${TFunctionName}`;
+  remoteRunner: `${keyof TRemoteSources & string}.${TRunnerName}`;
   upcharge?: number;
   onRequest?: (context: TContext) => Promise<any>;
   onResponse?: (
@@ -23,35 +23,35 @@ export interface IPassthroughFunctionComponents<
   ) => Promise<any>;
 }
 
-export default class PassthroughFunction<
+export default class PassthroughRunner<
   TRemoteSources extends Record<string, string>,
-  TFunctionName extends string,
-  TSchema extends IFunctionSchema = IFunctionSchema<any, any>,
-  TPlugin1 extends IFunctionPluginConstructor<TSchema> = IFunctionPluginConstructor<TSchema>,
-  TPlugin2 extends IFunctionPluginConstructor<TSchema> = IFunctionPluginConstructor<TSchema>,
-  TPlugin3 extends IFunctionPluginConstructor<TSchema> = IFunctionPluginConstructor<TSchema>,
+  TRunnerName extends string,
+  TSchema extends IRunnerSchema = IRunnerSchema<any, any>,
+  TPlugin1 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
+  TPlugin2 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
+  TPlugin3 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
   TOutput extends ExtractSchemaType<TSchema['output']> = ExtractSchemaType<TSchema['output']>,
-  TContext extends IFunctionContext<TSchema> & IDatastoreExecRelayArgs = IFunctionContext<TSchema> &
+  TContext extends IRunnerContext<TSchema> & IDatastoreExecRelayArgs = IRunnerContext<TSchema> &
     TPlugin1['contextAddons'] &
     TPlugin2['contextAddons'] &
     TPlugin3['contextAddons'] &
     IDatastoreExecRelayArgs,
-> extends Function<TSchema, TPlugin1, TPlugin2, TPlugin3, TContext> {
+> extends Runner<TSchema, TPlugin1, TPlugin2, TPlugin3, TContext> {
   public readonly remoteSource: string;
-  public readonly remoteFunction: string;
+  public readonly remoteRunner: string;
   public datastoreVersionHash: string;
 
   protected upstreamClient: DatastoreApiClient;
-  protected readonly passThroughComponents: IPassthroughFunctionComponents<
+  protected readonly passThroughComponents: IPassthroughRunnerComponents<
     TRemoteSources,
-    TFunctionName,
+    TRunnerName,
     TSchema,
     TContext
   >;
 
   constructor(
-    components: Pick<IFunctionComponents<TSchema, TContext>, 'name' | 'schema'> &
-      IPassthroughFunctionComponents<TRemoteSources, TFunctionName> &
+    components: Pick<IRunnerComponents<TSchema, TContext>, 'name' | 'schema'> &
+      IPassthroughRunnerComponents<TRemoteSources, TRunnerName> &
       TPlugin1['componentAddons'] &
       TPlugin2['componentAddons'] &
       TPlugin3['componentAddons'],
@@ -61,11 +61,11 @@ export default class PassthroughFunction<
     this.components.run = this.run.bind(this);
     this.pricePerQuery = components.upcharge ?? 0;
     this.minimumPrice = components.upcharge ?? 0;
-    assert(components.remoteFunction, 'A remote function is required');
-    assert(components.remoteFunction.includes('.'), 'A remote function source is required');
+    assert(components.remoteRunner, 'A remote function is required');
+    assert(components.remoteRunner.includes('.'), 'A remote function source is required');
     this.passThroughComponents = components;
-    const [source, remoteFunction] = components.remoteFunction.split('.');
-    this.remoteFunction = remoteFunction;
+    const [source, remoteRunner] = components.remoteRunner.split('.');
+    this.remoteRunner = remoteRunner;
     this.remoteSource = source;
   }
 
@@ -88,7 +88,7 @@ export default class PassthroughFunction<
 
     const queryResult = this.upstreamClient.stream<{ output: TOutput; input: any }>(
       this.datastoreVersionHash,
-      this.remoteFunction,
+      this.remoteRunner,
       context.input,
       {
         payment,
@@ -129,7 +129,7 @@ export default class PassthroughFunction<
       console.warn('Newer Datastore VersionHash is available', {
         newVersionHash: finalResult.latestVersionHash,
         usingVersionHash: this.datastoreVersionHash,
-        host: this.passThroughComponents.remoteFunction,
+        host: this.passThroughComponents.remoteRunner,
       });
     }
   }

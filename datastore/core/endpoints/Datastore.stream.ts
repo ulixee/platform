@@ -1,11 +1,11 @@
-import Datastore, { IFunctionExecOptions } from '@ulixee/datastore';
+import Datastore, { IRunnerExecOptions } from '@ulixee/datastore';
 import IDatastoreApis from '@ulixee/specification/datastore/DatastoreApis';
 import { SqlGenerator } from '@ulixee/sql-engine';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreCore from '../index';
 import PaymentProcessor from '../lib/PaymentProcessor';
 import DatastoreVm from '../lib/DatastoreVm';
-import { validateAuthentication, validateFunctionCoreVersions } from '../lib/datastoreUtils';
+import { validateAuthentication, validateRunnerCoreVersions } from '../lib/datastoreUtils';
 import { IDatastoreManifestWithStats } from '../lib/DatastoreRegistry';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 import DatastoreStorage from '../lib/DatastoreStorage';
@@ -20,15 +20,15 @@ export default new DatastoreApiHandler('Datastore.stream', {
 
     let outputs;
 
-    const datastoreFunction = datastore.metadata.functionsByName[request.name];
+    const datastoreRunner = datastore.metadata.runnersByName[request.name];
     const datastoreTable = datastore.metadata.tablesByName[request.name];
-    if (datastoreFunction) {
-      outputs = await extractFunctionOutputs(manifestWithStats, datastore, request, context, paymentProcessor);
+    if (datastoreRunner) {
+      outputs = await extractRunnerOutputs(manifestWithStats, datastore, request, context, paymentProcessor);
     } else if (datastoreTable) {
       // TODO: Need to put a payment hold for tables
       outputs = extractTableOutputs(datastore, request, context);
     } else {
-      throw new Error(`${request.name} is not a valid Function name for this Datastore.`);
+      throw new Error(`${request.name} is not a valid Runner name for this Datastore.`);
     }
 
     const bytes = PaymentProcessor.getOfficialBytes(outputs);
@@ -51,7 +51,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
   },
 });
 
-async function extractFunctionOutputs(
+async function extractRunnerOutputs(
   manifestWithStats: IDatastoreManifestWithStats, 
   datastore: Datastore, 
   request: IDatastoreApis['Datastore.stream']['args'],
@@ -60,15 +60,15 @@ async function extractFunctionOutputs(
 ): Promise<any[]> {
   await paymentProcessor.createHold(
     manifestWithStats,
-    [{ functionName: request.name, id: 1 }],
+    [{ runnerName: request.name, id: 1 }],
     request.pricingPreferences,
   );
 
-  validateFunctionCoreVersions(manifestWithStats, request.name, context);
+  validateRunnerCoreVersions(manifestWithStats, request.name, context);
 
   return await context.workTracker.trackRun(
     (async () => {
-      const options: IFunctionExecOptions<any> = {
+      const options: IRunnerExecOptions<any> = {
         input: request.input,
         authentication: request.authentication,
         affiliateId: request.affiliateId,
@@ -76,15 +76,15 @@ async function extractFunctionOutputs(
       };
 
       for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
-        if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);
+        if (plugin.beforeExecRunner) await plugin.beforeExecRunner(options);
       }
 
-      const results = datastore.functions[request.name].runInternal(options);
+      const results = datastore.runners[request.name].runInternal(options);
       for await (const result of results) {
         context.connectionToClient.sendEvent({
           listenerId: request.streamId,
           data: result,
-          eventType: 'FunctionStream.output',
+          eventType: 'RunnerStream.output',
         });
       }
       return results;
@@ -132,7 +132,7 @@ function extractTableOutputs(
     context.connectionToClient.sendEvent({
       listenerId: request.streamId,
       data: result,
-      eventType: 'FunctionStream.output',
+      eventType: 'RunnerStream.output',
     });
   }
 

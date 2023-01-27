@@ -21,7 +21,7 @@ afterAll(async () => {
   if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
 });
 
-test('should be able to stream a datastore function', async () => {
+test('should be able to stream a datastore runner', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/stream.js`);
   await packager.build();
   await client.upload(await packager.dbx.asBuffer());
@@ -44,7 +44,7 @@ test('should be able to stream a datastore function', async () => {
   expect(outputs).toEqual([{ record: 0 }, { record: 1 }, { record: 2 }]);
 });
 
-test('should be able to require authentication for a streamed function', async () => {
+test('should be able to require authentication for a streamed runner', async () => {
   const id = Identity.createSync();
   Fs.writeFileSync(
     `${__dirname}/datastores/streamedAuth.js`,

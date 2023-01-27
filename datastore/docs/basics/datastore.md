@@ -6,15 +6,15 @@ This is the primary class used to create a datastore. The following is a simple 
 import Datastore from '@ulixee/datastore';
 
 export default new Datastore({
-  functions: {
-    nameOfFunction: new Function(functionContext => {
+  runners: {
+    nameOfRunner: new Runner(functionContext => {
       functionContext.output = `Hello ${functionContext.input.firstName}`;
     }),
   },
 });
 ```
 
-A Datastore is constructed with one or more [Functions](./function.md).
+A Datastore is constructed with one or more [Runners](./function.md).
 
 ## Constructor
 
@@ -27,9 +27,9 @@ Creates a new Datastore instance.
 - name `string`. Optional name for this Datastore to be used in Documentation websites.
 - description `string`. Optional description for this Datastore to be used in Documentation websites.
 - domain `string`. A dns name (eg, A record) that maps to the Datastore host. This domain will act as a virtual host mapped to the latest deployed version of this Datastore. Documentation sites and credit urls can be distributed to users with this domain. NOTE that this is unique _per_ Datastore. You may only use it for a single Datastore version. If you have a custom port, it should _not_ be added to this variable, but will be appended to any urls you distribute (eg, `mydns.com -> 192.168.1.1`, `npx @ulixee/datastore credits install https://mydns.com:1818/free-credits?crd2234343:234234ssd3234`).
-- functions: `object`. An object mapping names to [Functions](./function.md).
+- runners: `object`. An object mapping names to [Runners](./function.md).
   - key `string`. A unique name of the function.
-  - value `Function`. A [Function](./function.md) instance.
+  - value `Runner`. A [Runner](./function.md) instance.
 - crawlers: `object`. An object mapping names to [Crawlers](./crawler.md).
   - key `string`. A unique name of the Crawler.
   - value `Crawler`. A [Crawler](./function.md) instance.
@@ -39,15 +39,15 @@ Creates a new Datastore instance.
 - affiliateId `string`. An optional unique identifier to send with all remoteDatastore queries sent from this Datastore.
 - adminIdentity `string`. A bech32 encoded admin Identity. Grants access to this identity to perform signed `Datastore.admin` API calls (like managing [Credits](../advanced/credits.md)). If not included, the `adminIdentities` of your Miner server are the only valid admin Identities for your Datastore.
 - authenticateIdentity `function`. An optional function that can be used to secure access to this Datastore. More details are [here](#authenticateIdentity)
-- remoteDatastores `{ [name]: url }`. An optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughFunctions](./passthrough-function.md).
+- remoteDatastores `{ [name]: url }`. An optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughRunners](./passthrough-function.md).
 - remoteDatastoreEmbeddedCredits `{ [name]: ICredit }`. An optional key/value of remoteDatastore "names" to [credit](../advanced/credits.md) details (`id` and `secret`). If included, the embedded credits will be used for Payment to the remoteDatastore for consumers of this Datastore.
 
 ```js
-import Datastore, { Function } from '@ulixee/datastore';
+import Datastore, { Runner } from '@ulixee/datastore';
 
 export default new Datastore({
-  functions: {
-    instance: new Function({
+  runners: {
+    instance: new Runner({
       run({ input, Output }) {
         const output = new Output();
         output.urlLength = input.url.length;
@@ -69,11 +69,11 @@ export default new Datastore({
 
 ### metadata `object`
 
-Object containing the definitions of nested Functions, Crawlers, Tables and settings for this Datastore.
+Object containing the definitions of nested Runners, Crawlers, Tables and settings for this Datastore.
 
-### functions `{ [name:string]: Function}`
+### runners `{ [name:string]: Runner}`
 
-Object containing [Functions](./function.md) keyed by their name.
+Object containing [Runners](./function.md) keyed by their name.
 
 ### crawlers `{ [name:string]: Crawler}`
 
@@ -85,7 +85,7 @@ Object containing [Tables](./table.md) keyed by their name.
 
 ### remoteDatastores `{ [name]: url }` {#remote-datastores}
 
-Object containing an optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughFunctions](./passthrough-function.md). Urls take the format `ulx://<MinerHost>/<DatastoreVersionHash>`.
+Object containing an optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughRunners](./passthrough-function.md). Urls take the format `ulx://<MinerHost>/<DatastoreVersionHash>`.
 
 ### authenticateIdentity _(identity, nonce)_ {#authenticateIdentity}
 

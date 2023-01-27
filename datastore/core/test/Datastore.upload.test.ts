@@ -40,7 +40,7 @@ test('should be able upload a datastore', async () => {
   expect(Fs.existsSync(storageDir)).toBeTruthy();
   expect(manifest.schemaInterface).toBe(`{
   tables: {};
-  functions: {
+  runners: {
     upTest: {
       output: {
         /**

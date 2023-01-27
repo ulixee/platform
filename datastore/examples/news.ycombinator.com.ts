@@ -1,8 +1,8 @@
 // NOTE: you must start your own Ulixee Miner to run this example.
 
-import { Function, HeroFunctionPlugin } from '@ulixee/datastore-plugins-hero';
+import { Runner, HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
 
-export default new Function(async ({ Hero, Output }) => {
+export default new Runner(async ({ Hero, Output }) => {
   const hero = new Hero();
   await hero.goto('https://news.ycombinator.com/');
   await hero.waitForPaintingStable();
@@ -51,4 +51,4 @@ export default new Function(async ({ Hero, Output }) => {
   }
 
   await hero.close();
-}, HeroFunctionPlugin);
+}, HeroRunnerPlugin);

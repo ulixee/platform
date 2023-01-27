@@ -1,11 +1,11 @@
 const { Table } = require('@ulixee/datastore');
 const Datastore = require('@ulixee/datastore');
-const { Function } = require('@ulixee/datastore');
+const { Runner } = require('@ulixee/datastore');
 const { boolean, string } = require('@ulixee/schema');
 
 exports.default = new Datastore({
-  functions: {
-    test: new Function({
+  runners: {
+    test: new Runner({
       run(ctx) {
         ctx.output = { 
           testerEcho: ctx.input.shouldTest,

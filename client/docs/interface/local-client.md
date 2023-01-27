@@ -41,12 +41,12 @@ Send a NoSQL query to the specified table.
 
 ### client.run _(runnerName, inputFilter)_ {#run}
 
-Run one of the Datastore's functions.
+Run one of the Datastore's runners.
 
 #### **Arguments**:
 
 - runnerName `string`. Any valid Ulixee SQL query. Case sensitive.
-- inputFilter `object`. Optional. Any named arguments required or allowed by the function.
+- inputFilter `object`. Optional. Any named arguments required or allowed by the runner.
 
 #### **Returns**: `Promise<Record[]>`
 
@@ -63,13 +63,13 @@ Trigger one of the Datastore's crawlers.
 #### **Returns**: `Promise<Record[]>`
  
 
-## Client.ForFunction
+## Client.ForRunner
 
 ```javascript
 import Client from '@ulixee/client-playground';
-import myFunction from './myFunction';
+import myRunner from './myRunner';
 
-const client = new Client.ForFunction(myFunction);
+const client = new Client.ForRunner(myRunner);
 client.query('SELECT firstName, lastName FROM self(isTesting => $1), [true]).then(records => {
   console.log(records);
 });
@@ -77,11 +77,11 @@ client.query('SELECT firstName, lastName FROM self(isTesting => $1), [true]).the
 
 ### client.run _(inputFilter)_ {#run}
 
-Run the function.
+Run the Runner.
 
 #### **Arguments**:
 
-- inputFilter `object`. Optional. Any named arguments required or allowed by the function.
+- inputFilter `object`. Optional. Any named arguments required or allowed by the runner.
 
 
 ### client.query _(sql, boundValues)_ {#query}

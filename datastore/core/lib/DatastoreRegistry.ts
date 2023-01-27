@@ -20,12 +20,12 @@ import { IDatastoreVersionRecord } from './DatastoreVersionsTable';
 
 const datastorePackageJson = require(`../package.json`);
 
-export interface IStatsByFunctionName {
-  [functionName: string]: IDatastoreStatsRecord;
+export interface IStatsByRunnerName {
+  [runnerName: string]: IDatastoreStatsRecord;
 }
 
 export type IDatastoreManifestWithStats = IDatastoreManifest & {
-  statsByFunction: IStatsByFunctionName;
+  statsByRunner: IStatsByRunnerName;
   path: string;
   latestVersionHash: string;
 };
@@ -77,13 +77,13 @@ export default class DatastoreRegistry {
     if (!manifest) {
       throw new DatastoreNotFoundError('Datastore package not found on Miner.', latestVersionHash);
     }
-    const statsByFunction: IStatsByFunctionName = {};
-    for (const name of Object.keys(manifest.functionsByName)) {
-      statsByFunction[name] = this.datastoresDb.datastoreStats.getByVersionHash(versionHash, name);
+    const statsByRunner: IStatsByRunnerName = {};
+    for (const name of Object.keys(manifest.runnersByName)) {
+      statsByRunner[name] = this.datastoresDb.datastoreStats.getByVersionHash(versionHash, name);
     }
     return {
       path,
-      statsByFunction,
+      statsByRunner,
       latestVersionHash,
       ...manifest,
     };
@@ -91,12 +91,12 @@ export default class DatastoreRegistry {
 
   public recordStats(
     versionHash: string,
-    functionName: string,
+    runnerName: string,
     stats: { bytes: number; microgons: number; milliseconds: number },
   ): void {
     this.datastoresDb.datastoreStats.record(
       versionHash,
-      functionName,
+      runnerName,
       stats.microgons,
       stats.bytes,
       stats.milliseconds,

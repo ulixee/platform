@@ -22,7 +22,7 @@ import { customAlphabet } from 'nanoid';
 import DatastoreCore from '../index';
 import DatastoreManifest from '../lib/DatastoreManifest';
 
-const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughFunctions.test');
+const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughRunners.test');
 
 let miner: UlixeeMiner;
 let client: DatastoreApiClient;
@@ -60,9 +60,9 @@ const mock = {
 let remoteVersionHash: string;
 beforeAll(async () => {
   for (const file of [
-    'passthroughFunction',
-    'passthroughFunctionUpcharge',
-    'passthroughFunctionNoOnresponse',
+    'passthroughRunner',
+    'passthroughRunnerUpcharge',
+    'passthroughRunnerNoOnresponse',
     'hop2',
   ]) {
     if (Fs.existsSync(`${__dirname}/datastores/${file}.js`)) {
@@ -76,8 +76,8 @@ beforeAll(async () => {
     }
   }
 
-  if (Fs.existsSync(`${__dirname}/datastores/remoteFunction.dbx`)) {
-    Fs.unlinkSync(`${__dirname}/datastores/remoteFunction.dbx`);
+  if (Fs.existsSync(`${__dirname}/datastores/remoteRunner.dbx`)) {
+    Fs.unlinkSync(`${__dirname}/datastores/remoteRunner.dbx`);
   }
 
   mock.MicronoteBatchFunding.fundBatch.mockImplementation(async function (batch, centagons) {
@@ -96,7 +96,7 @@ beforeAll(async () => {
   client = new DatastoreApiClient(await miner.address);
   Helpers.onClose(() => client.disconnect(), true);
 
-  const packager = new DatastorePackager(`${__dirname}/datastores/remoteFunction.js`);
+  const packager = new DatastorePackager(`${__dirname}/datastores/remoteRunner.js`);
   await packager.build();
   await client.upload(await packager.dbx.asBuffer());
   remoteVersionHash = packager.manifest.versionHash;
@@ -116,13 +116,13 @@ afterAll(async () => {
   Fs.rmSync(storageDir, { recursive: true });
 });
 
-test('should be able to have a passthrough function', async () => {
+test('should be able to have a passthrough runner', async () => {
   await expect(client.stream(remoteVersionHash, 'remote', { test: '123d' })).resolves.toEqual([
     { iAmRemote: true, echo: '123d' },
   ]);
 
   Fs.writeFileSync(
-    `${__dirname}/datastores/passthroughFunction.js`,
+    `${__dirname}/datastores/passthroughRunner.js`,
     `const Datastore = require('@ulixee/datastore');
 const { boolean, string } = require('@ulixee/schema');
 
@@ -130,9 +130,9 @@ export default new Datastore({
   remoteDatastores: {
     source: 'ulx://${await miner.address}/${remoteVersionHash}',
   },
-  functions: {
-    pass: new Datastore.PassthroughFunction({
-      remoteFunction: 'source.remote',
+  runners: {
+    pass: new Datastore.PassthroughRunner({
+      remoteRunner: 'source.remote',
       schema: {
         input: {
           test: string(),
@@ -153,7 +153,7 @@ export default new Datastore({
 });`,
   );
 
-  const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughFunction.js`);
+  const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughRunner.js`);
   await passthrough.build();
   await client.upload(await passthrough.dbx.asBuffer());
 
@@ -168,7 +168,7 @@ test('should re-emit output automatically if no onResponse is provided', async (
   ]);
 
   Fs.writeFileSync(
-    `${__dirname}/datastores/passthroughFunctionNoOnresponse.js`,
+    `${__dirname}/datastores/passthroughRunnerNoOnresponse.js`,
     `const Datastore = require('@ulixee/datastore');
 const { boolean, string } = require('@ulixee/schema');
 
@@ -176,9 +176,9 @@ export default new Datastore({
   remoteDatastores: {
     source: 'ulx://${await miner.address}/${remoteVersionHash}',
   },
-  functions: {
-    pass: new Datastore.PassthroughFunction({
-      remoteFunction: 'source.remote',
+  runners: {
+    pass: new Datastore.PassthroughRunner({
+      remoteRunner: 'source.remote',
       schema: {
         input: {
           test: string(),
@@ -194,7 +194,7 @@ export default new Datastore({
   );
 
   const passthrough = new DatastorePackager(
-    `${__dirname}/datastores/passthroughFunctionNoOnresponse.js`,
+    `${__dirname}/datastores/passthroughRunnerNoOnresponse.js`,
   );
   await passthrough.build();
   await client.upload(await passthrough.dbx.asBuffer());
@@ -204,9 +204,9 @@ export default new Datastore({
   ).resolves.toEqual([{ iAmRemote: true, echo: '123d' }]);
 });
 
-test('should be able to add upcharge to a function', async () => {
+test('should be able to add upcharge to a runner', async () => {
   Fs.writeFileSync(
-    `${__dirname}/datastores/passthroughFunctionUpcharge.js`,
+    `${__dirname}/datastores/passthroughRunnerUpcharge.js`,
     `
 const Datastore = require('@ulixee/datastore');
 const { boolean, string } = require('@ulixee/schema');
@@ -215,10 +215,10 @@ export default new Datastore({
   remoteDatastores: {
     source: 'ulx://${await miner.address}/${remoteVersionHash}',
   },
-  functions: {
-    pass: new Datastore.PassthroughFunction({
+  runners: {
+    pass: new Datastore.PassthroughRunner({
       upcharge: 400,
-      remoteFunction: 'source.remote',
+      remoteRunner: 'source.remote',
       async onResponse({ stream, Output }) {
         for await (const output of stream) {
            Output.emit({ ...output, addOn: 'phew '})
@@ -230,16 +230,16 @@ export default new Datastore({
   );
 
   const passthrough = new DatastorePackager(
-    `${__dirname}/datastores/passthroughFunctionUpcharge.js`,
+    `${__dirname}/datastores/passthroughRunnerUpcharge.js`,
   );
   await passthrough.build();
   await client.upload(await passthrough.dbx.asBuffer());
 
   const meta = await client.getMeta(passthrough.manifest.versionHash);
-  expect(meta.functionsByName.pass.minimumPrice).toBe(405);
+  expect(meta.runnersByName.pass.minimumPrice).toBe(405);
 });
 
-test('should be able to add charges from multiple functions', async () => {
+test('should be able to add charges from multiple runners', async () => {
   apiCalls.mockReset();
   holdAmounts.length = 0;
   const address1 = Address.createFromSigningIdentities([Identity.createSync()]);
@@ -253,8 +253,8 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   paymentAddress: '${address1.bech32}',
-  functions: {
-    source: new Datastore.Function({
+  runners: {
+    source: new Datastore.Runner({
       pricePerQuery: 6,
       run({ input, Output }) {
         const output = new Output();
@@ -273,7 +273,7 @@ export default new Datastore({
     await new DatastoreApiClient(await miner.address).upload(await dbx.dbx.asBuffer());
     versionHash = dbx.manifest.versionHash;
     expect(dbx.manifest.paymentAddress).toBeTruthy();
-    const price = await client.getFunctionPricing(versionHash, 'source');
+    const price = await client.getRunnerPricing(versionHash, 'source');
     expect(price.minimumPrice).toBe(6 + 5);
   }
 
@@ -289,10 +289,10 @@ export default new Datastore({
   remoteDatastores: {
     hop0: 'ulx://${await miner.address}/${versionHash}',
   },
-  functions: {
-    source2: new Datastore.PassthroughFunction({
+  runners: {
+    source2: new Datastore.PassthroughRunner({
       upcharge: 11,
-      remoteFunction: 'hop0.source',
+      remoteRunner: 'hop0.source',
       async onResponse({ stream, Output }) {
         for await (const output of stream) {
            Output.emit({ ...output, lastRun:'hop1', calls: output.calls +1 })
@@ -309,7 +309,7 @@ export default new Datastore({
     await dbx.build();
     await new DatastoreApiClient(await miner.address).upload(await dbx.dbx.asBuffer());
     versionHash = dbx.manifest.versionHash;
-    const price = await client.getFunctionPricing(versionHash, 'source2');
+    const price = await client.getRunnerPricing(versionHash, 'source2');
     expect(price.minimumPrice).toBe(6 + 5 + 11);
   }
 
@@ -324,10 +324,10 @@ export default new Datastore({
   remoteDatastores: {
     hop1: 'ulx://${await miner.address}/${versionHash}',
   },
-  functions: {
-    last: new Datastore.PassthroughFunction({
+  runners: {
+    last: new Datastore.PassthroughRunner({
       upcharge: 3,
-      remoteFunction: 'hop1.source2',
+      remoteRunner: 'hop1.source2',
       async onResponse({ stream, Output }) {
         for await (const output of stream) {
            Output.emit({ ...output, lastRun:'hop2', calls: output.calls +1 })
@@ -342,7 +342,7 @@ export default new Datastore({
   await lastHop.build();
   await client.upload(await lastHop.dbx.asBuffer());
 
-  const price = await client.getFunctionPricing(lastHop.manifest.versionHash, 'last');
+  const price = await client.getRunnerPricing(lastHop.manifest.versionHash, 'last');
   expect(price.minimumPrice).toBe(3 + 11 + 6 + 5);
 
   const clientIdentity = Identity.createSync();

@@ -1,18 +1,18 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import Datastore from './lib/Datastore';
-import FunctionContext from './lib/FunctionContext';
+import RunnerContext from './lib/RunnerContext';
 import { Observable } from './lib/ObjectObserver';
-import { FunctionPluginStatics } from './interfaces/IFunctionPluginStatics';
-import IFunctionContext from './interfaces/IFunctionContext';
-import IFunctionPlugin from './interfaces/IFunctionPlugin';
-import IFunctionComponents from './interfaces/IFunctionComponents';
-import IFunctionExecOptions from './interfaces/IFunctionExecOptions';
-import IFunctionSchema, { FunctionSchema } from './interfaces/IFunctionSchema';
+import { RunnerPluginStatics } from './interfaces/IRunnerPluginStatics';
+import IRunnerContext from './interfaces/IRunnerContext';
+import IRunnerPlugin from './interfaces/IRunnerPlugin';
+import IRunnerComponents from './interfaces/IRunnerComponents';
+import IRunnerExecOptions from './interfaces/IRunnerExecOptions';
+import IRunnerSchema, { RunnerSchema } from './interfaces/IRunnerSchema';
 import Table from './lib/Table';
 import ConnectionToDatastoreCore from './connections/ConnectionToDatastoreCore';
-import PassthroughFunction from './lib/PassthroughFunction';
+import PassthroughRunner from './lib/PassthroughRunner';
 import PassthroughTable from './lib/PassthroughTable';
-import Function from './lib/Function';
+import Runner from './lib/Runner';
 import Crawler from './lib/Crawler';
 import Autorun from './lib/utils/Autorun';
 
@@ -22,19 +22,19 @@ export {
   Table,
   Datastore,
   Observable,
-  FunctionSchema,
-  FunctionContext,
-  Function,
+  RunnerSchema,
+  RunnerContext,
+  Runner,
   Crawler,
   ConnectionToDatastoreCore,
-  PassthroughFunction,
+  PassthroughRunner,
   PassthroughTable,
-  IFunctionComponents,
-  IFunctionExecOptions,
-  IFunctionSchema,
-  FunctionPluginStatics,
-  IFunctionContext,
-  IFunctionPlugin,
+  IRunnerComponents,
+  IRunnerExecOptions,
+  IRunnerSchema,
+  RunnerPluginStatics,
+  IRunnerContext,
+  IRunnerPlugin,
 };
 
 Autorun.setupAutorunBeforeExitHook(require.main);

@@ -3,7 +3,7 @@ import { number, string } from '@ulixee/schema';
 import SqlParser from '../lib/Parser';
 
 test('support named args', () => {
-  const sqlParser = new SqlParser(`SELECT * FROM func(count => 0, success => 'yes')`);
+  const sqlParser = new SqlParser(`SELECT * FROM runner(count => 0, success => 'yes')`);
   const ast = sqlParser.ast as ISelectFromStatement;
   expect(ast.from[0].type).toBe('call');
   expect((ast.from[0] as any).args).toMatchObject([
@@ -21,7 +21,7 @@ test('support named args', () => {
 });
 
 test('support unnamed args', () => {
-  const sqlParser = new SqlParser(`SELECT * FROM func(0, 'yes')`);
+  const sqlParser = new SqlParser(`SELECT * FROM runner(0, 'yes')`);
   const ast = sqlParser.ast as ISelectFromStatement;
   expect(ast.from[0].type).toBe('call');
   expect((ast.from[0] as any).args).toMatchObject([
@@ -36,33 +36,33 @@ test('support unnamed args', () => {
   ]);
 });
 
-test('extractFunctionInput', () => {
-  const sqlParser = new SqlParser(`SELECT * FROM func(count => 0, success => 'yes')`);
+test('extractRunnerInput', () => {
+  const sqlParser = new SqlParser(`SELECT * FROM runner(count => 0, success => 'yes')`);
   const inputSchemas = {
-    func: {
+    runner: {
       count: number(),
       success: string(),
     }
   }
-  const inputs = sqlParser.extractFunctionInputs(inputSchemas, []);
+  const inputs = sqlParser.extractRunnerInputs(inputSchemas, []);
 
-  expect(inputs.func).toMatchObject({
+  expect(inputs.runner).toMatchObject({
     count: 0,
     success: 'yes',
   });
 });
 
-test('extractFunctionInput with boundValues', () => {
-  const sqlParser = new SqlParser(`SELECT * FROM func(count => $1, success => $2)`);
+test('extractRunnerInput with boundValues', () => {
+  const sqlParser = new SqlParser(`SELECT * FROM runner(count => $1, success => $2)`);
   const inputSchemas = {
-    func: {
+    runner: {
       count: number(),
       success: string(),
     }
   }
-  const inputs = sqlParser.extractFunctionInputs(inputSchemas, [0, 'yes']);
+  const inputs = sqlParser.extractRunnerInputs(inputSchemas, [0, 'yes']);
   
-  expect(inputs.func).toMatchObject({
+  expect(inputs.runner).toMatchObject({
     count: 0,
     success: 'yes',
   });

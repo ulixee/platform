@@ -22,15 +22,15 @@ export default async function cloneDatastore(
   const schemasByName: Record<string, { isTable: boolean; schemaJson: any }> = {};
   const imports = new Set<string>();
 
-  const passthroughFunctions = Object.entries(meta.functionsByName).map(([x, func]) => {
+  const passthroughRunners = Object.entries(meta.runnersByName).map(([x, runner]) => {
     let schemaLine = '';
-    imports.add('PassthroughFunction');
-    if (func.schemaJson) {
-      schemasByName[`${x}FunctionSchema`] = { isTable: false, schemaJson: func.schemaJson };
-      schemaLine = `\n  schema: ${x}FunctionSchema(),\n`;
+    imports.add('PassthroughRunner');
+    if (runner.schemaJson) {
+      schemasByName[`${x}RunnerSchema`] = { isTable: false, schemaJson: runner.schemaJson };
+      schemaLine = `\n  schema: ${x}RunnerSchema(),\n`;
     }
-    return `${x}: new PassthroughFunction({
-  remoteFunction: 'source.${x}',${schemaLine}
+    return `${x}: new PassthroughRunner({
+  remoteRunner: 'source.${x}',${schemaLine}
 })`;
   });
 
@@ -83,8 +83,8 @@ export default async function cloneDatastore(
     remoteDatastores: {
       source: "${url}",
     },${remoteCredits}
-    functions: {
-      ${passthroughFunctions}
+    runners: {
+      ${passthroughRunners}
     },
     tables: {
       ${passthroughTables}

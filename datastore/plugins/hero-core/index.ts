@@ -2,12 +2,12 @@ import HeroCore from '@ulixee/hero-core';
 import DatastoreCore from '@ulixee/datastore-core';
 import { ConnectionToHeroCore } from '@ulixee/hero';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
-import { IHeroFunctionExecOptions } from '@ulixee/datastore-plugins-hero';
-import IFunctionPluginCore from '@ulixee/datastore/interfaces/IFunctionPluginCore';
+import { IHeroRunnerExecOptions } from '@ulixee/datastore-plugins-hero';
+import IRunnerPluginCore from '@ulixee/datastore/interfaces/IRunnerPluginCore';
 
 const pkg = require('@ulixee/datastore-plugins-hero/package.json');
 
-export default class DatastoreForHeroPluginCore implements IFunctionPluginCore {
+export default class DatastoreForHeroPluginCore implements IRunnerPluginCore {
   public name = pkg.name;
   public version = pkg.version;
   public nodeVmRequireWhitelist = ['@ulixee/*'];
@@ -21,7 +21,7 @@ export default class DatastoreForHeroPluginCore implements IFunctionPluginCore {
     this.connectionToHeroCore = new ConnectionToHeroCore(bridge.transportToCore);
   }
 
-  public beforeExecFunction(options: IHeroFunctionExecOptions<unknown>): void {
+  public beforeExecRunner(options: IHeroRunnerExecOptions<unknown>): void {
     options.connectionToCore = this.connectionToHeroCore;
   }
 

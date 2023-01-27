@@ -1,12 +1,12 @@
-import Datastore, { Function } from '@ulixee/datastore';
-import { HeroFunctionPlugin } from '@ulixee/datastore-plugins-hero';
-import { testFunction } from './helper';
+import Datastore, { Runner } from '@ulixee/datastore';
+import { HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import { testRunner } from './helper';
 import { dateAdd, string } from '@ulixee/schema';
 
-const func = new Function(
+const runner = new Runner(
   {
     async run(context) {
-      const text = testFunction();
+      const text = testRunner();
       const { input, Output, Hero } = context;
 
       const hero = new Hero();
@@ -37,11 +37,11 @@ const func = new Function(
       inputExamples: [{ url: 'https://example.com', date: dateAdd(1, 'days') }],
     },
   },
-  HeroFunctionPlugin,
+  HeroRunnerPlugin,
 );
 
 export default new Datastore({
-  functions: {
-    default: func,
+  runners: {
+    default: runner,
   },
 });

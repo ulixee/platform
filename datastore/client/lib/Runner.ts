@@ -1,33 +1,33 @@
 import { SqlParser } from '@ulixee/sql-engine';
 import { parseEnvBool } from '@ulixee/commons/lib/envUtils';
 import { ExtractSchemaType } from '@ulixee/schema';
-import FunctionInternal from './FunctionInternal';
+import RunnerInternal from './RunnerInternal';
 import readCommandLineArgs from './utils/readCommandLineArgs';
-import { IFunctionPluginConstructor } from '../interfaces/IFunctionPluginStatics';
-import IFunctionContext from '../interfaces/IFunctionContext';
-import IFunctionSchema from '../interfaces/IFunctionSchema';
-import IFunctionExecOptions from '../interfaces/IFunctionExecOptions';
-import IFunctionComponents from '../interfaces/IFunctionComponents';
-import FunctionPlugins from './FunctionPlugins';
+import { IRunnerPluginConstructor } from '../interfaces/IRunnerPluginStatics';
+import IRunnerContext from '../interfaces/IRunnerContext';
+import IRunnerSchema from '../interfaces/IRunnerSchema';
+import IRunnerExecOptions from '../interfaces/IRunnerExecOptions';
+import IRunnerComponents from '../interfaces/IRunnerComponents';
+import RunnerPlugins from './RunnerPlugins';
 import DatastoreInternal from './DatastoreInternal';
 import ResultIterable from './ResultIterable';
 
 const disableColors = parseEnvBool(process.env.NODE_DISABLE_COLORS) ?? false;
 
-export default class Function<
-  TSchema extends IFunctionSchema = IFunctionSchema,
-  TPlugin1 extends IFunctionPluginConstructor<TSchema> = IFunctionPluginConstructor<TSchema>,
-  TPlugin2 extends IFunctionPluginConstructor<TSchema> = IFunctionPluginConstructor<TSchema>,
-  TPlugin3 extends IFunctionPluginConstructor<TSchema> = IFunctionPluginConstructor<TSchema>,
-  TContext extends IFunctionContext<TSchema> = IFunctionContext<TSchema> &
+export default class Runner<
+  TSchema extends IRunnerSchema = IRunnerSchema,
+  TPlugin1 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
+  TPlugin2 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
+  TPlugin3 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
+  TContext extends IRunnerContext<TSchema> = IRunnerContext<TSchema> &
     TPlugin1['contextAddons'] &
     TPlugin2['contextAddons'] &
     TPlugin3['contextAddons'],
   TOutput extends ExtractSchemaType<TSchema['output']> = ExtractSchemaType<TSchema['output']>,
-  TRunArgs extends IFunctionExecOptions<TSchema> &
+  TRunArgs extends IRunnerExecOptions<TSchema> &
     TPlugin1['execArgAddons'] &
     TPlugin2['execArgAddons'] &
-    TPlugin3['execArgAddons'] = IFunctionExecOptions<TSchema> &
+    TPlugin3['execArgAddons'] = IRunnerExecOptions<TSchema> &
     TPlugin1['execArgAddons'] &
     TPlugin2['execArgAddons'] &
     TPlugin3['execArgAddons'],
@@ -39,9 +39,9 @@ export default class Function<
   declare readonly schemaType: ExtractSchemaType<TSchema>;
   declare readonly runArgsType: TRunArgs;
 
-  public functionType = 'basic';
+  public runnerType = 'basic';
   public corePlugins: { [name: string]: string } = {};
-  public pluginClasses: IFunctionPluginConstructor<TSchema>[] = [];
+  public pluginClasses: IRunnerPluginConstructor<TSchema>[] = [];
   public disableAutorun: boolean;
   public successCount = 0;
   public errorCount = 0;
@@ -65,21 +65,21 @@ export default class Function<
 
   protected get datastoreInternal(): DatastoreInternal {
     if (!this.#datastoreInternal) {
-      this.#datastoreInternal = new DatastoreInternal({ functions: { [this.name]: this } });
-      this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryFunction.bind(this));
+      this.#datastoreInternal = new DatastoreInternal({ runners: { [this.name]: this } });
+      this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryRunner.bind(this));
     }
     return this.#datastoreInternal;
   }
 
-  protected readonly components: IFunctionComponents<TSchema, TContext> &
+  protected readonly components: IRunnerComponents<TSchema, TContext> &
     TPlugin1['componentAddons'] &
     TPlugin2['componentAddons'] &
     TPlugin3['componentAddons'];
 
   constructor(
     components: (
-      | IFunctionComponents<TSchema, TContext>
-      | IFunctionComponents<TSchema, TContext>['run']
+      | IRunnerComponents<TSchema, TContext>
+      | IRunnerComponents<TSchema, TContext>['run']
     ) &
       TPlugin1['componentAddons'] &
       TPlugin2['componentAddons'] &
@@ -116,18 +116,18 @@ export default class Function<
     const resultsIterable = new ResultIterable<TOutput>();
 
     (async () => {
-      const functionInternal = new FunctionInternal<TSchema>(options, this.components);
-      const plugins = new FunctionPlugins<TSchema, TContext>(this.components, this.pluginClasses);
+      const runnerInternal = new RunnerInternal<TSchema>(options, this.components);
+      const plugins = new RunnerPlugins<TSchema, TContext>(this.components, this.pluginClasses);
       try {
         this.#isRunning = true;
-        functionInternal.validateInput();
-        const context = await plugins.initialize(functionInternal, this.datastoreInternal);
+        runnerInternal.validateInput();
+        const context = await plugins.initialize(runnerInternal, this.datastoreInternal);
 
-        const functionResults = functionInternal.run(context);
+        const runnerResults = runnerInternal.run(context);
 
         let counter = 0;
-        for await (const output of functionResults) {
-          functionInternal.validateOutput(output, counter++);
+        for await (const output of runnerResults) {
+          runnerInternal.validateOutput(output, counter++);
           if (logOutputResult) {
             // eslint-disable-next-line no-console
             console.dir(output, { colors: !disableColors, depth: null, getters: false });
@@ -135,19 +135,19 @@ export default class Function<
           resultsIterable.push(output as TOutput);
         }
 
-        await plugins.setResolution(functionInternal.outputs);
+        await plugins.setResolution(runnerInternal.outputs);
         this.successCount++;
       } catch (error) {
         this.errorCount++;
-        error.stack = error.stack.split('at Function.runInternal').shift().trim();
+        error.stack = error.stack.split('at Runner.runInternal').shift().trim();
         await plugins.setResolution(null, error).catch(() => null);
         resultsIterable.reject(error);
       } finally {
-        await functionInternal.close();
+        await runnerInternal.close();
         this.#isRunning = false;
         resultsIterable.done();
       }
-    })().catch(err => console.error('Error streaming Function results', err));
+    })().catch(err => console.error('Error streaming Runner results', err));
     return resultsIterable;
   }
 
@@ -157,13 +157,13 @@ export default class Function<
     const datastoreInstanceId = this.datastoreInternal.instanceId;
     const datastoreVersionHash = this.datastoreInternal.manifest?.versionHash;
 
-    const sqlParser = new SqlParser(sql, { function: name });
+    const sqlParser = new SqlParser(sql, { runner: name });
     const schemas = { [name]: this.schema.input };
-    const inputsByFunction = sqlParser.extractFunctionInputs<TSchema['input']>(
+    const inputsByRunner = sqlParser.extractRunnerInputs<TSchema['input']>(
       schemas,
       boundValues,
     );
-    const input = inputsByFunction[name];
+    const input = inputsByRunner[name];
     const outputs: any[] = [];
 
     const results = await this.runInternal({ input } as TRunArgs);
@@ -179,28 +179,28 @@ export default class Function<
       datastoreVersionHash,
     };
     return await this.datastoreInternal.sendRequest({
-      command: 'Datastore.queryInternalFunctionResult',
+      command: 'Datastore.queryInternalRunnerResult',
       args: [args],
     });
   }
 
   public attachToDatastore(
     datastoreInternal: DatastoreInternal<any, any>,
-    functionName: string,
+    runnerName: string,
   ): void {
-    this.components.name = functionName;
+    this.components.name = runnerName;
     if (this.#datastoreInternal && this.#datastoreInternal === datastoreInternal) return;
     if (this.#datastoreInternal) {
-      throw new Error(`${functionName} Function is already attached to a Datastore`);
+      throw new Error(`${runnerName} Runner is already attached to a Datastore`);
     }
 
     this.#datastoreInternal = datastoreInternal;
     if (!datastoreInternal.manifest?.versionHash) {
-      this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryFunction.bind(this));
+      this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryRunner.bind(this));
     }
   }
 
-  private async createInMemoryFunction(): Promise<void> {
+  private async createInMemoryRunner(): Promise<void> {
     const datastoreInstanceId = this.datastoreInternal.instanceId;
     const name = this.components.name;
     const args = {
@@ -209,13 +209,13 @@ export default class Function<
       schema: this.components.schema,
     };
     await this.datastoreInternal.sendRequest({
-      command: 'Datastore.createInMemoryFunction',
+      command: 'Datastore.createInMemoryRunner',
       args: [args],
     });
   }
 
-  public static commandLineExec<T>(datastoreFunction: Function<any, any, any>): ResultIterable<T> {
+  public static commandLineExec<T>(datastoreRunner: Runner<any, any, any>): ResultIterable<T> {
     const options = readCommandLineArgs();
-    return datastoreFunction.runInternal(options, process.env.NODE_ENV !== 'test');
+    return datastoreRunner.runInternal(options, process.env.NODE_ENV !== 'test');
   }
 }

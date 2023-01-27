@@ -2,7 +2,7 @@ import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import { NodeVM, VMScript } from 'vm2';
 import { promises as Fs } from 'fs';
 import Datastore, { ConnectionToDatastoreCore } from '@ulixee/datastore';
-import Function from '@ulixee/datastore/lib/Function';
+import Runner from '@ulixee/datastore/lib/Runner';
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
@@ -35,9 +35,9 @@ export default class DatastoreVm {
     const script = await this.getVMScript(path, manifest);
 
     let datastore = this.getVm().run(script) as Datastore;
-    if (datastore instanceof Function) {
-      const func = datastore as Function;
-      datastore = new Datastore({ functions: { [func.name ?? 'default']: func } }) as Datastore;
+    if (datastore instanceof Runner) {
+      const runner = datastore as Runner;
+      datastore = new Datastore({ runners: { [runner.name ?? 'default']: runner } }) as Datastore;
     }
     if (!(datastore instanceof Datastore)) {
       throw new Error(

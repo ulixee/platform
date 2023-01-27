@@ -87,13 +87,13 @@ export default class DbxFile {
       name: name.charAt(0).toUpperCase() + name.slice(1),
       description: meta.description,
       createdAt: new Date().toISOString(),
-      functionsByName: Object.keys(meta.functionsByName).reduce((obj, n) => {
+      runnersByName: Object.keys(meta.runnersByName).reduce((obj, n) => {
         return Object.assign(obj, {
           [n]: {
             name: n,
-            description: meta.functionsByName[n].description || '',
-            schema: meta.functionsByName[n].schema,
-            prices: manifest.functionsByName[n].prices,
+            description: meta.runnersByName[n].description || '',
+            schema: meta.runnersByName[n].schema,
+            prices: manifest.runnersByName[n].prices,
           },
         });
       }, {}),

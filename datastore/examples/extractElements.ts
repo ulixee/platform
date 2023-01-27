@@ -1,6 +1,6 @@
 // NOTE: you must start your own Ulixee Miner to run this example.
 
-import { Crawler, Datastore, Function, HeroFunctionPlugin } from '@ulixee/datastore-plugins-hero';
+import { Crawler, Datastore, Runner, HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
 import { string } from '@ulixee/schema';
 
 const crawl = new Crawler(
@@ -20,15 +20,15 @@ const crawl = new Crawler(
       },
     },
   },
-  HeroFunctionPlugin,
+  HeroRunnerPlugin,
 );
 
 const datastore = new Datastore({
   crawlers: {
     crawl,
   },
-  functions: {
-    extract: new Function(async ({ HeroReplay, Output }) => {
+  runners: {
+    extract: new Runner(async ({ HeroReplay, Output }) => {
       const heroReplay = await HeroReplay.fromCrawler(crawl, {
         input: {
           url: 'https://ulixee.org',
@@ -41,7 +41,7 @@ const datastore = new Datastore({
       const divs = h1.querySelectorAll('div');
       output.divs = { count: divs.length, textLengths: [...divs].map(x => x.textContent.length) };
       console.log(output);
-    }, HeroFunctionPlugin),
+    }, HeroRunnerPlugin),
   },
 });
 

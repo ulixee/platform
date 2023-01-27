@@ -86,45 +86,45 @@ export default class DatastorePackager {
       throw new Error('Datastore must specify a coreVersion');
     }
 
-    const functionsByName: IDatastoreManifest['functionsByName'] = {};
+    const runnersByName: IDatastoreManifest['runnersByName'] = {};
     const tablesByName: IDatastoreManifest['tablesByName'] = {};
     const schemaInterface: {
       tables: Record<string, ISchemaAny>;
-      functions: Record<string, ISchemaAny>;
-    } = { tables: {}, functions: {} };
+      runners: Record<string, ISchemaAny>;
+    } = { tables: {}, runners: {} };
 
-    if (this.meta.functionsByName) {
-      for (const [name, functionMeta] of Object.entries(this.meta.functionsByName)) {
-        const { schema, pricePerQuery, minimumPrice, corePlugins } = functionMeta;
+    if (this.meta.runnersByName) {
+      for (const [name, runnerMeta] of Object.entries(this.meta.runnersByName)) {
+        const { schema, pricePerQuery, minimumPrice, corePlugins } = runnerMeta;
         if (schema) {
           const fields = filterUndefined({
             input: schemaFromJson(schema?.input),
             output: schemaFromJson(schema?.output),
           });
           if (Object.keys(fields).length) {
-            schemaInterface.functions[name] = object(fields);
+            schemaInterface.runners[name] = object(fields);
           }
         }
 
-        functionsByName[name] = {
+        runnersByName[name] = {
           corePlugins,
           prices: [
             {
               perQuery: pricePerQuery ?? 0,
               minimum: minimumPrice ?? pricePerQuery ?? 0,
-              addOns: functionMeta.addOnPricing,
+              addOns: runnerMeta.addOnPricing,
             },
           ],
           schemaAsJson: schema,
         };
 
         // lookup upstream pricing
-        if (functionMeta.remoteFunction) {
-          const functionDetails = await this.lookupRemoteDatastoreFunctionPricing(
+        if (runnerMeta.remoteRunner) {
+          const runnerDetails = await this.lookupRemoteDatastoreRunnerPricing(
             this.meta,
-            functionMeta,
+            runnerMeta,
           );
-          functionsByName[name].prices.push(...functionDetails.priceBreakdown);
+          runnersByName[name].prices.push(...runnerDetails.priceBreakdown);
         }
       }
     }
@@ -160,7 +160,7 @@ export default class DatastorePackager {
       scriptVersionHash,
       Date.now(),
       interfaceString,
-      functionsByName,
+      runnersByName,
       tablesByName,
       this.meta,
       this.logToConsole ? console.log : undefined,
@@ -173,15 +173,15 @@ export default class DatastorePackager {
     return this.manifest;
   }
 
-  protected async lookupRemoteDatastoreFunctionPricing(
+  protected async lookupRemoteDatastoreRunnerPricing(
     meta: IFetchMetaResponseData,
-    func: IFetchMetaResponseData['functionsByName'][0],
-  ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['functionsByName'][0]> {
-    const functionName = func.remoteFunction;
-    const url = meta.remoteDatastores[func.remoteSource];
+    runner: IFetchMetaResponseData['runnersByName'][0],
+  ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['runnersByName'][0]> {
+    const runnerName = runner.remoteRunner;
+    const url = meta.remoteDatastores[runner.remoteSource];
     if (!url)
       throw new Error(
-        `The remoteDatastore could not be found for the key - ${func.remoteFunction}. It should be defined in remoteDatastores on your Datastore.`,
+        `The remoteDatastore could not be found for the key - ${runner.remoteRunner}. It should be defined in remoteDatastores on your Datastore.`,
       );
 
     let remoteUrl: URL;
@@ -189,7 +189,7 @@ export default class DatastorePackager {
       remoteUrl = new URL(url);
     } catch (err) {
       throw new Error(
-        `The remoteDatastore url for "${func.remoteFunction}" is not a valid url (${url})`,
+        `The remoteDatastore url for "${runner.remoteRunner}" is not a valid url (${url})`,
       );
     }
 
@@ -199,14 +199,14 @@ export default class DatastorePackager {
     const remoteMeta = {
       host: remoteUrl.host,
       datastoreVersionHash,
-      functionName,
+      runnerName,
     };
     const datastoreApiClient = new DatastoreApiClient(remoteUrl.host, this.logToConsole);
     try {
       const upstreamMeta = await datastoreApiClient.getMeta(datastoreVersionHash);
-      const remoteFunctionDetails = upstreamMeta.functionsByName[functionName];
-      remoteFunctionDetails.priceBreakdown[0].remoteMeta = remoteMeta;
-      return remoteFunctionDetails;
+      const remoteRunnerDetails = upstreamMeta.runnersByName[runnerName];
+      remoteRunnerDetails.priceBreakdown[0].remoteMeta = remoteMeta;
+      return remoteRunnerDetails;
     } catch (error) {
       console.error('ERROR loading remote datastore pricing', remoteMeta, error);
       throw error;

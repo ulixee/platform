@@ -1,13 +1,13 @@
-import Datastore, { Function } from '@ulixee/datastore';
-import { HeroFunctionPlugin } from '@ulixee/datastore-plugins-hero';
-import { testFunction } from './helper';
+import Datastore, { Runner } from '@ulixee/datastore';
+import { HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import { testRunner } from './helper';
 
 export default new Datastore({
-  functions: {
-    default: new Function(
+  runners: {
+    default: new Runner(
       {
         async run(ctx) {
-          const text = testFunction();
+          const text = testRunner();
           const { input, Output, Hero } = ctx;
           const hero = new Hero();
           await hero.goto('https://example.org');
@@ -21,7 +21,7 @@ export default new Datastore({
           await hero.close();
         },
       },
-      HeroFunctionPlugin,
+      HeroRunnerPlugin,
     ),
   },
 });

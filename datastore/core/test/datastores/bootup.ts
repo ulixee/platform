@@ -1,10 +1,10 @@
 import { boolean } from '@ulixee/schema';
-import Datastore, { Function } from '@ulixee/datastore';
+import Datastore, { Runner } from '@ulixee/datastore';
 
 module.exports = new Datastore({
   domain: 'bootup-datastore.com',
-  functions: {
-    bootup: new Function({
+  runners: {
+    bootup: new Runner({
       run({ Output }) {
         const output = new Output();
         output.success = true;

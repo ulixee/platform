@@ -29,7 +29,7 @@ test('query datastore table', async () => {
   ]);
 }, 30e3);
 
-test('query datastore function', async () => {
+test('query datastore runner', async () => {
   const records = await directDatastore.queryInternal('SELECT * FROM test(shouldTest => true)');
   expect(records).toMatchObject([
     {
@@ -39,7 +39,7 @@ test('query datastore function', async () => {
   ]);
 }, 30e3);
 
-test('query specific fields on function', async () => {
+test('query specific fields on runner', async () => {
   const records = await directDatastore.queryInternal('SELECT greeting FROM test(shouldTest => true)');
   expect(records).toMatchObject([
     {
@@ -48,7 +48,7 @@ test('query specific fields on function', async () => {
   ]);
 }, 30e3);
 
-test('left join table on functions', async () => {
+test('left join table on runners', async () => {
   const sql = `SELECT greeting, firstName FROM test(shouldTest => true) LEFT JOIN testers ON testers.isTester=test.shouldTest`;
   const records = await directDatastore.queryInternal(sql);
   expect(records).toMatchObject([

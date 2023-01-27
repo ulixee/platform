@@ -4,10 +4,10 @@ import DateSchema from '@ulixee/schema/lib/DateSchema';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import { SqlGenerator } from '@ulixee/sql-engine';
 import moment = require('moment');
-import Function from './Function';
-import IFunctionSchema, { ISchemaRecordType } from '../interfaces/IFunctionSchema';
-import { IFunctionPluginConstructor } from '../interfaces/IFunctionPluginStatics';
-import IFunctionContext from '../interfaces/IFunctionContext';
+import Runner from './Runner';
+import IRunnerSchema, { ISchemaRecordType } from '../interfaces/IRunnerSchema';
+import { IRunnerPluginConstructor } from '../interfaces/IRunnerPluginStatics';
+import IRunnerContext from '../interfaces/IRunnerContext';
 import ICrawlerComponents from '../interfaces/ICrawlerComponents';
 import ICrawlerOutputSchema, { CrawlerOutputSchema } from '../interfaces/ICrawlerOutputSchema';
 import Table from './Table';
@@ -15,30 +15,30 @@ import DatastoreInternal from './DatastoreInternal';
 
 export default class Crawler<
   TDisableCache extends boolean = false,
-  TProvidedSchema extends IFunctionSchema<unknown, never> = IFunctionSchema<unknown, never>,
+  TProvidedSchema extends IRunnerSchema<unknown, never> = IRunnerSchema<unknown, never>,
   TFinalInput extends ISchemaRecordType<any> = TDisableCache extends true
     ? TProvidedSchema['input']
     : TProvidedSchema extends { input: Record<string, ISchemaAny> }
     ? typeof CrawlerInputSchema & TProvidedSchema['input']
     : typeof CrawlerInputSchema & Record<string, ISchemaAny>,
-  TSchema extends IFunctionSchema<TFinalInput, typeof CrawlerOutputSchema> = IFunctionSchema<
+  TSchema extends IRunnerSchema<TFinalInput, typeof CrawlerOutputSchema> = IRunnerSchema<
     TFinalInput,
     typeof CrawlerOutputSchema
   >,
-  TPlugin1 extends IFunctionPluginConstructor<TSchema> = IFunctionPluginConstructor<TSchema>,
-  TPlugin2 extends IFunctionPluginConstructor<TSchema> = IFunctionPluginConstructor<TSchema>,
-  TPlugin3 extends IFunctionPluginConstructor<TSchema> = IFunctionPluginConstructor<TSchema>,
-  TContext extends Omit<IFunctionContext<TSchema>, 'Output' | 'outputs'> &
+  TPlugin1 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
+  TPlugin2 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
+  TPlugin3 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
+  TContext extends Omit<IRunnerContext<TSchema>, 'Output' | 'outputs'> &
     TPlugin1['contextAddons'] &
     TPlugin2['contextAddons'] &
-    TPlugin3['contextAddons'] = Omit<IFunctionContext<TSchema>, 'Output' | 'outputs'> &
+    TPlugin3['contextAddons'] = Omit<IRunnerContext<TSchema>, 'Output' | 'outputs'> &
     TPlugin1['contextAddons'] &
     TPlugin2['contextAddons'] &
     TPlugin3['contextAddons'],
-> extends Function<TSchema, TPlugin1, TPlugin2, TPlugin3, TContext> {
+> extends Runner<TSchema, TPlugin1, TPlugin2, TPlugin3, TContext> {
   public static defaultMaxTimeInCache = 10 * 60e3;
 
-  public override functionType = 'crawler';
+  public override runnerType = 'crawler';
   public cache?: Table<{
     input: StringSchema<false>;
     sessionId: StringSchema<false>;
@@ -71,13 +71,13 @@ export default class Crawler<
 
   public override attachToDatastore(
     datastoreInternal: DatastoreInternal<any, any>,
-    functionName: string,
+    runnerName: string,
   ): void {
-    super.attachToDatastore(datastoreInternal, functionName);
+    super.attachToDatastore(datastoreInternal, runnerName);
     if (!this.crawlerComponents.disableCache) {
       this.cache = new Table({
         isPublic: false,
-        name: `crawler_cache_${functionName}`,
+        name: `crawler_cache_${runnerName}`,
         schema: {
           input: string({ description: 'Typeserialized json of the inputs' }),
           sessionId: string({
@@ -97,7 +97,7 @@ export default class Crawler<
     context: TContext,
   ): Promise<void> {
     const { outputs, Output, datastoreMetadata, input, schema, ...rest } =
-      context as IFunctionContext<TSchema>;
+      context as IRunnerContext<TSchema>;
     const cached = await this.findCached(input as TContext['input']);
     if (cached) {
       Output.emit(cached as any);

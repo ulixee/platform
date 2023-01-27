@@ -54,18 +54,18 @@ export default class DatastoreApiClient {
     });
   }
 
-  public async getFunctionPricing<
+  public async getRunnerPricing<
     IVersionHash extends keyof ITypes & string = any,
-    IFunctionName extends keyof ITypes[IVersionHash]['functions'] & string = 'default',
+    IRunnerName extends keyof ITypes[IVersionHash]['runners'] & string = 'default',
   >(
     versionHash: IVersionHash,
-    functionName: IFunctionName,
+    runnerName: IRunnerName,
   ): Promise<
-    Omit<IDatastoreApiTypes['Datastore.meta']['result']['functionsByName'][IFunctionName], 'name'> &
+    Omit<IDatastoreApiTypes['Datastore.meta']['result']['runnersByName'][IRunnerName], 'name'> &
       Pick<IDatastoreApiTypes['Datastore.meta']['result'], 'computePricePerQuery'>
   > {
     const meta = await this.getMeta(versionHash);
-    const stats = meta.functionsByName[functionName];
+    const stats = meta.runnersByName[runnerName];
 
     return {
       ...stats,
@@ -79,7 +79,7 @@ export default class DatastoreApiClient {
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
     const meta = await this.getMeta(versionHash);
 
-    if (meta.functionsByName && meta.schemaInterface) {
+    if (meta.runnersByName && meta.schemaInterface) {
       installDatastoreSchema(meta.schemaInterface, versionHash);
     }
     if (alias) {
@@ -95,8 +95,8 @@ export default class DatastoreApiClient {
   public stream<
     IO extends IItemInputOutput,
     IVersionHash extends keyof ITypes & string = any,
-    IItemName extends keyof ITypes[IVersionHash]['functions'] & string = string,
-    ISchemaDbx extends ITypes[IVersionHash]['functions'][IItemName] = IO,
+    IItemName extends keyof ITypes[IVersionHash]['runners'] & string = string,
+    ISchemaDbx extends ITypes[IVersionHash]['runners'][IItemName] = IO,
   >(
     versionHash: IVersionHash,
     name: IItemName,
@@ -261,7 +261,7 @@ export default class DatastoreApiClient {
     datastoreVersionHash: string,
     adminIdentity: Identity,
     adminFunction: {
-      ownerType: 'datastore' | 'crawler' | 'function' | 'table';
+      ownerType: 'datastore' | 'crawler' | 'runner' | 'table';
       ownerName: string;
       functionName: string;
     },
@@ -288,8 +288,8 @@ export default class DatastoreApiClient {
   protected onEvent<T extends keyof IDatastoreEvents>(
     event: ICoreEventPayload<IDatastoreEvents, T>,
   ): void {
-    if (event.eventType === 'FunctionStream.output') {
-      const data = event.data as IDatastoreEvents['FunctionStream.output'];
+    if (event.eventType === 'RunnerStream.output') {
+      const data = event.data as IDatastoreEvents['RunnerStream.output'];
       this.activeIterableByStreamId.get(event.listenerId)?.push(data);
     }
   }

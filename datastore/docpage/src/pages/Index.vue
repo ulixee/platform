@@ -81,17 +81,17 @@
           </div>
         </section>
 
-        <section v-if="functions.length" id="functions">
-          <h2 class="text-2xl font-bold">Functions</h2>
-          <div v-for="func of functions" class="mt-3">
-            <h3 class="text-xl font-bold">{{ func.name }}</h3>
-            {{ func.description }}
+        <section v-if="runners.length" id="runners">
+          <h2 class="text-2xl font-bold">Runners</h2>
+          <div v-for="runner of runners" class="mt-3">
+            <h3 class="text-xl font-bold">{{ runner.name }}</h3>
+            {{ runner.description }}
 
             <div class="mt-2 font-bold">Input Params</div>
-            <Fields :schema="func.schema.input" />
+            <Fields :schema="runner.schema.input" />
 
             <div class="mt-2 font-bold">Output Fields</div>
-            <Fields :schema="func.schema.output" />
+            <Fields :schema="runner.schema.output" />
           </div>
         </section>
 
@@ -122,7 +122,7 @@
         <div class="mt-5 font-bold">Table of Contents</div>
         <ul>
           <li v-if="tables.length"><a href="#tables">Tables</a></li>
-          <li v-if="functions.length"><a href="#functions">Functions</a></li>
+          <li v-if="runners.length"><a href="#runners">Runners</a></li>
           <li v-if="crawlers.length"><a href="#crawlers">Crawlers</a></li>
         </ul>
       </div>
@@ -146,11 +146,11 @@ export default Vue.defineComponent({
     Navbar,
   },
   setup() {
-    const { tablesByName, functionsByName, crawlersByName } = config as any;
+    const { tablesByName, runnersByName, crawlersByName } = config as any;
     const prices: number[] = [];
-    for (const func of Object.values(functionsByName) as any[]) {
+    for (const runner of Object.values(runnersByName) as any[]) {
       let total = 0;
-      for (const price of func.prices) total += price.perQuery;
+      for (const price of runner.prices) total += price.perQuery;
       prices.push(total)
     }
 
@@ -163,7 +163,7 @@ export default Vue.defineComponent({
       createdAt,
       lastUsedAt,
       tables: Object.values(tablesByName || {}),
-      functions: Object.values(functionsByName || {}),
+      runners: Object.values(runnersByName || {}),
       crawlers: Object.values(crawlersByName || {}),
       fields: [
         {

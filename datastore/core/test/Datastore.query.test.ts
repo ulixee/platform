@@ -14,8 +14,8 @@ beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/query.dbx`)) {
     Fs.unlinkSync(`${__dirname}/datastores/query.dbx`);
   }
-  if (Fs.existsSync(`${__dirname}/datastores/directFunction.dbx`)) {
-    Fs.unlinkSync(`${__dirname}/datastores/directFunction.dbx`);
+  if (Fs.existsSync(`${__dirname}/datastores/directRunner.dbx`)) {
+    Fs.unlinkSync(`${__dirname}/datastores/directRunner.dbx`);
   }
 
   miner = new UlixeeMiner();
@@ -29,7 +29,7 @@ afterAll(async () => {
   if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
 });
 
-test('should be able to query a datastore function', async () => {
+test('should be able to query a datastore runner', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/query.js`);
   await packager.build();
   await client.upload(await packager.dbx.asBuffer());
@@ -66,7 +66,7 @@ test('should be able to require authentication for a datastore', async () => {
 });
 
 test('should be able to query a function packaged without a datastore', async () => {
-  const packager = new DatastorePackager(`${__dirname}/datastores/directFunction.js`);
+  const packager = new DatastorePackager(`${__dirname}/datastores/directRunner.js`);
   await packager.build();
   await client.upload(await packager.dbx.asBuffer());
   await expect(

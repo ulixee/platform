@@ -1,6 +1,6 @@
 # Configuration
 
-Datastores are dynamically configurable via a command line, and each Datastore Function allows you to define default configurations if none are provided (schemas can define default inputs, Plugins can add default configurations (eg, HeroFunctionPlugin adds `defaultHeroOptions` to a Function constructor).
+Datastores are dynamically configurable via a command line, and each Datastore Runner allows you to define default configurations if none are provided (schemas can define default inputs, Plugins can add default configurations (eg, HeroRunnerPlugin adds `defaultHeroOptions` to a Runner constructor).
 
 Command line variables are parsed using [yargs-parser](https://github.com/yargs/yargs-parser). Variables containing a '.' will be converted into objects, and dashes are camel-cased.
 
@@ -53,7 +53,7 @@ The server environment a Datastore runs in will alter a few default settings. Cu
 Datastore Core installs some administrative features for built-in Datastores. This currently includes things like:
 
 - [Credits](../advanced/credits.md): issuing trial credits to consumers of your Datastore(s). An Admin Identity is required to create new Credits.
-- Access for an Admin to run private javascript functions on [Tables](../basics/table.md), [Functions](../basics/function.md) and [Crawlers](../basics/crawler.md).
+- Access for an Admin to run private javascript functions on [Tables](../basics/table.md), [Runners](../basics/function.md) and [Crawlers](../basics/crawler.md).
 - Ability to "upload" packaged Datastores to a live server in `production` [mode](#env).
 
 #### Environment Variable

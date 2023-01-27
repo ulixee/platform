@@ -1,15 +1,15 @@
 # Output
 
-Output is an object used to create a "result" for your Datastore Function.
+Output is an object used to create a "result" for your Datastore Runner.
 
 It's a specialized object because it allows Datastore to observe an object that you attach to the output. All changes will be recorded as you modify the object. You can optionally `emit()` an Output instance, which will stream the individual record to any callers.
 
-If you do not manually call `emit()`, all created Output instances will be emitted when the `Function.run` callback completes.
+If you do not manually call `emit()`, all created Output instances will be emitted when the `Runner.run` callback completes.
 
 ```js
-import { Function, HeroFunctionPlugin } from '@ulixee/datastore-plugins-hero';
+import { Runner, HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
 
-const func = new Function(async ctx => {
+const runner = new Runner(async ctx => {
   const { Output, Hero } = ctx;
   
   const links = [
@@ -31,11 +31,11 @@ const func = new Function(async ctx => {
       output.emit();
     }
   }
-}, HeroFunctionPlugin);
+}, HeroRunnerPlugin);
 
 (async () => {
   // Records can be consumed as they are emitted
-  for await (const output of func.runInternal()) {
+  for await (const output of runner.runInternal()) {
     console.log(output, new Date());
   }
 })();
@@ -52,14 +52,14 @@ Instance method to freeze the output and immediately emit the record to any call
 Static method to emit contents without constructing a new Output record.
 
 ```js
-import { Function } from '@ulixee/datastore';
+import { Runner } from '@ulixee/datastore';
 
-new Function(async context => {
+new Runner(async context => {
   const { input, Output, Hero } = context;
   const hero = new Hero();
   await hero.goto('https://example.org');
   Output.emit({ text: `I went to example.org. Your input was: ${input.name}` });
-}, HeroFunctionPlugin);
+}, HeroRunnerPlugin);
 ```
 
 ## Gotchas
@@ -69,9 +69,9 @@ new Function(async context => {
 You cannot "re-assign" the output variable and have it be observed. You should instead use `Object.assign(output, yourVariables)` to assign them onto the output object, or set properties individually.
 
 ```js
-import { Function } from '@ulixee/datastore';
+import { Runner } from '@ulixee/datastore';
 
-export default new Function(async ctx => {
+export default new Runner(async ctx => {
   let { Output } = ctx;
 
   let output = new Output();
@@ -89,9 +89,9 @@ export default new Function(async ctx => {
 Any object you assign into Output is "copied" into the Output object. To create an object that will be tracked through the process of attaching it to output, you can use the `Observable` class.
 
 ```js
-import { Observable, Function } from '@ulixee/datastore';
+import { Observable, Runner } from '@ulixee/datastore';
 
-export default new Function(async ctx => {
+export default new Runner(async ctx => {
   const { Output } = ctx;
 
   let result = Observable({});
@@ -105,9 +105,9 @@ export default new Function(async ctx => {
 If you do not use `Observable` or re-retrieve your object, you should NOT expect further changes to the source object to be saved.
 
 ```js
-import { Function } from '@ulixee/datastore';
+import { Runner } from '@ulixee/datastore';
 
-export default new Function(async ctx => {
+export default new Runner(async ctx => {
   const { Output } = datastore;
 
   let result = {};

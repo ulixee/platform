@@ -1,25 +1,25 @@
-import IFunctionComponents from './IFunctionComponents';
+import IRunnerComponents from './IRunnerComponents';
 import ITableComponents from './ITableComponents';
 import IDatastoreComponents from './IDatastoreComponents';
 
 export default interface IDatastoreMetadata
   extends Omit<
     IDatastoreComponents<any, any, any>,
-    'authenticateIdentity' | 'crawlers' | 'functions' | 'tables'
+    'authenticateIdentity' | 'crawlers' | 'runners' | 'tables'
   > {
   coreVersion: string;
-  functionsByName: {
+  runnersByName: {
     [name: string]: {
       corePlugins: { [name: string]: string };
-      remoteFunction?: string;
+      remoteRunner?: string;
       remoteSource?: string;
       remoteDatastoreVersionHash?: string;
-    } & Omit<IFunctionComponents<any, any>, 'run'>;
+    } & Omit<IRunnerComponents<any, any>, 'run'>;
   };
   crawlersByName: {
     [name: string]: {
       corePlugins: { [name: string]: string };
-    } & Omit<IFunctionComponents<any, any>, 'run'>;
+    } & Omit<IRunnerComponents<any, any>, 'run'>;
   };
   tablesByName: {
     [name: string]: {

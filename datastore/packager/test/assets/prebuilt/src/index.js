@@ -4,8 +4,8 @@ const datastore = require('@ulixee/datastore');
 const datastore_for_hero_1 = require('@ulixee/datastore-plugins-hero');
 const helper_1 = require('./helper');
 exports.default = new datastore.default({
-  functions: {
-    default: new datastore_for_hero_1.Function(
+  runners: {
+    default: new datastore_for_hero_1.Runner(
       {
         defaults: {
           input: {
@@ -13,7 +13,7 @@ exports.default = new datastore.default({
           },
         },
         async run(ctx) {
-          const text = (0, helper_1.testFunction)();
+          const text = (0, helper_1.testRunner)();
           const { input, Output, Hero } = ctx;
           const hero = new Hero();
           await hero.goto(input.url);
@@ -26,7 +26,7 @@ exports.default = new datastore.default({
           await hero.close();
         },
       },
-      datastore_for_hero_1.HeroFunctionPlugin,
+      datastore_for_hero_1.HeroRunnerPlugin,
     ),
   },
 });

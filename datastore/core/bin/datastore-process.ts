@@ -1,5 +1,5 @@
 import Datastore from '@ulixee/datastore';
-import Function from '@ulixee/datastore/lib/Function';
+import Runner from '@ulixee/datastore/lib/Runner';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import { IFetchMetaResponseData, IMessage, IResponse } from '../interfaces/ILocalDatastoreProcess';
 import { DatastoreNotFoundError } from '../lib/errors';
@@ -24,10 +24,10 @@ process.on('message', async (messageJson: string) => {
     if (message.action === 'fetchMeta') {
       let datastore = requireDatastore(message.scriptPath);
       // wrap function in a default datastore
-      if (datastore instanceof Function) {
-        const functionName = datastore.name ?? 'default';
+      if (datastore instanceof Runner) {
+        const runnerName = datastore.name ?? 'default';
         datastore = new Datastore({
-          functions: { [functionName]: datastore },
+          runners: { [runnerName]: datastore },
           tables: {},
         }) as Datastore;
       }
@@ -50,16 +50,16 @@ process.on('message', async (messageJson: string) => {
     if (message.action === 'run') {
       const datastore = requireDatastore(message.scriptPath);
 
-      if (!datastore.functions[message.functionName]) {
+      if (!datastore.runners[message.runnerName]) {
         return sendToParent({
           responseId: message.messageId,
           data: new DatastoreNotFoundError(
-            `Database function "${message.functionName}" not found.`,
+            `Database function "${message.runnerName}" not found.`,
           ),
         });
       }
 
-      const iterator = datastore.functions[message.functionName].runInternal(message.functionName, message.input);
+      const iterator = datastore.runners[message.runnerName].runInternal(message.runnerName, message.input);
       for await (const output of iterator) {
         sendToParent({
           responseId: null,

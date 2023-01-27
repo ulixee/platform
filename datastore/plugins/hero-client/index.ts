@@ -2,24 +2,24 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import Hero, { HeroReplay, IHeroCreateOptions, IHeroReplayCreateOptions } from '@ulixee/hero';
 import ICoreSession, { IOutputChangeToRecord } from '@ulixee/hero/interfaces/ICoreSession';
-import FunctionInternal from '@ulixee/datastore/lib/FunctionInternal';
+import RunnerInternal from '@ulixee/datastore/lib/RunnerInternal';
 import { InternalPropertiesSymbol } from '@ulixee/hero/lib/internal';
-import IFunctionSchema from '@ulixee/datastore/interfaces/IFunctionSchema';
+import IRunnerSchema from '@ulixee/datastore/interfaces/IRunnerSchema';
 import IObservableChange from '@ulixee/datastore/interfaces/IObservableChange';
 import {
   Crawler,
-  FunctionPluginStatics,
-  IFunctionComponents,
-  IFunctionExecOptions,
+  RunnerPluginStatics,
+  IRunnerComponents,
+  IRunnerExecOptions,
 } from '@ulixee/datastore';
-import IFunctionContextBase from '@ulixee/datastore/interfaces/IFunctionContext';
+import IRunnerContextBase from '@ulixee/datastore/interfaces/IRunnerContext';
 import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSchema';
 
 export * from '@ulixee/datastore';
 
 const pkg = require('./package.json');
 
-export type IHeroFunctionExecOptions<ISchema> = IFunctionExecOptions<ISchema> & IHeroCreateOptions;
+export type IHeroRunnerExecOptions<ISchema> = IRunnerExecOptions<ISchema> & IHeroCreateOptions;
 
 declare module '@ulixee/hero/lib/extendables' {
   interface Hero {
@@ -32,18 +32,18 @@ export type HeroReplayCrawler = typeof HeroReplay & {
   fromCrawler<T extends Crawler>(crawler: T, options?: T['runArgsType']): Promise<HeroReplay>;
 };
 
-export type IHeroFunctionContext<ISchema> = IFunctionContextBase<ISchema> & {
+export type IHeroRunnerContext<ISchema> = IRunnerContextBase<ISchema> & {
   Hero: typeof Hero;
   HeroReplay: HeroReplayCrawler;
 };
 
-export type IHeroFunctionComponents<ISchema> = IFunctionComponents<
+export type IHeroRunnerComponents<ISchema> = IRunnerComponents<
   ISchema,
-  IHeroFunctionContext<ISchema>
+  IHeroRunnerContext<ISchema>
 >;
 
-@FunctionPluginStatics
-export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
+@RunnerPluginStatics
+export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
   public static execArgAddons: IHeroCreateOptions;
   public static contextAddons: {
     Hero: typeof Hero;
@@ -55,27 +55,27 @@ export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
   public hero: Hero;
   public heroReplays = new Set<HeroReplay>();
 
-  public functionInternal: FunctionInternal<ISchema, IHeroFunctionExecOptions<ISchema>>;
-  public execOptions: IHeroFunctionExecOptions<ISchema>;
-  public components: IHeroFunctionComponents<ISchema>;
+  public runnerInternal: RunnerInternal<ISchema, IHeroRunnerExecOptions<ISchema>>;
+  public execOptions: IHeroRunnerExecOptions<ISchema>;
+  public components: IHeroRunnerComponents<ISchema>;
 
   private pendingOutputs: IOutputChangeToRecord[] = [];
   private pendingUploadPromises = new Set<Promise<void>>();
   private coreSessionPromise: Promise<ICoreSession>;
 
-  constructor(components: IHeroFunctionComponents<ISchema>) {
+  constructor(components: IHeroRunnerComponents<ISchema>) {
     this.components = components;
     this.uploadOutputs = this.uploadOutputs.bind(this);
   }
 
   public async run(
-    functionInternal: FunctionInternal<ISchema, IHeroFunctionExecOptions<ISchema>>,
-    context: IHeroFunctionContext<ISchema>,
-    next: () => Promise<IHeroFunctionContext<ISchema>['outputs']>,
+    runnerInternal: RunnerInternal<ISchema, IHeroRunnerExecOptions<ISchema>>,
+    context: IHeroRunnerContext<ISchema>,
+    next: () => Promise<IHeroRunnerContext<ISchema>['outputs']>,
   ): Promise<void> {
-    this.execOptions = functionInternal.options;
-    this.functionInternal = functionInternal;
-    this.functionInternal.onOutputChanges = this.onOutputChanged.bind(this);
+    this.execOptions = runnerInternal.options;
+    this.runnerInternal = runnerInternal;
+    this.runnerInternal.onOutputChanges = this.onOutputChanged.bind(this);
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const container = this;
@@ -88,11 +88,11 @@ export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
         authentication,
         isFromCommandLine,
         ...heroApplicableOptions
-      } = functionInternal.options as IFunctionExecOptions<ISchema>;
+      } = runnerInternal.options as IRunnerExecOptions<ISchema>;
 
       const heroOptions: IHeroCreateOptions = {
         ...heroApplicableOptions,
-        input: this.functionInternal.input,
+        input: this.runnerInternal.input,
       };
 
       const HeroBase = Hero;
@@ -100,7 +100,7 @@ export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
       context.Hero = class Hero extends HeroBase {
         constructor(options: IHeroCreateOptions = {}) {
           if (container.hero) {
-            throw new Error('Multiple Hero instances are not supported in a Datastore Function.');
+            throw new Error('Multiple Hero instances are not supported in a Datastore Runner.');
           }
           super({ ...heroOptions, ...options });
           container.hero = this;
