@@ -139,7 +139,7 @@ export default class Function<
         this.successCount++;
       } catch (error) {
         this.errorCount++;
-        error.stack = error.stack.split('at async Function.stream').shift().trim();
+        error.stack = error.stack.split('at Function.runInternal').shift().trim();
         await plugins.setResolution(null, error).catch(() => null);
         resultsIterable.reject(error);
       } finally {

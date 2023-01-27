@@ -21,12 +21,11 @@ export default function createOutputGenerator<TOutput>(
     #isEmitted = false;
 
     constructor(data?: TOutput) {
-      this.#observable = new ObjectObserver({});
+      this.#observable = new ObjectObserver(data ?? {});
       this.#observable.proxiedFunctions.emit = this.emit.bind(this);
       this.#observable.proxiedFunctions.toJSON = this.toJSON.bind(this);
       this.#observable.onChanges = internal.onOutputChanges.bind(null, this.#observable.target);
 
-      if (data) Object.assign(this.#observable.proxy, data);
       internal.outputs.push(this.#observable.proxy);
       // eslint-disable-next-line no-constructor-return
       return this.#observable.proxy;

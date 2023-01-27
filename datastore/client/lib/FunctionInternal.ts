@@ -122,6 +122,7 @@ export default class FunctionInternal<
       throw new DatastoreSchemaError(
         'The Function input did not match its Schema',
         inputValidation.errors,
+        this.schema.input,
       );
     }
   }
@@ -143,6 +144,7 @@ export default class FunctionInternal<
       throw new DatastoreSchemaError(
         `The Function's ${humanCounter}Output did not match its Schema`,
         outputValidation.errors,
+        output,
       );
     }
   }
@@ -151,7 +153,7 @@ export default class FunctionInternal<
     if (this.schema?.output) {
       // TODO: follow nested schema columns
       for (const key of Object.keys(output)) {
-        if (!this.schema.output[key]) delete output[key];
+        if (!this.schema.output[key] && !this.schema.output.fields?.[key]) delete output[key];
       }
     }
     this.onOutputRecord?.(output);
@@ -176,7 +178,7 @@ export default class FunctionInternal<
               validErrors.push(error);
           }
         }
-        if (validErrors.length) throw new DatastoreSchemaError(err.message, validErrors);
+        if (validErrors.length) throw new DatastoreSchemaError(err.message, validErrors, output);
       }
     }
   }

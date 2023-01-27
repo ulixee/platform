@@ -60,6 +60,8 @@ export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
   public components: IHeroFunctionComponents<ISchema>;
 
   private pendingOutputs: IOutputChangeToRecord[] = [];
+  private pendingUploadPromises = new Set<Promise<void>>();
+  private coreSessionPromise: Promise<ICoreSession>;
 
   constructor(components: IHeroFunctionComponents<ISchema>) {
     this.components = components;
@@ -96,11 +98,11 @@ export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
       const HeroBase = Hero;
       // eslint-disable-next-line @typescript-eslint/no-shadow
       context.Hero = class Hero extends HeroBase {
-        constructor(options?: IHeroCreateOptions) {
+        constructor(options: IHeroCreateOptions = {}) {
           if (container.hero) {
             throw new Error('Multiple Hero instances are not supported in a Datastore Function.');
           }
-          super({ ...heroOptions, ...(options ?? {}) });
+          super({ ...heroOptions, ...options });
           container.hero = this;
           this.toCrawlerOutput = async (): Promise<ICrawlerOutputSchema> => {
             return {
@@ -109,47 +111,71 @@ export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
               version: this.version,
             };
           };
-          void this[InternalPropertiesSymbol].coreSessionPromise.then(container.uploadOutputs);
+          void this.once('connected', container.onConnected.bind(container, this));
         }
       };
-
       // eslint-disable-next-line @typescript-eslint/no-shadow
       context.HeroReplay = class HeroReplay extends HeroReplayBase {
-        constructor(options?: IHeroReplayCreateOptions | ICrawlerOutputSchema) {
+        constructor(options: IHeroReplayCreateOptions | ICrawlerOutputSchema = {}) {
+          // extract sessionId so that we don't try to reload
+          const { sessionId, crawler, version, ...replayOptions } = options as any;
+
+          const replaySessionId =
+            sessionId || heroOptions.replaySessionId || process.env.ULX_REPLAY_SESSION_ID;
+
           super({
-            replaySessionId: ((options as ICrawlerOutputSchema) ?? {}).sessionId,
             ...heroOptions,
-            ...(options ?? {}),
+            ...replayOptions,
+            replaySessionId,
           });
           container.heroReplays.add(this);
+          this.once('connected', container.onConnected.bind(container, this));
         }
 
         static async fromCrawler<T extends Crawler>(
           crawler: T,
           options: T['runArgsType'] = {},
         ): Promise<HeroReplay> {
+          if (heroOptions.replaySessionId) return new context.HeroReplay(heroOptions);
           const crawl = await context.crawl(crawler, options);
-          return new HeroReplay(crawl);
+          return new context.HeroReplay(crawl);
         }
       };
 
       await next();
+
+      // need to allow an immediate for directly emitted outputs to register
+      await new Promise(setImmediate);
+      await Promise.all(this.pendingUploadPromises);
     } finally {
-      await Promise.all(
-        [this.hero, ...this.heroReplays].filter(Boolean).map(x => x.close().catch(() => null)),
-      );
+      const heroes = [this.hero, ...this.heroReplays].filter(Boolean);
+      await Promise.all(heroes.map(x => x.close().catch(() => null)));
     }
   }
 
   // INTERNALS ///////////////////////
 
-  public get coreSessionPromise(): Promise<ICoreSession> | undefined {
-    if (!this.hero) return;
-    return this.hero[InternalPropertiesSymbol].coreSessionPromise;
+  protected onConnected(source: Hero | HeroReplay): void {
+    const coreSessionPromise = source[InternalPropertiesSymbol].coreSessionPromise;
+    this.coreSessionPromise = coreSessionPromise;
+    // drown unhandled errors
+    void coreSessionPromise
+      .then(() => this.registerSessionClose(coreSessionPromise))
+      .catch(() => null);
+    this.uploadOutputs();
   }
 
-  public get replaySessionId(): string | undefined {
-    return this.execOptions.replaySessionId ?? process.env.ULX_REPLAY_SESSION_ID;
+  protected async registerSessionClose(coreSessionPromise: Promise<ICoreSession>): Promise<void> {
+    try {
+      const coreSession = await coreSessionPromise;
+      if (!coreSession) return;
+      coreSession.once('close', () => {
+        if (this.coreSessionPromise === coreSessionPromise) this.coreSessionPromise = null;
+      });
+    } catch (err) {
+      console.error(err);
+      if (this.coreSessionPromise === coreSessionPromise) this.coreSessionPromise = null;
+    }
   }
 
   protected uploadOutputs(): void {
@@ -157,7 +183,10 @@ export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
 
     const records = [...this.pendingOutputs];
     this.pendingOutputs.length = 0;
-    this.coreSessionPromise.then(x => x.recordOutput(records)).catch(() => null);
+    const promise = this.coreSessionPromise.then(x => x.recordOutput(records)).catch(() => null);
+
+    this.pendingUploadPromises.add(promise);
+    void promise.then(() => this.pendingUploadPromises.delete(promise));
   }
 
   private onOutputChanged(changes: IObservableChange[]): void {
@@ -172,9 +201,4 @@ export class HeroFunctionPlugin<ISchema extends IFunctionSchema> {
 
     this.uploadOutputs();
   }
-}
-
-const pluginInstancesByHero: WeakMap<Hero, HeroFunctionPlugin<any>> = new WeakMap();
-export function getDatastoreForHeroPlugin(hero: Hero): HeroFunctionPlugin<any> {
-  return pluginInstancesByHero.get(hero);
 }

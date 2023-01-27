@@ -68,9 +68,11 @@ export default class ObjectObserver implements ProxyHandler<any> {
     this.isArray = Array.isArray(source);
 
     const target = this.isArray ? [] : {};
+    let hasKeys = false;
     for (const [key, value] of Object.entries(source)) {
       const storedKey = this.coerceKey(key);
       target[storedKey] = this.observeChild(value, storedKey);
+      hasKeys = true;
     }
 
     Object.setPrototypeOf(target, Object.getPrototypeOf(source));
@@ -81,6 +83,16 @@ export default class ObjectObserver implements ProxyHandler<any> {
     });
     this.proxy = new Proxy(target, this);
     this.target = target;
+
+    if (hasKeys) {
+      process.nextTick(() =>
+        this.emit({
+          path: this.path,
+          type: ObservableChangeType.insert,
+          value: this.deepClone(target),
+        }),
+      );
+    }
   }
 
   emit(...changes: IObservableChange[]): void {
