@@ -15,7 +15,7 @@ import * as Http from 'http';
 import * as Https from 'https';
 import ITypes from '../types';
 import installDatastoreSchema, { addDatastoreAlias } from '../types/installDatastoreSchema';
-import IFunctionInputOutput from '../interfaces/IFunctionInputOutput';
+import IItemInputOutput from '../interfaces/IItemInputOutput';
 import ResultIterable from './ResultIterable';
 import IDatastoreEvents from '../interfaces/IDatastoreEvents';
 import CreditsTable from './CreditsTable';
@@ -93,13 +93,30 @@ export default class DatastoreApiClient {
    * NOTE: any caller must handle tracking local balances of Credits and removing them if they're depleted!
    */
   public stream<
-    IO extends IFunctionInputOutput,
+    IO extends IItemInputOutput,
     IVersionHash extends keyof ITypes & string = any,
-    IFunctionName extends keyof ITypes[IVersionHash]['functions'] & string = string,
-    ISchemaDbx extends ITypes[IVersionHash]['functions'][IFunctionName] = IO,
+    IItemName extends keyof ITypes[IVersionHash]['functions'] & string = string,
+    ISchemaDbx extends ITypes[IVersionHash]['functions'][IItemName] = IO,
   >(
     versionHash: IVersionHash,
-    functionName: IFunctionName,
+    name: IItemName,
+    input: ISchemaDbx['input'],
+    options?: {
+      payment?: IPayment & {
+        onFinalized?(metadata: IDatastoreExecResult['metadata'], error?: Error): void;
+      };
+      authentication?: IDatastoreExecRelayArgs['authentication'];
+      affiliateId?: string;
+    },
+  ): ResultIterable<ISchemaDbx['output'], IDatastoreApiTypes['Datastore.stream']['result']>
+  public stream<
+    IO extends IItemInputOutput,
+    IVersionHash extends keyof ITypes & string = any,
+    IItemName extends keyof ITypes[IVersionHash]['tables'] & string = string,
+    ISchemaDbx extends ITypes[IVersionHash]['tables'][IItemName] = IO,
+  >(
+    versionHash: IVersionHash,
+    name: IItemName,
     input: ISchemaDbx['input'],
     options: {
       payment?: IPayment & {
@@ -121,7 +138,7 @@ export default class DatastoreApiClient {
     void this.runRemote('Datastore.stream', {
       versionHash,
       streamId,
-      functionName,
+      name,
       input,
       payment: options.payment,
       authentication: options.authentication,
@@ -294,7 +311,7 @@ export default class DatastoreApiClient {
         });
       }
       throw ValidationError.fromZodValidation(
-        `The API parameters for ${command} have some issues`,
+        `The API parameters for ${command} has some issues`,
         error,
       );
     }

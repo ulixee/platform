@@ -1,5 +1,6 @@
 {
   "name": "Testing",
+  "versionHash": "dbx1tqudz9gkkkn58l290e",
   "description": "A database of various testers. See below for a full documentation of the database tables and functions.",
   "createdAt": "2023-01-02T21:43:14.125Z",
   "functionsByName": {

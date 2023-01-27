@@ -9,6 +9,14 @@ const rootDir = Path.resolve(__dirname, '../../');
 // await saveToWebsite(basePath, `${basePath}/main/Overview/Configuration.md`, 'hero');
 
 {
+  const mdDocsRootPath = `${rootDir}/client/docs`;
+  walkDirectory(mdDocsRootPath, async filePath => {
+    await saveToWebsite(mdDocsRootPath, filePath, 'client');
+  });
+  ensureIndexFile(mdDocsRootPath, 'client');
+}
+
+{
   const mdDocsRootPath = `${rootDir}/hero/docs`;
   walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'hero');

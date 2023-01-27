@@ -3,6 +3,9 @@
     <PopoverPanel class="absolute z-10 left-0 top-full transform -mt-1 w-screen sm:w-auto sm:pr-0">
       <div class="rounded-lg shadow-lg bg-white overflow-hidden whitespace-nowrap border border-gray-200 flex flex-col space-y-2 py-3 px-1">
         <div class="relative bg-white">
+          <router-link to="/docs/client" class="block px-5">Client</router-link>
+        </div>
+        <div class="relative bg-white">
           <router-link to="/docs/hero" class="block px-5">Hero</router-link>
         </div>
         <div class="relative bg-white">
@@ -11,8 +14,9 @@
         <div class="relative bg-white">
           <router-link to="/docs/miner" class="block px-5">Miner</router-link>
         </div>
+        <div class="divider border-t"></div>
         <div class="relative bg-white">
-          <router-link to="/docs/sql" class="block px-5">Ulixee SQL</router-link>
+          <router-link to="/docs/sql" class="block px-5">Ulixee SQL Spec</router-link>
         </div>
 <!--        <div class="relative bg-white">-->
 <!--          <router-link to="/docs/cli" class="block px-5">CLI</router-link>-->

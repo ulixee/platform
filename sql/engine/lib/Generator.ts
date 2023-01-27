@@ -181,6 +181,10 @@ export default class SqlGenerator {
     }
 
     if (type === undefined || type === null) {
+      if (value instanceof Buffer) {
+        return [value, 'buffer'];
+      }
+
       if (typeof value === 'boolean') {
         return [value ? 1 : 0, 'boolean'];
       }

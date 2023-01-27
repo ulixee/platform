@@ -73,16 +73,30 @@ export default class DatastoreInternal<
     lastInstanceId++;
     this.instanceId = `${process.pid}-${lastInstanceId}`;
     this.components = components;
+
+    const names: Set<string> = new Set();
     for (const [name, func] of Object.entries(components.functions || [])) {
+      if (names.has(name)) {
+        throw new Error(`${name} already exists in this datastore`);
+      }
       this.attachFunction(func, name);
+      names.add(name);
     }
     for (const [name, table] of Object.entries(components.tables || [])) {
+      if (names.has(name)) {
+        throw new Error(`${name} already exists in this datastore`);
+      }
       this.attachTable(table, name);
+      names.add(name);
     }
     this.attachTable(new CreditsTable());
 
     for (const [name, crawler] of Object.entries(components.crawlers || [])) {
+      if (names.has(name)) {
+        throw new Error(`${name} already exists in this datastore`);
+      }
       this.attachCrawler(crawler, name);
+      names.add(name);
     }
 
     this.affiliateId = components.affiliateId;

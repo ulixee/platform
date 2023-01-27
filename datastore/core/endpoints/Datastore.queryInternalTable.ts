@@ -41,7 +41,7 @@ export default new DatastoreApiHandler('Datastore.queryInternalTable', {
 
     if (sqlParser.isInsert() || sqlParser.isDelete() || sqlParser.isUpdate()) {
       const sql = sqlParser.toSql();
-      const boundValues = sqlParser.convertToBoundValuesMap(request.boundValues);
+      const boundValues = sqlParser.convertToBoundValuesSqliteMap(request.boundValues);
       if (sqlParser.hasReturn()) {
         return db.prepare(sql).get(boundValues);
       }
@@ -52,7 +52,7 @@ export default new DatastoreApiHandler('Datastore.queryInternalTable', {
     if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
 
     const sql = sqlParser.toSql();
-    const boundValues = sqlParser.convertToBoundValuesMap(request.boundValues);
+    const boundValues = sqlParser.convertToBoundValuesSqliteMap(request.boundValues);
     const records = db.prepare(sql).all(boundValues);
 
     return SqlGenerator.convertRecordsFromSqlite(records, [schema]);

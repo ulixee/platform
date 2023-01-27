@@ -16,7 +16,7 @@ module.exports = {
       title: 'Ulixee'
     },
   },
-  publicPath: './',
+  // publicPath: './',
   chainWebpack(config) {
     config.module
       .rule('vue')

@@ -12,7 +12,7 @@ import ChromeAliveUtils from './ChromeAliveUtils';
 import Miner, { IHttpHandleFn } from '../index';
 
 export default class CoreRouter {
-  public static modulesToRegister = [
+  public static datastorePluginsToRegister = [
     '@ulixee/datastore-plugins-hero-core/register',
     '@ulixee/datastore-plugins-puppeteer-core/register',
   ];
@@ -55,7 +55,7 @@ export default class CoreRouter {
     miner.addHttpRoute(/\/(.*)/, 'GET', this.handleHttpRequest.bind(this, 'datastoreRoot'));
     miner.addHttpRoute('/', 'OPTIONS', this.handleHttpRequest.bind(this, 'datastoreOptions'));
 
-    for (const module of CoreRouter.modulesToRegister) {
+    for (const module of CoreRouter.datastorePluginsToRegister) {
       safeRegisterModule(module);
     }
 

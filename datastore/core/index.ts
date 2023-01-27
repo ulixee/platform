@@ -37,6 +37,7 @@ import DatastoreInitializeInMemoryFunction from './endpoints/Datastore.createInM
 import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
 import DatastoreStorage from './lib/DatastoreStorage';
 import DatastoreStream from './endpoints/Datastore.stream';
+import DatastoreFetchInternalTable from './endpoints/Datastore.fetchInternalTable';
 import DatastoreAdmin from './endpoints/Datastore.admin';
 import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
 import DatastoreVm from './lib/DatastoreVm';
@@ -76,6 +77,7 @@ export default class DatastoreCore {
     DatastoreUpload,
     DatastoreQuery,
     DatastoreStream,
+    DatastoreFetchInternalTable,
     DatastoreAdmin,
     DatastoreCreditsBalance,
     DatastoreMeta,

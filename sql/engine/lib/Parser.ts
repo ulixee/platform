@@ -109,6 +109,13 @@ export default class SqlParser {
     return values.reduce((a, v, i) => ({ ...a, [i + 1]: v }), {});
   }
 
+  public convertToBoundValuesSqliteMap(values: any[] | { [k: string]: any }): { [k: string]: any } {
+    const valuesMap = Array.isArray(values) ? this.convertToBoundValuesMap(values) : values;
+    return Object.keys(valuesMap).reduce((a, k) => {
+      return { ...a, [k]: SqlGenerator.convertToSqliteValue(null, valuesMap[k])[0] }
+    }, {});
+  }
+
   public extractFunctionInput(functionName: string, boundValues: any): { [key: string]: any } {
     const boundValuesMap = this.convertToBoundValuesMap(boundValues);
     const input: any = {};

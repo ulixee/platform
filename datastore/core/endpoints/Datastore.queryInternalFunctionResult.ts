@@ -44,7 +44,7 @@ export default new DatastoreApiHandler('Datastore.queryInternalFunctionResult', 
     });
 
     const sql = sqlParser.toSql();
-    const boundValues = sqlParser.convertToBoundValuesMap(request.boundValues);
+    const boundValues = sqlParser.convertToBoundValuesSqliteMap(request.boundValues);
     const records = db.prepare(sql).all(boundValues);
 
     SqlGenerator.convertRecordsFromSqlite(records, [schema])
