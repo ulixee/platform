@@ -13,4 +13,4 @@ client.query(`SELECT * FROM developers WHERE status='founder'`).then(records => 
 
 By default all query are read-only (i.e., they must be SELECTs) unless you have special admin privileges. 
 
-Click here to open the Ulixee SQL specification.
+More details are available in the [Ulixee SQL specification docs](../../sql).

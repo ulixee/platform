@@ -1,4 +1,4 @@
-import ConnectionString from '@ulixee/client-connection-string';
+import ConnectionString from './ConnectionString';
 import defaults from './defaults';
 
 export default class ConnectionParameters {
@@ -7,10 +7,6 @@ export default class ConnectionParameters {
   database: string;
   port: number;
   host: string;
-  binary: string;
-  options: any;
-  query_timeout: string | number;
-  connect_timeout: string | number;
 
   constructor(config) {
     // if a string is passed, it is a raw connection string so we parse it into a config
@@ -22,12 +18,12 @@ export default class ConnectionParameters {
       config = { ...config, ...ConnectionString.parse(config.connectionString) };
     }
 
-    this.user = val('username', config) || val('user', config);
-    this.password = val('password', config);
-    this.database = val('database', config);
+    this.user = config.user || defaults.user;
+    this.password = config.password || defaults.password;
+    this.database = config.database || defaults.database;
 
-    this.port = parseInt(val('port', config), 10);
-    this.host = val('host', config);
+    this.port = parseInt(config.port || defaults.port, 10);
+    this.host = config.host || defaults.host;
 
     // "hiding" the password so it doesn't show up in stack traces
     // or if the client is console.logged
@@ -35,31 +31,7 @@ export default class ConnectionParameters {
       configurable: true,
       enumerable: false,
       writable: true,
-      value: val('password', config),
-    })
-
-    this.binary = val('binary', config)
-    this.options = val('options', config)
-
-    this.query_timeout = val('query_timeout', config, false)
-
-    if (config.connectionTimeoutMillis === undefined) {
-      this.connect_timeout = process.env.ULX_CONNECT_TIMEOUT || 0
-    } else {
-      this.connect_timeout = Math.floor(config.connectionTimeoutMillis / 1000)
-    }
+      value: config.password || defaults.password,
+    });
   }
-}
-
-
-function val(key: string, config: any, envVar?: string | boolean): string {
-  if (envVar === undefined) {
-    envVar = process.env[`ULX_${key.toUpperCase()}`];
-  } else if (envVar === false) {
-    // do nothing ... use false
-  } else {
-    envVar = process.env[envVar as string]
-  }
-
-  return config[key] || envVar || defaults[key]
 }

@@ -6,7 +6,6 @@
   "license": "MIT",
   "scripts": {},
   "dependencies": {
-    "@ulixee/client-connection-string": "2.0.0-alpha.18",
     "@ulixee/net": "2.0.0-alpha.18",
     "@ulixee/datastore": "2.0.0-alpha.18",
     "@ulixee/commons": "2.0.0-alpha.18",

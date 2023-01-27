@@ -5,7 +5,6 @@ import router from './router'
 import './index.css';
 
 export const app = createApp(App);
-console.log(router);
 app.use(router);
 app.component('InlineSvg', InlineSvg);
 app.mount('#app');

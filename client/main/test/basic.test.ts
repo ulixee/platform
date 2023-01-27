@@ -41,7 +41,6 @@ describe('basic Client tests', () => {
 
   it('uses defaults when values are not supplied', async () => {
     const client = new Client();
-    // @ts-ignore
     const { user, password, host, port, database } = client;
     expect(user).toBe(defaults.user);
     expect(password).toBe(undefined);

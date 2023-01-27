@@ -1,20 +1,20 @@
 # Local Client
 
-When developing a new Datastore, sometimes you'll want to test your code by querying specific Runners and Tables or even the entire Datastore. You can initialize a new Client by passing one of these instances directly into the constructor. This allows you to interact with your new Datastore (or parts of it) without needing to build and deploy to a Cloud Node:
+When developing a new Datastore, sometimes you'll want to test your code by querying specific Runners and Tables or even the entire Datastore. You can initialize a new Client by passing one of these instances directly into the constructor. This allows you to interact with your new Datastore (or parts of it) without needing to build and deploy the entire Datastore to a Cloud Node.
+
+You'll use different Clients depending on what you're testing (Datastore vs Table, etc). Also, each Client provides a different subset of methods that are available. See below...
+
+## Client.ForDatastore
 
 ```javascript
 import Client from '@ulixee/client-playground';
-import myTable from './myTable';
+import myDatastore from './myDatastore';
 
-const client = new Client(testingTable);
-client.query('SELECT firstName, lastName FROM self WHERE lastName=$1', ['Jordan']).then(records => {
+const client = new Client.ForDatastore(myDatastore);
+client.query('SELECT firstName, lastName FROM testers WHERE lastName=$1', ['Jordan']).then(records => {
   console.log(records);
 });
 ```
-
-`new Client` will return different class instances depending on what was passed in to the constructor. Each of these class instances provide different methods:
-
-## Client for Datastore
 
 ### client.query _(sql, boundValues)_ {#query}
 
@@ -63,7 +63,17 @@ Trigger one of the Datastore's crawlers.
 #### **Returns**: `Promise<Record[]>`
  
 
-## Client for Function
+## Client.ForFunction
+
+```javascript
+import Client from '@ulixee/client-playground';
+import myFunction from './myFunction';
+
+const client = new Client.ForFunction(myFunction);
+client.query('SELECT firstName, lastName FROM self(isTesting => $1), [true]).then(records => {
+  console.log(records);
+});
+```
 
 ### client.run _(inputFilter)_ {#run}
 
@@ -87,7 +97,17 @@ Send a SQL query to the table. You can use `self` as an alias for the table name
 
 
 
-## Client for Table
+## Client.ForTable
+
+```javascript
+import Client from '@ulixee/client-playground';
+import myTable from './myTable';
+
+const client = new Client.ForTable(testingTable);
+client.query('SELECT firstName, lastName FROM self WHERE lastName=$1', ['Jordan']).then(records => {
+  console.log(records);
+});
+```
 
 ### client.fetch _(inputFilter)_ {#fetch}
 
@@ -114,7 +134,17 @@ Send a SQL query to the table. You can use `self` as an alias for the table name
 
 
 
-## Client for Crawler
+## Client.ForCrawler
+
+```javascript
+import Client from '@ulixee/client-playground';
+import myCrawler from './myCrawler';
+
+const client = new Client.ForCrawler(myCrawler);
+client.query('SELECT sessionId FROM self WHERE page=$1', ['Home']).then(records => {
+  console.log(records);
+});
+```
 
 ### client.crawl _(inputFilter)_ {#crawl}
 

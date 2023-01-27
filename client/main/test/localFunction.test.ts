@@ -21,7 +21,7 @@ afterAll(async () => {
 });
 
 test('should be able to query a datastore using sql', async () => {
-  const client = new Client(localFunction);
+  const client = new Client.ForFunction(localFunction);
   const results = await client.query('SELECT * FROM test(shouldTest => $1)', [true]);
 
   expect(results).toEqual([

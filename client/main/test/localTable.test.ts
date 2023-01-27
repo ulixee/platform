@@ -19,7 +19,7 @@ afterAll(async () => {
 });
 
 test('should be able to query a datastore using sql', async () => {
-  const client = new Client(localTable);
+  const client = new Client.ForTable(localTable);
   const results = await client.query('SELECT * FROM self');
 
   expect(results).toEqual([

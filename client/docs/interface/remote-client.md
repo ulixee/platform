@@ -2,8 +2,7 @@
 
 This is the default use-case for using Ulixee Client. You supply a connection URI or Object to the datastore you want to query. 
 
-You can also pass in a local Datastore, Function, Table, or Crawl instance to the constructor, however, this will return a
-different set of properties and methods than shown on this page. See [Local Client](./local-client.md).
+You can also initialize clients with a local Datastore, Table, Function or Crawler instance, however, these clients provide a more limited set of properties and methods than what is shown on this page. See [Local Client](./local-client.md).
 
 ## Constructor
 
