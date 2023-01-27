@@ -83,16 +83,6 @@ export default class ObjectObserver implements ProxyHandler<any> {
     });
     this.proxy = new Proxy(target, this);
     this.target = target;
-
-    if (hasKeys) {
-      process.nextTick(() =>
-        this.emit({
-          path: this.path,
-          type: ObservableChangeType.insert,
-          value: this.deepClone(target),
-        }),
-      );
-    }
   }
 
   emit(...changes: IObservableChange[]): void {
@@ -138,6 +128,14 @@ export default class ObjectObserver implements ProxyHandler<any> {
       return this.proxiedFunctions[key].bind(target);
     }
     return target[key];
+  }
+
+  emitTarget(): void {
+    this.emit({
+      path: this.path,
+      type: ObservableChangeType.insert,
+      value: this.deepClone(this.target),
+    });
   }
 
   deleteProperty(target: any, key: PropertyKey): boolean {

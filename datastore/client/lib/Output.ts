@@ -27,6 +27,9 @@ export default function createOutputGenerator<TOutput>(
       this.#observable.onChanges = internal.onOutputChanges.bind(null, this.#observable.target);
 
       internal.outputs.push(this.#observable.proxy);
+      if (data && Object.keys(data).length) {
+        process.nextTick(this.#observable.emitTarget.bind(this.#observable));
+      }
       // eslint-disable-next-line no-constructor-return
       return this.#observable.proxy;
     }
