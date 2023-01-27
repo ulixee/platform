@@ -300,7 +300,7 @@ export default class HeroCorePlugin extends CorePlugin {
   }
 
   public static shouldActivate(profile: IEmulationProfile, session: ISessionSummary): boolean {
-    return session.options.showChromeAlive && session.options.showChrome;
+    return session.options.showChromeAlive === true && session.options.showChrome === true;
   }
 }
 

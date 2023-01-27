@@ -244,7 +244,6 @@ export class ChromeAlive extends EventEmitter {
       x: workarea.x,
       webPreferences: {
         preload: `${__dirname}/PagePreload.js`,
-        nativeWindowOpen: true,
       },
       height: 44,
     });

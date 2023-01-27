@@ -346,13 +346,18 @@ export default class ChromeAliveCore {
     }
 
     this.app = launchChromeAlive(...args);
-    this.events.once(this.app, 'exit', () => (this.app = null));
-    this.events.once(this.app, 'close', () => (this.app = null));
+    this.events.once(this.app, 'exit', this.onAppExit.bind(this));
+    this.events.once(this.app, 'close', this.onAppExit.bind(this));
     log.info('Launched Electron App', {
       file: this.app?.spawnfile,
       args: this.app?.spawnargs,
       sessionId: null,
     });
+  }
+
+  private static onAppExit(): void {
+    delete HeroCore.corePluginsById[HeroCorePlugin.id];
+    this.app = null;
   }
 
   private static onBrowserHasNoWindows(event: { browser: Browser }): void {
