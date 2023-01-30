@@ -1,8 +1,8 @@
-# FunctionContext
+# RunnerContext
 
-> FunctionContext provides access to metadata about your Function execution, along with Plugin-created variables.
+> RunnerContext provides access to metadata about your Runner execution, along with Plugin-created variables.
 
-The FunctionContext class is passed into the [`run`](./function#constructor) callback provided to a Function. It cannot be constructed.
+The RunnerContext class is passed into the [`run`](./runner#constructor) callback provided to a Runner. It cannot be constructed.
 
 ## Properties
 
@@ -18,7 +18,7 @@ Authentication includes:
 
 ### callerAffiliateId
 
-The affiliateId provided (if any) to this Function call.
+The affiliateId provided (if any) to this Runner call.
 
 #### **Returns** `string`.
 
@@ -30,7 +30,7 @@ The affiliateId of the containing Datastore.
 
 ### datastoreMetadata
 
-Metadata about all [Functions](./function.md), [Crawlers](./crawler.md) and [Tables](./table.md) installed in this Datastore.
+Metadata about all [Runners](./runner.md), [Crawlers](./crawler.md) and [Tables](./table.md) installed in this Datastore.
 
 #### **Returns** 'IDatastoreMetadata'
 
@@ -63,7 +63,7 @@ The payment supplied to the Datastore Core for payment. Top level keys are:
 
 A schema defining inputs and outputs for the function.
 
-#### **Returns** [`IFunctionSchema`](../advanced/function-schemas.md)
+#### **Returns** [`IRunnerSchema`](../advanced/runner-schemas.md)
 
 ## Methods
 
@@ -74,15 +74,15 @@ Execute the [`crawler`](./crawler.md) and return the resulting metadata. Argumen
 #### **Arguments**:
 
 - crawler [`Crawler`](./crawler.md) The Crawler instance to run.
-- options `object`. Parameters to run the crawler. This parameter will default all values to the context. eg, the payment, authentication and affiliateId of the caller will be defaulted to the values provided to the original function this FunctionContext has been passed into.
+- options `object`. Parameters to run the crawler. This parameter will default all values to the context. eg, the payment, authentication and affiliateId of the caller will be defaulted to the values provided to the original function this RunnerContext has been passed into.
   - payment `IPayment`. Override the payment provided to this context.
   - authentication [authentication](#authentication). Override the authentication supplied to the calling context.
-  - input [input](#input). Merge values into the calling input. If you are calling a Crawler from a Function, and you supply only a `maxTimeInCache` value, it will be _added_ to the input values provided to the Function.
+  - input [input](#input). Merge values into the calling input. If you are calling a Crawler from a Runner, and you supply only a `maxTimeInCache` value, it will be _added_ to the input values provided to the Runner.
   - affiliateId `string`. Override the affiliateId provided to the calling function.
 
 #### Return Promise<ICrawlerOutputSchema>. Returns a promise of the Crawler output (version, sessionId and crawler).
 
-### fetch _(functionOrTable, options)_ {#fetch}
+### fetch _(runnerOrTable, options)_ {#fetch}
 
 Alias for [`run`](#run). This function executes and returns results for a query.
 
@@ -101,11 +101,11 @@ Execute the passed in function. The result is an AsyncIterable, which can be use
 
 #### **Arguments**:
 
-- function [`Function`](./function.md) The Function instance to run.
-- options `object`. Parameters to run the crawler. This parameter will default all values to the context. eg, the payment, authentication and affiliateId of the caller will be defaulted to the values provided to the original function this FunctionContext has been passed into.
+- function [`Runner`](./runner.md) The Runner instance to run.
+- options `object`. Parameters to run the crawler. This parameter will default all values to the context. eg, the payment, authentication and affiliateId of the caller will be defaulted to the values provided to the original function this RunnerContext has been passed into.
     - payment `IPayment`. Override the payment provided to this context.
     - authentication [authentication](#authentication). Override the authentication supplied to the calling context.
-    - input [input](#input). Merge values into the calling input. If you are calling a Crawler from a Function, and you supply only a `maxTimeInCache` value, it will be _added_ to the input values provided to the Function.
+    - input [input](#input). Merge values into the calling input. If you are calling a Crawler from a Runner, and you supply only a `maxTimeInCache` value, it will be _added_ to the input values provided to the Runner.
     - affiliateId `string`. Override the affiliateId provided to the calling function.
 
 #### Return Promise/AsyncIterable of schema['Output'] Returns an AsyncIterable streaming results one at a time, or a Promise waiting for all results. The objects are the defined Schema Output records.

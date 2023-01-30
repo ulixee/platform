@@ -8,11 +8,11 @@ export default new DatastoreApiHandler('Datastore.meta', {
     const datastore = await context.datastoreRegistry.getByVersionHash(request.versionHash);
 
     let settlementFeeMicrogons: number;
-    const functionsByName: IDatastoreApiTypes['Datastore.meta']['result']['functionsByName'] = {};
+    const runnersByName: IDatastoreApiTypes['Datastore.meta']['result']['runnersByName'] = {};
     const tablesByName: IDatastoreApiTypes['Datastore.meta']['result']['tablesByName'] = {};
 
-    for (const [name, stats] of Object.entries(datastore.statsByFunction)) {
-      const { prices } = datastore.functionsByName[name];
+    for (const [name, stats] of Object.entries(datastore.statsByRunner)) {
+      const { prices } = datastore.runnersByName[name];
       let minimumPrice = 0;
       let pricePerQuery = 0;
       for (const price of prices) {
@@ -28,7 +28,7 @@ export default new DatastoreApiHandler('Datastore.meta', {
         minimumPrice += settlementFeeMicrogons;
       }
 
-      functionsByName[name] = {
+      runnersByName[name] = {
         stats: {
           averageMilliseconds: stats.averageMilliseconds,
           maxMilliseconds: stats.maxMilliseconds,
@@ -43,7 +43,7 @@ export default new DatastoreApiHandler('Datastore.meta', {
       };
 
       if (request.includeSchemasAsJson) {
-        functionsByName[name].schemaJson = datastore.functionsByName[name]?.schemaAsJson;
+        runnersByName[name].schemaJson = datastore.runnersByName[name]?.schemaAsJson;
       }
     }
     for (const [name, meta] of Object.entries(datastore.tablesByName)) {
@@ -74,7 +74,7 @@ export default new DatastoreApiHandler('Datastore.meta', {
       name: datastore.name,
       latestVersionHash: datastore.latestVersionHash,
       schemaInterface: datastore.schemaInterface,
-      functionsByName,
+      runnersByName,
       tablesByName,
       computePricePerQuery,
     };

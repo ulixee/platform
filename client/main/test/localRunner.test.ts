@@ -3,9 +3,9 @@ import * as Path from 'path';
 import UlixeeMiner from '@ulixee/miner';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import Client from '..';
-import localFunction from './datastores/localFunction';
+import localRunner from './datastores/localRunner';
 
-const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Client.localFunction.test');
+const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Client.localRunner.test');
 let miner: UlixeeMiner;
 let apiClient: DatastoreApiClient;
 
@@ -21,7 +21,7 @@ afterAll(async () => {
 });
 
 test('should be able to query a datastore using sql', async () => {
-  const client = new Client.ForFunction(localFunction);
+  const client = new Client.ForRunner(localRunner);
   const results = await client.query('SELECT * FROM test(shouldTest => $1)', [true]);
 
   expect(results).toEqual([

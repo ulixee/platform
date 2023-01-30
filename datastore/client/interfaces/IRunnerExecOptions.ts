@@ -1,7 +1,7 @@
 import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
-import IFunctionSchema, { ExtractSchemaType } from './IFunctionSchema';
+import IRunnerSchema, { ExtractSchemaType } from './IRunnerSchema';
 
-export default interface IFunctionExecOptions<ISchema extends IFunctionSchema>
+export default interface IRunnerExecOptions<ISchema extends IRunnerSchema>
   extends Pick<
     IDatastoreApiTypes['Datastore.query']['args'],
     'payment' | 'affiliateId' | 'authentication'

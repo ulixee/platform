@@ -1,10 +1,10 @@
 const Datastore = require('@ulixee/datastore');
-const { Function, HeroFunctionPlugin } = require('@ulixee/datastore-plugins-hero');
+const { Runner, HeroRunnerPlugin } = require('@ulixee/datastore-plugins-hero');
 const { string } = require('@ulixee/schema');
 
 exports.default = new Datastore({
-  functions: {
-    funcWithInput: new Function(
+  runners: {
+    runnerWithInput: new Runner(
       {
         schema: {
           input: {
@@ -16,9 +16,9 @@ exports.default = new Datastore({
           await hero.goto(input.url);
         },
       },
-      HeroFunctionPlugin,
+      HeroRunnerPlugin,
     ),
-    funcWithOutput: new Function({
+    runnerWithOutput: new Runner({
       schema: {
         output: {
           title: string(),

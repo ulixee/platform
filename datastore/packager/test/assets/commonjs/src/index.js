@@ -1,12 +1,12 @@
-const { Function, HeroFunctionPlugin } = require('@ulixee/datastore-plugins-hero');
-const { testFunction } = require('./helper');
+const { Runner, HeroRunnerPlugin } = require('@ulixee/datastore-plugins-hero');
+const { testRunner } = require('./helper');
 
-module.exports = new Function(
+module.exports = new Runner(
   {
     async run(ctx) {
       const { Output } = ctx;
-      Output.emit({ text: testFunction() });
+      Output.emit({ text: testRunner() });
     },
   },
-  HeroFunctionPlugin,
+  HeroRunnerPlugin,
 );

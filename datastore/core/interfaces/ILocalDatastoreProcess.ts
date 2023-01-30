@@ -9,7 +9,7 @@ export interface IFetchMetaMessage {
 export interface IRunMessage {
   messageId: string;
   action: 'run';
-  functionName: string;
+  runnerName: string;
   scriptPath: string;
   input: any;
   streamId: number;

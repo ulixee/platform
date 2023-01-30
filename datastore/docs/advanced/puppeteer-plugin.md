@@ -1,16 +1,16 @@
-# Using the PuppeteerFunctionPlugin
+# Using the PuppeteerRunnerPlugin
 
-> PuppeteerFunctionPlugin supercharges your datastore Function with a ready-to-use [`Puppeteer`](https://pptr.dev/api) instance.
+> PuppeteerRunnerPlugin supercharges your datastore Runner with a ready-to-use [`Puppeteer`](https://pptr.dev/api) instance.
 
-To use PuppeteerFunctionPlugin, import the plugin and include it in the `plugins` array of your Function constructor:
+To use PuppeteerRunnerPlugin, import the plugin and include it in the `plugins` array of your Runner constructor:
 
 ```js
 import Datastore from '@ulixee/datastore';
-import { Function, PuppeteerFunctionPlugin } from '@ulixee/datastore-plugins-puppeteer';
+import { Runner, PuppeteerRunnerPlugin } from '@ulixee/datastore-plugins-puppeteer';
 
 export default new Datastore({
-  functions: {
-    pupp: new Function(async ctx => {
+  runners: {
+    pupp: new Runner(async ctx => {
       const { input, Output, launchBrowser } = ctx;
 
       const browser = await launchBrowser();
@@ -21,36 +21,36 @@ export default new Datastore({
           return document.querySelector('#firstHeading').textContent;
         }),
       });
-    }, PuppeteerFunctionPlugin),
+    }, PuppeteerRunnerPlugin),
   },
 });
 ```
 
-## Changes to FunctionContext
+## Changes to RunnerContext
 
-The PuppeteerFunctionPlugin adds a single property to the [FunctionContext](../basics/function-context.md).
+The PuppeteerRunnerPlugin adds a single property to the [RunnerContext](../basics/runner-context.md).
 
-### run _(functionContext)_ {#run-hero}
+### run _(runnerContext)_ {#run-hero}
 
-- functionContext.launchBrowser: () => Promise<`Puppeteer`>. Function to launch a new [Puppeteer](https://pptr.dev/api) Browser instance.
+- runnerContext.launchBrowser: () => Promise<`Puppeteer`>. Runner to launch a new [Puppeteer](https://pptr.dev/api) Browser instance.
 
-### Function.stream(... puppeteerLaunchArgs)
+### Runner.stream(... puppeteerLaunchArgs)
 
 Configure the [Puppeteer](https://pptr.dev/api) instance with [LaunchOptions](https://pptr.dev/api/puppeteer.launchoptions).
 
 ```js
 import Datastore from '@ulixee/datastore';
-import { Function, PuppeteerFunctionPlugin } from '@ulixee/datastore-plugins-puppeteer';
+import { Runner, PuppeteerRunnerPlugin } from '@ulixee/datastore-plugins-puppeteer';
 
 const datastore = new Datastore({
-  functions: {
-    pupp: new Function(async ctx => {
+  runners: {
+    pupp: new Runner(async ctx => {
       const page = await ctx.browser.newPage();
       output.title = await page.evaluate(() => {
         return document.querySelector('title').textContent;
       });
-    }, PuppeteerFunctionPlugin),
+    }, PuppeteerRunnerPlugin),
   },
 });
-await datastore.functions.pupp.runInternal({ waitForInitialPage: false });
+await datastore.runners.pupp.runInternal({ waitForInitialPage: false });
 ```

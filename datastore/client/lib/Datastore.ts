@@ -2,7 +2,7 @@ import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
 import IDatastoreComponents, {
   TCrawlers,
-  TFunctions,
+  TRunners,
   TTables,
 } from '../interfaces/IDatastoreComponents';
 import DatastoreInternal from './DatastoreInternal';
@@ -11,15 +11,15 @@ import DatastoreApiClient from './DatastoreApiClient';
 
 export default class Datastore<
   TTable extends TTables = TTables,
-  TFunction extends TFunctions = TFunctions,
+  TRunner extends TRunners = TRunners,
   TCrawler extends TCrawlers = TCrawlers,
-  TComponents extends IDatastoreComponents<TTable, TFunction, TCrawler> = IDatastoreComponents<
+  TComponents extends IDatastoreComponents<TTable, TRunner, TCrawler> = IDatastoreComponents<
     TTable,
-    TFunction,
+    TRunner,
     TCrawler
   >,
 > {
-  #datastoreInternal: DatastoreInternal<TTable, TFunction, TCrawler, TComponents>;
+  #datastoreInternal: DatastoreInternal<TTable, TRunner, TCrawler, TComponents>;
 
   public disableAutorun: boolean;
 
@@ -31,8 +31,8 @@ export default class Datastore<
     return this.#datastoreInternal.metadata;
   }
 
-  public get functions(): TComponents['functions'] {
-    return this.#datastoreInternal.functions;
+  public get runners(): TComponents['runners'] {
+    return this.#datastoreInternal.runners;
   }
 
   public get tables(): TComponents['tables'] {
@@ -49,7 +49,7 @@ export default class Datastore<
 
   constructor(
     components: TComponents,
-    datastoreInternal?: DatastoreInternal<TTable, TFunction, TCrawler, TComponents>,
+    datastoreInternal?: DatastoreInternal<TTable, TRunner, TCrawler, TComponents>,
   ) {
     this.#datastoreInternal = datastoreInternal ?? new DatastoreInternal(components);
 

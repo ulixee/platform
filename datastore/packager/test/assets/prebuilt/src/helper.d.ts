@@ -1,2 +1,2 @@
-declare function testFunction(): string;
-export { testFunction };
+declare function testRunner(): string;
+export { testRunner };

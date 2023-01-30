@@ -1,32 +1,32 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import {
-  FunctionPluginStatics,
-  IFunctionContext,
-  IFunctionExecOptions,
-  IFunctionPlugin,
-  IFunctionSchema,
+  RunnerPluginStatics,
+  IRunnerContext,
+  IRunnerExecOptions,
+  IRunnerPlugin,
+  IRunnerSchema,
 } from '@ulixee/datastore';
 import * as Puppeteer from 'puppeteer';
 import { Browser as PuppeteerBrowser, LaunchOptions as IPuppeteerLaunchOptions } from 'puppeteer';
-import FunctionInternal from '@ulixee/datastore/lib/FunctionInternal';
+import RunnerInternal from '@ulixee/datastore/lib/RunnerInternal';
 
 const pkg = require('./package.json');
 
 export * from '@ulixee/datastore';
 
 type IContextAddons = { launchBrowser(): Promise<PuppeteerBrowser> };
-export type IPuppeteerFunctionContext<ISchema> = IFunctionContext<ISchema> & IContextAddons;
+export type IPuppeteerRunnerContext<ISchema> = IRunnerContext<ISchema> & IContextAddons;
 
-export type IPuppeteerFunctionExecOptions<ISchema> = IFunctionExecOptions<ISchema> &
+export type IPuppeteerRunnerExecOptions<ISchema> = IRunnerExecOptions<ISchema> &
   IPuppeteerLaunchOptions;
 
-@FunctionPluginStatics
-export class PuppeteerFunctionPlugin<ISchema extends IFunctionSchema>
+@RunnerPluginStatics
+export class PuppeteerRunnerPlugin<ISchema extends IRunnerSchema>
   implements
-    IFunctionPlugin<
+    IRunnerPlugin<
       ISchema,
-      IPuppeteerFunctionExecOptions<ISchema>,
-      IPuppeteerFunctionContext<ISchema>
+      IPuppeteerRunnerExecOptions<ISchema>,
+      IPuppeteerRunnerContext<ISchema>
     >
 {
   public static readonly execArgAddons: IPuppeteerLaunchOptions;
@@ -37,14 +37,14 @@ export class PuppeteerFunctionPlugin<ISchema extends IFunctionSchema>
 
   public puppeteerBrowserPromise: Promise<Puppeteer.Browser>;
 
-  private execOptions: IPuppeteerFunctionExecOptions<ISchema>;
+  private execOptions: IPuppeteerRunnerExecOptions<ISchema>;
 
   async run(
-    functionInternal: FunctionInternal<ISchema, IPuppeteerFunctionExecOptions<ISchema>>,
-    context: IPuppeteerFunctionContext<ISchema>,
-    next: () => Promise<IFunctionContext<ISchema>['outputs']>,
+    runnerInternal: RunnerInternal<ISchema, IPuppeteerRunnerExecOptions<ISchema>>,
+    context: IPuppeteerRunnerContext<ISchema>,
+    next: () => Promise<IRunnerContext<ISchema>['outputs']>,
   ): Promise<void> {
-    this.execOptions = functionInternal.options;
+    this.execOptions = runnerInternal.options;
     try {
       context.launchBrowser = this.initializePuppeteer.bind(this);
       await next();

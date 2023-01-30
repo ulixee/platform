@@ -63,12 +63,12 @@ test('it should ensure a payment has enough microgons', async () => {
   await expect(
     processor.createHold(
       {
-        functionsByName: {
+        runnersByName: {
           fun1: { prices: [{ perQuery: 100, minimum: 100 }] },
         },
         paymentAddress: 'ar1',
       } as unknown as IDatastoreManifest,
-      [{ id: 1, functionName: 'fun1' }],
+      [{ id: 1, runnerName: 'fun1' }],
     ),
   ).rejects.toThrowError('insufficient');
 });
@@ -87,15 +87,15 @@ test('it should allow adding multiple payees', async () => {
   await expect(
     processor.createHold(
       {
-        functionsByName: {
+        runnersByName: {
           fun1: { prices: [{ perQuery: 100, minimum: 100 }] },
           fun2: { prices: [{ perQuery: 600, minimum: 600 }] },
         },
         paymentAddress: 'ar1',
       } as unknown as IDatastoreManifest,
       [
-        { id: 1, functionName: 'fun1' },
-        { id: 2, functionName: 'fun2' },
+        { id: 1, runnerName: 'fun1' },
+        { id: 2, runnerName: 'fun2' },
       ],
     ),
   ).resolves.toBe(true);
@@ -130,20 +130,20 @@ test('it should allow an function to charge per kb', async () => {
   await expect(
     processor.createHold(
       {
-        functionsByName: {
+        runnersByName: {
           fun1: { prices: [{ perQuery: 500, minimum: 500 }] },
           fun2: { prices: [{ perQuery: 100, addOns: { perKb: 1 }, minimum: 100 }] },
         },
         paymentAddress: 'ar1',
       } as any as IDatastoreManifest,
       [
-        { id: 1, functionName: 'fun1' },
-        { id: 2, functionName: 'fun2' },
+        { id: 1, runnerName: 'fun1' },
+        { id: 2, runnerName: 'fun2' },
       ],
     ),
   ).resolves.toBe(true);
-  expect(processor.releaseLocalFunctionHold(1, 1e3)).toBe(500);
-  expect(processor.releaseLocalFunctionHold(2, 1e3)).toBe(101);
+  expect(processor.releaseLocalRunnerHold(1, 1e3)).toBe(500);
+  expect(processor.releaseLocalRunnerHold(2, 1e3)).toBe(101);
 
   const finalMicrogons = await processor.settle(1e3);
   expect(finalMicrogons).toBe(611);
@@ -174,20 +174,20 @@ test('the processor should take all available funds if a query exceeds the micro
   await expect(
     processor.createHold(
       {
-        functionsByName: {
+        runnersByName: {
           fun1: { prices: [{ perQuery: 494, minimum: 494 }] },
           fun2: { prices: [{ perQuery: 500, minimum: 500, addOns: { perKb: 1 } }] },
         },
         paymentAddress: 'ar1',
       } as unknown as IDatastoreManifest,
       [
-        { id: 1, functionName: 'fun1' },
-        { id: 2, functionName: 'fun2' },
+        { id: 1, runnerName: 'fun1' },
+        { id: 2, runnerName: 'fun2' },
       ],
     ),
   ).resolves.toBe(true);
-  expect(processor.releaseLocalFunctionHold(1, 1e3)).toBe(494);
-  expect(processor.releaseLocalFunctionHold(2, 1e3)).toBe(501);
+  expect(processor.releaseLocalRunnerHold(1, 1e3)).toBe(494);
+  expect(processor.releaseLocalRunnerHold(2, 1e3)).toBe(501);
 
   await expect(processor.settle(23)).rejects.toThrowError('will not cover');
   expect(settleSpy).toHaveBeenCalledTimes(1);

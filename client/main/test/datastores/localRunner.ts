@@ -1,7 +1,7 @@
-import { Function } from '@ulixee/datastore';
+import { Runner } from '@ulixee/datastore';
 import { boolean, string } from '@ulixee/schema';
 
-export default new Function({
+export default new Runner({
   name: 'test',
   run(ctx) {
     ctx.Output.emit({

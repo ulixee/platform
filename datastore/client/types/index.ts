@@ -4,7 +4,7 @@ export default interface ITypes
   extends Record<
     string,
     { 
-      functions: Record<string, IItemInputOutput>; 
+      runners: Record<string, IItemInputOutput>; 
       tables: Record<string, IItemInputOutput>;
     }
   > {}

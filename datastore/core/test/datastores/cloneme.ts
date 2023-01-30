@@ -1,10 +1,10 @@
-import Datastore, { Function, Table } from '@ulixee/datastore';
+import Datastore, { Runner, Table } from '@ulixee/datastore';
 import { boolean, date, object, string } from '@ulixee/schema';
 
 export default new Datastore({
   name: 'cloneme',
-  functions: {
-    cloneUpstream: new Function({
+  runners: {
+    cloneUpstream: new Runner({
       run(ctx) {
         ctx.Output.emit({ success: true, affiliateId: ctx.callerAffiliateId });
       },

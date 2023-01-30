@@ -1,5 +1,5 @@
 import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
-import { IFunctionSchema } from '@ulixee/datastore';
+import { IRunnerSchema } from '@ulixee/datastore';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 
 const zodToSqliteTypes = {
@@ -31,10 +31,10 @@ export default class SqlGenerator {
     `);
   }
 
-  public static createFunctionFromSchema(
+  public static createRunnerFromSchema(
     input: Record<string, any>,
     outputRecords: Record<string, any>[],
-    schema: IFunctionSchema,
+    schema: IRunnerSchema,
     callback: (parameters: string[], columns: string[]) => void,
   ): void {
     const parameters = Array.from(
@@ -96,7 +96,7 @@ export default class SqlGenerator {
     return record;
   }
 
-  public static convertFunctionRecordToSqliteRow(
+  public static convertRunnerRecordToSqliteRow(
     record: Record<string, any>,
     schema: Record<string, IAnySchemaJson>,
     tmpSchema: any = {},

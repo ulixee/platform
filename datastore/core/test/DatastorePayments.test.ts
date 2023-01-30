@@ -99,7 +99,7 @@ test('should be able to run a datastore function with payments', async () => {
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
-      functionsByName: {
+      runnersByName: {
         putout: {
           prices: [
             {
@@ -113,7 +113,7 @@ test('should be able to run a datastore function with payments', async () => {
 
   const dbx = await packager.build();
   const manifest = packager.manifest;
-  expect(manifest.functionsByName.putout.prices[0].perQuery).toBe(1250);
+  expect(manifest.runnersByName.putout.prices[0].perQuery).toBe(1250);
   await client.upload(await dbx.asBuffer());
 
   await expect(client.query(manifest.versionHash, 'SELECT * FROM putout()')).rejects.toThrowError(
@@ -130,7 +130,7 @@ test('should be able to run a datastore function with payments', async () => {
   expect(settings.settlementFeeMicrogons).toBe(5);
   apiCalls.mockClear();
 
-  const meta = await client.getFunctionPricing(manifest.versionHash, 'putout');
+  const meta = await client.getRunnerPricing(manifest.versionHash, 'putout');
   const payment = await sidechainClient.createMicroPayment({
     microgons: meta.minimumPrice,
     ...meta,
@@ -165,8 +165,8 @@ test('should be able to run a datastore function with payments', async () => {
   // @ts-ignore
   const registry = DatastoreCore.datastoreRegistry;
   const entry = await registry.getByVersionHash(manifest.versionHash);
-  expect(entry.statsByFunction.putout.runs).toBe(1);
-  expect(entry.statsByFunction.putout.maxPrice).toBe(1250);
+  expect(entry.statsByRunner.putout.runs).toBe(1);
+  expect(entry.statsByRunner.putout.maxPrice).toBe(1250);
 
   const streamed = client.stream(manifest.versionHash, 'putout', {}, { payment });
   await expect(streamed.resultMetadata).resolves.toEqual({
@@ -185,7 +185,7 @@ test('should be able run a Datastore with Credits', async () => {
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
-      functionsByName: {
+      runnersByName: {
         putout: {
           prices: [{ perQuery: 1000 }],
         },
@@ -236,7 +236,7 @@ test('should remove an empty Credits from the local cache', async () => {
   await Fs.writeFileSync(
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
-      functionsByName: {
+      runnersByName: {
         putout: {
           prices: [{ perQuery: 1250 }],
         },
@@ -261,7 +261,7 @@ test('should be able to embed Credits in a Datastore', async () => {
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
-      functionsByName: {
+      runnersByName: {
         putout: {
           prices: [{ perQuery: 1000 }],
         },
@@ -293,7 +293,7 @@ test('should be able to embed Credits in a Datastore', async () => {
     `${__dirname}/datastores/clone-output/datastore-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha3('payme123'), 'ar'),
-      functionsByName: {
+      runnersByName: {
         putout: {
           prices: [{ perQuery: 1000 }],
         },

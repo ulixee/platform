@@ -31,7 +31,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
 
   public coreVersion: string;
   public schemaInterface: string;
-  public functionsByName: IDatastoreManifest['functionsByName'] = {};
+  public runnersByName: IDatastoreManifest['runnersByName'] = {};
   public tablesByName: IDatastoreManifest['tablesByName'] = {};
 
   public adminIdentities: string[];
@@ -82,7 +82,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     scriptHash: string,
     versionTimestamp: number,
     schemaInterface: string,
-    functionsByName: IDatastoreManifest['functionsByName'],
+    runnersByName: IDatastoreManifest['runnersByName'],
     tablesByName: IDatastoreManifest['tablesByName'],
     metadata: Pick<
       IDatastoreMetadata,
@@ -98,7 +98,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     const manifestSources = DatastoreManifest.getCustomSources(absoluteScriptEntrypoint);
     await this.loadGeneratedManifests(manifestSources);
     this.linkedVersions ??= [];
-    this.functionsByName = {};
+    this.runnersByName = {};
 
     const { name, coreVersion, paymentAddress, adminIdentities, domain } = metadata;
 
@@ -112,8 +112,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
     });
     this.adminIdentities ??= [];
 
-    for (const [funcName, funcMeta] of Object.entries(functionsByName)) {
-      this.functionsByName[funcName] = {
+    for (const [funcName, funcMeta] of Object.entries(runnersByName)) {
+      this.runnersByName[funcName] = {
         corePlugins: funcMeta.corePlugins ?? {},
         prices: funcMeta.prices ?? [{ perQuery: 0, minimum: 0 }],
         schemaAsJson: funcMeta.schemaAsJson,
@@ -214,7 +214,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       scriptHash: this.scriptHash,
       coreVersion: this.coreVersion,
       schemaInterface: this.schemaInterface,
-      functionsByName: this.functionsByName,
+      runnersByName: this.runnersByName,
       tablesByName: this.tablesByName,
       paymentAddress: this.paymentAddress,
       adminIdentities: this.adminIdentities,
@@ -263,16 +263,16 @@ export default class DatastoreManifest implements IDatastoreManifest {
           path: source.path,
           overrides: explicitSettings,
         });
-        const { functionsByName, tablesByName, ...otherSettings } = explicitSettings;
-        if (functionsByName) {
-          for (const [name, funcMeta] of Object.entries(functionsByName)) {
-            if (this.functionsByName[name]) {
-              Object.assign(this.functionsByName[name], funcMeta);
+        const { runnersByName, tablesByName, ...otherSettings } = explicitSettings;
+        if (runnersByName) {
+          for (const [name, funcMeta] of Object.entries(runnersByName)) {
+            if (this.runnersByName[name]) {
+              Object.assign(this.runnersByName[name], funcMeta);
             } else {
-              this.functionsByName[name] = funcMeta;
+              this.runnersByName[name] = funcMeta;
             }
-            this.functionsByName[name].prices ??= [];
-            for (const price of this.functionsByName[name].prices) {
+            this.runnersByName[name].prices ??= [];
+            for (const price of this.runnersByName[name].prices) {
               price.perQuery ??= 0;
               price.minimum ??= price.perQuery;
             }
@@ -319,7 +319,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       | 'scriptEntrypoint'
       | 'linkedVersions'
       | 'paymentAddress'
-      | 'functionsByName'
+      | 'runnersByName'
       | 'tablesByName'
       | 'adminIdentities'
     >,
@@ -328,20 +328,20 @@ export default class DatastoreManifest implements IDatastoreManifest {
       scriptHash,
       versionTimestamp,
       scriptEntrypoint,
-      functionsByName,
+      runnersByName,
       tablesByName,
       paymentAddress,
       linkedVersions,
       adminIdentities,
     } = manifest;
     linkedVersions.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
-    const functions = Object.keys(functionsByName ?? {}).sort();
-    const functionPrices: (string | number)[] = [];
-    for (const name of functions) {
-      const func = functionsByName[name];
+    const runners = Object.keys(runnersByName ?? {}).sort();
+    const runnerPrices: (string | number)[] = [];
+    for (const name of runners) {
+      const func = runnersByName[name];
       func.prices ??= [{ perQuery: 0, minimum: 0 }];
       for (const price of func.prices) {
-        functionPrices.push(price.perQuery, price.minimum, price.addOns?.perKb);
+        runnerPrices.push(price.perQuery, price.minimum, price.addOns?.perKb);
       }
     }
     const tablePrices: (string | number)[] = [];
@@ -356,7 +356,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       scriptHash,
       versionTimestamp,
       scriptEntrypoint,
-      ...functionPrices,
+      ...runnerPrices,
       ...tablePrices,
       paymentAddress,
       ...(adminIdentities ?? []),

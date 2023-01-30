@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.testFunction = void 0;
+exports.testRunner = void 0;
 const isArray_1 = require("lodash-es/isArray");
-function testFunction() {
+function testRunner() {
     return (0, isArray_1.default)([]) ? 'true' : 'not an array';
 }
-exports.testFunction = testFunction;
+exports.testRunner = testRunner;
 //# sourceMappingURL=helper.js.map

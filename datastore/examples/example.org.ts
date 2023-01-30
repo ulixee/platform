@@ -1,12 +1,12 @@
 // NOTE: you must start your own Ulixee Miner to run this example.
 
-import { Function, HeroFunctionPlugin, Schema } from '@ulixee/datastore-plugins-hero';
+import { Runner, HeroRunnerPlugin, Schema } from '@ulixee/datastore-plugins-hero';
 
 const { string } = Schema;
 
 // configure input.url by running as node example.org.js --input.url="https://ulixee.org"
 
-export default new Function(
+export default new Runner(
   {
     async run(context) {
       const { input, Output, Hero } = context;
@@ -35,5 +35,5 @@ export default new Function(
       ],
     },
   },
-  HeroFunctionPlugin,
+  HeroRunnerPlugin,
 );

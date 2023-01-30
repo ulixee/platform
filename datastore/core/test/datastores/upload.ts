@@ -1,9 +1,9 @@
-import Datastore, { Function } from '@ulixee/datastore';
+import Datastore, { Runner } from '@ulixee/datastore';
 import { boolean } from '@ulixee/schema';
 
 export default new Datastore({
-  functions: {
-    upTest: new Function({
+  runners: {
+    upTest: new Runner({
       run(ctx) {
         ctx.Output.emit({ upload: true });
       },

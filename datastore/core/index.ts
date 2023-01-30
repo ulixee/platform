@@ -4,7 +4,7 @@ import { promises as Fs } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import * as Finalhandler from 'finalhandler';
 import * as ServeStatic from 'serve-static';
-import IFunctionPluginCore from '@ulixee/datastore/interfaces/IFunctionPluginCore';
+import IRunnerPluginCore from '@ulixee/datastore/interfaces/IRunnerPluginCore';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
@@ -31,9 +31,9 @@ import DatastoreQueryLocalScript from './endpoints/Datastore.queryLocalScript';
 import DatastoreMeta from './endpoints/Datastore.meta';
 import DatastoreQueryInternal from './endpoints/Datastore.queryInternal';
 import DatastoreQueryInternalTable from './endpoints/Datastore.queryInternalTable';
-import DatastoreQueryInternalFunctionResult from './endpoints/Datastore.queryInternalFunctionResult';
+import DatastoreQueryInternalRunnerResult from './endpoints/Datastore.queryInternalRunnerResult';
 import DatastoreInitializeInMemoryTable from './endpoints/Datastore.createInMemoryTable';
-import DatastoreInitializeInMemoryFunction from './endpoints/Datastore.createInMemoryFunction';
+import DatastoreInitializeInMemoryRunner from './endpoints/Datastore.createInMemoryRunner';
 import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
 import DatastoreStorage from './lib/DatastoreStorage';
 import DatastoreStream from './endpoints/Datastore.stream';
@@ -70,7 +70,7 @@ export default class DatastoreCore {
     approvedSidechainsRefreshInterval: 60e3 * 60, // 1 hour
   };
 
-  public static pluginCoresByName: { [name: string]: IFunctionPluginCore } = {};
+  public static pluginCoresByName: { [name: string]: IRunnerPluginCore } = {};
   public static isClosing: Promise<void>;
   public static workTracker: WorkTracker;
   public static apiRegistry = new ApiRegistry<IDatastoreApiContext>([
@@ -83,9 +83,9 @@ export default class DatastoreCore {
     DatastoreMeta,
     DatastoreQueryInternal,
     DatastoreQueryInternalTable,
-    DatastoreQueryInternalFunctionResult,
+    DatastoreQueryInternalRunnerResult,
     DatastoreInitializeInMemoryTable,
-    DatastoreInitializeInMemoryFunction,
+    DatastoreInitializeInMemoryRunner,
   ]);
 
   private static datastoreRegistry: DatastoreRegistry;
@@ -160,7 +160,7 @@ export default class DatastoreCore {
     ServeStatic(docpagePath)(req, res, done);
   }
 
-  public static registerPlugin(pluginCore: IFunctionPluginCore): void {
+  public static registerPlugin(pluginCore: IRunnerPluginCore): void {
     this.pluginCoresByName[pluginCore.name] = pluginCore;
   }
 

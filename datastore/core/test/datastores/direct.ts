@@ -1,9 +1,9 @@
-import Datastore, { Table, Function } from '@ulixee/datastore';
+import Datastore, { Table, Runner } from '@ulixee/datastore';
 import { boolean, string } from '@ulixee/schema';
 
 export default new Datastore({
-  functions: {
-    test: new Function({
+  runners: {
+    test: new Runner({
       run(ctx) {
         new ctx.Output({
           testerEcho: ctx.input.shouldTest,

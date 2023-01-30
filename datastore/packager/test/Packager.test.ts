@@ -58,10 +58,10 @@ test('it should generate a relative script entrypoint', async () => {
     coreVersion: require('../package.json').version,
     schemaInterface: `{
   tables: {};
-  functions: {};
+  runners: {};
 }`,
     tablesByName: {},
-    functionsByName: expect.objectContaining({
+    runnersByName: expect.objectContaining({
       default: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {
@@ -139,11 +139,11 @@ test('should build a version history with a new version', async () => {
   dbxFile = packager.dbxPath;
   await Fs.writeFile(
     `${__dirname}/assets/_historytestManual.js`,
-    `const {Datastore, Function, HeroFunctionPlugin }=require("@ulixee/datastore-plugins-hero");
-const heroFunction = new Function(({output}) => {
+    `const {Datastore, Runner, HeroRunnerPlugin }=require("@ulixee/datastore-plugins-hero");
+const heroRunner = new Runner(({output}) => {
    output.text=1;
-},HeroFunctionPlugin);
-module.exports = new Datastore({ functions: { heroFunction }});`,
+},HeroRunnerPlugin);
+module.exports = new Datastore({ runners: { heroRunner }});`,
   );
   const packager2 = new DatastorePackager(`${__dirname}/assets/historyTest.js`);
   await packager2.build({
@@ -156,11 +156,11 @@ module.exports = new Datastore({ functions: { heroFunction }});`,
 test('should be able to "link" the version history', async () => {
   await Fs.writeFile(
     `${__dirname}/assets/historyTest2.js`,
-    `const { Datastore, Function, HeroFunctionPlugin }=require("@ulixee/datastore-plugins-hero");
-const heroFunction = new Function(({output}) => {
+    `const { Datastore, Runner, HeroRunnerPlugin }=require("@ulixee/datastore-plugins-hero");
+const heroRunner = new Runner(({output}) => {
    output.text=1;
-},HeroFunctionPlugin);
-module.exports = new Datastore({ functions: { heroFunction }})`,
+},HeroRunnerPlugin);
+module.exports = new Datastore({ runners: { heroRunner }})`,
   );
   const entrypoint = `${__dirname}/assets/historyTest2.js`;
   const packager = new DatastorePackager(entrypoint);
@@ -194,22 +194,22 @@ test('should be able to change the output directory', async () => {
 });
 
 test('should be able to package a multi-function Datastore', async () => {
-  const packager = new DatastorePackager(`${__dirname}/assets/multiFunctionTest.js`);
+  const packager = new DatastorePackager(`${__dirname}/assets/multiRunnerTest.js`);
   await packager.build();
   dbxFile = packager.dbxPath;
   workingDirectory = packager.dbx.workingDirectory;
   const dbx = new DbxFile(dbxFile);
   expect(packager.manifest.toJSON()).toEqual(<IDatastoreManifest>{
     linkedVersions: [],
-    scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `multiFunctionTest.js`),
+    scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `multiRunnerTest.js`),
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
     tablesByName: {},
     adminIdentities: [],
     schemaInterface: `{
   tables: {};
-  functions: {
-    funcWithInput: {
+  runners: {
+    runnerWithInput: {
       input: {
         /**
          * @format url
@@ -217,7 +217,7 @@ test('should be able to package a multi-function Datastore', async () => {
         url: string;
       };
     };
-    funcWithOutput: {
+    runnerWithOutput: {
       output: {
         title: string;
         html: string;
@@ -225,15 +225,15 @@ test('should be able to package a multi-function Datastore', async () => {
     };
   };
 }`,
-    functionsByName: expect.objectContaining({
-      funcWithInput: {
+    runnersByName: expect.objectContaining({
+      runnerWithInput: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {
           '@ulixee/datastore-plugins-hero': require('../package.json').version,
         },
         schemaAsJson: { input: { url: { format: 'url', typeName: 'string' } } },
       },
-      funcWithOutput: {
+      runnerWithOutput: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {},
         schemaAsJson: { output: { title: { typeName: 'string' }, html: { typeName: 'string' } } },
@@ -243,27 +243,27 @@ test('should be able to package a multi-function Datastore', async () => {
     versionTimestamp: expect.any(Number),
     paymentAddress: undefined,
   });
-  expect((await Fs.stat(`${__dirname}/assets/multiFunctionTest.dbx`)).isFile()).toBeTruthy();
+  expect((await Fs.stat(`${__dirname}/assets/multiRunnerTest.dbx`)).isFile()).toBeTruthy();
 
-  await Fs.unlink(`${__dirname}/assets/multiFunctionTest.dbx`);
+  await Fs.unlink(`${__dirname}/assets/multiRunnerTest.dbx`);
 });
 
-test('should be able to package an exported Function without a Datastore', async () => {
-  const packager = new DatastorePackager(`${__dirname}/assets/rawFunctionTest.js`);
+test('should be able to package an exported Runner without a Datastore', async () => {
+  const packager = new DatastorePackager(`${__dirname}/assets/rawRunnerTest.js`);
   await packager.build();
   dbxFile = packager.dbxPath;
   workingDirectory = packager.dbx.workingDirectory;
   const dbx = new DbxFile(dbxFile);
   expect(packager.manifest.toJSON()).toEqual({
     linkedVersions: [],
-    scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `rawFunctionTest.js`),
+    scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `rawRunnerTest.js`),
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
     schemaInterface: `{
   tables: {};
-  functions: {};
+  runners: {};
 }`,
-    functionsByName: expect.objectContaining({
+    runnersByName: expect.objectContaining({
       default: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {
@@ -278,7 +278,7 @@ test('should be able to package an exported Function without a Datastore', async
     paymentAddress: undefined,
     adminIdentities: [],
   });
-  expect((await Fs.stat(`${__dirname}/assets/rawFunctionTest.dbx`)).isFile()).toBeTruthy();
+  expect((await Fs.stat(`${__dirname}/assets/rawRunnerTest.dbx`)).isFile()).toBeTruthy();
 
-  await Fs.unlink(`${__dirname}/assets/rawFunctionTest.dbx`);
+  await Fs.unlink(`${__dirname}/assets/rawRunnerTest.dbx`);
 });

@@ -7,7 +7,7 @@ import DatastoreCore from '../index';
 import PaymentProcessor from '../lib/PaymentProcessor';
 import DatastoreStorage from '../lib/DatastoreStorage';
 import DatastoreVm from '../lib/DatastoreVm';
-import { validateAuthentication, validateFunctionCoreVersions } from '../lib/datastoreUtils';
+import { validateAuthentication, validateRunnerCoreVersions } from '../lib/datastoreUtils';
 
 export default new DatastoreApiHandler('Datastore.query', {
   async handler(request, context) {
@@ -35,9 +35,9 @@ export default new DatastoreApiHandler('Datastore.query', {
     const sqlParser = new SqlParser(request.sql);
     if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
 
-    sqlParser.functionNames.forEach(functionName => {
-      const schema = datastore.functions[functionName].schema ?? {};
-      storage.addFunctionSchema(functionName, schema);
+    sqlParser.functionNames.forEach(name => {
+      const schema = datastore.runners[name].schema ?? {};
+      storage.addRunnerSchema(name, schema);
     });
 
     sqlParser.tableNames.forEach(name => {
@@ -47,43 +47,43 @@ export default new DatastoreApiHandler('Datastore.query', {
       storage.addTableSchema(name, schema, !!table?.remoteSource);
     });
 
-    const inputByFunctionName = sqlParser.extractFunctionInputs(
-      storage.schemasByFunctionName,
+    const inputByRunnerName = sqlParser.extractRunnerInputs(
+      storage.schemasByRunnerName,
       request.boundValues,
     );
-    const outputsByFunctionName: { [name: string]: any[] } = {};
+    const outputsByRunnerName: { [name: string]: any[] } = {};
 
     const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
 
-    const functionsWithTempIds = Object.keys(inputByFunctionName).map((x, i) => {
+    const runnersWithTempIds = Object.keys(inputByRunnerName).map((x, i) => {
       return {
-        functionName: x,
+        runnerName: x,
         id: i,
       };
     });
 
     await paymentProcessor.createHold(
       datastoreVersion,
-      functionsWithTempIds,
+      runnersWithTempIds,
       request.pricingPreferences,
     );
 
-    for (const { functionName, id } of functionsWithTempIds) {
-      const functionStart = Date.now();
-      const functionInput = inputByFunctionName[functionName];
-      validateFunctionCoreVersions(datastoreVersion, functionName, context);
+    for (const { runnerName, id } of runnersWithTempIds) {
+      const runnerStart = Date.now();
+      const runnerInput = inputByRunnerName[runnerName];
+      validateRunnerCoreVersions(datastoreVersion, runnerName, context);
 
       const outputs = await context.workTracker.trackRun(
-        runDatastoreFunction(datastore, functionName, functionInput, request),
+        runDatastoreRunner(datastore, runnerName, runnerInput, request),
       );
-      outputsByFunctionName[functionName] = outputs;
+      outputsByRunnerName[runnerName] = outputs;
 
       // release the hold
       const bytes = PaymentProcessor.getOfficialBytes(outputs);
-      const microgons = paymentProcessor.releaseLocalFunctionHold(id, bytes);
+      const microgons = paymentProcessor.releaseLocalRunnerHold(id, bytes);
 
-      const milliseconds = Date.now() - functionStart;
-      context.datastoreRegistry.recordStats(request.versionHash, functionName, {
+      const milliseconds = Date.now() - runnerStart;
+      context.datastoreRegistry.recordStats(request.versionHash, runnerName, {
         bytes,
         microgons,
         milliseconds,
@@ -103,8 +103,8 @@ export default new DatastoreApiHandler('Datastore.query', {
     const boundValues = sqlParser.convertToBoundValuesSqliteMap(request.boundValues);
     const sqlQuery = new SqlQuery(sqlParser, storage, db);
     const outputs = sqlQuery.execute(
-      inputByFunctionName,
-      outputsByFunctionName,
+      inputByRunnerName,
+      outputsByRunnerName,
       recordsByVirtualTableName,
       boundValues,
     );
@@ -123,23 +123,23 @@ export default new DatastoreApiHandler('Datastore.query', {
   },
 });
 
-async function runDatastoreFunction<T>(
+async function runDatastoreRunner<T>(
   datastore: Datastore,
-  functionName: string,
-  functionInput: any,
+  runnerName: string,
+  runnerInput: any,
   request: IDatastoreApiTypes['Datastore.query']['args'],
 ): Promise<T> {
   const options = {
-    input: functionInput,
+    input: runnerInput,
     payment: request.payment,
     authentication: request.authentication,
     affiliateId: request.affiliateId,
   };
   for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
-    if (plugin.beforeExecFunction) await plugin.beforeExecFunction(options);
+    if (plugin.beforeExecRunner) await plugin.beforeExecRunner(options);
   }
 
-  return await datastore.functions[functionName].runInternal(options);
+  return await datastore.runners[runnerName].runInternal(options);
 }
 
 async function runDatastorePassthroughQuery<T>(

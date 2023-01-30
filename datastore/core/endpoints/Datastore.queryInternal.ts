@@ -36,8 +36,8 @@ export default new DatastoreApiHandler('Datastore.queryInternal', {
     const boundValues = sqlParser.convertToBoundValuesSqliteMap(request.boundValues);
     const sqlQuery = new SqlQuery(sqlParser, storage, db);
     const records = sqlQuery.execute(
-      request.inputByFunctionName,
-      request.outputByFunctionName,
+      request.inputByRunnerName,
+      request.outputByRunnerName,
       request.recordsByVirtualTableName,
       boundValues,
     );

@@ -1,8 +1,8 @@
 // NOTE: you must start your own Ulixee Miner to run this example.
 
-import { Function, HeroFunctionPlugin } from '@ulixee/datastore-plugins-hero';
+import { Runner, HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
 
-export default new Function(async ctx => {
+export default new Runner(async ctx => {
   const { input, Output, Hero } = ctx;
   input.url ??= 'https://ulixee.org';
 
@@ -26,4 +26,4 @@ export default new Function(async ctx => {
   // step 3 - look at the first one
   await hero.click(datasets[0]);
   await hero.waitForLocation('change');
-}, HeroFunctionPlugin);
+}, HeroRunnerPlugin);

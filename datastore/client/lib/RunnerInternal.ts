@@ -5,17 +5,17 @@ import { IValidationError } from '@ulixee/schema/interfaces/IValidationResult';
 import { bindFunctions, pickRandom } from '@ulixee/commons/lib/utils';
 import StringSchema from '@ulixee/schema/lib/StringSchema';
 import DatastoreSchemaError from './DatastoreSchemaError';
-import IFunctionSchema, { ExtractSchemaType } from '../interfaces/IFunctionSchema';
-import IFunctionExecOptions from '../interfaces/IFunctionExecOptions';
+import IRunnerSchema, { ExtractSchemaType } from '../interfaces/IRunnerSchema';
+import IRunnerExecOptions from '../interfaces/IRunnerExecOptions';
 import createOutputGenerator, { IOutputClass } from './Output';
 import IObservableChange from '../interfaces/IObservableChange';
 import ResultIterable from './ResultIterable';
-import IFunctionComponents from '../interfaces/IFunctionComponents';
-import IFunctionContext from '../interfaces/IFunctionContext';
+import IRunnerComponents from '../interfaces/IRunnerComponents';
+import IRunnerContext from '../interfaces/IRunnerContext';
 
-export default class FunctionInternal<
-  TSchema extends IFunctionSchema<any, any>,
-  TOptions extends IFunctionExecOptions<TSchema> = IFunctionExecOptions<TSchema>,
+export default class RunnerInternal<
+  TSchema extends IRunnerSchema<any, any>,
+  TOptions extends IRunnerExecOptions<TSchema> = IRunnerExecOptions<TSchema>,
   TInput extends ExtractSchemaType<TSchema['input']> = ExtractSchemaType<TSchema['input']>,
   TOutput extends ExtractSchemaType<TSchema['output']> = ExtractSchemaType<TSchema['output']>,
 > extends TypedEventEmitter<{
@@ -33,7 +33,7 @@ export default class FunctionInternal<
   public onOutputChanges: (changes: IObservableChange[]) => any;
   public onOutputRecord: (output: TOutput) => void;
 
-  constructor(options: TOptions, private components: IFunctionComponents<TSchema, any>) {
+  constructor(options: TOptions, private components: IRunnerComponents<TSchema, any>) {
     super();
     this.options = options;
     this.schema = components.schema;
@@ -71,16 +71,16 @@ export default class FunctionInternal<
     bindFunctions(this);
   }
 
-  public run(context: IFunctionContext<TSchema>): ResultIterable<TOutput> {
-    const functionResults = new ResultIterable<TOutput>();
-    this.onOutputRecord = output => functionResults.push(output);
+  public run(context: IRunnerContext<TSchema>): ResultIterable<TOutput> {
+    const runnerResults = new ResultIterable<TOutput>();
+    this.onOutputRecord = output => runnerResults.push(output);
 
     void Promise.resolve(this.components.run(context))
       .then(this.emitPendingOutputs)
-      .then(functionResults.done)
-      .catch(functionResults.reject);
+      .then(runnerResults.done)
+      .catch(runnerResults.reject);
 
-    return functionResults;
+    return runnerResults;
   }
 
   public emitPendingOutputs(): void {
@@ -120,7 +120,7 @@ export default class FunctionInternal<
     const inputValidation = schema.validate(this.input);
     if (!inputValidation.success) {
       throw new DatastoreSchemaError(
-        'The Function input did not match its Schema',
+        'The Runner input did not match its Schema',
         inputValidation.errors,
         this.schema.input,
       );
@@ -142,7 +142,7 @@ export default class FunctionInternal<
     const outputValidation = this.#outputSchema.validate(output);
     if (!outputValidation.success) {
       throw new DatastoreSchemaError(
-        `The Function's ${humanCounter}Output did not match its Schema`,
+        `The Runner's ${humanCounter}Output did not match its Schema`,
         outputValidation.errors,
         output,
       );

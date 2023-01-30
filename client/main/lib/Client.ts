@@ -1,6 +1,6 @@
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import ClientForDatastore from "./ClientForDatastore";
-import ClientForFunction from './ClientForFunction';
+import ClientForRunner from './ClientForRunner';
 import ClientForTable from './ClientForTable';
 import ClientForCrawler from './ClientForCrawler';
 import ConnectionParameters from './ConnectionParameters';
@@ -10,7 +10,7 @@ import ILocationStringOrObject from '../interfaces/ILocationStringOrObject';
 export default class ClientForRemote {
   public static ForDatastore = ClientForDatastore;
   public static ForTable = ClientForTable;
-  public static ForFunction = ClientForFunction;
+  public static ForRunner = ClientForRunner;
   public static ForCrawler = ClientForCrawler;
 
   public user: string;
@@ -41,14 +41,14 @@ export default class ClientForRemote {
   public async run<
     TInputFilter extends IInputFilter = IInputFilter,
     TOutputSchema extends IOutputSchema = IOutputSchema,
-  >(functionOrTableName: string, inputFilter?: TInputFilter): Promise<TOutputSchema[]> {
-    return await this.fetch(functionOrTableName, inputFilter);
+  >(runnerOrTableName: string, inputFilter?: TInputFilter): Promise<TOutputSchema[]> {
+    return await this.fetch(runnerOrTableName, inputFilter);
   }
 
   public async fetch<
     TInputFilter extends IInputFilter = IInputFilter,
     TOutputSchema extends IOutputSchema = IOutputSchema,
-  >(functionOrTableName: string, inputFilter?: TInputFilter): Promise<TOutputSchema[]> {
+  >(runnerOrTableName: string, inputFilter?: TInputFilter): Promise<TOutputSchema[]> {
     if (!this.database) {
       throw new Error('You Client connection must specific a datastore to fetch');
     }
@@ -61,7 +61,7 @@ export default class ClientForRemote {
       } : undefined,
     };
 
-    return await this.apiClient.stream(this.database, functionOrTableName, inputFilter, options) as TOutputSchema[];
+    return await this.apiClient.stream(this.database, runnerOrTableName, inputFilter, options) as TOutputSchema[];
   }
 
   public async crawl<

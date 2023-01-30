@@ -1,9 +1,9 @@
-import Datastore, { Function } from '@ulixee/datastore';
+import Datastore, { Runner } from '@ulixee/datastore';
 import { boolean, string } from '@ulixee/schema';
 
 export default new Datastore({
-  functions: {
-    remote: new Function({
+  runners: {
+    remote: new Runner({
       run(ctx) {
         new ctx.Output({ iAmRemote: true, echo: ctx.input.test });
       },

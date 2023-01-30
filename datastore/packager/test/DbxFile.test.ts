@@ -6,10 +6,10 @@ import DbxFile from '../lib/DbxFile';
 test('can load and manipulate a working directory', async () => {
   const packager = new DatastorePackager(`${__dirname}/assets/dbxTest1.js`);
   await packager.build();
-  const newScript = `const { Function, HeroFunctionPlugin } = require("@ulixee/datastore-plugins-hero");
-module.exports=new Function(({output}) => {
+  const newScript = `const { Runner, HeroRunnerPlugin } = require("@ulixee/datastore-plugins-hero");
+module.exports=new Runner(({output}) => {
   output.text='test';
-}, HeroFunctionPlugin);`;
+}, HeroRunnerPlugin);`;
 
   const dbxFile = new DbxFile(packager.dbxPath);
   await dbxFile.open();

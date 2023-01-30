@@ -9,14 +9,14 @@ import ConnectionFactory from '../connections/ConnectionFactory';
 import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
 import IDatastoreComponents, {
   TCrawlers,
-  TFunctions,
+  TRunners,
   TTables,
 } from '../interfaces/IDatastoreComponents';
-import Function from './Function';
+import Runner from './Runner';
 import Table from './Table';
 import type Crawler from './Crawler';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
-import type PassthroughFunction from './PassthroughFunction';
+import type PassthroughRunner from './PassthroughRunner';
 import PassthroughTable from './PassthroughTable';
 import CreditsTable from './CreditsTable';
 import DatastoreApiClient from './DatastoreApiClient';
@@ -27,11 +27,11 @@ let lastInstanceId = 0;
 
 export default class DatastoreInternal<
   TTable extends TTables = TTables,
-  TFunction extends TFunctions = TFunctions,
+  TRunner extends TRunners = TRunners,
   TCrawler extends TCrawlers = TCrawlers,
-  TComponents extends IDatastoreComponents<TTable, TFunction, TCrawler> = IDatastoreComponents<
+  TComponents extends IDatastoreComponents<TTable, TRunner, TCrawler> = IDatastoreComponents<
     TTable,
-    TFunction,
+    TRunner,
     TCrawler
   >,
 > {
@@ -45,7 +45,7 @@ export default class DatastoreInternal<
   public instanceId: string;
   public loadingPromises: PromiseLike<void>[] = [];
   public components: TComponents;
-  public readonly functions: TFunction = {} as any;
+  public readonly runners: TRunner = {} as any;
   public readonly tables: TTable = {} as any;
   public readonly crawlers: TCrawler = {} as any;
   public readonly affiliateId: string;
@@ -75,11 +75,11 @@ export default class DatastoreInternal<
     this.components = components;
 
     const names: Set<string> = new Set();
-    for (const [name, func] of Object.entries(components.functions || [])) {
+    for (const [name, runner] of Object.entries(components.runners || [])) {
       if (names.has(name)) {
         throw new Error(`${name} already exists in this datastore`);
       }
-      this.attachFunction(func, name);
+      this.attachRunner(runner, name);
       names.add(name);
     }
     for (const [name, table] of Object.entries(components.tables || [])) {
@@ -139,16 +139,16 @@ export default class DatastoreInternal<
     const datastoreVersionHash = this.manifest?.versionHash;
 
     const sqlParser = new SqlParser(sql);
-    const inputSchemas: { [functionName: string]: ISchemaAny } = {};
-    for (const [key, func] of Object.entries(this.functions)) {
-      if (func.schema) inputSchemas[key] = func.schema.input;
+    const inputSchemas: { [runnerName: string]: ISchemaAny } = {};
+    for (const [key, runner] of Object.entries(this.runners)) {
+      if (runner.schema) inputSchemas[key] = runner.schema.input;
     }
-    const inputByFunctionName = sqlParser.extractFunctionInputs(inputSchemas, boundValues);
-    const outputByFunctionName: { [name: string]: any[] } = {};
+    const inputByRunnerName = sqlParser.extractRunnerInputs(inputSchemas, boundValues);
+    const outputByRunnerName: { [name: string]: any[] } = {};
 
-    for (const functionName of Object.keys(inputByFunctionName)) {
-      const input = inputByFunctionName[functionName];
-      outputByFunctionName[functionName] = await this.functions[functionName].runInternal({
+    for (const runnerName of Object.keys(inputByRunnerName)) {
+      const input = inputByRunnerName[runnerName];
+      outputByRunnerName[runnerName] = await this.runners[runnerName].runInternal({
         input,
       });
     }
@@ -167,8 +167,8 @@ export default class DatastoreInternal<
     const args = {
       sql,
       boundValues,
-      inputByFunctionName,
-      outputByFunctionName,
+      inputByRunnerName,
+      outputByRunnerName,
       recordsByVirtualTableName,
       datastoreInstanceId,
       datastoreVersionHash,
@@ -195,19 +195,19 @@ export default class DatastoreInternal<
     }));
   }
 
-  public attachFunction(
-    func: Function,
+  public attachRunner(
+    runner: Runner,
     nameOverride?: string,
     isAlreadyAttachedToDatastore?: boolean,
   ): void {
-    const isFunction = func instanceof Function;
-    const name = nameOverride || func.name;
-    if (!name) throw new Error(`Function requires a name`);
-    if (!isFunction) throw new Error(`${name} must be an instance of Function`);
-    if (this.functions[name]) throw new Error(`Function already exists with name: ${name}`);
+    const isRunner = runner instanceof Runner;
+    const name = nameOverride || runner.name;
+    if (!name) throw new Error(`Runner requires a name`);
+    if (!isRunner) throw new Error(`${name} must be an instance of Runner`);
+    if (this.runners[name]) throw new Error(`Runner already exists with name: ${name}`);
 
-    if (!isAlreadyAttachedToDatastore) func.attachToDatastore(this, name);
-    (this.functions as any)[name] = func;
+    if (!isAlreadyAttachedToDatastore) runner.attachToDatastore(this, name);
+    (this.runners as any)[name] = runner;
   }
 
   public attachCrawler(
@@ -216,7 +216,7 @@ export default class DatastoreInternal<
     isAlreadyAttachedToDatastore?: boolean,
   ): void {
     // NOTE: can't check instanceof Crawler because it creates a dependency loop
-    const isCrawler = crawler instanceof Function && crawler.functionType === 'crawler';
+    const isCrawler = crawler instanceof Runner && crawler.runnerType === 'crawler';
     const name = nameOverride || crawler.name;
     if (!name) throw new Error(`Crawler requires a name`);
     if (!isCrawler) throw new Error(`${name} must be an instance of Crawler`);
@@ -264,23 +264,23 @@ export default class DatastoreInternal<
       adminIdentities,
       coreVersion: pkg.version,
       tablesByName: {},
-      functionsByName: {},
+      runnersByName: {},
       crawlersByName: {},
     };
     metadata.remoteDatastoreEmbeddedCredits ??= {};
 
-    for (const [funcName, func] of Object.entries(this.functions)) {
-      const passThrough = func as unknown as PassthroughFunction<any, any>;
-      metadata.functionsByName[funcName] = {
-        name: func.name,
-        description: func.description,
-        corePlugins: func.corePlugins ?? {},
-        schema: func.schema,
-        pricePerQuery: func.pricePerQuery,
-        addOnPricing: func.addOnPricing,
-        minimumPrice: func.minimumPrice,
+    for (const [runnerName, runner] of Object.entries(this.runners)) {
+      const passThrough = runner as unknown as PassthroughRunner<any, any>;
+      metadata.runnersByName[runnerName] = {
+        name: runner.name,
+        description: runner.description,
+        corePlugins: runner.corePlugins ?? {},
+        schema: runner.schema,
+        pricePerQuery: runner.pricePerQuery,
+        addOnPricing: runner.addOnPricing,
+        minimumPrice: runner.minimumPrice,
         remoteSource: passThrough?.remoteSource,
-        remoteFunction: passThrough?.remoteFunction,
+        remoteRunner: passThrough?.remoteRunner,
         remoteDatastoreVersionHash: passThrough?.datastoreVersionHash,
       };
     }
@@ -297,9 +297,9 @@ export default class DatastoreInternal<
       };
     }
 
-    for (const [funcName, table] of Object.entries(this.tables ?? {})) {
+    for (const [runnerName, table] of Object.entries(this.tables ?? {})) {
       const passThrough = table as unknown as PassthroughTable<any, any>;
-      metadata.tablesByName[funcName] = {
+      metadata.tablesByName[runnerName] = {
         name: table.name,
         description: table.description,
         isPublic: table.isPublic !== false,

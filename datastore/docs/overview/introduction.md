@@ -1,23 +1,23 @@
 # Introduction
 
-> Datastores are deployable "databases" that have functions and tables, support native payment, and can be cloned and expanded as you see fit. Datastore Functions contain data retrieval functions, like Hero scraper scripts, with structured input and output. Deploying a Datastore provides you with a structured Data API that can be privately consumed, or sold "out of the box".
+> Datastores are deployable "databases" that have runners and tables, support native payment, and can be cloned and expanded as you see fit. Datastore Runners contain data retrieval functions, like Hero scraper scripts, with structured input and output. Deploying a Datastore provides you with a structured Data API that can be privately consumed, or sold "out of the box".
 
 ## What is a Datastore?
 
 Datastores create databases of specialized data structures - for instance, a Travel database, or a Jobs database. They're a combination of static metadata tables, dynamically retrieved web data and cached aggregated data that make up a data category. They support payment out of the box, so a client can pay per query without any setup or contracts. Datastores also support PostgreSQL natively (including payment), so can be tested out and integrated across programming languages.
 
-## Datastore Functions
+## Datastore Runners
 
-Datastore Functions create structure -- boundaries -- around a single "scrape", which make your scripts are far easier to test, re-try, scale and compose. It allows us to do things like:
+Datastore Runners create structure -- boundaries -- around a single "scrape", which make your scripts are far easier to test, re-try, scale and compose. It allows us to do things like:
 
 - Restart a script during development as you change it.
 - Rotate inputs to try out a variety of IPs, parameters, and more to make sure you can handle edge cases.
 - Test the extraction of 100s of different potential results pages and ensure your Output follows the same structure.
-- Spawn new Functions from the current one if you need to parallelize following links.
+- Spawn new Runners from the current one if you need to parallelize following links.
 
 ## Datastore Crawlers
 
-Datastore Crawlers allow you to write specialized Functions that only output a "cached" scrape. It comes with built-in caching, so you can automatically re-use results that have been recently recorded.
+Datastore Crawlers allow you to write specialized Runners that only output a "cached" scrape. It comes with built-in caching, so you can automatically re-use results that have been recently recorded.
 
 ## Datastore Tables
 
@@ -45,12 +45,12 @@ It's your responsibility to ensure your Ulixee development environment is setup,
 
 ## Usage Example
 
-The simplest Datastore is initialized with a single Function:
+The simplest Datastore is initialized with a single Runner:
 
 ```js
 export default new Datastore({
-  functions: {
-    default: new Function(ctx => {
+  runners: {
+    default: new Runner(ctx => {
       ctx.output = `Hello ${ctx.input.firstName}`;
     }),
   },

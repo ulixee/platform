@@ -2,7 +2,7 @@ import { SqlParser, SqlGenerator } from '@ulixee/sql-engine';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreStorage from '../lib/DatastoreStorage';
 
-export default new DatastoreApiHandler('Datastore.queryInternalFunctionResult', {
+export default new DatastoreApiHandler('Datastore.queryInternalRunnerResult', {
   handler(request, context) {
     if (!context.connectionToClient?.isInternal) {
       throw new Error('You do not have permission to access this endpoint');
@@ -18,13 +18,13 @@ export default new DatastoreApiHandler('Datastore.queryInternalFunctionResult', 
     }
 
     const db = storage.db;
-    const functionName = request.name;
-    const schema = storage.getFunctionSchema(functionName);
+    const runnerName = request.name;
+    const schema = storage.getRunnerSchema(runnerName);
 
-    const sqlParser = new SqlParser(request.sql, { function: request.name });
-    const unknownNames = sqlParser.functionNames.filter(x => x !== functionName);
+    const sqlParser = new SqlParser(request.sql, { runner: request.name });
+    const unknownNames = sqlParser.functionNames.filter(x => x !== runnerName);
     if (unknownNames.length) {
-      throw new Error(`Function${unknownNames.length === 1 ? ' does' : 's do'} not exist: ${unknownNames.join(', ')}`);
+      throw new Error(`Runner${unknownNames.length === 1 ? ' does' : 's do'} not exist: ${unknownNames.join(', ')}`);
     }
 
     if (!sqlParser.isSelect()) {
@@ -32,13 +32,13 @@ export default new DatastoreApiHandler('Datastore.queryInternalFunctionResult', 
     }
 
     const { input, outputs } = request;
-    SqlGenerator.createFunctionFromSchema(input, outputs, schema, (parameters, columns) => {
-      db.table(functionName, {
+    SqlGenerator.createRunnerFromSchema(input, outputs, schema, (parameters, columns) => {
+      db.table(runnerName, {
         parameters,
         columns,
         *rows() {
           const record = outputs.shift();
-          if (record) yield SqlGenerator.convertFunctionRecordToSqliteRow(record, schema);
+          if (record) yield SqlGenerator.convertRunnerRecordToSqliteRow(record, schema);
         },
       });
     });

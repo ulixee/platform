@@ -12,23 +12,23 @@ export default class ClientForDatastore<TDatastore extends Datastore> extends Ev
     this.datastore = datastore;
   }
 
-  public fetch<T extends keyof TDatastore['functions']>(
+  public fetch<T extends keyof TDatastore['runners']>(
     funcName: T,
-    inputFilter: ExtractSchemaType<TDatastore['functions'][T]['schema']['input']>,
-  ): ResultIterable<ExtractSchemaType<TDatastore['functions'][T]['schema']['output']>>;
+    inputFilter: ExtractSchemaType<TDatastore['runners'][T]['schema']['input']>,
+  ): ResultIterable<ExtractSchemaType<TDatastore['runners'][T]['schema']['output']>>;
   public fetch<T extends keyof TDatastore['tables']>(
     tableTable: T,
     inputFilter: ExtractSchemaType<TDatastore['tables'][T]['schema']['input']>,
   ): ResultIterable<ExtractSchemaType<TDatastore['tables'][T]['schema']['output']>>;
   public fetch(name, inputFilter): any {
-    const instance = this.datastore.functions[name] || this.datastore.tables[name];
+    const instance = this.datastore.runners[name] || this.datastore.tables[name];
     return instance.runInternal(inputFilter);
   }
 
-  public run<T extends keyof TDatastore['functions']>(
+  public run<T extends keyof TDatastore['runners']>(
     funcName: T,
-    inputFilter: ExtractSchemaType<TDatastore['functions'][T]['schema']['input']>,
-  ): ResultIterable<ExtractSchemaType<TDatastore['functions'][T]['schema']['output']>>;
+    inputFilter: ExtractSchemaType<TDatastore['runners'][T]['schema']['input']>,
+  ): ResultIterable<ExtractSchemaType<TDatastore['runners'][T]['schema']['output']>>;
   public run<T extends keyof TDatastore['tables']>(
     tableTable: T,
     inputFilter: ExtractSchemaType<TDatastore['tables'][T]['schema']['input']>,

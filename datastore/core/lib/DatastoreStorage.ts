@@ -10,7 +10,7 @@ export default class DatastoreStorage {
   public readonly db: SqliteDatabase;
   public readonly path: string;
   #schemasByTableName: { [name: string]: ISchema } = {};
-  #schemasByFunctionName: { [name: string]: ISchema } = {};
+  #schemasByRunnerName: { [name: string]: ISchema } = {};
   #virtualTableNames = new Set<string>();
 
   constructor(storagePath?: string) {
@@ -21,15 +21,15 @@ export default class DatastoreStorage {
       this.db = new Database(':memory:');
     }
     this.#schemasByTableName = {};
-    this.#schemasByFunctionName = {};
+    this.#schemasByRunnerName = {};
   }
 
   public get schemasByTableName(): { [name: string]: ISchema } {
     return { ...this.#schemasByTableName };
   }
 
-  public get schemasByFunctionName(): { [name: string]: ISchema } {
-    return { ...this.#schemasByFunctionName };
+  public get schemasByRunnerName(): { [name: string]: ISchema } {
+    return { ...this.#schemasByRunnerName };
   }
 
   public isVirtualTable(name: string): boolean {
@@ -45,12 +45,12 @@ export default class DatastoreStorage {
     return this.#schemasByTableName[name];
   }
 
-  public addFunctionSchema(name: string, schema: ISchema): void {
-    this.#schemasByFunctionName[name] = schema;
+  public addRunnerSchema(name: string, schema: ISchema): void {
+    this.#schemasByRunnerName[name] = schema;
   }
 
-  public getFunctionSchema(name: string): ISchema {
-    return this.#schemasByFunctionName[name];
+  public getRunnerSchema(name: string): ISchema {
+    return this.#schemasByRunnerName[name];
   }
 
   public static close(path: string): void {

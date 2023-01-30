@@ -1,26 +1,26 @@
 import Resolvable from '@ulixee/commons/lib/Resolvable';
-import IFunctionPlugin from '../interfaces/IFunctionPlugin';
-import IFunctionSchema from '../interfaces/IFunctionSchema';
-import IFunctionContext from '../interfaces/IFunctionContext';
-import IFunctionComponents from '../interfaces/IFunctionComponents';
-import FunctionInternal from './FunctionInternal';
-import FunctionContext from './FunctionContext';
+import IRunnerPlugin from '../interfaces/IRunnerPlugin';
+import IRunnerSchema from '../interfaces/IRunnerSchema';
+import IRunnerContext from '../interfaces/IRunnerContext';
+import IRunnerComponents from '../interfaces/IRunnerComponents';
+import RunnerInternal from './RunnerInternal';
+import RunnerContext from './RunnerContext';
 import DatastoreInternal from './DatastoreInternal';
 
-export default class FunctionPlugins<
-  ISchema extends IFunctionSchema,
-  IRunContext extends IFunctionContext<ISchema> = IFunctionContext<ISchema>,
+export default class RunnerPlugins<
+  ISchema extends IRunnerSchema,
+  IRunContext extends IRunnerContext<ISchema> = IRunnerContext<ISchema>,
 > {
-  #components: IFunctionComponents<ISchema, IFunctionContext<ISchema>>;
-  private clientPlugins: IFunctionPlugin<ISchema>[] = [];
-  private pluginNextPromises: Resolvable<IFunctionContext<ISchema>['outputs']>[] = [];
+  #components: IRunnerComponents<ISchema, IRunnerContext<ISchema>>;
+  private clientPlugins: IRunnerPlugin<ISchema>[] = [];
+  private pluginNextPromises: Resolvable<IRunnerContext<ISchema>['outputs']>[] = [];
   private pluginRunPromises: Promise<Error | void>[] = [];
 
   constructor(
-    components: IFunctionComponents<ISchema, IFunctionContext<ISchema>>,
+    components: IRunnerComponents<ISchema, IRunnerContext<ISchema>>,
     plugins: (new (
-      comps: IFunctionComponents<ISchema, IFunctionContext<ISchema>>,
-    ) => IFunctionPlugin<ISchema>)[],
+      comps: IRunnerComponents<ISchema, IRunnerContext<ISchema>>,
+    ) => IRunnerPlugin<ISchema>)[],
   ) {
     this.#components = components;
 
@@ -31,20 +31,20 @@ export default class FunctionPlugins<
   }
 
   public async initialize(
-    functionInternal: FunctionInternal<ISchema>,
+    runnerInternal: RunnerInternal<ISchema>,
     datastoreInternal: DatastoreInternal,
   ): Promise<IRunContext> {
-    const context = new FunctionContext(functionInternal, datastoreInternal);
+    const context = new RunnerContext(runnerInternal, datastoreInternal);
 
     // plugin `run` phases
     for (const plugin of this.clientPlugins) {
-      const outputPromise = new Resolvable<IFunctionContext<ISchema>['outputs']>();
+      const outputPromise = new Resolvable<IRunnerContext<ISchema>['outputs']>();
       this.pluginNextPromises.push(outputPromise);
 
       await new Promise<void>((resolve, reject) => {
         try {
           const promise = plugin
-            .run(functionInternal, context, () => {
+            .run(runnerInternal, context, () => {
               // wait for next to be called
               resolve();
               return outputPromise.promise;

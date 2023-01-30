@@ -7,7 +7,7 @@ This repository is the development home to several of the tools that make it eas
 ## Projects
 
 - Hero `/hero`. The Automated Browser Engine built for scraping. (repository home - https://github.com/ulixee/hero).
-- Datastore `/datastore`. Packaged "database" containing API access to crawler functions and data extraction functions.
+- Datastore `/datastore`. Packaged "database" containing API access to crawler functions and runner functions.
 - Miner `/miner`. Run Ulixee tooling on a remote machine.
 - Stream `/stream`. Query, transform and compose Datastores running on any machine.
 - ChromeAlive! `/apps/chromealive*`. Supercharge scraper script development using the Chrome browser.

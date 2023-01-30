@@ -115,7 +115,7 @@ test('can get metadata about an uploaded datastore', async () => {
   ).resolves.toEqual(<IDatastoreApiTypes['Datastore.meta']['result']>{
     latestVersionHash: packager.manifest.versionHash,
     computePricePerQuery: 0,
-    functionsByName: {
+    runnersByName: {
       bootup: {
         stats: {
           averageBytesPerQuery: expect.any(Number),
@@ -138,7 +138,7 @@ test('can get metadata about an uploaded datastore', async () => {
     tablesByName: {},
     schemaInterface: `{
   tables: {};
-  functions: {
+  runners: {
     bootup: {
       output: {
         "is-valid"?: boolean;

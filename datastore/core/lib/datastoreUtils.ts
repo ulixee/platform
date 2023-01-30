@@ -6,21 +6,21 @@ import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
-import { IStatsByFunctionName } from './DatastoreRegistry';
+import { IStatsByRunnerName } from './DatastoreRegistry';
 
-export function validateFunctionCoreVersions(
+export function validateRunnerCoreVersions(
   registryEntry: IDatastoreManifest & {
-    statsByFunction: IStatsByFunctionName;
+    statsByRunner: IStatsByRunnerName;
     path: string;
     latestVersionHash: string;
   },
-  functionName: string,
+  runnerName: string,
   context: IDatastoreApiContext,
 ): void {
-  if (!registryEntry.functionsByName[functionName])
-    throw new Error(`${functionName} is not a valid function name for this Datastore`);
+  if (!registryEntry.runnersByName[runnerName])
+    throw new Error(`${runnerName} is not a valid function name for this Datastore`);
 
-  const { corePlugins } = registryEntry.functionsByName[functionName] ?? {};
+  const { corePlugins } = registryEntry.runnersByName[runnerName] ?? {};
   for (const [pluginName, pluginVersion] of Object.entries(corePlugins ?? {})) {
     const pluginCore = context.pluginCoresByName[pluginName];
     if (!pluginCore) {

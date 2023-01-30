@@ -16,7 +16,7 @@ test('it can extract the datastore schema', async () => {
   const meta = await datastoreProcess.fetchMeta();
   await datastoreProcess.close();
 
-  expect(meta.functionsByName.default.schema).toEqual({
+  expect(meta.runnersByName.default.schema).toEqual({
     input: {
       field: {
         typeName: 'string',
