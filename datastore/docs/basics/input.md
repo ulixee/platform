@@ -1,6 +1,6 @@
 # Input
 
-Every Runner accepts input, which is attached to the [RunnerContext](./function-context.md).
+Every Runner accepts input, which is attached to the [RunnerContext](./runner-context.md).
 
 When running the Runner as a NodeJs script from the command line, you can pass the input as CLI variables. These are parsed using [yargs-parser](https://github.com/yargs/yargs-parser). Variables containing a '.' will be converted into objects, and dashes are camel-cased.
 

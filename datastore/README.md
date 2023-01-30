@@ -49,7 +49,7 @@ The simplest Datastore is initialized with a single Runner:
 
 ```js
 export default new Datastore({
-  functions: {
+  runners: {
     default: new Runner(ctx => {
       ctx.output = `Hello ${ctx.input.firstName}`;
     }),

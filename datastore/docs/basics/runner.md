@@ -16,7 +16,7 @@ Saving the above code to a file allows you to execute it directly from the comma
 node example.js --input.firstName=Caleb
 ```
 
-The callback method supplied to Runner's constructor receives a [RunnerContext](./function-context.md) as its first argument. This includes special [input](./input.md) and [Output](./output.md) objects.
+The callback method supplied to Runner's constructor receives a [RunnerContext](./runner-context.md) as its first argument. This includes special [input](./input.md) and [Output](./output.md) objects.
 
 ### Plugins
 
@@ -47,8 +47,8 @@ Creates a new Runner instance.
 
 The first argument can be a single callback function matching the `run` callback below, or an object containing the following properties.
 
-- run `function`(context: [RunnerContext](./function-context.md)): `Promise<schema['output]>`. A function that contains your script to run. The parameter is a [RunnerContext](./function-context.md) that provides access to [Input](./input.md) and [Output](./output.md)
-- schema `IRunnerSchema`. Optional [schema](../advanced/function-schemas.md) defining the type-checked input and output parameters for the function.
+- run `function`(context: [RunnerContext](./runner-context.md)): `Promise<schema['output]>`. A function that contains your script to run. The parameter is a [RunnerContext](./runner-context.md) that provides access to [Input](./input.md) and [Output](./output.md)
+- schema `IRunnerSchema`. Optional [schema](../advanced/runner-schemas.md) defining the type-checked input and output parameters for the function.
 - minimumPrice `number`. Optional minimum price that must be allocated in a Micronote for a caller.
 - pricePerQuery `number`. Optional charge price per query.
 - addOnPricing `object`. Optional pricing add-ons if your output varies widely in the amount of data that can be sent. This currently accepts a single property:

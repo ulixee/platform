@@ -76,18 +76,18 @@ node ./heroRunner.js --maxTimeInCache=30
 
 The HeroRunnerPlugin for Hero adds "automatically connecting" Hero and Hero Replay constructors.
 
-### run _(functionContext)_ {#run-hero}
+### run _(runnerContext)_ {#run-hero}
 
-- functionContext.Hero `Hero`. [Hero](https://ulixee.org/docs/hero/basic-client/hero) constructor that is automatically connected and cleaned up.
-- functionContext.HeroReplay `HeroReplay`. [HeroReplay](https://ulixee.org/docs/hero/basic-client/hero-replay) constructor that's automatically connected and cleaned up. Includes an extra static function `fromCrawler` to create an instance from a [Crawler](../basics/crawler.md) instance.
+- runnerContext.Hero `Hero`. [Hero](https://ulixee.org/docs/hero/basic-client/hero) constructor that is automatically connected and cleaned up.
+- runnerContext.HeroReplay `HeroReplay`. [HeroReplay](https://ulixee.org/docs/hero/basic-client/hero-replay) constructor that's automatically connected and cleaned up. Includes an extra static function `fromCrawler` to create an instance from a [Crawler](../basics/crawler.md) instance.
   - `static fromCrawler_(crawler, options)_`. Arguments: [crawler](../basics/crawler.md) - a Crawler instance, and options: all options that can be passed to a Runner `run` callback. Options will be merged with the calling RunnerContext. Input values provided will be merged with existing input values.
 
 ## Constructor
 
-### new Runner _(runCallback | functionComponents)_ {#constructor}
+### new Runner _(runCallback | runnerComponents)_ {#constructor}
 
 The HeroRunnerPlugin modifies the Runner constructor with the following changes:
 
 #### **Arguments**:
 
-- run: `function`(functionContext): `Promise<any>`. Adds a Hero and HeroReplay constructor to the run function as per [above](#run-hero).
+- run: `function`(runnerContext): `Promise<any>`. Adds a Hero and HeroReplay constructor to the run function as per [above](#run-hero).

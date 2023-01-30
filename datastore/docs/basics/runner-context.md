@@ -2,7 +2,7 @@
 
 > RunnerContext provides access to metadata about your Runner execution, along with Plugin-created variables.
 
-The RunnerContext class is passed into the [`run`](./function#constructor) callback provided to a Runner. It cannot be constructed.
+The RunnerContext class is passed into the [`run`](./runner#constructor) callback provided to a Runner. It cannot be constructed.
 
 ## Properties
 
@@ -30,7 +30,7 @@ The affiliateId of the containing Datastore.
 
 ### datastoreMetadata
 
-Metadata about all [Runners](./function.md), [Crawlers](./crawler.md) and [Tables](./table.md) installed in this Datastore.
+Metadata about all [Runners](./runner.md), [Crawlers](./crawler.md) and [Tables](./table.md) installed in this Datastore.
 
 #### **Returns** 'IDatastoreMetadata'
 
@@ -63,7 +63,7 @@ The payment supplied to the Datastore Core for payment. Top level keys are:
 
 A schema defining inputs and outputs for the function.
 
-#### **Returns** [`IRunnerSchema`](../advanced/function-schemas.md)
+#### **Returns** [`IRunnerSchema`](../advanced/runner-schemas.md)
 
 ## Methods
 
@@ -82,7 +82,7 @@ Execute the [`crawler`](./crawler.md) and return the resulting metadata. Argumen
 
 #### Return Promise<ICrawlerOutputSchema>. Returns a promise of the Crawler output (version, sessionId and crawler).
 
-### fetch _(functionOrTable, options)_ {#fetch}
+### fetch _(runnerOrTable, options)_ {#fetch}
 
 Alias for [`run`](#run). This function executes and returns results for a query.
 
@@ -101,7 +101,7 @@ Execute the passed in function. The result is an AsyncIterable, which can be use
 
 #### **Arguments**:
 
-- function [`Runner`](./function.md) The Runner instance to run.
+- function [`Runner`](./runner.md) The Runner instance to run.
 - options `object`. Parameters to run the crawler. This parameter will default all values to the context. eg, the payment, authentication and affiliateId of the caller will be defaulted to the values provided to the original function this RunnerContext has been passed into.
     - payment `IPayment`. Override the payment provided to this context.
     - authentication [authentication](#authentication). Override the authentication supplied to the calling context.

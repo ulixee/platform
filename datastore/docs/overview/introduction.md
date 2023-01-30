@@ -1,6 +1,6 @@
 # Introduction
 
-> Datastores are deployable "databases" that have functions and tables, support native payment, and can be cloned and expanded as you see fit. Datastore Runners contain data retrieval functions, like Hero scraper scripts, with structured input and output. Deploying a Datastore provides you with a structured Data API that can be privately consumed, or sold "out of the box".
+> Datastores are deployable "databases" that have runners and tables, support native payment, and can be cloned and expanded as you see fit. Datastore Runners contain data retrieval functions, like Hero scraper scripts, with structured input and output. Deploying a Datastore provides you with a structured Data API that can be privately consumed, or sold "out of the box".
 
 ## What is a Datastore?
 

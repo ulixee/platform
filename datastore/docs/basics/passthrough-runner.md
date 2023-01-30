@@ -13,7 +13,7 @@ import Datastore, { Runner } from '@ulixee/datastore';
 
 export default new Datastore({
   runners: {
-    function1: new Runner({
+    runner1: new Runner({
       run({ input, Output }) {
         const output = new Output();
         output.didRun = true;
@@ -35,8 +35,8 @@ export default new Datastore({
     source: `ulx://153.23.22.255:8080/dbx1tn43ect3qkwg0patvq`,
   },
   runners: {
-    function2: new PassthroughRunner({
-      remoteRunner: `source.function1`,
+    runner2: new PassthroughRunner({
+      remoteRunner: `source.runner1`,
       async onResponse({ Output, stream }) {
         const [record] = await stream;
         Output.emit({ ...record, didPasshthrough: true });
@@ -66,20 +66,20 @@ The output will be:
 
 ## Constructor
 
-### new PassthroughRunner _(functionComponents, ...plugins[])_ {#constructor}
+### new PassthroughRunner _(runnerComponents, ...plugins[])_ {#constructor}
 
 Creates a new PassthroughRunner instance.
 
 #### **Arguments**:
 
-functionComponents `object`:
+runnerComponents `object`:
 
 - remoteRunner `string`. Required remoteRunner to run. This string must start with the name of the `remoteDatastores` key as defined in [Datastore.remoteDatastores](./datastore.md#remote-datastores).
 - upcharge `number`. Optional microgons to add to the PassthroughRunner pricing. Defaults to 0.
-- onRequest `function`(context: [RunnerContext](./function-context.md)): `Promise<any>`. Optional function that contains any logic you wish to perform "before" the `remote` Runner is called. This allows you to modify input, or enhance information using a Hero browser (if a plugin is used).
-- onResponse `function`(context: [RunnerContext](./function-context.md)): `Promise<any>`. Optional function that contains any logic you wish to perform "after" the `remote` Runner has been called. The context includes:
+- onRequest `function`(context: [RunnerContext](./runner-context.md)): `Promise<any>`. Optional function that contains any logic you wish to perform "before" the `remote` Runner is called. This allows you to modify input, or enhance information using a Hero browser (if a plugin is used).
+- onResponse `function`(context: [RunnerContext](./runner-context.md)): `Promise<any>`. Optional function that contains any logic you wish to perform "after" the `remote` Runner has been called. The context includes:
   - stream `ResultsIterable`. An AsyncIterable object that can resolve each Output as it is emitted, or simply await the final result.
-- schema `IRunnerSchema`. Optional [schema](../advanced/function-schemas.md) defining the type-checked input and output parameters for the function. This schema can be different than the remote function if conversion or manipulation will be performed on the underlying data.
+- schema `IRunnerSchema`. Optional [schema](../advanced/runner-schemas.md) defining the type-checked input and output parameters for the function. This schema can be different than the remote function if conversion or manipulation will be performed on the underlying data.
 
 The second argument is a list of zero or more plugins.
 
@@ -98,7 +98,7 @@ import DatastoreApiClient  from '@ulixee/datastore/lib/DatastoreApiClient';
 
 const client = new DatastoreApiClient('153.23.22.255:8080');
 
-const stream = client.stream('function2', {});
+const stream = client.stream('runner2', {});
 
 // Async Iterable
 for await (const result of stream) {

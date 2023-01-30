@@ -28,11 +28,11 @@ export default new Datastore({
 
 ## Changes to RunnerContext
 
-The PuppeteerRunnerPlugin adds a single property to the [RunnerContext](../basics/function-context.md).
+The PuppeteerRunnerPlugin adds a single property to the [RunnerContext](../basics/runner-context.md).
 
-### run _(functionContext)_ {#run-hero}
+### run _(runnerContext)_ {#run-hero}
 
-- functionContext.launchBrowser: () => Promise<`Puppeteer`>. Runner to launch a new [Puppeteer](https://pptr.dev/api) Browser instance.
+- runnerContext.launchBrowser: () => Promise<`Puppeteer`>. Runner to launch a new [Puppeteer](https://pptr.dev/api) Browser instance.
 
 ### Runner.stream(... puppeteerLaunchArgs)
 
