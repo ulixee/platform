@@ -1,12 +1,10 @@
 import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
-import { Database as SqliteDatabase } from 'better-sqlite3';
 import * as Database from 'better-sqlite3';
+import { Database as SqliteDatabase } from 'better-sqlite3';
 
 type ISchema = Record<string, IAnySchemaJson>;
 
 export default class DatastoreStorage {
-  private static databasesByPath: { [path: string]: SqliteDatabase } = {};
-
   public readonly db: SqliteDatabase;
   public readonly path: string;
   #schemasByTableName: { [name: string]: ISchema } = {};
@@ -15,8 +13,7 @@ export default class DatastoreStorage {
 
   constructor(storagePath?: string) {
     if (storagePath) {
-      DatastoreStorage.databasesByPath[storagePath] ??= new Database(storagePath);
-      this.db = DatastoreStorage.databasesByPath[storagePath];
+      this.db = new Database(storagePath);
     } else {
       this.db = new Database(':memory:');
     }
@@ -51,18 +48,5 @@ export default class DatastoreStorage {
 
   public getRunnerSchema(name: string): ISchema {
     return this.#schemasByRunnerName[name];
-  }
-
-  public static close(path: string): void {
-    if (!this.databasesByPath[path]) return;
-    this.databasesByPath[path].close();
-    delete this.databasesByPath[path];
-  }
-
-  public static closeAll(): void {
-    for (const path of Object.keys(this.databasesByPath)) {
-      this.databasesByPath[path].close();
-      delete this.databasesByPath[path];
-    }
   }
 }

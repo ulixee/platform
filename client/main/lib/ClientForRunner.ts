@@ -1,23 +1,22 @@
 import { Runner } from '@ulixee/datastore';
 import ResultIterable from '@ulixee/datastore/lib/ResultIterable';
-import { ExtractSchemaType } from '@ulixee/schema';
 import { IOutputSchema } from '../interfaces/IInputOutput';
 
-export default class ClientForRunner<TRunner extends Runner>  {
+export default class ClientForRunner<TRunner extends Runner> {
   private runner: TRunner;
   constructor(runner: TRunner) {
     this.runner = runner;
   }
 
   public fetch(
-    inputFilter: ExtractSchemaType<TRunner['schema']['input']>,
-  ): ResultIterable<any> {
+    inputFilter: TRunner['schemaType']['input'],
+  ): ResultIterable<TRunner['schema']['output']> {
     return this.runner.runInternal({ input: inputFilter });
   }
 
   public run(
-    inputFilter?: ExtractSchemaType<TRunner['schema']['input']>,
-  ): ResultIterable<ExtractSchemaType<TRunner['schema']['output']>> {
+    inputFilter?: TRunner['schemaType']['input'],
+  ): ResultIterable<TRunner['schemaType']['output']> {
     return this.fetch(inputFilter);
   }
 

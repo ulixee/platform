@@ -1,5 +1,5 @@
 import Datastore, { Table, Runner } from '@ulixee/datastore';
-import { boolean, string } from '@ulixee/schema';
+import { bigint, boolean, string } from '@ulixee/schema';
 
 export default new Datastore({
   runners: {
@@ -28,10 +28,10 @@ export default new Datastore({
       schema: {
         firstName: string(),
         lastName: string(),
-        isTester: boolean(),
+        testerNumber: bigint({ optional: true }),
       },
       seedlings: [
-        { firstName: 'Caleb', lastName: 'Clark', isTester: true },
+        { firstName: 'Caleb', lastName: 'Clark', testerNumber: 1n },
         { firstName: 'Blake', lastName: 'Byrnes' },
       ],
     }),

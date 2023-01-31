@@ -35,7 +35,7 @@ test('should be able to query a datastore using sql', async () => {
       lastName: 'Clark',
       greeting: 'Hello world',
       firstName: 'Caleb',
-      isTester: true
+      testerNumber: 1n
     }
   ]);
 });

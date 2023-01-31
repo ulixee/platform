@@ -36,7 +36,11 @@ export default class Runner<
   #datastoreInternal: DatastoreInternal;
 
   // dummy type holders
-  declare readonly schemaType: ExtractSchemaType<TSchema>;
+  declare readonly schemaType: {
+    input: ExtractSchemaType<TSchema['input']>;
+    output: ExtractSchemaType<TSchema['output']>;
+  };
+
   declare readonly runArgsType: TRunArgs;
 
   public runnerType = 'basic';

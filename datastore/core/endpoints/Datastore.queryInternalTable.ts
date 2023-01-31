@@ -1,8 +1,6 @@
 import { SqlGenerator, SqlParser } from '@ulixee/sql-engine';
-import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreStorage from '../lib/DatastoreStorage';
-import DatastoreVm from '../lib/DatastoreVm';
 
 export default new DatastoreApiHandler('Datastore.queryInternalTable', {
   async handler(request, context) {
@@ -10,32 +8,25 @@ export default new DatastoreApiHandler('Datastore.queryInternalTable', {
       throw new Error('You do not have permission to access this endpoint');
     }
 
-    const tableName = request.name;
     let storage: DatastoreStorage;
-    let schema: Record<string, IAnySchemaJson>;
     if (request.datastoreVersionHash) {
-      const storagePath = context.datastoreRegistry.getStoragePath(request.datastoreVersionHash);
-
-      const datastoreVersion = await context.datastoreRegistry.getByVersionHash(
-        request.datastoreVersionHash,
-      );
-      const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
-      storage = new DatastoreStorage(storagePath);
-      schema = datastore.tables[tableName].schema;
+      storage = await context.datastoreRegistry.getStorage(request.datastoreVersionHash);
     } else {
       context.connectionToClient.datastoreStorage ??= new DatastoreStorage();
       storage = context.connectionToClient?.datastoreStorage;
-      schema = storage.getTableSchema(tableName);
     }
+
+    const tableName = request.name;
+    const schema = storage.getTableSchema(tableName) ?? {};
 
     const db = storage.db;
     const sqlParser = new SqlParser(request.sql, { table: tableName });
     const unknownNames = sqlParser.tableNames.filter(x => x !== tableName);
     if (unknownNames.length) {
       throw new Error(
-        `Table${unknownNames.length === 1 ? ' does' : 's do'} not exist: ${unknownNames.join(
-          ', ',
-        )}`,
+        `Table${
+          unknownNames.length === 1 ? '' : 's'
+        } cannot be queried with this api: ${unknownNames.join(', ')}`,
       );
     }
 

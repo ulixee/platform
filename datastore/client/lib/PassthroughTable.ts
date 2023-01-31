@@ -19,14 +19,14 @@ export default class PassthroughTable<
   TRemoteSources extends Record<string, string>,
   TTableName extends string,
   TSchema extends IExpandedTableSchema<any> = IExpandedTableSchema<any>,
-  TRecords extends ExtractSchemaType<TSchema> = ExtractSchemaType<TSchema>,
+  TSchemaType extends ExtractSchemaType<TSchema> = ExtractSchemaType<TSchema>,
   TComponents extends IPassthroughTableComponents<
     TRemoteSources,
     TTableName,
     TSchema,
-    TRecords
-  > = IPassthroughTableComponents<TRemoteSources, TTableName, TSchema, TRecords>,
-> extends Table<TSchema, TRecords, TComponents> {
+    TSchemaType
+  > = IPassthroughTableComponents<TRemoteSources, TTableName, TSchema, TSchemaType>,
+> extends Table<TSchema, TSchemaType> {
   public readonly remoteSource: string;
   public readonly remoteTable: string;
   public datastoreVersionHash: string;
@@ -43,7 +43,7 @@ export default class PassthroughTable<
     this.remoteSource = source;
   }
 
-  public override async queryInternal<T = TRecords[]>(
+  public override async queryInternal<T = TSchemaType[]>(
     sql: string,
     boundValues: any[] = [],
     options: Omit<

@@ -27,7 +27,7 @@ export default new Datastore({
       schema: {
         firstName: string(),
         lastName: string(),
-        isTester: boolean(),
+        isTester: boolean({ optional: true }),
       },
       seedlings: [
         { firstName: 'Caleb', lastName: 'Clark', isTester: true },

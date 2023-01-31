@@ -1,30 +1,25 @@
 import { Table } from '@ulixee/datastore';
-import { ExtractSchemaType } from '@ulixee/schema';
 import { IOutputSchema } from '../interfaces/IInputOutput';
 
-export default class ClientForTable <TTable extends Table> {
+export default class ClientForTable<TTable extends Table> {
   private table: TTable;
 
-  constructor(table?: TTable) {
+  constructor(table: TTable) {
     this.table = table;
   }
 
-  public fetch(
-    inputFilter: ExtractSchemaType<TTable['schema']>,
-  ): Promise<any> {
+  public fetch(inputFilter: Partial<TTable['schemaType']>): Promise<TTable['schemaType'][]> {
     return this.table.fetchInternal({ input: inputFilter });
   }
 
-  public run(
-    inputFilter?: ExtractSchemaType<TTable['schema']>,
-  ): Promise<ExtractSchemaType<TTable['schema']>> {
+  public run(inputFilter?: Partial<TTable['schemaType']>): Promise<TTable['schemaType'][]> {
     return this.fetch(inputFilter);
   }
 
-  public query<TSchema extends IOutputSchema = IOutputSchema>(
+  public query<TOutputSchema extends IOutputSchema = IOutputSchema>(
     sql: string,
     boundValues: any[] = [],
-  ): Promise<TSchema[]> {
+  ): Promise<TOutputSchema[]> {
     return this.table.queryInternal(sql, boundValues);
   }
 }

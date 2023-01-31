@@ -5,7 +5,6 @@ import SqlQuery from '../lib/SqlQuery';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreCore from '../index';
 import PaymentProcessor from '../lib/PaymentProcessor';
-import DatastoreStorage from '../lib/DatastoreStorage';
 import DatastoreVm from '../lib/DatastoreVm';
 import { validateAuthentication, validateRunnerCoreVersions } from '../lib/datastoreUtils';
 
@@ -14,18 +13,9 @@ export default new DatastoreApiHandler('Datastore.query', {
     request.boundValues ??= [];
 
     const startTime = Date.now();
-    const datastoreVersion = await context.datastoreRegistry.getByVersionHash(
-      request.versionHash,
-    );
+    const datastoreVersion = await context.datastoreRegistry.getByVersionHash(request.versionHash);
 
-    let storage: DatastoreStorage;
-    if (request.versionHash) {
-      const storagePath = context.datastoreRegistry.getStoragePath(request.versionHash);
-      storage = new DatastoreStorage(storagePath);
-    } else {
-      context.connectionToClient.datastoreStorage ??= new DatastoreStorage();
-      storage = context.connectionToClient?.datastoreStorage;
-    }
+    const storage = await context.datastoreRegistry.getStorage(request.versionHash);
 
     const db = storage.db;
     const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
@@ -35,16 +25,9 @@ export default new DatastoreApiHandler('Datastore.query', {
     const sqlParser = new SqlParser(request.sql);
     if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
 
-    sqlParser.functionNames.forEach(name => {
-      const schema = datastore.runners[name].schema ?? {};
-      storage.addRunnerSchema(name, schema);
-    });
-
     sqlParser.tableNames.forEach(name => {
       const table = datastore.tables[name];
       if (!table.isPublic) throw new Error(`Table ${name} is not publicly accessible.`);
-      const schema = table.schema ?? {};
-      storage.addTableSchema(name, schema, !!table?.remoteSource);
     });
 
     const inputByRunnerName = sqlParser.extractRunnerInputs(

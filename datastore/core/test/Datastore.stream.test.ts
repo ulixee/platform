@@ -44,6 +44,29 @@ test('should be able to stream a datastore runner', async () => {
   expect(outputs).toEqual([{ record: 0 }, { record: 1 }, { record: 2 }]);
 });
 
+test('should be able to stream a datastore table', async () => {
+  const packager = new DatastorePackager(`${__dirname}/datastores/stream.js`);
+  await packager.build();
+  await client.upload(await packager.dbx.asBuffer());
+  let counter = 0;
+  const outputs = [];
+  const result = client.stream(packager.manifest.versionHash, 'streamTable', { success: false });
+  await expect(result.resultMetadata).resolves.toEqual({
+    metadata: {
+      milliseconds: expect.any(Number),
+      bytes: expect.any(Number),
+      microgons: 0,
+    },
+    latestVersionHash: expect.any(String),
+  });
+  for await (const record of result) {
+    counter += 1;
+    outputs.push(record);
+  }
+  expect(counter).toBe(1);
+  expect(outputs).toEqual([{ title: 'World', success: false }]);
+});
+
 test('should be able to require authentication for a streamed runner', async () => {
   const id = Identity.createSync();
   Fs.writeFileSync(

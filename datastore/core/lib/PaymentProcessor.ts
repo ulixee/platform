@@ -5,6 +5,7 @@ import { UnapprovedSidechainError } from '@ulixee/sidechain/lib/errors';
 import Datastore from '@ulixee/datastore';
 import CreditsTable from '@ulixee/datastore/lib/CreditsTable';
 import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import {
   InsufficientMicronoteFundsError,
   InsufficientQueryPriceError,
@@ -151,7 +152,8 @@ export default class PaymentProcessor {
 
     const payments: { [address: string]: number } = {};
     // NOTE: don't claim the settlement cost!!
-    const maxMicrogons = this.fundingBalance - (this.sidechainSettings?.settlementFeeMicrogons ?? 0);
+    const maxMicrogons =
+      this.fundingBalance - (this.sidechainSettings?.settlementFeeMicrogons ?? 0);
     let allocatedMicrogons = 0;
     let totalMicrogons = 0;
     for (const payout of this.payouts) {
@@ -248,6 +250,7 @@ export default class PaymentProcessor {
   }
 
   public static getOfficialBytes(output: any): number {
-    return Buffer.byteLength(Buffer.from(JSON.stringify(output), 'utf8'));
+    // must use types or you can't serialize Bigint/Regex/etc
+    return Buffer.byteLength(Buffer.from(TypeSerializer.stringify(output), 'utf8'));
   }
 }
