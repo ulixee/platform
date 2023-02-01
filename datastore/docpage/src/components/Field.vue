@@ -7,7 +7,7 @@
     <div class="line"></div>
     <div class="right">
       <span class="desc" v-if='field.description'>{{field.description}}</span>
-      <span class="type">{{field.typeName.toLowerCase()}}</span>
+      <span class="type">{{field.typeName?.toLowerCase()}}</span>
     </div>
   </div>
   <!-- <ul class="children">

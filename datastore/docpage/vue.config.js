@@ -3,6 +3,7 @@ const ReplaceConfigFile = require('./lib/ReplaceConfigFile');
 
 const outDir = process.env.BUILD_DIR ?? 'build'
 const outputDir = Path.resolve(__dirname, '../..', outDir, 'datastore/docpage/dist');
+const isDevelopment = !['production', 'test'].includes(process.env.NODE_ENV);
 
 module.exports = {
   outputDir,
@@ -16,7 +17,7 @@ module.exports = {
       title: 'Ulixee'
     },
   },
-  // publicPath: './',
+  publicPath: isDevelopment ? undefined : './',
   chainWebpack(config) {
     config.module
       .rule('vue')
@@ -27,7 +28,7 @@ module.exports = {
         options.compilerOptions.whitespace = 'preserve'
         return options
       });
-    if (['production', 'test'].includes(process.env.NODE_ENV)) {
+    if (!isDevelopment) {
       config.plugin('ReplaceConfigFile').use(ReplaceConfigFile, [ ['$DATASTORE_CONFIG_DATA'] ]);
     }
   }

@@ -10,7 +10,7 @@
       <p class="mt-5">You can clone this datastore to your local machine with a few simple commands:</p>
 
       <Prism language="bash">
-        npx @ulixee/datastore clone {{ config.versionHash }} -h 43.343.43:9453
+        npx @ulixee/datastore clone {{ config.versionHash }} -h {{ipAddress}}:{{port}}
       </Prism>
 
       <p class="mt-5">That's It. Now you can run it...</p>
@@ -32,15 +32,20 @@ import * as Vue from 'vue';
 import Prism from '../components/Prism.vue';
 import Navbar from '../layouts/Navbar.vue';
 import config from '../data.config.json';
+import { serverDetailsPromise } from '../main';
 
 export default Vue.defineComponent({
   components: {
     Prism,
     Navbar,
   },
-  setup() {
+  async setup() {
+    const { ipAddress, port } = await serverDetailsPromise;
+
     return {
       config,
+      ipAddress,
+      port,
     }
   }
 });

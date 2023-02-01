@@ -156,6 +156,7 @@ export default class DatastoreCore {
     const { path } = await this.datastoreRegistry.getByVersionHash(versionHash);
     const docpagePath = path.replace(/datastore.js$/, 'docpage');
     req.url = reqPath;
+    
     const done = Finalhandler(req, res);
     ServeStatic(docpagePath)(req, res, done);
   }
