@@ -50,7 +50,14 @@ test('can get the stack trace of a compiled datastore', async () => {
     await client.stream(packager.manifest.versionHash, 'errorStack', {});
   } catch (error) {
     expect(error.stack).toContain(
-      `at multiply (${packager.manifest.versionHash}/datastore/core/test/datastores/errorStack.ts:15:25)`,
+      `at multiply (${Path.join(
+        packager.manifest.versionHash,
+        'datastore',
+        'core',
+        'test',
+        'datastores',
+        'errorStack.ts',
+      )}:15:25)`,
     );
   }
 }, 45e3);
