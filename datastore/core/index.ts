@@ -203,9 +203,11 @@ export default class DatastoreCore {
 
       this.sidechainClientManager = new SidechainClientManager(this.options);
       this.isStarted.resolve();
+
     } catch (error) {
       this.isStarted.reject(error, true);
     }
+    return this.isStarted;
   }
 
   public static async close(): Promise<void> {

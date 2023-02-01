@@ -9,14 +9,16 @@ import SidechainClient from '@ulixee/sidechain';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import * as Hostile from 'hostile';
 import UlixeeMiner from '@ulixee/miner';
+import * as Moment from 'moment';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
 import DatastoreCore from '../index';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreCore.test');
 const tmpDir = `${storageDir}/tmp`;
-let packager: Packager;
-let dbx: DbxFile;
+let bootupPackager: Packager;
+let bootupDbx: DbxFile;
 let miner: UlixeeMiner;
+let client: DatastoreApiClient;
 
 beforeAll(async () => {
   mkdirSync(storageDir, { recursive: true });
@@ -26,13 +28,15 @@ beforeAll(async () => {
   miner = new UlixeeMiner();
   miner.router.datastoreConfiguration = { datastoresDir: storageDir };
   await miner.listen();
-  packager = new Packager(require.resolve('./datastores/bootup.ts'));
-  dbx = await packager.build();
+  client = new DatastoreApiClient(await miner.address);
+  bootupPackager = new Packager(require.resolve('./datastores/bootup.ts'));
+  bootupDbx = await bootupPackager.build();
   if (process.env.CI !== 'true') Hostile.set('127.0.0.1', 'bootup-datastore.com');
 }, 30e3);
 
 afterAll(async () => {
   await miner.close();
+  await client.disconnect();
   if (process.env.CI !== 'true') Hostile.remove('127.0.0.1', 'bootup-datastore.com');
   try {
     rmSync(storageDir, { recursive: true });
@@ -40,14 +44,14 @@ afterAll(async () => {
 });
 
 test('should install new datastores on startup', async () => {
-  await Fs.copyFile(dbx.dbxPath, `${storageDir}/bootup.dbx`);
+  await Fs.copyFile(bootupDbx.dbxPath, `${storageDir}/bootup.dbx`);
   await DatastoreCore.installManuallyUploadedDbxFiles();
   const registry = new DatastoreRegistry(storageDir, tmpDir);
-  expect(registry.hasVersionHash(packager.manifest.versionHash)).toBe(true);
+  expect(registry.hasVersionHash(bootupPackager.manifest.versionHash)).toBe(true);
   // @ts-expect-error
   const dbxPath = registry.getDbxPath(
-    packager.manifest.scriptEntrypoint,
-    packager.manifest.versionHash,
+    bootupPackager.manifest.scriptEntrypoint,
+    bootupPackager.manifest.versionHash,
   );
   await expect(existsAsync(dbxPath)).resolves.toBeTruthy();
 }, 45e3);
@@ -55,7 +59,7 @@ test('should install new datastores on startup', async () => {
 test('should be able to lookup a datastore domain', async () => {
   await expect(
     runApi('Datastore.upload', {
-      compressedDatastore: await Fs.readFile(dbx.dbxPath),
+      compressedDatastore: await Fs.readFile(bootupDbx.dbxPath),
       allowNewLinkedVersionHistory: false,
     }),
   ).resolves.toEqual({ success: true });
@@ -64,37 +68,37 @@ test('should be able to lookup a datastore domain', async () => {
     DatastoreApiClient.resolveDatastoreDomain(`bootup-datastore.com:${await miner.port}`),
   ).resolves.toEqual({
     host: await miner.address,
-    datastoreVersionHash: packager.manifest.versionHash,
+    datastoreVersionHash: bootupPackager.manifest.versionHash,
   });
 }, 45e3);
 
 test('can load a version from disk if not already open', async () => {
   await expect(
     runApi('Datastore.upload', {
-      compressedDatastore: await Fs.readFile(dbx.dbxPath),
+      compressedDatastore: await Fs.readFile(bootupDbx.dbxPath),
       allowNewLinkedVersionHistory: false,
     }),
   ).resolves.toEqual({ success: true });
 
   const registry = new DatastoreRegistry(storageDir, tmpDir);
   // @ts-ignore
-  await Fs.rm(registry.getDatastoreWorkingDirectory(packager.manifest.versionHash), {
+  await Fs.rm(registry.getDatastoreWorkingDirectory(bootupPackager.manifest.versionHash), {
     recursive: true,
   });
 
   await runApi('Datastore.query', {
     sql: 'SELECT * FROM bootup()',
-    versionHash: packager.manifest.versionHash,
+    versionHash: bootupPackager.manifest.versionHash,
   });
 
   await expect(
     runApi('Datastore.query', {
       sql: 'SELECT * FROM bootup()',
-      versionHash: packager.manifest.versionHash,
+      versionHash: bootupPackager.manifest.versionHash,
     }),
   ).resolves.toMatchObject({
     outputs: [{ success: true }],
-    latestVersionHash: packager.manifest.versionHash,
+    latestVersionHash: bootupPackager.manifest.versionHash,
   });
 });
 
@@ -106,14 +110,14 @@ test('can get metadata about an uploaded datastore', async () => {
   });
   await expect(
     runApi('Datastore.upload', {
-      compressedDatastore: await Fs.readFile(dbx.dbxPath),
+      compressedDatastore: await Fs.readFile(bootupDbx.dbxPath),
       allowNewLinkedVersionHistory: false,
     }),
   ).resolves.toEqual({ success: true });
   await expect(
-    runApi('Datastore.meta', { versionHash: packager.manifest.versionHash }),
+    runApi('Datastore.meta', { versionHash: bootupPackager.manifest.versionHash }),
   ).resolves.toEqual(<IDatastoreApiTypes['Datastore.meta']['result']>{
-    latestVersionHash: packager.manifest.versionHash,
+    latestVersionHash: bootupPackager.manifest.versionHash,
     computePricePerQuery: 0,
     runnersByName: {
       bootup: {
@@ -149,6 +153,32 @@ test('can get metadata about an uploaded datastore', async () => {
 }`,
   });
 });
+
+test('can run a Datastore with momentjs', async () => {
+  const packager = new Packager(require.resolve('./datastores/moment.ts'));
+  const dbx = await packager.build();
+  await dbx.upload(await miner.address);
+  await expect(
+    client.stream(packager.manifest.versionHash, 'moment', { date: '2021/02/01' }),
+  ).rejects.toThrow('input did not match its Schema');
+
+  await expect(
+    client.stream(packager.manifest.versionHash, 'moment', { date: '2021-02-01' }),
+  ).resolves.toEqual([{ date: Moment('2021-02-01').toDate() }]);
+}, 45e3);
+
+test('can get the stack trace of a compiled datastore', async () => {
+  const packager = new Packager(require.resolve('./datastores/errorStackDatastore.ts'));
+  const dbx = await packager.build();
+  await dbx.upload(await miner.address);
+  try {
+    await client.stream(packager.manifest.versionHash, 'errorStack', {});
+  } catch (error) {
+    expect(error.stack).toContain(
+      `at multiply (${packager.manifest.versionHash}/datastore/core/test/datastores/errorStack.ts:15:25)`,
+    );
+  }
+}, 45e3);
 
 function runApi<API extends keyof IDatastoreApiTypes & string>(
   Api: API,
