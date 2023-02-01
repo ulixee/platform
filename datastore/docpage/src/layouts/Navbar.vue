@@ -4,16 +4,16 @@
       <ul class="flex flex-row gap-x-3 divide-x w-full">
         <li>
           <inline-svg :src="require('@/assets/icons/datastore.svg')" class="inline" :height="20" />
-          <router-link to="/">Documentation</router-link>
+          <router-link :to="{ name: 'home' }">Documentation</router-link>
         </li>
         <li class="pl-3">
-          <router-link to="/query-example">Query Example</router-link>
+          <router-link :to="{ name: 'queryExample' }">Query Example</router-link>
         </li>
         <li class="pl-3">
-          <router-link to="/clone-it">Clone It</router-link>
+          <router-link :to="{ name: 'cloneIt' }">Clone It</router-link>
         </li>
         <li class="pl-3">
-          <router-link to="/free-credits">My Free Credits</router-link>
+          <router-link :to="{ name: 'freeCredits' }">My Free Credits</router-link>
         </li>
       </ul>
       <ul class="flex flex-row whitespace-nowrap">

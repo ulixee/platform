@@ -7,21 +7,20 @@
         <div class="text-8xl">QUERY EXAMPLE</div>
       </h1>
 
-
       <h2 class="mt-5">
           Usage Example
           <select class="py-0" v-model="exampleType">
-            <option value="sql">Ulixee SQL</option>
+            <option value="client">Ulixee Client</option>
             <option value="stream">Ulixee Stream</option>
             <option value="postgres">Postgres</option>
           </select>
         </h2>
-        <Prism language="javascript" v-if="exampleType === 'sql'">
-          import Sql from '@ulixee/sql'; 
+        <Prism language="javascript" v-if="exampleType === 'client'">
+          import Client from '@ulixee/client'; 
           
           (async function () { 
-            const stream = new Sql('ulx://{{ authString ? `${authString}@` : ''}}localhost:8080/{{ config.versionHash }}');
-            const rows = sql.query('SELECT * FROM testers');
+            const client = new Client('ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{ config.versionHash }}');
+            const rows = client.query('SELECT * FROM testers');
             console.log(rows);
           })();
         </Prism>
@@ -29,7 +28,7 @@
           import Stream from '@ulixee/stream'; 
           
           (async function () { 
-            const stream = new Stream('ulx://{{ authString ? `${authString}@` : ''}}localhost:8080/{{ config.versionHash }}');
+            const stream = new Stream('ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{ config.versionHash }}');
             stream.addJob({
               tableName: 'testers',
               fields: '*'
@@ -40,7 +39,7 @@
           import PG from 'pg'; 
           
           (async function () {   
-            const client = new PG.Client('ulx://');
+            const client = new PG.Client('ulx://{{ipAddress}}:{{port}}/{{ config.versionHash }}');
             await client.connect();
             const response = client.query('SELECT * FROM testers');
             console.log(response.rows);
@@ -55,16 +54,21 @@ import * as Vue from 'vue';
 import Prism from '../components/Prism.vue';
 import Navbar from '../layouts/Navbar.vue';
 import config from '../data.config.json';
+import { serverDetailsPromise } from '../main';
 
 export default Vue.defineComponent({
   components: {
     Prism,
     Navbar,
   },
-  setup() {
+  async setup() {
+    const { ipAddress, port } = await serverDetailsPromise;
+
     return {
       config,
-      exampleType: Vue.ref('sql'),
+      ipAddress,
+      port,
+      exampleType: Vue.ref('client'),
       authString: location.search.replace(/^\?/, '')
     }
   }

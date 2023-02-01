@@ -19,6 +19,7 @@ export default class CoreRouter {
 
   public heroConfiguration: ICoreConfigureOptions;
   public datastoreConfiguration: Partial<IDatastoreCoreConfigureOptions>;
+  private serverAddress: { ipAddress: string; port: number };
 
   public get dataDir(): string {
     return HeroCore.dataDir;
@@ -54,6 +55,7 @@ export default class CoreRouter {
     miner.addHttpRoute(/\/datastore\/(.+)/, 'GET', this.handleHttpRequest.bind(this, 'datastore'));
     miner.addHttpRoute(/\/(.*)/, 'GET', this.handleHttpRequest.bind(this, 'datastoreRoot'));
     miner.addHttpRoute('/', 'OPTIONS', this.handleHttpRequest.bind(this, 'datastoreOptions'));
+    miner.addHttpRoute('/server-details', 'GET', this.handleHttpServerDetails.bind(this));
 
     for (const module of CoreRouter.datastorePluginsToRegister) {
       safeRegisterModule(module);
@@ -75,8 +77,9 @@ export default class CoreRouter {
     }
 
     const [ipAddress, port] = minerAddress.split(':');
-    await DatastoreCore.start({ ipAddress, port: Number(port) });
-
+    this.serverAddress = { ipAddress, port: Number(port) };
+    await DatastoreCore.start({ ipAddress, port: this.serverAddress.port });
+    
     if (ChromeAliveUtils.isInstalled()) {
       const chromeAliveCore = ChromeAliveUtils.getChromeAlive();
       const wsAddress = Promise.resolve(`ws://${minerAddress}/chromealive`);
@@ -128,6 +131,14 @@ export default class CoreRouter {
   ): Promise<void | boolean> {
     const result = await this.httpRoutersByType[connectionType](req, res, params);
     return result;
+  }
+
+  private handleHttpServerDetails(
+    req: IncomingMessage,
+    res: ServerResponse,
+  ): void {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ ipAddress: this.serverAddress.ipAddress, port: this.serverAddress.port }));
   }
 }
 

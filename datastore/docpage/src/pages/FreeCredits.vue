@@ -24,29 +24,22 @@
       <div>
         Query Example Code
         <Prism language="javascript">
-          import Client from ‘@ulixee/client;
+          import Client from '@ulixee/client';
 
           (async function run() {
-            const client = new Client(`ulx://HOST/DATASTORE`);
-            
+            const client = new Client(`ulx://{{ipAddress}}:{{port}}/{{ config.versionHash }}`);
             const records = await client.query(`SELECT * FROM githubProjects(true) WHERE lastName = 'Clark'`);
-
-            // const records = await client.run('githubProjects', { lastName: 'Clark' });
-
-            // const records = await client.fetch('testers', where, ['name', 'isActive']);
-
-
             console.log(records);
           })().catch(error => console.log(error));
         </Prism>
       </div>
 
-      <ul class="flex flex-row space-x-5">
+      <ul class="flex flex-row space-x-5 mt-5">
         <li>
-          <router-link to="/">View Documentation</router-link>
+          <router-link :to="{ name: 'home' }">View Documentation</router-link>
         </li>
         <li>
-          <router-link to="/clone-it">Clone It</router-link>
+          <router-link :to="{ name: 'cloneIt' }">Clone It</router-link>
         </li>
       </ul>
     </div>
@@ -58,12 +51,23 @@ import * as Vue from 'vue';
 import Prism from '../components/Prism.vue';
 import Navbar from '../layouts/Navbar.vue';
 import config from '../data.config.json';
+import { serverDetailsPromise } from '../main';
 
 export default Vue.defineComponent({
   components: {
     Prism,
     Navbar,
   },
+
+  async setup() {
+    const { ipAddress, port } = await serverDetailsPromise;
+
+    return {
+      config,
+      ipAddress,
+      port,
+    }
+  }
 });
 </script>
 

@@ -9,13 +9,13 @@
         <h2 class="mt-5">
           Installation
           <select class="py-0" v-model="exampleType">
-            <option value="sql">Ulixee SQL</option>
+            <option value="client">Ulixee Client</option>
             <option value="stream">Ulixee Stream</option>
             <option value="postgres">Postgres</option>
           </select>
         </h2>
-        <Prism language="shell" v-if="exampleType === 'sql'">
-          npm install @ulixee/sql 
+        <Prism language="shell" v-if="exampleType === 'client'">
+          npm install @ulixee/client 
         </Prism>
         <Prism language="shell" v-else-if="exampleType === 'stream'">
           npm install @ulixee/stream
@@ -25,17 +25,17 @@
         <h2 class="mt-5">
           Usage Example
           <select class="py-0" v-model="exampleType">
-            <option value="sql">Ulixee SQL</option>
+            <option value="client">Ulixee Client</option>
             <option value="stream">Ulixee Stream</option>
             <option value="postgres">Postgres</option>
           </select>
         </h2>
-        <Prism language="javascript" v-if="exampleType === 'sql'">
-          import Sql from '@ulixee/sql'; 
+        <Prism language="javascript" v-if="exampleType === 'client'">
+          import Client from '@ulixee/client'; 
           
           (async function () { 
-            const stream = new Sql('ulx://{{ authString ? `${authString}@` : ''}}localhost:8080/{{ config.versionHash }}');
-            const rows = sql.query('SELECT * FROM testers');
+            const client = new Client('ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{ config.versionHash }}');
+            const rows = client.query('SELECT * FROM testers');
             console.log(rows);
           })();
         </Prism>
@@ -43,7 +43,7 @@
           import Stream from '@ulixee/stream'; 
           
           (async function () { 
-            const stream = new Stream('ulx://{{ authString ? `${authString}@` : ''}}localhost:8080/{{ config.versionHash }}');
+            const stream = new Stream('ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{ config.versionHash }}');
             stream.addJob({
               tableName: 'testers',
               fields: '*'
@@ -63,7 +63,7 @@
           import { Client } from 'pg'; 
           
           (async function () {   
-            const client = new Client('ulx://');
+            const client = new Client('ulx://{{ipAddress}}:{{port}}/{{ config.versionHash }}');
             await client.connect();
             const response = client.query('SELECT * FROM testers');
             console.log(response.rows);
@@ -133,6 +133,7 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import Moment from 'moment';
+import { serverDetailsPromise } from '../main';
 import Prism from '../components/Prism.vue';
 import Fields from '../components/Fields.vue';
 import Navbar from '../layouts/Navbar.vue';
@@ -145,7 +146,7 @@ export default Vue.defineComponent({
     Fields,
     Navbar,
   },
-  setup() {
+  async setup() {
     const { tablesByName, runnersByName, crawlersByName } = config as any;
     const prices: number[] = [];
     for (const runner of Object.values(runnersByName) as any[]) {
@@ -154,6 +155,7 @@ export default Vue.defineComponent({
       prices.push(total)
     }
 
+    const { ipAddress, port } = await serverDetailsPromise;
     const avgPricePerQuery = prices.reduce((total, price) => total + price, 0) / prices.length;
     const createdAt = Moment(config.createdAt);
     const yesterday = Moment().subtract(1, 'day');
@@ -162,6 +164,8 @@ export default Vue.defineComponent({
       config,
       createdAt,
       lastUsedAt,
+      ipAddress,
+      port,
       tables: Object.values(tablesByName || {}),
       runners: Object.values(runnersByName || {}),
       crawlers: Object.values(crawlersByName || {}),
@@ -173,14 +177,10 @@ export default Vue.defineComponent({
         },
       ],
       avgPricePerQuery: formatCurrency(avgPricePerQuery as number),
-      exampleType: Vue.ref('sql'),
+      exampleType: Vue.ref('client'),
       authString: location.search.replace(/^\?/, '')
     };
   },
-  mounted() {
-    console.log('ROUTER: ', this.$router);
-  },
-  methods: {}
 });
 </script>
 

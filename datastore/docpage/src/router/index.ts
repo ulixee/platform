@@ -1,21 +1,28 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import Index from '../pages/Index.vue';
 
+const matches = location.pathname.match(/(\/datastore\/dbx1[ac-hj-np-z02-9]{18})/);
+const pathPrefix = matches ? matches[1] : '';
+
 const basicRoutes: Array<RouteRecordRaw> = [
   {
-    path: '/',
+    name: 'home',
+    path: `${pathPrefix}/`,
     component: Index,
   },
   {
-    path: '/query-example',
+    name: 'queryExample',
+    path: `${pathPrefix}/query-example`,
     component: () => import('../pages/QueryExample.vue'),
   },
   {
-    path: '/clone-it',
+    name: 'cloneIt',
+    path: `${pathPrefix}/clone-it`,
     component: () => import('../pages/CloneIt.vue'),
   },
   {
-    path: '/free-credits',
+    name: 'freeCredits',
+    path: `${pathPrefix}/free-credits`,
     component: () => import('../pages/FreeCredits.vue'),
   },
 ];

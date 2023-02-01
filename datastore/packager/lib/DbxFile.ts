@@ -84,6 +84,7 @@ export default class DbxFile {
     const name = meta.name || entrypoint.match(/([^/\\]+)\.(js|ts)$/)[1] || 'Untitled';
 
     const config = {
+      versionHash: manifest.versionHash,
       name: name.charAt(0).toUpperCase() + name.slice(1),
       description: meta.description,
       createdAt: new Date().toISOString(),
@@ -107,6 +108,7 @@ export default class DbxFile {
         });
       }, {}),
     };
+
     await buildDocpage(config, docpageDir);
   }
 

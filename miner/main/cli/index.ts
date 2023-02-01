@@ -2,10 +2,10 @@ import { Command } from 'commander';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import { applyEnvironmentVariables, parseEnvBool } from '@ulixee/commons/lib/envUtils';
 import * as Path from 'path';
-import UlixeeMiner from './index';
-import UlixeeMinerEnv from './env';
+import UlixeeMiner from '../index';
+import UlixeeMinerEnv from '../env';
 
-const pkg = require('./package.json');
+const pkg = require('../package.json');
 
 export default function cliCommands(): Command {
   const program = new Command().version(pkg.version);
