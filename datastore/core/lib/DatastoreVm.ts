@@ -6,6 +6,8 @@ import Runner from '@ulixee/datastore/lib/Runner';
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
+import * as Path from 'path';
 import DatastoreCore from '../index';
 
 const { version } = require('../package.json');
@@ -32,7 +34,7 @@ export default class DatastoreVm {
       );
     }
 
-    const script = await this.getVMScript(path, manifest);
+    const script = await this.getVMScript(path);
 
     let datastore = this.getVm().run(script) as Datastore;
     if (datastore instanceof Runner) {
@@ -68,15 +70,17 @@ export default class DatastoreVm {
     return this.apiClientCacheByUrl[host];
   }
 
-  private static getVMScript(path: string, manifest: IDatastoreManifest): Promise<VMScript> {
+  private static getVMScript(path: string): Promise<VMScript> {
     if (this.compiledScriptsByPath.has(path)) {
       return this.compiledScriptsByPath.get(path);
     }
 
+    SourceMapSupport.clearStackPath(`${Path.dirname(Path.dirname(Path.resolve(path)))}/`);
+
     const script = new Promise<VMScript>(async resolve => {
       const file = await Fs.readFile(path, 'utf8');
       const vmScript = new VMScript(file, {
-        filename: manifest.scriptEntrypoint,
+        filename: path,
       }).compile();
       resolve(vmScript);
     });
@@ -101,6 +105,33 @@ export default class DatastoreVm {
         strict: true,
         require: {
           external: Array.from(whitelist),
+          resolve: moduleName => {
+            let isAllowed = false;
+            for (const entry of whitelist) {
+              if (entry.match(moduleName) || entry.startsWith('@ulixee/')) {
+                isAllowed = true;
+                break;
+              }
+            }
+            if (!isAllowed) return;
+            // eslint-disable-next-line import/no-dynamic-require
+            return require.resolve(moduleName);
+          },
+          builtin: [
+            'buffer',
+            'console',
+            'errors',
+            'events',
+            'http',
+            'https',
+            'http2',
+            'net',
+            'path',
+            'stream',
+            'url',
+            'util',
+            'zlib',
+          ],
         },
       });
     }

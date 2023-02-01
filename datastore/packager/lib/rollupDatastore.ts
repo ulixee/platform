@@ -1,6 +1,6 @@
 import { rollup } from 'rollup';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
-import { terser } from 'rollup-plugin-terser';
+import replace from '@rollup/plugin-replace';
 import sourcemaps from './sourcemaps';
 
 const commonjs = require('@rollup/plugin-commonjs');
@@ -13,14 +13,21 @@ export default async function rollupDatastore(
   const outDir = options.outDir ?? `${__dirname}/../`;
   const plugins = [
     nodeResolve({
-      resolveOnly: module => !module.startsWith('@ulixee'),
+      resolveOnly: module => {
+        return !module.startsWith('@ulixee');
+      },
     }),
     commonjs({ transformMixedEsModules: true, extensions: ['.js', '.ts'] }), // the ".ts" extension is required }),
-    terser({ compress: false, mangle: false, format: { comments: false }, ecma: 2020 }),
   ];
 
   if (scriptPath.endsWith('.ts')) {
     plugins.unshift(
+      replace({
+        preventAssignment: true,
+        values: {
+          'import * as moment': 'import moment',
+        },
+      }),
       typescript({
         compilerOptions: {
           composite: false,
@@ -29,7 +36,7 @@ export default async function rollupDatastore(
           inlineSources: true,
           declaration: false,
           checkJs: false,
-          target: 'es2020'
+          target: 'es2020',
         },
         outputToFilesystem: false,
         tsconfig: options?.tsconfig,
@@ -63,7 +70,8 @@ export default async function rollupDatastore(
     const { output } = await bundle[outFn]({
       file: outFile,
       sourcemap: true,
-      format: 'commonjs',
+      sourcemapFile: 'datastore.js.map',
+      format: 'cjs',
       generatedCode: 'es2015',
     });
 

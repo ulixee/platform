@@ -19,7 +19,6 @@ interface IInputSchemasByName<T = Record<string, IAnySchemaJson>> {
 export default class SqlParser {
   public ast: IStatement;
   private limitedTo: ILimitedTo = {};
-  private hasReturning = false;
 
   constructor(
     sql: string,
@@ -112,7 +111,7 @@ export default class SqlParser {
   public convertToBoundValuesSqliteMap(values: any[] | { [k: string]: any }): { [k: string]: any } {
     const valuesMap = Array.isArray(values) ? this.convertToBoundValuesMap(values) : values;
     return Object.keys(valuesMap).reduce((a, k) => {
-      return { ...a, [k]: SqlGenerator.convertToSqliteValue(null, valuesMap[k])[0] }
+      return { ...a, [k]: SqlGenerator.convertToSqliteValue(null, valuesMap[k])[0] };
     }, {});
   }
 
@@ -148,7 +147,7 @@ export default class SqlParser {
     // }));
     // visitor.statement(this.ast);
     // return input;
-    return { sql: `select * from ${tableName}`, args: [] };
+    return { sql: `SELECT * FROM ${tableName}`, args: [] };
   }
 
   public extractRunnerInputs<T>(
@@ -172,11 +171,4 @@ export default class SqlParser {
 
     return inputByRunner;
   }
-
-  // public extractSqlAndValues(sql: string, values: any): { sql: string, values: any } {
-  //   return {
-  //     sql: sql.replace(/\$([0-9]+)/g, '?$1'),
-  //     values: values.reduce((a, v, i) => ({ ...a, [i+1]: v}), {}),
-  //   }
-  // }
 }

@@ -3,15 +3,14 @@ import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreStorage from '../lib/DatastoreStorage';
 
 export default new DatastoreApiHandler('Datastore.queryInternalRunnerResult', {
-  handler(request, context) {
+  async handler(request, context) {
     if (!context.connectionToClient?.isInternal) {
       throw new Error('You do not have permission to access this endpoint');
     }
 
     let storage: DatastoreStorage;
     if (request.datastoreVersionHash) {
-      const storagePath = context.datastoreRegistry.getStoragePath(request.datastoreVersionHash);
-      storage = new DatastoreStorage(storagePath);
+      storage = await context.datastoreRegistry.getStorage(request.datastoreVersionHash);
     } else {
       context.connectionToClient.datastoreStorage ??= new DatastoreStorage();
       storage = context.connectionToClient?.datastoreStorage;
@@ -24,7 +23,11 @@ export default new DatastoreApiHandler('Datastore.queryInternalRunnerResult', {
     const sqlParser = new SqlParser(request.sql, { runner: request.name });
     const unknownNames = sqlParser.functionNames.filter(x => x !== runnerName);
     if (unknownNames.length) {
-      throw new Error(`Runner${unknownNames.length === 1 ? ' does' : 's do'} not exist: ${unknownNames.join(', ')}`);
+      throw new Error(
+        `Runner${
+          unknownNames.length === 1 ? '' : 's '
+        } is ineligible to run with this api: ${unknownNames.join(', ')}`,
+      );
     }
 
     if (!sqlParser.isSelect()) {
@@ -47,7 +50,7 @@ export default new DatastoreApiHandler('Datastore.queryInternalRunnerResult', {
     const boundValues = sqlParser.convertToBoundValuesSqliteMap(request.boundValues);
     const records = db.prepare(sql).all(boundValues);
 
-    SqlGenerator.convertRecordsFromSqlite(records, [schema])
+    SqlGenerator.convertRecordsFromSqlite(records, [schema]);
     return Promise.resolve(records);
   },
 });

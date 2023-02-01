@@ -326,7 +326,7 @@ test('should be able to embed Credits in a Datastore', async () => {
   expect(DatastoreVm.apiClientCacheByUrl).toEqual({
     [`ulx://${await miner.address}`]: expect.any(DatastoreApiClient),
   });
-});
+}, 60e3);
 
 async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, any>) {
   const { command, args } = message;

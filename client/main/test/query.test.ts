@@ -27,15 +27,18 @@ test('should be able to query a datastore using sql', async () => {
   await apiClient.upload(await packager.dbx.asBuffer());
   const minerAddress = await miner.address;
   const client = new Client(`ulx://${minerAddress}/${packager.manifest.versionHash}`);
-  const results = await client.query('SELECT * FROM test(shouldTest => $1) LEFT JOIN testers on testers.lastName=test.lastName', [true]);
-
+  const results = await client.query(
+    'SELECT * FROM test(shouldTest => $1) LEFT JOIN testers on testers.lastName=test.lastName',
+    [true],
+  );
+  await client.disconnect();
   expect(results).toEqual([
     {
       testerEcho: true,
       lastName: 'Clark',
       greeting: 'Hello world',
       firstName: 'Caleb',
-      isTester: true
-    }
+      testerNumber: 1n,
+    },
   ]);
 });

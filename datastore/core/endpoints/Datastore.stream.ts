@@ -23,10 +23,16 @@ export default new DatastoreApiHandler('Datastore.stream', {
     const datastoreRunner = datastore.metadata.runnersByName[request.name];
     const datastoreTable = datastore.metadata.tablesByName[request.name];
     if (datastoreRunner) {
-      outputs = await extractRunnerOutputs(manifestWithStats, datastore, request, context, paymentProcessor);
+      outputs = await extractRunnerOutputs(
+        manifestWithStats,
+        datastore,
+        request,
+        context,
+        paymentProcessor,
+      );
     } else if (datastoreTable) {
       // TODO: Need to put a payment hold for tables
-      outputs = extractTableOutputs(datastore, request, context);
+      outputs = await extractTableOutputs(datastore, request, context);
     } else {
       throw new Error(`${request.name} is not a valid Runner name for this Datastore.`);
     }
@@ -39,7 +45,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
       microgons,
       milliseconds,
     });
-  
+
     return {
       latestVersionHash: manifestWithStats.latestVersionHash,
       metadata: {
@@ -52,10 +58,10 @@ export default new DatastoreApiHandler('Datastore.stream', {
 });
 
 async function extractRunnerOutputs(
-  manifestWithStats: IDatastoreManifestWithStats, 
-  datastore: Datastore, 
+  manifestWithStats: IDatastoreManifestWithStats,
+  datastore: Datastore,
   request: IDatastoreApis['Datastore.stream']['args'],
-  context: IDatastoreApiContext, 
+  context: IDatastoreApiContext,
   paymentProcessor: PaymentProcessor,
 ): Promise<any[]> {
   await paymentProcessor.createHold(
@@ -92,38 +98,23 @@ async function extractRunnerOutputs(
   );
 }
 
-function extractTableOutputs(
-  datastore: Datastore, 
+async function extractTableOutputs(
+  datastore: Datastore,
   request: IDatastoreApis['Datastore.stream']['args'],
-  context: IDatastoreApiContext, 
-): any[] {
+  context: IDatastoreApiContext,
+): Promise<any[]> {
   let storage: DatastoreStorage;
   if (request.versionHash) {
-    const storagePath = context.datastoreRegistry.getStoragePath(request.versionHash);
-    storage = new DatastoreStorage(storagePath);
+    storage = await context.datastoreRegistry.getStorage(request.versionHash);
   } else {
     context.connectionToClient.datastoreStorage ??= new DatastoreStorage();
     storage = context.connectionToClient?.datastoreStorage;
   }
 
   const db = storage.db;
-  const schema = datastore.tables[request.name].schema;
+  const schema = storage.getTableSchema(request.name);
+  const { sql, boundValues } = SqlGenerator.createWhereClause(request.name, request.input, ['*'], 1000);
 
-  const fields = ['*'];
-  const where: string[] = [];
-  const boundValues: string[] = [];
-
-  for (const field of Object.keys(request.input || {})) {
-    const value = request.input[field];
-    if (!(field in schema)) {
-      throw new Error(`${field} does not exist in schema for table: ${request.name}`);
-    }
-    where.push(`"${field}"=?`);
-    boundValues.push(value);
-  }
-
-  const whereSql = where.length ? `WHERE ${where.join(', ')} ` : '';
-  const sql = `SELECT ${fields.join(',')} from "${request.name}" ${whereSql}LIMIT 1000`;  
   const results = db.prepare(sql).all(boundValues);
 
   SqlGenerator.convertRecordsFromSqlite(results, [schema]);

@@ -1,9 +1,9 @@
-import { ExtractSchemaType } from '@ulixee/schema';
-import ITableSchema from '../interfaces/ITableSchema';
+import { ExtractSchemaType, ISchemaAny } from '@ulixee/schema';
 import ITableComponents from '../interfaces/ITableComponents';
 import DatastoreInternal from './DatastoreInternal';
+import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
 
-export type IExpandedTableSchema<T> = T extends ITableSchema
+export type IExpandedTableSchema<T> = T extends Record<string, ISchemaAny>
   ? {
       [K in keyof T]: T[K];
     }
@@ -11,16 +11,18 @@ export type IExpandedTableSchema<T> = T extends ITableSchema
 
 export default class Table<
   TSchema extends IExpandedTableSchema<any> = IExpandedTableSchema<any>,
-  TOutput extends ExtractSchemaType<TSchema> = ExtractSchemaType<TSchema>,
-  TComponents extends ITableComponents<TSchema, TOutput> = ITableComponents<TSchema, TOutput>,
+  TSchemaType extends ExtractSchemaType<TSchema> = ExtractSchemaType<TSchema>,
 > {
-  seedlings: TOutput[];
+  // dummy type holders
+  declare readonly schemaType: TSchemaType;
+
+  seedlings: TSchemaType[];
   #datastoreInternal: DatastoreInternal;
   #isInMemoryTableCreated = false;
 
-  protected readonly components: TComponents;
+  protected readonly components: ITableComponents<TSchema, TSchemaType>;
 
-  constructor(components: TComponents) {
+  constructor(components: ITableComponents<TSchema, TSchemaType>) {
     this.seedlings = components.seedlings;
     this.components = { ...components };
   }
@@ -34,7 +36,7 @@ export default class Table<
   }
 
   public get name(): string {
-    return this.components.name;
+    return this.components.name ?? 'default';
   }
 
   public get description(): string | undefined {
@@ -49,25 +51,30 @@ export default class Table<
     return this.#datastoreInternal;
   }
 
-  public async fetchInternal(inputFilter: TOutput): Promise<TOutput> {
-    const name = this.components.name;
+  public async fetchInternal(options: {
+    input: ExtractSchemaType<TSchema>;
+  }): Promise<TSchemaType[]> {
+    await this.datastoreInternal.ensureDatabaseExists();
+    const name = this.name;
     const datastoreInstanceId = this.datastoreInternal.instanceId;
     const datastoreVersionHash = this.datastoreInternal.manifest?.versionHash;
 
     return await this.datastoreInternal.sendRequest({
       command: 'Datastore.fetchInternalTable',
-      args: [{
-        name,
-        input: inputFilter,
-        datastoreInstanceId,
-        datastoreVersionHash,
-      }],
+      args: [
+        {
+          name,
+          input: options.input,
+          datastoreInstanceId,
+          datastoreVersionHash,
+        },
+      ],
     });
   }
 
-  public async queryInternal<T = TOutput[]>(sql: string, boundValues: any[] = []): Promise<T> {
+  public async queryInternal<T = TSchemaType[]>(sql: string, boundValues: any[] = []): Promise<T> {
     await this.datastoreInternal.ensureDatabaseExists();
-    const name = this.components.name;
+    const name = this.name;
     const datastoreInstanceId = this.datastoreInternal.instanceId;
     const datastoreVersionHash = this.datastoreInternal.manifest?.versionHash;
     const args = {
@@ -99,15 +106,19 @@ export default class Table<
     }
   }
 
+  public addConnectionToDatastoreCore(connectionToCore: ConnectionToDatastoreCore): void {
+    this.datastoreInternal.connectionToCore = connectionToCore;
+  }
+
   protected async createInMemoryTable(): Promise<void> {
     if (this.#isInMemoryTableCreated) return;
     this.#isInMemoryTableCreated = true;
     const datastoreInstanceId = this.datastoreInternal.instanceId;
-    const name = this.components.name ?? 'this';
+    const name = this.name;
     const args = {
       name,
       datastoreInstanceId,
-      schema: this.components.schema,
+      schema: this.schema,
       seedlings: this.seedlings,
     };
     await this.datastoreInternal.sendRequest({

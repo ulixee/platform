@@ -17,6 +17,7 @@ import { unpackDbxFile } from './dbxUtils';
 import { IDatastoreStatsRecord } from './DatastoreStatsTable';
 import DatastoreStorage from './DatastoreStorage';
 import { IDatastoreVersionRecord } from './DatastoreVersionsTable';
+import DatastoreVm from './DatastoreVm';
 
 const datastorePackageJson = require(`../package.json`);
 
@@ -37,12 +38,18 @@ export default class DatastoreRegistry {
   }
 
   #datastoresDb: DatastoresDb;
+  #storageByPath = new Map<string, DatastoreStorage>();
   #openedManifestsByPath = new Map<string, IDatastoreManifest>();
 
   constructor(readonly storageDir: string, readonly workingDir: string) {}
 
   public close(): void {
     this.#datastoresDb?.close();
+    for (const storage of this.#storageByPath.values()) {
+      storage.db.close();
+    }
+    this.#openedManifestsByPath.clear();
+    this.#storageByPath.clear();
   }
 
   public hasVersionHash(versionHash: string): boolean {
@@ -103,6 +110,26 @@ export default class DatastoreRegistry {
     );
   }
 
+  public async getStorage(versionHash: string): Promise<DatastoreStorage> {
+    const storagePath = this.getStoragePath(versionHash);
+    if (this.#storageByPath.has(storagePath)) return this.#storageByPath.get(storagePath);
+    const datastoreVersion = await this.getByVersionHash(versionHash);
+    const storage = new DatastoreStorage(storagePath);
+    this.#storageByPath.set(storagePath, storage);
+
+    const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
+    for (const [name, runner] of Object.entries(datastore.runners)) {
+      const schema = runner.schema ?? {};
+      storage.addRunnerSchema(name, schema);
+    }
+    for (const [name, table] of Object.entries(datastore.tables)) {
+      if (!table.isPublic) continue;
+      const schema = table.schema ?? {};
+      storage.addTableSchema(name, schema, !!table?.remoteSource);
+    }
+    return storage;
+  }
+
   public getStoragePath(versionHash: string): string {
     const workingDir = this.getDatastoreWorkingDirectory(versionHash);
     return Path.join(workingDir, 'storage.db');
@@ -149,7 +176,8 @@ export default class DatastoreRegistry {
     }
 
     const storagePath = this.getStoragePath(manifest.versionHash);
-    DatastoreStorage.close(storagePath);
+    // make sure to close any existing db
+    this.#storageByPath.get(storagePath)?.db?.close();
     try {
       await Fs.unlink(storagePath);
     } catch (e) {}

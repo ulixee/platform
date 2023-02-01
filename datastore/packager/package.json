@@ -6,6 +6,7 @@
     "@rollup/plugin-commonjs": "^22.0.0",
     "@rollup/plugin-node-resolve": "^13.3.0",
     "@rollup/plugin-typescript": "^8.3.2",
+    "@rollup/plugin-replace": "^5.0.2",
     "@ulixee/commons": "2.0.0-alpha.18",
     "@ulixee/crypto": "2.0.0-alpha.18",
     "@ulixee/datastore": "2.0.0-alpha.18",

@@ -35,7 +35,6 @@ import DatastoreQueryInternalRunnerResult from './endpoints/Datastore.queryInter
 import DatastoreInitializeInMemoryTable from './endpoints/Datastore.createInMemoryTable';
 import DatastoreInitializeInMemoryRunner from './endpoints/Datastore.createInMemoryRunner';
 import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
-import DatastoreStorage from './lib/DatastoreStorage';
 import DatastoreStream from './endpoints/Datastore.stream';
 import DatastoreFetchInternalTable from './endpoints/Datastore.fetchInternalTable';
 import DatastoreAdmin from './endpoints/Datastore.admin';
@@ -204,9 +203,11 @@ export default class DatastoreCore {
 
       this.sidechainClientManager = new SidechainClientManager(this.options);
       this.isStarted.resolve();
+
     } catch (error) {
       this.isStarted.reject(error, true);
     }
+    return this.isStarted;
   }
 
   public static async close(): Promise<void> {
@@ -229,7 +230,6 @@ export default class DatastoreCore {
       }
       this.connections.clear();
       this.datastoreRegistry?.close();
-      DatastoreStorage.closeAll();
       await DatastoreVm.close();
     } finally {
       closingPromise.resolve();

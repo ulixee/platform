@@ -1,6 +1,7 @@
 import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
 import { IRunnerSchema } from '@ulixee/datastore';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
+import SqlParser from './Parser';
 
 const zodToSqliteTypes = {
   string: 'TEXT',
@@ -44,6 +45,41 @@ export default class SqlGenerator {
       new Set([...Object.keys(schema?.output || {}), ...Object.keys(outputRecords[0])]),
     );
     callback(parameters, columns);
+  }
+
+  public static createWhereClause(
+    tableName: string,
+    filters: { [field: string]: any },
+    fields: string[] = ['*'],
+    limit = 1000,
+  ): { sql: string; boundValues: typeof filters } {
+    const where: string[] = [];
+    const boundValues: any[] = [];
+
+    let counter = 1;
+    for (const [field, value] of Object.entries(filters ?? {})) {
+      where.push(`"${field}"=$${counter++}`);
+      boundValues.push(value);
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(', ')} ` : '';
+    const sql = `SELECT ${fields.join(',')} from "${tableName}" ${whereSql}LIMIT ${limit}`;
+
+    const sqlParser = new SqlParser(sql, { table: tableName });
+
+    const unknownNames = sqlParser.tableNames.filter(x => x !== tableName);
+    if (unknownNames.length) {
+      throw new Error(
+        `Table${unknownNames.length === 1 ? ' does' : 's do'} not exist: ${unknownNames.join(
+          ', ',
+        )}`,
+      );
+    }
+
+    return {
+      sql: sqlParser.toSql(),
+      boundValues: sqlParser.convertToBoundValuesSqliteMap(boundValues),
+    };
   }
 
   public static createInsertStatement(
@@ -154,6 +190,12 @@ export default class SqlGenerator {
     if (type === 'boolean') {
       return !!value;
     }
+    if (type === 'buffer') {
+      return value;
+    }
+    if (type === 'bigint') {
+      return value ? BigInt(value) : null;
+    }
     if (type === 'date') {
       return value ? new Date(value) : null;
     }
@@ -181,8 +223,12 @@ export default class SqlGenerator {
     }
 
     if (type === undefined || type === null) {
-      if (value instanceof Buffer) {
+      if (Buffer.isBuffer(value)) {
         return [value, 'buffer'];
+      }
+
+      if (typeof value === 'bigint') {
+        return [value, 'bigint'];
       }
 
       if (typeof value === 'boolean') {

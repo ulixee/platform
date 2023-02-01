@@ -1,4 +1,4 @@
-import Datastore, { Crawler, Runner } from '@ulixee/datastore/index';
+import Datastore, { Crawler, Runner } from '@ulixee/datastore';
 import * as assert from 'assert';
 import { boolean, number, string } from '@ulixee/schema';
 import { HeroRunnerPlugin } from '../index';

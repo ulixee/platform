@@ -1,4 +1,4 @@
-import Datastore, { Table, Runner } from '@ulixee/datastore';
+import Datastore, { Runner, Table } from '@ulixee/datastore';
 import { boolean, string } from '@ulixee/schema';
 
 export default new Datastore({
@@ -28,7 +28,7 @@ export default new Datastore({
       schema: {
         firstName: string(),
         lastName: string(),
-        isTester: boolean(),
+        isTester: boolean({ optional: true }),
       },
       seedlings: [
         { firstName: 'Caleb', lastName: 'Clark', isTester: true },

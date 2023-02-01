@@ -1,16 +1,21 @@
-import { setupAutorunMjsHack } from './lib/utils/Autorun.mjs';
 import cjsImport from './index.js';
 
 const {
   IInputFilter,
   IOutputSchema
+  ClientForDatastore,
+  ClientForTable,
+  ClientForFunction,
+  ClientForCrawler,
 } = cjsImport;
 
 export {
-  IInputFilter, 
+  ClientForDatastore,
+  ClientForTable,
+  ClientForFunction,
+  ClientForCrawler,
+  IInputFilter,
   IOutputSchema,
 };
 
 export default cjsImport.default;
-
-setupAutorunMjsHack();
