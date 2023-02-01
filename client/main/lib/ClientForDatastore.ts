@@ -1,12 +1,15 @@
 import ResultIterable from '@ulixee/datastore/lib/ResultIterable';
-import Datastore from '@ulixee/datastore';
+import Datastore, { ConnectionToDatastoreCore } from '@ulixee/datastore';
 import { IOutputSchema } from '../interfaces/IInputOutput';
 
 export default class ClientForDatastore<TDatastore extends Datastore> {
   private datastore: TDatastore;
 
-  constructor(datastore: TDatastore) {
+  constructor(datastore: TDatastore, options?: { connectionToCore: ConnectionToDatastoreCore }) {
     this.datastore = datastore;
+    if (options.connectionToCore) {
+      this.datastore.addConnectionToDatastoreCore(options.connectionToCore);
+    }
   }
 
   public fetch<T extends keyof TDatastore['runners']>(

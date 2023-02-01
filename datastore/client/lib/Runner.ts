@@ -11,6 +11,7 @@ import IRunnerComponents from '../interfaces/IRunnerComponents';
 import RunnerPlugins from './RunnerPlugins';
 import DatastoreInternal from './DatastoreInternal';
 import ResultIterable from './ResultIterable';
+import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
 
 const disableColors = parseEnvBool(process.env.NODE_DISABLE_COLORS) ?? false;
 
@@ -163,10 +164,7 @@ export default class Runner<
 
     const sqlParser = new SqlParser(sql, { runner: name });
     const schemas = { [name]: this.schema.input };
-    const inputsByRunner = sqlParser.extractRunnerInputs<TSchema['input']>(
-      schemas,
-      boundValues,
-    );
+    const inputsByRunner = sqlParser.extractRunnerInputs<TSchema['input']>(schemas, boundValues);
     const input = inputsByRunner[name];
     const outputs: any[] = [];
 
@@ -202,6 +200,10 @@ export default class Runner<
     if (!datastoreInternal.manifest?.versionHash) {
       this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryRunner.bind(this));
     }
+  }
+
+  public addConnectionToDatastoreCore(connectionToCore: ConnectionToDatastoreCore): void {
+    this.datastoreInternal.connectionToCore = connectionToCore;
   }
 
   private async createInMemoryRunner(): Promise<void> {

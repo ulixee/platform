@@ -1,11 +1,12 @@
-import { Runner } from '@ulixee/datastore';
+import { ConnectionToDatastoreCore, Runner } from '@ulixee/datastore';
 import ResultIterable from '@ulixee/datastore/lib/ResultIterable';
 import { IOutputSchema } from '../interfaces/IInputOutput';
 
 export default class ClientForRunner<TRunner extends Runner> {
   private runner: TRunner;
-  constructor(runner: TRunner) {
+  constructor(runner: TRunner, options?: { connectionToCore: ConnectionToDatastoreCore }) {
     this.runner = runner;
+    if (options?.connectionToCore) runner.addConnectionToDatastoreCore(options?.connectionToCore)
   }
 
   public fetch(

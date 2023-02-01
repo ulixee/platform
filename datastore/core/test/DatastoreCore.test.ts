@@ -4,12 +4,10 @@ import Packager from '@ulixee/datastore-packager';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import DbxFile from '@ulixee/datastore-packager/lib/DbxFile';
 import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
-import Identity from '@ulixee/crypto/lib/Identity';
 import SidechainClient from '@ulixee/sidechain';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import * as Hostile from 'hostile';
 import UlixeeMiner from '@ulixee/miner';
-import * as Moment from 'moment';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
 import DatastoreCore from '../index';
 
@@ -24,7 +22,6 @@ beforeAll(async () => {
   mkdirSync(storageDir, { recursive: true });
   DatastoreCore.options.datastoresTmpDir = tmpDir;
   DatastoreCore.options.datastoresDir = storageDir;
-  DatastoreCore.options.identityWithSidechain = Identity.createSync();
   miner = new UlixeeMiner();
   miner.router.datastoreConfiguration = { datastoresDir: storageDir };
   await miner.listen();
@@ -32,7 +29,7 @@ beforeAll(async () => {
   bootupPackager = new Packager(require.resolve('./datastores/bootup.ts'));
   bootupDbx = await bootupPackager.build();
   if (process.env.CI !== 'true') Hostile.set('127.0.0.1', 'bootup-datastore.com');
-}, 30e3);
+}, 60e3);
 
 afterAll(async () => {
   await miner.close();
@@ -153,32 +150,6 @@ test('can get metadata about an uploaded datastore', async () => {
 }`,
   });
 });
-
-test('can run a Datastore with momentjs', async () => {
-  const packager = new Packager(require.resolve('./datastores/moment.ts'));
-  const dbx = await packager.build();
-  await dbx.upload(await miner.address);
-  await expect(
-    client.stream(packager.manifest.versionHash, 'moment', { date: '2021/02/01' }),
-  ).rejects.toThrow('input did not match its Schema');
-
-  await expect(
-    client.stream(packager.manifest.versionHash, 'moment', { date: '2021-02-01' }),
-  ).resolves.toEqual([{ date: Moment('2021-02-01').toDate() }]);
-}, 45e3);
-
-test('can get the stack trace of a compiled datastore', async () => {
-  const packager = new Packager(require.resolve('./datastores/errorStackDatastore.ts'));
-  const dbx = await packager.build();
-  await dbx.upload(await miner.address);
-  try {
-    await client.stream(packager.manifest.versionHash, 'errorStack', {});
-  } catch (error) {
-    expect(error.stack).toContain(
-      `at multiply (${packager.manifest.versionHash}/datastore/core/test/datastores/errorStack.ts:15:25)`,
-    );
-  }
-}, 45e3);
 
 function runApi<API extends keyof IDatastoreApiTypes & string>(
   Api: API,

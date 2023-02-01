@@ -75,7 +75,7 @@ export default class DatastoreVm {
       return this.compiledScriptsByPath.get(path);
     }
 
-    SourceMapSupport.clearStackPath(`${Path.dirname(Path.dirname(path))}/`);
+    SourceMapSupport.clearStackPath(`${Path.dirname(Path.dirname(Path.resolve(path)))}/`);
 
     const script = new Promise<VMScript>(async resolve => {
       const file = await Fs.readFile(path, 'utf8');

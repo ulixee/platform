@@ -1,6 +1,7 @@
 import { ExtractSchemaType, ISchemaAny } from '@ulixee/schema';
 import ITableComponents from '../interfaces/ITableComponents';
 import DatastoreInternal from './DatastoreInternal';
+import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
 
 export type IExpandedTableSchema<T> = T extends Record<string, ISchemaAny>
   ? {
@@ -50,7 +51,9 @@ export default class Table<
     return this.#datastoreInternal;
   }
 
-  public async fetchInternal(options: { input: ExtractSchemaType<TSchema> }): Promise<TSchemaType[]> {
+  public async fetchInternal(options: {
+    input: ExtractSchemaType<TSchema>;
+  }): Promise<TSchemaType[]> {
     await this.datastoreInternal.ensureDatabaseExists();
     const name = this.name;
     const datastoreInstanceId = this.datastoreInternal.instanceId;
@@ -101,6 +104,10 @@ export default class Table<
     if (!datastoreInternal.manifest?.versionHash) {
       this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryTable.bind(this));
     }
+  }
+
+  public addConnectionToDatastoreCore(connectionToCore: ConnectionToDatastoreCore): void {
+    this.datastoreInternal.connectionToCore = connectionToCore;
   }
 
   protected async createInMemoryTable(): Promise<void> {

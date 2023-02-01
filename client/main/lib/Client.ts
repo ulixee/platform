@@ -1,5 +1,5 @@
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import Datastore, { Crawler, Runner, Table } from '@ulixee/datastore';
+import Datastore, { ConnectionToDatastoreCore, Crawler, Runner, Table } from '@ulixee/datastore';
 import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSchema';
 import ClientForDatastore from './ClientForDatastore';
 import ClientForRunner from './ClientForRunner';
@@ -16,6 +16,14 @@ export default class ClientForRemote {
   public port: number;
   public database: string;
 
+  private get apiClient(): DatastoreApiClient {
+    if (!this.#apiClient) {
+      const address = `${this.host}:${this.port}`;
+      this.#apiClient = new DatastoreApiClient(address);
+    }
+    return this.#apiClient;
+  }
+
   #apiClient: DatastoreApiClient;
 
   constructor(uriOrObject: ILocationStringOrObject = {}) {
@@ -25,14 +33,6 @@ export default class ClientForRemote {
     this.port = connectionParameters.port;
     this.host = connectionParameters.host;
     this.password = connectionParameters.password;
-  }
-
-  private get apiClient(): DatastoreApiClient {
-    if (!this.#apiClient) {
-      const address = `${this.host}:${this.port}`;
-      this.#apiClient = new DatastoreApiClient(address);
-    }
-    return this.#apiClient;
   }
 
   public async run<
@@ -113,19 +113,36 @@ export default class ClientForRemote {
     return outputs;
   }
 
-  public static forDatastore<T extends Datastore>(datastore: T): ClientForDatastore<T> {
-    return new ClientForDatastore(datastore);
+  public disconnect(): Promise<void> {
+    return this.#apiClient?.disconnect();
   }
 
-  public static forTable<T extends Table>(table: T): ClientForTable<T> {
-    return new ClientForTable(table);
+  public static forDatastore<T extends Datastore>(
+    datastore: T,
+    options?: IClientOptions,
+  ): ClientForDatastore<T> {
+    return new ClientForDatastore(datastore, options);
   }
 
-  public static forRunner<T extends Runner>(runner: T): ClientForRunner<T> {
-    return new ClientForRunner(runner);
+  public static forTable<T extends Table>(table: T, options?: IClientOptions): ClientForTable<T> {
+    return new ClientForTable(table, options);
   }
 
-  public static forCrawler<T extends Crawler>(datastore: T): ClientForCrawler<T> {
-    return new ClientForCrawler(datastore);
+  public static forRunner<T extends Runner>(
+    runner: T,
+    options?: IClientOptions,
+  ): ClientForRunner<T> {
+    return new ClientForRunner(runner, options);
   }
+
+  public static forCrawler<T extends Crawler>(
+    datastore: T,
+    options?: IClientOptions,
+  ): ClientForCrawler<T> {
+    return new ClientForCrawler(datastore, options);
+  }
+}
+
+interface IClientOptions {
+  connectionToCore: ConnectionToDatastoreCore;
 }
