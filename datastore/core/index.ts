@@ -155,7 +155,7 @@ export default class DatastoreCore {
     const { path } = await this.datastoreRegistry.getByVersionHash(versionHash);
     const docpagePath = path.replace(/datastore.js$/, 'docpage');
     req.url = reqPath;
-    
+
     const done = Finalhandler(req, res);
     ServeStatic(docpagePath)(req, res, done);
   }
@@ -221,7 +221,7 @@ export default class DatastoreCore {
       await this.workTracker?.stop(this.options.waitForDatastoreCompletionOnShutdown);
 
       for (const plugin of Object.values(this.pluginCoresByName)) {
-        if (plugin.onCoreStart) await plugin.onCoreClose();
+        if (plugin.onCoreClose) await plugin.onCoreClose();
       }
       this.pluginCoresByName = {};
 
