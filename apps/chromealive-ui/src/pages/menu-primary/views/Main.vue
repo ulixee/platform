@@ -39,7 +39,7 @@
 import * as Vue from 'vue';
 import { defineComponent } from 'vue';
 import Client from '@/api/Client';
-import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
+import IHeroSessionUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionUpdatedEvent';
 
 export default defineComponent({
   name: 'Menu',
@@ -53,13 +53,13 @@ export default defineComponent({
       scriptEntrypoint: Vue.ref<string>('unknown script'),
       scriptEntrypointRaw: Vue.ref<string>(null),
       scriptEntrypointTs: Vue.ref<string>(null),
-      session: Vue.reactive<IHeroSessionActiveEvent>({} as any),
+      session: Vue.reactive<IHeroSessionUpdatedEvent>({} as any),
     };
   },
   mounted() {
     Client.connect().catch(err => alert(String(err)));
     this.refreshData();
-    Client.on('Session.active', this.onSessionActive);
+    Client.on('Session.updated', this.onSessionUpdated);
   },
   methods: {
     fileOsTool() {
@@ -69,9 +69,7 @@ export default defineComponent({
       return 'File System';
     },
     quitScript() {
-      Client.send('Session.quit', {
-        heroSessionId: this.session.heroSessionId,
-      });
+      Client.send('Session.close');
     },
 
     openScript(filepath: string) {
@@ -84,21 +82,19 @@ export default defineComponent({
 
     continueScript() {
       Client.send('Session.resume', {
-        heroSessionId: this.session.heroSessionId,
         startLocation: 'currentLocation',
       });
     },
 
     restartScript() {
       Client.send('Session.resume', {
-        heroSessionId: this.session.heroSessionId,
         startLocation: 'sessionStart',
       });
     },
 
     openAbout() {},
 
-    onSessionActive(data: IHeroSessionActiveEvent) {
+    onSessionUpdated(data: IHeroSessionUpdatedEvent) {
       const divider = data.scriptEntrypoint.includes('/') ? '/' : '\\';
       this.session = data;
       this.scriptEntrypoint = (data.scriptEntrypointTs ?? data.scriptEntrypoint)
@@ -108,9 +104,10 @@ export default defineComponent({
       this.scriptEntrypointRaw = data.scriptEntrypoint;
       this.scriptEntrypointTs = data.scriptEntrypointTs;
     },
+
     refreshData(): void {
-      Client.send('Session.getActive')
-        .then(this.onSessionActive)
+      Client.send('Session.load')
+        .then(this.onSessionUpdated)
         .catch(err => alert(String(err)));
     },
   },

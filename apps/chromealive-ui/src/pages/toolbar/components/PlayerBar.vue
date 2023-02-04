@@ -75,8 +75,10 @@ import { PropType } from 'vue';
 import Client from '@/api/Client';
 import ISessionTimetravelEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionTimetravelEvent';
 import { ITimelineTick } from '@/pages/toolbar/views/SessionController.vue';
-import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
-import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
+import IHeroSessionUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionUpdatedEvent';
+import ISessionAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionAppModeEvent';
+import ISessionApi from '@ulixee/apps-chromealive-interfaces/apis/ISessionApi';
+import { IChromeAliveApiResponse } from '@ulixee/apps-chromealive-interfaces/apis';
 import ArrowRight from './ArrowRight.vue';
 
 const startMarkerPosition = 0;
@@ -113,9 +115,9 @@ export default Vue.defineComponent({
       type: Array as PropType<ITimelineTick[]>,
     },
     session: {
-      type: Object as PropType<IHeroSessionActiveEvent>,
+      type: Object as PropType<IHeroSessionUpdatedEvent>,
     },
-    mode: { type: String as PropType<IAppModeEvent['mode']> },
+    mode: { type: String as PropType<ISessionAppModeEvent['mode']> },
   },
   emits: [],
   setup(props) {
@@ -167,7 +169,7 @@ export default Vue.defineComponent({
     };
   },
   watch: {
-    mode(value: IAppModeEvent['mode']) {
+    mode(value: ISessionAppModeEvent['mode']) {
       if (value === 'Live') {
         this.markerClass.isLive = true;
         this.markerClass.hasMultiple = false;
@@ -293,7 +295,6 @@ export default Vue.defineComponent({
 
     restartScript() {
       void Client.send('Session.resume', {
-        heroSessionId: this.session.heroSessionId,
         startLocation: 'sessionStart',
       });
     },
@@ -301,16 +302,13 @@ export default Vue.defineComponent({
     resumeScript() {
       this.session.playbackState = 'running';
       void Client.send('Session.resume', {
-        heroSessionId: this.session.heroSessionId,
         startLocation: 'currentLocation',
       });
     },
 
     pauseScript() {
       this.session.playbackState = 'paused';
-      void Client.send('Session.pause', {
-        heroSessionId: this.session.heroSessionId,
-      });
+      void Client.send('Session.pause');
     },
 
     handleMousemove(event: MouseEvent) {
@@ -441,14 +439,12 @@ export default Vue.defineComponent({
         if (this.mode !== 'Live') {
           await Client.send('Session.openMode', {
             mode: 'Live',
-            heroSessionId,
           });
         }
         return;
       }
 
       await Client.send('Session.timetravel', {
-        heroSessionId,
         timelinePercentRange: this.markerClass.hasMultiple
           ? [startOffset, endOffset]
           : [percentOffset, percentOffset],
@@ -456,9 +452,17 @@ export default Vue.defineComponent({
       });
     },
 
+    getTimetravelStateResponse(
+      event: IChromeAliveApiResponse<'Session.getTimetravelState'>['data'],
+    ): void {
+      this.cssVars.markerLeft = event.percentOffset;
+      this.cssVars.markerRight = event.percentOffset;
+      this.markerClass.isLive = event.percentOffset >= liveMarkerPosition;
+    },
+
     onTimetraveled(event: ISessionTimetravelEvent): void {
-      this.markerClass.isLive = false;
       if (this.mouseDownItem || this.isMouseDown || this.isMouseDownDragging) return;
+      this.markerClass.isLive = event.percentOffset >= liveMarkerPosition;
 
       if (event.focusedRange) {
         this.markerClass.hasMultiple = true;
@@ -473,6 +477,9 @@ export default Vue.defineComponent({
   },
   mounted() {
     Client.on('Session.timetravel', this.onTimetraveled);
+    Client.send('Session.getTimetravelState')
+      .then(this.getTimetravelStateResponse)
+      .catch(err => alert(String(err)));
     window.addEventListener('mousemove', this.handleMousemove.bind(this));
   },
   beforeUnmount() {
@@ -494,7 +501,8 @@ export default Vue.defineComponent({
     }
   }
   &.isRestartingSession {
-    .ticks, .ghost {
+    .ticks,
+    .ghost {
       display: none;
     }
     .marker.isLive {

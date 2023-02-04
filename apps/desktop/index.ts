@@ -1,3 +1,4 @@
+import './lib/util/UlixeeLogger';
 import '@ulixee/commons/lib/SourceMapSupport';
 import { app } from 'electron';
 import { Menubar } from './lib/Menubar';
@@ -6,7 +7,6 @@ if (app.isPackaged) {
   process.env.DEBUG = [process.env.DEBUG ?? '', 'ulx:*'].filter(Boolean).join(',');
 }
 
-require('./lib/util/UlixeeLogger');
 const { version } = require('./package.json');
 
 if (process.argv.some(x => x.includes('--chromealive'))) {

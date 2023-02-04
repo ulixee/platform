@@ -13,20 +13,26 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
   source: ISourceCodeUpdatedEvent;
   command: ICommandUpdatedEvent;
 }> {
-  public entrypoint: string;
   private sourceFileLines: { [path: string]: string[] } = {};
   private events = new EventSubscriber();
   private commandsById: { [id: number]: ICommandUpdatedEvent } = {};
 
-  constructor(readonly heroSession: Session) {
+  constructor(readonly entrypoint: string) {
     super();
     bindFunctions(this);
 
-    this.entrypoint = SourceMapSupport.getSourceFile(
-      heroSession.options.scriptInstanceMeta.entrypoint,
-    );
+    this.entrypoint = SourceMapSupport.getSourceFile(this.entrypoint);
+  }
+
+  public listen(heroSession: Session): void {
     this.events.on(heroSession.commands, 'start', this.onCommandStart);
     this.events.on(heroSession.commands, 'finish', this.onCommandFinished);
+  }
+
+  public loadCommands(commands: ICommandMeta[]): void {
+    for (const command of commands) {
+      this.onCommandFinished(command, true)
+    }
   }
 
   public getCurrentState(): {
@@ -66,7 +72,7 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
     this.emit('command', this.commandsById[command.id]);
   }
 
-  private onCommandFinished(command: ICommandMeta): void {
+  private onCommandFinished(command: ICommandMeta, skipEmit = false): void {
     if (!command.callsite) return;
     const originalSourcePosition = command.callsite.map(x =>
       SourceMapSupport.getOriginalSourcePosition(x),
@@ -77,7 +83,7 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
       isComplete: true,
       originalSourcePosition,
     };
-    this.emit('command', this.commandsById[command.id]);
+    if (!skipEmit) this.emit('command', this.commandsById[command.id]);
   }
 
   private checkForSourceUpdates(sourceLocations: ISourceCodeLocation[]): void {

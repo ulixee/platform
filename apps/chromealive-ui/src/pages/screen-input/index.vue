@@ -119,7 +119,7 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
-import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
+import IHeroSessionUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionUpdatedEvent';
 import IHeroMeta from '@ulixee/hero-interfaces/IHeroMeta';
 import moment from 'moment';
 import Client from '@/api/Client';
@@ -139,7 +139,7 @@ export default Vue.defineComponent({
     };
   },
   methods: {
-    onSessionActive(data: IHeroSessionActiveEvent) {
+    onSessionUpdated(data: IHeroSessionUpdatedEvent) {
       if (!data) return;
 
       const entrypoint = data.scriptEntrypointTs ?? data.scriptEntrypoint;
@@ -158,8 +158,8 @@ export default Vue.defineComponent({
       this.meta = meta;
     },
     refreshMeta(): void {
-      Client.send('Session.getActive')
-        .then(this.onSessionActive)
+      Client.send('Session.load')
+        .then(this.onSessionUpdated)
         .catch(err => console.error(err));
       Client.send('Session.getMeta')
         .then(this.onHeroMeta)
@@ -169,7 +169,7 @@ export default Vue.defineComponent({
   mounted() {
     Client.connect().catch(err => console.error(err));
     this.refreshMeta();
-    Client.on('Session.active', this.onSessionActive);
+    Client.on('Session.updated', this.onSessionUpdated);
   },
 });
 </script>

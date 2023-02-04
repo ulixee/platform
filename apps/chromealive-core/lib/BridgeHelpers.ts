@@ -47,7 +47,6 @@ export type IMessageEventType = keyof typeof MessageEventType;
 export enum MessageLocation {
   DevtoolsPrivate = 'DevtoolsPrivate',
   DevtoolsScript = 'DevtoolsScript',
-  BackgroundScript = 'BackgroundScript',
   ContentScript = 'ContentScript',
   Core = 'Core',
 }

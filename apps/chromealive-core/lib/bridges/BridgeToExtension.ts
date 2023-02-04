@@ -1,13 +1,14 @@
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { EventEmitter } from 'events';
-import IDevtoolsSession, { Protocol } from '@ulixee/unblocked-specification/agent/browser/IDevtoolsSession';
+import IDevtoolsSession, {
+  Protocol,
+} from '@ulixee/unblocked-specification/agent/browser/IDevtoolsSession';
 import { IPage } from '@ulixee/unblocked-specification/agent/browser/IPage';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import { createPromise } from '@ulixee/commons/lib/utils';
 import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
 import Log from '@ulixee/commons/lib/Logger';
 import { extensionId } from '../ExtensionUtils';
-import ChromeAliveCore from '../../index';
 import {
   ___receiveFromCore,
   ___sendToCore,
@@ -68,10 +69,9 @@ export default class BridgeToExtension extends EventEmitter {
     ]).catch(() => null);
   }
 
-  public send<T = any>(message: any, pageId?: string): Promise<T | void> {
+  public send<T = any>(message: any, pageId: string): Promise<T | void> {
     const [destLocation, responseCode, restOfMessage] =
       extractStringifiedComponentsFromMessage(message);
-    pageId ??= ChromeAliveCore.getActivePage()?.id;
     if (!pageId) {
       throw new Error(`No active browser page ${pageId}`);
     }

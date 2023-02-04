@@ -5,14 +5,13 @@ const srcDir = path.join(__dirname, 'src');
 const outDir = process.env.BUILD_DIR ?? 'build';
 const outputDir = path.resolve(
   __dirname,
-  path.join('../..', outDir, 'apps/chromealive-core/extension'),
+  path.join('../..', outDir, 'apps/chromealive/extension'),
 );
 
 module.exports = {
   devtool: 'inline-source-map',
   mode: 'development',
   entry: {
-    background: path.join(srcDir, 'background.ts'),
     content: path.join(srcDir, 'content.ts'),
     devtools: path.join(srcDir, 'devtools.ts'),
   },

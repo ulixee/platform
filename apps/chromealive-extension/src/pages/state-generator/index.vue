@@ -16,8 +16,7 @@ import { DomActionType, IFrontendDomChangeEvent } from '@ulixee/hero-interfaces/
 import DomNodeState from './DomNodeState';
 import DomNode from './DomNode.vue';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
-import { IChromeAliveApiResponse, IChromeAliveApis } from '@ulixee/apps-chromealive-interfaces/apis';
-import { sendToBackgroundScript } from '../../lib/devtools/DevtoolsMessenger';
+import { IChromeAliveApiResponse } from '@ulixee/apps-chromealive-interfaces/apis';
 
 export interface IDomFrameNodes {
   nodesById: Record<number, DomNodeState>;
@@ -113,7 +112,8 @@ export default Vue.defineComponent({
       this.hiddenNodeGroups.isExpandedByGroupId.clear();
       this.hiddenNodeGroups.collapsedGroupIdByFrameNodeId.clear();
       this.hiddenNodeGroups.createdGroupIdByFrameNodeId.clear();
-      this.findTreeChanges(this.mainFrame.document);
+      const frame = this.mainFrame;
+      if (frame) this.findTreeChanges(frame.document);
     },
 
     findTreeChanges(nodeState: DomNodeState): void {
@@ -213,12 +213,9 @@ export default Vue.defineComponent({
   },
 
   mounted() {
-    sendToBackgroundScript({ action: 'getMinerAddress' }, address => {
-      window.setMinerAddress(address);
-      Client.send('Session.getDom')
-        .then(this.onDomResponse)
-        .catch(err => alert(err.stack));
-    });
+    Client.send('Session.getDom', {})
+      .then(this.onDomResponse)
+      .catch(err => alert(err.stack));
   },
 
   beforeUnmount() {

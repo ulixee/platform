@@ -2,11 +2,11 @@ import { IPage } from '@ulixee/unblocked-specification/agent/browser/IPage';
 import * as fs from 'fs';
 import { ISelectorMap } from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
 import highlightConfig from './highlightConfig';
-import HeroCorePlugin from '../HeroCorePlugin';
+import AppReplayWindowController from '../AppReplayWindowController';
 
 const installSymbol = Symbol.for('@ulixee/generateSelectorMap');
 export default class ElementsModule {
-  constructor(private heroCorePlugin: HeroCorePlugin) {}
+  constructor(private replayWindow: AppReplayWindowController) {}
 
   public async onNewPage(page: IPage): Promise<any> {
     await page.devtoolsSession.send('DOM.enable');
@@ -14,14 +14,14 @@ export default class ElementsModule {
   }
 
   public async highlightNode(id: { backendNodeId?: number; objectId?: string }): Promise<void> {
-    await this.heroCorePlugin.activePage?.devtoolsSession.send('Overlay.highlightNode', {
+    await this.replayWindow.activePage?.devtoolsSession.send('Overlay.highlightNode', {
       highlightConfig,
       ...id,
     });
   }
 
   public async hideHighlight(): Promise<void> {
-    await this.heroCorePlugin.activePage?.devtoolsSession.send('Overlay.hideHighlight');
+    await this.replayWindow.activePage?.devtoolsSession.send('Overlay.hideHighlight');
   }
 
   public async generateQuerySelector(
@@ -30,7 +30,7 @@ export default class ElementsModule {
       objectId?: string;
     },
   ): Promise<ISelectorMap> {
-    const frame = this.heroCorePlugin.activePage.mainFrame;
+    const frame = this.replayWindow.activePage.mainFrame;
     const chromeObjectId = id.objectId ?? (await frame.resolveDevtoolsNodeId(id.backendNodeId, false));
     if (!frame[installSymbol]) {
       await frame.evaluate(injectedScript, false);

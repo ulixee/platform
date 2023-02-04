@@ -1,6 +1,6 @@
 import TypeSerializer from "@ulixee/commons/lib/TypeSerializer";
 import type {
-  IChromeAliveApis,
+  IChromeAliveSessionApis,
   IChromeAliveApiRequest,
   IChromeAliveApiResponse,
 } from "@ulixee/apps-chromealive-interfaces/apis";
@@ -77,7 +77,7 @@ class Client {
     }, 1e3);
   }
 
-  async send<T extends keyof IChromeAliveApis>(
+  async send<T extends keyof IChromeAliveSessionApis>(
     command: T,
     ...args: IChromeAliveApiRequest<T>["args"]
   ): Promise<IChromeAliveApiResponse<T>["data"]> {

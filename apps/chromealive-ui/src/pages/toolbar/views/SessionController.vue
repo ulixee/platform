@@ -42,12 +42,12 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import Client from '@/api/Client';
-import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
-import IAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/IAppModeEvent';
+import IHeroSessionUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionUpdatedEvent';
 import IDatastoreOutputEvent from '@ulixee/apps-chromealive-interfaces/events/IDatastoreOutputEvent';
 import { ChevronDownIcon } from '@heroicons/vue/outline';
 import humanizeBytes from '@/utils/humanizeBytes';
 import ISessionTimetravelEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionTimetravelEvent';
+import ISessionAppModeEvent from '@ulixee/apps-chromealive-interfaces/events/ISessionAppModeEvent';
 import MenuButton from '../components/MenuButton.vue';
 import InputButton from '../components/InputButton.vue';
 import Player from '../components/Player.vue';
@@ -74,7 +74,7 @@ export default Vue.defineComponent({
   },
   setup() {
     const session = Vue.reactive(createDefaultSession());
-    const mode = Vue.ref<IAppModeEvent['mode']>('Live');
+    const mode = Vue.ref<ISessionAppModeEvent['mode']>('Live');
     const isPlayerSelected = Vue.computed(() => {
       const value = mode.value;
       return value === 'Live' || value === 'Timetravel' || value === 'Finder';
@@ -86,7 +86,7 @@ export default Vue.defineComponent({
       isPlayerSelected,
       isRestarting,
       mode,
-      previousPlayerMode: Vue.ref<IAppModeEvent['mode']>(mode.value),
+      previousPlayerMode: Vue.ref<ISessionAppModeEvent['mode']>(mode.value),
       isMinimal: Vue.ref(false),
       startLocation: Vue.ref<IStartLocation>('currentLocation'),
       timelineTicks: Vue.ref<any[]>([]),
@@ -110,12 +110,11 @@ export default Vue.defineComponent({
       this.select(this.previousPlayerMode ?? 'Live');
     },
 
-    select(mode: IAppModeEvent['mode']) {
+    select(mode: ISessionAppModeEvent['mode']) {
       const heroSessionId = this.session.heroSessionId;
       this.mode = mode;
       if (!heroSessionId) return;
       Client.send('Session.openMode', {
-        heroSessionId,
         mode,
       }).catch(err => alert(String(err)));
     },
@@ -132,7 +131,7 @@ export default Vue.defineComponent({
       this.timetravel = message;
     },
 
-    onSessionActiveEvent(message: IHeroSessionActiveEvent) {
+    onSessionActiveEvent(message: IHeroSessionUpdatedEvent) {
       if (!message) {
         this.outputSize = humanizeBytes(0);
         this.inputSize = humanizeBytes(0);
@@ -177,7 +176,7 @@ export default Vue.defineComponent({
       this.outputSize = humanizeBytes(message?.bytes);
     },
 
-    onAppModeEvent(message: IAppModeEvent): void {
+    onAppModeEvent(message: ISessionAppModeEvent): void {
       const { mode } = message;
       this.mode = mode;
     },
@@ -185,23 +184,24 @@ export default Vue.defineComponent({
 
   mounted() {
     Client.on('Session.timetravel', this.onSessionTimetravel);
-    Client.on('Session.active', this.onSessionActiveEvent);
+    Client.on('Session.updated', this.onSessionActiveEvent);
     Client.on('Datastore.output', this.onDatastoreUpdated);
-    Client.on('App.mode', this.onAppModeEvent);
+    Client.on('Session.appMode', this.onAppModeEvent);
   },
 
   beforeUnmount() {
     Client.off('Session.timetravel', this.onSessionTimetravel);
-    Client.off('Session.active', this.onSessionActiveEvent);
+    Client.off('Session.updated', this.onSessionActiveEvent);
     Client.off('Datastore.output', this.onDatastoreUpdated);
-    Client.off('App.mode', this.onAppModeEvent);
+    Client.off('Session.appMode', this.onAppModeEvent);
   },
 });
 
-function createDefaultSession(): IHeroSessionActiveEvent {
+function createDefaultSession(): IHeroSessionUpdatedEvent {
   return {
     timeline: { urls: [], paintEvents: [], screenshots: [], storageEvents: [] },
     playbackState: 'paused',
+    dbPath: '',
     runtimeMs: 0,
     heroSessionId: '',
     inputBytes: 0,
@@ -224,6 +224,7 @@ function createDefaultSession(): IHeroSessionActiveEvent {
   background-color: var(--toolbarBackgroundColor);
   height: 36px;
   cursor: default;
+  //-webkit-app-region: no-drag;
   &.isRestarting {
     background-color: transparent;
     .MenuButton,

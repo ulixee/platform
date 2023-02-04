@@ -5,27 +5,21 @@ import {
   isResponseMessage,
   messageExpectsResponse,
   createResponseId,
+  ___receiveFromCore,
+  IMessageLocation,
+  IResponseCode,
+  IRestOfMessageObject,
+  packMessage,
+  ___sendToCore,
 } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
 
-type IPort = chrome.runtime.Port;
 type IResponseFn = (response: any) => void;
 
-const currentTabId = chrome.devtools.inspectedWindow.tabId;
 const currentMessengerLocation = MessageLocation.DevtoolsScript;
 
 export function sendToContentScript(tabId: number, payload: any, responseCallbackFn?: IResponseFn) {
   const message: IMessageObject = {
     destLocation: MessageLocation.ContentScript,
-    origLocation: currentMessengerLocation,
-    payload,
-    ...convertResponseFnToCodeAndId(responseCallbackFn),
-  };
-  routeInternally(message);
-}
-
-export function sendToBackgroundScript(payload: any, responseCallbackFn?: IResponseFn) {
-  const message: IMessageObject = {
-    destLocation: MessageLocation.BackgroundScript,
     origLocation: currentMessengerLocation,
     payload,
     ...convertResponseFnToCodeAndId(responseCallbackFn),
@@ -74,49 +68,17 @@ const pendingByResponseId: {
   };
 } = {};
 
-// LISTENER TO <-> FROM BACKGROUND /////////////////////////////////////////////////////////////////
-
-let activePort: IPort;
-
-function connect() {
-  try {
-    if (activePort) return;
-    if (!currentTabId || currentTabId === -1) {
-      console.warn('No tab id to register for devtools');
-      return;
-    }
-    const port = chrome.runtime.connect({ name: `${currentMessengerLocation}:${currentTabId}` });
-    handleConnectedToBackgroundScript(port);
-  } catch (err) {
-    console.error('Error connecting to service worker', err);
-    setTimeout(connect, 5e3);
-  }
-}
-
-function disconnectPort(port: IPort) {
-  console.log('DISCONNECTED from BackgroundScript');
-  port.onMessage.removeListener(handleIncomingMessageFromBackgroundScript);
-  if (port === activePort) {
-    activePort = null;
-    setTimeout(connect, 1e3);
-  }
-}
-
-function handleConnectedToBackgroundScript(port: IPort) {
-  if (activePort === port) return;
-  if (activePort && activePort !== port) {
-    try {
-      activePort.disconnect();
-    } catch (err) {
-      /* no-op */
-    }
-  }
-  activePort = port;
-  activePort.onDisconnect.addListener(disconnectPort.bind(null, port));
-  activePort.onMessage.addListener(handleIncomingMessageFromBackgroundScript);
-}
-
-function handleIncomingMessageFromBackgroundScript(message: IMessageObject) {
+// receive and route messages coming in from core
+window[___receiveFromCore] = (
+  destLocation: IMessageLocation,
+  responseCode: IResponseCode,
+  restOfMessage: IRestOfMessageObject,
+) => {
+  const message: IMessageObject = {
+    destLocation,
+    responseCode,
+    ...restOfMessage,
+  };
   if (message.destLocation === currentMessengerLocation) {
     if (isResponseMessage(message)) {
       handleIncomingLocalResponse(message);
@@ -124,12 +86,10 @@ function handleIncomingMessageFromBackgroundScript(message: IMessageObject) {
       handleIncomingLocalMessage(message);
     }
   } else {
-    // pass it along
-    routeInternally(message);
+    throw new Error('Unknown destLocation');
   }
-}
+};
 
-connect();
 
 // HELPERS //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -165,7 +125,8 @@ function routeResponseBack(message: IMessageObject, responsePayload) {
 // INTERNAL ROUTING ////////////////////////////////////////////////////////////////////////////////
 
 function routeInternally(message: IMessageObject) {
-  activePort.postMessage(message);
+  const packedMessage = packMessage(message);
+  window[___sendToCore](packedMessage);
 }
 
 function convertResponseFnToCodeAndId(responseFn: IResponseFn) {

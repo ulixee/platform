@@ -17,7 +17,6 @@ export function process(
 
   Client.send('Session.getScreenshot', {
     timestamp,
-    heroSessionId,
     tabId,
   })
     .then(x => {

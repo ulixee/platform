@@ -110,6 +110,11 @@
       <div v-else class="search-view flex h-full flex-col overflow-hidden">
         <div class="form header-bar flex-none p-3">
           <div class="flex flex-row">
+            <a
+              href="javascript:void(0)"
+              class="icon ml-2 mt-2 mr-3 mt-1 inline-block h-6 justify-center align-middle"
+              @click="hideMenu"
+            >X</a>
             <input
               ref="inputElem"
               v-model="inputText"
@@ -214,7 +219,7 @@ import IElementSummary from '@ulixee/apps-chromealive-interfaces/IElementSummary
 import IResourceSearchResult from '@ulixee/apps-chromealive-interfaces/IResourceSearchResult';
 import { ISearchContext } from '@ulixee/apps-chromealive-interfaces/ISessionSearchResult';
 import { ISelectorMap } from '@ulixee/apps-chromealive-interfaces/ISelectorMap';
-import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
+import IHeroSessionUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionUpdatedEvent';
 
 function roundFloor(num: number): number {
   return Math.round(10 * num) / 10;
@@ -276,6 +281,9 @@ export default Vue.defineComponent({
     },
   },
   methods: {
+    hideMenu() {
+      window.close();
+    },
     searchTimes() {
       const { startTime, endTime, baseTime } = this.searchContext;
       const start = roundFloor((startTime - baseTime) / 1000);
@@ -295,7 +303,7 @@ export default Vue.defineComponent({
         if (value) {
           let valueText = value;
           if (valueText.length > 50) {
-            valueText = `${value.substring(0, 49)}\u2026`;
+            valueText = `${value.substring(0, 49)}...`;
           }
           attrText += `="${valueText}"`;
         }
@@ -304,8 +312,8 @@ export default Vue.defineComponent({
       const tag = element.localName;
 
       let textContent = element.nodeValueInternal ?? '';
-      if (textContent.length > 50) textContent = `${textContent.substring(0, 20)}\u2026`;
-      if (element.hasChildren && textContent === '') textContent = '\u2026';
+      if (textContent.length > 50) textContent = `${textContent.substring(0, 20)}...`;
+      if (element.hasChildren && textContent === '') textContent = '...';
       return `<${tag}${attrText}>${textContent}</${tag}>`;
     },
     moreResults() {
@@ -395,7 +403,7 @@ export default Vue.defineComponent({
       );
     },
 
-    onSessionUpdated(message: IHeroSessionActiveEvent): void {
+    onSessionUpdated(message: IHeroSessionUpdatedEvent): void {
       if (!message || this.heroSessionId !== message.heroSessionId) {
         this.resourceResults.length = 0;
         this.elementResults.length = 0;
@@ -412,14 +420,13 @@ export default Vue.defineComponent({
       });
     });
 
-    Client.on('Session.active', message => this.onSessionUpdated(message));
+    Client.on('Session.updated', message => this.onSessionUpdated(message));
 
     Client.on('DevtoolsBackdoor.toggleInspectElementMode', ({ isActive }) => {
-      console.log('DevtoolsBackdoor.toggleInspectElementMode', isActive);
       this.handleInspectElementModeChange(isActive);
     });
+
     Client.on('DevtoolsBackdoor.elementWasSelected', event => {
-      console.log('DevtoolsBackdoor.elementWasSelected', event);
       this.handleElementWasSelected(event.element);
     });
   },

@@ -29,21 +29,20 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "electron": "17.1.0",
-    "electron-builder": "^23.0.3",
+    "electron": "22.0.3",
+    "electron-builder": "^24.0.0-alpha.11",
     "electron-notarize": "^1.1.0",
     "tslib": "^2.3.1"
   },
   "optionalDependencies": {
-    "global-mouse-events": "1.0.7",
-    "nseventmonitor": "1.0.2"
+    "global-mouse-events": "1.1.0",
+    "nseventmonitor": "1.0.3"
   },
   "build": {
     "appId": "dev.ulixee.desktop",
     "productName": "Ulixee",
     "afterSign": "scripts/notarize.js",
     "asarUnpack": [
-      "node_modules/@ulixee/apps-chromealive-core",
       "node_modules/@ulixee/apps-chromealive"
     ],
     "directories": {

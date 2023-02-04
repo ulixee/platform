@@ -8,24 +8,28 @@ declare global {
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const ___emitFromDevtoolsToCore = '___emitFromDevtoolsToCore';
-const extensionId = '';
+const extensionId = 'nhchohpofcdodgoddejmfcebjkmdafmk';
 const EventType = {
   ElementWasSelected: 'ElementWasSelected',
   ToggleInspectElementMode: 'ToggleInspectElementMode',
-  DevtoolsFocus: 'DevtoolsFocus',
 };
+
+document.addEventListener('DOMContentLoaded', () => {
+  DevtoolsBackdoor.showHeroScriptPanel();
+});
 
 class DevtoolsBackdoor {
   public static inspectElementModeIsActive = false;
 
   public static async getInspectedTabId(timeoutMs = 10e3) {
     const start = Date.now();
+
     while (Date.now() - start < timeoutMs) {
       const tabId = DevToolsAPI.getInspectedTabId();
       if (tabId !== undefined) {
         return tabId;
       }
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
   }
 
@@ -50,14 +54,16 @@ class DevtoolsBackdoor {
     InspectorFrontendHost.closeWindow();
   }
 
-  public static toggleInspectElementMode(InspectorFrontendAPI: any) {
+  // @ts-expect-error
+  public static toggleInspectElementMode(InspectorFrontendAPI = window.InspectorFrontendAPI) {
     const isActive = this.inspectElementModeIsActive;
-    DevToolsAPI.enterInspectElementMode();
+
+    InspectorFrontendAPI.enterInspectElementMode();
     return !isActive;
   }
 
   public static async searchDom(query: string) {
-    const SDK = await eval("import('./devtools-frontend/front_end/core/sdk/sdk.js')");
+    const SDK = await eval("import('devtools://devtools/bundled/core/sdk/sdk.js')");
     const domModels = SDK.TargetManager.TargetManager.instance().models(SDK.DOMModel.DOMModel);
     const domModel = domModels[0];
     const searchOptions = { query, includeUserAgentShadowDOM: true };
@@ -72,25 +78,13 @@ class DevtoolsBackdoor {
   }
 
   public static async revealNodeInElementsPanel(backendNodeId: string) {
-    const Common = await eval("import('./devtools-frontend/front_end/core/common/common.js')");
-    const SDK = await eval("import('./devtools-frontend/front_end/core/sdk/sdk.js')");
+    const Common = await eval("import('devtools://devtools/bundled/core/common/common.js')");
+    const SDK = await eval("import('devtools://devtools/bundled/core/sdk/sdk.js')");
     const domModels = SDK.TargetManager.TargetManager.instance().models(SDK.DOMModel.DOMModel);
     const domModel = domModels[0];
     const nodeMap = await domModel.pushNodesByBackendIdsToFrontend(new Set([backendNodeId]));
     const node = nodeMap.get(backendNodeId);
     void Common.Revealer.reveal(node);
-  }
-
-  public static getState() {
-    // TODO
-    // position of HeroScript & StateGenerator in tabs list
-    // scrollY position of HeroScript + StateGenerator panels
-    // the active tab, if HeroScript or StateGenerator
-    // height of devtools
-  }
-
-  public static setState() {
-    // TODO
   }
 }
 
@@ -122,9 +116,7 @@ function convertToElementSummary(nodeId: number, domModel) {
 // BIND LISTENERS ////////////////////////////////////////////////////////////////////////////////////////
 
 async function emitElementWasSelected(): Promise<void> {
-  const Elements = await eval(
-    "import('./devtools-frontend/front_end/panels/elements/elements.js')",
-  );
+  const Elements = await eval("import('devtools://devtools/bundled/panels/elements/elements.js')");
   const ElementsTreeOutline = Elements.ElementsTreeOutline.ElementsTreeOutline;
   const orignalFn = ElementsTreeOutline.prototype.selectDOMNode;
 
@@ -134,7 +126,7 @@ async function emitElementWasSelected(): Promise<void> {
         event: EventType.ElementWasSelected,
         backendNodeId: node.backendNodeId(),
       });
-      window[___emitFromDevtoolsToCore](payload);
+      window[___emitFromDevtoolsToCore]?.(payload);
     }
     orignalFn.call(this, node, focus);
   }
@@ -144,9 +136,7 @@ async function emitElementWasSelected(): Promise<void> {
 emitElementWasSelected().catch(console.error);
 
 async function emitToggledInspectElementMode() {
-  const Elements = await eval(
-    "import('./devtools-frontend/front_end/panels/elements/elements.js')",
-  );
+  const Elements = await eval("import('devtools://devtools/bundled/panels/elements/elements.js')");
   const InspectElementModeController =
     Elements.InspectElementModeController.InspectElementModeController;
   const orignalFn = InspectElementModeController.prototype.setMode;
@@ -169,26 +159,7 @@ window.DevtoolsBackdoor = DevtoolsBackdoor;
 
 declare let UI: any;
 
-function onDevtoolsFocused(focus: boolean): void {
-  const payload = JSON.stringify({
-    event: EventType.DevtoolsFocus,
-    focus,
-    dockSide: UI.dockController.dockSideInternal,
-  });
-  window[___emitFromDevtoolsToCore](payload);
-}
-
-window.addEventListener('focus', () => {
-  onDevtoolsFocused(true);
-});
-window.addEventListener('blur', () => {
-  onDevtoolsFocused(false);
-});
-window.addEventListener('beforeunload', () => {
-  onDevtoolsFocused(false);
-});
-
-// const SDK = await eval("import('./devtools-frontend/front_end/core/sdk/sdk.js')");
+// const SDK = await eval("import('devtools://devtools/bundled/core/sdk/sdk.js')");
 // const OverlayModel = SDK.OverlayModel.OverlayModel;
 
 // // THIS CREATES CONTEXT MENU

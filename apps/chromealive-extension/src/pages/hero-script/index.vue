@@ -35,7 +35,7 @@ import Client from '../../api/Client';
 import ICommandUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/ICommandUpdatedEvent';
 import ICommandFocusedEvent from '@ulixee/apps-chromealive-interfaces/events/ICommandFocusedEvent';
 import ISourceCodeUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/ISourceCodeUpdatedEvent';
-import { sendToBackgroundScript } from '../../lib/devtools/DevtoolsMessenger';
+import { IChromeAliveApiResponse } from '@ulixee/apps-chromealive-interfaces/apis';
 
 export default Vue.defineComponent({
   name: 'HeroScriptPanel',
@@ -91,7 +91,6 @@ export default Vue.defineComponent({
     },
     changedFocusedCommand(): void {
       Client.send('Session.timetravel', {
-        heroSessionId: null,
         commandId: this.focusedCommandId,
       }).catch(err => alert(err.message));
     },
@@ -99,7 +98,6 @@ export default Vue.defineComponent({
       const commandIds: Set<number> = this.commandIdsByLineKey[`${filename}_${line}`];
       if (!commandIds?.size) return;
       Client.send('Session.timetravel', {
-        heroSessionId: null,
         commandId: [...commandIds][0],
       }).catch(err => alert(err.message));
     },
@@ -152,6 +150,7 @@ export default Vue.defineComponent({
     onScriptStateResponse(message: {
       commandsById: Record<number, ICommandUpdatedEvent>;
       sourceFileLines: Record<string, string[]>;
+      focusedCommandId: number;
     }) {
       if (!message) return;
       for (const ev of Object.values(message.commandsById)) {
@@ -159,6 +158,9 @@ export default Vue.defineComponent({
       }
       for (const [filename, lines] of Object.entries(message.sourceFileLines)) {
         this.onSourceCodeUpdated({ filename, lines });
+      }
+      if (message.focusedCommandId) {
+        this.onCommandFocused({ commandId: message.focusedCommandId });
       }
     },
 
@@ -172,16 +174,13 @@ export default Vue.defineComponent({
   },
 
   async mounted() {
-    sendToBackgroundScript({ action: 'getMinerAddress' }, address => {
-      window.setMinerAddress(address);
-      Client.send('Session.getScriptState')
-        .then(this.onScriptStateResponse)
-        .catch(err => alert(String(err)));
+    Client.send('Session.getScriptState', {})
+      .then(this.onScriptStateResponse)
+      .catch(err => alert(String(err)));
 
-      Client.on('SourceCode.updated', this.onSourceCodeUpdated);
-      Client.on('Command.updated', this.onCommandUpdated);
-      Client.on('Command.focused', this.onCommandFocused);
-    });
+    Client.on('SourceCode.updated', this.onSourceCodeUpdated);
+    Client.on('Command.updated', this.onCommandUpdated);
+    Client.on('Command.focused', this.onCommandFocused);
   },
 
   beforeUnmount() {
@@ -220,8 +219,9 @@ h5 {
   flex-direction: row;
   justify-content: end;
   align-items: baseline;
-  height: 16px;
-  margin: 2px 0;
+  line-height: 16px;
+  margin: 0;
+  padding: 0;
   pointer-events: none;
   color: #999999;
 
@@ -255,20 +255,24 @@ h5 {
     }
   }
   &.active {
-    background: green;
+    background: #00A86B;
     color: white;
     &:hover {
-      background: green;
+      background: #00A86B;
+    }
+    .line-number {
+      font-weight: bold;
+      color: black;
     }
   }
   &.error {
-    background: yellow !important;
+    background: #C7EA46 !important;
   }
   .line-number {
     display: flex;
     flex-grow: 0;
     flex-basis: 30px;
-    line-height: 13px;
+    line-height: 16px;
     font-size: 12px;
     color: #595959;
   }

@@ -18,12 +18,11 @@ type IEmitterEvents = {
   [EmitterName.hideMenuUrl]: void;
 };
 
-const emitter: Emitter<IEmitterEvents> = mitt<IEmitterEvents>();
+const windowsControllerEmitter: Emitter<IEmitterEvents> = mitt<IEmitterEvents>();
 
 export default class WindowsController {
   static primaryMenu;
   static finderMenu: Window;
-  static showingFinderMenuTimestamp: number;
   static urlMenu;
 
   static showMenuPrimary(rect: DOMRect) {
@@ -42,6 +41,9 @@ export default class WindowsController {
       this.primaryMenu.addEventListener('blur', () => {
         this.hideMenuPrimary();
       });
+      this.primaryMenu.addEventListener('close', () => {
+        this.primaryMenu = null;
+      });
     }
   }
 
@@ -54,7 +56,7 @@ export default class WindowsController {
         detail: { frameName },
       }),
     );
-    emitter.emit(EmitterName.hideMenuPrimary);
+    windowsControllerEmitter.emit(EmitterName.hideMenuPrimary);
   }
 
   static showMenuFinder(rect: DOMRect) {
@@ -63,7 +65,6 @@ export default class WindowsController {
     const top = rect.y + rect.height + window.screenTop - 5;
     if (this.finderMenu) {
       this.finderMenu.moveTo(left, top);
-      this.showingFinderMenuTimestamp = Date.now();
       document.dispatchEvent(
         new CustomEvent('App:showChildWindow', {
           detail: { frameName },
@@ -71,11 +72,14 @@ export default class WindowsController {
       );
     } else {
       const features = `top=${top},left=${left},width=${400},height=${400}`;
-      this.showingFinderMenuTimestamp = Date.now();
       this.finderMenu = window.open('/menu-finder.html', frameName, features);
-      this.finderMenu.addEventListener('blur', () => {
-        if (Date.now() - this.showingFinderMenuTimestamp < 500) return;
-        window.focus();
+      this.finderMenu.addEventListener('manual-close', () => {
+        this.finderMenu = null;
+        windowsControllerEmitter.emit(EmitterName.hideMenuFinder);
+      });
+      this.finderMenu.addEventListener('close', () => {
+        this.finderMenu = null;
+        windowsControllerEmitter.emit(EmitterName.hideMenuFinder);
       });
     }
   }
@@ -87,7 +91,7 @@ export default class WindowsController {
         detail: { frameName },
       }),
     );
-    emitter.emit(EmitterName.hideMenuFinder);
+    windowsControllerEmitter.emit(EmitterName.hideMenuFinder);
   }
 
   static showMenuUrl(rect: DOMRect) {
@@ -106,6 +110,9 @@ export default class WindowsController {
       this.urlMenu.addEventListener('blur', () => {
         this.hideMenuUrl();
       });
+      this.urlMenu.addEventListener('close', () => {
+        this.urlMenu = null;
+      });
     }
   }
 
@@ -116,14 +123,14 @@ export default class WindowsController {
         detail: { frameName },
       }),
     );
-    emitter.emit(EmitterName.hideMenuUrl);
+    windowsControllerEmitter.emit(EmitterName.hideMenuUrl);
   }
 
   static on(eventName: EmitterName, callback: () => void) {
-    emitter.on(eventName, callback);
+    windowsControllerEmitter.on(eventName, callback);
   }
 
   static off(eventName: EmitterName, callback: () => void) {
-    emitter.off(eventName, callback);
+    windowsControllerEmitter.off(eventName, callback);
   }
 }

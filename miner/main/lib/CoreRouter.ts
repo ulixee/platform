@@ -36,7 +36,11 @@ export default class CoreRouter {
   private wsConnectionByType = {
     hero: transport => HeroCore.addConnection(transport),
     datastore: transport => DatastoreCore.addConnection(transport) as any,
-    chromealive: transport => ChromeAliveUtils.getChromeAlive().addConnection(transport) as any,
+    chromealive: (transport, req) =>
+      ChromeAliveUtils.getChromeAlive().addConnection(transport, req) as any,
+    chromealiveRaw: (ws, req) => {
+      ChromeAliveUtils.getChromeAlive().addChromealiveDevtoolsWebsocket(ws, req);
+    },
   } as const;
 
   private httpRoutersByType: {
@@ -54,7 +58,11 @@ export default class CoreRouter {
     miner.addWsRoute('/hero', this.handleSocketRequest.bind(this, 'hero'));
     miner.addWsRoute('/datastore', this.handleSocketRequest.bind(this, 'datastore'));
     miner.addHttpRoute('/server-details', 'GET', this.handleHttpServerDetails.bind(this));
-    miner.addHttpRoute(/.*\/free-credits\/?\?crd[A-Za-z0-9_]{8}.*/, 'GET', this.handleHttpRequest.bind(this, 'datastoreCreditBalance'));
+    miner.addHttpRoute(
+      /.*\/free-credits\/?\?crd[A-Za-z0-9_]{8}.*/,
+      'GET',
+      this.handleHttpRequest.bind(this, 'datastoreCreditBalance'),
+    );
     miner.addHttpRoute(/\/datastore\/(.+)/, 'GET', this.handleHttpRequest.bind(this, 'datastore'));
     miner.addHttpRoute(/\/(.*)/, 'GET', this.handleHttpRequest.bind(this, 'datastoreRoot'));
     miner.addHttpRoute('/', 'OPTIONS', this.handleHttpRequest.bind(this, 'datastoreOptions'));
@@ -64,7 +72,11 @@ export default class CoreRouter {
     }
 
     if (ChromeAliveUtils.isInstalled()) {
-      miner.addWsRoute('/chromealive', this.handleSocketRequest.bind(this, 'chromealive'));
+      miner.addWsRoute(
+        /\/chromealive-devtools\?id=.+/,
+        this.handleRawSocketRequest.bind(this, 'chromealiveRaw'),
+      );
+      miner.addWsRoute(/\/chromealive.*/, this.handleSocketRequest.bind(this, 'chromealive'));
     }
   }
 
@@ -113,13 +125,29 @@ export default class CoreRouter {
     return closeResolvable.promise;
   }
 
+  private handleRawSocketRequest(
+    connectionType: keyof CoreRouter['wsConnectionByType'],
+    ws: WebSocket,
+    req: IncomingMessage,
+  ): void {
+    if (connectionType === 'chromealiveRaw') {
+      this.wsConnectionByType[connectionType](ws, req);
+    }
+    this.connections.add({
+      disconnect(): Promise<void> {
+        ws.terminate();
+        return Promise.resolve();
+      },
+    } as any);
+  }
+
   private handleSocketRequest(
     connectionType: keyof CoreRouter['wsConnectionByType'],
     ws: WebSocket,
     req: IncomingMessage,
   ): void {
     const transport = new WsTransportToClient(ws, req);
-    const connection = this.wsConnectionByType[connectionType](transport);
+    const connection = this.wsConnectionByType[connectionType](transport, req);
     if (!connection) throw new Error(`Unknown connection protocol attempted "${connectionType}"`);
     this.connections.add(connection);
     connection.once('disconnected', () => this.connections.delete(connection));
@@ -135,12 +163,11 @@ export default class CoreRouter {
     return result;
   }
 
-  private handleHttpServerDetails(
-    req: IncomingMessage,
-    res: ServerResponse,
-  ): void {
+  private handleHttpServerDetails(req: IncomingMessage, res: ServerResponse): void {
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ ipAddress: this.serverAddress.ipAddress, port: this.serverAddress.port }));
+    res.end(
+      JSON.stringify({ ipAddress: this.serverAddress.ipAddress, port: this.serverAddress.port }),
+    );
   }
 }
 

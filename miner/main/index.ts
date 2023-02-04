@@ -26,13 +26,13 @@ export default class Miner {
   public readonly router: CoreRouter;
 
   public get address(): Promise<string> {
-    return this.finalAddressHostPromise.promise.then(x => {
+    return this.listeningPromise.promise.then(x => {
       return `${this.addressHost}:${x.port}`;
     });
   }
 
   public get port(): Promise<number> {
-    return this.finalAddressHostPromise.promise.then(x => {
+    return this.listeningPromise.promise.then(x => {
       return x.port;
     });
   }
@@ -48,7 +48,7 @@ export default class Miner {
   private isClosing: Promise<any>;
   private didAutoroute = false;
   private sockets = new Set<Socket>();
-  private finalAddressHostPromise = createPromise<AddressInfo>();
+  private listeningPromise = createPromise<AddressInfo>();
   private readonly addressHost: string;
   private readonly httpServer: Http.Server;
   private readonly httpRoutes: [url: RegExp | string, method: string, handler: IHttpHandleFn][];
@@ -79,7 +79,7 @@ export default class Miner {
   }
 
   public async listen(options?: ListenOptions, shouldAutoRouteToHost = true): Promise<AddressInfo> {
-    if (this.finalAddressHostPromise.isResolved) return this.finalAddressHostPromise.promise;
+    if (this.listeningPromise.isResolved) return this.listeningPromise.promise;
 
     const listenOptions = { ...(options ?? { port: 0 }) };
 
@@ -109,11 +109,11 @@ export default class Miner {
         ShutdownHandler.register(() => UlixeeHostsConfig.global.setVersionHost(this.version, null));
       }
       await this.router.start(`${this.addressHost}:${addressHost.port}`);
-      this.finalAddressHostPromise.resolve(addressHost);
+      this.listeningPromise.resolve(addressHost);
     } catch (error) {
-      this.finalAddressHostPromise.reject(error);
+      this.listeningPromise.reject(error);
     }
-    return this.finalAddressHostPromise;
+    return this.listeningPromise;
   }
 
   public addHttpRoute(route: RegExp | string, method: string, handleFn: IHttpHandleFn): void {
@@ -174,6 +174,7 @@ export default class Miner {
   }
 
   private async handleHttpRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    await this.listeningPromise;
     for (const [route, method, handlerFn] of this.httpRoutes) {
       if (req.method !== method) continue;
       if (route instanceof RegExp && route.test(req.url)) {
@@ -195,7 +196,8 @@ export default class Miner {
     socket.on('close', () => this.sockets.delete(socket));
   }
 
-  private handleWsConnection(ws: WebSocket, req: Http.IncomingMessage): void {
+  private async handleWsConnection(ws: WebSocket, req: Http.IncomingMessage): Promise<void> {
+    await this.listeningPromise;
     for (const [route, handlerFn] of this.wsRoutes) {
       if (route instanceof RegExp && route.test(req.url)) {
         const args = route.exec(req.url);

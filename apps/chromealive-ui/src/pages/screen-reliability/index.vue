@@ -13,7 +13,7 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import Client from '@/api/Client';
-import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
+import IHeroSessionUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionUpdatedEvent';
 
 export default Vue.defineComponent({
   name: 'Input',
@@ -23,21 +23,21 @@ export default Vue.defineComponent({
     };
   },
   methods: {
-    onSessionActive(data: IHeroSessionActiveEvent) {
+    onSessionUpdated(data: IHeroSessionUpdatedEvent) {
       const entrypoint = data.scriptEntrypointTs ?? data.scriptEntrypoint;
       const divider = entrypoint.includes('/') ? '/' : '\\';
       this.scriptEntrypoint = entrypoint.split(divider).slice(-2).join(divider);
     },
     refreshData(): void {
-      Client.send('Session.getActive')
-        .then(this.onSessionActive)
+      Client.send('Session.load')
+        .then(this.onSessionUpdated)
         .catch(err => alert(String(err)));
     },
   },
   mounted() {
     Client.connect().catch(err => alert(String(err)));
     this.refreshData();
-    Client.on('Session.active', this.onSessionActive);
+    Client.on('Session.updated', this.onSessionUpdated);
   },
 });
 </script>

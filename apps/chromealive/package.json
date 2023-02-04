@@ -10,8 +10,6 @@
     "build": "yarn build:ui && cd ../../build/apps/chromealive && yarn && electron-builder install-app-deps",
     "build:basic": "cd ../.. && yarn run tsc",
     "build:ui": "yarn workspace @ulixee/apps-chromealive-ui build && yarn workspace @ulixee/apps-chromealive-extension build",
-    "dist": "yarn build && cd ../../build/apps/chromealive && electron-builder -mwl && ./pack.sh",
-    "dist:basic": "yarn build:basic && cd ../../build/apps/chromealive && electron-builder",
     "start": "cd ../../build/apps/chromealive && npx electron ."
   },
   "main": "app.js",
@@ -24,67 +22,19 @@
     "@ulixee/apps-chromealive-interfaces": "2.0.0-alpha.18",
     "@ulixee/commons": "2.0.0-alpha.18",
     "@ulixee/net": "2.0.0-alpha.18",
-    "compare-versions": "^3.6.0",
-    "electron-context-menu": "^3.1.2",
     "electron-log": "^4.4.6",
-    "global-mouse-events": "1.0.7",
     "node-static": "^0.7.11",
-    "progress": "^2.0.3",
-    "tar": "^6.1.11",
     "tslib": "^2.3.1",
+    "nanoid": "^3.1.30",
     "ws": "^7.4.6"
   },
-  "optionalDependencies": {
-    "global-mouse-events": "1.0.7",
-    "nseventmonitor": "1.0.2"
-  },
   "devDependencies": {
-    "@electron/remote": "^2.0.5",
-    "@types/progress": "^2.0.5",
-    "@types/tar": "^4.0.5",
-    "cross-env": "^7.0.3",
-    "electron": "17.1.0",
-    "electron-builder": "^22.14.13",
-    "shx": "^0.3.3"
-  },
-  "build": {
-    "appId": "dev.ulixee.chromealive",
-    "productName": "ChromeAlive!",
-    "directories": {
-      "buildResources": "assets"
-    },
-    "files": [
-      "**/*",
-      "assets/*"
-    ],
-    "mac": {
-      "category": "public.app-category.developer-tools",
-      "hardenedRuntime": true,
-      "extendInfo": {
-        "LSUIElement": 1
-      },
-      "target": {
-        "target": "dir",
-        "arch": [
-          "arm64",
-          "x64"
-        ]
-      }
-    },
-    "win": {
-      "target": "dir"
-    },
-    "linux": {
-      "executableName": "ChromeAlive!",
-      "category": "Development",
-      "target": "dir"
-    }
+    "electron": "22.2.0",
+    "electron-builder": "^23.6.0"
   },
   "nohoist": [
     "**/electron",
     "**/electron-webpack",
-    "**/electron-webpack/**",
-    "global-mouse-events",
-    "nseventmonitor"
+    "**/electron-webpack/**"
   ]
 }

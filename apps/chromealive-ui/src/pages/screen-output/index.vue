@@ -1,7 +1,7 @@
 <template>
   <div class="py-12 px-28">
-    <div class="pb-5 mb-5 border-b border-gray-400 text-center">
-      <div class="text-2xl mb-2 script-path font-thin opacity-50">
+    <div class="mb-5 border-b border-gray-400 pb-5 text-center">
+      <div class="script-path mb-2 text-2xl font-thin opacity-50">
         {{ scriptEntrypoint }}
       </div>
       <h1>OUTPUT DATA</h1>
@@ -19,7 +19,7 @@
     <h2>
       Datastore Output <span>{{ dataSize }}</span>:
     </h2>
-    <div class="box bg-gray-50 border border-gray-200 min-h-[200px] max-h-[500px] overflow-auto">
+    <div class="box max-h-[500px] min-h-[200px] overflow-auto border border-gray-200 bg-gray-50">
       <Json
         v-if="output"
         :json="output"
@@ -29,19 +29,19 @@
     </div>
     {{ detachedResourcesString }}, {{ detachedElementsString }}, {{ snippetsString }}
 
-    <div class="text-center my-10">
+    <div class="my-10 text-center">
       <a
-        class="underline text-purple-700"
-        href="/rerun-extract"
-        @click.prevent="execExtract"
-      >Re-run Extract</a>
+        class="text-purple-700 underline"
+        href="/rerun-runner"
+        @click.prevent="rerunRunner"
+      >Re-run Runner</a>
     </div>
     <slot v-if="collectedAssets.detachedResources.length">
       <h2>Collected Resources</h2>
       <div
         v-for="resource of collectedAssets.detachedResources"
         :key="resource.resource.id"
-        class="box border border-gray-100 p-10 mb-20"
+        class="box mb-20 border border-gray-100 p-10"
       >
         <h4>Name "{{ resource.name }}"</h4>
         <h5>
@@ -56,7 +56,7 @@
           Http Requested at {{ formatTimestamp(resource.resource.request.timestamp) }}
         </div>
 
-        <div class="font-sm whitespace-pre box border border-gray-100 bg-gray-100 my-2 p-2">
+        <div class="font-sm box my-2 whitespace-pre border border-gray-100 bg-gray-100 p-2">
           <div>Source Code</div>
           <div v-for="line of resource.sourcecode" :key="line.line">
             <span class="text-gray-300">{{ line.line }}.</span>
@@ -64,7 +64,7 @@
           </div>
         </div>
 
-        <div class="mt-20 box">
+        <div class="box mt-20">
           <a
             class="text-purple-700 underline"
             :href="resourceDataUrlsById[resource.resource.id]"
@@ -86,7 +86,7 @@
       <div
         v-for="snippet of collectedAssets.snippets"
         :key="snippet.commandId"
-        class="box border border-gray-100 p-10 mb-20"
+        class="box mb-20 border border-gray-100 p-10"
       >
         <h4>Name "{{ snippet.name }}"</h4>
         <div class="font-thin">
@@ -94,21 +94,13 @@
         </div>
         <div class="grid">
           <div
-            class="
-              p-10
-              bg-gray-10
-              border border-gray-200
-              font-thin
-              whitespace-pre
-              text-sm
-              overflow-auto
-            "
+            class="bg-gray-10 overflow-auto whitespace-pre border border-gray-200 p-10 text-sm font-thin"
           >
             {{ formatJson(snippet.value) }}
           </div>
         </div>
 
-        <div class="font-sm whitespace-pre box border border-gray-100 bg-gray-100 my-2 p-2">
+        <div class="font-sm box my-2 whitespace-pre border border-gray-100 bg-gray-100 p-2">
           <div>Source Code</div>
           <div v-for="line of snippet.sourcecode" :key="line.line">
             <span class="text-gray-300">{{ line.line }}.</span>
@@ -123,7 +115,7 @@
       <div
         v-for="element of collectedAssets.detachedElements"
         :key="element.id"
-        class="box border border-gray-100 p-10 mb-20"
+        class="box mb-20 border border-gray-100 p-10"
       >
         <h4>Name "{{ element.name }}"</h4>
         <h5>
@@ -135,29 +127,29 @@
           {{ element.documentUrl }}
         </div>
 
-        <div class="font-sm whitespace-pre box border border-gray-100 bg-gray-100 my-2 p-2">
+        <div class="font-sm box my-2 whitespace-pre border border-gray-100 bg-gray-100 p-2">
           <div>Source Code</div>
           <div v-for="line of element.sourcecode" :key="line.line">
             <span class="text-gray-300">{{ line.line }}.</span>
             <span class="text-gray-500">{{ line.code }}</span>
           </div>
         </div>
-        <div class="mt-20 box">
+        <div class="box mt-20">
           <a
-            class="underline text-purple-700"
+            class="text-purple-700 underline"
             :href="`data:text/html,${encodeURIComponent(element.outerHTML)}`"
             target="_blank"
             :download="element.name + '.html'"
           >Download HTML</a>
 
           <a
-            class="ml-20 underline text-purple-700"
+            class="ml-20 text-purple-700 underline"
             href="javascript:void(0)"
             @click.prevent="inspectElement(element)"
           >Inspect Element</a>
 
           <a
-            class="ml-20 underline text-purple-700"
+            class="ml-20 text-purple-700 underline"
             href="javascript:void(0)"
             @click.prevent="timetravelToElement(element)"
           >Show Element in Timetravel</a>
@@ -176,7 +168,7 @@ import IDatastoreOutputEvent from '@ulixee/apps-chromealive-interfaces/events/ID
 import humanizeBytes from '@/utils/humanizeBytes';
 import Json from '@/components/Json.vue';
 import { convertJsonToFlat } from '@/utils/flattenJson';
-import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
+import IHeroSessionUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionUpdatedEvent';
 import IDatastoreCollectedAssetsResponse from '@ulixee/apps-chromealive-interfaces/IDatastoreCollectedAssets';
 import IDatastoreCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDatastoreCollectedAssetEvent';
 import IResourceMeta from '@ulixee/unblocked-specification/agent/net/IResourceMeta';
@@ -266,7 +258,7 @@ const datastore: any = Vue.defineComponent({
         this.output = convertJsonToFlat({});
       }
     },
-    onSessionActive(data: IHeroSessionActiveEvent) {
+    onSessionUpdated(data: IHeroSessionUpdatedEvent) {
       if (!data) return;
 
       const entrypoint = data.scriptEntrypointTs ?? data.scriptEntrypoint;
@@ -344,7 +336,6 @@ const datastore: any = Vue.defineComponent({
     },
     timetravelToElement(element: IDetachedElement): void {
       Client.send('Session.timetravel', {
-        heroSessionId: null,
         commandId: element.commandId,
       }).catch(err => console.error(err));
     },
@@ -365,8 +356,8 @@ const datastore: any = Vue.defineComponent({
       fileReader.readAsDataURL(blob);
     },
     refreshData(): void {
-      Client.send('Session.getActive')
-        .then(this.onSessionActive)
+      Client.send('Session.load')
+        .then(this.onSessionUpdated)
         .catch(err => console.error(err));
       Client.send('Datastore.getOutput')
         .then(x => this.onDatastoreOutput({ ...x, changes: undefined }))
@@ -375,10 +366,8 @@ const datastore: any = Vue.defineComponent({
         .then(this.onCollectedAssets)
         .catch(err => console.error(err));
     },
-    execExtract(): void {
-      Client.send('Datastore.execExtract', { heroSessionId: this.sessionId }).catch(err =>
-        console.error(err),
-      );
+    rerunRunner(): void {
+      Client.send('Datastore.rerunRunner').catch(err => console.error(err));
     },
   },
   mounted() {
@@ -386,7 +375,7 @@ const datastore: any = Vue.defineComponent({
     this.refreshData();
     Client.on('Datastore.output', this.onDatastoreOutput);
     Client.on('Datastore.collected-asset', this.onCollectedAsset);
-    Client.on('Session.active', this.onSessionActive);
+    Client.on('Session.updated', this.onSessionUpdated);
   },
 });
 export default datastore;
@@ -395,10 +384,10 @@ export default datastore;
 <style lang="scss" scoped="scoped">
 h1 {
   color: #ada0b6;
-  @apply text-6xl mb-3;
+  @apply mb-3 text-6xl;
 }
 
 h2 {
-  @apply mt-10 font-bold mb-5;
+  @apply mt-10 mb-5 font-bold;
 }
 </style>

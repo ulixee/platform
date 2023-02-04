@@ -9,3 +9,7 @@ const chromeAlive = new ChromeAlive();
 chromeAlive.on('ready', () => {
   console.warn('RUNNING CHROMEALIVE');
 });
+
+process.on('uncaughtException', error => {
+  console.error(error);
+});

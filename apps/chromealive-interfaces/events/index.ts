@@ -1,8 +1,8 @@
+import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
 import IDatastoreOutputEvent from './IDatastoreOutputEvent';
-import IHeroSessionActiveEvent from './IHeroSessionActiveEvent';
+import IHeroSessionUpdatedEvent from './IHeroSessionUpdatedEvent';
 import IDomStateUpdateEvent from './IDomStateUpdatedEvent';
-import IAppMoveEvent from './IAppMoveEvent';
-import IAppModeEvent from './IAppModeEvent';
+import ISessionAppModeEvent from './ISessionAppModeEvent';
 import ICommandUpdatedEvent from './ICommandUpdatedEvent';
 import ISourceCodeUpdatedEvent from './ISourceCodeUpdatedEvent';
 import ICommandFocusedEvent from './ICommandFocusedEvent';
@@ -14,16 +14,14 @@ import IDatastoreCollectedAssetEvent from './IDatastoreCollectedAssetEvent';
 import IElementSummary from '../IElementSummary';
 
 export default interface IChromeAliveEvents {
-  'App.show': { onTop: boolean };
-  'App.hide': null;
-  'App.startedDraggingChrome': null;
-  'App.stoppedDraggingChrome': null;
   'App.quit': null;
-  'App.moveTo': IAppMoveEvent;
-  'App.mode': IAppModeEvent;
+  'Session.opened': { heroSessionId: string; options: ISessionCreateOptions; dbPath: string; startDate: Date; };
+  'Session.tabCreated': { tabId: number };
+  'Session.appMode': ISessionAppModeEvent;
+  'Session.closed': void;
   'Session.loading': void;
   'Session.loaded': void;
-  'Session.active': IHeroSessionActiveEvent;
+  'Session.updated': IHeroSessionUpdatedEvent;
   'Session.timetravel': ISessionTimetravelEvent;
   'Session.interceptInspectElementMode': IInterceptInspectElementMode;
   'Datastore.output': IDatastoreOutputEvent;

@@ -26,7 +26,7 @@
             LIVE
           </div>
           <div v-else class="text">
-            DONE
+            REPLAY
           </div>
         </div>
         <div v-else class="timetravel-icon">

@@ -1,14 +1,6 @@
 import { ChildProcess, spawn, SpawnOptions, StdioOptions } from 'child_process';
-import {
-  getBinaryPath,
-  getLocalBuildPath,
-  isBinaryInstalled,
-  isLocalBuildPresent,
-} from './install/Utils';
 
 const launchPaths = {
-  local: getLocalBuildPath(),
-  binary: getBinaryPath(),
   workspace: `yarn workspace @ulixee/apps-chromealive start`,
   desktop: process.execPath,
 };
@@ -38,15 +30,7 @@ export default function launchChromeAlive(...launchArgs: string[]): ChildProcess
   return child;
 }
 
-function getPreferredLaunch(): 'local' | 'workspace' | 'binary' | 'desktop' {
-  if (isLocalBuildPresent()) {
-    return 'local';
-  }
-
-  if (isBinaryInstalled()) {
-    return 'binary';
-  }
-
+function getPreferredLaunch(): keyof typeof launchPaths {
   try {
     require.resolve('./app');
     // eslint-disable-next-line global-require

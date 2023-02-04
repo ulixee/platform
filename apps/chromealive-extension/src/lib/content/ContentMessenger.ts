@@ -1,35 +1,21 @@
 import {
   ___receiveFromCore,
-  MessageLocation,
-  packMessage,
-  IMessageObject,
-  IMessageLocation,
-  IResponseCode,
-  IRestOfMessageObject,
-  ResponseCode,
   ___sendToCore,
   createResponseId,
+  IMessageLocation,
+  IMessageObject,
+  IResponseCode,
+  IRestOfMessageObject,
   isResponseMessage,
   messageExpectsResponse,
+  MessageLocation,
+  packMessage,
+  ResponseCode,
 } from '@ulixee/apps-chromealive-core/lib/BridgeHelpers';
-import logDebug from '../logDebug';
 
 type IResponseFn = (response: any) => void;
 
 const currentMessengerLocation = MessageLocation.ContentScript;
-
-export function sendToBackgroundScript(payload: any, responseCallbackFn?: IResponseFn) {
-  const message: IMessageObject = {
-    destLocation: MessageLocation.BackgroundScript,
-    origLocation: currentMessengerLocation,
-    payload,
-    ...convertResponseFnToCodeAndId(responseCallbackFn),
-  };
-  routeInternally(message);
-}
-
-// @ts-ignore
-window.sendToBackgroundScript = sendToBackgroundScript;
 
 export function sendToDevtoolsScript(payload: any, responseCallbackFn?: IResponseFn) {
   const message: IMessageObject = {
@@ -70,68 +56,6 @@ export function onMessagePayload(fn: (payload: any, responseFn: IResponseFn) => 
   onMessagePayloadFn = fn;
 }
 
-// LISTENER TO <-> FROM BACKGROUND /////////////////////////////////////////////////////////////////
-
-let activePort: chrome.runtime.Port;
-chrome.runtime.onConnect.addListener(handleConnectFromBackgroundScript);
-
-function connect() {
-  try {
-    if (activePort) return;
-    const port = chrome.runtime.connect({ name: currentMessengerLocation });
-    handleConnectedToBackgroundScript(port);
-  } catch (err) {
-    console.error('Error connecting to service worker', err);
-    setTimeout(connect, 5e3);
-  }
-}
-
-function handleConnectFromBackgroundScript(port: chrome.runtime.Port) {
-  logDebug(`OnConnect from BackgroundScript`, port);
-  registerActivePort(port);
-}
-
-function handleConnectedToBackgroundScript(port: chrome.runtime.Port) {
-  logDebug(`OnConnect to BackgroundScript`, port);
-  registerActivePort(port);
-}
-
-function onPortDisconnect(port: chrome.runtime.Port): void {
-  port.onMessage.removeListener(handleIncomingMessageFromBackgroundScript);
-  if (port === activePort) activePort = null;
-  if (!activePort) setTimeout(connect, 1e3);
-}
-
-function registerActivePort(port: chrome.runtime.Port): void {
-  if (activePort === port) return;
-  if (activePort && activePort !== port) {
-    try {
-      activePort.disconnect();
-    } catch (err) {
-      /* no-op */
-    }
-  }
-  activePort = port;
-  activePort.onDisconnect.addListener(onPortDisconnect.bind(null, port));
-  activePort.onMessage.addListener(handleIncomingMessageFromBackgroundScript);
-}
-
-function handleIncomingMessageFromBackgroundScript(message: IMessageObject) {
-  logDebug(`OnIncomingMessage from BackgroundScript`, JSON.stringify(message));
-  if (message.destLocation === currentMessengerLocation) {
-    if (isResponseMessage(message)) {
-      handleIncomingLocalResponse(message);
-    } else {
-      handleIncomingLocalMessage(message);
-    }
-  } else {
-    // pass it along
-    routeInternally(message);
-  }
-}
-
-connect();
-
 // LISTENER TO <-> FROM CORE ///////////////////////////////////////////////////////////////////////
 
 // receive and route messages coming in from core
@@ -151,8 +75,6 @@ window[___receiveFromCore] = (
     } else {
       handleIncomingLocalMessage(message);
     }
-  } else if (destLocation === MessageLocation.BackgroundScript) {
-    routeInternally(message);
   } else {
     throw new Error('Unknown destLocation');
   }
@@ -190,7 +112,7 @@ function sendResponseBack(message: IMessageObject, responsePayload) {
   const { responseId, origLocation: destLocation } = message;
   const response: IMessageObject = {
     destLocation,
-    origLocation: MessageLocation.BackgroundScript,
+    origLocation: MessageLocation.Core,
     responseId,
     responseCode,
     payload: responsePayload,
@@ -201,13 +123,8 @@ function sendResponseBack(message: IMessageObject, responsePayload) {
 // INTERNAL ROUTING ////////////////////////////////////////////////////////////////////////////////
 
 function routeInternally(message: IMessageObject) {
-  const destination = message.destLocation as MessageLocation;
-  if ([MessageLocation.BackgroundScript, MessageLocation.DevtoolsScript].includes(destination)) {
-    activePort.postMessage(message);
-  } else {
-    const packedMessage = packMessage(message);
-    window[___sendToCore](packedMessage);
-  }
+  const packedMessage = packMessage(message);
+  window[___sendToCore](packedMessage);
 }
 
 function convertResponseFnToCodeAndId(responseFn: IResponseFn) {

@@ -1,4 +1,4 @@
-export default interface IHeroSessionActiveEvent {
+export default interface IHeroSessionUpdatedEvent {
   scriptEntrypoint: string;
   scriptLastModifiedTime: number;
   heroSessionId: string;

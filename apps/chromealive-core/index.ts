@@ -1,141 +1,135 @@
-import * as Fs from 'fs';
-import HeroCore, { Session as HeroSession } from '@ulixee/hero-core';
+import HeroCore, { Session, Session as HeroSession } from '@ulixee/hero-core';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
 import Log from '@ulixee/commons/lib/Logger';
-import { ChildProcess } from 'child_process';
-import launchChromeAlive from '@ulixee/apps-chromealive/index';
-import { Browser } from '@ulixee/unblocked-agent';
-import { bindFunctions } from '@ulixee/commons/lib/utils';
-import { IPage } from '@ulixee/unblocked-specification/agent/browser/IPage';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
-import IDatastoreCollectedAssetEvent from '@ulixee/apps-chromealive-interfaces/events/IDatastoreCollectedAssetEvent';
-import { URL } from 'url';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
-import ChromeAliveCoreApis from './apis';
-import AliveBarPositioner from './lib/AliveBarPositioner';
-import SessionObserver from './lib/SessionObserver';
-import HeroCorePlugin, { extensionPath } from './lib/HeroCorePlugin';
+import { IncomingMessage } from 'http';
+import { nanoid } from 'nanoid';
+import IApiHandlers from '@ulixee/net/interfaces/IApiHandlers';
+import IAppApi from '@ulixee/apps-chromealive-interfaces/apis/IAppApi';
+import { IChromeAliveAppApis } from '@ulixee/apps-chromealive-interfaces/apis';
+import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
+import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
+import WebSocket = require('ws');
+import SessionController from './lib/SessionController';
+import FullscreenHeroCorePlugin from './lib/FullscreenHeroCorePlugin';
+import Workarea from './lib/Workarea';
+import AppDevtoolsConnection from './lib/AppDevtoolsConnection';
 
 const { log } = Log(module);
 
-type IConnectionToChromeAliveClient = IConnectionToClient<
-  typeof ChromeAliveCoreApis,
-  IChromeAliveEvents
->;
+type IConnectionToChromeAliveClient = IConnectionToClient<IChromeAliveAppApis, IChromeAliveEvents>;
 
 export default class ChromeAliveCore {
-  public static sessionObserversById = new Map<string, SessionObserver>();
-  public static vueServer: string;
-  public static get activeSessionObserver(): SessionObserver {
-    return this.sessionObserversById.get(this.activeHeroSessionId);
-  }
-
-  public static restartingHeroSessionId: string;
-  public static activeHeroSessionId: string;
+  public static sessionControllersById = new Map<string, SessionController>();
   public static minerAddress?: Promise<string>;
-  private static connections: IConnectionToChromeAliveClient[] = [];
-  private static app: ChildProcess;
+  private static appConnectionsById = new Map<string, IConnectionToChromeAliveClient>();
+  private static appDevtoolsConnectionsById = new Map<string, AppDevtoolsConnection>();
+
   private static events = new EventSubscriber();
-  private static isEnabled = false;
 
   public static setMinerAddress(address: Promise<string>): void {
     this.minerAddress = address;
-    this.launchApp(true).catch(err => {
-      console.error('Cannot launch ChromeAlive app', err);
-    });
   }
 
-  public static addConnection(
-    transport: ITransportToClient<typeof ChromeAliveCoreApis>,
-  ): IConnectionToChromeAliveClient {
-    const connection: IConnectionToChromeAliveClient = new ConnectionToClient(
-      transport,
-      ChromeAliveCoreApis,
-    );
-    this.connections.push(connection);
-    this.onWsConnected();
-    this.events.once(connection, 'disconnect', () => {
-      const idx = this.connections.indexOf(connection);
-      if (idx >= 0) this.connections.splice(idx, 1);
+  public static addChromealiveDevtoolsWebsocket(ws: WebSocket, request: IncomingMessage): void {
+    const url = new URL(request.url, 'http://localhost');
+    const id = url.searchParams.get('id');
+    if (!id) throw new Error('A ChromeAlive devtools connection was made without an id parameter.');
+    const connection = new AppDevtoolsConnection(ws);
+    this.appDevtoolsConnectionsById.set(id, connection);
+    connection.onCloseFns.push(() => this.appDevtoolsConnectionsById.delete(id));
+  }
+
+  public static addConnection<T extends IApiHandlers>(
+    transport: ITransportToClient<T>,
+    request: IncomingMessage,
+  ): IConnectionToClient<T, IChromeAliveEvents> {
+    const chromeAliveMatch = request.url.match(/\/chromealive\/([0-9a-zA-Z-_]{6,21}).*/);
+    if (chromeAliveMatch) {
+      const heroSessionId = chromeAliveMatch[1];
+      const controller = this.sessionControllersById.get(heroSessionId);
+
+      if (controller) return controller.addConnection(transport, request) as any;
+      return this.loadSessionController(heroSessionId, transport, request);
+    }
+
+    let id: string;
+    const host = request.socket.remoteAddress;
+    // give local desktop special permissions. does not need to be specified
+    if (host === '::1' || host === '::' || host === '127.0.0.1' || host === '::ffff:127.0.0.1') {
+      id = 'local';
+    } else id = nanoid(10);
+
+    log.info('Desktop app connected', { id, host, sessionId: null });
+
+    // Desktop initiates a connection to Core. This Core could be remote or local
+    const connection = new ConnectionToClient(transport, {
+      'App.connect': this.onAppConnect.bind(this, id),
+    } as any);
+
+    this.appConnectionsById.set(id, connection);
+
+    this.events.on(connection, 'request', msg => {
+      log.stats(`${msg.request.command} (${msg.request?.messageId})`, {
+        request: msg.request,
+        sessionId: null,
+      });
     });
-    return connection;
+    this.events.on(connection, 'event', msg => {
+      log.stats(msg.event.eventType, {
+        ...msg,
+        sessionId: null,
+      });
+    });
+    this.events.on(connection, 'response', msg => {
+      log.info(`${msg.request.command} response (${msg.request?.messageId})`, {
+        response: msg.response,
+        sessionId: null,
+      });
+    });
+    this.events.once(connection, 'disconnect', () => this.appConnectionsById.delete(id));
+    return connection as any;
   }
 
   public static register(): void {
     log.info('Registering ChromeAlive!');
 
-    this.isEnabled = true;
-    bindFunctions(this);
+    this.events.on(HeroSession.events, 'new', this.onHeroSessionCreated.bind(this));
 
-    this.events.on(HeroCore.events, 'browser-launched', this.onNewBrowser);
-    this.events.on(HeroCore.events, 'all-browsers-closed', () => AliveBarPositioner.resetSession());
-    this.events.on(HeroCore.events, 'browser-has-no-open-windows', this.onBrowserHasNoWindows);
-    this.events.on(HeroSession.events, 'new', this.onHeroSessionCreated);
-
-    HeroCore.use(HeroCorePlugin);
+    HeroCore.use(FullscreenHeroCorePlugin);
   }
 
-  public static shutdown(): void {
+  public static onAppConnect(
+    id: string,
+    args: Parameters<IAppApi['connect']>[0],
+  ): Promise<{ id: string }> {
+    Workarea.onAppReady(args.workarea);
+    return Promise.resolve({ id });
+  }
+
+  public static async shutdown(): Promise<void> {
     log.info('Shutting down ChromeAlive!');
-    this.closeApp();
+
+    for (const connection of this.appConnectionsById.values()) {
+      connection.sendEvent({ eventType: 'App.quit', data: null });
+    }
+    this.appDevtoolsConnectionsById.clear();
     this.events.close();
-    while (this.connections.length) {
-      const next = this.connections.shift();
-      void next.disconnect();
+    for (const controller of this.sessionControllersById.values()) {
+      await controller.close();
     }
-    for (const observer of this.sessionObserversById.values()) {
-      observer.close();
-    }
-    this.sessionObserversById.clear();
+    this.sessionControllersById.clear();
   }
 
-  public static getActivePage(): IPage {
-    if (!this.activeHeroSessionId) return;
-    const sessionObserver = this.sessionObserversById.get(this.activeHeroSessionId);
-    if (!sessionObserver) return;
-
-    const { heroSession } = sessionObserver;
-    return [...heroSession.tabsById.values()].find(x => !x.isClosing)?.page;
-  }
-
-  public static sendAppEvent<T extends keyof IChromeAliveEvents>(
-    eventType: T,
-    data: IChromeAliveEvents[T] = null,
-  ): void {
-    for (const connection of this.connections) {
-      connection.sendEvent({ eventType, data });
-    }
-  }
-
-  public static changeActiveSessions(
-    status: { focused: boolean; active: boolean },
-    heroSessionId: string,
-    pageId: string,
-  ): void {
-    const isPageVisible = status.active;
-    log.info('Changing active session', {
-      isPageVisible,
-      sessionId: heroSessionId,
-      pageId,
-    });
-
-    if (this.activeHeroSessionId === heroSessionId && status.focused) {
-      AliveBarPositioner.focusedPageId(pageId);
-    } else if (!this.restartingHeroSessionId) {
-      AliveBarPositioner.blurredPageId(pageId);
-    }
-  }
-
-  private static async onHeroSessionCreated(event: { session: HeroSession }): Promise<any> {
+  private static async onHeroSessionCreated(event: { session: HeroSession }): Promise<void> {
     const { session: heroSession } = event;
 
     const script = heroSession.options.scriptInstanceMeta?.entrypoint;
     if (!script) return;
-    if (!this.isEnabled) return;
 
     if (heroSession.mode === 'timetravel' || heroSession.mode === 'production') {
       return;
@@ -148,16 +142,10 @@ export default class ChromeAliveCore {
     if (heroSession.mode === 'browserless') {
       const replaySessionId = heroSession.options.replaySessionId;
       if (replaySessionId) {
-        const observer = this.sessionObserversById.get(replaySessionId);
+        const observer = this.sessionControllersById.get(replaySessionId);
         if (observer) observer.bindExtractor(heroSession);
         return;
       }
-      return;
-    }
-
-    if (heroSession.mode === 'multiverse') {
-      const observer = this.sessionObserversById.get(this.activeHeroSessionId);
-      observer?.onMultiverseSession(heroSession);
       return;
     }
 
@@ -173,228 +161,94 @@ export default class ChromeAliveCore {
     });
     // keep alive session
     heroSession.options.sessionKeepAlive = true;
-    // automatically showChrome if showChromeAlive is turned on
-    heroSession.options.showChrome = true;
-    heroSession.options.showChromeInteractions ??= true;
-    // extensions need incognito disabled
-    heroSession.options.disableIncognito = true;
-    heroSession.options.viewport ??= { width: 0, height: 0 };
-    const sessionObserver = new SessionObserver(heroSession);
-    const minerAddress = await this.minerAddress;
-    heroSession.bypassResourceRegistrationForHost = new URL(minerAddress);
 
-    this.sessionObserversById.set(sessionId, sessionObserver);
-    const sourceCode = sessionObserver.sourceCodeTimeline;
-    const timetravel = sessionObserver.timetravelPlayer;
-    const on = this.events.on.bind(this.events);
-    const sessionEvents = [
-      on(sessionObserver, 'hero:updated', this.sendActiveSession.bind(this, sessionId)),
-      on(sessionObserver, 'app:mode', this.sendAppModeEvent.bind(this, sessionId)),
-      on(sessionObserver, 'datastore:output', this.sendDatastoreUpdatedEvent.bind(this, sessionId)),
-      on(
-        sessionObserver,
-        'datastore:asset',
-        this.sendDatastoreCollectedAssetsEvent.bind(this, sessionId),
-      ),
-      on(sessionObserver, 'closed', this.onSessionObserverClosed.bind(this, sessionObserver)),
-      on(sourceCode, 'command', this.sendAppEvent.bind(this, 'Command.updated')),
-      on(sourceCode, 'source', this.sendAppEvent.bind(this, 'SourceCode.updated')),
-      on(timetravel, 'new-tick-command', this.sendCommandFocusedEvent.bind(this, sessionId)),
-      on(timetravel, 'new-paint-index', this.sendPaintIndexEvent.bind(this, sessionId)),
-      on(timetravel, 'new-offset', this.sendTimetravelOffset.bind(this, sessionId)),
-    ];
-    this.events.group(`session-${sessionId}`, ...sessionEvents);
+    const originalController = this.sessionControllersById.get(heroSession.options.resumeSessionId);
+    originalController?.setResuming(heroSession.options.resumeSessionId);
+    if (originalController) return;
 
-    this.sendActiveSession(sessionId);
-
-    const isRestartedSessionId =
-      !!this.restartingHeroSessionId &&
-      this.restartingHeroSessionId === heroSession.options.resumeSessionId;
-    this.restartingHeroSessionId = null;
-
-    if (!this.activeHeroSessionId || isRestartedSessionId) {
-      if (!isRestartedSessionId) {
-        this.sendAppEvent('Session.loading');
-      }
-      AliveBarPositioner.showHeroSessionOnBounds(sessionId);
-      this.events.once(sessionObserver, 'hero:updated', () => {
-        this.sendAppEvent('Session.loaded');
-        const plugin = HeroCorePlugin.bySessionId.get(sessionId);
-        if (plugin.activePage) AliveBarPositioner.focusedPageId(plugin.activePage.id);
-      });
-      this.activeHeroSessionId = sessionId;
-    }
-  }
-
-  private static onWsConnected(): void {
-    log.info('ChromeAlive! Ws Connected', {
-      sessionId: this.activeHeroSessionId,
-    });
-    if (this.activeHeroSessionId) {
-      this.sendActiveSession(this.activeHeroSessionId);
-      this.sendDatastoreUpdatedEvent(this.activeHeroSessionId);
-    }
-  }
-
-  private static sendCommandFocusedEvent(
-    sessionId: string,
-    event: TimetravelPlayer['EventTypes']['new-tick-command'],
-  ): void {
-    this.sendDatastoreUpdatedEvent(sessionId);
-    this.sendAppEvent('Command.focused', event);
-  }
-
-  private static sendTimetravelOffset(
-    sessionId: string,
-    event: TimetravelPlayer['EventTypes']['new-offset'],
-  ): void {
-    const timetravel = this.sessionObserversById.get(sessionId).timetravelPlayer;
-    this.sendAppEvent('Session.timetravel', {
-      ...event,
-      url: timetravel.activeTab.mirrorPage.page.mainFrame.url,
-    });
-  }
-
-  private static sendPaintIndexEvent(
-    sessionId: string,
-    event: TimetravelPlayer['EventTypes']['new-paint-index'],
-  ): void {
-    this.sendAppEvent('Dom.focus', {
-      highlightPaintIndexRange: event.paintIndexRange,
-      documentLoadPaintIndex: event.documentLoadPaintIndex,
-    });
-  }
-
-  private static onSessionObserverClosed(sessionObserver: SessionObserver): void {
-    const heroSessionId = sessionObserver.heroSession.id;
-    this.sessionObserversById.delete(heroSessionId);
-    this.events.endGroup(`session-${heroSessionId}`);
-    if (this.activeHeroSessionId === heroSessionId) {
-      this.activeHeroSessionId = null;
-      if (this.restartingHeroSessionId === heroSessionId) {
-        this.sendAppEvent('Session.active', {
-          heroSessionId: null,
-          timeline: { urls: [], screenshots: [], paintEvents: [], storageEvents: [] },
-          playbackState: 'restarting',
-          startTime: Date.now(),
-          inputBytes: 0,
-          runtimeMs: 0,
-          ...sessionObserver.getScriptDetails(),
-        });
-      } else {
-        AliveBarPositioner.resetSession(heroSessionId);
-        this.sendAppEvent('Session.active', null);
-      }
-
-      this.sendAppEvent('Datastore.output', {
-        changes: [],
-        output: null,
-        bytes: 0,
-      });
-    }
-  }
-
-  private static sendActiveSession(heroSessionId: string): void {
-    const sessionObserver = this.sessionObserversById.get(heroSessionId);
-    if (!sessionObserver) return;
-
-    this.sendAppEvent('Session.active', sessionObserver.getHeroSessionEvent());
-  }
-
-  private static sendDatastoreUpdatedEvent(heroSessionId: string): void {
-    const sessionObserver = this.sessionObserversById.get(heroSessionId);
-    if (!sessionObserver) return;
-    this.sendAppEvent('Datastore.output', sessionObserver.getDatastoreEvent());
-  }
-
-  private static sendDatastoreCollectedAssetsEvent(
-    heroSessionId: string,
-    event: IDatastoreCollectedAssetEvent,
-  ): void {
-    const sessionObserver = this.sessionObserversById.get(heroSessionId);
-    if (!sessionObserver) return;
-    this.sendAppEvent('Datastore.collected-asset', event);
-  }
-
-  private static sendAppModeEvent(heroSessionId: string): void {
-    const sessionObserver = this.sessionObserversById.get(heroSessionId);
-    if (!sessionObserver) return;
-    this.sendAppEvent('App.mode', { mode: sessionObserver.mode });
-  }
-
-  private static async launchApp(hideOnLaunch = false): Promise<void> {
-    if (this.app && !this.app.killed) return;
-
-    const args: string[] = hideOnLaunch ? ['--hide'] : [];
-    if (this.minerAddress) {
-      const minerAddress = await this.minerAddress;
-      const filePath = `${extensionPath}/background.js`;
-
-      try {
-        let fileContents = await Fs.promises.readFile(filePath, 'utf8');
-        fileContents = fileContents.replace(
-          /__MINER_ADDRESS__ = '.*';/,
-          `__MINER_ADDRESS__ = '${minerAddress}';`,
-        );
-        await Fs.promises.writeFile(filePath, fileContents);
-      } catch (err) {
-        this.isEnabled = false;
-        delete HeroCore.corePluginsById[HeroCorePlugin.id];
-        throw new Error('Could not launch ChromeAlive! Chrome Extension not installed.');
-      }
-      args.push(`--minerAddress="${minerAddress}"`);
-    }
-
-    this.app = launchChromeAlive(...args);
-    this.events.once(this.app, 'exit', this.onAppExit.bind(this));
-    this.events.once(this.app, 'close', this.onAppExit.bind(this));
-    log.info('Launched Electron App', {
-      file: this.app?.spawnfile,
-      args: this.app?.spawnargs,
-      sessionId: null,
-    });
-  }
-
-  private static onAppExit(): void {
-    delete HeroCore.corePluginsById[HeroCorePlugin.id];
-    this.app = null;
-  }
-
-  private static onBrowserHasNoWindows(event: { browser: Browser }): void {
-    // only check for headed
-    if (!event.browser.engine.isHeaded) return;
-
-    const browserId = event.browser.id;
-
-    const hasSessionObservers = HeroSession.sessionsWithBrowserId(browserId).some(x =>
-      this.sessionObserversById.has(x.id),
+    const { sessionController, appConnectionId } = this.createSessionController(
+      heroSession.db,
+      heroSession.options,
     );
-    if (!hasSessionObservers) return;
+    if (!sessionController) return;
+    sessionController.bindLiveSession(heroSession);
 
-    const restartedSessionId = this.restartingHeroSessionId;
-    const checkForBrowserClose = (): any => {
-      if (
-        restartedSessionId &&
-        (!this.activeHeroSessionId || restartedSessionId === this.activeHeroSessionId)
-      ) {
-        return setTimeout(checkForBrowserClose, 1e3).unref();
-      }
-      const sessionsUsingEngine = HeroSession.sessionsWithBrowserId(browserId);
-      const hasWindows = sessionsUsingEngine.some(x => x.tabsById.size > 0);
-      if (!hasWindows) {
-        return event.browser.close();
-      }
+    await this.sendReadyEvent(
+      appConnectionId,
+      sessionId,
+      heroSession.options,
+      heroSession.db.path,
+      new Date(heroSession.createdTime),
+    );
+  }
+
+  private static createSessionController(
+    db: SessionDb,
+    options: ISessionCreateOptions,
+  ): { sessionController: SessionController; appConnectionId: string } {
+    const appConnectionId = options.desktopConnectionId ?? 'local';
+    if (!this.appDevtoolsConnectionsById.has(appConnectionId)) {
+      console.warn('showChromeAlive requested for Hero, but no Desktops available');
+      return { sessionController: null, appConnectionId };
+    }
+
+    const sessionId = db.sessionId;
+    const devtoolsConnection = this.appDevtoolsConnectionsById.get(appConnectionId);
+    const sessionController = new SessionController(db, options, devtoolsConnection);
+    this.sessionControllersById.set(sessionId, sessionController);
+    this.events.once(sessionController, 'closed', () => {
+      this.sessionControllersById.delete(sessionId);
+    });
+
+    return { sessionController, appConnectionId };
+  }
+
+  private static loadSessionController(
+    heroSessionId: string,
+    transport: ITransportToClient<any>,
+    request: IncomingMessage,
+  ): IConnectionToClient<any, any> {
+    const db = SessionDb.getCached(heroSessionId, true);
+    const dbSession = db.session.get();
+    const options = Session.restoreOptionsFromSessionRecord({}, heroSessionId);
+
+    options.scriptInstanceMeta = {
+      id: dbSession.scriptInstanceId,
+      workingDirectory: dbSession.workingDirectory,
+      entrypoint: dbSession.scriptEntrypoint,
+      startDate: dbSession.scriptStartDate,
     };
-    setTimeout(checkForBrowserClose, 2e3).unref();
+    const { sessionController, appConnectionId } = this.createSessionController(db, options);
+    const apiConnection = sessionController.addConnection(transport, request);
+
+    this.sendReadyEvent(
+      appConnectionId,
+      db.sessionId,
+      options,
+      db.path,
+      new Date(dbSession.startDate),
+    )
+      .then(() => sessionController.loadFromDb())
+      .catch(error => {
+        log.error('ERROR loading session from database', {
+          error,
+          sessionId: heroSessionId,
+        });
+      });
+    return apiConnection;
   }
 
-  private static async onNewBrowser(): Promise<void> {
-    await this.launchApp().catch(() => null);
-  }
-
-  private static closeApp(): void {
-    log.stats('Closing Electron App');
-    this.sendAppEvent('App.quit');
-    this.app = null;
+  private static async sendReadyEvent(
+    appConnectionId: string,
+    heroSessionId: string,
+    options: ISessionCreateOptions,
+    dbPath: string,
+    startDate: Date,
+  ): Promise<any> {
+    const appConnection = this.appConnectionsById.get(appConnectionId);
+    await appConnection.sendEvent({
+      eventType: 'Session.opened',
+      data: { heroSessionId, options, dbPath, startDate },
+    });
   }
 }

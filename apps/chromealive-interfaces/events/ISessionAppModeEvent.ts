@@ -1,3 +1,3 @@
-export default interface IAppModeEvent {
+export default interface ISessionAppModeEvent {
   mode: 'Live' | 'Timetravel' | 'Input' | 'Output' | 'Reliability' | 'Finder';
 }

@@ -6,6 +6,3 @@ export default interface IDevtoolsBackdoorApi {
   hideHighlight(): Promise<void>;
   generateQuerySelector(options: { backendNodeId?: number; objectId?: string }): Promise<ISelectorMap>;
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/explicit-function-return-type
-export function IDevtoolsBackdoorApiStatics(staticClass: IDevtoolsBackdoorApi) {}

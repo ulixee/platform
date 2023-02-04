@@ -4,7 +4,6 @@ import { MessageEventType } from '@ulixee/apps-chromealive-core/lib/BridgeHelper
 import ElementOptionsOverlay from './lib/ElementOptionsOverlay';
 import { onMessagePayload, sendToDevtoolsScript } from './lib/content/ContentMessenger';
 import ElementsBucket from './lib/ElementsBucket';
-import './lib/content/ContentListeners';
 import findSelectors from './lib/content/findSelectors';
 
 

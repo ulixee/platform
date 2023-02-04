@@ -17,7 +17,7 @@
 import * as Vue from 'vue';
 import { defineComponent } from 'vue';
 import Client from '@/api/Client';
-import IHeroSessionActiveEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionActiveEvent';
+import IHeroSessionUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/IHeroSessionUpdatedEvent';
 import { LoadStatus } from '@ulixee/unblocked-specification/agent/browser/Location';
 
 export default defineComponent({
@@ -30,20 +30,19 @@ export default defineComponent({
     };
   },
   mounted() {
-    Client.on('Session.active', this.onSessionActiveEvent);
+    Client.on('Session.updated', this.onSessionUpdatedEvent);
   },
   unmounted() {
-    Client.off('Session.active', this.onSessionActiveEvent);
+    Client.off('Session.updated', this.onSessionUpdatedEvent);
   },
   methods: {
     navigateToOffset(offset: number) {
       void Client.send('Session.timetravel', {
-        heroSessionId: this.heroSessionId,
         percentOffset: offset,
       });
       window.blur();
     },
-    onSessionActiveEvent(message: IHeroSessionActiveEvent) {
+    onSessionUpdatedEvent(message: IHeroSessionUpdatedEvent) {
       if (!message) {
         this.urls.length = 0;
         this.heroSessionId = '';

@@ -30,7 +30,7 @@ export default Vue.defineComponent({
     Client.on('Session.loading', () => {
       this.isLoading = true;
     });
-    Client.on('Session.active', (session) => {
+    Client.on('Session.updated', (session) => {
       this.isRestarting = session?.playbackState === 'restarting';
     });
     Client.on('Session.loaded', () => {
@@ -70,7 +70,10 @@ body {
   vertical-align: top;
   color: rgba(0, 0, 0, 0.8);
   box-sizing: border-box;
-  height: 36px;
+  padding: 35px 10px 15px;
+  min-height: 36px;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.16);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   background: white;
 
   &.restarting {

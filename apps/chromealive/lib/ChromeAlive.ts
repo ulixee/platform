@@ -1,184 +1,99 @@
-import { app, BrowserWindow, screen, shell } from 'electron';
-import * as remoteMain from '@electron/remote/main';
+import { app, dialog, ipcMain, Menu, screen } from 'electron';
 import { EventEmitter } from 'events';
-import { Server as StaticServer } from 'node-static';
 import * as Http from 'http';
-import { AddressInfo } from 'net';
 import * as Path from 'path';
-import * as Fs from 'fs';
-import * as ContextMenu from 'electron-context-menu';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
-import IAppMoveEvent from '@ulixee/apps-chromealive-interfaces/events/IAppMoveEvent';
+import { httpGet } from '@ulixee/commons/lib/downloadFile';
+import { IChromeAliveAppApis } from '@ulixee/apps-chromealive-interfaces/apis';
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import { ClientOptions } from 'ws';
+import * as Os from 'os';
+import WebSocket = require('ws');
 import ChromeAliveApi from './ChromeAliveApi';
+import generateAppMenu from '../menus/generateAppMenu';
+import StaticServer from './StaticServer';
+import ChromeAliveWindow from './ChromeAliveWindow';
+
+const { version } = require('../package.json');
 
 export class ChromeAlive extends EventEmitter {
-  readonly #vueServer: Http.Server;
-  #toolbarWindow: BrowserWindow;
-  #toolbarIsVisible: boolean; // track visibility
-  #childWindowsByName = new Map<string, BrowserWindow>();
+  readonly #staticServer: StaticServer;
+  get activeWindow(): ChromeAliveWindow {
+    return this.windows[this.activeWindowIdx];
+  }
 
-  #vueAddress: Promise<AddressInfo>;
-  #hideOnLaunch = false;
-  #nsEventMonitor: any;
-  #mouseDown: boolean;
-  #api: ChromeAliveApi;
-  #hideOnTimeout: NodeJS.Timeout;
+  windows: ChromeAliveWindow[] = [];
+  activeWindowIdx = 0;
+  #windowsBySessionId = new Map<string, ChromeAliveWindow>();
+  #debuggerUrl: string;
+
+  #apiByMinerAddress = new Map<
+    string,
+    {
+      api: ChromeAliveApi<IChromeAliveAppApis>;
+      id: string;
+      wsToCore: WebSocket;
+      wsToDevtoolsProtocol: WebSocket;
+    }
+  >();
+
   #exited = false;
-  #visibleWindowIdsToVisibleTime = new Map<number, number>();
-  #lastWindowInteract = -1;
-  #savedVisibleWindowIds = new Set<number>();
-  #apiWantsToShowToolbar = false;
+  events = new EventSubscriber();
 
-  constructor(readonly minerAddress?: string) {
+  constructor(private minerAddress?: string) {
     super();
-    this.#toolbarIsVisible = false;
-    this.minerAddress ??= process.argv
+    const minerAddressInArgv = process.argv
       .find(x => x.startsWith('--minerAddress='))
       ?.replace('--minerAddress=', '')
       ?.replace(/"/g, '');
 
-    this.#hideOnLaunch = process.argv.some(x => x === '--hide');
+    this.minerAddress ??= this.formatMinerAddress(
+      minerAddressInArgv ?? UlixeeHostsConfig.global.getVersionHost(version),
+    );
 
-    // hide the dock icon if it shows
-    if (process.platform === 'darwin') {
-      app.setActivationPolicy('accessory');
-    }
-    this.#api = new ChromeAliveApi(this.minerAddress, this.onChromeAliveEvent.bind(this));
-    this.#api.once('close', () => this.appExit());
-
-    ContextMenu({
-      showInspectElement: true,
-      showSearchWithGoogle: false,
-      showLookUpSelection: false,
-      showCopyImage: false,
-      showCopyImageAddress: false,
-    });
     app.name = 'ChromeAlive!';
+    (process.env as any).ELECTRON_DISABLE_SECURITY_WARNINGS = true;
+    app.commandLine.appendSwitch('remote-debugging-port', '8315');
 
     app.setAppLogsPath();
 
-    if (app.isReady()) {
-      process.nextTick(() => this.appReady());
-    } else {
-      app.on('ready', () => this.appReady());
-    }
+    this.#staticServer = new StaticServer(Path.resolve(__dirname, '..', 'ui'));
 
-    const vueDistPath = Path.resolve(__dirname, '..', 'ui');
-    if (!Fs.existsSync(vueDistPath)) throw new Error('ChromeAlive UI not installed');
-
-    const cacheTime = app.isPackaged ? 3600 * 24 : 0;
-    const staticServer = new StaticServer(vueDistPath, { cache: cacheTime });
-
-    this.#vueServer = Http.createServer((req, res) => {
-      staticServer.serve(req, res);
-    });
-
-    this.#vueAddress = new Promise<AddressInfo>((resolve, reject) => {
-      this.#vueServer.once('error', reject);
-      this.#vueServer.listen({ port: 0 }, () => {
-        this.#vueServer.off('error', reject);
-        resolve(this.#vueServer.address() as AddressInfo);
-      });
-    });
-  }
-
-  private hideToolbarWindow(): void {
-    this.#apiWantsToShowToolbar = false;
-    clearTimeout(this.#hideOnTimeout);
-    if (this.doesAnyAppWindowHaveFocus() || Date.now() - this.#lastWindowInteract < 500) {
-      this.#hideOnTimeout = setTimeout(this.hideToolbarWindow.bind(this), 500);
-      return;
-    }
-    this.#savedVisibleWindowIds.clear();
-    for (const id of this.#visibleWindowIdsToVisibleTime.keys())
-      this.#savedVisibleWindowIds.add(id);
-
-    this.#toolbarWindow.hide();
-    for (const window of this.#childWindowsByName.values()) {
-      window.hide();
-    }
-  }
-
-  private showToolbarWindow(): void {
-    this.#apiWantsToShowToolbar = true;
-    clearTimeout(this.#hideOnTimeout);
-    if (!this.#toolbarWindow.isVisible()) {
-      this.#toolbarWindow.showInactive();
-    }
-    for (const window of this.#childWindowsByName.values()) {
-      if (window.isVisible()) continue;
-      if (this.#savedVisibleWindowIds.has(window.id)) window.show();
-    }
-    this.#savedVisibleWindowIds.clear();
-  }
-
-  private onAppWindowBlurred(id: number): void {
-    this.#lastWindowInteract = Date.now();
-    this.#visibleWindowIdsToVisibleTime.delete(id);
-    if (this.#apiWantsToShowToolbar === false) {
-      clearTimeout(this.#hideOnTimeout);
-      this.#hideOnTimeout = setTimeout(() => {
-        // only run if still false
-        if (this.#apiWantsToShowToolbar === false) this.hideToolbarWindow();
-      }, 500);
-    }
-  }
-
-  private doesAnyAppWindowHaveFocus(): boolean {
-    if (
-      this.#toolbarWindow.isFocused() ||
-      this.#toolbarWindow.webContents.isFocused() ||
-      this.#toolbarWindow.webContents.isDevToolsFocused()
-    ) {
-      return true;
-    }
-    // if any windows launched in last second, consider this "focused"
-    const now = Date.now();
-    for (const value of this.#visibleWindowIdsToVisibleTime.values()) {
-      if (now - value < 500) return true;
-    }
-    for (const window of this.#childWindowsByName.values()) {
-      if (
-        window.isFocused() ||
-        window.webContents.isFocused() ||
-        window.webContents.isDevToolsFocused()
-      ) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private didStartDragging(): void {
-    this.hideToolbarWindow();
-  }
-
-  private didStopDragging(): void {
-    this.showToolbarWindow();
+    void this.appReady();
   }
 
   private appExit(): void {
     if (this.#exited) return;
     this.#exited = true;
 
+    this.events.close();
     console.warn('EXITING CHROMEALIVE!');
-    try {
-      this.#nsEventMonitor?.stop();
-      void this.#api.disconnect().catch(() => null);
-    } catch (err) {
-      console.error('ERROR shutting down', err);
+    for (const connection of this.#apiByMinerAddress.values()) {
+      void connection.api.disconnect().catch(() => null);
     }
+    this.#apiByMinerAddress.clear();
     app.exit();
   }
 
   private async appReady(): Promise<void> {
     try {
-      await this.#api.connect();
-      await this.createToolbarWindow();
-      this.listenForMouseDown();
+      await app.whenReady();
+      Menu.setApplicationMenu(
+        generateAppMenu({
+          replayControl: this.replayControl.bind(this),
+          getSessionPath: this.getSessionPath.bind(this),
+        }),
+      );
+      this.bindIpcEvents();
+      await this.#staticServer.load();
       app.once('before-quit', () => this.appExit());
       ShutdownHandler.register(() => this.appExit());
+      await this.getDebuggerUrl();
+
+      this.events.on(UlixeeHostsConfig.global, 'change', this.onNewMinerHost.bind(this));
+      await this.connectToMiner(this.minerAddress);
 
       this.emit('ready');
     } catch (error) {
@@ -186,246 +101,200 @@ export class ChromeAlive extends EventEmitter {
     }
   }
 
-  private listenForMouseDown(): void {
-    // TODO: add linux support
-    // https://github.com/wilix-team/iohook (seems unstable, but possibly look at ideas?)
-
-    if (process.platform === 'darwin') {
-      if (this.#nsEventMonitor) return;
-      // eslint-disable-next-line import/no-unresolved,global-require
-      const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
-
-      // https://developer.apple.com/documentation/appkit/nsevent/eventtype/leftmousedown
-      enum NSEventType {
-        LeftMouseDown = 1,
-        LeftMouseUp = 2,
+  private async onNewMinerHost(): Promise<void> {
+    const newAddress = UlixeeHostsConfig.global.getVersionHost(version);
+    if (!newAddress) return;
+    if (this.minerAddress !== newAddress) {
+      const oldAddress = this.minerAddress;
+      this.minerAddress = this.formatMinerAddress(newAddress);
+      // eslint-disable-next-line no-console
+      console.log('Connecting to local miner', this.minerAddress);
+      await this.connectToMiner(this.minerAddress);
+      for (const window of this.windows) {
+        if (window.minerAddress.startsWith(oldAddress)) {
+          await window.reconnect(this.minerAddress);
+        }
       }
-
-      const monitor = new NSEventMonitor();
-      monitor.start(NSEventMask.leftMouseDown | NSEventMask.leftMouseUp, ev => {
-        this.#mouseDown = ev.type === NSEventType.LeftMouseDown;
-        return this.#api.send('Mouse.state', { isMousedown: this.#mouseDown });
-      });
-      this.#nsEventMonitor = monitor;
-    } else if (process.platform === 'win32') {
-      // eslint-disable-next-line import/no-unresolved,global-require
-      const mouseEvents = require('global-mouse-events') as any;
-      mouseEvents.on('mousedown', ev => {
-        this.#mouseDown = ev.type === 1;
-        return this.#api.send('Mouse.state', { isMousedown: this.#mouseDown }).catch(() => null);
-      });
-      mouseEvents.on('mouseup', () => {
-        this.#mouseDown = false;
-        return this.#api.send('Mouse.state', { isMousedown: false }).catch(() => null);
-      });
     }
   }
 
-  private async createToolbarWindow(): Promise<void> {
+  private async connectToMiner(address: string): Promise<void> {
+    if (!address) return;
+    const api = new ChromeAliveApi<IChromeAliveAppApis>(
+      address,
+      this.onChromeAliveEvent.bind(this, address),
+    );
+    await api.connect();
+    this.events.once(api, 'close', this.onApiClosed.bind(this, address));
     const mainScreen = screen.getPrimaryDisplay();
     const workarea = mainScreen.workArea;
-
-    this.#toolbarWindow = new BrowserWindow({
-      show: false,
-      frame: false,
-      roundedCorners: false,
-      focusable: true,
-      movable: false,
-      closable: false,
-      resizable: false,
-      transparent: true,
-      acceptFirstMouse: true,
-      hasShadow: false,
-      skipTaskbar: true,
-      alwaysOnTop: true,
-      autoHideMenuBar: true,
-      width: workarea.width,
-      y: workarea.y,
-      x: workarea.x,
-      webPreferences: {
-        preload: `${__dirname}/PagePreload.js`,
-      },
-      height: 44,
-    });
-
-    remoteMain.enable(this.#toolbarWindow.webContents);
-
-    // for child windows
-    this.#toolbarWindow.webContents.setWindowOpenHandler(details => {
-      const isMenu = details.frameName.includes('Menu');
-      const canMoveAndResize = !isMenu || details.frameName === 'MenuFinder';
-      return {
-        action: 'allow',
-        overrideBrowserWindowOptions: {
-          resizable: canMoveAndResize,
-          frame: !isMenu,
-          roundedCorners: true,
-          movable: canMoveAndResize,
-          closable: true,
-          transparent: isMenu,
-          titleBarStyle: 'default',
-          alwaysOnTop: true,
-          hasShadow: !isMenu,
-          acceptFirstMouse: true,
-          useContentSize: true,
-          webPreferences: {
-            preload: `${__dirname}/PagePreload.js`,
-          },
-        },
-      };
-    });
-
-    this.#toolbarWindow.webContents.on('did-create-window', (childWindow, details) => {
-      this.trackChildWindow(childWindow, details);
-    });
-    const id = this.#toolbarWindow.id;
-
-    this.#toolbarWindow.on('show', () => {
-      this.#visibleWindowIdsToVisibleTime.set(id, Date.now());
-      if (this.#apiWantsToShowToolbar) this.showToolbarWindow();
-    });
-
-    this.#toolbarWindow.on('focus', () => {
-      this.#visibleWindowIdsToVisibleTime.set(id, Date.now());
-      if (this.#apiWantsToShowToolbar) this.showToolbarWindow();
-    });
-
-    this.#toolbarWindow.on('blur', () => this.onAppWindowBlurred(id));
-
-    this.#toolbarWindow.on('close', () => app.exit());
-    this.#toolbarWindow.webContents.on('ipc-message', (e, eventName, ...args) => {
-      if (eventName === 'App:mousemove') {
-        this.#lastWindowInteract = Date.now();
-        clearTimeout(this.#hideOnTimeout);
-        if (!this.#toolbarWindow.isVisible()) {
-          this.#toolbarWindow.show();
-          if (!this.#toolbarWindow.webContents.isFocused()) this.#toolbarWindow.focusOnWebView();
-        }
-      } else if (eventName === 'App:changeHeight') {
-        this.#toolbarWindow.setBounds({
-          height: args[0],
-        });
-      } else if (eventName === 'App:showChildWindow') {
-        const frameName = args[0];
-        const window = this.#childWindowsByName.get(frameName);
-        window?.show();
-        window?.focusOnWebView();
-      } else if (eventName === 'App:hideChildWindow') {
-        const frameName = args[0];
-        this.#childWindowsByName.get(frameName)?.hide();
-      }
-    });
-
-    const vueServerAddress = await this.#vueAddress;
-    await this.#toolbarWindow.loadURL(`http://localhost:${vueServerAddress.port}/toolbar.html`);
-
-    await this.injectMinerAddress(this.#toolbarWindow);
-
     const workareaBounds = {
       left: workarea.x,
       top: workarea.y,
       ...workarea,
       scale: mainScreen.scaleFactor,
     };
-    await this.#api.send('App.ready', {
+    const { id } = await api.send('App.connect', {
       workarea: workareaBounds,
-      vueServer: `http://localhost:${vueServerAddress.port}`,
     });
+
+    let url: URL;
+    try {
+      url = new URL(`/chromealive-devtools`, api.transport.host);
+      url.searchParams.set('id', id);
+    } catch (error) {
+      console.error('Invalid ChromeAlive Devtools URL', error, { address });
+    }
+    // pipe connection
+    const wsToCore = await this.connectToWebSocket(url.href, { perMessageDeflate: true });
+    const wsToDevtoolsProtocol = await this.connectToWebSocket(this.#debuggerUrl);
+    wsToDevtoolsProtocol.on('message', msg => wsToCore.send(msg));
+    wsToCore.on('message', msg => wsToDevtoolsProtocol.send(msg));
+
+    this.events.once(wsToCore, 'close', this.onApiClosed.bind(this, address));
+    this.events.on(wsToCore, 'error', this.onDevtoolsError.bind(this, wsToCore));
+    this.events.once(wsToDevtoolsProtocol, 'close', this.onApiClosed.bind(this, address));
+    this.events.on(wsToDevtoolsProtocol, 'error', this.onDevtoolsError.bind(this, wsToCore));
+
+    this.#apiByMinerAddress.set(address, { id, api, wsToCore, wsToDevtoolsProtocol });
   }
 
-  private trackChildWindow(childWindow: BrowserWindow, details: { frameName: string }): void {
-    const { frameName } = details;
-    if (this.#childWindowsByName.has(frameName)) {
-      throw new Error(`Child window with the same frameName already exists: ${frameName}`);
-    }
+  private onDevtoolsError(ws: WebSocket, error: Error): void {
+    console.warn('ERROR in devtools websocket with Core at %s', ws.url, error);
+  }
 
-    this.#childWindowsByName.set(frameName, childWindow);
-    childWindow.webContents.on('ipc-message', (e, eventName, ...args) => {
-      if (eventName === 'chromealive:api') {
-        const [command, apiArgs] = args;
-        if (command === 'File:navigate') {
-          const { filepath } = apiArgs;
-          shell.showItemInFolder(filepath);
+  private onApiClosed(address: string): void {
+    console.warn('Api Disconnected', address);
+    const api = this.#apiByMinerAddress.get(address);
+    if (api?.api.isConnected) void api.api.disconnect();
+    this.#apiByMinerAddress.delete(address);
+  }
+
+  private replayControl(direction: 'back' | 'forward'): void {
+    void this.activeWindow?.replayControl(direction);
+  }
+
+  private getSessionPath(): string {
+    return this.activeWindow?.session.dbPath;
+  }
+
+  private async connectToWebSocket(host: string, options?: ClientOptions): Promise<WebSocket> {
+    const ws = new WebSocket(host, options);
+    await new Promise<void>((resolve, reject) => {
+      const closeEvents = [
+        this.events.once(ws, 'close', reject),
+        this.events.once(ws, 'error', reject),
+      ];
+      this.events.once(ws, 'open', () => {
+        this.events.off(...closeEvents);
+        resolve();
+      });
+    });
+    return ws;
+  }
+
+  private bindIpcEvents(): void {
+    ipcMain.on('open-file', async () => {
+      const result = await dialog.showOpenDialog({
+        properties: ['openFile', 'showHiddenFiles'],
+        defaultPath: Path.join(Os.tmpdir(), '.ulixee', 'hero-sessions'),
+        filters: [
+          // { name: 'All Files', extensions: ['js', 'ts', 'db'] },
+          { name: 'Session Database', extensions: ['db'] },
+          // { name: 'Javascript', extensions: ['js'] },
+          // { name: 'Typescript', extensions: ['ts'] },
+        ],
+      });
+      if (result.filePaths.length) {
+        const [filename] = result.filePaths;
+        if (filename.endsWith('.db')) {
+          return this.loadChromeAliveWindow(this.minerAddress, {
+            dbPath: filename,
+            heroSessionId: Path.basename(filename).replace('.db', ''),
+          });
         }
-      } else if (eventName === 'App:changeHeight') {
-        childWindow.setBounds({
-          height: Math.round(args[0]),
-        });
+        // const sessionContainerDir = Path.dirname(filename);
+        // TODO: show relevant sessions
       }
     });
-
-    const id = childWindow.id;
-    childWindow.on('show', () => {
-      this.#visibleWindowIdsToVisibleTime.set(id, Date.now());
-    });
-    childWindow.on('focus', () => {
-      this.#visibleWindowIdsToVisibleTime.set(id, Date.now());
-    });
-    childWindow.on('blur', () => this.onAppWindowBlurred(id));
-    childWindow.on('hide', () => this.onAppWindowBlurred(id));
-    let hasHandled = false;
-    childWindow.on('close', async e => {
-      if (!hasHandled) {
-        hasHandled = true;
-        e.preventDefault();
-        await childWindow.webContents.executeJavaScript(
-          'window.dispatchEvent(new CustomEvent("manual-close"))',
-        );
-        childWindow.close();
-        return;
-      }
-      this.#childWindowsByName.delete(frameName);
-    });
   }
 
-  private async injectMinerAddress(window: BrowserWindow): Promise<void> {
-    await window.webContents.executeJavaScript(
-      `(() => {
-        const minerAddress = '${this.minerAddress ?? ''}';
-        if (minerAddress) {
-          window.minerAddress = minerAddress;
-          if ('setMinerAddress' in window) window.setMinerAddress(minerAddress);
-        }
-      })()`,
-    );
-  }
-
-  private moveToolbarWindow(move: IAppMoveEvent): void {
-    const bounds = this.#toolbarWindow.getBounds();
-    if (bounds.x !== move.bounds.x || bounds.y !== move.bounds.y) {
-      bounds.x = move.bounds.x;
-      bounds.y = move.bounds.y;
-      this.#toolbarWindow.setPosition(move.bounds.x, move.bounds.y);
-    }
-    if (bounds.width !== move.bounds.width) {
-      bounds.width = move.bounds.width;
-      this.#toolbarWindow.setBounds(bounds);
-    }
-  }
-
-  private onChromeAliveEvent<T extends keyof IChromeAliveEvents>(
+  private onChromeAliveEvent<T extends keyof IChromeAliveEvents & string>(
+    minerAddress: string,
     eventType: T,
     data: IChromeAliveEvents[T],
   ): void {
     if (this.#exited) return;
 
-    if (eventType === 'App.startedDraggingChrome') {
-      this.didStartDragging();
+    if (eventType === 'Session.opened') {
+      void this.loadChromeAliveWindow(minerAddress, data as any);
     }
-    if (eventType === 'App.stoppedDraggingChrome') {
-      this.didStopDragging();
-    }
-    if (eventType === 'App.show') {
-      this.showToolbarWindow();
-    }
-    if (eventType === 'App.hide') {
-      this.hideToolbarWindow();
-    }
+
     if (eventType === 'App.quit') {
-      this.appExit();
+      const apis = this.#apiByMinerAddress.get(minerAddress);
+      if (apis) {
+        void apis.api?.disconnect();
+        apis.wsToCore?.close();
+        apis.wsToDevtoolsProtocol?.close();
+      }
     }
-    if (eventType === 'App.moveTo') {
-      this.moveToolbarWindow(data as IAppMoveEvent);
+  }
+
+  private async loadChromeAliveWindow(
+    minerAddress: string,
+    data: { heroSessionId: string; dbPath: string },
+  ): Promise<void> {
+    if (this.#windowsBySessionId.has(data.heroSessionId)) return;
+    const chromeAliveWindow = new ChromeAliveWindow(data, this.#staticServer, minerAddress);
+
+    const { heroSessionId } = data;
+    this.windows.push(chromeAliveWindow);
+    this.#windowsBySessionId.set(heroSessionId, chromeAliveWindow);
+    await chromeAliveWindow
+      .load()
+      .catch(err => console.error('Error Loading ChromeAlive window', err));
+
+    this.events.on(chromeAliveWindow.window, 'focus', this.focusWindow.bind(this, heroSessionId));
+    this.events.on(chromeAliveWindow.window, 'close', this.closeWindow.bind(this, heroSessionId));
+  }
+
+  private closeWindow(heroSessionId: string): void {
+    const chromeAliveWindow = this.#windowsBySessionId.get(heroSessionId);
+    if (!chromeAliveWindow) return;
+    this.#windowsBySessionId.delete(heroSessionId);
+    const idx = this.windows.indexOf(chromeAliveWindow);
+    if (idx === this.activeWindowIdx) {
+      this.activeWindowIdx = 0;
     }
+    this.windows.splice(idx, 1);
+  }
+
+  private focusWindow(heroSessionId: string): void {
+    const chromeAliveWindow = this.#windowsBySessionId.get(heroSessionId);
+    if (chromeAliveWindow) this.activeWindowIdx = this.windows.indexOf(chromeAliveWindow);
+  }
+
+  private async getDebuggerUrl(): Promise<void> {
+    const res = await new Promise<Http.IncomingMessage>(resolve =>
+      httpGet(`http://localhost:8315/json/version`, resolve),
+    );
+    res.setEncoding('utf8');
+    let jsonString = '';
+    for await (const chunk of res) jsonString += chunk;
+    const debugEndpoints = JSON.parse(jsonString);
+
+    this.#debuggerUrl = debugEndpoints.webSocketDebuggerUrl;
+  }
+
+  private formatMinerAddress(host: string): string {
+    if (!host) return host;
+    if (host.endsWith('/')) host = host.slice(-1);
+    if (!host.endsWith('/chromealive')) {
+      host += '/chromealive';
+    }
+    if (!host.includes('://')) {
+      host = `ws://${host}`;
+    }
+    return host;
   }
 }
