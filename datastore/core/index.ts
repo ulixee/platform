@@ -134,6 +134,38 @@ export default class DatastoreCore {
     }
   }
 
+  public static async routeCreditsBalanceApi(
+    req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<boolean> {
+    if (req.headers.accept !== 'application/json') return false;
+    let datastoreVersionHash = '';
+
+    let host = req.headers.host ?? `${this.serverAddress.ipAddress}:${this.serverAddress.port}`;
+    if (!host.includes('://')) host = `http://${host}`;
+    const url = new URL(req.url, host);
+
+    if (!url.host.includes('localhost')) {
+      const domainVersion = this.datastoreRegistry.getByDomain(url.hostname);
+      datastoreVersionHash = domainVersion?.versionHash;
+    }
+    if (!datastoreVersionHash) {
+      const match = url.pathname.match(/(dbx1[ac-hj-np-z02-9]{18})(\/(.+)?)?/);
+      datastoreVersionHash = match[1];
+    }
+    if (!datastoreVersionHash) {
+      res.writeHead(409, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: 'No valid Datastore VersionHash could be found.' }));
+    }
+
+    const creditId = url.searchParams.keys().next().value.split(':').shift();
+    const result = await DatastoreCreditsBalance.handler({ datastoreVersionHash, creditId }, this.getApiContext());
+
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify(result));
+    return true;
+  }
+
   public static async routeHttpRoot(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
     const host = req.headers.host.replace(`:${this.serverAddress.port}`, '').split('://').pop();
 
@@ -151,7 +183,7 @@ export default class DatastoreCore {
   ): Promise<void> {
     const pathParts = params[0].match(/(dbx1[ac-hj-np-z02-9]{18})(\/(.+)?)?/);
     const versionHash = pathParts[1];
-    const reqPath = pathParts[3] ? pathParts[2] : '/index.html';
+    const reqPath = pathParts[2] ? pathParts[2] : '/index.html';
     const { path } = await this.datastoreRegistry.getByVersionHash(versionHash);
     const docpagePath = path.replace(/datastore.js$/, 'docpage');
     req.url = reqPath;
@@ -203,7 +235,6 @@ export default class DatastoreCore {
 
       this.sidechainClientManager = new SidechainClientManager(this.options);
       this.isStarted.resolve();
-
     } catch (error) {
       this.isStarted.reject(error, true);
     }

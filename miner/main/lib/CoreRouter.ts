@@ -43,6 +43,7 @@ export default class CoreRouter {
     [key: string]: IHttpHandleFn;
   } = {
     datastore: DatastoreCore.routeHttp.bind(DatastoreCore),
+    datastoreCreditBalance: DatastoreCore.routeCreditsBalanceApi.bind(DatastoreCore),
     datastoreRoot: DatastoreCore.routeHttpRoot.bind(DatastoreCore),
     datastoreOptions: DatastoreCore.routeOptions.bind(DatastoreCore),
   };
@@ -52,10 +53,11 @@ export default class CoreRouter {
 
     miner.addWsRoute('/hero', this.handleSocketRequest.bind(this, 'hero'));
     miner.addWsRoute('/datastore', this.handleSocketRequest.bind(this, 'datastore'));
+    miner.addHttpRoute('/server-details', 'GET', this.handleHttpServerDetails.bind(this));
+    miner.addHttpRoute(/.*\/free-credits\/?\?crd[A-Za-z0-9_]{8}.*/, 'GET', this.handleHttpRequest.bind(this, 'datastoreCreditBalance'));
     miner.addHttpRoute(/\/datastore\/(.+)/, 'GET', this.handleHttpRequest.bind(this, 'datastore'));
     miner.addHttpRoute(/\/(.*)/, 'GET', this.handleHttpRequest.bind(this, 'datastoreRoot'));
     miner.addHttpRoute('/', 'OPTIONS', this.handleHttpRequest.bind(this, 'datastoreOptions'));
-    miner.addHttpRoute('/server-details', 'GET', this.handleHttpServerDetails.bind(this));
 
     for (const module of CoreRouter.datastorePluginsToRegister) {
       safeRegisterModule(module);
