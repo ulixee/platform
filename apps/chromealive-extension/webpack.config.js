@@ -3,10 +3,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 const srcDir = path.join(__dirname, 'src');
 const outDir = process.env.BUILD_DIR ?? 'build';
-const outputDir = path.resolve(
-  __dirname,
-  path.join('../..', outDir, 'apps/chromealive/extension'),
-);
+const outputDir = path.resolve(__dirname, path.join('../..', outDir, 'apps/desktop/ui'));
 
 module.exports = {
   devtool: 'inline-source-map',
@@ -36,7 +33,9 @@ module.exports = {
   },
   plugins: [
     new CopyPlugin({
-      patterns: [{ from: path.resolve('manifest.json'), to: `${outputDir}/manifest.json` }],
+      patterns: [
+        { from: path.resolve('manifest.json'), to: `${outputDir}/manifest.json` },
+      ],
     }),
   ],
 };

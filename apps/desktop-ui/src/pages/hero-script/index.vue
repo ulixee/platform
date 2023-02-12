@@ -2,24 +2,24 @@
   <div class="wrapper">
     <h5>{{ activeFilename }}</h5>
     <div
-      class="line"
       v-for="(line, i) in activeFileLines"
-      @click="clickLine(i + 1, activeFilename)"
-      :class="getClassesForLineIndex(i)"
       :ref="
         el => {
           lineElemsByIdx[i + 1] = el;
         }
       "
+      class="line"
+      :class="getClassesForLineIndex(i)"
+      @click="clickLine(i + 1, activeFilename)"
     >
       <span class="line-number">{{ i + 1 }}.</span>
       <pre class="code">{{ line }}</pre>
 
       <select
+        v-model="focusedCommandId"
         class="call-marker"
         @change="changedFocusedCommand()"
         @click.stop.prevent="onSelectClick($event)"
-        v-model="focusedCommandId"
       >
         <option v-for="call of getCallsForLine(i + 1)" :value="call.commandId">
           {{ call.callInfo }}
@@ -31,11 +31,10 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
-import Client from '../../api/Client';
 import ICommandUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/ICommandUpdatedEvent';
 import ICommandFocusedEvent from '@ulixee/apps-chromealive-interfaces/events/ICommandFocusedEvent';
 import ISourceCodeUpdatedEvent from '@ulixee/apps-chromealive-interfaces/events/ISourceCodeUpdatedEvent';
-import { IChromeAliveApiResponse } from '@ulixee/apps-chromealive-interfaces/apis';
+import Client from '../../api/Client';
 
 export default Vue.defineComponent({
   name: 'HeroScriptPanel',
@@ -52,14 +51,14 @@ export default Vue.defineComponent({
     };
   },
   watch: {
-    ['focusedPositions.0.line'](value) {
+    'focusedPositions.0.line': function (value) {
       const firstLine = value;
       if (!firstLine) return;
       clearTimeout(this.scrollOnTimeout);
       this.scrollOnTimeout = setTimeout(() => {
         const $el = this.lineElemsByIdx[firstLine];
         if ($el) $el.scrollIntoView({ block: 'center' });
-      });
+      }) as any;
     },
   },
   computed: {
@@ -173,7 +172,7 @@ export default Vue.defineComponent({
     },
   },
 
-  async mounted() {
+  mounted() {
     Client.send('Session.getScriptState', {})
       .then(this.onScriptStateResponse)
       .catch(err => alert(String(err)));
@@ -184,7 +183,7 @@ export default Vue.defineComponent({
   },
 
   beforeUnmount() {
-    Client.off('SourceCode.updated', this.onSourceCodeUpdatd);
+    Client.off('SourceCode.updated', this.onSourceCodeUpdated);
     Client.off('Command.updated', this.onCommandUpdated);
     Client.off('Command.focused', this.onCommandFocused);
   },
@@ -255,10 +254,10 @@ h5 {
     }
   }
   &.active {
-    background: #00A86B;
+    background: #00a86b;
     color: white;
     &:hover {
-      background: #00A86B;
+      background: #00a86b;
     }
     .line-number {
       font-weight: bold;
@@ -266,7 +265,7 @@ h5 {
     }
   }
   &.error {
-    background: #C7EA46 !important;
+    background: #c7ea46 !important;
   }
   .line-number {
     display: flex;

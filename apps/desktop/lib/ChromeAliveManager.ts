@@ -13,13 +13,12 @@ import * as Os from 'os';
 import WebSocket = require('ws');
 import ChromeAliveApi from './ChromeAliveApi';
 import generateAppMenu from '../menus/generateAppMenu';
-import StaticServer from './StaticServer';
 import ChromeAliveWindow from './ChromeAliveWindow';
+import { Menubar } from './Menubar';
 
 const { version } = require('../package.json');
 
-export class ChromeAlive extends EventEmitter {
-  readonly #staticServer: StaticServer;
+export class ChromeAliveManager extends EventEmitter {
   get activeWindow(): ChromeAliveWindow {
     return this.windows[this.activeWindowIdx];
   }
@@ -28,7 +27,6 @@ export class ChromeAlive extends EventEmitter {
   activeWindowIdx = 0;
   #windowsBySessionId = new Map<string, ChromeAliveWindow>();
   #debuggerUrl: string;
-
   #apiByMinerAddress = new Map<
     string,
     {
@@ -42,29 +40,13 @@ export class ChromeAlive extends EventEmitter {
   #exited = false;
   events = new EventSubscriber();
 
-  constructor(private minerAddress?: string) {
+  constructor(private menuBar: Menubar, private minerAddress?: string) {
     super();
-    const minerAddressInArgv = process.argv
-      .find(x => x.startsWith('--minerAddress='))
-      ?.replace('--minerAddress=', '')
-      ?.replace(/"/g, '');
 
-    this.minerAddress ??= this.formatMinerAddress(
-      minerAddressInArgv ?? UlixeeHostsConfig.global.getVersionHost(version),
-    );
-
-    app.name = 'ChromeAlive!';
-    (process.env as any).ELECTRON_DISABLE_SECURITY_WARNINGS = true;
     app.commandLine.appendSwitch('remote-debugging-port', '8315');
-
-    app.setAppLogsPath();
-
-    this.#staticServer = new StaticServer(Path.resolve(__dirname, '..', 'ui'));
-
-    void this.appReady();
   }
 
-  private appExit(): void {
+  public close(): void {
     if (this.#exited) return;
     this.#exited = true;
 
@@ -74,30 +56,53 @@ export class ChromeAlive extends EventEmitter {
       void connection.api.disconnect().catch(() => null);
     }
     this.#apiByMinerAddress.clear();
-    app.exit();
   }
 
-  private async appReady(): Promise<void> {
-    try {
-      await app.whenReady();
-      Menu.setApplicationMenu(
-        generateAppMenu({
-          replayControl: this.replayControl.bind(this),
-          getSessionPath: this.getSessionPath.bind(this),
-        }),
-      );
-      this.bindIpcEvents();
-      await this.#staticServer.load();
-      app.once('before-quit', () => this.appExit());
-      ShutdownHandler.register(() => this.appExit());
-      await this.getDebuggerUrl();
+  public async start(minerAddress: string): Promise<void> {
+    Menu.setApplicationMenu(
+      generateAppMenu({
+        replayControl: this.replayControl.bind(this),
+        getSessionPath: this.getSessionPath.bind(this),
+      }),
+    );
+    this.bindIpcEvents();
+    await this.getDebuggerUrl();
 
-      this.events.on(UlixeeHostsConfig.global, 'change', this.onNewMinerHost.bind(this));
-      await this.connectToMiner(this.minerAddress);
+    console.log(
+      'starigng miner',
+      minerAddress,
+      this.formatMinerAddress(UlixeeHostsConfig.global.getVersionHost(version)),
+    );
+    this.minerAddress = this.formatMinerAddress(
+      minerAddress ?? UlixeeHostsConfig.global.getVersionHost(version),
+    );
+    this.events.on(UlixeeHostsConfig.global, 'change', this.onNewMinerHost.bind(this));
+    await this.connectToMiner(this.minerAddress);
 
-      this.emit('ready');
-    } catch (error) {
-      console.error('ERROR in appReady: ', error);
+    this.emit('ready');
+  }
+
+  public async pickHeroSession(): Promise<void> {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile', 'showHiddenFiles'],
+      defaultPath: Path.join(Os.tmpdir(), '.ulixee', 'hero-sessions'),
+      filters: [
+        // { name: 'All Files', extensions: ['js', 'ts', 'db'] },
+        { name: 'Session Database', extensions: ['db'] },
+        // { name: 'Javascript', extensions: ['js'] },
+        // { name: 'Typescript', extensions: ['ts'] },
+      ],
+    });
+    if (result.filePaths.length) {
+      const [filename] = result.filePaths;
+      if (filename.endsWith('.db')) {
+        return this.loadChromeAliveWindow(this.minerAddress, {
+          dbPath: filename,
+          heroSessionId: Path.basename(filename).replace('.db', ''),
+        });
+      }
+      // const sessionContainerDir = Path.dirname(filename);
+      // TODO: show relevant sessions
     }
   }
 
@@ -194,29 +199,7 @@ export class ChromeAlive extends EventEmitter {
   }
 
   private bindIpcEvents(): void {
-    ipcMain.on('open-file', async () => {
-      const result = await dialog.showOpenDialog({
-        properties: ['openFile', 'showHiddenFiles'],
-        defaultPath: Path.join(Os.tmpdir(), '.ulixee', 'hero-sessions'),
-        filters: [
-          // { name: 'All Files', extensions: ['js', 'ts', 'db'] },
-          { name: 'Session Database', extensions: ['db'] },
-          // { name: 'Javascript', extensions: ['js'] },
-          // { name: 'Typescript', extensions: ['ts'] },
-        ],
-      });
-      if (result.filePaths.length) {
-        const [filename] = result.filePaths;
-        if (filename.endsWith('.db')) {
-          return this.loadChromeAliveWindow(this.minerAddress, {
-            dbPath: filename,
-            heroSessionId: Path.basename(filename).replace('.db', ''),
-          });
-        }
-        // const sessionContainerDir = Path.dirname(filename);
-        // TODO: show relevant sessions
-      }
-    });
+    ipcMain.on('open-file', this.pickHeroSession);
   }
 
   private onChromeAliveEvent<T extends keyof IChromeAliveEvents & string>(
@@ -245,7 +228,8 @@ export class ChromeAlive extends EventEmitter {
     data: { heroSessionId: string; dbPath: string },
   ): Promise<void> {
     if (this.#windowsBySessionId.has(data.heroSessionId)) return;
-    const chromeAliveWindow = new ChromeAliveWindow(data, this.#staticServer, minerAddress);
+    await app.dock?.show();
+    const chromeAliveWindow = new ChromeAliveWindow(data, this.menuBar.staticServer, minerAddress);
 
     const { heroSessionId } = data;
     this.windows.push(chromeAliveWindow);
@@ -267,6 +251,7 @@ export class ChromeAlive extends EventEmitter {
       this.activeWindowIdx = 0;
     }
     this.windows.splice(idx, 1);
+    if (this.windows.length === 0) app.dock?.hide();
   }
 
   private focusWindow(heroSessionId: string): void {

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "vue-cli-service build",
-    "watch": "vue-cli-service build --watch",
+    "watch": "vue-cli-service build --no-clean --watch",
     "clean": "vue-cli-service clean",
     "serve": "vue-cli-service serve"
   },

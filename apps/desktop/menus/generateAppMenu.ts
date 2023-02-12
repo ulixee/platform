@@ -123,7 +123,7 @@ export default function generateAppMenu(container: {
       label: 'Replay',
       submenu: [
         {
-          label: 'Reveal Database',
+          label: 'Open Database',
           click: () => {
             const path = container.getSessionPath();
             if (path) void shell.openPath(path);

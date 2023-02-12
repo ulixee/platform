@@ -7,19 +7,23 @@ import * as Positioner from 'electron-positioner';
 import * as Path from 'path';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import UlixeeConfig from '@ulixee/commons/config';
-import { autoUpdater, UpdateInfo, ProgressInfo } from 'electron-updater';
+import { autoUpdater, ProgressInfo, UpdateInfo } from 'electron-updater';
 import IMenubarOptions from '../interfaces/IMenubarOptions';
 import { getWindowPosition } from './util/getWindowPosition';
-import VueServer from './VueServer';
 import installDefaultChrome from './util/installDefaultChrome';
+import StaticServer from './StaticServer';
+import { ChromeAliveManager } from './ChromeAliveManager';
 
 const { version } = require('../package.json');
 // Forked from https://github.com/maxogden/menubar
 
 const iconPath = Path.resolve(__dirname, '..', 'assets', 'IconTemplate.png');
-const vueDistPath = Path.resolve(__dirname, '..', 'ui');
 
 export class Menubar extends EventEmitter {
+  ulixeeMiner: UlixeeMiner;
+  ulixeeConfig: UlixeeConfig;
+  readonly staticServer: StaticServer;
+
   #tray?: Tray;
   #browserWindow?: BrowserWindow;
   #blurTimeout: NodeJS.Timeout | null = null; // track blur events with timeout
@@ -28,9 +32,7 @@ export class Menubar extends EventEmitter {
   #options: IMenubarOptions;
   #nsEventMonitor: unknown;
   #positioner: Positioner | undefined;
-  #vueServer: VueServer;
-  #ulixeeMiner: UlixeeMiner;
-  #ulixeeConfig: UlixeeConfig;
+  #chromeAliveManager: ChromeAliveManager;
   #isClosing = false;
   #updateInfoPromise: Promise<UpdateInfo>;
   #installUpdateOnExit = false;
@@ -44,16 +46,13 @@ export class Menubar extends EventEmitter {
     if (process.platform === 'darwin') {
       app.setActivationPolicy('accessory');
     }
-    const cacheTime = app.isPackaged ? 3600 * 24 : 0;
-    this.#vueServer = new VueServer(vueDistPath, cacheTime);
-    this.#ulixeeConfig = UlixeeConfig.global;
+    app.setAppLogsPath();
+    (process.env as any).ELECTRON_DISABLE_SECURITY_WARNINGS = true;
 
-    if (app.isReady()) {
-      // See https://github.com/maxogden/menubar/pull/151
-      process.nextTick(() => this.appReady());
-    } else {
-      app.on('ready', () => this.appReady());
-    }
+    this.staticServer = new StaticServer(Path.resolve(__dirname, '..', 'ui'));
+    this.#chromeAliveManager = new ChromeAliveManager(this);
+    this.ulixeeConfig = UlixeeConfig.global;
+    void this.appReady();
   }
 
   get tray(): Tray {
@@ -145,6 +144,7 @@ export class Menubar extends EventEmitter {
     this.#tray.removeAllListeners();
     this.hideWindow();
     await this.stopMiner();
+    await this.#chromeAliveManager.close();
   }
 
   private async appExit(): Promise<void> {
@@ -157,11 +157,15 @@ export class Menubar extends EventEmitter {
     app.exit();
   }
 
-  private appReady(): void {
+  private async appReady(): Promise<void> {
     try {
+      await app.whenReady();
       // for now auto-start
-      this.startMiner().catch(console.error);
-      ShutdownHandler.exitOnSignal = false;
+      await this.staticServer.load();
+      await this.startMiner();
+      await this.#chromeAliveManager.start(await this.ulixeeMiner?.address);
+
+      await this.createWindow();
       ShutdownHandler.register(() => this.appExit());
 
       this.#tray = new Tray(iconPath);
@@ -194,12 +198,8 @@ export class Menubar extends EventEmitter {
         this.#options.windowPosition = getWindowPosition(this.#tray);
       }
 
-      this.createWindow()
-        .then(() => {
-          this.emit('ready');
-          return app.dock?.hide();
-        })
-        .catch(err => console.error('ERROR creating app window', err));
+      this.emit('ready');
+      app.dock?.hide();
     } catch (error) {
       console.error('ERROR in appReady: ', error);
     }
@@ -226,13 +226,13 @@ export class Menubar extends EventEmitter {
 
   private async noUpdateAvailable(): Promise<void> {
     log.verbose('No new Ulixee.app versions available');
-    await this.sendToVueApp('Version.onLatest', {});
+    await this.sendToFrontend('Version.onLatest', {});
   }
 
   private async onUpdateAvailable(update: UpdateInfo): Promise<void> {
     log.info('New Ulixee.app version available', update);
     this.#updateInfoPromise = Promise.resolve(update);
-    await this.sendToVueApp('Version.available', {
+    await this.sendToFrontend('Version.available', {
       version: update.version,
     });
   }
@@ -240,7 +240,7 @@ export class Menubar extends EventEmitter {
   private async onDownloadProgress(progress: ProgressInfo): Promise<void> {
     log.verbose('New version download progress', progress);
     this.#downloadProgress = Math.round(progress.percent);
-    await this.sendToVueApp('Version.download', {
+    await this.sendToFrontend('Version.download', {
       progress: this.#downloadProgress,
     });
   }
@@ -263,7 +263,7 @@ export class Menubar extends EventEmitter {
       update: await this.#updateInfoPromise,
     });
     this.#installUpdateOnExit = true;
-    await this.sendToVueApp('Version.installing', {})
+    await this.sendToFrontend('Version.installing', {});
     if (this.#downloadProgress < 100) await autoUpdater.downloadUpdate();
     await autoUpdater.quitAndInstall(false, true);
   }
@@ -290,7 +290,9 @@ export class Menubar extends EventEmitter {
 
     try {
       if (!this.#updateInfoPromise) {
-        this.#updateInfoPromise = autoUpdater.checkForUpdatesAndNotify().then(x => x?.updateInfo ?? null);
+        this.#updateInfoPromise = autoUpdater
+          .checkForUpdatesAndNotify()
+          .then(x => x?.updateInfo ?? null);
         await this.#updateInfoPromise;
       }
     } catch (error) {
@@ -314,7 +316,7 @@ export class Menubar extends EventEmitter {
       transparent: true,
       alwaysOnTop: true,
       webPreferences: {
-        preload: `${__dirname}/PagePreload.js`,
+        preload: `${__dirname}/MenubarPagePreload.js`,
       },
     });
 
@@ -346,7 +348,11 @@ export class Menubar extends EventEmitter {
         }
 
         if (api === 'App.openDataDirectory') {
-          await shell.openPath(this.#ulixeeMiner.dataDir);
+          await shell.openPath(this.ulixeeMiner.dataDir);
+        }
+
+        if (api === 'App.openHeroSession') {
+          await this.#chromeAliveManager.pickHeroSession();
         }
 
         if (api === 'Miner.stop' || api === 'Miner.restart') {
@@ -371,15 +377,14 @@ export class Menubar extends EventEmitter {
       }
     });
 
-    const port = await this.#vueServer.port;
     const backgroundPref = process.platform === 'win32' ? 'window' : 'window-background';
     const windowBackground = systemPreferences.getColor(backgroundPref)?.replace('#', '') ?? '';
-    const url = `http://localhost:${port}/?windowBackground=${windowBackground}`;
+    const url = this.staticServer.getPath(`menubar.html?windowBackground=${windowBackground}`);
     await this.#browserWindow.loadURL(url);
     if (!app.isPackaged || process.env.OPEN_DEVTOOLS) {
       this.#browserWindow.webContents.openDevTools({ mode: 'undocked' });
     }
-    if (this.#ulixeeMiner) {
+    if (this.ulixeeMiner) {
       await this.updateMinerStatus();
     }
   }
@@ -391,42 +396,42 @@ export class Menubar extends EventEmitter {
   /// //// MINER MANAGEMENT ////////////////////////////////////////////////////////////////////////////////////////////
 
   private async stopMiner(): Promise<void> {
-    if (!this.#ulixeeMiner) return;
+    if (!this.ulixeeMiner) return;
 
     // eslint-disable-next-line no-console
     console.log(`CLOSING ULIXEE MINER`);
-    const miner = this.#ulixeeMiner;
-    this.#ulixeeMiner = null;
+    const miner = this.ulixeeMiner;
+    this.ulixeeMiner = null;
     await miner.close();
     await this.updateMinerStatus();
   }
 
   private async startMiner(): Promise<void> {
-    if (this.#ulixeeMiner) return;
+    if (this.ulixeeMiner) return;
     ChromeAliveCore.register();
-    this.#ulixeeMiner = new UlixeeMiner();
-    await this.#ulixeeMiner.listen();
+    this.ulixeeMiner = new UlixeeMiner();
+    await this.ulixeeMiner.listen();
 
     await installDefaultChrome();
 
     // eslint-disable-next-line no-console
-    console.log(`STARTED ULIXEE MINER at ${await this.#ulixeeMiner.address}`);
+    console.log(`STARTED ULIXEE MINER at ${await this.ulixeeMiner.address}`);
     await this.updateMinerStatus();
   }
 
   private async updateMinerStatus(): Promise<void> {
     if (this.#isClosing) return;
     let address: string = null;
-    if (this.#ulixeeMiner) {
-      address = await this.#ulixeeMiner.address;
+    if (this.ulixeeMiner) {
+      address = await this.ulixeeMiner.address;
     }
-    await this.sendToVueApp('Miner.status', {
-      started: !!this.#ulixeeMiner,
+    await this.sendToFrontend('Miner.status', {
+      started: !!this.ulixeeMiner,
       address,
     });
   }
 
-  private async sendToVueApp(eventType: string, data: any): Promise<void> {
+  private async sendToFrontend(eventType: string, data: any): Promise<void> {
     if (this.#browserWindow) {
       const json = { detail: { eventType, data } };
       await this.#browserWindow.webContents.executeJavaScript(`(()=>{

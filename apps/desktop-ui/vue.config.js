@@ -1,5 +1,6 @@
 module.exports = {
-  outputDir: '../../build/apps/chromealive/ui',
+  outputDir: '../../build/apps/desktop/ui',
+  filenameHashing: false,
   pages: {
     toolbar: {
       entry: './src/pages/toolbar/index.ts',
@@ -16,6 +17,9 @@ module.exports = {
     'menu-url': {
       entry: './src/pages/menu-url/index.ts',
     },
+    menubar: {
+      entry: './src/pages/menubar/index.ts',
+    },
     'screen-input': {
       title: 'Input Configuration',
       entry: './src/pages/screen-input/index.ts',
@@ -31,5 +35,16 @@ module.exports = {
     'screen-about': {
       entry: './src/pages/screen-about/index.ts',
     },
+    'hero-script': {
+      entry: `src/pages/hero-script/index.ts`,
+      template: 'public/extension.html',
+    },
+    'state-generator': {
+      entry: `src/pages/state-generator/index.ts`,
+      template: 'public/extension.html',
+    },
+  },
+  configureWebpack: config => {
+    config.devtool = 'inline-source-map';
   },
 };

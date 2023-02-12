@@ -14,7 +14,7 @@ import ChromeAliveApi from './ChromeAliveApi';
 import BrowserView = Electron.BrowserView;
 
 // make electron packaging friendly
-const extensionPath = Path.resolve(__dirname, '../extension').replace(
+const extensionPath = Path.resolve(__dirname, '../ui').replace(
   'app.asar',
   'app.asar.unpacked',
 );
@@ -98,14 +98,14 @@ export default class ChromeAliveWindow {
     });
 
     this.#mainView = new View(this.window, {
-      preload: `${__dirname}/PagePreload.js`,
+      preload: `${__dirname}/ChromeAlivePagePreload.js`,
     });
     this.#mainView.attach();
     this.#mainView.hide();
     this.#mainView.browserView.webContents.on('focus', this.hidePopups.bind(this));
 
     this.#toolbarView = new View(this.window, {
-      preload: `${__dirname}/PagePreload.js`,
+      preload: `${__dirname}/ChromeAlivePagePreload.js`,
     });
     this.#toolbarView.attach();
     // for child windows
@@ -127,7 +127,7 @@ export default class ChromeAliveWindow {
           acceptFirstMouse: true,
           useContentSize: true,
           webPreferences: {
-            preload: `${__dirname}/PagePreload.js`,
+            preload: `${__dirname}/ChromeAlivePagePreload.js`,
           },
         },
       };

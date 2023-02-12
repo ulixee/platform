@@ -11,12 +11,12 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
-import Client from '../../api/Client';
 import { DomActionType, IFrontendDomChangeEvent } from '@ulixee/hero-interfaces/IDomChangeEvent';
-import DomNodeState from './DomNodeState';
-import DomNode from './DomNode.vue';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
 import { IChromeAliveApiResponse } from '@ulixee/apps-chromealive-interfaces/apis';
+import Client from '../../api/Client';
+import DomNodeState from './DomNodeState';
+import DomNode from './DomNode.vue';
 
 export interface IDomFrameNodes {
   nodesById: Record<number, DomNodeState>;
@@ -131,6 +131,7 @@ export default Vue.defineComponent({
           groups.collapsedGroupIdByFrameNodeId.set(nodeState.frameNodeId, this.activeGroupId);
           groups.frameNodeIdsByGroupId.get(this.activeGroupId).push(nodeState.frameNodeId);
         } else {
+          // eslint-disable-next-line no-multi-assign
           const nextId = (this.latestGroupId += 1);
           this.activeGroupId = nextId;
           groups.isExpandedByGroupId.set(nextId, false);
@@ -194,7 +195,7 @@ export default Vue.defineComponent({
     },
 
     onDomFocus(event: IChromeAliveEvents['Dom.focus']): void {
-      this.focusedPaintIndexRange = event.highlightPaintIndexRange;
+      this.focusedPaintIndex = event.highlightPaintIndexRange[0];
       this.setPaintIndex(event.highlightPaintIndexRange, event.documentLoadPaintIndex);
     },
 
