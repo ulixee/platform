@@ -493,6 +493,7 @@ export default Vue.defineComponent({
 @import '../variables';
 
 .PlayerBar {
+  -webkit-app-region: no-drag;
   height: 100%;
 
   &.notSelected {
@@ -547,6 +548,7 @@ export default Vue.defineComponent({
   min-width: 4px;
   z-index: 12;
   left: calc(100% * var(--markerLeft) / 100);
+  -webkit-app-region: no-drag;
 
   &.finder {
     opacity: 0.8;

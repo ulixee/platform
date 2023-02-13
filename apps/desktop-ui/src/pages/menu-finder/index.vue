@@ -4,7 +4,6 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
-import Client from '@/api/Client';
 import Main from './views/Main.vue';
 
 export default Vue.defineComponent({

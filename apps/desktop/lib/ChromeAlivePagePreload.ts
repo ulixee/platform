@@ -2,9 +2,6 @@
 const { ipcRenderer } = require('electron');
 
 // @ts-ignore
-window.addEventListener('mousemove', () => ipcRenderer.send('App:mousemove'), { capture: false });
-
-// @ts-ignore
 document.addEventListener('chromealive:event', (e: any) => {
   const message = e.detail;
   // eslint-disable-next-line no-console

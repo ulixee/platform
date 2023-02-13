@@ -39,7 +39,7 @@
           </div>
         </div>
         <div
-          :class="{ hasFinder: isShowingFinder }"
+          :class="{ hasFinder: isFinderMode }"
           class="search-icon"
           @click="toggleFinder"
         >
@@ -50,8 +50,8 @@
       <div class="player-wrapper relative flex h-full flex-1 flex-row items-center">
         <div class="bar-bg" />
         <PlayerBar
-          :is-selected="isSelected && !isShowingFinder"
-          :is-using-finder="isShowingFinder"
+          :is-selected="isSelected && !isFinderMode"
+          :is-using-finder="isFinderMode"
           :mouse-is-within-player="mouseIsWithinPlayer"
           :ticks="ticks"
           :session="session"
@@ -65,7 +65,7 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
-import WindowsController, { EmitterName } from '@/pages/toolbar/lib/WindowsController';
+import WindowsController from '@/pages/toolbar/lib/WindowsController';
 import ArrowRight from './ArrowRight.vue';
 import PlayerBar from './PlayerBar.vue';
 import Borders from './Borders.vue';
@@ -78,10 +78,10 @@ export default Vue.defineComponent({
     Borders,
   },
   props: ['isSelected', 'isFocused', 'ticks', 'session', 'mode', 'timetravel'],
-  emits: ['select', 'toggleFinder'],
+  emits: ['select', 'finderActivated'],
   setup(props) {
     const isLiveMode = Vue.computed(() => props.mode === 'Live');
-    const isShowingFinder = Vue.computed(() => props.mode === 'Finder');
+    const isFinderMode = Vue.computed(() => props.mode === 'Finder');
     const isRestartingSession = Vue.computed(() => props.session?.playbackState === 'restarting');
     const currentUrl = Vue.computed(() => {
       let url = props.timetravel?.url;
@@ -98,11 +98,10 @@ export default Vue.defineComponent({
 
     return {
       currentUrl,
-      isShowingUrlMenu: Vue.ref(false),
       mouseIsWithinPlayer: Vue.ref(false),
       isRestartingSession,
       isLiveMode,
-      isShowingFinder,
+      isFinderMode,
     };
   },
   methods: {
@@ -115,32 +114,21 @@ export default Vue.defineComponent({
 
     toggleFinder(event: MouseEvent) {
       const rect = (event.target as HTMLElement).getBoundingClientRect();
-      if (!this.isShowingFinder) {
-        WindowsController.showMenuFinder(rect);
-      } else {
+      if (WindowsController.isShowingFinder) {
         WindowsController.hideMenuFinder();
+      } else {
+        WindowsController.showMenuFinder(rect);
       }
-      this.$emit('toggleFinder', !this.isShowingFinder);
+      this.$emit('finderActivated', WindowsController.isShowingFinder);
     },
 
     toggleUrlMenu(event: MouseEvent) {
       const rect = (event.target as HTMLElement).parentElement.getBoundingClientRect();
-      if (this.isShowingUrlMenu) {
+      if (WindowsController.isShowingUrlMenu) {
         WindowsController.hideMenuUrl();
       } else {
         WindowsController.showMenuUrl(rect);
       }
-      this.isShowingUrlMenu = !this.isShowingUrlMenu;
-    },
-
-    finishHideFinder() {
-      if (this.isShowingFinder) {
-        this.$emit('toggleFinder', false);
-      }
-    },
-
-    finishHideUrl() {
-      this.isShowingUrlMenu = false;
     },
 
     handleMouseLeave() {
@@ -150,16 +138,6 @@ export default Vue.defineComponent({
     handleMouseEnter() {
       this.mouseIsWithinPlayer = true;
     },
-  },
-
-  mounted() {
-    WindowsController.on(EmitterName.hideMenuFinder, this.finishHideFinder.bind(this));
-    WindowsController.on(EmitterName.hideMenuUrl, this.finishHideUrl.bind(this));
-  },
-
-  beforeUnmount() {
-    WindowsController.off(EmitterName.hideMenuFinder, this.finishHideFinder.bind(this));
-    WindowsController.off(EmitterName.hideMenuUrl, this.finishHideUrl.bind(this));
   },
 });
 </script>

@@ -171,7 +171,6 @@ export class Menubar extends EventEmitter {
       this.#tray = new Tray(iconPath);
 
       app.on('activate', (_event, hasVisibleWindows) => {
-        app.dock?.hide();
         if (!hasVisibleWindows) {
           this.showWindow().catch(console.error);
         }

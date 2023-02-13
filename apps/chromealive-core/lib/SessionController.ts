@@ -466,7 +466,7 @@ export default class SessionController extends TypedEventEmitter<{
     const { tab } = event;
     this.events.on(tab, 'page-events', this.sendDomRecordingUpdates.bind(this, tab));
 
-    const mirrorPage = tab.createMirrorPage();
+    const mirrorPage = tab.createMirrorPage(false);
     mirrorPage.showChromeInteractions = true;
     void this.addReplayTab(tab.id, mirrorPage);
   }
@@ -530,6 +530,7 @@ export default class SessionController extends TypedEventEmitter<{
     this.mirrorRefreshLastUpdated = now;
 
     try {
+      await this.replayAppWindow.waitForPageWithHeroTabId(tabId);
       await this.mirrorPagesByTabId[tabId].load();
     } catch (error) {
       if (!(error instanceof CanceledPromiseError))
@@ -613,10 +614,10 @@ export default class SessionController extends TypedEventEmitter<{
     const activeTab = this.timetravelPlayer.activeTab;
     const tick = activeTab?.currentTick;
     return Promise.resolve({
-      activeCommandId: tick.commandId,
-      documentLoadPaintIndex: tick.documentLoadPaintIndex,
-      highlightPaintIndexRange: activeTab.focusedPaintIndexes,
-      percentOffset: this.mode === 'Live' ? 100 : activeTab.currentTimelineOffsetPct,
+      activeCommandId: tick?.commandId ?? 1,
+      documentLoadPaintIndex: tick?.documentLoadPaintIndex ?? -1,
+      highlightPaintIndexRange: activeTab?.focusedPaintIndexes,
+      percentOffset: this.mode === 'Live' ? 100 : activeTab?.currentTimelineOffsetPct ?? 0,
     });
   }
 
@@ -624,6 +625,7 @@ export default class SessionController extends TypedEventEmitter<{
     timelineOffsetPercent: number;
   }> {
     try {
+      await this.replayAppWindow.waitForPageWithHeroTabId(this.timetravelPlayer.activeTab?.id);
       await this.timetravelPlayer.setFocusedOffsetRange(args.timelinePercentRange);
 
       if (args.step) {

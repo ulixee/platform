@@ -2,7 +2,6 @@ import { app, dialog, ipcMain, Menu, screen } from 'electron';
 import { EventEmitter } from 'events';
 import * as Http from 'http';
 import * as Path from 'path';
-import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
 import { httpGet } from '@ulixee/commons/lib/downloadFile';
 import { IChromeAliveAppApis } from '@ulixee/apps-chromealive-interfaces/apis';
@@ -68,11 +67,6 @@ export class ChromeAliveManager extends EventEmitter {
     this.bindIpcEvents();
     await this.getDebuggerUrl();
 
-    console.log(
-      'starigng miner',
-      minerAddress,
-      this.formatMinerAddress(UlixeeHostsConfig.global.getVersionHost(version)),
-    );
     this.minerAddress = this.formatMinerAddress(
       minerAddress ?? UlixeeHostsConfig.global.getVersionHost(version),
     );

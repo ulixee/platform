@@ -98,29 +98,6 @@ export default function generateContextMenu(
     ]);
   }
 
-  if (
-    !params.hasImageContents &&
-    params.linkURL === '' &&
-    params.selectionText === '' &&
-    !params.isEditable
-  ) {
-    menuItems = menuItems.concat([
-      {
-        label: 'Reload',
-        accelerator: 'CmdOrCtrl+R',
-        click: () => {
-          webContents.reload();
-        },
-      },
-      {
-        type: 'separator',
-      },
-      {
-        type: 'separator',
-      },
-    ]);
-  }
-
   menuItems.push({
     label: 'Inspect',
     accelerator: 'CmdOrCtrl+Shift+I',

@@ -7,6 +7,7 @@ import IChromeAliveEvents from '@ulixee/apps-chromealive-interfaces/events';
 import { IChromeAliveSessionApis } from '@ulixee/apps-chromealive-interfaces/apis';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import Queue from '@ulixee/commons/lib/Queue';
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import moment = require('moment');
 import View from './View';
 import StaticServer from './StaticServer';
@@ -14,10 +15,7 @@ import ChromeAliveApi from './ChromeAliveApi';
 import BrowserView = Electron.BrowserView;
 
 // make electron packaging friendly
-const extensionPath = Path.resolve(__dirname, '../ui').replace(
-  'app.asar',
-  'app.asar.unpacked',
-);
+const extensionPath = Path.resolve(__dirname, '../ui').replace('app.asar', 'app.asar.unpacked');
 interface IReplayTab {
   view: View;
   heroTabId: number;
@@ -52,6 +50,8 @@ export default class ChromeAliveWindow {
   #hasShown = false;
   #addTabQueue = new Queue('TAB CREATOR', 1);
 
+  #eventSubscriber = new EventSubscriber();
+
   constructor(
     public readonly session: {
       heroSessionId: string;
@@ -71,6 +71,8 @@ export default class ChromeAliveWindow {
       acceptFirstMouse: true,
       webPreferences: {
         contextIsolation: true,
+        sandbox: true,
+        partition: nanoid(5),
       },
       titleBarStyle: 'hiddenInset',
       icon: Path.resolve(app.getAppPath(), 'assets', 'icon.png'),
@@ -81,19 +83,19 @@ export default class ChromeAliveWindow {
     });
 
     this.window.title = `${this.session.heroSessionId}`;
-    this.window.on('resize', () => this.relayout());
-    this.window.on('maximize', () => this.relayout());
-    this.window.on('restore', () => this.relayout());
-    this.window.on('unmaximize', () => this.relayout());
-    this.window.on('close', () => this.onClose());
-    this.window.on('blur', () => {
+    this.#eventSubscriber.on(this.window, 'resize', this.relayout);
+    this.#eventSubscriber.on(this.window, 'maximize', this.relayout);
+    this.#eventSubscriber.on(this.window, 'restore', this.relayout);
+    this.#eventSubscriber.on(this.window, 'unmaximize', this.relayout);
+    this.#eventSubscriber.on(this.window, 'close', this.onClose);
+    this.#eventSubscriber.on(this.window, 'blur', () => {
       const finderMenu = this.#childWindowsByName.get('MenuFinder');
       if (finderMenu) {
         finderMenu.setAlwaysOnTop(false);
         finderMenu.moveAbove(this.window.getMediaSourceId());
       }
     });
-    this.window.on('focus', () => {
+    this.#eventSubscriber.on(this.window, 'focus', () => {
       this.#childWindowsByName.get('MenuFinder')?.setAlwaysOnTop(true);
     });
 
@@ -102,7 +104,7 @@ export default class ChromeAliveWindow {
     });
     this.#mainView.attach();
     this.#mainView.hide();
-    this.#mainView.browserView.webContents.on('focus', this.hidePopups.bind(this));
+    this.#eventSubscriber.on(this.#mainView.browserView.webContents, 'focus', this.closeOpenPopup);
 
     this.#toolbarView = new View(this.window, {
       preload: `${__dirname}/ChromeAlivePagePreload.js`,
@@ -111,7 +113,7 @@ export default class ChromeAliveWindow {
     // for child windows
     this.#toolbarView.webContents.setWindowOpenHandler(details => {
       const isMenu = details.frameName.includes('Menu');
-      const canMoveAndResize = !isMenu || details.frameName === 'MenuFinder';
+      const canMoveAndResize = !isMenu || details.frameName.startsWith('MenuFinder');
       return {
         action: 'allow',
         overrideBrowserWindowOptions: {
@@ -122,7 +124,7 @@ export default class ChromeAliveWindow {
           closable: true,
           transparent: isMenu,
           titleBarStyle: 'default',
-          alwaysOnTop: details.frameName === 'MenuFinder',
+          alwaysOnTop: details.frameName.startsWith('MenuFinder'),
           hasShadow: !isMenu,
           acceptFirstMouse: true,
           useContentSize: true,
@@ -133,12 +135,14 @@ export default class ChromeAliveWindow {
       };
     });
 
-    this.#toolbarView.webContents.on('did-create-window', (childWindow, details) => {
+    const toolbarWc = this.#toolbarView.webContents;
+    this.#eventSubscriber.on(toolbarWc, 'did-create-window', (childWindow, details) => {
       childWindow.moveAbove(this.window.getMediaSourceId());
       this.trackChildWindow(childWindow, details);
     });
 
-    this.#toolbarView.webContents.on('ipc-message', (e, eventName, ...args) => {
+    this.#toolbarView.webContents.openDevTools({ mode: 'detach' });
+    this.#eventSubscriber.on(toolbarWc, 'ipc-message', (e, eventName, ...args) => {
       if (eventName === 'App:changeHeight') {
         this.#toolbarHeight = args[0];
         void this.relayout();
@@ -148,7 +152,7 @@ export default class ChromeAliveWindow {
         window?.show();
         window?.focusOnWebView();
       } else if (eventName === 'App:hideChildWindow') {
-        this.hidePopups();
+        this.#childWindowsByName.get(args[0])?.close();
       }
     });
   }
@@ -182,8 +186,13 @@ export default class ChromeAliveWindow {
   }
 
   public async onClose(): Promise<void> {
-    for (const win of this.#childWindowsByName.values()) win.close();
+    for (const win of this.#childWindowsByName.values()) {
+      if (win.webContents?.isDevToolsOpened()) win.webContents.closeDevTools();
+      win.close();
+    }
     this.#childWindowsByName.clear();
+    this.#eventSubscriber.close();
+    await this.api?.send('Session.close');
     await this.api?.disconnect();
   }
 
@@ -229,14 +238,16 @@ export default class ChromeAliveWindow {
       view.browserView.setAutoResize({ width: true, height: true });
       view.attach();
       await view.webContents.loadURL('about:blank');
-      view.webContents.on('focus', this.hidePopups.bind(this));
+      view.webContents.on('focus', () => {
+        if (!this.#showingPopupName?.startsWith('MenuFinder')) this.closeOpenPopup();
+      });
       await ChromeAliveWindow.replaceExtensionApiPath(this.api.address);
 
       await view.webContents.session.loadExtension(extensionPath, {
         allowFileAccess: true,
       });
       if (this.enableDevtoolsOnDevtools) await this.addDevtoolsOnDevtools(view);
-      view.webContents.on('devtools-opened', async () => {
+      this.#eventSubscriber.on(view.webContents, 'devtools-opened', async () => {
         const devtoolsWc = view.webContents.devToolsWebContents;
         if (!devtoolsWc) {
           console.warn('No web contents on showing devtools');
@@ -282,7 +293,7 @@ export default class ChromeAliveWindow {
     );
     // eslint-disable-next-line no-console
     console.log('Window connected to %s', this.api.address);
-    this.api.on('close', this.onApiClose.bind(this));
+    this.#eventSubscriber.once(this.api, 'close', this.onApiClose);
   }
 
   private async injectMinerAddress(view: BrowserView): Promise<void> {
@@ -296,6 +307,7 @@ export default class ChromeAliveWindow {
   }
 
   private onApiClose(): void {
+    this.#eventSubscriber.off({ emitter: this.api, eventName: 'close', handler: this.onApiClose });
     this.api = null;
   }
 
@@ -353,8 +365,11 @@ export default class ChromeAliveWindow {
     if (!this.activeTab?.view?.isHidden) await this.activeTab.view.setBounds(remainingBounds);
   }
 
-  private hidePopups(): void {
-    this.#childWindowsByName.get(this.#showingPopupName)?.hide();
+  private closeOpenPopup(): void {
+    try {
+      this.#childWindowsByName.get(this.#showingPopupName)?.close();
+      this.#childWindowsByName.delete(this.#showingPopupName);
+    } catch {}
     this.#showingPopupName = null;
   }
 
@@ -389,7 +404,8 @@ export default class ChromeAliveWindow {
 
     if (eventType === 'Session.appMode') {
       const mode = (data as IChromeAliveEvents['Session.appMode']).mode;
-      this.hidePopups();
+      const isFinderPopup = this.#showingPopupName?.startsWith('MenuFinder') && mode === 'Finder';
+      if (!isFinderPopup) this.closeOpenPopup();
       void this.activateView(mode);
     }
   }
@@ -401,39 +417,44 @@ export default class ChromeAliveWindow {
     }
 
     this.#childWindowsByName.set(frameName, childWindow);
-    childWindow.webContents.on('ipc-message', (e, eventName, ...args) => {
-      if (eventName === 'chromealive:api') {
-        const [command, apiArgs] = args;
-        if (command === 'File:navigate') {
-          const { filepath } = apiArgs;
-          shell.showItemInFolder(filepath);
+    const onIpcMessage = this.#eventSubscriber.on(
+      childWindow.webContents,
+      'ipc-message',
+      (e, eventName, ...args) => {
+        if (eventName === 'chromealive:api') {
+          const [command, apiArgs] = args;
+          if (command === 'File:navigate') {
+            const { filepath } = apiArgs;
+            shell.showItemInFolder(filepath);
+          }
+        } else if (eventName === 'App:changeHeight') {
+          childWindow.setBounds({
+            height: Math.round(args[0]),
+          });
         }
-      } else if (eventName === 'App:changeHeight') {
-        childWindow.setBounds({
-          height: Math.round(args[0]),
-        });
-      }
-    });
+      },
+    );
 
-    childWindow.on('show', () => {
-      this.hidePopups();
-      // don't auto-close
-      if (frameName === 'MenuFinder') return;
+    const onshow = this.#eventSubscriber.on(childWindow, 'show', () => {
+      if (this.#showingPopupName === frameName) return;
+      this.closeOpenPopup();
       this.#showingPopupName = frameName;
     });
     let hasHandled = false;
-    childWindow.on('close', async e => {
+    childWindow.once('close', async e => {
+      this.#eventSubscriber.off(onshow, onIpcMessage);
       if (this.#showingPopupName === frameName) this.#showingPopupName = null;
-      if (!hasHandled) {
+      const popup = this.#childWindowsByName.get(frameName);
+      this.#childWindowsByName.delete(frameName);
+      if (!hasHandled && popup) {
         hasHandled = true;
         e.preventDefault();
-        await childWindow.webContents.executeJavaScript(
+        await popup?.webContents.executeJavaScript(
           'window.dispatchEvent(new CustomEvent("manual-close"))',
         );
-        childWindow.close();
+        popup?.close();
         return;
       }
-      this.#childWindowsByName.delete(frameName);
     });
   }
 

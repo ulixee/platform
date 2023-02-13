@@ -19,7 +19,7 @@
       :timetravel="timetravel"
       class="z-10 flex-1"
       @select="selectPlayerMode"
-      @toggleFinder="onFinderModeToggled"
+      @finderActivated="onFinderActivated"
     />
     <OutputButton
       :is-selected="mode === 'Output'"
@@ -119,7 +119,7 @@ export default Vue.defineComponent({
       }).catch(err => alert(String(err)));
     },
 
-    onFinderModeToggled(isToggledOn: boolean): void {
+    onFinderActivated(isToggledOn: boolean): void {
       if (isToggledOn) {
         this.select('Finder');
       } else {

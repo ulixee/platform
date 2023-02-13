@@ -45,7 +45,7 @@ export default function generateAppMenu(container: {
         ...createMenuItem(
           ['CmdOrCtrl+Shift+W'],
           window => {
-            window.close();
+            window?.close();
           },
           'Close Window',
         ),
