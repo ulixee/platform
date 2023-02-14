@@ -24,7 +24,7 @@ yarn add @ulixee/miner
 
 When you install Miner, it requires PeerDependencies of [`Hero`](https://ulixee.org/docs/hero) and [`Datastore`](https://ulixee.org/docs/datastore).
 
-It will also optionally use a PeerDependency `ChromeAlive!` Core (`@ulixee/apps-chromealive-core`). This tool enhances the Hero Development process.
+It will also optionally use a PeerDependency `ChromeAlive!` Core (`@ulixee/desktop-core`). This tool enhances the Hero Development process.
 
 ## Command Line Interface (CLI)
 

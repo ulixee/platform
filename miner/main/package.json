@@ -12,14 +12,14 @@
   "bin": "./bin/cli.js",
   "scripts": {
     "start": "node bin/cli.js start",
-    "start:alive": "node -r @ulixee/apps-chromealive-core/register bin/cli.js start",
+    "start:alive": "node -r @ulixee/desktop-core/register bin/cli.js start",
     "preversion": "node ../../build/miner/main/scripts/gatherEnvSettings.js"
   },
   "peerDependencies": {
-    "@ulixee/apps-chromealive-core": "2.0.0-alpha.18"
+    "@ulixee/desktop-core": "2.0.0-alpha.18"
   },
   "peerDependenciesMeta": {
-    "@ulixee/apps-chromealive-core": {
+    "@ulixee/desktop-core": {
       "optional": true
     }
   },

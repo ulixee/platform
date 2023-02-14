@@ -93,12 +93,12 @@ export default class CoreRouter {
     const [ipAddress, port] = minerAddress.split(':');
     this.serverAddress = { ipAddress, port: Number(port) };
     await DatastoreCore.start({ ipAddress, port: this.serverAddress.port });
-    
+
     if (ChromeAliveUtils.isInstalled()) {
       const chromeAliveCore = ChromeAliveUtils.getChromeAlive();
       const wsAddress = Promise.resolve(`ws://${minerAddress}/chromealive`);
       chromeAliveCore.setMinerAddress(wsAddress);
-      await chromeAliveCore.register();
+      await chromeAliveCore.activatePlugin();
     }
   }
 

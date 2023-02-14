@@ -7,13 +7,13 @@
   },
   "references": [
     {
-      "path": "apps/chromealive-core/injected-scripts/tsconfig.json"
+      "path": "desktop/core/injected-scripts/tsconfig.json"
     }
   ],
   "include": [
     "miner",
     "end-to-end",
-    "apps",
+    "desktop",
     "playgrounds",
     "datastore",
     "datastore/packager/*.json",
@@ -32,9 +32,9 @@
     "**/build-dist/**/*",
     "node_modules",
     "**/node_modules",
-    "apps/desktop-ui",
-    "apps/chromealive-extension",
-    "apps/chromealive-core/injected-scripts",
+    "desktop/ui",
+    "desktop/chrome-extension",
+    "desktop/core/injected-scripts",
     "hero",
     "datastore/docpage/src",
     "**/website",

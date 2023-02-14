@@ -1,4 +1,4 @@
-import type IChromeAliveCore from '@ulixee/apps-chromealive-core';
+import type IChromeAliveCore from '@ulixee/desktop-core';
 import Env from '../env'
 
 export default class ChromeAliveUtils {
@@ -15,6 +15,6 @@ export default class ChromeAliveUtils {
 
   public static getChromeAlive(): typeof IChromeAliveCore {
     // eslint-disable-next-line global-require
-    return require('@ulixee/apps-chromealive-core').default;
+    return require('@ulixee/desktop-core').default;
   }
 }

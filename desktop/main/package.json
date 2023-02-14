@@ -1,0 +1,94 @@
+{
+  "name": "@ulixee/desktop",
+  "version": "2.0.0-alpha.18",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "build": "yarn build:ui && yarn build:basic",
+    "build:basic": "cd ../.. && yarn run tsc && cd desktop/main && yarn copy:build && cd ../../build/desktop/main && yarn && electron-builder install-app-deps",
+    "build:ui": "yarn workspace @ulixee/desktop-ui build && yarn workspace @ulixee/desktop-chrome-extension build",
+    "watch": "yarn copy:build --watch",
+    "copy:build": "cd ../../build/desktop/main && node builder/copySources.js ./packages",
+    "dist": "yarn build && cd ../../build/desktop/main && yarn && electron-builder --publish onTagOrDraft",
+    "dist:basic": "yarn build:basic && cd ../../build/desktop/main && electron-builder",
+    "start": "yarn copy:build && cd ../../build/desktop/main && npx electron ."
+  },
+  "repository": "git@github.com:ulixee/platform.git",
+  "license": "MIT",
+  "dependencies": {
+    "@ulixee/desktop-interfaces": "2.0.0-alpha.18",
+    "@ulixee/commons": "2.0.0-alpha.18",
+    "@ulixee/datastore-core": "2.0.0-alpha.18",
+    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.18",
+    "@ulixee/default-browser-emulator": "2.0.0-alpha.18",
+    "@ulixee/miner": "2.0.0-alpha.18",
+    "@ulixee/net": "2.0.0-alpha.18",
+    "tslib": "^2.3.1",
+    "nanoid": "^3.1.30",
+    "ws": "^7.4.6",
+    "electron-log": "^4.4.6",
+    "electron-positioner": "^4.1.0",
+    "electron-updater": "^5.0.1",
+    "node-static": "^0.7.11"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "22.2.0",
+    "electron-builder": "^24.0.0-alpha.11",
+    "@electron/notarize": "^1.2.3",
+    "tslib": "^2.3.1"
+  },
+  "optionalDependencies": {
+    "global-mouse-events": "1.1.0",
+    "nseventmonitor": "1.0.3"
+  },
+  "build": {
+    "appId": "dev.ulixee.desktop",
+    "productName": "Ulixee",
+    "afterSign": "scripts/notarize.js",
+    "asarUnpack": [
+      "node_modules/@ulixee/desktop"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "files": [
+      "**/*",
+      "assets/*",
+      "!**/desktop/dist",
+      "!packages",
+      "!dist"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "extendInfo": {
+        "LSUIElement": 1
+      },
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist"
+    },
+    "win": {
+      "target": "NSIS"
+    },
+    "linux": {
+      "category": "Development",
+      "target": "AppImage"
+    },
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
+    }
+  },
+  "nohoist": [
+    "**/electron",
+    "**/electron-webpack",
+    "**/electron-webpack/**",
+    "electron-positioner",
+    "global-mouse-events",
+    "nseventmonitor",
+    "electron-updater",
+    "better-sqlite3"
+  ]
+}

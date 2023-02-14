@@ -2,7 +2,7 @@
 
 Ulixee is a scraping [engine][hero] with a built-in deployment [unit][datastore] that enables out-of-the-box [querying][stream] across a horizontal [deployment][miner].
 
-This repository is the development home to several of the tools that make it easy to build and manage these scripts, including [ChromeAlive!](apps/chromealive), [Miner][miner] and [Datastore][datastore].
+This repository is the development home to several of the tools that make it easy to build and manage these scripts, including [Ulixee Desktop](desktop), [Miner][miner] and [Datastore][datastore].
 
 ## Projects
 
@@ -10,7 +10,7 @@ This repository is the development home to several of the tools that make it eas
 - Datastore `/datastore`. Packaged "database" containing API access to crawler functions and runner functions.
 - Miner `/miner`. Run Ulixee tooling on a remote machine.
 - Stream `/stream`. Query, transform and compose Datastores running on any machine.
-- ChromeAlive! `/apps/chromealive*`. Supercharge scraper script development using the Chrome browser.
+- Desktop `/desktop`. Supercharge scraper script development using a Hero Replay toolset, remote Datastore viewer and Error troubleshooter.
 
 ## Tooling
 

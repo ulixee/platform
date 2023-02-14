@@ -37,5 +37,5 @@ module.exports = {
   reporters: ['default', 'jest-summary-reporter'],
   roots: workspaces.map(x => `${x}/`),
   moduleDirectories: ['node_modules', ...workspaces.map(x => `${x}/node_modules`)],
-  modulePathIgnorePatterns: ['build/apps/desktop/packages'],
+  modulePathIgnorePatterns: ['build/desktop/packages'],
 };

@@ -61,7 +61,7 @@ jobs:
 
       - name: Build Desktop
         run: yarn dist
-        working-directory: ./apps/desktop
+        working-directory: ./desktop
         env:
           NODE_ENV: production
           USE_HARD_LINKS: false
@@ -75,7 +75,7 @@ jobs:
         with:
           name: desktop-${{ matrix.os }}
           path: |
-            ./build/apps/desktop/dist/*.AppImage
-            ./build/apps/desktop/dist/*.dmg
-            ./build/apps/desktop/dist/*.exe
+            ./build/desktop/dist/*.AppImage
+            ./build/desktop/dist/*.dmg
+            ./build/desktop/dist/*.exe
           retention-days: 1
