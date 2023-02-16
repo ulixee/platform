@@ -20,7 +20,7 @@ export default class Workarea {
     };
   }
 
-  public static onAppReady(workarea: IBoundsAndScale): void {
+  public static setHeroDefaultScreen(workarea: IBoundsAndScale): void {
     this.workarea = workarea;
     const maxbounds = this.getMaxChromeBounds();
 

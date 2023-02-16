@@ -104,12 +104,7 @@ export default class ResourceSearch {
       if (contentType.includes('json')) {
         formattedBody = JSON.stringify(JSON.parse(formattedBody), null, 2);
       }
-    } catch (error) {
-      console.error('ERROR parsing resource body', {
-        error,
-        resource,
-      });
-    }
+    } catch {}
 
     await this.searchIndexByTabId[tabId].add({
       id: resource.id,

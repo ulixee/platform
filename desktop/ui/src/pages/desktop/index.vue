@@ -26,11 +26,6 @@ html {
   margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
   font-size: 13px;
-  overflow: hidden;
-  user-select: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
 }
 
 body {

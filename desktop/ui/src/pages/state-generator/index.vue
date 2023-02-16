@@ -13,7 +13,7 @@
 import * as Vue from 'vue';
 import { DomActionType, IFrontendDomChangeEvent } from '@ulixee/hero-interfaces/IDomChangeEvent';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
-import { IChromeAliveApiResponse } from '@ulixee/desktop-interfaces/apis';
+import { IChromeAliveSessionApiResponse } from '@ulixee/desktop-interfaces/apis';
 import Client from '../../api/Client';
 import DomNodeState from './DomNodeState';
 import DomNode from './DomNode.vue';
@@ -203,7 +203,7 @@ export default Vue.defineComponent({
       this.setPaintEvents(event.paintEvents, event.framesById);
     },
 
-    onDomResponse(response: IChromeAliveApiResponse<'Session.getDom'>['data']): void {
+    onDomResponse(response: IChromeAliveSessionApiResponse<'Session.getDom'>['data']): void {
       this.setPaintEvents(
         response.paintEvents.map(x => x.changeEvents),
         response.framesById,

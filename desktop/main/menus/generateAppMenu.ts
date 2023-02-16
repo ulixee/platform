@@ -1,12 +1,10 @@
-import { app, BrowserWindow, ipcMain, Menu, MenuItem, shell, webContents } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, MenuItem, shell } from 'electron';
+import ChromeAliveWindow from '../lib/ChromeAliveWindow';
 import MenuItemConstructorOptions = Electron.MenuItemConstructorOptions;
 
 const isMac = process.platform === 'darwin';
 
-export default function generateAppMenu(container: {
-  replayControl(direction: 'back' | 'forward'): void;
-  getSessionPath(): string;
-}): Menu {
+export default function generateAppMenu(loadedChromeAlive: ChromeAliveWindow): Menu {
   const template: any = [
     ...(isMac
       ? [
@@ -42,13 +40,7 @@ export default function generateAppMenu(container: {
         {
           type: 'separator',
         },
-        ...createMenuItem(
-          ['CmdOrCtrl+Shift+W'],
-          window => {
-            window?.close();
-          },
-          'Close Window',
-        ),
+        isMac ? { role: 'close' } : { role: 'quit' },
         {
           type: 'separator',
         },
@@ -80,61 +72,13 @@ export default function generateAppMenu(container: {
     {
       label: 'View',
       submenu: [
-        ...createMenuItem(
-          ['CmdOrCtrl+R', 'F5'],
-          window => {
-            window.webContents.reload();
-          },
-          'Reload',
-        ),
-        ...createMenuItem(
-          ['CmdOrCtrl+Shift+R', 'Shift+F5'],
-          window => {
-            window.webContents.reloadIgnoringCache();
-          },
-          'Reload ignoring cache',
-        ),
-      ],
-    },
-    {
-      label: 'Tools',
-      submenu: [
-        ...createMenuItem(
-          ['CmdOrCtrl+Shift+I', 'CmdOrCtrl+Shift+J', 'F12'],
-          () => {
-            setTimeout(() => {
-              const wc = webContents.getFocusedWebContents();
-              if (!wc) return;
-              wc.toggleDevTools();
-            }, 0);
-          },
-          'Developer Tools',
-        ),
-
-        // Developer tools (current webContents) (dev)
-        ...createMenuItem(['CmdOrCtrl+Shift+F12'], () => {
-          setTimeout(() => {
-            webContents.getFocusedWebContents().openDevTools({ mode: 'detach' });
-          }, 0);
-        }),
-      ],
-    },
-    {
-      label: 'Replay',
-      submenu: [
-        {
-          label: 'Open Database',
-          click: () => {
-            const path = container.getSessionPath();
-            if (path) void shell.openPath(path);
-          },
-        },
-        ...createMenuItem(['Left'], () => {
-          container.replayControl('back');
-        }),
-        ...createMenuItem(['Right'], () => {
-          container.replayControl('forward');
-        }),
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
       ],
     },
     {
@@ -144,7 +88,7 @@ export default function generateAppMenu(container: {
         { role: 'zoom' },
         ...(isMac
           ? [{ type: 'separator' }, { role: 'front' }, { type: 'separator' }, { role: 'window' }]
-          : [{ role: 'close', accelerator: '' }]),
+          : [{ role: 'close' }]),
         { type: 'separator' },
         {
           label: 'Always on top',
@@ -158,6 +102,25 @@ export default function generateAppMenu(container: {
       ],
     },
   ];
+  if (loadedChromeAlive) {
+    template.splice(template.length - 1, 0, {
+      label: 'Replay',
+      submenu: [
+        {
+          label: 'Open Database',
+          click: () => {
+            void shell.openPath(loadedChromeAlive.session.dbPath);
+          },
+        },
+        ...createMenuItem(['Left'], () => {
+          loadedChromeAlive.replayControl('back');
+        }),
+        ...createMenuItem(['Right'], () => {
+          loadedChromeAlive.replayControl('forward');
+        }),
+      ],
+    });
+  }
 
   return Menu.buildFromTemplate(template);
 }

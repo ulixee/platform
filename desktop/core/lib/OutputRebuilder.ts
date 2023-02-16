@@ -48,7 +48,7 @@ export default class OutputRebuilder {
           delete propertyOwner[property];
         }
       } else if (output.type === 'reorder') {
-        const order = parseIfNeeded(output.value) as number[];
+        const order = output.value as unknown as number[];
         if (property) {
           const startArray = propertyOwner[property];
           propertyOwner[property] = order.map(x => startArray[x]);
@@ -56,7 +56,7 @@ export default class OutputRebuilder {
           snapshot.output = order.map(x => snapshot.output[x]);
         }
       } else {
-        propertyOwner[property] = parseIfNeeded(output.value);
+        propertyOwner[property] = output.value;
       }
 
       let flatPath = '';

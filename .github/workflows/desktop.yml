@@ -25,28 +25,31 @@ jobs:
           cache: 'yarn'
 
       - name: Install pcap
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu-latest' }} && !startsWith(github.ref, 'refs/tags/v')
         run: sudo apt-get install -y libpcap-dev
 
       - name: Clone unblocked
+        if: !startsWith(github.ref, 'refs/tags/v')
         run: git clone --recurse-submodules -j8 https://github.com/ulixee/unblocked.git
         working-directory: ..
 
       - name: Install unblocked
+        if: !startsWith(github.ref, 'refs/tags/v')
         run: yarn build
         working-directory: ../unblocked
 
       - name: Chocolatey Install Action
-        if: ${{ matrix.os == 'windows-latest' }}
+        if: ${{ matrix.os == 'windows-latest' }} && !startsWith(github.ref, 'refs/tags/v')
         uses: crazy-max/ghaction-chocolatey@v2
         with:
           args: install python2 visualcpp-build-tools -y
 
       - name: Add msbuild to PATH
+        if: ${{ matrix.os == 'windows-latest' }} && !startsWith(github.ref, 'refs/tags/v')
         uses: microsoft/setup-msbuild@v1.1
-        if: ${{ matrix.os == 'windows-latest' }}
 
       - name: Install Hero
+        if: !startsWith(github.ref, 'refs/tags/v')
         run: yarn && yarn build
         working-directory: ./hero
 
@@ -61,7 +64,7 @@ jobs:
 
       - name: Build Desktop
         run: yarn dist
-        working-directory: ./desktop
+        working-directory: ./desktop/main
         env:
           NODE_ENV: production
           USE_HARD_LINKS: false
@@ -75,7 +78,7 @@ jobs:
         with:
           name: desktop-${{ matrix.os }}
           path: |
-            ./build/desktop/dist/*.AppImage
-            ./build/desktop/dist/*.dmg
-            ./build/desktop/dist/*.exe
+            ./build/desktop/main/dist/*.AppImage
+            ./build/desktop/main/dist/*.dmg
+            ./build/desktop/main/dist/*.exe
           retention-days: 1

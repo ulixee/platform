@@ -1,19 +1,20 @@
-import type IChromeAliveCore from '@ulixee/desktop-core';
+import type TDesktopCore from '@ulixee/desktop-core';
 import Env from '../env'
 
-export default class ChromeAliveUtils {
+export default class DesktopUtils {
   public static isInstalled(): boolean {
     try {
 
       if (Env.disableChromeAlive) return false;
-      this.getChromeAlive();
+      this.getDesktop();
       return true;
     } catch (err) {
+      console.log(err)
       return false;
     }
   }
 
-  public static getChromeAlive(): typeof IChromeAliveCore {
+  public static getDesktop(): typeof TDesktopCore {
     // eslint-disable-next-line global-require
     return require('@ulixee/desktop-core').default;
   }

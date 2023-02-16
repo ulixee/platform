@@ -7,27 +7,31 @@ import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
 import { IncomingMessage } from 'http';
 import { nanoid } from 'nanoid';
-import IApiHandlers from '@ulixee/net/interfaces/IApiHandlers';
 import IAppApi from '@ulixee/desktop-interfaces/apis/IAppApi';
-import { IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
+import { IChromeAliveSessionApis, IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
+import IDesktopAppEvents, {
+  INewHeroSessionEvent,
+} from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
+import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
 import WebSocket = require('ws');
-import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
 import SessionController from './lib/SessionController';
 import FullscreenHeroCorePlugin from './lib/FullscreenHeroCorePlugin';
 import Workarea from './lib/Workarea';
 import AppDevtoolsConnection from './lib/AppDevtoolsConnection';
+import HeroSessionsSearch from './lib/HeroSessionsSearch';
 
 const { log } = Log(module);
 
-type IConnectionToChromeAliveClient = IConnectionToClient<IDesktopAppApis, IDesktopAppEvents>;
+type IConnectionToDesktopClient = IConnectionToClient<IDesktopAppApis, IDesktopAppEvents>;
 
-export default class ChromeAliveCore {
+export default class DesktopCore {
   public static sessionControllersById = new Map<string, SessionController>();
   public static minerAddress?: Promise<string>;
-  private static appConnectionsById = new Map<string, IConnectionToChromeAliveClient>();
+  private static appConnectionsById = new Map<string, IConnectionToDesktopClient>();
   private static appDevtoolsConnectionsById = new Map<string, AppDevtoolsConnection>();
+  private static heroSessionsSearch = new HeroSessionsSearch();
 
   private static events = new EventSubscriber();
 
@@ -35,7 +39,7 @@ export default class ChromeAliveCore {
     this.minerAddress = address;
   }
 
-  public static addChromealiveDevtoolsWebsocket(ws: WebSocket, request: IncomingMessage): void {
+  public static addAppDevtoolsWebsocket(ws: WebSocket, request: IncomingMessage): void {
     const url = new URL(request.url, 'http://localhost');
     const id = url.searchParams.get('id');
     if (!id) throw new Error('A ChromeAlive devtools connection was made without an id parameter.');
@@ -44,10 +48,10 @@ export default class ChromeAliveCore {
     connection.onCloseFns.push(() => this.appDevtoolsConnectionsById.delete(id));
   }
 
-  public static addConnection<T extends IApiHandlers>(
-    transport: ITransportToClient<T>,
+  public static addChromeAliveConnection(
+    transport: ITransportToClient<IChromeAliveSessionApis>,
     request: IncomingMessage,
-  ): IConnectionToClient<T, IDesktopAppEvents> {
+  ): IConnectionToClient<IChromeAliveSessionApis, IChromeAliveSessionEvents> {
     const chromeAliveMatch = request.url.match(/\/chromealive\/([0-9a-zA-Z-_]{6,21}).*/);
     if (chromeAliveMatch) {
       const heroSessionId = chromeAliveMatch[1];
@@ -56,7 +60,12 @@ export default class ChromeAliveCore {
       if (controller) return controller.addConnection(transport, request) as any;
       return this.loadSessionController(heroSessionId, transport, request);
     }
+  }
 
+  public static addDesktopConnection(
+    transport: ITransportToClient<IDesktopAppApis>,
+    request: IncomingMessage,
+  ): IConnectionToClient<IDesktopAppApis, IDesktopAppEvents> {
     let id: string;
     const host = request.socket.remoteAddress;
     // give local desktop special permissions. does not need to be specified
@@ -69,29 +78,42 @@ export default class ChromeAliveCore {
     // Desktop initiates a connection to Core. This Core could be remote or local
     const connection = new ConnectionToClient(transport, {
       'App.connect': this.onAppConnect.bind(this, id),
-    } as any);
+      'Sessions.search': this.heroSessionsSearch.search,
+      'Sessions.list': this.heroSessionsSearch.list,
+    });
 
     this.appConnectionsById.set(id, connection);
 
-    this.events.on(connection, 'request', msg => {
-      log.stats(`${msg.request.command} (${msg.request?.messageId})`, {
-        request: msg.request,
-        sessionId: null,
-      });
+    const eventId = nanoid();
+
+    this.events.group(
+      eventId,
+      this.events.on(this.heroSessionsSearch, 'update', x =>
+        connection.sendEvent({ data: x, eventType: 'Sessions.listUpdated' }),
+      ),
+      this.events.on(connection, 'request', msg => {
+        log.stats(`${msg.request.command} (${msg.request?.messageId})`, {
+          request: msg.request,
+          sessionId: null,
+        });
+      }),
+      this.events.on(connection, 'event', msg => {
+        log.stats(msg.event.eventType, {
+          ...msg,
+          sessionId: null,
+        });
+      }),
+      this.events.on(connection, 'response', msg => {
+        log.info(`${msg.request.command} response (${msg.request?.messageId})`, {
+          response: msg.response,
+          sessionId: null,
+        });
+      }),
+    );
+    this.events.once(connection, 'disconnect', () => {
+      this.events.endGroup(eventId);
+      this.appConnectionsById.delete(id);
     });
-    this.events.on(connection, 'event', msg => {
-      log.stats(msg.event.eventType, {
-        ...msg,
-        sessionId: null,
-      });
-    });
-    this.events.on(connection, 'response', msg => {
-      log.info(`${msg.request.command} response (${msg.request?.messageId})`, {
-        response: msg.response,
-        sessionId: null,
-      });
-    });
-    this.events.once(connection, 'disconnect', () => this.appConnectionsById.delete(id));
     return connection as any;
   }
 
@@ -107,7 +129,9 @@ export default class ChromeAliveCore {
     id: string,
     args: Parameters<IAppApi['connect']>[0],
   ): Promise<{ id: string }> {
-    Workarea.onAppReady(args.workarea);
+    if (id === 'local') {
+      Workarea.setHeroDefaultScreen(args.workarea);
+    }
     return Promise.resolve({ id });
   }
 
@@ -127,6 +151,17 @@ export default class ChromeAliveCore {
 
   private static async onHeroSessionCreated(event: { session: HeroSession }): Promise<void> {
     const { session: heroSession } = event;
+    const sessionId = heroSession.id;
+
+    const newSessionEvent: INewHeroSessionEvent = {
+      dbPath: heroSession.db.path,
+      heroSessionId: sessionId,
+      options: heroSession.options,
+      startDate: new Date(heroSession.createdTime),
+    };
+
+    this.broadcastAppEvent('Session.created', newSessionEvent);
+    this.heroSessionsSearch.onNewSession(heroSession);
 
     const script = heroSession.options.scriptInstanceMeta?.entrypoint;
     if (!script) return;
@@ -154,7 +189,6 @@ export default class ChromeAliveCore {
       return;
     }
 
-    const sessionId = heroSession.id;
     log.info('New Hero Session Created: %s (%s)', {
       script: script.split('/').pop(),
       sessionId,
@@ -217,6 +251,8 @@ export default class ChromeAliveCore {
       workingDirectory: dbSession.workingDirectory,
       entrypoint: dbSession.scriptEntrypoint,
       startDate: dbSession.scriptStartDate,
+      execArgv: dbSession.scriptExecArgv,
+      execPath: dbSession.scriptExecPath,
     };
     const { sessionController, appConnectionId } = this.createSessionController(db, options);
     const apiConnection = sessionController.addConnection(transport, request);
@@ -227,28 +263,36 @@ export default class ChromeAliveCore {
       options,
       db.path,
       new Date(dbSession.startDate),
-    )
-      .then(() => sessionController.loadFromDb())
-      .catch(error => {
-        log.error('ERROR loading session from database', {
-          error,
-          sessionId: heroSessionId,
-        });
+    );
+    sessionController.loadFromDb().catch(error => {
+      log.error('ERROR loading session from database', {
+        error,
+        sessionId: heroSessionId,
       });
+    });
     return apiConnection;
   }
 
-  private static async sendReadyEvent(
+  private static sendReadyEvent(
     appConnectionId: string,
     heroSessionId: string,
     options: ISessionCreateOptions,
     dbPath: string,
     startDate: Date,
-  ): Promise<any> {
+  ): void {
     const appConnection = this.appConnectionsById.get(appConnectionId);
-    await appConnection.sendEvent({
+    appConnection.sendEvent({
       eventType: 'Session.opened',
       data: { heroSessionId, options, dbPath, startDate },
     });
+  }
+
+  private static broadcastAppEvent<T extends keyof IDesktopAppEvents & string>(
+    eventType: T,
+    data: IDesktopAppEvents[T],
+  ): void {
+    for (const client of this.appConnectionsById.values()) {
+      client.sendEvent({ eventType, data });
+    }
   }
 }

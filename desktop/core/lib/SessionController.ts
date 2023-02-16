@@ -37,8 +37,8 @@ import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
 import DetachedAssets from '@ulixee/hero-core/lib/DetachedAssets';
 import MirrorNetwork from '@ulixee/hero-timetravel/lib/MirrorNetwork';
-import sessionTicksApi from '@ulixee/hero-core/apis/Session.ticks';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
+import getTimetravelTicks from '@ulixee/hero-timetravel/player/getTimetravelTicks';
 import ResourceSearch from './ResourceSearch';
 import ElementsModule from './app-extension-modules/ElementsModule';
 import DevtoolsBackdoorModule from './app-extension-modules/DevtoolsBackdoorModule';
@@ -183,6 +183,7 @@ export default class SessionController extends TypedEventEmitter<{
     this.resourceSearch = new ResourceSearch(heroSession, this.events);
     this.events.on(heroSession, 'kept-alive', this.onHeroSessionKeptAlive);
     this.events.on(heroSession, 'resumed', this.onHeroSessionResumed);
+    this.events.on(heroSession, 'closed', this.onHeroSessionClosed);
     this.events.on(heroSession, 'output', this.onOutputUpdated);
     this.events.on(heroSession, 'collected-asset', this.onCollectedAsset);
     this.events.on(heroSession, 'tab-created', this.onTabCreated);
@@ -202,10 +203,7 @@ export default class SessionController extends TypedEventEmitter<{
   public async loadFromDb(): Promise<void> {
     this.sourceCodeTimeline.loadCommands(this.db.commands.loadHistory());
     const network = await MirrorNetwork.createFromSessionDb(this.db);
-    const { tabDetails } = await sessionTicksApi({
-      includeCommands: true,
-      includeInteractionEvents: true,
-      includePaintEvents: true,
+    const tabDetails = await getTimetravelTicks({
       sessionId: this.sessionId,
     });
 
@@ -279,6 +277,7 @@ export default class SessionController extends TypedEventEmitter<{
       });
     });
     this.events.once(connection, 'disconnect', () => {
+      connection.removeAllListeners();
       const idx = this.connections.indexOf(connection);
       if (idx >= 0) this.connections.splice(idx, 1);
     });
@@ -601,7 +600,9 @@ export default class SessionController extends TypedEventEmitter<{
     });
   }
 
-  public getDom(args?: Parameters<IChromeAliveSessionApi['getDom']>[0]): ReturnType<IChromeAliveSessionApi['getDom']> {
+  public getDom(
+    args?: Parameters<IChromeAliveSessionApi['getDom']>[0],
+  ): ReturnType<IChromeAliveSessionApi['getDom']> {
     return this.getDomRecording(args?.tabId);
   }
 
@@ -879,6 +880,12 @@ export default class SessionController extends TypedEventEmitter<{
 
   private onCommandsResumed(): void {
     this.playbackState = 'running';
+    this.sendActiveSession();
+  }
+
+  private onHeroSessionClosed(): void {
+    this.playbackState = 'finished';
+    this.mirrorPagePauseRefreshing = true;
     this.sendActiveSession();
   }
 

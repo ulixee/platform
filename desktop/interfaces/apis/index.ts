@@ -36,12 +36,12 @@ export type IDesktopAppApis = {
   'Sessions.list': IHeroSessionsApi['list'];
 };
 
-export type IChromeAliveApiResponse<T extends keyof IChromeAliveSessionApis> = ICoreResponsePayload<
+export type IChromeAliveSessionApiResponse<T extends keyof IChromeAliveSessionApis> = ICoreResponsePayload<
   IChromeAliveSessionApis,
   T
 >;
 
-export type IChromeAliveApiRequest<T extends keyof IChromeAliveSessionApis> = ICoreRequestPayload<
+export type IChromeAliveSessionApiRequest<T extends keyof IChromeAliveSessionApis> = ICoreRequestPayload<
   IChromeAliveSessionApis,
   T
 >;

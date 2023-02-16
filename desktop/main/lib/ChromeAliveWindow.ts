@@ -11,7 +11,7 @@ import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import moment = require('moment');
 import View from './View';
 import StaticServer from './StaticServer';
-import ChromeAliveApi from './ChromeAliveApi';
+import ApiClient from './ApiClient';
 import BrowserView = Electron.BrowserView;
 
 // make electron packaging friendly
@@ -33,7 +33,7 @@ export default class ChromeAliveWindow {
   private static hasUpdatedApiPath = false;
 
   window: BrowserWindow;
-  api: ChromeAliveApi<IChromeAliveSessionApis, IChromeAliveSessionEvents>;
+  api: ApiClient<IChromeAliveSessionApis, IChromeAliveSessionEvents>;
   enableDevtoolsOnDevtools = false;
 
   private get activeTab(): IReplayTab {
@@ -65,6 +65,7 @@ export default class ChromeAliveWindow {
 
     const mainScreen = screen.getPrimaryDisplay();
     const workarea = mainScreen.workArea;
+    this.minerAddress = new URL(minerAddress).origin;
 
     this.window = new BrowserWindow({
       show: false,
@@ -197,6 +198,7 @@ export default class ChromeAliveWindow {
   }
 
   public async reconnect(address: string): Promise<void> {
+    console.log('calling reconnect', address, this.minerAddress)
     this.minerAddress = address;
     this.createApi();
 
@@ -287,8 +289,8 @@ export default class ChromeAliveWindow {
   }
 
   private createApi(): void {
-    this.api = new ChromeAliveApi(
-      `${this.minerAddress}/${this.session.heroSessionId}`,
+    this.api = new ApiClient(
+      `${this.minerAddress}/chromealive/${this.session.heroSessionId}`,
       this.onChromeAliveEvent,
     );
     // eslint-disable-next-line no-console

@@ -8,7 +8,7 @@ import ICoreRequestPayload from '@ulixee/net/interfaces/ICoreRequestPayload';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
 import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
 
-export default class ChromeAliveApi<
+export default class ApiClient<
   TApis extends IDesktopAppApis | IChromeAliveSessionApis,
   TEvents extends IChromeAliveSessionEvents | IDesktopAppEvents,
   TEventNames extends keyof TEvents = keyof TEvents,
@@ -29,7 +29,7 @@ export default class ChromeAliveApi<
       url.hostname.replace('localhost', '127.0.0.1');
       this.address = url.href;
     } catch (error) {
-      console.error('Invalid ChromeAliveApi URL', error, { address });
+      console.error('Invalid API URL', error, { address });
       throw error;
     }
     this.transport = new WsTransportToCore(this.address);

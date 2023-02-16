@@ -2,6 +2,9 @@ module.exports = {
   outputDir: '../../build/desktop/main/ui',
   filenameHashing: false,
   pages: {
+    desktop: {
+      entry: './src/pages/desktop/index.ts',
+    },
     toolbar: {
       entry: './src/pages/toolbar/index.ts',
     },

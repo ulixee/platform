@@ -16,6 +16,8 @@ declare global {
 
 export class Client<Type extends 'session' | 'desktop' = 'session'> {
   public onConnect: () => any;
+  public address: string;
+  public autoReconnect = true;
 
   private connectedPromise: Promise<void>;
   private connection: WebSocket;
@@ -32,10 +34,10 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     if (this.connectedPromise) {
       return this.connectedPromise;
     }
-    if (!window.minerAddress) {
+    if (!this.address) {
       return Promise.resolve();
     }
-    this.connection = new WebSocket(window.minerAddress);
+    this.connection = new WebSocket(this.address);
     this.connection.onclose = this.onClose.bind(this);
     this.connectedPromise = new Promise(resolve => {
       this.connection.onopen = () => resolve();
@@ -68,9 +70,21 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     if (idx >= 0) handlers.splice(idx, 1);
   }
 
+  close() {
+    try {
+      this.connection?.close();
+    } catch {}
+    this.connection = null;
+  }
+
   onClose() {
     this.connectedPromise = null;
+    if (!this.autoReconnect) {
+      this.eventHandlersByEventType = {}
+      return;
+    }
     setTimeout(() => {
+      this.address ||= window.minerAddress;
       this.connect().catch(err => console.log('Client Connect Error', err));
     }, 1e3);
   }
@@ -147,12 +161,13 @@ if (window.opener) {
 
 window.setMinerAddress = function setMinerAddress(url: string) {
   window.minerAddress = url;
+  defaultClient.address = url;
   defaultClient.connect().catch(console.error);
 };
 
 // if already set, connect now
 if (window.minerAddress) {
-  defaultClient.connect().catch(console.error);
+  window.setMinerAddress(window.minerAddress);
 }
 window.defaultClient = defaultClient;
 

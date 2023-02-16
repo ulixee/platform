@@ -77,7 +77,7 @@ import ISessionTimetravelEvent from '@ulixee/desktop-interfaces/events/ISessionT
 import { ITimelineTick } from '@/pages/toolbar/views/SessionController.vue';
 import IHeroSessionUpdatedEvent from '@ulixee/desktop-interfaces/events/IHeroSessionUpdatedEvent';
 import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';
-import { IChromeAliveApiResponse } from '@ulixee/desktop-interfaces/apis';
+import { IChromeAliveSessionApiResponse } from '@ulixee/desktop-interfaces/apis';
 import ArrowRight from './ArrowRight.vue';
 
 const startMarkerPosition = 0;
@@ -452,7 +452,7 @@ export default Vue.defineComponent({
     },
 
     getTimetravelStateResponse(
-      event: IChromeAliveApiResponse<'Session.getTimetravelState'>['data'],
+      event: IChromeAliveSessionApiResponse<'Session.getTimetravelState'>['data'],
     ): void {
       this.cssVars.markerLeft = event.percentOffset;
       this.cssVars.markerRight = event.percentOffset;

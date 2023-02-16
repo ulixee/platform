@@ -8,7 +8,7 @@ import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
-import ChromeAliveUtils from './ChromeAliveUtils';
+import DesktopUtils from './DesktopUtils';
 import Miner, { IHttpHandleFn } from '../index';
 
 export default class CoreRouter {
@@ -36,10 +36,12 @@ export default class CoreRouter {
   private wsConnectionByType = {
     hero: transport => HeroCore.addConnection(transport),
     datastore: transport => DatastoreCore.addConnection(transport) as any,
+    desktop: (transport, req) =>
+      DesktopUtils.getDesktop().addDesktopConnection(transport, req) as any,
     chromealive: (transport, req) =>
-      ChromeAliveUtils.getChromeAlive().addConnection(transport, req) as any,
-    chromealiveRaw: (ws, req) => {
-      ChromeAliveUtils.getChromeAlive().addChromealiveDevtoolsWebsocket(ws, req);
+      DesktopUtils.getDesktop().addChromeAliveConnection(transport, req),
+    desktopRaw: (ws, req) => {
+      DesktopUtils.getDesktop().addAppDevtoolsWebsocket(ws, req);
     },
   } as const;
 
@@ -71,12 +73,13 @@ export default class CoreRouter {
       safeRegisterModule(module);
     }
 
-    if (ChromeAliveUtils.isInstalled()) {
+    if (DesktopUtils.isInstalled()) {
       miner.addWsRoute(
-        /\/chromealive-devtools\?id=.+/,
-        this.handleRawSocketRequest.bind(this, 'chromealiveRaw'),
+        /\/desktop-devtools\?id=.+/,
+        this.handleRawSocketRequest.bind(this, 'desktopRaw'),
       );
-      miner.addWsRoute(/\/chromealive.*/, this.handleSocketRequest.bind(this, 'chromealive'));
+      miner.addWsRoute('/desktop', this.handleSocketRequest.bind(this, 'desktop'));
+      miner.addWsRoute(/\/chromealive\/.+/, this.handleSocketRequest.bind(this, 'chromealive'));
     }
   }
 
@@ -94,9 +97,9 @@ export default class CoreRouter {
     this.serverAddress = { ipAddress, port: Number(port) };
     await DatastoreCore.start({ ipAddress, port: this.serverAddress.port });
 
-    if (ChromeAliveUtils.isInstalled()) {
-      const chromeAliveCore = ChromeAliveUtils.getChromeAlive();
-      const wsAddress = Promise.resolve(`ws://${minerAddress}/chromealive`);
+    if (DesktopUtils.isInstalled()) {
+      const chromeAliveCore = DesktopUtils.getDesktop();
+      const wsAddress = Promise.resolve(`ws://${minerAddress}`);
       chromeAliveCore.setMinerAddress(wsAddress);
       await chromeAliveCore.activatePlugin();
     }
@@ -112,8 +115,8 @@ export default class CoreRouter {
       for (const connection of this.connections) {
         await connection.disconnect();
       }
-      if (ChromeAliveUtils.isInstalled()) {
-        await ChromeAliveUtils.getChromeAlive().shutdown();
+      if (DesktopUtils.isInstalled()) {
+        await DesktopUtils.getDesktop().shutdown();
       }
       await DatastoreCore.close();
       await HeroCore.shutdown();
@@ -130,7 +133,7 @@ export default class CoreRouter {
     ws: WebSocket,
     req: IncomingMessage,
   ): void {
-    if (connectionType === 'chromealiveRaw') {
+    if (connectionType === 'desktopRaw') {
       this.wsConnectionByType[connectionType](ws, req);
     }
     this.connections.add({

@@ -11,7 +11,8 @@ import IMenubarOptions from '../interfaces/IMenubarOptions';
 import { getWindowPosition } from './util/getWindowPosition';
 import installDefaultChrome from './util/installDefaultChrome';
 import StaticServer from './StaticServer';
-import { ChromeAliveManager } from './ChromeAliveManager';
+import { WindowManager } from './WindowManager';
+import ApiManager from './ApiManager';
 
 const { version } = require('../package.json');
 // Forked from https://github.com/maxogden/menubar
@@ -31,11 +32,12 @@ export class Menubar extends EventEmitter {
   #options: IMenubarOptions;
   #nsEventMonitor: unknown;
   #positioner: Positioner | undefined;
-  #chromeAliveManager: ChromeAliveManager;
+  #windowManager: WindowManager;
   #isClosing = false;
   #updateInfoPromise: Promise<UpdateInfo>;
   #installUpdateOnExit = false;
   #downloadProgress = 0;
+  #apiManager: ApiManager;
 
   constructor(options?: IMenubarOptions) {
     super();
@@ -49,7 +51,7 @@ export class Menubar extends EventEmitter {
     (process.env as any).ELECTRON_DISABLE_SECURITY_WARNINGS = true;
 
     this.staticServer = new StaticServer(Path.resolve(__dirname, '..', 'ui'));
-    this.#chromeAliveManager = new ChromeAliveManager(this);
+    this.#apiManager = new ApiManager();
     this.ulixeeConfig = UlixeeConfig.global;
     void this.appReady();
   }
@@ -142,8 +144,9 @@ export class Menubar extends EventEmitter {
     console.warn('Quitting Ulixee Menubar');
     this.#tray.removeAllListeners();
     this.hideWindow();
+    this.#apiManager.close();
     await this.stopMiner();
-    await this.#chromeAliveManager.close();
+    await this.#windowManager.close();
   }
 
   private async appExit(): Promise<void> {
@@ -159,13 +162,14 @@ export class Menubar extends EventEmitter {
   private async appReady(): Promise<void> {
     try {
       await app.whenReady();
+      ShutdownHandler.register(() => this.appExit());
       // for now auto-start
       await this.staticServer.load();
+      this.#windowManager = new WindowManager(this, this.#apiManager);
       await this.startMiner();
-      await this.#chromeAliveManager.start(await this.ulixeeMiner?.address);
+      await this.#apiManager.start(await this.ulixeeMiner?.address);
 
       await this.createWindow();
-      ShutdownHandler.register(() => this.appExit());
 
       this.#tray = new Tray(iconPath);
 
@@ -350,11 +354,11 @@ export class Menubar extends EventEmitter {
         }
 
         if (api === 'App.openHeroSession') {
-          await this.#chromeAliveManager.pickHeroSession();
+          await this.#windowManager.pickHeroSession();
         }
 
         if (api === 'App.openDesktop') {
-          await this.#chromeAliveManager.pickHeroSession();
+          await this.#windowManager.openDesktop();
         }
 
         if (api === 'Miner.stop' || api === 'Miner.restart') {
