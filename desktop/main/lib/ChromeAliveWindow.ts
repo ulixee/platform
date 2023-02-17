@@ -198,7 +198,6 @@ export default class ChromeAliveWindow {
   }
 
   public async reconnect(address: string): Promise<void> {
-    console.log('calling reconnect', address, this.minerAddress)
     this.minerAddress = address;
     this.createApi();
 
@@ -322,7 +321,7 @@ export default class ChromeAliveWindow {
     });
     devtoolsOnDevtoolsWindow.show();
     view.webContents.setDevToolsWebContents(devtoolsOnDevtoolsWindow.webContents);
-    devtoolsOnDevtoolsWindow.webContents.openDevTools({ mode: 'detach' });
+    devtoolsOnDevtoolsWindow.webContents.openDevTools({ mode: 'undocked' });
   }
 
   private async activateView(mode: ISessionAppModeEvent['mode']): Promise<void> {

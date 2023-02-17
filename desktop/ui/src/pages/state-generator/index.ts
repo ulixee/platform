@@ -1,5 +1,5 @@
 import { createApp } from 'vue';
 import App from './index.vue';
+import './index.css';
 
-console.log('creting state generate')
 createApp(App).mount('#app');

@@ -8,6 +8,7 @@ import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation'
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import ICommandUpdatedEvent from '@ulixee/desktop-interfaces/events/ICommandUpdatedEvent';
 import ISourceCodeUpdatedEvent from '@ulixee/desktop-interfaces/events/ISourceCodeUpdatedEvent';
+import CommandFormatter from '@ulixee/hero-core/lib/CommandFormatter';
 
 export default class SourceCodeTimeline extends TypedEventEmitter<{
   source: ISourceCodeUpdatedEvent;
@@ -22,6 +23,8 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
     bindFunctions(this);
 
     this.entrypoint = SourceMapSupport.getSourceFile(this.entrypoint);
+    this.sourceFileLines[this.entrypoint] =
+      SourceLoader.getFileContents(this.entrypoint, false)?.split(/\r?\n/) ?? [];
   }
 
   public listen(heroSession: Session): void {
@@ -31,7 +34,7 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
 
   public loadCommands(commands: ICommandMeta[]): void {
     for (const command of commands) {
-      this.onCommandFinished(command, true)
+      this.onCommandFinished(command, true);
     }
   }
 
@@ -65,7 +68,7 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
     );
     this.checkForSourceUpdates(originalSourcePosition);
     this.commandsById[command.id] = {
-      command,
+      command: CommandFormatter.parseResult(command),
       isComplete: false,
       originalSourcePosition,
     };
@@ -79,7 +82,7 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
     );
     this.checkForSourceUpdates(originalSourcePosition);
     this.commandsById[command.id] = {
-      command,
+      command: CommandFormatter.parseResult(command),
       isComplete: true,
       originalSourcePosition,
     };

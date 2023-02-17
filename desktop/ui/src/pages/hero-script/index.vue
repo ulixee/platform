@@ -1,30 +1,57 @@
 <template>
-  <div class="wrapper">
-    <h5>{{ activeFilename }}</h5>
-    <div
-      v-for="(line, i) in activeFileLines"
-      :ref="
-        el => {
-          lineElemsByIdx[i + 1] = el;
-        }
-      "
-      class="line"
-      :class="getClassesForLineIndex(i)"
-      @click="clickLine(i + 1, activeFilename)"
-    >
-      <span class="line-number">{{ i + 1 }}.</span>
-      <pre class="code">{{ line }}</pre>
-
-      <select
-        v-model="focusedCommandId"
-        class="call-marker"
-        @change="changedFocusedCommand()"
-        @click.stop.prevent="onSelectClick($event)"
+  <div class="flex flex-row h-screen divide-x divide-slate-200">
+    <div ref="scriptRef" class="basis-4/6 overflow-auto">
+      <h5>{{ activeFilename }}</h5>
+      <div
+        v-for="(line, i) in activeFileLines"
+        :key="i"
+        :ref="
+          el => {
+            lineElemsByIdx[i + 1] = el;
+          }
+        "
+        class="line"
+        :class="getClassesForLineIndex(i)"
+        @click="clickLine(i + 1, activeFilename)"
       >
-        <option v-for="call of getCallsForLine(i + 1)" :value="call.commandId">
-          {{ call.callInfo }}
-        </option>
-      </select>
+        <span class="line-number">{{ i + 1 }}.</span>
+        <pre class="code">{{ line }}</pre>
+
+        <select
+          v-model="focusedCommandId"
+          class="call-marker"
+          @change="changedFocusedCommand()"
+          @click.stop.prevent="onSelectClick($event)"
+        >
+          <option v-for="call of getCallsForLine(i + 1)" :value="call.commandId">
+            {{ call.callInfo }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <div class="basis-2/6 p-3 overflow-auto">
+      <h5 class="text-base font-bold">
+        Arguments
+      </h5>
+      <ul v-if="focusedCommand" class="list-inside list-decimal">
+        <li v-for="arg in focusedCommand.args">
+          {{ arg }}
+        </li>
+      </ul>
+      <h5 class="mt-2 text-base font-bold">
+        Result
+      </h5>
+      <hr>
+      <div v-if="focusedCommand" class="">
+        <img
+          v-if="focusedCommand.resultType === 'image'"
+          :src="focusedCommand.result"
+          class="object-contain"
+        >
+        <p v-else>
+          {{ focusedCommand.result }}
+        </p>
+      </div>
     </div>
   </div>
 </template>
@@ -34,6 +61,7 @@ import * as Vue from 'vue';
 import ICommandUpdatedEvent from '@ulixee/desktop-interfaces/events/ICommandUpdatedEvent';
 import ICommandFocusedEvent from '@ulixee/desktop-interfaces/events/ICommandFocusedEvent';
 import ISourceCodeUpdatedEvent from '@ulixee/desktop-interfaces/events/ISourceCodeUpdatedEvent';
+import ICommandWithResult from '@ulixee/hero-core/interfaces/ICommandWithResult';
 import Client from '../../api/Client';
 
 export default Vue.defineComponent({
@@ -45,6 +73,8 @@ export default Vue.defineComponent({
       lineElemsByIdx: Vue.reactive<{ [index: number]: HTMLElement }>({}),
       focusedPositions: Vue.reactive<{ line: number; filename: string }[]>([]),
       focusedCommandId: Vue.ref<number>(null),
+      hasTrueFocus: Vue.ref<boolean>(false),
+      scriptRef: Vue.ref<HTMLDivElement>(),
       scriptsByFilename: Vue.reactive<Record<string, ISourceCodeUpdatedEvent['lines']>>({}),
       commandsById: Vue.reactive<{ [commandId: number]: ICommandUpdatedEvent }>({}),
       scrollOnTimeout: -1,
@@ -69,6 +99,9 @@ export default Vue.defineComponent({
     },
     activeFilename(): string {
       return this.focusedPositions?.length ? this.focusedPositions[0].filename : null;
+    },
+    focusedCommand(): ICommandWithResult {
+      return this.commandsById[this.focusedCommandId]?.command;
     },
   },
   methods: {
@@ -129,12 +162,14 @@ export default Vue.defineComponent({
         this.commandIdsByLineKey[key] ??= new Set();
         this.commandIdsByLineKey[key].add(message.command.id);
       }
-      if (!this.focusedCommandId && message.originalSourcePosition?.length) {
+      if (!this.hasTrueFocus && message.originalSourcePosition?.length) {
         this.setFocusedPositions(message.originalSourcePosition);
+        this.focusedCommandId = message.command.id;
       }
     },
     onCommandFocused(message: ICommandFocusedEvent) {
       this.focusedCommandId = message.commandId;
+      this.hasTrueFocus = true;
       const position = this.commandsById[message.commandId]?.originalSourcePosition;
       if (!position?.length) return;
       this.setFocusedPositions(position);
@@ -197,17 +232,11 @@ export default Vue.defineComponent({
   --buttonHoverBackgroundColor: rgba(255, 255, 255, 0.08);
 }
 
-body {
+body, #app {
   height: 100vh;
   margin: 0;
   border-top: 0 none;
   width: 100%;
-}
-
-.wrapper {
-  box-sizing: border-box;
-  background: white;
-  margin: 0;
 }
 h5 {
   margin: 10px;
@@ -265,7 +294,8 @@ h5 {
     }
   }
   &.error {
-    background: #c7ea46 !important;
+    color: black;
+    background: rgba(224, 224, 1, 0.85) !important;
   }
   .line-number {
     display: flex;

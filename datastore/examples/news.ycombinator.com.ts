@@ -14,7 +14,7 @@ export default new Runner(async ({ Hero, Output }) => {
     const extraElem = await story.nextElementSibling;
     const record = new Output();
 
-    const titleElem = await story.querySelector('a.titlelink');
+    const titleElem = story.querySelector('a.titlelink');
 
     record.score = parseInt(
       await extraElem.querySelector('.score').textContent.catch(() => '0'),

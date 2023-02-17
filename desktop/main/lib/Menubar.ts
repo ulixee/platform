@@ -387,7 +387,7 @@ export class Menubar extends EventEmitter {
     const windowBackground = systemPreferences.getColor(backgroundPref)?.replace('#', '') ?? '';
     const url = this.staticServer.getPath(`menubar.html?windowBackground=${windowBackground}`);
     await this.#browserWindow.loadURL(url);
-    if (!app.isPackaged || process.env.OPEN_DEVTOOLS) {
+    if (process.env.OPEN_DEVTOOLS) {
       this.#browserWindow.webContents.openDevTools({ mode: 'undocked' });
     }
     if (this.ulixeeMiner) {

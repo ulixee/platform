@@ -50,7 +50,6 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
 
   onNewSession(heroSession: HeroSession): void {
     const id = heroSession.id;
-    console.log('on session');
     const entry: IHeroSessionsListResult = {
       heroSessionId: id,
       scriptEntrypoint: this.processEntrypoint(heroSession.options?.scriptInstanceMeta?.entrypoint),
@@ -60,7 +59,7 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
       input: heroSession.options.input,
     };
     this.sessions.unshift(entry);
-    this.emit('update', this.list());
+    this.emit('update', [entry]);
     this.events.group(
       id,
       this.events.on(heroSession, 'kept-alive', this.onHeroSessionKeptAlive.bind(this, entry)),
@@ -194,19 +193,19 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
 
   private onHeroSessionResumed(entry: IHeroSessionsListResult): void {
     entry.state = 'running';
-    this.emit('update', this.list());
+    this.emit('update', [entry]);
   }
 
   private onHeroSessionClosed(entry: IHeroSessionsListResult): void {
     const update = this.processSession(entry.heroSessionId);
     Object.assign(entry, update);
-    this.emit('update', this.list());
+    this.emit('update', [entry]);
     this.events.endGroup(entry.heroSessionId);
   }
 
   private onHeroSessionKeptAlive(entry: IHeroSessionsListResult): void {
     const update = this.processSession(entry.heroSessionId);
     Object.assign(entry, update);
-    this.emit('update', this.list());
+    this.emit('update', [entry]);
   }
 }

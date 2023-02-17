@@ -68,7 +68,9 @@ export default class Autorun {
 
       await (runner.constructor as typeof Runner).commandLineExec(runner);
     } catch (error) {
-      errorConsole.error(`ERROR running ${runnerName ?? runner?.name ?? 'runner'}`, error);
+      if (!error[Symbol.for('Runner.hasLogged')]) {
+        errorConsole.error(`ERROR running ${runnerName ?? runner?.name ?? 'runner'}`, error);
+      }
     }
   }
 

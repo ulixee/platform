@@ -7,6 +7,7 @@ import { ClientOptions } from 'ws';
 import * as Http from 'http';
 import { httpGet } from '@ulixee/commons/lib/downloadFile';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
 import WebSocket = require('ws');
 import ApiClient from './ApiClient';
 
@@ -26,15 +27,7 @@ export default class ApiManager<
     newAddress: string;
   };
 }> {
-  public apiByMinerAddress = new Map<
-    string,
-    {
-      api: ApiClient<IDesktopAppApis, IDesktopAppEvents>;
-      id: string;
-      wsToCore: WebSocket;
-      wsToDevtoolsProtocol: WebSocket;
-    }
-  >();
+  public apiByMinerAddress = new Map<string, Resolvable<IApiGroup>>();
 
   exited = false;
   events = new EventSubscriber();
@@ -61,61 +54,70 @@ export default class ApiManager<
 
     this.events.close('error');
     for (const connection of this.apiByMinerAddress.values()) {
-      void connection.api.disconnect().catch(() => null);
+      void this.closeApiGroup(connection);
     }
     this.apiByMinerAddress.clear();
   }
 
   public async connectToMiner(address: string, oldAddress?: string): Promise<void> {
     if (!address) return;
-
     address = this.formatMinerAddress(address);
-
-    const api = new ApiClient<IDesktopAppApis, IDesktopAppEvents>(
-      address,
-      this.onDesktopEvent.bind(this, address),
-    );
-    await api.connect();
-    const onApiClosed = this.events.once(api, 'close', this.onApiClosed.bind(this, address));
-
-    const mainScreen = screen.getPrimaryDisplay();
-    const workarea = mainScreen.workArea;
-    const { id } = await api.send('App.connect', {
-      workarea: {
-        left: workarea.x,
-        top: workarea.y,
-        ...workarea,
-        scale: mainScreen.scaleFactor,
-      },
-    });
-
-    let url: URL;
-    try {
-      url = new URL(`/desktop-devtools`, api.transport.host);
-      url.searchParams.set('id', id);
-    } catch (error) {
-      console.error('Invalid ChromeAlive Devtools URL', error, { address });
+    if (this.apiByMinerAddress.has(address)) {
+      await this.apiByMinerAddress.get(address).promise;
+      return;
     }
-    // pipe connection
-    const [wsToCore, wsToDevtoolsProtocol] = await Promise.all([
-      this.connectToWebSocket(url.href, { perMessageDeflate: true }),
-      this.connectToWebSocket(this.debuggerUrl),
-    ]);
-    const events = [
-      this.events.on(wsToCore, 'message', msg => wsToDevtoolsProtocol.send(msg)),
-      this.events.on(wsToCore, 'error', this.onDevtoolsError.bind(this, wsToCore)),
-      this.events.once(wsToCore, 'close', this.onApiClosed.bind(this, address)),
-      this.events.on(wsToDevtoolsProtocol, 'message', msg => wsToCore.send(msg)),
-      this.events.on(
-        wsToDevtoolsProtocol,
-        'error',
-        this.onDevtoolsError.bind(this, wsToDevtoolsProtocol),
-      ),
-      this.events.once(wsToDevtoolsProtocol, 'close', this.onApiClosed.bind(this, address)),
-    ];
-    this.events.group(`ws-${address}`, onApiClosed, ...events);
-    this.apiByMinerAddress.set(address, { id, api, wsToCore, wsToDevtoolsProtocol });
-    this.emit('new-miner-address', { newAddress: address, isLocal: id === 'local', oldAddress });
+    try {
+      this.apiByMinerAddress.set(address, new Resolvable());
+
+      const api = new ApiClient<IDesktopAppApis, IDesktopAppEvents>(
+        address,
+        this.onDesktopEvent.bind(this, address),
+      );
+      await api.connect();
+      const onApiClosed = this.events.once(api, 'close', this.onApiClosed.bind(this, address));
+
+      const mainScreen = screen.getPrimaryDisplay();
+      const workarea = mainScreen.workArea;
+      const { id } = await api.send('App.connect', {
+        workarea: {
+          left: workarea.x,
+          top: workarea.y,
+          ...workarea,
+          scale: mainScreen.scaleFactor,
+        },
+      });
+
+      let url: URL;
+      try {
+        url = new URL(`/desktop-devtools`, api.transport.host);
+        url.searchParams.set('id', id);
+      } catch (error) {
+        console.error('Invalid ChromeAlive Devtools URL', error, { address });
+      }
+      // pipe connection
+      const [wsToCore, wsToDevtoolsProtocol] = await Promise.all([
+        this.connectToWebSocket(url.href, { perMessageDeflate: true }),
+        this.connectToWebSocket(this.debuggerUrl),
+      ]);
+      const events = [
+        this.events.on(wsToCore, 'message', msg => wsToDevtoolsProtocol.send(msg)),
+        this.events.on(wsToCore, 'error', this.onDevtoolsError.bind(this, wsToCore)),
+        this.events.once(wsToCore, 'close', this.onApiClosed.bind(this, address)),
+        this.events.on(wsToDevtoolsProtocol, 'message', msg => wsToCore.send(msg)),
+        this.events.on(
+          wsToDevtoolsProtocol,
+          'error',
+          this.onDevtoolsError.bind(this, wsToDevtoolsProtocol),
+        ),
+        this.events.once(wsToDevtoolsProtocol, 'close', this.onApiClosed.bind(this, address)),
+      ];
+      this.events.group(`ws-${address}`, onApiClosed, ...events);
+      this.apiByMinerAddress.get(address).resolve({ id, api, wsToCore, wsToDevtoolsProtocol });
+      this.emit('new-miner-address', { newAddress: address, isLocal: id === 'local', oldAddress });
+    } catch (error) {
+      this.apiByMinerAddress.get(address).reject(error);
+      throw error;
+    }
   }
 
   private onDesktopEvent(
@@ -132,9 +134,7 @@ export default class ApiManager<
     if (eventType === 'App.quit') {
       const apis = this.apiByMinerAddress.get(minerAddress);
       if (apis) {
-        void apis.api?.disconnect();
-        apis.wsToCore?.close();
-        apis.wsToDevtoolsProtocol?.close();
+        void this.closeApiGroup(apis);
       }
     }
   }
@@ -160,11 +160,16 @@ export default class ApiManager<
     const api = this.apiByMinerAddress.get(address);
     this.events.endGroup(`ws-${address}`);
     if (api) {
-      if (api.api.isConnected) void api.api.disconnect();
-      api.wsToCore?.close();
-      api.wsToDevtoolsProtocol?.close();
+      void this.closeApiGroup(api);
     }
     this.apiByMinerAddress.delete(address);
+  }
+
+  private async closeApiGroup(group: Resolvable<IApiGroup>): Promise<void> {
+    const { api, wsToCore, wsToDevtoolsProtocol } = await group;
+    if (api.isConnected) await api.disconnect();
+    wsToCore?.close();
+    return wsToDevtoolsProtocol?.close();
   }
 
   private async connectToWebSocket(host: string, options?: ClientOptions): Promise<WebSocket> {
@@ -205,4 +210,11 @@ export default class ApiManager<
     }
     return host;
   }
+}
+
+interface IApiGroup {
+  api: ApiClient<IDesktopAppApis, IDesktopAppEvents>;
+  id: string;
+  wsToCore: WebSocket;
+  wsToDevtoolsProtocol: WebSocket;
 }

@@ -145,6 +145,10 @@ export default class Runner<
       } catch (error) {
         this.errorCount++;
         error.stack = error.stack.split('at Runner.runInternal').shift().trim();
+        if (logOutputResult) {
+          error[Symbol.for('Runner.hasLogged')] = true;
+          console.error(error);
+        }
         await plugins.setResolution(null, error).catch(() => null);
         resultsIterable.reject(error);
       } finally {

@@ -38,7 +38,9 @@ import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions
 import DetachedAssets from '@ulixee/hero-core/lib/DetachedAssets';
 import MirrorNetwork from '@ulixee/hero-timetravel/lib/MirrorNetwork';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
-import getTimetravelTicks from '@ulixee/hero-timetravel/player/getTimetravelTicks';
+import TimetravelTicks, { ITabDetails } from '@ulixee/hero-timetravel/player/TimetravelTicks';
+import { IDomRecording } from '@ulixee/hero-core/models/DomChangesTable';
+import ICommandMeta from '@ulixee/hero-interfaces/ICommandMeta';
 import ResourceSearch from './ResourceSearch';
 import ElementsModule from './app-extension-modules/ElementsModule';
 import DevtoolsBackdoorModule from './app-extension-modules/DevtoolsBackdoorModule';
@@ -148,7 +150,7 @@ export default class SessionController extends TypedEventEmitter<{
     this.scriptInstanceMeta = options.scriptInstanceMeta;
     this.worldHeroSessionIds.add(this.sessionId);
 
-    this.timetravelPlayer = TimetravelPlayer.create(this.sessionId, this);
+    this.timetravelPlayer = new TimetravelPlayer(db, this);
     this.events.on(this.timetravelPlayer, 'new-tick-command', this.sendCommandFocusedEvent);
     this.events.on(this.timetravelPlayer, 'new-paint-index', this.sendPaintIndexEvent);
     this.events.on(this.timetravelPlayer, 'new-offset', this.sendTimetravelOffset);
@@ -187,6 +189,7 @@ export default class SessionController extends TypedEventEmitter<{
     this.events.on(heroSession, 'output', this.onOutputUpdated);
     this.events.on(heroSession, 'collected-asset', this.onCollectedAsset);
     this.events.on(heroSession, 'tab-created', this.onTabCreated);
+    this.events.on(heroSession.commands, 'start', this.onCommandStarted);
     this.events.on(heroSession.commands, 'pause', this.onCommandsPaused);
     this.events.on(heroSession.commands, 'resume', this.onCommandsResumed);
 
@@ -200,29 +203,31 @@ export default class SessionController extends TypedEventEmitter<{
     this.events.on(this.timelineWatch, 'updated', () => this.sendActiveSession());
   }
 
+  public loadTimelineTicks(): ITabDetails[] {
+    const ticks = new TimetravelTicks(this.db);
+    const commandTimeline = CommandTimeline.fromDb(this.db);
+    let domRecordings: { tabId: number; domRecording: IDomRecording }[];
+    if (this.liveSession) {
+      domRecordings = Object.entries(this.mirrorPagesByTabId).map(([tabId, mirrorPage]) => {
+        return { tabId: Number(tabId), domRecording: mirrorPage.domRecording };
+      });
+    } else {
+      domRecordings = TimetravelTicks.loadDomRecording(this.db);
+    }
+
+    return ticks.load(domRecordings, commandTimeline);
+  }
+
   public async loadFromDb(): Promise<void> {
     this.sourceCodeTimeline.loadCommands(this.db.commands.loadHistory());
     const network = await MirrorNetwork.createFromSessionDb(this.db);
-    const tabDetails = await getTimetravelTicks({
-      sessionId: this.sessionId,
-    });
+    const timelineTicks = this.loadTimelineTicks();
 
-    for (const { tab, paintEvents, documents } of tabDetails) {
-      const mainFrameIds = new Set<number>();
-      const domNodePathByFrameId: { [frameId: number]: string } = {};
-      for (const frame of tab.frames) {
-        if (frame.isMainFrame) mainFrameIds.add(frame.id);
-        domNodePathByFrameId[frame.id] = frame.domNodePath;
-      }
-      const mirrorPage = new MirrorPage(network, {
-        paintEvents,
-        documents,
-        domNodePathByFrameId,
-        mainFrameIds,
-      });
-      await this.addReplayTab(tab.id, mirrorPage);
+    for (const { tabId, domRecording } of timelineTicks) {
+      const mirrorPage = new MirrorPage(network, domRecording);
+      await this.addReplayTab(tabId, mirrorPage);
     }
-    await this.timetravelPlayer.setTabState(tabDetails);
+    await this.timetravelPlayer.setTabState(timelineTicks);
     if (this.timetravelPlayer.activeTab) {
       this.timetravelPlayer.activeTab.currentTimelineOffsetPct = -1;
       this.timetravelPlayer.activeTab.currentTickIndex = -1;
@@ -464,6 +469,7 @@ export default class SessionController extends TypedEventEmitter<{
   public onTabCreated(event: HeroSession['EventTypes']['tab-created']): void {
     const { tab } = event;
     this.events.on(tab, 'page-events', this.sendDomRecordingUpdates.bind(this, tab));
+    this.events.on(tab, 'page-events', () => (this.timetravelPlayer.shouldReloadTicks = true));
 
     const mirrorPage = tab.createMirrorPage(false);
     mirrorPage.showChromeInteractions = true;
@@ -625,17 +631,15 @@ export default class SessionController extends TypedEventEmitter<{
     timelineOffsetPercent: number;
   }> {
     try {
+      await this.timetravelPlayer.load();
       await this.chromeAliveWindowController.waitForPageWithHeroTabId(
-        this.timetravelPlayer.activeTab?.id,
+        this.timetravelPlayer.activeTab.id,
       );
       await this.timetravelPlayer.setFocusedOffsetRange(args.timelinePercentRange);
 
       if (args.step) {
-        const tickIndex = this.timetravelPlayer.activeTab.currentTickIndex;
-        if (
-          args.step === 'forward' &&
-          tickIndex === this.timetravelPlayer.activeTab.ticks.length - 1
-        ) {
+        const didStep = await this.timetravelPlayer.step(args.step);
+        if (!didStep && args.step === 'forward') {
           if (this.liveSession) {
             await this.openMode({ mode: 'Live' });
           }
@@ -643,16 +647,14 @@ export default class SessionController extends TypedEventEmitter<{
             tabId: this.timetravelPlayer.activeTab.id,
             percentOffset: 100,
             focusedRange: undefined,
+            url: undefined,
           });
           return { timelineOffsetPercent: 100 };
         }
-        await this.timetravelPlayer.step(args.step);
-      } else {
-        let percentOffset = args.percentOffset;
-        if (args.commandId) {
-          percentOffset = await this.timetravelPlayer.findCommandPercentOffset(args.commandId);
-        }
-        await this.timetravelPlayer.goto(percentOffset ?? 100);
+      } else if (args.percentOffset !== undefined) {
+        await this.timetravelPlayer.goto(args.percentOffset);
+      } else if (args.commandId) {
+        await this.timetravelPlayer.loadTickWithCommandId(args.commandId);
       }
 
       if (this.mode !== 'Timetravel') {
@@ -873,6 +875,12 @@ export default class SessionController extends TypedEventEmitter<{
     this.sendDatastoreUpdatedEvent();
   }
 
+  private onCommandStarted(): void {
+    if (this.mode === 'Live') {
+      this.timetravelPlayer.shouldReloadTicks = true;
+    }
+  }
+
   private onCommandsPaused(): void {
     this.playbackState = 'paused';
     this.sendActiveSession();
@@ -912,10 +920,7 @@ export default class SessionController extends TypedEventEmitter<{
   }
 
   private sendTimetravelOffset(event: TimetravelPlayer['EventTypes']['new-offset']): void {
-    this.sendApiEvent('Session.timetravel', {
-      ...event,
-      url: this.timetravelPlayer.activeTab.mirrorPage.page.mainFrame.url,
-    });
+    this.sendApiEvent('Session.timetravel', event);
   }
 
   private sendPaintIndexEvent(event: TimetravelPlayer['EventTypes']['new-paint-index']): void {

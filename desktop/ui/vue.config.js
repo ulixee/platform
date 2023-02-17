@@ -3,6 +3,7 @@ module.exports = {
   filenameHashing: false,
   pages: {
     desktop: {
+      title: 'Ulixee Desktop',
       entry: './src/pages/desktop/index.ts',
     },
     toolbar: {
