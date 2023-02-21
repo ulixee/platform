@@ -93,7 +93,7 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
       .join(' | ');
 
     const results: IHeroSessionsSearchResult[] = [];
-    const searchResults = this.searchIndex.search(finalQuery, { limit: 10 });
+    const searchResults = this.searchIndex.search(finalQuery);
     for (const result of searchResults) {
       const id = result.item.id;
 

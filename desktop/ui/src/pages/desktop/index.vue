@@ -1,17 +1,18 @@
 <template>
-  <Main />
+  <Home />
 </template>
 
 <script lang="ts">
 import * as Vue from 'vue';
-import Main from './views/Main.vue';
+import Home from './views/Home.vue';
 
 export default Vue.defineComponent({
   name: 'App',
   components: {
-    Main
+    Home
   },
   setup() {
+    document.title = 'Ulixee Desktop';
     return {};
   },
   methods: {},

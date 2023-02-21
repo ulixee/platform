@@ -29,7 +29,7 @@ export default class DesktopWindow extends TypedEventEmitter<{
   constructor(staticServer: StaticServer, private apiManager: ApiManager) {
     super();
     this.#webpageUrl = staticServer.getPath('desktop.html');
-    void this.open(false)
+    void this.open(false);
   }
 
   public async open(show = true): Promise<void> {
@@ -55,12 +55,28 @@ export default class DesktopWindow extends TypedEventEmitter<{
       if (message === 'desktop:api') {
         const [api] = args;
         if (api === 'Desktop.publishConnections') {
-          for (const address of this.apiManager.apiByMinerAddress.keys()) {
+          for (const [address, group] of this.apiManager.apiByMinerAddress) {
+            if (group.isResolved && !group.resolved?.api) continue;
             await this.onNewMinerAddress({ newAddress: address });
           }
         }
         if (api === 'Session.openReplay') {
           this.emit('open-chromealive', ...args[1]);
+        }
+        if (api === 'Desktop.connectToMiner') {
+          const { address } = args[1][0];
+          if (!address) {
+            console.warn('No valid address provided to connect to', args[1]);
+            return;
+          }
+          await this.apiManager
+            .connectToMiner(address)
+            .catch(error =>
+              this.sendDesktopEvent('Desktop.connectToMinerError', {
+                message: error.message,
+                address,
+              }),
+            );
         }
       }
     });
@@ -83,9 +99,14 @@ export default class DesktopWindow extends TypedEventEmitter<{
     newAddress: string;
     oldAddress?: string;
   }): Promise<void> {
-    const json = { detail: { eventType: 'Desktop.onRemoteConnected', data: event } };
-    await this.#window.webContents.executeJavaScript(`(()=>{
-      document.dispatchEvent(new CustomEvent('desktop:event', ${JSON.stringify(json)}));
+    await this.sendDesktopEvent('Desktop.onRemoteConnected', event);
+  }
+
+  private sendDesktopEvent(eventType: string, data: any): Promise<any> {
+    return this.#window.webContents.executeJavaScript(`(()=>{
+      document.dispatchEvent(new CustomEvent('desktop:event', ${JSON.stringify({
+        detail: { eventType, data },
+      })}));
     })()`);
   }
 }

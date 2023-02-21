@@ -1,6 +1,6 @@
 <template>
-  <div class="flex h-screen flex-row divide-x divide-slate-200">
-    <div class="controls fixed top-0 left-0 right-0 bg-slate-100">
+  <div class="flex h-screen flex-row divide-x divide-slate-200 pt-6">
+    <div class="controls fixed top-0 left-0 right-0 bg-slate-100 h-6">
       <span class="inline-block p-1 mx-3">Playback script</span>
       <PlayIcon
         v-if="playback === 'manual'"

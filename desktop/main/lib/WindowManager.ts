@@ -125,6 +125,7 @@ export class WindowManager {
     event: ApiManager['EventTypes']['new-miner-address'],
   ): Promise<void> {
     const { oldAddress, newAddress } = event;
+    await this.desktopWindow.onNewMinerAddress(event);
     if (!oldAddress) return;
 
     for (const window of this.chromeAliveWindows) {

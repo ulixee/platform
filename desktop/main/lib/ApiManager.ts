@@ -115,7 +115,7 @@ export default class ApiManager<
       this.apiByMinerAddress.get(address).resolve({ id, api, wsToCore, wsToDevtoolsProtocol });
       this.emit('new-miner-address', { newAddress: address, isLocal: id === 'local', oldAddress });
     } catch (error) {
-      this.apiByMinerAddress.get(address).reject(error);
+      this.apiByMinerAddress.get(address).reject(error, true);
       throw error;
     }
   }
