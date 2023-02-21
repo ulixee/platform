@@ -1,5 +1,18 @@
 <template>
-  <div class="flex flex-row h-screen divide-x divide-slate-200">
+  <div class="flex h-screen flex-row divide-x divide-slate-200">
+    <div class="controls fixed top-0 left-0 right-0 bg-slate-100">
+      <span class="inline-block p-1 mx-3">Playback script</span>
+      <PlayIcon
+        v-if="playback === 'manual'"
+        class="inline-block h-4 text-slate-800 hover:text-slate-1000"
+        @click.prevent="playScript"
+      />
+      <PauseIcon
+        v-else
+        class="inline-block h-4 text-slate-800 hover:text-slate-1000"
+        @click.prevent="pauseScript"
+      />
+    </div>
     <div ref="scriptRef" class="basis-4/6 overflow-auto">
       <h5>{{ activeFilename }}</h5>
       <div
@@ -15,6 +28,9 @@
         @click="clickLine(i + 1, activeFilename)"
       >
         <span class="line-number">{{ i + 1 }}.</span>
+        <div class="inline-block h-4 w-4">
+          <ExclamationTriangleIcon v-if="lineHasError(i)" class="my-1 box-border text-yellow-800" />
+        </div>
         <pre class="code">{{ line }}</pre>
 
         <select
@@ -29,28 +45,28 @@
         </select>
       </div>
     </div>
-    <div class="basis-2/6 p-3 overflow-auto">
+    <div class="basis-2/6 overflow-auto p-3">
       <h5 class="text-base font-bold">
-        Arguments
+        Raw Command
       </h5>
-      <ul v-if="focusedCommand" class="list-inside list-decimal">
-        <li v-for="arg in focusedCommand.args">
-          {{ arg }}
-        </li>
+      <ul v-if="focusedCommand" class="list-inside list-decimal p-2">
+        {{
+          focusedCommand.label
+        }}
       </ul>
       <h5 class="mt-2 text-base font-bold">
         Result
       </h5>
       <hr>
-      <div v-if="focusedCommand" class="">
+      <div v-if="focusedCommand" class="p-2">
         <img
           v-if="focusedCommand.resultType === 'image'"
           :src="focusedCommand.result"
           class="object-contain"
         >
-        <p v-else>
+        <div v-else class="whitespace-pre">
           {{ focusedCommand.result }}
-        </p>
+        </div>
       </div>
     </div>
   </div>
@@ -58,15 +74,19 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
+import json5 from 'json5';
 import ICommandUpdatedEvent from '@ulixee/desktop-interfaces/events/ICommandUpdatedEvent';
 import ICommandFocusedEvent from '@ulixee/desktop-interfaces/events/ICommandFocusedEvent';
 import ISourceCodeUpdatedEvent from '@ulixee/desktop-interfaces/events/ISourceCodeUpdatedEvent';
+import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';
+import ISessionTimetravelEvent from '@ulixee/desktop-interfaces/events/ISessionTimetravelEvent';
 import ICommandWithResult from '@ulixee/hero-core/interfaces/ICommandWithResult';
+import { ExclamationTriangleIcon, PauseIcon, PlayIcon } from '@heroicons/vue/24/outline';
 import Client from '../../api/Client';
 
 export default Vue.defineComponent({
   name: 'HeroScriptPanel',
-  components: {},
+  components: { ExclamationTriangleIcon, PlayIcon, PauseIcon },
   setup() {
     return {
       commandIdsByLineKey: {} as { [filename_line: string]: Set<number> },
@@ -78,6 +98,8 @@ export default Vue.defineComponent({
       scriptsByFilename: Vue.reactive<Record<string, ISourceCodeUpdatedEvent['lines']>>({}),
       commandsById: Vue.reactive<{ [commandId: number]: ICommandUpdatedEvent }>({}),
       scrollOnTimeout: -1,
+      mode: Vue.ref<ISessionAppModeEvent['mode']>('Live'),
+      playback: Vue.ref<ISessionTimetravelEvent['playback']>('manual'),
     };
   },
   watch: {
@@ -105,6 +127,25 @@ export default Vue.defineComponent({
     },
   },
   methods: {
+    playScript(): void {
+      this.playback = 'automatic';
+      Client.send('Session.timetravel', {
+        playback: 'automatic',
+      }).catch(err => alert(err.message));
+    },
+
+    pauseScript(): void {
+      this.playback = 'manual';
+      Client.send('Session.timetravel', {
+        playback: 'manual',
+      }).catch(err => alert(err.message));
+    },
+
+    formatJson(text: string | any): string {
+      let json = text;
+      if (typeof text === 'string') json = JSON.parse(text);
+      return json5.stringify(json, null, 2);
+    },
     getCallsForLine(line: number): { commandId: number; callInfo: string; active: boolean }[] {
       const filename = this.activeFilename;
       if (!filename) return [];
@@ -141,16 +182,19 @@ export default Vue.defineComponent({
       }
       return [];
     },
+    lineHasError(index: number): boolean {
+      const commandsAtLine = this.getCommandsAtPosition(index + 1, this.activeFilename);
+      return commandsAtLine.some(x => x.command.resultType?.includes('Error'));
+    },
     getClassesForLineIndex(index: number) {
       const filename = this.activeFilename;
       const active =
         this.focusedPositions?.some(x => x.line === index + 1 && x.filename === filename) ?? false;
 
       const commandsAtLine = this.getCommandsAtPosition(index + 1, this.activeFilename);
-      const hasError = commandsAtLine.some(x => x.command.resultType?.includes('Error'));
       return {
         active,
-        error: hasError,
+        error: this.lineHasError(index),
         'multi-call': commandsAtLine.length > 1,
         command: commandsAtLine.length > 0,
       };
@@ -198,6 +242,11 @@ export default Vue.defineComponent({
       }
     },
 
+    onModeChange(event: ISessionAppModeEvent): void {
+      if (event.mode === 'Timetravel' || event.mode === 'Live') {
+        this.mode = event.mode;
+      }
+    },
     // private functions
 
     setFocusedPositions(positions: ICommandUpdatedEvent['originalSourcePosition']) {
@@ -211,6 +260,7 @@ export default Vue.defineComponent({
     Client.send('Session.getScriptState', {})
       .then(this.onScriptStateResponse)
       .catch(err => alert(String(err)));
+    Client.on('Session.appMode', this.onModeChange);
 
     Client.on('SourceCode.updated', this.onSourceCodeUpdated);
     Client.on('Command.updated', this.onCommandUpdated);
@@ -232,7 +282,8 @@ export default Vue.defineComponent({
   --buttonHoverBackgroundColor: rgba(255, 255, 255, 0.08);
 }
 
-body, #app {
+body,
+#app {
   height: 100vh;
   margin: 0;
   border-top: 0 none;
@@ -240,6 +291,10 @@ body, #app {
 }
 h5 {
   margin: 10px;
+}
+.controls {
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.16);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
 }
 .line {
   display: flex;
@@ -275,27 +330,23 @@ h5 {
       }
     }
     &:hover {
-      background: aliceblue;
+      outline: #83898d dashed 1px;
       cursor: pointer;
     }
     .line-number {
-      background: aliceblue;
+      color: black;
     }
   }
   &.active {
-    background: #00a86b;
-    color: white;
-    &:hover {
-      background: #00a86b;
-    }
+    outline: #3498db dashed 2px;
     .line-number {
       font-weight: bold;
       color: black;
     }
-  }
-  &.error {
-    color: black;
-    background: rgba(224, 224, 1, 0.85) !important;
+    &:hover {
+      outline: #3498db dashed 2px;
+      cursor: auto;
+    }
   }
   .line-number {
     display: flex;

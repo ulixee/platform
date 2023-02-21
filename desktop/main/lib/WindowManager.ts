@@ -128,7 +128,7 @@ export class WindowManager {
     if (!oldAddress) return;
 
     for (const window of this.chromeAliveWindows) {
-      if (window.minerAddress.startsWith(oldAddress)) {
+      if (window.api.address.startsWith(oldAddress)) {
         await window.reconnect(newAddress);
       }
     }

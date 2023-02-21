@@ -78,7 +78,7 @@ export default class CoreRouter {
         /\/desktop-devtools\?id=.+/,
         this.handleRawSocketRequest.bind(this, 'desktopRaw'),
       );
-      miner.addWsRoute('/desktop', this.handleSocketRequest.bind(this, 'desktop'));
+      miner.addWsRoute(/\/desktop(\?.+)?/, this.handleSocketRequest.bind(this, 'desktop'));
       miner.addWsRoute(/\/chromealive\/.+/, this.handleSocketRequest.bind(this, 'chromealive'));
     }
   }

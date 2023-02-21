@@ -1,7 +1,6 @@
 import { app, BrowserWindow, screen, shell } from 'electron';
 import * as Path from 'path';
 import { nanoid } from 'nanoid';
-import * as Fs from 'fs';
 import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
 import { IChromeAliveSessionApis } from '@ulixee/desktop-interfaces/apis';
@@ -30,8 +29,6 @@ export default class ChromeAliveWindow {
     Reliability: '/screen-reliability.html',
   } as const;
 
-  private static hasUpdatedApiPath = false;
-
   window: BrowserWindow;
   api: ApiClient<IChromeAliveSessionApis, IChromeAliveSessionEvents>;
   enableDevtoolsOnDevtools = false;
@@ -58,15 +55,13 @@ export default class ChromeAliveWindow {
       dbPath: string;
     },
     private staticServer: StaticServer,
-    public minerAddress: string,
+    minerAddress: string,
   ) {
     bindFunctions(this);
-    this.createApi();
+    this.createApi(minerAddress);
 
     const mainScreen = screen.getPrimaryDisplay();
     const workarea = mainScreen.workArea;
-    this.minerAddress = new URL(minerAddress).origin;
-
     this.window = new BrowserWindow({
       show: false,
       acceptFirstMouse: true,
@@ -142,7 +137,9 @@ export default class ChromeAliveWindow {
       this.trackChildWindow(childWindow, details);
     });
 
-    this.#toolbarView.webContents.openDevTools({ mode: 'detach' });
+    if (process.env.DEVTOOLS) {
+      this.#toolbarView.webContents.openDevTools({ mode: 'detach' });
+    }
     this.#eventSubscriber.on(toolbarWc, 'ipc-message', (e, eventName, ...args) => {
       if (eventName === 'App:changeHeight') {
         this.#toolbarHeight = args[0];
@@ -191,6 +188,13 @@ export default class ChromeAliveWindow {
       if (win.webContents?.isDevToolsOpened()) win.webContents.closeDevTools();
       win.close();
     }
+    if (this.#toolbarView.webContents.isDevToolsOpened()) {
+      this.#toolbarView.webContents.closeDevTools();
+    }
+    this.#toolbarView.webContents.close();
+    for (const tab of this.#replayTabs) {
+      tab.view.webContents.close();
+    }
     this.#childWindowsByName.clear();
     this.#eventSubscriber.close();
     await this.api?.send('Session.close');
@@ -198,8 +202,11 @@ export default class ChromeAliveWindow {
   }
 
   public async reconnect(address: string): Promise<void> {
-    this.minerAddress = address;
-    this.createApi();
+    if (this.api?.address.includes(address)) return;
+    if (this.api?.isConnected) {
+      await this.api.disconnect()
+    }
+    this.createApi(address);
 
     await this.api.connect();
     for (const tab of this.#replayTabs) {
@@ -235,14 +242,14 @@ export default class ChromeAliveWindow {
       if (this.#replayTabs.some(x => x.heroTabId === heroTabId)) return;
       const view = new View(this.window, {
         partition: `persist:${nanoid(5)}`,
+        webSecurity: false,
       });
       view.browserView.setAutoResize({ width: true, height: true });
       view.attach();
-      await view.webContents.loadURL('about:blank');
+
       view.webContents.on('focus', () => {
         if (!this.#showingPopupName?.startsWith('MenuFinder')) this.closeOpenPopup();
       });
-      await ChromeAliveWindow.replaceExtensionApiPath(this.api.address);
 
       await view.webContents.session.loadExtension(extensionPath, {
         allowFileAccess: true,
@@ -254,15 +261,22 @@ export default class ChromeAliveWindow {
           console.warn('No web contents on showing devtools');
           return;
         }
+
         void devtoolsWc.executeJavaScript(
           `(async () => {
+          window.addEventListener("message", (event) => {
+            event.source.postMessage({ 
+              action: 'returnMinerAddress', 
+              minerAddress: '${this.api.address}' 
+            }, event.origin);
+          }, false);
         UI.inspectorView.tabbedPane.closeTabs(['timeline', 'heap_profiler', 'lighthouse', 'security', 'resources', 'network', 'sources']);
         
         for (let i =0; i < 100; i+=1) {
            const tab = UI.inspectorView.tabbedPane.tabs.find(x => x.titleInternal === 'Hero Script');
            if (tab) {    
              UI.inspectorView.tabbedPane.insertBefore(tab, 0);
-             UI.inspectorView.tabbedPane.selectTab(tab.id)
+             UI.inspectorView.tabbedPane.selectTab(tab.id);
              break;
            }
            await new Promise(r => setTimeout(r, 100));
@@ -272,8 +286,10 @@ export default class ChromeAliveWindow {
         const target = await View.getTargetInfo(devtoolsWc);
         await this.api.send('Session.devtoolsTargetOpened', target);
       });
-      view.webContents.openDevTools({ mode: 'bottom' });
       view.addContextMenu();
+
+      await view.webContents.loadURL('about:blank');
+      view.webContents.openDevTools({ mode: 'bottom' });
 
       const { targetId, browserContextId } = await View.getTargetInfo(view.webContents);
       const chromeTabId = view.webContents.id;
@@ -287,11 +303,9 @@ export default class ChromeAliveWindow {
     });
   }
 
-  private createApi(): void {
-    this.api = new ApiClient(
-      `${this.minerAddress}/chromealive/${this.session.heroSessionId}`,
-      this.onChromeAliveEvent,
-    );
+  private createApi(baseHost: string): void {
+    const address = new URL(`/chromealive/${this.session.heroSessionId}`, baseHost).href;
+    this.api = new ApiClient(address, this.onChromeAliveEvent);
     // eslint-disable-next-line no-console
     console.log('Window connected to %s', this.api.address);
     this.#eventSubscriber.once(this.api, 'close', this.onApiClose);
@@ -453,20 +467,10 @@ export default class ChromeAliveWindow {
         await popup?.webContents.executeJavaScript(
           'window.dispatchEvent(new CustomEvent("manual-close"))',
         );
-        popup?.close();
-        return;
+        try {
+          popup?.close();
+        } catch {}
       }
     });
-  }
-
-  private static async replaceExtensionApiPath(address: string): Promise<void> {
-    if (this.hasUpdatedApiPath) return;
-    try {
-      const filePath = `${extensionPath}/getMinerAddress.js`;
-      await Fs.promises.writeFile(filePath, `window.minerAddress = "${address}";`);
-      this.hasUpdatedApiPath = true;
-    } catch (err) {
-      throw new Error(`Could not launch ChromeAlive: ${err.message}`);
-    }
   }
 }

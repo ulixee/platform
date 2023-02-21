@@ -38,7 +38,7 @@ describe('basic ResourceSearch tests', () => {
   it('can find a resource', async () => {
     const exampleUrl = `${koaServer.baseUrl}/resources-search`;
     const { session, tab } = await Session.create({});
-    const resourceSearch = new ResourceSearch(session, new EventSubscriber());
+    const resourceSearch = new ResourceSearch(session.db, new EventSubscriber());
     resourceSearch.onTabCreated({ tab });
 
     await tab.goto(exampleUrl);

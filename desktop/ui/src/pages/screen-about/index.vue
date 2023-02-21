@@ -1,6 +1,6 @@
 <template>
   <div class="container-md mx-auto">
-    <div id="circuits" v-if="mode === 'circuits'">
+    <div v-if="mode === 'circuits'" id="circuits">
       <h1>About Circuits</h1>
       <p>
         Circuits allow you to define and then detect what Location or State your Hero World is in.
@@ -29,7 +29,7 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
-import { ChevronRightIcon } from '@heroicons/vue/solid';
+import { ChevronRightIcon } from '@heroicons/vue/24/solid';
 
 export default Vue.defineComponent({
   name: 'About',

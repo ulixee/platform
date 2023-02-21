@@ -1,6 +1,6 @@
 import Page from '@ulixee/unblocked-agent/lib/Page';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import IDevtoolsSession from '@ulixee/unblocked-specification/agent/browser/IDevtoolsSession';
+import IDevtoolsSession, {Protocol} from '@ulixee/unblocked-specification/agent/browser/IDevtoolsSession';
 import { IBrowserContextHooks } from '@ulixee/unblocked-specification/agent/hooks/IBrowserHooks';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
@@ -8,6 +8,7 @@ import BridgeToExtension from './bridges/BridgeToExtension';
 import DevtoolsBackdoorModule from './app-extension-modules/DevtoolsBackdoorModule';
 import ElementsModule from './app-extension-modules/ElementsModule';
 import AppDevtoolsConnection from './AppDevtoolsConnection';
+import TargetInfo = Protocol.Target.TargetInfo;
 
 export default class ChromeAliveWindowController implements IBrowserContextHooks {
   // TODO: support multiple replay tabs for finder
@@ -67,8 +68,8 @@ export default class ChromeAliveWindowController implements IBrowserContextHooks
     return await this.pendingPagePromisesByTabId.get(heroTabId).promise;
   }
 
-  public onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession): Promise<any> {
-    return this.devtoolsBackdoorModule.onDevtoolsPanelAttached(devtoolsSession);
+  public onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession, targetInfo: TargetInfo): Promise<any> {
+    return this.devtoolsBackdoorModule.onDevtoolsPanelAttached(devtoolsSession, targetInfo);
   }
 
   public onDevtoolsPanelDetached(devtoolsSession: IDevtoolsSession): Promise<any> {
@@ -76,7 +77,7 @@ export default class ChromeAliveWindowController implements IBrowserContextHooks
     return Promise.resolve();
   }
 
-  public async onDevtoolsOpened(target: {
+  public async onDevtoolsOpenedInApp(target: {
     targetId: string;
     browserContextId: string;
     isReconnect?: boolean;

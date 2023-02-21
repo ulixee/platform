@@ -233,7 +233,7 @@
 <script lang="ts">
 import * as Vue from "vue";
 import { Popover, PopoverButton } from '@headlessui/vue'
-import { ChevronDownIcon } from '@heroicons/vue/solid'
+import { ChevronDownIcon } from '@heroicons/vue/24/solid'
 import ActiveToolsOverlay from "@/components/ActiveToolsOverlay.vue";
 
 const logos = [

@@ -9,7 +9,6 @@ export default class DesktopUtils {
       this.getDesktop();
       return true;
     } catch (err) {
-      console.log(err)
       return false;
     }
   }

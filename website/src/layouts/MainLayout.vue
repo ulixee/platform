@@ -12,13 +12,13 @@
           </li>
           <li :class="[isSelected('home') ? 'isSelected' : '']" class="hidden md:flex flex-row items-stretch">
             <router-link to="/" class="no-underline flex flex-row items-center"><span>Home</span></router-link>
-          </li> 
+          </li>
           <!-- <li class="flex flex-row items-center">
             <MenuDataTools />
           </li>
           <li class="flex flex-row items-center">
             <MenuEconomicTools />
-          </li>    --> 
+          </li>    -->
           <!-- <li class="flex flex-row items-center">
             <router-link to="/getting-started" class="no-underline">Getting Started</router-link>
           </li> -->
@@ -33,7 +33,7 @@
               </PopoverButton>
               <DocumentationMenu />
             </Popover>
-          </li> 
+          </li>
         </ul>
 
         <ul class="flex-1 flex flex-row justify-end">
@@ -80,7 +80,7 @@
 <script lang="ts">
 import * as Vue from "vue";
 import { Popover, PopoverButton } from '@headlessui/vue'
-import { ChevronDownIcon } from '@heroicons/vue/outline'
+import { ChevronDownIcon } from '@heroicons/vue/24/outline'
 import MenuDataTools from './menus/MenuDataTools.vue';
 import MenuEconomicTools from './menus/MenuEconomicTools.vue';
 import MenuVersion from './menus/MenuVersion.vue';
@@ -91,7 +91,7 @@ import SearchForm from './SearchForm.vue';
 export default Vue.defineComponent({
   props: {
     showPadding: {
-      type: Boolean,  
+      type: Boolean,
       default: true,
     },
     navBgColor: {

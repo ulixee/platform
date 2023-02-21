@@ -9,8 +9,8 @@
 
       <p class="w-10/12">
         As anyone who has written scraper scripts knows, debugging can be one helluva experience, and not in a good way. One
-        moment your script works and the next moment it's broken. Why? What changed? What did the website look like the 
-        precise moment your script broke? What about five milliseconds before? ChromeAlive connects your script to the 
+        moment your script works and the next moment it's broken. Why? What changed? What did the website look like the
+        precise moment your script broke? What about five milliseconds before? ChromeAlive connects your script to the
         website in a way that will forever change how scrapers are written.
       </p>
 
@@ -18,7 +18,7 @@
 
       <ChromeAlivePreview class="mt-16" />
     </AboveTheFold>
-    
+
     <h2 class="font-light text-3xl px-24 mt-16">TIMETRAVEL IS NOW POSSIBLE</h2>
     <div class="flex flex-row px-24 mb-12 items-stretch">
       <div class="w-24">
@@ -76,7 +76,7 @@
 
 <script lang="ts">
 import * as Vue from "vue";
-import { HeartIcon } from '@heroicons/vue/solid';
+import { HeartIcon } from '@heroicons/vue/24/solid';
 import InstallIt from '@/components/InstallIt.vue';
 import Dependencies from '@/components/Dependencies.vue';
 import UseIt from '@/components/UseIt.vue';

@@ -44,7 +44,7 @@ import * as Vue from 'vue';
 import Client from '@/api/Client';
 import IHeroSessionUpdatedEvent from '@ulixee/desktop-interfaces/events/IHeroSessionUpdatedEvent';
 import IDatastoreOutputEvent from '@ulixee/desktop-interfaces/events/IDatastoreOutputEvent';
-import { ChevronDownIcon } from '@heroicons/vue/outline';
+import { ChevronDownIcon } from '@heroicons/vue/24/outline';
 import humanizeBytes from '@/utils/humanizeBytes';
 import ISessionTimetravelEvent from '@ulixee/desktop-interfaces/events/ISessionTimetravelEvent';
 import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';

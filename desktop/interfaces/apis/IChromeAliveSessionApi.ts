@@ -37,6 +37,7 @@ export default interface IChromeAliveSessionApi {
   timetravel(args: {
     commandId?: number;
     percentOffset?: number;
+    playback?: 'automatic' | 'manual';
     timelinePercentRange?: [start: number, end: number];
     step?: 'forward' | 'back';
   }): Promise<{

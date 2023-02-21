@@ -70,7 +70,7 @@ export default class ApiManager<
       this.apiByMinerAddress.set(address, new Resolvable());
 
       const api = new ApiClient<IDesktopAppApis, IDesktopAppEvents>(
-        address,
+        `${address}?type=app`,
         this.onDesktopEvent.bind(this, address),
       );
       await api.connect();

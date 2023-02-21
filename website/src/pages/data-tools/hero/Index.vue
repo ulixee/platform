@@ -1,6 +1,6 @@
 <template>
   <MainLayout class="ChromeAlive" :showPadding="false">
-    
+
     <AboveTheFold>
       <MainHeader productKey="hero">Ulixee Hero</MainHeader>
       <SubHeader>
@@ -9,9 +9,9 @@
       </SubHeader>
 
       <p class="w-10/12">
-        Hero was built from the ground up as a modern web scraping engine. Unlike Puppeteer and Playwright which were 
-        designed for automated testing, Hero has native support for DOM APIs and reactive flow handling. This allows you to 
-        easily handle website curveballs, such as cookie overlays and captchas. Give it a spin; you'll never want to go back 
+        Hero was built from the ground up as a modern web scraping engine. Unlike Puppeteer and Playwright which were
+        designed for automated testing, Hero has native support for DOM APIs and reactive flow handling. This allows you to
+        easily handle website curveballs, such as cookie overlays and captchas. Give it a spin; you'll never want to go back
         to the old tools again.
       </p>
 
@@ -71,7 +71,7 @@
 
           <section class="pt-5">
             <h3 class="font-bold text-2xl">State Machine Solves the Nasty Load Event, And Much More</h3>
-            <p>Most scraper tools presume that everything will happen in a precise order, which is untrue out in the wild. In practice, you end up checking for element states, sleeping, and checking again.</p>    
+            <p>Most scraper tools presume that everything will happen in a precise order, which is untrue out in the wild. In practice, you end up checking for element states, sleeping, and checking again.</p>
           </section>
 
           <section class="pt-5">
@@ -159,7 +159,7 @@ import InstallIt from '@/components/InstallIt.vue';
 import Dependencies from '@/components/Dependencies.vue';
 import UseIt from '@/components/UseIt.vue';
 import Command from '@/components/Command.vue';
-import { CheckIcon, XIcon } from '@heroicons/vue/solid';
+import { CheckIcon, XIcon } from '@heroicons/vue/24/solid';
 import { AboveTheFold, MainHeader, SubHeader, ActionButtons } from "../components";
 import HeroPreview from "../components/HeroPreview.vue";
 

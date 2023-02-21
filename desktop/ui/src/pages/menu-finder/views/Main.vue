@@ -214,7 +214,7 @@ import {
   ListboxOption,
   ListboxOptions,
 } from '@headlessui/vue';
-import { CheckIcon, ChevronLeftIcon, SelectorIcon } from '@heroicons/vue/solid';
+import { CheckIcon, ChevronLeftIcon } from '@heroicons/vue/24/solid';
 import IElementSummary from '@ulixee/desktop-interfaces/IElementSummary';
 import IResourceSearchResult from '@ulixee/desktop-interfaces/IResourceSearchResult';
 import { ISearchContext } from '@ulixee/desktop-interfaces/ISessionSearchResult';
@@ -234,7 +234,6 @@ export default Vue.defineComponent({
     ListboxOptions,
     ChevronLeftIcon,
     CheckIcon,
-    SelectorIcon,
   },
   setup() {
     const querySelector = Vue.reactive<ISelectorMap>({

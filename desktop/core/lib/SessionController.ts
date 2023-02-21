@@ -40,7 +40,6 @@ import MirrorNetwork from '@ulixee/hero-timetravel/lib/MirrorNetwork';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
 import TimetravelTicks, { ITabDetails } from '@ulixee/hero-timetravel/player/TimetravelTicks';
 import { IDomRecording } from '@ulixee/hero-core/models/DomChangesTable';
-import ICommandMeta from '@ulixee/hero-interfaces/ICommandMeta';
 import ResourceSearch from './ResourceSearch';
 import ElementsModule from './app-extension-modules/ElementsModule';
 import DevtoolsBackdoorModule from './app-extension-modules/DevtoolsBackdoorModule';
@@ -149,6 +148,7 @@ export default class SessionController extends TypedEventEmitter<{
     this.logger = log.createChild(module, { sessionId: this.sessionId });
     this.scriptInstanceMeta = options.scriptInstanceMeta;
     this.worldHeroSessionIds.add(this.sessionId);
+    this.resourceSearch = new ResourceSearch(db, this.events);
 
     this.timetravelPlayer = new TimetravelPlayer(db, this);
     this.events.on(this.timetravelPlayer, 'new-tick-command', this.sendCommandFocusedEvent);
@@ -182,7 +182,6 @@ export default class SessionController extends TypedEventEmitter<{
     this.playbackState = 'running';
     this.liveSession = heroSession;
     this.sourceCodeTimeline.listen(heroSession);
-    this.resourceSearch = new ResourceSearch(heroSession, this.events);
     this.events.on(heroSession, 'kept-alive', this.onHeroSessionKeptAlive);
     this.events.on(heroSession, 'resumed', this.onHeroSessionResumed);
     this.events.on(heroSession, 'closed', this.onHeroSessionClosed);
@@ -221,17 +220,33 @@ export default class SessionController extends TypedEventEmitter<{
   public async loadFromDb(): Promise<void> {
     this.sourceCodeTimeline.loadCommands(this.db.commands.loadHistory());
     const network = await MirrorNetwork.createFromSessionDb(this.db);
+
+    for (const resource of this.db.resources.all()) {
+      if (
+        this.resourceSearch.matchesFilter(
+          resource.type,
+          JSON.parse(resource.responseHeaders ?? '{}'),
+        )
+      )
+        continue;
+
+      void this.resourceSearch
+        .onTabResource(resource.tabId, await this.db.resources.getMeta(resource.id, false))
+        .catch(() => null);
+    }
     const timelineTicks = this.loadTimelineTicks();
 
     for (const { tabId, domRecording } of timelineTicks) {
       const mirrorPage = new MirrorPage(network, domRecording);
+      mirrorPage.showChromeInteractions = true;
       await this.addReplayTab(tabId, mirrorPage);
     }
     await this.timetravelPlayer.setTabState(timelineTicks);
-    if (this.timetravelPlayer.activeTab) {
-      this.timetravelPlayer.activeTab.currentTimelineOffsetPct = -1;
-      this.timetravelPlayer.activeTab.currentTickIndex = -1;
-      await this.timetravelPlayer.activeTab.loadTick(0);
+    const activeTab = await this.timetravelPlayer.loadTab();
+    if (activeTab) {
+      activeTab.currentTimelineOffsetPct = -1;
+      activeTab.currentTickIndex = -1;
+      await activeTab.loadTick(0);
     }
   }
 
@@ -470,7 +485,7 @@ export default class SessionController extends TypedEventEmitter<{
     const { tab } = event;
     this.events.on(tab, 'page-events', this.sendDomRecordingUpdates.bind(this, tab));
     this.events.on(tab, 'page-events', () => (this.timetravelPlayer.shouldReloadTicks = true));
-
+    this.resourceSearch.onTabCreated(event);
     const mirrorPage = tab.createMirrorPage(false);
     mirrorPage.showChromeInteractions = true;
     void this.addReplayTab(tab.id, mirrorPage);
@@ -545,7 +560,7 @@ export default class SessionController extends TypedEventEmitter<{
 
   public async getDomRecording(tabId?: number): ReturnType<IChromeAliveSessionApi['getDom']> {
     tabId ??=
-      this.timetravelPlayer.activeTab?.id ?? Number(Object.keys(this.mirrorPagesByTabId)[0] ?? 1);
+      this.timetravelPlayer.activeTabId ?? Number(Object.keys(this.mirrorPagesByTabId)[0] ?? 1);
     const mirrorPage = await this.getMirrorPage(tabId);
     return {
       ...mirrorPage?.domRecording,
@@ -581,6 +596,7 @@ export default class SessionController extends TypedEventEmitter<{
     }
     clearTimeout(this.mirrorRefreshTimeout);
 
+    this.resourceSearch.close();
     this.timelineWatch?.close();
     this.timetravelPlayer?.close()?.catch(console.error);
     this.emit('closed');
@@ -596,14 +612,15 @@ export default class SessionController extends TypedEventEmitter<{
   public async onDevtoolsTargetOpened(
     args?: Parameters<IChromeAliveSessionApi['devtoolsTargetOpened']>[0],
   ): ReturnType<IChromeAliveSessionApi['devtoolsTargetOpened']> {
-    await this.chromeAliveWindowController.onDevtoolsOpened(args);
+    await this.chromeAliveWindowController.onDevtoolsOpenedInApp(args);
   }
 
-  public getScriptState(): ReturnType<IChromeAliveSessionApi['getScriptState']> {
-    return Promise.resolve({
+  public async getScriptState(): ReturnType<IChromeAliveSessionApi['getScriptState']> {
+    const tab = await this.timetravelPlayer.loadTab();
+    return {
       ...this.sourceCodeTimeline.getCurrentState(),
-      focusedCommandId: this.timetravelPlayer.activeTab?.currentTick?.commandId,
-    });
+      focusedCommandId: tab?.currentTick?.commandId,
+    };
   }
 
   public getDom(
@@ -616,8 +633,8 @@ export default class SessionController extends TypedEventEmitter<{
     return this.db.session.getHeroMeta();
   }
 
-  public getTimetravelState(): ReturnType<IChromeAliveSessionApi['getTimetravelState']> {
-    const activeTab = this.timetravelPlayer.activeTab;
+  public async getTimetravelState(): ReturnType<IChromeAliveSessionApi['getTimetravelState']> {
+    const activeTab = await this.timetravelPlayer.loadTab();
     const tick = activeTab?.currentTick;
     return Promise.resolve({
       activeCommandId: tick?.commandId ?? 1,
@@ -631,37 +648,39 @@ export default class SessionController extends TypedEventEmitter<{
     timelineOffsetPercent: number;
   }> {
     try {
-      await this.timetravelPlayer.load();
-      await this.chromeAliveWindowController.waitForPageWithHeroTabId(
-        this.timetravelPlayer.activeTab.id,
-      );
-      await this.timetravelPlayer.setFocusedOffsetRange(args.timelinePercentRange);
+      const tab = await this.timetravelPlayer.loadTab();
+      await this.chromeAliveWindowController.waitForPageWithHeroTabId(tab.id);
+      await tab.setFocusedOffsetRange(args.timelinePercentRange);
+      tab.latestStatusMetadata = this.lastTimelineMetadata;
 
-      if (args.step) {
-        const didStep = await this.timetravelPlayer.step(args.step);
+      if (args.playback) {
+        if (tab.isPlaying) tab.pause();
+        else await tab.play();
+      } else if (args.step) {
+        const didStep = await tab.step(args.step);
         if (!didStep && args.step === 'forward') {
           if (this.liveSession) {
             await this.openMode({ mode: 'Live' });
           }
           this.sendTimetravelOffset({
-            tabId: this.timetravelPlayer.activeTab.id,
+            tabId: tab.id,
             percentOffset: 100,
+            playback: tab.isPlaying ? 'automatic' : 'manual',
             focusedRange: undefined,
             url: undefined,
           });
           return { timelineOffsetPercent: 100 };
         }
       } else if (args.percentOffset !== undefined) {
-        await this.timetravelPlayer.goto(args.percentOffset);
+        await tab.setTimelineOffset(args.percentOffset);
       } else if (args.commandId) {
-        await this.timetravelPlayer.loadTickWithCommandId(args.commandId);
+        await tab.loadTickWithCommandId(args.commandId);
       }
 
       if (this.mode !== 'Timetravel') {
         await this.openMode({ mode: 'Timetravel' });
       }
-      await this.timetravelPlayer.showLoadStatus(this.lastTimelineMetadata);
-      const timelineOffsetPercent = this.timetravelPlayer.activeTab.currentTimelineOffsetPct;
+      const timelineOffsetPercent = tab.currentTimelineOffsetPct;
       return { timelineOffsetPercent };
     } catch (err) {
       if (err instanceof CanceledPromiseError) {
@@ -730,7 +749,7 @@ export default class SessionController extends TypedEventEmitter<{
     let endTime = commandTimeline.endTime;
     let documentUrl = lastNavigation.finalUrl ?? lastNavigation.requestedUrl;
     if (this.isSearchingTimetravel) {
-      const tab = this.timetravelPlayer.activeTab;
+      const tab = await this.timetravelPlayer.loadTab(tabId);
       tabId = tab.id;
       documentUrl = tab.currentTick.documentUrl;
       if (!tab.focusedOffsetRange) {
@@ -843,7 +862,7 @@ export default class SessionController extends TypedEventEmitter<{
   }): Promise<ISelectorMap> {
     try {
       const selectorMap = await this.elementsModule.generateQuerySelector(id);
-      const activePageUrl = this.timetravelPlayer.activeTab?.mirrorPage.page.mainFrame.url;
+      const activePageUrl = (await this.timetravelPlayer.loadTab())?.mirrorPage.page.mainFrame.url;
 
       void this.selectorRecommendations
         .save(selectorMap, activePageUrl)

@@ -16,7 +16,7 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
-import { InformationCircleIcon } from '@heroicons/vue/solid'
+import { InformationCircleIcon } from '@heroicons/vue/24/solid'
 
 export default Vue.defineComponent({
   components: {

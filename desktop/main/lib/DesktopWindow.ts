@@ -29,14 +29,17 @@ export default class DesktopWindow extends TypedEventEmitter<{
   constructor(staticServer: StaticServer, private apiManager: ApiManager) {
     super();
     this.#webpageUrl = staticServer.getPath('desktop.html');
+    void this.open(false)
   }
 
-  public async open(): Promise<void> {
+  public async open(show = true): Promise<void> {
     if (this.#window) {
+      if (show) this.#window.show();
       this.#window.focus();
       return;
     }
     this.#window = new BrowserWindow({
+      show,
       acceptFirstMouse: true,
       useContentSize: true,
       ...this.#windowStateKeeper.windowState,

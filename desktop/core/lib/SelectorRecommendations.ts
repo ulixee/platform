@@ -30,10 +30,11 @@ export default class SelectorRecommendations {
     const filename = this.getFilename();
     const selectorMapsPath = `${configDirectory}/selectors/${filename}.json`;
     let selectorMaps: ISavedSelectors = {};
-    if (!(await existsAsync(selectorMapsPath))) {
+    if (!(await existsAsync(Path.dirname(selectorMapsPath)))) {
       Fs.mkdirSync(Path.dirname(selectorMapsPath));
     } else {
-      selectorMaps = (await readFileAsJson<ISavedSelectors>(selectorMapsPath)) ?? {};
+      selectorMaps =
+        (await readFileAsJson<ISavedSelectors>(selectorMapsPath).catch(() => null)) ?? {};
     }
     selectorMaps[url] ??= {};
     selectorMaps[url][map.nodePath] = map;

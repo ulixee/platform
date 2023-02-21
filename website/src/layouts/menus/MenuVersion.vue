@@ -42,7 +42,7 @@
 <script lang="ts">
 import * as Vue from "vue";
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
-import { ChevronDownIcon } from '@heroicons/vue/outline'
+import { ChevronDownIcon } from '@heroicons/vue/24/outline'
 
 export default Vue.defineComponent({
   components: {

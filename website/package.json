@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@headlessui/vue": "^1.5.0",
-    "@heroicons/vue": "^1.0.6",
+    "@heroicons/vue": "^2.0.16",
     "@tailwindcss/forms": "^0.5.0",
     "axios": "^0.26.1",
     "babel-plugin-prismjs": "^2.1.0",

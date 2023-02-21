@@ -35,7 +35,7 @@
 
 <script lang="ts">
 import * as Vue from "vue";
-import { HeartIcon } from '@heroicons/vue/solid';
+import { HeartIcon } from '@heroicons/vue/24/solid';
 import InstallIt from '@/components/InstallIt.vue';
 import Dependencies from '@/components/Dependencies.vue';
 import UseIt from '@/components/UseIt.vue';

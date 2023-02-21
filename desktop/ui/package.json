@@ -15,7 +15,7 @@
     "@babel/core": "^7.0.0",
     "@babel/runtime-corejs3": "^7.13.10",
     "@headlessui/vue": "^1.5.0",
-    "@heroicons/vue": "^1.0.6",
+    "@heroicons/vue": "^2.0.16",
     "@ulixee/desktop-interfaces": "2.0.0-alpha.18",
     "@ulixee/commons": "2.0.0-alpha.18",
     "@ulixee/hero-interfaces": "2.0.0-alpha.18",

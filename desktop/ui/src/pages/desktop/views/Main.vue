@@ -32,7 +32,7 @@
       <li
         v-for="session in filteredSessions"
         :key="session.heroSessionId"
-        class="flex flex h-full flex-row items-center"
+        class="justify-content v-top mb-2 flex flex h-full flex-row border-b border-slate-100 pb-2 text-left"
       >
         <span class="flex basis-1/4 text-slate-600">{{ formatDate(session.startTime) }}</span>
         <span class="mx-2 block flex basis-2/4 content-between justify-between text-left">{{
@@ -42,12 +42,13 @@
           <span v-if="session.state === 'error'">{{ session.error ?? 'Error' }}</span>
           <span v-else-if="session.state === 'running'">running</span>
         </span>
-        <button
-          class="flex-0 my-1 mx-5 appearance-none rounded-md border border-gray-300 px-2 py-1 text-blue-600"
+        <a
+          href="javascript:void(0)"
+          class="ml-10 whitespace-nowrap text-sm text-blue-600"
           @click.prevent="openReplay(session)"
         >
           Open Replay
-        </button>
+        </a>
       </li>
     </ul>
   </div>
@@ -73,7 +74,6 @@ import {
   ListboxOption,
   ListboxOptions,
 } from '@headlessui/vue';
-import { CheckIcon, ChevronLeftIcon, SelectorIcon } from '@heroicons/vue/solid';
 import {
   IHeroSessionsListResult,
   IHeroSessionsSearchResult,
@@ -88,9 +88,6 @@ export default Vue.defineComponent({
     ListboxLabel,
     ListboxOption,
     ListboxOptions,
-    ChevronLeftIcon,
-    CheckIcon,
-    SelectorIcon,
   },
   setup() {
     document.title = 'Ulixee Desktop';

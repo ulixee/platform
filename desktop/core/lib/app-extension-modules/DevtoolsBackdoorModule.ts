@@ -6,23 +6,41 @@ import IDevtoolsSession, {
 } from '@ulixee/unblocked-specification/agent/browser/IDevtoolsSession';
 import IElementSummary from '@ulixee/desktop-interfaces/IElementSummary';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
+import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
+import Log from '@ulixee/commons/lib/Logger';
 import {
   ___emitFromDevtoolsToCore,
   EventType,
 } from '../../injected-scripts/DevtoolsBackdoorConfig';
 import ChromeAliveWindowController from '../ChromeAliveWindowController';
+import TargetInfo = Protocol.Target.TargetInfo;
+
+const { log } = Log(module);
 
 export default class DevtoolsBackdoorModule {
   private events = new EventSubscriber();
 
-  private devtoolsSessionToTabId = new Map<IDevtoolsSession, number>();
-  private devtoolsSessionByTabId = new Map<number, IDevtoolsSession>();
+  private devtoolsDetachedSessionIds = new Set<string>();
+  private devtoolsSessionByTargetId = new Map<string, IDevtoolsSession>();
+  private devtoolsSessionToIds = new Map<IDevtoolsSession, { tabId: number; targetId: string }>();
+  private devtoolsSessionByTabId = new Map<number, Set<IDevtoolsSession>>();
+  private logger: IBoundLog;
 
   constructor(readonly chromeAliveWindowController: ChromeAliveWindowController) {
     bindFunctions(this);
+    this.logger = log.createChild(module, { sessionId: chromeAliveWindowController.sessionId });
   }
 
-  public async onDevtoolsPanelAttached(devtoolsSession: IDevtoolsSession): Promise<void> {
+  public async onDevtoolsPanelAttached(
+    devtoolsSession: IDevtoolsSession,
+    targetInfo: TargetInfo,
+  ): Promise<void> {
+    if (this.devtoolsDetachedSessionIds.has(devtoolsSession.id)) return;
+    if (this.devtoolsSessionByTargetId.has(targetInfo.targetId)) {
+      await devtoolsSession.send('Target.detachFromTarget');
+      return;
+    }
+
     let response: Protocol.Runtime.EvaluateResponse;
     try {
       response = await devtoolsSession.send('Runtime.evaluate', {
@@ -41,9 +59,12 @@ export default class DevtoolsBackdoorModule {
       throw error;
     }
     const tabId = response.result.value;
+    if (this.devtoolsSessionToIds.has(devtoolsSession)) return;
 
-    this.devtoolsSessionToTabId.set(devtoolsSession, tabId);
-    this.devtoolsSessionByTabId.set(tabId, devtoolsSession);
+    this.devtoolsSessionToIds.set(devtoolsSession, { tabId, targetId: targetInfo.targetId });
+    const byTabId = this.devtoolsSessionByTabId.get(tabId) ?? new Set<IDevtoolsSession>();
+    byTabId.add(devtoolsSession);
+    this.devtoolsSessionByTabId.set(tabId, byTabId);
 
     this.events.on(
       devtoolsSession,
@@ -55,13 +76,22 @@ export default class DevtoolsBackdoorModule {
   }
 
   public onDevtoolsPanelDetached(devtoolsSession: IDevtoolsSession): void {
-    const tabId = this.devtoolsSessionToTabId.get(devtoolsSession);
-    this.devtoolsSessionToTabId.delete(devtoolsSession);
-    this.devtoolsSessionByTabId.delete(tabId);
+    this.devtoolsDetachedSessionIds.add(devtoolsSession.id);
+    const ids = this.devtoolsSessionToIds.get(devtoolsSession);
+    this.devtoolsSessionToIds.delete(devtoolsSession);
+
+    if (ids) {
+      const { tabId, targetId } = ids;
+      this.devtoolsSessionByTargetId.delete(targetId);
+      const byTabId = this.devtoolsSessionByTabId.get(tabId);
+      byTabId?.delete(devtoolsSession);
+      if (byTabId?.size === 0) this.devtoolsSessionByTabId.delete(tabId);
+    }
   }
 
   public close(): void {
-    this.devtoolsSessionToTabId.clear();
+    this.devtoolsSessionToIds.clear();
+    this.devtoolsSessionByTargetId.clear();
     this.devtoolsSessionByTabId.clear();
     this.events.close();
   }
@@ -111,7 +141,7 @@ export default class DevtoolsBackdoorModule {
   private async emitElementWasSelected(tabId: number, backendNodeId: number): Promise<void> {
     const page = await this.chromeAliveWindowController.getPageByChromeTabId(tabId);
     if (!page) {
-      console.warn('Element emitted for non-ChromeAlive tab', { tabId, backendNodeId });
+      this.logger.warn('Element emitted for non-ChromeAlive tab', { tabId, backendNodeId });
       return;
     }
 
@@ -128,7 +158,9 @@ export default class DevtoolsBackdoorModule {
   }
 
   private emitToggleInspectElementMode(isActive: boolean): void {
-    this.chromeAliveWindowController.sendApiEvent('DevtoolsBackdoor.toggleInspectElementMode', { isActive });
+    this.chromeAliveWindowController.sendApiEvent('DevtoolsBackdoor.toggleInspectElementMode', {
+      isActive,
+    });
   }
 
   private toElementSummary(
@@ -155,19 +187,23 @@ export default class DevtoolsBackdoorModule {
   }
 
   private async send(tabId: number, command: string, args: any[] = []): Promise<any> {
-    const devtoolsSession = this.devtoolsSessionByTabId.get(tabId);
-    const response = await devtoolsSession.send('Runtime.evaluate', {
-      expression: `(function devtoolsBackdoorCommand() {
+    for (const devtoolsSession of this.devtoolsSessionByTabId.get(tabId)) {
+      try {
+        const response = await devtoolsSession.send('Runtime.evaluate', {
+          expression: `(function devtoolsBackdoorCommand() {
         return ${command}(...${JSON.stringify(args)});
       })();`,
-      awaitPromise: true,
-      returnByValue: true,
-    });
-    if (response.exceptionDetails) {
-      throw new Error(response.exceptionDetails.exception.description);
+          awaitPromise: true,
+          returnByValue: true,
+        });
+        if (response.exceptionDetails) {
+          throw new Error(response.exceptionDetails.exception.description);
+        }
+        return response.result.value;
+      } catch (error) {
+        this.logger.warn('ERROR sending to DevtoolsBackdoor', error);
+      }
     }
-
-    return response.result.value;
   }
 }
 

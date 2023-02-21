@@ -10,7 +10,7 @@
         <ActiveToolsOverlay :subPath="subPath" />
       </Popover>
     </h1>
-            
+
     <div class="absolute top-0 right-0 flex flex-row space-x-5 font-light">
       <router-link :to="`/${productKey}`" :class="[active === 'overview' ? 'font-bold' : '']">Overview</router-link>
       <router-link :to="`/${productKey}/example`" :class="[active === 'example' ? 'font-bold' : '']">Example Code</router-link>
@@ -26,7 +26,7 @@ import * as Vue from "vue";
 import { useRoute } from 'vue-router';
 import { Popover, PopoverButton } from '@headlessui/vue'
 import ActiveToolsOverlay from "@/components/ActiveToolsOverlay.vue";
-import { ChevronDownIcon } from '@heroicons/vue/outline'
+import { ChevronDownIcon } from '@heroicons/vue/24/outline'
 
 export default Vue.defineComponent({
   props: {

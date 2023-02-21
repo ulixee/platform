@@ -66,10 +66,15 @@ export default class DesktopCore {
     transport: ITransportToClient<IDesktopAppApis>,
     request: IncomingMessage,
   ): IConnectionToClient<IDesktopAppApis, IDesktopAppEvents> {
+    const url = new URL(request.url, 'https://localhost');
+    const connectionType = url.searchParams.get('type');
     let id: string;
     const host = request.socket.remoteAddress;
     // give local desktop special permissions. does not need to be specified
-    if (host === '::1' || host === '::' || host === '127.0.0.1' || host === '::ffff:127.0.0.1') {
+    if (
+      connectionType === 'app' &&
+      (host === '::1' || host === '::' || host === '127.0.0.1' || host === '::ffff:127.0.0.1')
+    ) {
       id = 'local';
     } else id = nanoid(10);
 
@@ -166,10 +171,6 @@ export default class DesktopCore {
     const script = heroSession.options.scriptInstanceMeta?.entrypoint;
     if (!script) return;
 
-    if (heroSession.mode === 'timetravel' || heroSession.mode === 'production') {
-      return;
-    }
-
     if (heroSession.options.resumeSessionId || heroSession.options.replaySessionId) {
       SourceMapSupport.resetCache();
     }
@@ -195,25 +196,33 @@ export default class DesktopCore {
     });
     // keep alive session
     heroSession.options.sessionKeepAlive = true;
+    try {
+      const originalController = this.sessionControllersById.get(
+        heroSession.options.resumeSessionId,
+      );
+      originalController?.setResuming(heroSession.options.resumeSessionId);
+      if (originalController) return;
 
-    const originalController = this.sessionControllersById.get(heroSession.options.resumeSessionId);
-    originalController?.setResuming(heroSession.options.resumeSessionId);
-    if (originalController) return;
+      const { sessionController, appConnectionId } = this.createSessionController(
+        heroSession.db,
+        heroSession.options,
+      );
+      if (!sessionController) return;
+      sessionController.bindLiveSession(heroSession);
 
-    const { sessionController, appConnectionId } = this.createSessionController(
-      heroSession.db,
-      heroSession.options,
-    );
-    if (!sessionController) return;
-    sessionController.bindLiveSession(heroSession);
-
-    await this.sendReadyEvent(
-      appConnectionId,
-      sessionId,
-      heroSession.options,
-      heroSession.db.path,
-      new Date(heroSession.createdTime),
-    );
+      const appConnection = this.appConnectionsById.get(appConnectionId);
+      await appConnection.sendEvent({
+        eventType: 'Session.opened',
+        data: {
+          heroSessionId: heroSession.id,
+          options: heroSession.options,
+          dbPath: heroSession.db.path,
+          startDate: new Date(heroSession.createdTime),
+        },
+      });
+    } catch (error) {
+      log.error('ERROR launching ChromeAlive for Session', { error, sessionId });
+    }
   }
 
   private static createSessionController(
@@ -254,16 +263,9 @@ export default class DesktopCore {
       execArgv: dbSession.scriptExecArgv,
       execPath: dbSession.scriptExecPath,
     };
-    const { sessionController, appConnectionId } = this.createSessionController(db, options);
+    const { sessionController } = this.createSessionController(db, options);
     const apiConnection = sessionController.addConnection(transport, request);
 
-    this.sendReadyEvent(
-      appConnectionId,
-      db.sessionId,
-      options,
-      db.path,
-      new Date(dbSession.startDate),
-    );
     sessionController.loadFromDb().catch(error => {
       log.error('ERROR loading session from database', {
         error,
@@ -271,20 +273,6 @@ export default class DesktopCore {
       });
     });
     return apiConnection;
-  }
-
-  private static sendReadyEvent(
-    appConnectionId: string,
-    heroSessionId: string,
-    options: ISessionCreateOptions,
-    dbPath: string,
-    startDate: Date,
-  ): void {
-    const appConnection = this.appConnectionsById.get(appConnectionId);
-    appConnection.sendEvent({
-      eventType: 'Session.opened',
-      data: { heroSessionId, options, dbPath, startDate },
-    });
   }
 
   private static broadcastAppEvent<T extends keyof IDesktopAppEvents & string>(

@@ -2,9 +2,6 @@
   <div id="menu">
     <div class="section">
       <a @click.prevent="openDesktop()">Open Ulixee Desktop</a>
-      <a class="disabled">Open Ulixee Marketplace <span class="coming-soon">Coming Soon</span></a>
-      <a>Preferences...</a>
-
       <a v-if="downloadProgress > 0 && downloadProgress < 100">Downloading new Version <span class="progress">{{ downloadProgress }}%</span></a>
       <a
         v-else-if="isInstalling"
@@ -22,7 +19,6 @@
     <div class="section">
       <a @click.prevent="openLogsDirectory()">Open App Logs</a>
       <a @click.prevent="openDataDirectory()">Open Data Directory</a>
-      <a @click.prevent="openHeroSession()">Replay Hero Session</a>
     </div>
     <div class="section">
       <a @click.prevent="quit()">Shutdown Ulixee</a>
@@ -113,9 +109,6 @@ export default Vue.defineComponent({
     },
     openDataDirectory() {
       this.sendApi('App.openDataDirectory');
-    },
-    openHeroSession() {
-      this.sendApi('App.openHeroSession');
     },
     installUpdate() {
       this.sendApi('Version.install');

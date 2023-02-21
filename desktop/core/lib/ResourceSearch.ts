@@ -5,16 +5,29 @@ import FuseJs from 'fuse.js';
 import { ISearchContext } from '@ulixee/desktop-interfaces/ISessionSearchResult';
 import IResourceMeta from '@ulixee/unblocked-specification/agent/net/IResourceMeta';
 import IResourceType from '@ulixee/unblocked-specification/agent/net/IResourceType';
+import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
+import IHttpHeaders from '@ulixee/unblocked-specification/agent/net/IHttpHeaders';
 
 const Fuse = require('fuse.js/dist/fuse.common.js');
 
 export default class ResourceSearch {
+  private static allowedResourceTypes = new Set<IResourceType>([
+    'Document',
+    'XHR',
+    'Fetch',
+    'Script',
+    'Websocket',
+    'Other',
+  ]);
+
   private searchIndexByTabId: {
     [tabId: number]: FuseJs<{ id: number; body: string; url: string }>;
   } = {};
 
-  constructor(private heroSession: HeroSession, private events: EventSubscriber) {
-    this.events.on(this.heroSession, 'tab-created', this.onTabCreated.bind(this));
+  constructor(private db: SessionDb, private events: EventSubscriber) {}
+
+  public close(): void {
+    this.events.close();
   }
 
   public search(query: string, context: ISearchContext): IResourceSearchResult[] {
@@ -33,12 +46,12 @@ export default class ResourceSearch {
 
     const searchResults = this.searchIndexByTabId[tabId].search(finalQuery, { limit: 10 });
     for (const result of searchResults) {
-      const resource = this.heroSession.resources.get(result.item.id);
+      const resource = this.db.resources.get(result.item.id);
       // must match document url
       if (documentUrl && resource.documentUrl !== documentUrl) continue;
       // allow an exception for the actual document
-      const isPageLoad = resource.url === documentUrl;
-      const timestamp = resource.response.browserLoadedTime ?? resource.response.timestamp;
+      const isPageLoad = resource.requestUrl === documentUrl;
+      const timestamp = resource.browserLoadedTimestamp ?? resource.responseTimestamp;
       if (!isPageLoad && (timestamp < startTime || timestamp > endTime)) continue;
 
       const matchIndices: IResourceSearchResult['matchIndices'] = [];
@@ -53,8 +66,8 @@ export default class ResourceSearch {
       results.push({
         id: resource.id,
         documentUrl: resource.documentUrl,
-        statusCode: resource.response.statusCode,
-        url: resource.url,
+        statusCode: resource.statusCode,
+        url: resource.requestUrl,
         body: result.item.body,
         type: resource.type,
         matchIndices,
@@ -64,7 +77,11 @@ export default class ResourceSearch {
   }
 
   public onTabCreated(event: HeroSession['EventTypes']['tab-created']): void {
-    this.searchIndexByTabId[event.tab.id] = new Fuse([], {
+    this.events.on(event.tab, 'resource', this.onTabResource.bind(this, event.tab.id));
+  }
+
+  public async onTabResource(tabId: number, resource: IResourceMeta): Promise<void> {
+    this.searchIndexByTabId[tabId] ??= new Fuse([], {
       isCaseSensitive: false,
       findAllMatches: true,
       useExtendedSearch: true,
@@ -74,30 +91,14 @@ export default class ResourceSearch {
       ignoreFieldNorm: true,
       includeMatches: true,
     });
-    this.events.on(event.tab, 'resource', this.onTabResource.bind(this, event.tab.id));
-  }
-
-  private async onTabResource(tabId: number, resource: IResourceMeta): Promise<void> {
-    const allowedResourceTypes = new Set<IResourceType>([
-      'Document',
-      'XHR',
-      'Fetch',
-      'Script',
-      'Websocket',
-      'Other',
-    ]);
 
     if (!resource.response?.statusCode) return;
-    if (!allowedResourceTypes.has(resource.type)) return;
+    if (!this.matchesFilter(resource.type, resource.response?.headers)) return;
 
     const headers = resource.response?.headers ?? {};
     const contentType = headers['content-type'] ?? headers['Content-Type'] ?? '';
-
-    if (resource.type === 'Other') {
-      if (!contentType.includes('text') && !contentType.includes('json')) return;
-    }
     // search for terms
-    const body = await this.heroSession.db.resources.getResourceBodyById(resource.id, true);
+    const body = await this.db.resources.getResourceBodyById(resource.id, true);
 
     let formattedBody = body.toString();
     try {
@@ -111,5 +112,17 @@ export default class ResourceSearch {
       body: formattedBody,
       url: resource.url,
     });
+  }
+
+  public matchesFilter(resourceType: IResourceType, responseHeaders: IHttpHeaders = {}): boolean {
+    if (!ResourceSearch.allowedResourceTypes.has(resourceType)) return false;
+
+    if (resourceType === 'Other') {
+      const contentType = responseHeaders['content-type'] ?? responseHeaders['Content-Type'] ?? '';
+      if (!contentType.includes('text') && !contentType.includes('json')) {
+        return false;
+      }
+    }
+    return true;
   }
 }
