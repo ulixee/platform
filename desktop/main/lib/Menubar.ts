@@ -387,12 +387,11 @@ export class Menubar extends EventEmitter {
 
     const backgroundPref = process.platform === 'win32' ? 'window' : 'window-background';
     const windowBackground = systemPreferences.getColor(backgroundPref)?.replace('#', '') ?? '';
-    console.log('opening menubar with background', windowBackground);
     const url = this.staticServer.getPath(`menubar.html?windowBackground=${windowBackground}`);
     await this.#browserWindow.loadURL(url);
-    // if (process.env.OPEN_DEVTOOLS) {
-    this.#browserWindow.webContents.openDevTools({ mode: 'detach' });
-    // }
+    if (process.env.OPEN_DEVTOOLS) {
+      this.#browserWindow.webContents.openDevTools({ mode: 'detach' });
+    }
     if (this.ulixeeMiner) {
       await this.updateMinerStatus();
     }
