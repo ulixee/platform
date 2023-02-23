@@ -19,6 +19,9 @@ export default interface IDatastoreMetadata
   crawlersByName: {
     [name: string]: {
       corePlugins: { [name: string]: string };
+      remoteCrawler?: string;
+      remoteSource?: string;
+      remoteDatastoreVersionHash?: string;
     } & Omit<IRunnerComponents<any, any>, 'run'>;
   };
   tablesByName: {

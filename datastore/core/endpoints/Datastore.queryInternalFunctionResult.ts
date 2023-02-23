@@ -2,7 +2,7 @@ import { SqlParser, SqlGenerator } from '@ulixee/sql-engine';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreStorage from '../lib/DatastoreStorage';
 
-export default new DatastoreApiHandler('Datastore.queryInternalRunnerResult', {
+export default new DatastoreApiHandler('Datastore.queryInternalFunctionResult', {
   async handler(request, context) {
     if (!context.connectionToClient?.isInternal) {
       throw new Error('You do not have permission to access this endpoint');
@@ -18,9 +18,9 @@ export default new DatastoreApiHandler('Datastore.queryInternalRunnerResult', {
 
     const db = storage.db;
     const runnerName = request.name;
-    const schema = storage.getRunnerSchema(runnerName);
+    const schema = storage.getFunctionSchema(runnerName);
 
-    const sqlParser = new SqlParser(request.sql, { runner: request.name });
+    const sqlParser = new SqlParser(request.sql, { function: request.name });
     const unknownNames = sqlParser.functionNames.filter(x => x !== runnerName);
     if (unknownNames.length) {
       throw new Error(

@@ -1,6 +1,6 @@
 import * as Fs from 'fs';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
-import { sha3 } from '@ulixee/commons/lib/hashUtils';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import installDatastoreSchema, { addDatastoreAlias } from '../types/installDatastoreSchema';
 
 beforeEach(() => {
@@ -48,8 +48,8 @@ it('can install multiple schemas', async () => {
       nothing: boolean;
     };
   }`;
-  const id1 = encodeBuffer(sha3('schema1'), 'dbx').substring(0,22);
-  const id2 = encodeBuffer(sha3('schema2'), 'dbx').substring(0,22);;
+  const id1 = encodeBuffer(sha256('schema1'), 'dbx').substring(0,22);
+  const id2 = encodeBuffer(sha256('schema2'), 'dbx').substring(0,22);;
   installDatastoreSchema(schema1, id1);
   installDatastoreSchema(schema2, id2);
 

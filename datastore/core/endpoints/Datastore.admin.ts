@@ -1,7 +1,7 @@
 import Identity from '@ulixee/crypto/lib/Identity';
 import { InvalidSignatureError } from '@ulixee/crypto/lib/errors';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
+import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import { InvalidPermissionsError } from '../lib/errors';
 import DatastoreVm from '../lib/DatastoreVm';

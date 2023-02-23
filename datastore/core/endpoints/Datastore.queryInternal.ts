@@ -4,15 +4,14 @@ import DatastoreStorage from '../lib/DatastoreStorage';
 import SqlQuery from '../lib/SqlQuery';
 
 export default new DatastoreApiHandler('Datastore.queryInternal', {
-  handler(request, context) {
+  async handler(request, context) {
     if (!context.connectionToClient?.isInternal) {
       throw new Error('You do not have permission to access this endpoint');
     }
 
     let storage: DatastoreStorage;
     if (request.datastoreVersionHash) {
-      const storagePath = context.datastoreRegistry.getStoragePath(request.datastoreVersionHash);
-      storage = new DatastoreStorage(storagePath);
+      storage = await context.datastoreRegistry.getStorage(request.datastoreVersionHash);
     } else {
       context.connectionToClient.datastoreStorage ??= new DatastoreStorage();
       storage = context.connectionToClient?.datastoreStorage;

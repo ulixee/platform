@@ -49,6 +49,7 @@ export class Menubar extends EventEmitter {
     }
     app.setAppLogsPath();
     (process.env as any).ELECTRON_DISABLE_SECURITY_WARNINGS = true;
+    ShutdownHandler.register(() => this.appExit());
 
     this.staticServer = new StaticServer(Path.resolve(__dirname, '..', 'ui'));
     this.#apiManager = new ApiManager();
@@ -162,7 +163,6 @@ export class Menubar extends EventEmitter {
   private async appReady(): Promise<void> {
     try {
       await app.whenReady();
-      ShutdownHandler.register(() => this.appExit());
       // for now auto-start
       await this.staticServer.load();
       this.#windowManager = new WindowManager(this, this.#apiManager);
@@ -317,7 +317,9 @@ export class Menubar extends EventEmitter {
       autoHideMenuBar: true,
       transparent: true,
       alwaysOnTop: true,
+      useContentSize: true,
       webPreferences: {
+        javascript: true,
         preload: `${__dirname}/MenubarPagePreload.js`,
       },
     });
@@ -385,11 +387,12 @@ export class Menubar extends EventEmitter {
 
     const backgroundPref = process.platform === 'win32' ? 'window' : 'window-background';
     const windowBackground = systemPreferences.getColor(backgroundPref)?.replace('#', '') ?? '';
+    console.log('opening menubar with background', windowBackground);
     const url = this.staticServer.getPath(`menubar.html?windowBackground=${windowBackground}`);
     await this.#browserWindow.loadURL(url);
-    if (process.env.OPEN_DEVTOOLS) {
-      this.#browserWindow.webContents.openDevTools({ mode: 'undocked' });
-    }
+    // if (process.env.OPEN_DEVTOOLS) {
+    this.#browserWindow.webContents.openDevTools({ mode: 'detach' });
+    // }
     if (this.ulixeeMiner) {
       await this.updateMinerStatus();
     }

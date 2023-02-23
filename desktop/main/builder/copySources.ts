@@ -58,20 +58,14 @@ if (process.env.NODE_ENV !== 'production') {
   copyDir(`${baseBuild}/../unblocked/build/specification`, `${dest}/unblocked-specification`);
   copyDir(`${baseBuild}/../shared/build/net`, `${dest}/net`);
   copyDir(`${baseBuild}/../shared/build/commons`, `${dest}/commons`);
-  copyDir(`${baseBuild}/../shared/build/specification`, `${dest}/specification`);
+  copyDir(`${baseBuild}/../shared/build/specification`, `${dest}/ulixee-specification`);
   copyDir(`${baseBuild}/../shared/build/schema`, `${dest}/schema`);
   copyDir(`${baseBuild}/../unblocked/build/plugins`, `${dest}/unblocked-plugins`);
   Fs.writeFileSync(
     `${dest}/unblocked-plugins/default-browser-emulator/paths.json`,
-    JSON.stringify(
-      {
-        'emulator-data': '../../browser-emulator-builder/data',
-        __modified__: '2023-02-10T14:54:53.672Z',
-      },
-      null,
-      2,
-    ),
-    'utf8',
+    JSON.stringify({
+      'emulator-data': '../../browser-emulator-builder/data',
+    }),
   );
 }
 

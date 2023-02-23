@@ -1,5 +1,5 @@
 import { buffer, ExtractSchemaType, number, string } from '@ulixee/schema';
-import { sha3 } from '@ulixee/commons/lib/hashUtils';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { customAlphabet, nanoid } from 'nanoid';
 import Table from './Table';
@@ -39,7 +39,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     const salt = nanoid(16);
     const id = `crd${postgresFriendlyNanoid(8)}`;
     secret ??= postgresFriendlyNanoid(12);
-    const secretHash = sha3(concatAsBuffer(id, salt, secret));
+    const secretHash = sha256(concatAsBuffer(id, salt, secret));
     await this.queryInternal(
       'INSERT INTO self (id, salt, secretHash, issuedCredits, holdCredits, remainingCredits) VALUES ($1, $2, $3, $4, 0, $4)',
       [id, salt, secretHash, microgons],
@@ -59,7 +59,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     const [credit] = await this.queryInternal('SELECT * FROM self WHERE id=$1', [id]);
     if (!credit) throw new Error('This is an invalid Credit.');
 
-    const hash = sha3(concatAsBuffer(credit.id, credit.salt, secret));
+    const hash = sha256(concatAsBuffer(credit.id, credit.salt, secret));
     if (!hash.equals(credit.secretHash)) throw new Error('This is an invalid Credit secret.');
 
     if (credit.remainingCredits < holdAmount)

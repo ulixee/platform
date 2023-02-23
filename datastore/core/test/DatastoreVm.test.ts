@@ -46,18 +46,17 @@ test('can get the stack trace of a compiled datastore', async () => {
   const packager = new Packager(require.resolve('./datastores/errorStackDatastore.ts'));
   const dbx = await packager.build();
   await dbx.upload(await miner.address);
+  const expectedPath = Path.join(
+    `errorStackDatastore@${packager.manifest.versionHash}.dbx`,
+    'datastore',
+    'core',
+    'test',
+    'datastores',
+    'errorStack.ts',
+  );
   try {
     await client.stream(packager.manifest.versionHash, 'errorStack', {});
   } catch (error) {
-    expect(error.stack).toContain(
-      `at multiply (${Path.join(
-        packager.manifest.versionHash,
-        'datastore',
-        'core',
-        'test',
-        'datastores',
-        'errorStack.ts',
-      )}:15:25)`,
-    );
+    expect(error.stack).toContain(`at multiply (${expectedPath}:15:25)`);
   }
 }, 45e3);

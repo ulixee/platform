@@ -5,7 +5,7 @@ import DatastorePackager from '@ulixee/datastore-packager';
 import UlixeeMiner from '@ulixee/miner';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import * as Hostile from 'hostile';
 import Identity from '@ulixee/crypto/lib/Identity';
 

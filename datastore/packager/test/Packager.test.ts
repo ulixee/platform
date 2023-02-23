@@ -3,8 +3,8 @@ import * as Path from 'path';
 import { existsSync } from 'fs';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
-import { sha3 } from '@ulixee/commons/lib/hashUtils';
-import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import DatastorePackager from '../index';
 import DbxFile from '../lib/DbxFile';
 
@@ -53,12 +53,15 @@ test('it should generate a relative script entrypoint', async () => {
   expect(packager.manifest.toJSON()).toEqual({
     linkedVersions: [],
     adminIdentities: [],
+    crawlersByName: {},
+    domain: undefined,
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `historyTest.js`),
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
     schemaInterface: `{
   tables: {};
   runners: {};
+  crawlers: {};
 }`,
     tablesByName: {},
     runnersByName: expect.objectContaining({
@@ -84,7 +87,7 @@ test('should be able to modify the local built files for uploading', async () =>
   workingDirectory = new DbxFile(dbxFile).workingDirectory;
   dbxFile = packager.dbxPath;
 
-  const versionHash = encodeBuffer(sha3('dbxExtra'), 'dbx').substring(0, 22);
+  const versionHash = encodeBuffer(sha256('dbxExtra'), 'dbx').substring(0, 22);
   await packager.build({ keepOpen: true });
   packager.manifest.linkedVersions.push({
     versionHash,
@@ -169,7 +172,7 @@ module.exports = new Datastore({ runners: { heroRunner }})`,
   dbxFile = packager.dbxPath;
 
   const [dbx1, dbx2, dbx3] = ['dbx1', 'dbx2', 'dbx3'].map(x =>
-    encodeBuffer(sha3(x), 'dbx').substring(0, 22),
+    encodeBuffer(sha256(x), 'dbx').substring(0, 22),
   );
   await packager.manifest.setLinkedVersions(entrypoint, [
     { versionHash: dbx1, versionTimestamp: Date.now() - 25e3 },
@@ -205,6 +208,8 @@ test('should be able to package a multi-function Datastore', async () => {
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
     tablesByName: {},
+    crawlersByName: {},
+    domain: undefined,
     adminIdentities: [],
     schemaInterface: `{
   tables: {};
@@ -224,6 +229,7 @@ test('should be able to package a multi-function Datastore', async () => {
       };
     };
   };
+  crawlers: {};
 }`,
     runnersByName: expect.objectContaining({
       runnerWithInput: {
@@ -262,6 +268,7 @@ test('should be able to package an exported Runner without a Datastore', async (
     schemaInterface: `{
   tables: {};
   runners: {};
+  crawlers: {};
 }`,
     runnersByName: expect.objectContaining({
       default: {
@@ -273,6 +280,8 @@ test('should be able to package an exported Runner without a Datastore', async (
       },
     }),
     tablesByName: {},
+    crawlersByName: {},
+    domain: undefined,
     versionHash: DatastoreManifest.createVersionHash(packager.manifest),
     versionTimestamp: expect.any(Number),
     paymentAddress: undefined,

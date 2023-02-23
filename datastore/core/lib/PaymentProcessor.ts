@@ -1,10 +1,10 @@
-import { IPayment } from '@ulixee/specification';
+import { IPayment } from '@ulixee/platform-specification';
 import SidechainClient from '@ulixee/sidechain';
 import verifyMicronote from '@ulixee/sidechain/lib/verifyMicronote';
 import { UnapprovedSidechainError } from '@ulixee/sidechain/lib/errors';
 import Datastore from '@ulixee/datastore';
 import CreditsTable from '@ulixee/datastore/lib/CreditsTable';
-import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import {
   InsufficientMicronoteFundsError,
@@ -25,6 +25,8 @@ import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
  *
  */
 export default class PaymentProcessor {
+  private static settlementFeeMicrogons: number;
+
   private microgonsToHold = 0;
   private holdId: string;
   private holdAuthorizationCode?: string;
@@ -52,7 +54,7 @@ export default class PaymentProcessor {
 
   public async createHold(
     manifest: IDatastoreManifest,
-    runnerCalls: { id: number; runnerName: string }[],
+    functionCallsWithTempIds: { id: number; name: string }[],
     pricingPreferences: { maxComputePricePerQuery?: number } = { maxComputePricePerQuery: 0 },
   ): Promise<boolean> {
     const configuration = this.context.configuration;
@@ -79,8 +81,8 @@ export default class PaymentProcessor {
     }
 
     let minimumPrice = computePricePerQuery;
-    for (const runnerCall of runnerCalls) {
-      const prices = manifest.runnersByName[runnerCall.runnerName].prices;
+    for (const runnerCall of functionCallsWithTempIds) {
+      const prices = manifest.runnersByName[runnerCall.name].prices;
       const pricePerQuery = prices[0]?.perQuery ?? 0;
       const pricePerKb = prices[0]?.addOns?.perKb ?? 0;
       const holdMicrogons = prices[0]?.minimum ?? pricePerQuery ?? 0;
@@ -122,7 +124,7 @@ export default class PaymentProcessor {
     return true;
   }
 
-  public releaseLocalRunnerHold(runnerId: number, resultBytes: number): number {
+  public releaseLocalFunctionHold(runnerId: number, resultBytes: number): number {
     if (!this.holdId) return 0;
 
     let totalMicrogons = 0;
@@ -147,7 +149,7 @@ export default class PaymentProcessor {
     if (!this.holdId) return 0;
 
     if (this.runnerHolds.length === 1 && !this.runnerHolds[0].didRelease) {
-      this.releaseLocalRunnerHold(this.runnerHolds[0].id, finalResultBytes);
+      this.releaseLocalFunctionHold(this.runnerHolds[0].id, finalResultBytes);
     }
 
     const payments: { [address: string]: number } = {};
@@ -247,6 +249,26 @@ export default class PaymentProcessor {
       settlementFeeMicrogons: settings.settlementFeeMicrogons,
       blockHeight: settings.latestBlockSettings?.height ?? 0,
     };
+  }
+
+  public static async getPrice(
+    prices: { perQuery?: number; minimum?: number }[],
+    context: Pick<IDatastoreApiContext, 'configuration' | 'sidechainClientManager'>,
+  ): Promise<{ pricePerQuery: number; settlementFee: number }> {
+    let pricePerQuery = 0;
+    for (const price of prices) {
+      if (Number.isInteger(price.perQuery)) pricePerQuery += price.perQuery;
+    }
+    let settlementFee = 0;
+    if (pricePerQuery > 0) {
+      this.settlementFeeMicrogons ??= (
+        await context.sidechainClientManager.defaultClient
+          .getSettings(false, false)
+          .catch(() => ({ settlementFeeMicrogons: 0 }))
+      ).settlementFeeMicrogons;
+      settlementFee = this.settlementFeeMicrogons;
+    }
+    return { settlementFee, pricePerQuery };
   }
 
   public static getOfficialBytes(output: any): number {

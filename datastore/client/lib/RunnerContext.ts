@@ -1,4 +1,4 @@
-import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
+import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import { ExtractSchemaType } from '@ulixee/schema';
 import IRunnerSchema from '../interfaces/IRunnerSchema';
 import RunnerInternal from './RunnerInternal';

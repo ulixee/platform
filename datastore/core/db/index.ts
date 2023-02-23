@@ -12,7 +12,7 @@ export default class DatastoresDb {
 
   constructor(baseDir: string, options?: { enableSqliteWAL: boolean }) {
     if (!Fs.existsSync(baseDir)) Fs.mkdirSync(baseDir, { recursive: true });
-    this.db = new Database(`${baseDir}/index.db`);
+    this.db = new Database(`${baseDir}/metadata.db`);
     if (options?.enableSqliteWAL) {
       this.db.unsafeMode(false);
       this.db.pragma('journal_mode = WAL');

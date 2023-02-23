@@ -10,7 +10,7 @@ export enum SupportedCommandType {
 }
 
 type ISupportedCommandType = keyof typeof SupportedCommandType;
-type ILimitedTo = { table?: string; runner?: string };
+type ILimitedTo = { table?: string; function?: string };
 
 interface IInputSchemasByName<T = Record<string, IAnySchemaJson>> {
   [name: string]: T;
@@ -36,8 +36,8 @@ export default class SqlParser {
         return map.super().tableRef(t);
       },
       call(t) {
-        if (limitedTo.runner && t.function.name === 'self') {
-          t.function.name = limitedTo.runner;
+        if (limitedTo.function && t.function.name === 'self') {
+          t.function.name = limitedTo.function;
         }
         return map.super().call(t);
       },
@@ -115,12 +115,12 @@ export default class SqlParser {
     }, {});
   }
 
-  public extractRunnerInput(runnerName: string, boundValues: any): { [key: string]: any } {
+  public extractFunctionInput(functionName: string, boundValues: any): { [key: string]: any } {
     const boundValuesMap = this.convertToBoundValuesMap(boundValues);
     const input: any = {};
     const visitor = astVisitor(() => ({
       call(t: any) {
-        if (t.function.name !== runnerName) return;
+        if (t.function.name !== functionName) return;
         for (const arg of t.args) {
           if (arg.type === 'parameter') {
             input[arg.key] = boundValuesMap[arg.name.replace('$', '')];
@@ -150,25 +150,25 @@ export default class SqlParser {
     return { sql: `SELECT * FROM ${tableName}`, args: [] };
   }
 
-  public extractRunnerInputs<T>(
+  public extractFunctionCallInputs<T>(
     schemasByName: IInputSchemasByName<T>,
     boundValues: any[],
-  ): { [name: string]: any } {
+  ): { [functionName: string]: any } {
     if (!this.isSelect()) throw new Error('Invalid SQL command');
 
-    const inputByRunner: { [name: string]: any } = {};
+    const inputByFunction: { [name: string]: any } = {};
     for (const name of this.functionNames) {
-      if (this.limitedTo.runner && this.limitedTo.runner !== name) {
-        throw new Error(`Runner does not exist: ${name}`);
+      if (this.limitedTo.function && this.limitedTo.function !== name) {
+        throw new Error(`function does not exist: ${name}`);
       }
       const schema = schemasByName[name];
-      const input = this.extractRunnerInput(name, boundValues);
+      const input = this.extractFunctionInput(name, boundValues);
       for (const key of Object.keys(input)) {
         input[key] = SqlGenerator.convertFromSqliteValue(schema[key]?.typeName, input[key]);
       }
-      inputByRunner[name] = input;
+      inputByFunction[name] = input;
     }
 
-    return inputByRunner;
+    return inputByFunction;
   }
 }

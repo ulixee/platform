@@ -13,7 +13,8 @@
       "miner/*",
       "sql/*",
       "cli",
-      "playgrounds/*"
+      "playgrounds/*",
+      "specification"
     ]
   }
 }

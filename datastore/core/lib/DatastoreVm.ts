@@ -1,4 +1,4 @@
-import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { NodeVM, VMScript } from 'vm2';
 import { promises as Fs } from 'fs';
 import Datastore, { ConnectionToDatastoreCore } from '@ulixee/datastore';

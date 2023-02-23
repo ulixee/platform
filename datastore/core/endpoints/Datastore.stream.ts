@@ -1,11 +1,11 @@
 import Datastore, { IRunnerExecOptions } from '@ulixee/datastore';
-import IDatastoreApis from '@ulixee/specification/datastore/DatastoreApis';
+import IDatastoreApis from '@ulixee/platform-specification/datastore/DatastoreApis';
 import { SqlGenerator } from '@ulixee/sql-engine';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreCore from '../index';
 import PaymentProcessor from '../lib/PaymentProcessor';
 import DatastoreVm from '../lib/DatastoreVm';
-import { validateAuthentication, validateRunnerCoreVersions } from '../lib/datastoreUtils';
+import { validateAuthentication, validateFunctionCoreVersions } from '../lib/datastoreUtils';
 import { IDatastoreManifestWithStats } from '../lib/DatastoreRegistry';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 import DatastoreStorage from '../lib/DatastoreStorage';
@@ -20,10 +20,12 @@ export default new DatastoreApiHandler('Datastore.stream', {
 
     let outputs;
 
-    const datastoreRunner = datastore.metadata.runnersByName[request.name];
+    const datastoreFunction =
+      datastore.metadata.runnersByName[request.name] ??
+      datastore.metadata.crawlersByName[request.name];
     const datastoreTable = datastore.metadata.tablesByName[request.name];
-    if (datastoreRunner) {
-      outputs = await extractRunnerOutputs(
+    if (datastoreFunction) {
+      outputs = await extractFunctionOutputs(
         manifestWithStats,
         datastore,
         request,
@@ -57,7 +59,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
   },
 });
 
-async function extractRunnerOutputs(
+async function extractFunctionOutputs(
   manifestWithStats: IDatastoreManifestWithStats,
   datastore: Datastore,
   request: IDatastoreApis['Datastore.stream']['args'],
@@ -66,11 +68,11 @@ async function extractRunnerOutputs(
 ): Promise<any[]> {
   await paymentProcessor.createHold(
     manifestWithStats,
-    [{ runnerName: request.name, id: 1 }],
+    [{ name: request.name, id: 1 }],
     request.pricingPreferences,
   );
 
-  validateRunnerCoreVersions(manifestWithStats, request.name, context);
+  validateFunctionCoreVersions(manifestWithStats, request.name, context);
 
   return await context.workTracker.trackRun(
     (async () => {
@@ -85,12 +87,13 @@ async function extractRunnerOutputs(
         if (plugin.beforeExecRunner) await plugin.beforeExecRunner(options);
       }
 
-      const results = datastore.runners[request.name].runInternal(options);
+      const func = datastore.runners[request.name] ?? datastore.crawlers[request.name];
+      const results = func.runInternal(options);
       for await (const result of results) {
         context.connectionToClient.sendEvent({
           listenerId: request.streamId,
           data: result,
-          eventType: 'RunnerStream.output',
+          eventType: 'Stream.output',
         });
       }
       return results;
@@ -113,7 +116,12 @@ async function extractTableOutputs(
 
   const db = storage.db;
   const schema = storage.getTableSchema(request.name);
-  const { sql, boundValues } = SqlGenerator.createWhereClause(request.name, request.input, ['*'], 1000);
+  const { sql, boundValues } = SqlGenerator.createWhereClause(
+    request.name,
+    request.input,
+    ['*'],
+    1000,
+  );
 
   const results = db.prepare(sql).all(boundValues);
 
@@ -123,7 +131,7 @@ async function extractTableOutputs(
     context.connectionToClient.sendEvent({
       listenerId: request.streamId,
       data: result,
-      eventType: 'RunnerStream.output',
+      eventType: 'Stream.output',
     });
   }
 

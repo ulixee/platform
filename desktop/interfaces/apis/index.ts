@@ -1,5 +1,5 @@
 import type ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
-import type ICoreRequestPayload from '@ulixee/net/interfaces/ICoreRequestPayload';
+import { IDatastoreApis } from '@ulixee/platform-specification/datastore';
 import IChromeAliveSessionApi from './IChromeAliveSessionApi';
 import IDevtoolsBackdoorApi from './IDevtoolsBackdoorApi';
 import IDatastoreApi from './IDatastoreApi';
@@ -34,14 +34,10 @@ export type IDesktopAppApis = {
   'App.connect': IAppApi['connect'];
   'Sessions.search': IHeroSessionsApi['search'];
   'Sessions.list': IHeroSessionsApi['list'];
+  'Datastores.list': IDatastoreApis['Datastores.list'];
 };
 
 export type IChromeAliveSessionApiResponse<T extends keyof IChromeAliveSessionApis> = ICoreResponsePayload<
-  IChromeAliveSessionApis,
-  T
->;
-
-export type IChromeAliveSessionApiRequest<T extends keyof IChromeAliveSessionApis> = ICoreRequestPayload<
   IChromeAliveSessionApis,
   T
 >;

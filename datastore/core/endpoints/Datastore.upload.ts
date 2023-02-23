@@ -34,7 +34,6 @@ export default new DatastoreApiHandler('Datastore.upload', {
           await unpackDbx(compressedDatastore, tmpDir);
           await datastoreRegistry.save(
             tmpDir,
-            compressedDatastore,
             adminIdentity,
             allowNewLinkedVersionHistory,
             hasServerAdminIdentity,

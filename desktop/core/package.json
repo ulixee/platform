@@ -15,13 +15,15 @@
     "@ulixee/hero-timetravel": "2.0.0-alpha.18",
     "@ulixee/net": "2.0.0-alpha.18",
     "@ulixee/unblocked-agent": "2.0.0-alpha.18",
+    "@ulixee/platform-specification": "2.0.0-alpha.18",
     "@ulixee/unblocked-specification": "2.0.0-alpha.18",
     "fuse.js": "^6.5.3",
     "nanoid": "^3.1.30",
     "ws": "^7.4.6"
   },
   "peerDependencies": {
-    "@ulixee/hero-core": "2.0.0-alpha.18"
+    "@ulixee/hero-core": "2.0.0-alpha.18",
+    "@ulixee/datastore-core": "2.0.0-alpha.18"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.154",

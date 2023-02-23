@@ -6,7 +6,7 @@ test('extracts functions from SELECT', () => {
 });
 
 test('replace function alias "self" with name SELECT', () => {
-  const sqlParser = new SqlParser('SELECT * FROM self()', { runner: 'funcName' });
+  const sqlParser = new SqlParser('SELECT * FROM self()', { function: 'funcName' });
   expect(sqlParser.functionNames).toEqual(['funcName']);
 });
 

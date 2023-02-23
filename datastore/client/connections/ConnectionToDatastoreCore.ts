@@ -1,4 +1,4 @@
-import { IDatastoreApis } from '@ulixee/specification/datastore';
+import { IDatastoreApis } from '@ulixee/platform-specification/datastore';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
 import ITransportToCore from '@ulixee/net/interfaces/ITransportToCore';
 

@@ -1,6 +1,6 @@
 import ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
-import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
-import { IDatastoreApis } from '@ulixee/specification/datastore';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { IDatastoreApis } from '@ulixee/platform-specification/datastore';
 import { IApiSpec } from '@ulixee/net/interfaces/IApiHandlers';
 import IUnixTime from '@ulixee/net/interfaces/IUnixTime';
 import { ISchemaAny } from '@ulixee/schema';
@@ -143,12 +143,13 @@ export default class DatastoreInternal<
     for (const [key, runner] of Object.entries(this.runners)) {
       if (runner.schema) inputSchemas[key] = runner.schema.input;
     }
-    const inputByRunnerName = sqlParser.extractRunnerInputs(inputSchemas, boundValues);
-    const outputByRunnerName: { [name: string]: any[] } = {};
+    const inputByFunctionName = sqlParser.extractFunctionCallInputs(inputSchemas, boundValues);
+    const outputByFunctionName: { [name: string]: any[] } = {};
 
-    for (const runnerName of Object.keys(inputByRunnerName)) {
-      const input = inputByRunnerName[runnerName];
-      outputByRunnerName[runnerName] = await this.runners[runnerName].runInternal({
+    for (const functionName of Object.keys(inputByFunctionName)) {
+      const input = inputByFunctionName[functionName];
+      const func = this.runners[functionName] ?? this.crawlers[functionName];
+      outputByFunctionName[functionName] = await func.runInternal({
         input,
       });
     }
@@ -167,8 +168,8 @@ export default class DatastoreInternal<
     const args = {
       sql,
       boundValues,
-      inputByRunnerName,
-      outputByRunnerName,
+      inputByRunnerName: inputByFunctionName,
+      outputByRunnerName: outputByFunctionName,
       recordsByVirtualTableName,
       datastoreInstanceId,
       datastoreVersionHash,

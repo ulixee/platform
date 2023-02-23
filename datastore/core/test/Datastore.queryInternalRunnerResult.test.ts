@@ -4,7 +4,7 @@ import UlixeeMiner from '@ulixee/miner';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import directRunner from './datastores/directRunner';
 
-const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.queryInternalRunnerResult.test');
+const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.queryInternalFunctionResult.test');
 
 let miner: UlixeeMiner;
 

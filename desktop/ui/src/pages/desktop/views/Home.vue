@@ -1,6 +1,9 @@
 <template>
   <div class="bar-wrapper flex h-full w-full flex-row items-stretch">
-    <ul class="tabbar flex list-none flex-col flex-wrap whitespace-nowrap pl-0 text-center" role="tablist">
+    <ul
+      class="tabbar flex list-none flex-col flex-wrap whitespace-nowrap pl-0 text-center"
+      role="tablist"
+    >
       <li
         v-for="tab of tabs"
         :key="tab.key"
@@ -21,7 +24,7 @@
         :class="[activeTab === 'datastores' ? 'opacity-100' : 'opacity:0']"
         class="transition-opacity duration-150 ease-linear"
       >
-        Datastores
+        <Datastores ref="datastoresRef" :clients-by-miner-address="clientsByMinerAddress" />
       </div>
       <div
         v-show="activeTab === 'sessions'"
@@ -46,7 +49,8 @@ import * as Vue from 'vue';
 import { Client } from '@/api/Client';
 import { ChevronDownIcon } from '@heroicons/vue/24/outline';
 import Sessions from './Sessions.vue';
-import Remotes from './Remotes.vue'
+import Remotes from './Remotes.vue';
+import Datastores from './Datastores.vue';
 
 type ITabs = 'datastores' | 'sessions' | 'remotes';
 export default Vue.defineComponent({
@@ -54,6 +58,7 @@ export default Vue.defineComponent({
   components: {
     Sessions,
     Remotes,
+    Datastores,
     ChevronDownIcon,
   },
   setup() {
@@ -65,6 +70,7 @@ export default Vue.defineComponent({
         { title: 'Cloud Nodes', key: 'remotes' },
       ],
       sessionsRef: Vue.ref<typeof Sessions>(null),
+      datastoresRef: Vue.ref<typeof Datastores>(null),
       activeTab: Vue.ref<ITabs>('datastores'),
     };
   },
@@ -83,6 +89,7 @@ export default Vue.defineComponent({
       this.clientsByMinerAddress.set(address, client);
       await client.connect();
       this.sessionsRef.onClient(client);
+      this.datastoresRef.onClient(client);
     },
     sendToBackend(api: string, ...args: any[]) {
       document.dispatchEvent(

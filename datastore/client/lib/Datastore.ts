@@ -1,4 +1,4 @@
-import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
 import IDatastoreComponents, {
   TCrawlers,

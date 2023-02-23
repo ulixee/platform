@@ -12,7 +12,7 @@ export default class DatastoreStatsTable extends SqliteTable<IDatastoreStatsReco
       'DatastoreStats',
       [
         ['versionHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
-        ['runnerName', 'TEXT', 'NOT NULL PRIMARY KEY'],
+        ['name', 'TEXT', 'NOT NULL PRIMARY KEY'],
         ['lastRunTimestamp', 'DATETIME'],
         ['averageBytes', 'INTEGER'],
         ['minBytes', 'INTEGER'],
@@ -26,20 +26,20 @@ export default class DatastoreStatsTable extends SqliteTable<IDatastoreStatsReco
       true,
     );
     this.getQuery = db.prepare(
-      `select * from ${this.tableName} where versionHash = ? and runnerName = ? limit 1`,
+      `select * from ${this.tableName} where versionHash = ? and name = ? limit 1`,
     );
   }
 
   public record(
     versionHash: string,
-    runnerName: string,
+    name: string,
     price: number,
     bytes: number,
     milliseconds: number,
   ): void {
     price ??= 0;
 
-    const stats = this.getByVersionHash(versionHash, runnerName);
+    const stats = this.getByVersionHash(versionHash, name);
     stats.runs += 1;
     stats.lastRunTimestamp = Date.now();
     stats.maxPrice = Math.max(stats.maxPrice, price);
@@ -56,7 +56,7 @@ export default class DatastoreStatsTable extends SqliteTable<IDatastoreStatsReco
     stats.averageBytes = calculateNewAverage(stats.averageBytes, bytes, stats.runs);
     this.queuePendingInsert([
       versionHash,
-      runnerName,
+      name,
       stats.runs,
       stats.lastRunTimestamp,
       stats.averageBytes,
@@ -70,10 +70,10 @@ export default class DatastoreStatsTable extends SqliteTable<IDatastoreStatsReco
     ]);
   }
 
-  public getByVersionHash(versionHash: string, runnerName: string): IDatastoreStatsRecord {
-    DatastoreStatsTable.byVersionHashAndName[`${versionHash}_${runnerName}`] ??= this.getQuery.get(
+  public getByVersionHash(versionHash: string, name: string): IDatastoreStatsRecord {
+    DatastoreStatsTable.byVersionHashAndName[`${versionHash}_${name}`] ??= this.getQuery.get(
       versionHash,
-      runnerName,
+      name,
     ) ?? {
       lastRunTimestamp: Date.now(),
       runs: 0,
@@ -87,7 +87,7 @@ export default class DatastoreStatsTable extends SqliteTable<IDatastoreStatsReco
       maxMilliseconds: 0,
       versionHash,
     };
-    return DatastoreStatsTable.byVersionHashAndName[`${versionHash}_${runnerName}`];
+    return DatastoreStatsTable.byVersionHashAndName[`${versionHash}_${name}`];
   }
 }
 
@@ -98,7 +98,7 @@ function calculateNewAverage(oldAverage: number, value: number, newTotalValues: 
 
 export interface IDatastoreStatsRecord {
   versionHash: string;
-  runnerName: string;
+  name: string;
   runs: number;
   lastRunTimestamp: number;
   averageBytes: number;

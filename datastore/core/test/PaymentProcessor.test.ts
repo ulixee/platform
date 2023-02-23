@@ -1,9 +1,9 @@
 import SidechainClient from '@ulixee/sidechain';
 import Identity from '@ulixee/crypto/lib/Identity';
-import { sha3 } from '@ulixee/commons/lib/hashUtils';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import Datastore from '@ulixee/datastore';
-import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import PaymentProcessor from '../lib/PaymentProcessor';
 import SidechainClientManager from '../lib/SidechainClientManager';
 import IDatastoreCoreConfigureOptions from '../interfaces/IDatastoreCoreConfigureOptions';
@@ -33,12 +33,12 @@ const payment = {
     sidechainIdentity: sidechainIdentity.bech32,
     micronoteBatchIdentity: micronoteBatchIdentity.bech32,
     guaranteeBlockHeight: 0,
-    micronoteSignature: micronoteBatchIdentity.sign(sha3(concatAsBuffer('1', 1000))),
+    micronoteSignature: micronoteBatchIdentity.sign(sha256(concatAsBuffer('1', 1000))),
     micronoteId: '1',
     batchSlug: '123',
     blockHeight: 0,
     micronoteBatchUrl: '',
-    sidechainValidationSignature: sidechainIdentity.sign(sha3(micronoteBatchIdentity.bech32)),
+    sidechainValidationSignature: sidechainIdentity.sign(sha256(micronoteBatchIdentity.bech32)),
   },
 };
 
@@ -68,7 +68,7 @@ test('it should ensure a payment has enough microgons', async () => {
         },
         paymentAddress: 'ar1',
       } as unknown as IDatastoreManifest,
-      [{ id: 1, runnerName: 'fun1' }],
+      [{ id: 1, name: 'fun1' }],
     ),
   ).rejects.toThrowError('insufficient');
 });
@@ -94,8 +94,8 @@ test('it should allow adding multiple payees', async () => {
         paymentAddress: 'ar1',
       } as unknown as IDatastoreManifest,
       [
-        { id: 1, runnerName: 'fun1' },
-        { id: 2, runnerName: 'fun2' },
+        { id: 1, name: 'fun1' },
+        { id: 2, name: 'fun2' },
       ],
     ),
   ).resolves.toBe(true);
@@ -137,13 +137,13 @@ test('it should allow an function to charge per kb', async () => {
         paymentAddress: 'ar1',
       } as any as IDatastoreManifest,
       [
-        { id: 1, runnerName: 'fun1' },
-        { id: 2, runnerName: 'fun2' },
+        { id: 1, name: 'fun1' },
+        { id: 2, name: 'fun2' },
       ],
     ),
   ).resolves.toBe(true);
-  expect(processor.releaseLocalRunnerHold(1, 1e3)).toBe(500);
-  expect(processor.releaseLocalRunnerHold(2, 1e3)).toBe(101);
+  expect(processor.releaseLocalFunctionHold(1, 1e3)).toBe(500);
+  expect(processor.releaseLocalFunctionHold(2, 1e3)).toBe(101);
 
   const finalMicrogons = await processor.settle(1e3);
   expect(finalMicrogons).toBe(611);
@@ -181,13 +181,13 @@ test('the processor should take all available funds if a query exceeds the micro
         paymentAddress: 'ar1',
       } as unknown as IDatastoreManifest,
       [
-        { id: 1, runnerName: 'fun1' },
-        { id: 2, runnerName: 'fun2' },
+        { id: 1, name: 'fun1' },
+        { id: 2, name: 'fun2' },
       ],
     ),
   ).resolves.toBe(true);
-  expect(processor.releaseLocalRunnerHold(1, 1e3)).toBe(494);
-  expect(processor.releaseLocalRunnerHold(2, 1e3)).toBe(501);
+  expect(processor.releaseLocalFunctionHold(1, 1e3)).toBe(494);
+  expect(processor.releaseLocalFunctionHold(2, 1e3)).toBe(501);
 
   await expect(processor.settle(23)).rejects.toThrowError('will not cover');
   expect(settleSpy).toHaveBeenCalledTimes(1);

@@ -197,7 +197,7 @@ export default Vue.defineComponent({
 }
 
 .header-bar {
-  @apply bg-gray-100;
+  @apply bg-slate-100;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 

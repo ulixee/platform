@@ -7,7 +7,7 @@
   },
   "references": [
     {
-      "path": "desktop/core/injected-scripts/tsconfig.json"
+      "path": "specification/tsconfig.json"
     }
   ],
   "include": [
@@ -34,7 +34,7 @@
     "**/node_modules",
     "desktop/ui",
     "desktop/chrome-extension",
-    "desktop/core/injected-scripts",
+    "specification",
     "hero",
     "datastore/docpage/src",
     "**/website",

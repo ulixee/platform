@@ -22,6 +22,7 @@ interface IReplayTab {
   browserContextId: string;
   chromeTabId: number;
 }
+
 export default class ChromeAliveWindow {
   private static pages = {
     Input: '/screen-input.html',
@@ -204,7 +205,7 @@ export default class ChromeAliveWindow {
   public async reconnect(address: string): Promise<void> {
     if (this.api?.address.includes(address)) return;
     if (this.api?.isConnected) {
-      await this.api.disconnect()
+      await this.api.disconnect();
     }
     this.createApi(address);
 

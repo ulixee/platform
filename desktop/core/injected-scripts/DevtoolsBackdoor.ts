@@ -1,5 +1,15 @@
 import {} from '@ulixee/hero-interfaces/IDomChangeEvent';
 
+declare class DevToolsAPI {
+  static showPanel(name: string): void;
+  static getInspectedTabId(): number;
+  static enterInspectElementMode(): void;
+}
+
+declare class InspectorFrontendHost {
+  static closeWindow(): void;
+}
+
 declare global {
   interface Window {
     DevtoolsBackdoor: typeof DevtoolsBackdoor;

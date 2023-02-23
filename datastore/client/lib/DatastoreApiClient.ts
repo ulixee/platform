@@ -2,12 +2,12 @@ import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
 import DatastoreApiSchemas, {
   IDatastoreApis,
   IDatastoreApiTypes,
-} from '@ulixee/specification/datastore';
-import { sha3 } from '@ulixee/commons/lib/hashUtils';
+} from '@ulixee/platform-specification/datastore';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
-import { IPayment } from '@ulixee/specification';
+import { IPayment } from '@ulixee/platform-specification';
 import { nanoid } from 'nanoid';
 import ICoreEventPayload from '@ulixee/net/interfaces/ICoreEventPayload';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
@@ -108,7 +108,7 @@ export default class DatastoreApiClient {
       authentication?: IDatastoreExecRelayArgs['authentication'];
       affiliateId?: string;
     },
-  ): ResultIterable<ISchemaDbx['output'], IDatastoreApiTypes['Datastore.stream']['result']>
+  ): ResultIterable<ISchemaDbx['output'], IDatastoreApiTypes['Datastore.stream']['result']>;
   public stream<
     IO extends IItemInputOutput,
     IVersionHash extends keyof ITypes & string = any,
@@ -288,8 +288,8 @@ export default class DatastoreApiClient {
   protected onEvent<T extends keyof IDatastoreEvents>(
     event: ICoreEventPayload<IDatastoreEvents, T>,
   ): void {
-    if (event.eventType === 'RunnerStream.output') {
-      const data = event.data as IDatastoreEvents['RunnerStream.output'];
+    if (event.eventType === 'Stream.output') {
+      const data = event.data as IDatastoreEvents['Stream.output'];
       this.activeIterableByStreamId.get(event.listenerId)?.push(data);
     }
   }
@@ -353,7 +353,7 @@ export default class DatastoreApiClient {
   }
 
   public static createExecSignatureMessage(payment: IPayment, nonce: string): Buffer {
-    return sha3(
+    return sha256(
       concatAsBuffer(
         'Datastore.exec',
         payment?.credits?.id,
@@ -384,7 +384,7 @@ export default class DatastoreApiClient {
     functionName: string,
     args: any[],
   ): Buffer {
-    return sha3(
+    return sha256(
       concatAsBuffer(
         'Datastore.admin',
         adminIdentity,
@@ -400,7 +400,7 @@ export default class DatastoreApiClient {
     compressedDatastore: Buffer,
     allowNewLinkedVersionHistory: boolean,
   ): Buffer {
-    return sha3(
+    return sha256(
       concatAsBuffer('Datastore.upload', compressedDatastore, String(allowNewLinkedVersionHistory)),
     );
   }

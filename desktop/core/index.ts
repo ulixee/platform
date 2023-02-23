@@ -15,6 +15,10 @@ import IDesktopAppEvents, {
   INewHeroSessionEvent,
 } from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
+import TransportBridge from '@ulixee/net/lib/TransportBridge';
+import { ConnectionToDatastoreCore } from '@ulixee/datastore';
+import DatastoreCore from '@ulixee/datastore-core';
+import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import WebSocket = require('ws');
 import SessionController from './lib/SessionController';
 import FullscreenHeroCorePlugin from './lib/FullscreenHeroCorePlugin';
@@ -32,6 +36,16 @@ export default class DesktopCore {
   private static appConnectionsById = new Map<string, IConnectionToDesktopClient>();
   private static appDevtoolsConnectionsById = new Map<string, AppDevtoolsConnection>();
   private static heroSessionsSearch = new HeroSessionsSearch();
+  private static _connectionToDatastoreCore: ConnectionToDatastoreCore;
+
+  private static get connectionToDatastoreCore(): ConnectionToDatastoreCore {
+    if (!this._connectionToDatastoreCore) {
+      const bridge = new TransportBridge();
+      this._connectionToDatastoreCore = new ConnectionToDatastoreCore(bridge.transportToCore);
+      DatastoreCore.addConnection(bridge.transportToClient).isInternal = true;
+    }
+    return this._connectionToDatastoreCore;
+  }
 
   private static events = new EventSubscriber();
 
@@ -81,10 +95,11 @@ export default class DesktopCore {
     log.info('Desktop app connected', { id, host, sessionId: null });
 
     // Desktop initiates a connection to Core. This Core could be remote or local
-    const connection = new ConnectionToClient(transport, {
+    const connection = new ConnectionToClient(transport, <IDesktopAppApis>{
       'App.connect': this.onAppConnect.bind(this, id),
       'Sessions.search': this.heroSessionsSearch.search,
       'Sessions.list': this.heroSessionsSearch.list,
+      'Datastores.list': this.delegateToCore.bind(this, 'Datastores.list'),
     });
 
     this.appConnectionsById.set(id, connection);
@@ -244,6 +259,16 @@ export default class DesktopCore {
     });
 
     return { sessionController, appConnectionId };
+  }
+
+  private static delegateToCore<TCommand extends keyof IDatastoreApiTypes & string>(
+    command: TCommand,
+    args: IDatastoreApiTypes[TCommand]['args'],
+  ): Promise<IDatastoreApiTypes[TCommand]['result']> {
+    return this.connectionToDatastoreCore.sendRequest({
+      command,
+      args: [args] as any,
+    });
   }
 
   private static loadSessionController(

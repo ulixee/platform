@@ -1,6 +1,6 @@
 import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 import SqliteTable from '@ulixee/commons/lib/SqliteTable';
-import { IVersionHistoryEntry } from '@ulixee/specification/types/IDatastoreManifest';
+import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
 
 export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersionRecord> {
   private getQuery: Statement<string>;

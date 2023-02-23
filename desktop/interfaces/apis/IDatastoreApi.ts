@@ -9,3 +9,4 @@ export default interface IDatastoreApi {
     error?: Error;
   }>;
 }
+

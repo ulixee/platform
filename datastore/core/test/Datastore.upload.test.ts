@@ -2,7 +2,7 @@ import * as Fs from 'fs';
 import * as Path from 'path';
 import DatastorePackager from '@ulixee/datastore-packager';
 import UlixeeMiner from '@ulixee/miner';
-import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
@@ -50,6 +50,7 @@ test('should be able upload a datastore', async () => {
       };
     };
   };
+  crawlers: {};
 }`)
   expect(Fs.existsSync(`${storageDir}/upload@${manifest.versionHash}.dbx`)).toBeTruthy();
 } catch (error) {

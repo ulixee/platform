@@ -71,7 +71,7 @@ export default class Runner<
   protected get datastoreInternal(): DatastoreInternal {
     if (!this.#datastoreInternal) {
       this.#datastoreInternal = new DatastoreInternal({ runners: { [this.name]: this } });
-      this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryRunner.bind(this));
+      this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryFunction.bind(this));
     }
     return this.#datastoreInternal;
   }
@@ -166,10 +166,10 @@ export default class Runner<
     const datastoreInstanceId = this.datastoreInternal.instanceId;
     const datastoreVersionHash = this.datastoreInternal.manifest?.versionHash;
 
-    const sqlParser = new SqlParser(sql, { runner: name });
+    const sqlParser = new SqlParser(sql, { function: name });
     const schemas = { [name]: this.schema.input };
-    const inputsByRunner = sqlParser.extractRunnerInputs<TSchema['input']>(schemas, boundValues);
-    const input = inputsByRunner[name];
+    const inputsByFunction = sqlParser.extractFunctionCallInputs<TSchema['input']>(schemas, boundValues);
+    const input = inputsByFunction[name];
     const outputs: any[] = [];
 
     const results = await this.runInternal({ input } as TRunArgs);
@@ -185,7 +185,7 @@ export default class Runner<
       datastoreVersionHash,
     };
     return await this.datastoreInternal.sendRequest({
-      command: 'Datastore.queryInternalRunnerResult',
+      command: 'Datastore.queryInternalFunctionResult',
       args: [args],
     });
   }
@@ -202,7 +202,7 @@ export default class Runner<
 
     this.#datastoreInternal = datastoreInternal;
     if (!datastoreInternal.manifest?.versionHash) {
-      this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryRunner.bind(this));
+      this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryFunction.bind(this));
     }
   }
 
@@ -210,7 +210,7 @@ export default class Runner<
     this.datastoreInternal.connectionToCore = connectionToCore;
   }
 
-  private async createInMemoryRunner(): Promise<void> {
+  private async createInMemoryFunction(): Promise<void> {
     const datastoreInstanceId = this.datastoreInternal.instanceId;
     const name = this.components.name;
     const args = {
@@ -219,7 +219,7 @@ export default class Runner<
       schema: this.components.schema,
     };
     await this.datastoreInternal.sendRequest({
-      command: 'Datastore.createInMemoryRunner',
+      command: 'Datastore.createInMemoryFunction',
       args: [args],
     });
   }

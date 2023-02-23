@@ -14,6 +14,7 @@
     "@ulixee/datastore-docpage": "2.0.0-alpha.18",
     "@ulixee/net": "2.0.0-alpha.18",
     "@ulixee/schema": "2.0.0-alpha.18",
+    "@ulixee/platform-specification": "2.0.0-alpha.18",
     "@ulixee/specification": "2.0.0-alpha.18",
     "@ulixee/sql-engine": "2.0.0-alpha.18",
     "better-sqlite3": "^8.0.1",

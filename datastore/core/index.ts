@@ -10,7 +10,7 @@ import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
-import { IDatastoreApis } from '@ulixee/specification/datastore';
+import { IDatastoreApis } from '@ulixee/platform-specification/datastore';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import IDatastoreEvents from '@ulixee/datastore/interfaces/IDatastoreEvents';
 import Identity from '@ulixee/crypto/lib/Identity';
@@ -21,7 +21,6 @@ import Autorun from '@ulixee/datastore/lib/utils/Autorun';
 import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
 import env from './env';
 import DatastoreRegistry from './lib/DatastoreRegistry';
-import { unpackDbxFile } from './lib/dbxUtils';
 import WorkTracker from './lib/WorkTracker';
 import IDatastoreApiContext from './interfaces/IDatastoreApiContext';
 import SidechainClientManager from './lib/SidechainClientManager';
@@ -31,9 +30,9 @@ import DatastoreQueryLocalScript from './endpoints/Datastore.queryLocalScript';
 import DatastoreMeta from './endpoints/Datastore.meta';
 import DatastoreQueryInternal from './endpoints/Datastore.queryInternal';
 import DatastoreQueryInternalTable from './endpoints/Datastore.queryInternalTable';
-import DatastoreQueryInternalRunnerResult from './endpoints/Datastore.queryInternalRunnerResult';
+import DatastorequeryInternalFunctionResult from './endpoints/Datastore.queryInternalFunctionResult';
 import DatastoreInitializeInMemoryTable from './endpoints/Datastore.createInMemoryTable';
-import DatastoreInitializeInMemoryRunner from './endpoints/Datastore.createInMemoryRunner';
+import DatastoreInitializeInMemoryRunner from './endpoints/Datastore.createInMemoryFunction';
 import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
 import DatastoreStream from './endpoints/Datastore.stream';
 import DatastoreFetchInternalTable from './endpoints/Datastore.fetchInternalTable';
@@ -41,6 +40,7 @@ import DatastoreAdmin from './endpoints/Datastore.admin';
 import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
 import DatastoreVm from './lib/DatastoreVm';
 import { DatastoreNotFoundError } from './lib/errors';
+import DatastoresList from './endpoints/Datastores.list';
 
 const { log } = Logger(module);
 
@@ -76,13 +76,14 @@ export default class DatastoreCore {
     DatastoreUpload,
     DatastoreQuery,
     DatastoreStream,
+    DatastoresList,
     DatastoreFetchInternalTable,
     DatastoreAdmin,
     DatastoreCreditsBalance,
     DatastoreMeta,
     DatastoreQueryInternal,
     DatastoreQueryInternalTable,
-    DatastoreQueryInternalRunnerResult,
+    DatastorequeryInternalFunctionResult,
     DatastoreInitializeInMemoryTable,
     DatastoreInitializeInMemoryRunner,
   ]);
@@ -159,7 +160,10 @@ export default class DatastoreCore {
     }
 
     const creditId = url.searchParams.keys().next().value.split(':').shift();
-    const result = await DatastoreCreditsBalance.handler({ datastoreVersionHash, creditId }, this.getApiContext());
+    const result = await DatastoreCreditsBalance.handler(
+      { datastoreVersionHash, creditId },
+      this.getApiContext(),
+    );
 
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify(result));
@@ -217,11 +221,8 @@ export default class DatastoreCore {
       if (!(await existsAsync(this.options.datastoresTmpDir))) {
         await Fs.mkdir(this.options.datastoresTmpDir, { recursive: true });
       }
-      this.datastoreRegistry = new DatastoreRegistry(
-        this.options.datastoresDir,
-        this.options.datastoresTmpDir,
-      );
-      await this.installManuallyUploadedDbxFiles();
+      this.datastoreRegistry = new DatastoreRegistry(this.options.datastoresDir);
+      await this.datastoreRegistry.installManuallyUploadedDbxFiles();
 
       Autorun.isEnabled = false;
       process.env.ULX_DATASTORE_DISABLE_AUTORUN = 'true';
@@ -264,32 +265,6 @@ export default class DatastoreCore {
       await DatastoreVm.close();
     } finally {
       closingPromise.resolve();
-    }
-  }
-
-  public static async installManuallyUploadedDbxFiles(): Promise<void> {
-    if (!(await existsAsync(this.datastoresDir))) return;
-
-    for (const file of await Fs.readdir(this.datastoresDir)) {
-      if (!file.endsWith('.dbx')) continue;
-      const path = Path.join(this.datastoresDir, file);
-
-      if (file.includes('@')) {
-        const hash = file.replace('.dbx', '').split('@').pop();
-        if (this.datastoreRegistry.hasVersionHash(hash)) continue;
-      }
-
-      log.info('Found unknown .dbx file in datastores directory. Checking for import.', {
-        file,
-        sessionId: null,
-      });
-
-      const tmpDir = await Fs.mkdtemp(`${this.options.datastoresTmpDir}/`);
-      await unpackDbxFile(path, tmpDir);
-      const buffer = await Fs.readFile(path);
-      const { dbxPath } = await this.datastoreRegistry.save(tmpDir, buffer, null, true, true);
-      if (dbxPath !== path) await Fs.unlink(path);
-      if (await existsAsync(tmpDir)) await Fs.rm(tmpDir, { recursive: true });
     }
   }
 

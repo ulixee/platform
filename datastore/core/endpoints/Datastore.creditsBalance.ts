@@ -1,5 +1,5 @@
 import CreditsTable from '@ulixee/datastore/lib/CreditsTable';
-import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
+import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreVm from '../lib/DatastoreVm';
 

@@ -1,6 +1,6 @@
 import Identity from '@ulixee/crypto/lib/Identity';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
-import { sha3 } from '@ulixee/commons/lib/hashUtils';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import SidechainClient from '@ulixee/sidechain';
 import { IBlockSettings } from '@ulixee/specification';
 import ISidechainInfoApis from '@ulixee/specification/sidechain/SidechainInfoApis';
@@ -25,7 +25,7 @@ test('should check that micronotes come from trusted sidechains', async () => {
     defaultSidechainRootIdentity: identity.bech32,
   });
   await expect(
-    manager.withIdentity(encodeBuffer(sha3('NewNoteIdentity'), 'id')),
+    manager.withIdentity(encodeBuffer(sha256('NewNoteIdentity'), 'id')),
   ).rejects.toThrowError('not approved');
 });
 
@@ -47,7 +47,7 @@ test('can update the approved sidechain list from the main sidechain', async () 
           rootIdentities: [sidechainOriginalRootIdentity.bech32],
           identityProofSignatures: [
             sidechainOriginalRootIdentity.sign(
-              sha3(concatAsBuffer(command, (args as any)?.identity)),
+              sha256(concatAsBuffer(command, (args as any)?.identity)),
             ),
           ],
           latestBlockSettings: {

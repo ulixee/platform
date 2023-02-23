@@ -50,16 +50,16 @@ process.on('message', async (messageJson: string) => {
     if (message.action === 'run') {
       const datastore = requireDatastore(message.scriptPath);
 
-      if (!datastore.runners[message.runnerName]) {
+      if (!datastore.runners[message.name] && !datastore.crawlers[message.name]) {
         return sendToParent({
           responseId: message.messageId,
-          data: new DatastoreNotFoundError(
-            `Database function "${message.runnerName}" not found.`,
-          ),
+          data: new DatastoreNotFoundError(`Database function "${message.name}" not found.`),
         });
       }
 
-      const iterator = datastore.runners[message.runnerName].runInternal(message.runnerName, message.input);
+      const iterator = (
+        datastore.runners[message.name] ?? datastore.crawlers[message.name]
+      ).runInternal(message.name, message.input);
       for await (const output of iterator) {
         sendToParent({
           responseId: null,
