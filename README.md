@@ -1,8 +1,8 @@
 # Ulixee
 
-Ulixee is a scraping [engine][hero] with a built-in deployment [unit][datastore] that enables out-of-the-box [querying][stream] across a horizontal [deployment][miner].
+Ulixee is a scraping [engine][hero] with a built-in deployment [unit][datastore] that enables out-of-the-box [querying][stream] across a horizontal [deployment][cloud].
 
-This repository is the development home to several of the tools that make it easy to build and manage these scripts, including [Ulixee Desktop](desktop), [Miner][miner] and [Datastore][datastore].
+This repository is the development home to several of the tools that make it easy to build and manage these scripts, including [Ulixee Desktop](desktop), [Miner][cloud] and [Datastore][datastore].
 
 ## Projects
 
@@ -48,4 +48,4 @@ We'd love your help in making Ulixee a better set of tools. Please don't hesitat
 [hero]: https://github.com/ulixee/hero
 [datastore]: datastore
 [stream]: ./
-[miner]: miner
+[cloud]: cloud
