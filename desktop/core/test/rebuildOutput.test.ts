@@ -11,7 +11,7 @@ describe('basic OutputRebuilder tests', () => {
     observable.onChanges = changes => {
       const changesToRecord = changes.map(change => ({
         type: change.type,
-        value: JSON.stringify(change.value),
+        value: change.value,
         path: JSON.stringify(change.path),
         lastCommandId: id,
         timestamp: Date.now(),
@@ -60,7 +60,7 @@ describe('basic OutputRebuilder tests', () => {
     observable.onChanges = changes => {
       const changesToRecord = changes.map(change => ({
         type: change.type,
-        value: JSON.stringify(change.value),
+        value: change.value,
         path: JSON.stringify(change.path),
         lastCommandId: id,
         timestamp: Date.now(),
