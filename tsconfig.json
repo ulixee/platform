@@ -11,7 +11,7 @@
     }
   ],
   "include": [
-    "miner",
+    "cloud",
     "end-to-end",
     "desktop",
     "playgrounds",
@@ -20,7 +20,7 @@
     "sql",
     "client",
     "cli",
-    "miner/**/*.json",
+    "cloud/**/*.json",
     "./*.js",
     "./*.json",
     ".eslintrc.js"

@@ -8,7 +8,7 @@ This repository is the development home to several of the tools that make it eas
 
 - Hero `/hero`. The Automated Browser Engine built for scraping. (repository home - https://github.com/ulixee/hero).
 - Datastore `/datastore`. Packaged "database" containing API access to crawler functions and runner functions.
-- Miner `/miner`. Run Ulixee tooling on a remote machine.
+- Miner `/cloud`. Run Ulixee tooling on a remote machine.
 - Stream `/stream`. Query, transform and compose Datastores running on any machine.
 - Desktop `/desktop`. Supercharge scraper script development using a Hero Replay toolset, remote Datastore viewer and Error troubleshooter.
 
@@ -22,7 +22,7 @@ We publish a Docker image of the latest Ulixee Miner to:
 - Github Container Registry: `docker pull ghcr.io/ulixee/ulixee-miner && docker tag ghcr.io/ulixee/ulixee-miner ulixee/ulixe-miner`
 - DockerHub: `docker pull ulixee/ulixee-miner`
 
-To use the image, we have a [run.sh](./miner/tools/docker/run.sh) script that will run with a non-root user on your choice of port. All environmental configurations are listed [here](./miner/main/.env.defaults).
+To use the image, we have a [run.sh](./cloud/tools/docker/run.sh) script that will run with a non-root user on your choice of port. All environmental configurations are listed [here](./cloud/main/.env.defaults).
 
 ## Developer Environment
 

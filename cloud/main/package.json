@@ -13,7 +13,7 @@
   "scripts": {
     "start": "node bin/cli.js start",
     "start:alive": "node -r @ulixee/desktop-core/register bin/cli.js start",
-    "preversion": "node ../../build/miner/main/scripts/gatherEnvSettings.js"
+    "preversion": "node ../../build/cloud/main/scripts/gatherEnvSettings.js"
   },
   "peerDependencies": {
     "@ulixee/desktop-core": "2.0.0-alpha.18"

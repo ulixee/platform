@@ -10,7 +10,7 @@
       "desktop/*",
       "datastore/*",
       "datastore/plugins/*",
-      "miner/*",
+      "cloud/*",
       "sql/*",
       "cli",
       "playgrounds/*",

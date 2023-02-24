@@ -72,6 +72,7 @@ export default class AppDevtoolsConnection implements IConnectionTransport {
   }
 
   public send(message: string): boolean {
+    console.log('send', message)
     if (this.webSocket.readyState === WebSocket.OPEN) {
       this.webSocket.send(message);
       return true;
@@ -88,6 +89,7 @@ export default class AppDevtoolsConnection implements IConnectionTransport {
   }
 
   private onClosed(): void {
+    console.log('onclosed')
     log.stats('WebSocketTransport.Closed');
     for (const close of this.onCloseFns) close();
   }
