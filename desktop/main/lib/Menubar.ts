@@ -5,7 +5,6 @@ import UlixeeMiner from '@ulixee/miner';
 import * as Positioner from 'electron-positioner';
 import * as Path from 'path';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
-import UlixeeConfig from '@ulixee/commons/config';
 import { autoUpdater, ProgressInfo, UpdateInfo } from 'electron-updater';
 import IMenubarOptions from '../interfaces/IMenubarOptions';
 import { getWindowPosition } from './util/getWindowPosition';
@@ -21,7 +20,6 @@ const iconPath = Path.resolve(__dirname, '..', 'assets', 'IconTemplate.png');
 
 export class Menubar extends EventEmitter {
   ulixeeMiner: UlixeeMiner;
-  ulixeeConfig: UlixeeConfig;
   readonly staticServer: StaticServer;
 
   #tray?: Tray;
@@ -53,7 +51,6 @@ export class Menubar extends EventEmitter {
 
     this.staticServer = new StaticServer(Path.resolve(__dirname, '..', 'ui'));
     this.#apiManager = new ApiManager();
-    this.ulixeeConfig = UlixeeConfig.global;
     void this.appReady();
   }
 

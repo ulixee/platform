@@ -42,8 +42,9 @@ export default class ApiManager<
 
   public async start(localMinerAddress: string): Promise<void> {
     this.debuggerUrl = await this.getDebuggerUrl();
-    this.localMinerAddress = localMinerAddress ?? UlixeeHostsConfig.global.getVersionHost(version);
-    if (this.localMinerAddress) {
+    localMinerAddress ??= UlixeeHostsConfig.global.getVersionHost(version);
+    if (localMinerAddress) {
+      this.localMinerAddress = this.formatMinerAddress(localMinerAddress);
       await this.connectToMiner(this.localMinerAddress);
     }
   }

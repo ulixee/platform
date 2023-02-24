@@ -40,6 +40,7 @@ import MirrorNetwork from '@ulixee/hero-timetravel/lib/MirrorNetwork';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
 import TimetravelTicks, { ITabDetails } from '@ulixee/hero-timetravel/player/TimetravelTicks';
 import { IDomRecording } from '@ulixee/hero-core/models/DomChangesTable';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
 import ResourceSearch from './ResourceSearch';
 import ElementsModule from './app-extension-modules/ElementsModule';
 import DevtoolsBackdoorModule from './app-extension-modules/DevtoolsBackdoorModule';
@@ -107,6 +108,7 @@ export default class SessionController extends TypedEventEmitter<{
 
   private readonly logger: IBoundLog;
   private events = new EventSubscriber();
+  private onFirstTab = new Resolvable<void>();
 
   constructor(
     private readonly db: SessionDb,
@@ -155,7 +157,6 @@ export default class SessionController extends TypedEventEmitter<{
     this.events.on(this.timetravelPlayer, 'new-paint-index', this.sendPaintIndexEvent);
     this.events.on(this.timetravelPlayer, 'new-offset', this.sendTimetravelOffset);
 
-    this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint).mtimeMs;
     this.selectorRecommendations = new SelectorRecommendations(this.scriptInstanceMeta);
 
     if (this.scriptInstanceMeta.entrypoint.endsWith('.ts')) {
@@ -164,18 +165,23 @@ export default class SessionController extends TypedEventEmitter<{
     if (this.options.input) {
       this.inputBytes = Buffer.byteLength(JSON.stringify(this.options.input));
     }
+
     this.sourceCodeTimeline = new SourceCodeTimeline(this.scriptInstanceMeta.entrypoint);
+
     const sourceCode = this.sourceCodeTimeline;
     this.events.on(sourceCode, 'command', this.sendApiEvent.bind(this, 'Command.updated'));
     this.events.on(sourceCode, 'source', this.sendApiEvent.bind(this, 'SourceCode.updated'));
 
-    this.watchHandle = Fs.watch(
-      this.scriptInstanceMeta.entrypoint,
-      {
-        persistent: false,
-      },
-      this.onScriptEntrypointUpdated,
-    );
+    if (this.sourceCodeTimeline.scriptExists) {
+      this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint)?.mtimeMs;
+      this.watchHandle = Fs.watch(
+        this.scriptInstanceMeta.entrypoint,
+        {
+          persistent: false,
+        },
+        this.onScriptEntrypointUpdated,
+      );
+    }
   }
 
   public bindLiveSession(heroSession: HeroSession): void {
@@ -242,6 +248,7 @@ export default class SessionController extends TypedEventEmitter<{
       await this.addReplayTab(tabId, mirrorPage);
     }
     await this.timetravelPlayer.setTabState(timelineTicks);
+    this.onFirstTab.resolve();
     const activeTab = await this.timetravelPlayer.loadTab();
     if (activeTab) {
       activeTab.currentTimelineOffsetPct = -1;
@@ -483,6 +490,7 @@ export default class SessionController extends TypedEventEmitter<{
 
   public onTabCreated(event: HeroSession['EventTypes']['tab-created']): void {
     const { tab } = event;
+    this.onFirstTab.resolve();
     this.events.on(tab, 'page-events', this.sendDomRecordingUpdates.bind(this, tab));
     this.events.on(tab, 'page-events', () => (this.timetravelPlayer.shouldReloadTicks = true));
     this.resourceSearch.onTabCreated(event);
@@ -616,6 +624,7 @@ export default class SessionController extends TypedEventEmitter<{
   }
 
   public async getScriptState(): ReturnType<IChromeAliveSessionApi['getScriptState']> {
+    await this.onFirstTab;
     const tab = await this.timetravelPlayer.loadTab();
     return {
       ...this.sourceCodeTimeline.getCurrentState(),
@@ -634,6 +643,7 @@ export default class SessionController extends TypedEventEmitter<{
   }
 
   public async getTimetravelState(): ReturnType<IChromeAliveSessionApi['getTimetravelState']> {
+    await this.onFirstTab;
     const activeTab = await this.timetravelPlayer.loadTab();
     const tick = activeTab?.currentTick;
     return Promise.resolve({

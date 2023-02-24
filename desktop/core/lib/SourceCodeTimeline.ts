@@ -9,11 +9,13 @@ import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import ICommandUpdatedEvent from '@ulixee/desktop-interfaces/events/ICommandUpdatedEvent';
 import ISourceCodeUpdatedEvent from '@ulixee/desktop-interfaces/events/ISourceCodeUpdatedEvent';
 import CommandFormatter from '@ulixee/hero-core/lib/CommandFormatter';
+import * as Fs from 'fs';
 
 export default class SourceCodeTimeline extends TypedEventEmitter<{
   source: ISourceCodeUpdatedEvent;
   command: ICommandUpdatedEvent;
 }> {
+  public scriptExists = true;
   private sourceFileLines: { [path: string]: string[] } = {};
   private events = new EventSubscriber();
   private commandsById: { [id: number]: ICommandUpdatedEvent } = {};
@@ -23,8 +25,11 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
     bindFunctions(this);
 
     this.entrypoint = SourceMapSupport.getSourceFile(this.entrypoint);
-    this.sourceFileLines[this.entrypoint] =
-      SourceLoader.getFileContents(this.entrypoint, false)?.split(/\r?\n/) ?? [];
+    this.scriptExists = Fs.existsSync(this.entrypoint);
+    if (this.scriptExists) {
+      this.sourceFileLines[this.entrypoint] =
+        SourceLoader.getFileContents(this.entrypoint, false)?.split(/\r?\n/) ?? [];
+    }
   }
 
   public listen(heroSession: Session): void {
@@ -92,7 +97,7 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
   private checkForSourceUpdates(sourceLocations: ISourceCodeLocation[]): void {
     for (const sourcePosition of sourceLocations) {
       const { filename } = sourcePosition;
-      if (!this.sourceFileLines[filename]) {
+      if (!this.sourceFileLines[filename] && this.scriptExists) {
         this.sourceFileLines[filename] =
           SourceLoader.getFileContents(filename, false)?.split(/\r?\n/) ?? [];
         this.emit('source', {

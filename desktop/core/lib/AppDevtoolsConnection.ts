@@ -10,6 +10,7 @@ import WebSocket = require('ws');
 
 const { log } = Log(module);
 
+let counter = 0;
 export default class AppDevtoolsConnection implements IConnectionTransport {
   public browser: Browser;
   public onMessageFn: (message: string) => void;
@@ -17,6 +18,7 @@ export default class AppDevtoolsConnection implements IConnectionTransport {
   public connectedPromise = new Resolvable<void>();
   public isClosed = false;
 
+  private id = counter++;
   private events = new EventSubscriber();
 
   constructor(readonly webSocket: WebSocket) {
@@ -72,7 +74,6 @@ export default class AppDevtoolsConnection implements IConnectionTransport {
   }
 
   public send(message: string): boolean {
-    console.log('send', message)
     if (this.webSocket.readyState === WebSocket.OPEN) {
       this.webSocket.send(message);
       return true;
@@ -89,7 +90,6 @@ export default class AppDevtoolsConnection implements IConnectionTransport {
   }
 
   private onClosed(): void {
-    console.log('onclosed')
     log.stats('WebSocketTransport.Closed');
     for (const close of this.onCloseFns) close();
   }

@@ -18,6 +18,7 @@
   "dependencies": {
     "@ulixee/desktop-interfaces": "2.0.0-alpha.18",
     "@ulixee/commons": "2.0.0-alpha.18",
+    "@ulixee/hero-core": "2.0.0-alpha.18",
     "@ulixee/datastore-core": "2.0.0-alpha.18",
     "@ulixee/datastore-plugins-hero": "2.0.0-alpha.18",
     "@ulixee/default-browser-emulator": "2.0.0-alpha.18",

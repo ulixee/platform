@@ -276,7 +276,10 @@ export default class DesktopCore {
     transport: ITransportToClient<any>,
     request: IncomingMessage,
   ): IConnectionToClient<any, any> {
-    const db = SessionDb.getCached(heroSessionId, true);
+    const requestUrl = new URL(request.url, 'http://localhost')
+    const customDbPath = requestUrl.searchParams.get('path');
+
+    const db = SessionDb.getCached(heroSessionId, true, customDbPath);
     const dbSession = db.session.get();
     const options = Session.restoreOptionsFromSessionRecord({}, heroSessionId);
 

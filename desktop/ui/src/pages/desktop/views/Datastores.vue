@@ -1,41 +1,45 @@
 <template>
   <div class="h-full">
-    <div class="form header-bar p-3">
-      <h2 class="p-3 text-center text-lg font-bold uppercase">
-        Deployed Datastores
-      </h2>
-      <ArrowPathIcon
-        class="absolute right-0 top-0 m-6 h-6 w-6 text-lg text-slate-600 hover:text-slate-900"
-      />
-    </div>
-
+    <ArrowPathIcon
+      class="absolute right-0 top-0 m-6 h-6 w-6 text-lg text-slate-600 hover:text-slate-900"
+    />
     <ul class="flex-overflow flex flex-row space-x-10 space-y-10 px-3">
+      <li v-if="!datastoresByVersion.size" class="text-center text-lg text-slate-800">
+        None stored
+      </li>
       <li
         v-for="[versionHash, datastore] in datastoresByVersion"
         :key="versionHash"
-        class="justify-content my-5 w-96 border border-slate-100 shadow-md p-5"
+        class="justify-content my-5 w-96 border border-slate-100 p-5 shadow-md"
       >
         <h5 class="font-md text-lg">
-          {{ datastore.name ?? '' }} <span class="font-light font-md">{{ datastore.versionHash }}</span>
+          {{ datastore.name ?? '' }}
+          <span class="font-md font-light">{{ datastore.versionHash }}</span>
         </h5>
         <div class="text-sm">
           <div class="flex flex-row">
             <h5>Tables</h5>
-            <span class="mx-2 rounded-full bg-gray-200	 h-6 text-xs p-1">{{ Object.keys(datastore.tablesByName).length }}</span>
+            <span class="mx-2 h-6 rounded-full bg-gray-200 p-1 text-xs">{{
+              Object.keys(datastore.tablesByName).length
+            }}</span>
             <span>{{ Object.keys(datastore.tablesByName).slice(0, 3).join(', ')
             }}{{ Object.keys(datastore.tablesByName).length > 3 ? ' ...' : '' }}</span>
           </div>
 
           <div class="flex flex-row">
             <h5>Crawlers</h5>
-            <span class="mx-2 rounded-full bg-gray-200	 h-6 text-xs p-1">{{ Object.keys(datastore.crawlersByName).length }}</span>
+            <span class="mx-2 h-6 rounded-full bg-gray-200 p-1 text-xs">{{
+              Object.keys(datastore.crawlersByName).length
+            }}</span>
             <span>{{ Object.keys(datastore.crawlersByName).slice(0, 3).join(', ')
             }}{{ Object.keys(datastore.crawlersByName).length > 3 ? ' ...' : '' }}</span>
           </div>
 
           <div class="flex flex-row">
             <h5>Runners</h5>
-            <span class="mx-2 rounded-full bg-gray-200	 h-6 text-xs p-1">{{ Object.keys(datastore.runnersByName).length }}</span>
+            <span class="mx-2 h-6 rounded-full bg-gray-200 p-1 text-xs">{{
+              Object.keys(datastore.runnersByName).length
+            }}</span>
             <span>{{ Object.keys(datastore.runnersByName).slice(0, 3).join(', ')
             }}{{ Object.keys(datastore.runnersByName).length > 3 ? ' ...' : '' }}</span>
           </div>

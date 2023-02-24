@@ -1,7 +1,7 @@
 <template>
-  <div class="bar-wrapper flex h-full w-full flex-row items-stretch">
+  <div class="bar-wrapper">
     <ul
-      class="tabbar flex list-none flex-col flex-wrap whitespace-nowrap pl-0 text-center"
+      class="tabbar flex flex-row w-full"
       role="tablist"
     >
       <li
@@ -18,7 +18,7 @@
         >{{ tab.title }}</a>
       </li>
     </ul>
-    <div class="h-screen w-full overflow-auto">
+    <div class="">
       <div
         v-show="activeTab === 'datastores'"
         :class="[activeTab === 'datastores' ? 'opacity-100' : 'opacity:0']"
@@ -34,11 +34,11 @@
         <Sessions ref="sessionsRef" :clients-by-miner-address="clientsByMinerAddress" />
       </div>
       <div
-        v-show="activeTab === 'remotes'"
-        :class="[activeTab === 'remotes' ? 'opacity-100' : 'opacity:0']"
+        v-show="activeTab === 'clouds'"
+        :class="[activeTab === 'clouds' ? 'opacity-100' : 'opacity:0']"
         class="transition-opacity duration-150 ease-linear"
       >
-        <Remotes :clients-by-miner-address="clientsByMinerAddress" />
+        <Clouds :clients-by-miner-address="clientsByMinerAddress" />
       </div>
     </div>
   </div>
@@ -49,15 +49,15 @@ import * as Vue from 'vue';
 import { Client } from '@/api/Client';
 import { ChevronDownIcon } from '@heroicons/vue/24/outline';
 import Sessions from './Sessions.vue';
-import Remotes from './Remotes.vue';
+import Clouds from './Clouds.vue';
 import Datastores from './Datastores.vue';
 
-type ITabs = 'datastores' | 'sessions' | 'remotes';
+type ITabs = 'datastores' | 'sessions' | 'clouds';
 export default Vue.defineComponent({
   name: 'DesktopHome',
   components: {
     Sessions,
-    Remotes,
+    Clouds,
     Datastores,
     ChevronDownIcon,
   },
@@ -67,7 +67,7 @@ export default Vue.defineComponent({
       tabs: [
         { title: 'Datastores', key: 'datastores' },
         { title: 'Hero Sessions', key: 'sessions' },
-        { title: 'Cloud Nodes', key: 'remotes' },
+        { title: 'Clouds', key: 'clouds' },
       ],
       sessionsRef: Vue.ref<typeof Sessions>(null),
       datastoresRef: Vue.ref<typeof Datastores>(null),

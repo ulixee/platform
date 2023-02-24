@@ -7,6 +7,7 @@ import { IChromeAliveSessionApis } from '@ulixee/desktop-interfaces/apis';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import Queue from '@ulixee/commons/lib/Queue';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import moment = require('moment');
 import View from './View';
 import StaticServer from './StaticServer';
@@ -305,8 +306,11 @@ export default class ChromeAliveWindow {
   }
 
   private createApi(baseHost: string): void {
-    const address = new URL(`/chromealive/${this.session.heroSessionId}`, baseHost).href;
-    this.api = new ApiClient(address, this.onChromeAliveEvent);
+    const address = new URL(`/chromealive/${this.session.heroSessionId}`, baseHost);
+    if (!this.session.dbPath.includes(SessionDb.databaseDir)) {
+      address.searchParams.set('path', this.session.dbPath);
+    }
+    this.api = new ApiClient(address.href, this.onChromeAliveEvent);
     // eslint-disable-next-line no-console
     console.log('Window connected to %s', this.api.address);
     this.#eventSubscriber.once(this.api, 'close', this.onApiClose);

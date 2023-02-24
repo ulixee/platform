@@ -1,6 +1,6 @@
 <template>
   <div class="Sessions h-full">
-    <div class="form header-bar flex-none p-3">
+    <div class="form header-bar flex-none px-3">
       <div class="flex flex-row">
         <input
           ref="inputElem"
@@ -12,7 +12,7 @@
           @change="runSearch"
         >
       </div>
-      <div class="mt-2 flex flex-row">
+      <div class="my-2 pb-2 flex flex-row">
         <label class="font-sm text-slate-500">Filter Sessions by:</label>
         <a
           href="javascript:void(0)"
@@ -23,9 +23,6 @@
       </div>
     </div>
 
-    <h4 class="mt-2 p-3 text-base font-bold">
-      Recent Sessions
-    </h4>
     <ul class="list-inside px-3">
       <li
         v-for="session in filteredSessions"

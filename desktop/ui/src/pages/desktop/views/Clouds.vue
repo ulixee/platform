@@ -1,5 +1,5 @@
 <template>
-  <div class="Remotes h-full">
+  <div class="Clouds h-full">
     <div class="form header-bar flex-none p-3">
       <div class="flex flex-row">
         <input
@@ -52,7 +52,7 @@ import {
 const isIpRegex = /^(?!0)(?!.*\.$)((1?\d?\d|25[0-5]|2[0-4]\d)(\.|$)){4}$/;
 
 export default Vue.defineComponent({
-  name: 'Remotes',
+  name: 'Clouds',
   props: {
     clientsByMinerAddress: {
       type: Object as PropType<Map<string, Client<'desktop'>>>,

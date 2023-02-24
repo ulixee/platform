@@ -136,7 +136,7 @@ export class WindowManager {
   }
 
   private bindIpcEvents(): void {
-    ipcMain.on('open-file', this.pickHeroSession);
+    ipcMain.on('open-file', this.pickHeroSession.bind(this));
   }
 
   private closeWindow(
