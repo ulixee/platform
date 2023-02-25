@@ -1,13 +1,13 @@
 {
   "name": "@ulixee/desktop-interfaces",
-  "version": "2.0.0-alpha.18",
+  "version": "2.0.0-alpha.19",
   "scripts": {},
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/hero-interfaces": "2.0.0-alpha.18",
-    "@ulixee/unblocked-specification": "2.0.0-alpha.18",
-    "@ulixee/platform-specification": "2.0.0-alpha.18",
-    "@ulixee/specification": "2.0.0-alpha.18"
+    "@ulixee/hero-interfaces": "2.0.0-alpha.19",
+    "@ulixee/platform-specification": "2.0.0-alpha.19",
+    "@ulixee/specification": "2.0.0-alpha.19",
+    "@ulixee/unblocked-specification": "2.0.0-alpha.19"
   }
 }

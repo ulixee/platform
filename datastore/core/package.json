@@ -1,20 +1,20 @@
 {
   "name": "@ulixee/datastore-core",
-  "version": "2.0.0-alpha.18",
+  "version": "2.0.0-alpha.19",
   "main": "index.js",
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.18",
-    "@ulixee/crypto": "2.0.0-alpha.18",
-    "@ulixee/datastore": "2.0.0-alpha.18",
-    "@ulixee/net": "2.0.0-alpha.18",
-    "@ulixee/schema": "2.0.0-alpha.18",
-    "@ulixee/sidechain": "2.0.0-alpha.18",
-    "@ulixee/platform-specification": "2.0.0-alpha.18",
-    "@ulixee/specification": "2.0.0-alpha.18",
-    "@ulixee/sql-ast": "2.0.0-alpha.18",
-    "@ulixee/sql-engine": "2.0.0-alpha.18",
+    "@ulixee/commons": "2.0.0-alpha.19",
+    "@ulixee/crypto": "2.0.0-alpha.19",
+    "@ulixee/datastore": "2.0.0-alpha.19",
+    "@ulixee/net": "2.0.0-alpha.19",
+    "@ulixee/platform-specification": "2.0.0-alpha.19",
+    "@ulixee/schema": "2.0.0-alpha.19",
+    "@ulixee/sidechain": "2.0.0-alpha.19",
+    "@ulixee/specification": "2.0.0-alpha.19",
+    "@ulixee/sql-ast": "2.0.0-alpha.19",
+    "@ulixee/sql-engine": "2.0.0-alpha.19",
     "better-sqlite3": "^8.0.1",
     "finalhandler": "^1.2.0",
     "nanoid": "^3.1.32",
@@ -23,13 +23,13 @@
     "vm2": "^3.9.10"
   },
   "devDependencies": {
-    "@ulixee/datastore-packager": "2.0.0-alpha.18",
-    "@ulixee/datastore-testing": "2.0.0-alpha.18",
-    "@ulixee/miner": "2.0.0-alpha.18",
+    "@ulixee/datastore-packager": "2.0.0-alpha.19",
+    "@ulixee/datastore-testing": "2.0.0-alpha.19",
+    "@ulixee/miner": "2.0.0-alpha.19",
     "axios": "^0.26.1",
-    "ts-node": "^10.8.1",
-    "zod": "^3.17.10",
     "hostile": "^1.3.3",
-    "moment": "^2.29.4"
+    "moment": "^2.29.4",
+    "ts-node": "^10.8.1",
+    "zod": "^3.17.10"
   }
 }

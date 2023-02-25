@@ -1,13 +1,13 @@
 {
   "name": "@ulixee/datastore-plugins-puppeteer-core",
-  "version": "2.0.0-alpha.18",
+  "version": "2.0.0-alpha.19",
   "main": "index.js",
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/datastore": "2.0.0-alpha.18",
-    "@ulixee/datastore-core": "2.0.0-alpha.18",
-    "@ulixee/datastore-plugins-puppeteer": "2.0.0-alpha.18"
+    "@ulixee/datastore": "2.0.0-alpha.19",
+    "@ulixee/datastore-core": "2.0.0-alpha.19",
+    "@ulixee/datastore-plugins-puppeteer": "2.0.0-alpha.19"
   },
   "devDependencies": {
     "@types/node": "14.14.31"

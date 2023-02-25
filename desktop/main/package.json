@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/desktop",
-  "version": "2.0.0-alpha.18",
+  "version": "2.0.0-alpha.19",
   "private": true,
   "main": "index.js",
   "scripts": {
@@ -16,27 +16,27 @@
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/desktop-interfaces": "2.0.0-alpha.18",
-    "@ulixee/commons": "2.0.0-alpha.18",
-    "@ulixee/hero-core": "2.0.0-alpha.18",
-    "@ulixee/datastore-core": "2.0.0-alpha.18",
-    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.18",
-    "@ulixee/default-browser-emulator": "2.0.0-alpha.18",
-    "@ulixee/miner": "2.0.0-alpha.18",
-    "@ulixee/net": "2.0.0-alpha.18",
-    "tslib": "^2.3.1",
-    "nanoid": "^3.1.30",
-    "ws": "^7.4.6",
+    "@ulixee/commons": "2.0.0-alpha.19",
+    "@ulixee/datastore-core": "2.0.0-alpha.19",
+    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.19",
+    "@ulixee/default-browser-emulator": "2.0.0-alpha.19",
+    "@ulixee/desktop-interfaces": "2.0.0-alpha.19",
+    "@ulixee/hero-core": "2.0.0-alpha.19",
+    "@ulixee/miner": "2.0.0-alpha.19",
+    "@ulixee/net": "2.0.0-alpha.19",
     "electron-log": "^4.4.6",
     "electron-positioner": "^4.1.0",
     "electron-updater": "^5.0.1",
-    "node-static": "^0.7.11"
+    "nanoid": "^3.1.30",
+    "node-static": "^0.7.11",
+    "tslib": "^2.3.1",
+    "ws": "^7.4.6"
   },
   "devDependencies": {
+    "@electron/notarize": "^1.2.3",
     "cross-env": "^7.0.3",
     "electron": "22.3.1",
     "electron-builder": "^24.0.0-alpha.13",
-    "@electron/notarize": "^1.2.3",
     "tslib": "^2.3.1"
   },
   "optionalDependencies": {

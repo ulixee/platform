@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.19](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.19) (2023-02-25)
+
+
+### Bug Fixes
+
+* **datastore:** ensure output is stored to db ([ae54593](https://github.com/ulixee/platform/commit/ae54593cb883f9d2f7cba5ea36f823c4bf4f1666))
+
+
+### Features
+
+* **client:** add connection to core option ([46d35a9](https://github.com/ulixee/platform/commit/46d35a9d13d27f05cbb59ee2686f52f926a71eb8))
+* **datastore:** add context crawl, run, query ([e8e722c](https://github.com/ulixee/platform/commit/e8e722c048499c557f9b030ad97089677922d330))
+* **datastore:** multi-function autorun ([eaf0a2f](https://github.com/ulixee/platform/commit/eaf0a2fac8f187c8a0a4ea933a4cfdd324257358))
+
+
+
+
+
 # [2.0.0-alpha.18](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.18) (2023-01-17)
 
 **Note:** Version bump only for package @ulixee/datastore-plugins-hero
