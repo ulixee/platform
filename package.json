@@ -9,7 +9,7 @@
     "build:desktop": "yarn workspace @ulixee/desktop build:ui",
     "build:docpage": "yarn workspace @ulixee/datastore-docpage build",
     "build:all": "yarn build:hero && yarn build:desktop && yarn build",
-    "build:dist": "shx rm -rf build-dist && tsc -b tsconfig.dist.json && yarn copy:dist",
+    "build:dist": "shx rm -rf build-dist && tsc -b tsconfig.dist.json && yarn copy:dist && yarn workspace @ulixee/datastore-docpage build:dist",
     "copy:build": "ulx-repo-after-build && ulx-repo-adjust-paths",
     "copy:dist": "ulx-repo-after-build --dist",
     "tsc": "tsc -b -i tsconfig.json && yarn copy:build",

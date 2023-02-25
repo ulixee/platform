@@ -9,7 +9,7 @@
     "build:ui": "yarn workspace @ulixee/desktop-ui build && yarn workspace @ulixee/desktop-chrome-extension build",
     "watch": "yarn copy:build --watch",
     "copy:build": "cd ../../build/desktop/main && node builder/copySources.js ./packages",
-    "dist": "yarn build && cd ../../build/desktop/main && yarn && electron-builder --publish onTagOrDraft",
+    "dist": " shx cp -r ../../build/desktop/ui ../../build-dist/desktop/ui && cd ../../build-dist/desktop/main && yarn && electron-builder -m --publish onTagOrDraft",
     "dist:basic": "yarn build:basic && cd ../../build/desktop/main && electron-builder",
     "start": "yarn copy:build && cd ../../build/desktop/main && npx electron ."
   },
