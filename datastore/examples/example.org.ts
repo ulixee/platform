@@ -30,7 +30,7 @@ export default new Runner(
       },
       inputExamples: [
         {
-          url: 'https://example.org',
+          url: 'https://espn.com',
         },
       ],
     },

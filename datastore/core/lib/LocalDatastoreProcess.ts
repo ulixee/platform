@@ -48,7 +48,7 @@ export default class LocalDatastoreProcess extends TypedEventEmitter<{ error: Er
       const data = await this.sendMessageToChild<IRunMessage, IExecResponseData>({
         action: 'run',
         scriptPath: this.scriptPath,
-        runnerName,
+        name: runnerName,
         input,
         streamId,
       });

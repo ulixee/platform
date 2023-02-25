@@ -99,4 +99,4 @@ Your plugin can be configured so that a Typescript developer using your plugin w
 - Variables added onto the `run` callback.
 - Additional configuration enabled in `Runner.stream`.
 
-If you implement the [RunnerPluginStatics](https://github.com/ulixee/platform/tree/main/datastore/client/interfaces/IRunnerPluginStatics.ts), this typing will be activated by simply adding your plugin to a new Runner `new Runner(..., YourPlugin)`. The typing for these runners is somewhat complex. It's recommended to copy an existing plugin (`https://github.com/ulixee/platform/tree/main/datastore/plugins`).
+If you implement the [RunnerPluginStatics](https://github.com/ulixee/platform/tree/main/datastore/main/interfaces/IRunnerPluginStatics.ts), this typing will be activated by simply adding your plugin to a new Runner `new Runner(..., YourPlugin)`. The typing for these runners is somewhat complex. It's recommended to copy an existing plugin (`https://github.com/ulixee/platform/tree/main/datastore/plugins`).

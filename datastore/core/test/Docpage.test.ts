@@ -5,9 +5,8 @@ import DatastorePackager from '@ulixee/datastore-packager';
 import UlixeeMiner from '@ulixee/miner';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import * as Hostile from 'hostile';
-import axios from 'axios';
 import Identity from '@ulixee/crypto/lib/Identity';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.docpage.test');
@@ -32,6 +31,7 @@ beforeAll(async () => {
   miner = new UlixeeMiner();
   miner.router.datastoreConfiguration = {
     datastoresDir: storageDir,
+    datastoresTmpDir: Path.join(storageDir, 'tmp'),
     serverAdminIdentities: [adminIdentity.bech32],
   };
   await miner.listen();
@@ -63,7 +63,7 @@ test('should be able to use a domain to get a credit balance', async () => {
   const port = await miner.port;
   const credits = await client.createCredits(manifest.versionHash, 1002, adminIdentity);
   await expect(
-    axios
+    Axios
       .get(`http://docs.datastoresRus.com:${port}/free-credits?${credits.id}:${credits.secret}`, {
         responseType: 'json',
         headers: { accept: 'application/json' },
@@ -76,7 +76,7 @@ test('should be able to use a domain to get a credit balance', async () => {
 
   // can also use the full address
   await expect(
-    axios
+    Axios
       .get(
         `http://${await miner.address}/datastore/${manifest.versionHash}/free-credits?${
           credits.id

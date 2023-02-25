@@ -2,7 +2,7 @@ import * as HashUtils from '@ulixee/commons/lib/hashUtils';
 import IDatastoreManifest, {
   DatastoreManifestSchema,
   IVersionHistoryEntry,
-} from '@ulixee/specification/types/IDatastoreManifest';
+} from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { existsAsync, readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import * as Path from 'path';
 import UlixeeConfig from '@ulixee/commons/config';
@@ -12,8 +12,8 @@ import { promises as Fs } from 'fs';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
-import { datastoreVersionHashValidation } from '@ulixee/specification/common';
 import IDatastoreMetadata from '@ulixee/datastore/interfaces/IDatastoreMetadata';
+import { datastoreVersionHashValidation } from '@ulixee/platform-specification/types/datastoreVersionHashValidation';
 
 type IDatastoreSources = [
   global: DatastoreManifest,
@@ -31,6 +31,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
 
   public coreVersion: string;
   public schemaInterface: string;
+  public crawlersByName: IDatastoreManifest['crawlersByName'] = {};
   public runnersByName: IDatastoreManifest['runnersByName'] = {};
   public tablesByName: IDatastoreManifest['tablesByName'] = {};
 
@@ -49,7 +50,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
 
   constructor(
     manifestPath: string,
-    source: typeof DatastoreManifest.prototype['source'] = 'dbx',
+    source: (typeof DatastoreManifest.prototype)['source'] = 'dbx',
     private sharedConfigFileKey?: string,
   ) {
     this.path = manifestPath;
@@ -83,6 +84,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     versionTimestamp: number,
     schemaInterface: string,
     runnersByName: IDatastoreManifest['runnersByName'],
+    crawlersByName: IDatastoreManifest['crawlersByName'],
     tablesByName: IDatastoreManifest['tablesByName'],
     metadata: Pick<
       IDatastoreMetadata,
@@ -99,6 +101,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     await this.loadGeneratedManifests(manifestSources);
     this.linkedVersions ??= [];
     this.runnersByName = {};
+    this.crawlersByName = {};
 
     const { name, coreVersion, paymentAddress, adminIdentities, domain } = metadata;
 
@@ -114,6 +117,13 @@ export default class DatastoreManifest implements IDatastoreManifest {
 
     for (const [funcName, funcMeta] of Object.entries(runnersByName)) {
       this.runnersByName[funcName] = {
+        corePlugins: funcMeta.corePlugins ?? {},
+        prices: funcMeta.prices ?? [{ perQuery: 0, minimum: 0 }],
+        schemaAsJson: funcMeta.schemaAsJson,
+      };
+    }
+    for (const [funcName, funcMeta] of Object.entries(crawlersByName)) {
+      this.crawlersByName[funcName] = {
         corePlugins: funcMeta.corePlugins ?? {},
         prices: funcMeta.prices ?? [{ perQuery: 0, minimum: 0 }],
         schemaAsJson: funcMeta.schemaAsJson,
@@ -215,6 +225,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       coreVersion: this.coreVersion,
       schemaInterface: this.schemaInterface,
       runnersByName: this.runnersByName,
+      crawlersByName: this.crawlersByName,
       tablesByName: this.tablesByName,
       paymentAddress: this.paymentAddress,
       adminIdentities: this.adminIdentities,
@@ -263,7 +274,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
           path: source.path,
           overrides: explicitSettings,
         });
-        const { runnersByName, tablesByName, ...otherSettings } = explicitSettings;
+        const { runnersByName, crawlersByName, tablesByName, ...otherSettings } = explicitSettings;
         if (runnersByName) {
           for (const [name, funcMeta] of Object.entries(runnersByName)) {
             if (this.runnersByName[name]) {
@@ -273,6 +284,20 @@ export default class DatastoreManifest implements IDatastoreManifest {
             }
             this.runnersByName[name].prices ??= [];
             for (const price of this.runnersByName[name].prices) {
+              price.perQuery ??= 0;
+              price.minimum ??= price.perQuery;
+            }
+          }
+        }
+        if (crawlersByName) {
+          for (const [name, funcMeta] of Object.entries(crawlersByName)) {
+            if (this.crawlersByName[name]) {
+              Object.assign(this.crawlersByName[name], funcMeta);
+            } else {
+              this.crawlersByName[name] = funcMeta;
+            }
+            this.crawlersByName[name].prices ??= [];
+            for (const price of this.crawlersByName[name].prices) {
               price.perQuery ??= 0;
               price.minimum ??= price.perQuery;
             }
@@ -320,6 +345,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       | 'linkedVersions'
       | 'paymentAddress'
       | 'runnersByName'
+      | 'crawlersByName'
       | 'tablesByName'
       | 'adminIdentities'
     >,
@@ -329,6 +355,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       versionTimestamp,
       scriptEntrypoint,
       runnersByName,
+      crawlersByName,
       tablesByName,
       paymentAddress,
       linkedVersions,
@@ -344,6 +371,14 @@ export default class DatastoreManifest implements IDatastoreManifest {
         runnerPrices.push(price.perQuery, price.minimum, price.addOns?.perKb);
       }
     }
+    const crawlerPrices: (string | number)[] = [];
+    for (const name of Object.keys(crawlersByName ?? {}).sort()) {
+      const func = crawlersByName[name];
+      func.prices ??= [{ perQuery: 0, minimum: 0 }];
+      for (const price of func.prices) {
+        crawlerPrices.push(price.perQuery, price.minimum, price.addOns?.perKb);
+      }
+    }
     const tablePrices: (string | number)[] = [];
     for (const name of Object.keys(tablesByName ?? {}).sort()) {
       const table = tablesByName[name];
@@ -357,12 +392,13 @@ export default class DatastoreManifest implements IDatastoreManifest {
       versionTimestamp,
       scriptEntrypoint,
       ...runnerPrices,
+      ...crawlerPrices,
       ...tablePrices,
       paymentAddress,
       ...(adminIdentities ?? []),
       JSON.stringify(linkedVersions),
     );
-    const sha = HashUtils.sha3(hashMessage);
+    const sha = HashUtils.sha256(hashMessage);
     return encodeBuffer(sha, 'dbx').substring(0, 22);
   }
 

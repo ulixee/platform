@@ -186,7 +186,7 @@
 
 <script lang="ts">
 import * as Vue from "vue";
-import { ChevronDoubleRightIcon } from '@heroicons/vue/solid';
+import { ChevronDoubleRightIcon } from '@heroicons/vue/24/solid';
 
 export default Vue.defineComponent({
   components: {

@@ -11,14 +11,14 @@
     "watch:stream": "npx onchange '../stream/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",
     "watch:datastore": "npx onchange '../datastore/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",
     "watch:hero": "npx onchange '../hero/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",
-    "watch:miner": "npx onchange '../miner/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",
+    "watch:cloud": "npx onchange '../cloud/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",
     "watch:sql": "npx onchange '../sql/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",
     "watch:client": "npx onchange '../client/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",
     "watch": "concurrently -n w: \"npm:watch:*\""
   },
   "dependencies": {
     "@headlessui/vue": "^1.5.0",
-    "@heroicons/vue": "^1.0.6",
+    "@heroicons/vue": "^2.0.16",
     "@tailwindcss/forms": "^0.5.0",
     "axios": "^0.26.1",
     "babel-plugin-prismjs": "^2.1.0",

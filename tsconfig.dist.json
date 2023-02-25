@@ -7,7 +7,7 @@
   },
   "references": [
     {
-      "path": "apps/chromealive-core/injected-scripts/tsconfig.dist.json"
+      "path": "specification/tsconfig.dist.json"
     }
   ]
 }

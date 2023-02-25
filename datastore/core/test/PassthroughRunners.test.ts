@@ -6,7 +6,7 @@ import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { Helpers } from '@ulixee/datastore-testing';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
-import { sha3 } from '@ulixee/commons/lib/hashUtils';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import MicronoteBatchFunding from '@ulixee/sidechain/lib/MicronoteBatchFunding';
 import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
 import SidechainClient from '@ulixee/sidechain';
@@ -91,7 +91,10 @@ beforeAll(async () => {
   mock.sidechainClient.sendRequest.mockImplementation(mockSidechainServer);
 
   miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = { datastoresDir: storageDir };
+  miner.router.datastoreConfiguration = {
+    datastoresDir: storageDir,
+    datastoresTmpDir: Path.join(storageDir, 'tmp'),
+  };
   await miner.listen();
   client = new DatastoreApiClient(await miner.address);
   Helpers.onClose(() => client.disconnect(), true);
@@ -229,9 +232,7 @@ export default new Datastore({
 });`,
   );
 
-  const passthrough = new DatastorePackager(
-    `${__dirname}/datastores/passthroughRunnerUpcharge.js`,
-  );
+  const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughRunnerUpcharge.js`);
   await passthrough.build();
   await client.upload(await passthrough.dbx.asBuffer());
 
@@ -383,7 +384,7 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
       // built to handle more than one key if we need to rotate one out
       rootIdentities: [sidechainIdentity.bech32],
       identityProofSignatures: [
-        sidechainIdentity.sign(sha3(concatAsBuffer(command, (args as any)?.identity))),
+        sidechainIdentity.sign(sha256(concatAsBuffer(command, (args as any)?.identity))),
       ],
       latestBlockSettings: {
         height: 0,
@@ -420,13 +421,13 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
           minimumFundingCentagons: 1n,
           micronoteBatchIdentity: batchIdentity.bech32,
           sidechainIdentity: sidechainIdentity.bech32,
-          sidechainValidationSignature: sidechainIdentity.sign(sha3(batchIdentity.bech32)),
+          sidechainValidationSignature: sidechainIdentity.sign(sha256(batchIdentity.bech32)),
         },
       ],
     } as ISidechainInfoApis['Sidechain.openBatches']['result'];
   }
   if (command === 'Micronote.create') {
-    const id = encodeBuffer(sha3('micronoteId'), 'mcr');
+    const id = encodeBuffer(sha256('micronoteId'), 'mcr');
     const mcrBatchSlug = (args as any).batchSlug;
     return {
       batchSlug: mcrBatchSlug,
@@ -435,7 +436,7 @@ async function mockSidechainServer(message: ICoreRequestPayload<ISidechainApis, 
       guaranteeBlockHeight: 0,
       fundsId: '1'.padEnd(30, '0'),
       fundMicrogonsRemaining: args.microgons,
-      micronoteSignature: batchIdentity.sign(sha3(concatAsBuffer(id, args.microgons))),
+      micronoteSignature: batchIdentity.sign(sha256(concatAsBuffer(id, args.microgons))),
     } as IMicronoteApis['Micronote.create']['result'];
   }
   throw new Error(`unknown request ${command}`);

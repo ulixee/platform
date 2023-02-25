@@ -1,6 +1,0 @@
-{
-  "scripts": {
-    "build": "electron-builder install-app-deps",
-    "start": "npx electron ."
-  }
-}

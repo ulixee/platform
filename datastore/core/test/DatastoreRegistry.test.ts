@@ -1,19 +1,18 @@
 import * as HashUtils from '@ulixee/commons/lib/hashUtils';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import IDatastoreManifest, {
   IVersionHistoryEntry,
-} from '@ulixee/specification/types/IDatastoreManifest';
+} from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { existsSync, mkdirSync, promises as Fs, readFileSync, rmSync } from 'fs';
 import { Helpers } from '@ulixee/datastore-testing';
 import * as Path from 'path';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
-import { sha3 } from '@ulixee/commons/lib/hashUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
 import { DatastoreNotFoundError } from '../lib/errors';
 import DatastoreManifest from '../lib/DatastoreManifest';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreRegistry.test');
-const tmpDir = `${storageDir}/tmp`;
 
 afterEach(Helpers.afterEach);
 afterAll(async () => {
@@ -22,23 +21,24 @@ afterAll(async () => {
 });
 
 function hashScript(script: string): string {
-  const sha = HashUtils.sha3(script);
+  const sha = HashUtils.sha256(script);
   return encodeBuffer(sha, 'scr');
 }
 
 test('should throw an error if the required datastore core version is not installed', async () => {
-  const registry = new DatastoreRegistry(storageDir, tmpDir);
+  const registry = new DatastoreRegistry(storageDir);
   Helpers.needsClosing.push(registry);
   const datastoreTmpDir = `${storageDir}/tmp/dbx1`;
   mkdirSync(datastoreTmpDir, { recursive: true });
   await Fs.writeFile(
     `${datastoreTmpDir}/datastore-manifest.json`,
     JSON.stringify(<IDatastoreManifest>{
-      versionHash: encodeBuffer(sha3('dbx123'), 'dbx').substring(0, 22),
-      scriptHash: encodeBuffer(sha3('scr123'), 'scr'),
+      versionHash: encodeBuffer(sha256('dbx123'), 'dbx').substring(0, 22),
+      scriptHash: encodeBuffer(sha256('scr123'), 'scr'),
       coreVersion: '5.0.0',
       versionTimestamp: Date.now(),
       runnersByName: {},
+      crawlersByName: {},
       tablesByName: {},
       scriptEntrypoint: 'here.js',
       linkedVersions: [],
@@ -46,13 +46,13 @@ test('should throw an error if the required datastore core version is not instal
     }),
   );
   await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, 'function(){}');
-  await expect(registry.save(datastoreTmpDir, Buffer.from('dbx file'))).rejects.toThrow(
+  await expect(registry.save(datastoreTmpDir)).rejects.toThrow(
     'not compatible with the version required by your Datastore',
   );
 });
 
 test('should be able to upload and retrieve the datastore', async () => {
-  const registry = new DatastoreRegistry(storageDir, tmpDir);
+  const registry = new DatastoreRegistry(storageDir);
   Helpers.needsClosing.push(registry);
   const script = 'function(){}';
   const scriptHash = hashScript(script);
@@ -64,6 +64,7 @@ test('should be able to upload and retrieve the datastore', async () => {
     versionTimestamp,
     scriptEntrypoint: 'here.js',
     linkedVersions: [],
+    crawlersByName: {},
     runnersByName: { default: {} },
     tablesByName: {},
     adminIdentities: [],
@@ -77,13 +78,14 @@ test('should be able to upload and retrieve the datastore', async () => {
       coreVersion: '2.0.0-alpha.1',
       scriptEntrypoint: 'here.js',
       runnersByName: { default: {} },
+      crawlersByName: {},
       tablesByName: {},
       linkedVersions: [],
       adminIdentities: [],
     }),
   );
   await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script);
-  await expect(registry.save(datastoreTmpDir, Buffer.from(script))).resolves.toBeTruthy();
+  await expect(registry.save(datastoreTmpDir)).resolves.toBeTruthy();
 
   const uploaded = await registry.getByVersionHash(versionHash);
   expect(uploaded).toBeTruthy();
@@ -96,7 +98,7 @@ test('should allow a user to override updating with no history', async () => {
     close: () => existsSync(datastoreTmpDir) && rmSync(datastoreTmpDir),
     onlyCloseOnFinal: false,
   });
-  const registry = new DatastoreRegistry(storageDir, tmpDir);
+  const registry = new DatastoreRegistry(storageDir);
   Helpers.needsClosing.push(registry);
 
   let originalVersionHash: string;
@@ -110,6 +112,7 @@ test('should allow a user to override updating with no history', async () => {
       scriptHash: hashScript(script),
       versionHash: null,
       runnersByName: { default: {} },
+      crawlersByName: {},
       tablesByName: {},
       linkedVersions: [],
       adminIdentities: [],
@@ -120,7 +123,7 @@ test('should allow a user to override updating with no history', async () => {
 
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
     await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script);
-    await expect(registry.save(datastoreTmpDir, Buffer.from(script))).resolves.toBeTruthy();
+    await expect(registry.save(datastoreTmpDir)).resolves.toBeTruthy();
   }
   {
     await Fs.mkdir(datastoreTmpDir, { recursive: true });
@@ -131,6 +134,7 @@ test('should allow a user to override updating with no history', async () => {
       scriptHash: hashScript(script),
       versionTimestamp: Date.now(),
       runnersByName: { default: {} },
+      crawlersByName: {},
       tablesByName: {},
       versionHash: null,
       linkedVersions: [],
@@ -141,21 +145,19 @@ test('should allow a user to override updating with no history', async () => {
 
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
     await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script);
-    await expect(registry.save(datastoreTmpDir, Buffer.from(script))).rejects.toThrow(
+    await expect(registry.save(datastoreTmpDir)).rejects.toThrow(
       'link to previous version history',
     );
     expect(registry.getLatestVersion(originalVersionHash)).toBe(originalVersionHash);
     // force new history
-    await expect(
-      registry.save(datastoreTmpDir, Buffer.from(script), null, true),
-    ).resolves.toBeTruthy();
+    await expect(registry.save(datastoreTmpDir, null, true)).resolves.toBeTruthy();
     expect(registry.getLatestVersion(originalVersionHash)).toBe(originalVersionHash);
     expect(registry.getLatestVersion(manifest.versionHash)).toBe(manifest.versionHash);
   }
 });
 
 test('should throw an error with version history if current versions are unmatched', async () => {
-  const registry = new DatastoreRegistry(storageDir, tmpDir);
+  const registry = new DatastoreRegistry(storageDir);
   Helpers.needsClosing.push(registry);
   const script1 = 'function 1(){}';
   const script1VersionHash = hashScript(script1);
@@ -180,6 +182,7 @@ test('should throw an error with version history if current versions are unmatch
       versionTimestamp: Date.now(),
       versionHash: null,
       runnersByName: { default: {} },
+      crawlersByName: {},
       tablesByName: {},
       linkedVersions: [],
       adminIdentities: [],
@@ -188,7 +191,7 @@ test('should throw an error with version history if current versions are unmatch
     versions.push({ versionHash: manifest.versionHash, versionTimestamp: Date.now() });
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
     await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script1);
-    await expect(registry.save(datastoreTmpDir, Buffer.from(script1))).resolves.toBeTruthy();
+    await expect(registry.save(datastoreTmpDir)).resolves.toBeTruthy();
 
     await expect(registry.getByVersionHash(manifest.versionHash)).resolves.toBeTruthy();
   }
@@ -203,6 +206,7 @@ test('should throw an error with version history if current versions are unmatch
       versionTimestamp: Date.now(),
       versionHash: null,
       runnersByName: { default: {} },
+      crawlersByName: {},
       tablesByName: {},
       linkedVersions: [...versions],
       adminIdentities: [],
@@ -212,7 +216,7 @@ test('should throw an error with version history if current versions are unmatch
 
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
     await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script2);
-    await expect(registry.save(datastoreTmpDir, Buffer.from(script2))).resolves.toBeTruthy();
+    await expect(registry.save(datastoreTmpDir)).resolves.toBeTruthy();
 
     await expect(registry.getByVersionHash(manifest.versionHash)).resolves.toBeTruthy();
     expect(registry.getLatestVersion(versions[1].versionHash)).toBe(manifest.versionHash);
@@ -230,6 +234,7 @@ test('should throw an error with version history if current versions are unmatch
       versionTimestamp: Date.now(),
       versionHash: null,
       runnersByName: { default: {} },
+      crawlersByName: {},
       tablesByName: {},
       linkedVersions: [versions[1]],
       adminIdentities: [],
@@ -237,14 +242,12 @@ test('should throw an error with version history if current versions are unmatch
     manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
     await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script3);
-    await expect(registry.save(datastoreTmpDir, Buffer.from(script3))).rejects.toThrow(
-      'different version history',
-    );
+    await expect(registry.save(datastoreTmpDir)).rejects.toThrow('different version history');
   }
 });
 
 test('should provide a newer version hash if old script not available', async () => {
-  const registry = new DatastoreRegistry(storageDir, tmpDir);
+  const registry = new DatastoreRegistry(storageDir);
   Helpers.needsClosing.push(registry);
   // @ts-ignore
   registry.datastoresDb.datastoreVersions.save('maybe-there', Date.now(), 'not-there', null);
@@ -262,7 +265,7 @@ test('should require a new upload to be signed by a previous admin identity', as
     close: () => existsSync(datastoreTmpDir) && rmSync(datastoreTmpDir),
     onlyCloseOnFinal: false,
   });
-  const registry = new DatastoreRegistry(storageDir, tmpDir);
+  const registry = new DatastoreRegistry(storageDir);
   Helpers.needsClosing.push(registry);
 
   const identity = Identity.createSync();
@@ -277,6 +280,7 @@ test('should require a new upload to be signed by a previous admin identity', as
       scriptHash: hashScript(script),
       versionHash: null,
       runnersByName: { default: {} },
+      crawlersByName: {},
       tablesByName: {},
       linkedVersions: [],
       adminIdentities: [identity.bech32],
@@ -287,9 +291,7 @@ test('should require a new upload to be signed by a previous admin identity', as
 
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
     await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script);
-    await expect(
-      registry.save(datastoreTmpDir, Buffer.from(script), identity.bech32),
-    ).resolves.toBeTruthy();
+    await expect(registry.save(datastoreTmpDir, identity.bech32)).resolves.toBeTruthy();
   }
   {
     await Fs.mkdir(datastoreTmpDir, { recursive: true });
@@ -300,6 +302,7 @@ test('should require a new upload to be signed by a previous admin identity', as
       scriptHash: hashScript(script),
       versionTimestamp: Date.now(),
       runnersByName: { default: {} },
+      crawlersByName: {},
       tablesByName: {},
       versionHash: null,
       linkedVersions: [{ versionHash: originalVersionHash, versionTimestamp: Date.now() }],
@@ -312,16 +315,14 @@ test('should require a new upload to be signed by a previous admin identity', as
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
     await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script);
     // can't pass in no identity
-    await expect(registry.save(datastoreTmpDir, Buffer.from(script))).rejects.toThrow(
+    await expect(registry.save(datastoreTmpDir)).rejects.toThrow(
       'You are trying to overwrite a previous version of this Datastore with an AdminIdentity that was not present in the previous version',
     );
 
     const adminOverwriteAttempt = Identity.createSync();
     // TEST 2: try to sign empty list with a new identity
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
-    await expect(
-      registry.save(datastoreTmpDir, Buffer.from(script), adminOverwriteAttempt.bech32),
-    ).rejects.toThrow(
+    await expect(registry.save(datastoreTmpDir, adminOverwriteAttempt.bech32)).rejects.toThrow(
       'You are trying to overwrite a previous version of this Datastore with an AdminIdentity that was not present in the previous version',
     );
 
@@ -330,9 +331,7 @@ test('should require a new upload to be signed by a previous admin identity', as
     manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
     // can't just overwrite the admins without a previous one
-    await expect(
-      registry.save(datastoreTmpDir, Buffer.from(script), adminOverwriteAttempt.bech32),
-    ).rejects.toThrow(
+    await expect(registry.save(datastoreTmpDir, adminOverwriteAttempt.bech32)).rejects.toThrow(
       'You are trying to overwrite a previous version of this Datastore with an AdminIdentity that was not present in the previous version',
     );
 
@@ -340,8 +339,6 @@ test('should require a new upload to be signed by a previous admin identity', as
     manifest.adminIdentities = [adminOverwriteAttempt.bech32, identity.bech32];
     manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
-    await expect(
-      registry.save(datastoreTmpDir, Buffer.from(script), identity.bech32),
-    ).resolves.toBeTruthy();
+    await expect(registry.save(datastoreTmpDir, identity.bech32)).resolves.toBeTruthy();
   }
 });

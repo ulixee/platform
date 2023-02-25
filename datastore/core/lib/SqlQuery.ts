@@ -24,7 +24,7 @@ export default class SqlQuery {
     for (const name of this.sqlParser.functionNames) {
       const input = inputByRunnerName[name];
       const outputs = outputsByRunnerName[name];
-      const schema = this.storage.getRunnerSchema(name);
+      const schema = this.storage.getFunctionSchema(name);
       schemas.push(schema);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
       SqlGenerator.createRunnerFromSchema(input, outputs, schema, (parameters, columns) => {

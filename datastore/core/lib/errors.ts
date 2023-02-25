@@ -1,6 +1,6 @@
 // eslint-disable-next-line max-classes-per-file
 import { registerSerializableErrorType } from '@ulixee/commons/lib/TypeSerializer';
-import { IVersionHistoryEntry } from '@ulixee/specification/types/IDatastoreManifest';
+import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { UlixeeError } from '@ulixee/commons/lib/errors';
 
 export class DatastoreNotFoundError extends Error {

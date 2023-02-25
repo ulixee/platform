@@ -4,7 +4,7 @@ import * as Path from 'path';
 import { existsSync } from 'fs';
 import { inspect } from 'util';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
-import { IVersionHistoryEntry } from '@ulixee/specification/types/IDatastoreManifest';
+import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { findProjectPathSync } from '@ulixee/commons/lib/dirUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { execSync } from 'child_process';
@@ -275,6 +275,7 @@ You can choose from the options below to link to the existing Miner versions or 
           manifest.versionTimestamp,
           manifest.schemaInterface,
           manifest.runnersByName,
+          manifest.crawlersByName,
           manifest.tablesByName,
           manifest,
           console.log,

@@ -7,20 +7,20 @@
   },
   "references": [
     {
-      "path": "apps/chromealive-core/injected-scripts/tsconfig.json"
+      "path": "specification/tsconfig.json"
     }
   ],
   "include": [
-    "miner",
+    "cloud",
     "end-to-end",
-    "apps",
+    "desktop",
     "playgrounds",
     "datastore",
     "datastore/packager/*.json",
     "sql",
     "client",
     "cli",
-    "miner/**/*.json",
+    "cloud/**/*.json",
     "./*.js",
     "./*.json",
     ".eslintrc.js"
@@ -32,10 +32,9 @@
     "**/build-dist/**/*",
     "node_modules",
     "**/node_modules",
-    "apps/chromealive-ui",
-    "apps/menubar-ui",
-    "apps/chromealive-extension",
-    "apps/chromealive-core/injected-scripts",
+    "desktop/ui",
+    "desktop/chrome-extension",
+    "specification",
     "hero",
     "datastore/docpage/src",
     "**/website",

@@ -1,6 +1,6 @@
 <template>
   <MainLayout class="ChromeAlive" :showPadding="false">
-    
+
     <AboveTheFold>
       <MainHeader productKey="hero">Ulixee Hero</MainHeader>
 
@@ -27,7 +27,7 @@
 
           const title = await hero.querySelector('.title').innerText;
           console.log(title);
-        
+
           await hero.querySelector('button.next-page').click();
 
           await hero.waitForState(assert => {
@@ -47,7 +47,7 @@
         <li>Lines #13-15 - Hero's waitForState makes it easy to know when a page is ready for extraction, regardless of how many redirects happen or what kind of dynamic loading is happening on the page.</li>
       </ul>
       <div class="mb-10"></div>
-    </AboveTheFold>    
+    </AboveTheFold>
   </MainLayout>
 </template>
 
@@ -57,7 +57,7 @@ import InstallIt from '@/components/InstallIt.vue';
 import Dependencies from '@/components/Dependencies.vue';
 import UseIt from '@/components/UseIt.vue';
 import Command from '@/components/Command.vue';
-import { CheckIcon, XIcon } from '@heroicons/vue/solid';
+import { CheckIcon, XIcon } from '@heroicons/vue/24/solid';
 import { AboveTheFold, MainHeader, SubHeader, ActionButtons } from "../components";
 import AlertDevelopmentEnvironment from "../components/AlertDevelopmentEnvironment.vue";
 import Prism from "@/components/Prism.vue";

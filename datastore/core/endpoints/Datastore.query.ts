@@ -1,12 +1,12 @@
 import { SqlParser } from '@ulixee/sql-engine';
 import Datastore from '@ulixee/datastore';
-import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
+import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import SqlQuery from '../lib/SqlQuery';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreCore from '../index';
 import PaymentProcessor from '../lib/PaymentProcessor';
 import DatastoreVm from '../lib/DatastoreVm';
-import { validateAuthentication, validateRunnerCoreVersions } from '../lib/datastoreUtils';
+import { validateAuthentication, validateFunctionCoreVersions } from '../lib/datastoreUtils';
 
 export default new DatastoreApiHandler('Datastore.query', {
   async handler(request, context) {
@@ -30,43 +30,43 @@ export default new DatastoreApiHandler('Datastore.query', {
       if (!table.isPublic) throw new Error(`Table ${name} is not publicly accessible.`);
     });
 
-    const inputByRunnerName = sqlParser.extractRunnerInputs(
-      storage.schemasByRunnerName,
+    const inputByFunctionName = sqlParser.extractFunctionCallInputs(
+      storage.schemasByFunctionName,
       request.boundValues,
     );
-    const outputsByRunnerName: { [name: string]: any[] } = {};
+    const outputsByFunctionName: { [name: string]: any[] } = {};
 
     const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
 
-    const runnersWithTempIds = Object.keys(inputByRunnerName).map((x, i) => {
+    const functionCallsWithTempIds = Object.keys(inputByFunctionName).map((x, i) => {
       return {
-        runnerName: x,
+        name: x,
         id: i,
       };
     });
 
     await paymentProcessor.createHold(
       datastoreVersion,
-      runnersWithTempIds,
+      functionCallsWithTempIds,
       request.pricingPreferences,
     );
 
-    for (const { runnerName, id } of runnersWithTempIds) {
-      const runnerStart = Date.now();
-      const runnerInput = inputByRunnerName[runnerName];
-      validateRunnerCoreVersions(datastoreVersion, runnerName, context);
+    for (const { name, id } of functionCallsWithTempIds) {
+      const runStart = Date.now();
+      const input = inputByFunctionName[name];
+      validateFunctionCoreVersions(datastoreVersion, name, context);
 
       const outputs = await context.workTracker.trackRun(
-        runDatastoreRunner(datastore, runnerName, runnerInput, request),
+        runDatastoreFunction(datastore, name, input, request),
       );
-      outputsByRunnerName[runnerName] = outputs;
+      outputsByFunctionName[name] = outputs;
 
       // release the hold
       const bytes = PaymentProcessor.getOfficialBytes(outputs);
-      const microgons = paymentProcessor.releaseLocalRunnerHold(id, bytes);
+      const microgons = paymentProcessor.releaseLocalFunctionHold(id, bytes);
 
-      const milliseconds = Date.now() - runnerStart;
-      context.datastoreRegistry.recordStats(request.versionHash, runnerName, {
+      const milliseconds = Date.now() - runStart;
+      context.datastoreRegistry.recordStats(request.versionHash, name, {
         bytes,
         microgons,
         milliseconds,
@@ -86,8 +86,8 @@ export default new DatastoreApiHandler('Datastore.query', {
     const boundValues = sqlParser.convertToBoundValuesSqliteMap(request.boundValues);
     const sqlQuery = new SqlQuery(sqlParser, storage, db);
     const outputs = sqlQuery.execute(
-      inputByRunnerName,
-      outputsByRunnerName,
+      inputByFunctionName,
+      outputsByFunctionName,
       recordsByVirtualTableName,
       boundValues,
     );
@@ -106,14 +106,14 @@ export default new DatastoreApiHandler('Datastore.query', {
   },
 });
 
-async function runDatastoreRunner<T>(
+async function runDatastoreFunction<T>(
   datastore: Datastore,
-  runnerName: string,
-  runnerInput: any,
+  name: string,
+  input: any,
   request: IDatastoreApiTypes['Datastore.query']['args'],
 ): Promise<T> {
   const options = {
-    input: runnerInput,
+    input,
     payment: request.payment,
     authentication: request.authentication,
     affiliateId: request.affiliateId,
@@ -122,7 +122,9 @@ async function runDatastoreRunner<T>(
     if (plugin.beforeExecRunner) await plugin.beforeExecRunner(options);
   }
 
-  return await datastore.runners[runnerName].runInternal(options);
+  const func = datastore.runners[name] ?? datastore.crawlers[name];
+
+  return await func.runInternal(options);
 }
 
 async function runDatastorePassthroughQuery<T>(

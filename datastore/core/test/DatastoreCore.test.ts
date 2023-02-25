@@ -3,7 +3,7 @@ import * as Path from 'path';
 import Packager from '@ulixee/datastore-packager';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import DbxFile from '@ulixee/datastore-packager/lib/DbxFile';
-import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
+import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import SidechainClient from '@ulixee/sidechain';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import * as Hostile from 'hostile';
@@ -23,7 +23,10 @@ beforeAll(async () => {
   DatastoreCore.options.datastoresTmpDir = tmpDir;
   DatastoreCore.options.datastoresDir = storageDir;
   miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = { datastoresDir: storageDir };
+  miner.router.datastoreConfiguration = {
+    datastoresDir: storageDir,
+    datastoresTmpDir: Path.join(storageDir, 'tmp'),
+  };
   await miner.listen();
   client = new DatastoreApiClient(await miner.address);
   bootupPackager = new Packager(require.resolve('./datastores/bootup.ts'));
@@ -42,14 +45,11 @@ afterAll(async () => {
 
 test('should install new datastores on startup', async () => {
   await Fs.copyFile(bootupDbx.dbxPath, `${storageDir}/bootup.dbx`);
-  await DatastoreCore.installManuallyUploadedDbxFiles();
-  const registry = new DatastoreRegistry(storageDir, tmpDir);
+  const registry = new DatastoreRegistry(storageDir);
+  await registry.installManuallyUploadedDbxFiles();
   expect(registry.hasVersionHash(bootupPackager.manifest.versionHash)).toBe(true);
   // @ts-expect-error
-  const dbxPath = registry.getDbxPath(
-    bootupPackager.manifest.scriptEntrypoint,
-    bootupPackager.manifest.versionHash,
-  );
+  const dbxPath = registry.getDbxPath(bootupPackager.manifest.versionHash);
   await expect(existsAsync(dbxPath)).resolves.toBeTruthy();
 }, 45e3);
 
@@ -69,36 +69,6 @@ test('should be able to lookup a datastore domain', async () => {
   });
 }, 45e3);
 
-test('can load a version from disk if not already open', async () => {
-  await expect(
-    runApi('Datastore.upload', {
-      compressedDatastore: await Fs.readFile(bootupDbx.dbxPath),
-      allowNewLinkedVersionHistory: false,
-    }),
-  ).resolves.toEqual({ success: true });
-
-  const registry = new DatastoreRegistry(storageDir, tmpDir);
-  // @ts-ignore
-  await Fs.rm(registry.getDatastoreWorkingDirectory(bootupPackager.manifest.versionHash), {
-    recursive: true,
-  });
-
-  await runApi('Datastore.query', {
-    sql: 'SELECT * FROM bootup()',
-    versionHash: bootupPackager.manifest.versionHash,
-  });
-
-  await expect(
-    runApi('Datastore.query', {
-      sql: 'SELECT * FROM bootup()',
-      versionHash: bootupPackager.manifest.versionHash,
-    }),
-  ).resolves.toMatchObject({
-    outputs: [{ success: true }],
-    latestVersionHash: bootupPackager.manifest.versionHash,
-  });
-});
-
 test('can get metadata about an uploaded datastore', async () => {
   jest.spyOn(SidechainClient.prototype, 'getSettings').mockImplementationOnce(() => {
     return Promise.resolve({
@@ -114,6 +84,8 @@ test('can get metadata about an uploaded datastore', async () => {
   await expect(
     runApi('Datastore.meta', { versionHash: bootupPackager.manifest.versionHash }),
   ).resolves.toEqual(<IDatastoreApiTypes['Datastore.meta']['result']>{
+    versionHash: bootupPackager.manifest.versionHash,
+    name: undefined,
     latestVersionHash: bootupPackager.manifest.versionHash,
     computePricePerQuery: 0,
     runnersByName: {
@@ -127,6 +99,7 @@ test('can get metadata about an uploaded datastore', async () => {
           maxMilliseconds: expect.any(Number),
         },
         pricePerQuery: 0,
+        schemaJson: undefined,
         minimumPrice: 0,
         priceBreakdown: [
           {
@@ -137,6 +110,7 @@ test('can get metadata about an uploaded datastore', async () => {
       },
     },
     tablesByName: {},
+    crawlersByName: {},
     schemaInterface: `{
   tables: {};
   runners: {
@@ -147,6 +121,7 @@ test('can get metadata about an uploaded datastore', async () => {
       };
     };
   };
+  crawlers: {};
 }`,
   });
 });

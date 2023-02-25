@@ -36,7 +36,7 @@ test('support unnamed args', () => {
   ]);
 });
 
-test('extractRunnerInput', () => {
+test('extractFunctionInput', () => {
   const sqlParser = new SqlParser(`SELECT * FROM runner(count => 0, success => 'yes')`);
   const inputSchemas = {
     runner: {
@@ -44,7 +44,7 @@ test('extractRunnerInput', () => {
       success: string(),
     }
   }
-  const inputs = sqlParser.extractRunnerInputs(inputSchemas, []);
+  const inputs = sqlParser.extractFunctionCallInputs(inputSchemas, []);
 
   expect(inputs.runner).toMatchObject({
     count: 0,
@@ -52,7 +52,7 @@ test('extractRunnerInput', () => {
   });
 });
 
-test('extractRunnerInput with boundValues', () => {
+test('extractFunctionInput with boundValues', () => {
   const sqlParser = new SqlParser(`SELECT * FROM runner(count => $1, success => $2)`);
   const inputSchemas = {
     runner: {
@@ -60,8 +60,8 @@ test('extractRunnerInput with boundValues', () => {
       success: string(),
     }
   }
-  const inputs = sqlParser.extractRunnerInputs(inputSchemas, [0, 'yes']);
-  
+  const inputs = sqlParser.extractFunctionCallInputs(inputSchemas, [0, 'yes']);
+
   expect(inputs.runner).toMatchObject({
     count: 0,
     success: 'yes',

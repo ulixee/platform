@@ -1,6 +1,6 @@
 import * as Path from 'path';
 import { IFetchMetaResponseData } from '@ulixee/datastore-core/interfaces/ILocalDatastoreProcess';
-import { sha3 } from '@ulixee/commons/lib/hashUtils';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import LocalDatastoreProcess from '@ulixee/datastore-core/lib/LocalDatastoreProcess';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import UlixeeConfig from '@ulixee/commons/config';
@@ -9,9 +9,9 @@ import schemaFromJson from '@ulixee/schema/lib/schemaFromJson';
 import schemaToInterface, { printNode } from '@ulixee/schema/lib/schemaToInterface';
 import { ISchemaAny, object } from '@ulixee/schema';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
-import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { IDatastoreApiTypes } from '@ulixee/specification/datastore';
+import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import rollupDatastore from './lib/rollupDatastore';
 import DbxFile from './lib/DbxFile';
 
@@ -87,11 +87,13 @@ export default class DatastorePackager {
     }
 
     const runnersByName: IDatastoreManifest['runnersByName'] = {};
+    const crawlersByName: IDatastoreManifest['crawlersByName'] = {};
     const tablesByName: IDatastoreManifest['tablesByName'] = {};
     const schemaInterface: {
       tables: Record<string, ISchemaAny>;
+      crawlers: Record<string, ISchemaAny>;
       runners: Record<string, ISchemaAny>;
-    } = { tables: {}, runners: {} };
+    } = { tables: {}, runners: {}, crawlers: {} };
 
     if (this.meta.runnersByName) {
       for (const [name, runnerMeta] of Object.entries(this.meta.runnersByName)) {
@@ -129,6 +131,39 @@ export default class DatastorePackager {
       }
     }
 
+    if (this.meta.crawlersByName) {
+      for (const [name, crawler] of Object.entries(this.meta.crawlersByName)) {
+        const { schema, pricePerQuery, minimumPrice, corePlugins } = crawler;
+        if (schema) {
+          const fields = filterUndefined({
+            input: schemaFromJson(schema?.input),
+            output: schemaFromJson(schema?.output),
+          });
+          if (Object.keys(fields).length) {
+            schemaInterface.crawlers[name] = object(fields);
+          }
+        }
+
+        crawlersByName[name] = {
+          corePlugins,
+          prices: [
+            {
+              perQuery: pricePerQuery ?? 0,
+              minimum: minimumPrice ?? pricePerQuery ?? 0,
+              addOns: crawler.addOnPricing,
+            },
+          ],
+          schemaAsJson: schema,
+        };
+
+        // lookup upstream pricing
+        if (crawler.remoteCrawler) {
+          const runnerDetails = await this.lookupRemoteDatastoreCrawlerPricing(this.meta, crawler);
+          crawlersByName[name].prices.push(...runnerDetails.priceBreakdown);
+        }
+      }
+    }
+
     if (this.meta.tablesByName) {
       for (const [name, tableMeta] of Object.entries(this.meta.tablesByName)) {
         // don't publish private tables
@@ -153,7 +188,7 @@ export default class DatastorePackager {
 
     const interfaceString = printNode(schemaToInterface(schemaInterface));
 
-    const hash = sha3(Buffer.from(sourceCode));
+    const hash = sha256(Buffer.from(sourceCode));
     const scriptVersionHash = encodeBuffer(hash, 'scr');
     await this.manifest.update(
       this.entrypoint,
@@ -161,6 +196,7 @@ export default class DatastorePackager {
       Date.now(),
       interfaceString,
       runnersByName,
+      crawlersByName,
       tablesByName,
       this.meta,
       this.logToConsole ? console.log : undefined,
@@ -178,33 +214,46 @@ export default class DatastorePackager {
     runner: IFetchMetaResponseData['runnersByName'][0],
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['runnersByName'][0]> {
     const runnerName = runner.remoteRunner;
-    const url = meta.remoteDatastores[runner.remoteSource];
-    if (!url)
-      throw new Error(
-        `The remoteDatastore could not be found for the key - ${runner.remoteRunner}. It should be defined in remoteDatastores on your Datastore.`,
-      );
 
-    let remoteUrl: URL;
-    try {
-      remoteUrl = new URL(url);
-    } catch (err) {
-      throw new Error(
-        `The remoteDatastore url for "${runner.remoteRunner}" is not a valid url (${url})`,
-      );
-    }
-
-    const [datastoreVersionHash] = remoteUrl.pathname.match(/dbx1[ac-hj-np-z02-9]{18}/)
-    DatastoreManifest.validateVersionHash(datastoreVersionHash);
+    const { remoteHost, datastoreVersionHash } = this.getRemoteSourceAndVersionHash(
+      meta,
+      runner.remoteSource,
+    );
 
     const remoteMeta = {
-      host: remoteUrl.host,
+      host: remoteHost,
       datastoreVersionHash,
       runnerName,
     };
-    const datastoreApiClient = new DatastoreApiClient(remoteUrl.host, this.logToConsole);
+
     try {
-      const upstreamMeta = await datastoreApiClient.getMeta(datastoreVersionHash);
+      const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreVersionHash);
       const remoteRunnerDetails = upstreamMeta.runnersByName[runnerName];
+      remoteRunnerDetails.priceBreakdown[0].remoteMeta = remoteMeta;
+      return remoteRunnerDetails;
+    } catch (error) {
+      console.error('ERROR loading remote datastore pricing', remoteMeta, error);
+      throw error;
+    }
+  }
+
+  protected async lookupRemoteDatastoreCrawlerPricing(
+    meta: IFetchMetaResponseData,
+    crawler: IFetchMetaResponseData['crawlersByName'][0],
+  ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['crawlersByName'][0]> {
+    const crawlerName = crawler.remoteCrawler;
+    const { remoteHost, datastoreVersionHash } = this.getRemoteSourceAndVersionHash(
+      meta,
+      crawler.remoteSource,
+    );
+    const remoteMeta = {
+      host: remoteHost,
+      datastoreVersionHash,
+      crawlerName,
+    };
+    try {
+      const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreVersionHash);
+      const remoteRunnerDetails = upstreamMeta.crawlersByName[crawlerName];
       remoteRunnerDetails.priceBreakdown[0].remoteMeta = remoteMeta;
       return remoteRunnerDetails;
     } catch (error) {
@@ -218,32 +267,19 @@ export default class DatastorePackager {
     table: IFetchMetaResponseData['tablesByName'][0],
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['tablesByName'][0]> {
     const tableName = table.remoteTable;
-    const url = meta.remoteDatastores[table.remoteSource];
-    if (!url)
-      throw new Error(
-        `The remoteDatastore could not be found for the key - ${table.remoteTable}. It should be defined in remoteDatastores on your Datastore.`,
-      );
 
-    let remoteUrl: URL;
-    try {
-      remoteUrl = new URL(url);
-    } catch (err) {
-      throw new Error(
-        `The remoteDatastore url for "${table.remoteTable}" is not a valid url (${url})`,
-      );
-    }
-
-    const [datastoreVersionHash] = remoteUrl.pathname.match(/dbx1[ac-hj-np-z02-9]{18}/)
-    DatastoreManifest.validateVersionHash(datastoreVersionHash);
-
+    const { remoteHost, datastoreVersionHash } = this.getRemoteSourceAndVersionHash(
+      meta,
+      table.remoteSource,
+    );
     const remoteMeta = {
-      host: remoteUrl.host,
+      host: remoteHost,
       datastoreVersionHash,
       tableName,
     };
-    const datastoreApiClient = new DatastoreApiClient(remoteUrl.host, this.logToConsole);
+
     try {
-      const upstreamMeta = await datastoreApiClient.getMeta(datastoreVersionHash);
+      const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreVersionHash);
       const remoteDetails = upstreamMeta.tablesByName[tableName];
       remoteDetails.priceBreakdown[0].remoteMeta = remoteMeta;
       return remoteDetails;
@@ -251,6 +287,43 @@ export default class DatastorePackager {
       console.error('ERROR loading remote datastore pricing', remoteMeta, error);
       throw error;
     }
+  }
+
+  private async getDatastoreMeta(
+    host: string,
+    datastoreVersionHash: string,
+  ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
+    const datastoreApiClient = new DatastoreApiClient(host, this.logToConsole);
+    try {
+      return await datastoreApiClient.getMeta(datastoreVersionHash);
+    } finally {
+      await datastoreApiClient.disconnect();
+    }
+  }
+
+  private getRemoteSourceAndVersionHash(
+    meta: IFetchMetaResponseData,
+    remoteSource: string,
+  ): {
+    remoteHost: string;
+    datastoreVersionHash: string;
+  } {
+    const url = meta.remoteDatastores[remoteSource];
+    if (!url)
+      throw new Error(
+        `The remoteDatastore could not be found for the key - ${remoteSource}. It should be defined in remoteDatastores on your Datastore.`,
+      );
+
+    let remoteUrl: URL;
+    try {
+      remoteUrl = new URL(url);
+    } catch (err) {
+      throw new Error(`The remoteDatastore url for "${remoteSource}" is not a valid url (${url})`);
+    }
+
+    const [datastoreVersionHash] = remoteUrl.pathname.match(/dbx1[ac-hj-np-z02-9]{18}/);
+    DatastoreManifest.validateVersionHash(datastoreVersionHash);
+    return { datastoreVersionHash, remoteHost: remoteUrl.host };
   }
 
   private async findDatastoreMeta(): Promise<IFetchMetaResponseData> {

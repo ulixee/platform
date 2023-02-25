@@ -182,7 +182,7 @@
 <script lang="ts">
 import * as Vue from "vue";
 import Prism from "@/components/Prism.vue";
-import { ChevronDownIcon } from '@heroicons/vue/outline'
+import { ChevronDownIcon } from '@heroicons/vue/24/outline'
 
 export default Vue.defineComponent({
   components: {
