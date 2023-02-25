@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.19](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.17...v2.0.0-alpha.19) (2023-02-25)
+
+
+### Bug Fixes
+
+* **datastore:** windows tests failing moving files ([deea344](https://github.com/ulixee/ulixee/commit/deea344e697160d8bb4e17802b166e6778a7095d))
+
+
+
+
+
 # [2.0.0-alpha.18](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.17...v2.0.0-alpha.18) (2023-01-17)
 
 **Note:** Version bump only for package @ulixee/datastore-plugins-hero-core

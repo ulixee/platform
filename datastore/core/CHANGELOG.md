@@ -3,6 +3,44 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.19](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.19) (2023-02-25)
+
+
+### Bug Fixes
+
+* **datastore:** failing private table tests ([e844ebe](https://github.com/ulixee/platform/commit/e844ebeac9d9720a54795066d1f3abf319bafbe7))
+* **datastore:** fix unit tests for domains ([8f00a37](https://github.com/ulixee/platform/commit/8f00a37c67818c7421836715e73e90e3a6cf1276))
+* **datastore:** handle rolling up momentjs ([01e29eb](https://github.com/ulixee/platform/commit/01e29eb77f1e0f7c8cb68b47858901f6e239ed08))
+* **datastore:** testing stack trace windows slash ([f7042b8](https://github.com/ulixee/platform/commit/f7042b811093e30cbc19a9d1e2a84b22b9009163))
+* **datastore:** tweak cli to fix end-to-end test ([4355cd1](https://github.com/ulixee/platform/commit/4355cd1f428806e10cbd23d62c4d2c0b970ce30e))
+* **datastore:** vm not loading connection to core ([5862db8](https://github.com/ulixee/platform/commit/5862db8dd6da8cc7fb62fb78d8616720dcc401ae))
+* **datastore:** windows tests failing moving files ([deea344](https://github.com/ulixee/platform/commit/deea344e697160d8bb4e17802b166e6778a7095d))
+* docpage now works inside datastores ([0af2695](https://github.com/ulixee/platform/commit/0af26957e83fbc115b9641390d799b4f1a59f80c))
+* stop sql injection in Datastore.stream ([b3c4c4b](https://github.com/ulixee/platform/commit/b3c4c4b1f1d134e9f38cdc37411fa407642bb69d))
+
+
+### Features
+
+* added @ulixee/client package ([c71cc8b](https://github.com/ulixee/platform/commit/c71cc8bd99ea1777ad096a0fa9d960782dfdeb7d))
+* **chromealive:** move replay window to electron ([a0eef50](https://github.com/ulixee/platform/commit/a0eef509242d10250a079d0766991e8c2c1f7028))
+* **client:** add connection to core option ([46d35a9](https://github.com/ulixee/platform/commit/46d35a9d13d27f05cbb59ee2686f52f926a71eb8))
+* **client:** add type checking to local ctor ([a44549b](https://github.com/ulixee/platform/commit/a44549bce2dafe0575d74b0340896c157a78b02f))
+* **datastore:** ability to route domains ([8d123d3](https://github.com/ulixee/platform/commit/8d123d37c121aa52f22696b15e47fec4278464d0))
+* **datastore:** add context crawl, run, query ([e8e722c](https://github.com/ulixee/platform/commit/e8e722c048499c557f9b030ad97089677922d330))
+* **datastore:** affiliateId and embedded credits ([e56a24d](https://github.com/ulixee/platform/commit/e56a24dbd33211f26d120e1c7fd5fc20e6e698a8))
+* **datastore:** change cloning to create project ([6263ecb](https://github.com/ulixee/platform/commit/6263ecb3829d1f1569f0ca5a5a82278adf0c1b64))
+* **datastore:** cli to clone datastores ([cd9fd16](https://github.com/ulixee/platform/commit/cd9fd1641a0299365da4b4c1d6d8a24e2b58b4f5))
+* **datastore:** enable credits ([972029e](https://github.com/ulixee/platform/commit/972029e93451e4dddd79f313527f5799aaf11260))
+* **datastore:** http api for credits balance ([0270a04](https://github.com/ulixee/platform/commit/0270a04c4a4b381e0e1564a3efb79c06fb72aac5))
+* **datastore:** multi-function autorun ([eaf0a2f](https://github.com/ulixee/platform/commit/eaf0a2fac8f187c8a0a4ea933a4cfdd324257358))
+* **datastore:** passthrough tables ([36f4cb6](https://github.com/ulixee/platform/commit/36f4cb6a7122ec0ab517ad051e61b5262d5c99d9))
+* **datastore:** shorten version hash length ([0e36ead](https://github.com/ulixee/platform/commit/0e36ead760356addb93340313458b92093e51c1b))
+* docpage credits + @ulixee/client package ([21c0175](https://github.com/ulixee/platform/commit/21c0175c41991a4d89e4f625e10df19cc35be8ec))
+
+
+
+
+
 # [2.0.0-alpha.18](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.18) (2023-01-17)
 
 

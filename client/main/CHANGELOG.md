@@ -8,19 +8,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Bug Fixes
 
-* docpage now works inside datastores ([0af2695](https://github.com/ulixee/platform/commit/0af26957e83fbc115b9641390d799b4f1a59f80c))
+* **datastore:** windows tests failing moving files ([deea344](https://github.com/ulixee/platform/commit/deea344e697160d8bb4e17802b166e6778a7095d))
 
 
 ### Features
 
+* added @ulixee/client package ([c71cc8b](https://github.com/ulixee/platform/commit/c71cc8bd99ea1777ad096a0fa9d960782dfdeb7d))
 * added sub-Clients like ForDatastore, ForTable, etc + several fixes ([e3d2323](https://github.com/ulixee/platform/commit/e3d23237febf7adfc93da68979a55dd50611d104))
-* **desktop:** playback of script ([521d21f](https://github.com/ulixee/platform/commit/521d21faaa769651ad485afee876f09a73dde18e))
+* **client:** add connection to core option ([46d35a9](https://github.com/ulixee/platform/commit/46d35a9d13d27f05cbb59ee2686f52f926a71eb8))
+* **client:** add type checking to local ctor ([a44549b](https://github.com/ulixee/platform/commit/a44549bce2dafe0575d74b0340896c157a78b02f))
 * docpage credits + @ulixee/client package ([21c0175](https://github.com/ulixee/platform/commit/21c0175c41991a4d89e4f625e10df19cc35be8ec))
-
-
-
-
-
-# [2.0.0-alpha.18](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.18) (2023-01-17)
-
-**Note:** Version bump only for package @ulixee/datastore-docpage

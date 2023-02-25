@@ -3,6 +3,72 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.19](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.19) (2023-02-25)
+
+
+### Bug Fixes
+
+* **apps:** do not improperly activate chromealive ([bfe328f](https://github.com/ulixee/platform/commit/bfe328f3f8b72547d21f5b976cea02bc458368cc))
+* **databox:** docs links ([f9d8c91](https://github.com/ulixee/platform/commit/f9d8c91e4577fda70e8e1328888fd7215ae9d70c))
+* **datastore:** broken argon conversions ([eb5d6d5](https://github.com/ulixee/platform/commit/eb5d6d5d6dcbf8f42cc3df1c2f3402fa6dcb44f0))
+* **datastore:** ensure output is stored to db ([ae54593](https://github.com/ulixee/platform/commit/ae54593cb883f9d2f7cba5ea36f823c4bf4f1666))
+* **datastore:** error logging ([7ee3d02](https://github.com/ulixee/platform/commit/7ee3d02076c0ced0dda05c884b25a33236f73d12))
+* **datastore:** failing private table tests ([e844ebe](https://github.com/ulixee/platform/commit/e844ebeac9d9720a54795066d1f3abf319bafbe7))
+* **datastore:** fix unit tests for domains ([8f00a37](https://github.com/ulixee/platform/commit/8f00a37c67818c7421836715e73e90e3a6cf1276))
+* **datastore:** handle rolling up momentjs ([01e29eb](https://github.com/ulixee/platform/commit/01e29eb77f1e0f7c8cb68b47858901f6e239ed08))
+* **datastore:** output tests ([1b0055d](https://github.com/ulixee/platform/commit/1b0055dcadee8b18e1869ebec7c093bc9b3605bc))
+* **datastore:** testing stack trace windows slash ([f7042b8](https://github.com/ulixee/platform/commit/f7042b811093e30cbc19a9d1e2a84b22b9009163))
+* **datastore:** tweak cli to fix end-to-end test ([4355cd1](https://github.com/ulixee/platform/commit/4355cd1f428806e10cbd23d62c4d2c0b970ce30e))
+* **datastore:** vm not loading connection to core ([5862db8](https://github.com/ulixee/platform/commit/5862db8dd6da8cc7fb62fb78d8616720dcc401ae))
+* **datastore:** windows tests failing moving files ([deea344](https://github.com/ulixee/platform/commit/deea344e697160d8bb4e17802b166e6778a7095d))
+* **desktop:** allow opening external sesison ([5f5e229](https://github.com/ulixee/platform/commit/5f5e229a45f2373f1c3f236aadd7e21b17dbda87))
+* **desktop:** multi-window popovers not workign ([9e60773](https://github.com/ulixee/platform/commit/9e60773215d6a3bfd2c5205c3ec35035fa7a0ad3))
+* **desktop:** rebuild output tests ([d9a19c6](https://github.com/ulixee/platform/commit/d9a19c68d527ab9de2751d28b82f3f4edaf62656))
+* docpage now works inside datastores ([0af2695](https://github.com/ulixee/platform/commit/0af26957e83fbc115b9641390d799b4f1a59f80c))
+* docs pricing should include remote ([ca7bd07](https://github.com/ulixee/platform/commit/ca7bd07e0719a8a171ff53f5382d99f8a77ace50))
+* docs still referencing afterRun ([875d295](https://github.com/ulixee/platform/commit/875d295d038009bf88976235310f2cf45b4a0eb0))
+* download chrome in release tests ([27d8720](https://github.com/ulixee/platform/commit/27d8720c001d3c367418d0a7f38efd4bea905408))
+* incorrect syntax for crawler output in docs ([fb672f9](https://github.com/ulixee/platform/commit/fb672f90a43963e6bc0e68baea139bbf23d7929b))
+* lint issue and schema change ([b0fe5eb](https://github.com/ulixee/platform/commit/b0fe5ebb0b0ca187c19b1cae0f4766d2dce3313d))
+* merge issues ([de1f3b4](https://github.com/ulixee/platform/commit/de1f3b4da65979b1ef5e2a145b36175e852ba845))
+* **miner:** startup waits for router to start ([0e158ec](https://github.com/ulixee/platform/commit/0e158ec8aebeab1cc7abfc4a524c0d2b7f40d0a6))
+* slashes in windows file paths were breaking things ([9e40001](https://github.com/ulixee/platform/commit/9e40001dbad08203ab3414e345a62ff375cb6f61))
+* stop sql injection in Datastore.stream ([b3c4c4b](https://github.com/ulixee/platform/commit/b3c4c4b1f1d134e9f38cdc37411fa407642bb69d))
+* updated doc links to point to runner ([f3e14c6](https://github.com/ulixee/platform/commit/f3e14c60a9c528a0861cb126fd191fb306acf88e))
+
+
+### Features
+
+* added @ulixee/client package ([c71cc8b](https://github.com/ulixee/platform/commit/c71cc8bd99ea1777ad096a0fa9d960782dfdeb7d))
+* added databox docpage ([57d0790](https://github.com/ulixee/platform/commit/57d07906dd711fa30997d1946cc3bbab1aeb3902))
+* added sub-Clients like ForDatastore, ForTable, etc + several fixes ([e3d2323](https://github.com/ulixee/platform/commit/e3d23237febf7adfc93da68979a55dd50611d104))
+* **chromealive:** move replay window to electron ([a0eef50](https://github.com/ulixee/platform/commit/a0eef509242d10250a079d0766991e8c2c1f7028))
+* **client:** add connection to core option ([46d35a9](https://github.com/ulixee/platform/commit/46d35a9d13d27f05cbb59ee2686f52f926a71eb8))
+* **client:** add type checking to local ctor ([a44549b](https://github.com/ulixee/platform/commit/a44549bce2dafe0575d74b0340896c157a78b02f))
+* convert outputs to an array of records ([a6f6ab4](https://github.com/ulixee/platform/commit/a6f6ab41acdaa947790636e008427f39978bb28e))
+* crawler documentation ([0615cd8](https://github.com/ulixee/platform/commit/0615cd86410163570b730c11db2fd67dc5f85091))
+* **databox:** stream output records as available ([a92da44](https://github.com/ulixee/platform/commit/a92da44710aabaf0c6be33cdb02cd99060a3d47c))
+* **datastore:** ability to route domains ([8d123d3](https://github.com/ulixee/platform/commit/8d123d37c121aa52f22696b15e47fec4278464d0))
+* **datastore:** add context crawl, run, query ([e8e722c](https://github.com/ulixee/platform/commit/e8e722c048499c557f9b030ad97089677922d330))
+* **datastore:** affiliateId and embedded credits ([e56a24d](https://github.com/ulixee/platform/commit/e56a24dbd33211f26d120e1c7fd5fc20e6e698a8))
+* **datastore:** change cloning to create project ([6263ecb](https://github.com/ulixee/platform/commit/6263ecb3829d1f1569f0ca5a5a82278adf0c1b64))
+* **datastore:** cli to clone datastores ([cd9fd16](https://github.com/ulixee/platform/commit/cd9fd1641a0299365da4b4c1d6d8a24e2b58b4f5))
+* **datastore:** default max time in cache to 10m ([dff7895](https://github.com/ulixee/platform/commit/dff7895ed640d8e7aca3068ff8483c7589c5083f))
+* **datastore:** documentation ([6c607fe](https://github.com/ulixee/platform/commit/6c607fef9b032dd4593444d5379b96c126ffb61c))
+* **datastore:** enable credits ([972029e](https://github.com/ulixee/platform/commit/972029e93451e4dddd79f313527f5799aaf11260))
+* **datastore:** http api for credits balance ([0270a04](https://github.com/ulixee/platform/commit/0270a04c4a4b381e0e1564a3efb79c06fb72aac5))
+* **datastore:** multi-function autorun ([eaf0a2f](https://github.com/ulixee/platform/commit/eaf0a2fac8f187c8a0a4ea933a4cfdd324257358))
+* **datastore:** passthrough tables ([36f4cb6](https://github.com/ulixee/platform/commit/36f4cb6a7122ec0ab517ad051e61b5262d5c99d9))
+* **datastore:** shorten version hash length ([0e36ead](https://github.com/ulixee/platform/commit/0e36ead760356addb93340313458b92093e51c1b))
+* **desktop:** add desktop home page ([d8f5611](https://github.com/ulixee/platform/commit/d8f56110c66a1d290bf28c9e227721716fbe1f7a))
+* **desktop:** add pages to home ([76ff239](https://github.com/ulixee/platform/commit/76ff239eeacdd3c03d44ed91781b900e352479a6))
+* **desktop:** playback of script ([521d21f](https://github.com/ulixee/platform/commit/521d21faaa769651ad485afee876f09a73dde18e))
+* docpage credits + @ulixee/client package ([21c0175](https://github.com/ulixee/platform/commit/21c0175c41991a4d89e4f625e10df19cc35be8ec))
+
+
+
+
+
 # [2.0.0-alpha.18](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.18) (2023-01-17)
 
 

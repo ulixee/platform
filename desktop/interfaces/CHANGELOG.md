@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.19](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.19) (2023-02-25)
+
+
+### Bug Fixes
+
+* **datastore:** error logging ([7ee3d02](https://github.com/ulixee/platform/commit/7ee3d02076c0ced0dda05c884b25a33236f73d12))
+
+
+### Features
+
+* **desktop:** add desktop home page ([d8f5611](https://github.com/ulixee/platform/commit/d8f56110c66a1d290bf28c9e227721716fbe1f7a))
+* **desktop:** add pages to home ([76ff239](https://github.com/ulixee/platform/commit/76ff239eeacdd3c03d44ed91781b900e352479a6))
+* **desktop:** playback of script ([521d21f](https://github.com/ulixee/platform/commit/521d21faaa769651ad485afee876f09a73dde18e))
+
+
+
+
+
 # [2.0.0-alpha.18](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.18) (2023-01-17)
 
 **Note:** Version bump only for package @ulixee/desktop-interfaces

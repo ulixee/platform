@@ -1,15 +1,15 @@
 {
   "name": "@ulixee/end-to-end",
   "private": true,
-  "version": "2.0.0-alpha.18",
+  "version": "2.0.0-alpha.19",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.18",
-    "@ulixee/crypto": "2.0.0-alpha.18",
-    "@ulixee/datastore": "2.0.0-alpha.18",
-    "@ulixee/datastore-packager": "2.0.0-alpha.18",
-    "@ulixee/miner": "2.0.0-alpha.18",
-    "@ulixee/net": "2.0.0-alpha.18",
-    "@ulixee/sidechain": "2.0.0-alpha.18",
-    "@ulixee/specification": "2.0.0-alpha.18"
+    "@ulixee/commons": "2.0.0-alpha.19",
+    "@ulixee/crypto": "2.0.0-alpha.19",
+    "@ulixee/datastore": "2.0.0-alpha.19",
+    "@ulixee/datastore-packager": "2.0.0-alpha.19",
+    "@ulixee/miner": "2.0.0-alpha.19",
+    "@ulixee/net": "2.0.0-alpha.19",
+    "@ulixee/sidechain": "2.0.0-alpha.19",
+    "@ulixee/specification": "2.0.0-alpha.19"
   }
 }
