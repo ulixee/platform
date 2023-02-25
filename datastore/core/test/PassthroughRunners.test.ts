@@ -91,7 +91,10 @@ beforeAll(async () => {
   mock.sidechainClient.sendRequest.mockImplementation(mockSidechainServer);
 
   miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = { datastoresDir: storageDir };
+  miner.router.datastoreConfiguration = {
+    datastoresDir: storageDir,
+    datastoresTmpDir: Path.join(storageDir, 'tmp'),
+  };
   await miner.listen();
   client = new DatastoreApiClient(await miner.address);
   Helpers.onClose(() => client.disconnect(), true);
@@ -229,9 +232,7 @@ export default new Datastore({
 });`,
   );
 
-  const passthrough = new DatastorePackager(
-    `${__dirname}/datastores/passthroughRunnerUpcharge.js`,
-  );
+  const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughRunnerUpcharge.js`);
   await passthrough.build();
   await client.upload(await passthrough.dbx.asBuffer());
 

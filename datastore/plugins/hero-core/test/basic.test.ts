@@ -3,11 +3,19 @@ import UlixeeMiner from '@ulixee/miner';
 import { Helpers } from '@ulixee/datastore-testing';
 import Packager from '@ulixee/datastore-packager';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
+import * as Path from 'path';
+
+const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'hero-core/basic.test');
 
 let ulixeeMiner: UlixeeMiner;
 let koaServer: Helpers.ITestKoaServer;
 beforeAll(async () => {
+
   ulixeeMiner = new UlixeeMiner();
+  ulixeeMiner.router.datastoreConfiguration = {
+    datastoresDir: storageDir,
+    datastoresTmpDir: Path.join(storageDir, 'tmp'),
+  };
   Helpers.onClose(() => ulixeeMiner.close(), true);
   koaServer = await Helpers.runKoaServer();
   await ulixeeMiner.listen(null, false);

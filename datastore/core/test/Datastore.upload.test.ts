@@ -22,7 +22,10 @@ beforeAll(async () => {
   dbxFile = await packager.dbx.asBuffer();
   manifest = packager.manifest.toJSON();
   miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = { datastoresDir: storageDir };
+  miner.router.datastoreConfiguration = {
+    datastoresDir: storageDir,
+    datastoresTmpDir: Path.join(storageDir, 'tmp'),
+  };
   await miner.listen();
   client = new DatastoreApiClient(await miner.address);
 });
@@ -36,9 +39,9 @@ afterAll(async () => {
 
 test('should be able upload a datastore', async () => {
   try {
-  await client.upload(dbxFile);
-  expect(Fs.existsSync(storageDir)).toBeTruthy();
-  expect(manifest.schemaInterface).toBe(`{
+    await client.upload(dbxFile);
+    expect(Fs.existsSync(storageDir)).toBeTruthy();
+    expect(manifest.schemaInterface).toBe(`{
   tables: {};
   runners: {
     upTest: {
@@ -51,20 +54,18 @@ test('should be able upload a datastore', async () => {
     };
   };
   crawlers: {};
-}`)
-  expect(Fs.existsSync(`${storageDir}/upload@${manifest.versionHash}.dbx`)).toBeTruthy();
-} catch (error) {
-  console.log('TEST ERROR: ', error);
-  throw error;
-}
+}`);
+    expect(Fs.existsSync(`${storageDir}/upload@${manifest.versionHash}.dbx`)).toBeTruthy();
+  } catch (error) {
+    console.log('TEST ERROR: ', error);
+    throw error;
+  }
 });
 
 test('should be able to restrict uploads', async () => {
   const identity = await Identity.create();
   DatastoreCore.options.serverAdminIdentities = [identity.bech32];
 
-  await expect(client.upload(dbxFile)).rejects.toThrowError(
-    'valid AdminIdentity signature',
-  );
+  await expect(client.upload(dbxFile)).rejects.toThrowError('valid AdminIdentity signature');
   await expect(client.upload(dbxFile, { identity })).resolves.toBeTruthy();
 });

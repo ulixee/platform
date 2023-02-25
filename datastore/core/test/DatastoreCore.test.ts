@@ -23,7 +23,10 @@ beforeAll(async () => {
   DatastoreCore.options.datastoresTmpDir = tmpDir;
   DatastoreCore.options.datastoresDir = storageDir;
   miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = { datastoresDir: storageDir };
+  miner.router.datastoreConfiguration = {
+    datastoresDir: storageDir,
+    datastoresTmpDir: Path.join(storageDir, 'tmp'),
+  };
   await miner.listen();
   client = new DatastoreApiClient(await miner.address);
   bootupPackager = new Packager(require.resolve('./datastores/bootup.ts'));

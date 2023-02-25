@@ -11,7 +11,10 @@ let apiClient: DatastoreApiClient;
 
 beforeAll(async () => {
   miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = { datastoresDir: storageDir };
+  miner.router.datastoreConfiguration = {
+    datastoresDir: storageDir,
+    datastoresTmpDir: Path.join(storageDir, 'tmp'),
+  };
   await miner.listen();
   apiClient = new DatastoreApiClient(await miner.address);
 });

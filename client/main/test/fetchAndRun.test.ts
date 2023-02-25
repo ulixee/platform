@@ -11,7 +11,10 @@ let apiClient: DatastoreApiClient;
 
 beforeAll(async () => {
   miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = { datastoresDir: storageDir };
+  miner.router.datastoreConfiguration = {
+    datastoresDir: storageDir,
+    datastoresTmpDir: Path.join(storageDir, 'tmp'),
+  };
   await miner.listen();
   apiClient = new DatastoreApiClient(await miner.address);
 });
@@ -28,7 +31,7 @@ test('should be able to fetch a datastore table', async () => {
   const minerAddress = await miner.address;
   const client = new Client(`ulx://${minerAddress}/${packager.manifest.versionHash}`);
   const results = await client.fetch('testers');
-  
+
   expect(results).toEqual([
     { firstName: 'Caleb', lastName: 'Clark', isTester: true },
     { firstName: 'Blake', lastName: 'Byrnes', isTester: null },
@@ -43,7 +46,5 @@ test('should be able to run a datastore runner', async () => {
   const client = new Client(`ulx://${minerAddress}/${packager.manifest.versionHash}`);
   const results = await client.run('test', { shouldTest: true });
 
-  expect(results).toEqual([ 
-    { testerEcho: true, greeting: 'Hello world' },
-  ]);
+  expect(results).toEqual([{ testerEcho: true, greeting: 'Hello world' }]);
 });

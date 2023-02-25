@@ -31,6 +31,7 @@ beforeAll(async () => {
   miner = new UlixeeMiner();
   miner.router.datastoreConfiguration = {
     datastoresDir: storageDir,
+    datastoresTmpDir: Path.join(storageDir, 'tmp'),
     serverAdminIdentities: [adminIdentity.bech32],
   };
   await miner.listen();

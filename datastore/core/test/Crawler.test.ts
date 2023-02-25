@@ -21,7 +21,10 @@ beforeAll(async () => {
   }
 
   miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = { datastoresDir: storageDir };
+  miner.router.datastoreConfiguration = {
+    datastoresDir: storageDir,
+    datastoresTmpDir: Path.join(storageDir, 'tmp'),
+  };
   await miner.listen();
   client = new DatastoreApiClient(await miner.address);
   Helpers.onClose(() => client.disconnect(), true);
@@ -34,7 +37,7 @@ beforeEach(() => {
 afterEach(Helpers.afterEach);
 
 afterAll(async () => {
-  await miner.close()
+  await miner.close();
   await Helpers.afterAll();
   await Fs.promises.rm(storageDir, { recursive: true }).catch(() => null);
 });
