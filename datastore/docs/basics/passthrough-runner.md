@@ -6,7 +6,7 @@ A PassthroughRunner allows you to extend other Datastore Runners published acros
 
 The following is a simple example:
 
-##### Runner 1 Published to a Miner at `153.23.22.255:8080`:
+##### Runner 1 Published to a CloudNode at `153.23.22.255:8080`:
 
 ```js
 import Datastore, { Runner } from '@ulixee/datastore';

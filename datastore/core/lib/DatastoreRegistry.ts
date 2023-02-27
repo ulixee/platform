@@ -84,7 +84,7 @@ export default class DatastoreRegistry {
     const latestVersionHash = this.getLatestVersion(versionHash);
 
     if (!manifest) {
-      throw new DatastoreNotFoundError('Datastore package not found on Miner.', latestVersionHash);
+      throw new DatastoreNotFoundError('Datastore package not found on Cloud.', latestVersionHash);
     }
     const statsByName: IStatsByName = {};
     for (const name of Object.keys(manifest.runnersByName)) {
@@ -234,11 +234,11 @@ export default class DatastoreRegistry {
     if (manifest.adminIdentities.length && !manifest.adminIdentities.includes(adminIdentity)) {
       if (adminIdentity)
         throw new InvalidPermissionsError(
-          `Your AdminIdentity is not authorized to upload Datastores to this Miner (${adminIdentity}).`,
+          `Your AdminIdentity is not authorized to upload Datastores to this Cloud (${adminIdentity}).`,
         );
       else {
         throw new InvalidPermissionsError(
-          `You must sign this request with an AdminIdentity authorized for this Datastore or Miner.`,
+          `You must sign this request with an AdminIdentity authorized for this Datastore or Cloud.`,
         );
       }
     }
@@ -265,7 +265,7 @@ export default class DatastoreRegistry {
     if (!isSemverSatisfied(requiredVersion, installedVersion)) {
       throw new Error(
         `The installed Datastore Core (${installedVersion}) is not compatible with the version required by your Datastore Package (${requiredVersion}).\n
-Please try to re-upload after testing with the version available on this Miner.`,
+Please try to re-upload after testing with the version available on this Cloud.`,
       );
     }
   }

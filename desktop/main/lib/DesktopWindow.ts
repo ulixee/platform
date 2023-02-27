@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron';
+import { Menu, MenuItem, BrowserWindow } from 'electron';
 import * as Path from 'path';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
@@ -10,7 +10,7 @@ import WindowStateKeeper from './util/windowStateKeeper';
 export default class DesktopWindow extends TypedEventEmitter<{
   close: void;
   focus: void;
-  'open-chromealive': { minerAddress: string; heroSessionId: string; dbPath: string };
+  'open-chromealive': { cloudAddress: string; heroSessionId: string; dbPath: string };
 }> {
   public get isOpen(): boolean {
     return !!this.#window;
@@ -55,38 +55,66 @@ export default class DesktopWindow extends TypedEventEmitter<{
       if (message === 'desktop:api') {
         const [api] = args;
         if (api === 'Desktop.publishConnections') {
-          for (const [address, group] of this.apiManager.apiByMinerAddress) {
-            if (group.isResolved && !group.resolved?.api) continue;
-            await this.onNewMinerAddress({ newAddress: address });
+          for (const [address, group] of this.apiManager.apiByCloudAddress) {
+            if (group.resolvable.isResolved && !group.resolvable.resolved?.api) continue;
+            await this.onNewCloudAddress({ address, name: group.name, type: group.type });
           }
         }
         if (api === 'Session.openReplay') {
           this.emit('open-chromealive', ...args[1]);
         }
-        if (api === 'Desktop.connectToMiner') {
-          const { address } = args[1][0];
+        if (api === 'Desktop.connectToPrivateCloud') {
+          const { address, name } = args[1][0];
           if (!address) {
             console.warn('No valid address provided to connect to', args[1]);
             return;
           }
-          await this.apiManager
-            .connectToMiner(address)
-            .catch(error =>
-              this.sendDesktopEvent('Desktop.connectToMinerError', {
-                message: error.message,
-                address,
-              }),
-            );
+          await this.apiManager.connectToCloud(address, 'private', name).catch(error =>
+            this.sendDesktopEvent('Desktop.connectToPrivateCloudError', {
+              message: error.message,
+              address,
+            }),
+          );
+        }
+        if (api === 'Datastore.contextMenu') {
+          const menu = new Menu();
+          const { datastoreVersionHash, cloud } = args[1][0];
+          const menuItem = new MenuItem({
+            label: 'Deploy To',
+            submenu: [
+              {
+                label: 'Public Cloud (coming soon)',
+                enabled: false,
+                click: () => {
+                  // eslint-disable-next-line no-console
+                  console.log('deploy to public cloud', datastoreVersionHash, cloud);
+                },
+              },
+              ...([...this.apiManager.apiByCloudAddress].filter(([address, details]) => {
+                if (details.name === cloud) return null;
+                return {
+                  label: details.name,
+                  click: () => {
+                    // eslint-disable-next-line no-console
+                    console.log('deploy to %s', address);
+                  },
+                };
+              }).filter(Boolean) as any[]),
+            ],
+          });
+          menu.append(menuItem);
+          menu.popup();
         }
       }
     });
     this.#events.on(this.#window.webContents, 'context-menu', (e, params) => {
       generateContextMenu(params, this.#window.webContents).popup();
     });
-    this.#events.once(this.#window, 'focus', this.emit.bind(this, 'focus'));
+    this.#events.once(this.#window, 'focus', this.emit.bind(this, 'focus'))
     this.#events.once(this.#window, 'close', this.close.bind(this));
 
     await this.#window.webContents.loadURL(this.#webpageUrl);
+    this.#window.focus();
   }
 
   public close(): void {
@@ -95,11 +123,10 @@ export default class DesktopWindow extends TypedEventEmitter<{
     this.emit('close');
   }
 
-  public async onNewMinerAddress(event: {
-    newAddress: string;
-    oldAddress?: string;
-  }): Promise<void> {
-    await this.sendDesktopEvent('Desktop.onRemoteConnected', event);
+  public async onNewCloudAddress(
+    event: ApiManager['EventTypes']['new-cloud-address'],
+  ): Promise<void> {
+    await this.sendDesktopEvent('Desktop.onCloudConnected', event);
   }
 
   private sendDesktopEvent(eventType: string, data: any): Promise<any> {

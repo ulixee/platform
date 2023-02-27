@@ -120,7 +120,7 @@ export async function buildPackage(
       openDocsPage(packager.manifest, result.uploadHost);
     }
   } else {
-    console.log('Rolled up and hashed Datastore. The .dbx file was not uploaded to a Miner.', {
+    console.log('Rolled up and hashed Datastore. The .dbx file was not uploaded to a Cloud.', {
       dbxPath: dbx.dbxPath,
       manifest: packager.manifest.toJSON(),
     });
@@ -145,7 +145,7 @@ async function uploadPackage(
 
   if (!uploadHost) {
     throw new Error(
-      'Could not determine a Miner host from Ulixee config files. Please provide one with the `--upload-host` option.',
+      'Could not determine a Cloud host from Ulixee config files. Please provide one with the `--upload-host` option.',
     );
   }
   let identity: Identity;
@@ -199,9 +199,9 @@ function handleMissingLinkedVersions(
   });
 
   rl.question(
-    `You uploaded a script without any linked versions, but the entrypoint "${manifest.scriptEntrypoint}" matches an existing Datastore on the Miner. 
+    `You uploaded a script without any linked versions, but the entrypoint "${manifest.scriptEntrypoint}" matches an existing Datastore on the Cloud. 
         
->> To link versions on the Miner with your local Datastore, please type "link".
+>> To link versions on the Cloud with your local Datastore, please type "link".
 >> To create a new version list, please type "new".
 
 `,
@@ -213,7 +213,7 @@ function handleMissingLinkedVersions(
         await manifest.setLinkedVersions(absoluteScriptPath, versionHistory);
         await dbxFile.save();
         await dbxFile.upload(uploadHost);
-        console.log('Your Datastore has been linked to the Miner version!');
+        console.log('Your Datastore has been linked to the Cloud version!');
       }
       if (answer.toLowerCase().includes('new')) {
         await dbxFile.upload(uploadHost, { allowNewLinkedVersionHistory: true });
@@ -244,11 +244,11 @@ function handleInvalidScriptVersionHistory(
   rl.question(
     `The uploaded Datastore has a different version history than your local version. 
         
-You can choose from the options below to link to the existing Miner versions or create a new Datastore manifest at:
+You can choose from the options below to link to the existing Cloud versions or create a new Datastore manifest at:
 
   ${customManifestPath}
   
->> To link the version history on the Miner with your local Datastore, please type "link".
+>> To link the version history on the Cloud with your local Datastore, please type "link".
 >> To add a custom manifest to your project, type "custom".
 
 `,
@@ -259,7 +259,7 @@ You can choose from the options below to link to the existing Miner versions or 
         await dbxFile.save();
         await dbxFile.upload(uploadHost);
         console.log(
-          'Your updated Datastore has been uploaded and linked to the Miner version history!',
+          'Your updated Datastore has been uploaded and linked to the Cloud version history!',
         );
       }
       if (answer.toLowerCase().includes('custom')) {

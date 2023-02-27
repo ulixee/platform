@@ -2,8 +2,8 @@
 
 Follow **one** of these steps to upgrade Hero to latest version.
 
-- With **yarn** run `yarn upgrade @ulixee/miner --latest`
-- With **npm** run `npm install @ulixee/miner@latest`
+- With **yarn** run `yarn upgrade @ulixee/cloud --latest`
+- With **npm** run `npm install @ulixee/cloud@latest`
 
 ### Problems after upgrading
 

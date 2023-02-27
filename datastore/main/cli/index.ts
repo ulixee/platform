@@ -26,7 +26,7 @@ export default function datastoreCommands(): Command {
 
   const uploadHostOption = cli.createOption(
     '-h, --upload-host <host>',
-    'Upload this Datastore to the given host Miner. Will try to auto-connect if none specified.',
+    'Upload this Datastore to the given host Cloud node. Will try to auto-connect if none specified.',
   );
 
   const clearVersionHistoryOption = cli
@@ -94,7 +94,7 @@ export default function datastoreCommands(): Command {
       'The path of the entrypoint to the Datastore. Must have a default export that is a Datastore.',
     )
     .option('-o, --out-dir <path>', 'A directory path where you want .dbx packages to be saved')
-    .option('-u, --upload', 'Upload this package to a Ulixee Miner after packaging.', false)
+    .option('-u, --upload', 'Upload this package to a Ulixee Cloud after packaging.', false)
     .option('-d, --no-docs', "Don't automatically display the deployed documentation website.", false)
     .addOption(uploadHostOption)
     .addOption(clearVersionHistoryOption)
@@ -157,12 +157,12 @@ export default function datastoreCommands(): Command {
     .option('-a, --alias <name>', 'Add a shortcut name to reference this Datastore hash.')
     .option(
       '-h, --host <host>',
-      'Connect to the given host Miner. Will try to automatically connect if omitted.',
+      'Connect to the given Cloud node host. Will try to automatically connect if omitted.',
     )
     .action(async (versionHash, { alias, host }) => {
       host ??= UlixeeHostsConfig.global.getVersionHost(version);
 
-      if (!host) throw new Error('Please provide a Miner host to connect to.');
+      if (!host) throw new Error('Please provide a Cloud host to connect to.');
 
       const client = new DatastoreApiClient(host);
       await client.install(versionHash, alias);
@@ -170,7 +170,7 @@ export default function datastoreCommands(): Command {
 
   cli
     .command('upload')
-    .description('Upload a Datastore package to a Miner.')
+    .description('Upload a Datastore package to a Cloud.')
     .argument('<dbxPath>', 'The path to the .dbx package.')
     .addOption(uploadHostOption)
     .addOption(identityPrivateKeyPathOption)

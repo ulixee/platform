@@ -1,14 +1,14 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import DatastorePackager from '@ulixee/datastore-packager';
-import UlixeeMiner from '@ulixee/miner';
+import { CloudNode } from '@ulixee/cloud';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import cloneDatastore from '@ulixee/datastore/cli/cloneDatastore';
 import { Helpers } from '@ulixee/datastore-testing';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.clone.test');
 
-let miner: UlixeeMiner;
+let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 let versionHash: string;
 
@@ -25,13 +25,13 @@ beforeAll(async () => {
     Fs.unlinkSync(`${__dirname}/datastores/cloned.dbx`);
   }
 
-  miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = {
+  cloudNode = new CloudNode();
+  cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
-  await miner.listen();
-  client = new DatastoreApiClient(await miner.address, true);
+  await cloudNode.listen();
+  client = new DatastoreApiClient(await cloudNode.address, true);
 
   const packager = new DatastorePackager(`${__dirname}/datastores/cloneme.ts`);
   await packager.build();
@@ -42,12 +42,12 @@ beforeAll(async () => {
 afterEach(Helpers.afterEach);
 
 afterAll(async () => {
-  await miner.close();
+  await cloudNode.close();
   if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
 });
 
 test('should be able to clone a datastore', async () => {
-  const url = `ulx://${await miner.address}/datastore/${versionHash}`;
+  const url = `ulx://${await cloudNode.address}/datastore/${versionHash}`;
   await expect(cloneDatastore(url, `${__dirname}/datastores/cloned`)).resolves.toBeUndefined();
 
   expect(Fs.existsSync(`${__dirname}/datastores/cloned/datastore.ts`)).toBeTruthy();

@@ -9,7 +9,7 @@ const { version } = require('../package.json');
 const { log } = Log(module);
 
 export default class ConnectionFactory {
-  public static hasLocalMinerPackage = false;
+  public static hasLocalCloudPackage = false;
 
   public static createConnection(): ConnectionToDatastoreCore {
     let connection: ConnectionToDatastoreCore;
@@ -19,19 +19,19 @@ export default class ConnectionFactory {
       const transport = new WsTransportToCore(`${host}/datastore`);
       connection = new ConnectionToDatastoreCore(transport, { version });
     } else if (UlixeeHostsConfig.global.hasHosts()) {
-      if (this.hasLocalMinerPackage) {
-        // If Miners are launched, but none compatible, propose installing Miner locally
+      if (this.hasLocalCloudPackage) {
+        // If Clouds are launched, but none compatible, propose installing Ulixee Cloud locally
         throw new Error(
-          `Your Ulixee Miner is not started. From your project, run:\n\nnpx @ulixee/miner start`,
+          `A local Ulixee Cloud is not started. From your project, run:\n\nnpx @ulixee/cloud start`,
         );
       }
 
-      // If Miners are launched, but none compatible, propose installing miner locally
-      throw new Error(`Your script is using version ${version} of Datastore. A compatible Datastore Core was not found on localhost. You can fix this by installing and running a Ulixee Miner in your project:
+      // If Clouds are launched, but none compatible, propose installing cloudNode locally
+      throw new Error(`Your script is using version ${version} of Datastore. A compatible Datastore Core was not found on localhost. You can fix this by installing and running a local Ulixee Cloud in your project:
 
-npm install --save-dev @ulixee/miner
+npm install --save-dev @ulixee/cloud
 
-npx @ulixee/miner start
+npx @ulixee/cloud start
       `);
     }
 
@@ -58,8 +58,8 @@ npx @ulixee/miner start
   }
 }
 try {
-  require.resolve('@ulixee/miner');
-  ConnectionFactory.hasLocalMinerPackage = true;
+  require.resolve('@ulixee/cloud');
+  ConnectionFactory.hasLocalCloudPackage = true;
 } catch (error) {
   /* no-op */
 }

@@ -33,7 +33,7 @@ The `ulx_credits` table tracks every credit id to the balance of credits "on hol
 
 ### Admin Identity Access {#admin}
 
-To use Credits, you need to have a valid `admin` Identity installed on either the Datastore or your [Miner](../overview/configuration.md).
+To use Credits, you need to have a valid `admin` Identity installed on either the Datastore or your [CloudNode](../overview/configuration.md).
 
 An identity is an Ed25519 key with a recognized encoding for the Ulixee Platform. To create a new Identity, you can run: `npx @ulixee/crypto identity`. Run with `-h` to get options on how to store the resulting PEM file.
 

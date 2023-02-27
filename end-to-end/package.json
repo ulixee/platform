@@ -7,7 +7,7 @@
     "@ulixee/crypto": "2.0.0-alpha.19",
     "@ulixee/datastore": "2.0.0-alpha.19",
     "@ulixee/datastore-packager": "2.0.0-alpha.19",
-    "@ulixee/miner": "2.0.0-alpha.19",
+    "@ulixee/cloud": "2.0.0-alpha.19",
     "@ulixee/net": "2.0.0-alpha.19",
     "@ulixee/sidechain": "2.0.0-alpha.19",
     "@ulixee/specification": "2.0.0-alpha.19"

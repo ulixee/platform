@@ -13,7 +13,7 @@ The HeroRunnerPlugin adds two options to a Runner's `run` callback:
 
 Writing a Hero script with a Datastore Runner is very similar to writing a normal Hero script, except it must be contained within a callback, and you have make it the default export.
 
-You can run this script as a regular node script and it will run the callback. However, this structure also allows us to load it into a Datastore to interact with other Runners and Tables, or deploy it onto a server ([Miner](https://ulixee.org/docs/hero/docs/miner)).
+You can run this script as a regular node script and it will run the callback. However, this structure also allows us to load it into a Datastore to interact with other Runners and Tables, or deploy it onto a server ([CloudNode](https://ulixee.org/docs/hero/docs/cloud-node)).
 
 To use HeroRunnerPlugin, import the plugin and include it in the `plugins` vararg array of your Datastore Runner constructor.
 

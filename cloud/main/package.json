@@ -1,7 +1,7 @@
 {
-  "name": "@ulixee/miner",
+  "name": "@ulixee/cloud",
   "version": "2.0.0-alpha.19",
-  "description": "The Ulixee Miner is an out-of-the box tool to host and deploy Ulixee Datastores and Hero scripts. It allows you to easily create a paid API service.",
+  "description": "The Ulixee Cloud is an out-of-the box tool to host and deploy Ulixee Datastores and Hero scripts. It allows you to easily create a paid API service.",
   "exports": {
     ".": {
       "import": "./index.mjs",

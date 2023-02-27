@@ -24,13 +24,13 @@
       <a @click.prevent="quit()">Shutdown Ulixee</a>
     </div>
     <div class="section">
-      <div class="miner-status">
-        <span class="circle" :class="{ stopped: !minerStarted }" />
-        <span v-if="minerStarted" class="text">Miner is running on {{ address }}</span>
-        <span v-else class="text">Miner is not running</span>
+      <div class="cloud-status">
+        <span class="circle" :class="{ stopped: !cloudStarted }" />
+        <span v-if="cloudStarted" class="text">Local Cloud running on {{ address }}</span>
+        <span v-else class="text">Local Cloud is not running</span>
       </div>
-      <div class="miner-actions">
-        <button v-if="minerStarted" @click.prevent="stop()">
+      <div class="cloud-actions">
+        <button v-if="cloudStarted" @click.prevent="stop()">
           Stop
         </button>
         <button v-else @click.prevent="start()">
@@ -52,7 +52,7 @@ export default Vue.defineComponent({
   components: {},
   setup() {
     return {
-      minerStarted: Vue.ref(false),
+      cloudStarted: Vue.ref(false),
       address: Vue.ref(''),
       onLatestVersion: Vue.ref(false),
       isInstalling: Vue.ref(false),
@@ -66,9 +66,9 @@ export default Vue.defineComponent({
         console.log('desktop:event', evt);
       } catch (err) {}
       const { eventType, data } = (evt as CustomEvent).detail;
-      if (eventType === 'Miner.status') {
+      if (eventType === 'Cloud.status') {
         this.address = data.address;
-        this.minerStarted = data.started;
+        this.cloudStarted = data.started;
       }
       if (eventType === 'Version.onLatest') {
         this.onLatestVersion = true;
@@ -86,20 +86,20 @@ export default Vue.defineComponent({
       }
     });
 
-    this.sendApi('Miner.getStatus');
+    this.sendApi('Cloud.getStatus');
   },
   methods: {
     quit() {
       this.sendApi('App.quit');
     },
     restart() {
-      this.sendApi('Miner.restart');
+      this.sendApi('Cloud.restart');
     },
     start() {
-      this.sendApi('Miner.start');
+      this.sendApi('Cloud.start');
     },
     stop() {
-      this.sendApi('Miner.stop');
+      this.sendApi('Cloud.stop');
     },
     openDesktop() {
       this.sendApi('App.openDesktop');
@@ -225,7 +225,7 @@ button {
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
   }
-  .miner-status {
+  .cloud-status {
     padding: 8px 10px;
     font-weight: bold;
     .circle {
@@ -243,7 +243,7 @@ button {
       }
     }
   }
-  .miner-actions {
+  .cloud-actions {
     padding: 8px 10px;
     display: flex;
     flex-direction: row;

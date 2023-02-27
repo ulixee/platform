@@ -1,26 +1,26 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import DatastorePackager from '@ulixee/datastore-packager';
-import UlixeeMiner from '@ulixee/miner';
+import { CloudNode } from '@ulixee/cloud';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.stream.test');
-let miner: UlixeeMiner;
+let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 
 beforeAll(async () => {
-  miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = {
+  cloudNode = new CloudNode();
+  cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
-  await miner.listen();
-  client = new DatastoreApiClient(await miner.address);
+  await cloudNode.listen();
+  client = new DatastoreApiClient(await cloudNode.address);
 });
 
 afterAll(async () => {
-  await miner.close();
+  await cloudNode.close();
   if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
 });
 

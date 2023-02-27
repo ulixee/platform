@@ -19,17 +19,17 @@ This adds support for Datastores that want to add a payment. It will require Run
 [x] Payments Module
 
 ## 2.3 - First Network Cluster
-Miner should be able to operate as a load balancer for a series of other servers. You might also ask a server what other servers were available in the network. Each could operate as a load balancer and knew workloads of its cluster members so it could properly distribute new tasks. Some nodes may also operate as a “rig” and provide a set of services such as providing a public IP and connecting into the decentralized network.
+CloudNode should be able to operate as a load balancer for a series of other servers. You might also ask a server what other servers were available in the network. Each could operate as a load balancer and knew workloads of its cluster members so it could properly distribute new tasks. Some nodes may also operate as a “rig” and provide a set of services such as providing a public IP and connecting into the decentralized network.
 - Load Balancing of Cluster
-- Miner Registration    
+- CloudNode Registration    
 
 ## 2.4 - Services and Management
-The Miner ecosystem needs to support a few services for IP Rotation and Catpcha solving. We want to have a plugin infrastructure where developers can choose their own, but we will also provide some defaults.
+The CloudNode ecosystem needs to support a few services for IP Rotation and Catpcha solving. We want to have a plugin infrastructure where developers can choose their own, but we will also provide some defaults.
 We need APIs to get statistics on how often different Datastores have been hit, and how accurate the data has been.
 - External Service - IP Proxy Service
 - External Service - Catpcha Breaker Service
-- Miner Management - Endpoint Statistics
-- Miner Management - SessionDB Retrieval
+- CloudNode Management - Endpoint Statistics
+- CloudNode Management - SessionDB Retrieval
 
 
 # UNVERSIONED
@@ -40,12 +40,12 @@ We want to consider supporting one or more infrastructure scripting languages as
 - Terraform
 
 ## P2P Modules
-Rigs have network services so that Miners can be simple Datastore runners.
+Rigs have network services so that Cloud Nodes can be simple Datastore runners.
 P2P Storage Lookup/Index
 P2P Network Lookups
 
 ## Deploy to Multiple Clouds
-We want to provide one click deployment options for Miner across various platforms.
+We want to provide one click deployment options for CloudNode across various platforms.
 AWS Lambda
 Google Cloud Functions
 Digital Ocean

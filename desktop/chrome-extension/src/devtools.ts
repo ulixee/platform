@@ -9,12 +9,12 @@
 // }
 
 window.addEventListener('message', event => {
-  if (event.data.action === 'returnMinerAddress') {
+  if (event.data.action === 'returnCloudAddress') {
     // @ts-expect-error
-    window.minerAddress = event.data.minerAddress;
+    window.cloudAddress = event.data.cloudAddress;
   }
 });
-window.parent?.postMessage({ action: 'getMinerAddress' });
+window.parent?.postMessage({ action: 'getCloudAddress' });
 
 chrome.devtools.panels.create('Hero Script', null, '/hero-script.html', extensionPanel => {
   let runOnce = false;
@@ -22,7 +22,7 @@ chrome.devtools.panels.create('Hero Script', null, '/hero-script.html', extensio
     if (runOnce) return;
     runOnce = true;
     // @ts-expect-error
-    panelWindow.setMinerAddress(window.minerAddress);
+    panelWindow.setCloudAddress(window.cloudAddress);
   });
   // newPanel.onHidden.addListener(handleHidden);
   return null;
@@ -34,7 +34,7 @@ chrome.devtools.panels.create('State Generator', null, '/state-generator.html', 
     if (runOnce) return;
     runOnce = true;
     // @ts-expect-error
-    panelWindow.setMinerAddress(window.minerAddress);
+    panelWindow.setCloudAddress(window.cloudAddress);
   });
   // newPanel.onHidden.addListener(handleHidden);
   return null;

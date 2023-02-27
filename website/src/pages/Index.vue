@@ -169,12 +169,12 @@
           </ul>
         </div>
         <div class="BOX !mx-0 !ml-3 w-1/2">
-          <h2><inline-svg :src="require('@/assets/tool-icons/server.svg')" height="30" />ULIXEE MINER</h2>
-          <h3>Easily Scale Your Datastores<br /> Across Multiple Clouds</h3>
-          <p class="px-20">Miner is our answer to running your scripts in production, scaling horizontally and breaking free of any single cloud stack.</p>
+          <h2><inline-svg :src="require('@/assets/tool-icons/server.svg')" height="30" />ULIXEE CLOUD</h2>
+          <h3>Easily Scale Your Datastores<br /> Across Multiple Machines</h3>
+          <p class="px-20">Ulixee Cloud is our answer to running your scripts in production, scaling horizontally and breaking free of any single cloud stack.</p>
           <ul class="mx-1">
-            <li><router-link to="/miner">Learn More</router-link></li>
-            <li><a href="//docs.ulixee.org/miner">Go to Documentation</a></li>
+            <li><router-link to="/cloud">Learn More</router-link></li>
+            <li><a href="//docs.ulixee.org/cloud">Go to Documentation</a></li>
           </ul>
         </div>
       </div>

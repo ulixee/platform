@@ -24,7 +24,7 @@ export function validateFunctionCoreVersions(
   for (const [pluginName, pluginVersion] of Object.entries(corePlugins ?? {})) {
     const pluginCore = context.pluginCoresByName[pluginName];
     if (!pluginCore) {
-      throw new Error(`Miner does not support required runtime dependency: ${pluginName}`);
+      throw new Error(`This Cloud does not support required runtime dependency: ${pluginName}`);
     }
 
     if (!isSemverSatisfied(pluginVersion, pluginCore.version)) {

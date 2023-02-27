@@ -24,7 +24,7 @@ const options = {
 
 ### Default Connection
 
-If no connectionToCore is provided to a Datastore, a localhost Miner connection will attempt to be automatically discovered.
+If no connectionToCore is provided to a Datastore, a localhost CloudNode connection will attempt to be automatically discovered.
 
 ### Defer Running Datastore
 

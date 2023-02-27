@@ -13,7 +13,7 @@ export default class WorkTracker {
   public async stop(waitForDatastoreCompletionOnShutdown: boolean): Promise<void> {
     if (!waitForDatastoreCompletionOnShutdown) {
       for (const promise of this.runPromises) {
-        promise.reject(new CanceledPromiseError('Shutting down Miner'), true);
+        promise.reject(new CanceledPromiseError('Shutting down Cloud'), true);
         this.runPromises.delete(promise);
       }
     } else {

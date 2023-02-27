@@ -272,7 +272,7 @@ export default class SessionController extends TypedEventEmitter<{
   ): TConnectionToChromeAliveSessionClient {
     if (request.url.includes('/devtools')) {
       this.replayTransport = transport;
-      this.events.once(transport, 'disconnect', () => {
+      this.events.once(transport, 'disconnected', () => {
         this.replayTransport = null;
       });
       return;
@@ -303,7 +303,7 @@ export default class SessionController extends TypedEventEmitter<{
         sessionId: null,
       });
     });
-    this.events.once(connection, 'disconnect', () => {
+    this.events.once(connection, 'disconnected', () => {
       connection.removeAllListeners();
       const idx = this.connections.indexOf(connection);
       if (idx >= 0) this.connections.splice(idx, 1);

@@ -23,7 +23,7 @@ export class WindowManager {
   #chromeAliveWindowsBySessionId = new Map<string, ChromeAliveWindow>();
 
   constructor(private menuBar: Menubar, private apiManager: ApiManager) {
-    this.events.on(apiManager, 'new-miner-address', this.onNewMinerAddress.bind(this));
+    this.events.on(apiManager, 'new-cloud-address', this.onNewCloudAddress.bind(this));
     this.events.on(apiManager, 'api-event', this.onApiEvent.bind(this));
 
     this.bindIpcEvents();
@@ -44,7 +44,7 @@ export class WindowManager {
   }
 
   public async loadChromeAliveWindow(data: {
-    minerAddress: string;
+    cloudAddress: string;
     heroSessionId: string;
     dbPath: string;
   }): Promise<void> {
@@ -56,7 +56,7 @@ export class WindowManager {
     const chromeAliveWindow = new ChromeAliveWindow(
       data,
       this.menuBar.staticServer,
-      data.minerAddress,
+      data.cloudAddress,
     );
 
     const { heroSessionId } = data;
@@ -94,7 +94,7 @@ export class WindowManager {
       const [filename] = result.filePaths;
       if (filename.endsWith('.db')) {
         return this.loadChromeAliveWindow({
-          minerAddress: this.apiManager.localMinerAddress,
+          cloudAddress: this.apiManager.localCloudAddress,
           dbPath: filename,
           heroSessionId: Path.basename(filename).replace('.db', ''),
         });
@@ -116,21 +116,21 @@ export class WindowManager {
     if (event.eventType === 'Session.opened') {
       void this.loadChromeAliveWindow({
         ...(event.data as INewHeroSessionEvent),
-        minerAddress: event.minerAddress,
+        cloudAddress: event.cloudAddress,
       });
     }
   }
 
-  private async onNewMinerAddress(
-    event: ApiManager['EventTypes']['new-miner-address'],
+  private async onNewCloudAddress(
+    event: ApiManager['EventTypes']['new-cloud-address'],
   ): Promise<void> {
-    const { oldAddress, newAddress } = event;
-    await this.desktopWindow.onNewMinerAddress(event);
+    const { oldAddress, address,  } = event;
+    await this.desktopWindow.onNewCloudAddress(event);
     if (!oldAddress) return;
 
     for (const window of this.chromeAliveWindows) {
       if (window.api.address.startsWith(oldAddress)) {
-        await window.reconnect(newAddress);
+        await window.reconnect(address);
       }
     }
   }

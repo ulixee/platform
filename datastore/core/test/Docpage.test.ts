@@ -2,7 +2,7 @@ import * as Fs from 'fs';
 import * as Path from 'path';
 import Axios from 'axios';
 import DatastorePackager from '@ulixee/datastore-packager';
-import UlixeeMiner from '@ulixee/miner';
+import { CloudNode } from '@ulixee/cloud';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
@@ -12,7 +12,7 @@ import Identity from '@ulixee/crypto/lib/Identity';
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.docpage.test');
 
 let dbxFile: Buffer;
-let miner: UlixeeMiner;
+let cloudNode: CloudNode;
 let manifest: IDatastoreManifest;
 let client: DatastoreApiClient;
 const adminIdentity = Identity.createSync();
@@ -28,19 +28,19 @@ beforeAll(async () => {
   await packager.build();
   dbxFile = await packager.dbx.asBuffer();
   manifest = packager.manifest.toJSON();
-  miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = {
+  cloudNode = new CloudNode();
+  cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
     serverAdminIdentities: [adminIdentity.bech32],
   };
-  await miner.listen();
-  client = new DatastoreApiClient(await miner.address);
+  await cloudNode.listen();
+  client = new DatastoreApiClient(await cloudNode.address);
   await client.upload(dbxFile, { identity: adminIdentity });
 });
 
 afterAll(async () => {
-  await miner?.close();
+  await cloudNode?.close();
   if (process.env.CI !== 'true') Hostile.remove('127.0.0.1', 'docs.datastoresrus.com');
   if (Fs.existsSync(storageDir)) {
     if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
@@ -48,19 +48,19 @@ afterAll(async () => {
 });
 
 test('should be able to load datastore documentation', async () => {
-  const address = await miner.address;
+  const address = await cloudNode.address;
   const res = await Axios.get(`http://${address}/datastore/${manifest.versionHash}/`);
   expect(res.data.includes('Docpage - Ulixee Datastore')).toBe(true);
 });
 
 test('should be able to access documentation through a datastore domain', async () => {
-  const port = await miner.port;
+  const port = await cloudNode.port;
   const res = await Axios.get(`http://docs.datastoresRus.com:${port}`);
   expect(res.data.includes('Docpage - Ulixee Datastore')).toBe(true);
 });
 
 test('should be able to use a domain to get a credit balance', async () => {
-  const port = await miner.port;
+  const port = await cloudNode.port;
   const credits = await client.createCredits(manifest.versionHash, 1002, adminIdentity);
   await expect(
     Axios
@@ -78,7 +78,7 @@ test('should be able to use a domain to get a credit balance', async () => {
   await expect(
     Axios
       .get(
-        `http://${await miner.address}/datastore/${manifest.versionHash}/free-credits?${
+        `http://${await cloudNode.address}/datastore/${manifest.versionHash}/free-credits?${
           credits.id
         }:${credits.secret}`,
         { responseType: 'json', headers: { accept: 'application/json' } },
@@ -91,9 +91,9 @@ test('should be able to use a domain to get a credit balance', async () => {
 });
 
 test('should be able to parse domain urls', async () => {
-  const port = await miner.port;
+  const port = await cloudNode.port;
   const expectedOutput = {
-    host: await miner.address,
+    host: await cloudNode.address,
     datastoreVersionHash: manifest.versionHash,
   };
   await expect(
@@ -108,7 +108,7 @@ test('should be able to parse domain urls', async () => {
 
   await expect(
     DatastoreApiClient.resolveDatastoreDomain(
-      `${await miner.address}/datastore/${manifest.versionHash}`,
+      `${await cloudNode.address}/datastore/${manifest.versionHash}`,
     ),
   ).resolves.toEqual(expectedOutput);
 
@@ -121,7 +121,7 @@ test('should be able to parse domain urls', async () => {
 
   await expect(
     DatastoreApiClient.resolveDatastoreDomain(
-      `ulx://${await miner.address}/datastore/${
+      `ulx://${await cloudNode.address}/datastore/${
         manifest.versionHash
       }/free-credit/?crd2342342:234234333`,
     ),

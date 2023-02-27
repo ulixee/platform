@@ -1,13 +1,13 @@
 import * as Http from 'http';
-import Miner from '../index';
+import CloudNode from '../lib/CloudNode';
 
 const pkg = require('../package.json');
 
-describe('basic Miner tests', () => {
+describe('basic CloudNode tests', () => {
   it('starts, responds to request and shuts down', async () => {
-    const miner = new Miner();
-    await miner.listen({ port: 8099 }, false);
-    const url = `http://${await miner.address}/`;
+    const cloudNode = new CloudNode();
+    await cloudNode.listen({ port: 8099 }, false);
+    const url = `http://${await cloudNode.address}/`;
 
     const response = await new Promise(resolve => {
       Http.get(url, res => {
@@ -17,8 +17,8 @@ describe('basic Miner tests', () => {
       });
     });
 
-    expect(response).toEqual(`Ulixee Miner v${pkg.version}`);
+    expect(response).toEqual(`Ulixee Cloud v${pkg.version}`);
 
-    await miner.close();
+    await cloudNode.close();
   });
 });

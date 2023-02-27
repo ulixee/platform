@@ -3,4 +3,4 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import cli from '../cli';
 
-cli().name('@ulixee/miner').parseAsync().catch(console.error)
+cli().name('@ulixee/cloud').parseAsync().catch(console.error)

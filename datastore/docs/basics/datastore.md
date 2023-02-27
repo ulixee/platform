@@ -37,7 +37,7 @@ Creates a new Datastore instance.
   - key `string`. A unique name of the Table.
   - value `Table`. A [Table](./table.md) instance.
 - affiliateId `string`. An optional unique identifier to send with all remoteDatastore queries sent from this Datastore.
-- adminIdentity `string`. A bech32 encoded admin Identity. Grants access to this identity to perform signed `Datastore.admin` API calls (like managing [Credits](../advanced/credits.md)). If not included, the `adminIdentities` of your Miner server are the only valid admin Identities for your Datastore.
+- adminIdentity `string`. A bech32 encoded admin Identity. Grants access to this identity to perform signed `Datastore.admin` API calls (like managing [Credits](../advanced/credits.md)). If not included, the `adminIdentities` of your CloudNode server are the only valid admin Identities for your Datastore.
 - authenticateIdentity `function`. An optional function that can be used to secure access to this Datastore. More details are [here](#authenticateIdentity)
 - remoteDatastores `{ [name]: url }`. An optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughRunners](./passthrough-runner.md).
 - remoteDatastoreEmbeddedCredits `{ [name]: ICredit }`. An optional key/value of remoteDatastore "names" to [credit](../advanced/credits.md) details (`id` and `secret`). If included, the embedded credits will be used for Payment to the remoteDatastore for consumers of this Datastore.
@@ -85,7 +85,7 @@ Object containing [Tables](./table.md) keyed by their name.
 
 ### remoteDatastores `{ [name]: url }` {#remote-datastores}
 
-Object containing an optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughRunners](./passthrough-runner.md). Urls take the format `ulx://<MinerHost>/<DatastoreVersionHash>`.
+Object containing an optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughRunners](./passthrough-runner.md). Urls take the format `ulx://<CloudAddress>/<DatastoreVersionHash>`.
 
 ### authenticateIdentity _(identity, nonce)_ {#authenticateIdentity}
 

@@ -1,7 +1,7 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import DatastorePackager from '@ulixee/datastore-packager';
-import UlixeeMiner from '@ulixee/miner';
+import { CloudNode } from '@ulixee/cloud';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
@@ -26,7 +26,7 @@ import DatastoreVm from '../lib/DatastoreVm';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastorePayments.test');
 
-let miner: UlixeeMiner;
+let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 const sidechainIdentity = Identity.createSync();
 const batchIdentity = Identity.createSync();
@@ -76,13 +76,13 @@ beforeAll(async () => {
 
   mock.sidechainClient.sendRequest.mockImplementation(mockSidechainServer);
 
-  miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = {
+  cloudNode = new CloudNode();
+  cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
-  await miner.listen();
-  client = new DatastoreApiClient(await miner.address, true);
+  await cloudNode.listen();
+  client = new DatastoreApiClient(await cloudNode.address, true);
 });
 
 beforeEach(() => {
@@ -92,7 +92,7 @@ beforeEach(() => {
 });
 
 afterAll(async () => {
-  await miner.close();
+  await cloudNode.close();
   if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
 });
 
@@ -289,7 +289,7 @@ test('should be able to embed Credits in a Datastore', async () => {
   });
 
   await cloneDatastore(
-    `ulx://${await miner.address}/datastore/${manifest.versionHash}`,
+    `ulx://${await cloudNode.address}/datastore/${manifest.versionHash}`,
     `${__dirname}/datastores/clone-output`,
     { embedCredits: credits },
   );
@@ -328,7 +328,7 @@ test('should be able to embed Credits in a Datastore', async () => {
   }
   // @ts-expect-error
   expect(DatastoreVm.apiClientCacheByUrl).toEqual({
-    [`ulx://${await miner.address}`]: expect.any(DatastoreApiClient),
+    [`ulx://${await cloudNode.address}`]: expect.any(DatastoreApiClient),
   });
 }, 60e3);
 

@@ -1,7 +1,7 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import DatastorePackager from '@ulixee/datastore-packager';
-import UlixeeMiner from '@ulixee/miner';
+import { CloudNode } from '@ulixee/cloud';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { Helpers } from '@ulixee/datastore-testing';
@@ -24,7 +24,7 @@ import DatastoreManifest from '../lib/DatastoreManifest';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughRunners.test');
 
-let miner: UlixeeMiner;
+let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 const sidechainIdentity = Identity.createSync();
 const batchIdentity = Identity.createSync();
@@ -90,13 +90,13 @@ beforeAll(async () => {
 
   mock.sidechainClient.sendRequest.mockImplementation(mockSidechainServer);
 
-  miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = {
+  cloudNode = new CloudNode();
+  cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
-  await miner.listen();
-  client = new DatastoreApiClient(await miner.address);
+  await cloudNode.listen();
+  client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 
   const packager = new DatastorePackager(`${__dirname}/datastores/remoteRunner.js`);
@@ -114,7 +114,7 @@ beforeEach(() => {
 afterEach(Helpers.afterEach);
 
 afterAll(async () => {
-  await miner.close();
+  await cloudNode.close();
   await Helpers.afterAll();
   Fs.rmSync(storageDir, { recursive: true });
 });
@@ -131,7 +131,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await miner.address}/${remoteVersionHash}',
+    source: 'ulx://${await cloudNode.address}/${remoteVersionHash}',
   },
   runners: {
     pass: new Datastore.PassthroughRunner({
@@ -177,7 +177,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await miner.address}/${remoteVersionHash}',
+    source: 'ulx://${await cloudNode.address}/${remoteVersionHash}',
   },
   runners: {
     pass: new Datastore.PassthroughRunner({
@@ -216,7 +216,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await miner.address}/${remoteVersionHash}',
+    source: 'ulx://${await cloudNode.address}/${remoteVersionHash}',
   },
   runners: {
     pass: new Datastore.PassthroughRunner({
@@ -271,7 +271,7 @@ export default new Datastore({
     await dbx.build();
     Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/source.js`));
     Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/source.dbx`));
-    await new DatastoreApiClient(await miner.address).upload(await dbx.dbx.asBuffer());
+    await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.asBuffer());
     versionHash = dbx.manifest.versionHash;
     expect(dbx.manifest.paymentAddress).toBeTruthy();
     const price = await client.getRunnerPricing(versionHash, 'source');
@@ -288,7 +288,7 @@ const { boolean, string } = require('@ulixee/schema');
 export default new Datastore({
   paymentAddress: '${address1.bech32}',
   remoteDatastores: {
-    hop0: 'ulx://${await miner.address}/${versionHash}',
+    hop0: 'ulx://${await cloudNode.address}/${versionHash}',
   },
   runners: {
     source2: new Datastore.PassthroughRunner({
@@ -308,7 +308,7 @@ export default new Datastore({
     Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/hop1.js`));
     Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/hop1.dbx`));
     await dbx.build();
-    await new DatastoreApiClient(await miner.address).upload(await dbx.dbx.asBuffer());
+    await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.asBuffer());
     versionHash = dbx.manifest.versionHash;
     const price = await client.getRunnerPricing(versionHash, 'source2');
     expect(price.minimumPrice).toBe(6 + 5 + 11);
@@ -323,7 +323,7 @@ const { boolean, string } = require('@ulixee/schema');
 export default new Datastore({
   paymentAddress: '${address1.bech32}',
   remoteDatastores: {
-    hop1: 'ulx://${await miner.address}/${versionHash}',
+    hop1: 'ulx://${await cloudNode.address}/${versionHash}',
   },
   runners: {
     last: new Datastore.PassthroughRunner({

@@ -1,26 +1,26 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
-import UlixeeMiner from '@ulixee/miner';
+import { CloudNode } from '@ulixee/cloud';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
 import Client from '..';
 import localDatastore from './datastores/localDatastore';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Client.localDatastore.test');
-let miner: UlixeeMiner;
+let cloudNode: CloudNode;
 let connectionToCore: ConnectionToDatastoreCore;
 
 beforeAll(async () => {
-  miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = {
+  cloudNode = new CloudNode();
+  cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
-  await miner.listen();
-  connectionToCore = ConnectionToDatastoreCore.remote(await miner.address);
+  await cloudNode.listen();
+  connectionToCore = ConnectionToDatastoreCore.remote(await cloudNode.address);
 });
 
 afterAll(async () => {
-  await miner.close();
+  await cloudNode.close();
   await connectionToCore.disconnect();
   if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
 });

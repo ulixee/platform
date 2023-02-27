@@ -31,7 +31,7 @@ export default function creditsCli(): Command {
     .addOption(
       requiredOptionWithEnv(
         '-i, --identity-path <path>',
-        'A path to an Admin Identity approved for the given Datastore or Miner.',
+        'A path to an Admin Identity approved for the given Datastore or Cloud.',
         'ULX_IDENTITY_PATH',
       ),
     )

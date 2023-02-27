@@ -12,7 +12,7 @@ jobs:
     env:
       GITHUB_URL: https://github.com/${{ github.repository }}
       ADD_CHROME_VERSION: 108
-      IMAGE: ulixee/ulixee-miner
+      IMAGE: ulixee/ulixee-cloud
 
     steps:
       - uses: actions/checkout@v3

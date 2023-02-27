@@ -19,34 +19,38 @@ export default class ApiManager<
   TEventType extends keyof IDesktopAppEvents & string = keyof IDesktopAppEvents,
 > extends TypedEventEmitter<{
   'api-event': {
-    minerAddress: string;
+    cloudAddress: string;
     eventType: TEventType;
     data: IDesktopAppEvents[TEventType];
   };
-  'new-miner-address': {
+  'new-cloud-address': {
     oldAddress?: string;
-    isLocal: boolean;
-    newAddress: string;
+    type: 'local' | 'public' | 'private';
+    name: string;
+    address: string;
   };
 }> {
-  public apiByMinerAddress = new Map<string, Resolvable<IApiGroup>>();
+  public apiByCloudAddress = new Map<
+    string,
+    { name: string; type: 'local' | 'public' | 'private'; resolvable: Resolvable<IApiGroup> }
+  >();
 
   exited = false;
   events = new EventSubscriber();
-  localMinerAddress: string;
+  localCloudAddress: string;
   debuggerUrl: string;
 
   constructor() {
     super();
-    this.events.on(UlixeeHostsConfig.global, 'change', this.onNewLocalMinerHost.bind(this));
+    this.events.on(UlixeeHostsConfig.global, 'change', this.onNewLocalCloudAddress.bind(this));
   }
 
-  public async start(localMinerAddress: string): Promise<void> {
+  public async start(localCloudAddress: string): Promise<void> {
     this.debuggerUrl = await this.getDebuggerUrl();
-    localMinerAddress ??= UlixeeHostsConfig.global.getVersionHost(version);
-    if (localMinerAddress) {
-      this.localMinerAddress = this.formatMinerAddress(localMinerAddress);
-      await this.connectToMiner(this.localMinerAddress);
+    localCloudAddress ??= UlixeeHostsConfig.global.getVersionHost(version);
+    if (localCloudAddress) {
+      this.localCloudAddress = this.formatCloudAddress(localCloudAddress);
+      await this.connectToCloud(this.localCloudAddress, 'local');
     }
   }
 
@@ -55,21 +59,31 @@ export default class ApiManager<
     this.exited = true;
 
     this.events.close('error');
-    for (const connection of this.apiByMinerAddress.values()) {
-      void this.closeApiGroup(connection);
+    for (const connection of this.apiByCloudAddress.values()) {
+      void this.closeApiGroup(connection.resolvable);
     }
-    this.apiByMinerAddress.clear();
+    this.apiByCloudAddress.clear();
   }
 
-  public async connectToMiner(address: string, oldAddress?: string): Promise<void> {
+  public async connectToCloud(
+    address: string,
+    type: 'public' | 'private' | 'local',
+    name?: string,
+    oldAddress?: string,
+  ): Promise<void> {
     if (!address) return;
-    address = this.formatMinerAddress(address);
-    if (this.apiByMinerAddress.has(address)) {
-      await this.apiByMinerAddress.get(address).promise;
+    name ??= type;
+    address = this.formatCloudAddress(address);
+    if (this.apiByCloudAddress.has(address)) {
+      await this.apiByCloudAddress.get(address).resolvable.promise;
       return;
     }
     try {
-      this.apiByMinerAddress.set(address, new Resolvable());
+      this.apiByCloudAddress.set(address, {
+        name: name ?? type,
+        type,
+        resolvable: new Resolvable(),
+      });
 
       const api = new ApiClient<IDesktopAppApis, IDesktopAppEvents>(
         `${address}?type=app`,
@@ -114,29 +128,36 @@ export default class ApiManager<
         this.events.once(wsToDevtoolsProtocol, 'close', this.onApiClosed.bind(this, address)),
       ];
       this.events.group(`ws-${address}`, onApiClosed, ...events);
-      this.apiByMinerAddress.get(address).resolve({ id, api, wsToCore, wsToDevtoolsProtocol });
-      this.emit('new-miner-address', { newAddress: address, isLocal: id === 'local', oldAddress });
+      this.apiByCloudAddress
+        .get(address)
+        .resolvable.resolve({ id, api, wsToCore, wsToDevtoolsProtocol });
+      this.emit('new-cloud-address', {
+        address,
+        name,
+        type,
+        oldAddress,
+      });
     } catch (error) {
-      this.apiByMinerAddress.get(address)?.reject(error, true);
+      this.apiByCloudAddress.get(address)?.resolvable.reject(error, true);
       throw error;
     }
   }
 
   private onDesktopEvent(
-    minerAddress: string,
+    cloudAddress: string,
     eventType: TEventType,
     data: IDesktopAppEvents[TEventType],
   ): void {
     if (this.exited) return;
 
     if (eventType === 'Session.opened') {
-      this.emit('api-event', { minerAddress, eventType, data });
+      this.emit('api-event', { cloudAddress, eventType, data });
     }
 
     if (eventType === 'App.quit') {
-      const apis = this.apiByMinerAddress.get(minerAddress);
+      const apis = this.apiByCloudAddress.get(cloudAddress);
       if (apis) {
-        void this.closeApiGroup(apis);
+        void this.closeApiGroup(apis.resolvable);
       }
     }
   }
@@ -145,26 +166,26 @@ export default class ApiManager<
     console.warn('ERROR in devtools websocket with Core at %s', ws.url, error);
   }
 
-  private async onNewLocalMinerHost(): Promise<void> {
+  private async onNewLocalCloudAddress(): Promise<void> {
     const newAddress = UlixeeHostsConfig.global.getVersionHost(version);
     if (!newAddress) return;
-    if (this.localMinerAddress !== newAddress) {
-      const oldAddress = this.localMinerAddress;
-      this.localMinerAddress = this.formatMinerAddress(newAddress);
+    if (this.localCloudAddress !== newAddress) {
+      const oldAddress = this.localCloudAddress;
+      this.localCloudAddress = this.formatCloudAddress(newAddress);
       // eslint-disable-next-line no-console
-      console.log('Connecting to local miner', this.localMinerAddress);
-      await this.connectToMiner(this.localMinerAddress, oldAddress);
+      console.log('Connecting to local cloud', this.localCloudAddress);
+      await this.connectToCloud(this.localCloudAddress, 'local', 'local', oldAddress);
     }
   }
 
   private onApiClosed(address: string): void {
     console.warn('Api Disconnected', address);
-    const api = this.apiByMinerAddress.get(address);
+    const api = this.apiByCloudAddress.get(address);
     this.events.endGroup(`ws-${address}`);
     if (api) {
-      void this.closeApiGroup(api);
+      void this.closeApiGroup(api.resolvable);
     }
-    this.apiByMinerAddress.delete(address);
+    this.apiByCloudAddress.delete(address);
   }
 
   private async closeApiGroup(group: Resolvable<IApiGroup>): Promise<void> {
@@ -201,7 +222,7 @@ export default class ApiManager<
     return debugEndpoints.webSocketDebuggerUrl;
   }
 
-  private formatMinerAddress(host: string): string {
+  private formatCloudAddress(host: string): string {
     if (!host) return host;
     if (host.endsWith('/')) host = host.slice(-1);
     if (!host.endsWith('/desktop')) {

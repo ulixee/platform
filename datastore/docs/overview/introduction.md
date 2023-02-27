@@ -25,7 +25,7 @@ Datastore Tables allow you to manage and deploy database tables as part of your 
 
 ## How Datastores Work
 
-Each Datastore is a wrapper for defining a composable scraper script. You can run datastores directly from the command line or upload them to a [Miner](https://ulixee.org/docs/miner).
+Each Datastore is a wrapper for defining a composable scraper script. You can run datastores directly from the command line or upload them to a [Cloud](https://ulixee.org/docs/cloud).
 
 ## Installation
 
@@ -41,7 +41,7 @@ or
 yarn add @ulixee/datastore
 ```
 
-It's your responsibility to ensure your Ulixee development environment is setup, such as installing and running [`@ulixee/miner`](https://ulixee.org/docs/miner).
+It's your responsibility to ensure your Ulixee development environment is setup, such as installing and running [`@ulixee/cloud`](https://ulixee.org/docs/cloud).
 
 ## Usage Example
 
@@ -63,7 +63,7 @@ Save that script to your filesystem (i.e., simple.js), and run it as a regular n
 node ./simple.js --input.firstName=Me
 ```
 
-However, this Datastore structure also allows us to load it onto a Miner and run it on demand:
+However, this Datastore structure also allows us to load it onto a CloudNode and run it on demand:
 
 ```bash
 npx @ulixee/datastore deploy ./simple.js

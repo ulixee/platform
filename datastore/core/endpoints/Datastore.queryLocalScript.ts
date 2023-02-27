@@ -31,7 +31,7 @@ export default new DatastoreApiHandler('Datastore.queryLocalScript', {
 
       for (const pluginName of Object.keys(runner.corePlugins)) {
         if (!context.pluginCoresByName[pluginName]) {
-          throw new Error(`Miner does not support required datastore plugin: ${pluginName}`);
+          throw new Error(`This Ulixee Cloud does not support required datastore plugin: ${pluginName}`);
         }
       }
 

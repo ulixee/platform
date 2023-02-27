@@ -41,9 +41,9 @@
               </router-link>
             </li>
             <li>
-              <router-link to="/miner">
+              <router-link to="/cloud">
                 <inline-svg :src="require('@/assets/tool-icons/server.svg')" />
-                <label>Miner</label>
+                <label>Cloud</label>
               </router-link>
             </li>
             <li class="COMING-SOON">

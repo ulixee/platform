@@ -11,7 +11,7 @@ if (env.ULX_IDENTITY_PATH) env.ULX_IDENTITY_PATH = parseEnvPath(env.ULX_IDENTITY
 export default {
   serverEnvironment: env.ULX_SERVER_ENVIRONMENT,
   datastoresDir: env.ULX_DATASTORE_DIR,
-  // list of identities who can upload to this Miner [@ulixee/crypto/lib/Identity.bech32]
+  // list of identities who can upload to this Cloud [@ulixee/crypto/lib/Identity.bech32]
   serverAdminIdentities: parseIdentities(env.ULX_SERVER_ADMIN_IDENTITIES, 'Admin Identities'),
   paymentAddress: parseAddress(env.ULX_PAYMENT_ADDRESS),
   computePricePerQuery: parseEnvInt(env.ULX_PRICE_PER_QUERY),

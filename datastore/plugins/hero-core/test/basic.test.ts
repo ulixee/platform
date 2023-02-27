@@ -1,5 +1,5 @@
 import * as Fs from 'fs';
-import UlixeeMiner from '@ulixee/miner';
+import { CloudNode } from '@ulixee/cloud';
 import { Helpers } from '@ulixee/datastore-testing';
 import Packager from '@ulixee/datastore-packager';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
@@ -7,18 +7,18 @@ import * as Path from 'path';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'hero-core/basic.test');
 
-let ulixeeMiner: UlixeeMiner;
+let cloudNode: CloudNode;
 let koaServer: Helpers.ITestKoaServer;
 beforeAll(async () => {
 
-  ulixeeMiner = new UlixeeMiner();
-  ulixeeMiner.router.datastoreConfiguration = {
+  cloudNode = new CloudNode();
+  cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
-  Helpers.onClose(() => ulixeeMiner.close(), true);
+  Helpers.onClose(() => cloudNode.close(), true);
   koaServer = await Helpers.runKoaServer();
-  await ulixeeMiner.listen(null, false);
+  await cloudNode.listen(null, false);
 });
 afterAll(Helpers.afterAll);
 
@@ -27,7 +27,7 @@ test('it should be able to upload a datastore and run it by hash', async () => {
     Fs.unlinkSync(`${__dirname}/_testDatastore.dbx`);
   const packager = new Packager(require.resolve('./_testDatastore.js'));
   const dbx = await packager.build();
-  const host = await ulixeeMiner.address;
+  const host = await cloudNode.address;
   await dbx.upload(host);
 
   const manifest = packager.manifest;

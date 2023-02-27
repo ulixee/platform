@@ -1,14 +1,14 @@
 import { spawn } from 'child_process';
 import * as Path from 'path';
 import * as assert from 'assert';
-import { execAndLog, getMinerHost } from '../utils';
+import { execAndLog, getCloudAddress } from '../utils';
 
 export default async function main(
   needsClosing: (() => Promise<any> | any)[],
   rootDir: string,
 ): Promise<{
   creditUrl: string;
-  minerHost: string;
+  cloudAddress: string;
   datastoreHash: string;
 }> {
   // CREATE IDENTITIES
@@ -22,8 +22,8 @@ export default async function main(
   );
   assert(identityBech32, 'Must be a valid identity');
 
-  // BOOT UP A MINER WITH GIFT CARD RESTRICTIONS
-  const miner = spawn(`npx @ulixee/miner start`, {
+  // BOOT UP A CLOUD WITH GIFT CARD RESTRICTIONS
+  const cloudNode = spawn(`npx @ulixee/cloud start`, {
     stdio: 'pipe',
     cwd: rootDir,
     shell: true,
@@ -34,12 +34,12 @@ export default async function main(
       ULX_DISABLE_CHROMEALIVE: 'true',
     },
   });
-  const minerHost = await getMinerHost(miner);
-  needsClosing.push(() => miner.kill());
+  const cloudAddress = await getCloudAddress(cloudNode);
+  needsClosing.push(() => cloudNode.kill());
 
   // For some reason, nodejs is taking CWD, but then going to closest package.json, so have to prefix with ./credits
   const datastoreResult = execAndLog(
-    `npx @ulixee/datastore deploy ./credits/datastore/index.js -h ${minerHost}`,
+    `npx @ulixee/datastore deploy ./credits/datastore/index.js -h ${cloudAddress}`,
     {
       cwd: __dirname,
       env: {
@@ -55,7 +55,7 @@ export default async function main(
   console.log('Datastore VersionHash', datastoreHash);
 
   const creditResult = execAndLog(
-    `npx @ulixee/datastore credits create ${minerHost}/datastore/${datastoreHash} --argons=5`,
+    `npx @ulixee/datastore credits create ${cloudAddress}/datastore/${datastoreHash} --argons=5`,
     {
       cwd: __dirname,
       env: {
@@ -71,6 +71,6 @@ export default async function main(
   return {
     creditUrl,
     datastoreHash,
-    minerHost,
+    cloudAddress,
   };
 }

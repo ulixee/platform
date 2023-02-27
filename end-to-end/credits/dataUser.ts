@@ -5,19 +5,19 @@ import { execAndLog } from '../utils';
 export default async function main(
   datastore: {
     creditUrl: string;
-    minerHost: string;
+    cloudAddress: string;
     datastoreHash: string;
   },
   rootDir: string,
 ): Promise<void> {
-  const { datastoreHash, creditUrl, minerHost } = datastore;
+  const { datastoreHash, creditUrl, cloudAddress } = datastore;
 
   execAndLog(`npx @ulixee/datastore credits install ${creditUrl}`, {
     cwd: rootDir,
     stdio: 'inherit',
   });
 
-  const datastoreClient = new DatastoreApiClient(minerHost);
+  const datastoreClient = new DatastoreApiClient(cloudAddress);
   const pricing = await datastoreClient.getRunnerPricing(datastoreHash, 'default');
   const payment = await CreditsStore.getPayment(datastoreHash, pricing.minimumPrice);
 

@@ -2,8 +2,8 @@ import { Command } from 'commander';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import { applyEnvironmentVariables, parseEnvBool } from '@ulixee/commons/lib/envUtils';
 import * as Path from 'path';
-import UlixeeMiner from '../index';
-import UlixeeMinerEnv from '../env';
+import { CloudNode } from '../index';
+import CloudNodeEnv from '../env';
 
 const pkg = require('../package.json');
 
@@ -12,7 +12,7 @@ export default function cliCommands(): Command {
 
   program
     .command('start', { isDefault: true })
-    .description('start a Ulixee Miner')
+    .description('start a Ulixee CloudNode')
     .addOption(
       program
         .createOption('-p, --port <number>', 'The port to use. Defaults to any available port.')
@@ -21,7 +21,7 @@ export default function cliCommands(): Command {
     .addOption(
       program.createOption(
         '-h, --host <host>',
-        'The host the miner should listen on. (default: localhost)',
+        'The host the Cloud node should listen on. (default: localhost)',
       ),
     )
     .addOption(
@@ -85,23 +85,23 @@ export default function cliCommands(): Command {
       program
         .createOption(
           '-w, --datastore-wait-for-completion',
-          'Wait for all in-process Datastores to complete before shutting down the Miner.',
+          'Wait for all in-process Datastores to complete before shutting down the Cloud node.',
         )
         .default(false),
     )
     .allowUnknownOption(true)
     .action(async opts => {
-      console.log('Starting Ulixee Miner with configuration:', opts);
+      console.log('Starting Ulixee Cloud with configuration:', opts);
       const { port, disableChromeAlive, host, env } = opts;
       if (env) {
         applyEnvironmentVariables(Path.resolve(env), process.env);
       }
-      if (disableChromeAlive) UlixeeMinerEnv.disableChromeAlive = disableChromeAlive;
+      if (disableChromeAlive) CloudNodeEnv.disableChromeAlive = disableChromeAlive;
 
-      const miner = new UlixeeMiner(host);
+      const cloudNode = new CloudNode(host);
 
       const { unblockedPlugins, heroDataDir, maxConcurrentHeroes } = opts;
-      miner.router.heroConfiguration = filterUndefined({
+      cloudNode.router.heroConfiguration = filterUndefined({
         maxConcurrentClientCount: maxConcurrentHeroes,
         dataDir: heroDataDir,
         defaultUnblockedPlugins: unblockedPlugins?.map(x => {
@@ -112,15 +112,15 @@ export default function cliCommands(): Command {
         }),
       });
 
-      miner.router.datastoreConfiguration = filterUndefined({
+      cloudNode.router.datastoreConfiguration = filterUndefined({
         datastoresDir: opts.datastoreStorageDir,
         datastoresTmpDir: opts.datastoreTmpDir,
         maxRuntimeMs: opts.maxDatastoreRuntimeMs,
         waitForDatastoreCompletionOnShutdown: opts.datastoreWaitForCompletion,
       });
 
-      await miner.listen({ port });
-      console.log('Ulixee Miner listening at %s', await miner.address);
+      await cloudNode.listen({ port });
+      console.log('Ulixee Cloud listening at %s', await cloudNode.address);
     });
 
   return program;

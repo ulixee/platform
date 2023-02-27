@@ -1,13 +1,13 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import DatastorePackager from '@ulixee/datastore-packager';
-import UlixeeMiner from '@ulixee/miner';
+import { CloudNode } from '@ulixee/cloud';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { Helpers } from '@ulixee/datastore-testing';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughTable.test');
 
-let miner: UlixeeMiner;
+let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 let remoteVersionHash: string;
 beforeAll(async () => {
@@ -17,13 +17,13 @@ beforeAll(async () => {
     }
   }
 
-  miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = {
+  cloudNode = new CloudNode();
+  cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
-  await miner.listen();
-  client = new DatastoreApiClient(await miner.address);
+  await cloudNode.listen();
+  client = new DatastoreApiClient(await cloudNode.address);
 
   const packager = new DatastorePackager(`${__dirname}/datastores/remoteTable.js`);
   await packager.build();
@@ -33,7 +33,7 @@ beforeAll(async () => {
 afterEach(Helpers.afterEach);
 
 afterAll(async () => {
-  await miner.close();
+  await cloudNode.close();
   await Helpers.afterAll();
   Fs.rmSync(storageDir, { recursive: true });
 });
@@ -55,7 +55,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await miner.address}/${remoteVersionHash}',
+    source: 'ulx://${await cloudNode.address}/${remoteVersionHash}',
   },
   tables: {
     pass: new Datastore.PassthroughTable({
@@ -93,7 +93,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await miner.address}/${remoteVersionHash}',
+    source: 'ulx://${await cloudNode.address}/${remoteVersionHash}',
   },
   tables: {
     pass: new Datastore.PassthroughTable({

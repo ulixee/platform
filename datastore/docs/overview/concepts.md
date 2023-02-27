@@ -14,4 +14,4 @@ When you combine these two ideas, it means your "Scraper scripts" can become sim
 
 ## Deployable
 
-Datastores can be packaged up and deployed as a "unit" to a Ulixee Miner. You can query using the [Stream](https://ulixee.org/docs/stream) library. By deploying to a Miner, Datastores are able to run very efficiently - the code is cached, all individual commands for the Datastore Runners are run on the Miner and do not need serialization/transport to a Client. The only necessary communications are an "input" and the resulting "output" as a response.
+Datastores can be packaged up and deployed as a "unit" to a Ulixee CloudNode. You can query using the [Stream](https://ulixee.org/docs/stream) library. By deploying to a CloudNode, Datastores are able to run very efficiently - the code is cached, all individual commands for the Datastore Runners are run on the CloudNode and do not need serialization/transport to a Client. The only necessary communications are an "input" and the resulting "output" as a response.

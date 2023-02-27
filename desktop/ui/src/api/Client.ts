@@ -8,8 +8,8 @@ import type ICoreRequestPayload from '@ulixee/net/interfaces/ICoreRequestPayload
 
 declare global {
   interface Window {
-    setMinerAddress(url: string): void;
-    minerAddress: string | undefined;
+    setCloudAddress(url: string): void;
+    cloudAddress: string | undefined;
     defaultClient: Client;
   }
 }
@@ -40,7 +40,12 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     this.connection = new WebSocket(this.address);
     this.connection.onclose = this.onClose.bind(this);
     this.connectedPromise = new Promise(resolve => {
-      this.connection.onopen = () => resolve();
+      this.connection.onopen = () => {
+        window.addEventListener('beforeunload', () => {
+          this.connection?.close()
+        });
+        resolve();
+      };
     });
     this.connection.onmessage = this.emit.bind(this);
     return this.connectedPromise.then(this.onConnect);
@@ -80,11 +85,11 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
   onClose() {
     this.connectedPromise = null;
     if (!this.autoReconnect) {
-      this.eventHandlersByEventType = {}
+      this.eventHandlersByEventType = {};
       return;
     }
     setTimeout(() => {
-      this.address ||= window.minerAddress;
+      this.address ||= window.cloudAddress;
       this.connect().catch(err => console.log('Client Connect Error', err));
     }, 1e3);
   }
@@ -149,7 +154,7 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
   }
 }
 
-window.minerAddress ??= '';
+window.cloudAddress ??= '';
 
 // eslint-disable-next-line import/no-mutable-exports
 let defaultClient: Client;
@@ -159,15 +164,15 @@ if (window.opener) {
   defaultClient = new Client();
 }
 
-window.setMinerAddress = function setMinerAddress(url: string) {
-  window.minerAddress = url;
+window.setCloudAddress = function setCloudAddress(url: string) {
+  window.cloudAddress = url;
   defaultClient.address = url;
   defaultClient.connect().catch(console.error);
 };
 
 // if already set, connect now
-if (window.minerAddress) {
-  window.setMinerAddress(window.minerAddress);
+if (window.cloudAddress) {
+  window.setCloudAddress(window.cloudAddress);
 }
 window.defaultClient = defaultClient;
 

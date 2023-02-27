@@ -1,6 +1,6 @@
 # Prerequisites
 
-To get started with Ulixee Miner, you’ll need to have the following software tools installed:
+To get started with Ulixee Cloud, you’ll need to have the following software tools installed:
 
 ### Node.js
 

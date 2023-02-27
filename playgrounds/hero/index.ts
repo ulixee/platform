@@ -1,7 +1,7 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import Core from '@ulixee/hero-core';
 import DefaultHero, { IHeroCreateOptions } from '@ulixee/hero';
-import UlixeeMiner from '@ulixee/miner';
+import { Cloud } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 
 const { version } = require('./package.json');
@@ -27,20 +27,20 @@ https://ulixee.org/docs/hero/advanced-concepts/client-vs-core
 }
 
 async function getCoreHost(): Promise<string> {
-  let minerHost = UlixeeHostsConfig.global.getVersionHost(version);
+  let coreHost = UlixeeHostsConfig.global.getVersionHost(version);
 
-  if (minerHost?.startsWith('localhost')) {
-    minerHost = await UlixeeHostsConfig.global.checkLocalVersionHost(version, minerHost);
+  if (coreHost?.startsWith('localhost')) {
+    coreHost = await UlixeeHostsConfig.global.checkLocalVersionHost(version, coreHost);
   }
 
-  // start a miner if none already started
-  if (!minerHost) {
-    const miner = new UlixeeMiner();
-    await miner.listen();
-    minerHost = await miner.address;
-    console.log('Started Ulixee Miner at %s', minerHost);
+  // start a cloud if none already started
+  if (!coreHost) {
+    const cloud = new Cloud();
+    await cloud.listen();
+    coreHost = await cloud.address;
+    console.log('Started Ulixee Cloud at %s', coreHost);
   } else {
-    console.log('Connecting to Ulixee Miner at %s', minerHost);
+    console.log('Connecting to Ulixee Cloud at %s', coreHost);
   }
 
   Core.events.once('browser-has-no-open-windows', ({ browser }) => browser.close());
@@ -48,5 +48,5 @@ async function getCoreHost(): Promise<string> {
     console.log('Automatically shutting down Hero Core (Browser Closed)');
     return Core.shutdown();
   });
-  return minerHost;
+  return coreHost;
 }

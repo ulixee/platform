@@ -13,6 +13,6 @@
     "@ulixee/commons": "2.0.0-alpha.19",
     "@ulixee/hero": "2.0.0-alpha.19",
     "@ulixee/hero-core": "2.0.0-alpha.19",
-    "@ulixee/miner": "2.0.0-alpha.19"
+    "@ulixee/cloud": "2.0.0-alpha.19"
   }
 }

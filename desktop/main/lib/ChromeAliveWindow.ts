@@ -57,10 +57,10 @@ export default class ChromeAliveWindow {
       dbPath: string;
     },
     private staticServer: StaticServer,
-    minerAddress: string,
+    cloudAddress: string,
   ) {
     bindFunctions(this);
-    this.createApi(minerAddress);
+    this.createApi(cloudAddress);
 
     const mainScreen = screen.getPrimaryDisplay();
     const workarea = mainScreen.workArea;
@@ -182,7 +182,7 @@ export default class ChromeAliveWindow {
         resizeObserver.observe(elem);
       `);
 
-    await this.injectMinerAddress(this.#toolbarView.browserView);
+    await this.injectCloudAddress(this.#toolbarView.browserView);
   }
 
   public async onClose(): Promise<void> {
@@ -233,8 +233,8 @@ export default class ChromeAliveWindow {
       }
     }
     await Promise.all([
-      this.injectMinerAddress(this.#toolbarView.browserView),
-      this.injectMinerAddress(this.#mainView.browserView),
+      this.injectCloudAddress(this.#toolbarView.browserView),
+      this.injectCloudAddress(this.#mainView.browserView),
     ]);
   }
 
@@ -268,8 +268,8 @@ export default class ChromeAliveWindow {
           `(async () => {
           window.addEventListener("message", (event) => {
             event.source.postMessage({ 
-              action: 'returnMinerAddress', 
-              minerAddress: '${this.api.address}' 
+              action: 'returnCloudAddress', 
+              cloudAddress: '${this.api.address}' 
             }, event.origin);
           }, false);
         UI.inspectorView.tabbedPane.closeTabs(['timeline', 'heap_profiler', 'lighthouse', 'security', 'resources', 'network', 'sources']);
@@ -316,12 +316,12 @@ export default class ChromeAliveWindow {
     this.#eventSubscriber.once(this.api, 'close', this.onApiClose);
   }
 
-  private async injectMinerAddress(view: BrowserView): Promise<void> {
+  private async injectCloudAddress(view: BrowserView): Promise<void> {
     if (!this.api.address) return;
     await view.webContents.executeJavaScript(
       `(() => {
-        window.minerAddress = '${this.api.address}';
-        if ('setMinerAddress' in window) window.setMinerAddress(window.minerAddress);
+        window.cloudAddress = '${this.api.address}';
+        if ('setCloudAddress' in window) window.setCloudAddress(window.cloudAddress);
       })()`,
     );
   }
@@ -360,7 +360,7 @@ export default class ChromeAliveWindow {
         const url = this.staticServer.getPath(page);
         if (this.#mainView.webContents.getURL() !== url) {
           await this.#mainView.webContents.loadURL(url);
-          await this.injectMinerAddress(this.#mainView.browserView);
+          await this.injectCloudAddress(this.#mainView.browserView);
         }
       }
     }

@@ -79,7 +79,7 @@ const toolNames: { [key: string]: string } = {
   client: 'Client',
   hero: 'Hero',
   datastore: 'Datastore',
-  miner: 'Miner',
+  cloud: 'Cloud',
   sql: 'SQL',
 };
 

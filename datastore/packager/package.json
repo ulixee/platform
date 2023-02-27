@@ -1,7 +1,7 @@
 {
   "name": "@ulixee/datastore-packager",
   "version": "2.0.0-alpha.19",
-  "description": "Packager for creating Datastore bundles that can be consumed by a Ulixee Miner",
+  "description": "Packager for creating Datastore bundles that can be consumed by a Ulixee Cloud",
   "dependencies": {
     "@rollup/plugin-commonjs": "^22.0.0",
     "@rollup/plugin-node-resolve": "^13.3.0",

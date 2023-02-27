@@ -32,7 +32,7 @@ type IConnectionToDesktopClient = IConnectionToClient<IDesktopAppApis, IDesktopA
 
 export default class DesktopCore {
   public static sessionControllersById = new Map<string, SessionController>();
-  public static minerAddress?: Promise<string>;
+  public static localCloudAddress?: Promise<string>;
   private static appConnectionsById = new Map<string, IConnectionToDesktopClient>();
   private static appDevtoolsConnectionsById = new Map<string, AppDevtoolsConnection>();
   private static heroSessionsSearch = new HeroSessionsSearch();
@@ -49,8 +49,8 @@ export default class DesktopCore {
 
   private static events = new EventSubscriber();
 
-  public static setMinerAddress(address: Promise<string>): void {
-    this.minerAddress = address;
+  public static setLocalCloudAddress(address: Promise<string>): void {
+    this.localCloudAddress = address;
   }
 
   public static addAppDevtoolsWebsocket(ws: WebSocket, request: IncomingMessage): void {
@@ -130,7 +130,7 @@ export default class DesktopCore {
         });
       }),
     );
-    this.events.once(connection, 'disconnect', () => {
+    this.events.once(connection, 'disconnected', () => {
       this.events.endGroup(eventId);
       this.appConnectionsById.delete(id);
     });

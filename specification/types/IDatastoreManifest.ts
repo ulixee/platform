@@ -30,7 +30,7 @@ export const DatastoreManifestSchema = z.object({
   adminIdentities: identityValidation
     .array()
     .describe(
-      'Administrators of this Datastore. If none are present, defaults to Administrators on the Miner.',
+      'Administrators of this Datastore. If none are present, defaults to Administrators on the Cloud.',
     ),
   scriptEntrypoint: z.string().describe('A relative path from a project root'),
   coreVersion: z.string().describe('Version of the Datastore Core Runtime'),

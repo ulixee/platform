@@ -24,7 +24,7 @@
     "@ulixee/desktop-core": "2.0.0-alpha.19",
     "@ulixee/desktop-interfaces": "2.0.0-alpha.19",
     "@ulixee/hero-core": "2.0.0-alpha.19",
-    "@ulixee/miner": "2.0.0-alpha.19",
+    "@ulixee/cloud": "2.0.0-alpha.19",
     "@ulixee/net": "2.0.0-alpha.19",
     "electron-log": "^4.4.6",
     "electron-positioner": "^4.1.0",

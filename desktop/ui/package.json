@@ -19,6 +19,7 @@
     "@ulixee/commons": "2.0.0-alpha.19",
     "@ulixee/desktop-interfaces": "2.0.0-alpha.19",
     "@ulixee/hero-interfaces": "2.0.0-alpha.19",
+    "@ulixee/platform-specification": "2.0.0-alpha.19",
     "@ulixee/unblocked-specification": "2.0.0-alpha.19",
     "@webcomponents/custom-elements": "^1.5.0",
     "core-js": "^3.21.1",

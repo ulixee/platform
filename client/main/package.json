@@ -14,7 +14,7 @@
   "devDependencies": {
     "@ulixee/crypto": "2.0.0-alpha.19",
     "@ulixee/datastore-packager": "2.0.0-alpha.19",
-    "@ulixee/miner": "2.0.0-alpha.19",
+    "@ulixee/cloud": "2.0.0-alpha.19",
     "@ulixee/schema": "2.0.0-alpha.19",
     "@ulixee/specification": "2.0.0-alpha.19",
     "@ulixee/sql-ast": "2.0.0-alpha.19",

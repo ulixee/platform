@@ -7,7 +7,7 @@ import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import SidechainClient from '@ulixee/sidechain';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import * as Hostile from 'hostile';
-import UlixeeMiner from '@ulixee/miner';
+import { CloudNode } from '@ulixee/cloud';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
 import DatastoreCore from '../index';
 
@@ -15,27 +15,27 @@ const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreCore.
 const tmpDir = `${storageDir}/tmp`;
 let bootupPackager: Packager;
 let bootupDbx: DbxFile;
-let miner: UlixeeMiner;
+let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 
 beforeAll(async () => {
   mkdirSync(storageDir, { recursive: true });
   DatastoreCore.options.datastoresTmpDir = tmpDir;
   DatastoreCore.options.datastoresDir = storageDir;
-  miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = {
+  cloudNode = new CloudNode();
+  cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
-  await miner.listen();
-  client = new DatastoreApiClient(await miner.address);
+  await cloudNode.listen();
+  client = new DatastoreApiClient(await cloudNode.address);
   bootupPackager = new Packager(require.resolve('./datastores/bootup.ts'));
   bootupDbx = await bootupPackager.build();
   if (process.env.CI !== 'true') Hostile.set('127.0.0.1', 'bootup-datastore.com');
 }, 60e3);
 
 afterAll(async () => {
-  await miner.close();
+  await cloudNode.close();
   await client.disconnect();
   if (process.env.CI !== 'true') Hostile.remove('127.0.0.1', 'bootup-datastore.com');
   try {
@@ -62,9 +62,9 @@ test('should be able to lookup a datastore domain', async () => {
   ).resolves.toEqual({ success: true });
 
   await expect(
-    DatastoreApiClient.resolveDatastoreDomain(`bootup-datastore.com:${await miner.port}`),
+    DatastoreApiClient.resolveDatastoreDomain(`bootup-datastore.com:${await cloudNode.port}`),
   ).resolves.toEqual({
-    host: await miner.address,
+    host: await cloudNode.address,
     datastoreVersionHash: bootupPackager.manifest.versionHash,
   });
 }, 45e3);

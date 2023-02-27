@@ -67,12 +67,13 @@ import {
 } from '@ulixee/desktop-interfaces/apis/IHeroSessionsApi';
 import moment from 'moment';
 import { Client } from '@/api/Client';
+import ICloudConnection from '@/api/ICloudConnection';
 
 export default Vue.defineComponent({
   name: 'Sessions',
   props: {
-    clientsByMinerAddress: {
-      type: Object as PropType<Map<string, Client<'desktop'>>>,
+    clouds: {
+      type: Object as PropType<Map<string, { clientsByAddress: Map<string, Client<'desktop'>> }>>,
       required: true,
     },
   },
@@ -86,7 +87,7 @@ export default Vue.defineComponent({
   setup() {
     const selectedFilter = Vue.ref<'hasError' | 'none'>(null);
     const sessionIdsMatchingSearchToMatches = Vue.ref(new Map<string, IHeroSessionsSearchResult>());
-    const sessions = Vue.ref<(IHeroSessionsListResult & { minerAddress: string })[]>([]);
+    const sessions = Vue.ref<(IHeroSessionsListResult & { cloudAddress: string })[]>([]);
     const inputText = Vue.ref('');
     const filteredSessions = Vue.computed<IHeroSessionsListResult[]>(() => {
       const filtered: IHeroSessionsListResult[] = [];
@@ -123,10 +124,10 @@ export default Vue.defineComponent({
       if (this.selectedFilter === 'hasError') return session.state === 'error';
     },
 
-    openReplay(session: IHeroSessionsListResult & { minerAddress: string }): void {
+    openReplay(session: IHeroSessionsListResult & { cloudAddress: string }): void {
       this.sendToBackend('Session.openReplay', {
         heroSessionId: session.heroSessionId,
-        minerAddress: session.minerAddress,
+        cloudAddress: session.cloudAddress,
         dbPath: session.dbPath,
       });
     },
@@ -134,32 +135,34 @@ export default Vue.defineComponent({
     async runSearch() {
       const query = this.inputText;
       this.sessionIdsMatchingSearchToMatches.clear();
-      console.log('search', query, this.clientsByMinerAddress);
+      console.log('search', query, this.clouds);
       if (!query) {
         return;
       }
-      for (const [, client] of this.clientsByMinerAddress) {
-        const searchResults = await client.send('Sessions.search', query);
-        for (const result of searchResults) {
-          this.sessionIdsMatchingSearchToMatches.set(result.heroSessionId, result);
+      for (const [, cloud] of this.clouds) {
+        for (const client of cloud.clientsByAddress.values()) {
+          const searchResults = await client.send('Sessions.search', query);
+          for (const result of searchResults) {
+            this.sessionIdsMatchingSearchToMatches.set(result.heroSessionId, result);
+          }
         }
       }
     },
 
-    async onClient(client: Client<'desktop'>): Promise<void> {
+    async onClient(cloud: ICloudConnection, client: Client<'desktop'>): Promise<void> {
       client.on('Sessions.listUpdated', x => this.onSessionList(client.address, x));
       const list = await client.send('Sessions.list');
       this.onSessionList(client.address, list);
     },
 
-    onSessionList(minerAddress: string, list: IHeroSessionsListResult[]): void {
+    onSessionList(cloudAddress: string, list: IHeroSessionsListResult[]): void {
       for (const result of list) {
         if (this.existingSessionIds.has(result.heroSessionId)) {
           const existing = this.sessions.find(x => x.heroSessionId === result.heroSessionId);
           Object.assign(existing, result);
         } else {
           this.existingSessionIds.add(result.heroSessionId);
-          this.sessions.push({ ...result, minerAddress });
+          this.sessions.push({ ...result, cloudAddress });
         }
       }
       this.sessions.sort((a, b) => {
