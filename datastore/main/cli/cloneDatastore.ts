@@ -6,6 +6,12 @@ import jsonToSchemaCode from '@ulixee/schema/lib/jsonToSchemaCode';
 import { nanoid } from 'nanoid';
 import DatastoreApiClient from '../lib/DatastoreApiClient';
 
+const { version } = require('../package.json');
+const clonedPackageJson = require('./cloned-package.json');
+
+clonedPackageJson.dependencies['@ulixee/datastore'] = version;
+clonedPackageJson.devDependencies['@ulixee/datastore-packager'] = version;
+
 export default async function cloneDatastore(
   url: string,
   directoryPath?: string,
@@ -107,7 +113,7 @@ export default async function cloneDatastore(
     mkdirSync(folder, { recursive: true });
   }
   if (!existsSync(Path.join(folder, 'package.json'))) {
-    copyFileSync(`${__dirname}/cloned-package.json`, Path.join(folder, 'package.json'));
+    writeFileSync(Path.join(folder, 'package.json'), JSON.stringify(clonedPackageJson, null, 2), 'utf8');
   }
   if (!existsSync(Path.join(folder, 'tsconfig.json'))) {
     copyFileSync(`${__dirname}/cloned-tsconfig.json`, Path.join(folder, 'tsconfig.json'));

@@ -8,8 +8,11 @@ import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
+import Logger from '@ulixee/commons/lib/Logger';
 import DesktopUtils from './DesktopUtils';
 import Miner, { IHttpHandleFn } from '../index';
+
+const { log } = Logger(module);
 
 export default class CoreRouter {
   public static datastorePluginsToRegister = [
@@ -84,24 +87,35 @@ export default class CoreRouter {
   }
 
   public async start(minerAddress: string): Promise<void> {
-    HeroCore.onShutdown = () => this.miner.close();
-    this.heroConfiguration ??= {};
-    this.heroConfiguration.shouldShutdownOnSignals ??= this.miner.shouldShutdownOnSignals;
-    await HeroCore.start(this.heroConfiguration);
+    const startLogId = log.info('Miner.start', {
+      minerAddress,
+      sessionId: null,
+    });
+    try {
+      HeroCore.onShutdown = () => this.miner.close();
+      this.heroConfiguration ??= {};
+      this.heroConfiguration.shouldShutdownOnSignals ??= this.miner.shouldShutdownOnSignals;
+      await HeroCore.start(this.heroConfiguration);
 
-    if (this.datastoreConfiguration) {
-      Object.assign(DatastoreCore.options, this.datastoreConfiguration);
-    }
+      if (this.datastoreConfiguration) {
+        Object.assign(DatastoreCore.options, this.datastoreConfiguration);
+      }
 
-    const [ipAddress, port] = minerAddress.split(':');
-    this.serverAddress = { ipAddress, port: Number(port) };
-    await DatastoreCore.start({ ipAddress, port: this.serverAddress.port });
+      const [ipAddress, port] = minerAddress.split(':');
+      this.serverAddress = { ipAddress, port: Number(port) };
+      await DatastoreCore.start({ ipAddress, port: this.serverAddress.port });
 
-    if (DesktopUtils.isInstalled()) {
-      const chromeAliveCore = DesktopUtils.getDesktop();
-      const wsAddress = Promise.resolve(`ws://${minerAddress}`);
-      chromeAliveCore.setMinerAddress(wsAddress);
-      await chromeAliveCore.activatePlugin();
+      if (DesktopUtils.isInstalled()) {
+        const chromeAliveCore = DesktopUtils.getDesktop();
+        const wsAddress = Promise.resolve(`ws://${minerAddress}`);
+        chromeAliveCore.setMinerAddress(wsAddress);
+        await chromeAliveCore.activatePlugin();
+      }
+    } finally {
+      log.stats('Miner.started', {
+        parentLogId: startLogId,
+        sessionId: null,
+      });
     }
   }
 

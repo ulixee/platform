@@ -9,8 +9,9 @@
     "build:ui": "yarn workspace @ulixee/desktop-ui build && yarn workspace @ulixee/desktop-chrome-extension build",
     "watch": "yarn copy:build --watch",
     "copy:build": "cd ../../build/desktop/main && node builder/copySources.js ./packages",
-    "dist": " shx cp -r ../../build/desktop/ui ../../build-dist/desktop/ui && cd ../../build-dist/desktop/main && yarn && electron-builder -m --publish onTagOrDraft",
-    "dist:basic": "yarn build:basic && cd ../../build/desktop/main && electron-builder",
+    "copy:dist": "shx cp -r ../../build/desktop/main/ui ../../build-dist/desktop/main/ui",
+    "dist": "yarn copy:dist && cd ../../build-dist/desktop/main && yarn && electron-builder --publish onTagOrDraft",
+    "dist:basic": "yarn copy:dist && cd ../../build-dist/desktop/main && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -m",
     "start": "yarn copy:build && cd ../../build/desktop/main && npx electron ."
   },
   "repository": "git@github.com:ulixee/platform.git",
@@ -20,6 +21,7 @@
     "@ulixee/datastore-core": "2.0.0-alpha.19",
     "@ulixee/datastore-plugins-hero": "2.0.0-alpha.19",
     "@ulixee/default-browser-emulator": "2.0.0-alpha.19",
+    "@ulixee/desktop-core": "2.0.0-alpha.19",
     "@ulixee/desktop-interfaces": "2.0.0-alpha.19",
     "@ulixee/hero-core": "2.0.0-alpha.19",
     "@ulixee/miner": "2.0.0-alpha.19",
@@ -48,7 +50,7 @@
     "productName": "Ulixee",
     "afterSign": "scripts/notarize.js",
     "asarUnpack": [
-      "node_modules/@ulixee/desktop"
+      "ui"
     ],
     "directories": {
       "buildResources": "assets"
@@ -56,7 +58,7 @@
     "files": [
       "**/*",
       "assets/*",
-      "!**/desktop/dist",
+      "!**/desktop/main/dist",
       "!packages",
       "!dist"
     ],

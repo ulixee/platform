@@ -50,7 +50,6 @@ export class Menubar extends EventEmitter {
     ShutdownHandler.register(() => this.appExit());
 
     this.staticServer = new StaticServer(Path.resolve(__dirname, '..', 'ui'));
-    this.#apiManager = new ApiManager();
     void this.appReady();
   }
 
@@ -140,9 +139,9 @@ export class Menubar extends EventEmitter {
     if (this.#isClosing) return;
     this.#isClosing = true;
     console.warn('Quitting Ulixee Menubar');
-    this.#tray.removeAllListeners();
+    this.#tray?.removeAllListeners();
     this.hideWindow();
-    this.#apiManager.close();
+    this.#apiManager?.close();
     await this.stopMiner();
     await this.#windowManager.close();
   }
@@ -162,8 +161,9 @@ export class Menubar extends EventEmitter {
       await app.whenReady();
       // for now auto-start
       await this.staticServer.load();
-      this.#windowManager = new WindowManager(this, this.#apiManager);
       await this.startMiner();
+      this.#apiManager = new ApiManager();
+      this.#windowManager = new WindowManager(this, this.#apiManager);
       await this.#apiManager.start(await this.ulixeeMiner?.address);
 
       await this.createWindow();

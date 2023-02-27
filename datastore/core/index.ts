@@ -202,7 +202,10 @@ export default class DatastoreCore {
 
   public static async start(config: { ipAddress: string; port: number }): Promise<void> {
     if (this.isStarted.isResolved) return this.isStarted.promise;
-
+    const startLogId = log.info('DatastoreCore.start', {
+      options: this.options,
+      sessionId: null,
+    });
     this.serverAddress = config;
     try {
       this.close = this.close.bind(this);
@@ -235,8 +238,17 @@ export default class DatastoreCore {
       this.workTracker = new WorkTracker(this.options.maxRuntimeMs);
 
       this.sidechainClientManager = new SidechainClientManager(this.options);
+      log.stats('DatastoreCore.started', {
+        parentLogId: startLogId,
+        sessionId: null,
+      });
       this.isStarted.resolve();
     } catch (error) {
+      log.stats('DatastoreCore.startError', {
+        parentLogId: startLogId,
+        error,
+        sessionId: null,
+      });
       this.isStarted.reject(error, true);
     }
     return this.isStarted;

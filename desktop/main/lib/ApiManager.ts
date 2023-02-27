@@ -11,6 +11,8 @@ import Resolvable from '@ulixee/commons/lib/Resolvable';
 import WebSocket = require('ws');
 import ApiClient from './ApiClient';
 
+app.commandLine.appendSwitch('remote-debugging-port', '8315');
+
 const { version } = require('../package.json');
 
 export default class ApiManager<
@@ -36,7 +38,6 @@ export default class ApiManager<
 
   constructor() {
     super();
-    app.commandLine.appendSwitch('remote-debugging-port', '8315');
     this.events.on(UlixeeHostsConfig.global, 'change', this.onNewLocalMinerHost.bind(this));
   }
 
@@ -116,7 +117,7 @@ export default class ApiManager<
       this.apiByMinerAddress.get(address).resolve({ id, api, wsToCore, wsToDevtoolsProtocol });
       this.emit('new-miner-address', { newAddress: address, isLocal: id === 'local', oldAddress });
     } catch (error) {
-      this.apiByMinerAddress.get(address).reject(error, true);
+      this.apiByMinerAddress.get(address)?.reject(error, true);
       throw error;
     }
   }

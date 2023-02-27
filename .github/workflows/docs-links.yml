@@ -21,7 +21,7 @@ jobs:
         with:
           args: ./datastore/docs
 
-      - name: Check Miner Docs
+      - name: Check Cloud Docs
         uses: becheran/mlc@v0.15.4
         with:
           args: ./cloud/docs
