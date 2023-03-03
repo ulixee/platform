@@ -13,12 +13,15 @@ export type IChromeAliveSessionApis = {
   'Session.getTimetravelState': IChromeAliveSessionApi['getTimetravelState'];
   'Session.resume': IChromeAliveSessionApi['resume'];
   'Session.pause': IChromeAliveSessionApi['pause'];
+  'Session.getResources': IChromeAliveSessionApi['getResources'];
+  'Session.getResourceDetails': IChromeAliveSessionApi['getResourceDetails'];
   'Session.getScreenshot': IChromeAliveSessionApi['getScreenshot'];
   'Session.getScriptState': IChromeAliveSessionApi['getScriptState'];
   'Session.openMode': IChromeAliveSessionApi['openMode'];
   'Session.getDom': IChromeAliveSessionApi['getDom'];
   'Session.getMeta': IChromeAliveSessionApi['getMeta'];
-  'Session.search': IChromeAliveSessionApi['search'];
+  'Session.searchDom': IChromeAliveSessionApi['searchDom'];
+  'Session.searchResources': IChromeAliveSessionApi['searchResources'];
   'Session.replayTargetCreated': IChromeAliveSessionApi['replayTargetCreated'];
   'Session.devtoolsTargetOpened': IChromeAliveSessionApi['devtoolsTargetOpened'];
   'Datastore.rerunRunner': IDatastoreApi['rerunRunner'];

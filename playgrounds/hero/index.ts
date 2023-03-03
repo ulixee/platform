@@ -1,7 +1,7 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import Core from '@ulixee/hero-core';
 import DefaultHero, { IHeroCreateOptions } from '@ulixee/hero';
-import { Cloud } from '@ulixee/cloud';
+import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 
 const { version } = require('./package.json');
@@ -35,7 +35,7 @@ async function getCoreHost(): Promise<string> {
 
   // start a cloud if none already started
   if (!coreHost) {
-    const cloud = new Cloud();
+    const cloud = new CloudNode();
     await cloud.listen();
     coreHost = await cloud.address;
     console.log('Started Ulixee Cloud at %s', coreHost);

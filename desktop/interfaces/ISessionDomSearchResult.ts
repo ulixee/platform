@@ -1,10 +1,8 @@
-import IResourceSearchResult from './IResourceSearchResult';
 import IElementSummary from './IElementSummary';
 
-export default interface ISessionSearchResult {
+export default interface ISessionDomSearchResult {
   searchingContext: ISearchContext;
   elements: IElementSummary[];
-  resources: IResourceSearchResult[];
 }
 
 export interface ISearchContext {

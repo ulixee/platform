@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen, shell } from 'electron';
+import { app, BrowserWindow, MenuItem, screen, shell } from 'electron';
 import * as Path from 'path';
 import { nanoid } from 'nanoid';
 import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';
@@ -13,6 +13,7 @@ import View from './View';
 import StaticServer from './StaticServer';
 import ApiClient from './ApiClient';
 import BrowserView = Electron.BrowserView;
+import generateContextMenu from '../menus/generateContextMenu';
 
 // make electron packaging friendly
 const extensionPath = Path.resolve(__dirname, '../ui').replace('app.asar', 'app.asar.unpacked');
@@ -288,7 +289,23 @@ export default class ChromeAliveWindow {
         const target = await View.getTargetInfo(devtoolsWc);
         await this.api.send('Session.devtoolsTargetOpened', target);
       });
-      view.addContextMenu();
+      view.webContents.on('context-menu', (ev, params) => {
+        const menu = generateContextMenu(params, view.webContents);
+        menu.append(
+          new MenuItem({
+            label: 'Generate Selector',
+            click: () => {
+              view.webContents.inspectElement(params.x, params.y);
+              void this.api.send('Session.openMode', {
+                mode: 'Finder',
+                position: { x: params.x, y: params.y },
+                trigger: 'contextMenu'
+              });
+            },
+          }),
+        );
+        menu.popup();
+      });
 
       await view.webContents.loadURL('about:blank');
       view.webContents.openDevTools({ mode: 'bottom' });

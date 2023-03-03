@@ -3,8 +3,10 @@ import IHeroMeta from '@ulixee/hero-interfaces/IHeroMeta';
 import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
 import ICommandUpdatedEvent from '../events/ICommandUpdatedEvent';
 import ISessionAppModeEvent from '../events/ISessionAppModeEvent';
-import ISessionSearchResult from '../ISessionSearchResult';
+import ISessionDomSearchResult from '../ISessionDomSearchResult';
 import IHeroSessionUpdatedEvent from '../events/IHeroSessionUpdatedEvent';
+import IResourceOverview from '../IResourceOverview';
+import IResourceSearchResult from '../IResourceSearchResult';
 
 export interface ISessionResumeArgs {
   startLocation: ISessionCreateOptions['resumeSessionStartLocation'];
@@ -32,7 +34,7 @@ export default interface IChromeAliveSessionApi {
   getScriptState(args: { tabId?: number }): Promise<{
     commandsById: Record<number, ICommandUpdatedEvent>;
     sourceFileLines: Record<string, string[]>;
-    focusedCommandId: number
+    focusedCommandId: number;
   }>;
   timetravel(args: {
     commandId?: number;
@@ -49,8 +51,17 @@ export default interface IChromeAliveSessionApi {
     highlightPaintIndexRange: [start: number, end: number];
     documentLoadPaintIndex: number;
   }>;
-  openMode(args: { mode: ISessionAppModeEvent['mode'] }): void;
-  search(args: { query: string }): Promise<ISessionSearchResult>;
+  getResources(): Promise<IResourceOverview[]>;
+  getResourceDetails(id: number): Promise<{ id: number; postBody: string; responseBody: string }>;
+  openMode(args: {
+    mode: ISessionAppModeEvent['mode'];
+    trigger?: 'contextMenu';
+    position?: { x: number; y: number };
+  }): void;
+  searchDom(args: { query: string }): Promise<ISessionDomSearchResult>;
+  searchResources(args: { query: string }): Promise<{
+    resources: IResourceSearchResult[];
+  }>;
   replayTargetCreated(args: {
     targetId: string;
     browserContextId: string;

@@ -5,7 +5,7 @@ Packaged datastore will need to be manually uploaded to a CloudNode.
 
 ## 2.3 - 
 Manager needs to be able to trigger the Datastore packaging logic to create and upload Datastores.
-- Push Datastore to a CloudNode
+- Push Datastore to a Cloud
 
 ## 2.4 - Troubleshooting Runs
 Manager should be able to show the full input and output for any Datastore execution on localhost or remote Clouds. It should allow you to Timetravel those runs and re-create them.
@@ -18,6 +18,6 @@ Manager should be able to show the full input and output for any Datastore execu
 - Manage Clouds: Remove Nodes
 - Manage Clouds: Configure Nodes?
 
-- Manager should show the Argons paid out for a given Datastore or Domain.
-- Ability to calculate profits per Datastore/Domain
+- Manager should show the Argons paid out for a given Datastore.
+- Ability to calculate profits per Datastore
 

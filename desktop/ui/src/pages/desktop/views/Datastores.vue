@@ -1,23 +1,40 @@
 <template>
   <div class="h-full">
     <ArrowPathIcon
-      class="absolute right-0 top-0 m-6 h-6 w-6 text-lg hover:text-slate-900"
+      v-if="!selectedDatastore"
+      class="absolute right-0 top-0 m-6 h-6 w-6 text-lg hover:text-slate-900 hover:drop-shadow"
       :class="[refreshing ? 'text-green-600' : 'text-slate-600']"
       :disabled="refreshing"
       @click.prevent="refresh"
     />
 
-    <div v-for="[name, datastores] of orderedClouds" :key="name" class="mb-16">
+    <DatastoreDetails
+      v-if="selectedDatastore"
+      :datastore="selectedDatastore.datastore"
+      :selected-cloud="selectedDatastore.cloudName"
+      :datastores-by-cloud="datastoresByCloud"
+      :clouds="clouds"
+      @clear-datastore="clearDatastore"
+      @navigate="selectDatastore($event.cloud, $event.datastore)"
+    />
+
+    <div
+      v-for="cloud of clouds"
+      v-else
+      :key="cloud.name"
+      :set="(datastores = datastoresByCloud.get(cloud.name))"
+      class="mb-16"
+    >
       <h2 class="text-bold p-3 text-2xl">
-        {{ getCloudName(name) }}
+        {{ getCloudName(cloud.name) }}
       </h2>
       <ul class="flex-overflow flex flex-row space-x-10 space-y-10 border-y-2 border-slate-100 p-3">
         <li v-if="!datastores.size" class="text-center text-lg text-slate-800">Nothing deployed</li>
         <li
           v-for="[versionHash, datastore] in datastores"
           :key="versionHash"
-          class="justify-content my-5 w-96 cursor-context-menu border border-slate-100 p-5 shadow-md hover:shadow-sm"
-          @contextmenu="onDatastoreContext($event, name, versionHash)"
+          class="justify-content my-5 w-96 cursor-pointer border border-slate-100 p-5 shadow-md hover:shadow-sm"
+          @click.prevent="selectDatastore(cloud.name, datastore)"
         >
           <h5 class="font-md text-3xl font-thin">
             {{ datastore.name ?? '' }}
@@ -51,14 +68,28 @@
               </h5>
             </div>
           </div>
-          <div class="center mt-5 flex flex-row place-content-center pt-5 border-t border-slate-100 divide-x divide-slate-200">
-            <div class="grid-col grid basis-1/2 place-content-center gap-4 text-center text-xl">
+          <div
+            class="center mt-5 flex flex-row place-content-center divide-x divide-slate-200 border-t border-slate-100 pt-5"
+          >
+            <div
+              v-if="argonActive"
+              class="grid-col grid basis-1/2 place-content-center gap-4 text-center text-xl"
+            >
               <div class="text-2xl font-bold">₳{{ totalSpend(name, datastore) }}</div>
               <div class="font-thin">Spent</div>
             </div>
-            <div class="grid-col grid basis-1/2 place-content-center gap-4 text-center text-xl">
+            <div
+              v-if="argonActive"
+              class="grid-col grid basis-1/2 place-content-center gap-4 text-center text-xl"
+            >
               <div class="text-2xl font-bold">₳{{ totalEarned(name, datastore) }}</div>
               <div class="font-thin">Earned</div>
+            </div>
+            <div v-if="!argonActive" class="place-content-center gap-4 text-center text-xl">
+              <div class="text-2xl font-bold">
+                {{ totalQueries(name, datastore) }}
+              </div>
+              <div class="font-thin">Queries</div>
             </div>
           </div>
         </li>
@@ -74,6 +105,7 @@ import { ArrowPathIcon } from '@heroicons/vue/24/outline';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import { Client } from '@/api/Client';
 import ICloudConnection from '@/api/ICloudConnection';
+import DatastoreDetails from './DatastoreDetails.vue';
 
 type IDatastoreList = IDatastoreApiTypes['Datastores.list']['result'];
 
@@ -85,7 +117,7 @@ export default Vue.defineComponent({
       required: true,
     },
   },
-  components: { ArrowPathIcon },
+  components: { ArrowPathIcon, DatastoreDetails },
   setup(props) {
     const datastoresByCloud = Vue.ref(
       new Map<string, Map<string, IDatastoreList[0]>>(
@@ -97,14 +129,8 @@ export default Vue.defineComponent({
 
     return {
       datastoresByCloud,
-      orderedClouds: Vue.computed(() =>
-        [...datastoresByCloud.value].sort((a, b) => {
-          return (
-            props.clouds.findIndex(x => a[0] === x.name) -
-            props.clouds.findIndex(x => b[0] === x.name)
-          );
-        }),
-      ),
+      argonActive: Vue.ref(false),
+      selectedDatastore: Vue.ref<{ datastore: IDatastoreList[0]; cloudName: string }>(),
       refreshing: Vue.ref(false),
     };
   },
@@ -115,10 +141,26 @@ export default Vue.defineComponent({
     totalEarned(cloudName: string, datastore: IDatastoreList[0]): number {
       return 12.64;
     },
+    totalQueries(name: string, datastore: IDatastoreList[0]): number {
+      let queries = 0;
+      for (const entry of Object.values(datastore.tablesByName))
+        queries += entry.stats.queries ?? 0;
+      for (const entry of Object.values(datastore.runnersByName))
+        queries += entry.stats.queries ?? 0;
+      for (const entry of Object.values(datastore.crawlersByName))
+        queries += entry.stats.queries ?? 0;
+      return queries;
+    },
     getCloudName(name: string): string {
       if (name === 'public') return 'Public Cloud';
       if (name === 'local') return 'Local Development Cloud';
       return name;
+    },
+    clearDatastore(): void {
+      this.selectedDatastore = null;
+    },
+    selectDatastore(name: string, selectDatastore: IDatastoreList[0]): void {
+      this.selectedDatastore = { datastore: selectDatastore, cloudName: name };
     },
     onDatastoreContext(e: MouseEvent, currentCloud: string, versionHash: string): void {
       e.preventDefault();

@@ -26,7 +26,7 @@
     <div class="section">
       <div class="cloud-status">
         <span class="circle" :class="{ stopped: !cloudStarted }" />
-        <span v-if="cloudStarted" class="text">Local Cloud running on {{ address }}</span>
+        <span v-if="cloudStarted" class="text">Local Cloud running at {{ address }}</span>
         <span v-else class="text">Local Cloud is not running</span>
       </div>
       <div class="cloud-actions">

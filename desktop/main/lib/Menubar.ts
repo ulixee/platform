@@ -161,6 +161,8 @@ export class Menubar extends EventEmitter {
       await app.whenReady();
       // for now auto-start
       await this.staticServer.load();
+      // eslint-disable-next-line no-console
+      console.log('Static server running at ', this.staticServer.getPath(''))
       await this.startCloud();
       this.#apiManager = new ApiManager();
       this.#windowManager = new WindowManager(this, this.#apiManager);

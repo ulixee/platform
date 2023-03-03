@@ -91,6 +91,7 @@ test('can get metadata about an uploaded datastore', async () => {
     runnersByName: {
       bootup: {
         stats: {
+          queries: 0,
           averageBytesPerQuery: expect.any(Number),
           averageMilliseconds: expect.any(Number),
           averageTotalPricePerQuery: 0,

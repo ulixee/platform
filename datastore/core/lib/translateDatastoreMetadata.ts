@@ -67,6 +67,7 @@ function translateStats(
 ): IDatastoreApiTypes['Datastore.meta']['result']['runnersByName'][0]['stats'] {
   stats ??= {} as any;
   return {
+    queries: stats.runs ?? 0,
     averageMilliseconds: stats.averageMilliseconds ?? 0,
     maxMilliseconds: stats.maxMilliseconds ?? 0,
     averageTotalPricePerQuery: stats.averagePrice ?? 0,

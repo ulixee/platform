@@ -14,7 +14,7 @@ import * as Vue from 'vue';
 import { DomActionType, IFrontendDomChangeEvent } from '@ulixee/hero-interfaces/IDomChangeEvent';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
 import { IChromeAliveSessionApiResponse } from '@ulixee/desktop-interfaces/apis';
-import Client from '../../api/Client';
+import Client from '../../../api/Client';
 import DomNodeState from './DomNodeState';
 import DomNode from './DomNode.vue';
 

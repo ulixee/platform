@@ -61,7 +61,7 @@ import Datastores from './Datastores.vue';
 import Overview from './Overview.vue';
 
 const tabs = [
-  { title: 'Overview', key: 'overview' },
+  // { title: 'Overview', key: 'overview' },
   { title: 'Datastores', key: 'datastores' },
   { title: 'Hero Sessions', key: 'sessions' },
   { title: 'Clouds', key: 'clouds' },
@@ -89,7 +89,7 @@ export default Vue.defineComponent({
       tabs,
       sessionsRef: Vue.ref<typeof Sessions>(null),
       datastoresRef: Vue.ref<typeof Datastores>(null),
-      activeTab: Vue.ref<ITabs>('overview'),
+      activeTab: Vue.ref<ITabs>(tabs[0].key),
     };
   },
   watch: {},
@@ -140,6 +140,7 @@ export default Vue.defineComponent({
 
   mounted() {
     document.addEventListener('desktop:event', evt => {
+      console.log('event', evt)
       const { eventType, data } = (evt as CustomEvent).detail;
       if (eventType === 'Desktop.onCloudConnected') {
         this.onConnection(data).catch(console.error);

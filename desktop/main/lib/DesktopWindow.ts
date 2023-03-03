@@ -1,4 +1,4 @@
-import { Menu, MenuItem, BrowserWindow } from 'electron';
+import { BrowserWindow, Menu, MenuItem } from 'electron';
 import * as Path from 'path';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
@@ -69,12 +69,14 @@ export default class DesktopWindow extends TypedEventEmitter<{
             console.warn('No valid address provided to connect to', args[1]);
             return;
           }
-          await this.apiManager.connectToCloud(address, 'private', name).catch(error =>
-            this.sendDesktopEvent('Desktop.connectToPrivateCloudError', {
+          try {
+            await this.apiManager.connectToCloud(address, 'private', name);
+          } catch (error) {
+            await this.sendDesktopEvent('Desktop.connectToPrivateCloudError', {
               message: error.message,
               address,
-            }),
-          );
+            });
+          }
         }
         if (api === 'Datastore.contextMenu') {
           const menu = new Menu();
@@ -90,16 +92,18 @@ export default class DesktopWindow extends TypedEventEmitter<{
                   console.log('deploy to public cloud', datastoreVersionHash, cloud);
                 },
               },
-              ...([...this.apiManager.apiByCloudAddress].filter(([address, details]) => {
-                if (details.name === cloud) return null;
-                return {
-                  label: details.name,
-                  click: () => {
-                    // eslint-disable-next-line no-console
-                    console.log('deploy to %s', address);
-                  },
-                };
-              }).filter(Boolean) as any[]),
+              ...([...this.apiManager.apiByCloudAddress]
+                .filter(([address, details]) => {
+                  if (details.name === cloud) return null;
+                  return {
+                    label: details.name,
+                    click: () => {
+                      // eslint-disable-next-line no-console
+                      console.log('deploy to %s', address);
+                    },
+                  };
+                })
+                .filter(Boolean) as any[]),
             ],
           });
           menu.append(menuItem);
@@ -110,7 +114,7 @@ export default class DesktopWindow extends TypedEventEmitter<{
     this.#events.on(this.#window.webContents, 'context-menu', (e, params) => {
       generateContextMenu(params, this.#window.webContents).popup();
     });
-    this.#events.once(this.#window, 'focus', this.emit.bind(this, 'focus'))
+    this.#events.once(this.#window, 'focus', this.emit.bind(this, 'focus'));
     this.#events.once(this.#window, 'close', this.close.bind(this));
 
     await this.#window.webContents.loadURL(this.#webpageUrl);

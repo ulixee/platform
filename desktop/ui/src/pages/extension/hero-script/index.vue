@@ -82,7 +82,7 @@ import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppM
 import ISessionTimetravelEvent from '@ulixee/desktop-interfaces/events/ISessionTimetravelEvent';
 import ICommandWithResult from '@ulixee/hero-core/interfaces/ICommandWithResult';
 import { ExclamationTriangleIcon, PauseIcon, PlayIcon } from '@heroicons/vue/24/outline';
-import Client from '../../api/Client';
+import Client from '../../../api/Client';
 
 export default Vue.defineComponent({
   name: 'HeroScriptPanel',

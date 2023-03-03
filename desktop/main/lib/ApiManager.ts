@@ -224,7 +224,7 @@ export default class ApiManager<
 
   private formatCloudAddress(host: string): string {
     if (!host) return host;
-    if (host.endsWith('/')) host = host.slice(-1);
+    if (host.endsWith('/')) host = host.slice(0, -1);
     if (!host.endsWith('/desktop')) {
       host += '/desktop';
     }

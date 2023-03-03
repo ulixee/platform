@@ -10,6 +10,7 @@
       @select="select('Input')"
     />
     <Player
+      ref='playerRef'
       :mode="mode"
       :is-selected="isPlayerSelected"
       :is-focused="isPlayerSelected"
@@ -86,6 +87,7 @@ export default Vue.defineComponent({
       isPlayerSelected,
       isRestarting,
       mode,
+      playerRef: Vue.ref<typeof Player>(),
       previousPlayerMode: Vue.ref<ISessionAppModeEvent['mode']>(mode.value),
       isMinimal: Vue.ref(false),
       startLocation: Vue.ref<IStartLocation>('currentLocation'),
@@ -99,9 +101,12 @@ export default Vue.defineComponent({
     await Client.connect();
   },
   watch: {
-    mode() {
+    mode(value) {
       if (this.mode === 'Live' || this.mode === 'Timetravel') {
         this.previousPlayerMode = this.mode;
+      }
+      if (value === 'Finder') {
+        this.playerRef.ensureFinderOpen();
       }
     },
   },
@@ -112,6 +117,7 @@ export default Vue.defineComponent({
 
     select(mode: ISessionAppModeEvent['mode']) {
       const heroSessionId = this.session.heroSessionId;
+      if (this.mode === mode) return;
       this.mode = mode;
       if (!heroSessionId) return;
       Client.send('Session.openMode', {
