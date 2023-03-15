@@ -1,41 +1,21 @@
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { createInterface } from 'readline';
 import * as Path from 'path';
+import * as Fs from 'fs';
 import { existsSync } from 'fs';
 import { inspect } from 'util';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { findProjectPathSync } from '@ulixee/commons/lib/dirUtils';
+import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
+import { CloudNode } from '@ulixee/cloud';
 import { execSync } from 'child_process';
-import DbxFile from './DbxFile';
+import Dbx from './Dbx';
 import DatastorePackager from '../index';
 import { version } from '../package.json';
 
 inspect.defaultOptions.depth = 10;
-
-export async function upload(
-  dbxPath: string,
-  args: {
-    uploadHost?: string;
-    allowNewVersionHistory?: boolean;
-    identityPath?: string;
-    identityPassphrase?: string;
-  },
-): Promise<void> {
-  const { uploadHost } = args;
-  dbxPath = Path.resolve(dbxPath);
-  const dbx = await new DbxFile(dbxPath);
-  const manifest = await dbx.getEmbeddedManifest();
-  await uploadPackage(
-    dbx,
-    manifest,
-    uploadHost,
-    args.allowNewVersionHistory,
-    args.identityPath,
-    args.identityPassphrase,
-  );
-}
 
 export async function deploy(
   entrypoint: string,
@@ -50,97 +30,18 @@ export async function deploy(
   },
 ): Promise<void> {
   const packager = new DatastorePackager(entrypoint, null, true);
+  const dbxExists = await existsAsync(packager.dbxPath);
   console.log('Building Datastore ...');
   const dbx = await packager.build({
     tsconfig: options.tsconfig,
     compiledSourcePath: options.compiledSourcePath,
   });
-  console.log('Uploading...');
-  const result = await uploadPackage(
-    dbx,
-    packager.manifest,
-    options.uploadHost,
-    options.clearVersionHistory,
-    options.identityPath,
-    options.identityPassphrase,
-  );
+  const manifest = dbx.manifest;
 
-  if (!options.dontAutoshowDocs) {
-    openDocsPage(packager.manifest, result.uploadHost);
-  }
+  let uploadHost = options.uploadHost ?? UlixeeHostsConfig.global.getVersionHost(version);
 
-  await dbx.delete();
-}
-
-export async function unpack(dbxPath: string): Promise<void> {
-  const dbx = await new DbxFile(dbxPath);
-  await dbx.open();
-  console.log('Unpacked %s to %s', Path.basename(dbxPath), dbx.workingDirectory);
-}
-
-export async function closeDbx(dbxPath: string, discardChanges: boolean): Promise<void> {
-  const dbx = await new DbxFile(dbxPath);
-  if (!discardChanges) await dbx.save();
-  else await dbx.close();
-}
-
-export async function buildPackage(
-  path: string,
-  options: {
-    outDir?: string;
-    tsconfig?: string;
-    compiledSourcePath?: string;
-    clearVersionHistory?: boolean;
-    uploadHost?: string;
-    upload?: boolean;
-    identityPath?: string;
-    identityPassphrase?: string;
-    dontAutoshowDocs?: boolean;
-  },
-): Promise<void> {
-  const packager = new DatastorePackager(path, options?.outDir, true);
-  console.log('Building Datastore ...');
-  const dbx = await packager.build({
-    tsconfig: options.tsconfig,
-    compiledSourcePath: options.compiledSourcePath,
-  });
-  if (options.upload === true) {
-    console.log('Rolled up and hashed Datastore', {
-      dbxPath: dbx.dbxPath,
-    });
-    const result = await uploadPackage(
-      dbx,
-      packager.manifest,
-      options.uploadHost,
-      options.clearVersionHistory,
-      options.identityPath,
-      options.identityPassphrase,
-    );
-    if (!options.dontAutoshowDocs) {
-      openDocsPage(packager.manifest, result.uploadHost);
-    }
-  } else {
-    console.log('Rolled up and hashed Datastore. The .dbx file was not uploaded to a Cloud.', {
-      dbxPath: dbx.dbxPath,
-      manifest: packager.manifest.toJSON(),
-    });
-  }
-}
-
-async function uploadPackage(
-  dbxFile: DbxFile,
-  manifest: DatastoreManifest,
-  uploadHost: string,
-  clearVersionHistory: boolean,
-  identityPath: string | undefined,
-  identityPassphrase: string | undefined,
-): Promise<{ uploadHost: string }> {
-  if (!uploadHost) {
-    uploadHost = UlixeeHostsConfig.global.getVersionHost(version);
-
-    if (uploadHost?.startsWith('localhost')) {
-      uploadHost = await UlixeeHostsConfig.global.checkLocalVersionHost(version, uploadHost);
-    }
+  if (uploadHost?.startsWith('localhost')) {
+    uploadHost = await UlixeeHostsConfig.global.checkLocalVersionHost(version, uploadHost);
   }
 
   if (!uploadHost) {
@@ -148,6 +49,8 @@ async function uploadPackage(
       'Could not determine a Cloud host from Ulixee config files. Please provide one with the `--upload-host` option.',
     );
   }
+
+  const { identityPath, identityPassphrase } = options;
   let identity: Identity;
   if (identityPath) {
     identity = Identity.loadFromFile(identityPath, {
@@ -155,26 +58,68 @@ async function uploadPackage(
     });
   }
 
-  console.log('Uploading package to %s', uploadHost, {
+  console.log('Uploading Datastore to %s', uploadHost, {
     manifest: manifest.toJSON(),
   });
   try {
-    await dbxFile.upload(uploadHost, {
-      allowNewLinkedVersionHistory: clearVersionHistory,
+    await dbx.upload(uploadHost, {
+      allowNewLinkedVersionHistory: options.clearVersionHistory,
       identity,
     });
     console.log('Your Datastore has been uploaded!');
   } catch (error) {
     if (error.code === 'InvalidScriptVersionHistoryError' && error.versionHistory) {
-      handleInvalidScriptVersionHistory(manifest, dbxFile, error.versionHistory, uploadHost);
+      handleInvalidScriptVersionHistory(manifest, dbx, error.versionHistory, uploadHost);
     } else if (error.code === 'MissingLinkedScriptVersionsError' && error.previousVersions) {
-      handleMissingLinkedVersions(manifest, dbxFile, error.previousVersions, uploadHost);
+      handleMissingLinkedVersions(manifest, dbx, error.previousVersions, uploadHost);
     } else {
       console.error(error.message, error.stack);
       process.exit(1);
     }
   }
-  return { uploadHost };
+
+  if (!options.dontAutoshowDocs) {
+    openDocsPage(packager.manifest, uploadHost);
+  }
+
+  if (!dbxExists) {
+    await Fs.promises.rm(packager.dbxPath, { recursive: true });
+  }
+}
+
+export async function startDatastore(
+  path: string,
+  options: {
+    outDir?: string;
+    tsconfig?: string;
+    compiledSourcePath?: string;
+    watch?: boolean;
+  },
+): Promise<void> {
+  const packager = new DatastorePackager(path, options?.outDir, true);
+  console.log('Starting Datastore ...');
+  const dbx = await packager.build({
+    tsconfig: options.tsconfig,
+    compiledSourcePath: options.compiledSourcePath,
+    watch: options.watch,
+  });
+
+  let host = UlixeeHostsConfig.global.getVersionHost(version);
+
+  if (host?.startsWith('localhost')) {
+    host = await UlixeeHostsConfig.global.checkLocalVersionHost(version, host);
+  }
+
+  if (!host) {
+    const cloudNode = new CloudNode();
+    await cloudNode.listen();
+    host = UlixeeHostsConfig.global.getVersionHost(version);
+  }
+  const startLocation = '...';
+  console.log('Started Datastore at %s.', startLocation, {
+    dbxPath: dbx.path,
+    manifest: packager.manifest.toJSON(),
+  });
 }
 
 function openDocsPage(manifest: DatastoreManifest, uploadHost: string): void {
@@ -189,7 +134,7 @@ function openDocsPage(manifest: DatastoreManifest, uploadHost: string): void {
 
 function handleMissingLinkedVersions(
   manifest: DatastoreManifest,
-  dbxFile: DbxFile,
+  dbxFile: Dbx,
   versionHistory: IVersionHistoryEntry[],
   uploadHost: string,
 ): void {
@@ -207,11 +152,9 @@ function handleMissingLinkedVersions(
 `,
     async answer => {
       if (answer.toLowerCase().includes('link')) {
-        await dbxFile.open();
-        const projectPath = findProjectPathSync(dbxFile.dbxPath);
+        const projectPath = findProjectPathSync(dbxFile.path);
         const absoluteScriptPath = Path.join(projectPath, '..', manifest.scriptEntrypoint);
         await manifest.setLinkedVersions(absoluteScriptPath, versionHistory);
-        await dbxFile.save();
         await dbxFile.upload(uploadHost);
         console.log('Your Datastore has been linked to the Cloud version!');
       }
@@ -226,7 +169,7 @@ function handleMissingLinkedVersions(
 
 function handleInvalidScriptVersionHistory(
   manifest: DatastoreManifest,
-  dbxFile: DbxFile,
+  dbxFile: Dbx,
   versionHistory: IVersionHistoryEntry[],
   uploadHost: string,
 ): void {
@@ -234,7 +177,7 @@ function handleInvalidScriptVersionHistory(
     input: process.stdin,
     output: process.stdout,
   });
-  const projectPath = findProjectPathSync(dbxFile.dbxPath);
+  const projectPath = findProjectPathSync(dbxFile.path);
   const absoluteScriptPath = Path.join(projectPath, '..', manifest.scriptEntrypoint);
   const customManifestPath = absoluteScriptPath.replace(
     Path.extname(absoluteScriptPath),
@@ -254,9 +197,7 @@ You can choose from the options below to link to the existing Cloud versions or 
 `,
     async answer => {
       if (answer.toLowerCase().includes('link')) {
-        await dbxFile.open();
         await manifest.setLinkedVersions(absoluteScriptPath, versionHistory);
-        await dbxFile.save();
         await dbxFile.upload(uploadHost);
         console.log(
           'Your updated Datastore has been uploaded and linked to the Cloud version history!',
@@ -282,7 +223,7 @@ You can choose from the options below to link to the existing Cloud versions or 
         );
         await newManifest.save();
         console.log(
-          'New manifest saved at %s. Please modify the manifest as needed and rebuild your Datastore.',
+          'New manifest saved at %s. Please modify the manifest as needed and re-deploy your Datastore.',
           customManifestPath,
         );
       }

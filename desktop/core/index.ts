@@ -42,7 +42,7 @@ export default class DesktopCore {
     if (!this._connectionToDatastoreCore) {
       const bridge = new TransportBridge();
       this._connectionToDatastoreCore = new ConnectionToDatastoreCore(bridge.transportToCore);
-      DatastoreCore.addConnection(bridge.transportToClient).isInternal = true;
+      DatastoreCore.addConnection(bridge.transportToClient);
     }
     return this._connectionToDatastoreCore;
   }

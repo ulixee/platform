@@ -14,7 +14,6 @@ import PassthroughRunner from './lib/PassthroughRunner';
 import PassthroughTable from './lib/PassthroughTable';
 import Runner from './lib/Runner';
 import Crawler from './lib/Crawler';
-import Autorun from './lib/utils/Autorun';
 
 export * as Schema from '@ulixee/schema';
 
@@ -36,7 +35,5 @@ export {
   IRunnerContext,
   IRunnerPlugin,
 };
-
-Autorun.setupAutorunBeforeExitHook(require.main);
 
 export default Datastore;

@@ -8,13 +8,13 @@ import DatastoreVm from '../lib/DatastoreVm';
 import { validateAuthentication, validateFunctionCoreVersions } from '../lib/datastoreUtils';
 import { IDatastoreManifestWithStats } from '../lib/DatastoreRegistry';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
-import DatastoreStorage from '../lib/DatastoreStorage';
 
 export default new DatastoreApiHandler('Datastore.stream', {
   async handler(request, context) {
     const startTime = Date.now();
     const manifestWithStats = await context.datastoreRegistry.getByVersionHash(request.versionHash);
-    const datastore = await DatastoreVm.open(manifestWithStats.path, manifestWithStats);
+    const storage = context.datastoreRegistry.getStorage(request.versionHash);
+    const datastore = await DatastoreVm.open(manifestWithStats.path, storage, manifestWithStats);
     await validateAuthentication(datastore, request.payment, request.authentication);
     const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
 
@@ -34,7 +34,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
       );
     } else if (datastoreTable) {
       // TODO: Need to put a payment hold for tables
-      outputs = await extractTableOutputs(datastore, request, context);
+      outputs = extractTableOutputs(datastore, request, context);
     } else {
       throw new Error(`${request.name} is not a valid Runner name for this Datastore.`);
     }
@@ -101,18 +101,12 @@ async function extractFunctionOutputs(
   );
 }
 
-async function extractTableOutputs(
+function extractTableOutputs(
   datastore: Datastore,
   request: IDatastoreApis['Datastore.stream']['args'],
   context: IDatastoreApiContext,
-): Promise<any[]> {
-  let storage: DatastoreStorage;
-  if (request.versionHash) {
-    storage = await context.datastoreRegistry.getStorage(request.versionHash);
-  } else {
-    context.connectionToClient.datastoreStorage ??= new DatastoreStorage();
-    storage = context.connectionToClient?.datastoreStorage;
-  }
+): any[] {
+  const storage = context.datastoreRegistry.getStorage(request.versionHash);
 
   const db = storage.db;
   const schema = storage.getTableSchema(request.name);

@@ -14,15 +14,11 @@ let versionHash: string;
 
 beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/cloneme.dbx`)) {
-    Fs.unlinkSync(`${__dirname}/datastores/cloneme.dbx`);
-  }
-
-  if (Fs.existsSync(`${__dirname}/datastores/cloneme.dbx.build`)) {
-    Fs.rmSync(`${__dirname}/datastores/cloneme.dbx.build`, { recursive: true });
+    Fs.rmSync(`${__dirname}/datastores/cloneme.dbx`, { recursive: true });
   }
 
   if (Fs.existsSync(`${__dirname}/datastores/cloned.dbx`)) {
-    Fs.unlinkSync(`${__dirname}/datastores/cloned.dbx`);
+    Fs.rmSync(`${__dirname}/datastores/cloned.dbx`, { recursive: true });
   }
 
   cloudNode = new CloudNode();

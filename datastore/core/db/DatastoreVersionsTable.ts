@@ -17,6 +17,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       [
         ['versionHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
         ['baseVersionHash', 'TEXT'],
+        ['path', 'TEXT'],
         ['versionTimestamp', 'DATETIME'],
         ['scriptEntrypoint', 'TEXT'],
         ['domain', 'TEXT'],
@@ -47,15 +48,24 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
     versionHash: string,
     scriptEntrypoint: string,
     versionTimestamp: number,
+    path: string,
     baseVersionHash: string,
     domain: string,
   ): void {
     domain = domain?.toLowerCase();
 
-    this.insertNow([versionHash, baseVersionHash, versionTimestamp, scriptEntrypoint, domain]);
+    this.insertNow([
+      versionHash,
+      baseVersionHash,
+      path,
+      versionTimestamp,
+      scriptEntrypoint,
+      domain,
+    ]);
     this.cacheByVersionHash[versionHash] = {
       versionHash,
       baseVersionHash,
+      path,
       versionTimestamp,
       scriptEntrypoint,
       domain,
@@ -111,5 +121,6 @@ export interface IDatastoreVersionRecord {
   versionTimestamp: number;
   baseVersionHash: string;
   scriptEntrypoint: string;
+  path: string;
   domain: string;
 }

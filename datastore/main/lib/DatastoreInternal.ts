@@ -2,6 +2,7 @@ import ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { IDatastoreApis } from '@ulixee/platform-specification/datastore';
 import { IApiSpec } from '@ulixee/net/interfaces/IApiHandlers';
+import { Database as SqliteDatabase } from 'better-sqlite3';
 import IUnixTime from '@ulixee/net/interfaces/IUnixTime';
 import { ISchemaAny } from '@ulixee/schema';
 import { SqlParser } from '@ulixee/sql-engine';
@@ -17,9 +18,12 @@ import Table from './Table';
 import type Crawler from './Crawler';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
 import type PassthroughRunner from './PassthroughRunner';
-import PassthroughTable from './PassthroughTable';
+import PassthroughTable, { IPassthroughQueryRunOptions } from './PassthroughTable';
 import CreditsTable from './CreditsTable';
 import DatastoreApiClient from './DatastoreApiClient';
+import DatastoreStorage from './DatastoreStorage';
+import SqlQuery from './SqlQuery';
+import IRunnerExecOptions from '../interfaces/IRunnerExecOptions';
 
 const pkg = require('../package.json');
 
@@ -37,9 +41,8 @@ export default class DatastoreInternal<
 > {
   #connectionToCore: ConnectionToDatastoreCore;
   #isClosingPromise: Promise<void>;
-  #createInMemoryDatabaseCallbacks: (() => void)[] = [];
-  #createInMemoryDatabasePromise: Promise<void>;
 
+  public storage: DatastoreStorage;
   public manifest: IDatastoreManifest;
   public readonly metadata: IDatastoreMetadata;
   public instanceId: string;
@@ -49,6 +52,10 @@ export default class DatastoreInternal<
   public readonly tables: TTable = {} as any;
   public readonly crawlers: TCrawler = {} as any;
   public readonly affiliateId: string;
+
+  public get db(): SqliteDatabase {
+    return this.storage.db;
+  }
 
   public get remoteDatastores(): TComponents['remoteDatastores'] {
     return this.components.remoteDatastores;
@@ -103,6 +110,16 @@ export default class DatastoreInternal<
     this.metadata = this.createMetadata();
   }
 
+  public bind(config: IDatastoreBinding): DatastoreInternal {
+    const { manifest, datastoreStorage, connectionToCore, apiClientLoader } = config;
+    this.manifest = manifest;
+    this.storage = datastoreStorage ?? new DatastoreStorage();
+    this.storage.open(this);
+    this.connectionToCore = connectionToCore;
+    if (apiClientLoader) this.createApiClient = apiClientLoader;
+    return this;
+  }
+
   public sendRequest<T extends keyof IDatastoreApis & string>(
     payload: {
       command: T;
@@ -115,29 +132,11 @@ export default class DatastoreInternal<
     return this.connectionToCore.sendRequest(payload, timeoutMs);
   }
 
-  public onCreateInMemoryDatabase(callback: () => void): void {
-    this.#createInMemoryDatabaseCallbacks.push(callback);
-  }
-
-  public ensureDatabaseExists(): Promise<void> {
-    return (this.#createInMemoryDatabasePromise ??= new Promise(async (resolve, reject) => {
-      try {
-        await Promise.all(this.#createInMemoryDatabaseCallbacks.map(x => x()));
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    }));
-  }
-
-  public async queryInternal<TResultType = any>(
+  public async queryInternal<TResultType = any[]>(
     sql: string,
     boundValues: any[] = [],
+    callbacks: IQueryInternalCallbacks = {},
   ): Promise<TResultType> {
-    await this.ensureDatabaseExists();
-    const datastoreInstanceId = this.instanceId;
-    const datastoreVersionHash = this.manifest?.versionHash;
-
     const sqlParser = new SqlParser(sql);
     const inputSchemas: { [runnerName: string]: ISchemaAny } = {};
     for (const [key, runner] of Object.entries(this.runners)) {
@@ -146,38 +145,60 @@ export default class DatastoreInternal<
     const inputByFunctionName = sqlParser.extractFunctionCallInputs(inputSchemas, boundValues);
     const outputByFunctionName: { [name: string]: any[] } = {};
 
-    for (const functionName of Object.keys(inputByFunctionName)) {
-      const input = inputByFunctionName[functionName];
-      const func = this.runners[functionName] ?? this.crawlers[functionName];
-      outputByFunctionName[functionName] = await func.runInternal({
-        input,
-      });
+    const functionCallsById = Object.keys(inputByFunctionName).map((x, i) => {
+      return {
+        name: x,
+        id: i,
+      };
+    });
+
+    if (callbacks.beforeAll) {
+      await callbacks.beforeAll({ sqlParser, functionCallsById });
+    }
+
+    for (const { name, id } of functionCallsById) {
+      const input = inputByFunctionName[name];
+      const func = this.runners[name] ?? this.crawlers[name];
+      callbacks.onFunction ??= (_, __, options, run) => run(options);
+      outputByFunctionName[name] = await callbacks.onFunction(id, name, { input }, options =>
+        func.runInternal(options),
+      );
     }
 
     const recordsByVirtualTableName: { [name: string]: Record<string, any>[] } = {};
     for (const tableName of sqlParser.tableNames) {
-      if (!(this.tables[tableName] as PassthroughTable<any, any>).remoteSource) continue;
+      if (!this.storage.isVirtualTable(tableName)) continue;
 
       const sqlInputs = sqlParser.extractTableQuery(tableName, boundValues);
-      recordsByVirtualTableName[tableName] = await this.tables[tableName].queryInternal(
-        sqlInputs.sql,
-        sqlInputs.args,
+      callbacks.onPassthroughTable ??= (_, options, run) => run(options);
+      recordsByVirtualTableName[tableName] = await callbacks.onPassthroughTable(
+        tableName,
+        {},
+        options => this.tables[tableName].queryInternal(sqlInputs.sql, sqlInputs.args, options),
       );
     }
 
-    const args = {
-      sql,
-      boundValues,
-      inputByRunnerName: inputByFunctionName,
-      outputByRunnerName: outputByFunctionName,
+    const db = this.db;
+    sql = sqlParser.toSql();
+    const queryBoundValues = sqlParser.convertToBoundValuesSqliteMap(boundValues);
+
+    if (sqlParser.isInsert() || sqlParser.isUpdate() || sqlParser.isDelete()) {
+      if (sqlParser.hasReturn()) {
+        return db.prepare(sql).get(queryBoundValues);
+      }
+      const result = db.prepare(sql).run(queryBoundValues);
+      return { changes: result?.changes } as any;
+    }
+
+    if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
+
+    const sqlQuery = new SqlQuery(sqlParser, this.storage);
+    return sqlQuery.execute(
+      inputByFunctionName,
+      outputByFunctionName,
       recordsByVirtualTableName,
-      datastoreInstanceId,
-      datastoreVersionHash,
-    };
-    return await this.sendRequest({
-      command: 'Datastore.queryInternal',
-      args: [args],
-    });
+      queryBoundValues,
+    );
   }
 
   public createApiClient(host: string): DatastoreApiClient {
@@ -313,4 +334,29 @@ export default class DatastoreInternal<
 
     return metadata;
   }
+}
+
+export interface IDatastoreBinding {
+  connectionToCore?: ConnectionToDatastoreCore;
+  datastoreStorage?: DatastoreStorage;
+  manifest?: IDatastoreManifest;
+  apiClientLoader?: (url: string) => DatastoreApiClient;
+}
+
+export interface IQueryInternalCallbacks {
+  beforeAll?(args: {
+    sqlParser: SqlParser;
+    functionCallsById: { name: string; id: number }[];
+  }): Promise<void>;
+  onFunction?<TOutput = any[]>(
+    id: number,
+    name: string,
+    options: IRunnerExecOptions<any>,
+    run: (options: IRunnerExecOptions<any>) => Promise<TOutput>,
+  ): Promise<TOutput>;
+  onPassthroughTable?<TOutput = any[]>(
+    name: string,
+    options: IPassthroughQueryRunOptions,
+    run: (options: IPassthroughQueryRunOptions) => Promise<TOutput>,
+  ): Promise<TOutput>;
 }

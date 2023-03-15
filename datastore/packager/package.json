@@ -10,6 +10,7 @@
     "@ulixee/commons": "2.0.0-alpha.19",
     "@ulixee/crypto": "2.0.0-alpha.19",
     "@ulixee/datastore": "2.0.0-alpha.19",
+    "@ulixee/cloud": "2.0.0-alpha.19",
     "@ulixee/datastore-core": "2.0.0-alpha.19",
     "@ulixee/datastore-docpage": "2.0.0-alpha.19",
     "@ulixee/net": "2.0.0-alpha.19",

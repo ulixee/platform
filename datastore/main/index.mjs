@@ -1,4 +1,3 @@
-import { setupAutorunMjsHack } from './lib/utils/Autorun.mjs';
 import cjsImport from './index.js';
 
 const {
@@ -28,5 +27,3 @@ export {
 };
 
 export default cjsImport.default;
-
-setupAutorunMjsHack();

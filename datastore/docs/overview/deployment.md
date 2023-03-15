@@ -8,7 +8,7 @@ We provide a packaging tool out of the box to combine your Datastore and include
 
 ### Packaged .dbx Files
 
-Your Datastore will be packaged into a file with the same name and path as your script, but with the extension `.dbx`. These files are safe to check-in to source control so other developers on your team can package and deploy the datastores without a need to re-build them. You can also ftp them onto a CloudNode to [deploy](#deploying) them.
+Your Datastore will be packaged into a file with the same name and path as your script, but with the extension `.dbx`. These files are safe to check-in to source control so other developers on your team can package and deploy the datastores without a need to re-build them. You can also ftp them onto a Cloud Node to [deploy](#deploying) them.
 
 A `.dbx` file has the following files in it:
 
@@ -19,7 +19,7 @@ A `.dbx` file has the following files in it:
 
 #### Out Directory
 
-If you want to build all your `.dbx` files so they can be deployed manually onto a CloudNode (eg, if you have a Docker image and wish to pre-deploy `.dbx` files), you can do so in two ways:
+If you want to build all your `.dbx` files so they can be deployed manually onto a Cloud (eg, if you have a Docker image and wish to pre-deploy `.dbx` files), you can do so in two ways:
 
 1. `Configuration`. You can add a `datastoreOutDir` parameter to a Ulixee config file (`.ulixee/config.json` in the hierarchy of your project). The path should be relative to the `config.json` file.
 2. `npx @ulixee/datastore build --out-dir=<path>`. During build, you can specify an out directory.
@@ -308,7 +308,7 @@ Options below show a short and long form.
 
 ## Datastore Core Sandboxes
 
-When Datastores are run on a CloudNode, they are initialized into a virtual machine sandbox that has no default access to Node.js, other than those explicitly allowed by a [Datastore Plugin](../advanced/plugins.md). Any dependencies imported by your script will be packaged into your script, but you should not expect NodeJs core modules to be available. Your script will also be fully isolated between runs - any shared state must be provided in via the `input` variables. This isolation ensures your script can be reproduced, re-run and troubleshooted reliably.
+When Datastores are run on a Cloud, they are initialized into a virtual machine sandbox that has no default access to Node.js, other than those explicitly allowed by a [Datastore Plugin](../advanced/plugins.md). Any dependencies imported by your script will be packaged into your script, but you should not expect NodeJs core modules to be available. Your script will also be fully isolated between runs - any shared state must be provided in via the `input` variables. This isolation ensures your script can be reproduced, re-run and troubleshooted reliably.
 
 ## Efficient Units
 

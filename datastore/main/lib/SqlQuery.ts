@@ -7,23 +7,23 @@ export default class SqlQuery {
   storage: DatastoreStorage;
   db: SqliteDatabase;
 
-  constructor(sqlParser: SqlParser, storage: DatastoreStorage, db: SqliteDatabase) {
+  constructor(sqlParser: SqlParser, storage: DatastoreStorage) {
     this.sqlParser = sqlParser;
     this.storage = storage;
-    this.db = db;
+    this.db = storage.db;
   }
 
-  public execute(
-    inputByRunnerName: { [name: string]: Record<string, any> },
-    outputsByRunnerName: { [name: string]: Record<string, any>[] },
+  public execute<TResult = any[]>(
+    inputByFunctionName: { [name: string]: Record<string, any> },
+    outputsByFunctionName: { [name: string]: Record<string, any>[] },
     recordsByVirtualTableName: { [name: string]: Record<string, any>[] },
     boundValues: Record<string, any>,
-  ): any[] {
+  ): TResult {
     const schemas = this.sqlParser.tableNames.map(x => this.storage.getTableSchema(x));
     const tmpSchemas = {};
     for (const name of this.sqlParser.functionNames) {
-      const input = inputByRunnerName[name];
-      const outputs = outputsByRunnerName[name];
+      const input = inputByFunctionName[name];
+      const outputs = outputsByFunctionName[name];
       const schema = this.storage.getFunctionSchema(name);
       schemas.push(schema);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
@@ -33,7 +33,7 @@ export default class SqlQuery {
           columns,
           *rows() {
             for (const record of outputs)
-              yield SqlGenerator.convertRunnerRecordToSqliteRow(record, schema, tmpSchemas);
+              yield SqlGenerator.convertFunctionRecordToSqliteRow(record, schema, tmpSchemas);
           },
         });
       });
@@ -53,13 +53,10 @@ export default class SqlQuery {
     }
 
     const sql = this.sqlParser.toSql();
-    const convertedValues = Object.keys(boundValues).reduce((obj, k) => {
-      const v = SqlGenerator.convertToSqliteValue(null, boundValues[k])[0];
-      return Object.assign(obj, { [k]: v });
-    }, {});
+    const convertedValues = this.sqlParser.convertToBoundValuesSqliteMap(boundValues);
     const records = this.db.prepare(sql).all(convertedValues);
     SqlGenerator.convertRecordsFromSqlite(records, schemas, tmpSchemas);
 
-    return records;
+    return records as any;
   }
 }

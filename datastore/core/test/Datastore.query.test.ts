@@ -12,10 +12,10 @@ let client: DatastoreApiClient;
 
 beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/query.dbx`)) {
-    Fs.unlinkSync(`${__dirname}/datastores/query.dbx`);
+    Fs.rmSync(`${__dirname}/datastores/query.dbx`, { recursive: true });
   }
   if (Fs.existsSync(`${__dirname}/datastores/directRunner.dbx`)) {
-    Fs.unlinkSync(`${__dirname}/datastores/directRunner.dbx`);
+    Fs.rmSync(`${__dirname}/datastores/directRunner.dbx`, { recursive: true });
   }
 
   cloudNode = new CloudNode();

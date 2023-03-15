@@ -24,18 +24,6 @@ export default function datastoreCommands(): Command {
     )
     .env('ULX_IDENTITY_PASSPHRASE');
 
-  const uploadHostOption = cli.createOption(
-    '-h, --upload-host <host>',
-    'Upload this Datastore to the given host Cloud node. Will try to auto-connect if none specified.',
-  );
-
-  const clearVersionHistoryOption = cli
-    .createOption(
-      '-c, --clear-version-history',
-      'Clear out any version history for this script entrypoint',
-    )
-    .default(false);
-
   cli
     .command('clone')
     .description('Clone and add onto a Datastore.')
@@ -52,8 +40,15 @@ export default function datastoreCommands(): Command {
       '<path>',
       'The path of the entrypoint to the Datastore. Must have a default export that is a Datastore.',
     )
-    .addOption(uploadHostOption)
-    .addOption(clearVersionHistoryOption)
+    .option(
+      '-h, --upload-host <host>',
+      'Upload this Datastore to the given host Cloud node. Will try to auto-connect if none specified.',
+    )
+    .option(
+      '-c, --clear-version-history',
+      'Clear out any version history for this script entrypoint',
+      false,
+    )
     .option(
       '-s, --compiled-source-path <path>',
       'Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).',
@@ -87,17 +82,16 @@ export default function datastoreCommands(): Command {
     });
 
   cli
-    .command('build')
-    .description('Build a Datastore into a single ".dbx" file.')
+    .command('start')
+    .description('Start a Datastore.')
     .argument(
       '<path>',
       'The path of the entrypoint to the Datastore. Must have a default export that is a Datastore.',
     )
-    .option('-o, --out-dir <path>', 'A directory path where you want .dbx packages to be saved')
-    .option('-u, --upload', 'Upload this package to a Ulixee Cloud after packaging.', false)
-    .option('-d, --no-docs', "Don't automatically display the deployed documentation website.", false)
-    .addOption(uploadHostOption)
-    .addOption(clearVersionHistoryOption)
+    .option(
+      '-o, --out-dir <path>',
+      'A path where you want a .dbx working directory to be created. Defaults to the <entrypoint>.dbx',
+    )
     .option(
       '-s, --compiled-source-path <path>',
       'Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).',
@@ -106,46 +100,18 @@ export default function datastoreCommands(): Command {
       '-t, --tsconfig <path>',
       'A path to a TypeScript config file if needed. Will be auto-located based on the entrypoint if it ends in ".ts"',
     )
+    .option(
+      '-w, --watch',
+      'Watch for file changes in your datastore.',
+    )
     .action(async (path, options) => {
-      const {
-        tsconfig,
-        outDir,
-        compiledSourcePath,
-        uploadHost,
-        upload,
-        clearVersionHistory,
-        identityPath,
-        identityPassphrase,
-        noDocs,
-      } = options;
-      await getPackagerCommands().buildPackage(path, {
+      const { tsconfig, outDir, compiledSourcePath, watch } = options;
+      await getPackagerCommands().startDatastore(path, {
         tsconfig,
         compiledSourcePath,
         outDir,
-        uploadHost,
-        upload,
-        clearVersionHistory,
-        identityPath,
-        identityPassphrase,
-        dontAutoshowDocs: noDocs,
+        watch,
       });
-    });
-
-  cli
-    .command('open')
-    .description('Open a Datastore package in the local working directory.')
-    .argument('<dbxPath>', 'The path to the .dbx package.')
-    .action(async dbxPath => {
-      await getPackagerCommands().unpack(dbxPath);
-    });
-
-  cli
-    .command('close')
-    .description('Close the Datastore package and save or discard the local changes.')
-    .argument('<dbxPath>', 'The path to the .dbx package.')
-    .option('-x, --discard-changes', 'Remove the working directory without saving any changes')
-    .action(async (dbxPath, { discardChanges }) => {
-      await getPackagerCommands().closeDbx(dbxPath, discardChanges);
     });
 
   cli
@@ -167,32 +133,6 @@ export default function datastoreCommands(): Command {
       const client = new DatastoreApiClient(host);
       await client.install(versionHash, alias);
     });
-
-  cli
-    .command('upload')
-    .description('Upload a Datastore package to a Cloud.')
-    .argument('<dbxPath>', 'The path to the .dbx package.')
-    .addOption(uploadHostOption)
-    .addOption(identityPrivateKeyPathOption)
-    .addOption(identityPrivateKeyPassphraseOption)
-    .option(
-      '-a, --allow-new-version-history',
-      'Allow uploaded Datastore to create a new version history for the script entrypoint.',
-      false,
-    )
-    .action(
-      async (
-        packagePath,
-        { uploadHost, allowNewVersionHistory, identityPath, identityPassphrase },
-      ) => {
-        await getPackagerCommands().upload(packagePath, {
-          uploadHost,
-          allowNewVersionHistory,
-          identityPath,
-          identityPassphrase,
-        });
-      },
-    );
 
   cli.addCommand(creditsCli());
   return cli;

@@ -8,7 +8,7 @@ const typescript = require('@rollup/plugin-typescript');
 
 export default async function rollupDatastore(
   scriptPath: string,
-  options: { tsconfig?: string; outDir?: string; dryRun?: boolean } = {},
+  options: { tsconfig?: string; outDir?: string; dryRun?: boolean, watch?: boolean } = {},
 ): Promise<{ bytes: number; code: Buffer; sourceMap: string; modules: string[] }> {
   const outDir = options.outDir ?? `${__dirname}/../`;
   const plugins = [
@@ -49,6 +49,7 @@ export default async function rollupDatastore(
   try {
     // create a bundle
     const bundle = await rollup({
+      watch: options.watch ? { buildDelay: 100 } : false,
       input: scriptPath,
       plugins,
       onwarn: warning => {

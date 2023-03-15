@@ -356,7 +356,7 @@ export default class SessionController extends TypedEventEmitter<{
       const child = spawn(execPath, [...execArgv, script, ...args], {
         cwd: this.scriptInstanceMeta.workingDirectory,
         stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-        env: { ...process.env, ULX_CLI_NOPROMPT: 'true', ULX_DATASTORE_DISABLE_AUTORUN: 'false' },
+        env: { ...process.env, ULX_CLI_NOPROMPT: 'true' },
       });
       child.stderr.setEncoding('utf8');
       child.stdout.setEncoding('utf8');

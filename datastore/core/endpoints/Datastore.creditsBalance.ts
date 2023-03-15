@@ -11,7 +11,8 @@ export default new DatastoreApiHandler('Datastore.creditsBalance', {
     const datastoreVersion = await context.datastoreRegistry.getByVersionHash(
       request.datastoreVersionHash,
     );
-    const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
+    const storage = context.datastoreRegistry.getStorage(request.datastoreVersionHash);
+    const datastore = await DatastoreVm.open(datastoreVersion.path, storage, datastoreVersion);
     const credits = await datastore.tables[CreditsTable.tableName].get(request.creditId);
     return { balance: credits?.remainingCredits ?? 0, issuedCredits: credits?.issuedCredits ?? 0 };
   },

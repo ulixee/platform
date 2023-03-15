@@ -11,9 +11,9 @@ let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 let remoteVersionHash: string;
 beforeAll(async () => {
-  for (const file of ['remoteTable.dbx', 'passthroughTable.js', 'passthroughTable.dbx']) {
+  for (const file of ['remoteTable.dbx', 'passthroughTable.js', 'passthroughTable.dbx', 'passthroughTable2.dbx']) {
     if (Fs.existsSync(`${__dirname}/datastores/${file}`)) {
-      Fs.unlinkSync(`${__dirname}/datastores/${file}`);
+      await Fs.promises.rm(`${__dirname}/datastores/${file}`, { recursive: true });
     }
   }
 
@@ -33,7 +33,7 @@ beforeAll(async () => {
 afterEach(Helpers.afterEach);
 
 afterAll(async () => {
-  await cloudNode.close();
+  await cloudNode?.close();
   await Helpers.afterAll();
   Fs.rmSync(storageDir, { recursive: true });
 });

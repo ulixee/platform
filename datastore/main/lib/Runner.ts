@@ -9,9 +9,9 @@ import IRunnerSchema from '../interfaces/IRunnerSchema';
 import IRunnerExecOptions from '../interfaces/IRunnerExecOptions';
 import IRunnerComponents from '../interfaces/IRunnerComponents';
 import RunnerPlugins from './RunnerPlugins';
-import DatastoreInternal from './DatastoreInternal';
+import DatastoreInternal, { IDatastoreBinding } from './DatastoreInternal';
 import ResultIterable from './ResultIterable';
-import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
+import SqlQuery from './SqlQuery';
 
 const disableColors = parseEnvBool(process.env.NODE_DISABLE_COLORS) ?? false;
 
@@ -47,7 +47,6 @@ export default class Runner<
   public runnerType = 'basic';
   public corePlugins: { [name: string]: string } = {};
   public pluginClasses: IRunnerPluginConstructor<TSchema>[] = [];
-  public disableAutorun: boolean;
   public successCount = 0;
   public errorCount = 0;
   public pricePerQuery = 0;
@@ -69,10 +68,7 @@ export default class Runner<
   }
 
   protected get datastoreInternal(): DatastoreInternal {
-    if (!this.#datastoreInternal) {
-      this.#datastoreInternal = new DatastoreInternal({ runners: { [this.name]: this } });
-      this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryFunction.bind(this));
-    }
+    this.#datastoreInternal ??= new DatastoreInternal({ runners: { [this.name]: this } });
     return this.#datastoreInternal;
   }
 
@@ -108,10 +104,6 @@ export default class Runner<
     this.pricePerQuery = this.components.pricePerQuery ?? 0;
     this.addOnPricing = this.components.addOnPricing;
     this.minimumPrice = this.components.minimumPrice;
-
-    this.disableAutorun = Boolean(
-      JSON.parse(process.env.ULX_DATASTORE_DISABLE_AUTORUN?.toLowerCase() ?? 'false'),
-    );
   }
 
   public runInternal(options: TRunArgs, logOutputResult = false): ResultIterable<TOutput> {
@@ -161,33 +153,22 @@ export default class Runner<
   }
 
   public async queryInternal(sql: string, boundValues: any[] = []): Promise<any> {
-    await this.datastoreInternal.ensureDatabaseExists();
     const name = this.components.name;
-    const datastoreInstanceId = this.datastoreInternal.instanceId;
-    const datastoreVersionHash = this.datastoreInternal.manifest?.versionHash;
 
     const sqlParser = new SqlParser(sql, { function: name });
-    const schemas = { [name]: this.schema.input };
-    const inputsByFunction = sqlParser.extractFunctionCallInputs<TSchema['input']>(schemas, boundValues);
-    const input = inputsByFunction[name];
-    const outputs: any[] = [];
+    if (!sqlParser.isSelect()) {
+      throw new Error('Invalid SQL command');
+    }
 
-    const results = await this.runInternal({ input } as TRunArgs);
-    for await (const result of results) outputs.push(result);
-
-    const args = {
-      name,
-      sql,
+    const inputsByFunction = sqlParser.extractFunctionCallInputs<TSchema['input']>(
+      { [name]: this.schema.input },
       boundValues,
-      input,
-      outputs,
-      datastoreInstanceId,
-      datastoreVersionHash,
-    };
-    return await this.datastoreInternal.sendRequest({
-      command: 'Datastore.queryInternalFunctionResult',
-      args: [args],
-    });
+    );
+    const input = inputsByFunction[name];
+    const outputs = await this.runInternal({ input } as TRunArgs);
+
+    const query = new SqlQuery(sqlParser, this.datastoreInternal.storage);
+    return query.execute(inputsByFunction, { [name]: outputs }, {}, boundValues);
   }
 
   public attachToDatastore(
@@ -201,27 +182,10 @@ export default class Runner<
     }
 
     this.#datastoreInternal = datastoreInternal;
-    if (!datastoreInternal.manifest?.versionHash) {
-      this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryFunction.bind(this));
-    }
   }
 
-  public addConnectionToDatastoreCore(connectionToCore: ConnectionToDatastoreCore): void {
-    this.datastoreInternal.connectionToCore = connectionToCore;
-  }
-
-  private async createInMemoryFunction(): Promise<void> {
-    const datastoreInstanceId = this.datastoreInternal.instanceId;
-    const name = this.components.name;
-    const args = {
-      name,
-      datastoreInstanceId,
-      schema: this.components.schema,
-    };
-    await this.datastoreInternal.sendRequest({
-      command: 'Datastore.createInMemoryFunction',
-      args: [args],
-    });
+  public bind(config: IDatastoreBinding): void {
+    this.datastoreInternal.bind(config ?? {});
   }
 
   public static commandLineExec<T>(datastoreRunner: Runner<any, any, any>): ResultIterable<T> {

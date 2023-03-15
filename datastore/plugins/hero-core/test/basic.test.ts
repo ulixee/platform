@@ -10,7 +10,6 @@ const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'hero-core/basi
 let cloudNode: CloudNode;
 let koaServer: Helpers.ITestKoaServer;
 beforeAll(async () => {
-
   cloudNode = new CloudNode();
   cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
@@ -24,7 +23,7 @@ afterAll(Helpers.afterAll);
 
 test('it should be able to upload a datastore and run it by hash', async () => {
   if (Fs.existsSync(`${__dirname}/_testDatastore.dbx`))
-    Fs.unlinkSync(`${__dirname}/_testDatastore.dbx`);
+    await Fs.promises.rm(`${__dirname}/_testDatastore.dbx`, { recursive: true });
   const packager = new Packager(require.resolve('./_testDatastore.js'));
   const dbx = await packager.build();
   const host = await cloudNode.address;

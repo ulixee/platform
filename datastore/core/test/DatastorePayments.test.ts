@@ -63,7 +63,7 @@ beforeAll(async () => {
   }
 
   if (Fs.existsSync(`${__dirname}/datastores/output.dbx`)) {
-    Fs.unlinkSync(`${__dirname}/datastores/output.dbx`);
+    Fs.rmSync(`${__dirname}/datastores/output.dbx`, { recursive: true });
   }
 
   mock.MicronoteBatchFunding.fundBatch.mockImplementation(async function (batch, centagons) {

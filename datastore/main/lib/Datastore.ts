@@ -1,13 +1,10 @@
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
 import IDatastoreComponents, {
   TCrawlers,
   TRunners,
   TTables,
 } from '../interfaces/IDatastoreComponents';
-import DatastoreInternal from './DatastoreInternal';
+import DatastoreInternal, { IDatastoreBinding, IQueryInternalCallbacks } from './DatastoreInternal';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
-import DatastoreApiClient from './DatastoreApiClient';
 
 export default class Datastore<
   TTable extends TTables = TTables,
@@ -20,8 +17,6 @@ export default class Datastore<
   >,
 > {
   #datastoreInternal: DatastoreInternal<TTable, TRunner, TCrawler, TComponents>;
-
-  public disableAutorun: boolean;
 
   public get affiliateId(): string {
     return this.#datastoreInternal.affiliateId;
@@ -52,26 +47,17 @@ export default class Datastore<
     datastoreInternal?: DatastoreInternal<TTable, TRunner, TCrawler, TComponents>,
   ) {
     this.#datastoreInternal = datastoreInternal ?? new DatastoreInternal(components);
-
-    this.disableAutorun ??= Boolean(
-      JSON.parse(process.env.ULX_DATASTORE_DISABLE_AUTORUN?.toLowerCase() ?? 'false'),
-    );
   }
 
-  public queryInternal<TResultType = any>(
+  public queryInternal<TResultType = any[]>(
     sql: string,
     boundValues: any[] = [],
+    callbacks: IQueryInternalCallbacks = {},
   ): Promise<TResultType> {
-    return this.#datastoreInternal.queryInternal(sql, boundValues);
+    return this.#datastoreInternal.queryInternal(sql, boundValues, callbacks);
   }
 
-  public addConnectionToDatastoreCore(
-    connectionToCore: ConnectionToDatastoreCore,
-    manifest?: IDatastoreManifest,
-    apiClientLoader?: (url: string) => DatastoreApiClient,
-  ): void {
-    this.#datastoreInternal.manifest = manifest;
-    this.#datastoreInternal.connectionToCore = connectionToCore;
-    if (apiClientLoader) this.#datastoreInternal.createApiClient = apiClientLoader;
+  public bind(config: IDatastoreBinding): DatastoreInternal {
+    return this.#datastoreInternal.bind(config);
   }
 }

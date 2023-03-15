@@ -5,6 +5,7 @@ import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import * as Path from 'path';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
+import DatastoreStorage from '@ulixee/datastore/lib/DatastoreStorage';
 import Logger from '@ulixee/commons/lib/Logger';
 import DatastoresDb from '../db';
 import { IDatastoreStatsRecord } from '../db/DatastoreStatsTable';
@@ -16,9 +17,6 @@ import {
   MissingLinkedScriptVersionsError,
 } from './errors';
 import DatastoreManifest from './DatastoreManifest';
-import DatastoreStorage from './DatastoreStorage';
-import DatastoreVm from './DatastoreVm';
-import { unpackDbxFile } from './dbxUtils';
 
 const datastorePackageJson = require(`../package.json`);
 const { log } = Logger(module);
@@ -72,10 +70,10 @@ export default class DatastoreRegistry {
 
     if (!versionRecord) return null;
 
-    const path = Path.join(this.getDbxPath(versionHash), 'datastore.js');
+    const path = Path.join(versionRecord.path, 'datastore.js');
     let manifest = this.#openedManifestsByPath.get(path);
 
-    if (!await existsAsync(path)) return null;
+    if (!(await existsAsync(path))) return null;
 
     if (!manifest) {
       manifest = await readFileAsJson(Path.join(Path.dirname(path), 'datastore-manifest.json'));
@@ -112,27 +110,11 @@ export default class DatastoreRegistry {
     );
   }
 
-  public async getStorage(versionHash: string): Promise<DatastoreStorage> {
+  public getStorage(versionHash: string): DatastoreStorage {
     const storagePath = this.getStoragePath(versionHash);
     if (this.#storageByPath.has(storagePath)) return this.#storageByPath.get(storagePath);
-    const datastoreVersion = await this.getByVersionHash(versionHash);
     const storage = new DatastoreStorage(storagePath);
     this.#storageByPath.set(storagePath, storage);
-
-    const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
-    for (const [name, runner] of Object.entries(datastore.runners)) {
-      const schema = runner.schema ?? {};
-      storage.addFunctionSchema(name, schema);
-    }
-    for (const [name, crawler] of Object.entries(datastore.crawlers)) {
-      const schema = crawler.schema ?? {};
-      storage.addFunctionSchema(name, schema);
-    }
-    for (const [name, table] of Object.entries(datastore.tables)) {
-      if (!table.isPublic) continue;
-      const schema = table.schema ?? {};
-      storage.addTableSchema(name, schema, !!table?.remoteSource);
-    }
     return storage;
   }
 
@@ -148,7 +130,7 @@ export default class DatastoreRegistry {
     if (!(await existsAsync(this.datastoresDir))) return;
 
     for (const filepath of await Fs.readdir(this.datastoresDir, { withFileTypes: true })) {
-      if (filepath.isDirectory() || !filepath.name.endsWith('.dbx')) continue;
+      if (!filepath.isDirectory() || !filepath.name.endsWith('.dbx')) continue;
 
       const file = filepath.name;
       const path = Path.join(this.datastoresDir, file);
@@ -158,12 +140,7 @@ export default class DatastoreRegistry {
         sessionId: null,
       });
 
-      if (await existsAsync(`${path}.tmp`)) {
-        await Fs.rm(`${path}.tmp`, { recursive: true });
-      }
-      await Fs.mkdir(`${path}.tmp`);
-      await unpackDbxFile(path, `${path}.tmp`);
-      await this.save(`${path}.tmp`, null, true, true);
+      await this.save(path, null, true, true);
     }
   }
 
@@ -176,6 +153,10 @@ export default class DatastoreRegistry {
     const manifest = await readFileAsJson<IDatastoreManifest>(
       `${datastoreTmpPath}/datastore-manifest.json`,
     );
+    const storedPath = this.datastoresDb.datastoreVersions.getByHash(manifest.versionHash)?.path;
+    if (storedPath) {
+      return { dbxPath: storedPath };
+    }
 
     await DatastoreManifest.validate(manifest);
 
@@ -198,8 +179,8 @@ export default class DatastoreRegistry {
       );
     }
 
-    const dbxPath = this.getDbxPath(manifest.versionHash, manifest.scriptEntrypoint);
-    const storagePath = this.getStoragePath(manifest.versionHash, manifest.scriptEntrypoint);
+    const dbxPath = this.createDbxPath(manifest);
+    const storagePath = Path.join(dbxPath, 'storage.db');
     // make sure to close any existing db
     this.#storageByPath.get(storagePath)?.db?.close();
     try {
@@ -313,20 +294,20 @@ Please try to re-upload after testing with the version available on this Cloud.`
     }
   }
 
-  private getStoragePath(versionHash: string, scriptEntrypoint?: string): string {
-    const workingDir = this.getDbxPath(versionHash, scriptEntrypoint);
-    return Path.join(workingDir, 'storage.db');
+  private getStoragePath(versionHash: string): string {
+    const dbxPath = this.datastoresDb.datastoreVersions.getByHash(versionHash)?.path;
+    if (!dbxPath) return null;
+    return Path.join(dbxPath, 'storage.db');
   }
 
-  private getDbxPath(versionHash: string, scriptEntrypoint?: string): string {
-    scriptEntrypoint ??=
-      this.datastoresDb.datastoreVersions.getByHash(versionHash)?.scriptEntrypoint;
-    const entrypoint = Path.basename(scriptEntrypoint, Path.extname(scriptEntrypoint));
-    return Path.resolve(this.datastoresDir, `${entrypoint}@${versionHash}.dbx`);
+  private createDbxPath(manifest: IDatastoreManifest): string {
+    const entrypoint = manifest.scriptEntrypoint;
+    const filename = Path.basename(entrypoint, Path.extname(entrypoint));
+    return Path.resolve(this.datastoresDir, `${filename}@${manifest.versionHash}.dbx`);
   }
 
   private saveManifestMetadata(manifest: IDatastoreManifest): void {
-    const path = this.getDbxPath(manifest.versionHash, manifest.scriptEntrypoint);
+    const path = this.createDbxPath(manifest);
     this.#openedManifestsByPath.set(path, manifest);
     const baseVersionHash =
       manifest.linkedVersions[manifest.linkedVersions.length - 1]?.versionHash ??
@@ -338,6 +319,7 @@ Please try to re-upload after testing with the version available on this Cloud.`
         version.versionHash,
         manifest.scriptEntrypoint,
         version.versionTimestamp,
+        this.datastoresDb.datastoreVersions.getByHash(version.versionHash)?.path,
         baseVersionHash,
         manifest.domain,
       );
@@ -347,6 +329,7 @@ Please try to re-upload after testing with the version available on this Cloud.`
       manifest.versionHash,
       manifest.scriptEntrypoint,
       manifest.versionTimestamp,
+      path,
       baseVersionHash,
       manifest.domain,
     );

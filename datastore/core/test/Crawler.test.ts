@@ -14,10 +14,7 @@ const findCachedSpy = jest.spyOn<any, any>(Crawler.prototype, 'findCached');
 
 beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/crawl.dbx`)) {
-    Fs.unlinkSync(`${__dirname}/datastores/crawl.dbx`);
-  }
-  if (Fs.existsSync(`${__dirname}/datastores/crawl.dbx.build`)) {
-    Fs.rmSync(`${__dirname}/datastores/crawl.dbx.build`, { recursive: true });
+    Fs.rmSync(`${__dirname}/datastores/crawl.dbx`, { recursive: true });
   }
 
   cloudNode = new CloudNode();

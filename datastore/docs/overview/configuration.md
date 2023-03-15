@@ -26,18 +26,12 @@ const options = {
 
 If no connectionToCore is provided to a Datastore, a localhost CloudNode connection will attempt to be automatically discovered.
 
-### Defer Running Datastore
-
-Any script you run from the command line that default exports a Datastore instance is automatically run. You can disable autorun defer running by setting ULX_DATASTORE_DISABLE_AUTORUN to `true`.
-
-- ULX_DATASTORE_DISABLE_AUTORUN `string`. Set this to `true` to explicitly disable autorunning Datastores when a script is directly executed from the command line.
-
 ### Datastore Core Storage {#storage}
 
 Datastore Core stores and retrieves [packaged Datastores](./deployment) from a configurable location on a machine. This directory will contain:
 
 1. `dbx*`. Packaged datastores organized into folders by their Bech32m encoded hashes.
-2. `index.db`. A sqlite3 file containing an index of all Datastores installed locally. This index will be automatically updated if new files are added to the folder and requested in a query.
+2. `metadata.db`. A sqlite3 file containing version history and stats of all Datastores installed locally. This index will be automatically updated if new compressed .dbx.tgz files are added to the directory.
 
 During bootup, any Packaged Datastore files (`.dbx`) in this directory will be automatically unpacked and loaded.
 

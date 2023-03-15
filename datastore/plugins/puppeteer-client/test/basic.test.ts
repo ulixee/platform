@@ -13,7 +13,6 @@ describe('basic puppeteerRunner tests', () => {
       await page.close();
       hasCompleted = true;
     }, PuppeteerRunnerPlugin);
-    puppeteerRunner.disableAutorun = true;
     await puppeteerRunner.runInternal({});
     expect(hasCompleted).toBe(true);
   }, 30e3);
@@ -26,7 +25,6 @@ describe('basic puppeteerRunner tests', () => {
       const page = await browser.newPage();
       await page.goto('https://example.org');
     }, PuppeteerRunnerPlugin);
-    puppeteerRunner.disableAutorun = true;
     await puppeteerRunner.runInternal({});
     expect(closeSpy).toBeCalledTimes(1);
   });
@@ -41,7 +39,6 @@ describe('basic puppeteerRunner tests', () => {
         throw new Error('testy');
       });
     }, PuppeteerRunnerPlugin);
-    puppeteerRunner.disableAutorun = true;
 
     await expect(puppeteerRunner.runInternal({})).rejects.toThrowError('testy');
     expect(closeSpy).toBeCalledTimes(1);

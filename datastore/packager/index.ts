@@ -13,14 +13,17 @@ import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreM
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import rollupDatastore from './lib/rollupDatastore';
-import DbxFile from './lib/DbxFile';
+import Dbx from './lib/Dbx';
 
 export default class DatastorePackager {
-  public manifest: DatastoreManifest;
   public script: string;
   public sourceMap: string;
-  public dbx: DbxFile;
+  public dbx: Dbx;
   public meta: IFetchMetaResponseData;
+
+  public get manifest(): DatastoreManifest {
+    return this.dbx.manifest;
+  }
 
   public get dbxPath(): string {
     return Path.join(this.outDir, `${this.filename}.dbx`);
@@ -36,20 +39,16 @@ export default class DatastorePackager {
         ?.datastoreOutDir ?? Path.dirname(this.entrypoint);
     this.outDir = Path.resolve(this.outDir);
     this.filename = Path.basename(this.entrypoint, Path.extname(this.entrypoint));
-    this.dbx = new DbxFile(this.dbxPath);
-    this.manifest = new DatastoreManifest(`${this.dbx.workingDirectory}/datastore-manifest.json`);
+    this.dbx = new Dbx(this.dbxPath);
   }
 
   public async build(options?: {
     tsconfig?: string;
     compiledSourcePath?: string;
-    keepOpen?: boolean;
     createNewVersionHistory?: boolean;
-  }): Promise<DbxFile> {
+    watch?: boolean
+  }): Promise<Dbx> {
     const dbx = this.dbx;
-    if ((await dbx.exists()) && !(await dbx.isOpen())) {
-      await dbx.open(true);
-    }
     const { sourceCode, sourceMap } = await this.rollup(options);
 
     this.meta ??= await this.findDatastoreMeta();
@@ -60,7 +59,6 @@ export default class DatastorePackager {
 
     await this.createOrUpdateManifest(sourceCode, sourceMap, options?.createNewVersionHistory);
     await dbx.createOrUpdateDocpage(this.meta, this.manifest, this.entrypoint);
-    await dbx.save(options?.keepOpen);
 
     return dbx;
   }
@@ -68,10 +66,12 @@ export default class DatastorePackager {
   public async rollup(options?: {
     tsconfig?: string;
     compiledSourcePath?: string;
+    watch?: boolean
   }): Promise<{ sourceMap: string; sourceCode: string }> {
     const rollup = await rollupDatastore(options?.compiledSourcePath ?? this.entrypoint, {
-      outDir: this.dbx.workingDirectory,
+      outDir: this.dbx.path,
       tsconfig: options?.tsconfig,
+      watch: options?.watch
     });
     return { sourceMap: rollup.sourceMap, sourceCode: rollup.code.toString('utf8') };
   }
@@ -327,7 +327,7 @@ export default class DatastorePackager {
   }
 
   private async findDatastoreMeta(): Promise<IFetchMetaResponseData> {
-    const entrypoint = `${this.dbx.workingDirectory}/datastore.js`;
+    const entrypoint = this.dbx.entrypoint;
     const datastoreProcess = new LocalDatastoreProcess(entrypoint);
     const meta = await datastoreProcess.fetchMeta();
     await new Promise(resolve => setTimeout(resolve, 1e3));

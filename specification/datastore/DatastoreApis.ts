@@ -217,15 +217,6 @@ export const DatastoreApiSchemas = {
         .optional(),
     }),
   },
-  'Datastore.fetchInternalTable': {
-    args: z.object({
-      name: z.string().describe('The name of the table'),
-      input: z.any().optional().describe('Optional input or where parameters'),
-      datastoreVersionHash: z.string().optional(),
-      datastoreInstanceId: z.string().optional(),
-    }),
-    result: z.any({}),
-  },
   'Datastore.query': {
     args: z.object({
       sql: z.string().describe('The SQL command(s) you want to run'),
@@ -270,77 +261,6 @@ export const DatastoreApiSchemas = {
         })
         .optional(),
     }),
-  },
-  'Datastore.queryLocalScript': {
-    args: z.object({
-      sql: z.string().describe('The SQL command(s) you want to run'),
-      boundValues: z
-        .array(z.any())
-        .optional()
-        .describe('An array of values you want to use as bound parameters'),
-      scriptPath: z
-        .string()
-        .describe('A path to a local script to run. NOTE: API only enabled in development.'),
-    }),
-    result: z.object({
-      latestVersionHash: datastoreVersionHashValidation,
-      outputs: z.any().array(),
-      error: z.any().optional(),
-    }),
-  },
-  'Datastore.createInMemoryTable': {
-    args: z.object({
-      name: z.string(),
-      schema: z.any({}),
-      seedlings: z.any({}).optional(),
-      datastoreInstanceId: z.string(),
-    }),
-    result: z.object({}),
-  },
-  'Datastore.createInMemoryFunction': {
-    args: z.object({
-      name: z.string(),
-      schema: z.any({}),
-      datastoreInstanceId: z.string(),
-    }),
-    result: z.object({}),
-  },
-  'Datastore.queryInternalTable': {
-    args: z.object({
-      name: z.string(),
-      sql: z.string(),
-      boundValues: z.any({}).optional(),
-      datastoreVersionHash: z.string().optional(),
-      datastoreInstanceId: z.string().optional(),
-    }),
-    result: z.any({}),
-  },
-  'Datastore.queryInternalFunctionResult': {
-    args: z.object({
-      name: z.string(),
-      sql: z.string(),
-      boundValues: z.any({}).optional(),
-      input: z.any({}).optional(),
-      outputs: z.array(z.any({})),
-      datastoreVersionHash: z.string().optional(),
-      datastoreInstanceId: z.string().optional(),
-    }),
-    result: z.any({}),
-  },
-  'Datastore.queryInternal': {
-    args: z.object({
-      sql: z.string(),
-      boundValues: z.any({}).optional(),
-      inputByRunnerName: z.record(z.any()),
-      outputByRunnerName: z.record(z.array(z.any({}))),
-      recordsByVirtualTableName: z.record(
-        z.string({ description: 'Virtual Table Name' }),
-        z.record(z.string(), z.any(), { description: 'Virtual Table Record' }).array(),
-      ),
-      datastoreVersionHash: z.string().optional(),
-      datastoreInstanceId: z.string().optional(),
-    }),
-    result: z.any({}),
   },
 };
 

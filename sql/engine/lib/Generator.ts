@@ -132,7 +132,7 @@ export default class SqlGenerator {
     return record;
   }
 
-  public static convertRunnerRecordToSqliteRow(
+  public static convertFunctionRecordToSqliteRow(
     record: Record<string, any>,
     schema: Record<string, IAnySchemaJson>,
     tmpSchema: any = {},

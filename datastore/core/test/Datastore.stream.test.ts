@@ -15,6 +15,7 @@ beforeAll(async () => {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
+  await Fs.promises.rm(`${__dirname}/datastores/stream.dbx`, { recursive: true }).catch(() => null);
   await cloudNode.listen();
   client = new DatastoreApiClient(await cloudNode.address);
 });

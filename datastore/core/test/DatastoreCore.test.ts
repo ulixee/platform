@@ -1,8 +1,8 @@
-import { mkdirSync, promises as Fs, rmSync } from 'fs';
+import { mkdirSync, rmSync } from 'fs';
 import * as Path from 'path';
 import Packager from '@ulixee/datastore-packager';
-import { existsAsync } from '@ulixee/commons/lib/fileUtils';
-import DbxFile from '@ulixee/datastore-packager/lib/DbxFile';
+import { copyDir, existsAsync } from '@ulixee/commons/lib/fileUtils';
+import Dbx from '@ulixee/datastore-packager/lib/Dbx';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import SidechainClient from '@ulixee/sidechain';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
@@ -14,7 +14,7 @@ import DatastoreCore from '../index';
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreCore.test');
 const tmpDir = `${storageDir}/tmp`;
 let bootupPackager: Packager;
-let bootupDbx: DbxFile;
+let bootupDbx: Dbx;
 let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 
@@ -44,19 +44,19 @@ afterAll(async () => {
 });
 
 test('should install new datastores on startup', async () => {
-  await Fs.copyFile(bootupDbx.dbxPath, `${storageDir}/bootup.dbx`);
+  await copyDir(bootupDbx.path, `${storageDir}/bootup.dbx`);
   const registry = new DatastoreRegistry(storageDir);
   await registry.installManuallyUploadedDbxFiles();
   expect(registry.hasVersionHash(bootupPackager.manifest.versionHash)).toBe(true);
   // @ts-expect-error
-  const dbxPath = registry.getDbxPath(bootupPackager.manifest.versionHash);
+  const dbxPath = registry.createDbxPath(bootupPackager.manifest);
   await expect(existsAsync(dbxPath)).resolves.toBeTruthy();
 }, 45e3);
 
 test('should be able to lookup a datastore domain', async () => {
   await expect(
     runApi('Datastore.upload', {
-      compressedDatastore: await Fs.readFile(bootupDbx.dbxPath),
+      compressedDatastore: await bootupDbx.asBuffer(),
       allowNewLinkedVersionHistory: false,
     }),
   ).resolves.toEqual({ success: true });
@@ -77,7 +77,7 @@ test('can get metadata about an uploaded datastore', async () => {
   });
   await expect(
     runApi('Datastore.upload', {
-      compressedDatastore: await Fs.readFile(bootupDbx.dbxPath),
+      compressedDatastore: await bootupDbx.asBuffer(),
       allowNewLinkedVersionHistory: false,
     }),
   ).resolves.toEqual({ success: true });

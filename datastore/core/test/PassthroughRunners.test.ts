@@ -69,15 +69,12 @@ beforeAll(async () => {
       Fs.unlinkSync(`${__dirname}/datastores/${file}.js`);
     }
     if (Fs.existsSync(`${__dirname}/datastores/${file}.dbx`)) {
-      Fs.unlinkSync(`${__dirname}/datastores/${file}.dbx`);
-    }
-    if (Fs.existsSync(`${__dirname}/datastores/${file}.dbx.build`)) {
-      Fs.rmSync(`${__dirname}/datastores/${file}.dbx.build`, { recursive: true });
+      await Fs.promises.rm(`${__dirname}/datastores/${file}.dbx`, { recursive: true });
     }
   }
 
   if (Fs.existsSync(`${__dirname}/datastores/remoteRunner.dbx`)) {
-    Fs.unlinkSync(`${__dirname}/datastores/remoteRunner.dbx`);
+    await Fs.promises.rm(`${__dirname}/datastores/remoteRunner.dbx`, { recursive: true });
   }
 
   mock.MicronoteBatchFunding.fundBatch.mockImplementation(async function (batch, centagons) {
@@ -270,7 +267,9 @@ export default new Datastore({
     const dbx = new DatastorePackager(`${__dirname}/datastores/source.js`);
     await dbx.build();
     Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/source.js`));
-    Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/source.dbx`));
+    Helpers.onClose(() =>
+      Fs.promises.rm(`${__dirname}/datastores/source.dbx`, { recursive: true }),
+    );
     await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.asBuffer());
     versionHash = dbx.manifest.versionHash;
     expect(dbx.manifest.paymentAddress).toBeTruthy();
@@ -306,7 +305,7 @@ export default new Datastore({
 
     const dbx = new DatastorePackager(`${__dirname}/datastores/hop1.js`);
     Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/hop1.js`));
-    Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/hop1.dbx`));
+    Helpers.onClose(() => Fs.promises.rm(`${__dirname}/datastores/hop1.dbx`, { recursive: true }));
     await dbx.build();
     await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.asBuffer());
     versionHash = dbx.manifest.versionHash;

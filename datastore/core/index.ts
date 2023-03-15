@@ -17,7 +17,6 @@ import Identity from '@ulixee/crypto/lib/Identity';
 import Ed25519 from '@ulixee/crypto/lib/Ed25519';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import IDatastoreDomainResponse from '@ulixee/datastore/interfaces/IDatastoreDomainResponse';
-import Autorun from '@ulixee/datastore/lib/utils/Autorun';
 import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
 import env from './env';
 import DatastoreRegistry from './lib/DatastoreRegistry';
@@ -26,16 +25,9 @@ import IDatastoreApiContext from './interfaces/IDatastoreApiContext';
 import SidechainClientManager from './lib/SidechainClientManager';
 import DatastoreUpload from './endpoints/Datastore.upload';
 import DatastoreQuery from './endpoints/Datastore.query';
-import DatastoreQueryLocalScript from './endpoints/Datastore.queryLocalScript';
 import DatastoreMeta from './endpoints/Datastore.meta';
-import DatastoreQueryInternal from './endpoints/Datastore.queryInternal';
-import DatastoreQueryInternalTable from './endpoints/Datastore.queryInternalTable';
-import DatastorequeryInternalFunctionResult from './endpoints/Datastore.queryInternalFunctionResult';
-import DatastoreInitializeInMemoryTable from './endpoints/Datastore.createInMemoryTable';
-import DatastoreInitializeInMemoryRunner from './endpoints/Datastore.createInMemoryFunction';
 import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
 import DatastoreStream from './endpoints/Datastore.stream';
-import DatastoreFetchInternalTable from './endpoints/Datastore.fetchInternalTable';
 import DatastoreAdmin from './endpoints/Datastore.admin';
 import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
 import DatastoreVm from './lib/DatastoreVm';
@@ -57,7 +49,7 @@ export default class DatastoreCore {
     datastoresTmpDir: Path.join(Os.tmpdir(), '.ulixee', 'datastore'),
     maxRuntimeMs: 10 * 60e3,
     waitForDatastoreCompletionOnShutdown: false,
-    enableRunWithLocalPath: env.serverEnvironment === 'development',
+    enableDatastoreLocalPath: env.serverEnvironment === 'development',
     paymentAddress: env.paymentAddress,
     serverAdminIdentities: env.serverAdminIdentities,
     computePricePerQuery: env.computePricePerQuery,
@@ -77,15 +69,9 @@ export default class DatastoreCore {
     DatastoreQuery,
     DatastoreStream,
     DatastoresList,
-    DatastoreFetchInternalTable,
     DatastoreAdmin,
     DatastoreCreditsBalance,
     DatastoreMeta,
-    DatastoreQueryInternal,
-    DatastoreQueryInternalTable,
-    DatastorequeryInternalFunctionResult,
-    DatastoreInitializeInMemoryTable,
-    DatastoreInitializeInMemoryRunner,
   ]);
 
   private static datastoreRegistry: DatastoreRegistry;
@@ -104,10 +90,8 @@ export default class DatastoreCore {
     );
     context.connectionToClient = connection;
     connection.once('disconnected', () => {
-      connection.datastoreStorage?.db.close();
       this.connections.delete(connection);
     });
-    connection.isInternal = this.options.serverEnvironment === 'development';
     this.connections.add(connection);
     return connection;
   }
@@ -217,18 +201,12 @@ export default class DatastoreCore {
         this.showTemporaryAdminIdentityPrompt();
       }
 
-      if (this.options.enableRunWithLocalPath) {
-        this.apiRegistry.register(DatastoreQueryLocalScript);
-      }
-
       if (!(await existsAsync(this.options.datastoresTmpDir))) {
         await Fs.mkdir(this.options.datastoresTmpDir, { recursive: true });
       }
       this.datastoreRegistry = new DatastoreRegistry(this.options.datastoresDir);
       await this.datastoreRegistry.installManuallyUploadedDbxFiles();
 
-      Autorun.isEnabled = false;
-      process.env.ULX_DATASTORE_DISABLE_AUTORUN = 'true';
       await new Promise(resolve => process.nextTick(resolve));
 
       for (const plugin of Object.values(this.pluginCoresByName)) {

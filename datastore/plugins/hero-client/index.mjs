@@ -1,4 +1,3 @@
-import { setupAutorunMjsHack } from '@ulixee/datastore/lib/utils/Autorun.mjs';
 import cjsImport from './index.js';
 
 const {
@@ -20,5 +19,3 @@ export {
   PassthroughRunner,
   Schema,
 };
-
-setupAutorunMjsHack();

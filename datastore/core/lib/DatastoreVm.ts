@@ -7,6 +7,7 @@ import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
+import DatastoreStorage from '@ulixee/datastore/lib/DatastoreStorage';
 import * as Path from 'path';
 import DatastoreCore from '../index';
 
@@ -22,12 +23,16 @@ export default class DatastoreVm {
     if (!this._connectionToDatastoreCore) {
       const bridge = new TransportBridge();
       this._connectionToDatastoreCore = new ConnectionToDatastoreCore(bridge.transportToCore);
-      DatastoreCore.addConnection(bridge.transportToClient).isInternal = true;
+      DatastoreCore.addConnection(bridge.transportToClient);
     }
     return this._connectionToDatastoreCore;
   }
 
-  public static async open(path: string, manifest: IDatastoreManifest): Promise<Datastore> {
+  public static async open(
+    path: string,
+    storage: DatastoreStorage,
+    manifest: IDatastoreManifest,
+  ): Promise<Datastore> {
     if (!isSemverSatisfied(manifest.coreVersion, version)) {
       throw new Error(
         `The current version of Core (${version}) is incompatible with this Datastore version (${manifest.coreVersion})`,
@@ -46,11 +51,12 @@ export default class DatastoreVm {
         'The default export from this script needs to inherit from "@ulixee/datastore"',
       );
     }
-    datastore.addConnectionToDatastoreCore(
-      this.connectionToDatastoreCore,
+    datastore.bind({
+      connectionToCore: this.connectionToDatastoreCore,
+      datastoreStorage: storage,
       manifest,
-      this.getCachedApiClient.bind(this),
-    );
+      apiClientLoader: this.getCachedApiClient.bind(this),
+    });
 
     return datastore;
   }

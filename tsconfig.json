@@ -37,6 +37,8 @@
     "specification",
     "hero",
     "datastore/docpage/src",
+    "assets",
+    "test/datastores",
     "**/website",
     "**/docs",
     "**/*.d.ts",

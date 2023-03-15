@@ -4,7 +4,6 @@ import Packager from '@ulixee/datastore-packager';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { CloudNode } from '@ulixee/cloud';
 import * as Moment from 'moment';
-import DatastoreCore from '../index';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreVm.test');
 const tmpDir = `${storageDir}/tmp`;
@@ -13,10 +12,8 @@ let client: DatastoreApiClient;
 
 beforeAll(async () => {
   mkdirSync(storageDir, { recursive: true });
-  DatastoreCore.options.datastoresTmpDir = tmpDir;
-  DatastoreCore.options.datastoresDir = storageDir;
   cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = { datastoresDir: storageDir };
+  cloudNode.router.datastoreConfiguration = { datastoresDir: storageDir, datastoresTmpDir: tmpDir };
   await cloudNode.listen();
   client = new DatastoreApiClient(await cloudNode.address);
 }, 30e3);
