@@ -45,6 +45,14 @@ export const DatastoreApiSchemas = {
       success: z.boolean(),
     }),
   },
+  'Datastore.start': {
+    args: z.object({
+      dbxPath: z.string().describe('Path to a local file system Database path.'),
+    }),
+    result: z.object({
+      success: z.boolean(),
+    }),
+  },
   'Datastore.creditsBalance': {
     args: z.object({
       datastoreVersionHash: datastoreVersionHashValidation.describe(

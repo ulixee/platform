@@ -14,6 +14,7 @@ import DatastoreCore from '../index';
 const { version } = require('../package.json');
 
 export default class DatastoreVm {
+  public static doNotCacheList = new Set<string>();
   private static vm: NodeVM;
   private static compiledScriptsByPath = new Map<string, Promise<VMScript>>();
   private static _connectionToDatastoreCore: ConnectionToDatastoreCore;
@@ -91,7 +92,9 @@ export default class DatastoreVm {
       resolve(vmScript);
     });
 
-    this.compiledScriptsByPath.set(path, script);
+    if (!this.doNotCacheList.has(path)) {
+      this.compiledScriptsByPath.set(path, script);
+    }
     return script;
   }
 

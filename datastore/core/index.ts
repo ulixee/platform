@@ -33,6 +33,7 @@ import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
 import DatastoreVm from './lib/DatastoreVm';
 import { DatastoreNotFoundError } from './lib/errors';
 import DatastoresList from './endpoints/Datastores.list';
+import DatastoreStart from './endpoints/Datastore.start';
 
 const { log } = Logger(module);
 
@@ -49,7 +50,7 @@ export default class DatastoreCore {
     datastoresTmpDir: Path.join(Os.tmpdir(), '.ulixee', 'datastore'),
     maxRuntimeMs: 10 * 60e3,
     waitForDatastoreCompletionOnShutdown: false,
-    enableDatastoreLocalPath: env.serverEnvironment === 'development',
+    enableDatastoreWatchMode: env.serverEnvironment === 'development',
     paymentAddress: env.paymentAddress,
     serverAdminIdentities: env.serverAdminIdentities,
     computePricePerQuery: env.computePricePerQuery,
@@ -71,6 +72,7 @@ export default class DatastoreCore {
     DatastoresList,
     DatastoreAdmin,
     DatastoreCreditsBalance,
+    DatastoreStart,
     DatastoreMeta,
   ]);
 

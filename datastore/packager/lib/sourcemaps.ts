@@ -28,5 +28,8 @@ export default function sourcemaps(): Plugin {
       }
       return Promise.resolve(result);
     },
+    watchChange() {
+      SourceLoader.resetCache();
+    },
   };
 }

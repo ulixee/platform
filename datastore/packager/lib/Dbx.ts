@@ -8,6 +8,7 @@ import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { SqlGenerator } from '@ulixee/sql-engine';
 import { IFetchMetaResponseData } from '@ulixee/datastore-core/interfaces/ILocalDatastoreProcess';
 import { buildDocpage } from '@ulixee/datastore-docpage';
+import { unlinkSync } from 'fs';
 
 export default class Dbx {
   public manifest: DatastoreManifest;
@@ -32,6 +33,10 @@ export default class Dbx {
     seedlingsByName: IFetchMetaResponseData['tableSeedlingsByName'],
   ): void {
     const dbPath = Path.join(this.path, 'storage.db');
+    try {
+      // remove for now. eventually need to figure out migrations
+      unlinkSync(dbPath);
+    } catch {}
     const db = new Database(dbPath);
 
     const tables = new Set(

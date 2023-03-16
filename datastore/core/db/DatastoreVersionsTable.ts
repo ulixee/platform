@@ -44,6 +44,24 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
     return this.findWithDomainQuery.get(domain.toLowerCase());
   }
 
+  public cache(
+    versionHash: string,
+    scriptEntrypoint: string,
+    versionTimestamp: number,
+    path: string,
+    baseVersionHash: string,
+    domain: string,
+  ): void {
+    this.cacheByVersionHash[versionHash] = {
+      versionHash,
+      baseVersionHash,
+      path,
+      versionTimestamp,
+      scriptEntrypoint,
+      domain,
+    };
+  }
+
   public save(
     versionHash: string,
     scriptEntrypoint: string,
@@ -62,14 +80,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       scriptEntrypoint,
       domain,
     ]);
-    this.cacheByVersionHash[versionHash] = {
-      versionHash,
-      baseVersionHash,
-      path,
-      versionTimestamp,
-      scriptEntrypoint,
-      domain,
-    };
+    this.cache(versionHash, scriptEntrypoint, versionTimestamp, path, baseVersionHash, domain);
     this.versionsByBaseHash[baseVersionHash] ??= this.getPreviousVersions(baseVersionHash);
     if (!this.versionsByBaseHash[baseVersionHash].some(x => x.versionHash === versionHash)) {
       this.versionsByBaseHash[baseVersionHash].unshift({ versionHash, versionTimestamp });

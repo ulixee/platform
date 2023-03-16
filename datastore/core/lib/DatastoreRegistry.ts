@@ -160,7 +160,7 @@ export default class DatastoreRegistry {
 
     await DatastoreManifest.validate(manifest);
 
-    if (!manifest) throw new Error('Could not read the provided .dbx manifest.');
+    if (!manifest) throw new Error('Could not read the provided Datastore manifest.');
     this.checkDatastoreCoreInstalled(manifest.coreVersion);
 
     // validate hash
@@ -187,24 +187,35 @@ export default class DatastoreRegistry {
       await Fs.unlink(storagePath);
     } catch (e) {}
 
-    if (this.hasVersionHash(manifest.versionHash)) {
-      return { dbxPath };
-    }
-
     if (!allowNewLinkedVersionHistory) this.checkMatchingEntrypointVersions(manifest);
 
     this.checkVersionHistoryMatch(manifest);
 
     if (!hasServerAdminIdentity) await this.verifyAdminIdentity(manifest, adminIdentity);
 
-    // remove .dbx file and/or existing package
-    if (await existsAsync(dbxPath)) await Fs.rm(dbxPath, { recursive: true });
+    if (dbxPath !== datastoreTmpPath) {
+      // remove any existing folder at dbxPath
+      if (await existsAsync(dbxPath)) await Fs.rm(dbxPath, { recursive: true });
 
-    await Fs.rename(datastoreTmpPath, dbxPath);
+      await Fs.rename(datastoreTmpPath, dbxPath);
+    }
 
-    this.saveManifestMetadata(manifest);
+    this.saveManifestMetadata(manifest, dbxPath);
 
     return { dbxPath };
+  }
+
+  public async watchDbxPath(dbxPath: string): Promise<void> {
+    const manifest = await readFileAsJson<IDatastoreManifest>(`${dbxPath}/datastore-manifest.json`);
+    this.#openedManifestsByPath.set(dbxPath, manifest);
+    this.datastoresDb.datastoreVersions.cache(
+      manifest.versionHash,
+      manifest.scriptEntrypoint,
+      manifest.versionTimestamp,
+      dbxPath,
+      manifest.versionHash,
+      manifest.domain,
+    );
   }
 
   private async verifyAdminIdentity(
@@ -306,8 +317,7 @@ Please try to re-upload after testing with the version available on this Cloud.`
     return Path.resolve(this.datastoresDir, `${filename}@${manifest.versionHash}.dbx`);
   }
 
-  private saveManifestMetadata(manifest: IDatastoreManifest): void {
-    const path = this.createDbxPath(manifest);
+  private saveManifestMetadata(manifest: IDatastoreManifest, path: string): void {
     this.#openedManifestsByPath.set(path, manifest);
     const baseVersionHash =
       manifest.linkedVersions[manifest.linkedVersions.length - 1]?.versionHash ??

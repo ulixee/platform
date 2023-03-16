@@ -4,6 +4,7 @@ import * as Path from 'path';
 import * as Fs from 'fs';
 import { existsSync } from 'fs';
 import { inspect } from 'util';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { findProjectPathSync } from '@ulixee/commons/lib/dirUtils';
@@ -94,6 +95,7 @@ export async function startDatastore(
     tsconfig?: string;
     compiledSourcePath?: string;
     watch?: boolean;
+    showDocs?: boolean;
   },
 ): Promise<void> {
   const packager = new DatastorePackager(path, options?.outDir, true);
@@ -115,11 +117,20 @@ export async function startDatastore(
     await cloudNode.listen();
     host = UlixeeHostsConfig.global.getVersionHost(version);
   }
-  const startLocation = '...';
-  console.log('Started Datastore at %s.', startLocation, {
-    dbxPath: dbx.path,
-    manifest: packager.manifest.toJSON(),
-  });
+  if (!host.includes('://')) host = `ulx://${host}`;
+
+  const client = new DatastoreApiClient(host);
+  try {
+    await client.startDatastore(dbx.path);
+    console.log('%s Datastore', options.watch ? 'Started + watching' : 'Started', {
+      connectionString: `${host}/${packager.manifest.versionHash}`,
+    });
+  } finally {
+    await client.disconnect();
+  }
+  if (options.showDocs) {
+    openDocsPage(packager.manifest, host);
+  }
 }
 
 function openDocsPage(manifest: DatastoreManifest, uploadHost: string): void {

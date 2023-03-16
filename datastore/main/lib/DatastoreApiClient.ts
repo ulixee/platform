@@ -230,6 +230,12 @@ export default class DatastoreApiClient {
     );
   }
 
+  public async startDatastore(dbxPath: string): Promise<{ success: boolean }> {
+    return await this.runRemote('Datastore.start', {
+      dbxPath,
+    });
+  }
+
   public async getCreditsBalance(
     datastoreVersionHash: string,
     creditId: string,

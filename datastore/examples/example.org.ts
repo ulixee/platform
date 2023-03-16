@@ -4,8 +4,6 @@ import { Runner, HeroRunnerPlugin, Schema } from '@ulixee/datastore-plugins-hero
 
 const { string } = Schema;
 
-// configure input.url by running as node example.org.js --input.url="https://ulixee.org"
-
 export default new Runner(
   {
     async run(context) {
@@ -30,7 +28,7 @@ export default new Runner(
       },
       inputExamples: [
         {
-          url: 'https://espn.com',
+          url: 'https://example.org',
         },
       ],
     },

@@ -12,10 +12,11 @@ import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import rollupDatastore from './lib/rollupDatastore';
 import Dbx from './lib/Dbx';
 
-export default class DatastorePackager {
+export default class DatastorePackager extends TypedEventEmitter<{ build: void }> {
   public script: string;
   public sourceMap: string;
   public dbx: Dbx;
@@ -31,8 +32,10 @@ export default class DatastorePackager {
 
   private readonly entrypoint: string;
   private readonly filename: string;
+  private onClose: (() => Promise<void>)[] = [];
 
   constructor(entrypoint: string, private readonly outDir?: string, private logToConsole = false) {
+    super();
     this.entrypoint = Path.resolve(entrypoint);
     this.outDir ??=
       UlixeeConfig.load({ entrypoint: this.entrypoint, workingDirectory: process.cwd() })
@@ -42,38 +45,39 @@ export default class DatastorePackager {
     this.dbx = new Dbx(this.dbxPath);
   }
 
+  public async close(): Promise<void> {
+    for (const onclose of this.onClose) {
+      await onclose();
+    }
+  }
+
   public async build(options?: {
     tsconfig?: string;
     compiledSourcePath?: string;
     createNewVersionHistory?: boolean;
-    watch?: boolean
+    watch?: boolean;
   }): Promise<Dbx> {
-    const dbx = this.dbx;
-    const { sourceCode, sourceMap } = await this.rollup(options);
+    const rollup = await rollupDatastore(options?.compiledSourcePath ?? this.entrypoint, {
+      outDir: this.dbx.path,
+      tsconfig: options?.tsconfig,
+      watch: options?.watch,
+    });
+    if (options?.watch) {
+      this.onClose.push(() => rollup.close());
+    }
 
     this.meta ??= await this.findDatastoreMeta();
     if (!this.meta.coreVersion) {
       throw new Error('Datastore must specify a coreVersion');
     }
-    dbx.createOrUpdateDatabase(this.meta.tablesByName, this.meta.tableSeedlingsByName);
+    await this.generateDetails(rollup.code, rollup.sourceMap, options?.createNewVersionHistory);
 
-    await this.createOrUpdateManifest(sourceCode, sourceMap, options?.createNewVersionHistory);
-    await dbx.createOrUpdateDocpage(this.meta, this.manifest, this.entrypoint);
-
-    return dbx;
-  }
-
-  public async rollup(options?: {
-    tsconfig?: string;
-    compiledSourcePath?: string;
-    watch?: boolean
-  }): Promise<{ sourceMap: string; sourceCode: string }> {
-    const rollup = await rollupDatastore(options?.compiledSourcePath ?? this.entrypoint, {
-      outDir: this.dbx.path,
-      tsconfig: options?.tsconfig,
-      watch: options?.watch
-    });
-    return { sourceMap: rollup.sourceMap, sourceCode: rollup.code.toString('utf8') };
+    rollup.events.on(
+      'change',
+      async ({ code, sourceMap }) =>
+        await this.generateDetails(code, sourceMap, options?.createNewVersionHistory),
+    );
+    return this.dbx;
   }
 
   public async createOrUpdateManifest(
@@ -207,6 +211,20 @@ export default class DatastorePackager {
     this.script = sourceCode;
     this.sourceMap = sourceMap;
     return this.manifest;
+  }
+
+  protected async generateDetails(
+    code: string,
+    sourceMap: string,
+    createVersionHistory: boolean,
+  ): Promise<void> {
+    this.meta = await this.findDatastoreMeta();
+    const dbx = this.dbx;
+    dbx.createOrUpdateDatabase(this.meta.tablesByName, this.meta.tableSeedlingsByName);
+
+    await this.createOrUpdateManifest(code, sourceMap, createVersionHistory);
+    await dbx.createOrUpdateDocpage(this.meta, this.manifest, this.entrypoint);
+    this.emit('build');
   }
 
   protected async lookupRemoteDatastoreRunnerPricing(

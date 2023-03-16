@@ -1,12 +1,12 @@
 import * as Fs from 'fs/promises';
 import * as Path from 'path';
+import { Helpers } from '@ulixee/datastore-testing';
 import { existsSync } from 'fs';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import DatastorePackager from '../index';
-import Dbx from '../lib/Dbx';
 
 beforeEach(async () => {
   if (existsSync(`${__dirname}/assets/historyTest.dbx`)) {
@@ -19,14 +19,12 @@ beforeEach(async () => {
 
 let path: string;
 afterEach(async () => {
-  if (path && existsSync(path))
-    await Fs.rm(path, { recursive: true }).catch(() => null);
+  if (path && existsSync(path)) await Fs.rm(path, { recursive: true }).catch(() => null);
   path = null;
 });
 
 afterAll(async () => {
-  if (path && existsSync(path))
-    await Fs.rm(path, { recursive: true }).catch(() => null);
+  if (path && existsSync(path)) await Fs.rm(path, { recursive: true }).catch(() => null);
 });
 
 test('it should generate a relative script entrypoint', async () => {
@@ -37,12 +35,8 @@ test('it should generate a relative script entrypoint', async () => {
 
   expect(dbx.path).toBe(Path.resolve(`${__dirname}/assets/historyTest.dbx`));
   expect(packager.script).toBe(await Fs.readFile(`${dbx.path}/datastore.js`, 'utf8'));
-  expect(packager.sourceMap).toBe(
-    await Fs.readFile(`${dbx.path}/datastore.js.map`, 'utf8'),
-  );
-  await expect(
-    Fs.readFile(`${dbx.path}/datastore-manifest.json`, 'utf8'),
-  ).resolves.toBeTruthy();
+  expect(packager.sourceMap).toBe(await Fs.readFile(`${dbx.path}/datastore.js.map`, 'utf8'));
+  await expect(Fs.readFile(`${dbx.path}/datastore-manifest.json`, 'utf8')).resolves.toBeTruthy();
 
   expect(packager.manifest.toJSON()).toEqual({
     linkedVersions: [],
@@ -272,4 +266,83 @@ test('should be able to package an exported Runner without a Datastore', async (
   expect((await Fs.stat(`${__dirname}/assets/rawRunnerTest.dbx`)).isDirectory()).toBeTruthy();
 
   await Fs.rm(`${__dirname}/assets/rawRunnerTest.dbx`, { recursive: true });
+});
+
+// NOTE: I can't get watch to play with jest (BAB)
+// eslint-disable-next-line jest/no-disabled-tests
+test.skip('should be able to watch a Datastore for changes', async () => {
+  function writeScript(schema: string): Promise<void> {
+    return Fs.writeFile(
+      `${__dirname}/assets/watch.js`,
+      `const Datastore = require('@ulixee/datastore');
+const { boolean, string } = require('@ulixee/schema');
+
+export default new Datastore({
+  tables: {
+    people: new Table({
+      schema: ${schema},
+    })
+  },
+});`,
+    );
+  }
+  await writeScript(`{
+    firstName: string(),
+    lastName: string(),
+    isTester: boolean(),
+  }`);
+  const packager = new DatastorePackager(`${__dirname}/assets/watch.js`);
+  await packager.build({ watch: true });
+  Helpers.needsClosing.push(packager);
+  path = packager.dbx.path;
+  expect(packager.manifest.toJSON()).toEqual({
+    linkedVersions: [],
+    scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `watch.js`),
+    scriptHash: expect.any(String),
+    coreVersion: require('../package.json').version,
+    schemaInterface: `{
+  tables: {
+    people: {
+      firstName: string;
+      lastName: string;
+      isTester: boolean;
+    }
+  };
+  runners: {};
+  crawlers: {};
+}`,
+    runnersByName: {},
+    tablesByName: expect.objectContaining({
+      people: {
+        schemaAsJson: undefined,
+      },
+    }),
+    crawlersByName: {},
+    domain: undefined,
+    versionHash: DatastoreManifest.createVersionHash(packager.manifest),
+    versionTimestamp: expect.any(Number),
+    paymentAddress: undefined,
+    adminIdentities: [],
+  });
+  expect((await Fs.stat(`${__dirname}/assets/watch.dbx`)).isDirectory()).toBeTruthy();
+  await writeScript(`{
+    firstName: string(),
+    lastName: string(),
+    isTester: boolean({ optional: true }),
+  }`);
+  await new Promise(resolve => packager.once('build', resolve));
+
+  const manifest = packager.manifest.toJSON();
+  expect(manifest.schemaInterface).toBe(`{
+  tables: {
+    people: {
+      firstName: string;
+      lastName: string;
+      isTester?: boolean;
+    }
+  };
+  runners: {};
+  crawlers: {};
+}`);
+  await Fs.rm(`${__dirname}/assets/watch.dbx`, { recursive: true });
 });

@@ -8,7 +8,7 @@ export default interface IDatastoreCoreConfigureOptions {
   datastoresTmpDir: string;
   waitForDatastoreCompletionOnShutdown: boolean;
   paymentAddress: string;
-  enableDatastoreLocalPath: boolean;
+  enableDatastoreWatchMode: boolean;
   serverAdminIdentities: string[];
   defaultBytesForPaymentEstimates: number;
   computePricePerQuery: number;
