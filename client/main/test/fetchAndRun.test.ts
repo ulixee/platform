@@ -27,7 +27,7 @@ afterAll(async () => {
 test('should be able to fetch a datastore table', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/fetch.js`);
   await packager.build();
-  await apiClient.upload(await packager.dbx.asBuffer());
+  await apiClient.upload(await packager.dbx.tarGzip());
   const cloudNodeAddress = await cloudNode.address;
   const client = new Client(`ulx://${cloudNodeAddress}/${packager.manifest.versionHash}`);
   const results = await client.fetch('testers');
@@ -41,7 +41,7 @@ test('should be able to fetch a datastore table', async () => {
 test('should be able to run a datastore runner', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/fetch.js`);
   await packager.build();
-  await apiClient.upload(await packager.dbx.asBuffer());
+  await apiClient.upload(await packager.dbx.tarGzip());
   const cloudNodeAddress = await cloudNode.address;
   const client = new Client(`ulx://${cloudNodeAddress}/${packager.manifest.versionHash}`);
   const results = await client.run('test', { shouldTest: true });

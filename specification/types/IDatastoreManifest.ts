@@ -7,6 +7,7 @@ const minDate = new Date('2022-01-01').getTime();
 
 export const DatastoreManifestSchema = z.object({
   name: z.string().optional(),
+  description: z.string().optional(),
   versionHash: datastoreVersionHashValidation,
   domain: z
     .string()
@@ -41,6 +42,7 @@ export const DatastoreManifestSchema = z.object({
       .regex(/[a-z][A-Za-z0-9]+/)
       .describe('The Runner name'),
     z.object({
+      description: z.string().optional(),
       corePlugins: z
         .record(z.string())
         .optional()
@@ -68,6 +70,7 @@ export const DatastoreManifestSchema = z.object({
       .regex(/[a-z][A-Za-z0-9]+/)
       .describe('The Crawler name'),
     z.object({
+      description: z.string().optional(),
       corePlugins: z
         .record(z.string())
         .optional()
@@ -95,6 +98,7 @@ export const DatastoreManifestSchema = z.object({
       .regex(/[a-z][A-Za-z0-9]+/)
       .describe('The Table name'),
     z.object({
+      description: z.string().optional(),
       schemaAsJson: z.record(z.string(), z.any()).optional().describe('The schema as json.'),
       prices: z
         .object({

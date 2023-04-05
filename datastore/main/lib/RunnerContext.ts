@@ -3,7 +3,7 @@ import { ExtractSchemaType } from '@ulixee/schema';
 import IRunnerSchema from '../interfaces/IRunnerSchema';
 import RunnerInternal from './RunnerInternal';
 import IRunnerContext from '../interfaces/IRunnerContext';
-import DatastoreInternal from './DatastoreInternal';
+import DatastoreInternal, { IQueryInternalCallbacks } from './DatastoreInternal';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
 import ResultIterable from './ResultIterable';
 import Table from './Table';
@@ -48,11 +48,18 @@ export default class RunnerContext<
 
   #runnerInternal: RunnerInternal<ISchema>;
   #datastoreInternal: DatastoreInternal;
+  #callbacks: IQueryInternalCallbacks;
 
-  constructor(runnerInternal: RunnerInternal<ISchema>, datastoreInternal: DatastoreInternal) {
+  constructor(
+    runnerInternal: RunnerInternal<ISchema>,
+    datastoreInternal: DatastoreInternal,
+    callbacks?: IQueryInternalCallbacks,
+  ) {
     this.#runnerInternal = runnerInternal;
-    const { affiliateId, payment, input, authentication, isFromCommandLine, ...otherOptions } =
-      runnerInternal.options;
+    this.#callbacks = callbacks ?? {};
+    this.#callbacks.onFunction ??= (_, __, options, run) => run(options);
+
+    const { affiliateId, payment, input, authentication, ...otherOptions } = runnerInternal.options;
     this.extraOptions = otherOptions;
     this.datastoreMetadata = datastoreInternal.metadata;
     this.datastoreAffiliateId = datastoreInternal.affiliateId;
@@ -68,8 +75,7 @@ export default class RunnerContext<
     options: any,
   ): ResultIterable<ExtractSchemaType<T['schema']>>;
   public fetch(runnerOrTable, options): any {
-    const finalOptions = this.getMergedOptions(options);
-    return runnerOrTable.runInternal(finalOptions);
+    return this.run(runnerOrTable, options);
   }
 
   public run<T extends Runner>(
@@ -82,6 +88,17 @@ export default class RunnerContext<
   ): ResultIterable<ExtractSchemaType<T['schema']>>;
   public run(runnerOrTable, options): any {
     const finalOptions = this.getMergedOptions(options);
+    if (runnerOrTable instanceof Runner) {
+      return this.#callbacks.onFunction(-1, runnerOrTable.name, finalOptions, modifiedOptions =>
+        runnerOrTable.runInternal(modifiedOptions, this.#callbacks),
+      );
+    }
+    if ('remoteSource' in runnerOrTable) {
+      return this.#callbacks.onPassthroughTable(runnerOrTable.name, finalOptions, modifiedOptions =>
+        runnerOrTable.fetchInternal(modifiedOptions, this.#callbacks),
+      );
+    }
+
     return runnerOrTable.runInternal(finalOptions) as any;
   }
 
@@ -90,17 +107,23 @@ export default class RunnerContext<
     options: T['runArgsType'] = {},
   ): Promise<ICrawlerOutputSchema> {
     const finalOptions = this.getMergedOptions(options);
-    const [crawl] = await crawler.runInternal(finalOptions);
+    const [crawl] = await this.#callbacks.onFunction(
+      -1,
+      crawler.name,
+      finalOptions,
+      modifiedOptions => crawler.runInternal(modifiedOptions, this.#callbacks),
+    );
     return crawl;
   }
 
-  public query<TResult>(sql: string, boundValues: any[]): Promise<TResult> {
+  public query<TResult>(sql: string, boundValues: any[], queryId?: string): Promise<TResult> {
     // const finalOptions = this.#runnerInternal.options;
-    return this.#datastoreInternal.queryInternal(sql, boundValues);
+    return this.#datastoreInternal.queryInternal(sql, boundValues, queryId, this.#callbacks);
   }
 
   private getMergedOptions<T extends IRunnerExecOptions<any>>(options: T): T {
     const finalOptions = { ...this.#runnerInternal.options, ...options };
+    finalOptions.trackMetadata = options.trackMetadata;
     if (options.input) {
       // merge input
       finalOptions.input = { ...this.#runnerInternal.input, ...options.input };

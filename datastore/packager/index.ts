@@ -13,8 +13,8 @@ import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreM
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import rollupDatastore from './lib/rollupDatastore';
 import Dbx from './lib/Dbx';
+import rollupDatastore from './lib/rollupDatastore';
 
 export default class DatastorePackager extends TypedEventEmitter<{ build: void }> {
   public script: string;
@@ -55,6 +55,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     tsconfig?: string;
     compiledSourcePath?: string;
     createNewVersionHistory?: boolean;
+    createTemporaryVersionHash?: boolean;
     watch?: boolean;
   }): Promise<Dbx> {
     const rollup = await rollupDatastore(options?.compiledSourcePath ?? this.entrypoint, {
@@ -70,12 +71,22 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     if (!this.meta.coreVersion) {
       throw new Error('Datastore must specify a coreVersion');
     }
-    await this.generateDetails(rollup.code, rollup.sourceMap, options?.createNewVersionHistory);
+    await this.generateDetails(
+      rollup.code,
+      rollup.sourceMap,
+      options?.createNewVersionHistory,
+      options?.createTemporaryVersionHash,
+    );
 
     rollup.events.on(
       'change',
       async ({ code, sourceMap }) =>
-        await this.generateDetails(code, sourceMap, options?.createNewVersionHistory),
+        await this.generateDetails(
+          code,
+          sourceMap,
+          options?.createNewVersionHistory,
+          options?.createTemporaryVersionHash,
+        ),
     );
     return this.dbx;
   }
@@ -84,6 +95,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     sourceCode: string,
     sourceMap: string,
     createNewVersionHistory = false,
+    createTemporaryVersionHash = false,
   ): Promise<DatastoreManifest> {
     this.meta ??= await this.findDatastoreMeta();
     if (!this.meta.coreVersion) {
@@ -204,6 +216,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
       tablesByName,
       this.meta,
       this.logToConsole ? console.log : undefined,
+      createTemporaryVersionHash,
     );
     if (createNewVersionHistory) {
       await this.manifest.setLinkedVersions(this.entrypoint, []);
@@ -216,13 +229,21 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
   protected async generateDetails(
     code: string,
     sourceMap: string,
-    createVersionHistory: boolean,
+    createNewVersionHistory: boolean,
+    createTemporaryVersionHash: boolean,
   ): Promise<void> {
     this.meta = await this.findDatastoreMeta();
     const dbx = this.dbx;
     dbx.createOrUpdateDatabase(this.meta.tablesByName, this.meta.tableSeedlingsByName);
 
-    await this.createOrUpdateManifest(code, sourceMap, createVersionHistory);
+    this.manifest.addToVersionHistory = createTemporaryVersionHash !== true;
+
+    await this.createOrUpdateManifest(
+      code,
+      sourceMap,
+      createNewVersionHistory,
+      createTemporaryVersionHash,
+    );
     await dbx.createOrUpdateDocpage(this.meta, this.manifest, this.entrypoint);
     this.emit('build');
   }

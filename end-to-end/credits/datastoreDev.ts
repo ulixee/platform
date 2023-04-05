@@ -29,7 +29,7 @@ export default async function main(
     shell: true,
     env: {
       ...process.env,
-      ULX_SERVER_ADMIN_IDENTITIES: identityBech32,
+      ULX_CLOUD_ADMIN_IDENTITIES: identityBech32,
       ULX_IDENTITY_PATH: identityPath,
       ULX_DISABLE_CHROMEALIVE: 'true',
     },

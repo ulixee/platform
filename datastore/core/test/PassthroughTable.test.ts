@@ -27,7 +27,7 @@ beforeAll(async () => {
 
   const packager = new DatastorePackager(`${__dirname}/datastores/remoteTable.js`);
   await packager.build();
-  await client.upload(await packager.dbx.asBuffer());
+  await client.upload(await packager.dbx.tarGzip());
   remoteVersionHash = packager.manifest.versionHash;
 });
 afterEach(Helpers.afterEach);
@@ -71,7 +71,7 @@ export default new Datastore({
 
   const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughTable.js`);
   await passthrough.build();
-  await client.upload(await passthrough.dbx.asBuffer());
+  await client.upload(await passthrough.dbx.tarGzip());
 
   await expect(
     client.query(passthrough.manifest.versionHash, 'select * from pass'),
@@ -116,7 +116,7 @@ export default new Datastore({
 
   const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughTable2.js`);
   await passthrough.build();
-  await client.upload(await passthrough.dbx.asBuffer());
+  await client.upload(await passthrough.dbx.tarGzip());
 
   await expect(
     client.query(

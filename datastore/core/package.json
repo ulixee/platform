@@ -9,6 +9,7 @@
     "@ulixee/crypto": "2.0.0-alpha.19",
     "@ulixee/datastore": "2.0.0-alpha.19",
     "@ulixee/net": "2.0.0-alpha.19",
+    "@ulixee/datastore-docpage": "2.0.0-alpha.19",
     "@ulixee/platform-specification": "2.0.0-alpha.19",
     "@ulixee/schema": "2.0.0-alpha.19",
     "@ulixee/sidechain": "2.0.0-alpha.19",
@@ -20,7 +21,7 @@
     "nanoid": "^3.1.32",
     "serve-static": "^1.15.0",
     "tar": "^6.1.11",
-    "vm2": "^3.9.15"
+    "vm2": "^3.9.16"
   },
   "devDependencies": {
     "@ulixee/datastore-packager": "2.0.0-alpha.19",

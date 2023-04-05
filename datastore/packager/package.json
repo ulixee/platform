@@ -4,9 +4,9 @@
   "description": "Packager for creating Datastore bundles that can be consumed by a Ulixee Cloud",
   "dependencies": {
     "@rollup/plugin-commonjs": "^24.0.1",
-    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-node-resolve": "^15.0.2",
     "@rollup/plugin-replace": "^5.0.2",
-    "@rollup/plugin-typescript": "^11.0.0",
+    "@rollup/plugin-typescript": "^11.1.0",
     "@ulixee/commons": "2.0.0-alpha.19",
     "@ulixee/crypto": "2.0.0-alpha.19",
     "@ulixee/datastore": "2.0.0-alpha.19",
@@ -19,7 +19,7 @@
     "@ulixee/specification": "2.0.0-alpha.19",
     "@ulixee/sql-engine": "2.0.0-alpha.19",
     "better-sqlite3": "^8.0.1",
-    "rollup": "^3.19.1",
+    "rollup": "^3.20.2",
     "rollup-plugin-terser": "^7.0.2",
     "tar": "^6.1.11",
     "ws": "^7.4.6"

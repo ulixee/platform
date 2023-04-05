@@ -2,7 +2,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import Index from '../pages/Index.vue';
 import Documentation from '../pages/Documentation.vue';
 
-const roadmapNames = [
+const _roadmapNames = [
   'Argon',
   'Bonds',
   'ChromeAlive',

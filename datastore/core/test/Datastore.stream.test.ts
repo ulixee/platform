@@ -28,7 +28,7 @@ afterAll(async () => {
 test('should be able to stream a datastore runner', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/stream.js`);
   await packager.build();
-  await client.upload(await packager.dbx.asBuffer());
+  await client.upload(await packager.dbx.tarGzip());
   let counter = 0;
   const outputs = [];
   const result = client.stream(packager.manifest.versionHash, 'streamer', {});
@@ -51,7 +51,7 @@ test('should be able to stream a datastore runner', async () => {
 test('should be able to stream a datastore table', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/stream.js`);
   await packager.build();
-  await client.upload(await packager.dbx.asBuffer());
+  await client.upload(await packager.dbx.tarGzip());
   let counter = 0;
   const outputs = [];
   const result = client.stream(packager.manifest.versionHash, 'streamTable', { success: false });
@@ -83,7 +83,7 @@ test('should be able to require authentication for a streamed runner', async () 
 
   const packager = new DatastorePackager(`${__dirname}/datastores/streamedAuth.js`);
   await packager.build();
-  await client.upload(await packager.dbx.asBuffer());
+  await client.upload(await packager.dbx.tarGzip());
   const auth = DatastoreApiClient.createExecAuthentication(null, id);
   await expect(client.stream(packager.manifest.versionHash, 'authme', {})).rejects.toThrowError(
     'authentication',

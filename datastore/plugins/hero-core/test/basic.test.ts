@@ -1,6 +1,7 @@
 import * as Fs from 'fs';
 import { CloudNode } from '@ulixee/cloud';
 import { Helpers } from '@ulixee/datastore-testing';
+import DatastoreCore from '@ulixee/datastore-core';
 import Packager from '@ulixee/datastore-packager';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
 import * as Path from 'path';
@@ -28,6 +29,10 @@ test('it should be able to upload a datastore and run it by hash', async () => {
   const dbx = await packager.build();
   const host = await cloudNode.address;
   await dbx.upload(host);
+  // @ts-expect-error
+  const registry = DatastoreCore.datastoreRegistry;
+  // @ts-expect-error
+  const { queryLogDb, datastoresDb } = registry;
 
   const manifest = packager.manifest;
   koaServer.get('/datastore', ctx => {
@@ -35,11 +40,13 @@ test('it should be able to upload a datastore and run it by hash', async () => {
   });
   const remoteTransport = ConnectionToDatastoreCore.remote(host);
   Helpers.onClose(() => remoteTransport.disconnect());
+
   await expect(
     remoteTransport.sendRequest({
       command: 'Datastore.query',
       args: [
         {
+          id: '1',
           sql: 'SELECT title FROM default(url => $1)',
           boundValues: [`${koaServer.baseUrl}/datastore`],
           versionHash: manifest.versionHash,
@@ -51,6 +58,14 @@ test('it should be able to upload a datastore and run it by hash', async () => {
     outputs: [{ title: 'Datastore!' }],
     latestVersionHash: manifest.versionHash,
   });
+
+  expect(queryLogDb.logTable.all()).toHaveLength(1);
+  expect(queryLogDb.logTable.all()[0].query).toBe(`SELECT title FROM default(url => $1)`);
+  expect(queryLogDb.logTable.all()[0].heroSessionIds.split(',')).toHaveLength(2);
+  const stats = datastoresDb.datastoreItemStats.all();
+  expect(stats).toHaveLength(2);
+  expect(stats.some(x => x.name === 'default')).toBeTruthy();
+  expect(stats.some(x => x.name === 'defaultCrawl')).toBeTruthy();
 }, 45e3);
 
 test('it should throw an error if the default export is not a datastore', async () => {

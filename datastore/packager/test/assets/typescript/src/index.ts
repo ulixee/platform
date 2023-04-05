@@ -1,5 +1,6 @@
 import Datastore, { Runner } from '@ulixee/datastore';
 import { HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import { ISuperElement } from '@ulixee/hero';
 import { testRunner } from './helper';
 import { dateAdd, string } from '@ulixee/schema';
 
@@ -11,8 +12,9 @@ const runner = new Runner(
 
       const hero = new Hero();
       await hero.goto(input.url);
-      const title = await hero.document.title;
-      const body = await hero.document.body.textContent;
+      const title: string = await hero.document.title;
+      const node: ISuperElement = hero.document.body;
+      const body: string = await node.textContent;
 
       Output.emit({ text, title, body });
       console.log(`LOADED ${input.url}: ${title}`);

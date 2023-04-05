@@ -299,7 +299,7 @@ export default class ChromeAliveWindow {
               void this.api.send('Session.openMode', {
                 mode: 'Finder',
                 position: { x: params.x, y: params.y },
-                trigger: 'contextMenu'
+                trigger: 'contextMenu',
               });
             },
           }),
@@ -422,7 +422,10 @@ export default class ChromeAliveWindow {
       const title = `${scriptEntrypoint} (${moment(session.startTime).format(
         'MMM D [at] h:mm a',
       )})`;
-      if (this.window.title !== title) this.window.setTitle(title);
+      if (this.window.title !== title) {
+        this.window.setTitle(title);
+        void this.#toolbarView.webContents.executeJavaScript(`document.title="${title}"`);
+      }
     }
 
     if (eventType === 'Session.loaded' && !this.#hasShown) {

@@ -35,7 +35,7 @@ afterAll(async () => {
 test('should be able to query a datastore runner', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/query.js`);
   await packager.build();
-  await client.upload(await packager.dbx.asBuffer());
+  await client.upload(await packager.dbx.tarGzip());
   await expect(
     client.query(packager.manifest.versionHash, 'SELECT success FROM query()'),
   ).resolves.toEqual({
@@ -57,7 +57,7 @@ test('should be able to require authentication for a datastore', async () => {
 
   const packager = new DatastorePackager(`${__dirname}/datastores/auth.js`);
   await packager.build();
-  await client.upload(await packager.dbx.asBuffer());
+  await client.upload(await packager.dbx.tarGzip());
   const auth = DatastoreApiClient.createExecAuthentication(null, id);
   await expect(
     client.query(packager.manifest.versionHash, 'select * from authme()'),
@@ -71,7 +71,7 @@ test('should be able to require authentication for a datastore', async () => {
 test('should be able to query a function packaged without a datastore', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/directRunner.js`);
   await packager.build();
-  await client.upload(await packager.dbx.asBuffer());
+  await client.upload(await packager.dbx.tarGzip());
   await expect(
     client.query(packager.manifest.versionHash, 'SELECT testerEcho FROM default(tester => $1)', {
       boundValues: [false],

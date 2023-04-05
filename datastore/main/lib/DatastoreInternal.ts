@@ -135,6 +135,7 @@ export default class DatastoreInternal<
   public async queryInternal<TResultType = any[]>(
     sql: string,
     boundValues: any[] = [],
+    queryId?: string,
     callbacks: IQueryInternalCallbacks = {},
   ): Promise<TResultType> {
     const sqlParser = new SqlParser(sql);
@@ -160,8 +161,11 @@ export default class DatastoreInternal<
       const input = inputByFunctionName[name];
       const func = this.runners[name] ?? this.crawlers[name];
       callbacks.onFunction ??= (_, __, options, run) => run(options);
-      outputByFunctionName[name] = await callbacks.onFunction(id, name, { input }, options =>
-        func.runInternal(options),
+      outputByFunctionName[name] = await callbacks.onFunction(
+        id,
+        name,
+        { input, id: queryId },
+        options => func.runInternal(options, callbacks),
       );
     }
 
@@ -173,7 +177,9 @@ export default class DatastoreInternal<
       callbacks.onPassthroughTable ??= (_, options, run) => run(options);
       recordsByVirtualTableName[tableName] = await callbacks.onPassthroughTable(
         tableName,
-        {},
+        {
+          id: queryId,
+        },
         options => this.tables[tableName].queryInternal(sqlInputs.sql, sqlInputs.args, options),
       );
     }

@@ -16,7 +16,7 @@ export default new DatastoreApiHandler('Datastore.admin', {
 
     const approvedAdmins = new Set<string>([
       ...datastoreVersion.adminIdentities,
-      ...context.configuration.serverAdminIdentities,
+      ...context.configuration.cloudAdminIdentities,
     ]);
 
     if (!adminIdentity || !approvedAdmins.has(adminIdentity)) {

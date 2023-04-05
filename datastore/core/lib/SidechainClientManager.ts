@@ -8,13 +8,13 @@ import IDatastoreCoreConfigureOptions from '../interfaces/IDatastoreCoreConfigur
 export default class SidechainClientManager {
   public get defaultClient(): SidechainClient {
     if (!this.options.defaultSidechainHost) {
-      throw new Error('No default Ulixee Sidechain host set! Cannot use payments.');
+      return null;
     }
-    this._defaultClientPromise ??= this.createSidechainClient(this.options.defaultSidechainHost);
-    return this._defaultClientPromise;
+    this._defaultClient ??= this.createSidechainClient(this.options.defaultSidechainHost);
+    return this._defaultClient;
   }
 
-  private _defaultClientPromise: SidechainClient;
+  private _defaultClient: SidechainClient;
   private _approvedSidechainsResolvable: Resolvable<IApprovedSidechainByRootIdentity>;
   private sidechainClientsByIdentity: { [identity: string]: SidechainClient } = {};
 

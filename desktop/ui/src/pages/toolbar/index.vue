@@ -1,6 +1,9 @@
 <template>
-  <div id="ChromeAliveToolbar" :class="{ loading: isLoading, restarting: isRestarting }">
-    <SessionController />
+  <div class="relative">
+    <span class="mt-2 l-0 r-0 w-full absolute mx-auto text-center font-semibold text-md text-slate-600">{{ title }}</span>
+    <div id="ChromeAliveToolbar" :class="{ loading: isLoading, restarting: isRestarting }">
+      <SessionController />
+    </div>
   </div>
 </template>
 
@@ -12,11 +15,11 @@ import SessionController from '@/pages/toolbar/views/SessionController.vue';
 export default Vue.defineComponent({
   name: 'App',
   components: {
-    SessionController
+    SessionController,
   },
   setup() {
-
     return {
+      title: Vue.ref<string>(''),
       isLoading: Vue.ref(false),
       isRestarting: Vue.ref(false),
     };
@@ -27,14 +30,16 @@ export default Vue.defineComponent({
   },
 
   mounted() {
+    document.title = 'ChromeAlive!';
     Client.on('Session.loading', () => {
       this.isLoading = true;
     });
-    Client.on('Session.updated', (session) => {
+    Client.on('Session.updated', session => {
+      this.title = document.title;
       this.isRestarting = session?.playbackState === 'restarting';
     });
     Client.on('Session.loaded', () => {
-      this.isLoading = false
+      this.isLoading = false;
     });
   },
 });

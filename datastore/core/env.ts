@@ -1,6 +1,6 @@
 import { addressValidation, identityValidation } from '@ulixee/specification/common';
 import Identity from '@ulixee/crypto/lib/Identity';
-import { loadEnv, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
+import { loadEnv, parseEnvBool, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
 
 loadEnv(process.cwd());
 loadEnv(__dirname);
@@ -11,8 +11,10 @@ if (env.ULX_IDENTITY_PATH) env.ULX_IDENTITY_PATH = parseEnvPath(env.ULX_IDENTITY
 export default {
   serverEnvironment: env.ULX_SERVER_ENVIRONMENT,
   datastoresDir: env.ULX_DATASTORE_DIR,
+  enableSqliteWalMode: env.ULX_ENABLE_SQLITE_WAL,
   // list of identities who can upload to this Cloud [@ulixee/crypto/lib/Identity.bech32]
-  serverAdminIdentities: parseIdentities(env.ULX_SERVER_ADMIN_IDENTITIES, 'Admin Identities'),
+  cloudAdminIdentities: parseIdentities(env.ULX_CLOUD_ADMIN_IDENTITIES, 'Admin Identities'),
+  requireDatastoreAdminIdentities: parseEnvBool(env.ULX_REQUIRE_DATASTORE_ADMIN) ?? false,
   paymentAddress: parseAddress(env.ULX_PAYMENT_ADDRESS),
   computePricePerQuery: parseEnvInt(env.ULX_PRICE_PER_QUERY),
   approvedSidechains: [],
@@ -45,7 +47,7 @@ function parseIdentity(identity: string, type: string): string {
   }
 }
 
-function parseIdentities(identities: string, type: string): string[] {
+export function parseIdentities(identities: string, type: string): string[] {
   if (!identities) return [];
   const identityList = identities
     .split(',')

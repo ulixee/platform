@@ -1,7 +1,6 @@
-import { app, BrowserWindow, shell, systemPreferences, Tray } from 'electron';
+import { app, BrowserWindow, shell, systemPreferences, Event, Tray } from 'electron';
 import log from 'electron-log';
 import { EventEmitter } from 'events';
-import { CloudNode } from '@ulixee/cloud';
 import * as Positioner from 'electron-positioner';
 import * as Path from 'path';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
@@ -19,7 +18,6 @@ const { version } = require('../package.json');
 const iconPath = Path.resolve(__dirname, '..', 'assets', 'IconTemplate.png');
 
 export class Menubar extends EventEmitter {
-  cloudNode: CloudNode;
   readonly staticServer: StaticServer;
 
   #tray?: Tray;
@@ -37,14 +35,23 @@ export class Menubar extends EventEmitter {
   #downloadProgress = 0;
   #apiManager: ApiManager;
 
+  #argonFileOpen: string;
+
   constructor(options?: IMenubarOptions) {
     super();
     this.#options = options;
     this.#isVisible = false;
+
+    if (!app.requestSingleInstanceLock()) {
+      app.quit();
+      return;
+    }
     // hide the dock icon if it shows
     if (process.platform === 'darwin') {
       app.setActivationPolicy('accessory');
     }
+    app.on('second-instance', this.onSecondInstance.bind(this));
+    app.on('open-file', this.onFileOpened.bind(this));
     app.setAppLogsPath();
     (process.env as any).ELECTRON_DISABLE_SECURITY_WARNINGS = true;
     ShutdownHandler.register(() => this.appExit());
@@ -73,6 +80,25 @@ export class Menubar extends EventEmitter {
       }
     } catch (error) {
       if (!String(error).includes('Object has been destroyed')) throw error;
+    }
+  }
+
+  private onSecondInstance(_, argv: string[]): void {
+    const argonFile = argv.find(x => x.endsWith('.arg'));
+    if (argonFile) {
+      if (this.#apiManager) void this.#apiManager.onArgonFileOpened(argonFile);
+      else this.#argonFileOpen = argonFile;
+    }
+  }
+
+  private onFileOpened(e: Event, path: string): void {
+    if (!path.endsWith('.arg') && !path.endsWith('.arc')) return;
+
+    e.preventDefault();
+    if (this.#apiManager) {
+      void this.#apiManager.onArgonFileOpened(path);
+    } else {
+      this.#argonFileOpen = path;
     }
   }
 
@@ -161,12 +187,15 @@ export class Menubar extends EventEmitter {
       await app.whenReady();
       // for now auto-start
       await this.staticServer.load();
-      // eslint-disable-next-line no-console
-      console.log('Static server running at ', this.staticServer.getPath(''))
-      await this.startCloud();
       this.#apiManager = new ApiManager();
       this.#windowManager = new WindowManager(this, this.#apiManager);
-      await this.#apiManager.start(await this.cloudNode?.address);
+      await this.#apiManager.start();
+      if (this.#argonFileOpen) {
+        await this.#apiManager.onArgonFileOpened(this.#argonFileOpen);
+        this.#argonFileOpen = null;
+      }
+      await installDefaultChrome();
+      await this.updateLocalCloudStatus();
 
       await this.createWindow();
 
@@ -324,10 +353,10 @@ export class Menubar extends EventEmitter {
 
     this.#browserWindow = new BrowserWindow({
       ...defaults,
-      roundedCorners: false,
+      roundedCorners: true,
       skipTaskbar: true,
       autoHideMenuBar: true,
-      transparent: true,
+      transparent: false,
       alwaysOnTop: true,
       useContentSize: true,
       webPreferences: {
@@ -364,7 +393,7 @@ export class Menubar extends EventEmitter {
         }
 
         if (api === 'App.openDataDirectory') {
-          await shell.openPath(this.cloudNode.dataDir);
+          await shell.openPath(this.#apiManager.localCloud.dataDir);
         }
 
         if (api === 'App.openHeroSession') {
@@ -404,7 +433,7 @@ export class Menubar extends EventEmitter {
     if (process.env.OPEN_DEVTOOLS) {
       this.#browserWindow.webContents.openDevTools({ mode: 'detach' });
     }
-    if (this.cloudNode) {
+    if (this.#apiManager.localCloud) {
       await this.updateLocalCloudStatus();
     }
   }
@@ -416,36 +445,30 @@ export class Menubar extends EventEmitter {
   /// //// CLOUD MANAGEMENT ////////////////////////////////////////////////////////////////////////////////////////////
 
   private async stopCloud(): Promise<void> {
-    if (!this.cloudNode) return;
+    if (!this.#apiManager.localCloud) return;
 
     // eslint-disable-next-line no-console
     console.log(`CLOSING ULIXEE CLOUD`);
-    const cloudNode = this.cloudNode;
-    this.cloudNode = null;
-    await cloudNode.close();
+    await this.#apiManager.stopLocalCloud();
     await this.updateLocalCloudStatus();
   }
 
   private async startCloud(): Promise<void> {
-    if (this.cloudNode) return;
-    this.cloudNode = new CloudNode();
-    await this.cloudNode.listen();
-
-    await installDefaultChrome();
+    await this.#apiManager.startLocalCloud();
 
     // eslint-disable-next-line no-console
-    console.log(`STARTED ULIXEE CLOUD at ${await this.cloudNode.address}`);
+    console.log(`STARTED ULIXEE CLOUD at ${await this.#apiManager.localCloud.address}`);
     await this.updateLocalCloudStatus();
   }
 
   private async updateLocalCloudStatus(): Promise<void> {
     if (this.#isClosing) return;
     let address: string = null;
-    if (this.cloudNode) {
-      address = await this.cloudNode.address;
+    if (this.#apiManager.localCloud) {
+      address = await this.#apiManager.localCloud.address;
     }
     await this.sendToFrontend('Cloud.status', {
-      started: !!this.cloudNode,
+      started: !!this.#apiManager.localCloud,
       address,
     });
   }

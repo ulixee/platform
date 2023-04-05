@@ -14,6 +14,7 @@ export interface IHeroSessionsListResult {
   input?: Record<string, any>;
   outputs?: Record<string, any>[];
   error?: string;
+  errorCommand?: string;
 }
 
 export interface IHeroSessionsSearchResult {

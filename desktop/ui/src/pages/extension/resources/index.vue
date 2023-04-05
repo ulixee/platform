@@ -1,8 +1,8 @@
 <template>
-  <div class="flex h-screen flex-row divide-x divide-slate-200">
+  <div class="flex h-screen flex-row divide-x divide-chrome">
     <div class="basis-3/6 overflow-auto">
       <div
-        class="controls header-bar border-r-1 sticky top-0 w-full box-border flex h-8 flex-row border-slate-400 bg-slate-100 p-1"
+        class="controls header-bar border-r-1 sticky top-0 w-full box-border flex h-8 flex-row border-slate-400 bg-chrome p-1"
       >
         <input
           ref="inputElem"
@@ -19,7 +19,7 @@
       </div>
       <table class="w-full table-fixed">
         <thead class="h-4">
-          <tr class="header-lip sticky top-8 bg-slate-100 text-left font-thin">
+          <tr class="header-lip sticky top-8 bg-chrome text-left font-thin">
             <th class="w-1/2 pl-2 font-normal">
               Name
             </th>

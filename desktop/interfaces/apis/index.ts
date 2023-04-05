@@ -38,6 +38,8 @@ export type IDesktopAppApis = {
   'Sessions.search': IHeroSessionsApi['search'];
   'Sessions.list': IHeroSessionsApi['list'];
   'Datastores.list': IDatastoreApis['Datastores.list'];
+  'Datastore.meta': IDatastoreApis['Datastore.meta'];
+  'Datastore.creditsIssued': IDatastoreApis['Datastore.creditsIssued'];
 };
 
 export type IChromeAliveSessionApiResponse<T extends keyof IChromeAliveSessionApis> = ICoreResponsePayload<

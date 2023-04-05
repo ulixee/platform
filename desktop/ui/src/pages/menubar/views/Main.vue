@@ -1,20 +1,22 @@
 <template>
-  <div id="menu">
+  <div id="menu" class="text-base max-h-fit">
     <div class="section">
       <a @click.prevent="openDesktop()">Open Ulixee Desktop</a>
-      <a v-if="downloadProgress > 0 && downloadProgress < 100">Downloading new Version <span class="progress">{{ downloadProgress }}%</span></a>
-      <a
-        v-else-if="isInstalling"
-        @click.prevent="void 0"
-      >Installing <span class="installing-version">{{ newVersion }}</span></a>
-      <a
-        v-else-if="newVersion"
-        @click.prevent="installUpdate"
-      >Update Available <span class="new-version">{{ downloadProgress < 100 ? '' : 'Install ' }}{{ newVersion }}</span></a>
-      <a
-        v-else
-        @click.prevent="checkForUpdate"
-      >Check for Updates <span v-if="onLatestVersion" class="latest-version">On Latest</span></a>
+      <a v-if="downloadProgress > 0 && downloadProgress < 100"
+        >Downloading new Version <span class="progress">{{ downloadProgress }}%</span></a
+      >
+      <a v-else-if="isInstalling" @click.prevent="void 0"
+        >Installing <span class="installing-version">{{ newVersion }}</span></a
+      >
+      <a v-else-if="newVersion" @click.prevent="installUpdate"
+        >Update Available
+        <span class="new-version"
+          >{{ downloadProgress < 100 ? '' : 'Install ' }}{{ newVersion }}</span
+        ></a
+      >
+      <a v-else @click.prevent="checkForUpdate"
+        >Check for Updates <span v-if="onLatestVersion" class="latest-version">On Latest</span></a
+      >
     </div>
     <div class="section">
       <a @click.prevent="openLogsDirectory()">Open App Logs</a>
@@ -25,18 +27,30 @@
     </div>
     <div class="section">
       <div class="cloud-status">
-        <span class="circle" :class="{ stopped: !cloudStarted }" />
-        <span v-if="cloudStarted" class="text">Local Cloud running at {{ address }}</span>
+        <CloudIcon
+          class="relative -top-0.5 mx-2 inline h-5 stroke-2"
+          :class="[cloudStarted ? 'text-emerald-500' : 'text-gray-500']"
+        />
+        <span v-if="cloudStarted" class="text-sm font-normal text-gray-700"
+          >Local Cloud running at {{ address }}</span
+        >
         <span v-else class="text">Local Cloud is not running</span>
       </div>
-      <div class="cloud-actions">
-        <button v-if="cloudStarted" @click.prevent="stop()">
-          Stop
+      <div class="isolate mt-5 flex justify-center">
+        <button
+          class="relative inline-flex items-center rounded-l-md bg-white px-5 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-500 hover:bg-gray-50 focus:z-10 focus:ring-gray-600"
+          v-if="cloudStarted"
+          @click.prevent="cloudStarted ? stop() : start()"
+        >
+          <StopCircleIcon v-if="cloudStarted" class=" inline w-6 pr-1  text-gray-500" />
+          <PlayCircleIcon v-else class=" inline w-6 pr-2  text-gray-500" />
+          {{ cloudStarted ? 'Stop' : 'Start' }}
         </button>
-        <button v-else @click.prevent="start()">
-          Start
-        </button>
-        <button @click.prevent="restart()">
+        <button
+          class="relative -ml-px inline-flex items-center rounded-r-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-500 hover:bg-gray-50 focus:z-10  focus:ring-gray-600"
+          @click.prevent="restart()"
+        >
+          <ArrowPathIcon class=" inline w-6 pr-1 text-gray-500" />
           Restart
         </button>
       </div>
@@ -46,10 +60,16 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
+import {
+  CloudIcon,
+  ArrowPathIcon,
+  StopCircleIcon,
+  PlayCircleIcon,
+} from '@heroicons/vue/24/outline';
 
 export default Vue.defineComponent({
   name: 'App',
-  components: {},
+  components: { CloudIcon, ArrowPathIcon, PlayCircleIcon, StopCircleIcon },
   setup() {
     return {
       cloudStarted: Vue.ref(false),
@@ -128,22 +148,6 @@ export default Vue.defineComponent({
 </script>
 
 <style lang="scss">
-@import '../../../assets/style/resets.scss';
-
-html {
-  height: 100%;
-  padding: 0;
-  margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
-  font-size: 13px;
-}
-
-body {
-  height: 100%;
-  padding: 0;
-  margin: 0;
-}
-
 *,
 a,
 button {
@@ -153,16 +157,12 @@ button {
 
 #menu {
   border-radius: 5px;
-  background-color: Menu;
-  height: 100%;
-  width: 100%;
   padding: 2px;
-  box-sizing: border-box;
 
   a {
+    @apply text-sm cursor-pointer px-2.5 py-1.5 whitespace-nowrap my-0.5 block box-border;
     &:hover {
-      background-color: Highlight;
-      color: HighlightText;
+      @apply bg-fuchsia-700 text-white;
     }
     .coming-soon,
     .latest-version,
@@ -209,10 +209,6 @@ button {
     }
 
     white-space: nowrap;
-    box-sizing: border-box;
-    display: block;
-    margin: 3px 0;
-    padding: 5px 7px;
   }
 
   .section {
@@ -224,59 +220,6 @@ button {
     margin: 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-  }
-  .cloud-status {
-    padding: 8px 10px;
-    font-weight: bold;
-    .circle {
-      width: 10px;
-      height: 10px;
-      display: inline-block;
-      border: 1px solid green;
-      background-color: greenyellow;
-      border-radius: 50%;
-      margin-right: 5px;
-      vertical-align: text-top;
-      margin-top: 2px;
-      &.stopped {
-        background-color: lightgrey;
-      }
-    }
-  }
-  .cloud-actions {
-    padding: 8px 10px;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-content: space-between;
-    button {
-      flex-grow: 1;
-      width: 35%;
-      padding: 3px 5px;
-      &:first-child {
-        margin-right: 30px;
-      }
-    }
-  }
-  ul.basic-stats {
-    @include reset-ul();
-    margin: 3px 0;
-    li {
-      display: inline-block;
-      width: 33.333333%;
-      text-align: center;
-      border-right: 1px solid rgba(0, 0, 0, 0.1);
-      box-shadow: 1px 0 0 rgba(255, 255, 255, 0.5);
-      box-sizing: border-box;
-    }
-    li:last-child {
-      border: none;
-      box-shadow: none;
-    }
-    .num {
-      font-weight: 900;
-      font-size: 20px;
-    }
   }
 }
 </style>

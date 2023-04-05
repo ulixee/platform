@@ -27,7 +27,7 @@ afterAll(async () => {
 test('should be able to query a datastore using sql', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/query.js`);
   await packager.build();
-  await apiClient.upload(await packager.dbx.asBuffer());
+  await apiClient.upload(await packager.dbx.tarGzip());
   const cloudNodeAddress = await cloudNode.address;
   const client = new Client(`ulx://${cloudNodeAddress}/${packager.manifest.versionHash}`);
   const results = await client.query(

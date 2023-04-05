@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "importHelpers": true,
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "esModuleInterop": false,
+    "resolveJsonModule": true,
+    "sourceMap": true
+  },
+  "include": ["./*.ts", "./*.mjs"],
+  "exclude": ["node_modules"]
+}

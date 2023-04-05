@@ -6,7 +6,7 @@ import IDatastoreManifest, {
 import { existsAsync, readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import * as Path from 'path';
 import UlixeeConfig from '@ulixee/commons/config';
-import { findProjectPathAsync } from '@ulixee/commons/lib/dirUtils';
+import { findProjectPathAsync, getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
 import { assert } from '@ulixee/commons/lib/utils';
 import { promises as Fs } from 'fs';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
@@ -23,6 +23,7 @@ type IDatastoreSources = [
 
 export default class DatastoreManifest implements IDatastoreManifest {
   public name: string;
+  public description: string;
   public domain: string;
   public versionHash: string;
   public versionTimestamp: number;
@@ -42,6 +43,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
   public linkedVersions: IVersionHistoryEntry[];
   public allVersions: IVersionHistoryEntry[];
   public hasClearedLinkedVersions = false;
+  public addToVersionHistory = true;
 
   public explicitSettings: Partial<IDatastoreManifest>;
   public source: 'dbx' | 'entrypoint' | 'project' | 'global';
@@ -88,9 +90,10 @@ export default class DatastoreManifest implements IDatastoreManifest {
     tablesByName: IDatastoreManifest['tablesByName'],
     metadata: Pick<
       IDatastoreMetadata,
-      'coreVersion' | 'paymentAddress' | 'adminIdentities' | 'domain' | 'name'
+      'coreVersion' | 'paymentAddress' | 'adminIdentities' | 'domain' | 'name' | 'description'
     >,
     logger?: (message: string, ...args: any[]) => any,
+    createTemporaryVersionHash = false,
   ): Promise<void> {
     await this.load();
 
@@ -103,7 +106,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     this.runnersByName = {};
     this.crawlersByName = {};
 
-    const { name, coreVersion, paymentAddress, adminIdentities, domain } = metadata;
+    const { name, description, coreVersion, paymentAddress, adminIdentities, domain } = metadata;
 
     Object.assign(this, {
       coreVersion,
@@ -111,12 +114,14 @@ export default class DatastoreManifest implements IDatastoreManifest {
       paymentAddress,
       adminIdentities,
       domain,
+      description,
       name,
     });
     this.adminIdentities ??= [];
 
     for (const [funcName, funcMeta] of Object.entries(runnersByName)) {
       this.runnersByName[funcName] = {
+        description: funcMeta.description,
         corePlugins: funcMeta.corePlugins ?? {},
         prices: funcMeta.prices ?? [{ perQuery: 0, minimum: 0 }],
         schemaAsJson: funcMeta.schemaAsJson,
@@ -124,6 +129,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     }
     for (const [funcName, funcMeta] of Object.entries(crawlersByName)) {
       this.crawlersByName[funcName] = {
+        description: funcMeta.description,
         corePlugins: funcMeta.corePlugins ?? {},
         prices: funcMeta.prices ?? [{ perQuery: 0, minimum: 0 }],
         schemaAsJson: funcMeta.schemaAsJson,
@@ -131,6 +137,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     }
     for (const [tableName, tableMeta] of Object.entries(tablesByName)) {
       this.tablesByName[tableName] = {
+        description: tableMeta.description,
         prices: tableMeta.prices ?? [{ perQuery: 0 }],
         schemaAsJson: tableMeta.schemaAsJson,
       };
@@ -144,7 +151,24 @@ export default class DatastoreManifest implements IDatastoreManifest {
     this.scriptEntrypoint = scriptEntrypoint;
     this.versionTimestamp = versionTimestamp;
     this.scriptHash = scriptHash;
-    await this.computeVersionHash();
+    if (createTemporaryVersionHash) {
+      const tempVersionHashPath = Path.join(
+        getCacheDirectory(),
+        'ulixee',
+        'datastore-temp-ids.json',
+      );
+      // DBX validation: [ac-hj-np-z02-9]{18}
+      const tempVersions = (await readFileAsJson(tempVersionHashPath).catch(() => {})) ?? {};
+      if (!tempVersions[this.scriptEntrypoint]) {
+        const next = Object.keys(tempVersions).length + 1;
+        tempVersions[this.scriptEntrypoint] = String(next).replace(/1/g, 'l').padStart(4, '0');
+        await Fs.writeFile(tempVersionHashPath, JSON.stringify(tempVersions, null, 2));
+      }
+
+      this.versionHash = `dbx1startedtempver${tempVersions[this.scriptEntrypoint]}`;
+    } else {
+      await this.computeVersionHash();
+    }
     await this.save();
     await this.syncGeneratedManifests(manifestSources);
   }
@@ -216,6 +240,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
   public toJSON(): IDatastoreManifest {
     return {
       name: this.name,
+      description: this.description,
       domain: this.domain,
       versionHash: this.versionHash,
       versionTimestamp: this.versionTimestamp,
@@ -327,7 +352,12 @@ export default class DatastoreManifest implements IDatastoreManifest {
   }
 
   private addVersionHashToHistory(): void {
-    if (this.versionHash && !this.linkedVersions.some(x => x.versionHash === this.versionHash)) {
+    if (
+      this.addToVersionHistory &&
+      this.versionHash &&
+      !this.versionHash.includes('tempver') &&
+      !this.linkedVersions.some(x => x.versionHash === this.versionHash)
+    ) {
       this.linkedVersions.unshift({
         versionHash: this.versionHash,
         versionTimestamp: this.versionTimestamp,

@@ -5,7 +5,7 @@ import IRunnerContext from '../interfaces/IRunnerContext';
 import IRunnerComponents from '../interfaces/IRunnerComponents';
 import RunnerInternal from './RunnerInternal';
 import RunnerContext from './RunnerContext';
-import DatastoreInternal from './DatastoreInternal';
+import DatastoreInternal, { IQueryInternalCallbacks } from './DatastoreInternal';
 
 export default class RunnerPlugins<
   ISchema extends IRunnerSchema,
@@ -33,8 +33,9 @@ export default class RunnerPlugins<
   public async initialize(
     runnerInternal: RunnerInternal<ISchema>,
     datastoreInternal: DatastoreInternal,
+    callbacks: IQueryInternalCallbacks,
   ): Promise<IRunContext> {
-    const context = new RunnerContext(runnerInternal, datastoreInternal);
+    const context = new RunnerContext(runnerInternal, datastoreInternal, callbacks);
 
     // plugin `run` phases
     for (const plugin of this.clientPlugins) {

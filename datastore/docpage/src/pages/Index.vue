@@ -14,13 +14,18 @@
             <option value="postgres">Postgres</option>
           </select>
         </h2>
+        <!-- prettier-ignore -->
         <Prism language="shell" v-if="exampleType === 'client'">
-          npm install @ulixee/client 
+          npm install @ulixee/client
         </Prism>
+        <!-- prettier-ignore -->
         <Prism language="shell" v-else-if="exampleType === 'stream'">
           npm install @ulixee/stream
         </Prism>
-        <Prism language="shell" v-else-if="exampleType === 'postgres'"> npm install pg </Prism>
+        <!-- prettier-ignore -->
+        <Prism language="shell" v-else-if="exampleType === 'postgres'">
+          npm install pg
+        </Prism>
 
         <h2 class="mt-5">
           Usage Example
@@ -30,42 +35,49 @@
             <option value="postgres">Postgres</option>
           </select>
         </h2>
+        <!-- prettier-ignore -->
         <Prism language="javascript" v-if="exampleType === 'client'">
-          import Client from '@ulixee/client'; 
-          
-          (async function () { 
+          import Client from '@ulixee/client';
+
+          (async function () {
             const client = new Client('ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{ config.versionHash }}');
-            const rows = client.query('SELECT * FROM testers');
+            const rows = await client.query('SELECT * FROM {{defaultExample.formatted}}',
+              {{JSON.stringify(Object.values(defaultExample.args))}}
+            );
             console.log(rows);
           })();
         </Prism>
+        <!-- prettier-ignore -->
         <Prism language="javascript" v-if="exampleType === 'stream'">
-          import Stream from '@ulixee/stream'; 
-          
-          (async function () { 
+          import Stream from '@ulixee/stream';
+
+          (async function () {
             const stream = new Stream('ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{ config.versionHash }}');
             stream.addJob({
-              tableName: 'testers',
+              {{ defaultExample.type }}Name: '{{defaultExample.name}}',
               fields: '*'
             });
             stream.addJob({
-              tableName: 'testers',
+              {{ defaultExample.type }}Name: '{{defaultExample.name}}',
               fields: '*'
             });
             stream.addJob({
-              tableName: 'testers',
+              {{ defaultExample.type }}Name: '{{defaultExample.name}}',
               fields: '*'
             });
             const results = await stream.results;
           })();
         </Prism>
+        <!-- prettier-ignore -->
         <Prism language="javascript" v-if="exampleType === 'postgres'">
-          import { Client } from 'pg'; 
-          
-          (async function () {   
-            const client = new Client('ulx://{{ipAddress}}:{{port}}/{{ config.versionHash }}');
+          import { Client } from 'pg';
+
+          (async function () {
+            const client = new Client('ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{ config.versionHash }}');
             await client.connect();
-            const response = client.query('SELECT * FROM testers');
+            const response = client.query('SELECT * FROM {{defaultExample.formatted}}',
+              {{JSON.stringify(Object.values(defaultExample.args))}}
+            );
             console.log(response.rows);
           })();
         </Prism>
@@ -100,6 +112,9 @@
           <div v-for="crawler of crawlers">
             <h3 class="text-xl font-bold">{{ crawler.name }}</h3>
             {{ crawler.description }}
+
+            <div class="mt-2 font-bold">Input Params</div>
+            <Fields :schema="crawler.schema.input" />
           </div>
         </section>
       </div>
@@ -133,12 +148,11 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import Moment from 'moment';
-import { serverDetailsPromise } from '../main';
+import { docpageConfigPromise, serverDetailsPromise } from '../main';
 import Prism from '../components/Prism.vue';
 import Fields from '../components/Fields.vue';
 import Navbar from '../layouts/Navbar.vue';
-import config from '../data.config.json';
-import { formatCurrency } from '../lib/Utils';
+import { formatCurrency, getCredit } from '../lib/Utils';
 
 export default Vue.defineComponent({
   components: {
@@ -147,16 +161,24 @@ export default Vue.defineComponent({
     Navbar,
   },
   async setup() {
-    const { tablesByName, runnersByName, crawlersByName } = config as any;
+    const config = await docpageConfigPromise;
+
+    document.title = `${config.name} - Ulixee Datastore`;
+    const { tablesByName, runnersByName, crawlersByName, defaultExample } = config;
     const prices: number[] = [];
-    for (const runner of Object.values(runnersByName) as any[]) {
-      let total = 0;
-      for (const price of runner.prices) total += price.perQuery;
-      prices.push(total)
+    for (const item of [
+      ...Object.values(tablesByName ?? {}),
+      ...Object.values(runnersByName ?? {}),
+      ...Object.values(crawlersByName ?? {}),
+    ] as any[]) {
+      for (const price of item.prices) {
+        prices.push(price.perQuery);
+      }
     }
 
     const { ipAddress, port } = await serverDetailsPromise;
-    const avgPricePerQuery = prices.reduce((total, price) => total + price, 0) / prices.length;
+    const avgPricePerQuery =
+      prices.reduce((total, price) => total + price, 0) / prices.length / 1_000_000;
     const createdAt = Moment(config.createdAt);
     const yesterday = Moment().subtract(1, 'day');
     const lastUsedAt = yesterday.isBefore(createdAt) ? createdAt : yesterday;
@@ -166,19 +188,13 @@ export default Vue.defineComponent({
       lastUsedAt,
       ipAddress,
       port,
+      defaultExample,
       tables: Object.values(tablesByName || {}),
       runners: Object.values(runnersByName || {}),
       crawlers: Object.values(crawlersByName || {}),
-      fields: [
-        {
-          name: 'test',
-          type: 'boolean',
-          description: 'testing',
-        },
-      ],
       avgPricePerQuery: formatCurrency(avgPricePerQuery as number),
       exampleType: Vue.ref('client'),
-      authString: location.search.replace(/^\?/, '')
+      authString: getCredit(),
     };
   },
 });

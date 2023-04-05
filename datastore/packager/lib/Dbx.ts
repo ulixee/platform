@@ -7,8 +7,12 @@ import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { SqlGenerator } from '@ulixee/sql-engine';
 import { IFetchMetaResponseData } from '@ulixee/datastore-core/interfaces/ILocalDatastoreProcess';
-import { buildDocpage } from '@ulixee/datastore-docpage';
 import { unlinkSync } from 'fs';
+import RunnerInternal from '@ulixee/datastore/lib/RunnerInternal';
+import StringSchema from '@ulixee/schema/lib/StringSchema';
+import { IRunnerSchema } from '@ulixee/datastore';
+import moment = require('moment');
+import IDocpageConfig from '../interfaces/IDocpageConfig';
 
 export default class Dbx {
   public manifest: DatastoreManifest;
@@ -66,46 +70,115 @@ export default class Dbx {
     manifest: DatastoreManifest,
     entrypoint: string,
   ): Promise<void> {
-    const docpageDir = Path.join(this.path, 'docpage');
-    const name = meta.name || entrypoint.match(/([^/\\]+)\.(js|ts)$/)[1] || 'Untitled';
+    const title = meta.name || entrypoint.match(/([^/\\]+)\.(js|ts)$/)[1] || 'Untitled';
 
-    const config = {
+    let defaultExample: IDocpageConfig['defaultExample'];
+    for (const table of Object.values(meta.tablesByName)) {
+      if (table.isPublic) {
+        defaultExample = {
+          type: 'table',
+          formatted: table.name,
+          args: null,
+          name: table.name,
+        };
+        break;
+      }
+    }
+    if (!defaultExample) {
+      const functions = [
+        ...Object.values(meta.crawlersByName),
+        ...Object.values(meta.runnersByName),
+      ];
+      const useFunction = functions.find(x => x.schema?.inputExamples?.length) ?? functions[0];
+      const type = meta.runnersByName[useFunction?.name] ? 'runner' : 'crawler';
+      if (useFunction?.schema) {
+        const args: Record<string, any> = {};
+        if (useFunction.schema.inputExamples?.length) {
+          RunnerInternal.fillInputWithExamples(useFunction.schema, args);
+        } else {
+          for (const [name, field] of Object.entries(
+            (useFunction.schema?.input as IRunnerSchema['input']) ?? {},
+          )) {
+            if (field.optional === true) continue;
+            if (field.format === 'time') args[name] = moment().format(StringSchema.TimeFormat);
+            else if (field.format === 'date') args[name] = moment().format(StringSchema.DateFormat);
+            else if (field.format === 'url') args[name] = '<USER SUPPLIED URL>';
+            else if (field.format === 'email') args[name] = '<USER SUPPLIED EMAIL>';
+            else if (field.enum) args[name] = field.enum[0];
+
+            args[name] ??= `<USER SUPPLIED ${field.typeName}>`;
+          }
+        }
+
+        const keys = Object.keys(args).map((key, i) => `${key} => $${i + 1}`);
+        defaultExample = {
+          type,
+          formatted: `${useFunction.name}(${keys.join(', ')})`,
+          args,
+          name: useFunction.name,
+        };
+      } else if (useFunction) {
+        defaultExample = {
+          type,
+          formatted: `${useFunction.name}()`,
+          args: {},
+          name: useFunction.name,
+        };
+      }
+    }
+
+    defaultExample ??= { type: 'table', formatted: 'default', args: null, name: 'default' };
+
+    const config: IDocpageConfig = {
       versionHash: manifest.versionHash,
-      name: name.charAt(0).toUpperCase() + name.slice(1),
+      name: title.charAt(0).toUpperCase() + title.slice(1),
       description: meta.description,
-      createdAt: new Date().toISOString(),
-      runnersByName: Object.keys(meta.runnersByName).reduce((obj, n) => {
+      defaultExample,
+      createdAt: new Date(manifest.versionTimestamp).toISOString(),
+      runnersByName: Object.entries(meta.runnersByName).reduce((obj, [name, entry]) => {
         return Object.assign(obj, {
-          [n]: {
-            name: n,
-            description: meta.runnersByName[n].description || '',
-            schema: meta.runnersByName[n].schema,
-            prices: manifest.runnersByName[n].prices,
+          [name]: {
+            name,
+            description: entry.description || '',
+            schema: entry.schema,
+            prices: manifest.runnersByName[name].prices,
           },
         });
       }, {}),
-      tablesByName: Object.keys(meta.tablesByName).reduce((obj, n) => {
+      crawlersByName: Object.entries(meta.crawlersByName).reduce((obj, [name, entry]) => {
         return Object.assign(obj, {
-          [n]: {
-            name: n,
-            description: meta.tablesByName[n].description || '',
-            schema: meta.tablesByName[n].schema,
+          [name]: {
+            name,
+            description: entry.description || '',
+            schema: entry.schema,
+            prices: manifest.crawlersByName[name].prices,
+          },
+        });
+      }, {}),
+      tablesByName: Object.entries(meta.tablesByName).reduce((obj, [name, entry]) => {
+        if (entry.isPublic === false) return;
+        return Object.assign(obj, {
+          [name]: {
+            name,
+            description: entry.description || '',
+            schema: entry.schema,
+            prices: manifest.tablesByName[name].prices,
           },
         });
       }, {}),
     };
 
-    await buildDocpage(config, docpageDir);
+    await Fs.writeFile(Path.join(this.path, 'docpage.json'), JSON.stringify(config));
   }
 
-  public async asBuffer(): Promise<Buffer> {
+  public async tarGzip(): Promise<Buffer> {
     await Tar.create(
       {
         gzip: true,
         cwd: this.path,
         file: `${this.path}.tgz`,
       },
-      ['datastore.js', 'datastore.js.map', 'datastore-manifest.json', 'storage.db', 'docpage'],
+      ['datastore.js', 'datastore.js.map', 'datastore-manifest.json', 'storage.db', 'docpage.json'],
     );
     const buffer = await Fs.readFile(`${this.path}.tgz`);
     await Fs.unlink(`${this.path}.tgz`);
@@ -120,7 +193,7 @@ export default class Dbx {
       timeoutMs?: number;
     } = {},
   ): Promise<{ success: boolean }> {
-    const compressedDatastore = await this.asBuffer();
+    const compressedDatastore = await this.tarGzip();
 
     const client = new DatastoreApiClient(host);
     try {

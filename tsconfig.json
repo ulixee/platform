@@ -37,6 +37,7 @@
     "specification",
     "hero",
     "datastore/docpage/src",
+    "datastore/packager/test/assets/*",
     "assets",
     "test/datastores",
     "**/website",

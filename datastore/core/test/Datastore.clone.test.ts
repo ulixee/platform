@@ -31,7 +31,7 @@ beforeAll(async () => {
 
   const packager = new DatastorePackager(`${__dirname}/datastores/cloneme.ts`);
   await packager.build();
-  await client.upload(await packager.dbx.asBuffer());
+  await client.upload(await packager.dbx.tarGzip());
   versionHash = packager.manifest.versionHash;
 }, 45e3);
 
@@ -43,13 +43,15 @@ afterAll(async () => {
 });
 
 test('should be able to clone a datastore', async () => {
-  const url = `ulx://${await cloudNode.address}/datastore/${versionHash}`;
-  await expect(cloneDatastore(url, `${__dirname}/datastores/cloned`)).resolves.toBeUndefined();
+  const url = `ulx://${await cloudNode.address}/${versionHash}`;
+  await expect(cloneDatastore(url, `${__dirname}/datastores/cloned`)).resolves.toEqual({
+    datastoreFilePath: `${__dirname}/datastores/cloned/datastore.ts`,
+  });
 
   expect(Fs.existsSync(`${__dirname}/datastores/cloned/datastore.ts`)).toBeTruthy();
   const packager = new DatastorePackager(`${__dirname}/datastores/cloned/datastore.ts`);
   await packager.build();
-  await client.upload(await packager.dbx.asBuffer());
+  await client.upload(await packager.dbx.tarGzip());
 
   // should not include a private table
   expect(Object.entries(packager.manifest.tablesByName)).toHaveLength(1);

@@ -1,29 +1,47 @@
-// NOTE: you must start your own Ulixee Cloud to run this example.
+import Datastore, { Runner } from '@ulixee/datastore';
+import { HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import { string } from '@ulixee/schema';
 
-import { Runner, HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+export default new Datastore({
+  name: 'Tutorial',
+  description: 'This is the example used in the Getting Started guide',
+  /**
+   * Configuring admin access.
+   */
+  adminIdentities: ['id13dheud78gd9am7azwmwu7rhds4n2xptpepzchlwmm54j5scq8flql4g0ql'],
+  runners: {
+    docPages: new Runner(
+      {
+        pricePerQuery: 10_000,
+        async run({ input, Hero, Output }) {
+          const hero = new Hero();
+          await hero.goto(`https://ulixee.org/docs/${input.tool}`);
 
-export default new Runner(async ctx => {
-  const { input, Output, Hero } = ctx;
-  input.url ??= 'https://ulixee.org';
+          await hero.querySelector('.LEFTBAR').$waitForVisible();
+          const links = await hero.querySelectorAll('.LEFTBAR a');
 
-  const hero = new Hero();
+          for (const link of await links) {
+            Output.emit({
+              title: await link.innerText,
+              href: await link.href,
+            });
+          }
 
-  await hero.goto('https://ulixee.org');
-  await hero.waitForPaintingStable();
-
-  const { document } = hero;
-  await document.querySelector('h1').textContent;
-
-  // step 1 - look in dom
-  const datasets = await document.querySelectorAll('.datasets .title');
-
-  // step 2 - start collecting datasets
-
-  for (const dataset of datasets) {
-    new Output({ dataset: await dataset.textContent }).emit();
-  }
-
-  // step 3 - look at the first one
-  await hero.click(datasets[0]);
-  await hero.waitForLocation('change');
-}, HeroRunnerPlugin);
+          await hero.close();
+        },
+        schema: {
+          input: {
+            tool: string({
+              enum: ['hero', 'datastore', 'cloud', 'client'],
+            }),
+          },
+          output: {
+            title: string(),
+            href: string({ format: 'url' }),
+          },
+        },
+      },
+      HeroRunnerPlugin,
+    ),
+  },
+});

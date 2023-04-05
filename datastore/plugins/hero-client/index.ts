@@ -8,9 +8,9 @@ import IRunnerSchema from '@ulixee/datastore/interfaces/IRunnerSchema';
 import IObservableChange from '@ulixee/datastore/interfaces/IObservableChange';
 import {
   Crawler,
-  RunnerPluginStatics,
   IRunnerComponents,
   IRunnerExecOptions,
+  RunnerPluginStatics,
 } from '@ulixee/datastore';
 import IRunnerContextBase from '@ulixee/datastore/interfaces/IRunnerContext';
 import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSchema';
@@ -77,18 +77,14 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
     this.runnerInternal = runnerInternal;
     this.runnerInternal.onOutputChanges = this.onOutputChanged.bind(this);
 
+    const needsClose: (() => Promise<void>)[] = [];
+
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const container = this;
     try {
       const HeroReplayBase = HeroReplay;
-      const {
-        input,
-        affiliateId,
-        payment,
-        authentication,
-        isFromCommandLine,
-        ...heroApplicableOptions
-      } = runnerInternal.options as IRunnerExecOptions<ISchema>;
+      const { input, affiliateId, payment, authentication, ...heroApplicableOptions } =
+        runnerInternal.options as IRunnerExecOptions<ISchema>;
 
       const heroOptions: IHeroCreateOptions = {
         ...heroApplicableOptions,
@@ -96,6 +92,7 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
       };
 
       const HeroBase = Hero;
+
       // eslint-disable-next-line @typescript-eslint/no-shadow
       context.Hero = class Hero extends HeroBase {
         constructor(options: IHeroCreateOptions = {}) {
@@ -112,6 +109,12 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
             };
           };
           void this.once('connected', container.onConnected.bind(container, this));
+          needsClose.push(super.close.bind(this));
+        }
+
+        // don't close until the end
+        override close(): Promise<void> {
+          return Promise.resolve();
         }
       };
       // eslint-disable-next-line @typescript-eslint/no-shadow
@@ -130,6 +133,12 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
           });
           container.heroReplays.add(this);
           this.once('connected', container.onConnected.bind(container, this));
+          needsClose.push(super.close.bind(this));
+        }
+
+        // don't close until the end
+        override close(): Promise<void> {
+          return Promise.resolve();
         }
 
         static async fromCrawler<T extends Crawler>(
@@ -148,8 +157,7 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
       await new Promise(setImmediate);
       await Promise.all(this.pendingUploadPromises);
     } finally {
-      const heroes = [this.hero, ...this.heroReplays].filter(Boolean);
-      await Promise.all(heroes.map(x => x.close().catch(() => null)));
+      await Promise.allSettled(needsClose.map(x => x()));
     }
   }
 
@@ -158,10 +166,7 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
   protected onConnected(source: Hero | HeroReplay): void {
     const coreSessionPromise = source[InternalPropertiesSymbol].coreSessionPromise;
     this.coreSessionPromise = coreSessionPromise;
-    // drown unhandled errors
-    void coreSessionPromise
-      .then(() => this.registerSessionClose(coreSessionPromise))
-      .catch(() => null);
+    this.registerSessionClose(coreSessionPromise).catch(() => null);
     this.uploadOutputs();
   }
 
@@ -169,6 +174,9 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
     try {
       const coreSession = await coreSessionPromise;
       if (!coreSession) return;
+      if (this.execOptions.trackMetadata) {
+        this.execOptions.trackMetadata('heroSessionId', coreSession.sessionId, this.name);
+      }
       coreSession.once('close', () => {
         if (this.coreSessionPromise === coreSessionPromise) this.coreSessionPromise = null;
       });

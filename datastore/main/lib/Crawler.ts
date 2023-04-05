@@ -3,6 +3,7 @@ import StringSchema from '@ulixee/schema/lib/StringSchema';
 import DateSchema from '@ulixee/schema/lib/DateSchema';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import { SqlGenerator } from '@ulixee/sql-engine';
+import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import moment = require('moment');
 import Runner from './Runner';
 import IRunnerSchema, { ISchemaRecordType } from '../interfaces/IRunnerSchema';
@@ -149,6 +150,8 @@ export default class Crawler<
     return TypeSerializer.stringify(inputArgs, { sortKeys: true });
   }
 }
+
+addGlobalInstance(Crawler);
 
 const CrawlerInputSchema = {
   maxTimeInCache: number({

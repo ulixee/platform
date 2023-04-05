@@ -4,6 +4,7 @@ import { DateUtilities, ObjectSchema } from '@ulixee/schema';
 import { IValidationError } from '@ulixee/schema/interfaces/IValidationResult';
 import { bindFunctions, pickRandom } from '@ulixee/commons/lib/utils';
 import StringSchema from '@ulixee/schema/lib/StringSchema';
+import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import DatastoreSchemaError from './DatastoreSchemaError';
 import IRunnerSchema, { ExtractSchemaType } from '../interfaces/IRunnerSchema';
 import IRunnerExecOptions from '../interfaces/IRunnerExecOptions';
@@ -45,20 +46,7 @@ export default class RunnerInternal<
     });
 
     if (components.schema?.inputExamples?.length && components.schema.input) {
-      const randomEntry = pickRandom(components.schema.inputExamples);
-      for (const [key, schema] of Object.entries(components.schema.input)) {
-        if (this.#input[key] === undefined) {
-          let value = randomEntry[key];
-          if (
-            value instanceof DateUtilities &&
-            schema instanceof StringSchema &&
-            (schema.format === 'date' || schema.format === 'time')
-          ) {
-            value = value.evaluate(schema.format);
-          }
-          (this.#input as any)[key] = value;
-        }
-      }
+      RunnerInternal.fillInputWithExamples(components.schema, this.#input);
     }
 
     if (this.schema?.output) {
@@ -93,9 +81,6 @@ export default class RunnerInternal<
   }
 
   public get input(): TInput {
-    if (this.#input && typeof this.#input === 'object') {
-      return { ...this.#input };
-    }
     return this.#input;
   }
 
@@ -182,4 +167,23 @@ export default class RunnerInternal<
       }
     }
   }
+
+  public static fillInputWithExamples(schema: IRunnerSchema, input: Record<string, any>): any {
+    const randomEntry = pickRandom(schema.inputExamples);
+    for (const [key, field] of Object.entries(schema.input)) {
+      if (input[key] === undefined && field.optional !== true) {
+        let value = randomEntry[key];
+        if (
+          value instanceof DateUtilities &&
+          field instanceof StringSchema &&
+          (field.format === 'date' || field.format === 'time')
+        ) {
+          value = value.evaluate(field.format);
+        }
+        input[key] = value;
+      }
+    }
+  }
 }
+
+addGlobalInstance(DateUtilities, StringSchema, RunnerInternal);

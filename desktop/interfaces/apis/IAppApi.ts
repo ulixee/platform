@@ -1,7 +1,9 @@
 import { IBounds } from '../IBounds';
 
 export default interface IAppApi {
-  connect(args: { workarea: IBounds & { scale: number } }): Promise<{ id: string }>;
+  connect(args: {
+    workarea: IBounds & { scale: number };
+  }): Promise<{ id: string; cloudNodes: number }>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/explicit-function-return-type

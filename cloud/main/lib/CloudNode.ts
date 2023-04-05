@@ -3,7 +3,7 @@ import * as Http from 'http';
 import { IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo, ListenOptions, Socket } from 'net';
 import Log from '@ulixee/commons/lib/Logger';
-import { bindFunctions, createPromise } from '@ulixee/commons/lib/utils';
+import { bindFunctions, createPromise, isPortInUse } from '@ulixee/commons/lib/utils';
 import { isWsOpen } from '@ulixee/net/lib/WsUtils';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
@@ -69,7 +69,6 @@ export default class CloudNode {
     this.httpRoutes = [];
     this.router = new CoreRouter(this);
 
-    this.addHttpRoute('/', 'GET', this.handleHome);
     if (!shouldShutdownOnSignals) ShutdownHandler.disableSignals = true;
     ShutdownHandler.register(this.autoClose);
   }
@@ -82,6 +81,11 @@ export default class CloudNode {
     if (this.listeningPromise.isResolved) return this.listeningPromise.promise;
 
     const listenOptions = { ...(options ?? { port: 0 }) };
+
+    if (!listenOptions.port) {
+      const is1818InUse = await isPortInUse(1818);
+      if (!is1818InUse) listenOptions.port = 1818;
+    }
 
     try {
       const addressHost = await new Promise<AddressInfo>((resolve, reject) => {
@@ -167,10 +171,6 @@ export default class CloudNode {
 
   private autoClose(): Promise<void> {
     return this.close(true);
-  }
-
-  private handleHome(req: IncomingMessage, res: ServerResponse): void {
-    res.end(`Ulixee Cloud v${this.version}`);
   }
 
   private async handleHttpRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {

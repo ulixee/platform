@@ -19,7 +19,7 @@ beforeAll(async () => {
   jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
   const packager = new DatastorePackager(`${__dirname}/datastores/upload.js`);
   await packager.build();
-  dbxFile = await packager.dbx.asBuffer();
+  dbxFile = await packager.dbx.tarGzip();
   manifest = packager.manifest.toJSON();
   cloudNode = new CloudNode();
   cloudNode.router.datastoreConfiguration = {
@@ -64,8 +64,18 @@ test('should be able upload a datastore', async () => {
 
 test('should be able to restrict uploads', async () => {
   const identity = await Identity.create();
-  DatastoreCore.options.serverAdminIdentities = [identity.bech32];
+  DatastoreCore.options.cloudAdminIdentities = [identity.bech32];
 
   await expect(client.upload(dbxFile)).rejects.toThrowError('valid AdminIdentity signature');
   await expect(client.upload(dbxFile, { identity })).resolves.toBeTruthy();
+});
+
+test('should be able to download dbx files', async () => {
+  const identity = await Identity.create();
+  DatastoreCore.options.cloudAdminIdentities = [identity.bech32];
+
+  await expect(client.download(manifest.versionHash)).rejects.toThrowError(
+    'valid AdminIdentity signature',
+  );
+  await expect(client.download(manifest.versionHash, { identity })).resolves.toBeTruthy();
 });

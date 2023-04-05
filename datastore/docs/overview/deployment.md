@@ -174,7 +174,7 @@ Your Datastore will be built and uploaded transparently. No `.dbx` or working di
 
 Options below show a short and long form.
 
-- `-h, --upload-host <host>`. Upload this package to the given host CloudNode. Will try to auto-connect if none specified.
+- `-h, --cloud-host <host>`. Upload this package to the given host CloudNode. Will try to auto-connect if none specified.
 - `-c, --clear-version-history` Clear out any version history for this script entrypoint (default: false)
 - `-s, --compiled-source-path <path>` Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).
 - `-t, --tsconfig <path>`. A path to a TypeScript config file (if needed). Will be auto-located based on the entrypoint if it ends in ".ts"
@@ -208,7 +208,7 @@ The build directory is automatically cleaned up after your upload.
 Options below show a short and long form.
 
 - `-u, --upload` `Boolean`. Upload this package to a Ulixee CloudNode after packaging. (default: false)
-- `-h, --upload-host <host>`. Upload this package to the given CloudNode host. Will try to auto-connect if none specified.
+- `-h, --cloud-host <host>`. Upload this package to the given CloudNode host. Will try to auto-connect if none specified.
 - `-o, --out-dir <path>` A directory path where you want packaged .dbx files to be saved
 - `-c, --clear-version-history` Clear out any version history for this script entrypoint (default: false)
 - `-s, --compiled-source-path <path>` Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).
@@ -236,7 +236,7 @@ You must provide a path to the pre-packaged `.dbx` file (eg, `<pathToScript/scri
 
 Options below show a short and long form.
 
-- `-h, --upload-host <host>`. Upload this package to the given CloudNode host. Will try to auto-connect if none specified.
+- `-h, --cloud-host <host>`. Upload this package to the given CloudNode host. Will try to auto-connect if none specified.
 - `-a, --allow-new-version-history` Allow uploaded Datastore to create a new version history for the script entrypoint. (default: false)
 
 ### Installing a Datastore locally.

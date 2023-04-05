@@ -14,6 +14,7 @@ declare global {
   }
 }
 
+let clientId = 0;
 export class Client<Type extends 'session' | 'desktop' = 'session'> {
   public onConnect: () => any;
   public address: string;
@@ -30,6 +31,13 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
 
   private lastEventByEventType: { [event: string]: any } = {};
 
+  private id = (clientId += 1);
+
+  constructor() {
+    this.connect = this.connect.bind(this);
+    this.send = this.send.bind(this);
+  }
+
   connect(): Promise<void> {
     if (this.connectedPromise) {
       return this.connectedPromise;
@@ -42,7 +50,7 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     this.connectedPromise = new Promise(resolve => {
       this.connection.onopen = () => {
         window.addEventListener('beforeunload', () => {
-          this.connection?.close()
+          this.connection?.close();
         });
         resolve();
       };
@@ -73,6 +81,15 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     if (!handlers) return;
     const idx = handlers.indexOf(handler);
     if (idx >= 0) handlers.splice(idx, 1);
+  }
+
+  removeEventListeners<
+    T extends keyof TEvents & string,
+    TEvents extends Type extends 'session'
+      ? IChromeAliveSessionEvents
+      : IDesktopAppEvents = Type extends 'session' ? IChromeAliveSessionEvents : IDesktopAppEvents,
+  >(event: T): void {
+    delete this.eventHandlersByEventType[event];
   }
 
   close() {
@@ -116,14 +133,15 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
       messageId,
       args,
     });
+
     document.dispatchEvent(
       new CustomEvent('chromealive:api', {
-        detail: { command, messageId, args },
+        detail: { command, messageId, args, clientId: this.id },
       }),
     );
     return new Promise(resolve => {
-      this.connection.send(message);
       this.pendingMessagesById.set(messageId, { resolve });
+      this.connection.send(message);
     });
   }
 
@@ -131,11 +149,10 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     TApis extends Type extends 'session'
       ? IChromeAliveSessionApis
       : IDesktopAppApis = Type extends 'session' ? IChromeAliveSessionApis : IDesktopAppApis,
-  >(message: { data: string }): void {
+  >(message: { eventType?: string; data: string }): void {
     const event: IChromeAliveEvent<any> | ICoreResponsePayload<TApis, any> = TypeSerializer.parse(
       message.data,
     );
-
     if ('eventType' in event) {
       this.lastEventByEventType[event.eventType as string] = event.data;
       for (const handler of this.eventHandlersByEventType[event.eventType as string] ?? []) {
@@ -150,6 +167,11 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
       const { responseId, data } = event;
       this.pendingMessagesById.get(responseId)?.resolve(data);
       this.pendingMessagesById.delete(responseId);
+      document.dispatchEvent(
+        new CustomEvent('chromealive:api:response', {
+          detail: { responseId, data, clientId: this.id },
+        }),
+      );
     }
   }
 }

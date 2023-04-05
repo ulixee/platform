@@ -1,5 +1,6 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
+// eslint-disable-next-line import/no-unresolved
 
 const dest = Path.join(process.cwd(), process.argv[2]);
 

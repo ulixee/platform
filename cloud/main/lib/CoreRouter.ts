@@ -9,8 +9,18 @@ import Resolvable from '@ulixee/commons/lib/Resolvable';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
 import Logger from '@ulixee/commons/lib/Logger';
-import DesktopUtils from './DesktopUtils';
+import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
+import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
+import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
+import { ICloudApis } from '@ulixee/platform-specification/cloud/index';
+import TransportBridge from '@ulixee/net/lib/TransportBridge';
+import { ConnectionToCore } from '@ulixee/net';
+import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreVersionHashValidation';
+import ICloudEvents from '../interfaces/ICloudEvents';
+import CloudStatus from '../endpoints/Cloud.status';
+import ICloudApiContext from '../interfaces/ICloudApiContext';
 import CloudNode, { IHttpHandleFn } from './CloudNode';
+import DesktopUtils from './DesktopUtils';
 
 const { log } = Logger(module);
 
@@ -36,16 +46,19 @@ export default class CoreRouter {
   private cloudNode: CloudNode;
   private readonly connections = new Set<IConnectionToClient<any, any>>();
 
+  private apiRegistry = new ApiRegistry<ICloudApiContext>([CloudStatus]);
+
   private wsConnectionByType = {
     hero: transport => HeroCore.addConnection(transport),
+    chromealive: (transport, req) =>
+      DesktopUtils.getDesktop().addChromeAliveConnection(transport, req),
     datastore: transport => DatastoreCore.addConnection(transport) as any,
     desktop: (transport, req) =>
       DesktopUtils.getDesktop().addDesktopConnection(transport, req) as any,
-    chromealive: (transport, req) =>
-      DesktopUtils.getDesktop().addChromeAliveConnection(transport, req),
     desktopRaw: (ws, req) => {
       DesktopUtils.getDesktop().addAppDevtoolsWebsocket(ws, req);
     },
+    cloud: transport => this.addCloudApiConnection(transport),
   } as const;
 
   private httpRoutersByType: {
@@ -68,9 +81,15 @@ export default class CoreRouter {
       'GET',
       this.handleHttpRequest.bind(this, 'datastoreCreditBalance'),
     );
-    cloudNode.addHttpRoute(/\/datastore\/(.+)/, 'GET', this.handleHttpRequest.bind(this, 'datastore'));
+    cloudNode.addHttpRoute(
+      new RegExp(`/(${datastoreRegex.source})(.*)`),
+      'GET',
+      this.handleHttpRequest.bind(this, 'datastore'),
+    );
     cloudNode.addHttpRoute(/\/(.*)/, 'GET', this.handleHttpRequest.bind(this, 'datastoreRoot'));
     cloudNode.addHttpRoute('/', 'OPTIONS', this.handleHttpRequest.bind(this, 'datastoreOptions'));
+    // last option
+    cloudNode.addHttpRoute('/', 'GET', this.handleHome.bind(this));
 
     for (const module of CoreRouter.datastorePluginsToRegister) {
       safeRegisterModule(module);
@@ -108,7 +127,13 @@ export default class CoreRouter {
       if (DesktopUtils.isInstalled()) {
         const chromeAliveCore = DesktopUtils.getDesktop();
         const wsAddress = Promise.resolve(`ws://${cloudNodeAddress}`);
-        chromeAliveCore.setLocalCloudAddress(wsAddress);
+        const bridge = new TransportBridge();
+        this.addCloudApiConnection(bridge.transportToClient);
+
+        chromeAliveCore.setLocalCloudAddress(
+          wsAddress,
+          new ConnectionToCore(bridge.transportToCore),
+        );
         await chromeAliveCore.activatePlugin();
       }
     } finally {
@@ -140,6 +165,21 @@ export default class CoreRouter {
       closeResolvable.reject(error);
     }
     return closeResolvable.promise;
+  }
+
+  private addCloudApiConnection(
+    transport: ITransportToClient<ICloudApis, ICloudEvents>,
+  ): ConnectionToClient<ICloudApis, ICloudEvents, ICloudApiContext> {
+    return this.apiRegistry.createConnection(transport, {
+      logger: log.createChild(module, {}),
+      connectedNodes: 0,
+      cloudNodes: 1,
+      version: this.cloudNode.version,
+    });
+  }
+
+  private handleHome(req: IncomingMessage, res: ServerResponse): void {
+    res.end(`Ulixee Cloud v${this.cloudNode.version}`);
   }
 
   private handleRawSocketRequest(
@@ -176,8 +216,7 @@ export default class CoreRouter {
     res: ServerResponse,
     params: string[],
   ): Promise<void | boolean> {
-    const result = await this.httpRoutersByType[connectionType](req, res, params);
-    return result;
+    return await this.httpRoutersByType[connectionType](req, res, params);
   }
 
   private handleHttpServerDetails(req: IncomingMessage, res: ServerResponse): void {

@@ -237,6 +237,8 @@ test('should be able to package an exported Runner without a Datastore', async (
   await packager.build();
   path = packager.dbx.path;
   expect(packager.manifest.toJSON()).toEqual({
+    name: undefined,
+    description: undefined,
     linkedVersions: [],
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `rawRunnerTest.js`),
     scriptHash: expect.any(String),

@@ -3,6 +3,7 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import sourcemaps from './sourcemaps';
 
 const commonjs = require('@rollup/plugin-commonjs');
@@ -48,7 +49,7 @@ export default async function rollupDatastore(
           inlineSources: true,
           declaration: false,
           checkJs: false,
-          target: 'es2020',
+          target: 'ES2021',
         },
         outputToFilesystem: false,
         tsconfig: options?.tsconfig,
@@ -83,7 +84,6 @@ export default async function rollupDatastore(
         }
         console.warn(warning.message, warning.code);
       },
-      treeshake: 'recommended',
     };
 
     // eslint-disable-next-line no-inner-declarations
@@ -143,7 +143,7 @@ export default async function rollupDatastore(
         if (ev.code === 'BUNDLE_END') {
           await emitSource(ev.result, watcher.close.bind(watcher));
         }
-        if ('result' in ev) {
+        if ('result' in ev && ev.result) {
           await ev.result.close();
         }
       });

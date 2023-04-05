@@ -9,6 +9,7 @@ import { Menubar } from './Menubar';
 import ApiManager from './ApiManager';
 import DesktopWindow from './DesktopWindow';
 import generateAppMenu from '../menus/generateAppMenu';
+import { IArgonFile } from './ArgonFile';
 
 export class WindowManager {
   get activeChromeAliveWindow(): ChromeAliveWindow {
@@ -25,12 +26,17 @@ export class WindowManager {
   constructor(private menuBar: Menubar, private apiManager: ApiManager) {
     this.events.on(apiManager, 'new-cloud-address', this.onNewCloudAddress.bind(this));
     this.events.on(apiManager, 'api-event', this.onApiEvent.bind(this));
+    this.events.on(apiManager, 'argon-file-opened', this.onArgonFileOpened.bind(this));
 
     this.bindIpcEvents();
     this.desktopWindow = new DesktopWindow(menuBar.staticServer, apiManager);
-    this.desktopWindow.on('close', this.checkOpenWindows.bind(this));
-    this.desktopWindow.on('focus', this.setMenu.bind(this));
-    this.desktopWindow.on('open-chromealive', this.loadChromeAliveWindow.bind(this));
+    this.events.on(this.desktopWindow, 'close', this.checkOpenWindows.bind(this));
+    this.events.on(this.desktopWindow, 'focus', this.setMenu.bind(this));
+    this.events.on(
+      this.desktopWindow.privateApiHandler,
+      'open-chromealive',
+      this.loadChromeAliveWindow.bind(this),
+    );
   }
 
   public async openDesktop(): Promise<void> {
@@ -104,6 +110,12 @@ export class WindowManager {
     }
   }
 
+  private async onArgonFileOpened(file: IArgonFile): Promise<void> {
+    if (!this.desktopWindow.isOpen) await this.openDesktop();
+    this.desktopWindow.focus();
+    await this.desktopWindow.privateApiHandler.onArgonFileOpened(file);
+  }
+
   private setMenu(): void {
     if (this.desktopWindow.isFocused) {
       Menu.setApplicationMenu(generateAppMenu(null));
@@ -124,8 +136,7 @@ export class WindowManager {
   private async onNewCloudAddress(
     event: ApiManager['EventTypes']['new-cloud-address'],
   ): Promise<void> {
-    const { oldAddress, address,  } = event;
-    await this.desktopWindow.onNewCloudAddress(event);
+    const { oldAddress, address } = event;
     if (!oldAddress) return;
 
     for (const window of this.chromeAliveWindows) {

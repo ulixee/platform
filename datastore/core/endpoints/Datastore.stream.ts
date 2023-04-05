@@ -18,35 +18,89 @@ export default new DatastoreApiHandler('Datastore.stream', {
     await validateAuthentication(datastore, request.payment, request.authentication);
     const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
 
+    const heroSessionIds: string[] = [];
+
     let outputs;
+    let bytes = 0;
+    let runError: Error;
+    let microgons = 0;
+    const isCredits = !!request.payment?.credits;
 
     const datastoreFunction =
       datastore.metadata.runnersByName[request.name] ??
       datastore.metadata.crawlersByName[request.name];
     const datastoreTable = datastore.metadata.tablesByName[request.name];
-    if (datastoreFunction) {
-      outputs = await extractFunctionOutputs(
+
+    try {
+      await paymentProcessor.createHold(
         manifestWithStats,
-        datastore,
-        request,
-        context,
-        paymentProcessor,
+        [{ name: request.name, id: 1 }],
+        request.pricingPreferences,
       );
-    } else if (datastoreTable) {
-      // TODO: Need to put a payment hold for tables
-      outputs = extractTableOutputs(datastore, request, context);
-    } else {
-      throw new Error(`${request.name} is not a valid Runner name for this Datastore.`);
+    } catch (error) {
+      runError = error;
+      context.datastoreRegistry.recordQuery(
+        request.streamId,
+        `stream(${request.name})`,
+        startTime,
+        request.input,
+        outputs,
+        request.versionHash,
+        {
+          milliseconds: Date.now() - startTime,
+          microgons,
+          bytes,
+          isCredits,
+        },
+        request.affiliateId,
+        runError,
+      );
+      throw runError;
     }
 
-    const bytes = PaymentProcessor.getOfficialBytes(outputs);
-    const microgons = await paymentProcessor.settle(bytes);
+    try {
+      if (datastoreFunction) {
+        outputs = await extractFunctionOutputs(
+          manifestWithStats,
+          datastore,
+          request,
+          context,
+          heroSessionIds,
+        );
+      } else if (datastoreTable) {
+        outputs = extractTableOutputs(datastore, request, context);
+      } else {
+        throw new Error(`${request.name} is not a valid Runner name for this Datastore.`);
+      }
+
+      bytes = PaymentProcessor.getOfficialBytes(outputs);
+      microgons = await paymentProcessor.settle(bytes);
+    } catch (error) {
+      runError = error;
+    }
+
     const milliseconds = Date.now() - startTime;
-    context.datastoreRegistry.recordStats(request.versionHash, request.name, {
+    const stats = {
       bytes,
       microgons,
       milliseconds,
-    });
+      isCredits,
+    };
+    context.datastoreRegistry.recordItemStats(request.versionHash, request.name, stats, runError);
+    context.datastoreRegistry.recordQuery(
+      request.streamId,
+      `stream(${request.name})`,
+      startTime,
+      request.input,
+      outputs,
+      request.versionHash,
+      stats,
+      request.affiliateId,
+      runError,
+      heroSessionIds,
+    );
+
+    if (runError) throw runError;
 
     return {
       latestVersionHash: manifestWithStats.latestVersionHash,
@@ -64,31 +118,58 @@ async function extractFunctionOutputs(
   datastore: Datastore,
   request: IDatastoreApis['Datastore.stream']['args'],
   context: IDatastoreApiContext,
-  paymentProcessor: PaymentProcessor,
+  heroSessionIds: string[],
 ): Promise<any[]> {
-  await paymentProcessor.createHold(
-    manifestWithStats,
-    [{ name: request.name, id: 1 }],
-    request.pricingPreferences,
-  );
-
   validateFunctionCoreVersions(manifestWithStats, request.name, context);
-
+  const options: IRunnerExecOptions<any> = {
+    input: request.input,
+    authentication: request.authentication,
+    affiliateId: request.affiliateId,
+    payment: request.payment,
+  };
+  options.trackMetadata = (metaName, metaValue) => {
+    if (metaName === 'heroSessionId') {
+      if (!heroSessionIds.includes(metaValue)) heroSessionIds.push(metaValue);
+    }
+  };
   return await context.workTracker.trackRun(
     (async () => {
-      const options: IRunnerExecOptions<any> = {
-        input: request.input,
-        authentication: request.authentication,
-        affiliateId: request.affiliateId,
-        payment: request.payment,
-      };
-
       for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
         if (plugin.beforeExecRunner) await plugin.beforeExecRunner(options);
       }
 
       const func = datastore.runners[request.name] ?? datastore.crawlers[request.name];
-      const results = func.runInternal(options);
+      const results = func.runInternal(options, {
+        async onFunction(id, name, initialOptions, run) {
+          const runStart = Date.now();
+          let runError: Error;
+          let outputs: any;
+          let bytes = 0;
+          const microgons = 0;
+          try {
+            outputs = await context.workTracker.trackRun(run(options));
+            // release the hold
+            bytes = PaymentProcessor.getOfficialBytes(outputs);
+          } catch (error) {
+            runError = error;
+          }
+
+          const milliseconds = Date.now() - runStart;
+          context.datastoreRegistry.recordItemStats(
+            request.versionHash,
+            name,
+            {
+              bytes,
+              microgons,
+              milliseconds,
+              isCredits: !!request.payment?.credits,
+            },
+            runError,
+          );
+          if (runError instanceof Error) throw runError;
+          return outputs;
+        },
+      });
       for await (const result of results) {
         context.connectionToClient.sendEvent({
           listenerId: request.streamId,

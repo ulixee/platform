@@ -81,8 +81,10 @@ export default class PaymentProcessor {
     }
 
     let minimumPrice = computePricePerQuery;
-    for (const runnerCall of functionCallsWithTempIds) {
-      const prices = manifest.runnersByName[runnerCall.name].prices;
+    for (const functionCall of functionCallsWithTempIds) {
+      const prices =
+        (manifest.runnersByName[functionCall.name] ?? manifest.crawlersByName[functionCall.name])
+          ?.prices ?? [];
       const pricePerQuery = prices[0]?.perQuery ?? 0;
       const pricePerKb = prices[0]?.addOns?.perKb ?? 0;
       const holdMicrogons = prices[0]?.minimum ?? pricePerQuery ?? 0;
@@ -94,7 +96,7 @@ export default class PaymentProcessor {
       }
       if (payouts.length) {
         this.runnerHolds.push({
-          id: runnerCall.id,
+          id: functionCall.id,
           didRelease: false,
           payouts,
           heldMicrogons: holdMicrogons,
@@ -125,7 +127,7 @@ export default class PaymentProcessor {
   }
 
   public releaseLocalFunctionHold(runnerId: number, resultBytes: number): number {
-    if (!this.holdId) return 0;
+    if (!this.holdId || runnerId < 0) return 0;
 
     let totalMicrogons = 0;
     const runnerCall = this.runnerHolds.find(x => x.id === runnerId);
@@ -242,7 +244,6 @@ export default class PaymentProcessor {
     if (!approvedSidechains.has(sidechainIdentity)) {
       throw new UnapprovedSidechainError();
     }
-
     this.sidechain = await this.context.sidechainClientManager.withIdentity(sidechainIdentity);
     const settings = await this.sidechain.getSettings(true);
     this.sidechainSettings = {
@@ -261,11 +262,12 @@ export default class PaymentProcessor {
     }
     let settlementFee = 0;
     if (pricePerQuery > 0) {
-      this.settlementFeeMicrogons ??= (
-        await context.sidechainClientManager.defaultClient
-          .getSettings(false, false)
-          .catch(() => ({ settlementFeeMicrogons: 0 }))
-      ).settlementFeeMicrogons;
+      if (this.settlementFeeMicrogons === undefined) {
+        const settings = await context.sidechainClientManager.defaultClient
+          ?.getSettings(false, false)
+          .catch(() => null);
+        this.settlementFeeMicrogons = settings?.settlementFeeMicrogons ?? 0;
+      }
       settlementFee = this.settlementFeeMicrogons;
     }
     return { settlementFee, pricePerQuery };

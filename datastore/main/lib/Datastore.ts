@@ -1,3 +1,4 @@
+import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import IDatastoreComponents, {
   TCrawlers,
   TRunners,
@@ -52,12 +53,15 @@ export default class Datastore<
   public queryInternal<TResultType = any[]>(
     sql: string,
     boundValues: any[] = [],
+    queryId?: string,
     callbacks: IQueryInternalCallbacks = {},
   ): Promise<TResultType> {
-    return this.#datastoreInternal.queryInternal(sql, boundValues, callbacks);
+    return this.#datastoreInternal.queryInternal(sql, boundValues, queryId, callbacks);
   }
 
   public bind(config: IDatastoreBinding): DatastoreInternal {
     return this.#datastoreInternal.bind(config);
   }
 }
+
+addGlobalInstance(Datastore);

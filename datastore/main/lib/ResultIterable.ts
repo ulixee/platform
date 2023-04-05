@@ -2,7 +2,7 @@ import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 
 // modified from https://github.com/rolftimmermans/event-iterator
-export default class ResultIterable<T, TMeta = never> implements AsyncIterable<T>, Promise<T[]> {
+export default class ResultIterable<T, TMeta = any> implements AsyncIterable<T>, Promise<T[]> {
   public error?: Error;
   public results: T[] = [];
 

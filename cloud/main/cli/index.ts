@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import { applyEnvironmentVariables, parseEnvBool } from '@ulixee/commons/lib/envUtils';
 import * as Path from 'path';
+import { parseIdentities } from '@ulixee/datastore-core/env';
 import { CloudNode } from '../index';
 import CloudNodeEnv from '../env';
 
@@ -26,6 +27,14 @@ export default function cliCommands(): Command {
     )
     .addOption(
       program.createOption('-e, --env <file>', 'Load environment settings from a .env file.'),
+    )
+    .addOption(
+      program
+        .createOption(
+          '-a, --admin-identities',
+          'Your admin identity public ids (starting with id1)',
+        )
+        .env('ULX_CLOUD_ADMIN_IDENTITIES'),
     )
     .addOption(
       program
@@ -117,6 +126,7 @@ export default function cliCommands(): Command {
         datastoresTmpDir: opts.datastoreTmpDir,
         maxRuntimeMs: opts.maxDatastoreRuntimeMs,
         waitForDatastoreCompletionOnShutdown: opts.datastoreWaitForCompletion,
+        adminIdentities: parseIdentities(opts.adminIdentities, 'Admin Identities'),
       });
 
       await cloudNode.listen({ port });

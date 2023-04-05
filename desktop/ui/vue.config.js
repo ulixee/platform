@@ -55,4 +55,15 @@ module.exports = {
   configureWebpack: config => {
     config.devtool = 'inline-source-map';
   },
+  chainWebpack(config) {
+    config.module
+      .rule('vue')
+      .use('vue-loader')
+      .loader('vue-loader')
+      .tap(options => {
+        options.compilerOptions = options.compilerOptions || {};
+        options.compilerOptions.whitespace = 'preserve'
+        return options
+      });
+  }
 };

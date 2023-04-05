@@ -5,24 +5,30 @@
   "main": "index.js",
   "scripts": {
     "build": "yarn build:ui && yarn build:basic",
-    "build:basic": "cd ../.. && yarn run tsc && cd desktop/main && yarn copy:build && cd ../../build/desktop/main && yarn && electron-builder install-app-deps",
+    "build:bundled-datastore": "cd ../../build && npx @ulixee/datastore build ./datastore/examples/ulixee-docs.js -o ./desktop/main/assets",
+    "build:basic": "cd ../.. && yarn run tsc && cd desktop/main && yarn build:bundled-datastore && yarn copy:build && cd ../../build/desktop/main && yarn && electron-builder install-app-deps",
     "build:ui": "yarn workspace @ulixee/desktop-ui build && yarn workspace @ulixee/desktop-chrome-extension build",
     "watch": "yarn copy:build --watch",
     "copy:build": "cd ../../build/desktop/main && node builder/copySources.js ./packages",
     "copy:dist": "shx cp -r ../../build/desktop/main/ui ../../build-dist/desktop/main/ui",
     "dist": "yarn copy:dist && cd ../../build-dist/desktop/main && yarn && electron-builder --publish onTagOrDraft",
     "dist:basic": "yarn copy:dist && cd ../../build-dist/desktop/main && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -m",
-    "start": "yarn copy:build && cd ../../build/desktop/main && npx electron ."
+    "start": "yarn copy:build && cd ../../build/desktop/main && electron ."
   },
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.19",
+    "@ulixee/datastore": "2.0.0-alpha.19",
+    "@ulixee/crypto": "2.0.0-alpha.19",
+    "@ulixee/sidechain": "2.0.0-alpha.19",
     "@ulixee/datastore-core": "2.0.0-alpha.19",
     "@ulixee/datastore-plugins-hero": "2.0.0-alpha.19",
     "@ulixee/default-browser-emulator": "2.0.0-alpha.19",
     "@ulixee/desktop-core": "2.0.0-alpha.19",
     "@ulixee/desktop-interfaces": "2.0.0-alpha.19",
+    "@ulixee/specification": "2.0.0-alpha.19",
+    "@ulixee/platform-specification": "2.0.0-alpha.19",
     "@ulixee/hero-core": "2.0.0-alpha.19",
     "@ulixee/cloud": "2.0.0-alpha.19",
     "@ulixee/net": "2.0.0-alpha.19",
@@ -36,6 +42,7 @@
   },
   "devDependencies": {
     "@electron/notarize": "^1.2.3",
+    "@ulixee/datastore-packager": "2.0.0-alpha.19",
     "cross-env": "^7.0.3",
     "electron": "22.3.1",
     "electron-builder": "^24.0.0-alpha.13",
@@ -43,7 +50,8 @@
   },
   "optionalDependencies": {
     "global-mouse-events": "1.1.0",
-    "nseventmonitor": "1.0.3"
+    "nseventmonitor": "1.0.3",
+    "electron-clipboard-ex": "^1.3.3"
   },
   "build": {
     "appId": "dev.ulixee.desktop",
@@ -82,7 +90,16 @@
     "publish": {
       "provider": "github",
       "releaseType": "release"
-    }
+    },
+    "fileAssociations": [
+      {
+        "ext": "arg",
+        "name": "ARG",
+        "description": "Ulixee Argons",
+        "icon": "arg",
+        "rank": "Owner"
+      }
+    ]
   },
   "nohoist": [
     "**/electron",

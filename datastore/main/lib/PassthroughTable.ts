@@ -51,7 +51,7 @@ export default class PassthroughTable<
   public override async queryInternal<T = TSchemaType[]>(
     sql: string,
     boundValues: any[] = [],
-    options: IPassthroughQueryRunOptions = {},
+    options: IPassthroughQueryRunOptions = { id: undefined },
   ): Promise<T> {
     this.createApiClient();
     if (this.name !== this.remoteTable) {

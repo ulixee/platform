@@ -15,6 +15,7 @@ import { DatastoreStatsSchema } from '../types/IDatastoreStats';
 import { datastoreVersionHashValidation } from '../types/datastoreVersionHashValidation';
 
 const FunctionMetaSchema = z.object({
+  description: z.string().optional(),
   stats: DatastoreStatsSchema,
   pricePerQuery: micronoteTokenValidation.describe('The base price per query.'),
   minimumPrice: micronoteTokenValidation.describe(
@@ -26,7 +27,7 @@ const FunctionMetaSchema = z.object({
 export const DatastoreApiSchemas = {
   'Datastore.upload': {
     args: z.object({
-      compressedDatastore: z.instanceof(Buffer).describe('Bytes of a compressed .dbx file'),
+      compressedDatastore: z.instanceof(Buffer).describe('Bytes of a compressed .dbx directory.'),
       allowNewLinkedVersionHistory: z
         .boolean()
         .describe(
@@ -43,6 +44,25 @@ export const DatastoreApiSchemas = {
     }),
     result: z.object({
       success: z.boolean(),
+    }),
+  },
+  'Datastore.download': {
+    args: z.object({
+      versionHash: datastoreVersionHashValidation.describe(
+        'The hash of a unique datastore version',
+      ),
+      requestDate: z.date().describe('Date of this request. Must be in last 10 seconds.'),
+      adminIdentity: identityValidation
+        .optional()
+        .describe(
+          'If this server is in production mode, an AdminIdentity approved on the Server or Datastore.',
+        ),
+      adminSignature: signatureValidation
+        .optional()
+        .describe('A signature from an approved AdminIdentity'),
+    }),
+    result: z.object({
+      compressedDatastore: z.instanceof(Buffer).describe('Bytes of the compressed .dbx directory.'),
     }),
   },
   'Datastore.start': {
@@ -63,6 +83,19 @@ export const DatastoreApiSchemas = {
     result: z.object({
       issuedCredits: micronoteTokenValidation.describe('Issued credits balance in microgons.'),
       balance: micronoteTokenValidation.describe('Remaining credits balance in microgons.'),
+    }),
+  },
+  'Datastore.creditsIssued': {
+    args: z.object({
+      datastoreVersionHash: datastoreVersionHashValidation.describe(
+        'The hash of the Datastore version to look at credits for.',
+      ),
+    }),
+    result: z.object({
+      issuedCredits: micronoteTokenValidation.describe(
+        'Total credit microgons issued in microgons.',
+      ),
+      count: micronoteTokenValidation.describe('Total credits issued in microgons.'),
     }),
   },
   'Datastore.admin': {
@@ -90,53 +123,6 @@ export const DatastoreApiSchemas = {
     }),
     result: z.any().describe('A flexible result based on the type of api.'),
   },
-  'Datastores.list': {
-    args: z.object({
-      adminIdentity: identityValidation
-        .optional()
-        .describe('An admin Identity for this Cloud node.'),
-      adminSignature: signatureValidation
-        .optional()
-        .describe('A signature from the admin Identity'),
-    }),
-    result: z
-      .object({
-        name: z.string().optional(),
-        versionHash: datastoreVersionHashValidation,
-        domain: z
-          .string()
-          .optional()
-          .describe('A Custom DNS name pointing at the latest version of the Datastore.'),
-        latestVersionHash: datastoreVersionHashValidation.describe(
-          'The latest version hash of this datastore',
-        ),
-        runnersByName: z.record(
-          z.string().describe('The name of the runner'),
-          FunctionMetaSchema.extend({
-            priceBreakdown: DatastoreRunnerPricing.array(),
-          }),
-        ),
-        crawlersByName: z.record(
-          z.string().describe('The name of the cralwer'),
-          FunctionMetaSchema.extend({
-            priceBreakdown: DatastoreCrawlerPricing.array(),
-          }),
-        ),
-        tablesByName: z.record(
-          z.string().describe('The name of a table'),
-          z.object({
-            stats: DatastoreStatsSchema,
-            pricePerQuery: micronoteTokenValidation.describe('The table base price per query.'),
-            priceBreakdown: DatastoreTablePricing.array(),
-            schemaJson: z.any().optional().describe('The schema JSON if requested'),
-          }),
-        ),
-        computePricePerQuery: micronoteTokenValidation.describe(
-          'The current server price per query. NOTE: if a server is implementing surge pricing, this amount could vary.',
-        ),
-      })
-      .array(),
-  },
   'Datastore.meta': {
     args: z.object({
       versionHash: datastoreVersionHashValidation.describe(
@@ -149,10 +135,16 @@ export const DatastoreApiSchemas = {
     }),
     result: z.object({
       name: z.string().optional(),
+      description: z.string().optional(),
+      isStarted: z
+        .boolean()
+        .describe('Only relevant in development mode - is this Datastore started.'),
+      scriptEntrypoint: z.string(),
       versionHash: datastoreVersionHashValidation,
       latestVersionHash: datastoreVersionHashValidation.describe(
         'The latest version hash of this datastore',
       ),
+      stats: DatastoreStatsSchema,
       runnersByName: z.record(
         z.string().describe('The name of the runner'),
         FunctionMetaSchema.extend({
@@ -160,7 +152,7 @@ export const DatastoreApiSchemas = {
         }),
       ),
       crawlersByName: z.record(
-        z.string().describe('The name of the cralwer'),
+        z.string().describe('The name of the crawler'),
         FunctionMetaSchema.extend({
           priceBreakdown: DatastoreCrawlerPricing.array(),
         }),
@@ -168,6 +160,7 @@ export const DatastoreApiSchemas = {
       tablesByName: z.record(
         z.string().describe('The name of a table'),
         z.object({
+          description: z.string().optional(),
           stats: DatastoreStatsSchema,
           pricePerQuery: micronoteTokenValidation.describe('The table base price per query.'),
           priceBreakdown: DatastoreTablePricing.array(),
@@ -227,6 +220,7 @@ export const DatastoreApiSchemas = {
   },
   'Datastore.query': {
     args: z.object({
+      id: z.string().describe('The unique id of this query.'),
       sql: z.string().describe('The SQL command(s) you want to run'),
       boundValues: z
         .array(z.any())
@@ -268,6 +262,38 @@ export const DatastoreApiSchemas = {
           milliseconds: z.number().int().nonnegative(),
         })
         .optional(),
+    }),
+  },
+  'Datastores.list': {
+    args: z.object({
+      offset: z
+        .number()
+        .optional()
+        .describe('Starting offset (inclusive) of results to return')
+        .default(0),
+    }),
+    result: z.object({
+      datastores: z
+        .object({
+          name: z.string().optional(),
+          description: z.string().optional(),
+          isStarted: z
+            .boolean()
+            .describe('Only relevant in development mode - is this Datastore started.'),
+          scriptEntrypoint: z.string(),
+          versionHash: datastoreVersionHashValidation,
+          domain: z
+            .string()
+            .optional()
+            .describe('A Custom DNS name pointing at the latest version of the Datastore.'),
+          latestVersionHash: datastoreVersionHashValidation.describe(
+            'The latest version hash of this datastore',
+          ),
+          stats: DatastoreStatsSchema,
+        })
+        .array(),
+      count: z.number().describe('Total datastores.'),
+      offset: z.number().describe('Offset index of result (inclusive).'),
     }),
   },
 };

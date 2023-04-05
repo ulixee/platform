@@ -72,6 +72,7 @@ export default function generateAppMenu(loadedChromeAlive: ChromeAliveWindow): M
     {
       label: 'View',
       submenu: [
+        !loadedChromeAlive ? { role: 'reload' } : undefined,
         { role: 'toggleDevTools' },
         { type: 'separator' },
         { role: 'resetZoom' },
@@ -79,7 +80,7 @@ export default function generateAppMenu(loadedChromeAlive: ChromeAliveWindow): M
         { role: 'zoomOut' },
         { type: 'separator' },
         { role: 'togglefullscreen' },
-      ],
+      ].filter(Boolean),
     },
     {
       label: 'Window',

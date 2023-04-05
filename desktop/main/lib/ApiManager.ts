@@ -5,15 +5,25 @@ import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { app, screen } from 'electron';
 import { ClientOptions } from 'ws';
 import * as Http from 'http';
+import { CloudNode } from '@ulixee/cloud';
 import { httpGet } from '@ulixee/commons/lib/downloadFile';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
+import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
+import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
+import * as Path from 'path';
+import DatastoreCore from '@ulixee/datastore-core';
 import WebSocket = require('ws');
 import ApiClient from './ApiClient';
+import DesktopProfile from './DesktopProfile';
+import ArgonFile, { IArgonFile } from './ArgonFile';
+import DeploymentWatcher from './DeploymentWatcher';
 
 app.commandLine.appendSwitch('remote-debugging-port', '8315');
 
 const { version } = require('../package.json');
+
+const bundledDatastoreExample = Path.join(__dirname, '../assets/ulixee-docs.dbx.tgz');
 
 export default class ApiManager<
   TEventType extends keyof IDesktopAppEvents & string = keyof IDesktopAppEvents,
@@ -23,34 +33,55 @@ export default class ApiManager<
     eventType: TEventType;
     data: IDesktopAppEvents[TEventType];
   };
-  'new-cloud-address': {
-    oldAddress?: string;
-    type: 'local' | 'public' | 'private';
-    name: string;
-    address: string;
-  };
+  'new-cloud-address': ICloudConnected;
+  'argon-file-opened': IArgonFile;
+  deployment: IDatastoreDeployLogEntry;
 }> {
-  public apiByCloudAddress = new Map<
+  apiByCloudAddress = new Map<
     string,
-    { name: string; type: 'local' | 'public' | 'private'; resolvable: Resolvable<IApiGroup> }
+    {
+      name: string;
+      adminIdentity?: string;
+      cloudNodes: number;
+      type: 'local' | 'public' | 'private';
+      resolvable: Resolvable<IApiGroup>;
+    }
   >();
 
+  localCloud: CloudNode;
   exited = false;
   events = new EventSubscriber();
   localCloudAddress: string;
   debuggerUrl: string;
+  desktopProfile: DesktopProfile;
+  deploymentWatcher: DeploymentWatcher;
 
   constructor() {
     super();
-    this.events.on(UlixeeHostsConfig.global, 'change', this.onNewLocalCloudAddress.bind(this));
+    this.desktopProfile = new DesktopProfile();
+    this.deploymentWatcher = new DeploymentWatcher();
   }
 
-  public async start(localCloudAddress: string): Promise<void> {
+  public async start(): Promise<void> {
     this.debuggerUrl = await this.getDebuggerUrl();
-    localCloudAddress ??= UlixeeHostsConfig.global.getVersionHost(version);
-    if (localCloudAddress) {
-      this.localCloudAddress = this.formatCloudAddress(localCloudAddress);
-      await this.connectToCloud(this.localCloudAddress, 'local');
+
+    if (!this.desktopProfile.address) {
+      // TODO: move this to a welcome screen!!
+      await this.desktopProfile.createDefaultArgonAddress();
+    }
+    if (!this.desktopProfile.adminIdentityPath) {
+      await this.desktopProfile.createDefaultAdminIdentity();
+    }
+    this.deploymentWatcher.start();
+    await this.startLocalCloud();
+    this.events.on(UlixeeHostsConfig.global, 'change', this.onNewLocalCloudAddress.bind(this));
+    this.events.on(this.deploymentWatcher, 'new', x => this.emit('deployment', x));
+    for (const cloud of this.desktopProfile.clouds) {
+      await this.connectToCloud({
+        ...cloud,
+        adminIdentity: cloud.adminIdentity,
+        type: 'private',
+      });
     }
   }
 
@@ -63,14 +94,50 @@ export default class ApiManager<
       void this.closeApiGroup(connection.resolvable);
     }
     this.apiByCloudAddress.clear();
+    this.deploymentWatcher.stop();
   }
 
-  public async connectToCloud(
-    address: string,
-    type: 'public' | 'private' | 'local',
-    name?: string,
-    oldAddress?: string,
-  ): Promise<void> {
+  public async stopLocalCloud(): Promise<void> {
+    await this.localCloud?.close();
+    this.localCloud = null;
+  }
+
+  public async startLocalCloud(): Promise<void> {
+    let localCloudAddress = UlixeeHostsConfig.global.getVersionHost(version);
+
+    localCloudAddress = await UlixeeHostsConfig.global.checkLocalVersionHost(
+      version,
+      localCloudAddress,
+    );
+    let adminIdentity: string;
+    if (!localCloudAddress) {
+      adminIdentity = this.desktopProfile.adminIdentity.bech32;
+      await DatastoreCore.installCompressedDbx(bundledDatastoreExample);
+      this.localCloud ??= new CloudNode();
+      this.localCloud.router.datastoreConfiguration ??= {};
+      this.localCloud.router.datastoreConfiguration.cloudAdminIdentities ??= [];
+      this.localCloud.router.datastoreConfiguration.cloudAdminIdentities.push(adminIdentity);
+      await this.localCloud.listen();
+      localCloudAddress = await this.localCloud.address;
+    }
+    await this.connectToCloud({ address: localCloudAddress, type: 'local', adminIdentity });
+  }
+
+  public getCloudAddressByName(name: string): string {
+    for (const [address, entry] of this.apiByCloudAddress) {
+      if (entry.name === name) return address;
+    }
+  }
+
+  public async connectToCloud(cloud: {
+    address: string;
+    adminIdentity?: string;
+    type: 'public' | 'private' | 'local';
+    name?: string;
+    oldAddress?: string;
+  }): Promise<void> {
+    const { adminIdentity, oldAddress, type } = cloud;
+    let { address, name } = cloud;
     if (!address) return;
     name ??= type;
     address = this.formatCloudAddress(address);
@@ -81,7 +148,9 @@ export default class ApiManager<
     try {
       this.apiByCloudAddress.set(address, {
         name: name ?? type,
+        adminIdentity,
         type,
+        cloudNodes: 0,
         resolvable: new Resolvable(),
       });
 
@@ -94,7 +163,7 @@ export default class ApiManager<
 
       const mainScreen = screen.getPrimaryDisplay();
       const workarea = mainScreen.workArea;
-      const { id } = await api.send('App.connect', {
+      const { id, cloudNodes } = await api.send('App.connect', {
         workarea: {
           left: workarea.x,
           top: workarea.y,
@@ -102,6 +171,8 @@ export default class ApiManager<
           scale: mainScreen.scaleFactor,
         },
       });
+      const cloudApi = this.apiByCloudAddress.get(address);
+      cloudApi.cloudNodes = cloudNodes ?? 0;
 
       let url: URL;
       try {
@@ -128,18 +199,30 @@ export default class ApiManager<
         this.events.once(wsToDevtoolsProtocol, 'close', this.onApiClosed.bind(this, address)),
       ];
       this.events.group(`ws-${address}`, onApiClosed, ...events);
-      this.apiByCloudAddress
-        .get(address)
-        .resolvable.resolve({ id, api, wsToCore, wsToDevtoolsProtocol });
+      cloudApi.resolvable.resolve({
+        id,
+        api,
+        wsToCore,
+        wsToDevtoolsProtocol,
+      });
       this.emit('new-cloud-address', {
         address,
+        adminIdentity,
         name,
+        cloudNodes,
         type,
         oldAddress,
       });
     } catch (error) {
       this.apiByCloudAddress.get(address)?.resolvable.reject(error, true);
       throw error;
+    }
+  }
+
+  public async onArgonFileOpened(file: string): Promise<void> {
+    const argonFile = await ArgonFile.readFromPath(file);
+    if (argonFile) {
+      this.emit('argon-file-opened', argonFile);
     }
   }
 
@@ -173,8 +256,14 @@ export default class ApiManager<
       const oldAddress = this.localCloudAddress;
       this.localCloudAddress = this.formatCloudAddress(newAddress);
       // eslint-disable-next-line no-console
-      console.log('Connecting to local cloud', this.localCloudAddress);
-      await this.connectToCloud(this.localCloudAddress, 'local', 'local', oldAddress);
+      console.log('Desktop app connecting to local cloud', this.localCloudAddress);
+      await this.connectToCloud({
+        address: this.localCloudAddress,
+        adminIdentity: this.desktopProfile.adminIdentity?.bech32,
+        name: 'local',
+        type: 'local',
+        oldAddress,
+      });
     }
   }
 

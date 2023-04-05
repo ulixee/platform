@@ -19,66 +19,120 @@ export default new DatastoreApiHandler('Datastore.query', {
 
     const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
 
-    const outputs = await datastore.queryInternal(request.sql, request.boundValues, {
-      async beforeAll({ sqlParser, functionCallsById }) {
-        if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
+    const heroSessionIds: string[] = [];
 
-        for (const name of sqlParser.tableNames) {
-          const table = datastore.tables[name];
-          if (!table.isPublic) throw new Error(`Table ${name} is not publicly accessible.`);
-        }
+    const finalResult = await datastore
+      .queryInternal(request.sql, request.boundValues, request.id, {
+        async beforeAll({ sqlParser, functionCallsById }) {
+          if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
 
-        await paymentProcessor.createHold(
-          datastoreVersion,
-          functionCallsById,
-          request.pricingPreferences,
-        );
-      },
-      async onFunction(id, name, options, run) {
-        const runStart = Date.now();
-        validateFunctionCoreVersions(datastoreVersion, name, context);
+          for (const name of sqlParser.tableNames) {
+            const table = datastore.tables[name];
+            if (!table.isPublic) throw new Error(`Table ${name} is not publicly accessible.`);
+          }
 
-        Object.assign(options, {
-          payment: request.payment,
-          authentication: request.authentication,
-          affiliateId: request.affiliateId,
-        });
-        for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
-          if (plugin.beforeExecRunner) await plugin.beforeExecRunner(options);
-        }
+          await paymentProcessor.createHold(
+            datastoreVersion,
+            functionCallsById,
+            request.pricingPreferences,
+          );
+        },
+        async onFunction(id, name, options, run) {
+          const runStart = Date.now();
+          validateFunctionCoreVersions(datastoreVersion, name, context);
 
-        const result = await context.workTracker.trackRun(run(options));
-        // release the hold
-        const bytes = PaymentProcessor.getOfficialBytes(result);
-        const microgons = paymentProcessor.releaseLocalFunctionHold(id, bytes);
+          Object.assign(options, {
+            payment: request.payment,
+            authentication: request.authentication,
+            affiliateId: request.affiliateId,
+          });
+          options.trackMetadata = (metaName, metaValue) => {
+            if (metaName === 'heroSessionId') {
+              if (!heroSessionIds.includes(metaValue)) heroSessionIds.push(metaValue);
+            }
+          };
+          for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
+            if (plugin.beforeExecRunner) await plugin.beforeExecRunner(options);
+          }
 
-        const milliseconds = Date.now() - runStart;
-        context.datastoreRegistry.recordStats(request.versionHash, name, {
-          bytes,
-          microgons,
-          milliseconds,
-        });
-        return result;
-      },
-      async onPassthroughTable(name, options, run) {
-        Object.assign(options, {
-          payment: request.payment,
-          authentication: request.authentication,
-        });
-        return await context.workTracker.trackRun(run(options));
-      },
-    });
+          let runError: Error;
+          let outputs: any;
+          let bytes = 0;
+          let microgons = 0;
+          try {
+            outputs = await context.workTracker.trackRun(run(options));
+            // release the hold
+            bytes = PaymentProcessor.getOfficialBytes(outputs);
+            microgons = paymentProcessor.releaseLocalFunctionHold(id, bytes);
+          } catch (error) {
+            runError = error;
+          }
 
-    const resultBytes = PaymentProcessor.getOfficialBytes(outputs);
+          const milliseconds = Date.now() - runStart;
+          context.datastoreRegistry.recordItemStats(
+            request.versionHash,
+            name,
+            {
+              bytes,
+              microgons,
+              milliseconds,
+              isCredits: !!request.payment?.credits,
+            },
+            runError,
+          );
+          // Do we need to rollback the stats? We won't finalize payment in this scenario.
+          if (runError) throw runError;
+          return outputs;
+        },
+        async onPassthroughTable(name, options, run) {
+          Object.assign(options, {
+            payment: request.payment,
+            authentication: request.authentication,
+          });
+          return await context.workTracker.trackRun(run(options));
+        },
+      })
+      .catch(error => error);
+
+    let outputs: any[];
+    let runError: Error;
+    if (finalResult instanceof Error) {
+      runError = finalResult;
+    } else {
+      outputs = finalResult;
+    }
+    const resultBytes = outputs ? PaymentProcessor.getOfficialBytes(outputs) : 0;
     const microgons = await paymentProcessor.settle(resultBytes);
+
+    const metadata = {
+      bytes: resultBytes,
+      microgons,
+      milliseconds: Date.now() - startTime,
+    };
+
+    context.datastoreRegistry.recordQuery(
+      request.id,
+      request.sql,
+      startTime,
+      request.boundValues,
+      outputs,
+      request.versionHash,
+      {
+        ...metadata,
+        isCredits: !!request.payment?.credits,
+      },
+      request.affiliateId,
+      runError,
+      heroSessionIds,
+    );
+
+    // TODO: should we return this to client so that the rest of the metadata is visible?
+    if (runError) throw runError;
+
     return {
       outputs,
       latestVersionHash: datastoreVersion.latestVersionHash,
-      metadata: {
-        bytes: resultBytes,
-        microgons,
-        milliseconds: Date.now() - startTime,
-      },
+      metadata,
     };
   },
 });

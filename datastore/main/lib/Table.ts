@@ -1,5 +1,6 @@
 import { ExtractSchemaType, ISchemaAny } from '@ulixee/schema';
 import { SqlGenerator, SqlParser } from '@ulixee/sql-engine';
+import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import ITableComponents from '../interfaces/ITableComponents';
 import DatastoreInternal, { IDatastoreBinding } from './DatastoreInternal';
 
@@ -101,3 +102,4 @@ export default class Table<
     this.datastoreInternal.bind(config ?? {});
   }
 }
+addGlobalInstance(Table);

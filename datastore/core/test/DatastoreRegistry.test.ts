@@ -250,7 +250,14 @@ test('should provide a newer version hash if old script not available', async ()
   const registry = new DatastoreRegistry(storageDir);
   Helpers.needsClosing.push(registry);
   // @ts-ignore
-  registry.datastoresDb.datastoreVersions.save('maybe-there', Date.now(), 'not-there', null);
+  registry.datastoresDb.datastoreVersions.save(
+    'maybe-there',
+    './new-version.ts',
+    Date.now(),
+    './new-version.ts',
+    'not-there',
+    null,
+  );
   try {
     await registry.getByVersionHash('not-there');
   } catch (e) {

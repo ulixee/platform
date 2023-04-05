@@ -56,7 +56,7 @@ test('should install new datastores on startup', async () => {
 test('should be able to lookup a datastore domain', async () => {
   await expect(
     runApi('Datastore.upload', {
-      compressedDatastore: await bootupDbx.asBuffer(),
+      compressedDatastore: await bootupDbx.tarGzip(),
       allowNewLinkedVersionHistory: false,
     }),
   ).resolves.toEqual({ success: true });
@@ -77,7 +77,7 @@ test('can get metadata about an uploaded datastore', async () => {
   });
   await expect(
     runApi('Datastore.upload', {
-      compressedDatastore: await bootupDbx.asBuffer(),
+      compressedDatastore: await bootupDbx.tarGzip(),
       allowNewLinkedVersionHistory: false,
     }),
   ).resolves.toEqual({ success: true });
@@ -85,13 +85,30 @@ test('can get metadata about an uploaded datastore', async () => {
     runApi('Datastore.meta', { versionHash: bootupPackager.manifest.versionHash }),
   ).resolves.toEqual(<IDatastoreApiTypes['Datastore.meta']['result']>{
     versionHash: bootupPackager.manifest.versionHash,
+    isStarted: true,
+    scriptEntrypoint: bootupPackager.manifest.scriptEntrypoint,
     name: undefined,
     latestVersionHash: bootupPackager.manifest.versionHash,
     computePricePerQuery: 0,
+    stats: {
+      queries: 0,
+      errors: 0,
+      totalSpend: 0,
+      totalCreditSpend: 0,
+      averageBytesPerQuery: expect.any(Number),
+      averageMilliseconds: expect.any(Number),
+      averageTotalPricePerQuery: 0,
+      maxBytesPerQuery: expect.any(Number),
+      maxPricePerQuery: 0,
+      maxMilliseconds: expect.any(Number),
+    },
     runnersByName: {
       bootup: {
         stats: {
           queries: 0,
+          errors: 0,
+          totalSpend: 0,
+          totalCreditSpend: 0,
           averageBytesPerQuery: expect.any(Number),
           averageMilliseconds: expect.any(Number),
           averageTotalPricePerQuery: 0,

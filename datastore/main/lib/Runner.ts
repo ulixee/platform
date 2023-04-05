@@ -1,19 +1,16 @@
 import { SqlParser } from '@ulixee/sql-engine';
-import { parseEnvBool } from '@ulixee/commons/lib/envUtils';
 import { ExtractSchemaType } from '@ulixee/schema';
+import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import RunnerInternal from './RunnerInternal';
-import readCommandLineArgs from './utils/readCommandLineArgs';
 import { IRunnerPluginConstructor } from '../interfaces/IRunnerPluginStatics';
 import IRunnerContext from '../interfaces/IRunnerContext';
 import IRunnerSchema from '../interfaces/IRunnerSchema';
 import IRunnerExecOptions from '../interfaces/IRunnerExecOptions';
 import IRunnerComponents from '../interfaces/IRunnerComponents';
 import RunnerPlugins from './RunnerPlugins';
-import DatastoreInternal, { IDatastoreBinding } from './DatastoreInternal';
+import DatastoreInternal, { IDatastoreBinding, IQueryInternalCallbacks } from './DatastoreInternal';
 import ResultIterable from './ResultIterable';
 import SqlQuery from './SqlQuery';
-
-const disableColors = parseEnvBool(process.env.NODE_DISABLE_COLORS) ?? false;
 
 export default class Runner<
   TSchema extends IRunnerSchema = IRunnerSchema,
@@ -106,7 +103,10 @@ export default class Runner<
     this.minimumPrice = this.components.minimumPrice;
   }
 
-  public runInternal(options: TRunArgs, logOutputResult = false): ResultIterable<TOutput> {
+  public runInternal(
+    options: TRunArgs,
+    callbacks?: IQueryInternalCallbacks,
+  ): ResultIterable<TOutput, Record<string, any>> {
     if (this.#isRunning) {
       throw new Error('Datastore already running');
     }
@@ -115,20 +115,17 @@ export default class Runner<
     (async () => {
       const runnerInternal = new RunnerInternal<TSchema>(options, this.components);
       const plugins = new RunnerPlugins<TSchema, TContext>(this.components, this.pluginClasses);
+      let context: TContext;
       try {
         this.#isRunning = true;
         runnerInternal.validateInput();
-        const context = await plugins.initialize(runnerInternal, this.datastoreInternal);
+        context = await plugins.initialize(runnerInternal, this.datastoreInternal, callbacks);
 
         const runnerResults = runnerInternal.run(context);
 
         let counter = 0;
         for await (const output of runnerResults) {
           runnerInternal.validateOutput(output, counter++);
-          if (logOutputResult) {
-            // eslint-disable-next-line no-console
-            console.dir(output, { colors: !disableColors, depth: null, getters: false });
-          }
           resultsIterable.push(output as TOutput);
         }
 
@@ -137,10 +134,7 @@ export default class Runner<
       } catch (error) {
         this.errorCount++;
         error.stack = error.stack.split('at Runner.runInternal').shift().trim();
-        if (logOutputResult) {
-          error[Symbol.for('Runner.hasLogged')] = true;
-          console.error(error);
-        }
+
         await plugins.setResolution(null, error).catch(() => null);
         resultsIterable.reject(error);
       } finally {
@@ -187,9 +181,6 @@ export default class Runner<
   public bind(config: IDatastoreBinding): void {
     this.datastoreInternal.bind(config ?? {});
   }
-
-  public static commandLineExec<T>(datastoreRunner: Runner<any, any, any>): ResultIterable<T> {
-    const options = readCommandLineArgs();
-    return datastoreRunner.runInternal(options, process.env.NODE_ENV !== 'test');
-  }
 }
+
+addGlobalInstance(Runner);

@@ -55,6 +55,13 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     return credit;
   }
 
+  async summary(): Promise<{ count: number; microgons: number }> {
+    const [result] = await this.queryInternal<{ count: number; microgons: number }[]>(
+      'SELECT COUNT(1) as count, SUM(issuedCredits) as microgons FROM self',
+    );
+    return result;
+  }
+
   async hold(id: string, secret: string, holdAmount: number): Promise<number> {
     const [credit] = await this.queryInternal('SELECT * FROM self WHERE id=$1', [id]);
     if (!credit) throw new Error('This is an invalid Credit.');

@@ -1,25 +1,11 @@
 import IDatastoreMetadata from '@ulixee/datastore/interfaces/IDatastoreMetadata';
 
 export interface IFetchMetaMessage {
-  messageId: string;
   action: 'fetchMeta';
   scriptPath: string;
 }
 
-export interface IRunMessage {
-  messageId: string;
-  action: 'run';
-  name: string;
-  scriptPath: string;
-  input: any;
-  streamId: number;
-}
-
-export type IMessage = IFetchMetaMessage | IRunMessage;
-
-export interface IExecResponseData {
-  outputs?: any[];
-}
+export type IMessage = IFetchMetaMessage;
 
 export interface IFetchMetaResponseData extends IDatastoreMetadata {
   tableSeedlingsByName: {
@@ -27,10 +13,8 @@ export interface IFetchMetaResponseData extends IDatastoreMetadata {
   };
 }
 
-export type IResponseData = IExecResponseData | IFetchMetaResponseData;
+export type IResponseData = IFetchMetaResponseData;
 
 export interface IResponse {
-  responseId: string;
-  streamId?: number;
   data: IResponseData | Error;
 }

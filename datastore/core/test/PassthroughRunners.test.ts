@@ -98,7 +98,7 @@ beforeAll(async () => {
 
   const packager = new DatastorePackager(`${__dirname}/datastores/remoteRunner.js`);
   await packager.build();
-  await client.upload(await packager.dbx.asBuffer());
+  await client.upload(await packager.dbx.tarGzip());
   remoteVersionHash = packager.manifest.versionHash;
 });
 
@@ -155,7 +155,7 @@ export default new Datastore({
 
   const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughRunner.js`);
   await passthrough.build();
-  await client.upload(await passthrough.dbx.asBuffer());
+  await client.upload(await passthrough.dbx.tarGzip());
 
   await expect(
     client.stream(passthrough.manifest.versionHash, 'pass', { test: '123d' }),
@@ -197,7 +197,7 @@ export default new Datastore({
     `${__dirname}/datastores/passthroughRunnerNoOnresponse.js`,
   );
   await passthrough.build();
-  await client.upload(await passthrough.dbx.asBuffer());
+  await client.upload(await passthrough.dbx.tarGzip());
 
   await expect(
     client.stream(passthrough.manifest.versionHash, 'pass', { test: '123d' }),
@@ -231,7 +231,7 @@ export default new Datastore({
 
   const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughRunnerUpcharge.js`);
   await passthrough.build();
-  await client.upload(await passthrough.dbx.asBuffer());
+  await client.upload(await passthrough.dbx.tarGzip());
 
   const meta = await client.getMeta(passthrough.manifest.versionHash);
   expect(meta.runnersByName.pass.minimumPrice).toBe(405);
@@ -270,7 +270,7 @@ export default new Datastore({
     Helpers.onClose(() =>
       Fs.promises.rm(`${__dirname}/datastores/source.dbx`, { recursive: true }),
     );
-    await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.asBuffer());
+    await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.tarGzip());
     versionHash = dbx.manifest.versionHash;
     expect(dbx.manifest.paymentAddress).toBeTruthy();
     const price = await client.getRunnerPricing(versionHash, 'source');
@@ -307,7 +307,7 @@ export default new Datastore({
     Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/hop1.js`));
     Helpers.onClose(() => Fs.promises.rm(`${__dirname}/datastores/hop1.dbx`, { recursive: true }));
     await dbx.build();
-    await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.asBuffer());
+    await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.tarGzip());
     versionHash = dbx.manifest.versionHash;
     const price = await client.getRunnerPricing(versionHash, 'source2');
     expect(price.minimumPrice).toBe(6 + 5 + 11);
@@ -340,7 +340,7 @@ export default new Datastore({
 
   const lastHop = new DatastorePackager(`${__dirname}/datastores/hop2.js`);
   await lastHop.build();
-  await client.upload(await lastHop.dbx.asBuffer());
+  await client.upload(await lastHop.dbx.tarGzip());
 
   const price = await client.getRunnerPricing(lastHop.manifest.versionHash, 'last');
   expect(price.minimumPrice).toBe(3 + 11 + 6 + 5);

@@ -50,7 +50,7 @@ export default class PassthroughRunner<
   >;
 
   constructor(
-    components: Pick<IRunnerComponents<TSchema, TContext>, 'name' | 'schema'> &
+    components: Pick<IRunnerComponents<TSchema, TContext>, 'name' | 'description' | 'schema'> &
       IPassthroughRunnerComponents<TRemoteSources, TRunnerName> &
       TPlugin1['componentAddons'] &
       TPlugin2['componentAddons'] &
@@ -61,7 +61,7 @@ export default class PassthroughRunner<
     this.components.run = this.run.bind(this);
     this.pricePerQuery = components.upcharge ?? 0;
     this.minimumPrice = components.upcharge ?? 0;
-    assert(components.remoteRunner, 'A remote function is required');
+    assert(components.remoteRunner, 'A remote runner name is required');
     assert(components.remoteRunner.includes('.'), 'A remote function source is required');
     this.passThroughComponents = components;
     const [source, remoteRunner] = components.remoteRunner.split('.');

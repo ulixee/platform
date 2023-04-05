@@ -16,7 +16,7 @@ export default async function cloneDatastore(
   url: string,
   directoryPath?: string,
   options: { embedCredits?: { id: string; secret: string } } = {},
-): Promise<void> {
+): Promise<{ datastoreFilePath: string }> {
   const { datastoreVersionHash, host } = await DatastoreApiClient.resolveDatastoreDomain(url);
   if (url.includes('/free-credits')) {
     const credit = new URL(url).search.split(':');
@@ -24,7 +24,7 @@ export default async function cloneDatastore(
   }
   const datastoreApiClient = new DatastoreApiClient(host);
   const meta = await datastoreApiClient.getMeta(datastoreVersionHash, true);
-
+  await datastoreApiClient.disconnect();
   const schemasByName: Record<string, { isTable: boolean; schemaJson: any }> = {};
   const imports = new Set<string>();
 
@@ -32,11 +32,15 @@ export default async function cloneDatastore(
     let schemaLine = '';
     imports.add('PassthroughRunner');
     if (runner.schemaJson) {
-      schemasByName[`${x}RunnerSchema`] = { isTable: false, schemaJson: runner.schemaJson };
-      schemaLine = `\n  schema: ${x}RunnerSchema(),\n`;
+      schemasByName[`${x}`] = { isTable: false, schemaJson: runner.schemaJson };
+      schemaLine = `\n  schema: ${x}(),\n`;
+    }
+    let descriptionLine = '';
+    if (runner.description) {
+      descriptionLine = `\n  description: ${JSON.stringify(runner.description)},\n`;
     }
     return `${x}: new PassthroughRunner({
-  remoteRunner: 'source.${x}',${schemaLine}
+  remoteRunner: 'source.${x}',${schemaLine}${descriptionLine}
 })`;
   });
 
@@ -44,11 +48,17 @@ export default async function cloneDatastore(
     let schemaLine = '';
     imports.add('PassthroughTable');
     if (table.schemaJson) {
-      schemasByName[`${x}TableSchema`] = { isTable: true, schemaJson: table.schemaJson };
-      schemaLine = `\n  schema: ${x}TableSchema(),\n`;
+      schemasByName[`${x}`] = { isTable: true, schemaJson: table.schemaJson };
+      schemaLine = `\n  schema: ${x}(),\n`;
     }
+
+    let descriptionLine = '';
+    if (table.description) {
+      descriptionLine = `\n  description: ${JSON.stringify(table.description)},\n`;
+    }
+
     return `${x}: new PassthroughTable({
-  remoteTable: 'source.${x}',${schemaLine}
+  remoteTable: 'source.${x}',${schemaLine}${descriptionLine}
 })`;
   });
 
@@ -78,13 +88,16 @@ export default async function cloneDatastore(
     },`;
   }
 
+  const description = meta.description
+    ? `\n    description: ${JSON.stringify(meta.description)},\n`
+    : '';
   const script = `
   import { Datastore, ${[...imports].join(',')} } from '@ulixee/datastore';
   import schemaFromJson from '@ulixee/schema/lib/schemaFromJson';
   import { ${[...schemaImports].join(', ')} } from '@ulixee/schema';
   
   const datastore = new Datastore({
-    name: ${JSON.stringify(meta.name)},
+    name: ${JSON.stringify(meta.name)},${description}
     affiliateId: "aff${nanoid(12)}",
     remoteDatastores: {
       source: "${url}",
@@ -113,7 +126,11 @@ export default async function cloneDatastore(
     mkdirSync(folder, { recursive: true });
   }
   if (!existsSync(Path.join(folder, 'package.json'))) {
-    writeFileSync(Path.join(folder, 'package.json'), JSON.stringify(clonedPackageJson, null, 2), 'utf8');
+    writeFileSync(
+      Path.join(folder, 'package.json'),
+      JSON.stringify(clonedPackageJson, null, 2),
+      'utf8',
+    );
   }
   if (!existsSync(Path.join(folder, 'tsconfig.json'))) {
     copyFileSync(`${__dirname}/cloned-tsconfig.json`, Path.join(folder, 'tsconfig.json'));
@@ -131,4 +148,5 @@ export default async function cloneDatastore(
   const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed, noEmitHelpers: true });
   const tsFile = printer.printFile(sourceFile);
   writeFileSync(datastoreFilepath, tsFile);
+  return { datastoreFilePath: datastoreFilepath };
 }

@@ -1,4 +1,4 @@
-import { BrowserWindow, Menu, MenuItem } from 'electron';
+import { BrowserWindow } from 'electron';
 import * as Path from 'path';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
@@ -6,12 +6,14 @@ import StaticServer from './StaticServer';
 import ApiManager from './ApiManager';
 import generateContextMenu from '../menus/generateContextMenu';
 import WindowStateKeeper from './util/windowStateKeeper';
+import DesktopPrivateApiHandler from './DesktopPrivateApiHandler';
 
 export default class DesktopWindow extends TypedEventEmitter<{
   close: void;
   focus: void;
-  'open-chromealive': { cloudAddress: string; heroSessionId: string; dbPath: string };
 }> {
+  public readonly privateApiHandler: DesktopPrivateApiHandler;
+
   public get isOpen(): boolean {
     return !!this.#window;
   }
@@ -29,7 +31,15 @@ export default class DesktopWindow extends TypedEventEmitter<{
   constructor(staticServer: StaticServer, private apiManager: ApiManager) {
     super();
     this.#webpageUrl = staticServer.getPath('desktop.html');
+    this.privateApiHandler = new DesktopPrivateApiHandler(
+      apiManager,
+      this.sendDesktopEvent.bind(this),
+    );
     void this.open(false);
+  }
+
+  public focus(): void {
+    this.#window.focus();
   }
 
   public async open(show = true): Promise<void> {
@@ -42,74 +52,21 @@ export default class DesktopWindow extends TypedEventEmitter<{
       show,
       acceptFirstMouse: true,
       useContentSize: true,
+      titleBarStyle: 'hiddenInset',
       ...this.#windowStateKeeper.windowState,
       webPreferences: {
-        preload: `${__dirname}/MenubarPagePreload.js`,
+        preload: `${__dirname}/DesktopPagePreload.js`,
       },
       icon: Path.resolve('..', 'assets', 'icon.png'),
     });
 
     this.#windowStateKeeper.track(this.#window);
     this.#window.setTitle('Ulixee Desktop');
-    this.#events.on(this.#window.webContents, 'ipc-message', async (e, message, ...args) => {
-      if (message === 'desktop:api') {
-        const [api] = args;
-        if (api === 'Desktop.publishConnections') {
-          for (const [address, group] of this.apiManager.apiByCloudAddress) {
-            if (group.resolvable.isResolved && !group.resolvable.resolved?.api) continue;
-            await this.onNewCloudAddress({ address, name: group.name, type: group.type });
-          }
-        }
-        if (api === 'Session.openReplay') {
-          this.emit('open-chromealive', ...args[1]);
-        }
-        if (api === 'Desktop.connectToPrivateCloud') {
-          const { address, name } = args[1][0];
-          if (!address) {
-            console.warn('No valid address provided to connect to', args[1]);
-            return;
-          }
-          try {
-            await this.apiManager.connectToCloud(address, 'private', name);
-          } catch (error) {
-            await this.sendDesktopEvent('Desktop.connectToPrivateCloudError', {
-              message: error.message,
-              address,
-            });
-          }
-        }
-        if (api === 'Datastore.contextMenu') {
-          const menu = new Menu();
-          const { datastoreVersionHash, cloud } = args[1][0];
-          const menuItem = new MenuItem({
-            label: 'Deploy To',
-            submenu: [
-              {
-                label: 'Public Cloud (coming soon)',
-                enabled: false,
-                click: () => {
-                  // eslint-disable-next-line no-console
-                  console.log('deploy to public cloud', datastoreVersionHash, cloud);
-                },
-              },
-              ...([...this.apiManager.apiByCloudAddress]
-                .filter(([address, details]) => {
-                  if (details.name === cloud) return null;
-                  return {
-                    label: details.name,
-                    click: () => {
-                      // eslint-disable-next-line no-console
-                      console.log('deploy to %s', address);
-                    },
-                  };
-                })
-                .filter(Boolean) as any[]),
-            ],
-          });
-          menu.append(menuItem);
-          menu.popup();
-        }
-      }
+    this.#window.webContents.ipc.handle('desktop:api', async (e, { api, args }) => {
+      return await this.privateApiHandler.handleApi(api, args, e.sender);
+    });
+    this.#window.webContents.ipc.on('desktop:api', async (e, { api, args }) => {
+      await this.privateApiHandler.handleApi(api, args, e.sender);
     });
     this.#events.on(this.#window.webContents, 'context-menu', (e, params) => {
       generateContextMenu(params, this.#window.webContents).popup();
@@ -125,12 +82,6 @@ export default class DesktopWindow extends TypedEventEmitter<{
     this.#events.close();
     this.#window = null;
     this.emit('close');
-  }
-
-  public async onNewCloudAddress(
-    event: ApiManager['EventTypes']['new-cloud-address'],
-  ): Promise<void> {
-    await this.sendDesktopEvent('Desktop.onCloudConnected', event);
   }
 
   private sendDesktopEvent(eventType: string, data: any): Promise<any> {

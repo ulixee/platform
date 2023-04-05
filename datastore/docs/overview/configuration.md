@@ -39,7 +39,7 @@ During bootup, any Packaged Datastore files (`.dbx`) in this directory will be a
 
 The server environment a Datastore runs in will alter a few default settings. Current environment options are `development` and `production`. Production mode imposes the following limitations:
 
-1. All [Admin](#admin) APIs require an AdminIdentity. The Server must install one by default. If none is provided, a temporary AdminIdentity will be output on the console during startup (configured via `options.serverAdminIdentities` or environment variable `ULX_SERVER_ADMIN_IDENTITIES`).
+1. All [Admin](#admin) APIs require an AdminIdentity. The Server must install one by default. If none is provided, a temporary AdminIdentity will be output on the console during startup (configured via `options.cloudAdminIdentities` or environment variable `ULX_Cloud_ADMIN_IDENTITIES`).
 2. You cannot run `localScripts` through a Datastore Core. They must be packaged and deployed to the server.
 
 ### Server Admin Identities {#admin}

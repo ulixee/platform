@@ -9,7 +9,8 @@ export default interface IDatastoreCoreConfigureOptions {
   waitForDatastoreCompletionOnShutdown: boolean;
   paymentAddress: string;
   enableDatastoreWatchMode: boolean;
-  serverAdminIdentities: string[];
+  cloudAdminIdentities: string[];
+  requireDatastoreAdminIdentities: boolean;
   defaultBytesForPaymentEstimates: number;
   computePricePerQuery: number;
   approvedSidechains: IBlockSettings['sidechains'];

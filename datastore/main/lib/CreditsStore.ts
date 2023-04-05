@@ -7,13 +7,29 @@ export default class CreditsStore {
 
   private static creditsByDatastore: Promise<ICreditsStore>;
 
+  public static async storeFromUrl(url: string, microgons: number): Promise<void> {
+    const datastoreURL = new URL(url);
+    datastoreURL.protocol = 'ws:';
+    const versionHash = datastoreURL.pathname.slice(1);
+    await this.store(versionHash, datastoreURL.host, {
+      id: datastoreURL.username,
+      secret: datastoreURL.password,
+      remainingCredits: microgons,
+    });
+  }
+
   public static async store(
     datastoreVersionHash: string,
+    host: string,
     credits: { id: string; secret: string; remainingCredits: number },
   ): Promise<void> {
     const allCredits = await this.load();
     allCredits[datastoreVersionHash] ??= {};
-    allCredits[datastoreVersionHash][credits.id] = credits;
+    allCredits[datastoreVersionHash][credits.id] = {
+      ...credits,
+      host,
+      allocated: credits.remainingCredits,
+    };
     await this.writeToDisk(allCredits);
   }
 
@@ -32,10 +48,26 @@ export default class CreditsStore {
         credit.remainingCredits -= microgons;
         return {
           credits: { id: creditId, secret: credit.secret },
-          onFinalized: this.finalizePayment.bind(this, credit, microgons),
+          onFinalized: this.finalizePayment.bind(this, microgons, credit),
         };
       }
     }
+  }
+
+  public static async asList(): Promise<ICredit[]> {
+    const allCredits = await this.load();
+    const credits: ICredit[] = [];
+    for (const [datastoreVersionHash, credit] of Object.entries(allCredits)) {
+      const [creditsId, entry] = Object.entries(credit)[0];
+      credits.push({
+        datastoreVersionHash,
+        host: entry.host,
+        remainingBalance: entry.remainingCredits,
+        allocated: entry.allocated,
+        creditsId,
+      });
+    }
+    return credits;
   }
 
   protected static finalizePayment(
@@ -59,6 +91,21 @@ export default class CreditsStore {
     return safeOverwriteFile(this.storePath, JSON.stringify(data));
   }
 }
+
 interface ICreditsStore {
-  [versionHost: string]: { [creditsId: string]: { secret: string; remainingCredits: number } };
+  [datastoreVersionHash: string]: {
+    [creditsId: string]: {
+      secret: string;
+      host: string;
+      remainingCredits: number;
+      allocated: number;
+    };
+  };
 }
+export type ICredit = {
+  datastoreVersionHash: string;
+  remainingBalance: number;
+  allocated: number;
+  creditsId: string;
+  host: string;
+};

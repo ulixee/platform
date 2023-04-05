@@ -6,6 +6,6 @@ tsconfig*
 *.config.js
 *.config.d.ts
 *.config.js.map
-src
-lib
+src[
+lib]
 !dist

@@ -39,8 +39,8 @@ export default class WorkTracker {
     return resolvable.promise;
   }
 
-  public trackRun<TOutput = any[]>(outputPromise: Promise<TOutput>): Promise<TOutput> {
-    const resolvable = new Resolvable<TOutput>(this.maxRuntimeMs);
+  public trackRun<TOutput>(outputPromise: Promise<TOutput>): Promise<TOutput> {
+    const resolvable = new Resolvable(this.maxRuntimeMs);
     this.runPromises.add(resolvable);
 
     void outputPromise

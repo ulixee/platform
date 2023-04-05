@@ -5,11 +5,15 @@ import { Helpers } from '@ulixee/datastore-testing';
 import { CloudNode } from '@ulixee/cloud';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { Crawler } from '@ulixee/datastore';
+import { nanoid } from 'nanoid';
+import DatastoreRegistry from '../lib/DatastoreRegistry';
+import DatastoreCore from '../index';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Crawler.test');
 
 let cloudNode: CloudNode;
 let client: DatastoreApiClient;
+let registry: DatastoreRegistry;
 const findCachedSpy = jest.spyOn<any, any>(Crawler.prototype, 'findCached');
 
 beforeAll(async () => {
@@ -23,6 +27,8 @@ beforeAll(async () => {
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
   await cloudNode.listen();
+  // @ts-expect-error
+  registry = DatastoreCore.datastoreRegistry;
   client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 });
@@ -42,17 +48,56 @@ afterAll(async () => {
 test('should be able to run a crawler', async () => {
   const crawler = new DatastorePackager(`${__dirname}/datastores/crawl.js`);
   await crawler.build();
-  await client.upload(await crawler.dbx.asBuffer());
+  await client.upload(await crawler.dbx.tarGzip());
+  const affiliateId = `aff${nanoid(12)}`;
+  await expect(
+    client.stream(crawler.manifest.versionHash, 'crawlCall', {}, { affiliateId }),
+  ).resolves.toEqual([{ version: '1', crawler: 'none', runCrawlerTime: expect.any(Date) }]);
+  // @ts-expect-error
+  const { queryLogDb, datastoresDb } = registry;
+  expect(queryLogDb.logTable.all()).toHaveLength(1);
+  expect(queryLogDb.logTable.all()[0].query).toBe(`stream(crawlCall)`);
+  expect(queryLogDb.logTable.all()[0].affiliateId).toBe(affiliateId);
+  const stats = datastoresDb.datastoreItemStats.all();
+  expect(stats).toHaveLength(2);
+  expect(stats.some(x => x.name === 'crawlCall')).toBeTruthy();
+  expect(stats.some(x => x.name === 'crawl')).toBeTruthy();
+});
 
-  await expect(client.stream(crawler.manifest.versionHash, 'crawlCall', {})).resolves.toEqual([
-    { version: '1', crawler: 'none', runCrawlerTime: expect.any(Date) },
-  ]);
+test('should be able to query a crawler', async () => {
+  const crawler = new DatastorePackager(`${__dirname}/datastores/crawl.js`);
+  await crawler.build();
+  await client.upload(await crawler.dbx.tarGzip());
+  // @ts-expect-error
+  const { queryLogDb, datastoresDb } = registry;
+  queryLogDb.logTable.db.exec(`delete from ${queryLogDb.logTable.tableName}`);
+  datastoresDb.datastoreItemStats.db.exec(
+    `delete from ${datastoresDb.datastoreItemStats.tableName}`,
+  );
+  const affiliateId = `aff${nanoid(12)}`;
+  await expect(
+    client.query(crawler.manifest.versionHash, 'select * from crawlCall()', { affiliateId }),
+  ).resolves.toEqual(
+    expect.objectContaining({
+      outputs: [
+        { version: '1', crawler: 'none', sessionId: null, runCrawlerTime: expect.any(Date) },
+      ],
+    }),
+  );
+
+  expect(queryLogDb.logTable.all()).toHaveLength(1);
+  expect(queryLogDb.logTable.all()[0].query).toBe(`select * from crawlCall()`);
+  expect(queryLogDb.logTable.all()[0].affiliateId).toBe(affiliateId);
+  const stats = datastoresDb.datastoreItemStats.all();
+  expect(stats).toHaveLength(2);
+  expect(stats.some(x => x.name === 'crawlCall')).toBeTruthy();
+  expect(stats.some(x => x.name === 'crawl')).toBeTruthy();
 });
 
 test('should be able to ask a crawler for a cached result', async () => {
   const crawler = new DatastorePackager(`${__dirname}/datastores/crawl.js`);
   await crawler.build();
-  await client.upload(await crawler.dbx.asBuffer());
+  await client.upload(await crawler.dbx.tarGzip());
 
   const result1 = await client.stream(crawler.manifest.versionHash, 'crawlCall', {
     sessionId: '1',
@@ -74,7 +119,7 @@ test('should be able to ask a crawler for a cached result', async () => {
 test('should get cached result by serialized input if no schema', async () => {
   const crawler = new DatastorePackager(`${__dirname}/datastores/crawl.js`);
   await crawler.build();
-  await client.upload(await crawler.dbx.asBuffer());
+  await client.upload(await crawler.dbx.tarGzip());
 
   const result1 = await client.stream(crawler.manifest.versionHash, 'crawlCall', {
     sessionId: '1',
@@ -130,7 +175,7 @@ test('should get cached result by serialized input if no schema', async () => {
 test('should get cached result individual input columns', async () => {
   const crawler = new DatastorePackager(`${__dirname}/datastores/crawl.js`);
   await crawler.build();
-  await client.upload(await crawler.dbx.asBuffer());
+  await client.upload(await crawler.dbx.tarGzip());
 
   const result1 = await client.stream(crawler.manifest.versionHash, 'crawlWithSchemaCall', {
     sessionId: '1',

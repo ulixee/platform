@@ -1,6 +1,8 @@
 import { Command } from 'commander';
 import type * as CliCommands from '@ulixee/datastore-packager/lib/cliCommands';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import * as Path from 'path';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import DatastoreApiClient from '../lib/DatastoreApiClient';
 import creditsCli from './creditsCli';
 import cloneDatastore from './cloneDatastore';
@@ -30,7 +32,37 @@ export default function datastoreCommands(): Command {
     .argument('<url>', 'The url of the Datastore.')
     .argument('[path]', 'The directory path to output your cloned Datastore.')
     .action(async (url, path) => {
-      await cloneDatastore(url, path);
+      console.log('Cloning...');
+      const { datastoreFilePath } = await cloneDatastore(url, path);
+      console.log('Your cloned datastore has been created.', {
+        path: Path.dirname(datastoreFilePath),
+        startCommand: `npx @ulixee/datastore start "${Path.relative(process.cwd(), datastoreFilePath)}"`,
+      });
+    });
+
+  cli
+    .command('build')
+    .description('Build a Datastore and compress into a TarGz file.')
+    .argument(
+      '<path>',
+      'The path of the entrypoint to the Datastore. Must have a default export that is a Datastore.',
+    )
+    .option('-o, --out-dir <path>', 'A directory path where you want the compressed dbx to go.')
+    .option(
+      '-s, --compiled-source-path <path>',
+      'Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).',
+    )
+    .option(
+      '-t, --tsconfig <path>',
+      'A path to a TypeScript config file if needed. Will be auto-located based on the entrypoint if it ends in ".ts"',
+    )
+    .action(async (path, options) => {
+      const { tsconfig, outDir, compiledSourcePath } = options;
+      await getPackagerCommands().build(path, {
+        tsconfig,
+        compiledSourcePath,
+        outDir,
+      });
     });
 
   cli
@@ -41,7 +73,7 @@ export default function datastoreCommands(): Command {
       'The path of the entrypoint to the Datastore. Must have a default export that is a Datastore.',
     )
     .option(
-      '-h, --upload-host <host>',
+      '-h, --cloud-host <host>',
       'Upload this Datastore to the given host Cloud node. Will try to auto-connect if none specified.',
     )
     .option(
@@ -64,7 +96,7 @@ export default function datastoreCommands(): Command {
       const {
         tsconfig,
         compiledSourcePath,
-        uploadHost,
+        cloudHost,
         clearVersionHistory,
         identityPath,
         identityPassphrase,
@@ -73,7 +105,7 @@ export default function datastoreCommands(): Command {
       await getPackagerCommands().deploy(path, {
         tsconfig,
         compiledSourcePath,
-        uploadHost,
+        cloudHost,
         clearVersionHistory,
         identityPath,
         identityPassphrase,
@@ -100,12 +132,10 @@ export default function datastoreCommands(): Command {
       '-t, --tsconfig <path>',
       'A path to a TypeScript config file if needed. Will be auto-located based on the entrypoint if it ends in ".ts"',
     )
-    .option(
-      '-w, --watch',
-      'Watch for file changes in your datastore.',
-    )
+    .option('-w, --watch', 'Watch for file changes in your datastore.')
     .action(async (path, options) => {
       const { tsconfig, outDir, compiledSourcePath, watch } = options;
+
       await getPackagerCommands().startDatastore(path, {
         tsconfig,
         compiledSourcePath,

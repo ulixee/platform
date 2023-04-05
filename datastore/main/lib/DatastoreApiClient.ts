@@ -102,6 +102,7 @@ export default class DatastoreApiClient {
     name: IItemName,
     input: ISchemaDbx['input'],
     options?: {
+      streamId?: string;
       payment?: IPayment & {
         onFinalized?(metadata: IDatastoreExecResult['metadata'], error?: Error): void;
       };
@@ -119,6 +120,7 @@ export default class DatastoreApiClient {
     name: IItemName,
     input: ISchemaDbx['input'],
     options: {
+      streamId?: string;
       payment?: IPayment & {
         onFinalized?(metadata: IDatastoreExecResult['metadata'], error?: Error): void;
       };
@@ -126,7 +128,7 @@ export default class DatastoreApiClient {
       affiliateId?: string;
     } = {},
   ): ResultIterable<ISchemaDbx['output'], IDatastoreApiTypes['Datastore.stream']['result']> {
-    const streamId = nanoid(12);
+    const streamId = options?.streamId ?? nanoid(12);
     const results = new ResultIterable<
       ISchemaDbx['output'],
       IDatastoreApiTypes['Datastore.stream']['result']
@@ -166,6 +168,7 @@ export default class DatastoreApiClient {
     sql: string,
     options: {
       boundValues?: any[];
+      queryId?: string;
       payment?: IPayment & {
         onFinalized?(metadata: IDatastoreExecResult['metadata'], error?: Error): void;
       };
@@ -174,7 +177,9 @@ export default class DatastoreApiClient {
     } = {},
   ): Promise<IDatastoreExecResult & { outputs?: ISchemaOutput[] }> {
     try {
+      const id = options.queryId ?? nanoid(12);
       const result = await this.runRemote('Datastore.query', {
+        id,
         versionHash,
         sql,
         boundValues: options.boundValues ?? [],
@@ -218,7 +223,7 @@ export default class DatastoreApiClient {
       adminSignature = identity.sign(message);
     }
 
-    return await this.runRemote(
+    const { success } = await this.runRemote(
       'Datastore.upload',
       {
         compressedDatastore,
@@ -228,12 +233,50 @@ export default class DatastoreApiClient {
       },
       timeoutMs,
     );
+    return { success };
+  }
+
+  public async download(
+    versionHash: string,
+    options: {
+      timeoutMs?: number;
+      identity?: Identity;
+    } = {},
+  ): Promise<Buffer> {
+    options.timeoutMs ??= 120e3;
+    const requestDate = new Date();
+    const { timeoutMs } = options;
+
+    let adminSignature: Buffer;
+    let adminIdentity: string;
+    if (options.identity) {
+      const identity = options.identity;
+      adminIdentity = identity.bech32;
+      const message = DatastoreApiClient.createDownloadSignatureMessage(
+        versionHash,
+        requestDate.getTime(),
+      );
+      adminSignature = identity.sign(message);
+    }
+
+    const result = await this.runRemote(
+      'Datastore.download',
+      {
+        versionHash,
+        requestDate,
+        adminSignature,
+        adminIdentity,
+      },
+      timeoutMs,
+    );
+    return result?.compressedDatastore;
   }
 
   public async startDatastore(dbxPath: string): Promise<{ success: boolean }> {
-    return await this.runRemote('Datastore.start', {
+    const { success } = await this.runRemote('Datastore.start', {
       dbxPath,
     });
+    return { success };
   }
 
   public async getCreditsBalance(
@@ -326,7 +369,7 @@ export default class DatastoreApiClient {
   }
 
   public static resolveDatastoreDomain(domain: string): Promise<IDatastoreDomainResponse> {
-    const isFullDomain = domain.match(/(?:.+:\/\/)?([^/]+)\/datastore\/(dbx1[ac-hj-np-z02-9]{18})/);
+    const isFullDomain = domain.match(/(?:.+:\/\/)?([^/]+)\/(dbx1[ac-hj-np-z02-9]{18})\/?/);
     if (isFullDomain) {
       const [, host, datastoreVersionHash] = isFullDomain;
       return Promise.resolve({ host, datastoreVersionHash });
@@ -336,6 +379,7 @@ export default class DatastoreApiClient {
     const httpModule = domain.startsWith('https') ? Https : Http;
     return new Promise((resolve, reject) => {
       const url = new URL(domain);
+      if (url.protocol !== 'https:') url.protocol = 'http:';
       const request = httpModule.request(url.origin, { method: 'OPTIONS' }, async res => {
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           resolve(this.resolveDatastoreDomain(res.headers.location));
@@ -409,5 +453,9 @@ export default class DatastoreApiClient {
     return sha256(
       concatAsBuffer('Datastore.upload', compressedDatastore, String(allowNewLinkedVersionHistory)),
     );
+  }
+
+  public static createDownloadSignatureMessage(versionHash: string, requestDate: number): Buffer {
+    return sha256(concatAsBuffer('Datastore.download', versionHash, requestDate));
   }
 }

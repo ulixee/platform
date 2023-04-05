@@ -31,6 +31,7 @@
     "@ulixee/hero-interfaces": "2.0.0-alpha.19",
     "@ulixee/net": "2.0.0-alpha.19",
     "@ulixee/specification": "2.0.0-alpha.19",
+    "@ulixee/platform-specification": "2.0.0-alpha.19",
     "commander": "^9.3.0",
     "ws": "^7.4.6"
   },

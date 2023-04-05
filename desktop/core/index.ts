@@ -19,6 +19,8 @@ import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
 import DatastoreCore from '@ulixee/datastore-core';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
+import { ICloudApis, ICloudApiTypes } from '@ulixee/platform-specification/cloud';
+import { ConnectionToCore } from '@ulixee/net';
 import WebSocket = require('ws');
 import SessionController from './lib/SessionController';
 import FullscreenHeroCorePlugin from './lib/FullscreenHeroCorePlugin';
@@ -47,10 +49,16 @@ export default class DesktopCore {
     return this._connectionToDatastoreCore;
   }
 
+  private static connectionToCloudCore: ConnectionToCore<ICloudApis, {}>;
+
   private static events = new EventSubscriber();
 
-  public static setLocalCloudAddress(address: Promise<string>): void {
+  public static setLocalCloudAddress(
+    address: Promise<string>,
+    cloudApiConnection: ConnectionToCore<ICloudApis, {}>,
+  ): void {
     this.localCloudAddress = address;
+    this.connectionToCloudCore = cloudApiConnection;
   }
 
   public static addAppDevtoolsWebsocket(ws: WebSocket, request: IncomingMessage): void {
@@ -94,12 +102,15 @@ export default class DesktopCore {
 
     log.info('Desktop app connected', { id, host, sessionId: null });
 
-    // Desktop initiates a connection to Core. This Core could be remote or local
+    // Desktop initiates a connection to Core. This Core could be remote or local.
     const connection = new ConnectionToClient(transport, <IDesktopAppApis>{
       'App.connect': this.onAppConnect.bind(this, id),
       'Sessions.search': this.heroSessionsSearch.search,
       'Sessions.list': this.heroSessionsSearch.list,
-      'Datastores.list': this.delegateToCore.bind(this, 'Datastores.list'),
+      // NOTE: we proxy through some core apis here just to minimize necessary connections
+      'Datastores.list': this.delegateToDatastoreCore.bind(this, 'Datastores.list'),
+      'Datastore.meta': this.delegateToDatastoreCore.bind(this, 'Datastore.meta'),
+      'Datastore.creditsIssued': this.delegateToDatastoreCore.bind(this, 'Datastore.creditsIssued'),
     });
 
     this.appConnectionsById.set(id, connection);
@@ -111,6 +122,15 @@ export default class DesktopCore {
       this.events.on(this.heroSessionsSearch, 'update', x =>
         connection.sendEvent({ data: x, eventType: 'Sessions.listUpdated' }),
       ),
+      this.events.on(DatastoreCore.events, 'new', x => {
+        connection.sendEvent({ data: x, eventType: 'Datastore.new' });
+      }),
+      this.events.on(DatastoreCore.events, 'stats', x => {
+        connection.sendEvent({ data: x, eventType: 'Datastore.stats' });
+      }),
+      this.events.on(DatastoreCore.events, 'stopped', x => {
+        connection.sendEvent({ data: x, eventType: 'Datastore.stopped' });
+      }),
       this.events.on(connection, 'request', msg => {
         log.stats(`${msg.request.command} (${msg.request?.messageId})`, {
           request: msg.request,
@@ -145,14 +165,17 @@ export default class DesktopCore {
     HeroCore.use(FullscreenHeroCorePlugin);
   }
 
-  public static onAppConnect(
+  public static async onAppConnect(
     id: string,
     args: Parameters<IAppApi['connect']>[0],
-  ): Promise<{ id: string }> {
+  ): ReturnType<IAppApi['connect']> {
     if (id === 'local') {
       Workarea.setHeroDefaultScreen(args.workarea);
     }
-    return Promise.resolve({ id });
+
+    const { nodes } = await this.delegateToCloudCore('Cloud.status', {});
+
+    return { id, cloudNodes: nodes };
   }
 
   public static async shutdown(): Promise<void> {
@@ -261,11 +284,21 @@ export default class DesktopCore {
     return { sessionController, appConnectionId };
   }
 
-  private static delegateToCore<TCommand extends keyof IDatastoreApiTypes & string>(
+  private static delegateToDatastoreCore<TCommand extends keyof IDatastoreApiTypes & string>(
     command: TCommand,
     args: IDatastoreApiTypes[TCommand]['args'],
   ): Promise<IDatastoreApiTypes[TCommand]['result']> {
     return this.connectionToDatastoreCore.sendRequest({
+      command,
+      args: [args] as any,
+    });
+  }
+
+  private static delegateToCloudCore<TCommand extends keyof ICloudApiTypes & string>(
+    command: TCommand,
+    args: ICloudApiTypes[TCommand]['args'],
+  ): Promise<ICloudApiTypes[TCommand]['result']> {
+    return this.connectionToCloudCore.sendRequest({
       command,
       args: [args] as any,
     });
@@ -276,7 +309,7 @@ export default class DesktopCore {
     transport: ITransportToClient<any>,
     request: IncomingMessage,
   ): IConnectionToClient<any, any> {
-    const requestUrl = new URL(request.url, 'http://localhost')
+    const requestUrl = new URL(request.url, 'http://localhost');
     const customDbPath = requestUrl.searchParams.get('path');
 
     const db = SessionDb.getCached(heroSessionId, true, customDbPath);
