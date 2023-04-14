@@ -144,7 +144,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     }
     const statsByItemName: IStatsByName = {};
     for (const name of [
-      ...Object.keys(manifest.runnersByName),
+      ...Object.keys(manifest.extractorsByName),
       ...Object.keys(manifest.tablesByName),
       ...Object.keys(manifest.crawlersByName),
     ]) {

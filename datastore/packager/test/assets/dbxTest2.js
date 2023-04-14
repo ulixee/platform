@@ -1,13 +1,13 @@
 const { Table } = require('@ulixee/datastore');
 const Datastore = require('@ulixee/datastore');
-const { Runner } = require('@ulixee/datastore');
+const { Extractor } = require('@ulixee/datastore');
 const { boolean, string } = require('@ulixee/schema');
 
 exports.default = new Datastore({
-  runners: {
-    test: new Runner({
+  extractors: {
+    test: new Extractor({
       run(ctx) {
-        ctx.output = { 
+        ctx.output = {
           testerEcho: ctx.input.shouldTest,
           greeting: 'Hello world',
         };

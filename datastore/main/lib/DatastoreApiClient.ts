@@ -54,18 +54,18 @@ export default class DatastoreApiClient {
     });
   }
 
-  public async getRunnerPricing<
+  public async getExtractorPricing<
     IVersionHash extends keyof ITypes & string = any,
-    IRunnerName extends keyof ITypes[IVersionHash]['runners'] & string = 'default',
+    IExtractorName extends keyof ITypes[IVersionHash]['extractors'] & string = 'default',
   >(
     versionHash: IVersionHash,
-    runnerName: IRunnerName,
+    extractorName: IExtractorName,
   ): Promise<
-    Omit<IDatastoreApiTypes['Datastore.meta']['result']['runnersByName'][IRunnerName], 'name'> &
+    Omit<IDatastoreApiTypes['Datastore.meta']['result']['extractorsByName'][IExtractorName], 'name'> &
       Pick<IDatastoreApiTypes['Datastore.meta']['result'], 'computePricePerQuery'>
   > {
     const meta = await this.getMeta(versionHash);
-    const stats = meta.runnersByName[runnerName];
+    const stats = meta.extractorsByName[extractorName];
 
     return {
       ...stats,
@@ -79,7 +79,7 @@ export default class DatastoreApiClient {
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
     const meta = await this.getMeta(versionHash);
 
-    if (meta.runnersByName && meta.schemaInterface) {
+    if (meta.extractorsByName && meta.schemaInterface) {
       installDatastoreSchema(meta.schemaInterface, versionHash);
     }
     if (alias) {
@@ -95,8 +95,8 @@ export default class DatastoreApiClient {
   public stream<
     IO extends IItemInputOutput,
     IVersionHash extends keyof ITypes & string = any,
-    IItemName extends keyof ITypes[IVersionHash]['runners'] & string = string,
-    ISchemaDbx extends ITypes[IVersionHash]['runners'][IItemName] = IO,
+    IItemName extends keyof ITypes[IVersionHash]['extractors'] & string = string,
+    ISchemaDbx extends ITypes[IVersionHash]['extractors'][IItemName] = IO,
   >(
     versionHash: IVersionHash,
     name: IItemName,
@@ -310,7 +310,7 @@ export default class DatastoreApiClient {
     datastoreVersionHash: string,
     adminIdentity: Identity,
     adminFunction: {
-      ownerType: 'datastore' | 'crawler' | 'runner' | 'table';
+      ownerType: 'datastore' | 'crawler' | 'extractor' | 'table';
       ownerName: string;
       functionName: string;
     },

@@ -3,7 +3,7 @@ import { number, string } from '@ulixee/schema';
 import SqlParser from '../lib/Parser';
 
 test('support named args', () => {
-  const sqlParser = new SqlParser(`SELECT * FROM runner(count => 0, success => 'yes')`);
+  const sqlParser = new SqlParser(`SELECT * FROM extractor(count => 0, success => 'yes')`);
   const ast = sqlParser.ast as ISelectFromStatement;
   expect(ast.from[0].type).toBe('call');
   expect((ast.from[0] as any).args).toMatchObject([
@@ -21,7 +21,7 @@ test('support named args', () => {
 });
 
 test('support unnamed args', () => {
-  const sqlParser = new SqlParser(`SELECT * FROM runner(0, 'yes')`);
+  const sqlParser = new SqlParser(`SELECT * FROM extractor(0, 'yes')`);
   const ast = sqlParser.ast as ISelectFromStatement;
   expect(ast.from[0].type).toBe('call');
   expect((ast.from[0] as any).args).toMatchObject([
@@ -37,32 +37,32 @@ test('support unnamed args', () => {
 });
 
 test('extractFunctionInput', () => {
-  const sqlParser = new SqlParser(`SELECT * FROM runner(count => 0, success => 'yes')`);
+  const sqlParser = new SqlParser(`SELECT * FROM extractor(count => 0, success => 'yes')`);
   const inputSchemas = {
-    runner: {
+    extractor: {
       count: number(),
       success: string(),
     }
   }
   const inputs = sqlParser.extractFunctionCallInputs(inputSchemas, []);
 
-  expect(inputs.runner).toMatchObject({
+  expect(inputs.extractor).toMatchObject({
     count: 0,
     success: 'yes',
   });
 });
 
 test('extractFunctionInput with boundValues', () => {
-  const sqlParser = new SqlParser(`SELECT * FROM runner(count => $1, success => $2)`);
+  const sqlParser = new SqlParser(`SELECT * FROM extractor(count => $1, success => $2)`);
   const inputSchemas = {
-    runner: {
+    extractor: {
       count: number(),
       success: string(),
     }
   }
   const inputs = sqlParser.extractFunctionCallInputs(inputSchemas, [0, 'yes']);
 
-  expect(inputs.runner).toMatchObject({
+  expect(inputs.extractor).toMatchObject({
     count: 0,
     success: 'yes',
   });

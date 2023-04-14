@@ -113,6 +113,7 @@ export default class DesktopProfile {
     );
 
     await identity.save(this.adminIdentityPath);
+    await this.save();
     return identity.bech32;
   }
 
@@ -149,14 +150,16 @@ export default class DesktopProfile {
     if (!Fs.existsSync(DesktopProfile.path)) return;
     try {
       const data: IDesktopProfile = JSON.parse(Fs.readFileSync(DesktopProfile.path, 'utf8'));
-      this.clouds = data.clouds ?? [];
+      Object.assign(this, data);
+      this.clouds ??= [];
       for (const cloud of this.clouds) {
         if (cloud.adminIdentityPath) {
           cloud.adminIdentity = Identity.loadFromFile(cloud.adminIdentityPath).bech32;
         }
       }
-      this.gettingStartedCompletedSteps = data.gettingStartedCompletedSteps ?? [];
-      this.installedDatastores = data.installedDatastores ?? [];
+      this.datastoreAdminIdentities ??= [];
+      this.gettingStartedCompletedSteps ??= [];
+      this.installedDatastores ??= [];
       this.addressPath = data.addressPath;
     } catch {}
   }

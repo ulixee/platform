@@ -1,13 +1,13 @@
 // NOTE: you must start your own Ulixee Cloud to run this example.
 
-import { Runner, HeroRunnerPlugin, Datastore } from '@ulixee/datastore-plugins-hero';
+import { Extractor, HeroExtractorPlugin, Datastore } from '@ulixee/datastore-plugins-hero';
 import { number, object, string } from '@ulixee/schema';
 
 export default new Datastore({
   name: 'Hackernews',
   description: 'Collect all the top stories from news.ycombinator.com',
-  runners: {
-    latest: new Runner(
+  extractors: {
+    latest: new Extractor(
       {
         async run({ Hero, Output }) {
           const hero = new Hero();
@@ -76,7 +76,7 @@ export default new Datastore({
           },
         },
       },
-      HeroRunnerPlugin,
+      HeroExtractorPlugin,
     ),
   },
 });

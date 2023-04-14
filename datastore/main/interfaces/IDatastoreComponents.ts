@@ -1,11 +1,11 @@
 import Crawler from '../lib/Crawler';
-import Runner from '../lib/Runner';
+import Extractor from '../lib/Extractor';
 import Table from '../lib/Table';
 import CreditsTable from '../lib/CreditsTable';
 
 export default interface IDatastoreComponents<
   TTable extends TTables,
-  TRunner extends TRunners,
+  TExtractor extends TExtractors,
   TCrawler extends TCrawlers,
 > {
   name?: string;
@@ -18,7 +18,7 @@ export default interface IDatastoreComponents<
     [source: string]: { id: string; secret: string };
   };
   tables?: TTable & { credits?: CreditsTable };
-  runners?: TRunner;
+  extractors?: TExtractor;
   crawlers?: TCrawler;
   paymentAddress?: string;
   affiliateId?: string;
@@ -26,7 +26,7 @@ export default interface IDatastoreComponents<
   authenticateIdentity?(identity: string, nonce: string): Promise<boolean> | boolean;
 }
 
-export type TRunners<T = any, TFunc extends Runner = Runner> = T extends Record<string, TFunc>
+export type TExtractors<T = any, TFunc extends Extractor = Extractor> = T extends Record<string, TFunc>
   ? {
       [K in keyof T]: T[K];
     }

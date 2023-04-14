@@ -1,10 +1,10 @@
 import { boolean } from '@ulixee/schema';
-import Datastore, { Runner } from '@ulixee/datastore';
+import Datastore, { Extractor } from '@ulixee/datastore';
 
 module.exports = new Datastore({
   domain: 'bootup-datastore.com',
-  runners: {
-    bootup: new Runner({
+  extractors: {
+    bootup: new Extractor({
       run({ Output }) {
         const output = new Output();
         output.success = true;

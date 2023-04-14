@@ -102,7 +102,7 @@ test('can get metadata about an uploaded datastore', async () => {
       maxPricePerQuery: 0,
       maxMilliseconds: expect.any(Number),
     },
-    runnersByName: {
+    extractorsByName: {
       bootup: {
         stats: {
           queries: 0,
@@ -131,7 +131,7 @@ test('can get metadata about an uploaded datastore', async () => {
     crawlersByName: {},
     schemaInterface: `{
   tables: {};
-  runners: {
+  extractors: {
     bootup: {
       output: {
         "is-valid"?: boolean;

@@ -1,7 +1,7 @@
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
-import IRunnerSchema, { ExtractSchemaType } from './IRunnerSchema';
+import IExtractorSchema, { ExtractSchemaType } from './IExtractorSchema';
 
-export default interface IRunnerExecOptions<ISchema extends IRunnerSchema>
+export default interface IExtractorRunOptions<ISchema extends IExtractorSchema>
   extends Partial<
     Pick<
       IDatastoreApiTypes['Datastore.query']['args'],

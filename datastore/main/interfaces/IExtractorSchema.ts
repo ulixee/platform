@@ -8,7 +8,7 @@ export type ISchemaRecordType<T> = T extends Record<string, ISchemaAny>
     }
   : never;
 
-export default interface IRunnerSchema<
+export default interface IExtractorSchema<
   TInput extends ISchemaRecordType<any> = ISchemaRecordType<any>,
   TOutput extends ISchemaRecordType<any> = ISchemaRecordType<any>,
 > {
@@ -17,12 +17,12 @@ export default interface IRunnerSchema<
   inputExamples?: IInputSchemaType<this['input']>[];
 }
 
-export const RunnerSchema = <
+export const ExtractorSchema = <
   TInput extends ISchemaRecordType<any>,
   TOutput extends ISchemaRecordType<any>,
 >(
-  schema: IRunnerSchema<TInput, TOutput>,
-): IRunnerSchema<TInput, TOutput> => schema;
+  schema: IExtractorSchema<TInput, TOutput>,
+): IExtractorSchema<TInput, TOutput> => schema;
 
 type IInputSchemaType<T extends ISchemaRecordType<any>> = {
   [P in keyof T]?: T[P]['$type'] | DateUtilities;

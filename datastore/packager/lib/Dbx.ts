@@ -8,9 +8,9 @@ import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { SqlGenerator } from '@ulixee/sql-engine';
 import { IFetchMetaResponseData } from '@ulixee/datastore-core/interfaces/ILocalDatastoreProcess';
 import { unlinkSync } from 'fs';
-import RunnerInternal from '@ulixee/datastore/lib/RunnerInternal';
+import ExtractorInternal from '@ulixee/datastore/lib/ExtractorInternal';
 import StringSchema from '@ulixee/schema/lib/StringSchema';
-import { IRunnerSchema } from '@ulixee/datastore';
+import { IExtractorSchema } from '@ulixee/datastore';
 import moment = require('moment');
 import IDocpageConfig from '../interfaces/IDocpageConfig';
 
@@ -87,17 +87,17 @@ export default class Dbx {
     if (!defaultExample) {
       const functions = [
         ...Object.values(meta.crawlersByName),
-        ...Object.values(meta.runnersByName),
+        ...Object.values(meta.extractorsByName),
       ];
       const useFunction = functions.find(x => x.schema?.inputExamples?.length) ?? functions[0];
-      const type = meta.runnersByName[useFunction?.name] ? 'runner' : 'crawler';
+      const type = meta.extractorsByName[useFunction?.name] ? 'extractor' : 'crawler';
       if (useFunction?.schema) {
         const args: Record<string, any> = {};
         if (useFunction.schema.inputExamples?.length) {
-          RunnerInternal.fillInputWithExamples(useFunction.schema, args);
+          ExtractorInternal.fillInputWithExamples(useFunction.schema, args);
         } else {
           for (const [name, field] of Object.entries(
-            (useFunction.schema?.input as IRunnerSchema['input']) ?? {},
+            (useFunction.schema?.input as IExtractorSchema['input']) ?? {},
           )) {
             if (field.optional === true) continue;
             if (field.format === 'time') args[name] = moment().format(StringSchema.TimeFormat);
@@ -135,13 +135,13 @@ export default class Dbx {
       description: meta.description,
       defaultExample,
       createdAt: new Date(manifest.versionTimestamp).toISOString(),
-      runnersByName: Object.entries(meta.runnersByName).reduce((obj, [name, entry]) => {
+      extractorsByName: Object.entries(meta.extractorsByName).reduce((obj, [name, entry]) => {
         return Object.assign(obj, {
           [name]: {
             name,
             description: entry.description || '',
             schema: entry.schema,
-            prices: manifest.runnersByName[name].prices,
+            prices: manifest.extractorsByName[name].prices,
           },
         });
       }, {}),

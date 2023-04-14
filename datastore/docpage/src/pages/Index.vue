@@ -93,17 +93,17 @@
           </div>
         </section>
 
-        <section v-if="runners.length" id="runners">
-          <h2 class="text-2xl font-bold">Runners</h2>
-          <div v-for="runner of runners" class="mt-3">
-            <h3 class="text-xl font-bold">{{ runner.name }}</h3>
-            {{ runner.description }}
+        <section v-if="extractors.length" id="extractors">
+          <h2 class="text-2xl font-bold">Extractors</h2>
+          <div v-for="extractor of extractors" class="mt-3">
+            <h3 class="text-xl font-bold">{{ extractor.name }}</h3>
+            {{ extractor.description }}
 
             <div class="mt-2 font-bold">Input Params</div>
-            <Fields :schema="runner.schema.input" />
+            <Fields :schema="extractor.schema.input" />
 
             <div class="mt-2 font-bold">Output Fields</div>
-            <Fields :schema="runner.schema.output" />
+            <Fields :schema="extractor.schema.output" />
           </div>
         </section>
 
@@ -137,7 +137,7 @@
         <div class="mt-5 font-bold">Table of Contents</div>
         <ul>
           <li v-if="tables.length"><a href="#tables">Tables</a></li>
-          <li v-if="runners.length"><a href="#runners">Runners</a></li>
+          <li v-if="extractors.length"><a href="#extractors">Extractors</a></li>
           <li v-if="crawlers.length"><a href="#crawlers">Crawlers</a></li>
         </ul>
       </div>
@@ -164,11 +164,11 @@ export default Vue.defineComponent({
     const config = await docpageConfigPromise;
 
     document.title = `${config.name} - Ulixee Datastore`;
-    const { tablesByName, runnersByName, crawlersByName, defaultExample } = config;
+    const { tablesByName, extractorsByName, crawlersByName, defaultExample } = config;
     const prices: number[] = [];
     for (const item of [
       ...Object.values(tablesByName ?? {}),
-      ...Object.values(runnersByName ?? {}),
+      ...Object.values(extractorsByName ?? {}),
       ...Object.values(crawlersByName ?? {}),
     ] as any[]) {
       for (const price of item.prices) {
@@ -190,7 +190,7 @@ export default Vue.defineComponent({
       port,
       defaultExample,
       tables: Object.values(tablesByName || {}),
-      runners: Object.values(runnersByName || {}),
+      extractors: Object.values(extractorsByName || {}),
       crawlers: Object.values(crawlersByName || {}),
       avgPricePerQuery: formatCurrency(avgPricePerQuery as number),
       exampleType: Vue.ref('client'),

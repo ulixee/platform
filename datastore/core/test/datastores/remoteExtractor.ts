@@ -1,9 +1,9 @@
-import Datastore, { Runner } from '@ulixee/datastore';
+import Datastore, { Extractor } from '@ulixee/datastore';
 import { boolean, string } from '@ulixee/schema';
 
 export default new Datastore({
-  runners: {
-    remote: new Runner({
+  extractors: {
+    remote: new Extractor({
       run(ctx) {
         new ctx.Output({ iAmRemote: true, echo: ctx.input.test });
       },

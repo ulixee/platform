@@ -54,7 +54,7 @@
     <!--      </li>-->
     <!--      <li>-->
     <!--        <span class="mr-2 font-medium text-gray-800">datastore-manifest.json</span>-->
-    <!--        a manifest file describing your pricing, which Tables, Runners and Crawlers are available,-->
+    <!--        a manifest file describing your pricing, which Tables, Extractors and Crawlers are available,-->
     <!--        and their data structures.-->
     <!--      </li>-->
     <!--    </ul>-->
@@ -78,8 +78,8 @@
         data-line='9'
         style="font-size: 0.9em; max-height:300px; overflow-x: hidden"
       >
-        import Datastore, { Runner } from '@ulixee/datastore';
-        import { HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+        import Datastore, { Extractor } from '@ulixee/datastore';
+        import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
         import { string } from '@ulixee/schema';
 
         const datastore = new Datastore({
@@ -87,8 +87,8 @@
           * Configuring admin access.
           */
           adminIdentities: ['{{ adminIdentity }}'],
-          runners: {
-            docPages: new Runner({
+          extractors: {
+            docPages: new Extractor({
               pricePerQuery: 10_000,
               async run({ input, Hero, Output }) {
                 const hero = new Hero();
@@ -117,7 +117,7 @@
                   href: string({ format: 'url' })
                 }
               }
-            }, HeroRunnerPlugin)
+            }, HeroExtractorPlugin)
           }
         });
 

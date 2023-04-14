@@ -1,26 +1,26 @@
 import Resolvable from '@ulixee/commons/lib/Resolvable';
-import IRunnerPlugin from '../interfaces/IRunnerPlugin';
-import IRunnerSchema from '../interfaces/IRunnerSchema';
-import IRunnerContext from '../interfaces/IRunnerContext';
-import IRunnerComponents from '../interfaces/IRunnerComponents';
-import RunnerInternal from './RunnerInternal';
-import RunnerContext from './RunnerContext';
+import IExtractorPlugin from '../interfaces/IExtractorPlugin';
+import IExtractorSchema from '../interfaces/IExtractorSchema';
+import IExtractorContext from '../interfaces/IExtractorContext';
+import IExtractorComponents from '../interfaces/IExtractorComponents';
+import ExtractorInternal from './ExtractorInternal';
+import ExtractorContext from './ExtractorContext';
 import DatastoreInternal, { IQueryInternalCallbacks } from './DatastoreInternal';
 
-export default class RunnerPlugins<
-  ISchema extends IRunnerSchema,
-  IRunContext extends IRunnerContext<ISchema> = IRunnerContext<ISchema>,
+export default class ExtractorPlugins<
+  ISchema extends IExtractorSchema,
+  IRunContext extends IExtractorContext<ISchema> = IExtractorContext<ISchema>,
 > {
-  #components: IRunnerComponents<ISchema, IRunnerContext<ISchema>>;
-  private clientPlugins: IRunnerPlugin<ISchema>[] = [];
-  private pluginNextPromises: Resolvable<IRunnerContext<ISchema>['outputs']>[] = [];
+  #components: IExtractorComponents<ISchema, IExtractorContext<ISchema>>;
+  private clientPlugins: IExtractorPlugin<ISchema>[] = [];
+  private pluginNextPromises: Resolvable<IExtractorContext<ISchema>['outputs']>[] = [];
   private pluginRunPromises: Promise<Error | void>[] = [];
 
   constructor(
-    components: IRunnerComponents<ISchema, IRunnerContext<ISchema>>,
+    components: IExtractorComponents<ISchema, IExtractorContext<ISchema>>,
     plugins: (new (
-      comps: IRunnerComponents<ISchema, IRunnerContext<ISchema>>,
-    ) => IRunnerPlugin<ISchema>)[],
+      comps: IExtractorComponents<ISchema, IExtractorContext<ISchema>>,
+    ) => IExtractorPlugin<ISchema>)[],
   ) {
     this.#components = components;
 
@@ -31,21 +31,21 @@ export default class RunnerPlugins<
   }
 
   public async initialize(
-    runnerInternal: RunnerInternal<ISchema>,
+    extractorInternal: ExtractorInternal<ISchema>,
     datastoreInternal: DatastoreInternal,
     callbacks: IQueryInternalCallbacks,
   ): Promise<IRunContext> {
-    const context = new RunnerContext(runnerInternal, datastoreInternal, callbacks);
+    const context = new ExtractorContext(extractorInternal, datastoreInternal, callbacks);
 
     // plugin `run` phases
     for (const plugin of this.clientPlugins) {
-      const outputPromise = new Resolvable<IRunnerContext<ISchema>['outputs']>();
+      const outputPromise = new Resolvable<IExtractorContext<ISchema>['outputs']>();
       this.pluginNextPromises.push(outputPromise);
 
       await new Promise<void>((resolve, reject) => {
         try {
           const promise = plugin
-            .run(runnerInternal, context, () => {
+            .run(extractorInternal, context, () => {
               // wait for next to be called
               resolve();
               return outputPromise.promise;

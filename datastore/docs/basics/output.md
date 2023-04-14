@@ -1,15 +1,15 @@
 # Output
 
-Output is an object used to create a "result" for your Datastore Runner.
+Output is an object used to create a "result" for your Datastore Extractor.
 
 It's a specialized object because it allows Datastore to observe an object that you attach to the output. All changes will be recorded as you modify the object. You can optionally `emit()` an Output instance, which will stream the individual record to any callers.
 
-If you do not manually call `emit()`, all created Output instances will be emitted when the `Runner.run` callback completes.
+If you do not manually call `emit()`, all created Output instances will be emitted when the `Extractor.run` callback completes.
 
 ```js
-import { Runner, HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import { Extractor, HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 
-const runner = new Runner(async ctx => {
+const extractor = new Extractor(async ctx => {
   const { Output, Hero } = ctx;
   
   const links = [
@@ -31,11 +31,11 @@ const runner = new Runner(async ctx => {
       output.emit();
     }
   }
-}, HeroRunnerPlugin);
+}, HeroExtractorPlugin);
 
 (async () => {
   // Records can be consumed as they are emitted
-  for await (const output of runner.runInternal()) {
+  for await (const output of extractor.runInternal()) {
     console.log(output, new Date());
   }
 })();
@@ -52,14 +52,14 @@ Instance method to freeze the output and immediately emit the record to any call
 Static method to emit contents without constructing a new Output record.
 
 ```js
-import { Runner } from '@ulixee/datastore';
+import { Extractor } from '@ulixee/datastore';
 
-new Runner(async context => {
+new Extractor(async context => {
   const { input, Output, Hero } = context;
   const hero = new Hero();
   await hero.goto('https://example.org');
   Output.emit({ text: `I went to example.org. Your input was: ${input.name}` });
-}, HeroRunnerPlugin);
+}, HeroExtractorPlugin);
 ```
 
 ## Gotchas
@@ -69,16 +69,16 @@ new Runner(async context => {
 You cannot "re-assign" the output variable and have it be observed. You should instead use `Object.assign(output, yourVariables)` to assign them onto the output object, or set properties individually.
 
 ```js
-import { Runner } from '@ulixee/datastore';
+import { Extractor } from '@ulixee/datastore';
 
-export default new Runner(async ctx => {
+export default new Extractor(async ctx => {
   let { Output } = ctx;
-
+  
   let output = new Output();
-
+  
   // Setting a variable is ok
   output.whoop = 'This will work!';
-
+  
   // Datastore will not record this change
   output = { whoops: 'This will not work!' };
 });
@@ -89,15 +89,15 @@ export default new Runner(async ctx => {
 Any object you assign into Output is "copied" into the Output object. To create an object that will be tracked through the process of attaching it to output, you can use the `Observable` class.
 
 ```js
-import { Observable, Runner } from '@ulixee/datastore';
+import { Observable, Extractor } from '@ulixee/datastore';
 
-export default new Runner(async ctx => {
+export default new Extractor(async ctx => {
   const { Output } = ctx;
-
+  
   let result = Observable({});
   const output = new Output({ results: [] });
   output.results.push(result);
-
+  
   result.text = 'Got it!';
 });
 ```
@@ -105,14 +105,14 @@ export default new Runner(async ctx => {
 If you do not use `Observable` or re-retrieve your object, you should NOT expect further changes to the source object to be saved.
 
 ```js
-import { Runner } from '@ulixee/datastore';
+import { Extractor } from '@ulixee/datastore';
 
-export default new Runner(async ctx => {
+export default new Extractor(async ctx => {
   const { Output } = datastore;
-
+  
   let result = {};
   const output = new Output({ result });
-
+  
   result.text = 'Not going to be there!'; // WILL NOT TRACK!
 });
 ```

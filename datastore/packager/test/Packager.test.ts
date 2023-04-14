@@ -48,11 +48,11 @@ test('it should generate a relative script entrypoint', async () => {
     coreVersion: require('../package.json').version,
     schemaInterface: `{
   tables: {};
-  runners: {};
+  extractors: {};
   crawlers: {};
 }`,
     tablesByName: {},
-    runnersByName: expect.objectContaining({
+    extractorsByName: expect.objectContaining({
       default: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {
@@ -125,11 +125,11 @@ test('should build a version history with a new version', async () => {
   path = dbx.path;
   await Fs.writeFile(
     `${__dirname}/assets/_historytestManual.js`,
-    `const {Datastore, Runner, HeroRunnerPlugin }=require("@ulixee/datastore-plugins-hero");
-const heroRunner = new Runner(({output}) => {
+    `const {Datastore, Extractor, HeroExtractorPlugin }=require("@ulixee/datastore-plugins-hero");
+const heroExtractor = new Extractor(({output}) => {
    output.text=1;
-},HeroRunnerPlugin);
-module.exports = new Datastore({ runners: { heroRunner }});`,
+},HeroExtractorPlugin);
+module.exports = new Datastore({ extractors: { heroExtractor }});`,
   );
   const packager2 = new DatastorePackager(`${__dirname}/assets/historyTest.js`);
   await packager2.build({
@@ -142,11 +142,11 @@ module.exports = new Datastore({ runners: { heroRunner }});`,
 test('should be able to "link" the version history', async () => {
   await Fs.writeFile(
     `${__dirname}/assets/historyTest2.js`,
-    `const { Datastore, Runner, HeroRunnerPlugin }=require("@ulixee/datastore-plugins-hero");
-const heroRunner = new Runner(({output}) => {
+    `const { Datastore, Extractor, HeroExtractorPlugin }=require("@ulixee/datastore-plugins-hero");
+const heroExtractor = new Extractor(({output}) => {
    output.text=1;
-},HeroRunnerPlugin);
-module.exports = new Datastore({ runners: { heroRunner }})`,
+},HeroExtractorPlugin);
+module.exports = new Datastore({ extractors: { heroExtractor }})`,
   );
   const entrypoint = `${__dirname}/assets/historyTest2.js`;
   const packager = new DatastorePackager(entrypoint);
@@ -177,12 +177,12 @@ test('should be able to change the output directory', async () => {
 });
 
 test('should be able to package a multi-function Datastore', async () => {
-  const packager = new DatastorePackager(`${__dirname}/assets/multiRunnerTest.js`);
+  const packager = new DatastorePackager(`${__dirname}/assets/multiExtractorTest.js`);
   await packager.build();
   path = packager.dbx.path;
   expect(packager.manifest.toJSON()).toEqual(<IDatastoreManifest>{
     linkedVersions: [],
-    scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `multiRunnerTest.js`),
+    scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `multiExtractorTest.js`),
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
     tablesByName: {},
@@ -191,8 +191,8 @@ test('should be able to package a multi-function Datastore', async () => {
     adminIdentities: [],
     schemaInterface: `{
   tables: {};
-  runners: {
-    runnerWithInput: {
+  extractors: {
+    extractorWithInput: {
       input: {
         /**
          * @format url
@@ -200,7 +200,7 @@ test('should be able to package a multi-function Datastore', async () => {
         url: string;
       };
     };
-    runnerWithOutput: {
+    extractorWithOutput: {
       output: {
         title: string;
         html: string;
@@ -209,15 +209,15 @@ test('should be able to package a multi-function Datastore', async () => {
   };
   crawlers: {};
 }`,
-    runnersByName: expect.objectContaining({
-      runnerWithInput: {
+    extractorsByName: expect.objectContaining({
+      extractorWithInput: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {
           '@ulixee/datastore-plugins-hero': require('../package.json').version,
         },
         schemaAsJson: { input: { url: { format: 'url', typeName: 'string' } } },
       },
-      runnerWithOutput: {
+      extractorWithOutput: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {},
         schemaAsJson: { output: { title: { typeName: 'string' }, html: { typeName: 'string' } } },
@@ -227,28 +227,28 @@ test('should be able to package a multi-function Datastore', async () => {
     versionTimestamp: expect.any(Number),
     paymentAddress: undefined,
   });
-  expect((await Fs.stat(`${__dirname}/assets/multiRunnerTest.dbx`)).isDirectory()).toBeTruthy();
+  expect((await Fs.stat(`${__dirname}/assets/multiExtractorTest.dbx`)).isDirectory()).toBeTruthy();
 
-  await Fs.rm(`${__dirname}/assets/multiRunnerTest.dbx`, { recursive: true });
+  await Fs.rm(`${__dirname}/assets/multiExtractorTest.dbx`, { recursive: true });
 });
 
-test('should be able to package an exported Runner without a Datastore', async () => {
-  const packager = new DatastorePackager(`${__dirname}/assets/rawRunnerTest.js`);
+test('should be able to package an exported Extractor without a Datastore', async () => {
+  const packager = new DatastorePackager(`${__dirname}/assets/rawExtractorTest.js`);
   await packager.build();
   path = packager.dbx.path;
   expect(packager.manifest.toJSON()).toEqual({
     name: undefined,
     description: undefined,
     linkedVersions: [],
-    scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `rawRunnerTest.js`),
+    scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `rawExtractorTest.js`),
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
     schemaInterface: `{
   tables: {};
-  runners: {};
+  extractors: {};
   crawlers: {};
 }`,
-    runnersByName: expect.objectContaining({
+    extractorsByName: expect.objectContaining({
       default: {
         prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
         corePlugins: {
@@ -265,9 +265,9 @@ test('should be able to package an exported Runner without a Datastore', async (
     paymentAddress: undefined,
     adminIdentities: [],
   });
-  expect((await Fs.stat(`${__dirname}/assets/rawRunnerTest.dbx`)).isDirectory()).toBeTruthy();
+  expect((await Fs.stat(`${__dirname}/assets/rawExtractorTest.dbx`)).isDirectory()).toBeTruthy();
 
-  await Fs.rm(`${__dirname}/assets/rawRunnerTest.dbx`, { recursive: true });
+  await Fs.rm(`${__dirname}/assets/rawExtractorTest.dbx`, { recursive: true });
 });
 
 // NOTE: I can't get watch to play with jest (BAB)
@@ -310,10 +310,10 @@ export default new Datastore({
       isTester: boolean;
     }
   };
-  runners: {};
+  extractors: {};
   crawlers: {};
 }`,
-    runnersByName: {},
+    extractorsByName: {},
     tablesByName: expect.objectContaining({
       people: {
         schemaAsJson: undefined,
@@ -343,7 +343,7 @@ export default new Datastore({
       isTester?: boolean;
     }
   };
-  runners: {};
+  extractors: {};
   crawlers: {};
 }`);
   await Fs.rm(`${__dirname}/assets/watch.dbx`, { recursive: true });

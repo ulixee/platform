@@ -6,7 +6,7 @@ import Table from './Table';
 import PassthroughTable from './PassthroughTable';
 import IDatastoreComponents, {
   TCrawlers,
-  TRunners,
+  TExtractors,
   TTables,
 } from '../interfaces/IDatastoreComponents';
 
@@ -26,10 +26,10 @@ export default class DatastoreStorage {
     this.#schemasByFunctionName = {};
   }
 
-  public open(datastore: IDatastoreComponents<TTables, TRunners, TCrawlers>): void {
+  public open(datastore: IDatastoreComponents<TTables, TExtractors, TCrawlers>): void {
     if (this.#isOpened) return;
-    for (const [name, runner] of Object.entries(datastore.runners)) {
-      this.#schemasByFunctionName[name] = runner.schema ?? {};
+    for (const [name, extractor] of Object.entries(datastore.extractors)) {
+      this.#schemasByFunctionName[name] = extractor.schema ?? {};
     }
     for (const [name, crawler] of Object.entries(datastore.crawlers)) {
       this.#schemasByFunctionName[name] = crawler.schema ?? {};

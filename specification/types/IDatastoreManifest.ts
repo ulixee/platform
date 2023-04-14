@@ -1,6 +1,6 @@
 import { z } from '@ulixee/specification';
 import { addressValidation, identityValidation } from '@ulixee/specification/common';
-import { DatastoreCrawlerPricing, DatastoreRunnerPricing } from './IDatastorePricing';
+import { DatastoreCrawlerPricing, DatastoreExtractorPricing } from './IDatastorePricing';
 import { datastoreVersionHashValidation } from './datastoreVersionHashValidation';
 
 const minDate = new Date('2022-01-01').getTime();
@@ -36,11 +36,11 @@ export const DatastoreManifestSchema = z.object({
   scriptEntrypoint: z.string().describe('A relative path from a project root'),
   coreVersion: z.string().describe('Version of the Datastore Core Runtime'),
   schemaInterface: z.string().optional().describe('The raw typescript schema for this Datastore'),
-  runnersByName: z.record(
+  extractorsByName: z.record(
     z
       .string()
       .regex(/[a-z][A-Za-z0-9]+/)
-      .describe('The Runner name'),
+      .describe('The Extractor name'),
     z.object({
       description: z.string().optional(),
       corePlugins: z
@@ -55,7 +55,7 @@ export const DatastoreManifestSchema = z.object({
         })
         .optional()
         .describe('The schema as json.'),
-      prices: DatastoreRunnerPricing.array()
+      prices: DatastoreExtractorPricing.array()
         .min(1)
         .optional()
         .describe(

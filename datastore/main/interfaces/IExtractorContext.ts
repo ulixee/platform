@@ -1,14 +1,14 @@
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
-import IRunnerSchema, { ExtractSchemaType } from './IRunnerSchema';
+import IExtractorSchema, { ExtractSchemaType } from './IExtractorSchema';
 import { IOutputClass } from '../lib/Output';
 import IDatastoreMetadata from './IDatastoreMetadata';
 import Crawler from '../lib/Crawler';
-import Runner from '../lib/Runner';
+import Extractor from '../lib/Extractor';
 import Table from '../lib/Table';
 import ResultIterable from '../lib/ResultIterable';
 import ICrawlerOutputSchema from './ICrawlerOutputSchema';
 
-export default interface IRunnerContext<TSchema extends IRunnerSchema> {
+export default interface IExtractorContext<TSchema extends IExtractorSchema> {
   input?: ExtractSchemaType<TSchema['input']>;
   readonly outputs?: ExtractSchemaType<TSchema['output']>[];
   readonly Output?: IOutputClass<ExtractSchemaType<TSchema['output']>>;
@@ -19,12 +19,12 @@ export default interface IRunnerContext<TSchema extends IRunnerSchema> {
   readonly authentication: IDatastoreApiTypes['Datastore.query']['args']['authentication'];
   readonly payment: IDatastoreApiTypes['Datastore.query']['args']['payment'];
   crawl<T extends Crawler>(crawler: T, options?: T['runArgsType']): Promise<ICrawlerOutputSchema>;
-  run<T extends Runner>(
-    runner: T,
+  run<T extends Extractor>(
+    extractor: T,
     options?: T['runArgsType'],
   ): ResultIterable<ExtractSchemaType<T['schema']['output']>>;
-  fetch<T extends Runner>(
-    runner: T,
+  fetch<T extends Extractor>(
+    extractor: T,
     options?: T['runArgsType'],
   ): ResultIterable<ExtractSchemaType<T['schema']['output']>>;
   // TODO: add table options typing

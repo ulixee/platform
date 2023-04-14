@@ -3,9 +3,9 @@ import * as Path from 'path';
 import { CloudNode } from '@ulixee/cloud';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
 import Client from '..';
-import localRunner from './datastores/localRunner';
+import localExtractor from './datastores/localExtractor';
 
-const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Client.localRunner.test');
+const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Client.localExtractor.test');
 let cloudNode: CloudNode;
 let connectionToCore: ConnectionToDatastoreCore;
 
@@ -26,7 +26,7 @@ afterAll(async () => {
 });
 
 test('should be able to query a datastore using sql', async () => {
-  const client = Client.forRunner(localRunner, { connectionToCore });
+  const client = Client.forExtractor(localExtractor, { connectionToCore });
   const results = await client.query('SELECT * FROM test(shouldTest => $1)', [true]);
 
   expect(results).toEqual([
@@ -39,7 +39,7 @@ test('should be able to query a datastore using sql', async () => {
 });
 
 test('should be able to run a datastore function', async () => {
-  const client = Client.forRunner(localRunner, { connectionToCore });
+  const client = Client.forExtractor(localExtractor, { connectionToCore });
 
   const testTypes = () => {
     // @ts-expect-error

@@ -4,12 +4,12 @@ const {
   Table,
   Datastore,
   Observable,
-  RunnerSchema,
-  RunnerContext,
-  Runner,
+  ExtractorSchema,
+  ExtractorContext,
+  Extractor,
   Crawler,
   ConnectionToDatastoreCore,
-  PassthroughRunner,
+  PassthroughExtractor,
   Schema,
 } = cjsImport;
 
@@ -17,12 +17,12 @@ export {
   Table,
   Datastore,
   Observable,
-  RunnerSchema,
-  RunnerContext,
-  Runner,
+  ExtractorSchema,
+  ExtractorContext,
+  Extractor,
   Crawler,
   ConnectionToDatastoreCore,
-  PassthroughRunner,
+  PassthroughExtractor,
   Schema,
 };
 

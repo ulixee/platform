@@ -1,7 +1,7 @@
-import IDatastoreManifest from '@ulixee/specification/types/IDatastoreManifest';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 
 type TPrices = { perQuery: number; minimum: number };
-type TSchema = IDatastoreManifest['runnersByName'][0]['schemaAsJson'];
+type TSchema = IDatastoreManifest['extractorsByName'][0]['schemaAsJson'];
 
 export default interface IDocpageConfig {
   versionHash: string;
@@ -9,12 +9,12 @@ export default interface IDocpageConfig {
   description: string;
   createdAt: string;
   defaultExample: {
-    type: 'table' | 'runner' | 'crawler';
+    type: 'table' | 'extractor' | 'crawler';
     name: string;
     formatted: string;
     args: Record<string, any>;
   };
-  runnersByName: {
+  extractorsByName: {
     [name: string]: {
       name: string;
       description: string;

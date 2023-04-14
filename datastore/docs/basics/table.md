@@ -31,7 +31,7 @@ Creates a new Table instance.
 Components contains the following properties.
 
 - schema `ISchema`. A [schema](../advanced/schema.md) defining the column definitions for the table.
-- isPublic `boolean`. Optional parameter to make a table private. This means it can only be accessed by other [Runners](./runner.md) and [Crawlers](./crawler.md) in the same [Datastore](./datastore.md).
+- isPublic `boolean`. Optional parameter to make a table private. This means it can only be accessed by other [Extractors](./extractor.md) and [Crawlers](./crawler.md) in the same [Datastore](./datastore.md).
 - pricePerQuery `number`. Optional charge price per query.
 - seedlings `TSeedlings[]`. Optional definition for bootstrapped records that should be installed into the table.
 - name `string`. Optional name for this Table, primarily used only if defining a Table outside a Datastore.

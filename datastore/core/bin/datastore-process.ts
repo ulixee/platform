@@ -1,5 +1,5 @@
 import Datastore from '@ulixee/datastore';
-import Runner from '@ulixee/datastore/lib/Runner';
+import Extractor from '@ulixee/datastore/lib/Extractor';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import { IFetchMetaResponseData, IMessage, IResponse } from '../interfaces/ILocalDatastoreProcess';
 
@@ -23,10 +23,10 @@ process.on('message', async (messageJson: string) => {
     if (message.action === 'fetchMeta') {
       let datastore = requireDatastore(message.scriptPath);
       // wrap function in a default datastore
-      if (datastore instanceof Runner) {
-        const runnerName = datastore.name ?? 'default';
+      if (datastore instanceof Extractor) {
+        const extractorName = datastore.name ?? 'default';
         datastore = new Datastore({
-          runners: { [runnerName]: datastore },
+          extractors: { [extractorName]: datastore },
           tables: {},
         }) as Datastore;
       }

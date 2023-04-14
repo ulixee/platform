@@ -1,13 +1,13 @@
 // NOTE: you must start your own Ulixee Cloud to run this example.
 
-import { Datastore, Runner, HeroRunnerPlugin, Schema } from '@ulixee/datastore-plugins-hero';
+import { Datastore, Extractor, HeroExtractorPlugin, Schema } from '@ulixee/datastore-plugins-hero';
 
 const { string } = Schema;
 
 export default new Datastore({
   name: 'Example',
-  runners: {
-    exampleOrg: new Runner(
+  extractors: {
+    exampleOrg: new Extractor(
       {
         async run(context) {
           const { input, Output, Hero } = context;
@@ -36,7 +36,7 @@ export default new Datastore({
           ],
         },
       },
-      HeroRunnerPlugin,
+      HeroExtractorPlugin,
     ),
   },
 });

@@ -14,23 +14,23 @@
     </p>
     <ol class="list my-5 ml-2 list-inside list-decimal font-light">
       <li>
-        We'll wrap the script in a Runner + Datastore.
+        We'll wrap the script in a Extractor + Datastore.
         <ul class="list my-1 list-inside list-disc pl-5">
-          <li>A Runner is a basic queryable function in your Datastore.</li>
-          <li>Our Runner is named "docPages" (its name for queries).</li>
+          <li>A Extractor is a basic queryable function in your Datastore.</li>
+          <li>Our Extractor is named "docPages" (its name for queries).</li>
         </ul>
       </li>
       <li>
         Instead of <span class="font-medium italic">console.log</span>-ing our results, we'll use
         <span class="font-medium">Output.emit</span>
       </li>
-      <li>We'll add a "Schema", which informs the Runner what fields to expect.</li>
+      <li>We'll add a "Schema", which informs the Extractor what fields to expect.</li>
     </ol>
 
     <!-- prettier-ignore -->
     <Prism ref='code' language="typescript" data-line="8,15,28-31,39-49" style='font-size: 0.9em'>
-      import Datastore, { Runner } from '@ulixee/datastore';
-      import { HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+      import Datastore, { Extractor } from '@ulixee/datastore';
+      import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
       import { string } from '@ulixee/schema';
 
       /**
@@ -38,12 +38,12 @@
        */
       const datastore = new Datastore({
         name: 'Tutorial',
-        runners: {
+        extractors: {
 
       /**
-       * 1b. We created a Runner called docsPages.
+       * 1b. We created a Extractor called docsPages.
        */
-          docPages: new Runner({
+          docPages: new Extractor({
             async run({ input, Hero, Output }) {
               const hero = new Hero();
               await hero.goto(`https://ulixee.org/docs/${input.tool}`);
@@ -65,7 +65,7 @@
               await hero.close();
             },
       /**
-      * 3. We defined the schema of the Runner function.
+      * 3. We defined the schema of the Extractor function.
       */
             schema: {
               input: {
@@ -78,7 +78,7 @@
                 href: string({ format: 'url' })
               }
             }
-          }, HeroRunnerPlugin)
+          }, HeroExtractorPlugin)
         }
       });
 

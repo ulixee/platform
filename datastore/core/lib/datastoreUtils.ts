@@ -9,13 +9,13 @@ import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 
 export function validateFunctionCoreVersions(
   registryEntry: IDatastoreManifest,
-  runnerName: string,
+  extractorName: string,
   context: IDatastoreApiContext,
 ): void {
-  if (!registryEntry.runnersByName[runnerName] && !registryEntry.crawlersByName[runnerName])
-    throw new Error(`${runnerName} is not a valid function name for this Datastore`);
+  if (!registryEntry.extractorsByName[extractorName] && !registryEntry.crawlersByName[extractorName])
+    throw new Error(`${extractorName} is not a valid function name for this Datastore`);
 
-  const { corePlugins } = registryEntry.runnersByName[runnerName] ?? registryEntry.crawlersByName[runnerName] ?? {};
+  const { corePlugins } = registryEntry.extractorsByName[extractorName] ?? registryEntry.crawlersByName[extractorName] ?? {};
   for (const [pluginName, pluginVersion] of Object.entries(corePlugins ?? {})) {
     const pluginCore = context.pluginCoresByName[pluginName];
     if (!pluginCore) {

@@ -1,5 +1,5 @@
-import Datastore, { Runner } from '@ulixee/datastore';
-import { HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import Datastore, { Extractor } from '@ulixee/datastore';
+import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 import { string } from '@ulixee/schema';
 
 export default new Datastore({
@@ -9,8 +9,8 @@ export default new Datastore({
    * Configuring admin access.
    */
   adminIdentities: ['id13dheud78gd9am7azwmwu7rhds4n2xptpepzchlwmm54j5scq8flql4g0ql'],
-  runners: {
-    docPages: new Runner(
+  extractors: {
+    docPages: new Extractor(
       {
         pricePerQuery: 10_000,
         async run({ input, Hero, Output }) {
@@ -41,7 +41,7 @@ export default new Datastore({
           },
         },
       },
-      HeroRunnerPlugin,
+      HeroExtractorPlugin,
     ),
   },
 });

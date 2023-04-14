@@ -1,8 +1,8 @@
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import Datastore, { ConnectionToDatastoreCore, Crawler, Runner, Table } from '@ulixee/datastore';
+import Datastore, { ConnectionToDatastoreCore, Crawler, Extractor, Table } from '@ulixee/datastore';
 import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSchema';
 import ClientForDatastore from './ClientForDatastore';
-import ClientForRunner from './ClientForRunner';
+import ClientForExtractor from './ClientForExtractor';
 import ClientForTable from './ClientForTable';
 import ClientForCrawler from './ClientForCrawler';
 import ConnectionParameters from './ConnectionParameters';
@@ -38,14 +38,14 @@ export default class ClientForRemote {
   public async run<
     TInputFilter extends IInputFilter = IInputFilter,
     TOutputSchema extends IOutputSchema = IOutputSchema,
-  >(runnerOrTableName: string, inputFilter?: TInputFilter): Promise<TOutputSchema[]> {
-    return await this.fetch(runnerOrTableName, inputFilter);
+  >(extractorOrTableName: string, inputFilter?: TInputFilter): Promise<TOutputSchema[]> {
+    return await this.fetch(extractorOrTableName, inputFilter);
   }
 
   public async fetch<
     TInputFilter extends IInputFilter = IInputFilter,
     TOutputSchema extends IOutputSchema = IOutputSchema,
-  >(runnerOrTableName: string, inputFilter?: TInputFilter): Promise<TOutputSchema[]> {
+  >(extractorOrTableName: string, inputFilter?: TInputFilter): Promise<TOutputSchema[]> {
     if (!this.database) {
       throw new Error('You Client connection must specific a datastore to fetch');
     }
@@ -62,7 +62,7 @@ export default class ClientForRemote {
 
     return (await this.apiClient.stream(
       this.database,
-      runnerOrTableName,
+      extractorOrTableName,
       inputFilter,
       options,
     )) as TOutputSchema[];
@@ -128,11 +128,11 @@ export default class ClientForRemote {
     return new ClientForTable(table, options);
   }
 
-  public static forRunner<T extends Runner>(
-    runner: T,
+  public static forExtractor<T extends Extractor>(
+    extractor: T,
     options?: IClientOptions,
-  ): ClientForRunner<T> {
-    return new ClientForRunner(runner, options);
+  ): ClientForExtractor<T> {
+    return new ClientForExtractor(extractor, options);
   }
 
   public static forCrawler<T extends Crawler>(

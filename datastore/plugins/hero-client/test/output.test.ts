@@ -2,7 +2,7 @@ import { Helpers } from '@ulixee/datastore-testing';
 import ConnectionFactory from '@ulixee/hero/connections/ConnectionFactory';
 import { buffer, date, object, string } from '@ulixee/schema';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
-import { Runner, Observable } from '@ulixee/datastore';
+import { Extractor, Observable } from '@ulixee/datastore';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import Core from '@ulixee/hero-core';
 import { ConnectionToHeroCore } from '@ulixee/hero';
@@ -10,7 +10,7 @@ import Resolvable from '@ulixee/commons/lib/Resolvable';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import OutputRebuilder from '@ulixee/desktop-core/lib/OutputRebuilder';
 import MockConnectionToHeroCore from './_MockConnectionToHeroCore';
-import { HeroRunnerPlugin } from '../index';
+import { HeroExtractorPlugin } from '../index';
 
 let connectionToCore: ConnectionToHeroCore;
 beforeAll(() => {
@@ -35,12 +35,12 @@ describe('basic output tests', () => {
     });
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
 
-    await new Runner(async ctx => {
+    await new Extractor(async ctx => {
       const output = new ctx.Output();
       output.test = true;
       const hero = new ctx.Hero();
       await hero.sessionId;
-    }, HeroRunnerPlugin).runInternal({});
+    }, HeroExtractorPlugin).runInternal({});
 
     const outgoingCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingCommands.map(c => c[0].command)).toMatchObject([
@@ -79,7 +79,7 @@ describe('basic output tests', () => {
     let stringified: string;
     const url = 'https://example.org';
     const title = 'Example Domain';
-    const runner = new Runner(
+    const extractor = new Extractor(
       {
         async run({ Output, Hero }) {
           const output = new Output();
@@ -97,9 +97,9 @@ describe('basic output tests', () => {
         },
         schema,
       },
-      HeroRunnerPlugin,
+      HeroExtractorPlugin,
     );
-    await runner.runInternal({ connectionToCore });
+    await extractor.runInternal({ connectionToCore });
 
     const sessionId = await sessionIdPromise;
     const db = new SessionDb(sessionId, { readonly: true });
@@ -155,7 +155,7 @@ describe('basic output tests', () => {
     const sessionIdPromise = new Resolvable<string>();
     let stringified: string;
 
-    const runner = new Runner(async ({ Output, Hero }) => {
+    const extractor = new Extractor(async ({ Output, Hero }) => {
       const output = new Output();
       const record = Observable({} as any);
       output.records = [record];
@@ -167,8 +167,8 @@ describe('basic output tests', () => {
       const sessionId = await hero.sessionId;
 
       sessionIdPromise.resolve(sessionId);
-    }, HeroRunnerPlugin);
-    await runner.runInternal({ connectionToCore });
+    }, HeroExtractorPlugin);
+    await extractor.runInternal({ connectionToCore });
 
     const sessionId = await sessionIdPromise;
 

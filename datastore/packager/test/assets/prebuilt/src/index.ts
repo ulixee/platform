@@ -1,13 +1,13 @@
-import Datastore, { Runner } from '@ulixee/datastore';
-import { HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
-import { testRunner } from './helper';
+import Datastore, { Extractor } from '@ulixee/datastore';
+import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
+import { testExtractor } from './helper';
 
 export default new Datastore({
-  runners: {
-    default: new Runner(
+  extractors: {
+    default: new Extractor(
       {
         async run(ctx) {
-          const text = testRunner();
+          const text = testExtractor();
           const { input, Output, Hero } = ctx;
           const hero = new Hero();
           await hero.goto('https://example.org');
@@ -21,7 +21,7 @@ export default new Datastore({
           await hero.close();
         },
       },
-      HeroRunnerPlugin,
+      HeroExtractorPlugin,
     ),
   },
 });

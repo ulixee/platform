@@ -138,7 +138,7 @@ export default class SessionController extends TypedEventEmitter<{
       'Session.devtoolsTargetOpened': this.onDevtoolsTargetOpened,
       'Datastore.getOutput': this.getDatastoreOutput,
       'Datastore.getCollectedAssets': this.getCollectedAssets,
-      'Datastore.rerunRunner': this.rerunRunner,
+      'Datastore.rerunExtractor': this.rerunExtractor,
       'DevtoolsBackdoor.toggleInspectElementMode': this.toggleInspectElementMode,
       'DevtoolsBackdoor.highlightNode': this.highlightNode,
       'DevtoolsBackdoor.hideHighlight': this.hideHighlight,
@@ -878,7 +878,7 @@ export default class SessionController extends TypedEventEmitter<{
     );
   }
 
-  public async rerunRunner(): Promise<{
+  public async rerunExtractor(): Promise<{
     success: boolean;
     error?: Error;
   }> {

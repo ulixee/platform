@@ -3,7 +3,7 @@
     <h2 class="mb-5 text-lg font-semibold">Payment</h2>
     <p class="font-light mb-5">
       Datastores support payments per-query out of the box. You have full control to set prices per
-      query on the entire Datastore, or for each Table, Runner, etc contained within.
+      query on the entire Datastore, or for each Table, Extractor, etc contained within.
       <br /><br />
       Ulixee uses a currency called the Argon. The Argon has several unique properties, including an
       ability to transact Peer-to-Peer for units as small as one-millionth of an Argon (1 microgon)
@@ -22,13 +22,13 @@
       data-line='13'
       style="font-size: 0.9em"
     >
-      import Datastore, { Runner } from '@ulixee/datastore';
-      import { HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+      import Datastore, { Extractor } from '@ulixee/datastore';
+      import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
       import { string } from '@ulixee/schema';
 
       const datastore = new Datastore({
-        runners: {
-          docPages: new Runner({
+        extractors: {
+          docPages: new Extractor({
             /**
             * Here's all we do to enable payments of ~1 US cent per use of `docPages`.
             *
@@ -62,7 +62,7 @@
                 href: string({ format: 'url' })
               }
             }
-          }, HeroRunnerPlugin)
+          }, HeroExtractorPlugin)
         }
       });
 

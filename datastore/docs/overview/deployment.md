@@ -79,14 +79,14 @@ When you package a Datastore, a Manifest is created with the following propertie
 - linkedVersions `{ versionHash: string, versionTimestamp: number }[]`. The history of linked versions with newest first. NOTE: this will be automatically maintained by the packager.
 - scriptEntrypoint `string`. The relative path to your file (from the closest package.json).
 - coreVersion `string`. The version of the Datastore Core module. Your script will be checked for compatibility with the CloudNode npm modules before it runs.
-- schemaInterface `string`. A string containing a typescript declaration interface for all runners in this Datastore.
-- runnersByName `object`. A key value of Datastore Runner name to:
-  - corePlugins `string`. An object containing a list of npm packages/versions that are core Runner plugins.
+- schemaInterface `string`. A string containing a typescript declaration interface for all extractors in this Datastore.
+- extractorsByName `object`. A key value of Datastore Extractor name to:
+  - corePlugins `string`. An object containing a list of npm packages/versions that are core Extractor plugins.
   - prices `array`. Array of prices for each "step" in a function. The first entry is _this_ function's pricing.
     - minimum `number`. Optional minimum microgons that must be held in a Micronote for the given function step.
-    - perQuery `number`. Optional price per query for the given Runner (in Ulixee Sidechain microgons - 1 microgon = ~1/1,000,000 of a dollar).
+    - perQuery `number`. Optional price per query for the given Extractor (in Ulixee Sidechain microgons - 1 microgon = ~1/1,000,000 of a dollar).
     - addOns `object`. Optional price add-ons. Currently only `perKb` is supported.
-    - remoteMeta `object`. Optional information about the remote Datastore Runner being invoked (if applicable). 
+    - remoteMeta `object`. Optional information about the remote Datastore Extractor being invoked (if applicable). 
 - paymentAddress `string`. Optional address to use with the Ulixee Sidechain for payments.
 
 ### Setting values:
@@ -258,7 +258,7 @@ You must provide a versionHash to the Datastore to install. Types will become av
 ```js
 import ITypes from '@ulixee/datastore/types';
 
-type InputOutputDatastoreRunnerType = ITypes[versionHash][functionName];
+type InputOutputDatastoreExtractorType = ITypes[versionHash][functionName];
 ```
 
 #### CLI Options

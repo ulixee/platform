@@ -1,7 +1,7 @@
 import ConnectionFactory from '@ulixee/hero/connections/ConnectionFactory';
 import { Helpers } from '@ulixee/datastore-testing';
-import { Runner } from '@ulixee/datastore';
-import { HeroRunnerPlugin } from '../index';
+import { Extractor } from '@ulixee/datastore';
+import { HeroExtractorPlugin } from '../index';
 
 import MockConnectionToHeroCore from './_MockConnectionToHeroCore';
 
@@ -35,13 +35,13 @@ describe('basic Datastore tests', () => {
   it('waits until run method is explicitly called', async () => {
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
-    const datastoreRunner = new Runner(async ({ Hero }) => {
+    const datastoreExtractor = new Extractor(async ({ Hero }) => {
       const hero = new Hero();
       await hero.goto('https://news.ycombinator.org');
       await hero.close();
-    }, HeroRunnerPlugin);
+    }, HeroExtractorPlugin);
     expect(connection.outgoingSpy.mock.calls).toHaveLength(0);
-    await datastoreRunner.runInternal({});
+    await datastoreExtractor.runInternal({});
     const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toMatchObject([
       'Core.connect',
@@ -55,11 +55,11 @@ describe('basic Datastore tests', () => {
   it('should call close on hero automatically', async () => {
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
-    const datastoreRunner = new Runner(async context => {
+    const datastoreExtractor = new Extractor(async context => {
       const hero = new context.Hero();
       await hero.goto('https://news.ycombinator.org');
-    }, HeroRunnerPlugin);
-    await datastoreRunner.runInternal({});
+    }, HeroExtractorPlugin);
+    await datastoreExtractor.runInternal({});
 
     const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toContain('Session.close');
@@ -68,16 +68,16 @@ describe('basic Datastore tests', () => {
   it('should emit close hero on error', async () => {
     const connection = createConnectionToHeroCore();
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
-    const datastoreRunner = new Runner(async context => {
+    const datastoreExtractor = new Extractor(async context => {
       const hero = new context.Hero();
       await hero.goto('https://news.ycombinator.org').then(() => {
         throw new Error('test');
       });
 
       await hero.interact('click');
-    }, HeroRunnerPlugin);
+    }, HeroExtractorPlugin);
 
-    await expect(datastoreRunner.runInternal({})).rejects.toThrowError();
+    await expect(datastoreExtractor.runInternal({})).rejects.toThrowError();
 
     const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toContain('Session.close');

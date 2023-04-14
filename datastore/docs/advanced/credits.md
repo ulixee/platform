@@ -16,7 +16,7 @@ Ulixee Payments (in this case, Credits) come in the following denominations:
 
 - _Argon_: ~1 USD adjusted for inflation.
 - _Centagon_: ~1 hundredth of a USD adjusted for inflation. Usually the denomination used when creating a Credit.
-- _Microgon_: ~1 millionth of a USD adjusted for inflation. This is the denomination used by a query (eg, [Runner.pricePerQuery](../basics/runner.md).
+- _Microgon_: ~1 millionth of a USD adjusted for inflation. This is the denomination used by a query (eg, [Extractor.pricePerQuery](../basics/extractor.md).
 
 ### Payment Flows and Internal Structure
 

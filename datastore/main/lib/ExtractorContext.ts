@@ -1,21 +1,21 @@
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import { ExtractSchemaType } from '@ulixee/schema';
-import IRunnerSchema from '../interfaces/IRunnerSchema';
-import RunnerInternal from './RunnerInternal';
-import IRunnerContext from '../interfaces/IRunnerContext';
+import IExtractorSchema from '../interfaces/IExtractorSchema';
+import ExtractorInternal from './ExtractorInternal';
+import IExtractorContext from '../interfaces/IExtractorContext';
 import DatastoreInternal, { IQueryInternalCallbacks } from './DatastoreInternal';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
 import ResultIterable from './ResultIterable';
 import Table from './Table';
-import Runner from './Runner';
+import Extractor from './Extractor';
 import Crawler from './Crawler';
 import ICrawlerOutputSchema from '../interfaces/ICrawlerOutputSchema';
-import IRunnerExecOptions from '../interfaces/IRunnerExecOptions';
+import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
 
-export default class RunnerContext<
-  ISchema extends IRunnerSchema,
-  TRunnerInternal extends RunnerInternal<ISchema> = RunnerInternal<ISchema>,
-> implements IRunnerContext<ISchema>
+export default class ExtractorContext<
+  ISchema extends IExtractorSchema,
+  TExtractorInternal extends ExtractorInternal<ISchema> = ExtractorInternal<ISchema>,
+> implements IExtractorContext<ISchema>
 {
   public datastoreMetadata: IDatastoreMetadata;
   public datastoreAffiliateId: string;
@@ -23,83 +23,83 @@ export default class RunnerContext<
   public extraOptions: Record<string, any>;
 
   public get authentication(): IDatastoreApiTypes['Datastore.query']['args']['authentication'] {
-    return this.#runnerInternal.options.authentication;
+    return this.#extractorInternal.options.authentication;
   }
 
   public get payment(): IDatastoreApiTypes['Datastore.query']['args']['payment'] {
-    return this.#runnerInternal.options.payment;
+    return this.#extractorInternal.options.payment;
   }
 
-  public get input(): TRunnerInternal['input'] {
-    return this.#runnerInternal.input;
+  public get input(): TExtractorInternal['input'] {
+    return this.#extractorInternal.input;
   }
 
-  public get outputs(): TRunnerInternal['outputs'] {
-    return this.#runnerInternal.outputs;
+  public get outputs(): TExtractorInternal['outputs'] {
+    return this.#extractorInternal.outputs;
   }
 
-  public get Output(): TRunnerInternal['Output'] {
-    return this.#runnerInternal.Output;
+  public get Output(): TExtractorInternal['Output'] {
+    return this.#extractorInternal.Output;
   }
 
   public get schema(): ISchema {
-    return this.#runnerInternal.schema;
+    return this.#extractorInternal.schema;
   }
 
-  #runnerInternal: RunnerInternal<ISchema>;
+  #extractorInternal: ExtractorInternal<ISchema>;
   #datastoreInternal: DatastoreInternal;
   #callbacks: IQueryInternalCallbacks;
 
   constructor(
-    runnerInternal: RunnerInternal<ISchema>,
+    extractorInternal: ExtractorInternal<ISchema>,
     datastoreInternal: DatastoreInternal,
     callbacks?: IQueryInternalCallbacks,
   ) {
-    this.#runnerInternal = runnerInternal;
+    this.#extractorInternal = extractorInternal;
     this.#callbacks = callbacks ?? {};
     this.#callbacks.onFunction ??= (_, __, options, run) => run(options);
 
-    const { affiliateId, payment, input, authentication, ...otherOptions } = runnerInternal.options;
+    const { affiliateId, payment, input, authentication, ...otherOptions } = extractorInternal.options;
     this.extraOptions = otherOptions;
     this.datastoreMetadata = datastoreInternal.metadata;
     this.datastoreAffiliateId = datastoreInternal.affiliateId;
-    this.callerAffiliateId = runnerInternal.options.affiliateId;
+    this.callerAffiliateId = extractorInternal.options.affiliateId;
   }
 
-  public fetch<T extends Runner>(
-    runner: T,
+  public fetch<T extends Extractor>(
+    extractor: T,
     options: T['runArgsType'],
   ): ResultIterable<ExtractSchemaType<T['schema']['output']>>;
   public fetch<T extends Table>(
     table: T,
     options: any,
   ): ResultIterable<ExtractSchemaType<T['schema']>>;
-  public fetch(runnerOrTable, options): any {
-    return this.run(runnerOrTable, options);
+  public fetch(extractorOrTable, options): any {
+    return this.run(extractorOrTable, options);
   }
 
-  public run<T extends Runner>(
-    runner: T,
+  public run<T extends Extractor>(
+    extractor: T,
     options: T['runArgsType'],
   ): ResultIterable<ExtractSchemaType<T['schema']['output']>>;
   public run<T extends Table>(
     table: T,
     options: any,
   ): ResultIterable<ExtractSchemaType<T['schema']>>;
-  public run(runnerOrTable, options): any {
+  public run(extractorOrTable, options): any {
     const finalOptions = this.getMergedOptions(options);
-    if (runnerOrTable instanceof Runner) {
-      return this.#callbacks.onFunction(-1, runnerOrTable.name, finalOptions, modifiedOptions =>
-        runnerOrTable.runInternal(modifiedOptions, this.#callbacks),
+    if (extractorOrTable instanceof Extractor) {
+      return this.#callbacks.onFunction(-1, extractorOrTable.name, finalOptions, modifiedOptions =>
+        extractorOrTable.runInternal(modifiedOptions, this.#callbacks),
       );
     }
-    if ('remoteSource' in runnerOrTable) {
-      return this.#callbacks.onPassthroughTable(runnerOrTable.name, finalOptions, modifiedOptions =>
-        runnerOrTable.fetchInternal(modifiedOptions, this.#callbacks),
+    if ('remoteSource' in extractorOrTable) {
+      return this.#callbacks.onPassthroughTable(extractorOrTable.name, finalOptions, modifiedOptions =>
+        extractorOrTable.fetchInternal(modifiedOptions, this.#callbacks),
       );
     }
 
-    return runnerOrTable.runInternal(finalOptions) as any;
+    return extractorOrTable.runInternal(finalOptions) as any;
   }
 
   public async crawl<T extends Crawler>(
@@ -117,16 +117,16 @@ export default class RunnerContext<
   }
 
   public query<TResult>(sql: string, boundValues: any[], queryId?: string): Promise<TResult> {
-    // const finalOptions = this.#runnerInternal.options;
+    // const finalOptions = this.#extractorInternal.options;
     return this.#datastoreInternal.queryInternal(sql, boundValues, queryId, this.#callbacks);
   }
 
-  private getMergedOptions<T extends IRunnerExecOptions<any>>(options: T): T {
-    const finalOptions = { ...this.#runnerInternal.options, ...options };
+  private getMergedOptions<T extends IExtractorRunOptions<any>>(options: T): T {
+    const finalOptions = { ...this.#extractorInternal.options, ...options };
     finalOptions.trackMetadata = options.trackMetadata;
     if (options.input) {
       // merge input
-      finalOptions.input = { ...this.#runnerInternal.input, ...options.input };
+      finalOptions.input = { ...this.#extractorInternal.input, ...options.input };
     }
     return finalOptions;
   }

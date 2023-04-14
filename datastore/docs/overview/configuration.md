@@ -1,11 +1,11 @@
 # Configuration
 
-Datastores are dynamically configurable via a command line, and each Datastore Runner allows you to define default configurations if none are provided (schemas can define default inputs, Plugins can add default configurations (eg, HeroRunnerPlugin adds `defaultHeroOptions` to a Runner constructor).
+Datastores are dynamically configurable via a command line, and each Datastore Extractor allows you to define default configurations if none are provided (schemas can define default inputs, Plugins can add default configurations (eg, HeroExtractorPlugin adds `defaultHeroOptions` to a Extractor constructor).
 
 Command line variables are parsed using [yargs-parser](https://github.com/yargs/yargs-parser). Variables containing a '.' will be converted into objects, and dashes are camel-cased.
 
 ```shell
-  node ./runner.js --input.foo=99 --input.bar=9987930 --connectionToCore.host=ws://localhost:1228
+  node ./extractor.js --input.foo=99 --input.bar=9987930 --connectionToCore.host=ws://localhost:1228
 ```
 
 Options will be read as:
@@ -47,7 +47,7 @@ The server environment a Datastore runs in will alter a few default settings. Cu
 Datastore Core installs some administrative features for built-in Datastores. This currently includes things like:
 
 - [Credits](../advanced/credits.md): issuing trial credits to consumers of your Datastore(s). An Admin Identity is required to create new Credits.
-- Access for an Admin to run private javascript functions on [Tables](../basics/table.md), [Runners](../basics/runner.md) and [Crawlers](../basics/crawler.md).
+- Access for an Admin to run private javascript functions on [Tables](../basics/table.md), [Extractors](../basics/extractor.md) and [Crawlers](../basics/crawler.md).
 - Ability to "upload" packaged Datastores to a live server in `production` [mode](#env).
 
 #### Environment Variable

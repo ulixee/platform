@@ -9,17 +9,17 @@
   items:
     - Datastore
     - Table
-    - Runner
+    - Extractor
     - Crawler
-    - Passthrough Runner
+    - Passthrough Extractor
     - Cloning
-    - Runner Context
+    - Extractor Context
     - Input
     - Output
 
 - title: Advanced
   items:
-    - Runner Schemas
+    - Extractor Schemas
     - Schema
     - Credits
     - Plugins

@@ -1,13 +1,13 @@
-import Datastore, { Runner } from '@ulixee/datastore';
-import { HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import Datastore, { Extractor } from '@ulixee/datastore';
+import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 import { ISuperElement } from '@ulixee/hero';
-import { testRunner } from './helper';
+import { testExtractor } from './helper';
 import { dateAdd, string } from '@ulixee/schema';
 
-const runner = new Runner(
+const extractor = new Extractor(
   {
     async run(context) {
-      const text = testRunner();
+      const text = testExtractor();
       const { input, Output, Hero } = context;
 
       const hero = new Hero();
@@ -39,11 +39,11 @@ const runner = new Runner(
       inputExamples: [{ url: 'https://example.com', date: dateAdd(1, 'days') }],
     },
   },
-  HeroRunnerPlugin,
+  HeroExtractorPlugin,
 );
 
 export default new Datastore({
-  runners: {
-    default: runner,
+  extractors: {
+    default: extractor,
   },
 });

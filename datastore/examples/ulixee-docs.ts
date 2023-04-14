@@ -1,5 +1,5 @@
-import Datastore, { Crawler, Runner } from '@ulixee/datastore';
-import { HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import Datastore, { Crawler, Extractor } from '@ulixee/datastore';
+import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 import { array, boolean, object, string } from '@ulixee/schema';
 
 const datastore = new Datastore({
@@ -26,7 +26,7 @@ const datastore = new Datastore({
           inputExamples: [{ url: 'https://ulixee.org/docs/hero/advanced-client/tab' }],
         },
       },
-      HeroRunnerPlugin,
+      HeroExtractorPlugin,
     ),
     searchCrawler: new Crawler(
       {
@@ -53,11 +53,11 @@ const datastore = new Datastore({
           },
         },
       },
-      HeroRunnerPlugin,
+      HeroExtractorPlugin,
     ),
   },
-  runners: {
-    allPages: new Runner(
+  extractors: {
+    allPages: new Extractor(
       {
         description: `Get all documentation pages for a given tool in the Ulixee suite.`,
         async run({ input, Output, HeroReplay }) {
@@ -87,9 +87,9 @@ const datastore = new Datastore({
           },
         },
       },
-      HeroRunnerPlugin,
+      HeroExtractorPlugin,
     ),
-    getDocumentation: new Runner(
+    getDocumentation: new Extractor(
       {
         description: `Get all documented methods, properties and the associated descriptions for a page of the Ulixee documentation.`,
         async run({ input, HeroReplay, Output }) {
@@ -192,10 +192,10 @@ const datastore = new Datastore({
           },
         },
       },
-      HeroRunnerPlugin,
+      HeroExtractorPlugin,
     ),
 
-    search: new Runner(
+    search: new Extractor(
       {
         description: `Search the Ulixee documentation`,
         async run({ input, HeroReplay, Output }) {
@@ -225,7 +225,7 @@ const datastore = new Datastore({
           },
         },
       },
-      HeroRunnerPlugin,
+      HeroExtractorPlugin,
     ),
   },
 });

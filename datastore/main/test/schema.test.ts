@@ -1,7 +1,7 @@
 import { array, boolean, dateAdd, number, object, string, ExtractSchemaType } from '@ulixee/schema';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import * as moment from 'moment';
-import { Runner, RunnerSchema } from '../index';
+import { Extractor, ExtractorSchema } from '../index';
 
 describe('Schemas', () => {
   it('will validate input to a funner', async () => {
@@ -11,18 +11,18 @@ describe('Schemas', () => {
       },
     };
 
-    const runner = new Runner({
+    const extractor = new Extractor({
       async run(ctx) {
         ctx.Output.emit({ test: true });
       },
       schema,
     });
 
-    await expect(runner.runInternal({ input: {} as any })).rejects.toThrowError('input did not match');
+    await expect(extractor.runInternal({ input: {} as any })).rejects.toThrowError('input did not match');
   });
 
   it('will supply defaults to params if not given', async () => {
-    const schema = RunnerSchema({
+    const schema = ExtractorSchema({
       input: {
         plan: boolean(),
         for: number(),
@@ -38,7 +38,7 @@ describe('Schemas', () => {
     });
 
     const runResolver = new Resolvable<ExtractSchemaType<typeof schema['input']>>();
-    const runner = new Runner({
+    const extractor = new Extractor({
       async run(ctx) {
         runResolver.resolve(ctx.input);
         ctx.Output.emit({ test: true });
@@ -46,21 +46,21 @@ describe('Schemas', () => {
       schema,
     });
 
-    await expect(runner.runInternal({ input: { plan: false, for: 1 } } as any)).resolves.toBeTruthy();
+    await expect(extractor.runInternal({ input: { plan: false, for: 1 } } as any)).resolves.toBeTruthy();
     const input = await runResolver;
     expect(input.date).toBe(moment().add(1, 'days').format('YYYY-MM-DD'));
     expect(input.plan).toBe(false);
     expect(input.a).toBeUndefined();
   });
 
-  it('will validate output errors for a runner', async () => {
+  it('will validate output errors for a extractor', async () => {
     const schema = {
       output: {
         test: string(),
       },
     };
 
-    const runner = new Runner({
+    const extractor = new Extractor({
       async run(ctx) {
         // @ts-expect-error
         ctx.Output.emit({ test: 1 });
@@ -68,7 +68,7 @@ describe('Schemas', () => {
       schema,
     });
 
-    await expect(runner.runInternal({})).rejects.toThrowError('Output did not match');
+    await expect(extractor.runInternal({})).rejects.toThrowError('Output did not match');
   });
 
   it('will validate output and abort at the first error', async () => {
@@ -85,7 +85,7 @@ describe('Schemas', () => {
     };
 
     let counter = 0;
-    const runner = new Runner({
+    const extractor = new Extractor({
       schema,
       async run({ Output }) {
         const output = new Output();
@@ -99,7 +99,7 @@ describe('Schemas', () => {
       },
     });
 
-    await expect(runner.runInternal({})).rejects.toThrowError('Output did not match');
+    await expect(extractor.runInternal({})).rejects.toThrowError('Output did not match');
     expect(counter).toBe(2);
   });
 
@@ -113,14 +113,14 @@ describe('Schemas', () => {
       },
     };
 
-    const runner = new Runner({
+    const extractor = new Extractor({
       async run(ctx) {
         new ctx.Output({ test: 'good to go' });
       },
       schema,
     });
 
-    await expect(runner.runInternal({ input: { url: 'https://url.com' } })).resolves.toEqual([
+    await expect(extractor.runInternal({ input: { url: 'https://url.com' } })).resolves.toEqual([
       {
         test: 'good to go',
       },

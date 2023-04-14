@@ -1,10 +1,10 @@
-import Datastore, { Table, Runner } from '@ulixee/datastore';
+import Datastore, { Table, Extractor } from '@ulixee/datastore';
 import { boolean, string } from '@ulixee/schema';
 
 export default new Datastore({
   domain: 'docs.datastoresRus.com',
-  runners: {
-    test: new Runner({
+  extractors: {
+    test: new Extractor({
       run(ctx) {
         ctx.Output.emit({
           testerEcho: ctx.input.shouldTest,

@@ -58,6 +58,7 @@ if (process.env.NODE_ENV !== 'production') {
   copyDir(`${baseBuild}/../unblocked/build/agent`, `${dest}/agent`);
   copyDir(`${baseBuild}/../unblocked/build/specification`, `${dest}/unblocked-specification`);
   copyDir(`${baseBuild}/../shared/build/net`, `${dest}/net`);
+  copyDir(`${baseBuild}/../shared/build/crypto`, `${dest}/crypto`);
   copyDir(`${baseBuild}/../shared/build/commons`, `${dest}/commons`);
   copyDir(`${baseBuild}/../shared/build/specification`, `${dest}/ulixee-specification`);
   copyDir(`${baseBuild}/../shared/build/schema`, `${dest}/schema`);

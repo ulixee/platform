@@ -1,15 +1,15 @@
 import readCommandLineArgs from '../lib/utils/readCommandLineArgs';
-import { Runner } from '../index';
+import { Extractor } from '../index';
 
 describe('basic Datastore tests', () => {
   it('waits until run method is explicitly called', async () => {
     let wasRun = false;
-    const runner = new Runner(async ctx => {
+    const extractor = new Extractor(async ctx => {
       new ctx.Output({ ran: 'success' });
       wasRun = true;
     });
 
-    await runner.runInternal({});
+    await extractor.runInternal({});
     await new Promise(resolve => process.nextTick(resolve));
     expect(await wasRun).toBe(true);
   });

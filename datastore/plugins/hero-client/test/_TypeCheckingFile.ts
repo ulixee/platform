@@ -1,10 +1,10 @@
-import Datastore, { Crawler, Runner } from '@ulixee/datastore';
+import Datastore, { Crawler, Extractor } from '@ulixee/datastore';
 import * as assert from 'assert';
 import { boolean, number, string } from '@ulixee/schema';
-import { HeroRunnerPlugin } from '../index';
+import { HeroExtractorPlugin } from '../index';
 
 export function typeChecking(): void {
-  const runner = new Runner(
+  const extractor = new Extractor(
     {
       async run(context) {
         const { Hero, input } = context;
@@ -30,9 +30,9 @@ export function typeChecking(): void {
         },
       },
     },
-    HeroRunnerPlugin,
+    HeroExtractorPlugin,
   );
-  void runner.runInternal({ showChrome: true, input: { text: '123' } });
+  void extractor.runInternal({ showChrome: true, input: { text: '123' } });
 
   const crawler = new Crawler(
     {
@@ -58,7 +58,7 @@ export function typeChecking(): void {
         },
       },
     },
-    HeroRunnerPlugin,
+    HeroExtractorPlugin,
   );
   // @ts-expect-error
   void crawler.runInternal({ showChrome: true, input: { text: '123' } });
@@ -86,7 +86,7 @@ export function typeChecking(): void {
     crawlers: {
       plain: new Crawler(async ({ Hero }) => {
         return new Hero();
-      }, HeroRunnerPlugin),
+      }, HeroExtractorPlugin),
       crawlerSchema: new Crawler(
         {
           async run({ Hero, input }) {
@@ -103,19 +103,19 @@ export function typeChecking(): void {
             },
           },
         },
-        HeroRunnerPlugin,
+        HeroExtractorPlugin,
       ),
     },
 
-    runners: {
-      hero: new Runner(async ({ Hero }) => {
+    extractors: {
+      hero: new Extractor(async ({ Hero }) => {
         const hero = new Hero();
         await hero.goto('place');
         // @ts-expect-error - make sure hero is type checked (not any)
         await hero.unsupportedMethod();
-      }, HeroRunnerPlugin),
+      }, HeroExtractorPlugin),
 
-      heroSchema: new Runner(
+      heroSchema: new Extractor(
         {
           schema: {
             input: {
@@ -145,15 +145,15 @@ export function typeChecking(): void {
             const x = input.value;
           },
         },
-        HeroRunnerPlugin,
+        HeroExtractorPlugin,
       ),
     },
   });
 
   void (async () => {
-    await datastore.runners.hero.runInternal({ replaySessionId: '1' });
+    await datastore.extractors.hero.runInternal({ replaySessionId: '1' });
     // @ts-expect-error
-    await datastore.runners.hero.runInternal({ showChrome: '1,', replaySessionId: '1' });
+    await datastore.extractors.hero.runInternal({ showChrome: '1,', replaySessionId: '1' });
 
     await datastore.crawlers.plain
       // Can't get typescript to check this field when no schema // @ts-expect-error

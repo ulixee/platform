@@ -1,6 +1,6 @@
 # Local Client
 
-When developing a new Datastore, sometimes you'll want to test your code by querying specific Runners and Tables or even the entire Datastore. You can initialize a new Client by passing one of these instances directly into the constructor. This allows you to interact with your new Datastore (or parts of it) without needing to build and deploy the entire Datastore to a Cloud Node.
+When developing a new Datastore, sometimes you'll want to test your code by querying specific Extractors and Tables or even the entire Datastore. You can initialize a new Client by passing one of these instances directly into the constructor. This allows you to interact with your new Datastore (or parts of it) without needing to build and deploy the entire Datastore to a Cloud Node.
 
 You'll use different Clients depending on what you're testing (Datastore vs Table, etc). Also, each Client provides a different subset of methods that are available. See below...
 
@@ -39,14 +39,14 @@ Send a NoSQL query to the specified table.
 #### **Returns**: `Promise<Record[]>`
 
 
-### client.run _(runnerName, inputFilter)_ {#run}
+### client.run _(extractorName, inputFilter)_ {#run}
 
-Run one of the Datastore's runners.
+Run one of the Datastore's extractors.
 
 #### **Arguments**:
 
-- runnerName `string`. Any valid Ulixee SQL query. Case sensitive.
-- inputFilter `object`. Optional. Any named arguments required or allowed by the runner.
+- extractorName `string`. Any valid Ulixee SQL query. Case sensitive.
+- inputFilter `object`. Optional. Any named arguments required or allowed by the extractor.
 
 #### **Returns**: `Promise<Record[]>`
 
@@ -63,13 +63,13 @@ Trigger one of the Datastore's crawlers.
 #### **Returns**: `Promise<Record[]>`
  
 
-## Client.ForRunner
+## Client.ForExtractor
 
 ```javascript
 import Client from '@ulixee/client-playground';
-import myRunner from './myRunner';
+import myExtractor from './myExtractor';
 
-const client = new Client.ForRunner(myRunner);
+const client = new Client.ForExtractor(myExtractor);
 client.query('SELECT firstName, lastName FROM self(isTesting => $1), [true]).then(records => {
   console.log(records);
 });
@@ -77,11 +77,11 @@ client.query('SELECT firstName, lastName FROM self(isTesting => $1), [true]).the
 
 ### client.run _(inputFilter)_ {#run}
 
-Run the Runner.
+Run the Extractor.
 
 #### **Arguments**:
 
-- inputFilter `object`. Optional. Any named arguments required or allowed by the runner.
+- inputFilter `object`. Optional. Any named arguments required or allowed by the extractor.
 
 
 ### client.query _(sql, boundValues)_ {#query}
@@ -155,4 +155,3 @@ Trigger the crawler.
 - inputFilter `object`. Optional. A key/value object that will be passed to the crawler as input.
 
 #### **Returns**: `Promise<Record[]>`
- 

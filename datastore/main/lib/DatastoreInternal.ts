@@ -10,20 +10,20 @@ import ConnectionFactory from '../connections/ConnectionFactory';
 import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
 import IDatastoreComponents, {
   TCrawlers,
-  TRunners,
+  TExtractors,
   TTables,
 } from '../interfaces/IDatastoreComponents';
-import Runner from './Runner';
+import Extractor from './Extractor';
 import Table from './Table';
 import type Crawler from './Crawler';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
-import type PassthroughRunner from './PassthroughRunner';
+import type PassthroughExtractor from './PassthroughExtractor';
 import PassthroughTable, { IPassthroughQueryRunOptions } from './PassthroughTable';
 import CreditsTable from './CreditsTable';
 import DatastoreApiClient from './DatastoreApiClient';
 import DatastoreStorage from './DatastoreStorage';
 import SqlQuery from './SqlQuery';
-import IRunnerExecOptions from '../interfaces/IRunnerExecOptions';
+import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
 
 const pkg = require('../package.json');
 
@@ -31,11 +31,11 @@ let lastInstanceId = 0;
 
 export default class DatastoreInternal<
   TTable extends TTables = TTables,
-  TRunner extends TRunners = TRunners,
+  TExtractor extends TExtractors = TExtractors,
   TCrawler extends TCrawlers = TCrawlers,
-  TComponents extends IDatastoreComponents<TTable, TRunner, TCrawler> = IDatastoreComponents<
+  TComponents extends IDatastoreComponents<TTable, TExtractor, TCrawler> = IDatastoreComponents<
     TTable,
-    TRunner,
+    TExtractor,
     TCrawler
   >,
 > {
@@ -48,7 +48,7 @@ export default class DatastoreInternal<
   public instanceId: string;
   public loadingPromises: PromiseLike<void>[] = [];
   public components: TComponents;
-  public readonly runners: TRunner = {} as any;
+  public readonly extractors: TExtractor = {} as any;
   public readonly tables: TTable = {} as any;
   public readonly crawlers: TCrawler = {} as any;
   public readonly affiliateId: string;
@@ -82,11 +82,11 @@ export default class DatastoreInternal<
     this.components = components;
 
     const names: Set<string> = new Set();
-    for (const [name, runner] of Object.entries(components.runners || [])) {
+    for (const [name, extractor] of Object.entries(components.extractors || [])) {
       if (names.has(name)) {
         throw new Error(`${name} already exists in this datastore`);
       }
-      this.attachRunner(runner, name);
+      this.attachExtractor(extractor, name);
       names.add(name);
     }
     for (const [name, table] of Object.entries(components.tables || [])) {
@@ -139,9 +139,9 @@ export default class DatastoreInternal<
     callbacks: IQueryInternalCallbacks = {},
   ): Promise<TResultType> {
     const sqlParser = new SqlParser(sql);
-    const inputSchemas: { [runnerName: string]: ISchemaAny } = {};
-    for (const [key, runner] of Object.entries(this.runners)) {
-      if (runner.schema) inputSchemas[key] = runner.schema.input;
+    const inputSchemas: { [extractorName: string]: ISchemaAny } = {};
+    for (const [key, extractor] of Object.entries(this.extractors)) {
+      if (extractor.schema) inputSchemas[key] = extractor.schema.input;
     }
     const inputByFunctionName = sqlParser.extractFunctionCallInputs(inputSchemas, boundValues);
     const outputByFunctionName: { [name: string]: any[] } = {};
@@ -159,7 +159,7 @@ export default class DatastoreInternal<
 
     for (const { name, id } of functionCallsById) {
       const input = inputByFunctionName[name];
-      const func = this.runners[name] ?? this.crawlers[name];
+      const func = this.extractors[name] ?? this.crawlers[name];
       callbacks.onFunction ??= (_, __, options, run) => run(options);
       outputByFunctionName[name] = await callbacks.onFunction(
         id,
@@ -223,19 +223,19 @@ export default class DatastoreInternal<
     }));
   }
 
-  public attachRunner(
-    runner: Runner,
+  public attachExtractor(
+    extractor: Extractor,
     nameOverride?: string,
     isAlreadyAttachedToDatastore?: boolean,
   ): void {
-    const isRunner = runner instanceof Runner;
-    const name = nameOverride || runner.name;
-    if (!name) throw new Error(`Runner requires a name`);
-    if (!isRunner) throw new Error(`${name} must be an instance of Runner`);
-    if (this.runners[name]) throw new Error(`Runner already exists with name: ${name}`);
+    const isExtractor = extractor instanceof Extractor;
+    const name = nameOverride || extractor.name;
+    if (!name) throw new Error(`Extractor requires a name`);
+    if (!isExtractor) throw new Error(`${name} must be an instance of Extractor`);
+    if (this.extractors[name]) throw new Error(`Extractor already exists with name: ${name}`);
 
-    if (!isAlreadyAttachedToDatastore) runner.attachToDatastore(this, name);
-    (this.runners as any)[name] = runner;
+    if (!isAlreadyAttachedToDatastore) extractor.attachToDatastore(this, name);
+    (this.extractors as any)[name] = extractor;
   }
 
   public attachCrawler(
@@ -244,7 +244,7 @@ export default class DatastoreInternal<
     isAlreadyAttachedToDatastore?: boolean,
   ): void {
     // NOTE: can't check instanceof Crawler because it creates a dependency loop
-    const isCrawler = crawler instanceof Runner && crawler.runnerType === 'crawler';
+    const isCrawler = crawler instanceof Extractor && crawler.extractorType === 'crawler';
     const name = nameOverride || crawler.name;
     if (!name) throw new Error(`Crawler requires a name`);
     if (!isCrawler) throw new Error(`${name} must be an instance of Crawler`);
@@ -292,23 +292,23 @@ export default class DatastoreInternal<
       adminIdentities,
       coreVersion: pkg.version,
       tablesByName: {},
-      runnersByName: {},
+      extractorsByName: {},
       crawlersByName: {},
     };
     metadata.remoteDatastoreEmbeddedCredits ??= {};
 
-    for (const [runnerName, runner] of Object.entries(this.runners)) {
-      const passThrough = runner as unknown as PassthroughRunner<any, any>;
-      metadata.runnersByName[runnerName] = {
-        name: runner.name,
-        description: runner.description,
-        corePlugins: runner.corePlugins ?? {},
-        schema: runner.schema,
-        pricePerQuery: runner.pricePerQuery,
-        addOnPricing: runner.addOnPricing,
-        minimumPrice: runner.minimumPrice,
+    for (const [extractorName, extractor] of Object.entries(this.extractors)) {
+      const passThrough = extractor as unknown as PassthroughExtractor<any, any>;
+      metadata.extractorsByName[extractorName] = {
+        name: extractor.name,
+        description: extractor.description,
+        corePlugins: extractor.corePlugins ?? {},
+        schema: extractor.schema,
+        pricePerQuery: extractor.pricePerQuery,
+        addOnPricing: extractor.addOnPricing,
+        minimumPrice: extractor.minimumPrice,
         remoteSource: passThrough?.remoteSource,
-        remoteRunner: passThrough?.remoteRunner,
+        remoteExtractor: passThrough?.remoteExtractor,
         remoteDatastoreVersionHash: passThrough?.datastoreVersionHash,
       };
     }
@@ -325,9 +325,9 @@ export default class DatastoreInternal<
       };
     }
 
-    for (const [runnerName, table] of Object.entries(this.tables ?? {})) {
+    for (const [extractorName, table] of Object.entries(this.tables ?? {})) {
       const passThrough = table as unknown as PassthroughTable<any, any>;
-      metadata.tablesByName[runnerName] = {
+      metadata.tablesByName[extractorName] = {
         name: table.name,
         description: table.description,
         isPublic: table.isPublic !== false,
@@ -357,8 +357,8 @@ export interface IQueryInternalCallbacks {
   onFunction?<TOutput = any[]>(
     id: number,
     name: string,
-    options: IRunnerExecOptions<any>,
-    run: (options: IRunnerExecOptions<any>) => Promise<TOutput>,
+    options: IExtractorRunOptions<any>,
+    run: (options: IExtractorRunOptions<any>) => Promise<TOutput>,
   ): Promise<TOutput>;
   onPassthroughTable?<TOutput = any[]>(
     name: string,

@@ -1,21 +1,21 @@
 import * as assert from 'assert';
 import { ExtractSchemaType } from '@ulixee/schema';
-import Runner from './Runner';
-import IRunnerSchema from '../interfaces/IRunnerSchema';
-import IRunnerComponents from '../interfaces/IRunnerComponents';
-import IRunnerContext from '../interfaces/IRunnerContext';
+import Extractor from './Extractor';
+import IExtractorSchema from '../interfaces/IExtractorSchema';
+import IExtractorComponents from '../interfaces/IExtractorComponents';
+import IExtractorContext from '../interfaces/IExtractorContext';
 import DatastoreApiClient, { IDatastoreExecRelayArgs } from './DatastoreApiClient';
-import { IRunnerPluginConstructor } from '../interfaces/IRunnerPluginStatics';
+import { IExtractorPluginConstructor } from '../interfaces/IExtractorPluginStatics';
 import ResultIterable from './ResultIterable';
 
-export interface IPassthroughRunnerComponents<
+export interface IPassthroughExtractorComponents<
   TRemoteSources extends Record<string, string>,
-  TRunnerName extends string,
-  TSchema extends IRunnerSchema = IRunnerSchema<any, any>,
-  TContext extends IRunnerContext<TSchema> & IDatastoreExecRelayArgs = IRunnerContext<TSchema> &
+  TExtractorName extends string,
+  TSchema extends IExtractorSchema = IExtractorSchema<any, any>,
+  TContext extends IExtractorContext<TSchema> & IDatastoreExecRelayArgs = IExtractorContext<TSchema> &
     IDatastoreExecRelayArgs,
 > {
-  remoteRunner: `${keyof TRemoteSources & string}.${TRunnerName}`;
+  remoteExtractor: `${keyof TRemoteSources & string}.${TExtractorName}`;
   upcharge?: number;
   onRequest?: (context: TContext) => Promise<any>;
   onResponse?: (
@@ -23,35 +23,35 @@ export interface IPassthroughRunnerComponents<
   ) => Promise<any>;
 }
 
-export default class PassthroughRunner<
+export default class PassthroughExtractor<
   TRemoteSources extends Record<string, string>,
-  TRunnerName extends string,
-  TSchema extends IRunnerSchema = IRunnerSchema<any, any>,
-  TPlugin1 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
-  TPlugin2 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
-  TPlugin3 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
+  TExtractorName extends string,
+  TSchema extends IExtractorSchema = IExtractorSchema<any, any>,
+  TPlugin1 extends IExtractorPluginConstructor<TSchema> = IExtractorPluginConstructor<TSchema>,
+  TPlugin2 extends IExtractorPluginConstructor<TSchema> = IExtractorPluginConstructor<TSchema>,
+  TPlugin3 extends IExtractorPluginConstructor<TSchema> = IExtractorPluginConstructor<TSchema>,
   TOutput extends ExtractSchemaType<TSchema['output']> = ExtractSchemaType<TSchema['output']>,
-  TContext extends IRunnerContext<TSchema> & IDatastoreExecRelayArgs = IRunnerContext<TSchema> &
+  TContext extends IExtractorContext<TSchema> & IDatastoreExecRelayArgs = IExtractorContext<TSchema> &
     TPlugin1['contextAddons'] &
     TPlugin2['contextAddons'] &
     TPlugin3['contextAddons'] &
     IDatastoreExecRelayArgs,
-> extends Runner<TSchema, TPlugin1, TPlugin2, TPlugin3, TContext> {
+> extends Extractor<TSchema, TPlugin1, TPlugin2, TPlugin3, TContext> {
   public readonly remoteSource: string;
-  public readonly remoteRunner: string;
+  public readonly remoteExtractor: string;
   public datastoreVersionHash: string;
 
   protected upstreamClient: DatastoreApiClient;
-  protected readonly passThroughComponents: IPassthroughRunnerComponents<
+  protected readonly passThroughComponents: IPassthroughExtractorComponents<
     TRemoteSources,
-    TRunnerName,
+    TExtractorName,
     TSchema,
     TContext
   >;
 
   constructor(
-    components: Pick<IRunnerComponents<TSchema, TContext>, 'name' | 'description' | 'schema'> &
-      IPassthroughRunnerComponents<TRemoteSources, TRunnerName> &
+    components: Pick<IExtractorComponents<TSchema, TContext>, 'name' | 'description' | 'schema'> &
+      IPassthroughExtractorComponents<TRemoteSources, TExtractorName> &
       TPlugin1['componentAddons'] &
       TPlugin2['componentAddons'] &
       TPlugin3['componentAddons'],
@@ -61,11 +61,11 @@ export default class PassthroughRunner<
     this.components.run = this.run.bind(this);
     this.pricePerQuery = components.upcharge ?? 0;
     this.minimumPrice = components.upcharge ?? 0;
-    assert(components.remoteRunner, 'A remote runner name is required');
-    assert(components.remoteRunner.includes('.'), 'A remote function source is required');
+    assert(components.remoteExtractor, 'A remote extractor name is required');
+    assert(components.remoteExtractor.includes('.'), 'A remote function source is required');
     this.passThroughComponents = components;
-    const [source, remoteRunner] = components.remoteRunner.split('.');
-    this.remoteRunner = remoteRunner;
+    const [source, remoteExtractor] = components.remoteExtractor.split('.');
+    this.remoteExtractor = remoteExtractor;
     this.remoteSource = source;
   }
 
@@ -88,7 +88,7 @@ export default class PassthroughRunner<
 
     const queryResult = this.upstreamClient.stream<{ output: TOutput; input: any }>(
       this.datastoreVersionHash,
-      this.remoteRunner,
+      this.remoteExtractor,
       context.input,
       {
         payment,
@@ -129,7 +129,7 @@ export default class PassthroughRunner<
       console.warn('Newer Datastore VersionHash is available', {
         newVersionHash: finalResult.latestVersionHash,
         usingVersionHash: this.datastoreVersionHash,
-        host: this.passThroughComponents.remoteRunner,
+        host: this.passThroughComponents.remoteExtractor,
       });
     }
   }

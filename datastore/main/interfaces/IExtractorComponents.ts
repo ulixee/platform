@@ -1,4 +1,4 @@
-export default interface IRunnerComponents<ISchema, IContext> {
+export default interface IExtractorComponents<ISchema, IContext> {
   name?: string;
   description?: string;
   pricePerQuery?: number;

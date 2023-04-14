@@ -4,7 +4,7 @@ import { createReadStream, promises as Fs } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import * as Finalhandler from 'finalhandler';
 import * as ServeStatic from 'serve-static';
-import IRunnerPluginCore from '@ulixee/datastore/interfaces/IRunnerPluginCore';
+import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
@@ -79,7 +79,7 @@ export default class DatastoreCore {
     approvedSidechainsRefreshInterval: 60e3 * 60, // 1 hour
   };
 
-  public static pluginCoresByName: { [name: string]: IRunnerPluginCore } = {};
+  public static pluginCoresByName: { [name: string]: IExtractorPluginCore } = {};
   public static isClosing: Promise<void>;
   public static workTracker: WorkTracker;
   public static apiRegistry = new ApiRegistry<IDatastoreApiContext>([
@@ -223,7 +223,7 @@ export default class DatastoreCore {
     docPageServer(req, res, done);
   }
 
-  public static registerPlugin(pluginCore: IRunnerPluginCore): void {
+  public static registerPlugin(pluginCore: IExtractorPluginCore): void {
     this.pluginCoresByName[pluginCore.name] = pluginCore;
   }
 

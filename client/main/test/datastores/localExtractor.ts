@@ -1,7 +1,7 @@
-import { Runner } from '@ulixee/datastore';
+import { Extractor } from '@ulixee/datastore';
 import { boolean, string } from '@ulixee/schema';
 
-export default new Runner({
+export default new Extractor({
   name: 'test',
   run(ctx) {
     ctx.Output.emit({

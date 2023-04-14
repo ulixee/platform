@@ -43,13 +43,13 @@ test('should be able to query a datastore using sql', async () => {
   ]);
 });
 
-test('should be able to run a datastore runner', async () => {
+test('should be able to run a datastore extractor', async () => {
   const client = Client.forDatastore(localDatastore, { connectionToCore });
 
   // @ts-expect-error - must be a valid function
   await expect(() => client.run('test1', {})).toThrowError();
   // @ts-expect-error
-  await expect(client.run('test', { notValid: 1 })).rejects.toThrow('Runner input');
+  await expect(client.run('test', { notValid: 1 })).rejects.toThrow('Extractor input');
 
   const results = await client.run('test', { shouldTest: true });
   expect(results).toEqual([

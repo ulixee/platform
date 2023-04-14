@@ -103,7 +103,7 @@ test('should be able to run a datastore function with payments', async () => {
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha256('payme123'), 'ar'),
-      runnersByName: {
+      extractorsByName: {
         putout: {
           prices: [
             {
@@ -117,7 +117,7 @@ test('should be able to run a datastore function with payments', async () => {
 
   const dbx = await packager.build();
   const manifest = packager.manifest;
-  expect(manifest.runnersByName.putout.prices[0].perQuery).toBe(1250);
+  expect(manifest.extractorsByName.putout.prices[0].perQuery).toBe(1250);
   await client.upload(await dbx.tarGzip());
 
   await expect(client.query(manifest.versionHash, 'SELECT * FROM putout()')).rejects.toThrowError(
@@ -134,7 +134,7 @@ test('should be able to run a datastore function with payments', async () => {
   expect(settings.settlementFeeMicrogons).toBe(5);
   apiCalls.mockClear();
 
-  const meta = await client.getRunnerPricing(manifest.versionHash, 'putout');
+  const meta = await client.getExtractorPricing(manifest.versionHash, 'putout');
   const payment = await sidechainClient.createMicroPayment({
     microgons: meta.minimumPrice,
     ...meta,
@@ -192,7 +192,7 @@ test('should be able run a Datastore with Credits', async () => {
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha256('payme123'), 'ar'),
-      runnersByName: {
+      extractorsByName: {
         putout: {
           prices: [{ perQuery: 1000 }],
         },
@@ -243,7 +243,7 @@ test('should remove an empty Credits from the local cache', async () => {
   await Fs.writeFileSync(
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
-      runnersByName: {
+      extractorsByName: {
         putout: {
           prices: [{ perQuery: 1250 }],
         },
@@ -268,7 +268,7 @@ test('should be able to embed Credits in a Datastore', async () => {
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha256('payme123'), 'ar'),
-      runnersByName: {
+      extractorsByName: {
         putout: {
           prices: [{ perQuery: 1000 }],
         },
@@ -300,7 +300,7 @@ test('should be able to embed Credits in a Datastore', async () => {
     `${__dirname}/datastores/clone-output/datastore-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha256('payme123'), 'ar'),
-      runnersByName: {
+      extractorsByName: {
         putout: {
           prices: [{ perQuery: 1000 }],
         },

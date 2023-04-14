@@ -52,7 +52,7 @@ export default new DatastoreApiHandler('Datastore.query', {
             }
           };
           for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
-            if (plugin.beforeExecRunner) await plugin.beforeExecRunner(options);
+            if (plugin.beforeRunExtractor) await plugin.beforeRunExtractor(options);
           }
 
           let runError: Error;

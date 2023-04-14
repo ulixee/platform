@@ -33,7 +33,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
   public coreVersion: string;
   public schemaInterface: string;
   public crawlersByName: IDatastoreManifest['crawlersByName'] = {};
-  public runnersByName: IDatastoreManifest['runnersByName'] = {};
+  public extractorsByName: IDatastoreManifest['extractorsByName'] = {};
   public tablesByName: IDatastoreManifest['tablesByName'] = {};
 
   public adminIdentities: string[];
@@ -85,7 +85,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     scriptHash: string,
     versionTimestamp: number,
     schemaInterface: string,
-    runnersByName: IDatastoreManifest['runnersByName'],
+    extractorsByName: IDatastoreManifest['extractorsByName'],
     crawlersByName: IDatastoreManifest['crawlersByName'],
     tablesByName: IDatastoreManifest['tablesByName'],
     metadata: Pick<
@@ -103,7 +103,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     const manifestSources = DatastoreManifest.getCustomSources(absoluteScriptEntrypoint);
     await this.loadGeneratedManifests(manifestSources);
     this.linkedVersions ??= [];
-    this.runnersByName = {};
+    this.extractorsByName = {};
     this.crawlersByName = {};
 
     const { name, description, coreVersion, paymentAddress, adminIdentities, domain } = metadata;
@@ -119,8 +119,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
     });
     this.adminIdentities ??= [];
 
-    for (const [funcName, funcMeta] of Object.entries(runnersByName)) {
-      this.runnersByName[funcName] = {
+    for (const [funcName, funcMeta] of Object.entries(extractorsByName)) {
+      this.extractorsByName[funcName] = {
         description: funcMeta.description,
         corePlugins: funcMeta.corePlugins ?? {},
         prices: funcMeta.prices ?? [{ perQuery: 0, minimum: 0 }],
@@ -249,7 +249,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       scriptHash: this.scriptHash,
       coreVersion: this.coreVersion,
       schemaInterface: this.schemaInterface,
-      runnersByName: this.runnersByName,
+      extractorsByName: this.extractorsByName,
       crawlersByName: this.crawlersByName,
       tablesByName: this.tablesByName,
       paymentAddress: this.paymentAddress,
@@ -299,16 +299,16 @@ export default class DatastoreManifest implements IDatastoreManifest {
           path: source.path,
           overrides: explicitSettings,
         });
-        const { runnersByName, crawlersByName, tablesByName, ...otherSettings } = explicitSettings;
-        if (runnersByName) {
-          for (const [name, funcMeta] of Object.entries(runnersByName)) {
-            if (this.runnersByName[name]) {
-              Object.assign(this.runnersByName[name], funcMeta);
+        const { extractorsByName, crawlersByName, tablesByName, ...otherSettings } = explicitSettings;
+        if (extractorsByName) {
+          for (const [name, funcMeta] of Object.entries(extractorsByName)) {
+            if (this.extractorsByName[name]) {
+              Object.assign(this.extractorsByName[name], funcMeta);
             } else {
-              this.runnersByName[name] = funcMeta;
+              this.extractorsByName[name] = funcMeta;
             }
-            this.runnersByName[name].prices ??= [];
-            for (const price of this.runnersByName[name].prices) {
+            this.extractorsByName[name].prices ??= [];
+            for (const price of this.extractorsByName[name].prices) {
               price.perQuery ??= 0;
               price.minimum ??= price.perQuery;
             }
@@ -374,7 +374,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       | 'scriptEntrypoint'
       | 'linkedVersions'
       | 'paymentAddress'
-      | 'runnersByName'
+      | 'extractorsByName'
       | 'crawlersByName'
       | 'tablesByName'
       | 'adminIdentities'
@@ -384,7 +384,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       scriptHash,
       versionTimestamp,
       scriptEntrypoint,
-      runnersByName,
+      extractorsByName,
       crawlersByName,
       tablesByName,
       paymentAddress,
@@ -392,13 +392,13 @@ export default class DatastoreManifest implements IDatastoreManifest {
       adminIdentities,
     } = manifest;
     linkedVersions.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
-    const runners = Object.keys(runnersByName ?? {}).sort();
-    const runnerPrices: (string | number)[] = [];
-    for (const name of runners) {
-      const func = runnersByName[name];
+    const extractors = Object.keys(extractorsByName ?? {}).sort();
+    const extractorPrices: (string | number)[] = [];
+    for (const name of extractors) {
+      const func = extractorsByName[name];
       func.prices ??= [{ perQuery: 0, minimum: 0 }];
       for (const price of func.prices) {
-        runnerPrices.push(price.perQuery, price.minimum, price.addOns?.perKb);
+        extractorPrices.push(price.perQuery, price.minimum, price.addOns?.perKb);
       }
     }
     const crawlerPrices: (string | number)[] = [];
@@ -421,7 +421,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       scriptHash,
       versionTimestamp,
       scriptEntrypoint,
-      ...runnerPrices,
+      ...extractorPrices,
       ...crawlerPrices,
       ...tablePrices,
       paymentAddress,

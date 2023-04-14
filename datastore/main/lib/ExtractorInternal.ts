@@ -6,17 +6,17 @@ import { bindFunctions, pickRandom } from '@ulixee/commons/lib/utils';
 import StringSchema from '@ulixee/schema/lib/StringSchema';
 import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import DatastoreSchemaError from './DatastoreSchemaError';
-import IRunnerSchema, { ExtractSchemaType } from '../interfaces/IRunnerSchema';
-import IRunnerExecOptions from '../interfaces/IRunnerExecOptions';
+import IExtractorSchema, { ExtractSchemaType } from '../interfaces/IExtractorSchema';
+import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
 import createOutputGenerator, { IOutputClass } from './Output';
 import IObservableChange, { ObservableChangeType } from '../interfaces/IObservableChange';
 import ResultIterable from './ResultIterable';
-import IRunnerComponents from '../interfaces/IRunnerComponents';
-import IRunnerContext from '../interfaces/IRunnerContext';
+import IExtractorComponents from '../interfaces/IExtractorComponents';
+import IExtractorContext from '../interfaces/IExtractorContext';
 
-export default class RunnerInternal<
-  TSchema extends IRunnerSchema<any, any>,
-  TOptions extends IRunnerExecOptions<TSchema> = IRunnerExecOptions<TSchema>,
+export default class ExtractorInternal<
+  TSchema extends IExtractorSchema<any, any>,
+  TOptions extends IExtractorRunOptions<TSchema> = IExtractorRunOptions<TSchema>,
   TInput extends ExtractSchemaType<TSchema['input']> = ExtractSchemaType<TSchema['input']>,
   TOutput extends ExtractSchemaType<TSchema['output']> = ExtractSchemaType<TSchema['output']>,
 > extends TypedEventEmitter<{
@@ -34,7 +34,7 @@ export default class RunnerInternal<
   public onOutputChanges: (index: number, changes: IObservableChange[]) => any;
   public onOutputRecord: (index: number, output: TOutput) => void;
 
-  constructor(options: TOptions, private components: IRunnerComponents<TSchema, any>) {
+  constructor(options: TOptions, private components: IExtractorComponents<TSchema, any>) {
     super();
     this.options = options;
     this.schema = components.schema;
@@ -47,7 +47,7 @@ export default class RunnerInternal<
     });
 
     if (components.schema?.inputExamples?.length && components.schema.input) {
-      RunnerInternal.fillInputWithExamples(components.schema, this.#input);
+      ExtractorInternal.fillInputWithExamples(components.schema, this.#input);
     }
 
     if (this.schema?.output) {
@@ -60,16 +60,16 @@ export default class RunnerInternal<
     bindFunctions(this);
   }
 
-  public run(context: IRunnerContext<TSchema>): ResultIterable<TOutput> {
-    const runnerResults = new ResultIterable<TOutput>();
-    this.onOutputRecord = (index, output) => runnerResults.push(output, index);
+  public run(context: IExtractorContext<TSchema>): ResultIterable<TOutput> {
+    const extractorResults = new ResultIterable<TOutput>();
+    this.onOutputRecord = (index, output) => extractorResults.push(output, index);
 
     void Promise.resolve(this.components.run(context))
       .then(this.emitPendingOutputs)
-      .then(runnerResults.done)
-      .catch(runnerResults.reject);
+      .then(extractorResults.done)
+      .catch(extractorResults.reject);
 
-    return runnerResults;
+    return extractorResults;
   }
 
   public emitPendingOutputs(): void {
@@ -106,7 +106,7 @@ export default class RunnerInternal<
     const inputValidation = schema.validate(this.input);
     if (!inputValidation.success) {
       throw new DatastoreSchemaError(
-        'The Runner input did not match its Schema',
+        'The Extractor input did not match its Schema',
         inputValidation.errors,
         this.schema.input,
       );
@@ -128,7 +128,7 @@ export default class RunnerInternal<
     const outputValidation = this.#outputSchema.validate(output);
     if (!outputValidation.success) {
       throw new DatastoreSchemaError(
-        `The Runner's ${humanCounter}Output did not match its Schema`,
+        `The Extractor's ${humanCounter}Output did not match its Schema`,
         outputValidation.errors,
         output,
       );
@@ -178,7 +178,7 @@ export default class RunnerInternal<
     }
   }
 
-  public static fillInputWithExamples(schema: IRunnerSchema, input: Record<string, any>): any {
+  public static fillInputWithExamples(schema: IExtractorSchema, input: Record<string, any>): any {
     const randomEntry = pickRandom(schema.inputExamples);
     for (const [key, field] of Object.entries(schema.input)) {
       if (input[key] === undefined && field.optional !== true) {
@@ -196,4 +196,4 @@ export default class RunnerInternal<
   }
 }
 
-addGlobalInstance(DateUtilities, StringSchema, RunnerInternal);
+addGlobalInstance(DateUtilities, StringSchema, ExtractorInternal);

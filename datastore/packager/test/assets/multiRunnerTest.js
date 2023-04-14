@@ -1,10 +1,10 @@
 const Datastore = require('@ulixee/datastore');
-const { Runner, HeroRunnerPlugin } = require('@ulixee/datastore-plugins-hero');
+const { Extractor, HeroExtractorPlugin } = require('@ulixee/datastore-plugins-hero');
 const { string } = require('@ulixee/schema');
 
 exports.default = new Datastore({
-  runners: {
-    runnerWithInput: new Runner(
+  extractors: {
+    extractorWithInput: new Extractor(
       {
         schema: {
           input: {
@@ -16,9 +16,9 @@ exports.default = new Datastore({
           await hero.goto(input.url);
         },
       },
-      HeroRunnerPlugin,
+      HeroExtractorPlugin,
     ),
-    runnerWithOutput: new Runner({
+    extractorWithOutput: new Extractor({
       schema: {
         output: {
           title: string(),

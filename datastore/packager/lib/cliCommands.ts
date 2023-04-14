@@ -283,7 +283,7 @@ You can choose from the options below to link to the existing Cloud versions or 
           manifest.scriptHash,
           manifest.versionTimestamp,
           manifest.schemaInterface,
-          manifest.runnersByName,
+          manifest.extractorsByName,
           manifest.crawlersByName,
           manifest.tablesByName,
           manifest,

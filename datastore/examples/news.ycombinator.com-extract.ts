@@ -1,6 +1,6 @@
 // NOTE: you must start your own Ulixee Cloud to run this example.
 
-import { Crawler, Datastore, Runner, HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import { Crawler, Datastore, Extractor, HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 
 const datastore = new Datastore({
   crawlers: {
@@ -26,10 +26,10 @@ const datastore = new Datastore({
         // });
       }
       return hero;
-    }, HeroRunnerPlugin),
+    }, HeroExtractorPlugin),
   },
-  runners: {
-    hackernews: new Runner(async ({ Output, HeroReplay }) => {
+  extractors: {
+    hackernews: new Extractor(async ({ Output, HeroReplay }) => {
       const { detachedElements } = await HeroReplay.fromCrawler(datastore.crawlers.hackernews, {
         input: {
           maxTimeInCache: 24 * 60 * 60,
@@ -59,7 +59,7 @@ const datastore = new Datastore({
         record.url = titleElem.getAttribute('href');
         record.emit();
       }
-    }, HeroRunnerPlugin),
+    }, HeroExtractorPlugin),
   },
 });
 export default datastore;

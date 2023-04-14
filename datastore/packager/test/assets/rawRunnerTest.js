@@ -1,5 +1,5 @@
-const { Runner, HeroRunnerPlugin } = require('@ulixee/datastore-plugins-hero');
+const { Extractor, HeroExtractorPlugin } = require('@ulixee/datastore-plugins-hero');
 
-exports.default = new Runner(({ Output }) => {
+exports.default = new Extractor(({ Output }) => {
   Output.emit({ test: 1 });
-}, HeroRunnerPlugin);
+}, HeroExtractorPlugin);

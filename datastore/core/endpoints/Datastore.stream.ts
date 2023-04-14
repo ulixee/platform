@@ -1,4 +1,4 @@
-import Datastore, { IRunnerExecOptions } from '@ulixee/datastore';
+import Datastore, { IExtractorRunOptions } from '@ulixee/datastore';
 import IDatastoreApis from '@ulixee/platform-specification/datastore/DatastoreApis';
 import { SqlGenerator } from '@ulixee/sql-engine';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
@@ -27,7 +27,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
     const isCredits = !!request.payment?.credits;
 
     const datastoreFunction =
-      datastore.metadata.runnersByName[request.name] ??
+      datastore.metadata.extractorsByName[request.name] ??
       datastore.metadata.crawlersByName[request.name];
     const datastoreTable = datastore.metadata.tablesByName[request.name];
 
@@ -70,7 +70,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
       } else if (datastoreTable) {
         outputs = extractTableOutputs(datastore, request, context);
       } else {
-        throw new Error(`${request.name} is not a valid Runner name for this Datastore.`);
+        throw new Error(`${request.name} is not a valid Extractor name for this Datastore.`);
       }
 
       bytes = PaymentProcessor.getOfficialBytes(outputs);
@@ -121,7 +121,7 @@ async function extractFunctionOutputs(
   heroSessionIds: string[],
 ): Promise<any[]> {
   validateFunctionCoreVersions(manifestWithStats, request.name, context);
-  const options: IRunnerExecOptions<any> = {
+  const options: IExtractorRunOptions<any> = {
     input: request.input,
     authentication: request.authentication,
     affiliateId: request.affiliateId,
@@ -135,10 +135,10 @@ async function extractFunctionOutputs(
   return await context.workTracker.trackRun(
     (async () => {
       for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
-        if (plugin.beforeExecRunner) await plugin.beforeExecRunner(options);
+        if (plugin.beforeRunExtractor) await plugin.beforeRunExtractor(options);
       }
 
-      const func = datastore.runners[request.name] ?? datastore.crawlers[request.name];
+      const func = datastore.extractors[request.name] ?? datastore.crawlers[request.name];
       const results = func.runInternal(options, {
         async onFunction(id, name, initialOptions, run) {
           const runStart = Date.now();

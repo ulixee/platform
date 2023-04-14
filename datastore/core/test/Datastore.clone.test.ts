@@ -60,8 +60,8 @@ test('should be able to clone a datastore', async () => {
     name: { typeName: 'string' },
     birthdate: { typeName: 'date' },
   });
-  expect(Object.entries(packager.manifest.runnersByName)).toHaveLength(1);
-  expect(packager.manifest.runnersByName.cloneUpstream.schemaAsJson).toEqual({
+  expect(Object.entries(packager.manifest.extractorsByName)).toHaveLength(1);
+  expect(packager.manifest.extractorsByName.cloneUpstream.schemaAsJson).toEqual({
     input: {
       field: { typeName: 'string', minLength: 1, description: 'a field you should use' },
       nested: {

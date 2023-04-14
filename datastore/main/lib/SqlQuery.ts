@@ -27,7 +27,7 @@ export default class SqlQuery {
       const schema = this.storage.getFunctionSchema(name);
       schemas.push(schema);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
-      SqlGenerator.createRunnerFromSchema(input, outputs, schema, (parameters, columns) => {
+      SqlGenerator.createFunctionFromSchema(input, outputs, schema, (parameters, columns) => {
         this.db.table(name, {
           parameters,
           columns,

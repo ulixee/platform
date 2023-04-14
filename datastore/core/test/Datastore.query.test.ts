@@ -14,8 +14,8 @@ beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/query.dbx`)) {
     Fs.rmSync(`${__dirname}/datastores/query.dbx`, { recursive: true });
   }
-  if (Fs.existsSync(`${__dirname}/datastores/directRunner.dbx`)) {
-    Fs.rmSync(`${__dirname}/datastores/directRunner.dbx`, { recursive: true });
+  if (Fs.existsSync(`${__dirname}/datastores/directExtractor.dbx`)) {
+    Fs.rmSync(`${__dirname}/datastores/directExtractor.dbx`, { recursive: true });
   }
 
   cloudNode = new CloudNode();
@@ -32,7 +32,7 @@ afterAll(async () => {
   if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
 });
 
-test('should be able to query a datastore runner', async () => {
+test('should be able to query a datastore extractor', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/query.js`);
   await packager.build();
   await client.upload(await packager.dbx.tarGzip());
@@ -69,7 +69,7 @@ test('should be able to require authentication for a datastore', async () => {
 });
 
 test('should be able to query a function packaged without a datastore', async () => {
-  const packager = new DatastorePackager(`${__dirname}/datastores/directRunner.js`);
+  const packager = new DatastorePackager(`${__dirname}/datastores/directExtractor.js`);
   await packager.build();
   await client.upload(await packager.dbx.tarGzip());
   await expect(

@@ -1,19 +1,19 @@
-import Datastore, { Runner } from '@ulixee/datastore';
-import { HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import Datastore, { Extractor } from '@ulixee/datastore';
+import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 
-import { testRunner } from './helper';
+import { testExtractor } from './helper';
 
 export default new Datastore({
-  runners: {
-    default: new Runner(
+  extractors: {
+    default: new Extractor(
       {
         async run({ Output }) {
-          Output.emit({ text: testRunner() });
+          Output.emit({ text: testExtractor() });
         },
       },
-      HeroRunnerPlugin,
+      HeroExtractorPlugin,
     ),
   },
 });
 // test exporting another thing
-export { testRunner };
+export { testExtractor };

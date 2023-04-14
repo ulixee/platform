@@ -38,7 +38,7 @@ test('should be able to fetch a datastore table', async () => {
   ]);
 });
 
-test('should be able to run a datastore runner', async () => {
+test('should be able to run a datastore extractor', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/fetch.js`);
   await packager.build();
   await apiClient.upload(await packager.dbx.tarGzip());

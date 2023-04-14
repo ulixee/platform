@@ -2,7 +2,7 @@
 
 This is the default use-case for using Ulixee Client. You supply a connection URI or Object to the datastore you want to query. 
 
-You can also initialize clients with a local Datastore, Table, Runner or Crawler instance, however, these clients provide a more limited set of properties and methods than what is shown on this page. See [Local Client](./local-client.md).
+You can also initialize clients with a local Datastore, Table, Extractor or Crawler instance, however, these clients provide a more limited set of properties and methods than what is shown on this page. See [Local Client](./local-client.md).
 
 ## Constructor
 
@@ -102,9 +102,9 @@ const records = await client.fetch('developers' { lastname: 'Clark' });
 
 #### **Returns**: `Promise<Record[]>`
 
-### client.run _(runnerName, inputFilter)_ {#run}
+### client.run _(extractorName, inputFilter)_ {#run}
 
-Run one of the Datastore's runners (what we call them Runners):
+Run one of the Datastore's extractors (what we call them Extractors):
 
 ```js
 const client = new Client();
@@ -113,8 +113,8 @@ const records = await client.fetch('daysUntilWorldDomination' { probability: 5 }
 
 #### **Arguments**:
 
-- runnerName `string`. Any valid Ulixee SQL query. Case sensitive.
-- inputFilter `object`. Optional. Any named arguments required or allowed by the runner.
+- extractorName `string`. Any valid Ulixee SQL query. Case sensitive.
+- inputFilter `object`. Optional. Any named arguments required or allowed by the extractor.
 
 #### **Returns**: `Promise<Record[]>`
 

@@ -24,7 +24,7 @@ export type IChromeAliveSessionApis = {
   'Session.searchResources': IChromeAliveSessionApi['searchResources'];
   'Session.replayTargetCreated': IChromeAliveSessionApi['replayTargetCreated'];
   'Session.devtoolsTargetOpened': IChromeAliveSessionApi['devtoolsTargetOpened'];
-  'Datastore.rerunRunner': IDatastoreApi['rerunRunner'];
+  'Datastore.rerunExtractor': IDatastoreApi['rerunExtractor'];
   'Datastore.getOutput': IDatastoreApi['getOutput'];
   'Datastore.getCollectedAssets': IDatastoreApi['getCollectedAssets'];
   'DevtoolsBackdoor.toggleInspectElementMode': IDevtoolsBackdoorApi['toggleInspectElementMode'];

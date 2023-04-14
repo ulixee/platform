@@ -15,7 +15,7 @@
       Check out your newly created Datastore in the
       <span class="mx-0.5 bg-gray-200 p-1 font-light">/clone</span> directory. Your
       <span class="font-medium">datastore.ts</span> automatically created "Passthroughs" to the
-      Tables and Runners from the Ulixee Docs datastore, but the code remains private.
+      Tables and Extractors from the Ulixee Docs datastore, but the code remains private.
     </p>
     <div class="my-3 bg-gray-200 p-4 text-sm font-light text-gray-600">
       NOTE: in this case, the code isn't really private! You can explore the source code in the
@@ -34,7 +34,7 @@
 
       <!-- prettier-ignore -->
       <Prism language="typescript" class="mt-2" data-line='9-11,22,28-32,62-63 '  style="font-size: 0.9em">
-      import { Datastore, PassthroughRunner } from '@ulixee/datastore';
+      import { Datastore, PassthroughExtractor } from '@ulixee/datastore';
       import schemaFromJson from '@ulixee/schema/lib/schemaFromJson';
       import { string, array, object, boolean } from '@ulixee/schema';
 
@@ -49,26 +49,26 @@
         remoteDatastores: {
           source: 'ulx://localhost:1818/dbx1gr99wzqqnjuesg9wza',
         },
-        runners: {
-          allPages: new PassthroughRunner({
-            remoteRunner: 'source.pages',
+        extractors: {
+          allPages: new PassthroughExtractor({
+            remoteExtractor: 'source.pages',
             schema: allPages(),
           }),
-          getDocumentation: new PassthroughRunner({
+          getDocumentation: new PassthroughExtractor({
             description: 'Get the methods, properties and events of each Category of the Ulixee documentation using Page and Tool names.',
-            remoteRunner: 'source.documentation',
+            remoteExtractor: 'source.documentation',
             schema: getDocumentation(),
     /**
      * 2. Intercept the inbound requests and look up the URL for the given page.
     **/
             async onRequest(ctx) {
-              const pages = await ctx.run(datastore.runners.pages, { input: { tool: ctx.input.tool } });
+              const pages = await ctx.run(datastore.extractors.pages, { input: { tool: ctx.input.tool } });
               const page = pages.find(x => x.name === ctx.input.pageName);
               ctx.input.url = page.link;
             },
           }),
-          search: new PassthroughRunner({
-            remoteRunner: 'source.search',
+          search: new PassthroughExtractor({
+            remoteExtractor: 'source.search',
             schema: search(),
           }),
         },
@@ -92,7 +92,7 @@
       function getDocumentation() {
         return {
     /**
-     * 3. Change the parameters for the Runner.
+     * 3. Change the parameters for the Extractor.
     **/
           input: {
             tool: string({ enum: ['hero', 'datastore', 'cloud', 'client'] }),

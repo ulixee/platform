@@ -8,7 +8,7 @@ import {
 import { PaymentSchema } from '../types/IPayment';
 import {
   DatastoreCrawlerPricing,
-  DatastoreRunnerPricing,
+  DatastoreExtractorPricing,
   DatastoreTablePricing,
 } from '../types/IDatastorePricing';
 import { DatastoreStatsSchema } from '../types/IDatastoreStats';
@@ -111,11 +111,11 @@ export const DatastoreApiSchemas = {
         .describe('A signature from the admin Identity'),
       adminFunction: z.object({
         ownerType: z
-          .enum(['table', 'crawler', 'runner', 'datastore'])
+          .enum(['table', 'crawler', 'extractor', 'datastore'])
           .describe('Where to locate the function.'),
         ownerName: z
           .string()
-          .describe('The name of the owning runner, table or crawler (if applicable).')
+          .describe('The name of the owning extractor, table or crawler (if applicable).')
           .optional(),
         functionName: z.string().describe('The name of the function'),
       }),
@@ -145,10 +145,10 @@ export const DatastoreApiSchemas = {
         'The latest version hash of this datastore',
       ),
       stats: DatastoreStatsSchema,
-      runnersByName: z.record(
-        z.string().describe('The name of the runner'),
+      extractorsByName: z.record(
+        z.string().describe('The name of the extractor'),
         FunctionMetaSchema.extend({
-          priceBreakdown: DatastoreRunnerPricing.array(),
+          priceBreakdown: DatastoreExtractorPricing.array(),
         }),
       ),
       crawlersByName: z.record(
@@ -171,7 +171,7 @@ export const DatastoreApiSchemas = {
         .string()
         .optional()
         .describe(
-          'A Typescript interface describing input and outputs of Datastore Runners, and schemas of Datastore Tables',
+          'A Typescript interface describing input and outputs of Datastore Extractors, and schemas of Datastore Tables',
         ),
       computePricePerQuery: micronoteTokenValidation.describe(
         'The current server price per query. NOTE: if a server is implementing surge pricing, this amount could vary.',

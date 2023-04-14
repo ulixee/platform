@@ -18,7 +18,7 @@ export default async function main(
   });
 
   const datastoreClient = new DatastoreApiClient(cloudAddress);
-  const pricing = await datastoreClient.getRunnerPricing(datastoreHash, 'default');
+  const pricing = await datastoreClient.getExtractorPricing(datastoreHash, 'default');
   const payment = await CreditsStore.getPayment(datastoreHash, pricing.minimumPrice);
 
   const result = await datastoreClient.query(datastoreHash, 'SELECT * FROM default(test => $1)', {

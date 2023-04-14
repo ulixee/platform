@@ -1,7 +1,7 @@
 import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import IDatastoreComponents, {
   TCrawlers,
-  TRunners,
+  TExtractors,
   TTables,
 } from '../interfaces/IDatastoreComponents';
 import DatastoreInternal, { IDatastoreBinding, IQueryInternalCallbacks } from './DatastoreInternal';
@@ -9,15 +9,15 @@ import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
 
 export default class Datastore<
   TTable extends TTables = TTables,
-  TRunner extends TRunners = TRunners,
+  TExtractor extends TExtractors = TExtractors,
   TCrawler extends TCrawlers = TCrawlers,
-  TComponents extends IDatastoreComponents<TTable, TRunner, TCrawler> = IDatastoreComponents<
+  TComponents extends IDatastoreComponents<TTable, TExtractor, TCrawler> = IDatastoreComponents<
     TTable,
-    TRunner,
+    TExtractor,
     TCrawler
   >,
 > {
-  #datastoreInternal: DatastoreInternal<TTable, TRunner, TCrawler, TComponents>;
+  #datastoreInternal: DatastoreInternal<TTable, TExtractor, TCrawler, TComponents>;
 
   public get affiliateId(): string {
     return this.#datastoreInternal.affiliateId;
@@ -27,8 +27,8 @@ export default class Datastore<
     return this.#datastoreInternal.metadata;
   }
 
-  public get runners(): TComponents['runners'] {
-    return this.#datastoreInternal.runners;
+  public get extractors(): TComponents['extractors'] {
+    return this.#datastoreInternal.extractors;
   }
 
   public get tables(): TComponents['tables'] {
@@ -45,7 +45,7 @@ export default class Datastore<
 
   constructor(
     components: TComponents,
-    datastoreInternal?: DatastoreInternal<TTable, TRunner, TCrawler, TComponents>,
+    datastoreInternal?: DatastoreInternal<TTable, TExtractor, TCrawler, TComponents>,
   ) {
     this.#datastoreInternal = datastoreInternal ?? new DatastoreInternal(components);
   }

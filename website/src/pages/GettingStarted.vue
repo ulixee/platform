@@ -151,7 +151,7 @@
         <Prism language="javascript" :useUlixeeTheme="false">
           import DatastoreForHero from '@ulixee/datastorex';
 
-          export default new Runner(async { Hero } => {
+          export default new Extractor(async { Hero } => {
           &nbsp; const hero = new Hero();
           &nbsp; await hero.goto('https://ulixee.org/getting-started/hero');
           })();

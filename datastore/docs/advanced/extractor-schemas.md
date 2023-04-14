@@ -1,18 +1,18 @@
-# RunnerSchema
+# ExtractorSchema
 
-> RunnerSchemas provide a way to add Typescript types, validation and documentation for the Input and Output of a datastore Runner.
+> ExtractorSchemas provide a way to add Typescript types, validation and documentation for the Input and Output of a datastore Extractor.
 
-RunnerSchemas are not a runtime class, but an interface of a few properties to define a Datastore Runner's Input/Output structure. When you define the input and output of a Runner, a few things happen:
+ExtractorSchemas are not a runtime class, but an interface of a few properties to define a Datastore Extractor's Input/Output structure. When you define the input and output of a Extractor, a few things happen:
 
 - Typescript types will be generated and input/output will emit compilation errors
 - Runtime validation is performed when parsing input parameters or returning results
 - Realtime validation occurs as you add output properties. If a type is wrong, your script will halt and notify you immediately so you don't waste any extra work.
 
 ```js
-import { Runner, HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import { Extractor, HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 import { string } from '@ulixee/schema';
 
-export default new Runner({
+export default new Extractor({
   async run(datastore) {
     const { input, Output, Hero } = datastore;
 
@@ -26,7 +26,7 @@ export default new Runner({
     // ERROR: body expects a string, not a Promise<string>!
     output.body = hero.document.body.textContent;
   },
-  // RunnerSchema definition
+  // ExtractorSchema definition
   schema: {
     name: 'TitleAndHtmlPageResolver',
     input: {
@@ -46,12 +46,12 @@ export default new Runner({
       },
     ],
   },
-}, HeroRunnerPlugin);
+}, HeroExtractorPlugin);
 ```
 
-When you package a `Datastore` (or a `Runner` auto-wrapped into a `Datastore`) for [deployment](../overview/deployment), a few other type utilities are added:
+When you package a `Datastore` (or a `Extractor` auto-wrapped into a `Datastore`) for [deployment](../overview/deployment), a few other type utilities are added:
 
-- Types are automatically created so that you can import Datastore Runner types.
+- Types are automatically created so that you can import Datastore Extractor types.
 
   ```bash
   npx @ulixee/datastore deploy ./index.js; // Datastore Version hash is dbx12343
@@ -60,7 +60,7 @@ When you package a `Datastore` (or a `Runner` auto-wrapped into a `Datastore`) f
   ```js
   import ITypes from '@ulixee/datastore/types';
 
-  type IIndexRunnerSchema = ITypes['dbx1tn43ect3qkwg0patvq']['default']; // default is the name if auto-packaged
+  type IIndexExtractorSchema = ITypes['dbx1tn43ect3qkwg0patvq']['default']; // default is the name if auto-packaged
   ```
 
 - Typing of parameters and results are automatically referenced when running a Datastore function.
@@ -75,7 +75,7 @@ When you package a `Datastore` (or a `Runner` auto-wrapped into a `Datastore`) f
 
 ## Documentation Generation
 
-TODO: This feature will come in a follow-on release, and will auto-generate a website with documentation for using a Datastore Runner. Details come from this RunnerSchema definition.
+TODO: This feature will come in a follow-on release, and will auto-generate a website with documentation for using a Datastore Extractor. Details come from this ExtractorSchema definition.
 
 ## Properties
 
@@ -87,18 +87,18 @@ Optional input fields definition containing and object of string Keys to [Schema
 
 Optional definition of Key/[Any Schema](./schema), [Object](./schema#object) to be returned.
 
-### inputExamples: `Record<string, Example Value or DataUtilities Runner>[]`
+### inputExamples: `Record<string, Example Value or DataUtilities Extractor>[]`
 
-Optional array of example input field combinations. Each record contains an object of [input](#input) keys mapped to a value of the provided Schema type. There are in-built Data functions to generate dynamic data that are included with the `@ulixee/schema` library. Runners importable are:
+Optional array of example input field combinations. Each record contains an object of [input](#input) keys mapped to a value of the provided Schema type. There are in-built Data functions to generate dynamic data that are included with the `@ulixee/schema` library. Extractors importable are:
 
 - `dateAdd(quantity: number, units: IUnits)`: Add to the current date. Units options are `'seconds' | 'minutes' | 'hours' | 'days' | 'months' | 'years'`.
 - `dateSubtract(quantity: number, units: IUnits)`: Subtract from the current date. Units options are `'seconds' | 'minutes' | 'hours' | 'days' | 'months' | 'years'`.
 
 ```js
-import { Runner, HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import { Extractor, HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 import { string, dateAdd } from '@ulixee/schema';
 
-export default new Runner({
+export default new Extractor({
   async run(ctx) {
     // prints 'YYYY-MM-DD' of tomorrow
     console.log(ctx.input.when);

@@ -119,7 +119,7 @@ import { storeToRefs } from 'pinia';
 import Prism from '../../components/Prism.vue';
 
 export default Vue.defineComponent({
-  name: 'Datastores',
+  name: 'DatastoreQueries',
   components: {
     CheckIcon,
     CloudArrowUpIcon,
@@ -158,10 +158,10 @@ export default Vue.defineComponent({
           name: x[0],
           type: 'Crawler',
         })),
-        ...Object.entries(datastore?.runnersByName ?? {}).map(x => ({
+        ...Object.entries(datastore?.extractorsByName ?? {}).map(x => ({
           stats: x[1].stats,
           name: x[0],
-          type: 'Runner',
+          type: 'Extractor',
         })),
       ];
       return entries.sort((a, b) => {

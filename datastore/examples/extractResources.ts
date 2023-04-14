@@ -1,6 +1,6 @@
 // NOTE: you must start your own Ulixee Cloud to run this example.
 
-import { Crawler, Datastore, Runner, HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import { Crawler, Datastore, Extractor, HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 
 const datastore = new Datastore({
   crawlers: {
@@ -11,10 +11,10 @@ const datastore = new Datastore({
       const resources = await hero.activeTab.waitForResources({ url: 'index.json' });
       for (const resource of resources) await resource.$addToDetachedResources('xhr');
       return hero;
-    }, HeroRunnerPlugin),
+    }, HeroExtractorPlugin),
   },
-  runners: {
-    extract: new Runner(async ({ HeroReplay, Output }) => {
+  extractors: {
+    extract: new Extractor(async ({ HeroReplay, Output }) => {
       const heroReplay = await HeroReplay.fromCrawler(datastore.crawlers.crawl, {
         input: { maxTimeInCache: 24 * 60 * 60 },
       });
@@ -32,7 +32,7 @@ const datastore = new Datastore({
           output.gridsomeData.push(jsonObject.data);
         }
       }
-    }, HeroRunnerPlugin),
+    }, HeroExtractorPlugin),
   },
 });
 

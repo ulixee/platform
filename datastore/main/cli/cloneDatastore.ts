@@ -28,19 +28,19 @@ export default async function cloneDatastore(
   const schemasByName: Record<string, { isTable: boolean; schemaJson: any }> = {};
   const imports = new Set<string>();
 
-  const passthroughRunners = Object.entries(meta.runnersByName).map(([x, runner]) => {
+  const passthroughExtractors = Object.entries(meta.extractorsByName).map(([x, extractor]) => {
     let schemaLine = '';
-    imports.add('PassthroughRunner');
-    if (runner.schemaJson) {
-      schemasByName[`${x}`] = { isTable: false, schemaJson: runner.schemaJson };
+    imports.add('PassthroughExtractor');
+    if (extractor.schemaJson) {
+      schemasByName[`${x}`] = { isTable: false, schemaJson: extractor.schemaJson };
       schemaLine = `\n  schema: ${x}(),\n`;
     }
     let descriptionLine = '';
-    if (runner.description) {
-      descriptionLine = `\n  description: ${JSON.stringify(runner.description)},\n`;
+    if (extractor.description) {
+      descriptionLine = `\n  description: ${JSON.stringify(extractor.description)},\n`;
     }
-    return `${x}: new PassthroughRunner({
-  remoteRunner: 'source.${x}',${schemaLine}${descriptionLine}
+    return `${x}: new PassthroughExtractor({
+  remoteExtractor: 'source.${x}',${schemaLine}${descriptionLine}
 })`;
   });
 
@@ -102,8 +102,8 @@ export default async function cloneDatastore(
     remoteDatastores: {
       source: "${url}",
     },${remoteCredits}
-    runners: {
-      ${passthroughRunners}
+    extractors: {
+      ${passthroughExtractors}
     },
     tables: {
       ${passthroughTables}

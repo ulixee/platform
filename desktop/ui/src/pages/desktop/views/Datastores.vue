@@ -72,7 +72,7 @@
     </div>
 
     <div class="mt-5">
-      <ul class="grid grid-rows-6 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <ul class="grid grid-rows-3 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <li v-if="!datastores.length" class="italic text-slate-700">Nothing found</li>
         <DatastoreCard
           v-for="datastore in datastores"
@@ -121,15 +121,8 @@ export default Vue.defineComponent({
             list.push(localEntry);
           }
         } else if (active.value === 'installed') {
-          let didAdd = false;
-          const options = Object.entries(entry.deploymentsByCloud);
-          for (const [name, datastore] of options) {
-            if (name !== 'local') {
-              list.push(datastore);
-              didAdd = true;
-            }
-          }
-          if (!didAdd) list.push(entry.deploymentsByCloud.local);
+          if (entry.isInstalled)
+            list.push(Object.values(entry.deploymentsByCloud)[0] ?? entry.summary);
         } else if (active.value === 'admin') {
           const adminClouds = Object.keys(entry.deploymentsByCloud).filter(
             x => x !== 'local' && !!getAdmin(x),

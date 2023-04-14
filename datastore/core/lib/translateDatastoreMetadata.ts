@@ -19,17 +19,17 @@ export default async function translateDatastoreMetadata(
     schemaInterface: datastore.schemaInterface,
     stats: translateStats(datastore.stats),
     crawlersByName: {},
-    runnersByName: {},
+    extractorsByName: {},
     tablesByName: {},
     computePricePerQuery: context.configuration.computePricePerQuery,
   };
 
-  for (const [name, runner] of Object.entries(datastore.runnersByName)) {
-    const { prices, schemaAsJson } = runner;
+  for (const [name, extractor] of Object.entries(datastore.extractorsByName)) {
+    const { prices, schemaAsJson } = extractor;
     const stats = datastore.statsByItemName[name];
     const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
 
-    result.runnersByName[name] = {
+    result.extractorsByName[name] = {
       description: result.description,
       stats: translateStats(stats),
       pricePerQuery,
@@ -71,7 +71,7 @@ export default async function translateDatastoreMetadata(
 
 export function translateStats(
   stats: IDatastoreStatsRecord,
-): IDatastoreApiTypes['Datastore.meta']['result']['runnersByName'][0]['stats'] {
+): IDatastoreApiTypes['Datastore.meta']['result']['extractorsByName'][0]['stats'] {
   stats ??= {} as any;
   return {
     queries: stats.runs ?? 0,

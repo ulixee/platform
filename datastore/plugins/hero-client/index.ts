@@ -2,24 +2,24 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import Hero, { HeroReplay, IHeroCreateOptions, IHeroReplayCreateOptions } from '@ulixee/hero';
 import ICoreSession, { IOutputChangeToRecord } from '@ulixee/hero/interfaces/ICoreSession';
-import RunnerInternal from '@ulixee/datastore/lib/RunnerInternal';
+import ExtractorInternal from '@ulixee/datastore/lib/ExtractorInternal';
 import { InternalPropertiesSymbol } from '@ulixee/hero/lib/internal';
-import IRunnerSchema from '@ulixee/datastore/interfaces/IRunnerSchema';
+import IExtractorSchema from '@ulixee/datastore/interfaces/IExtractorSchema';
 import IObservableChange from '@ulixee/datastore/interfaces/IObservableChange';
 import {
   Crawler,
-  IRunnerComponents,
-  IRunnerExecOptions,
-  RunnerPluginStatics,
+  IExtractorComponents,
+  IExtractorRunOptions,
+  ExtractorPluginStatics,
 } from '@ulixee/datastore';
-import IRunnerContextBase from '@ulixee/datastore/interfaces/IRunnerContext';
+import IExtractorContextBase from '@ulixee/datastore/interfaces/IExtractorContext';
 import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSchema';
 
 export * from '@ulixee/datastore';
 
 const pkg = require('./package.json');
 
-export type IHeroRunnerExecOptions<ISchema> = IRunnerExecOptions<ISchema> & IHeroCreateOptions;
+export type IHeroExtractorExecOptions<ISchema> = IExtractorRunOptions<ISchema> & IHeroCreateOptions;
 
 declare module '@ulixee/hero/lib/extendables' {
   interface Hero {
@@ -32,18 +32,18 @@ export type HeroReplayCrawler = typeof HeroReplay & {
   fromCrawler<T extends Crawler>(crawler: T, options?: T['runArgsType']): Promise<HeroReplay>;
 };
 
-export type IHeroRunnerContext<ISchema> = IRunnerContextBase<ISchema> & {
+export type IHeroExtractorContext<ISchema> = IExtractorContextBase<ISchema> & {
   Hero: typeof Hero;
   HeroReplay: HeroReplayCrawler;
 };
 
-export type IHeroRunnerComponents<ISchema> = IRunnerComponents<
+export type IHeroExtractorComponents<ISchema> = IExtractorComponents<
   ISchema,
-  IHeroRunnerContext<ISchema>
+  IHeroExtractorContext<ISchema>
 >;
 
-@RunnerPluginStatics
-export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
+@ExtractorPluginStatics
+export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
   public static execArgAddons: IHeroCreateOptions;
   public static contextAddons: {
     Hero: typeof Hero;
@@ -55,27 +55,27 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
   public hero: Hero;
   public heroReplays = new Set<HeroReplay>();
 
-  public runnerInternal: RunnerInternal<ISchema, IHeroRunnerExecOptions<ISchema>>;
-  public execOptions: IHeroRunnerExecOptions<ISchema>;
-  public components: IHeroRunnerComponents<ISchema>;
+  public extractorInternal: ExtractorInternal<ISchema, IHeroExtractorExecOptions<ISchema>>;
+  public execOptions: IHeroExtractorExecOptions<ISchema>;
+  public components: IHeroExtractorComponents<ISchema>;
 
   private pendingOutputs: IOutputChangeToRecord[] = [];
   private pendingUploadPromises = new Set<Promise<void>>();
   private coreSessionPromise: Promise<ICoreSession>;
 
-  constructor(components: IHeroRunnerComponents<ISchema>) {
+  constructor(components: IHeroExtractorComponents<ISchema>) {
     this.components = components;
     this.uploadOutputs = this.uploadOutputs.bind(this);
   }
 
   public async run(
-    runnerInternal: RunnerInternal<ISchema, IHeroRunnerExecOptions<ISchema>>,
-    context: IHeroRunnerContext<ISchema>,
-    next: () => Promise<IHeroRunnerContext<ISchema>['outputs']>,
+    extractorInternal: ExtractorInternal<ISchema, IHeroExtractorExecOptions<ISchema>>,
+    context: IHeroExtractorContext<ISchema>,
+    next: () => Promise<IHeroExtractorContext<ISchema>['outputs']>,
   ): Promise<void> {
-    this.execOptions = runnerInternal.options;
-    this.runnerInternal = runnerInternal;
-    this.runnerInternal.onOutputChanges = this.onOutputChanged.bind(this);
+    this.execOptions = extractorInternal.options;
+    this.extractorInternal = extractorInternal;
+    this.extractorInternal.onOutputChanges = this.onOutputChanged.bind(this);
 
     const needsClose: (() => Promise<void>)[] = [];
 
@@ -84,11 +84,11 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
     try {
       const HeroReplayBase = HeroReplay;
       const { input, affiliateId, payment, authentication, ...heroApplicableOptions } =
-        runnerInternal.options as IRunnerExecOptions<ISchema>;
+        extractorInternal.options as IExtractorRunOptions<ISchema>;
 
       const heroOptions: IHeroCreateOptions = {
         ...heroApplicableOptions,
-        input: this.runnerInternal.input,
+        input: this.extractorInternal.input,
       };
 
       const HeroBase = Hero;
@@ -97,7 +97,7 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
       context.Hero = class Hero extends HeroBase {
         constructor(options: IHeroCreateOptions = {}) {
           if (container.hero) {
-            throw new Error('Multiple Hero instances are not supported in a Datastore Runner.');
+            throw new Error('Multiple Hero instances are not supported in a Datastore Extractor.');
           }
           super({ ...heroOptions, ...options });
           container.hero = this;

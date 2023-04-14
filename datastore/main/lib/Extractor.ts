@@ -1,31 +1,31 @@
 import { SqlParser } from '@ulixee/sql-engine';
 import { ExtractSchemaType } from '@ulixee/schema';
 import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
-import RunnerInternal from './RunnerInternal';
-import { IRunnerPluginConstructor } from '../interfaces/IRunnerPluginStatics';
-import IRunnerContext from '../interfaces/IRunnerContext';
-import IRunnerSchema from '../interfaces/IRunnerSchema';
-import IRunnerExecOptions from '../interfaces/IRunnerExecOptions';
-import IRunnerComponents from '../interfaces/IRunnerComponents';
-import RunnerPlugins from './RunnerPlugins';
+import ExtractorInternal from './ExtractorInternal';
+import { IExtractorPluginConstructor } from '../interfaces/IExtractorPluginStatics';
+import IExtractorContext from '../interfaces/IExtractorContext';
+import IExtractorSchema from '../interfaces/IExtractorSchema';
+import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
+import IExtractorComponents from '../interfaces/IExtractorComponents';
+import ExtractorPlugins from './ExtractorPlugins';
 import DatastoreInternal, { IDatastoreBinding, IQueryInternalCallbacks } from './DatastoreInternal';
 import ResultIterable from './ResultIterable';
 import SqlQuery from './SqlQuery';
 
-export default class Runner<
-  TSchema extends IRunnerSchema = IRunnerSchema,
-  TPlugin1 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
-  TPlugin2 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
-  TPlugin3 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
-  TContext extends IRunnerContext<TSchema> = IRunnerContext<TSchema> &
+export default class Extractor<
+  TSchema extends IExtractorSchema = IExtractorSchema,
+  TPlugin1 extends IExtractorPluginConstructor<TSchema> = IExtractorPluginConstructor<TSchema>,
+  TPlugin2 extends IExtractorPluginConstructor<TSchema> = IExtractorPluginConstructor<TSchema>,
+  TPlugin3 extends IExtractorPluginConstructor<TSchema> = IExtractorPluginConstructor<TSchema>,
+  TContext extends IExtractorContext<TSchema> = IExtractorContext<TSchema> &
     TPlugin1['contextAddons'] &
     TPlugin2['contextAddons'] &
     TPlugin3['contextAddons'],
   TOutput extends ExtractSchemaType<TSchema['output']> = ExtractSchemaType<TSchema['output']>,
-  TRunArgs extends IRunnerExecOptions<TSchema> &
+  TRunArgs extends IExtractorRunOptions<TSchema> &
     TPlugin1['execArgAddons'] &
     TPlugin2['execArgAddons'] &
-    TPlugin3['execArgAddons'] = IRunnerExecOptions<TSchema> &
+    TPlugin3['execArgAddons'] = IExtractorRunOptions<TSchema> &
     TPlugin1['execArgAddons'] &
     TPlugin2['execArgAddons'] &
     TPlugin3['execArgAddons'],
@@ -41,9 +41,9 @@ export default class Runner<
 
   declare readonly runArgsType: TRunArgs;
 
-  public runnerType = 'basic';
+  public extractorType = 'basic';
   public corePlugins: { [name: string]: string } = {};
-  public pluginClasses: IRunnerPluginConstructor<TSchema>[] = [];
+  public pluginClasses: IExtractorPluginConstructor<TSchema>[] = [];
   public successCount = 0;
   public errorCount = 0;
   public pricePerQuery = 0;
@@ -65,19 +65,19 @@ export default class Runner<
   }
 
   protected get datastoreInternal(): DatastoreInternal {
-    this.#datastoreInternal ??= new DatastoreInternal({ runners: { [this.name]: this } });
+    this.#datastoreInternal ??= new DatastoreInternal({ extractors: { [this.name]: this } });
     return this.#datastoreInternal;
   }
 
-  protected readonly components: IRunnerComponents<TSchema, TContext> &
+  protected readonly components: IExtractorComponents<TSchema, TContext> &
     TPlugin1['componentAddons'] &
     TPlugin2['componentAddons'] &
     TPlugin3['componentAddons'];
 
   constructor(
     components: (
-      | IRunnerComponents<TSchema, TContext>
-      | IRunnerComponents<TSchema, TContext>['run']
+      | IExtractorComponents<TSchema, TContext>
+      | IExtractorComponents<TSchema, TContext>['run']
     ) &
       TPlugin1['componentAddons'] &
       TPlugin2['componentAddons'] &
@@ -113,36 +113,36 @@ export default class Runner<
     const resultsIterable = new ResultIterable<TOutput>();
 
     (async () => {
-      const runnerInternal = new RunnerInternal<TSchema>(options, this.components);
-      const plugins = new RunnerPlugins<TSchema, TContext>(this.components, this.pluginClasses);
+      const extractorInternal = new ExtractorInternal<TSchema>(options, this.components);
+      const plugins = new ExtractorPlugins<TSchema, TContext>(this.components, this.pluginClasses);
       let context: TContext;
       try {
         this.#isRunning = true;
-        runnerInternal.validateInput();
-        context = await plugins.initialize(runnerInternal, this.datastoreInternal, callbacks);
+        extractorInternal.validateInput();
+        context = await plugins.initialize(extractorInternal, this.datastoreInternal, callbacks);
 
-        const runnerResults = runnerInternal.run(context);
+        const extractorResults = extractorInternal.run(context);
 
         let counter = 0;
-        for await (const output of runnerResults) {
-          runnerInternal.validateOutput(output, counter++);
+        for await (const output of extractorResults) {
+          extractorInternal.validateOutput(output, counter++);
           resultsIterable.push(output as TOutput);
         }
 
-        await plugins.setResolution(runnerInternal.outputs);
+        await plugins.setResolution(extractorInternal.outputs);
         this.successCount++;
       } catch (error) {
         this.errorCount++;
-        error.stack = error.stack.split('at Runner.runInternal').shift().trim();
+        error.stack = error.stack.split('at Extractor.runInternal').shift().trim();
 
         await plugins.setResolution(null, error).catch(() => null);
         resultsIterable.reject(error);
       } finally {
-        await runnerInternal.close();
+        await extractorInternal.close();
         this.#isRunning = false;
         resultsIterable.done();
       }
-    })().catch(err => console.error('Error streaming Runner results', err));
+    })().catch(err => console.error('Error streaming Extractor results', err));
     return resultsIterable;
   }
 
@@ -167,12 +167,12 @@ export default class Runner<
 
   public attachToDatastore(
     datastoreInternal: DatastoreInternal<any, any>,
-    runnerName: string,
+    extractorName: string,
   ): void {
-    this.components.name = runnerName;
+    this.components.name = extractorName;
     if (this.#datastoreInternal && this.#datastoreInternal === datastoreInternal) return;
     if (this.#datastoreInternal) {
-      throw new Error(`${runnerName} Runner is already attached to a Datastore`);
+      throw new Error(`${extractorName} Extractor is already attached to a Datastore`);
     }
 
     this.#datastoreInternal = datastoreInternal;
@@ -183,4 +183,4 @@ export default class Runner<
   }
 }
 
-addGlobalInstance(Runner);
+addGlobalInstance(Extractor);

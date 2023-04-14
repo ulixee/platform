@@ -13,7 +13,7 @@ We need capabilities to deploy, remove and run remote Datastores.
 
 ## 2.2 - Support Payment Wall
 Long-term this will hold the code for creating, submitting, and tracking blocks on the chain. Short-term this will have a single latestBlock endpoint that returns the latest generated block. 
-This adds support for Datastores that want to add a payment. It will require Runner queries to contain a payment token, validate that payment tokens are from a trusted source before processing, and upon successful completion of the query, the Server will settle the transaction with the Sidechain.
+This adds support for Datastores that want to add a payment. It will require Extractor queries to contain a payment token, validate that payment tokens are from a trusted source before processing, and upon successful completion of the query, the Server will settle the transaction with the Sidechain.
 [x] Sidechain verification
 [x] Mainchain Module
 [x] Payments Module
@@ -40,7 +40,7 @@ We want to consider supporting one or more infrastructure scripting languages as
 - Terraform
 
 ## P2P Modules
-Rigs have network services so that Cloud Nodes can be simple Datastore runners.
+Rigs have network services so that Cloud Nodes can be simple Datastore extractors.
 P2P Storage Lookup/Index
 P2P Network Lookups
 
