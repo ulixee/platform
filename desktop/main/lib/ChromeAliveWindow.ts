@@ -12,8 +12,8 @@ import moment = require('moment');
 import View from './View';
 import StaticServer from './StaticServer';
 import ApiClient from './ApiClient';
-import BrowserView = Electron.BrowserView;
 import generateContextMenu from '../menus/generateContextMenu';
+import BrowserView = Electron.BrowserView;
 
 // make electron packaging friendly
 const extensionPath = Path.resolve(__dirname, '../ui').replace('app.asar', 'app.asar.unpacked');
@@ -275,14 +275,14 @@ export default class ChromeAliveWindow {
           }, false);
         UI.inspectorView.tabbedPane.closeTabs(['timeline', 'heap_profiler', 'lighthouse', 'security', 'resources', 'network', 'sources']);
         
-        for (let i =0; i < 100; i+=1) {
+        for (let i =0; i < 50; i+=1) {
            const tab = UI.inspectorView.tabbedPane.tabs.find(x => x.titleInternal === 'Hero Script');
            if (tab) {    
              UI.inspectorView.tabbedPane.insertBefore(tab, 0);
              UI.inspectorView.tabbedPane.selectTab(tab.id);
              break;
            }
-           await new Promise(r => setTimeout(r, 100));
+           await new Promise(requestAnimationFrame);
         }
       })()`,
         );
@@ -378,6 +378,18 @@ export default class ChromeAliveWindow {
         if (this.#mainView.webContents.getURL() !== url) {
           await this.#mainView.webContents.loadURL(url);
           await this.injectCloudAddress(this.#mainView.browserView);
+          if (mode === 'Output') {
+            await this.#mainView.webContents.openDevTools({ mode: 'bottom' });
+            const view = this.#mainView;
+            this.#eventSubscriber.on(view.webContents, 'devtools-opened', () => {
+              const devtoolsWc = view.webContents.devToolsWebContents;
+              void devtoolsWc?.executeJavaScript(
+                `(() => {
+        UI.inspectorView.tabbedPane.closeTabs(['timeline', 'heap_profiler', 'lighthouse', 'security', 'resources', 'network', 'sources', 'elements']);
+      })()`,
+              );
+            });
+          }
         }
       }
     }

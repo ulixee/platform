@@ -3,10 +3,12 @@ import { inspect } from 'util';
 
 inspect.defaultOptions.depth = 10;
 async function main() {
-  const client = new Client('ulx://localhost:1818/dbx1startedtempver0002');
+  const client = new Client('ulx://localhost:1818/dbx1wtmj0v0gsq3j4g6g3d');
   try {
-    const result = await client.query('select * from docPages(tool => $1, pageName => $2)', ['hero', 'Tab']);
-    console.log(result);
+    const results = await client.query(`SELECT * from getDocumentation(url => $1)`, [
+      'https://ulixee.org/docs/hero/basic-client/hero',
+    ]);
+    console.log(results);
   } finally {
     await client.disconnect();
   }

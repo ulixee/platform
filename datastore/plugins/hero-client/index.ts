@@ -197,11 +197,11 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
     void promise.then(() => this.pendingUploadPromises.delete(promise));
   }
 
-  private onOutputChanged(changes: IObservableChange[]): void {
+  private onOutputChanged(index: number, changes: IObservableChange[]): void {
     const changesToRecord: IOutputChangeToRecord[] = changes.map(change => ({
       type: change.type as string,
       value: change.value,
-      path: JSON.stringify(change.path),
+      path: JSON.stringify([index, ...change.path]),
       timestamp: Date.now(),
     }));
 

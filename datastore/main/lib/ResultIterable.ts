@@ -30,10 +30,14 @@ export default class ResultIterable<T, TMeta = any> implements AsyncIterable<T>,
     bindFunctions(this);
   }
 
-  public push(value: T): void {
+  public push(value: T, index?: number): void {
     if (this.resolvable.isResolved) return;
 
-    this.results.push(value);
+    if (index !== undefined && index !== this.results.length - 1) {
+      this.results[index] = value;
+    } else {
+      this.results.push(value);
+    }
     const resolution = { value, done: false };
     if (this.pullQueue.length) {
       this.pullQueue.shift().resolve(resolution);

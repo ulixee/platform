@@ -4,9 +4,9 @@
     <p class="font-light">
       Datastores have a built-in feature allowing them to be extended and combined, called
       "Cloning". Let's clone a Datastore. Ulixee Desktop includes a Datastore called Ulixee Docs
-      that can search and read the Ulixee Documentation.
+      that's a more full-featured version of what we've built in this guide.
       <br /><br />
-      Run the following command from your test project:
+      Let's clone and improve it! Run the following command from your test project:
     </p>
     <Prism language="typescript" class="my-2" style="font-size: 0.9em">
       npx @ulixee/datastore clone "{{ docsDatastoreUrl }}" ./clone
@@ -50,14 +50,14 @@
           source: 'ulx://localhost:1818/dbx1gr99wzqqnjuesg9wza',
         },
         runners: {
-          pages: new PassthroughRunner({
+          allPages: new PassthroughRunner({
             remoteRunner: 'source.pages',
-            schema: pages(),
+            schema: allPages(),
           }),
-          docPages: new PassthroughRunner({
+          getDocumentation: new PassthroughRunner({
             description: 'Get the methods, properties and events of each Category of the Ulixee documentation using Page and Tool names.',
-            remoteRunner: 'source.docPages',
-            schema: docPages(),
+            remoteRunner: 'source.documentation',
+            schema: getDocumentation(),
     /**
      * 2. Intercept the inbound requests and look up the URL for the given page.
     **/
@@ -77,7 +77,7 @@
 
       //////////// SCHEMA DEFINITIONS //////////////////
 
-      function pages() {
+      function allPages() {
         return {
           input: {
             tool: string({ enum: ['hero', 'datastore', 'cloud', 'client'] }),
@@ -89,7 +89,7 @@
         };
       }
 
-      function docPages() {
+      function getDocumentation() {
         return {
     /**
      * 3. Change the parameters for the Runner.

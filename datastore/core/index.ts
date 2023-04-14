@@ -284,6 +284,9 @@ export default class DatastoreCore {
     const filename = Path.basename(path);
     const dest = Path.join(this.options.datastoresDir, filename);
     if (!(await existsAsync(dest))) {
+      if (!(await existsAsync(this.options.datastoresDir))) {
+        await Fs.mkdir(this.options.datastoresDir, { recursive: true });
+      }
       await Fs.copyFile(path, dest);
     }
   }

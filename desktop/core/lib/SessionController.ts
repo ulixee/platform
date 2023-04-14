@@ -256,6 +256,9 @@ export default class SessionController extends TypedEventEmitter<{
       activeTab.currentTickIndex = -1;
       await activeTab.loadTick(0);
     }
+
+    const output = this.db.output.all();
+    this.onOutputUpdated({ changes: output });
   }
 
   public setResuming(newSessionId): void {

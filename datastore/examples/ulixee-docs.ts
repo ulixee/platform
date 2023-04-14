@@ -57,7 +57,7 @@ const datastore = new Datastore({
     ),
   },
   runners: {
-    pages: new Runner(
+    allPages: new Runner(
       {
         description: `Get all documentation pages for a given tool in the Ulixee suite.`,
         async run({ input, Output, HeroReplay }) {
@@ -89,7 +89,7 @@ const datastore = new Datastore({
       },
       HeroRunnerPlugin,
     ),
-    docPages: new Runner(
+    getDocumentation: new Runner(
       {
         description: `Get all documented methods, properties and the associated descriptions for a page of the Ulixee documentation.`,
         async run({ input, HeroReplay, Output }) {
@@ -119,7 +119,7 @@ const datastore = new Datastore({
               currentItem.name = section.childNodes[1]?.textContent.trim();
               currentItem.link = url.href;
             }
-            if (section.tagName === 'H4') {
+            if (section.tagName === 'H4' && currentItem) {
               const id = section.id?.trim();
               if (!id) continue;
               if (id.startsWith('type') || id.startsWith('returns'))

@@ -9,7 +9,7 @@ import DatastoreSchemaError from './DatastoreSchemaError';
 import IRunnerSchema, { ExtractSchemaType } from '../interfaces/IRunnerSchema';
 import IRunnerExecOptions from '../interfaces/IRunnerExecOptions';
 import createOutputGenerator, { IOutputClass } from './Output';
-import IObservableChange from '../interfaces/IObservableChange';
+import IObservableChange, { ObservableChangeType } from '../interfaces/IObservableChange';
 import ResultIterable from './ResultIterable';
 import IRunnerComponents from '../interfaces/IRunnerComponents';
 import IRunnerContext from '../interfaces/IRunnerContext';
@@ -31,8 +31,8 @@ export default class RunnerInternal<
   public readonly schema: TSchema;
 
   public readonly Output: IOutputClass<TOutput>;
-  public onOutputChanges: (changes: IObservableChange[]) => any;
-  public onOutputRecord: (output: TOutput) => void;
+  public onOutputChanges: (index: number, changes: IObservableChange[]) => any;
+  public onOutputRecord: (index: number, output: TOutput) => void;
 
   constructor(options: TOptions, private components: IRunnerComponents<TSchema, any>) {
     super();
@@ -41,6 +41,7 @@ export default class RunnerInternal<
     this.#input = (options.input ?? {}) as TInput;
     this.Output = createOutputGenerator({
       outputs: this.outputs,
+      onNewOutput: this.onNewOutput.bind(this),
       onOutputChanges: this.defaultOnOutputChanges.bind(this),
       onOutputEmitted: this.onOutputEmitted.bind(this),
     });
@@ -61,7 +62,7 @@ export default class RunnerInternal<
 
   public run(context: IRunnerContext<TSchema>): ResultIterable<TOutput> {
     const runnerResults = new ResultIterable<TOutput>();
-    this.onOutputRecord = output => runnerResults.push(output);
+    this.onOutputRecord = (index, output) => runnerResults.push(output, index);
 
     void Promise.resolve(this.components.run(context))
       .then(this.emitPendingOutputs)
@@ -134,20 +135,29 @@ export default class RunnerInternal<
     }
   }
 
-  protected onOutputEmitted(output: TOutput): void {
+  protected onOutputEmitted(index: number, output: TOutput): void {
     if (this.schema?.output) {
       // TODO: follow nested schema columns
       for (const key of Object.keys(output)) {
         if (!this.schema.output[key] && !this.schema.output.fields?.[key]) delete output[key];
       }
     }
-    this.onOutputRecord?.(output);
+    this.onOutputRecord?.(index, output);
   }
 
-  protected defaultOnOutputChanges(output: TOutput, changes: IObservableChange[]): void {
-    if (this.onOutputChanges) this.onOutputChanges(changes);
+  protected onNewOutput(index: number): void {
+    if (this.onOutputChanges)
+      this.onOutputChanges(index, [{ path: [], value: {}, type: ObservableChangeType.insert }]);
+  }
+
+  protected defaultOnOutputChanges(
+    index: number,
+    output: TOutput,
+    changes: IObservableChange[],
+  ): void {
+    if (this.onOutputChanges) this.onOutputChanges(index, changes);
     try {
-      this.validateOutput(output, null);
+      this.validateOutput(output, index);
     } catch (err) {
       // NOTE: filter errors to only changed schema elements. Otherwise, we get incomplete object errors
       if (err instanceof DatastoreSchemaError) {
