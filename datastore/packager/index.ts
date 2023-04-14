@@ -332,7 +332,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     host: string,
     datastoreVersionHash: string,
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
-    const datastoreApiClient = new DatastoreApiClient(host, this.logToConsole);
+    const datastoreApiClient = new DatastoreApiClient(host, { consoleLogErrors: this.logToConsole });
     try {
       return await datastoreApiClient.getMeta(datastoreVersionHash);
     } finally {

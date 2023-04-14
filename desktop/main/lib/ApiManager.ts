@@ -9,11 +9,13 @@ import { CloudNode } from '@ulixee/cloud';
 import { httpGet } from '@ulixee/commons/lib/downloadFile';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
+import QueryLog from '@ulixee/datastore/lib/QueryLog';
 import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import * as Path from 'path';
 import DatastoreCore from '@ulixee/datastore-core';
 import WebSocket = require('ws');
+import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import ApiClient from './ApiClient';
 import DesktopProfile from './DesktopProfile';
 import ArgonFile, { IArgonFile } from './ArgonFile';
@@ -36,6 +38,7 @@ export default class ApiManager<
   'new-cloud-address': ICloudConnected;
   'argon-file-opened': IArgonFile;
   deployment: IDatastoreDeployLogEntry;
+  query: IQueryLogEntry;
 }> {
   apiByCloudAddress = new Map<
     string,
@@ -55,11 +58,13 @@ export default class ApiManager<
   debuggerUrl: string;
   desktopProfile: DesktopProfile;
   deploymentWatcher: DeploymentWatcher;
+  queryLogWatcher: QueryLog;
 
   constructor() {
     super();
     this.desktopProfile = new DesktopProfile();
     this.deploymentWatcher = new DeploymentWatcher();
+    this.queryLogWatcher = new QueryLog();
   }
 
   public async start(): Promise<void> {
@@ -73,6 +78,7 @@ export default class ApiManager<
       await this.desktopProfile.createDefaultAdminIdentity();
     }
     this.deploymentWatcher.start();
+    this.queryLogWatcher.monitor(x => this.emit('query', x));
     await this.startLocalCloud();
     this.events.on(UlixeeHostsConfig.global, 'change', this.onNewLocalCloudAddress.bind(this));
     this.events.on(this.deploymentWatcher, 'new', x => this.emit('deployment', x));
@@ -85,16 +91,17 @@ export default class ApiManager<
     }
   }
 
-  public close(): void {
+  public async close(): Promise<void> {
     if (this.exited) return;
     this.exited = true;
 
     this.events.close('error');
     for (const connection of this.apiByCloudAddress.values()) {
-      void this.closeApiGroup(connection.resolvable);
+      await this.closeApiGroup(connection.resolvable);
     }
     this.apiByCloudAddress.clear();
     this.deploymentWatcher.stop();
+    await this.queryLogWatcher.close();
   }
 
   public async stopLocalCloud(): Promise<void> {

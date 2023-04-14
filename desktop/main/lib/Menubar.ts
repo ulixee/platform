@@ -167,7 +167,7 @@ export class Menubar extends EventEmitter {
     console.warn('Quitting Ulixee Menubar');
     this.#tray?.removeAllListeners();
     this.hideWindow();
-    this.#apiManager?.close();
+    await this.#apiManager?.close();
     await this.stopCloud();
     await this.#windowManager.close();
   }

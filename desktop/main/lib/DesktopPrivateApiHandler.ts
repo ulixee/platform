@@ -3,6 +3,7 @@ import { bindFunctions } from '@ulixee/commons/lib/utils';
 import CreditsStore from '@ulixee/datastore/lib/CreditsStore';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
 import { ICloudConnected, IUserBalance } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import { dialog, Menu, WebContents } from 'electron';
@@ -35,6 +36,7 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
     bindFunctions(this);
     this.events.on(apiManager, 'new-cloud-address', this.onNewCloudAddress.bind(this));
     this.events.on(apiManager, 'deployment', this.onDeployment.bind(this));
+    this.events.on(apiManager, 'query', this.onQuery.bind(this));
     this.Apis = {
       'Argon.dropFile': this.onArgonFileDrop,
       'Credit.create': this.createCredit,
@@ -50,10 +52,11 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
       'Desktop.getAdminIdentities': this.getAdminIdentities,
       'Desktop.getCloudConnections': this.getCloudConnections,
       'Desktop.connectToPrivateCloud': this.connectToPrivateCloud,
-      'User.getBalance': this.getUserBalance,
       'GettingStarted.getCompletedSteps': this.gettingStartedProgress,
       'GettingStarted.completeStep': this.completeGettingStartedStep,
       'Session.openReplay': this.openReplay,
+      'User.getQueries': this.getQueries,
+      'User.getBalance': this.getUserBalance,
     };
   }
 
@@ -90,6 +93,10 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
 
   public getInstalledDatastores(): IDesktopProfile['installedDatastores'] {
     return this.apiManager.desktopProfile.installedDatastores;
+  }
+
+  public getQueries(): IQueryLogEntry[] {
+    return Object.values(this.apiManager.queryLogWatcher.queriesById);
   }
 
   public async deployDatastore(args: {
@@ -267,6 +274,10 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
 
   public async onDeployment(event: IDatastoreDeployLogEntry): Promise<void> {
     await this.sendDesktopEvent('Datastore.onDeployed', event);
+  }
+
+  public async onQuery(event: IQueryLogEntry): Promise<void> {
+    await this.sendDesktopEvent('User.onQuery', event);
   }
 
   public async onNewCloudAddress(event: ICloudConnected): Promise<void> {

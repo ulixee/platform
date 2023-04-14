@@ -40,7 +40,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
     } catch (error) {
       runError = error;
       context.datastoreRegistry.recordQuery(
-        request.streamId,
+        request.id,
         `stream(${request.name})`,
         startTime,
         request.input,
@@ -52,6 +52,8 @@ export default new DatastoreApiHandler('Datastore.stream', {
           bytes,
           isCredits,
         },
+        request.payment?.micronote?.micronoteId,
+        request.payment?.credits?.id,
         request.affiliateId,
         runError,
       );
@@ -88,13 +90,15 @@ export default new DatastoreApiHandler('Datastore.stream', {
     };
     context.datastoreRegistry.recordItemStats(request.versionHash, request.name, stats, runError);
     context.datastoreRegistry.recordQuery(
-      request.streamId,
+      request.id,
       `stream(${request.name})`,
       startTime,
       request.input,
       outputs,
       request.versionHash,
       stats,
+      request.payment?.micronote?.micronoteId,
+      request.payment?.credits?.id,
       request.affiliateId,
       runError,
       heroSessionIds,
@@ -172,7 +176,7 @@ async function extractFunctionOutputs(
       });
       for await (const result of results) {
         context.connectionToClient.sendEvent({
-          listenerId: request.streamId,
+          listenerId: request.id,
           data: result,
           eventType: 'Stream.output',
         });
@@ -204,7 +208,7 @@ function extractTableOutputs(
 
   for (const result of results) {
     context.connectionToClient.sendEvent({
-      listenerId: request.streamId,
+      listenerId: request.id,
       data: result,
       eventType: 'Stream.output',
     });

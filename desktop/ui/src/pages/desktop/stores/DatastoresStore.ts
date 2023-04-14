@@ -3,6 +3,7 @@ import { computed, Ref, ref } from 'vue';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import type IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import moment from 'moment';
+import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import { Client } from '@/api/Client';
 import ICloudConnection from '@/api/ICloudConnection';
 import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
@@ -29,6 +30,9 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
 
   const installedDatastoreVersions = new Set<string>();
   const datastoreAdminIdentities = ref<{ [versionHash: string]: string }>({});
+  const userQueriesByDatastore = ref<{
+    [versionHash: string]: { [queryId: string]: IQueryLogEntry };
+  }>({});
 
   const datastoresByVersion = ref<IDatastoresByVersion>({});
 
@@ -49,6 +53,11 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     const { eventType, data } = (evt as CustomEvent).detail;
     if (eventType === 'Datastore.onDeployed') {
       onDeployed(data);
+    }
+    if (eventType === 'User.onQuery') {
+      const query = data as IQueryLogEntry;
+      userQueriesByDatastore.value[query.versionHash] ??= {};
+      userQueriesByDatastore.value[query.versionHash][query.id] = query;
     }
   });
 
@@ -255,6 +264,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
       isInstalled: false,
       adminIdentity: null,
     };
+    userQueriesByDatastore.value[versionHash] ??= {};
     datastoresByVersion.value[versionHash].adminIdentity ??= getDatastoreAdminIdentity(
       versionHash,
       cloudName,
@@ -264,7 +274,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
       installedDatastoreVersions.has(versionHash);
   }
 
-  async function loadInstalled() {
+  async function load() {
     const datastores = await window.desktopApi.send('Datastore.getInstalled', null);
     for (const { cloudHost, datastoreVersionHash } of datastores) {
       installedDatastoreVersions.add(datastoreVersionHash);
@@ -275,12 +285,19 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
 
     const adminIdentities = await window.desktopApi.send('Desktop.getAdminIdentities', null);
     datastoreAdminIdentities.value = adminIdentities.datastoresByVersion;
+
+    const userQueries = await window.desktopApi.send('User.getQueries', null);
+    for (const query of userQueries) {
+      userQueriesByDatastore.value[query.versionHash] ??= {};
+      userQueriesByDatastore.value[query.versionHash][query.id] = query;
+    }
   }
 
-  void loadInstalled();
+  void load();
 
   return {
     datastoresByVersion,
+    userQueriesByDatastore,
     getAdminDetails,
     getByUrl,
     createCredit,
@@ -290,7 +307,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     installDatastore,
     installDatastoreByUrl,
     onClient,
-    loadInstalled,
+    load,
     refreshMetadata,
     findAdminIdentity,
     openDocs,

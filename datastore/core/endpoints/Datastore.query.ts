@@ -121,6 +121,8 @@ export default new DatastoreApiHandler('Datastore.query', {
         ...metadata,
         isCredits: !!request.payment?.credits,
       },
+      request.payment?.micronote?.micronoteId,
+      request.payment?.credits?.id,
       request.affiliateId,
       runError,
       heroSessionIds,

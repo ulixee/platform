@@ -97,7 +97,6 @@ export default class DatastoreVm {
     });
 
     if (!this.doNotCacheList.has(path)) {
-      console.log('caching compiled scripte', path);
       this.compiledScriptsByPath.set(path, script);
     }
     return script;

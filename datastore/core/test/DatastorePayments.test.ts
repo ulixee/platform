@@ -82,7 +82,7 @@ beforeAll(async () => {
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
   await cloudNode.listen();
-  client = new DatastoreApiClient(await cloudNode.address, true);
+  client = new DatastoreApiClient(await cloudNode.address, { consoleLogErrors: true });
 });
 
 beforeEach(() => {

@@ -188,6 +188,8 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     outputs: any[],
     datastoreVersionHash: string,
     stats: { bytes: number; microgons: number; milliseconds: number; isCredits: boolean },
+    micronoteId: string,
+    creditId: string,
     affiliateId: string,
     error?: Error,
     heroSessionIds?: string[],
@@ -210,10 +212,11 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
       input,
       outputs,
       error,
+      micronoteId,
+      creditId,
       stats.microgons,
       stats.bytes,
       stats.milliseconds,
-      stats.isCredits,
       heroSessionIds,
     );
   }

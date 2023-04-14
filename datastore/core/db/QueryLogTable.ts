@@ -1,5 +1,6 @@
 import { Database as SqliteDatabase } from 'better-sqlite3';
 import SqliteTable from '@ulixee/commons/lib/SqliteTable';
+import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry'
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 
 export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
@@ -16,7 +17,8 @@ export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
         ['outputs', 'TEXT'],
         ['affiliateId', 'TEXT'],
         ['error', 'TEXT'],
-        ['usedCredits', 'INTEGER'],
+        ['micronoteId', 'TEXT'],
+        ['creditId', 'TEXT'],
         ['bytes', 'INTEGER'],
         ['milliseconds', 'INTEGER'],
         ['microgons', 'INTEGER'],
@@ -35,10 +37,11 @@ export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
     input: any,
     outputs: any[],
     error: Error,
+    micronoteId: string,
+    creditId: string,
     microgons: number,
     bytes: number,
     milliseconds: number,
-    usedCredits: boolean,
     heroSessionIds: string[],
   ): void {
     microgons ??= 0;
@@ -52,7 +55,8 @@ export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
       outputs ? TypeSerializer.stringify(outputs) : undefined,
       affiliateId,
       error ? TypeSerializer.stringify(error) : undefined,
-      usedCredits ? 1 : 0,
+      micronoteId,
+      creditId,
       bytes,
       milliseconds,
       microgons,
@@ -61,18 +65,6 @@ export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
   }
 }
 
-export interface IQueryLogRecord {
-  id: string;
-  versionHash: string;
-  date: Date;
-  query: string;
-  input: string;
-  affiliateId: string;
-  outputs: string;
-  error: string;
-  milliseconds: number;
-  bytes: number;
-  microgons: number;
-  usedCredits: boolean;
+export interface IQueryLogRecord extends IQueryLogEntry {
   heroSessionIds: string;
 }

@@ -180,7 +180,7 @@ export const DatastoreApiSchemas = {
   },
   'Datastore.stream': {
     args: z.object({
-      streamId: z.string().describe('The streamId to push results for this query.'),
+      id: z.string().describe('The id of this query.'),
       name: z.string().describe('The name of the table or function'),
       input: z.any().optional().describe('Optional input or where parameters'),
       versionHash: datastoreVersionHashValidation.describe(
