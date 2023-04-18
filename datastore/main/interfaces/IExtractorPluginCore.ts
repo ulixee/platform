@@ -5,7 +5,14 @@ export default interface IExtractorPluginCore<ISchema extends IExtractorSchema =
   name: string;
   version: string;
   nodeVmRequireWhitelist?: string[];
+  nodeVmUseSandbox?(moduleName: string): boolean;
   onCoreStart?(): void | Promise<void>;
-  beforeRunExtractor?(options: IExtractorRunOptions<ISchema>): void | Promise<void>;
+  beforeRunExtractor?(
+    options: IExtractorRunOptions<ISchema>,
+    runtime?: {
+      scriptEntrypoint: string;
+      functionName: string;
+    },
+  ): void | Promise<void>;
   onCoreClose?(): void | Promise<void>;
 }

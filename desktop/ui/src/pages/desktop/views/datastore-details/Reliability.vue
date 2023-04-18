@@ -7,12 +7,12 @@
           scope="col"
           class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-white sm:pl-6"
         >
-          <a href="#" class="group inline-flex" @click.prevent="clickedHeader('default')">
+          <a href="#" class="group inline-flex" @click.prevent="clickedHeader('type')">
             Type
             <span
               class="ml-2 flex-none rounded group-hover:visible group-hover:outline-white/50 group-focus:visible"
               :class="[
-                  sortColumn !== 'default' ? 'invisible text-white group-hover:outline' : '',
+                  sortColumn !== 'type' ? 'invisible text-white group-hover:outline' : '',
                 ]"
             >
                 <ChevronUpIcon class="h-5 w-5" aria-hidden="true" v-if='isAscending' />
@@ -160,8 +160,8 @@ export default Vue.defineComponent({
 
     datastoresStore.refreshMetadata(versionHash);
 
-    const sortColumn = Vue.ref<'default' | 'queries' | 'price' | 'size' | 'millis' | 'name'>(
-      'default',
+    const sortColumn = Vue.ref<'type' | 'queries' | 'price' | 'size' | 'millis' | 'name'>(
+      'name',
     );
     const isAscending = Vue.ref<boolean>(false);
     const items = Vue.computed(() => {
@@ -188,9 +188,9 @@ export default Vue.defineComponent({
           type: 'Extractor',
         })),
       ];
-      let multiplier = isAscending.value ? 1 : -1;
+      let multiplier = isAscending.value ? -1 : 1;
       return entries.sort((a, b) => {
-        if (sortColumn.value === 'default') {
+        if (sortColumn.value === 'type') {
           if (a.type !== b.type) {
             return multiplier * a.type.localeCompare(b.type);
           }
@@ -217,7 +217,7 @@ export default Vue.defineComponent({
     };
   },
   methods: {
-    clickedHeader(name: 'default' | 'queries' | 'price' | 'size' | 'millis' | 'name'): void {
+    clickedHeader(name: 'type' | 'queries' | 'price' | 'size' | 'millis' | 'name'): void {
       if (this.sortColumn === name) {
         this.isAscending = !this.isAscending;
       } else {

@@ -9,11 +9,11 @@ export default new DatastoreApiHandler('Datastore.query', {
     request.boundValues ??= [];
 
     const startTime = Date.now();
-    const datastoreVersion = await context.datastoreRegistry.getByVersionHash(request.versionHash);
+    const manifestWithStats = await context.datastoreRegistry.getByVersionHash(request.versionHash);
 
     const storage = context.datastoreRegistry.getStorage(request.versionHash);
 
-    const datastore = await DatastoreVm.open(datastoreVersion.path, storage, datastoreVersion);
+    const datastore = await DatastoreVm.open(manifestWithStats.path, storage, manifestWithStats);
 
     await validateAuthentication(datastore, request.payment, request.authentication);
 
@@ -32,19 +32,20 @@ export default new DatastoreApiHandler('Datastore.query', {
           }
 
           await paymentProcessor.createHold(
-            datastoreVersion,
+            manifestWithStats,
             functionCallsById,
             request.pricingPreferences,
           );
         },
         async onFunction(id, name, options, run) {
           const runStart = Date.now();
-          validateFunctionCoreVersions(datastoreVersion, name, context);
+          validateFunctionCoreVersions(manifestWithStats, name, context);
 
           Object.assign(options, {
             payment: request.payment,
             authentication: request.authentication,
             affiliateId: request.affiliateId,
+            versionHash: request.versionHash,
           });
           options.trackMetadata = (metaName, metaValue) => {
             if (metaName === 'heroSessionId') {
@@ -52,7 +53,11 @@ export default new DatastoreApiHandler('Datastore.query', {
             }
           };
           for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
-            if (plugin.beforeRunExtractor) await plugin.beforeRunExtractor(options);
+            if (plugin.beforeRunExtractor)
+              await plugin.beforeRunExtractor(options, {
+                scriptEntrypoint: manifestWithStats.path,
+                functionName: name,
+              });
           }
 
           let runError: Error;
@@ -88,6 +93,7 @@ export default new DatastoreApiHandler('Datastore.query', {
           Object.assign(options, {
             payment: request.payment,
             authentication: request.authentication,
+            versionHash: request.versionHash,
           });
           return await context.workTracker.trackRun(run(options));
         },
@@ -133,7 +139,7 @@ export default new DatastoreApiHandler('Datastore.query', {
 
     return {
       outputs,
-      latestVersionHash: datastoreVersion.latestVersionHash,
+      latestVersionHash: manifestWithStats.latestVersionHash,
       metadata,
     };
   },

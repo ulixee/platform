@@ -175,6 +175,27 @@ export default Vue.defineComponent({
         prices.push(price.perQuery);
       }
     }
+    for (const [key, arg] of Object.entries(defaultExample.args)) {
+      if (typeof arg === 'object' && 'func' in arg) {
+        let result: Moment.Moment;
+        if (arg.func === 'add') {
+          result = Moment().add(arg.quantity, arg.units);
+        } else if (arg.func === 'subtract') {
+          result = Moment().subtract(arg.quantity, arg.units);
+        } else {
+          continue;
+        }
+        const entity =
+          defaultExample.type === 'crawler'
+            ? crawlersByName[defaultExample.name]
+            : extractorsByName[defaultExample.name];
+        const field = entity.schema?.input[key];
+        if (!field) continue;
+        if (field?.format === 'date') defaultExample.args[key] = result.format('YYYY-MM-DD');
+        else if (field?.format === 'time') defaultExample.args[key] = result.format('HH:mm');
+        else defaultExample.args[key] = result.toDate() as any;
+      }
+    }
 
     const { ipAddress, port } = await serverDetailsPromise;
     const avgPricePerQuery =

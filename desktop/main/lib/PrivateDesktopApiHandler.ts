@@ -1,5 +1,3 @@
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import { bindFunctions } from '@ulixee/commons/lib/utils';
 import CreditsStore from '@ulixee/datastore/lib/CreditsStore';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
@@ -7,57 +5,81 @@ import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
 import { ICloudConnected, IUserBalance } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import { dialog, Menu, WebContents } from 'electron';
+import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
 import * as Path from 'path';
 import { getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
 import * as Os from 'os';
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
-import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
+import { IDatastoreResultItem, IDesktopAppPrivateApis, TCredit } from '@ulixee/desktop-interfaces/apis';
+import IDesktopAppPrivateEvents from '@ulixee/desktop-interfaces/events/IDesktopAppPrivateEvents';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
-import { IDesktopProfile } from './DesktopProfile';
+import { nanoid } from 'nanoid';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
+import { IncomingMessage } from 'http';
+import { ConnectionToClient, WsTransportToClient } from '@ulixee/net';
+import WebSocket = require('ws');
 import ArgonFile from './ArgonFile';
 import ApiManager from './ApiManager';
 
-type IDatastoreResultItem = IDatastoreApiTypes['Datastores.list']['result']['datastores'][0];
-
 const argIconPath = Path.resolve(__dirname, '..', 'assets', 'arg.png');
 
-export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
-  'open-chromealive': { cloudAddress: string; heroSessionId: string; dbPath: string };
+export interface IOpenReplay {
+  cloudAddress: string;
+  heroSessionId: string;
+  dbPath: string;
+}
+
+export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
+  'open-chromealive': IOpenReplay;
 }> {
-  public Apis: { [apiName: string]: Function };
+  public Apis: IDesktopAppPrivateApis = {
+    'Argon.dropFile': this.onArgonFileDrop.bind(this),
+    'Credit.create': this.createCredit.bind(this),
+    'Credit.save': this.saveCredit.bind(this),
+    'Credit.showContextMenu': this.showContextMenu.bind(this),
+    'Cloud.findAdminIdentity': this.findCloudAdminIdentity.bind(this),
+    'Datastore.setAdminIdentity': this.setDatastoreAdminIdentity.bind(this),
+    'Datastore.findAdminIdentity': this.findAdminIdentity.bind(this),
+    'Datastore.getInstalled': this.getInstalledDatastores.bind(this),
+    'Datastore.query': this.queryDatastore.bind(this),
+    'Datastore.deploy': this.deployDatastore.bind(this),
+    'Datastore.install': this.installDatastore.bind(this),
+    'Desktop.getAdminIdentities': this.getAdminIdentities.bind(this),
+    'Desktop.getCloudConnections': this.getCloudConnections.bind(this),
+    'Desktop.connectToPrivateCloud': this.connectToPrivateCloud.bind(this),
+    'GettingStarted.getCompletedSteps': this.gettingStartedProgress.bind(this),
+    'GettingStarted.completeStep': this.completeGettingStartedStep.bind(this),
+    'Session.openReplay': this.openReplay.bind(this),
+    'User.getQueries': this.getQueries.bind(this),
+    'User.getBalance': this.getUserBalance.bind(this),
+  } as const;
+
+  public Events: IDesktopAppPrivateEvents;
+
+  private connectionToClient: IConnectionToClient<this['Apis'], this['Events']>;
   private events = new EventSubscriber();
 
-  constructor(
-    private readonly apiManager: ApiManager,
-    private sendDesktopEvent: (eventType: string, args: any) => Promise<any>,
-  ) {
+  constructor(private readonly apiManager: ApiManager) {
     super();
-    bindFunctions(this);
+
     this.events.on(apiManager, 'new-cloud-address', this.onNewCloudAddress.bind(this));
     this.events.on(apiManager, 'deployment', this.onDeployment.bind(this));
     this.events.on(apiManager, 'query', this.onQuery.bind(this));
-    this.Apis = {
-      'Argon.dropFile': this.onArgonFileDrop,
-      'Credit.create': this.createCredit,
-      'Credit.save': this.saveCredit,
-      'Credit.dragAsFile': this.dragCreditAsFile,
-      'Credit.showContextMenu': this.showContextMenu,
-      'Cloud.findAdminIdentity': this.findCloudAdminIdentity,
-      'Datastore.setAdminIdentity': this.setDatastoreAdminIdentity,
-      'Datastore.findAdminIdentity': this.findAdminIdentity,
-      'Datastore.getInstalled': this.getInstalledDatastores,
-      'Datastore.deploy': this.deployDatastore,
-      'Datastore.install': this.installDatastore,
-      'Desktop.getAdminIdentities': this.getAdminIdentities,
-      'Desktop.getCloudConnections': this.getCloudConnections,
-      'Desktop.connectToPrivateCloud': this.connectToPrivateCloud,
-      'GettingStarted.getCompletedSteps': this.gettingStartedProgress,
-      'GettingStarted.completeStep': this.completeGettingStartedStep,
-      'Session.openReplay': this.openReplay,
-      'User.getQueries': this.getQueries,
-      'User.getBalance': this.getUserBalance,
-    };
+  }
+
+  public onConnection(ws: WebSocket, req: IncomingMessage): void {
+    if (this.connectionToClient) void this.connectionToClient.disconnect();
+    const transport = new WsTransportToClient(ws, req);
+    this.connectionToClient = new ConnectionToClient(transport, this.Apis);
+  }
+
+  public async close(): Promise<void> {
+    try {
+      await this.connectionToClient?.disconnect();
+    } catch {}
+    this.events.close();
   }
 
   public async getUserBalance(): Promise<IUserBalance> {
@@ -70,20 +92,20 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
     return {
       credits,
       centagonsBalance,
-      address: this.apiManager.desktopProfile.address.bech32,
+      address: this.apiManager.localUserProfile.defaultAddress.bech32,
       walletBalance,
     };
   }
 
   public async completeGettingStartedStep(step: string): Promise<void> {
-    if (!this.apiManager.desktopProfile.gettingStartedCompletedSteps.includes(step)) {
-      this.apiManager.desktopProfile.gettingStartedCompletedSteps.push(step);
-      await this.apiManager.desktopProfile.save();
+    if (!this.apiManager.localUserProfile.gettingStartedCompletedSteps.includes(step)) {
+      this.apiManager.localUserProfile.gettingStartedCompletedSteps.push(step);
+      await this.apiManager.localUserProfile.save();
     }
   }
 
   public gettingStartedProgress(): string[] {
-    return this.apiManager.desktopProfile.gettingStartedCompletedSteps ?? [];
+    return this.apiManager.localUserProfile.gettingStartedCompletedSteps ?? [];
   }
 
   public async onArgonFileDrop(path: string): Promise<void> {
@@ -91,12 +113,31 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
     await this.onArgonFileOpened(argonFile);
   }
 
-  public getInstalledDatastores(): IDesktopProfile['installedDatastores'] {
-    return this.apiManager.desktopProfile.installedDatastores;
+  public getInstalledDatastores(): ILocalUserProfile['installedDatastores'] {
+    return this.apiManager.localUserProfile.installedDatastores;
   }
 
   public getQueries(): IQueryLogEntry[] {
     return Object.values(this.apiManager.queryLogWatcher.queriesById);
+  }
+
+  public queryDatastore(args: {
+    versionHash: string;
+    cloudHost: string;
+    query: string;
+  }): Promise<IQueryLogEntry> {
+    const { versionHash, query, cloudHost } = args;
+    const api = this.apiManager.getDatastoreClient(cloudHost);
+    const id = nanoid(12);
+    const date = new Date();
+    void api.query(versionHash, query, { queryId: id });
+    return Promise.resolve({
+      id,
+      date,
+      query,
+      input: [],
+      versionHash,
+    } as any);
   }
 
   public async deployDatastore(args: {
@@ -105,7 +146,7 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
     cloudName: string;
   }): Promise<void> {
     const { versionHash, cloudName, cloudHost } = args;
-    const adminIdentity = this.apiManager.desktopProfile.getAdminIdentity(versionHash, cloudName);
+    const adminIdentity = this.apiManager.localUserProfile.getAdminIdentity(versionHash, cloudName);
 
     if (!cloudHost) throw new Error('No cloud host available.');
     // TODO: download from api client. If it's a local file, do we build for them?
@@ -119,20 +160,20 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
     datastoreVersionHash: string;
   }): Promise<void> {
     const { cloudHost, datastoreVersionHash } = arg;
-    await this.apiManager.desktopProfile.installDatastore(cloudHost, datastoreVersionHash);
+    await this.apiManager.localUserProfile.installDatastore(cloudHost, datastoreVersionHash);
   }
 
   public async setDatastoreAdminIdentity(
     datastoreVersionHash: string,
     adminIdentityPath: string,
   ): Promise<string> {
-    return await this.apiManager.desktopProfile.setDatastoreAdminIdentity(
+    return await this.apiManager.localUserProfile.setDatastoreAdminIdentity(
       datastoreVersionHash,
       adminIdentityPath,
     );
   }
 
-  public async saveCredit(arg: { credit: IArgonFile['credit'] }): Promise<void> {
+  public async saveCredit(arg: { credit: TCredit }): Promise<void> {
     await CreditsStore.storeFromUrl(arg.credit.datastoreUrl, arg.credit.microgons);
   }
 
@@ -140,10 +181,10 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
     datastore: Pick<IDatastoreResultItem, 'versionHash' | 'name' | 'domain' | 'scriptEntrypoint'>;
     cloud: string;
     argons: number;
-  }): Promise<{ credit: IArgonFile['credit']; filename: string }> {
+  }): Promise<{ credit: TCredit; filename: string }> {
     const { argons, datastore } = args;
     const address = new URL(this.apiManager.getCloudAddressByName(args.cloud));
-    const adminIdentity = this.apiManager.desktopProfile.getAdminIdentity(
+    const adminIdentity = this.apiManager.localUserProfile.getAdminIdentity(
       datastore.versionHash,
       args.cloud,
     );
@@ -189,7 +230,7 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
   }
 
   public async showContextMenu(args: {
-    credit: IArgonFile['credit'];
+    credit: TCredit;
     filename: string;
     position: { x: number; y: number };
   }): Promise<void> {
@@ -221,7 +262,7 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
   }
 
   public async onArgonFileOpened(file: IArgonFile): Promise<void> {
-    await this.sendDesktopEvent('Argon.opened', file);
+    await this.connectionToClient?.sendEvent({ eventType: 'Argon.opened', data: file });
   }
 
   public async findAdminIdentity(datastoreVersionHash: string): Promise<string> {
@@ -247,7 +288,7 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
     });
     if (result.filePaths.length) {
       const [filename] = result.filePaths;
-      return await this.apiManager.desktopProfile.setCloudAdminIdentity(cloudName, filename);
+      return await this.apiManager.localUserProfile.setCloudAdminIdentity(cloudName, filename);
     }
     return null;
   }
@@ -259,7 +300,7 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
     cloudsByName: { [name: string]: string };
   } {
     const datastoresByVersion: Record<string, string> = {};
-    for (const { datastoreVersionHash, adminIdentity } of this.apiManager.desktopProfile
+    for (const { datastoreVersionHash, adminIdentity } of this.apiManager.localUserProfile
       .datastoreAdminIdentities) {
       datastoresByVersion[datastoreVersionHash] = adminIdentity;
     }
@@ -273,18 +314,18 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
   }
 
   public async onDeployment(event: IDatastoreDeployLogEntry): Promise<void> {
-    await this.sendDesktopEvent('Datastore.onDeployed', event);
+    await this.connectionToClient?.sendEvent({ eventType: 'Datastore.onDeployed', data: event });
   }
 
   public async onQuery(event: IQueryLogEntry): Promise<void> {
-    await this.sendDesktopEvent('User.onQuery', event);
+    await this.connectionToClient?.sendEvent({ eventType: 'User.onQuery', data: event });
   }
 
   public async onNewCloudAddress(event: ICloudConnected): Promise<void> {
-    await this.sendDesktopEvent('Cloud.onConnected', event);
+    await this.connectionToClient?.sendEvent({ eventType: 'Cloud.onConnected', data: event });
   }
 
-  public openReplay(arg: this['EventTypes']['open-chromealive']): void {
+  public openReplay(arg: IOpenReplay): void {
     this.emit('open-chromealive', arg);
   }
 
@@ -322,14 +363,11 @@ export default class DesktopPrivateApiHandler extends TypedEventEmitter<{
       name,
       adminIdentity,
     });
-    const profile = this.apiManager.desktopProfile;
+
+    const profile = this.apiManager.localUserProfile;
     if (!profile.clouds.find(x => x.address === address)) {
       profile.clouds.push({ address, name, adminIdentityPath: arg.adminIdentityPath });
       await profile.save();
     }
-  }
-
-  public async handleApi(api: string, args: any, context: WebContents): Promise<any> {
-    return await this.Apis[api](args, context);
   }
 }

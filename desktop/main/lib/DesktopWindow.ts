@@ -6,14 +6,11 @@ import StaticServer from './StaticServer';
 import ApiManager from './ApiManager';
 import generateContextMenu from '../menus/generateContextMenu';
 import WindowStateKeeper from './util/windowStateKeeper';
-import DesktopPrivateApiHandler from './DesktopPrivateApiHandler';
 
 export default class DesktopWindow extends TypedEventEmitter<{
   close: void;
   focus: void;
 }> {
-  public readonly privateApiHandler: DesktopPrivateApiHandler;
-
   public get isOpen(): boolean {
     return !!this.#window;
   }
@@ -31,10 +28,6 @@ export default class DesktopWindow extends TypedEventEmitter<{
   constructor(staticServer: StaticServer, private apiManager: ApiManager) {
     super();
     this.#webpageUrl = staticServer.getPath('desktop.html');
-    this.privateApiHandler = new DesktopPrivateApiHandler(
-      apiManager,
-      this.sendDesktopEvent.bind(this),
-    );
     void this.open(false);
   }
 
@@ -62,12 +55,16 @@ export default class DesktopWindow extends TypedEventEmitter<{
 
     this.#windowStateKeeper.track(this.#window);
     this.#window.setTitle('Ulixee Desktop');
+
     this.#window.webContents.ipc.handle('desktop:api', async (e, { api, args }) => {
-      return await this.privateApiHandler.handleApi(api, args, e.sender);
+      if (api === 'Credit.dragAsFile') {
+        return await this.apiManager.privateDesktopApiHandler.dragCreditAsFile(args, e.sender);
+      }
     });
-    this.#window.webContents.ipc.on('desktop:api', async (e, { api, args }) => {
-      await this.privateApiHandler.handleApi(api, args, e.sender);
+    this.#window.webContents.ipc.on('getPrivateApiHost', e => {
+      e.returnValue = this.apiManager.privateDesktopWsServerAddress;
     });
+
     this.#events.on(this.#window.webContents, 'context-menu', (e, params) => {
       generateContextMenu(params, this.#window.webContents).popup();
     });
@@ -75,6 +72,7 @@ export default class DesktopWindow extends TypedEventEmitter<{
     this.#events.once(this.#window, 'close', this.close.bind(this));
 
     await this.#window.webContents.loadURL(this.#webpageUrl);
+
     this.#window.focus();
   }
 

@@ -2,7 +2,6 @@ import { createApp } from 'vue';
 import * as VueRouter from 'vue-router';
 import { createPinia } from 'pinia';
 import InlineSvg from 'vue-inline-svg';
-import App from './index.vue';
 import './index.css';
 import Datastores from '@/pages/desktop/views/Datastores.vue';
 import DatastoreDetails from '@/pages/desktop/views/datastore-details/DatastoreDetails.vue';
@@ -27,9 +26,24 @@ import GettingStartedCredit from '@/pages/desktop/views/getting-started/Credit.v
 import GettingStartedPayment from '@/pages/desktop/views/getting-started/Payment.vue';
 import GettingStartedClone from '@/pages/desktop/views/getting-started/Clone.vue';
 import GettingStartedQuery from '@/pages/desktop/views/getting-started/Query.vue';
+import { Client } from '@/api/Client';
+import App from './index.vue';
+
+declare global {
+  interface Window {
+    desktopPrivateApiHost: string;
+    desktopApi: Client<'internal'>;
+    appBridge: {
+      send(api: string, args: any): Promise<any>;
+      getPrivateApiHost(): string;
+    };
+  }
+}
 
 const pinia = createPinia();
 const app = createApp(App);
+window.desktopApi = new Client(window.appBridge.getPrivateApiHost());
+window.desktopApi.connect().catch(console.error);
 
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
@@ -114,12 +128,3 @@ app.use(pinia);
 app.use(router);
 app.component('InlineSvg', InlineSvg);
 app.mount('#app');
-
-declare global {
-  interface Window {
-    desktopApi: {
-      send<T = any>(api: string, args: any): Promise<T>;
-      emit(api: string, args: any): void;
-    };
-  }
-}

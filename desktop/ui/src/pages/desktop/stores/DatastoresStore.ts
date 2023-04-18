@@ -96,6 +96,20 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     return cloudAddress;
   }
 
+  async function runQuery(versionHash: string, query: string): Promise<void> {
+    const datastore = datastoresByVersion.value[versionHash];
+    const cloudName = Object.keys(datastore.deploymentsByCloud)[0];
+    const cloudHost = cloudsStore.getCloudHost(cloudName);
+
+    const queryStart = await window.desktopApi.send('Datastore.query', {
+      versionHash,
+      cloudHost,
+      query,
+    });
+    userQueriesByDatastore.value[versionHash] ??= {};
+    userQueriesByDatastore.value[versionHash][queryStart.id] = queryStart;
+  }
+
   function openDocs(versionHash: string, cloudName: string) {
     const cloudHost = cloudsStore.getCloudHost(cloudName);
     const docsUrl = new URL(`/${versionHash}/`, cloudHost);
@@ -112,7 +126,6 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     const left = window.screenLeft + 25;
     const top = window.screenTop + 25;
     const features = `top=${top},left=${left},width=${window.outerWidth},height=${window.outerHeight}`;
-    console.log(docsUrl.href);
     window.open(docsUrl.href, `Docs${versionHash}`, features);
   }
 
@@ -275,7 +288,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
   }
 
   async function load() {
-    const datastores = await window.desktopApi.send('Datastore.getInstalled', null);
+    const datastores = await window.desktopApi.send('Datastore.getInstalled');
     for (const { cloudHost, datastoreVersionHash } of datastores) {
       installedDatastoreVersions.add(datastoreVersionHash);
       if (!cloudsStore.connectedToHost(cloudHost) && !cloudHost.includes('localhost:1818')) {
@@ -283,10 +296,10 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
       }
     }
 
-    const adminIdentities = await window.desktopApi.send('Desktop.getAdminIdentities', null);
+    const adminIdentities = await window.desktopApi.send('Desktop.getAdminIdentities');
     datastoreAdminIdentities.value = adminIdentities.datastoresByVersion;
 
-    const userQueries = await window.desktopApi.send('User.getQueries', null);
+    const userQueries = await window.desktopApi.send('User.getQueries');
     for (const query of userQueries) {
       userQueriesByDatastore.value[query.versionHash] ??= {};
       userQueriesByDatastore.value[query.versionHash][query.id] = query;
@@ -303,6 +316,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     createCredit,
     deploy,
     getCloudAddress,
+    runQuery,
     getWithHash,
     installDatastore,
     installDatastoreByUrl,

@@ -16,7 +16,7 @@ export type IExtractorPluginConstructor<
     IExtractorRunOptions<ISchema> & IExtraAddons,
     IExtractorContext<ISchema> & TContextAddons
   >;
-  readonly execArgAddons?: IExtraAddons;
+  readonly runArgAddons?: IExtraAddons;
   readonly componentAddons?: TContextAddons;
   readonly contextAddons?: TComponentAddons;
 };

@@ -38,7 +38,7 @@ export default class DatastoreApiClient {
   constructor(host: string, options?: { consoleLogErrors?: boolean; storeQueryLog?: boolean }) {
     this.options = options ?? ({} as any);
     this.options.consoleLogErrors ??= false;
-    this.options.storeQueryLog ??= true;
+    this.options.storeQueryLog ??= process.env.NODE_ENV !== 'test';
     if (!host.includes('://')) host = `ulx://${host}`;
     const url = new URL(host);
     const transport = new WsTransportToCore(`ws://${url.host}/datastore`);
@@ -57,7 +57,7 @@ export default class DatastoreApiClient {
     versionHash: string,
     includeSchemas = false,
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
-    return await this.runRemote('Datastore.meta', {
+    return await this.runApi('Datastore.meta', {
       versionHash,
       includeSchemasAsJson: includeSchemas,
     });
@@ -159,7 +159,7 @@ export default class DatastoreApiClient {
       affiliateId: options.affiliateId,
     };
 
-    void this.runRemote('Datastore.stream', query)
+    void this.runApi('Datastore.stream', query)
       .then(result => {
         onFinalized?.(result.metadata);
         results.done(result);
@@ -204,7 +204,7 @@ export default class DatastoreApiClient {
       affiliateId: options.affiliateId,
     };
     try {
-      const result = await this.runRemote('Datastore.query', query);
+      const result = await this.runApi('Datastore.query', query);
       if (options.payment?.onFinalized) {
         options.payment.onFinalized(result.metadata);
       }
@@ -243,7 +243,7 @@ export default class DatastoreApiClient {
       adminSignature = identity.sign(message);
     }
 
-    const { success } = await this.runRemote(
+    const { success } = await this.runApi(
       'Datastore.upload',
       {
         compressedDatastore,
@@ -279,7 +279,7 @@ export default class DatastoreApiClient {
       adminSignature = identity.sign(message);
     }
 
-    const result = await this.runRemote(
+    const result = await this.runApi(
       'Datastore.download',
       {
         versionHash,
@@ -293,7 +293,7 @@ export default class DatastoreApiClient {
   }
 
   public async startDatastore(dbxPath: string): Promise<{ success: boolean }> {
-    const { success } = await this.runRemote('Datastore.start', {
+    const { success } = await this.runApi('Datastore.start', {
       dbxPath,
     });
     return { success };
@@ -303,7 +303,7 @@ export default class DatastoreApiClient {
     datastoreVersionHash: string,
     creditId: string,
   ): Promise<IDatastoreApiTypes['Datastore.creditsBalance']['result']> {
-    return await this.runRemote('Datastore.creditsBalance', {
+    return await this.runApi('Datastore.creditsBalance', {
       datastoreVersionHash,
       creditId,
     });
@@ -345,7 +345,7 @@ export default class DatastoreApiClient {
     );
     const adminSignature = adminIdentity.sign(message);
 
-    return await this.runRemote('Datastore.admin', {
+    return await this.runApi('Datastore.admin', {
       versionHash: datastoreVersionHash,
       adminSignature,
       adminFunction,
@@ -363,7 +363,7 @@ export default class DatastoreApiClient {
     }
   }
 
-  protected async runRemote<T extends keyof IDatastoreApiTypes & string>(
+  protected async runApi<T extends keyof IDatastoreApiTypes & string>(
     command: T,
     args: IDatastoreApiTypes[T]['args'],
     timeoutMs?: number,

@@ -52,7 +52,9 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
     const id = heroSession.id;
     const entry: IHeroSessionsListResult = {
       heroSessionId: id,
-      scriptEntrypoint: this.processEntrypoint(heroSession.options?.scriptInstanceMeta?.entrypoint),
+      scriptEntrypoint: this.processEntrypoint(
+        heroSession.options?.scriptInvocationMeta?.entrypoint,
+      ),
       dbPath: heroSession.db.path,
       startTime: new Date(heroSession.createdTime),
       state: 'running',
@@ -180,10 +182,18 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
         scriptEntrypoint: this.processEntrypoint(scriptEntrypoint),
         dbPath: sessionDb.path,
         startTime: new Date(startDate),
+        datastore:
+          session.scriptRuntime === 'datastore'
+            ? {
+                versionHash: session.scriptVersion,
+                functionName: session.scriptEntrypointFunction,
+                queryId: session.scriptRunId,
+              }
+            : null,
         state,
         error: errorOnLastCommand ? `${errorOnLastCommand.error?.message ?? 'Error'}` : null,
         errorCommand: errorOnLastCommand ? errorOnLastCommand.label : null,
-        endTime: new Date(closeDate),
+        endTime: closeDate ? new Date(closeDate) : null,
         // TODO: store input and output and return
         input: createSessionOptions.input,
         outputs: outputRebuilder.getLatestSnapshot()?.output,
@@ -206,12 +216,16 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
   private onHeroSessionClosed(entry: IHeroSessionsListResult): void {
     const update = this.processSession(entry.heroSessionId);
     Object.assign(entry, update);
+    entry.endTime ??= new Date();
+    entry.state = 'complete';
+
     this.emit('update', [entry]);
     this.events.endGroup(entry.heroSessionId);
   }
 
   private onHeroSessionKeptAlive(entry: IHeroSessionsListResult): void {
     const update = this.processSession(entry.heroSessionId);
+    entry.state = 'kept-alive';
     Object.assign(entry, update);
     this.emit('update', [entry]);
   }

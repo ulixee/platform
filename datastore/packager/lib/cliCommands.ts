@@ -8,6 +8,7 @@ import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { findProjectPathSync } from '@ulixee/commons/lib/dirUtils';
+import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile'
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { CloudNode } from '@ulixee/cloud';
@@ -87,8 +88,14 @@ async function upload(
   identityPath: string | undefined,
   identityPassphrase: string | undefined,
 ): Promise<{ cloudHost: string }> {
+  cloudHost ??= UlixeeHostsConfig.global.getVersionHost(version);
+
   if (cloudHost?.startsWith('localhost')) {
     cloudHost = await UlixeeHostsConfig.global.checkLocalVersionHost(version, cloudHost);
+    if (!identityPath) {
+      const localProfile = new LocalUserProfile();
+      identityPath = localProfile.defaultAdminIdentityPath;
+    }
   }
 
   if (!cloudHost) {
@@ -176,7 +183,7 @@ export async function startDatastore(
   await client.startDatastore(dbx.path);
   const dbxPath = dbx.path;
   ShutdownHandler.register(() => {
-    console.log('removing dir', dbxPath)
+    console.log('removing dir', dbxPath);
     Fs.rmSync(dbxPath, { recursive: true });
     return client.disconnect();
   });

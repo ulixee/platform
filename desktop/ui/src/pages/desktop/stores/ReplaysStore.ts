@@ -22,7 +22,7 @@ export const useReplaysStore = defineStore('replaysStore', () => {
 
   async function onClient(cloud: ICloudConnection, client: Client<'desktop'>): Promise<void> {
     if (cloud.type !== 'local') return;
-    client.removeEventListeners('Sessions.listUpdated')
+    client.removeEventListeners('Sessions.listUpdated');
     client.on('Sessions.listUpdated', x => onSessionList(cloud, client.address, x));
     const list = await client.send('Sessions.list');
     onSessionList(cloud, client.address, list);
@@ -62,7 +62,7 @@ export const useReplaysStore = defineStore('replaysStore', () => {
 
   function openReplay(session: IHeroSessionsListResult & { cloudAddress: string }): void {
     lastOpenReplay.value = session;
-    window.desktopApi.emit('Session.openReplay', {
+    void window.desktopApi.send('Session.openReplay', {
       heroSessionId: session.heroSessionId,
       cloudAddress: session.cloudAddress,
       dbPath: session.dbPath,

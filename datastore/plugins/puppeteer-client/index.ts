@@ -17,7 +17,7 @@ export * from '@ulixee/datastore';
 type IContextAddons = { launchBrowser(): Promise<PuppeteerBrowser> };
 export type IPuppeteerExtractorContext<ISchema> = IExtractorContext<ISchema> & IContextAddons;
 
-export type IPuppeteerExtractorExecOptions<ISchema> = IExtractorRunOptions<ISchema> &
+export type IPuppeteerExtractorRunOptions<ISchema> = IExtractorRunOptions<ISchema> &
   IPuppeteerLaunchOptions;
 
 @ExtractorPluginStatics
@@ -25,11 +25,11 @@ export class PuppeteerExtractorPlugin<ISchema extends IExtractorSchema>
   implements
     IExtractorPlugin<
       ISchema,
-      IPuppeteerExtractorExecOptions<ISchema>,
+      IPuppeteerExtractorRunOptions<ISchema>,
       IPuppeteerExtractorContext<ISchema>
     >
 {
-  public static readonly execArgAddons: IPuppeteerLaunchOptions;
+  public static readonly runArgAddons: IPuppeteerLaunchOptions;
   public static readonly contextAddons: IContextAddons;
 
   public name = pkg.name;
@@ -37,14 +37,14 @@ export class PuppeteerExtractorPlugin<ISchema extends IExtractorSchema>
 
   public puppeteerBrowserPromise: Promise<Puppeteer.Browser>;
 
-  private execOptions: IPuppeteerExtractorExecOptions<ISchema>;
+  private runOptions: IPuppeteerExtractorRunOptions<ISchema>;
 
   async run(
-    extractorInternal: ExtractorInternal<ISchema, IPuppeteerExtractorExecOptions<ISchema>>,
+    extractorInternal: ExtractorInternal<ISchema, IPuppeteerExtractorRunOptions<ISchema>>,
     context: IPuppeteerExtractorContext<ISchema>,
     next: () => Promise<IExtractorContext<ISchema>['outputs']>,
   ): Promise<void> {
-    this.execOptions = extractorInternal.options;
+    this.runOptions = extractorInternal.options;
     try {
       context.launchBrowser = this.initializePuppeteer.bind(this);
       await next();
@@ -58,7 +58,7 @@ export class PuppeteerExtractorPlugin<ISchema extends IExtractorSchema>
 
   protected initializePuppeteer(): Promise<PuppeteerBrowser> {
     const options: Puppeteer.LaunchOptions = {
-      ...this.execOptions,
+      ...this.runOptions,
       handleSIGTERM: true,
       handleSIGHUP: true,
       handleSIGINT: true,

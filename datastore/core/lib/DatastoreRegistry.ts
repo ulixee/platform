@@ -251,9 +251,13 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
           await Fs.mkdir(destPath);
           await unpackDbxFile(path, destPath);
           path = destPath;
-        } else if (!file.endsWith('.dbx')) {
+        } else {
           continue;
         }
+      }
+
+      if (!path.endsWith('.dbx')) {
+        continue;
       }
 
       log.info('Found Datastore folder in datastores directory. Checking for import.', {

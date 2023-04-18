@@ -8,9 +8,9 @@ import IExtractorSchema from '@ulixee/datastore/interfaces/IExtractorSchema';
 import IObservableChange from '@ulixee/datastore/interfaces/IObservableChange';
 import {
   Crawler,
+  ExtractorPluginStatics,
   IExtractorComponents,
   IExtractorRunOptions,
-  ExtractorPluginStatics,
 } from '@ulixee/datastore';
 import IExtractorContextBase from '@ulixee/datastore/interfaces/IExtractorContext';
 import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSchema';
@@ -19,7 +19,7 @@ export * from '@ulixee/datastore';
 
 const pkg = require('./package.json');
 
-export type IHeroExtractorExecOptions<ISchema> = IExtractorRunOptions<ISchema> & IHeroCreateOptions;
+export type IHeroExtractorRunOptions<ISchema> = IExtractorRunOptions<ISchema> & IHeroCreateOptions;
 
 declare module '@ulixee/hero/lib/extendables' {
   interface Hero {
@@ -44,7 +44,7 @@ export type IHeroExtractorComponents<ISchema> = IExtractorComponents<
 
 @ExtractorPluginStatics
 export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
-  public static execArgAddons: IHeroCreateOptions;
+  public static runArgAddons: IHeroCreateOptions;
   public static contextAddons: {
     Hero: typeof Hero;
     HeroReplay: HeroReplayCrawler;
@@ -55,8 +55,8 @@ export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
   public hero: Hero;
   public heroReplays = new Set<HeroReplay>();
 
-  public extractorInternal: ExtractorInternal<ISchema, IHeroExtractorExecOptions<ISchema>>;
-  public execOptions: IHeroExtractorExecOptions<ISchema>;
+  public extractorInternal: ExtractorInternal<ISchema, IHeroExtractorRunOptions<ISchema>>;
+  public runOptions: IHeroExtractorRunOptions<ISchema>;
   public components: IHeroExtractorComponents<ISchema>;
 
   private pendingOutputs: IOutputChangeToRecord[] = [];
@@ -69,11 +69,11 @@ export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
   }
 
   public async run(
-    extractorInternal: ExtractorInternal<ISchema, IHeroExtractorExecOptions<ISchema>>,
+    extractorInternal: ExtractorInternal<ISchema, IHeroExtractorRunOptions<ISchema>>,
     context: IHeroExtractorContext<ISchema>,
     next: () => Promise<IHeroExtractorContext<ISchema>['outputs']>,
   ): Promise<void> {
-    this.execOptions = extractorInternal.options;
+    this.runOptions = extractorInternal.options;
     this.extractorInternal = extractorInternal;
     this.extractorInternal.onOutputChanges = this.onOutputChanged.bind(this);
 
@@ -83,8 +83,16 @@ export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
     const container = this;
     try {
       const HeroReplayBase = HeroReplay;
-      const { input, affiliateId, payment, authentication, ...heroApplicableOptions } =
-        extractorInternal.options as IExtractorRunOptions<ISchema>;
+      const {
+        input,
+        affiliateId,
+        payment,
+        authentication,
+        trackMetadata,
+        id,
+        versionHash,
+        ...heroApplicableOptions
+      } = extractorInternal.options as IExtractorRunOptions<ISchema>;
 
       const heroOptions: IHeroCreateOptions = {
         ...heroApplicableOptions,
@@ -174,8 +182,8 @@ export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
     try {
       const coreSession = await coreSessionPromise;
       if (!coreSession) return;
-      if (this.execOptions.trackMetadata) {
-        this.execOptions.trackMetadata('heroSessionId', coreSession.sessionId, this.name);
+      if (this.runOptions.trackMetadata) {
+        this.runOptions.trackMetadata('heroSessionId', coreSession.sessionId, this.name);
       }
       coreSession.once('close', () => {
         if (this.coreSessionPromise === coreSessionPromise) this.coreSessionPromise = null;

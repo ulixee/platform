@@ -5,7 +5,9 @@ import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { app, screen } from 'electron';
 import { ClientOptions } from 'ws';
 import * as Http from 'http';
+import { IncomingMessage } from 'http';
 import { CloudNode } from '@ulixee/cloud';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { httpGet } from '@ulixee/commons/lib/downloadFile';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
@@ -14,12 +16,14 @@ import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import * as Path from 'path';
 import DatastoreCore from '@ulixee/datastore-core';
-import WebSocket = require('ws');
 import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
+import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
+import { AddressInfo } from 'net';
+import WebSocket = require('ws');
 import ApiClient from './ApiClient';
-import DesktopProfile from './DesktopProfile';
 import ArgonFile, { IArgonFile } from './ArgonFile';
 import DeploymentWatcher from './DeploymentWatcher';
+import PrivateDesktopApiHandler from './PrivateDesktopApiHandler';
 
 app.commandLine.appendSwitch('remote-debugging-port', '8315');
 
@@ -56,33 +60,50 @@ export default class ApiManager<
   events = new EventSubscriber();
   localCloudAddress: string;
   debuggerUrl: string;
-  desktopProfile: DesktopProfile;
+  localUserProfile: LocalUserProfile;
   deploymentWatcher: DeploymentWatcher;
   queryLogWatcher: QueryLog;
+  privateDesktopApiHandler: PrivateDesktopApiHandler;
+  privateDesktopWsServer: WebSocket.Server;
+  privateDesktopWsServerAddress: string;
+
+  datastoreApiClientsByAddress: { [address: string]: DatastoreApiClient } = {};
 
   constructor() {
     super();
-    this.desktopProfile = new DesktopProfile();
+    this.localUserProfile = new LocalUserProfile();
     this.deploymentWatcher = new DeploymentWatcher();
     this.queryLogWatcher = new QueryLog();
+    this.privateDesktopApiHandler = new PrivateDesktopApiHandler(this);
   }
 
   public async start(): Promise<void> {
     this.debuggerUrl = await this.getDebuggerUrl();
-
-    if (!this.desktopProfile.address) {
+    this.privateDesktopWsServer = new WebSocket.Server({ port:0});
+    this.events.on(
+      this.privateDesktopWsServer,
+      'connection',
+      this.handlePrivateApiWsConnection.bind(this),
+    );
+    this.privateDesktopWsServerAddress = await new Promise<string>(resolve => {
+      this.privateDesktopWsServer.once('listening', () => {
+        const address = this.privateDesktopWsServer.address() as AddressInfo;
+        resolve(`ws://localhost:${address.port}`);
+      });
+    });
+    if (!this.localUserProfile.defaultAddress) {
       // TODO: move this to a welcome screen!!
-      await this.desktopProfile.createDefaultArgonAddress();
+      await this.localUserProfile.createDefaultArgonAddress();
     }
-    if (!this.desktopProfile.adminIdentityPath) {
-      await this.desktopProfile.createDefaultAdminIdentity();
+    if (!this.localUserProfile.defaultAdminIdentityPath) {
+      await this.localUserProfile.createDefaultAdminIdentity();
     }
     this.deploymentWatcher.start();
     this.queryLogWatcher.monitor(x => this.emit('query', x));
     await this.startLocalCloud();
     this.events.on(UlixeeHostsConfig.global, 'change', this.onNewLocalCloudAddress.bind(this));
     this.events.on(this.deploymentWatcher, 'new', x => this.emit('deployment', x));
-    for (const cloud of this.desktopProfile.clouds) {
+    for (const cloud of this.localUserProfile.clouds) {
       await this.connectToCloud({
         ...cloud,
         adminIdentity: cloud.adminIdentity,
@@ -95,9 +116,14 @@ export default class ApiManager<
     if (this.exited) return;
     this.exited = true;
 
+    this.privateDesktopWsServer.close();
+    await this.privateDesktopApiHandler.close();
     this.events.close('error');
     for (const connection of this.apiByCloudAddress.values()) {
       await this.closeApiGroup(connection.resolvable);
+    }
+    for (const client of Object.values(this.datastoreApiClientsByAddress)) {
+      await client.disconnect();
     }
     this.apiByCloudAddress.clear();
     this.deploymentWatcher.stop();
@@ -118,7 +144,7 @@ export default class ApiManager<
     );
     let adminIdentity: string;
     if (!localCloudAddress) {
-      adminIdentity = this.desktopProfile.adminIdentity.bech32;
+      adminIdentity = this.localUserProfile.defaultAdminIdentity.bech32;
       await DatastoreCore.installCompressedDbx(bundledDatastoreExample);
       this.localCloud ??= new CloudNode();
       this.localCloud.router.datastoreConfiguration ??= {};
@@ -128,6 +154,13 @@ export default class ApiManager<
       localCloudAddress = await this.localCloud.address;
     }
     await this.connectToCloud({ address: localCloudAddress, type: 'local', adminIdentity });
+  }
+
+  public getDatastoreClient(cloudHost: string): DatastoreApiClient {
+    if (!cloudHost.startsWith('ws:')) cloudHost = `ws://${cloudHost}`;
+    const hostUrl = new URL(cloudHost);
+    this.datastoreApiClientsByAddress[cloudHost] ??= new DatastoreApiClient(hostUrl.origin);
+    return this.datastoreApiClientsByAddress[cloudHost];
   }
 
   public getCloudAddressByName(name: string): string {
@@ -266,7 +299,7 @@ export default class ApiManager<
       console.log('Desktop app connecting to local cloud', this.localCloudAddress);
       await this.connectToCloud({
         address: this.localCloudAddress,
-        adminIdentity: this.desktopProfile.adminIdentity?.bech32,
+        adminIdentity: this.localUserProfile.defaultAdminIdentity?.bech32,
         name: 'local',
         type: 'local',
         oldAddress,
@@ -304,6 +337,10 @@ export default class ApiManager<
       });
     });
     return ws;
+  }
+
+  private handlePrivateApiWsConnection(ws: WebSocket, req: IncomingMessage): void {
+    this.privateDesktopApiHandler.onConnection(ws, req);
   }
 
   private async getDebuggerUrl(): Promise<string> {

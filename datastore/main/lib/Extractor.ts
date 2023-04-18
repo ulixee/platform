@@ -23,12 +23,12 @@ export default class Extractor<
     TPlugin3['contextAddons'],
   TOutput extends ExtractSchemaType<TSchema['output']> = ExtractSchemaType<TSchema['output']>,
   TRunArgs extends IExtractorRunOptions<TSchema> &
-    TPlugin1['execArgAddons'] &
-    TPlugin2['execArgAddons'] &
-    TPlugin3['execArgAddons'] = IExtractorRunOptions<TSchema> &
-    TPlugin1['execArgAddons'] &
-    TPlugin2['execArgAddons'] &
-    TPlugin3['execArgAddons'],
+    TPlugin1['runArgAddons'] &
+    TPlugin2['runArgAddons'] &
+    TPlugin3['runArgAddons'] = IExtractorRunOptions<TSchema> &
+    TPlugin1['runArgAddons'] &
+    TPlugin2['runArgAddons'] &
+    TPlugin3['runArgAddons'],
 > {
   #isRunning = false;
   #datastoreInternal: DatastoreInternal;

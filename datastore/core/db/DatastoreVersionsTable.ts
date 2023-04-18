@@ -132,7 +132,14 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
   }
 
   public getByHash(versionHash: string): IDatastoreVersionRecord {
-    this.cacheByVersionHash[versionHash] ??= this.getQuery.get(versionHash);
+    if (!this.cacheByVersionHash[versionHash]) {
+      const entry = this.getQuery.get(versionHash);
+      if (entry) {
+        entry.isStarted = !!entry.isStarted;
+        this.cacheByVersionHash[versionHash] = entry;
+      }
+    }
+
     return this.cacheByVersionHash[versionHash];
   }
 }

@@ -139,7 +139,12 @@ async function extractFunctionOutputs(
   return await context.workTracker.trackRun(
     (async () => {
       for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
-        if (plugin.beforeRunExtractor) await plugin.beforeRunExtractor(options);
+        if (plugin.beforeRunExtractor) {
+          await plugin.beforeRunExtractor(options, {
+            scriptEntrypoint: manifestWithStats.path,
+            functionName: request.name,
+          });
+        }
       }
 
       const func = datastore.extractors[request.name] ?? datastore.crawlers[request.name];

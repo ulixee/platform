@@ -1,10 +1,15 @@
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
-import type { IChromeAliveSessionApis, IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
+import type {
+  IChromeAliveSessionApis,
+  IDesktopAppApis,
+  IDesktopAppPrivateApis,
+} from '@ulixee/desktop-interfaces/apis';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
 import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
 import IChromeAliveEvent from '@ulixee/desktop-interfaces/events/IChromeAliveEvent';
 import type ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
 import type ICoreRequestPayload from '@ulixee/net/interfaces/ICoreRequestPayload';
+import IDesktopAppPrivateEvents from '@ulixee/desktop-interfaces/events/IDesktopAppPrivateEvents';
 
 declare global {
   interface Window {
@@ -15,7 +20,7 @@ declare global {
 }
 
 let clientId = 0;
-export class Client<Type extends 'session' | 'desktop' = 'session'> {
+export class Client<Type extends 'session' | 'desktop' | 'internal' = 'session'> {
   public onConnect: () => any;
   public address: string;
   public autoReconnect = true;
@@ -33,9 +38,10 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
 
   private id = (clientId += 1);
 
-  constructor() {
+  constructor(address?: string) {
     this.connect = this.connect.bind(this);
     this.send = this.send.bind(this);
+    this.address ??= address;
   }
 
   connect(): Promise<void> {
@@ -63,7 +69,13 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     T extends keyof TEvents & string,
     TEvents extends Type extends 'session'
       ? IChromeAliveSessionEvents
-      : IDesktopAppEvents = Type extends 'session' ? IChromeAliveSessionEvents : IDesktopAppEvents,
+      : Type extends 'desktop'
+      ? IDesktopAppEvents
+      : IDesktopAppPrivateEvents = Type extends 'session'
+      ? IChromeAliveSessionEvents
+      : Type extends 'desktop'
+      ? IDesktopAppEvents
+      : IDesktopAppPrivateEvents,
   >(event: T, handler: (message: TEvents[T]) => any): void {
     this.eventHandlersByEventType[event] ??= [];
     this.eventHandlersByEventType[event].push(handler);
@@ -75,7 +87,13 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     T extends keyof TEvents & string,
     TEvents extends Type extends 'session'
       ? IChromeAliveSessionEvents
-      : IDesktopAppEvents = Type extends 'session' ? IChromeAliveSessionEvents : IDesktopAppEvents,
+      : Type extends 'desktop'
+      ? IDesktopAppEvents
+      : IDesktopAppPrivateEvents = Type extends 'session'
+      ? IChromeAliveSessionEvents
+      : Type extends 'desktop'
+      ? IDesktopAppEvents
+      : IDesktopAppPrivateEvents,
   >(event: T, handler: (message: TEvents[T]) => any): void {
     const handlers = this.eventHandlersByEventType[event];
     if (!handlers) return;
@@ -87,7 +105,13 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     T extends keyof TEvents & string,
     TEvents extends Type extends 'session'
       ? IChromeAliveSessionEvents
-      : IDesktopAppEvents = Type extends 'session' ? IChromeAliveSessionEvents : IDesktopAppEvents,
+      : Type extends 'desktop'
+      ? IDesktopAppEvents
+      : IDesktopAppPrivateEvents = Type extends 'session'
+      ? IChromeAliveSessionEvents
+      : Type extends 'desktop'
+      ? IDesktopAppEvents
+      : IDesktopAppPrivateEvents,
   >(event: T): void {
     delete this.eventHandlersByEventType[event];
   }
@@ -115,7 +139,13 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     T extends keyof TApis & string,
     TApis extends Type extends 'session'
       ? IChromeAliveSessionApis
-      : IDesktopAppApis = Type extends 'session' ? IChromeAliveSessionApis : IDesktopAppApis,
+      : Type extends 'desktop'
+      ? IDesktopAppApis
+      : IDesktopAppPrivateApis = Type extends 'session'
+      ? IChromeAliveSessionApis
+      : Type extends 'desktop'
+      ? IDesktopAppApis
+      : IDesktopAppPrivateApis,
   >(
     command: T,
     ...args: ICoreRequestPayload<TApis, T>['args']

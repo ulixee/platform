@@ -9,7 +9,7 @@ import IQueryLogEntry from '../interfaces/IQueryLogEntry';
 
 export default class QueryLog {
   public queriesById: { [id: string]: IQueryLogEntry } = {};
-  public queryLogPath = Path.join(getCacheDirectory(), 'ulixee', 'userQuerylog.jsonl');
+  public queryLogPath = Path.join(getCacheDirectory(), 'ulixee', 'user-querylog.jsonl');
 
   private fileWatcher: Fs.FSWatcher;
   private queryLogBytesRead = 0;

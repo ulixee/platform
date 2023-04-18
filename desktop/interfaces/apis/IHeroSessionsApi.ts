@@ -8,7 +8,7 @@ export interface IHeroSessionsListResult {
   scriptEntrypoint: string;
   dbPath?: string;
   state: 'running' | 'kept-alive' | 'error' | 'complete';
-  datastore?: { id: string; scriptEntrypoint: string; name: string };
+  datastore?: { versionHash: string; functionName: string; queryId?: string };
   startTime: Date;
   endTime?: Date;
   input?: Record<string, any>;

@@ -33,7 +33,7 @@ export class WindowManager {
     this.events.on(this.desktopWindow, 'close', this.checkOpenWindows.bind(this));
     this.events.on(this.desktopWindow, 'focus', this.setMenu.bind(this));
     this.events.on(
-      this.desktopWindow.privateApiHandler,
+      apiManager.privateDesktopApiHandler,
       'open-chromealive',
       this.loadChromeAliveWindow.bind(this),
     );
@@ -113,7 +113,7 @@ export class WindowManager {
   private async onArgonFileOpened(file: IArgonFile): Promise<void> {
     if (!this.desktopWindow.isOpen) await this.openDesktop();
     this.desktopWindow.focus();
-    await this.desktopWindow.privateApiHandler.onArgonFileOpened(file);
+    await this.apiManager.privateDesktopApiHandler.onArgonFileOpened(file);
   }
 
   private setMenu(): void {

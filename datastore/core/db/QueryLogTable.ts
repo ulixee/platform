@@ -13,7 +13,7 @@ export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
         ['versionHash', 'TEXT', 'NOT NULL'],
         ['query', 'TEXT', 'NOT NULL'],
         ['date', 'DATETIME', 'NOT NULL'],
-        ['input', 'TEXT', 'NOT NULL'],
+        ['input', 'TEXT'],
         ['outputs', 'TEXT'],
         ['affiliateId', 'TEXT'],
         ['error', 'TEXT'],

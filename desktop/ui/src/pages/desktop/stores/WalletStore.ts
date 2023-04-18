@@ -9,7 +9,7 @@ export const useWalletStore = defineStore('walletStore', () => {
   const userBalance = ref<IUserBalance>({} as any);
 
   async function load() {
-    userBalance.value = await window.desktopApi.send('User.getBalance', null);
+    userBalance.value = await window.desktopApi.send('User.getBalance');
   }
   void load();
 
@@ -20,9 +20,10 @@ export const useWalletStore = defineStore('walletStore', () => {
     await load();
   }
 
-  async function saveCash(cash: IArgonFile['cash']) {
-    await window.desktopApi.send('Argon.saveCash', { cash });
-    await load();
+   function saveCash(_cash: IArgonFile['cash']) {
+    throw new Error('Not implemented');
+    // await window.desktopApi.send('Argon.saveCash', { cash });
+    // await load();
   }
 
   return {

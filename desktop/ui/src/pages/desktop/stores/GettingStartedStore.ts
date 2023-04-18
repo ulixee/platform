@@ -191,7 +191,7 @@ export const useGettingStartedStore = defineStore('gettingStartedStore', () => {
   };
 
   (async () => {
-    const userCompletedSteps = await window.desktopApi.send('GettingStarted.getCompletedSteps', {});
+    const userCompletedSteps = await window.desktopApi.send('GettingStarted.getCompletedSteps');
     for (const step of userCompletedSteps) completedSteps.value.add(step);
     for (const [key, callback] of Object.entries(stepCompletion)) {
       if (!completedSteps.value.has(key)) {

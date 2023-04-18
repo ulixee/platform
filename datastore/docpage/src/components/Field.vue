@@ -41,8 +41,12 @@ export default Vue.defineComponent({
   setup(props) {
     const nestedFields: [string, IAnySchemaJson][] = [];
     if (props.field?.typeName === 'array') {
-      for (const [name, field] of Object.entries(props.field.element.fields)) {
-        nestedFields.push([name, field]);
+      if (props.field.element.typeName === 'object') {
+        for (const [name, field] of Object.entries(props.field.element.fields)) {
+          nestedFields.push([name, field]);
+        }
+      } else {
+        props.field.typeName = `${props.field.element.typeName}[]`;
       }
     } else if (props.field?.typeName === 'record') {
       if (props.field.keys) nestedFields.push(['keys', props.field.keys]);

@@ -77,10 +77,7 @@ export const useCloudsStore = defineStore('cloudsStore', () => {
   });
 
   async function load() {
-    const list = await window.desktopApi.send<ICloudConnected[]>(
-      'Desktop.getCloudConnections',
-      null,
-    );
+    const list = await window.desktopApi.send('Desktop.getCloudConnections');
     for (const cloud of list) await onConnection(cloud);
   }
 

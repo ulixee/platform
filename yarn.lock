@@ -15339,10 +15339,9 @@ vfile@^5.0.0, vfile@^5.3.2:
     unist-util-stringify-position "^3.0.0"
     vfile-message "^3.0.0"
 
-vm2@^3.9.16:
+"vm2@https://github.com/ulixee/vm2#pathContext":
   version "3.9.16"
-  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.16.tgz#0fbc2a265f7bf8b837cea6f4a908f88a3f93b8e6"
-  integrity sha512-3T9LscojNTxdOyG+e8gFeyBXkMlOBYDoF6dqZbj+MPVHi9x10UfiTAJIobuchRCp3QvC+inybTbMJIUrLsig0w==
+  resolved "https://github.com/ulixee/vm2#0369ba2c0446891254a7edb2f7d0b1e8bd5f8ff5"
   dependencies:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"

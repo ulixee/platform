@@ -1,7 +1,7 @@
 import { Session as HeroSession, Tab } from '@ulixee/hero-core';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import * as Fs from 'fs';
-import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
+import IScriptInvocationMeta from '@ulixee/hero-interfaces/IScriptInvocationMeta';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import IHeroSessionUpdatedEvent from '@ulixee/desktop-interfaces/events/IHeroSessionUpdatedEvent';
 import type { IOutputChangeRecord } from '@ulixee/hero-core/models/OutputTable';
@@ -64,7 +64,7 @@ export default class SessionController extends TypedEventEmitter<{
   public mode: ISessionAppModeEvent['mode'] = 'Live';
   public playbackState: IHeroSessionUpdatedEvent['playbackState'] = 'finished';
   public readonly timetravelPlayer: TimetravelPlayer;
-  public readonly scriptInstanceMeta: IScriptInstanceMeta;
+  public readonly scriptInvocationMeta: IScriptInvocationMeta;
   public readonly sourceCodeTimeline: SourceCodeTimeline;
 
   public readonly mirrorPagesByTabId: { [tabId: number]: MirrorPage } = {};
@@ -152,7 +152,7 @@ export default class SessionController extends TypedEventEmitter<{
       this.sendApiEvent,
     );
     this.logger = log.createChild(module, { sessionId: this.sessionId });
-    this.scriptInstanceMeta = options.scriptInstanceMeta;
+    this.scriptInvocationMeta = options.scriptInvocationMeta;
     this.worldHeroSessionIds.add(this.sessionId);
     this.resourcesWatch = new SessionResourcesWatch(db, this.events);
     this.events.on(
@@ -166,25 +166,25 @@ export default class SessionController extends TypedEventEmitter<{
     this.events.on(this.timetravelPlayer, 'new-paint-index', this.sendPaintIndexEvent);
     this.events.on(this.timetravelPlayer, 'new-offset', this.sendTimetravelOffset);
 
-    this.selectorRecommendations = new SelectorRecommendations(this.scriptInstanceMeta);
+    this.selectorRecommendations = new SelectorRecommendations(this.scriptInvocationMeta);
 
-    if (this.scriptInstanceMeta.entrypoint.endsWith('.ts')) {
-      this.scriptEntrypointTs = this.scriptInstanceMeta.entrypoint;
+    if (this.scriptInvocationMeta.entrypoint.endsWith('.ts')) {
+      this.scriptEntrypointTs = this.scriptInvocationMeta.entrypoint;
     }
     if (this.options.input) {
       this.inputBytes = Buffer.byteLength(JSON.stringify(this.options.input));
     }
 
-    this.sourceCodeTimeline = new SourceCodeTimeline(this.scriptInstanceMeta.entrypoint);
+    this.sourceCodeTimeline = new SourceCodeTimeline(this.scriptInvocationMeta.entrypoint);
 
     const sourceCode = this.sourceCodeTimeline;
     this.events.on(sourceCode, 'command', this.sendApiEvent.bind(this, 'Command.updated'));
     this.events.on(sourceCode, 'source', this.sendApiEvent.bind(this, 'SourceCode.updated'));
 
     if (this.sourceCodeTimeline.scriptExists) {
-      this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint)?.mtimeMs;
+      this.scriptLastModifiedTime = Fs.statSync(this.scriptInvocationMeta.entrypoint)?.mtimeMs;
       this.watchHandle = Fs.watch(
-        this.scriptInstanceMeta.entrypoint,
+        this.scriptInvocationMeta.entrypoint,
         {
           persistent: false,
         },
@@ -337,12 +337,16 @@ export default class SessionController extends TypedEventEmitter<{
   public relaunchSession(startLocation: 'sessionStart' | 'extraction'): Error | undefined {
     if (startLocation === 'sessionStart') {
       // will automatically send out a restarting playback state
-
       SourceMapSupport.resetCache();
     }
-    const script = this.scriptInstanceMeta.entrypoint;
-    const execPath = this.scriptInstanceMeta.execPath;
-    const execArgv = this.scriptInstanceMeta.execArgv ?? [];
+
+    const script = this.scriptInvocationMeta.entrypoint;
+    const execPath = this.scriptInvocationMeta.execPath;
+    const execArgv = this.scriptInvocationMeta.execArgv ?? [];
+    if (execPath.includes('Electron') || execPath.includes('Ulixee.')) {
+      throw new Error("Can't restart a Datastore yet!");
+    }
+
     const args = [
       `--resumeSessionStartLocation="${startLocation}"`,
       `--resumeSessionId="${this.sessionId}"`,
@@ -357,7 +361,7 @@ export default class SessionController extends TypedEventEmitter<{
     try {
       this.logger.info('Relaunch Session', { execPath, args: [...execArgv, script, ...args] });
       const child = spawn(execPath, [...execArgv, script, ...args], {
-        cwd: this.scriptInstanceMeta.workingDirectory,
+        cwd: this.scriptInvocationMeta.workingDirectory,
         stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
         env: { ...process.env, ULX_CLI_NOPROMPT: 'true' },
       });
@@ -457,7 +461,7 @@ export default class SessionController extends TypedEventEmitter<{
       runtimeMs: commandTimeline.runtimeMs,
       inputBytes: this.inputBytes,
       playbackState: this.playbackState,
-      scriptEntrypoint: this.scriptInstanceMeta.entrypoint,
+      scriptEntrypoint: this.scriptInvocationMeta.entrypoint,
       scriptEntrypointTs: this.scriptEntrypointTs,
       scriptLastModifiedTime: this.scriptLastModifiedTime,
       timeline: this.lastTimelineMetadata,
@@ -940,7 +944,7 @@ export default class SessionController extends TypedEventEmitter<{
 
   private async onScriptEntrypointUpdated(action: string): Promise<void> {
     if (action !== 'change') return;
-    const stats = await Fs.promises.stat(this.scriptInstanceMeta.entrypoint);
+    const stats = await Fs.promises.stat(this.scriptInvocationMeta.entrypoint);
     this.scriptLastModifiedTime = stats.mtimeMs;
     this.hasScriptUpdatesSinceLastRun = true;
     this.sendActiveSession();

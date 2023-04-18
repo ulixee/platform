@@ -5,7 +5,7 @@ export default interface IExtractorRunOptions<ISchema extends IExtractorSchema>
   extends Partial<
     Pick<
       IDatastoreApiTypes['Datastore.query']['args'],
-      'id' | 'payment' | 'affiliateId' | 'authentication'
+      'id' | 'payment' | 'affiliateId' | 'authentication' | 'versionHash'
     >
   > {
   input?: ExtractSchemaType<ISchema['input']>;

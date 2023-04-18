@@ -206,7 +206,7 @@ export default class DesktopCore {
     this.broadcastAppEvent('Session.created', newSessionEvent);
     this.heroSessionsSearch.onNewSession(heroSession);
 
-    const script = heroSession.options.scriptInstanceMeta?.entrypoint;
+    const script = heroSession.options.scriptInvocationMeta?.entrypoint;
     if (!script) return;
 
     if (heroSession.options.resumeSessionId || heroSession.options.replaySessionId) {
@@ -316,11 +316,12 @@ export default class DesktopCore {
     const dbSession = db.session.get();
     const options = Session.restoreOptionsFromSessionRecord({}, heroSessionId);
 
-    options.scriptInstanceMeta = {
-      id: dbSession.scriptInstanceId,
-      workingDirectory: dbSession.workingDirectory,
+    options.scriptInvocationMeta = {
       entrypoint: dbSession.scriptEntrypoint,
-      startDate: dbSession.scriptStartDate,
+      runId: dbSession.scriptRunId,
+      version: dbSession.scriptVersion,
+      runtime: dbSession.scriptRuntime,
+      workingDirectory: dbSession.workingDirectory,
       execArgv: dbSession.scriptExecArgv,
       execPath: dbSession.scriptExecPath,
     };

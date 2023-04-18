@@ -41,10 +41,12 @@ export default class DatastoreVm {
 
     const script = await this.getVMScript(path);
 
-    let datastore = this.getVm(path, manifest.versionHash).run(script) as Datastore;
+    let datastore = this.getVm().run(script) as Datastore;
     if (datastore instanceof Extractor) {
       const extractor = datastore;
-      datastore = new Datastore({ extractors: { [extractor.name ?? 'default']: extractor } }) as Datastore;
+      datastore = new Datastore({
+        extractors: { [extractor.name ?? 'default']: extractor },
+      }) as Datastore;
     } else if (datastore instanceof Crawler) {
       const crawler = datastore;
       datastore = new Datastore({
@@ -92,6 +94,7 @@ export default class DatastoreVm {
       const file = await Fs.readFile(path, 'utf8');
       const vmScript = new VMScript(file, {
         filename: path,
+        compiler: 'javascript',
       }).compile();
       resolve(vmScript);
     });
@@ -102,11 +105,17 @@ export default class DatastoreVm {
     return script;
   }
 
-  private static getVm(path: string, datastoreVersionHash: string): NodeVM {
-    const whitelist: Set<string> = new Set(
-      ...Object.values(DatastoreCore.pluginCoresByName).map(x => x.nodeVmRequireWhitelist || []),
-    );
-    whitelist.add('@ulixee/*');
+  private static getVm(): NodeVM {
+    const plugins = [...Object.values(DatastoreCore.pluginCoresByName)];
+    const whitelist: Set<string> = new Set([
+      ...plugins.map(x => x.nodeVmRequireWhitelist || []).flat(),
+      '@ulixee/datastore',
+      '@ulixee/*-plugin',
+      '@ulixee/commons',
+      '@ulixee/schema',
+      '@ulixee/specification',
+      '@ulixee/platform-specification',
+    ]);
 
     return new NodeVM({
       console: 'inherit',
@@ -117,15 +126,21 @@ export default class DatastoreVm {
       eval: false,
       wrapper: 'commonjs',
       strict: true,
-      env: {
-        ULX_INJECTED_CALLSITE: path,
-        ULX_VIRTUAL_CONTAINER_ID: datastoreVersionHash,
-        ULX_VIRTUAL_CONTAINER: 'datastore',
-      },
       require: {
+        context: 'host',
         external: {
           modules: Array.from(whitelist),
           transitive: false,
+        },
+        // This is needed because the underlying node vm/Script can't see the origin line numbers
+        // from the "host", so we need Hero to be loaded into the Sandbox
+        pathContext(name) {
+          for (const plugin of plugins) {
+            if (plugin.nodeVmUseSandbox?.(name) === true) {
+              return 'sandbox';
+            }
+          }
+          return 'host';
         },
         resolve: moduleName => {
           let isAllowed = false;
@@ -155,6 +170,6 @@ export default class DatastoreVm {
           'zlib',
         ],
       },
-    });
+    } as any);
   }
 }

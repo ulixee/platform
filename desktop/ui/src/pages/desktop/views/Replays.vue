@@ -82,22 +82,33 @@
       </div>
     </div>
 
-    <div class="flex w-full flex-wrap items-center justify-between">
-      <ul class="w-full list-inside">
-        <li
+    <table class="w-full table-auto">
+      <thead class='h-0 invisible'>
+        <tr class="hidden h-1">
+          <th class="h-0 w-14">&nbsp;</th>
+          <th class="w-4/10 h-0">&nbsp;</th>
+          <th class="w-4/10 h-0">&nbsp;</th>
+          <th class="h-0 w-10">&nbsp;</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
           v-for="session in filteredSessions"
           :key="session.heroSessionId"
-          class="justify-content v-top group flex flex h-full flex-row border-b border-slate-100 px-4 py-5 text-left last:border-none hover:bg-gray-100/50"
+          class="text-sm v-top group border-b border-slate-100 text-left last:border-none hover:bg-gray-100/50"
         >
-          <span class="mr-3 basis-1/6 whitespace-nowrap font-light text-slate-500">{{
-            formatDate(session.startTime)
-          }}</span>
-          <div
-            class="mx-2 block basis-2/5 content-between justify-between text-ellipsis whitespace-nowrap text-left font-semibold text-slate-500"
+          <td class="whitespace-nowrap px-4 py-5 font-light text-slate-500">
+            {{ formatDate(session.startTime) }}
+          </td>
+          <td
+            class="text-ellipsis whitespace-nowrap px-4 py-5 text-left font-semibold text-slate-500"
           >
-            {{ session.scriptEntrypoint }}
-          </div>
-          <div class="flex-1 basis-1/2 text-sm">
+            {{ session.scriptEntrypoint
+            }}<span class="ml-0.5 text-gray-400" v-if="session.datastore?.functionName"
+              >#{{ session.datastore.functionName }}</span
+            >
+          </td>
+          <td class="text-sm">
             <div v-if="session.state === 'error'">
               <ExclamationTriangleIcon class="relative mr-2 inline w-4 text-amber-800/60" />
               <span class="font-reg mr-1 italic text-slate-600">error at:</span
@@ -107,20 +118,26 @@
                 {{ session.error ?? 'Error' }}
               </div>
             </div>
-            <span v-else-if="session.state === 'running'">running</span>
-          </div>
-          <a
-            href="javascript:void(0)"
-            class="basis-10 whitespace-nowrap pl-10 text-right"
-            @click.prevent="openReplay(session)"
-          >
-            <PlayCircleIcon
-              class="h-5 w-5 text-fuchsia-700 opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 group-hover:opacity-100"
-            />
-          </a>
-        </li>
-      </ul>
-    </div>
+            <span
+              class="mx-4 my-5 rounded-md bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-800"
+              v-if='session.state !== "complete"'
+              >{{ session.state }}</span
+            >
+          </td>
+          <td class="">
+            <a
+              href="javascript:void(0)"
+              class="my-3 whitespace-nowrap text-right"
+              @click.prevent="openReplay(session)"
+            >
+              <PlayCircleIcon
+                class="h-8 w-8 text-fuchsia-700 opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 group-hover:opacity-100"
+              />
+            </a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 

@@ -1,7 +1,7 @@
 // @ts-ignore
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('desktopApi', {
+contextBridge.exposeInMainWorld('appBridge', {
   async send<T>(api: string, args: any = {}): Promise<T> {
     try {
       const result = await ipcRenderer.invoke('desktop:api', { api, args });
@@ -16,21 +16,11 @@ contextBridge.exposeInMainWorld('desktopApi', {
       throw error;
     }
   },
-  emit(api: string, args: any = {}): void {
-    // eslint-disable-next-line no-console
-    console.log(api, {
-      args,
-    });
-    return ipcRenderer.send('desktop:api', { api, args });
+  getPrivateApiHost(): string {
+    return ipcRenderer.sendSync('getPrivateApiHost');
   },
 });
 
-// @ts-ignore
-document.addEventListener('desktop:event', (e: any) => {
-  const message = e.detail;
-  // eslint-disable-next-line no-console
-  console.log(message.eventType, message.data);
-});
 // @ts-ignore
 document.addEventListener('chromealive:event', (e: any) => {
   const message = e.detail;

@@ -1,10 +1,14 @@
 import type ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
-import { IDatastoreApis } from '@ulixee/platform-specification/datastore';
+import { IDatastoreApis, IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
+import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
+import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
+import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
 import IChromeAliveSessionApi from './IChromeAliveSessionApi';
 import IDevtoolsBackdoorApi from './IDevtoolsBackdoorApi';
 import IDatastoreApi from './IDatastoreApi';
 import IAppApi from './IAppApi';
 import IHeroSessionsApi from './IHeroSessionsApi';
+import { ICloudConnected, IUserBalance } from './IDesktopApis';
 
 export type IChromeAliveSessionApis = {
   'Session.load': IChromeAliveSessionApi['load'];
@@ -42,7 +46,73 @@ export type IDesktopAppApis = {
   'Datastore.creditsIssued': IDatastoreApis['Datastore.creditsIssued'];
 };
 
-export type IChromeAliveSessionApiResponse<T extends keyof IChromeAliveSessionApis> = ICoreResponsePayload<
-  IChromeAliveSessionApis,
-  T
->;
+export type IDatastoreResultItem = IDatastoreApiTypes['Datastores.list']['result']['datastores'][0];
+
+export type TCredit = { datastoreUrl: string; microgons: number };
+
+export type IDesktopAppPrivateApis = {
+  'Argon.dropFile': (path: string) => Promise<void>;
+  'Credit.create': (args: {
+    datastore: Pick<IDatastoreResultItem, 'versionHash' | 'name' | 'domain' | 'scriptEntrypoint'>;
+    cloud: string;
+    argons: number;
+  }) => Promise<{
+    credit: TCredit;
+    filename: string;
+  }>;
+  'Credit.save': (arg: { credit: IArgonFile['credit'] }) => Promise<void>;
+  'Credit.showContextMenu': (args: {
+    credit: TCredit;
+    filename: string;
+    position: {
+      x: number;
+      y: number;
+    };
+  }) => Promise<void>;
+  'Cloud.findAdminIdentity': (cloudName: string) => Promise<string>;
+  'Datastore.setAdminIdentity': (
+    datastoreVersionHash: string,
+    adminIdentityPath: string,
+  ) => Promise<string>;
+  'Datastore.findAdminIdentity': (datastoreVersionHash: string) => Promise<string>;
+  'Datastore.getInstalled': () => ILocalUserProfile['installedDatastores'];
+  'Datastore.query': (args: {
+    versionHash: string;
+    cloudHost: string;
+    query: string;
+  }) => Promise<IQueryLogEntry>;
+  'Datastore.deploy': (args: {
+    versionHash: string;
+    cloudHost: string;
+    cloudName: string;
+  }) => Promise<void>;
+  'Datastore.install': (arg: { cloudHost: string; datastoreVersionHash: string }) => Promise<void>;
+  'Desktop.getAdminIdentities': () => {
+    datastoresByVersion: {
+      [versionHash: string]: string;
+    };
+    cloudsByName: {
+      [name: string]: string;
+    };
+  };
+  'Desktop.getCloudConnections': () => ICloudConnected[];
+  'Desktop.connectToPrivateCloud': (arg: {
+    address: string;
+    name: string;
+    adminIdentityPath?: string;
+  }) => Promise<void>;
+  'GettingStarted.getCompletedSteps': () => string[];
+  'GettingStarted.completeStep': (step: string) => Promise<void>;
+  'Session.openReplay': (arg: IOpenReplay) => void;
+  'User.getQueries': () => IQueryLogEntry[];
+  'User.getBalance': () => Promise<IUserBalance>;
+};
+
+export interface IOpenReplay {
+  cloudAddress: string;
+  heroSessionId: string;
+  dbPath: string;
+}
+
+export type IChromeAliveSessionApiResponse<T extends keyof IChromeAliveSessionApis> =
+  ICoreResponsePayload<IChromeAliveSessionApis, T>;

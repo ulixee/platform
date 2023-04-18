@@ -5,41 +5,42 @@ import * as Path from 'path';
 import { safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import CryptoCli from '@ulixee/crypto/cli';
 import Identity from '@ulixee/crypto/lib/Identity';
+import ILocalUserProfile from '../interfaces/ILocalUserProfile';
 
-export default class DesktopProfile {
-  public static path = Path.join(getCacheDirectory(), 'ulixee', 'desktop-profile.json');
-  public clouds: (IDesktopProfile['clouds'][0] & { adminIdentity?: string })[] = [];
-  public installedDatastores: IDesktopProfile['installedDatastores'] = [];
-  public datastoreAdminIdentities: (IDesktopProfile['datastoreAdminIdentities'][0] & {
+export default class LocalUserProfile {
+  public static path = Path.join(getCacheDirectory(), 'ulixee', 'user-profile.json');
+  public clouds: (ILocalUserProfile['clouds'][0] & { adminIdentity?: string })[] = [];
+  public installedDatastores: ILocalUserProfile['installedDatastores'] = [];
+  public datastoreAdminIdentities: (ILocalUserProfile['datastoreAdminIdentities'][0] & {
     adminIdentity?: string;
   })[] = [];
 
   public gettingStartedCompletedSteps: string[] = [];
-  public adminIdentityPath: string;
+  public defaultAdminIdentityPath: string;
 
-  public get addressPath(): string {
-    return this.#addressPath;
+  public get defaultAddressPath(): string {
+    return this.#defaultAddressPath;
   }
 
-  public set addressPath(value: string) {
-    this.#addressPath = value;
-    if (value) this.#address = Address.readFromPath(value);
+  public set defaultAddressPath(value: string) {
+    this.#defaultAddressPath = value;
+    if (value) this.#defaultAddress = Address.readFromPath(value);
   }
 
-  public get address(): Address {
-    return this.#address;
+  public get defaultAddress(): Address {
+    return this.#defaultAddress;
   }
 
-  public get adminIdentity(): Identity {
-    if (this.adminIdentityPath) {
-      this.#adminIdentity ??= Identity.loadFromFile(this.adminIdentityPath);
-      return this.#adminIdentity;
+  public get defaultAdminIdentity(): Identity {
+    if (this.defaultAdminIdentityPath) {
+      this.#defaultAdminIdentity ??= Identity.loadFromFile(this.defaultAdminIdentityPath);
+      return this.#defaultAdminIdentity;
     }
   }
 
-  #address: Address;
-  #adminIdentity: Identity;
-  #addressPath: string;
+  #defaultAdminIdentity: Identity;
+  #defaultAddress: Address;
+  #defaultAddressPath: string;
 
   constructor() {
     this.loadProfile();
@@ -67,9 +68,9 @@ export default class DesktopProfile {
     adminIdentityPath: string,
   ): Promise<string> {
     if (cloudName === 'local') {
-      this.adminIdentityPath = adminIdentityPath;
-      this.#adminIdentity = null;
-      return this.adminIdentity.bech32;
+      this.defaultAdminIdentityPath = adminIdentityPath;
+      this.#defaultAdminIdentity = null;
+      return this.defaultAdminIdentity.bech32;
     }
     const existing = this.clouds.find(x => x.name === cloudName);
     existing.adminIdentityPath = adminIdentityPath;
@@ -85,7 +86,7 @@ export default class DesktopProfile {
     if (datastoreAdmin?.adminIdentityPath)
       return Identity.loadFromFile(datastoreAdmin.adminIdentityPath);
 
-    if (cloudName === 'local') return this.adminIdentity;
+    if (cloudName === 'local') return this.defaultAdminIdentity;
 
     const cloud = this.clouds.find(x => x.name === cloudName);
     if (cloud?.adminIdentityPath) return Identity.loadFromFile(cloud.adminIdentityPath);
@@ -99,20 +100,20 @@ export default class DesktopProfile {
       addressPath,
     );
     await CryptoCli().parseAsync(['address', 'UU', addressPath, '-q'], { from: 'user' });
-    this.addressPath = addressPath;
+    this.defaultAddressPath = addressPath;
     await this.save();
   }
 
   public async createDefaultAdminIdentity(): Promise<string> {
     const identity = await Identity.create();
-    this.adminIdentityPath = Path.join(
+    this.defaultAdminIdentityPath = Path.join(
       getCacheDirectory(),
       'ulixee',
       'identities',
       'adminIdentity.pem',
     );
 
-    await identity.save(this.adminIdentityPath);
+    await identity.save(this.defaultAdminIdentityPath);
     await this.save();
     return identity.bech32;
   }
@@ -129,15 +130,15 @@ export default class DesktopProfile {
   }
 
   public async save(): Promise<void> {
-    await safeOverwriteFile(DesktopProfile.path, JSON.stringify(this.toJSON()));
+    await safeOverwriteFile(LocalUserProfile.path, JSON.stringify(this.toJSON()));
   }
 
-  public toJSON(): IDesktopProfile {
+  public toJSON(): ILocalUserProfile {
     return {
       clouds: this.clouds,
       installedDatastores: this.installedDatastores,
-      addressPath: this.addressPath,
-      adminIdentityPath: this.adminIdentityPath,
+      defaultAddressPath: this.defaultAddressPath,
+      defaultAdminIdentityPath: this.defaultAdminIdentityPath,
       gettingStartedCompletedSteps: this.gettingStartedCompletedSteps,
       datastoreAdminIdentities: this.datastoreAdminIdentities.map(x => ({
         adminIdentityPath: x.adminIdentityPath,
@@ -147,9 +148,9 @@ export default class DesktopProfile {
   }
 
   private loadProfile(): void {
-    if (!Fs.existsSync(DesktopProfile.path)) return;
+    if (!Fs.existsSync(LocalUserProfile.path)) return;
     try {
-      const data: IDesktopProfile = JSON.parse(Fs.readFileSync(DesktopProfile.path, 'utf8'));
+      const data: ILocalUserProfile = JSON.parse(Fs.readFileSync(LocalUserProfile.path, 'utf8'));
       Object.assign(this, data);
       this.clouds ??= [];
       for (const cloud of this.clouds) {
@@ -160,16 +161,7 @@ export default class DesktopProfile {
       this.datastoreAdminIdentities ??= [];
       this.gettingStartedCompletedSteps ??= [];
       this.installedDatastores ??= [];
-      this.addressPath = data.addressPath;
+      this.defaultAddressPath = data.defaultAddressPath;
     } catch {}
   }
-}
-
-export interface IDesktopProfile {
-  clouds: { address: string; adminIdentityPath?: string; name: string }[];
-  installedDatastores: { cloudHost: string; datastoreVersionHash: string }[];
-  gettingStartedCompletedSteps: string[];
-  datastoreAdminIdentities: { datastoreVersionHash: string; adminIdentityPath?: string }[];
-  addressPath: string;
-  adminIdentityPath: string;
 }

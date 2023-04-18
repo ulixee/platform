@@ -105,7 +105,7 @@ export default Vue.defineComponent({
       creditUrl.username = '';
       creditUrl.password = '';
       creditUrl.search = `?${creditId}:${secret}`;
-      creditUrl.pathname = `/datastore${creditUrl.pathname}/free-credits`
+      creditUrl.pathname = `/datastore${creditUrl.pathname}/free-credits`;
       return creditUrl.href;
     },
     async addCredit() {
@@ -128,7 +128,7 @@ export default Vue.defineComponent({
     },
     async dragCredit() {
       const credit = { ...this.credit };
-      await window.desktopApi.send('Credit.dragAsFile', { filename: this.creditFilename, credit });
+      await window.appBridge.send('Credit.dragAsFile', { filename: this.creditFilename, credit });
     },
     async showCreditContextMenu($event) {
       const args = {
