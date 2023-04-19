@@ -36,9 +36,6 @@ export default Vue.defineComponent({
   methods: {},
 
   mounted() {
-    document.addEventListener('desktop:event', evt => {
-      const { eventType, data } = (evt as CustomEvent).detail;
-    });
   },
 });
 </script>

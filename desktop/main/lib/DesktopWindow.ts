@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, WebContents } from 'electron';
 import * as Path from 'path';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
@@ -17,6 +17,10 @@ export default class DesktopWindow extends TypedEventEmitter<{
 
   public get isFocused(): boolean {
     return this.#window?.isFocused();
+  }
+
+  public get webContents(): WebContents {
+    return this.#window?.webContents;
   }
 
   #window: BrowserWindow;
@@ -80,13 +84,5 @@ export default class DesktopWindow extends TypedEventEmitter<{
     this.#events.close();
     this.#window = null;
     this.emit('close');
-  }
-
-  private sendDesktopEvent(eventType: string, data: any): Promise<any> {
-    return this.#window.webContents.executeJavaScript(`(()=>{
-      document.dispatchEvent(new CustomEvent('desktop:event', ${JSON.stringify({
-        detail: { eventType, data },
-      })}));
-    })()`);
   }
 }

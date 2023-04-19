@@ -9,7 +9,9 @@
               :key="item.name"
               :to="item.href"
               :class="[
-                item.href === $route.path || $route.path.startsWith(item.href.slice(0, -1)) || item.alias === $route.path
+                item.href === $route.path ||
+                $route.path.startsWith(item.href.slice(0, -1)) ||
+                item.alias === $route.path
                   ? 'bg-gray-900 text-white'
                   : 'text-gray-300 hover:bg-gray-700 hover:text-white',
                 'group flex items-center rounded-md px-2 py-2 text-sm font-medium',
@@ -142,7 +144,7 @@ export default Vue.defineComponent({
   },
   setup() {
     const navigation = Vue.ref([
-      { name: 'Getting Started', href: '/getting-started', icon: RocketLaunchIcon, alias:'/' },
+      { name: 'Getting Started', href: '/getting-started', icon: RocketLaunchIcon, alias: '/' },
       {
         name: 'Datastores',
         href: '/datastores',
@@ -210,11 +212,11 @@ export default Vue.defineComponent({
     document.addEventListener('dragend', this.dragend);
     document.addEventListener('dragleave', this.dragend);
 
-    document.addEventListener('desktop:event', evt => {
-      const { eventType, data } = (evt as CustomEvent).detail;
-      if (eventType === 'Argon.opened') {
-        this.argonFile = data;
-      }
+    if (window.openedArgonFile) {
+      this.argonFile = window.openedArgonFile;
+    }
+    window.desktopApi.on('Argon.opened', data => {
+      this.argonFile = data;
     });
   },
   unmounted() {

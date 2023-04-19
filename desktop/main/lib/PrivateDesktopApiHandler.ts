@@ -25,6 +25,7 @@ import { IncomingMessage } from 'http';
 import { ConnectionToClient, WsTransportToClient } from '@ulixee/net';
 import WebSocket = require('ws');
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
 import ArgonFile from './ArgonFile';
 import ApiManager from './ApiManager';
 
@@ -64,6 +65,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   public Events: IDesktopAppPrivateEvents;
 
   private connectionToClient: IConnectionToClient<this['Apis'], this['Events']>;
+  private waitForConnection = new Resolvable<void>();
   private events = new EventSubscriber();
 
   constructor(private readonly apiManager: ApiManager) {
@@ -75,9 +77,16 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   }
 
   public onConnection(ws: WebSocket, req: IncomingMessage): void {
-    if (this.connectionToClient) void this.connectionToClient.disconnect();
+    if (this.connectionToClient) {
+      void this.connectionToClient.disconnect();
+    }
+    this.waitForConnection.resolve();
     const transport = new WsTransportToClient(ws, req);
     this.connectionToClient = new ConnectionToClient(transport, this.Apis);
+    const promise = this.waitForConnection;
+    this.events.once(this.connectionToClient, 'disconnected', () => {
+      if (this.waitForConnection === promise) this.waitForConnection = new Resolvable<void>();
+    });
   }
 
   public async close(): Promise<void> {
@@ -156,7 +165,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     if (!cloudHost) throw new Error('No cloud host available.');
     const apiClient = new DatastoreApiClient(cloudHost);
     if (versionHash.includes(DatastoreManifest.TemporaryIdPrefix)) {
-      throw new Error('This Datastore has only been started. You need to deploy it.')
+      throw new Error('This Datastore has only been started. You need to deploy it.');
     }
     const dbx = await apiClient.download(versionHash, { identity: adminIdentity });
     await apiClient.upload(dbx, { identity: adminIdentity });
@@ -270,7 +279,8 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   }
 
   public async onArgonFileOpened(file: IArgonFile): Promise<void> {
-    await this.connectionToClient?.sendEvent({ eventType: 'Argon.opened', data: file });
+    await this.waitForConnection;
+    await this.connectionToClient.sendEvent({ eventType: 'Argon.opened', data: file });
   }
 
   public async findAdminIdentity(datastoreVersionHash: string): Promise<string> {

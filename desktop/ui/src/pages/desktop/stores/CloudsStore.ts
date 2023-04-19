@@ -69,11 +69,8 @@ export const useCloudsStore = defineStore('cloudsStore', () => {
     });
   }
 
-  document.addEventListener('desktop:event', evt => {
-    const { eventType, data } = (evt as CustomEvent).detail;
-    if (eventType === 'Cloud.onConnected') {
-      onConnection(data).catch(console.error);
-    }
+  window.desktopApi.on('Cloud.onConnected', data => {
+    onConnection(data).catch(console.error);
   });
 
   async function load() {

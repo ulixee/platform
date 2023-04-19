@@ -31,7 +31,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.1
 
       - name: Yarn build
-        run: yarn && && yarn build:dist
+        run: yarn && yarn build && yarn build:dist
 
       - run: mkdir ~/.private_keys && echo "$APPLE_NOTARIZE_KEY" > ~/.private_keys/AuthKey_5VH6PQ3585.p8
         if: ${{ matrix.os == 'macos-latest' }}

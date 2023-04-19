@@ -49,16 +49,12 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     }
   }
 
-  document.addEventListener('desktop:event', evt => {
-    const { eventType, data } = (evt as CustomEvent).detail;
-    if (eventType === 'Datastore.onDeployed') {
-      onDeployed(data);
-    }
-    if (eventType === 'User.onQuery') {
-      const query = data as IQueryLogEntry;
-      userQueriesByDatastore.value[query.versionHash] ??= {};
-      userQueriesByDatastore.value[query.versionHash][query.id] = query;
-    }
+  window.desktopApi.on('Datastore.onDeployed', data => {
+    onDeployed(data);
+  });
+  window.desktopApi.on('User.onQuery', query => {
+    userQueriesByDatastore.value[query.versionHash] ??= {};
+    userQueriesByDatastore.value[query.versionHash][query.id] = query;
   });
 
   function getWithHash(versionHash: string): { summary: IDatastoreList[0]; cloud: string } {

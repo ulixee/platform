@@ -3,6 +3,7 @@ import * as VueRouter from 'vue-router';
 import { createPinia } from 'pinia';
 import InlineSvg from 'vue-inline-svg';
 import './index.css';
+import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
 import Datastores from '@/pages/desktop/views/Datastores.vue';
 import DatastoreDetails from '@/pages/desktop/views/datastore-details/DatastoreDetails.vue';
 import Replays from '@/pages/desktop/views/Replays.vue';
@@ -33,6 +34,7 @@ declare global {
   interface Window {
     desktopPrivateApiHost: string;
     desktopApi: Client<'internal'>;
+    openedArgonFile: IArgonFile;
     appBridge: {
       send(api: string, args: any): Promise<any>;
       getPrivateApiHost(): string;
@@ -44,6 +46,9 @@ const pinia = createPinia();
 const app = createApp(App);
 window.desktopApi = new Client(window.appBridge.getPrivateApiHost());
 window.desktopApi.connect().catch(console.error);
+window.desktopApi.on('Argon.opened', data => {
+  window.openedArgonFile = data;
+});
 
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
