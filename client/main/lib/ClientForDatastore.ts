@@ -1,35 +1,37 @@
 import ResultIterable from '@ulixee/datastore/lib/ResultIterable';
 import Datastore, { ConnectionToDatastoreCore } from '@ulixee/datastore';
+import DatastoreStorage from '@ulixee/datastore/lib/DatastoreStorage';
 import { IOutputSchema } from '../interfaces/IInputOutput';
 
 export default class ClientForDatastore<TDatastore extends Datastore> {
   private datastore: TDatastore;
 
-  constructor(datastore: TDatastore, options?: { connectionToCore: ConnectionToDatastoreCore }) {
+  constructor(
+    datastore: TDatastore,
+    options?: { connectionToCore: ConnectionToDatastoreCore; storage?: DatastoreStorage },
+  ) {
     this.datastore = datastore;
-    if (options.connectionToCore) {
-      this.datastore.addConnectionToDatastoreCore(options.connectionToCore);
-    }
+    this.datastore.bind(options);
   }
 
-  public fetch<T extends keyof TDatastore['runners']>(
-    runnerName: T,
-    inputFilter: TDatastore['runners'][T]['schemaType']['input'],
-  ): ResultIterable<TDatastore['runners'][T]['schemaType']['output']>;
+  public fetch<T extends keyof TDatastore['extractors']>(
+    extractorName: T,
+    inputFilter: TDatastore['extractors'][T]['schemaType']['input'],
+  ): ResultIterable<TDatastore['extractors'][T]['schemaType']['output']>;
   public fetch<T extends keyof TDatastore['tables']>(
     tableName: T,
     inputFilter: TDatastore['tables'][T]['schemaType'],
   ): ResultIterable<TDatastore['tables'][T]['schemaType']>;
   public fetch(name, inputFilter): any {
-    const instance = this.datastore.runners[name] || this.datastore.tables[name];
-    if (!instance) throw new Error(`${name} is not a valid Datastore Runner or Table name.`);
+    const instance = this.datastore.extractors[name] || this.datastore.tables[name];
+    if (!instance) throw new Error(`${name} is not a valid Datastore Extractor or Table name.`);
     return instance.runInternal({ input: inputFilter });
   }
 
-  public run<T extends keyof TDatastore['runners']>(
-    runnerName: T,
-    inputFilter: TDatastore['runners'][T]['schemaType']['input'],
-  ): ResultIterable<TDatastore['runners'][T]['schemaType']['output']>;
+  public run<T extends keyof TDatastore['extractors']>(
+    extractorName: T,
+    inputFilter: TDatastore['extractors'][T]['schemaType']['input'],
+  ): ResultIterable<TDatastore['extractors'][T]['schemaType']['output']>;
   public run<T extends keyof TDatastore['tables']>(
     tableName: T,
     inputFilter: TDatastore['tables'][T]['schemaType'],

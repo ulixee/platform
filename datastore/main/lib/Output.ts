@@ -4,13 +4,15 @@ import IObservableChange from '../interfaces/IObservableChange';
 
 export interface IOutputClass<T> {
   new (data?: T): T & { emit(): void };
-  emit(data: T);
+  emit(data: T): void;
+  Type: T & { emit(): void };
 }
 
 interface IInternalOutputOptions<TOutput> {
   outputs: TOutput[];
-  onOutputEmitted(output: TOutput);
-  onOutputChanges(output: TOutput, changes: IObservableChange[]): void;
+  onNewOutput(index: number);
+  onOutputEmitted(index: number, output: TOutput);
+  onOutputChanges(index: number, output: TOutput, changes: IObservableChange[]): void;
 }
 
 export default function createOutputGenerator<TOutput>(
@@ -19,14 +21,21 @@ export default function createOutputGenerator<TOutput>(
   return class Output {
     #observable: ObjectObserver;
     #isEmitted = false;
+    #index: number;
 
     constructor(data?: TOutput) {
+      this.#index = internal.outputs.length;
       this.#observable = new ObjectObserver(data ?? {});
       this.#observable.proxiedFunctions.emit = this.emit.bind(this);
       this.#observable.proxiedFunctions.toJSON = this.toJSON.bind(this);
-      this.#observable.onChanges = internal.onOutputChanges.bind(null, this.#observable.target);
+      this.#observable.onChanges = internal.onOutputChanges.bind(
+        null,
+        this.#index,
+        this.#observable.target,
+      );
 
       internal.outputs.push(this.#observable.proxy);
+      internal.onNewOutput(this.#index);
       if (data && Object.keys(data).length) {
         process.nextTick(this.#observable.emitTarget.bind(this.#observable));
       }
@@ -54,7 +63,7 @@ export default function createOutputGenerator<TOutput>(
       this.#isEmitted = true;
       const target = this.#observable.target;
       Object.freeze(target);
-      internal.onOutputEmitted(this.toJSON());
+      internal.onOutputEmitted(this.#index, this.toJSON());
     }
 
     static emit(data: TOutput): void {

@@ -2,24 +2,24 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import Hero, { HeroReplay, IHeroCreateOptions, IHeroReplayCreateOptions } from '@ulixee/hero';
 import ICoreSession, { IOutputChangeToRecord } from '@ulixee/hero/interfaces/ICoreSession';
-import RunnerInternal from '@ulixee/datastore/lib/RunnerInternal';
+import ExtractorInternal from '@ulixee/datastore/lib/ExtractorInternal';
 import { InternalPropertiesSymbol } from '@ulixee/hero/lib/internal';
-import IRunnerSchema from '@ulixee/datastore/interfaces/IRunnerSchema';
+import IExtractorSchema from '@ulixee/datastore/interfaces/IExtractorSchema';
 import IObservableChange from '@ulixee/datastore/interfaces/IObservableChange';
 import {
   Crawler,
-  RunnerPluginStatics,
-  IRunnerComponents,
-  IRunnerExecOptions,
+  ExtractorPluginStatics,
+  IExtractorComponents,
+  IExtractorRunOptions,
 } from '@ulixee/datastore';
-import IRunnerContextBase from '@ulixee/datastore/interfaces/IRunnerContext';
+import IExtractorContextBase from '@ulixee/datastore/interfaces/IExtractorContext';
 import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSchema';
 
 export * from '@ulixee/datastore';
 
 const pkg = require('./package.json');
 
-export type IHeroRunnerExecOptions<ISchema> = IRunnerExecOptions<ISchema> & IHeroCreateOptions;
+export type IHeroExtractorRunOptions<ISchema> = IExtractorRunOptions<ISchema> & IHeroCreateOptions;
 
 declare module '@ulixee/hero/lib/extendables' {
   interface Hero {
@@ -32,19 +32,19 @@ export type HeroReplayCrawler = typeof HeroReplay & {
   fromCrawler<T extends Crawler>(crawler: T, options?: T['runArgsType']): Promise<HeroReplay>;
 };
 
-export type IHeroRunnerContext<ISchema> = IRunnerContextBase<ISchema> & {
+export type IHeroExtractorContext<ISchema> = IExtractorContextBase<ISchema> & {
   Hero: typeof Hero;
   HeroReplay: HeroReplayCrawler;
 };
 
-export type IHeroRunnerComponents<ISchema> = IRunnerComponents<
+export type IHeroExtractorComponents<ISchema> = IExtractorComponents<
   ISchema,
-  IHeroRunnerContext<ISchema>
+  IHeroExtractorContext<ISchema>
 >;
 
-@RunnerPluginStatics
-export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
-  public static execArgAddons: IHeroCreateOptions;
+@ExtractorPluginStatics
+export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
+  public static runArgAddons: IHeroCreateOptions;
   public static contextAddons: {
     Hero: typeof Hero;
     HeroReplay: HeroReplayCrawler;
@@ -55,27 +55,29 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
   public hero: Hero;
   public heroReplays = new Set<HeroReplay>();
 
-  public runnerInternal: RunnerInternal<ISchema, IHeroRunnerExecOptions<ISchema>>;
-  public execOptions: IHeroRunnerExecOptions<ISchema>;
-  public components: IHeroRunnerComponents<ISchema>;
+  public extractorInternal: ExtractorInternal<ISchema, IHeroExtractorRunOptions<ISchema>>;
+  public runOptions: IHeroExtractorRunOptions<ISchema>;
+  public components: IHeroExtractorComponents<ISchema>;
 
   private pendingOutputs: IOutputChangeToRecord[] = [];
   private pendingUploadPromises = new Set<Promise<void>>();
   private coreSessionPromise: Promise<ICoreSession>;
 
-  constructor(components: IHeroRunnerComponents<ISchema>) {
+  constructor(components: IHeroExtractorComponents<ISchema>) {
     this.components = components;
     this.uploadOutputs = this.uploadOutputs.bind(this);
   }
 
   public async run(
-    runnerInternal: RunnerInternal<ISchema, IHeroRunnerExecOptions<ISchema>>,
-    context: IHeroRunnerContext<ISchema>,
-    next: () => Promise<IHeroRunnerContext<ISchema>['outputs']>,
+    extractorInternal: ExtractorInternal<ISchema, IHeroExtractorRunOptions<ISchema>>,
+    context: IHeroExtractorContext<ISchema>,
+    next: () => Promise<IHeroExtractorContext<ISchema>['outputs']>,
   ): Promise<void> {
-    this.execOptions = runnerInternal.options;
-    this.runnerInternal = runnerInternal;
-    this.runnerInternal.onOutputChanges = this.onOutputChanged.bind(this);
+    this.runOptions = extractorInternal.options;
+    this.extractorInternal = extractorInternal;
+    this.extractorInternal.onOutputChanges = this.onOutputChanged.bind(this);
+
+    const needsClose: (() => Promise<void>)[] = [];
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const container = this;
@@ -86,21 +88,24 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
         affiliateId,
         payment,
         authentication,
-        isFromCommandLine,
+        trackMetadata,
+        id,
+        versionHash,
         ...heroApplicableOptions
-      } = runnerInternal.options as IRunnerExecOptions<ISchema>;
+      } = extractorInternal.options as IExtractorRunOptions<ISchema>;
 
       const heroOptions: IHeroCreateOptions = {
         ...heroApplicableOptions,
-        input: this.runnerInternal.input,
+        input: this.extractorInternal.input,
       };
 
       const HeroBase = Hero;
+
       // eslint-disable-next-line @typescript-eslint/no-shadow
       context.Hero = class Hero extends HeroBase {
         constructor(options: IHeroCreateOptions = {}) {
           if (container.hero) {
-            throw new Error('Multiple Hero instances are not supported in a Datastore Runner.');
+            throw new Error('Multiple Hero instances are not supported in a Datastore Extractor.');
           }
           super({ ...heroOptions, ...options });
           container.hero = this;
@@ -112,6 +117,12 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
             };
           };
           void this.once('connected', container.onConnected.bind(container, this));
+          needsClose.push(super.close.bind(this));
+        }
+
+        // don't close until the end
+        override close(): Promise<void> {
+          return Promise.resolve();
         }
       };
       // eslint-disable-next-line @typescript-eslint/no-shadow
@@ -130,6 +141,12 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
           });
           container.heroReplays.add(this);
           this.once('connected', container.onConnected.bind(container, this));
+          needsClose.push(super.close.bind(this));
+        }
+
+        // don't close until the end
+        override close(): Promise<void> {
+          return Promise.resolve();
         }
 
         static async fromCrawler<T extends Crawler>(
@@ -148,8 +165,7 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
       await new Promise(setImmediate);
       await Promise.all(this.pendingUploadPromises);
     } finally {
-      const heroes = [this.hero, ...this.heroReplays].filter(Boolean);
-      await Promise.all(heroes.map(x => x.close().catch(() => null)));
+      await Promise.allSettled(needsClose.map(x => x()));
     }
   }
 
@@ -158,10 +174,7 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
   protected onConnected(source: Hero | HeroReplay): void {
     const coreSessionPromise = source[InternalPropertiesSymbol].coreSessionPromise;
     this.coreSessionPromise = coreSessionPromise;
-    // drown unhandled errors
-    void coreSessionPromise
-      .then(() => this.registerSessionClose(coreSessionPromise))
-      .catch(() => null);
+    this.registerSessionClose(coreSessionPromise).catch(() => null);
     this.uploadOutputs();
   }
 
@@ -169,6 +182,9 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
     try {
       const coreSession = await coreSessionPromise;
       if (!coreSession) return;
+      if (this.runOptions.trackMetadata) {
+        this.runOptions.trackMetadata('heroSessionId', coreSession.sessionId, this.name);
+      }
       coreSession.once('close', () => {
         if (this.coreSessionPromise === coreSessionPromise) this.coreSessionPromise = null;
       });
@@ -189,11 +205,11 @@ export class HeroRunnerPlugin<ISchema extends IRunnerSchema> {
     void promise.then(() => this.pendingUploadPromises.delete(promise));
   }
 
-  private onOutputChanged(changes: IObservableChange[]): void {
+  private onOutputChanged(index: number, changes: IObservableChange[]): void {
     const changesToRecord: IOutputChangeToRecord[] = changes.map(change => ({
       type: change.type as string,
       value: change.value,
-      path: JSON.stringify(change.path),
+      path: JSON.stringify([index, ...change.path]),
       timestamp: Date.now(),
     }));
 

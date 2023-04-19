@@ -37,5 +37,11 @@ module.exports = {
         '@typescript-eslint/ban-types': 'off',
       },
     },
+    {
+      files: ['src/**'],
+      rules: {
+        'import/no-unresolved': 'off',
+      },
+    },
   ],
 };

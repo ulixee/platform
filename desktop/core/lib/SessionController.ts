@@ -1,7 +1,7 @@
 import { Session as HeroSession, Tab } from '@ulixee/hero-core';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import * as Fs from 'fs';
-import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
+import IScriptInvocationMeta from '@ulixee/hero-interfaces/IScriptInvocationMeta';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import IHeroSessionUpdatedEvent from '@ulixee/desktop-interfaces/events/IHeroSessionUpdatedEvent';
 import type { IOutputChangeRecord } from '@ulixee/hero-core/models/OutputTable';
@@ -41,7 +41,8 @@ import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChrome
 import TimetravelTicks, { ITabDetails } from '@ulixee/hero-timetravel/player/TimetravelTicks';
 import { IDomRecording } from '@ulixee/hero-core/models/DomChangesTable';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
-import ResourceSearch from './ResourceSearch';
+import IResourceMeta from '@ulixee/unblocked-specification/agent/net/IResourceMeta';
+import SessionResourcesWatch from './SessionResourcesWatch';
 import ElementsModule from './app-extension-modules/ElementsModule';
 import DevtoolsBackdoorModule from './app-extension-modules/DevtoolsBackdoorModule';
 import SourceCodeTimeline from './SourceCodeTimeline';
@@ -63,7 +64,7 @@ export default class SessionController extends TypedEventEmitter<{
   public mode: ISessionAppModeEvent['mode'] = 'Live';
   public playbackState: IHeroSessionUpdatedEvent['playbackState'] = 'finished';
   public readonly timetravelPlayer: TimetravelPlayer;
-  public readonly scriptInstanceMeta: IScriptInstanceMeta;
+  public readonly scriptInvocationMeta: IScriptInvocationMeta;
   public readonly sourceCodeTimeline: SourceCodeTimeline;
 
   public readonly mirrorPagesByTabId: { [tabId: number]: MirrorPage } = {};
@@ -91,7 +92,7 @@ export default class SessionController extends TypedEventEmitter<{
   private mirrorRefreshTimeout: NodeJS.Timeout;
   private lastTimelineMetadata: ITimelineMetadata;
 
-  private resourceSearch: ResourceSearch;
+  private readonly resourcesWatch: SessionResourcesWatch;
   private isSearchingTimetravel = false;
 
   private restartingSessionId: string;
@@ -129,12 +130,15 @@ export default class SessionController extends TypedEventEmitter<{
       'Session.getScriptState': this.getScriptState,
       'Session.getDom': this.getDom,
       'Session.getMeta': this.getMeta,
-      'Session.search': this.search,
+      'Session.searchDom': this.searchDom,
+      'Session.searchResources': this.searchResources,
+      'Session.getResourceDetails': this.getResourceDetails,
+      'Session.getResources': this.getResources,
       'Session.replayTargetCreated': this.onReplayTargetCreated,
       'Session.devtoolsTargetOpened': this.onDevtoolsTargetOpened,
       'Datastore.getOutput': this.getDatastoreOutput,
       'Datastore.getCollectedAssets': this.getCollectedAssets,
-      'Datastore.rerunRunner': this.rerunRunner,
+      'Datastore.rerunExtractor': this.rerunExtractor,
       'DevtoolsBackdoor.toggleInspectElementMode': this.toggleInspectElementMode,
       'DevtoolsBackdoor.highlightNode': this.highlightNode,
       'DevtoolsBackdoor.hideHighlight': this.hideHighlight,
@@ -148,34 +152,39 @@ export default class SessionController extends TypedEventEmitter<{
       this.sendApiEvent,
     );
     this.logger = log.createChild(module, { sessionId: this.sessionId });
-    this.scriptInstanceMeta = options.scriptInstanceMeta;
+    this.scriptInvocationMeta = options.scriptInvocationMeta;
     this.worldHeroSessionIds.add(this.sessionId);
-    this.resourceSearch = new ResourceSearch(db, this.events);
+    this.resourcesWatch = new SessionResourcesWatch(db, this.events);
+    this.events.on(
+      this.resourcesWatch,
+      'resource',
+      this.sendApiEvent.bind(this, 'Session.resource'),
+    );
 
     this.timetravelPlayer = new TimetravelPlayer(db, this);
     this.events.on(this.timetravelPlayer, 'new-tick-command', this.sendCommandFocusedEvent);
     this.events.on(this.timetravelPlayer, 'new-paint-index', this.sendPaintIndexEvent);
     this.events.on(this.timetravelPlayer, 'new-offset', this.sendTimetravelOffset);
 
-    this.selectorRecommendations = new SelectorRecommendations(this.scriptInstanceMeta);
+    this.selectorRecommendations = new SelectorRecommendations(this.scriptInvocationMeta);
 
-    if (this.scriptInstanceMeta.entrypoint.endsWith('.ts')) {
-      this.scriptEntrypointTs = this.scriptInstanceMeta.entrypoint;
+    if (this.scriptInvocationMeta.entrypoint.endsWith('.ts')) {
+      this.scriptEntrypointTs = this.scriptInvocationMeta.entrypoint;
     }
     if (this.options.input) {
       this.inputBytes = Buffer.byteLength(JSON.stringify(this.options.input));
     }
 
-    this.sourceCodeTimeline = new SourceCodeTimeline(this.scriptInstanceMeta.entrypoint);
+    this.sourceCodeTimeline = new SourceCodeTimeline(this.scriptInvocationMeta.entrypoint);
 
     const sourceCode = this.sourceCodeTimeline;
     this.events.on(sourceCode, 'command', this.sendApiEvent.bind(this, 'Command.updated'));
     this.events.on(sourceCode, 'source', this.sendApiEvent.bind(this, 'SourceCode.updated'));
 
     if (this.sourceCodeTimeline.scriptExists) {
-      this.scriptLastModifiedTime = Fs.statSync(this.scriptInstanceMeta.entrypoint)?.mtimeMs;
+      this.scriptLastModifiedTime = Fs.statSync(this.scriptInvocationMeta.entrypoint)?.mtimeMs;
       this.watchHandle = Fs.watch(
-        this.scriptInstanceMeta.entrypoint,
+        this.scriptInvocationMeta.entrypoint,
         {
           persistent: false,
         },
@@ -228,15 +237,7 @@ export default class SessionController extends TypedEventEmitter<{
     const network = await MirrorNetwork.createFromSessionDb(this.db);
 
     for (const resource of this.db.resources.all()) {
-      if (
-        this.resourceSearch.matchesFilter(
-          resource.type,
-          JSON.parse(resource.responseHeaders ?? '{}'),
-        )
-      )
-        continue;
-
-      void this.resourceSearch
+      void this.resourcesWatch
         .onTabResource(resource.tabId, await this.db.resources.getMeta(resource.id, false))
         .catch(() => null);
     }
@@ -255,6 +256,9 @@ export default class SessionController extends TypedEventEmitter<{
       activeTab.currentTickIndex = -1;
       await activeTab.loadTick(0);
     }
+
+    const output = this.db.output.all();
+    this.onOutputUpdated({ changes: output });
   }
 
   public setResuming(newSessionId): void {
@@ -272,7 +276,7 @@ export default class SessionController extends TypedEventEmitter<{
   ): TConnectionToChromeAliveSessionClient {
     if (request.url.includes('/devtools')) {
       this.replayTransport = transport;
-      this.events.once(transport, 'disconnect', () => {
+      this.events.once(transport, 'disconnected', () => {
         this.replayTransport = null;
       });
       return;
@@ -303,7 +307,7 @@ export default class SessionController extends TypedEventEmitter<{
         sessionId: null,
       });
     });
-    this.events.once(connection, 'disconnect', () => {
+    this.events.once(connection, 'disconnected', () => {
       connection.removeAllListeners();
       const idx = this.connections.indexOf(connection);
       if (idx >= 0) this.connections.splice(idx, 1);
@@ -333,12 +337,16 @@ export default class SessionController extends TypedEventEmitter<{
   public relaunchSession(startLocation: 'sessionStart' | 'extraction'): Error | undefined {
     if (startLocation === 'sessionStart') {
       // will automatically send out a restarting playback state
-
       SourceMapSupport.resetCache();
     }
-    const script = this.scriptInstanceMeta.entrypoint;
-    const execPath = this.scriptInstanceMeta.execPath;
-    const execArgv = this.scriptInstanceMeta.execArgv ?? [];
+
+    const script = this.scriptInvocationMeta.entrypoint;
+    const execPath = this.scriptInvocationMeta.execPath;
+    const execArgv = this.scriptInvocationMeta.execArgv ?? [];
+    if (execPath.includes('Electron') || execPath.includes('Ulixee.')) {
+      throw new Error("Can't restart a Datastore yet!");
+    }
+
     const args = [
       `--resumeSessionStartLocation="${startLocation}"`,
       `--resumeSessionId="${this.sessionId}"`,
@@ -353,9 +361,9 @@ export default class SessionController extends TypedEventEmitter<{
     try {
       this.logger.info('Relaunch Session', { execPath, args: [...execArgv, script, ...args] });
       const child = spawn(execPath, [...execArgv, script, ...args], {
-        cwd: this.scriptInstanceMeta.workingDirectory,
+        cwd: this.scriptInvocationMeta.workingDirectory,
         stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-        env: { ...process.env, ULX_CLI_NOPROMPT: 'true', ULX_DATASTORE_DISABLE_AUTORUN: 'false' },
+        env: { ...process.env, ULX_CLI_NOPROMPT: 'true' },
       });
       child.stderr.setEncoding('utf8');
       child.stdout.setEncoding('utf8');
@@ -453,7 +461,7 @@ export default class SessionController extends TypedEventEmitter<{
       runtimeMs: commandTimeline.runtimeMs,
       inputBytes: this.inputBytes,
       playbackState: this.playbackState,
-      scriptEntrypoint: this.scriptInstanceMeta.entrypoint,
+      scriptEntrypoint: this.scriptInvocationMeta.entrypoint,
       scriptEntrypointTs: this.scriptEntrypointTs,
       scriptLastModifiedTime: this.scriptLastModifiedTime,
       timeline: this.lastTimelineMetadata,
@@ -493,7 +501,7 @@ export default class SessionController extends TypedEventEmitter<{
     this.onFirstTab.resolve();
     this.events.on(tab, 'page-events', this.sendDomRecordingUpdates.bind(this, tab));
     this.events.on(tab, 'page-events', () => (this.timetravelPlayer.shouldReloadTicks = true));
-    this.resourceSearch.onTabCreated(event);
+    this.events.on(event.tab, 'resource', this.onTabResource.bind(this, event.tab.id));
     const mirrorPage = tab.createMirrorPage(false);
     mirrorPage.showChromeInteractions = true;
     void this.addReplayTab(tab.id, mirrorPage);
@@ -604,7 +612,7 @@ export default class SessionController extends TypedEventEmitter<{
     }
     clearTimeout(this.mirrorRefreshTimeout);
 
-    this.resourceSearch.close();
+    this.resourcesWatch.close();
     this.timelineWatch?.close();
     this.timetravelPlayer?.close()?.catch(console.error);
     this.emit('closed');
@@ -712,7 +720,7 @@ export default class SessionController extends TypedEventEmitter<{
       }
 
       this.mode = mode;
-      this.sendAppModeEvent();
+      this.sendAppModeEvent(args.position, args.trigger);
       if (this.mode === 'Finder') {
         await this.chromeAliveWindowController.showElementsPanel();
       }
@@ -742,9 +750,33 @@ export default class SessionController extends TypedEventEmitter<{
     };
   }
 
-  public async search(
-    args?: Parameters<IChromeAliveSessionApi['search']>[0],
-  ): ReturnType<IChromeAliveSessionApi['search']> {
+  public searchResources(
+    args?: Parameters<IChromeAliveSessionApi['searchResources']>[0],
+  ): ReturnType<IChromeAliveSessionApi['searchResources']> {
+    const query = args.query;
+
+    if (!this.lastTimelineMetadata) this.toHeroSessionEvent();
+    const metadata = this.lastTimelineMetadata;
+    const lastUrl = metadata.urls[metadata.urls.length - 1];
+    const commandTimeline = CommandTimeline.fromDb(this.db);
+    const tabId = lastUrl.tabId;
+
+    const searchingContext = {
+      baseTime: commandTimeline.startTime,
+      startTime: commandTimeline.startTime,
+      tabId,
+      endTime: commandTimeline.endTime,
+      documentUrl: undefined,
+    };
+
+    return Promise.resolve({
+      resources: this.resourcesWatch.search(query, searchingContext),
+    });
+  }
+
+  public async searchDom(
+    args?: Parameters<IChromeAliveSessionApi['searchDom']>[0],
+  ): ReturnType<IChromeAliveSessionApi['searchDom']> {
     const query = args.query;
 
     if (!this.lastTimelineMetadata) this.toHeroSessionEvent();
@@ -785,8 +817,28 @@ export default class SessionController extends TypedEventEmitter<{
     return {
       searchingContext,
       elements: await this.devtoolsBackdoorModule.searchDom(query),
-      resources: this.resourceSearch.search(query, searchingContext),
     };
+  }
+
+  public async getResourceDetails(
+    id: number,
+  ): ReturnType<IChromeAliveSessionApis['Session.getResourceDetails']> {
+    const [body, postData] = await Promise.all([
+      this.db.resources.getResourceBodyById(id, true),
+      this.db.resources.getResourcePostDataById(id),
+    ]);
+    const resource = this.resourcesWatch.resourcesById[id];
+    const contentType =
+      resource.responseHeaders?.['content-type'] ?? resource.responseHeaders?.['Content-Type'];
+    const responseBody =
+      body && resource.type === 'Image' && contentType
+        ? `data:${contentType}; base64,${body?.toString('base64')}`
+        : body?.toString();
+    return { postBody: postData?.toString() ?? '', responseBody, id };
+  }
+
+  public getResources(): ReturnType<IChromeAliveSessionApis['Session.getResources']> {
+    return Promise.resolve(Object.values(this.resourcesWatch.resourcesById));
   }
 
   public async getCollectedAssets(): Promise<IDatastoreCollectedAssets> {
@@ -830,7 +882,7 @@ export default class SessionController extends TypedEventEmitter<{
     );
   }
 
-  public async rerunRunner(): Promise<{
+  public async rerunExtractor(): Promise<{
     success: boolean;
     error?: Error;
   }> {
@@ -886,9 +938,13 @@ export default class SessionController extends TypedEventEmitter<{
     }
   }
 
+  private async onTabResource(tabId: number, resource: IResourceMeta): Promise<void> {
+    await this.resourcesWatch.onTabResource(tabId, resource);
+  }
+
   private async onScriptEntrypointUpdated(action: string): Promise<void> {
     if (action !== 'change') return;
-    const stats = await Fs.promises.stat(this.scriptInstanceMeta.entrypoint);
+    const stats = await Fs.promises.stat(this.scriptInvocationMeta.entrypoint);
     this.scriptLastModifiedTime = stats.mtimeMs;
     this.hasScriptUpdatesSinceLastRun = true;
     this.sendActiveSession();
@@ -971,8 +1027,8 @@ export default class SessionController extends TypedEventEmitter<{
     this.sendApiEvent('Datastore.collected-asset', event);
   }
 
-  private sendAppModeEvent(): void {
-    this.sendApiEvent('Session.appMode', { mode: this.mode });
+  private sendAppModeEvent(position?: { x: number; y: number }, trigger?: 'contextMenu'): void {
+    this.sendApiEvent('Session.appMode', { mode: this.mode, position, trigger });
   }
 
   private sendApiEvent<T extends keyof IChromeAliveSessionEvents>(

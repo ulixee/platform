@@ -2,6 +2,7 @@ import ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { IDatastoreApis } from '@ulixee/platform-specification/datastore';
 import { IApiSpec } from '@ulixee/net/interfaces/IApiHandlers';
+import { Database as SqliteDatabase } from 'better-sqlite3';
 import IUnixTime from '@ulixee/net/interfaces/IUnixTime';
 import { ISchemaAny } from '@ulixee/schema';
 import { SqlParser } from '@ulixee/sql-engine';
@@ -9,17 +10,20 @@ import ConnectionFactory from '../connections/ConnectionFactory';
 import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
 import IDatastoreComponents, {
   TCrawlers,
-  TRunners,
+  TExtractors,
   TTables,
 } from '../interfaces/IDatastoreComponents';
-import Runner from './Runner';
+import Extractor from './Extractor';
 import Table from './Table';
 import type Crawler from './Crawler';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
-import type PassthroughRunner from './PassthroughRunner';
-import PassthroughTable from './PassthroughTable';
+import type PassthroughExtractor from './PassthroughExtractor';
+import PassthroughTable, { IPassthroughQueryRunOptions } from './PassthroughTable';
 import CreditsTable from './CreditsTable';
 import DatastoreApiClient from './DatastoreApiClient';
+import DatastoreStorage from './DatastoreStorage';
+import SqlQuery from './SqlQuery';
+import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
 
 const pkg = require('../package.json');
 
@@ -27,28 +31,31 @@ let lastInstanceId = 0;
 
 export default class DatastoreInternal<
   TTable extends TTables = TTables,
-  TRunner extends TRunners = TRunners,
+  TExtractor extends TExtractors = TExtractors,
   TCrawler extends TCrawlers = TCrawlers,
-  TComponents extends IDatastoreComponents<TTable, TRunner, TCrawler> = IDatastoreComponents<
+  TComponents extends IDatastoreComponents<TTable, TExtractor, TCrawler> = IDatastoreComponents<
     TTable,
-    TRunner,
+    TExtractor,
     TCrawler
   >,
 > {
   #connectionToCore: ConnectionToDatastoreCore;
   #isClosingPromise: Promise<void>;
-  #createInMemoryDatabaseCallbacks: (() => void)[] = [];
-  #createInMemoryDatabasePromise: Promise<void>;
 
+  public storage: DatastoreStorage;
   public manifest: IDatastoreManifest;
   public readonly metadata: IDatastoreMetadata;
   public instanceId: string;
   public loadingPromises: PromiseLike<void>[] = [];
   public components: TComponents;
-  public readonly runners: TRunner = {} as any;
+  public readonly extractors: TExtractor = {} as any;
   public readonly tables: TTable = {} as any;
   public readonly crawlers: TCrawler = {} as any;
   public readonly affiliateId: string;
+
+  public get db(): SqliteDatabase {
+    return this.storage.db;
+  }
 
   public get remoteDatastores(): TComponents['remoteDatastores'] {
     return this.components.remoteDatastores;
@@ -75,11 +82,11 @@ export default class DatastoreInternal<
     this.components = components;
 
     const names: Set<string> = new Set();
-    for (const [name, runner] of Object.entries(components.runners || [])) {
+    for (const [name, extractor] of Object.entries(components.extractors || [])) {
       if (names.has(name)) {
         throw new Error(`${name} already exists in this datastore`);
       }
-      this.attachRunner(runner, name);
+      this.attachExtractor(extractor, name);
       names.add(name);
     }
     for (const [name, table] of Object.entries(components.tables || [])) {
@@ -103,6 +110,16 @@ export default class DatastoreInternal<
     this.metadata = this.createMetadata();
   }
 
+  public bind(config: IDatastoreBinding): DatastoreInternal {
+    const { manifest, datastoreStorage, connectionToCore, apiClientLoader } = config ?? {};
+    this.manifest = manifest;
+    this.storage = datastoreStorage ?? new DatastoreStorage();
+    this.storage.open(this);
+    this.connectionToCore = connectionToCore;
+    if (apiClientLoader) this.createApiClient = apiClientLoader;
+    return this;
+  }
+
   public sendRequest<T extends keyof IDatastoreApis & string>(
     payload: {
       command: T;
@@ -115,69 +132,79 @@ export default class DatastoreInternal<
     return this.connectionToCore.sendRequest(payload, timeoutMs);
   }
 
-  public onCreateInMemoryDatabase(callback: () => void): void {
-    this.#createInMemoryDatabaseCallbacks.push(callback);
-  }
-
-  public ensureDatabaseExists(): Promise<void> {
-    return (this.#createInMemoryDatabasePromise ??= new Promise(async (resolve, reject) => {
-      try {
-        await Promise.all(this.#createInMemoryDatabaseCallbacks.map(x => x()));
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    }));
-  }
-
-  public async queryInternal<TResultType = any>(
+  public async queryInternal<TResultType = any[]>(
     sql: string,
     boundValues: any[] = [],
+    queryId?: string,
+    callbacks: IQueryInternalCallbacks = {},
   ): Promise<TResultType> {
-    await this.ensureDatabaseExists();
-    const datastoreInstanceId = this.instanceId;
-    const datastoreVersionHash = this.manifest?.versionHash;
-
     const sqlParser = new SqlParser(sql);
-    const inputSchemas: { [runnerName: string]: ISchemaAny } = {};
-    for (const [key, runner] of Object.entries(this.runners)) {
-      if (runner.schema) inputSchemas[key] = runner.schema.input;
+    const inputSchemas: { [extractorName: string]: ISchemaAny } = {};
+    for (const [key, extractor] of Object.entries(this.extractors)) {
+      if (extractor.schema) inputSchemas[key] = extractor.schema.input;
     }
     const inputByFunctionName = sqlParser.extractFunctionCallInputs(inputSchemas, boundValues);
     const outputByFunctionName: { [name: string]: any[] } = {};
 
-    for (const functionName of Object.keys(inputByFunctionName)) {
-      const input = inputByFunctionName[functionName];
-      const func = this.runners[functionName] ?? this.crawlers[functionName];
-      outputByFunctionName[functionName] = await func.runInternal({
-        input,
-      });
+    const functionCallsById = Object.keys(inputByFunctionName).map((x, i) => {
+      return {
+        name: x,
+        id: i,
+      };
+    });
+
+    if (callbacks.beforeAll) {
+      await callbacks.beforeAll({ sqlParser, functionCallsById });
+    }
+
+    for (const { name, id } of functionCallsById) {
+      const input = inputByFunctionName[name];
+      const func = this.extractors[name] ?? this.crawlers[name];
+      callbacks.onFunction ??= (_, __, options, run) => run(options);
+      outputByFunctionName[name] = await callbacks.onFunction(
+        id,
+        name,
+        { input, id: queryId },
+        options => func.runInternal(options, callbacks),
+      );
     }
 
     const recordsByVirtualTableName: { [name: string]: Record<string, any>[] } = {};
     for (const tableName of sqlParser.tableNames) {
-      if (!(this.tables[tableName] as PassthroughTable<any, any>).remoteSource) continue;
+      if (!this.storage.isVirtualTable(tableName)) continue;
 
       const sqlInputs = sqlParser.extractTableQuery(tableName, boundValues);
-      recordsByVirtualTableName[tableName] = await this.tables[tableName].queryInternal(
-        sqlInputs.sql,
-        sqlInputs.args,
+      callbacks.onPassthroughTable ??= (_, options, run) => run(options);
+      recordsByVirtualTableName[tableName] = await callbacks.onPassthroughTable(
+        tableName,
+        {
+          id: queryId,
+        },
+        options => this.tables[tableName].queryInternal(sqlInputs.sql, sqlInputs.args, options),
       );
     }
 
-    const args = {
-      sql,
-      boundValues,
-      inputByRunnerName: inputByFunctionName,
-      outputByRunnerName: outputByFunctionName,
+    const db = this.db;
+    sql = sqlParser.toSql();
+    const queryBoundValues = sqlParser.convertToBoundValuesSqliteMap(boundValues);
+
+    if (sqlParser.isInsert() || sqlParser.isUpdate() || sqlParser.isDelete()) {
+      if (sqlParser.hasReturn()) {
+        return db.prepare(sql).get(queryBoundValues);
+      }
+      const result = db.prepare(sql).run(queryBoundValues);
+      return { changes: result?.changes } as any;
+    }
+
+    if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
+
+    const sqlQuery = new SqlQuery(sqlParser, this.storage);
+    return sqlQuery.execute(
+      inputByFunctionName,
+      outputByFunctionName,
       recordsByVirtualTableName,
-      datastoreInstanceId,
-      datastoreVersionHash,
-    };
-    return await this.sendRequest({
-      command: 'Datastore.queryInternal',
-      args: [args],
-    });
+      queryBoundValues,
+    );
   }
 
   public createApiClient(host: string): DatastoreApiClient {
@@ -196,19 +223,19 @@ export default class DatastoreInternal<
     }));
   }
 
-  public attachRunner(
-    runner: Runner,
+  public attachExtractor(
+    extractor: Extractor,
     nameOverride?: string,
     isAlreadyAttachedToDatastore?: boolean,
   ): void {
-    const isRunner = runner instanceof Runner;
-    const name = nameOverride || runner.name;
-    if (!name) throw new Error(`Runner requires a name`);
-    if (!isRunner) throw new Error(`${name} must be an instance of Runner`);
-    if (this.runners[name]) throw new Error(`Runner already exists with name: ${name}`);
+    const isExtractor = extractor instanceof Extractor;
+    const name = nameOverride || extractor.name;
+    if (!name) throw new Error(`Extractor requires a name`);
+    if (!isExtractor) throw new Error(`${name} must be an instance of Extractor`);
+    if (this.extractors[name]) throw new Error(`Extractor already exists with name: ${name}`);
 
-    if (!isAlreadyAttachedToDatastore) runner.attachToDatastore(this, name);
-    (this.runners as any)[name] = runner;
+    if (!isAlreadyAttachedToDatastore) extractor.attachToDatastore(this, name);
+    (this.extractors as any)[name] = extractor;
   }
 
   public attachCrawler(
@@ -217,7 +244,7 @@ export default class DatastoreInternal<
     isAlreadyAttachedToDatastore?: boolean,
   ): void {
     // NOTE: can't check instanceof Crawler because it creates a dependency loop
-    const isCrawler = crawler instanceof Runner && crawler.runnerType === 'crawler';
+    const isCrawler = crawler instanceof Extractor && crawler.extractorType === 'crawler';
     const name = nameOverride || crawler.name;
     if (!name) throw new Error(`Crawler requires a name`);
     if (!isCrawler) throw new Error(`${name} must be an instance of Crawler`);
@@ -265,23 +292,23 @@ export default class DatastoreInternal<
       adminIdentities,
       coreVersion: pkg.version,
       tablesByName: {},
-      runnersByName: {},
+      extractorsByName: {},
       crawlersByName: {},
     };
     metadata.remoteDatastoreEmbeddedCredits ??= {};
 
-    for (const [runnerName, runner] of Object.entries(this.runners)) {
-      const passThrough = runner as unknown as PassthroughRunner<any, any>;
-      metadata.runnersByName[runnerName] = {
-        name: runner.name,
-        description: runner.description,
-        corePlugins: runner.corePlugins ?? {},
-        schema: runner.schema,
-        pricePerQuery: runner.pricePerQuery,
-        addOnPricing: runner.addOnPricing,
-        minimumPrice: runner.minimumPrice,
+    for (const [extractorName, extractor] of Object.entries(this.extractors)) {
+      const passThrough = extractor as unknown as PassthroughExtractor<any, any>;
+      metadata.extractorsByName[extractorName] = {
+        name: extractor.name,
+        description: extractor.description,
+        corePlugins: extractor.corePlugins ?? {},
+        schema: extractor.schema,
+        pricePerQuery: extractor.pricePerQuery,
+        addOnPricing: extractor.addOnPricing,
+        minimumPrice: extractor.minimumPrice,
         remoteSource: passThrough?.remoteSource,
-        remoteRunner: passThrough?.remoteRunner,
+        remoteExtractor: passThrough?.remoteExtractor,
         remoteDatastoreVersionHash: passThrough?.datastoreVersionHash,
       };
     }
@@ -298,9 +325,9 @@ export default class DatastoreInternal<
       };
     }
 
-    for (const [runnerName, table] of Object.entries(this.tables ?? {})) {
+    for (const [extractorName, table] of Object.entries(this.tables ?? {})) {
       const passThrough = table as unknown as PassthroughTable<any, any>;
-      metadata.tablesByName[runnerName] = {
+      metadata.tablesByName[extractorName] = {
         name: table.name,
         description: table.description,
         isPublic: table.isPublic !== false,
@@ -313,4 +340,29 @@ export default class DatastoreInternal<
 
     return metadata;
   }
+}
+
+export interface IDatastoreBinding {
+  connectionToCore?: ConnectionToDatastoreCore;
+  datastoreStorage?: DatastoreStorage;
+  manifest?: IDatastoreManifest;
+  apiClientLoader?: (url: string) => DatastoreApiClient;
+}
+
+export interface IQueryInternalCallbacks {
+  beforeAll?(args: {
+    sqlParser: SqlParser;
+    functionCallsById: { name: string; id: number }[];
+  }): Promise<void>;
+  onFunction?<TOutput = any[]>(
+    id: number,
+    name: string,
+    options: IExtractorRunOptions<any>,
+    run: (options: IExtractorRunOptions<any>) => Promise<TOutput>,
+  ): Promise<TOutput>;
+  onPassthroughTable?<TOutput = any[]>(
+    name: string,
+    options: IPassthroughQueryRunOptions,
+    run: (options: IPassthroughQueryRunOptions) => Promise<TOutput>,
+  ): Promise<TOutput>;
 }

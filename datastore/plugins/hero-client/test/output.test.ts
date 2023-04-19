@@ -2,13 +2,15 @@ import { Helpers } from '@ulixee/datastore-testing';
 import ConnectionFactory from '@ulixee/hero/connections/ConnectionFactory';
 import { buffer, date, object, string } from '@ulixee/schema';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
-import { Runner, Observable } from '@ulixee/datastore';
+import { Extractor, Observable } from '@ulixee/datastore';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import Core from '@ulixee/hero-core';
 import { ConnectionToHeroCore } from '@ulixee/hero';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import OutputRebuilder from '@ulixee/desktop-core/lib/OutputRebuilder';
 import MockConnectionToHeroCore from './_MockConnectionToHeroCore';
-import { HeroRunnerPlugin } from '../index';
+import { HeroExtractorPlugin } from '../index';
 
 let connectionToCore: ConnectionToHeroCore;
 beforeAll(() => {
@@ -33,12 +35,12 @@ describe('basic output tests', () => {
     });
     jest.spyOn(ConnectionFactory, 'createConnection').mockImplementationOnce(() => connection);
 
-    await new Runner(async ctx => {
+    await new Extractor(async ctx => {
       const output = new ctx.Output();
       output.test = true;
       const hero = new ctx.Hero();
       await hero.sessionId;
-    }, HeroRunnerPlugin).runInternal({});
+    }, HeroExtractorPlugin).runInternal({});
 
     const outgoingCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingCommands.map(c => c[0].command)).toMatchObject([
@@ -48,12 +50,11 @@ describe('basic output tests', () => {
       'Session.close',
       'Core.disconnect',
     ]);
-
-    const outputChange = outgoingCommands[2][0].recordCommands[0].args[0];
+    const outputChange = outgoingCommands[2][0].recordCommands[0].args[1];
     expect(outputChange).toMatchObject({
       type: 'insert',
       value: true,
-      path: '["test"]',
+      path: '[0,"test"]',
       timestamp: expect.any(Number),
       lastCommandId: 0,
     });
@@ -78,7 +79,7 @@ describe('basic output tests', () => {
     let stringified: string;
     const url = 'https://example.org';
     const title = 'Example Domain';
-    const runner = new Runner(
+    const extractor = new Extractor(
       {
         async run({ Output, Hero }) {
           const output = new Output();
@@ -96,34 +97,34 @@ describe('basic output tests', () => {
         },
         schema,
       },
-      HeroRunnerPlugin,
+      HeroExtractorPlugin,
     );
-    await runner.runInternal({ connectionToCore });
+    await extractor.runInternal({ connectionToCore });
 
     const sessionId = await sessionIdPromise;
     const db = new SessionDb(sessionId, { readonly: true });
     const outputs = db.output.all();
-    expect(outputs).toHaveLength(3);
-    expect(outputs[0]).toEqual({
+    expect(outputs).toHaveLength(4);
+    expect(outputs[1]).toEqual({
       type: 'insert',
       value: expect.any(Date),
       timestamp: expect.any(Number),
       lastCommandId: expect.any(Number),
-      path: '["started"]',
+      path: '[0,"started"]',
     });
-    expect(outputs[1]).toEqual({
+    expect(outputs[2]).toEqual({
       type: 'insert',
       value: { url, title },
       timestamp: expect.any(Number),
       lastCommandId: 0,
-      path: '["page"]',
+      path: '[0,"page"]',
     });
-    expect(outputs[2]).toEqual({
+    expect(outputs[3]).toEqual({
       type: 'insert',
       value: Buffer.from('I am buffer'),
       timestamp: expect.any(Number),
       lastCommandId: 0,
-      path: '["page","data"]',
+      path: '[0,"page","data"]',
     });
     expect(stringified).toEqual(
       JSON.stringify({
@@ -135,38 +136,51 @@ describe('basic output tests', () => {
         },
       }),
     );
+
+    const rebuilder = new OutputRebuilder();
+    rebuilder.applyChanges(outputs);
+    expect(rebuilder.getLatestSnapshot().output).toEqual([
+      {
+        started,
+        page: {
+          url,
+          title,
+          data: Buffer.from('I am buffer'),
+        },
+      },
+    ]);
   });
 
   it('can add observables directly', async () => {
     const sessionIdPromise = new Resolvable<string>();
     let stringified: string;
 
-    const runner = new Runner(async ({ Output, Hero }) => {
+    const extractor = new Extractor(async ({ Output, Hero }) => {
       const output = new Output();
       const record = Observable({} as any);
       output.records = [record];
       record.test = 1;
       record.watch = 2;
       record.any = { more: true };
-      stringified = JSON.stringify(output)
+      stringified = JSON.stringify(output);
       const hero = new Hero();
       const sessionId = await hero.sessionId;
 
       sessionIdPromise.resolve(sessionId);
-    }, HeroRunnerPlugin);
-    await runner.runInternal({ connectionToCore });
+    }, HeroExtractorPlugin);
+    await extractor.runInternal({ connectionToCore });
 
     const sessionId = await sessionIdPromise;
 
     const db = new SessionDb(sessionId, { readonly: true });
     const outputs = db.output.all();
-    expect(outputs).toHaveLength(4);
-    expect(outputs[0]).toEqual({
+    expect(outputs).toHaveLength(5);
+    expect(outputs[1]).toEqual({
       type: 'insert',
       value: [{}],
       timestamp: expect.any(Number),
       lastCommandId: 0,
-      path: '["records"]',
+      path: '[0,"records"]',
     });
     expect(stringified).toEqual(
       JSON.stringify({

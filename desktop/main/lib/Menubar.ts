@@ -1,7 +1,6 @@
-import { app, BrowserWindow, shell, systemPreferences, Tray } from 'electron';
+import { app, BrowserWindow, shell, systemPreferences, Event, Tray } from 'electron';
 import log from 'electron-log';
 import { EventEmitter } from 'events';
-import UlixeeMiner from '@ulixee/miner';
 import * as Positioner from 'electron-positioner';
 import * as Path from 'path';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
@@ -19,7 +18,6 @@ const { version } = require('../package.json');
 const iconPath = Path.resolve(__dirname, '..', 'assets', 'IconTemplate.png');
 
 export class Menubar extends EventEmitter {
-  ulixeeMiner: UlixeeMiner;
   readonly staticServer: StaticServer;
 
   #tray?: Tray;
@@ -37,20 +35,28 @@ export class Menubar extends EventEmitter {
   #downloadProgress = 0;
   #apiManager: ApiManager;
 
+  #argonFileOpen: string;
+
   constructor(options?: IMenubarOptions) {
     super();
     this.#options = options;
     this.#isVisible = false;
+
+    if (!app.requestSingleInstanceLock()) {
+      app.quit();
+      return;
+    }
     // hide the dock icon if it shows
     if (process.platform === 'darwin') {
       app.setActivationPolicy('accessory');
     }
+    app.on('second-instance', this.onSecondInstance.bind(this));
+    app.on('open-file', this.onFileOpened.bind(this));
     app.setAppLogsPath();
     (process.env as any).ELECTRON_DISABLE_SECURITY_WARNINGS = true;
     ShutdownHandler.register(() => this.appExit());
 
     this.staticServer = new StaticServer(Path.resolve(__dirname, '..', 'ui'));
-    this.#apiManager = new ApiManager();
     void this.appReady();
   }
 
@@ -74,6 +80,25 @@ export class Menubar extends EventEmitter {
       }
     } catch (error) {
       if (!String(error).includes('Object has been destroyed')) throw error;
+    }
+  }
+
+  private onSecondInstance(_, argv: string[]): void {
+    const argonFile = argv.find(x => x.endsWith('.arg'));
+    if (argonFile) {
+      if (this.#apiManager) void this.#apiManager.onArgonFileOpened(argonFile);
+      else this.#argonFileOpen = argonFile;
+    }
+  }
+
+  private onFileOpened(e: Event, path: string): void {
+    if (!path.endsWith('.arg') && !path.endsWith('.arc')) return;
+
+    e.preventDefault();
+    if (this.#apiManager) {
+      void this.#apiManager.onArgonFileOpened(path);
+    } else {
+      this.#argonFileOpen = path;
     }
   }
 
@@ -140,10 +165,10 @@ export class Menubar extends EventEmitter {
     if (this.#isClosing) return;
     this.#isClosing = true;
     console.warn('Quitting Ulixee Menubar');
-    this.#tray.removeAllListeners();
+    this.#tray?.removeAllListeners();
     this.hideWindow();
-    this.#apiManager.close();
-    await this.stopMiner();
+    await this.#apiManager?.close();
+    await this.stopCloud();
     await this.#windowManager.close();
   }
 
@@ -162,9 +187,15 @@ export class Menubar extends EventEmitter {
       await app.whenReady();
       // for now auto-start
       await this.staticServer.load();
+      this.#apiManager = new ApiManager();
       this.#windowManager = new WindowManager(this, this.#apiManager);
-      await this.startMiner();
-      await this.#apiManager.start(await this.ulixeeMiner?.address);
+      await this.#apiManager.start();
+      if (this.#argonFileOpen) {
+        await this.#apiManager.onArgonFileOpened(this.#argonFileOpen);
+        this.#argonFileOpen = null;
+      }
+      await installDefaultChrome();
+      await this.updateLocalCloudStatus();
 
       await this.createWindow();
 
@@ -180,7 +211,7 @@ export class Menubar extends EventEmitter {
 
       this.#tray.on('click', this.clicked.bind(this));
       this.#tray.on('right-click', this.clicked.bind(this));
-      this.#tray.on('double-click', this.clicked.bind(this));
+      this.#tray.on('double-click', this.doubleClicked.bind(this));
       this.#tray.setToolTip(this.#options.tooltip || '');
 
       autoUpdater.logger = null;
@@ -267,6 +298,19 @@ export class Menubar extends EventEmitter {
     await autoUpdater.quitAndInstall(false, true);
   }
 
+  private async doubleClicked(): Promise<void> {
+    // if blur was invoked clear timeout
+    if (this.#blurTimeout) {
+      clearInterval(this.#blurTimeout);
+    }
+
+    if (this.#browserWindow && this.#isVisible) {
+      this.hideWindow();
+    }
+
+    await this.#windowManager.openDesktop();
+  }
+
   private async clicked(
     event?: Electron.KeyboardEvent,
     bounds?: Electron.Rectangle,
@@ -309,10 +353,10 @@ export class Menubar extends EventEmitter {
 
     this.#browserWindow = new BrowserWindow({
       ...defaults,
-      roundedCorners: false,
+      roundedCorners: true,
       skipTaskbar: true,
       autoHideMenuBar: true,
-      transparent: true,
+      transparent: false,
       alwaysOnTop: true,
       useContentSize: true,
       webPreferences: {
@@ -349,7 +393,7 @@ export class Menubar extends EventEmitter {
         }
 
         if (api === 'App.openDataDirectory') {
-          await shell.openPath(this.ulixeeMiner.dataDir);
+          await shell.openPath(this.#apiManager.localCloud.dataDir);
         }
 
         if (api === 'App.openHeroSession') {
@@ -360,16 +404,16 @@ export class Menubar extends EventEmitter {
           await this.#windowManager.openDesktop();
         }
 
-        if (api === 'Miner.stop' || api === 'Miner.restart') {
-          await this.stopMiner();
+        if (api === 'Cloud.stop' || api === 'Cloud.restart') {
+          await this.stopCloud();
         }
 
-        if (api === 'Miner.start' || api === 'Miner.restart') {
-          await this.startMiner();
+        if (api === 'Cloud.start' || api === 'Cloud.restart') {
+          await this.startCloud();
         }
 
-        if (api === 'Miner.getStatus') {
-          await this.updateMinerStatus();
+        if (api === 'Cloud.getStatus') {
+          await this.updateLocalCloudStatus();
         }
 
         if (api === 'Version.check') {
@@ -389,8 +433,8 @@ export class Menubar extends EventEmitter {
     if (process.env.OPEN_DEVTOOLS) {
       this.#browserWindow.webContents.openDevTools({ mode: 'detach' });
     }
-    if (this.ulixeeMiner) {
-      await this.updateMinerStatus();
+    if (this.#apiManager.localCloud) {
+      await this.updateLocalCloudStatus();
     }
   }
 
@@ -398,39 +442,33 @@ export class Menubar extends EventEmitter {
     this.#browserWindow = undefined;
   }
 
-  /// //// MINER MANAGEMENT ////////////////////////////////////////////////////////////////////////////////////////////
+  /// //// CLOUD MANAGEMENT ////////////////////////////////////////////////////////////////////////////////////////////
 
-  private async stopMiner(): Promise<void> {
-    if (!this.ulixeeMiner) return;
-
-    // eslint-disable-next-line no-console
-    console.log(`CLOSING ULIXEE MINER`);
-    const miner = this.ulixeeMiner;
-    this.ulixeeMiner = null;
-    await miner.close();
-    await this.updateMinerStatus();
-  }
-
-  private async startMiner(): Promise<void> {
-    if (this.ulixeeMiner) return;
-    this.ulixeeMiner = new UlixeeMiner();
-    await this.ulixeeMiner.listen();
-
-    await installDefaultChrome();
+  private async stopCloud(): Promise<void> {
+    if (!this.#apiManager.localCloud) return;
 
     // eslint-disable-next-line no-console
-    console.log(`STARTED ULIXEE MINER at ${await this.ulixeeMiner.address}`);
-    await this.updateMinerStatus();
+    console.log(`CLOSING ULIXEE CLOUD`);
+    await this.#apiManager.stopLocalCloud();
+    await this.updateLocalCloudStatus();
   }
 
-  private async updateMinerStatus(): Promise<void> {
+  private async startCloud(): Promise<void> {
+    await this.#apiManager.startLocalCloud();
+
+    // eslint-disable-next-line no-console
+    console.log(`STARTED ULIXEE CLOUD at ${await this.#apiManager.localCloud.address}`);
+    await this.updateLocalCloudStatus();
+  }
+
+  private async updateLocalCloudStatus(): Promise<void> {
     if (this.#isClosing) return;
     let address: string = null;
-    if (this.ulixeeMiner) {
-      address = await this.ulixeeMiner.address;
+    if (this.#apiManager.localCloud) {
+      address = await this.#apiManager.localCloud.address;
     }
-    await this.sendToFrontend('Miner.status', {
-      started: !!this.ulixeeMiner,
+    await this.sendToFrontend('Cloud.status', {
+      started: !!this.#apiManager.localCloud,
       address,
     });
   }

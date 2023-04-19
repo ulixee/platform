@@ -24,11 +24,14 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
     super();
     bindFunctions(this);
 
-    this.entrypoint = SourceMapSupport.getSourceFile(this.entrypoint);
-    this.scriptExists = Fs.existsSync(this.entrypoint);
+    const sourceLookup = SourceMapSupport.getSourceFile(this.entrypoint);
+
+    this.scriptExists = Fs.existsSync(sourceLookup.path);
     if (this.scriptExists) {
       this.sourceFileLines[this.entrypoint] =
-        SourceLoader.getFileContents(this.entrypoint, false)?.split(/\r?\n/) ?? [];
+        SourceLoader.getFileContents(sourceLookup.path, false)?.split(/\r?\n/) ?? [];
+    } else if (sourceLookup.content) {
+      this.sourceFileLines[this.entrypoint] = sourceLookup.content.split(/\r?\n/);
     }
   }
 
@@ -94,12 +97,23 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
     if (!skipEmit) this.emit('command', this.commandsById[command.id]);
   }
 
-  private checkForSourceUpdates(sourceLocations: ISourceCodeLocation[]): void {
+  private checkForSourceUpdates(sourceLocations: (ISourceCodeLocation & { source?: string })[]): void {
     for (const sourcePosition of sourceLocations) {
       const { filename } = sourcePosition;
-      if (!this.sourceFileLines[filename] && this.scriptExists) {
-        this.sourceFileLines[filename] =
-          SourceLoader.getFileContents(filename, false)?.split(/\r?\n/) ?? [];
+      if (!this.sourceFileLines[filename]) {
+        if (this.scriptExists) {
+          this.sourceFileLines[filename] =
+            SourceLoader.getFileContents(filename, false)?.split(/\r?\n/) ?? [];
+        } else {
+          const sourceLookup = SourceMapSupport.getOriginalSourcePosition(
+            { ...sourcePosition, filename: sourcePosition.source ?? sourcePosition.filename },
+            true,
+          );
+          if (sourceLookup.content) {
+            this.sourceFileLines[filename] = sourceLookup.content.split(/\r?\n/);
+          }
+        }
+
         this.emit('source', {
           filename,
           lines: this.sourceFileLines[filename],

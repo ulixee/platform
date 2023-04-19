@@ -16,7 +16,7 @@ export default function creditsCli(): Command {
 
   cli
     .command('create')
-    .description('Create Credits for a User to try out your Datastore.')
+    .description('Create Argon Credits for a User to try out your Datastore.')
     .argument('<url>', 'The url to the Datastore.')
     .addOption(
       (() => {
@@ -31,7 +31,7 @@ export default function creditsCli(): Command {
     .addOption(
       requiredOptionWithEnv(
         '-i, --identity-path <path>',
-        'A path to an Admin Identity approved for the given Datastore or Miner.',
+        'A path to an Admin Identity approved for the given Datastore or Cloud.',
         'ULX_IDENTITY_PATH',
       ),
     )
@@ -65,11 +65,15 @@ export default function creditsCli(): Command {
         const creditIdAndSecret = url.split('/free-credit?').pop();
         const [id, secret] = creditIdAndSecret.split(':');
         const { balance } = await client.getCreditsBalance(datastoreVersionHash, id);
-        await CreditsStore.store(datastoreVersionHash.replace(/\//g, ''), {
-          id,
-          secret,
-          remainingCredits: balance,
-        });
+        await CreditsStore.store(
+          datastoreVersionHash.replace(/\//g, ''),
+          client.connectionToCore.transport.host,
+          {
+            id,
+            secret,
+            remainingCredits: balance,
+          },
+        );
       } finally {
         await client.disconnect();
       }

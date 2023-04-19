@@ -8,8 +8,7 @@ module.exports = {
         tiny: ['.915rem', '1.45rem'],
       },
       colors: {
-        ammoGray: '#454E57',
-        ammoWhite: '#FBFDFF',
+        chrome: '#F1F3F4',
       },
     },
   },

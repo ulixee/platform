@@ -1,9 +1,9 @@
-import Datastore, { Runner } from '@ulixee/datastore';
+import Datastore, { Extractor } from '@ulixee/datastore';
 import { boolean, string } from '@ulixee/schema';
 
 export default new Datastore({
-  runners: {
-    default: new Runner({
+  extractors: {
+    default: new Extractor({
       run(ctx) {
         ctx.Output.emit({ success: true });
       },

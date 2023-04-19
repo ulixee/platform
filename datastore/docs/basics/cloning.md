@@ -2,7 +2,7 @@
 
 > Every Datastore can be cloned and extended with additional functionality.
 
-Cloning is a command-line driven process to create a "copy" of a Datastore. All functionality that is cloned will continue to run on the remote server using [Passthrough Runners](./passthrough-runner.md) and [Passthrough Tables](./passthrough-table.md). You can mix-and-match local [Runners](./runner.md), [Crawlers](./crawler.md) and [Tables](./table.md) as you see fit.
+Cloning is a command-line driven process to create a "copy" of a Datastore. All functionality that is cloned will continue to run on the remote server using [Passthrough Extractors](./passthrough-extractor.md) and [Passthrough Tables](./passthrough-table.md). You can mix-and-match local [Extractors](./extractor.md), [Crawlers](./crawler.md) and [Tables](./table.md) as you see fit.
 
 ### Upstream
 

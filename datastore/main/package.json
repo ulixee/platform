@@ -24,7 +24,9 @@
     "@ulixee/schema": "2.0.0-alpha.19",
     "@ulixee/sidechain": "2.0.0-alpha.19",
     "@ulixee/specification": "2.0.0-alpha.19",
+    "@ulixee/sql-ast": "2.0.0-alpha.19",
     "@ulixee/sql-engine": "2.0.0-alpha.19",
+    "better-sqlite3": "^8.0.1",
     "commander": "^9.3.0",
     "nanoid": "^3.1.32",
     "yargs-parser": "^20.2.9"

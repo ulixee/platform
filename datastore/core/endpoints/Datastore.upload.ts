@@ -11,9 +11,9 @@ export default new DatastoreApiHandler('Datastore.upload', {
     const { compressedDatastore, allowNewLinkedVersionHistory, adminIdentity, adminSignature } =
       request;
 
-    let hasServerAdminIdentity =  false;
-    if (configuration.serverAdminIdentities.length) {
-      if (adminIdentity && configuration.serverAdminIdentities.includes(adminIdentity)) {
+    let hasServerAdminIdentity = false;
+    if (configuration.cloudAdminIdentities.length) {
+      if (adminIdentity && configuration.cloudAdminIdentities.includes(adminIdentity)) {
         hasServerAdminIdentity = true;
       }
       const message = DatastoreApiClient.createUploadSignatureMessage(
@@ -37,6 +37,7 @@ export default new DatastoreApiHandler('Datastore.upload', {
             adminIdentity,
             allowNewLinkedVersionHistory,
             hasServerAdminIdentity,
+            configuration.requireDatastoreAdminIdentities,
           );
         } finally {
           // remove tmp dir in case of errors

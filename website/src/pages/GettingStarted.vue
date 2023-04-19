@@ -75,10 +75,10 @@
 
         <div class="mt-5">
           <div class="text-3xl">Oh, and One More Thing</div>
-          <p>If you haven't installed <router-link to="developer-desktop">Ulixee Developer Desktop</router-link> then you'll need to manually setup Miner:</p>
+          <p>If you haven't installed <router-link to="developer-desktop">Ulixee Developer Desktop</router-link> then you'll need to manually setup Ulixee Cloud:</p>
 
           <Prism language="shell" :useUlixeeTheme="false">
-            npm install @ulixee/miner
+            npm install @ulixee/cloud
           </Prism>
         </div>
       </section>
@@ -151,7 +151,7 @@
         <Prism language="javascript" :useUlixeeTheme="false">
           import DatastoreForHero from '@ulixee/datastorex';
 
-          export default new Runner(async { Hero } => {
+          export default new Extractor(async { Hero } => {
           &nbsp; const hero = new Hero();
           &nbsp; await hero.goto('https://ulixee.org/getting-started/hero');
           })();

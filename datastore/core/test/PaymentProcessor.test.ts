@@ -63,7 +63,7 @@ test('it should ensure a payment has enough microgons', async () => {
   await expect(
     processor.createHold(
       {
-        runnersByName: {
+        extractorsByName: {
           fun1: { prices: [{ perQuery: 100, minimum: 100 }] },
         },
         paymentAddress: 'ar1',
@@ -87,7 +87,7 @@ test('it should allow adding multiple payees', async () => {
   await expect(
     processor.createHold(
       {
-        runnersByName: {
+        extractorsByName: {
           fun1: { prices: [{ perQuery: 100, minimum: 100 }] },
           fun2: { prices: [{ perQuery: 600, minimum: 600 }] },
         },
@@ -130,7 +130,7 @@ test('it should allow an function to charge per kb', async () => {
   await expect(
     processor.createHold(
       {
-        runnersByName: {
+        extractorsByName: {
           fun1: { prices: [{ perQuery: 500, minimum: 500 }] },
           fun2: { prices: [{ perQuery: 100, addOns: { perKb: 1 }, minimum: 100 }] },
         },
@@ -174,7 +174,7 @@ test('the processor should take all available funds if a query exceeds the micro
   await expect(
     processor.createHold(
       {
-        runnersByName: {
+        extractorsByName: {
           fun1: { prices: [{ perQuery: 494, minimum: 494 }] },
           fun2: { prices: [{ perQuery: 500, minimum: 500, addOns: { perKb: 1 } }] },
         },

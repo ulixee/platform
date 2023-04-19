@@ -16,7 +16,7 @@ export default new DatastoreApiHandler('Datastore.admin', {
 
     const approvedAdmins = new Set<string>([
       ...datastoreVersion.adminIdentities,
-      ...context.configuration.serverAdminIdentities,
+      ...context.configuration.cloudAdminIdentities,
     ]);
 
     if (!adminIdentity || !approvedAdmins.has(adminIdentity)) {
@@ -38,7 +38,8 @@ export default new DatastoreApiHandler('Datastore.admin', {
       throw new InvalidSignatureError('Your Admin signature is invalid for this function call.');
     }
 
-    const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
+    const storage = context.datastoreRegistry.getStorage(request.versionHash);
+    const datastore = await DatastoreVm.open(datastoreVersion.path, storage, datastoreVersion);
 
     if (adminFunction.ownerType === 'datastore') {
       if (typeof datastore[functionName] !== 'function')

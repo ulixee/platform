@@ -1,4 +1,4 @@
-import Datastore, { Crawler, Runner } from '@ulixee/datastore';
+import Datastore, { Crawler, Extractor } from '@ulixee/datastore';
 import { boolean, date, number, string } from '@ulixee/schema';
 
 let runCrawlerTime: Date;
@@ -40,12 +40,12 @@ const datastore = new Datastore({
       },
     }),
   },
-  runners: {
-    crawlCall: new Runner(async ctx => {
+  extractors: {
+    crawlCall: new Extractor(async ctx => {
       const crawl = await ctx.crawl(datastore.crawlers.crawl, ctx.input);
       ctx.Output.emit({ ...crawl, runCrawlerTime });
     }),
-    crawlWithSchemaCall: new Runner({
+    crawlWithSchemaCall: new Extractor({
       async run(ctx) {
         const crawl = await ctx.crawl(datastore.crawlers.crawlWithSchema, ctx.input);
         ctx.Output.emit({ ...crawl, runCrawlerTime });

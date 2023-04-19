@@ -1,6 +1,6 @@
 import { ISelectorMap } from '@ulixee/desktop-interfaces/ISelectorMap';
 import UlixeeConfig from '@ulixee/commons/config';
-import IScriptInstanceMeta from '@ulixee/hero-interfaces/IScriptInstanceMeta';
+import IScriptInvocationMeta from '@ulixee/hero-interfaces/IScriptInvocationMeta';
 import * as Fs from 'fs';
 import * as Path from 'path';
 import { existsAsync, readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
@@ -16,8 +16,8 @@ export default class SelectorRecommendations {
   private readonly projectPath: string;
   private readonly relativeScriptPath: string;
 
-  constructor(private scriptMetadata: IScriptInstanceMeta) {
-    this.config = UlixeeConfig.load(scriptMetadata);
+  constructor(private scriptMetadata: IScriptInvocationMeta) {
+    this.config = UlixeeConfig.load({ workingDirectory: process.cwd(), ...scriptMetadata });
     this.projectPath = this.findProjectPath();
     this.relativeScriptPath = Path.relative(
       `${this.projectPath}/..`,

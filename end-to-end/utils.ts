@@ -1,13 +1,13 @@
 import { ChildProcess, execSync, ExecSyncOptions } from 'child_process';
 
-export function getMinerHost(minerProcess: ChildProcess): Promise<string> {
+export function getCloudAddress(cloudNodeProcess: ChildProcess): Promise<string> {
   return new Promise<string>(resolve => {
-    minerProcess.stderr.setEncoding('utf8');
-    minerProcess.stderr.on('data', console.error);
-    minerProcess.stdout.setEncoding('utf8');
-    minerProcess.stdout.on('data', (message: string) => {
+    cloudNodeProcess.stderr.setEncoding('utf8');
+    cloudNodeProcess.stderr.on('data', console.error);
+    cloudNodeProcess.stdout.setEncoding('utf8');
+    cloudNodeProcess.stdout.on('data', (message: string) => {
       console.log('[DATASTORE CORE]', message.trim());
-      const match = message.match(/Ulixee Miner listening at (.+)/);
+      const match = message.match(/Ulixee Cloud listening at (.+)/);
       if (match?.length) resolve(match[1]);
     });
   });

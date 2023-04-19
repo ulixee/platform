@@ -163,8 +163,10 @@ export default class SqlParser {
       }
       const schema = schemasByName[name];
       const input = this.extractFunctionInput(name, boundValues);
-      for (const key of Object.keys(input)) {
-        input[key] = SqlGenerator.convertFromSqliteValue(schema[key]?.typeName, input[key]);
+      if (schema) {
+        for (const key of Object.keys(input)) {
+          input[key] = SqlGenerator.convertFromSqliteValue(schema[key]?.typeName, input[key]);
+        }
       }
       inputByFunction[name] = input;
     }

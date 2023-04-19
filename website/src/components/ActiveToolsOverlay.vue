@@ -39,10 +39,10 @@
               </router-link>
             </NavItem>
             <NavItem>
-              <router-link :to="`/miner${subPath}`">
+              <router-link :to="`/cloud${subPath}`">
                 <inline-svg :src="require('@/assets/tool-icons/server.svg')" />
                 <div>
-                  <header>Miner</header>
+                  <header>Cloud</header>
                   <p>Easily run and scale your Datastores across production and localhost.</p>
                 </div>
               </router-link>

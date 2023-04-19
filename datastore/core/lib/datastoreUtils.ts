@@ -6,25 +6,20 @@ import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
-import { IStatsByName } from './DatastoreRegistry';
 
 export function validateFunctionCoreVersions(
-  registryEntry: IDatastoreManifest & {
-    statsByName: IStatsByName;
-    path: string;
-    latestVersionHash: string;
-  },
-  runnerName: string,
+  registryEntry: IDatastoreManifest,
+  extractorName: string,
   context: IDatastoreApiContext,
 ): void {
-  if (!registryEntry.runnersByName[runnerName])
-    throw new Error(`${runnerName} is not a valid function name for this Datastore`);
+  if (!registryEntry.extractorsByName[extractorName] && !registryEntry.crawlersByName[extractorName])
+    throw new Error(`${extractorName} is not a valid function name for this Datastore`);
 
-  const { corePlugins } = registryEntry.runnersByName[runnerName] ?? {};
+  const { corePlugins } = registryEntry.extractorsByName[extractorName] ?? registryEntry.crawlersByName[extractorName] ?? {};
   for (const [pluginName, pluginVersion] of Object.entries(corePlugins ?? {})) {
     const pluginCore = context.pluginCoresByName[pluginName];
     if (!pluginCore) {
-      throw new Error(`Miner does not support required runtime dependency: ${pluginName}`);
+      throw new Error(`This Cloud does not support required runtime dependency: ${pluginName}`);
     }
 
     if (!isSemverSatisfied(pluginVersion, pluginCore.version)) {

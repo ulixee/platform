@@ -33,7 +33,7 @@ export default class PaymentProcessor {
   private fundingBalance: number;
   private sidechain: SidechainClient;
   private sidechainSettings: { settlementFeeMicrogons: number; blockHeight: number };
-  private readonly runnerHolds: {
+  private readonly functionHolds: {
     id: number;
     heldMicrogons: number;
     didRelease: boolean;
@@ -81,20 +81,22 @@ export default class PaymentProcessor {
     }
 
     let minimumPrice = computePricePerQuery;
-    for (const runnerCall of functionCallsWithTempIds) {
-      const prices = manifest.runnersByName[runnerCall.name].prices;
+    for (const functionCall of functionCallsWithTempIds) {
+      const prices =
+        (manifest.extractorsByName[functionCall.name] ?? manifest.crawlersByName[functionCall.name])
+          ?.prices ?? [];
       const pricePerQuery = prices[0]?.perQuery ?? 0;
       const pricePerKb = prices[0]?.addOns?.perKb ?? 0;
       const holdMicrogons = prices[0]?.minimum ?? pricePerQuery ?? 0;
       this.microgonsToHold += holdMicrogons;
 
-      const payouts: PaymentProcessor['runnerHolds'][0]['payouts'] = [];
+      const payouts: PaymentProcessor['functionHolds'][0]['payouts'] = [];
       if (pricePerQuery > 0 || pricePerKb > 0) {
         payouts.push({ address: manifest.paymentAddress, pricePerKb, pricePerQuery });
       }
       if (payouts.length) {
-        this.runnerHolds.push({
-          id: runnerCall.id,
+        this.functionHolds.push({
+          id: functionCall.id,
           didRelease: false,
           payouts,
           heldMicrogons: holdMicrogons,
@@ -124,15 +126,15 @@ export default class PaymentProcessor {
     return true;
   }
 
-  public releaseLocalFunctionHold(runnerId: number, resultBytes: number): number {
-    if (!this.holdId) return 0;
+  public releaseLocalFunctionHold(functionId: number, resultBytes: number): number {
+    if (!this.holdId || functionId < 0) return 0;
 
     let totalMicrogons = 0;
-    const runnerCall = this.runnerHolds.find(x => x.id === runnerId);
-    if (runnerCall.didRelease)
-      throw new Error(`This function call was already released! (id=${runnerId})`);
+    const extractorCall = this.functionHolds.find(x => x.id === functionId);
+    if (extractorCall.didRelease)
+      throw new Error(`This function call was already released! (id=${functionId})`);
 
-    for (const payout of runnerCall.payouts) {
+    for (const payout of extractorCall.payouts) {
       let microgons = payout.pricePerQuery ?? 0;
       if (payout.pricePerKb) {
         microgons += Math.floor((resultBytes / 1000) * payout.pricePerKb);
@@ -141,15 +143,15 @@ export default class PaymentProcessor {
       totalMicrogons += microgons;
       this.payouts.push({ microgons, address: payout.address });
     }
-    runnerCall.didRelease = true;
+    extractorCall.didRelease = true;
     return totalMicrogons;
   }
 
   public async settle(finalResultBytes: number): Promise<number> {
     if (!this.holdId) return 0;
 
-    if (this.runnerHolds.length === 1 && !this.runnerHolds[0].didRelease) {
-      this.releaseLocalFunctionHold(this.runnerHolds[0].id, finalResultBytes);
+    if (this.functionHolds.length === 1 && !this.functionHolds[0].didRelease) {
+      this.releaseLocalFunctionHold(this.functionHolds[0].id, finalResultBytes);
     }
 
     const payments: { [address: string]: number } = {};
@@ -222,7 +224,7 @@ export default class PaymentProcessor {
     );
     if (hold.holdAuthorizationCode) {
       this.holdAuthorizationCode = hold.holdAuthorizationCode;
-      // Add to the payments. This will active it for follow-on runners
+      // Add to the payments. This will active it for follow-on extractors
       this.payment.micronote.holdAuthorizationCode = hold.holdAuthorizationCode;
     }
     if (hold.accepted) {
@@ -242,7 +244,6 @@ export default class PaymentProcessor {
     if (!approvedSidechains.has(sidechainIdentity)) {
       throw new UnapprovedSidechainError();
     }
-
     this.sidechain = await this.context.sidechainClientManager.withIdentity(sidechainIdentity);
     const settings = await this.sidechain.getSettings(true);
     this.sidechainSettings = {
@@ -261,11 +262,12 @@ export default class PaymentProcessor {
     }
     let settlementFee = 0;
     if (pricePerQuery > 0) {
-      this.settlementFeeMicrogons ??= (
-        await context.sidechainClientManager.defaultClient
-          .getSettings(false, false)
-          .catch(() => ({ settlementFeeMicrogons: 0 }))
-      ).settlementFeeMicrogons;
+      if (this.settlementFeeMicrogons === undefined) {
+        const settings = await context.sidechainClientManager.defaultClient
+          ?.getSettings(false, false)
+          .catch(() => null);
+        this.settlementFeeMicrogons = settings?.settlementFeeMicrogons ?? 0;
+      }
       settlementFee = this.settlementFeeMicrogons;
     }
     return { settlementFee, pricePerQuery };

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen, shell } from 'electron';
+import { app, BrowserWindow, MenuItem, screen, shell } from 'electron';
 import * as Path from 'path';
 import { nanoid } from 'nanoid';
 import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';
@@ -12,6 +12,7 @@ import moment = require('moment');
 import View from './View';
 import StaticServer from './StaticServer';
 import ApiClient from './ApiClient';
+import generateContextMenu from '../menus/generateContextMenu';
 import BrowserView = Electron.BrowserView;
 
 // make electron packaging friendly
@@ -57,10 +58,10 @@ export default class ChromeAliveWindow {
       dbPath: string;
     },
     private staticServer: StaticServer,
-    minerAddress: string,
+    cloudAddress: string,
   ) {
     bindFunctions(this);
-    this.createApi(minerAddress);
+    this.createApi(cloudAddress);
 
     const mainScreen = screen.getPrimaryDisplay();
     const workarea = mainScreen.workArea;
@@ -182,7 +183,7 @@ export default class ChromeAliveWindow {
         resizeObserver.observe(elem);
       `);
 
-    await this.injectMinerAddress(this.#toolbarView.browserView);
+    await this.injectCloudAddress(this.#toolbarView.browserView);
   }
 
   public async onClose(): Promise<void> {
@@ -233,8 +234,8 @@ export default class ChromeAliveWindow {
       }
     }
     await Promise.all([
-      this.injectMinerAddress(this.#toolbarView.browserView),
-      this.injectMinerAddress(this.#mainView.browserView),
+      this.injectCloudAddress(this.#toolbarView.browserView),
+      this.injectCloudAddress(this.#mainView.browserView),
     ]);
   }
 
@@ -268,27 +269,43 @@ export default class ChromeAliveWindow {
           `(async () => {
           window.addEventListener("message", (event) => {
             event.source.postMessage({ 
-              action: 'returnMinerAddress', 
-              minerAddress: '${this.api.address}' 
+              action: 'returnCloudAddress', 
+              cloudAddress: '${this.api.address}' 
             }, event.origin);
           }, false);
         UI.inspectorView.tabbedPane.closeTabs(['timeline', 'heap_profiler', 'lighthouse', 'security', 'resources', 'network', 'sources']);
         
-        for (let i =0; i < 100; i+=1) {
+        for (let i =0; i < 50; i+=1) {
            const tab = UI.inspectorView.tabbedPane.tabs.find(x => x.titleInternal === 'Hero Script');
            if (tab) {    
              UI.inspectorView.tabbedPane.insertBefore(tab, 0);
              UI.inspectorView.tabbedPane.selectTab(tab.id);
              break;
            }
-           await new Promise(r => setTimeout(r, 100));
+           await new Promise(requestAnimationFrame);
         }
       })()`,
         );
         const target = await View.getTargetInfo(devtoolsWc);
         await this.api.send('Session.devtoolsTargetOpened', target);
       });
-      view.addContextMenu();
+      view.webContents.on('context-menu', (ev, params) => {
+        const menu = generateContextMenu(params, view.webContents);
+        menu.append(
+          new MenuItem({
+            label: 'Generate Selector',
+            click: () => {
+              view.webContents.inspectElement(params.x, params.y);
+              void this.api.send('Session.openMode', {
+                mode: 'Finder',
+                position: { x: params.x, y: params.y },
+                trigger: 'contextMenu',
+              });
+            },
+          }),
+        );
+        menu.popup();
+      });
 
       await view.webContents.loadURL('about:blank');
       view.webContents.openDevTools({ mode: 'bottom' });
@@ -316,12 +333,12 @@ export default class ChromeAliveWindow {
     this.#eventSubscriber.once(this.api, 'close', this.onApiClose);
   }
 
-  private async injectMinerAddress(view: BrowserView): Promise<void> {
+  private async injectCloudAddress(view: BrowserView): Promise<void> {
     if (!this.api.address) return;
     await view.webContents.executeJavaScript(
       `(() => {
-        window.minerAddress = '${this.api.address}';
-        if ('setMinerAddress' in window) window.setMinerAddress(window.minerAddress);
+        window.cloudAddress = '${this.api.address}';
+        if ('setCloudAddress' in window) window.setCloudAddress(window.cloudAddress);
       })()`,
     );
   }
@@ -360,7 +377,19 @@ export default class ChromeAliveWindow {
         const url = this.staticServer.getPath(page);
         if (this.#mainView.webContents.getURL() !== url) {
           await this.#mainView.webContents.loadURL(url);
-          await this.injectMinerAddress(this.#mainView.browserView);
+          await this.injectCloudAddress(this.#mainView.browserView);
+          if (mode === 'Output') {
+            await this.#mainView.webContents.openDevTools({ mode: 'bottom' });
+            const view = this.#mainView;
+            this.#eventSubscriber.on(view.webContents, 'devtools-opened', () => {
+              const devtoolsWc = view.webContents.devToolsWebContents;
+              void devtoolsWc?.executeJavaScript(
+                `(() => {
+        UI.inspectorView.tabbedPane.closeTabs(['timeline', 'heap_profiler', 'lighthouse', 'security', 'resources', 'network', 'sources', 'elements']);
+      })()`,
+              );
+            });
+          }
         }
       }
     }
@@ -405,7 +434,10 @@ export default class ChromeAliveWindow {
       const title = `${scriptEntrypoint} (${moment(session.startTime).format(
         'MMM D [at] h:mm a',
       )})`;
-      if (this.window.title !== title) this.window.setTitle(title);
+      if (this.window.title !== title) {
+        this.window.setTitle(title);
+        void this.#toolbarView.webContents.executeJavaScript(`document.title="${title}"`);
+      }
     }
 
     if (eventType === 'Session.loaded' && !this.#hasShown) {

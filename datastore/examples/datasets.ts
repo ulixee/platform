@@ -1,8 +1,8 @@
-// NOTE: you must start your own Ulixee Miner to run this example.
+// NOTE: you must start your own Ulixee Cloud to run this example.
 
-import { Runner, HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+import { Extractor, HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 
-export default new Runner(async context => {
+export default new Extractor(async context => {
   const { Output, Hero } = context;
   const hero = new Hero();
   await hero.goto('https://ulixee.org');
@@ -26,4 +26,4 @@ export default new Runner(async context => {
     await hero.goBack();
     await hero.waitForLocation('change');
   }
-}, HeroRunnerPlugin);
+}, HeroExtractorPlugin);

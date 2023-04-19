@@ -12,7 +12,7 @@
           <router-link to="/docs/datastore" class="block px-5">Datastore</router-link>
         </div>
         <div class="relative bg-white">
-          <router-link to="/docs/miner" class="block px-5">Miner</router-link>
+          <router-link to="/docs/cloud" class="block px-5">Cloud</router-link>
         </div>
         <div class="divider border-t"></div>
         <div class="relative bg-white">

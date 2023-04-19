@@ -18,14 +18,14 @@ reboot
 
 ## Pull Docker image from Github Container Registry
 ```bash
-docker pull ghcr.io/ulixee/ulixee-miner:latest
-docker tag ghcr.io/ulixee/ulixee-miner:latest ulixee-miner
+docker pull ghcr.io/ulixee/ulixee-cloud:latest
+docker tag ghcr.io/ulixee/ulixee-cloud:latest ulixee-cloud
 ```
 
 ## Pull Docker image from Dockerhub
 ```bash
-docker pull ulixee/ulixee-miner:latest
-docker tag ulixee/ulixee-miner ulixee-miner
+docker pull ulixee/ulixee-cloud:latest
+docker tag ulixee/ulixee-cloud ulixee-cloud
 ```
 
 # Copy/modify run.sh On Your Server

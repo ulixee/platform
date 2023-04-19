@@ -1,20 +1,26 @@
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
-import type { IChromeAliveSessionApis, IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
+import type {
+  IChromeAliveSessionApis,
+  IDesktopAppApis,
+  IDesktopAppPrivateApis,
+} from '@ulixee/desktop-interfaces/apis';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
 import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
 import IChromeAliveEvent from '@ulixee/desktop-interfaces/events/IChromeAliveEvent';
 import type ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
 import type ICoreRequestPayload from '@ulixee/net/interfaces/ICoreRequestPayload';
+import IDesktopAppPrivateEvents from '@ulixee/desktop-interfaces/events/IDesktopAppPrivateEvents';
 
 declare global {
   interface Window {
-    setMinerAddress(url: string): void;
-    minerAddress: string | undefined;
+    setCloudAddress(url: string): void;
+    cloudAddress: string | undefined;
     defaultClient: Client;
   }
 }
 
-export class Client<Type extends 'session' | 'desktop' = 'session'> {
+let clientId = 0;
+export class Client<Type extends 'session' | 'desktop' | 'internal' = 'session'> {
   public onConnect: () => any;
   public address: string;
   public autoReconnect = true;
@@ -30,6 +36,14 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
 
   private lastEventByEventType: { [event: string]: any } = {};
 
+  private id = (clientId += 1);
+
+  constructor(address?: string) {
+    this.connect = this.connect.bind(this);
+    this.send = this.send.bind(this);
+    this.address ??= address;
+  }
+
   connect(): Promise<void> {
     if (this.connectedPromise) {
       return this.connectedPromise;
@@ -40,7 +54,12 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     this.connection = new WebSocket(this.address);
     this.connection.onclose = this.onClose.bind(this);
     this.connectedPromise = new Promise(resolve => {
-      this.connection.onopen = () => resolve();
+      this.connection.onopen = () => {
+        window.addEventListener('beforeunload', () => {
+          this.connection?.close();
+        });
+        resolve();
+      };
     });
     this.connection.onmessage = this.emit.bind(this);
     return this.connectedPromise.then(this.onConnect);
@@ -50,7 +69,13 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     T extends keyof TEvents & string,
     TEvents extends Type extends 'session'
       ? IChromeAliveSessionEvents
-      : IDesktopAppEvents = Type extends 'session' ? IChromeAliveSessionEvents : IDesktopAppEvents,
+      : Type extends 'desktop'
+      ? IDesktopAppEvents
+      : IDesktopAppPrivateEvents = Type extends 'session'
+      ? IChromeAliveSessionEvents
+      : Type extends 'desktop'
+      ? IDesktopAppEvents
+      : IDesktopAppPrivateEvents,
   >(event: T, handler: (message: TEvents[T]) => any): void {
     this.eventHandlersByEventType[event] ??= [];
     this.eventHandlersByEventType[event].push(handler);
@@ -62,12 +87,33 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     T extends keyof TEvents & string,
     TEvents extends Type extends 'session'
       ? IChromeAliveSessionEvents
-      : IDesktopAppEvents = Type extends 'session' ? IChromeAliveSessionEvents : IDesktopAppEvents,
+      : Type extends 'desktop'
+      ? IDesktopAppEvents
+      : IDesktopAppPrivateEvents = Type extends 'session'
+      ? IChromeAliveSessionEvents
+      : Type extends 'desktop'
+      ? IDesktopAppEvents
+      : IDesktopAppPrivateEvents,
   >(event: T, handler: (message: TEvents[T]) => any): void {
     const handlers = this.eventHandlersByEventType[event];
     if (!handlers) return;
     const idx = handlers.indexOf(handler);
     if (idx >= 0) handlers.splice(idx, 1);
+  }
+
+  removeEventListeners<
+    T extends keyof TEvents & string,
+    TEvents extends Type extends 'session'
+      ? IChromeAliveSessionEvents
+      : Type extends 'desktop'
+      ? IDesktopAppEvents
+      : IDesktopAppPrivateEvents = Type extends 'session'
+      ? IChromeAliveSessionEvents
+      : Type extends 'desktop'
+      ? IDesktopAppEvents
+      : IDesktopAppPrivateEvents,
+  >(event: T): void {
+    delete this.eventHandlersByEventType[event];
   }
 
   close() {
@@ -80,11 +126,11 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
   onClose() {
     this.connectedPromise = null;
     if (!this.autoReconnect) {
-      this.eventHandlersByEventType = {}
+      this.eventHandlersByEventType = {};
       return;
     }
     setTimeout(() => {
-      this.address ||= window.minerAddress;
+      this.address ||= window.cloudAddress;
       this.connect().catch(err => console.log('Client Connect Error', err));
     }, 1e3);
   }
@@ -93,7 +139,13 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     T extends keyof TApis & string,
     TApis extends Type extends 'session'
       ? IChromeAliveSessionApis
-      : IDesktopAppApis = Type extends 'session' ? IChromeAliveSessionApis : IDesktopAppApis,
+      : Type extends 'desktop'
+      ? IDesktopAppApis
+      : IDesktopAppPrivateApis = Type extends 'session'
+      ? IChromeAliveSessionApis
+      : Type extends 'desktop'
+      ? IDesktopAppApis
+      : IDesktopAppPrivateApis,
   >(
     command: T,
     ...args: ICoreRequestPayload<TApis, T>['args']
@@ -111,14 +163,15 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
       messageId,
       args,
     });
+
     document.dispatchEvent(
       new CustomEvent('chromealive:api', {
-        detail: { command, messageId, args },
+        detail: { command, messageId, args, clientId: this.id },
       }),
     );
     return new Promise(resolve => {
-      this.connection.send(message);
       this.pendingMessagesById.set(messageId, { resolve });
+      this.connection.send(message);
     });
   }
 
@@ -126,11 +179,10 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
     TApis extends Type extends 'session'
       ? IChromeAliveSessionApis
       : IDesktopAppApis = Type extends 'session' ? IChromeAliveSessionApis : IDesktopAppApis,
-  >(message: { data: string }): void {
+  >(message: { eventType?: string; data: string }): void {
     const event: IChromeAliveEvent<any> | ICoreResponsePayload<TApis, any> = TypeSerializer.parse(
       message.data,
     );
-
     if ('eventType' in event) {
       this.lastEventByEventType[event.eventType as string] = event.data;
       for (const handler of this.eventHandlersByEventType[event.eventType as string] ?? []) {
@@ -145,11 +197,16 @@ export class Client<Type extends 'session' | 'desktop' = 'session'> {
       const { responseId, data } = event;
       this.pendingMessagesById.get(responseId)?.resolve(data);
       this.pendingMessagesById.delete(responseId);
+      document.dispatchEvent(
+        new CustomEvent('chromealive:api:response', {
+          detail: { responseId, data, clientId: this.id },
+        }),
+      );
     }
   }
 }
 
-window.minerAddress ??= '';
+window.cloudAddress ??= '';
 
 // eslint-disable-next-line import/no-mutable-exports
 let defaultClient: Client;
@@ -159,15 +216,15 @@ if (window.opener) {
   defaultClient = new Client();
 }
 
-window.setMinerAddress = function setMinerAddress(url: string) {
-  window.minerAddress = url;
+window.setCloudAddress = function setCloudAddress(url: string) {
+  window.cloudAddress = url;
   defaultClient.address = url;
   defaultClient.connect().catch(console.error);
 };
 
 // if already set, connect now
-if (window.minerAddress) {
-  window.setMinerAddress(window.minerAddress);
+if (window.cloudAddress) {
+  window.setCloudAddress(window.cloudAddress);
 }
 window.defaultClient = defaultClient;
 

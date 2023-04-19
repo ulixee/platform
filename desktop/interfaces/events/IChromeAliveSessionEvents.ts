@@ -11,6 +11,7 @@ import ISessionTimetravelEvent from './ISessionTimetravelEvent';
 import IInterceptInspectElementMode from './IInterceptInspectElementMode';
 import IDatastoreCollectedAssetEvent from './IDatastoreCollectedAssetEvent';
 import IElementSummary from '../IElementSummary';
+import IResourceOverview from '../IResourceOverview';
 
 export default interface IChromeAliveSessionEvents {
   'Session.tabCreated': { tabId: number };
@@ -19,6 +20,7 @@ export default interface IChromeAliveSessionEvents {
   'Session.loading': void;
   'Session.loaded': void;
   'Session.updated': IHeroSessionUpdatedEvent;
+  'Session.resource': { resource: IResourceOverview };
   'Session.timetravel': ISessionTimetravelEvent;
   'Session.interceptInspectElementMode': IInterceptInspectElementMode;
   'Datastore.output': IDatastoreOutputEvent;

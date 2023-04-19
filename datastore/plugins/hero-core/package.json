@@ -11,12 +11,13 @@
     "@ulixee/datastore-plugins-hero": "2.0.0-alpha.19",
     "@ulixee/hero": "2.0.0-alpha.19",
     "@ulixee/hero-core": "2.0.0-alpha.19",
+    "@ulixee/execute-js-plugin": "2.0.0-alpha.19",
     "@ulixee/net": "2.0.0-alpha.19"
   },
   "devDependencies": {
     "@types/node": "14.14.31",
     "@ulixee/datastore-packager": "2.0.0-alpha.19",
     "@ulixee/datastore-testing": "2.0.0-alpha.19",
-    "@ulixee/miner": "2.0.0-alpha.19"
+    "@ulixee/cloud": "2.0.0-alpha.19"
   }
 }

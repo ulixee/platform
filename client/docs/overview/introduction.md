@@ -26,7 +26,7 @@ client.fetch('developers', { status: 'founders' }).then(records => {
 });
 ```
 
-You can also use Client with local datastores/tables/runners/crawlers while in development mode:
+You can also use Client with local datastores/tables/extractors/crawlers while in development mode:
 
 ```javascript
 import Client from '@ulixee/client-playground';

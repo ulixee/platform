@@ -3,11 +3,12 @@ import StringSchema from '@ulixee/schema/lib/StringSchema';
 import DateSchema from '@ulixee/schema/lib/DateSchema';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import { SqlGenerator } from '@ulixee/sql-engine';
+import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import moment = require('moment');
-import Runner from './Runner';
-import IRunnerSchema, { ISchemaRecordType } from '../interfaces/IRunnerSchema';
-import { IRunnerPluginConstructor } from '../interfaces/IRunnerPluginStatics';
-import IRunnerContext from '../interfaces/IRunnerContext';
+import Extractor from './Extractor';
+import IExtractorSchema, { ISchemaRecordType } from '../interfaces/IExtractorSchema';
+import { IExtractorPluginConstructor } from '../interfaces/IExtractorPluginStatics';
+import IExtractorContext from '../interfaces/IExtractorContext';
 import ICrawlerComponents from '../interfaces/ICrawlerComponents';
 import ICrawlerOutputSchema, { CrawlerOutputSchema } from '../interfaces/ICrawlerOutputSchema';
 import Table from './Table';
@@ -15,30 +16,30 @@ import DatastoreInternal from './DatastoreInternal';
 
 export default class Crawler<
   TDisableCache extends boolean = false,
-  TProvidedSchema extends IRunnerSchema<unknown, never> = IRunnerSchema<unknown, never>,
+  TProvidedSchema extends IExtractorSchema<unknown, never> = IExtractorSchema<unknown, never>,
   TFinalInput extends ISchemaRecordType<any> = TDisableCache extends true
     ? TProvidedSchema['input']
     : TProvidedSchema extends { input: Record<string, ISchemaAny> }
     ? typeof CrawlerInputSchema & TProvidedSchema['input']
     : typeof CrawlerInputSchema & Record<string, ISchemaAny>,
-  TSchema extends IRunnerSchema<TFinalInput, typeof CrawlerOutputSchema> = IRunnerSchema<
+  TSchema extends IExtractorSchema<TFinalInput, typeof CrawlerOutputSchema> = IExtractorSchema<
     TFinalInput,
     typeof CrawlerOutputSchema
   >,
-  TPlugin1 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
-  TPlugin2 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
-  TPlugin3 extends IRunnerPluginConstructor<TSchema> = IRunnerPluginConstructor<TSchema>,
-  TContext extends Omit<IRunnerContext<TSchema>, 'Output' | 'outputs'> &
+  TPlugin1 extends IExtractorPluginConstructor<TSchema> = IExtractorPluginConstructor<TSchema>,
+  TPlugin2 extends IExtractorPluginConstructor<TSchema> = IExtractorPluginConstructor<TSchema>,
+  TPlugin3 extends IExtractorPluginConstructor<TSchema> = IExtractorPluginConstructor<TSchema>,
+  TContext extends Omit<IExtractorContext<TSchema>, 'Output' | 'outputs'> &
     TPlugin1['contextAddons'] &
     TPlugin2['contextAddons'] &
-    TPlugin3['contextAddons'] = Omit<IRunnerContext<TSchema>, 'Output' | 'outputs'> &
+    TPlugin3['contextAddons'] = Omit<IExtractorContext<TSchema>, 'Output' | 'outputs'> &
     TPlugin1['contextAddons'] &
     TPlugin2['contextAddons'] &
     TPlugin3['contextAddons'],
-> extends Runner<TSchema, TPlugin1, TPlugin2, TPlugin3, TContext> {
+> extends Extractor<TSchema, TPlugin1, TPlugin2, TPlugin3, TContext> {
   public static defaultMaxTimeInCache = 10 * 60e3;
 
-  public override runnerType = 'crawler';
+  public override extractorType = 'crawler';
   public cache?: Table<{
     input: StringSchema<false>;
     sessionId: StringSchema<false>;
@@ -71,13 +72,13 @@ export default class Crawler<
 
   public override attachToDatastore(
     datastoreInternal: DatastoreInternal<any, any>,
-    runnerName: string,
+    extractorName: string,
   ): void {
-    super.attachToDatastore(datastoreInternal, runnerName);
+    super.attachToDatastore(datastoreInternal, extractorName);
     if (!this.crawlerComponents.disableCache) {
       this.cache = new Table({
         isPublic: false,
-        name: `crawler_cache_${runnerName}`,
+        name: `crawler_cache_${extractorName}`,
         schema: {
           input: string({ description: 'Typeserialized json of the inputs' }),
           sessionId: string({
@@ -97,7 +98,7 @@ export default class Crawler<
     context: TContext,
   ): Promise<void> {
     const { outputs, Output, datastoreMetadata, input, schema, ...rest } =
-      context as IRunnerContext<TSchema>;
+      context as IExtractorContext<TSchema>;
     const cached = await this.findCached(input as TContext['input']);
     if (cached) {
       Output.emit(cached as any);
@@ -149,6 +150,8 @@ export default class Crawler<
     return TypeSerializer.stringify(inputArgs, { sortKeys: true });
   }
 }
+
+addGlobalInstance(Crawler);
 
 const CrawlerInputSchema = {
   maxTimeInCache: number({

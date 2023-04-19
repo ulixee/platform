@@ -13,7 +13,7 @@ client.fetch('developers', { status: 'founders' }).then(records => {
 });
 ```
 
-Run datastore runners:
+Run datastore extractors:
 
 
 ```javascript

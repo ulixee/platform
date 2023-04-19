@@ -41,7 +41,7 @@ const rootDir = Path.resolve(__dirname, '../../');
 }
 
 {
-  const mdDocsRootPath = `${rootDir}/miner/docs`;
+  const mdDocsRootPath = `${rootDir}/cloud/docs`;
   walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'miner');
   });

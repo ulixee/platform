@@ -8,8 +8,21 @@ import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
+import Logger from '@ulixee/commons/lib/Logger';
+import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
+import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
+import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
+import { ICloudApis } from '@ulixee/platform-specification/cloud/index';
+import TransportBridge from '@ulixee/net/lib/TransportBridge';
+import { ConnectionToCore } from '@ulixee/net';
+import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreVersionHashValidation';
+import ICloudEvents from '../interfaces/ICloudEvents';
+import CloudStatus from '../endpoints/Cloud.status';
+import ICloudApiContext from '../interfaces/ICloudApiContext';
+import CloudNode, { IHttpHandleFn } from './CloudNode';
 import DesktopUtils from './DesktopUtils';
-import Miner, { IHttpHandleFn } from '../index';
+
+const { log } = Logger(module);
 
 export default class CoreRouter {
   public static datastorePluginsToRegister = [
@@ -30,19 +43,22 @@ export default class CoreRouter {
   }
 
   private isClosing: Promise<void>;
-  private miner: Miner;
+  private cloudNode: CloudNode;
   private readonly connections = new Set<IConnectionToClient<any, any>>();
+
+  private apiRegistry = new ApiRegistry<ICloudApiContext>([CloudStatus]);
 
   private wsConnectionByType = {
     hero: transport => HeroCore.addConnection(transport),
+    chromealive: (transport, req) =>
+      DesktopUtils.getDesktop().addChromeAliveConnection(transport, req),
     datastore: transport => DatastoreCore.addConnection(transport) as any,
     desktop: (transport, req) =>
       DesktopUtils.getDesktop().addDesktopConnection(transport, req) as any,
-    chromealive: (transport, req) =>
-      DesktopUtils.getDesktop().addChromeAliveConnection(transport, req),
     desktopRaw: (ws, req) => {
       DesktopUtils.getDesktop().addAppDevtoolsWebsocket(ws, req);
     },
+    cloud: transport => this.addCloudApiConnection(transport),
   } as const;
 
   private httpRoutersByType: {
@@ -54,54 +70,77 @@ export default class CoreRouter {
     datastoreOptions: DatastoreCore.routeOptions.bind(DatastoreCore),
   };
 
-  constructor(miner: Miner) {
-    this.miner = miner;
+  constructor(cloudNode: CloudNode) {
+    this.cloudNode = cloudNode;
 
-    miner.addWsRoute('/hero', this.handleSocketRequest.bind(this, 'hero'));
-    miner.addWsRoute('/datastore', this.handleSocketRequest.bind(this, 'datastore'));
-    miner.addHttpRoute('/server-details', 'GET', this.handleHttpServerDetails.bind(this));
-    miner.addHttpRoute(
+    cloudNode.addWsRoute('/hero', this.handleSocketRequest.bind(this, 'hero'));
+    cloudNode.addWsRoute('/datastore', this.handleSocketRequest.bind(this, 'datastore'));
+    cloudNode.addHttpRoute('/server-details', 'GET', this.handleHttpServerDetails.bind(this));
+    cloudNode.addHttpRoute(
       /.*\/free-credits\/?\?crd[A-Za-z0-9_]{8}.*/,
       'GET',
       this.handleHttpRequest.bind(this, 'datastoreCreditBalance'),
     );
-    miner.addHttpRoute(/\/datastore\/(.+)/, 'GET', this.handleHttpRequest.bind(this, 'datastore'));
-    miner.addHttpRoute(/\/(.*)/, 'GET', this.handleHttpRequest.bind(this, 'datastoreRoot'));
-    miner.addHttpRoute('/', 'OPTIONS', this.handleHttpRequest.bind(this, 'datastoreOptions'));
+    cloudNode.addHttpRoute(
+      new RegExp(`/(${datastoreRegex.source})(.*)`),
+      'GET',
+      this.handleHttpRequest.bind(this, 'datastore'),
+    );
+    cloudNode.addHttpRoute(/\/(.*)/, 'GET', this.handleHttpRequest.bind(this, 'datastoreRoot'));
+    cloudNode.addHttpRoute('/', 'OPTIONS', this.handleHttpRequest.bind(this, 'datastoreOptions'));
+    // last option
+    cloudNode.addHttpRoute('/', 'GET', this.handleHome.bind(this));
 
     for (const module of CoreRouter.datastorePluginsToRegister) {
       safeRegisterModule(module);
     }
 
     if (DesktopUtils.isInstalled()) {
-      miner.addWsRoute(
+      cloudNode.addWsRoute(
         /\/desktop-devtools\?id=.+/,
         this.handleRawSocketRequest.bind(this, 'desktopRaw'),
       );
-      miner.addWsRoute(/\/desktop(\?.+)?/, this.handleSocketRequest.bind(this, 'desktop'));
-      miner.addWsRoute(/\/chromealive\/.+/, this.handleSocketRequest.bind(this, 'chromealive'));
+      cloudNode.addWsRoute(/\/desktop(\?.+)?/, this.handleSocketRequest.bind(this, 'desktop'));
+      cloudNode.addWsRoute(/\/chromealive\/.+/, this.handleSocketRequest.bind(this, 'chromealive'));
     }
   }
 
-  public async start(minerAddress: string): Promise<void> {
-    HeroCore.onShutdown = () => this.miner.close();
-    this.heroConfiguration ??= {};
-    this.heroConfiguration.shouldShutdownOnSignals ??= this.miner.shouldShutdownOnSignals;
-    await HeroCore.start(this.heroConfiguration);
+  public async start(cloudNodeAddress: string): Promise<void> {
+    const startLogId = log.info('CloudNode.start', {
+      cloudNodeAddress,
+      sessionId: null,
+    });
+    try {
+      HeroCore.onShutdown = () => this.cloudNode.close();
+      this.heroConfiguration ??= {};
+      this.heroConfiguration.shouldShutdownOnSignals ??= this.cloudNode.shouldShutdownOnSignals;
+      await HeroCore.start(this.heroConfiguration);
 
-    if (this.datastoreConfiguration) {
-      Object.assign(DatastoreCore.options, this.datastoreConfiguration);
-    }
+      if (this.datastoreConfiguration) {
+        Object.assign(DatastoreCore.options, this.datastoreConfiguration);
+      }
 
-    const [ipAddress, port] = minerAddress.split(':');
-    this.serverAddress = { ipAddress, port: Number(port) };
-    await DatastoreCore.start({ ipAddress, port: this.serverAddress.port });
+      const [ipAddress, port] = cloudNodeAddress.split(':');
+      this.serverAddress = { ipAddress, port: Number(port) };
+      await DatastoreCore.start({ ipAddress, port: this.serverAddress.port });
 
-    if (DesktopUtils.isInstalled()) {
-      const chromeAliveCore = DesktopUtils.getDesktop();
-      const wsAddress = Promise.resolve(`ws://${minerAddress}`);
-      chromeAliveCore.setMinerAddress(wsAddress);
-      await chromeAliveCore.activatePlugin();
+      if (DesktopUtils.isInstalled()) {
+        const chromeAliveCore = DesktopUtils.getDesktop();
+        const wsAddress = Promise.resolve(`ws://${cloudNodeAddress}`);
+        const bridge = new TransportBridge();
+        this.addCloudApiConnection(bridge.transportToClient);
+
+        chromeAliveCore.setLocalCloudAddress(
+          wsAddress,
+          new ConnectionToCore(bridge.transportToCore),
+        );
+        await chromeAliveCore.activatePlugin();
+      }
+    } finally {
+      log.stats('CloudNode.started', {
+        parentLogId: startLogId,
+        sessionId: null,
+      });
     }
   }
 
@@ -126,6 +165,21 @@ export default class CoreRouter {
       closeResolvable.reject(error);
     }
     return closeResolvable.promise;
+  }
+
+  private addCloudApiConnection(
+    transport: ITransportToClient<ICloudApis, ICloudEvents>,
+  ): ConnectionToClient<ICloudApis, ICloudEvents, ICloudApiContext> {
+    return this.apiRegistry.createConnection(transport, {
+      logger: log.createChild(module, {}),
+      connectedNodes: 0,
+      cloudNodes: 1,
+      version: this.cloudNode.version,
+    });
+  }
+
+  private handleHome(req: IncomingMessage, res: ServerResponse): void {
+    res.end(`Ulixee Cloud v${this.cloudNode.version}`);
   }
 
   private handleRawSocketRequest(
@@ -162,8 +216,7 @@ export default class CoreRouter {
     res: ServerResponse,
     params: string[],
   ): Promise<void | boolean> {
-    const result = await this.httpRoutersByType[connectionType](req, res, params);
-    return result;
+    return await this.httpRoutersByType[connectionType](req, res, params);
   }
 
   private handleHttpServerDetails(req: IncomingMessage, res: ServerResponse): void {

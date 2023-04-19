@@ -39,16 +39,31 @@ module.exports = {
     'screen-about': {
       entry: './src/pages/screen-about/index.ts',
     },
-    'hero-script': {
-      entry: `src/pages/hero-script/index.ts`,
+    'extension/hero-script': {
+      entry: `src/pages/extension/hero-script/index.ts`,
       template: 'public/extension.html',
     },
-    'state-generator': {
-      entry: `src/pages/state-generator/index.ts`,
+    'extension/state-generator': {
+      entry: `src/pages/extension/state-generator/index.ts`,
+      template: 'public/extension.html',
+    },
+    'extension/resources': {
+      entry: `src/pages/extension/resources/index.ts`,
       template: 'public/extension.html',
     },
   },
   configureWebpack: config => {
     config.devtool = 'inline-source-map';
   },
+  chainWebpack(config) {
+    config.module
+      .rule('vue')
+      .use('vue-loader')
+      .loader('vue-loader')
+      .tap(options => {
+        options.compilerOptions = options.compilerOptions || {};
+        options.compilerOptions.whitespace = 'preserve'
+        return options
+      });
+  }
 };

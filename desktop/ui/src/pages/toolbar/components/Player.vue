@@ -42,6 +42,7 @@
           :class="{ hasFinder: isFinderMode }"
           class="search-icon"
           @click="toggleFinder"
+          ref='finderButtonRef'
         >
           <img src="@/assets/icons/search.svg" class="h-5 w-5">
         </div>
@@ -98,6 +99,7 @@ export default Vue.defineComponent({
 
     return {
       currentUrl,
+      finderButtonRef: Vue.ref<HTMLDivElement>(),
       mouseIsWithinPlayer: Vue.ref(false),
       isRestartingSession,
       isLiveMode,
@@ -111,7 +113,11 @@ export default Vue.defineComponent({
         this.$emit('select');
       }
     },
-
+    ensureFinderOpen(rect?: DOMRect) {
+      if (!WindowsController.isShowingFinder) {
+        WindowsController.showMenuFinder(rect ?? this.finderButtonRef.getBoundingClientRect());
+      }
+    },
     toggleFinder(event: MouseEvent) {
       const rect = (event.target as HTMLElement).getBoundingClientRect();
       if (WindowsController.isShowingFinder) {

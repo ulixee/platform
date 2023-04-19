@@ -14,7 +14,7 @@ if (process.argv.some(x => x.includes('--desktop'))) {
   const menubar = new Menubar({
     windowPosition: 'trayLeft',
     width: 300,
-    height: 400,
+    height: 325,
     tooltip: 'Ulixee',
   });
 

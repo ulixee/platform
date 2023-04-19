@@ -6,6 +6,11 @@ import Table, { IExpandedTableSchema } from './Table';
 import ITableComponents from '../interfaces/ITableComponents';
 import DatastoreApiClient from './DatastoreApiClient';
 
+export type IPassthroughQueryRunOptions = Omit<
+  IDatastoreApiTypes['Datastore.query']['args'],
+  'sql' | 'boundValues' | 'versionHash'
+>;
+
 export interface IPassthroughTableComponents<
   TRemoteSources extends Record<string, string>,
   TTableName extends string,
@@ -46,10 +51,7 @@ export default class PassthroughTable<
   public override async queryInternal<T = TSchemaType[]>(
     sql: string,
     boundValues: any[] = [],
-    options: Omit<
-      IDatastoreApiTypes['Datastore.query']['args'],
-      'sql' | 'boundValues' | 'versionHash'
-    > = {},
+    options: IPassthroughQueryRunOptions = { id: undefined },
   ): Promise<T> {
     this.createApiClient();
     if (this.name !== this.remoteTable) {
@@ -79,10 +81,5 @@ export default class PassthroughTable<
         'A valid url was not supplied for this remote datastore. Format should be ulx://<host>/<datastoreVersionHash>',
       );
     }
-  }
-
-  // Do not create in-memory table for a remote table
-  protected override createInMemoryTable(): Promise<void> {
-    return Promise.resolve();
   }
 }

@@ -32,9 +32,9 @@
     <div class="my-10 text-center">
       <a
         class="text-purple-700 underline"
-        href="/rerun-runner"
-        @click.prevent="rerunRunner"
-      >Re-run Runner</a>
+        href="/rerun-extractor"
+        @click.prevent="rerunExtractor"
+      >Re-run Extractor</a>
     </div>
     <slot v-if="collectedAssets.detachedResources.length">
       <h2>Collected Resources</h2>
@@ -366,8 +366,8 @@ const datastore: any = Vue.defineComponent({
         .then(this.onCollectedAssets)
         .catch(err => console.error(err));
     },
-    rerunRunner(): void {
-      Client.send('Datastore.rerunRunner').catch(err => console.error(err));
+    rerunExtractor(): void {
+      Client.send('Datastore.rerunExtractor').catch(err => console.error(err));
     },
   },
   mounted() {

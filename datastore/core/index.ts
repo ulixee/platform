@@ -1,23 +1,24 @@
 import * as Os from 'os';
 import * as Path from 'path';
-import { promises as Fs } from 'fs';
+import { createReadStream, promises as Fs } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import * as Finalhandler from 'finalhandler';
 import * as ServeStatic from 'serve-static';
-import IRunnerPluginCore from '@ulixee/datastore/interfaces/IRunnerPluginCore';
+import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
-import { IDatastoreApis } from '@ulixee/platform-specification/datastore';
+import { IDatastoreApis, IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import IDatastoreEvents from '@ulixee/datastore/interfaces/IDatastoreEvents';
 import Identity from '@ulixee/crypto/lib/Identity';
 import Ed25519 from '@ulixee/crypto/lib/Ed25519';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import IDatastoreDomainResponse from '@ulixee/datastore/interfaces/IDatastoreDomainResponse';
-import Autorun from '@ulixee/datastore/lib/utils/Autorun';
+import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
+import DocspageDir from '@ulixee/datastore-docpage';
 import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
 import env from './env';
 import DatastoreRegistry from './lib/DatastoreRegistry';
@@ -26,26 +27,34 @@ import IDatastoreApiContext from './interfaces/IDatastoreApiContext';
 import SidechainClientManager from './lib/SidechainClientManager';
 import DatastoreUpload from './endpoints/Datastore.upload';
 import DatastoreQuery from './endpoints/Datastore.query';
-import DatastoreQueryLocalScript from './endpoints/Datastore.queryLocalScript';
 import DatastoreMeta from './endpoints/Datastore.meta';
-import DatastoreQueryInternal from './endpoints/Datastore.queryInternal';
-import DatastoreQueryInternalTable from './endpoints/Datastore.queryInternalTable';
-import DatastorequeryInternalFunctionResult from './endpoints/Datastore.queryInternalFunctionResult';
-import DatastoreInitializeInMemoryTable from './endpoints/Datastore.createInMemoryTable';
-import DatastoreInitializeInMemoryRunner from './endpoints/Datastore.createInMemoryFunction';
 import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
 import DatastoreStream from './endpoints/Datastore.stream';
-import DatastoreFetchInternalTable from './endpoints/Datastore.fetchInternalTable';
 import DatastoreAdmin from './endpoints/Datastore.admin';
 import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
 import DatastoreVm from './lib/DatastoreVm';
 import { DatastoreNotFoundError } from './lib/errors';
 import DatastoresList from './endpoints/Datastores.list';
+import DatastoreStart from './endpoints/Datastore.start';
+import DatastoreDownload from './endpoints/Datastore.download';
+import DatastoreCreditsIssued from './endpoints/Datastore.creditsIssued';
+import { translateStats } from './lib/translateDatastoreMetadata';
 
 const { log } = Logger(module);
 
+const docPageServer = ServeStatic(DocspageDir);
+
 export default class DatastoreCore {
   public static connections = new Set<IDatastoreConnectionToClient>();
+  public static events = new TypedEventEmitter<{
+    new: {
+      datastore: IDatastoreApiTypes['Datastore.meta']['result'];
+      activity: 'started' | 'uploaded';
+    };
+    stats: Pick<IDatastoreApiTypes['Datastore.meta']['result'], 'stats' | 'versionHash'>;
+    stopped: { versionHash: string };
+  }>();
+
   public static get datastoresDir(): string {
     return this.options.datastoresDir;
   }
@@ -57,9 +66,10 @@ export default class DatastoreCore {
     datastoresTmpDir: Path.join(Os.tmpdir(), '.ulixee', 'datastore'),
     maxRuntimeMs: 10 * 60e3,
     waitForDatastoreCompletionOnShutdown: false,
-    enableRunWithLocalPath: env.serverEnvironment === 'development',
+    enableDatastoreWatchMode: env.serverEnvironment === 'development',
     paymentAddress: env.paymentAddress,
-    serverAdminIdentities: env.serverAdminIdentities,
+    requireDatastoreAdminIdentities: env.requireDatastoreAdminIdentities,
+    cloudAdminIdentities: env.cloudAdminIdentities,
     computePricePerQuery: env.computePricePerQuery,
     defaultBytesForPaymentEstimates: 256,
     approvedSidechains: env.approvedSidechains,
@@ -69,23 +79,20 @@ export default class DatastoreCore {
     approvedSidechainsRefreshInterval: 60e3 * 60, // 1 hour
   };
 
-  public static pluginCoresByName: { [name: string]: IRunnerPluginCore } = {};
+  public static pluginCoresByName: { [name: string]: IExtractorPluginCore } = {};
   public static isClosing: Promise<void>;
   public static workTracker: WorkTracker;
   public static apiRegistry = new ApiRegistry<IDatastoreApiContext>([
     DatastoreUpload,
+    DatastoreDownload,
     DatastoreQuery,
     DatastoreStream,
     DatastoresList,
-    DatastoreFetchInternalTable,
     DatastoreAdmin,
     DatastoreCreditsBalance,
+    DatastoreCreditsIssued,
+    DatastoreStart,
     DatastoreMeta,
-    DatastoreQueryInternal,
-    DatastoreQueryInternalTable,
-    DatastorequeryInternalFunctionResult,
-    DatastoreInitializeInMemoryTable,
-    DatastoreInitializeInMemoryRunner,
   ]);
 
   private static datastoreRegistry: DatastoreRegistry;
@@ -104,10 +111,8 @@ export default class DatastoreCore {
     );
     context.connectionToClient = connection;
     connection.once('disconnected', () => {
-      connection.datastoreStorage?.db.close();
       this.connections.delete(connection);
     });
-    connection.isInternal = this.options.serverEnvironment === 'development';
     this.connections.add(connection);
     return connection;
   }
@@ -176,8 +181,9 @@ export default class DatastoreCore {
     const domainVersion = this.datastoreRegistry.getByDomain(host);
     if (!domainVersion) return false;
 
-    const extra = req.url.length ? req.url : '';
-    await this.routeHttp(req, res, [domainVersion.versionHash + extra]);
+    const params = [domainVersion.versionHash];
+    if (req.url.length) params.push(req.url);
+    await this.routeHttp(req, res, params);
   }
 
   public static async routeHttp(
@@ -185,37 +191,57 @@ export default class DatastoreCore {
     res: ServerResponse,
     params: string[],
   ): Promise<void> {
-    const pathParts = params[0].match(/(dbx1[ac-hj-np-z02-9]{18})(\/(.+)?)?/);
-    const versionHash = pathParts[1];
-    const reqPath = pathParts[2] ? pathParts[2] : '/index.html';
-    const { path } = await this.datastoreRegistry.getByVersionHash(versionHash);
-    const docpagePath = path.replace(/datastore.js$/, 'docpage');
-    req.url = reqPath;
+    if (!params[1]) {
+      const url = new URL(req.url, 'http://localhost/');
+      url.pathname += '/';
+      const search = url.search !== '?' ? url.search : '';
+      res.writeHead(301, { location: `${url.pathname}${search}` });
+      res.end();
+      return;
+    }
 
+    if (req.url.includes('docpage.json')) {
+      const versionHash = params[0];
+      const { path } = await this.datastoreRegistry.getByVersionHash(versionHash);
+      const docpagePath = path.replace('datastore.js', 'docpage.json');
+      res.writeHead(200, { 'content-type': 'application/json' });
+      createReadStream(docpagePath, { autoClose: true }).pipe(res, { end: true });
+      return;
+    }
+
+    if (
+      params[1].startsWith('/js/') ||
+      params[1].startsWith('/css/') ||
+      params[1].startsWith('/img/') ||
+      params[1] === '/favicon.ico'
+    ) {
+      req.url = params[1];
+    } else {
+      req.url = '/';
+    }
     const done = Finalhandler(req, res);
-    ServeStatic(docpagePath)(req, res, done);
+    docPageServer(req, res, done);
   }
 
-  public static registerPlugin(pluginCore: IRunnerPluginCore): void {
+  public static registerPlugin(pluginCore: IExtractorPluginCore): void {
     this.pluginCoresByName[pluginCore.name] = pluginCore;
   }
 
   public static async start(config: { ipAddress: string; port: number }): Promise<void> {
     if (this.isStarted.isResolved) return this.isStarted.promise;
-
+    const startLogId = log.info('DatastoreCore.start', {
+      options: this.options,
+      sessionId: null,
+    });
     this.serverAddress = config;
     try {
       this.close = this.close.bind(this);
 
       if (
         this.options.serverEnvironment === 'production' &&
-        !this.options.serverAdminIdentities.length
+        !this.options.cloudAdminIdentities.length
       ) {
         this.showTemporaryAdminIdentityPrompt();
-      }
-
-      if (this.options.enableRunWithLocalPath) {
-        this.apiRegistry.register(DatastoreQueryLocalScript);
       }
 
       if (!(await existsAsync(this.options.datastoresTmpDir))) {
@@ -224,8 +250,6 @@ export default class DatastoreCore {
       this.datastoreRegistry = new DatastoreRegistry(this.options.datastoresDir);
       await this.datastoreRegistry.installManuallyUploadedDbxFiles();
 
-      Autorun.isEnabled = false;
-      process.env.ULX_DATASTORE_DISABLE_AUTORUN = 'true';
       await new Promise(resolve => process.nextTick(resolve));
 
       for (const plugin of Object.values(this.pluginCoresByName)) {
@@ -235,11 +259,36 @@ export default class DatastoreCore {
       this.workTracker = new WorkTracker(this.options.maxRuntimeMs);
 
       this.sidechainClientManager = new SidechainClientManager(this.options);
+      log.stats('DatastoreCore.started', {
+        parentLogId: startLogId,
+        sessionId: null,
+      });
       this.isStarted.resolve();
+
+      // must be started before we can register for events
+      this.datastoreRegistry.on('new', this.onNewDatastore.bind(this));
+      this.datastoreRegistry.on('stats', this.onDatastoreStats.bind(this));
+      this.datastoreRegistry.on('stopped', this.onDatastoreStopped.bind(this));
     } catch (error) {
+      log.stats('DatastoreCore.startError', {
+        parentLogId: startLogId,
+        error,
+        sessionId: null,
+      });
       this.isStarted.reject(error, true);
     }
     return this.isStarted;
+  }
+
+  public static async installCompressedDbx(path: string): Promise<void> {
+    const filename = Path.basename(path);
+    const dest = Path.join(this.options.datastoresDir, filename);
+    if (!(await existsAsync(dest))) {
+      if (!(await existsAsync(this.options.datastoresDir))) {
+        await Fs.mkdir(this.options.datastoresDir, { recursive: true });
+      }
+      await Fs.copyFile(path, dest);
+    }
   }
 
   public static async close(): Promise<void> {
@@ -268,6 +317,23 @@ export default class DatastoreCore {
     }
   }
 
+  private static onNewDatastore(event: DatastoreRegistry['EventTypes']['new']): void {
+    void DatastoreMeta.handler(
+      { versionHash: event.datastore.versionHash },
+      this.getApiContext(),
+    ).then(x => {
+      return this.events.emit('new', { activity: event.activity, datastore: x });
+    });
+  }
+
+  private static onDatastoreStopped(event: DatastoreRegistry['EventTypes']['stopped']): void {
+    this.events.emit('stopped', event);
+  }
+
+  private static onDatastoreStats(event: DatastoreRegistry['EventTypes']['stats']): void {
+    this.events.emit('stats', { versionHash: event.versionHash, stats: translateStats(event) });
+  }
+
   private static getApiContext(remoteId?: string): IDatastoreApiContext {
     if (!this.isStarted.isResolved) {
       throw new Error('DatastoreCore has not started');
@@ -284,7 +350,7 @@ export default class DatastoreCore {
 
   private static showTemporaryAdminIdentityPrompt(): void {
     const tempIdentity = Identity.createSync();
-    this.options.serverAdminIdentities.push(tempIdentity.bech32);
+    this.options.cloudAdminIdentities.push(tempIdentity.bech32);
     const key = Ed25519.getPrivateKeyBytes(tempIdentity.privateKey);
     console.warn(`\n
 ############################################################################################
@@ -304,7 +370,7 @@ export default class DatastoreCore {
        
            To dismiss this message, add the following environment variable:
            
- ULX_SERVER_ADMIN_IDENTITIES=${tempIdentity.bech32},
+ ULX_CLOUD_ADMIN_IDENTITIES=${tempIdentity.bech32},
 
 ############################################################################################
 ############################################################################################

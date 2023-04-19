@@ -1,8 +1,8 @@
-import Datastore, { Runner } from '@ulixee/datastore';
+import Datastore, { Extractor } from '@ulixee/datastore';
 
 export default new Datastore({
-  runners: {
-    putout: new Runner(ctx => {
+  extractors: {
+    putout: new Extractor(ctx => {
       ctx.Output.emit({ success: true });
     }),
   },

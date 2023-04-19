@@ -1,3 +1,3 @@
-import cjsImport from './index.js';
+import { CloudNode } from './index.js';
 
-export default cjsImport.default;
+export { CloudNode };

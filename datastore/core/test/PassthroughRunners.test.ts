@@ -1,7 +1,7 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import DatastorePackager from '@ulixee/datastore-packager';
-import UlixeeMiner from '@ulixee/miner';
+import { CloudNode } from '@ulixee/cloud';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { Helpers } from '@ulixee/datastore-testing';
@@ -22,9 +22,9 @@ import { customAlphabet } from 'nanoid';
 import DatastoreCore from '../index';
 import DatastoreManifest from '../lib/DatastoreManifest';
 
-const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughRunners.test');
+const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughExtractors.test');
 
-let miner: UlixeeMiner;
+let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 const sidechainIdentity = Identity.createSync();
 const batchIdentity = Identity.createSync();
@@ -60,24 +60,21 @@ const mock = {
 let remoteVersionHash: string;
 beforeAll(async () => {
   for (const file of [
-    'passthroughRunner',
-    'passthroughRunnerUpcharge',
-    'passthroughRunnerNoOnresponse',
+    'passthroughExtractor',
+    'passthroughExtractorUpcharge',
+    'passthroughExtractorNoOnresponse',
     'hop2',
   ]) {
     if (Fs.existsSync(`${__dirname}/datastores/${file}.js`)) {
       Fs.unlinkSync(`${__dirname}/datastores/${file}.js`);
     }
     if (Fs.existsSync(`${__dirname}/datastores/${file}.dbx`)) {
-      Fs.unlinkSync(`${__dirname}/datastores/${file}.dbx`);
-    }
-    if (Fs.existsSync(`${__dirname}/datastores/${file}.dbx.build`)) {
-      Fs.rmSync(`${__dirname}/datastores/${file}.dbx.build`, { recursive: true });
+      await Fs.promises.rm(`${__dirname}/datastores/${file}.dbx`, { recursive: true });
     }
   }
 
-  if (Fs.existsSync(`${__dirname}/datastores/remoteRunner.dbx`)) {
-    Fs.unlinkSync(`${__dirname}/datastores/remoteRunner.dbx`);
+  if (Fs.existsSync(`${__dirname}/datastores/remoteExtractor.dbx`)) {
+    await Fs.promises.rm(`${__dirname}/datastores/remoteExtractor.dbx`, { recursive: true });
   }
 
   mock.MicronoteBatchFunding.fundBatch.mockImplementation(async function (batch, centagons) {
@@ -90,18 +87,18 @@ beforeAll(async () => {
 
   mock.sidechainClient.sendRequest.mockImplementation(mockSidechainServer);
 
-  miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = {
+  cloudNode = new CloudNode();
+  cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
-  await miner.listen();
-  client = new DatastoreApiClient(await miner.address);
+  await cloudNode.listen();
+  client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 
-  const packager = new DatastorePackager(`${__dirname}/datastores/remoteRunner.js`);
+  const packager = new DatastorePackager(`${__dirname}/datastores/remoteExtractor.js`);
   await packager.build();
-  await client.upload(await packager.dbx.asBuffer());
+  await client.upload(await packager.dbx.tarGzip());
   remoteVersionHash = packager.manifest.versionHash;
 });
 
@@ -114,28 +111,28 @@ beforeEach(() => {
 afterEach(Helpers.afterEach);
 
 afterAll(async () => {
-  await miner.close();
+  await cloudNode.close();
   await Helpers.afterAll();
   Fs.rmSync(storageDir, { recursive: true });
 });
 
-test('should be able to have a passthrough runner', async () => {
+test('should be able to have a passthrough extractor', async () => {
   await expect(client.stream(remoteVersionHash, 'remote', { test: '123d' })).resolves.toEqual([
     { iAmRemote: true, echo: '123d' },
   ]);
 
   Fs.writeFileSync(
-    `${__dirname}/datastores/passthroughRunner.js`,
+    `${__dirname}/datastores/passthroughExtractor.js`,
     `const Datastore = require('@ulixee/datastore');
 const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await miner.address}/${remoteVersionHash}',
+    source: 'ulx://${await cloudNode.address}/${remoteVersionHash}',
   },
-  runners: {
-    pass: new Datastore.PassthroughRunner({
-      remoteRunner: 'source.remote',
+  extractors: {
+    pass: new Datastore.PassthroughExtractor({
+      remoteExtractor: 'source.remote',
       schema: {
         input: {
           test: string(),
@@ -156,9 +153,9 @@ export default new Datastore({
 });`,
   );
 
-  const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughRunner.js`);
+  const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughExtractor.js`);
   await passthrough.build();
-  await client.upload(await passthrough.dbx.asBuffer());
+  await client.upload(await passthrough.dbx.tarGzip());
 
   await expect(
     client.stream(passthrough.manifest.versionHash, 'pass', { test: '123d' }),
@@ -171,17 +168,17 @@ test('should re-emit output automatically if no onResponse is provided', async (
   ]);
 
   Fs.writeFileSync(
-    `${__dirname}/datastores/passthroughRunnerNoOnresponse.js`,
+    `${__dirname}/datastores/passthroughExtractorNoOnresponse.js`,
     `const Datastore = require('@ulixee/datastore');
 const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await miner.address}/${remoteVersionHash}',
+    source: 'ulx://${await cloudNode.address}/${remoteVersionHash}',
   },
-  runners: {
-    pass: new Datastore.PassthroughRunner({
-      remoteRunner: 'source.remote',
+  extractors: {
+    pass: new Datastore.PassthroughExtractor({
+      remoteExtractor: 'source.remote',
       schema: {
         input: {
           test: string(),
@@ -197,31 +194,31 @@ export default new Datastore({
   );
 
   const passthrough = new DatastorePackager(
-    `${__dirname}/datastores/passthroughRunnerNoOnresponse.js`,
+    `${__dirname}/datastores/passthroughExtractorNoOnresponse.js`,
   );
   await passthrough.build();
-  await client.upload(await passthrough.dbx.asBuffer());
+  await client.upload(await passthrough.dbx.tarGzip());
 
   await expect(
     client.stream(passthrough.manifest.versionHash, 'pass', { test: '123d' }),
   ).resolves.toEqual([{ iAmRemote: true, echo: '123d' }]);
 });
 
-test('should be able to add upcharge to a runner', async () => {
+test('should be able to add upcharge to a extractor', async () => {
   Fs.writeFileSync(
-    `${__dirname}/datastores/passthroughRunnerUpcharge.js`,
+    `${__dirname}/datastores/passthroughExtractorUpcharge.js`,
     `
 const Datastore = require('@ulixee/datastore');
 const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await miner.address}/${remoteVersionHash}',
+    source: 'ulx://${await cloudNode.address}/${remoteVersionHash}',
   },
-  runners: {
-    pass: new Datastore.PassthroughRunner({
+  extractors: {
+    pass: new Datastore.PassthroughExtractor({
       upcharge: 400,
-      remoteRunner: 'source.remote',
+      remoteExtractor: 'source.remote',
       async onResponse({ stream, Output }) {
         for await (const output of stream) {
            Output.emit({ ...output, addOn: 'phew '})
@@ -232,15 +229,15 @@ export default new Datastore({
 });`,
   );
 
-  const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughRunnerUpcharge.js`);
+  const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughExtractorUpcharge.js`);
   await passthrough.build();
-  await client.upload(await passthrough.dbx.asBuffer());
+  await client.upload(await passthrough.dbx.tarGzip());
 
   const meta = await client.getMeta(passthrough.manifest.versionHash);
-  expect(meta.runnersByName.pass.minimumPrice).toBe(405);
+  expect(meta.extractorsByName.pass.minimumPrice).toBe(405);
 });
 
-test('should be able to add charges from multiple runners', async () => {
+test('should be able to add charges from multiple extractors', async () => {
   apiCalls.mockReset();
   holdAmounts.length = 0;
   const address1 = Address.createFromSigningIdentities([Identity.createSync()]);
@@ -254,8 +251,8 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   paymentAddress: '${address1.bech32}',
-  runners: {
-    source: new Datastore.Runner({
+  extractors: {
+    source: new Datastore.Extractor({
       pricePerQuery: 6,
       run({ input, Output }) {
         const output = new Output();
@@ -270,11 +267,13 @@ export default new Datastore({
     const dbx = new DatastorePackager(`${__dirname}/datastores/source.js`);
     await dbx.build();
     Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/source.js`));
-    Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/source.dbx`));
-    await new DatastoreApiClient(await miner.address).upload(await dbx.dbx.asBuffer());
+    Helpers.onClose(() =>
+      Fs.promises.rm(`${__dirname}/datastores/source.dbx`, { recursive: true }),
+    );
+    await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.tarGzip());
     versionHash = dbx.manifest.versionHash;
     expect(dbx.manifest.paymentAddress).toBeTruthy();
-    const price = await client.getRunnerPricing(versionHash, 'source');
+    const price = await client.getExtractorPricing(versionHash, 'source');
     expect(price.minimumPrice).toBe(6 + 5);
   }
 
@@ -288,12 +287,12 @@ const { boolean, string } = require('@ulixee/schema');
 export default new Datastore({
   paymentAddress: '${address1.bech32}',
   remoteDatastores: {
-    hop0: 'ulx://${await miner.address}/${versionHash}',
+    hop0: 'ulx://${await cloudNode.address}/${versionHash}',
   },
-  runners: {
-    source2: new Datastore.PassthroughRunner({
+  extractors: {
+    source2: new Datastore.PassthroughExtractor({
       upcharge: 11,
-      remoteRunner: 'hop0.source',
+      remoteExtractor: 'hop0.source',
       async onResponse({ stream, Output }) {
         for await (const output of stream) {
            Output.emit({ ...output, lastRun:'hop1', calls: output.calls +1 })
@@ -306,11 +305,11 @@ export default new Datastore({
 
     const dbx = new DatastorePackager(`${__dirname}/datastores/hop1.js`);
     Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/hop1.js`));
-    Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/hop1.dbx`));
+    Helpers.onClose(() => Fs.promises.rm(`${__dirname}/datastores/hop1.dbx`, { recursive: true }));
     await dbx.build();
-    await new DatastoreApiClient(await miner.address).upload(await dbx.dbx.asBuffer());
+    await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.tarGzip());
     versionHash = dbx.manifest.versionHash;
-    const price = await client.getRunnerPricing(versionHash, 'source2');
+    const price = await client.getExtractorPricing(versionHash, 'source2');
     expect(price.minimumPrice).toBe(6 + 5 + 11);
   }
 
@@ -323,12 +322,12 @@ const { boolean, string } = require('@ulixee/schema');
 export default new Datastore({
   paymentAddress: '${address1.bech32}',
   remoteDatastores: {
-    hop1: 'ulx://${await miner.address}/${versionHash}',
+    hop1: 'ulx://${await cloudNode.address}/${versionHash}',
   },
-  runners: {
-    last: new Datastore.PassthroughRunner({
+  extractors: {
+    last: new Datastore.PassthroughExtractor({
       upcharge: 3,
-      remoteRunner: 'hop1.source2',
+      remoteExtractor: 'hop1.source2',
       async onResponse({ stream, Output }) {
         for await (const output of stream) {
            Output.emit({ ...output, lastRun:'hop2', calls: output.calls +1 })
@@ -341,9 +340,9 @@ export default new Datastore({
 
   const lastHop = new DatastorePackager(`${__dirname}/datastores/hop2.js`);
   await lastHop.build();
-  await client.upload(await lastHop.dbx.asBuffer());
+  await client.upload(await lastHop.dbx.tarGzip());
 
-  const price = await client.getRunnerPricing(lastHop.manifest.versionHash, 'last');
+  const price = await client.getExtractorPricing(lastHop.manifest.versionHash, 'last');
   expect(price.minimumPrice).toBe(3 + 11 + 6 + 5);
 
   const clientIdentity = Identity.createSync();

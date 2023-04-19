@@ -37,7 +37,7 @@ test('should throw an error if the required datastore core version is not instal
       scriptHash: encodeBuffer(sha256('scr123'), 'scr'),
       coreVersion: '5.0.0',
       versionTimestamp: Date.now(),
-      runnersByName: {},
+      extractorsByName: {},
       crawlersByName: {},
       tablesByName: {},
       scriptEntrypoint: 'here.js',
@@ -65,7 +65,7 @@ test('should be able to upload and retrieve the datastore', async () => {
     scriptEntrypoint: 'here.js',
     linkedVersions: [],
     crawlersByName: {},
-    runnersByName: { default: {} },
+    extractorsByName: { default: {} },
     tablesByName: {},
     adminIdentities: [],
   });
@@ -77,7 +77,7 @@ test('should be able to upload and retrieve the datastore', async () => {
       versionHash,
       coreVersion: '2.0.0-alpha.1',
       scriptEntrypoint: 'here.js',
-      runnersByName: { default: {} },
+      extractorsByName: { default: {} },
       crawlersByName: {},
       tablesByName: {},
       linkedVersions: [],
@@ -111,7 +111,7 @@ test('should allow a user to override updating with no history', async () => {
       versionTimestamp: Date.now(),
       scriptHash: hashScript(script),
       versionHash: null,
-      runnersByName: { default: {} },
+      extractorsByName: { default: {} },
       crawlersByName: {},
       tablesByName: {},
       linkedVersions: [],
@@ -133,7 +133,7 @@ test('should allow a user to override updating with no history', async () => {
       scriptEntrypoint: 'override.js',
       scriptHash: hashScript(script),
       versionTimestamp: Date.now(),
-      runnersByName: { default: {} },
+      extractorsByName: { default: {} },
       crawlersByName: {},
       tablesByName: {},
       versionHash: null,
@@ -181,7 +181,7 @@ test('should throw an error with version history if current versions are unmatch
       scriptHash,
       versionTimestamp: Date.now(),
       versionHash: null,
-      runnersByName: { default: {} },
+      extractorsByName: { default: {} },
       crawlersByName: {},
       tablesByName: {},
       linkedVersions: [],
@@ -205,7 +205,7 @@ test('should throw an error with version history if current versions are unmatch
       scriptHash,
       versionTimestamp: Date.now(),
       versionHash: null,
-      runnersByName: { default: {} },
+      extractorsByName: { default: {} },
       crawlersByName: {},
       tablesByName: {},
       linkedVersions: [...versions],
@@ -233,7 +233,7 @@ test('should throw an error with version history if current versions are unmatch
       scriptHash,
       versionTimestamp: Date.now(),
       versionHash: null,
-      runnersByName: { default: {} },
+      extractorsByName: { default: {} },
       crawlersByName: {},
       tablesByName: {},
       linkedVersions: [versions[1]],
@@ -250,7 +250,14 @@ test('should provide a newer version hash if old script not available', async ()
   const registry = new DatastoreRegistry(storageDir);
   Helpers.needsClosing.push(registry);
   // @ts-ignore
-  registry.datastoresDb.datastoreVersions.save('maybe-there', Date.now(), 'not-there', null);
+  registry.datastoresDb.datastoreVersions.save(
+    'maybe-there',
+    './new-version.ts',
+    Date.now(),
+    './new-version.ts',
+    'not-there',
+    null,
+  );
   try {
     await registry.getByVersionHash('not-there');
   } catch (e) {
@@ -279,7 +286,7 @@ test('should require a new upload to be signed by a previous admin identity', as
       versionTimestamp: Date.now(),
       scriptHash: hashScript(script),
       versionHash: null,
-      runnersByName: { default: {} },
+      extractorsByName: { default: {} },
       crawlersByName: {},
       tablesByName: {},
       linkedVersions: [],
@@ -301,7 +308,7 @@ test('should require a new upload to be signed by a previous admin identity', as
       scriptEntrypoint: 'signed.js',
       scriptHash: hashScript(script),
       versionTimestamp: Date.now(),
-      runnersByName: { default: {} },
+      extractorsByName: { default: {} },
       crawlersByName: {},
       tablesByName: {},
       versionHash: null,

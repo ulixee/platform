@@ -108,44 +108,44 @@
           <tr class="border-b border-slate-300 h-10">
             <td>Designed to Avoid Bot Blockers</td>
             <td><CheckIcon class="h-5" /></td>
-            <td><XIcon class="h-5" /></td>
-            <td><XIcon class="h-5" /></td>
+            <td><XMarkIcon class="h-5" /></td>
+            <td><XMarkIcon class="h-5" /></td>
           </tr>
           <tr class="border-b border-slate-300 h-10">
             <td>Designed for Automated Testing</td>
-            <td><XIcon class="h-5" /></td>
+            <td><XMarkIcon class="h-5" /></td>
             <td><CheckIcon class="h-5" /></td>
             <td><CheckIcon class="h-5" /></td>
           </tr>
           <tr class="border-b border-slate-300 h-10">
             <td>Designed for Serious Web Scraping</td>
             <td><CheckIcon class="h-5" /></td>
-            <td><XIcon class="h-5" /></td>
-            <td><XIcon class="h-5" /></td>
+            <td><XMarkIcon class="h-5" /></td>
+            <td><XMarkIcon class="h-5" /></td>
           </tr>
           <tr class="border-b border-slate-300 h-10">
             <td>Supports Direct DOM Calls</td>
             <td><CheckIcon class="h-5" /></td>
-            <td><XIcon class="h-5" /></td>
-            <td><XIcon class="h-5" /></td>
+            <td><XMarkIcon class="h-5" /></td>
+            <td><XMarkIcon class="h-5" /></td>
           </tr>
           <tr class="border-b border-slate-300 h-10">
             <td>Native Support for Plugins</td>
             <td><CheckIcon class="h-5" /></td>
-            <td><XIcon class="h-5" /></td>
-            <td><XIcon class="h-5" /></td>
+            <td><XMarkIcon class="h-5" /></td>
+            <td><XMarkIcon class="h-5" /></td>
           </tr>
           <tr class="border-b border-slate-300 h-10">
             <td>Uses Reactive Flow Handlers</td>
             <td><CheckIcon class="h-5" /></td>
-            <td><XIcon class="h-5" /></td>
-            <td><XIcon class="h-5" /></td>
+            <td><XMarkIcon class="h-5" /></td>
+            <td><XMarkIcon class="h-5" /></td>
           </tr>
           <tr class="border-b border-slate-300 h-10">
             <td>Event Based State Tracking</td>
             <td><CheckIcon class="h-5" /></td>
-            <td><XIcon class="h-5" /></td>
-            <td><XIcon class="h-5" /></td>
+            <td><XMarkIcon class="h-5" /></td>
+            <td><XMarkIcon class="h-5" /></td>
           </tr>
         </tbody>
       </table>
@@ -159,7 +159,7 @@ import InstallIt from '@/components/InstallIt.vue';
 import Dependencies from '@/components/Dependencies.vue';
 import UseIt from '@/components/UseIt.vue';
 import Command from '@/components/Command.vue';
-import { CheckIcon, XIcon } from '@heroicons/vue/24/solid';
+import { CheckIcon, XMarkIcon } from '@heroicons/vue/24/solid';
 import { AboveTheFold, MainHeader, SubHeader, ActionButtons } from "../components";
 import HeroPreview from "../components/HeroPreview.vue";
 
@@ -170,7 +170,7 @@ export default Vue.defineComponent({
     UseIt,
     Command,
     CheckIcon,
-    XIcon,
+    XMarkIcon,
     MainHeader,
     SubHeader,
     AboveTheFold,

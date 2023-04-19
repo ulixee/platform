@@ -1,4 +1,3 @@
-
 export function isInt(n: any): boolean {
   if (typeof n === 'string') return !n.includes('.');
   return n % 1 === 0;
@@ -24,5 +23,15 @@ export function addCommas(num: string): string {
 }
 
 export function formatCurrency(num: string | number): string {
-  return addCommas(Number(num).toFixed(2));
+  return addCommas(Number(num).toFixed(5));
+}
+
+export function getCredit(): string | null {
+  let authString: string | null = location.search.replace(/^\?/, '');
+  if (authString) {
+    localStorage.setItem('@ulixee/credit', authString);
+  } else {
+    authString = localStorage.getItem('@ulixee/credit');
+  }
+  return authString;
 }

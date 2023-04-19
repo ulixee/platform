@@ -1,7 +1,8 @@
 import { ExtractSchemaType, ISchemaAny } from '@ulixee/schema';
+import { SqlGenerator, SqlParser } from '@ulixee/sql-engine';
+import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import ITableComponents from '../interfaces/ITableComponents';
-import DatastoreInternal from './DatastoreInternal';
-import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
+import DatastoreInternal, { IDatastoreBinding } from './DatastoreInternal';
 
 export type IExpandedTableSchema<T> = T extends Record<string, ISchemaAny>
   ? {
@@ -18,7 +19,6 @@ export default class Table<
 
   seedlings: TSchemaType[];
   #datastoreInternal: DatastoreInternal;
-  #isInMemoryTableCreated = false;
 
   protected readonly components: ITableComponents<TSchema, TSchemaType>;
 
@@ -46,7 +46,6 @@ export default class Table<
   protected get datastoreInternal(): DatastoreInternal {
     if (!this.#datastoreInternal) {
       this.#datastoreInternal = new DatastoreInternal({ tables: { [this.name]: this } });
-      this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryTable.bind(this));
     }
     return this.#datastoreInternal;
   }
@@ -54,40 +53,36 @@ export default class Table<
   public async fetchInternal(options: {
     input: ExtractSchemaType<TSchema>;
   }): Promise<TSchemaType[]> {
-    await this.datastoreInternal.ensureDatabaseExists();
     const name = this.name;
-    const datastoreInstanceId = this.datastoreInternal.instanceId;
-    const datastoreVersionHash = this.datastoreInternal.manifest?.versionHash;
 
-    return await this.datastoreInternal.sendRequest({
-      command: 'Datastore.fetchInternalTable',
-      args: [
-        {
-          name,
-          input: options.input,
-          datastoreInstanceId,
-          datastoreVersionHash,
-        },
-      ],
-    });
+    const db = this.datastoreInternal.db;
+    const { sql, boundValues } = SqlGenerator.createWhereClause(name, options.input, ['*'], 1000);
+    const results = db.prepare(sql).all(boundValues);
+
+    return await SqlGenerator.convertRecordsFromSqlite(results, [this.schema]);
   }
 
   public async queryInternal<T = TSchemaType[]>(sql: string, boundValues: any[] = []): Promise<T> {
-    await this.datastoreInternal.ensureDatabaseExists();
     const name = this.name;
-    const datastoreInstanceId = this.datastoreInternal.instanceId;
-    const datastoreVersionHash = this.datastoreInternal.manifest?.versionHash;
-    const args = {
-      name,
-      sql,
-      boundValues,
-      datastoreInstanceId,
-      datastoreVersionHash,
-    };
-    return await this.datastoreInternal.sendRequest({
-      command: 'Datastore.queryInternalTable',
-      args: [args],
-    });
+    const db = this.datastoreInternal.db;
+
+    const sqlParser = new SqlParser(sql, { table: name });
+    sql = sqlParser.toSql();
+    const queryValues = sqlParser.convertToBoundValuesSqliteMap(boundValues);
+
+    if (sqlParser.isInsert() || sqlParser.isDelete() || sqlParser.isUpdate()) {
+      if (sqlParser.hasReturn()) {
+        return db.prepare(sql).get(queryValues);
+      }
+      const result = db.prepare(sql).run(queryValues);
+      return { changes: result?.changes } as any;
+    }
+
+    if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
+
+    const records = db.prepare(sql).all(queryValues);
+
+    return await SqlGenerator.convertRecordsFromSqlite(records, [this.schema]);
   }
 
   public attachToDatastore(
@@ -101,29 +96,10 @@ export default class Table<
     }
 
     this.#datastoreInternal = datastoreInternal;
-    if (!datastoreInternal.manifest?.versionHash) {
-      this.#datastoreInternal.onCreateInMemoryDatabase(this.createInMemoryTable.bind(this));
-    }
   }
 
-  public addConnectionToDatastoreCore(connectionToCore: ConnectionToDatastoreCore): void {
-    this.datastoreInternal.connectionToCore = connectionToCore;
-  }
-
-  protected async createInMemoryTable(): Promise<void> {
-    if (this.#isInMemoryTableCreated) return;
-    this.#isInMemoryTableCreated = true;
-    const datastoreInstanceId = this.datastoreInternal.instanceId;
-    const name = this.name;
-    const args = {
-      name,
-      datastoreInstanceId,
-      schema: this.schema,
-      seedlings: this.seedlings,
-    };
-    await this.datastoreInternal.sendRequest({
-      command: 'Datastore.createInMemoryTable',
-      args: [args],
-    });
+  public bind(config: IDatastoreBinding): void {
+    this.datastoreInternal.bind(config ?? {});
   }
 }
+addGlobalInstance(Table);

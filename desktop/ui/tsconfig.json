@@ -29,6 +29,7 @@
     "extension/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
+    "src/**/*.svg",
     "tests/**/*.ts",
     "tests/**/*.tsx",
     ".eslintrc.js",

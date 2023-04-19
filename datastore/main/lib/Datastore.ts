@@ -1,27 +1,23 @@
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import ConnectionToDatastoreCore from '../connections/ConnectionToDatastoreCore';
+import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import IDatastoreComponents, {
   TCrawlers,
-  TRunners,
+  TExtractors,
   TTables,
 } from '../interfaces/IDatastoreComponents';
-import DatastoreInternal from './DatastoreInternal';
+import DatastoreInternal, { IDatastoreBinding, IQueryInternalCallbacks } from './DatastoreInternal';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
-import DatastoreApiClient from './DatastoreApiClient';
 
 export default class Datastore<
   TTable extends TTables = TTables,
-  TRunner extends TRunners = TRunners,
+  TExtractor extends TExtractors = TExtractors,
   TCrawler extends TCrawlers = TCrawlers,
-  TComponents extends IDatastoreComponents<TTable, TRunner, TCrawler> = IDatastoreComponents<
+  TComponents extends IDatastoreComponents<TTable, TExtractor, TCrawler> = IDatastoreComponents<
     TTable,
-    TRunner,
+    TExtractor,
     TCrawler
   >,
 > {
-  #datastoreInternal: DatastoreInternal<TTable, TRunner, TCrawler, TComponents>;
-
-  public disableAutorun: boolean;
+  #datastoreInternal: DatastoreInternal<TTable, TExtractor, TCrawler, TComponents>;
 
   public get affiliateId(): string {
     return this.#datastoreInternal.affiliateId;
@@ -31,8 +27,8 @@ export default class Datastore<
     return this.#datastoreInternal.metadata;
   }
 
-  public get runners(): TComponents['runners'] {
-    return this.#datastoreInternal.runners;
+  public get extractors(): TComponents['extractors'] {
+    return this.#datastoreInternal.extractors;
   }
 
   public get tables(): TComponents['tables'] {
@@ -49,29 +45,23 @@ export default class Datastore<
 
   constructor(
     components: TComponents,
-    datastoreInternal?: DatastoreInternal<TTable, TRunner, TCrawler, TComponents>,
+    datastoreInternal?: DatastoreInternal<TTable, TExtractor, TCrawler, TComponents>,
   ) {
     this.#datastoreInternal = datastoreInternal ?? new DatastoreInternal(components);
-
-    this.disableAutorun ??= Boolean(
-      JSON.parse(process.env.ULX_DATASTORE_DISABLE_AUTORUN?.toLowerCase() ?? 'false'),
-    );
   }
 
-  public queryInternal<TResultType = any>(
+  public queryInternal<TResultType = any[]>(
     sql: string,
     boundValues: any[] = [],
+    queryId?: string,
+    callbacks: IQueryInternalCallbacks = {},
   ): Promise<TResultType> {
-    return this.#datastoreInternal.queryInternal(sql, boundValues);
+    return this.#datastoreInternal.queryInternal(sql, boundValues, queryId, callbacks);
   }
 
-  public addConnectionToDatastoreCore(
-    connectionToCore: ConnectionToDatastoreCore,
-    manifest?: IDatastoreManifest,
-    apiClientLoader?: (url: string) => DatastoreApiClient,
-  ): void {
-    this.#datastoreInternal.manifest = manifest;
-    this.#datastoreInternal.connectionToCore = connectionToCore;
-    if (apiClientLoader) this.#datastoreInternal.createApiClient = apiClientLoader;
+  public bind(config: IDatastoreBinding): DatastoreInternal {
+    return this.#datastoreInternal.bind(config);
   }
 }
+
+addGlobalInstance(Datastore);

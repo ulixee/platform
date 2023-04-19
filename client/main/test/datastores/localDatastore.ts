@@ -1,9 +1,9 @@
-import Datastore, { Runner, Table } from '@ulixee/datastore';
+import Datastore, { Extractor, Table } from '@ulixee/datastore';
 import { boolean, string } from '@ulixee/schema';
 
 export default new Datastore({
-  runners: {
-    test: new Runner({
+  extractors: {
+    test: new Extractor({
       run(ctx) {
         ctx.Output.emit({
           testerEcho: ctx.input.shouldTest,

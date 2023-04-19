@@ -2,11 +2,11 @@
 
 ### Address Host
 
-A Miner addressHost can be specified on creation. This would allow you to create a custom domain for your connections, or to provide an externally addressable ip to reach your Servers.
+A CloudNode addressHost can be specified on creation. This would allow you to create a custom domain for your connections, or to provide an externally addressable ip to reach your Servers.
 
-### Miner Server ListenInfo
+### CloudNode Server ListenInfo
 
-A Miner can be provided ListenInfo on [`listen(listenInfo)`](../modules/miner.md). The data follows the Node.js [net.ListenInfo](https://nodejs.org/api/net.html#serverlistenoptions-callback) spec.
+A CloudNode can be provided ListenInfo on [`listen(listenInfo)`](../modules/cloud-node.md). The data follows the Node.js [net.ListenInfo](https://nodejs.org/api/net.html#serverlistenoptions-callback) spec.
 
 ### Disable ChromeAlive!
 

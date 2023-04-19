@@ -8,8 +8,9 @@ export default interface IDatastoreCoreConfigureOptions {
   datastoresTmpDir: string;
   waitForDatastoreCompletionOnShutdown: boolean;
   paymentAddress: string;
-  enableRunWithLocalPath: boolean;
-  serverAdminIdentities: string[];
+  enableDatastoreWatchMode: boolean;
+  cloudAdminIdentities: string[];
+  requireDatastoreAdminIdentities: boolean;
   defaultBytesForPaymentEstimates: number;
   computePricePerQuery: number;
   approvedSidechains: IBlockSettings['sidechains'];

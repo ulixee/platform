@@ -1,7 +1,7 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import DatastorePackager from '@ulixee/datastore-packager';
-import UlixeeMiner from '@ulixee/miner';
+import { CloudNode } from '@ulixee/cloud';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
@@ -26,7 +26,7 @@ import DatastoreVm from '../lib/DatastoreVm';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastorePayments.test');
 
-let miner: UlixeeMiner;
+let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 const sidechainIdentity = Identity.createSync();
 const batchIdentity = Identity.createSync();
@@ -63,7 +63,7 @@ beforeAll(async () => {
   }
 
   if (Fs.existsSync(`${__dirname}/datastores/output.dbx`)) {
-    Fs.unlinkSync(`${__dirname}/datastores/output.dbx`);
+    Fs.rmSync(`${__dirname}/datastores/output.dbx`, { recursive: true });
   }
 
   mock.MicronoteBatchFunding.fundBatch.mockImplementation(async function (batch, centagons) {
@@ -76,13 +76,13 @@ beforeAll(async () => {
 
   mock.sidechainClient.sendRequest.mockImplementation(mockSidechainServer);
 
-  miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = {
+  cloudNode = new CloudNode();
+  cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
-  await miner.listen();
-  client = new DatastoreApiClient(await miner.address, true);
+  await cloudNode.listen();
+  client = new DatastoreApiClient(await cloudNode.address, { consoleLogErrors: true });
 });
 
 beforeEach(() => {
@@ -92,7 +92,7 @@ beforeEach(() => {
 });
 
 afterAll(async () => {
-  await miner.close();
+  await cloudNode.close();
   if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
 });
 
@@ -103,7 +103,7 @@ test('should be able to run a datastore function with payments', async () => {
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha256('payme123'), 'ar'),
-      runnersByName: {
+      extractorsByName: {
         putout: {
           prices: [
             {
@@ -117,8 +117,8 @@ test('should be able to run a datastore function with payments', async () => {
 
   const dbx = await packager.build();
   const manifest = packager.manifest;
-  expect(manifest.runnersByName.putout.prices[0].perQuery).toBe(1250);
-  await client.upload(await dbx.asBuffer());
+  expect(manifest.extractorsByName.putout.prices[0].perQuery).toBe(1250);
+  await client.upload(await dbx.tarGzip());
 
   await expect(client.query(manifest.versionHash, 'SELECT * FROM putout()')).rejects.toThrowError(
     'requires payment',
@@ -134,7 +134,7 @@ test('should be able to run a datastore function with payments', async () => {
   expect(settings.settlementFeeMicrogons).toBe(5);
   apiCalls.mockClear();
 
-  const meta = await client.getRunnerPricing(manifest.versionHash, 'putout');
+  const meta = await client.getExtractorPricing(manifest.versionHash, 'putout');
   const payment = await sidechainClient.createMicroPayment({
     microgons: meta.minimumPrice,
     ...meta,
@@ -142,7 +142,7 @@ test('should be able to run a datastore function with payments', async () => {
   expect(payment.micronote.microgons).toBeGreaterThanOrEqual(1255);
 
   expect(apiCalls.mock.calls.map(x => x[0].command)).toEqual([
-    'Sidechain.settings',
+    // 'Sidechain.settings', should be cached
     'Sidechain.openBatches',
     'MicronoteBatch.findFund',
     'Micronote.create',
@@ -169,8 +169,11 @@ test('should be able to run a datastore function with payments', async () => {
   // @ts-ignore
   const registry = DatastoreCore.datastoreRegistry;
   const entry = await registry.getByVersionHash(manifest.versionHash);
-  expect(entry.statsByName.putout.runs).toBe(1);
-  expect(entry.statsByName.putout.maxPrice).toBe(1250);
+  expect(entry.stats.runs).toBe(3);
+  expect(entry.stats.errors).toBe(2);
+  expect(entry.stats.maxPrice).toBe(1255);
+  expect(entry.statsByItemName.putout.runs).toBe(1);
+  expect(entry.statsByItemName.putout.maxPrice).toBe(1250);
 
   const streamed = client.stream(manifest.versionHash, 'putout', {}, { payment });
   await expect(streamed.resultMetadata).resolves.toEqual({
@@ -189,7 +192,7 @@ test('should be able run a Datastore with Credits', async () => {
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha256('payme123'), 'ar'),
-      runnersByName: {
+      extractorsByName: {
         putout: {
           prices: [{ perQuery: 1000 }],
         },
@@ -200,7 +203,7 @@ test('should be able run a Datastore with Credits', async () => {
 
   const dbx = await packager.build();
   const manifest = packager.manifest;
-  await client.upload(await dbx.asBuffer(), { identity: adminIdentity });
+  await client.upload(await dbx.tarGzip(), { identity: adminIdentity });
 
   await expect(
     client.query(manifest.versionHash, 'SELECT * FROM putout()', {}),
@@ -240,7 +243,7 @@ test('should remove an empty Credits from the local cache', async () => {
   await Fs.writeFileSync(
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
-      runnersByName: {
+      extractorsByName: {
         putout: {
           prices: [{ perQuery: 1250 }],
         },
@@ -252,9 +255,9 @@ test('should remove an empty Credits from the local cache', async () => {
 
   const dbx = await packager.build();
   const manifest = packager.manifest;
-  await client.upload(await dbx.asBuffer(), { identity: adminIdentity });
+  await client.upload(await dbx.tarGzip(), { identity: adminIdentity });
   const credits = await client.createCredits(manifest.versionHash, 1250, adminIdentity);
-  await CreditsStore.store(manifest.versionHash, credits);
+  await CreditsStore.store(manifest.versionHash, client.connectionToCore.transport.host, credits);
   await expect(CreditsStore.getPayment(manifest.versionHash, 1250)).resolves.toBeTruthy();
   await expect(CreditsStore.getPayment(manifest.versionHash, 1)).resolves.toBeUndefined();
 });
@@ -265,7 +268,7 @@ test('should be able to embed Credits in a Datastore', async () => {
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha256('payme123'), 'ar'),
-      runnersByName: {
+      extractorsByName: {
         putout: {
           prices: [{ perQuery: 1000 }],
         },
@@ -276,7 +279,7 @@ test('should be able to embed Credits in a Datastore', async () => {
 
   const dbx = await packager.build();
   const manifest = packager.manifest;
-  await client.upload(await dbx.asBuffer(), { identity: adminIdentity });
+  await client.upload(await dbx.tarGzip(), { identity: adminIdentity });
   const credits = await client.createCredits(manifest.versionHash, 2001, adminIdentity);
 
   await expect(
@@ -289,7 +292,7 @@ test('should be able to embed Credits in a Datastore', async () => {
   });
 
   await cloneDatastore(
-    `ulx://${await miner.address}/datastore/${manifest.versionHash}`,
+    `ulx://${await cloudNode.address}/${manifest.versionHash}`,
     `${__dirname}/datastores/clone-output`,
     { embedCredits: credits },
   );
@@ -297,7 +300,7 @@ test('should be able to embed Credits in a Datastore', async () => {
     `${__dirname}/datastores/clone-output/datastore-manifest.json`,
     JSON.stringify({
       paymentAddress: encodeBuffer(sha256('payme123'), 'ar'),
-      runnersByName: {
+      extractorsByName: {
         putout: {
           prices: [{ perQuery: 1000 }],
         },
@@ -310,7 +313,7 @@ test('should be able to embed Credits in a Datastore', async () => {
     const packager2 = new DatastorePackager(`${__dirname}/datastores/clone-output/datastore.ts`);
     const dbx2 = await packager2.build();
     const manifest2 = packager2.manifest;
-    await client.upload(await dbx2.asBuffer(), { identity: adminIdentity });
+    await client.upload(await dbx2.tarGzip(), { identity: adminIdentity });
     const credits2 = await client.createCredits(manifest2.versionHash, 1002, adminIdentity);
 
     await expect(
@@ -328,7 +331,7 @@ test('should be able to embed Credits in a Datastore', async () => {
   }
   // @ts-expect-error
   expect(DatastoreVm.apiClientCacheByUrl).toEqual({
-    [`ulx://${await miner.address}`]: expect.any(DatastoreApiClient),
+    [`ulx://${await cloudNode.address}`]: expect.any(DatastoreApiClient),
   });
 }, 60e3);
 

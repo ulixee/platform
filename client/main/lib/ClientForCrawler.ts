@@ -1,15 +1,14 @@
-import { ConnectionToDatastoreCore, Crawler } from '@ulixee/datastore';
+import { Crawler } from '@ulixee/datastore';
 import ResultIterable from '@ulixee/datastore/lib/ResultIterable';
+import { IDatastoreBinding } from '@ulixee/datastore/lib/DatastoreInternal';
 import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSchema';
 
 export default class ClientForCrawler<TCrawler extends Crawler> {
   private crawler: TCrawler;
 
-  constructor(crawler: TCrawler, options?: { connectionToCore: ConnectionToDatastoreCore }) {
+  constructor(crawler: TCrawler, options?: IDatastoreBinding) {
     this.crawler = crawler;
-    if (options.connectionToCore) {
-      this.crawler.addConnectionToDatastoreCore(options.connectionToCore);
-    }
+    this.crawler.bind(options);
   }
 
   public crawl(inputFilter: TCrawler['schemaType']['input']): ResultIterable<ICrawlerOutputSchema> {

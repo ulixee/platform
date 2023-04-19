@@ -8,13 +8,14 @@ import {
 import { PaymentSchema } from '../types/IPayment';
 import {
   DatastoreCrawlerPricing,
-  DatastoreRunnerPricing,
+  DatastoreExtractorPricing,
   DatastoreTablePricing,
 } from '../types/IDatastorePricing';
 import { DatastoreStatsSchema } from '../types/IDatastoreStats';
 import { datastoreVersionHashValidation } from '../types/datastoreVersionHashValidation';
 
 const FunctionMetaSchema = z.object({
+  description: z.string().optional(),
   stats: DatastoreStatsSchema,
   pricePerQuery: micronoteTokenValidation.describe('The base price per query.'),
   minimumPrice: micronoteTokenValidation.describe(
@@ -26,7 +27,7 @@ const FunctionMetaSchema = z.object({
 export const DatastoreApiSchemas = {
   'Datastore.upload': {
     args: z.object({
-      compressedDatastore: z.instanceof(Buffer).describe('Bytes of a compressed .dbx file'),
+      compressedDatastore: z.instanceof(Buffer).describe('Bytes of a compressed .dbx directory.'),
       allowNewLinkedVersionHistory: z
         .boolean()
         .describe(
@@ -45,6 +46,33 @@ export const DatastoreApiSchemas = {
       success: z.boolean(),
     }),
   },
+  'Datastore.download': {
+    args: z.object({
+      versionHash: datastoreVersionHashValidation.describe(
+        'The hash of a unique datastore version',
+      ),
+      requestDate: z.date().describe('Date of this request. Must be in last 10 seconds.'),
+      adminIdentity: identityValidation
+        .optional()
+        .describe(
+          'If this server is in production mode, an AdminIdentity approved on the Server or Datastore.',
+        ),
+      adminSignature: signatureValidation
+        .optional()
+        .describe('A signature from an approved AdminIdentity'),
+    }),
+    result: z.object({
+      compressedDatastore: z.instanceof(Buffer).describe('Bytes of the compressed .dbx directory.'),
+    }),
+  },
+  'Datastore.start': {
+    args: z.object({
+      dbxPath: z.string().describe('Path to a local file system Database path.'),
+    }),
+    result: z.object({
+      success: z.boolean(),
+    }),
+  },
   'Datastore.creditsBalance': {
     args: z.object({
       datastoreVersionHash: datastoreVersionHashValidation.describe(
@@ -55,6 +83,19 @@ export const DatastoreApiSchemas = {
     result: z.object({
       issuedCredits: micronoteTokenValidation.describe('Issued credits balance in microgons.'),
       balance: micronoteTokenValidation.describe('Remaining credits balance in microgons.'),
+    }),
+  },
+  'Datastore.creditsIssued': {
+    args: z.object({
+      datastoreVersionHash: datastoreVersionHashValidation.describe(
+        'The hash of the Datastore version to look at credits for.',
+      ),
+    }),
+    result: z.object({
+      issuedCredits: micronoteTokenValidation.describe(
+        'Total credit microgons issued in microgons.',
+      ),
+      count: micronoteTokenValidation.describe('Total credits issued in microgons.'),
     }),
   },
   'Datastore.admin': {
@@ -70,64 +111,17 @@ export const DatastoreApiSchemas = {
         .describe('A signature from the admin Identity'),
       adminFunction: z.object({
         ownerType: z
-          .enum(['table', 'crawler', 'runner', 'datastore'])
+          .enum(['table', 'crawler', 'extractor', 'datastore'])
           .describe('Where to locate the function.'),
         ownerName: z
           .string()
-          .describe('The name of the owning runner, table or crawler (if applicable).')
+          .describe('The name of the owning extractor, table or crawler (if applicable).')
           .optional(),
         functionName: z.string().describe('The name of the function'),
       }),
       functionArgs: z.any().array().describe('The args to provide to the function.'),
     }),
     result: z.any().describe('A flexible result based on the type of api.'),
-  },
-  'Datastores.list': {
-    args: z.object({
-      adminIdentity: identityValidation
-        .optional()
-        .describe('An admin Identity for this Cloud node.'),
-      adminSignature: signatureValidation
-        .optional()
-        .describe('A signature from the admin Identity'),
-    }),
-    result: z
-      .object({
-        name: z.string().optional(),
-        versionHash: datastoreVersionHashValidation,
-        domain: z
-          .string()
-          .optional()
-          .describe('A Custom DNS name pointing at the latest version of the Datastore.'),
-        latestVersionHash: datastoreVersionHashValidation.describe(
-          'The latest version hash of this datastore',
-        ),
-        runnersByName: z.record(
-          z.string().describe('The name of the runner'),
-          FunctionMetaSchema.extend({
-            priceBreakdown: DatastoreRunnerPricing.array(),
-          }),
-        ),
-        crawlersByName: z.record(
-          z.string().describe('The name of the cralwer'),
-          FunctionMetaSchema.extend({
-            priceBreakdown: DatastoreCrawlerPricing.array(),
-          }),
-        ),
-        tablesByName: z.record(
-          z.string().describe('The name of a table'),
-          z.object({
-            stats: DatastoreStatsSchema,
-            pricePerQuery: micronoteTokenValidation.describe('The table base price per query.'),
-            priceBreakdown: DatastoreTablePricing.array(),
-            schemaJson: z.any().optional().describe('The schema JSON if requested'),
-          }),
-        ),
-        computePricePerQuery: micronoteTokenValidation.describe(
-          'The current server price per query. NOTE: if a server is implementing surge pricing, this amount could vary.',
-        ),
-      })
-      .array(),
   },
   'Datastore.meta': {
     args: z.object({
@@ -141,18 +135,24 @@ export const DatastoreApiSchemas = {
     }),
     result: z.object({
       name: z.string().optional(),
+      description: z.string().optional(),
+      isStarted: z
+        .boolean()
+        .describe('Only relevant in development mode - is this Datastore started.'),
+      scriptEntrypoint: z.string(),
       versionHash: datastoreVersionHashValidation,
       latestVersionHash: datastoreVersionHashValidation.describe(
         'The latest version hash of this datastore',
       ),
-      runnersByName: z.record(
-        z.string().describe('The name of the runner'),
+      stats: DatastoreStatsSchema,
+      extractorsByName: z.record(
+        z.string().describe('The name of the extractor'),
         FunctionMetaSchema.extend({
-          priceBreakdown: DatastoreRunnerPricing.array(),
+          priceBreakdown: DatastoreExtractorPricing.array(),
         }),
       ),
       crawlersByName: z.record(
-        z.string().describe('The name of the cralwer'),
+        z.string().describe('The name of the crawler'),
         FunctionMetaSchema.extend({
           priceBreakdown: DatastoreCrawlerPricing.array(),
         }),
@@ -160,6 +160,7 @@ export const DatastoreApiSchemas = {
       tablesByName: z.record(
         z.string().describe('The name of a table'),
         z.object({
+          description: z.string().optional(),
           stats: DatastoreStatsSchema,
           pricePerQuery: micronoteTokenValidation.describe('The table base price per query.'),
           priceBreakdown: DatastoreTablePricing.array(),
@@ -170,7 +171,7 @@ export const DatastoreApiSchemas = {
         .string()
         .optional()
         .describe(
-          'A Typescript interface describing input and outputs of Datastore Runners, and schemas of Datastore Tables',
+          'A Typescript interface describing input and outputs of Datastore Extractors, and schemas of Datastore Tables',
         ),
       computePricePerQuery: micronoteTokenValidation.describe(
         'The current server price per query. NOTE: if a server is implementing surge pricing, this amount could vary.',
@@ -179,7 +180,7 @@ export const DatastoreApiSchemas = {
   },
   'Datastore.stream': {
     args: z.object({
-      streamId: z.string().describe('The streamId to push results for this query.'),
+      id: z.string().describe('The id of this query.'),
       name: z.string().describe('The name of the table or function'),
       input: z.any().optional().describe('Optional input or where parameters'),
       versionHash: datastoreVersionHashValidation.describe(
@@ -217,17 +218,9 @@ export const DatastoreApiSchemas = {
         .optional(),
     }),
   },
-  'Datastore.fetchInternalTable': {
-    args: z.object({
-      name: z.string().describe('The name of the table'),
-      input: z.any().optional().describe('Optional input or where parameters'),
-      datastoreVersionHash: z.string().optional(),
-      datastoreInstanceId: z.string().optional(),
-    }),
-    result: z.any({}),
-  },
   'Datastore.query': {
     args: z.object({
+      id: z.string().describe('The unique id of this query.'),
       sql: z.string().describe('The SQL command(s) you want to run'),
       boundValues: z
         .array(z.any())
@@ -271,76 +264,37 @@ export const DatastoreApiSchemas = {
         .optional(),
     }),
   },
-  'Datastore.queryLocalScript': {
+  'Datastores.list': {
     args: z.object({
-      sql: z.string().describe('The SQL command(s) you want to run'),
-      boundValues: z
-        .array(z.any())
+      offset: z
+        .number()
         .optional()
-        .describe('An array of values you want to use as bound parameters'),
-      scriptPath: z
-        .string()
-        .describe('A path to a local script to run. NOTE: API only enabled in development.'),
+        .describe('Starting offset (inclusive) of results to return')
+        .default(0),
     }),
     result: z.object({
-      latestVersionHash: datastoreVersionHashValidation,
-      outputs: z.any().array(),
-      error: z.any().optional(),
+      datastores: z
+        .object({
+          name: z.string().optional(),
+          description: z.string().optional(),
+          isStarted: z
+            .boolean()
+            .describe('Only relevant in development mode - is this Datastore started.'),
+          scriptEntrypoint: z.string(),
+          versionHash: datastoreVersionHashValidation,
+          domain: z
+            .string()
+            .optional()
+            .describe('A Custom DNS name pointing at the latest version of the Datastore.'),
+          latestVersionHash: datastoreVersionHashValidation.describe(
+            'The latest version hash of this datastore',
+          ),
+          stats: DatastoreStatsSchema,
+        })
+        .array(),
+      count: z.number().describe('Total datastores.'),
+      offset: z.number().describe('Offset index of result (inclusive).'),
     }),
-  },
-  'Datastore.createInMemoryTable': {
-    args: z.object({
-      name: z.string(),
-      schema: z.any({}),
-      seedlings: z.any({}).optional(),
-      datastoreInstanceId: z.string(),
-    }),
-    result: z.object({}),
-  },
-  'Datastore.createInMemoryFunction': {
-    args: z.object({
-      name: z.string(),
-      schema: z.any({}),
-      datastoreInstanceId: z.string(),
-    }),
-    result: z.object({}),
-  },
-  'Datastore.queryInternalTable': {
-    args: z.object({
-      name: z.string(),
-      sql: z.string(),
-      boundValues: z.any({}).optional(),
-      datastoreVersionHash: z.string().optional(),
-      datastoreInstanceId: z.string().optional(),
-    }),
-    result: z.any({}),
-  },
-  'Datastore.queryInternalFunctionResult': {
-    args: z.object({
-      name: z.string(),
-      sql: z.string(),
-      boundValues: z.any({}).optional(),
-      input: z.any({}).optional(),
-      outputs: z.array(z.any({})),
-      datastoreVersionHash: z.string().optional(),
-      datastoreInstanceId: z.string().optional(),
-    }),
-    result: z.any({}),
-  },
-  'Datastore.queryInternal': {
-    args: z.object({
-      sql: z.string(),
-      boundValues: z.any({}).optional(),
-      inputByRunnerName: z.record(z.any()),
-      outputByRunnerName: z.record(z.array(z.any({}))),
-      recordsByVirtualTableName: z.record(
-        z.string({ description: 'Virtual Table Name' }),
-        z.record(z.string(), z.any(), { description: 'Virtual Table Record' }).array(),
-      ),
-      datastoreVersionHash: z.string().optional(),
-      datastoreInstanceId: z.string().optional(),
-    }),
-    result: z.any({}),
   },
 };
 

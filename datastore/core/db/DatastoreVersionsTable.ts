@@ -7,8 +7,8 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
   private findWithBaseHashQuery: Statement<string>;
   private findWithDomainQuery: Statement<string>;
   private findByEntrypointQuery: Statement<string>;
-  private cacheByVersionHash: Record<string, IDatastoreVersionRecord> = {};
   private versionsByBaseHash: Record<string, IVersionHistoryEntry[]> = {};
+  private cacheByVersionHash: Record<string, IDatastoreVersionRecord> = {};
 
   constructor(db: SqliteDatabase) {
     super(
@@ -17,9 +17,11 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       [
         ['versionHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
         ['baseVersionHash', 'TEXT'],
+        ['dbxPath', 'TEXT'],
         ['versionTimestamp', 'DATETIME'],
         ['scriptEntrypoint', 'TEXT'],
         ['domain', 'TEXT'],
+        ['isStarted', 'INTEGER'],
       ],
       true,
     );
@@ -43,22 +45,51 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
     return this.findWithDomainQuery.get(domain.toLowerCase());
   }
 
+  public allCached(): IDatastoreVersionRecord[] {
+    return Object.values(this.cacheByVersionHash);
+  }
+
+  public setDbxStopped(dbxPath: string): IDatastoreVersionRecord {
+    for (const cached of this.allCached()) {
+      if (cached.dbxPath === dbxPath) {
+        this.db
+          .prepare(`update ${this.tableName} set isStarted=0 where versionHash=?`)
+          .run(cached.versionHash);
+        cached.isStarted = false;
+        return cached;
+      }
+    }
+  }
+
   public save(
     versionHash: string,
     scriptEntrypoint: string,
     versionTimestamp: number,
+    dbxPath: string,
     baseVersionHash: string,
     domain: string,
   ): void {
     domain = domain?.toLowerCase();
 
-    this.insertNow([versionHash, baseVersionHash, versionTimestamp, scriptEntrypoint, domain]);
-    this.cacheByVersionHash[versionHash] = {
+    const isStarted = true;
+
+    this.insertNow([
       versionHash,
       baseVersionHash,
+      dbxPath,
       versionTimestamp,
       scriptEntrypoint,
       domain,
+      isStarted ? 1 : 0,
+    ]);
+    this.cacheByVersionHash[versionHash] = {
+      versionHash,
+      baseVersionHash,
+      dbxPath,
+      versionTimestamp,
+      scriptEntrypoint,
+      domain,
+      isStarted,
     };
     this.versionsByBaseHash[baseVersionHash] ??= this.getPreviousVersions(baseVersionHash);
     if (!this.versionsByBaseHash[baseVersionHash].some(x => x.versionHash === versionHash)) {
@@ -101,7 +132,14 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
   }
 
   public getByHash(versionHash: string): IDatastoreVersionRecord {
-    this.cacheByVersionHash[versionHash] ??= this.getQuery.get(versionHash);
+    if (!this.cacheByVersionHash[versionHash]) {
+      const entry = this.getQuery.get(versionHash);
+      if (entry) {
+        entry.isStarted = !!entry.isStarted;
+        this.cacheByVersionHash[versionHash] = entry;
+      }
+    }
+
     return this.cacheByVersionHash[versionHash];
   }
 }
@@ -111,5 +149,7 @@ export interface IDatastoreVersionRecord {
   versionTimestamp: number;
   baseVersionHash: string;
   scriptEntrypoint: string;
+  dbxPath: string;
+  isStarted: boolean;
   domain: string;
 }

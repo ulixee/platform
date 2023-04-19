@@ -57,7 +57,7 @@ import InstallIt from '@/components/InstallIt.vue';
 import Dependencies from '@/components/Dependencies.vue';
 import UseIt from '@/components/UseIt.vue';
 import Command from '@/components/Command.vue';
-import { CheckIcon, XIcon } from '@heroicons/vue/24/solid';
+import { CheckIcon, XMarkIcon } from '@heroicons/vue/24/solid';
 import { AboveTheFold, MainHeader, SubHeader, ActionButtons } from "../components";
 import AlertDevelopmentEnvironment from "../components/AlertDevelopmentEnvironment.vue";
 import Prism from "@/components/Prism.vue";
@@ -69,7 +69,7 @@ export default Vue.defineComponent({
     UseIt,
     Command,
     CheckIcon,
-    XIcon,
+    XMarkIcon,
     MainHeader,
     SubHeader,
     AboveTheFold,

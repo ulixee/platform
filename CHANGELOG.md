@@ -31,7 +31,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 * incorrect syntax for crawler output in docs ([fb672f9](https://github.com/ulixee/platform/commit/fb672f90a43963e6bc0e68baea139bbf23d7929b))
 * lint issue and schema change ([b0fe5eb](https://github.com/ulixee/platform/commit/b0fe5ebb0b0ca187c19b1cae0f4766d2dce3313d))
 * merge issues ([de1f3b4](https://github.com/ulixee/platform/commit/de1f3b4da65979b1ef5e2a145b36175e852ba845))
-* **miner:** startup waits for router to start ([0e158ec](https://github.com/ulixee/platform/commit/0e158ec8aebeab1cc7abfc4a524c0d2b7f40d0a6))
+* **cloudNode:** startup waits for router to start ([0e158ec](https://github.com/ulixee/platform/commit/0e158ec8aebeab1cc7abfc4a524c0d2b7f40d0a6))
 * slashes in windows file paths were breaking things ([9e40001](https://github.com/ulixee/platform/commit/9e40001dbad08203ab3414e345a62ff375cb6f61))
 * stop sql injection in Datastore.stream ([b3c4c4b](https://github.com/ulixee/platform/commit/b3c4c4b1f1d134e9f38cdc37411fa407642bb69d))
 * updated doc links to point to runner ([f3e14c6](https://github.com/ulixee/platform/commit/f3e14c60a9c528a0861cb126fd191fb306acf88e))

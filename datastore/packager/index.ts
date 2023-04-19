@@ -12,15 +12,19 @@ import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import Dbx from './lib/Dbx';
 import rollupDatastore from './lib/rollupDatastore';
-import DbxFile from './lib/DbxFile';
 
-export default class DatastorePackager {
-  public manifest: DatastoreManifest;
+export default class DatastorePackager extends TypedEventEmitter<{ build: void }> {
   public script: string;
   public sourceMap: string;
-  public dbx: DbxFile;
+  public dbx: Dbx;
   public meta: IFetchMetaResponseData;
+
+  public get manifest(): DatastoreManifest {
+    return this.dbx.manifest;
+  }
 
   public get dbxPath(): string {
     return Path.join(this.outDir, `${this.filename}.dbx`);
@@ -28,105 +32,117 @@ export default class DatastorePackager {
 
   private readonly entrypoint: string;
   private readonly filename: string;
+  private onClose: (() => Promise<void>)[] = [];
 
   constructor(entrypoint: string, private readonly outDir?: string, private logToConsole = false) {
+    super();
     this.entrypoint = Path.resolve(entrypoint);
     this.outDir ??=
       UlixeeConfig.load({ entrypoint: this.entrypoint, workingDirectory: process.cwd() })
         ?.datastoreOutDir ?? Path.dirname(this.entrypoint);
     this.outDir = Path.resolve(this.outDir);
     this.filename = Path.basename(this.entrypoint, Path.extname(this.entrypoint));
-    this.dbx = new DbxFile(this.dbxPath);
-    this.manifest = new DatastoreManifest(`${this.dbx.workingDirectory}/datastore-manifest.json`);
+    this.dbx = new Dbx(this.dbxPath);
+  }
+
+  public async close(): Promise<void> {
+    for (const onclose of this.onClose) {
+      await onclose();
+    }
   }
 
   public async build(options?: {
     tsconfig?: string;
     compiledSourcePath?: string;
-    keepOpen?: boolean;
     createNewVersionHistory?: boolean;
-  }): Promise<DbxFile> {
-    const dbx = this.dbx;
-    if ((await dbx.exists()) && !(await dbx.isOpen())) {
-      await dbx.open(true);
+    createTemporaryVersionHash?: boolean;
+    watch?: boolean;
+  }): Promise<Dbx> {
+    const rollup = await rollupDatastore(options?.compiledSourcePath ?? this.entrypoint, {
+      outDir: this.dbx.path,
+      tsconfig: options?.tsconfig,
+      watch: options?.watch,
+    });
+    if (options?.watch) {
+      this.onClose.push(() => rollup.close());
     }
-    const { sourceCode, sourceMap } = await this.rollup(options);
 
     this.meta ??= await this.findDatastoreMeta();
     if (!this.meta.coreVersion) {
       throw new Error('Datastore must specify a coreVersion');
     }
-    dbx.createOrUpdateDatabase(this.meta.tablesByName, this.meta.tableSeedlingsByName);
+    await this.generateDetails(
+      rollup.code,
+      rollup.sourceMap,
+      options?.createNewVersionHistory,
+      options?.createTemporaryVersionHash,
+    );
 
-    await this.createOrUpdateManifest(sourceCode, sourceMap, options?.createNewVersionHistory);
-    await dbx.createOrUpdateDocpage(this.meta, this.manifest, this.entrypoint);
-    await dbx.save(options?.keepOpen);
-
-    return dbx;
-  }
-
-  public async rollup(options?: {
-    tsconfig?: string;
-    compiledSourcePath?: string;
-  }): Promise<{ sourceMap: string; sourceCode: string }> {
-    const rollup = await rollupDatastore(options?.compiledSourcePath ?? this.entrypoint, {
-      outDir: this.dbx.workingDirectory,
-      tsconfig: options?.tsconfig,
-    });
-    return { sourceMap: rollup.sourceMap, sourceCode: rollup.code.toString('utf8') };
+    rollup.events.on(
+      'change',
+      async ({ code, sourceMap }) =>
+        await this.generateDetails(
+          code,
+          sourceMap,
+          options?.createNewVersionHistory,
+          options?.createTemporaryVersionHash,
+        ),
+    );
+    return this.dbx;
   }
 
   public async createOrUpdateManifest(
     sourceCode: string,
     sourceMap: string,
     createNewVersionHistory = false,
+    createTemporaryVersionHash = false,
   ): Promise<DatastoreManifest> {
     this.meta ??= await this.findDatastoreMeta();
     if (!this.meta.coreVersion) {
       throw new Error('Datastore must specify a coreVersion');
     }
 
-    const runnersByName: IDatastoreManifest['runnersByName'] = {};
+    const extractorsByName: IDatastoreManifest['extractorsByName'] = {};
     const crawlersByName: IDatastoreManifest['crawlersByName'] = {};
     const tablesByName: IDatastoreManifest['tablesByName'] = {};
     const schemaInterface: {
       tables: Record<string, ISchemaAny>;
       crawlers: Record<string, ISchemaAny>;
-      runners: Record<string, ISchemaAny>;
-    } = { tables: {}, runners: {}, crawlers: {} };
+      extractors: Record<string, ISchemaAny>;
+    } = { tables: {}, extractors: {}, crawlers: {} };
 
-    if (this.meta.runnersByName) {
-      for (const [name, runnerMeta] of Object.entries(this.meta.runnersByName)) {
-        const { schema, pricePerQuery, minimumPrice, corePlugins } = runnerMeta;
+    if (this.meta.extractorsByName) {
+      for (const [name, extractorMeta] of Object.entries(this.meta.extractorsByName)) {
+        const { schema, pricePerQuery, minimumPrice, corePlugins } = extractorMeta;
         if (schema) {
           const fields = filterUndefined({
             input: schemaFromJson(schema?.input),
             output: schemaFromJson(schema?.output),
           });
           if (Object.keys(fields).length) {
-            schemaInterface.runners[name] = object(fields);
+            schemaInterface.extractors[name] = object(fields);
           }
         }
 
-        runnersByName[name] = {
+        extractorsByName[name] = {
           corePlugins,
           prices: [
             {
               perQuery: pricePerQuery ?? 0,
               minimum: minimumPrice ?? pricePerQuery ?? 0,
-              addOns: runnerMeta.addOnPricing,
+              addOns: extractorMeta.addOnPricing,
             },
           ],
           schemaAsJson: schema,
         };
 
         // lookup upstream pricing
-        if (runnerMeta.remoteRunner) {
-          const runnerDetails = await this.lookupRemoteDatastoreRunnerPricing(
+        if (extractorMeta.remoteExtractor) {
+          const extractorDetails = await this.lookupRemoteDatastoreExtractorPricing(
             this.meta,
-            runnerMeta,
+            extractorMeta,
           );
-          runnersByName[name].prices.push(...runnerDetails.priceBreakdown);
+          extractorsByName[name].prices.push(...extractorDetails.priceBreakdown);
         }
       }
     }
@@ -158,8 +174,8 @@ export default class DatastorePackager {
 
         // lookup upstream pricing
         if (crawler.remoteCrawler) {
-          const runnerDetails = await this.lookupRemoteDatastoreCrawlerPricing(this.meta, crawler);
-          crawlersByName[name].prices.push(...runnerDetails.priceBreakdown);
+          const extractorDetails = await this.lookupRemoteDatastoreCrawlerPricing(this.meta, crawler);
+          crawlersByName[name].prices.push(...extractorDetails.priceBreakdown);
         }
       }
     }
@@ -195,11 +211,12 @@ export default class DatastorePackager {
       scriptVersionHash,
       Date.now(),
       interfaceString,
-      runnersByName,
+      extractorsByName,
       crawlersByName,
       tablesByName,
       this.meta,
       this.logToConsole ? console.log : undefined,
+      createTemporaryVersionHash,
     );
     if (createNewVersionHistory) {
       await this.manifest.setLinkedVersions(this.entrypoint, []);
@@ -209,28 +226,50 @@ export default class DatastorePackager {
     return this.manifest;
   }
 
-  protected async lookupRemoteDatastoreRunnerPricing(
+  protected async generateDetails(
+    code: string,
+    sourceMap: string,
+    createNewVersionHistory: boolean,
+    createTemporaryVersionHash: boolean,
+  ): Promise<void> {
+    this.meta = await this.findDatastoreMeta();
+    const dbx = this.dbx;
+    dbx.createOrUpdateDatabase(this.meta.tablesByName, this.meta.tableSeedlingsByName);
+
+    this.manifest.addToVersionHistory = createTemporaryVersionHash !== true;
+
+    await this.createOrUpdateManifest(
+      code,
+      sourceMap,
+      createNewVersionHistory,
+      createTemporaryVersionHash,
+    );
+    await dbx.createOrUpdateDocpage(this.meta, this.manifest, this.entrypoint);
+    this.emit('build');
+  }
+
+  protected async lookupRemoteDatastoreExtractorPricing(
     meta: IFetchMetaResponseData,
-    runner: IFetchMetaResponseData['runnersByName'][0],
-  ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['runnersByName'][0]> {
-    const runnerName = runner.remoteRunner;
+    extractor: IFetchMetaResponseData['extractorsByName'][0],
+  ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['extractorsByName'][0]> {
+    const extractorName = extractor.remoteExtractor;
 
     const { remoteHost, datastoreVersionHash } = this.getRemoteSourceAndVersionHash(
       meta,
-      runner.remoteSource,
+      extractor.remoteSource,
     );
 
     const remoteMeta = {
       host: remoteHost,
       datastoreVersionHash,
-      runnerName,
+      extractorName,
     };
 
     try {
       const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreVersionHash);
-      const remoteRunnerDetails = upstreamMeta.runnersByName[runnerName];
-      remoteRunnerDetails.priceBreakdown[0].remoteMeta = remoteMeta;
-      return remoteRunnerDetails;
+      const remoteExtractorDetails = upstreamMeta.extractorsByName[extractorName];
+      remoteExtractorDetails.priceBreakdown[0].remoteMeta = remoteMeta;
+      return remoteExtractorDetails;
     } catch (error) {
       console.error('ERROR loading remote datastore pricing', remoteMeta, error);
       throw error;
@@ -253,9 +292,9 @@ export default class DatastorePackager {
     };
     try {
       const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreVersionHash);
-      const remoteRunnerDetails = upstreamMeta.crawlersByName[crawlerName];
-      remoteRunnerDetails.priceBreakdown[0].remoteMeta = remoteMeta;
-      return remoteRunnerDetails;
+      const remoteExtractorDetails = upstreamMeta.crawlersByName[crawlerName];
+      remoteExtractorDetails.priceBreakdown[0].remoteMeta = remoteMeta;
+      return remoteExtractorDetails;
     } catch (error) {
       console.error('ERROR loading remote datastore pricing', remoteMeta, error);
       throw error;
@@ -293,7 +332,7 @@ export default class DatastorePackager {
     host: string,
     datastoreVersionHash: string,
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
-    const datastoreApiClient = new DatastoreApiClient(host, this.logToConsole);
+    const datastoreApiClient = new DatastoreApiClient(host, { consoleLogErrors: this.logToConsole });
     try {
       return await datastoreApiClient.getMeta(datastoreVersionHash);
     } finally {
@@ -327,7 +366,7 @@ export default class DatastorePackager {
   }
 
   private async findDatastoreMeta(): Promise<IFetchMetaResponseData> {
-    const entrypoint = `${this.dbx.workingDirectory}/datastore.js`;
+    const entrypoint = this.dbx.entrypoint;
     const datastoreProcess = new LocalDatastoreProcess(entrypoint);
     const meta = await datastoreProcess.fetchMeta();
     await new Promise(resolve => setTimeout(resolve, 1e3));

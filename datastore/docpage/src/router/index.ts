@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import Index from '../pages/Index.vue';
 
-const matches = location.pathname.match(/(\/datastore\/dbx1[ac-hj-np-z02-9]{18})/);
+const matches = location.pathname.match(/(\/dbx1[ac-hj-np-z02-9]{18})/);
 const pathPrefix = matches ? matches[1] : '';
 
 const basicRoutes: Array<RouteRecordRaw> = [
@@ -9,11 +9,6 @@ const basicRoutes: Array<RouteRecordRaw> = [
     name: 'home',
     path: `${pathPrefix}/`,
     component: Index,
-  },
-  {
-    name: 'queryExample',
-    path: `${pathPrefix}/query-example`,
-    component: () => import('../pages/QueryExample.vue'),
   },
   {
     name: 'cloneIt',

@@ -88,14 +88,14 @@ export class MaxSurgePricePerQueryExceeededError extends UlixeeError {
     return 'ERR_MAX_PRICE_EXCEEDED';
   }
 
-  constructor(clientMaxPricePerQuery: number, minerPricePerQuery: number) {
+  constructor(clientMaxPricePerQuery: number, cloudPricePerQuery: number) {
     super(
-      'The maximum surge price per query requested was not accepted by this Miner.',
+      'The maximum surge price per query requested was not accepted by this Cloud.',
       MaxSurgePricePerQueryExceeededError.code,
     );
     this.data = {
       clientMaxPricePerQuery,
-      minerPricePerQuery,
+      cloudPricePerQuery,
     };
   }
 }

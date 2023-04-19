@@ -1,7 +1,7 @@
-import { Runner } from '@ulixee/datastore';
+import { Extractor } from '@ulixee/datastore';
 import { InvalidSignatureError } from '@ulixee/crypto/lib/errors';
 
-export default new Runner({
+export default new Extractor({
   async run(ctx) {
     const y = await multiply(2);
     ctx.Output.emit({ y });

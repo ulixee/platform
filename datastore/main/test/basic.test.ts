@@ -1,30 +1,15 @@
 import readCommandLineArgs from '../lib/utils/readCommandLineArgs';
-import Autorun from '../lib/utils/Autorun';
-import { Runner } from '../index';
+import { Extractor } from '../index';
 
 describe('basic Datastore tests', () => {
-  it('automatically runs and closes a runner', async () => {
-    let runnerWasRun = false;
-    Autorun.mainModuleExports = {
-      default: new Runner(async ctx => {
-        new ctx.Output({ ran: 'success' });
-        runnerWasRun = true;
-      }),
-    };
-
-    await Autorun.attemptAutorun();
-    await new Promise(resolve => process.nextTick(resolve));
-    expect(await runnerWasRun).toBe(true);
-  });
-
   it('waits until run method is explicitly called', async () => {
     let wasRun = false;
-    const runner = new Runner(async ctx => {
+    const extractor = new Extractor(async ctx => {
       new ctx.Output({ ran: 'success' });
       wasRun = true;
     });
 
-    await runner.runInternal({});
+    await extractor.runInternal({});
     await new Promise(resolve => process.nextTick(resolve));
     expect(await wasRun).toBe(true);
   });

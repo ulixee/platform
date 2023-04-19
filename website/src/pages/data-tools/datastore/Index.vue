@@ -31,12 +31,12 @@
 
       <section class="mt-24">
         <h3>Intelligent Handling of Failure</h3>
-        <p>The more you run scrapers, the more likely you are to find failures, Datastores make it easy to categorize the outcomes intelligently. You can setup rules that allow Miner Overload failures to be retried in x minutes while Recaptchas should be retried only on a new IP Address.</p>
+        <p>The more you run scrapers, the more likely you are to find failures, Datastores make it easy to categorize the outcomes intelligently. You can setup rules that allow "compute overload" failures to be retried in x minutes while Recaptchas should be retried only on a new IP Address.</p>
       </section>
 
       <section class="mt-24">
         <h3>Payment Walls</h3>
-        <p>Datastore was designed with payments as a first class concept.  It’s as simple as setting a price and wallet address in the configuration settings of your Datastore. That’s it, so long as you’re using Ulixee Miner you can open it to the public, and anyone can query it. Every time they do, you get paid.</p>
+        <p>Datastore was designed with payments as a first class concept.  It’s as simple as setting a price and wallet address in the configuration settings of your Datastore. That’s it, so long as you’re using Ulixee Cloud you can open it to the public, and anyone can query it. Every time they do, you get paid.</p>
       </section>
 
       <section class="mt-24">
@@ -51,11 +51,11 @@
           </li>
           <li>
             <header>Datastore for Puppeteer</header>
-            <p>Datastore for Puppeteer is an easy way to connect existing Puppeteer scrapers into the Ulixee platform. It allows them to run on Ulixee Miner and accept payments in the new economy.</p>
+            <p>Datastore for Puppeteer is an easy way to connect existing Puppeteer scrapers into the Ulixee platform. It allows them to run on Ulixee Cloud and accept payments in the new economy.</p>
           </li>
           <li>
             <header>Datastore for Playwright</header>
-            <p>Similar to the Puppeteer implementation, this is an easy way to connect existing Playwright scrapers into Ulixee’s platform. It allows your scripts to run on Ulixee Miner and begin accepting payments</p>
+            <p>Similar to the Puppeteer implementation, this is an easy way to connect existing Playwright scrapers into Ulixee’s platform. It allows your scripts to run on Ulixee Cloud and begin accepting payments</p>
           </li>
         </ul>
       </section>

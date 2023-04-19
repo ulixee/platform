@@ -1,7 +1,12 @@
 import ICrawlerOutputSchema from './ICrawlerOutputSchema';
 
-export default interface ICrawlerComponents<TSchema, TContext, TDisableCache extends boolean = false> {
+export default interface ICrawlerComponents<
+  TSchema,
+  TContext,
+  TDisableCache extends boolean = false,
+> {
   name?: string;
+  description?: string;
   pricePerQuery?: number;
   addOnPricing?: {
     perKb?: never;

@@ -1,5 +1,5 @@
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
-import IRunnerPluginCore from '@ulixee/datastore/interfaces/IRunnerPluginCore';
+import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 import IDatastoreCoreConfigureOptions from './IDatastoreCoreConfigureOptions';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
 import WorkTracker from '../lib/WorkTracker';
@@ -11,7 +11,7 @@ export default interface IDatastoreApiContext {
   datastoreRegistry: DatastoreRegistry;
   workTracker: WorkTracker;
   configuration: IDatastoreCoreConfigureOptions;
-  pluginCoresByName: { [name: string]: IRunnerPluginCore<unknown> };
+  pluginCoresByName: { [name: string]: IExtractorPluginCore<unknown> };
   sidechainClientManager: SidechainClientManager;
   connectionToClient?: IDatastoreConnectionToClient;
 }

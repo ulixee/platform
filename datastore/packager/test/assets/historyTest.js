@@ -1,8 +1,8 @@
 const Datastore = require('@ulixee/datastore');
-const { Runner, HeroRunnerPlugin } = require('@ulixee/datastore-plugins-hero');
+const { Extractor, HeroExtractorPlugin } = require('@ulixee/datastore-plugins-hero');
 
 exports.default = new Datastore({
-  runners: {
-    default: new Runner(() => null, HeroRunnerPlugin),
+  extractors: {
+    default: new Extractor(() => null, HeroExtractorPlugin),
   },
 });

@@ -1,7 +1,7 @@
 import isArray from 'lodash-es/isArray';
 
-function testRunner(): string {
+function testExtractor(): string {
   return isArray([]) ? 'true' : 'not an array';
 }
 
-export { testRunner };
+export { testExtractor };

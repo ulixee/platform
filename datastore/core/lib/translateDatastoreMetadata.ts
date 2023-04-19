@@ -1,8 +1,8 @@
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
-import { IDatastoreStatsRecord } from '../db/DatastoreStatsTable';
 import PaymentProcessor from './PaymentProcessor';
 import { IDatastoreManifestWithStats } from './DatastoreRegistry';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
+import { IDatastoreStatsRecord } from '../db/DatastoreStatsTable';
 
 export default async function translateDatastoreMetadata(
   datastore: IDatastoreManifestWithStats,
@@ -11,21 +11,26 @@ export default async function translateDatastoreMetadata(
 ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
   const result: IDatastoreApiTypes['Datastore.meta']['result'] = {
     name: datastore.name,
+    description: datastore.description,
+    isStarted: datastore.isStarted,
+    scriptEntrypoint: datastore.scriptEntrypoint,
     versionHash: datastore.versionHash,
     latestVersionHash: datastore.latestVersionHash,
     schemaInterface: datastore.schemaInterface,
+    stats: translateStats(datastore.stats),
     crawlersByName: {},
-    runnersByName: {},
+    extractorsByName: {},
     tablesByName: {},
     computePricePerQuery: context.configuration.computePricePerQuery,
   };
 
-  for (const [name, runner] of Object.entries(datastore.runnersByName)) {
-    const { prices, schemaAsJson } = runner;
-    const stats = datastore.statsByName[name];
+  for (const [name, extractor] of Object.entries(datastore.extractorsByName)) {
+    const { prices, schemaAsJson } = extractor;
+    const stats = datastore.statsByItemName[name];
     const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
 
-    result.runnersByName[name] = {
+    result.extractorsByName[name] = {
+      description: result.description,
       stats: translateStats(stats),
       pricePerQuery,
       minimumPrice: pricePerQuery + settlementFee,
@@ -35,10 +40,11 @@ export default async function translateDatastoreMetadata(
   }
   for (const [name, crawler] of Object.entries(datastore.crawlersByName)) {
     const { prices, schemaAsJson } = crawler;
-    const stats = datastore.statsByName[name];
+    const stats = datastore.statsByItemName[name];
     const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
 
     result.crawlersByName[name] = {
+      description: result.description,
       stats: translateStats(stats),
       pricePerQuery,
       minimumPrice: pricePerQuery + settlementFee,
@@ -50,9 +56,10 @@ export default async function translateDatastoreMetadata(
   for (const [name, meta] of Object.entries(datastore.tablesByName)) {
     const { prices } = meta;
     const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
-    const stats = datastore.statsByName[name];
+    const stats = datastore.statsByItemName[name];
 
     result.tablesByName[name] = {
+      description: result.description,
       stats: translateStats(stats),
       pricePerQuery: pricePerQuery + settlementFee,
       priceBreakdown: prices,
@@ -62,11 +69,15 @@ export default async function translateDatastoreMetadata(
   return result;
 }
 
-function translateStats(
+export function translateStats(
   stats: IDatastoreStatsRecord,
-): IDatastoreApiTypes['Datastore.meta']['result']['runnersByName'][0]['stats'] {
+): IDatastoreApiTypes['Datastore.meta']['result']['extractorsByName'][0]['stats'] {
   stats ??= {} as any;
   return {
+    queries: stats.runs ?? 0,
+    errors: stats.errors ?? 0,
+    totalSpend: stats.totalSpend ?? 0,
+    totalCreditSpend: stats.totalCreditSpend ?? 0,
     averageMilliseconds: stats.averageMilliseconds ?? 0,
     maxMilliseconds: stats.maxMilliseconds ?? 0,
     averageTotalPricePerQuery: stats.averagePrice ?? 0,

@@ -1,23 +1,40 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
-import UlixeeMiner from '@ulixee/miner';
+import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import DatastoreStorage from '@ulixee/datastore/lib/DatastoreStorage';
 import directDatastore from './datastores/direct';
+import directExtractor from './datastores/directExtractor';
+import directTable from './datastores/directTable';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.queryInternal.test');
 
-let miner: UlixeeMiner;
+let cloudNode: CloudNode;
+const storages: DatastoreStorage[] = [];
 
 beforeAll(async () => {
   jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
+  for (const dbx of ['directExtractor', 'direct', 'directTable']) {
+    if (Fs.existsSync(`${__dirname}/datastores/${dbx}.dbx`)) {
+      await Fs.promises.rm(`${__dirname}/datastores/${dbx}.dbx`, { recursive: true });
+    }
+  }
 
-  miner = new UlixeeMiner();
-  miner.router.datastoreConfiguration = { datastoresDir: storageDir };
-  await miner.listen();
+  cloudNode = new CloudNode();
+  cloudNode.router.datastoreConfiguration = { datastoresDir: storageDir };
+  const storage1 = new DatastoreStorage();
+  const storage2 = new DatastoreStorage();
+  const storage3 = new DatastoreStorage();
+  await directDatastore.bind({ datastoreStorage: storage1 });
+  await directExtractor.bind({ datastoreStorage: storage2 });
+  await directTable.bind({ datastoreStorage: storage3 });
+  storages.push(storage1, storage2, storage3);
+  await cloudNode.listen();
 });
 
 afterAll(async () => {
-  await miner.close();
+  for (const storage of storages) storage.db.close();
+  await cloudNode.close();
   if (Fs.existsSync(storageDir)) Fs.rmdirSync(storageDir, { recursive: true });
 });
 
@@ -29,7 +46,7 @@ test('query datastore table', async () => {
   ]);
 }, 30e3);
 
-test('query datastore runner', async () => {
+test('query datastore extractor', async () => {
   const records = await directDatastore.queryInternal('SELECT * FROM test(shouldTest => true)');
   expect(records).toMatchObject([
     {
@@ -39,8 +56,10 @@ test('query datastore runner', async () => {
   ]);
 }, 30e3);
 
-test('query specific fields on runner', async () => {
-  const records = await directDatastore.queryInternal('SELECT greeting FROM test(shouldTest => true)');
+test('query specific fields on extractor', async () => {
+  const records = await directDatastore.queryInternal(
+    'SELECT greeting FROM test(shouldTest => true)',
+  );
   expect(records).toMatchObject([
     {
       greeting: 'Hello world',
@@ -48,7 +67,7 @@ test('query specific fields on runner', async () => {
   ]);
 }, 30e3);
 
-test('left join table on runners', async () => {
+test('left join table on extractors', async () => {
   const sql = `SELECT greeting, firstName FROM test(shouldTest => true) LEFT JOIN testers ON testers.isTester=test.shouldTest`;
   const records = await directDatastore.queryInternal(sql);
   expect(records).toMatchObject([
@@ -58,3 +77,17 @@ test('left join table on runners', async () => {
     },
   ]);
 }, 30e3);
+
+test('should be able to query function directly', async () => {
+  const data = await directExtractor.queryInternal('SELECT * FROM self(tester => true)');
+  expect(data).toMatchObject([{ testerEcho: true }]);
+}, 30e3);
+
+test('should be able to query table directly', async () => {
+  const data = await directTable.queryInternal('SELECT * FROM self');
+
+  expect(data).toMatchObject([
+    { title: 'Hello', success: true },
+    { title: 'World', success: false },
+  ]);
+});

@@ -1,10 +1,10 @@
-import Datastore, { Runner } from '@ulixee/datastore';
+import Datastore, { Extractor } from '@ulixee/datastore';
 import * as moment from 'moment';
 import { date, string } from '@ulixee/schema';
 
 export default new Datastore({
-  runners: {
-    moment: new Runner({
+  extractors: {
+    moment: new Extractor({
       run(ctx) {
         ctx.Output.emit({ date: moment(ctx.input.date).toDate() });
       },

@@ -9,6 +9,7 @@ import { Menubar } from './Menubar';
 import ApiManager from './ApiManager';
 import DesktopWindow from './DesktopWindow';
 import generateAppMenu from '../menus/generateAppMenu';
+import { IArgonFile } from './ArgonFile';
 
 export class WindowManager {
   get activeChromeAliveWindow(): ChromeAliveWindow {
@@ -23,14 +24,19 @@ export class WindowManager {
   #chromeAliveWindowsBySessionId = new Map<string, ChromeAliveWindow>();
 
   constructor(private menuBar: Menubar, private apiManager: ApiManager) {
-    this.events.on(apiManager, 'new-miner-address', this.onNewMinerAddress.bind(this));
+    this.events.on(apiManager, 'new-cloud-address', this.onNewCloudAddress.bind(this));
     this.events.on(apiManager, 'api-event', this.onApiEvent.bind(this));
+    this.events.on(apiManager, 'argon-file-opened', this.onArgonFileOpened.bind(this));
 
     this.bindIpcEvents();
     this.desktopWindow = new DesktopWindow(menuBar.staticServer, apiManager);
-    this.desktopWindow.on('close', this.checkOpenWindows.bind(this));
-    this.desktopWindow.on('focus', this.setMenu.bind(this));
-    this.desktopWindow.on('open-chromealive', this.loadChromeAliveWindow.bind(this));
+    this.events.on(this.desktopWindow, 'close', this.checkOpenWindows.bind(this));
+    this.events.on(this.desktopWindow, 'focus', this.setMenu.bind(this));
+    this.events.on(
+      apiManager.privateDesktopApiHandler,
+      'open-chromealive',
+      this.loadChromeAliveWindow.bind(this),
+    );
   }
 
   public async openDesktop(): Promise<void> {
@@ -44,7 +50,7 @@ export class WindowManager {
   }
 
   public async loadChromeAliveWindow(data: {
-    minerAddress: string;
+    cloudAddress: string;
     heroSessionId: string;
     dbPath: string;
   }): Promise<void> {
@@ -56,7 +62,7 @@ export class WindowManager {
     const chromeAliveWindow = new ChromeAliveWindow(
       data,
       this.menuBar.staticServer,
-      data.minerAddress,
+      data.cloudAddress,
     );
 
     const { heroSessionId } = data;
@@ -94,7 +100,7 @@ export class WindowManager {
       const [filename] = result.filePaths;
       if (filename.endsWith('.db')) {
         return this.loadChromeAliveWindow({
-          minerAddress: this.apiManager.localMinerAddress,
+          cloudAddress: this.apiManager.localCloudAddress,
           dbPath: filename,
           heroSessionId: Path.basename(filename).replace('.db', ''),
         });
@@ -102,6 +108,12 @@ export class WindowManager {
       // const sessionContainerDir = Path.dirname(filename);
       // TODO: show relevant sessions
     }
+  }
+
+  private async onArgonFileOpened(file: IArgonFile): Promise<void> {
+    if (!this.desktopWindow.isOpen) await this.openDesktop();
+    this.desktopWindow.focus();
+    await this.apiManager.privateDesktopApiHandler.onArgonFileOpened(file);
   }
 
   private setMenu(): void {
@@ -116,21 +128,20 @@ export class WindowManager {
     if (event.eventType === 'Session.opened') {
       void this.loadChromeAliveWindow({
         ...(event.data as INewHeroSessionEvent),
-        minerAddress: event.minerAddress,
+        cloudAddress: event.cloudAddress,
       });
     }
   }
 
-  private async onNewMinerAddress(
-    event: ApiManager['EventTypes']['new-miner-address'],
+  private async onNewCloudAddress(
+    event: ApiManager['EventTypes']['new-cloud-address'],
   ): Promise<void> {
-    const { oldAddress, newAddress } = event;
-    await this.desktopWindow.onNewMinerAddress(event);
+    const { oldAddress, address } = event;
     if (!oldAddress) return;
 
     for (const window of this.chromeAliveWindows) {
       if (window.api.address.startsWith(oldAddress)) {
-        await window.reconnect(newAddress);
+        await window.reconnect(address);
       }
     }
   }

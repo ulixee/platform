@@ -10,7 +10,6 @@ import WindowStateKeeper from './util/windowStateKeeper';
 export default class DesktopWindow extends TypedEventEmitter<{
   close: void;
   focus: void;
-  'open-chromealive': { minerAddress: string; heroSessionId: string; dbPath: string };
 }> {
   public get isOpen(): boolean {
     return !!this.#window;
@@ -32,6 +31,10 @@ export default class DesktopWindow extends TypedEventEmitter<{
     void this.open(false);
   }
 
+  public focus(): void {
+    this.#window.focus();
+  }
+
   public async open(show = true): Promise<void> {
     if (this.#window) {
       if (show) this.#window.show();
@@ -42,44 +45,26 @@ export default class DesktopWindow extends TypedEventEmitter<{
       show,
       acceptFirstMouse: true,
       useContentSize: true,
+      titleBarStyle: 'hiddenInset',
       ...this.#windowStateKeeper.windowState,
       webPreferences: {
-        preload: `${__dirname}/MenubarPagePreload.js`,
+        preload: `${__dirname}/DesktopPagePreload.js`,
       },
       icon: Path.resolve('..', 'assets', 'icon.png'),
     });
 
     this.#windowStateKeeper.track(this.#window);
     this.#window.setTitle('Ulixee Desktop');
-    this.#events.on(this.#window.webContents, 'ipc-message', async (e, message, ...args) => {
-      if (message === 'desktop:api') {
-        const [api] = args;
-        if (api === 'Desktop.publishConnections') {
-          for (const [address, group] of this.apiManager.apiByMinerAddress) {
-            if (group.isResolved && !group.resolved?.api) continue;
-            await this.onNewMinerAddress({ newAddress: address });
-          }
-        }
-        if (api === 'Session.openReplay') {
-          this.emit('open-chromealive', ...args[1]);
-        }
-        if (api === 'Desktop.connectToMiner') {
-          const { address } = args[1][0];
-          if (!address) {
-            console.warn('No valid address provided to connect to', args[1]);
-            return;
-          }
-          await this.apiManager
-            .connectToMiner(address)
-            .catch(error =>
-              this.sendDesktopEvent('Desktop.connectToMinerError', {
-                message: error.message,
-                address,
-              }),
-            );
-        }
+
+    this.#window.webContents.ipc.handle('desktop:api', async (e, { api, args }) => {
+      if (api === 'Credit.dragAsFile') {
+        return await this.apiManager.privateDesktopApiHandler.dragCreditAsFile(args, e.sender);
       }
     });
+    this.#window.webContents.ipc.on('getPrivateApiHost', e => {
+      e.returnValue = this.apiManager.privateDesktopWsServerAddress;
+    });
+
     this.#events.on(this.#window.webContents, 'context-menu', (e, params) => {
       generateContextMenu(params, this.#window.webContents).popup();
     });
@@ -87,19 +72,14 @@ export default class DesktopWindow extends TypedEventEmitter<{
     this.#events.once(this.#window, 'close', this.close.bind(this));
 
     await this.#window.webContents.loadURL(this.#webpageUrl);
+
+    this.#window.focus();
   }
 
   public close(): void {
     this.#events.close();
     this.#window = null;
     this.emit('close');
-  }
-
-  public async onNewMinerAddress(event: {
-    newAddress: string;
-    oldAddress?: string;
-  }): Promise<void> {
-    await this.sendDesktopEvent('Desktop.onRemoteConnected', event);
   }
 
   private sendDesktopEvent(eventType: string, data: any): Promise<any> {

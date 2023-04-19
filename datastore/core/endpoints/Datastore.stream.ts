@@ -1,4 +1,4 @@
-import Datastore, { IRunnerExecOptions } from '@ulixee/datastore';
+import Datastore, { IExtractorRunOptions } from '@ulixee/datastore';
 import IDatastoreApis from '@ulixee/platform-specification/datastore/DatastoreApis';
 import { SqlGenerator } from '@ulixee/sql-engine';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
@@ -8,45 +8,103 @@ import DatastoreVm from '../lib/DatastoreVm';
 import { validateAuthentication, validateFunctionCoreVersions } from '../lib/datastoreUtils';
 import { IDatastoreManifestWithStats } from '../lib/DatastoreRegistry';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
-import DatastoreStorage from '../lib/DatastoreStorage';
 
 export default new DatastoreApiHandler('Datastore.stream', {
   async handler(request, context) {
     const startTime = Date.now();
     const manifestWithStats = await context.datastoreRegistry.getByVersionHash(request.versionHash);
-    const datastore = await DatastoreVm.open(manifestWithStats.path, manifestWithStats);
+    const storage = context.datastoreRegistry.getStorage(request.versionHash);
+    const datastore = await DatastoreVm.open(manifestWithStats.path, storage, manifestWithStats);
     await validateAuthentication(datastore, request.payment, request.authentication);
     const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
 
+    const heroSessionIds: string[] = [];
+
     let outputs;
+    let bytes = 0;
+    let runError: Error;
+    let microgons = 0;
+    const isCredits = !!request.payment?.credits;
 
     const datastoreFunction =
-      datastore.metadata.runnersByName[request.name] ??
+      datastore.metadata.extractorsByName[request.name] ??
       datastore.metadata.crawlersByName[request.name];
     const datastoreTable = datastore.metadata.tablesByName[request.name];
-    if (datastoreFunction) {
-      outputs = await extractFunctionOutputs(
+
+    try {
+      await paymentProcessor.createHold(
         manifestWithStats,
-        datastore,
-        request,
-        context,
-        paymentProcessor,
+        [{ name: request.name, id: 1 }],
+        request.pricingPreferences,
       );
-    } else if (datastoreTable) {
-      // TODO: Need to put a payment hold for tables
-      outputs = await extractTableOutputs(datastore, request, context);
-    } else {
-      throw new Error(`${request.name} is not a valid Runner name for this Datastore.`);
+    } catch (error) {
+      runError = error;
+      context.datastoreRegistry.recordQuery(
+        request.id,
+        `stream(${request.name})`,
+        startTime,
+        request.input,
+        outputs,
+        request.versionHash,
+        {
+          milliseconds: Date.now() - startTime,
+          microgons,
+          bytes,
+          isCredits,
+        },
+        request.payment?.micronote?.micronoteId,
+        request.payment?.credits?.id,
+        request.affiliateId,
+        runError,
+      );
+      throw runError;
     }
 
-    const bytes = PaymentProcessor.getOfficialBytes(outputs);
-    const microgons = await paymentProcessor.settle(bytes);
+    try {
+      if (datastoreFunction) {
+        outputs = await extractFunctionOutputs(
+          manifestWithStats,
+          datastore,
+          request,
+          context,
+          heroSessionIds,
+        );
+      } else if (datastoreTable) {
+        outputs = extractTableOutputs(datastore, request, context);
+      } else {
+        throw new Error(`${request.name} is not a valid Extractor name for this Datastore.`);
+      }
+
+      bytes = PaymentProcessor.getOfficialBytes(outputs);
+      microgons = await paymentProcessor.settle(bytes);
+    } catch (error) {
+      runError = error;
+    }
+
     const milliseconds = Date.now() - startTime;
-    context.datastoreRegistry.recordStats(request.versionHash, request.name, {
+    const stats = {
       bytes,
       microgons,
       milliseconds,
-    });
+      isCredits,
+    };
+    context.datastoreRegistry.recordItemStats(request.versionHash, request.name, stats, runError);
+    context.datastoreRegistry.recordQuery(
+      request.id,
+      `stream(${request.name})`,
+      startTime,
+      request.input,
+      outputs,
+      request.versionHash,
+      stats,
+      request.payment?.micronote?.micronoteId,
+      request.payment?.credits?.id,
+      request.affiliateId,
+      runError,
+      heroSessionIds,
+    );
+
+    if (runError) throw runError;
 
     return {
       latestVersionHash: manifestWithStats.latestVersionHash,
@@ -64,34 +122,66 @@ async function extractFunctionOutputs(
   datastore: Datastore,
   request: IDatastoreApis['Datastore.stream']['args'],
   context: IDatastoreApiContext,
-  paymentProcessor: PaymentProcessor,
+  heroSessionIds: string[],
 ): Promise<any[]> {
-  await paymentProcessor.createHold(
-    manifestWithStats,
-    [{ name: request.name, id: 1 }],
-    request.pricingPreferences,
-  );
-
   validateFunctionCoreVersions(manifestWithStats, request.name, context);
-
+  const options: IExtractorRunOptions<any> = {
+    input: request.input,
+    authentication: request.authentication,
+    affiliateId: request.affiliateId,
+    payment: request.payment,
+  };
+  options.trackMetadata = (metaName, metaValue) => {
+    if (metaName === 'heroSessionId') {
+      if (!heroSessionIds.includes(metaValue)) heroSessionIds.push(metaValue);
+    }
+  };
   return await context.workTracker.trackRun(
     (async () => {
-      const options: IRunnerExecOptions<any> = {
-        input: request.input,
-        authentication: request.authentication,
-        affiliateId: request.affiliateId,
-        payment: request.payment,
-      };
-
       for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
-        if (plugin.beforeExecRunner) await plugin.beforeExecRunner(options);
+        if (plugin.beforeRunExtractor) {
+          await plugin.beforeRunExtractor(options, {
+            scriptEntrypoint: manifestWithStats.path,
+            functionName: request.name,
+          });
+        }
       }
 
-      const func = datastore.runners[request.name] ?? datastore.crawlers[request.name];
-      const results = func.runInternal(options);
+      const func = datastore.extractors[request.name] ?? datastore.crawlers[request.name];
+      const results = func.runInternal(options, {
+        async onFunction(id, name, initialOptions, run) {
+          const runStart = Date.now();
+          let runError: Error;
+          let outputs: any;
+          let bytes = 0;
+          const microgons = 0;
+          try {
+            outputs = await context.workTracker.trackRun(run(options));
+            // release the hold
+            bytes = PaymentProcessor.getOfficialBytes(outputs);
+          } catch (error) {
+            runError = error;
+          }
+
+          const milliseconds = Date.now() - runStart;
+          context.datastoreRegistry.recordItemStats(
+            request.versionHash,
+            name,
+            {
+              bytes,
+              microgons,
+              milliseconds,
+              isCredits: !!request.payment?.credits,
+            },
+            runError,
+          );
+          if (runError instanceof Error) throw runError;
+          return outputs;
+        },
+      });
       for await (const result of results) {
         context.connectionToClient.sendEvent({
-          listenerId: request.streamId,
+          listenerId: request.id,
           data: result,
           eventType: 'Stream.output',
         });
@@ -101,18 +191,12 @@ async function extractFunctionOutputs(
   );
 }
 
-async function extractTableOutputs(
+function extractTableOutputs(
   datastore: Datastore,
   request: IDatastoreApis['Datastore.stream']['args'],
   context: IDatastoreApiContext,
-): Promise<any[]> {
-  let storage: DatastoreStorage;
-  if (request.versionHash) {
-    storage = await context.datastoreRegistry.getStorage(request.versionHash);
-  } else {
-    context.connectionToClient.datastoreStorage ??= new DatastoreStorage();
-    storage = context.connectionToClient?.datastoreStorage;
-  }
+): any[] {
+  const storage = context.datastoreRegistry.getStorage(request.versionHash);
 
   const db = storage.db;
   const schema = storage.getTableSchema(request.name);
@@ -129,7 +213,7 @@ async function extractTableOutputs(
 
   for (const result of results) {
     context.connectionToClient.sendEvent({
-      listenerId: request.streamId,
+      listenerId: request.id,
       data: result,
       eventType: 'Stream.output',
     });

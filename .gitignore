@@ -24,9 +24,11 @@ tsconfig.tsbuildinfo
 **/dist
 /.eslintcache
 connect
-/datastore/examples/codepen.ts
-/datastore/examples/duckduckgo.ts
-/datastore/examples/creep.ts
-/datastore/examples/frame.ts
+/datastore/examples/*.ts
+!/datastore/examples/basic.ts
+!/datastore/examples/extract*
+!/datastore/examples/news.ycombinator*
+!/datastore/examples/ulixee*
+
 /.rollup.cache/
 /website/firebase-debug.log

@@ -17,9 +17,9 @@
       <h2 class="font-bold mt-8">Create Your First Datastore</h2>
       <p>The following script is exactly the same as the <router-link to="/hero/example">Hero Example</router-link>  except this one is wrapped in a Datastore. </p>
       <Prism language="javascript">
-        import { Runner, HeroRunnerPlugin } from '@ulixee/datastore-plugins-hero';
+        import { Extractor, HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 
-        export new Runner(async { Hero, Output } => {
+        export new Extractor(async { Hero, Output } => {
           const hero = new Hero();
           await hero.goto('https://ulixee.org/tryit/welcome-to-hero');
 
@@ -32,7 +32,7 @@
           });
 
           Output.emit({ description: await hero.querySelector('.description') });
-        }, HeroRunnerPlugin);
+        }, HeroExtractorPlugin);
       </Prism>
 
       <p>You can run above code directly from the command line by using `node example-datastore.js`, but the real power

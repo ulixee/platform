@@ -1,16 +1,15 @@
-import { setupAutorunMjsHack } from './lib/utils/Autorun.mjs';
 import cjsImport from './index.js';
 
 const {
   Table,
   Datastore,
   Observable,
-  RunnerSchema,
-  RunnerContext,
-  Runner,
+  ExtractorSchema,
+  ExtractorContext,
+  Extractor,
   Crawler,
   ConnectionToDatastoreCore,
-  PassthroughRunner,
+  PassthroughExtractor,
   Schema,
 } = cjsImport;
 
@@ -18,15 +17,13 @@ export {
   Table,
   Datastore,
   Observable,
-  RunnerSchema,
-  RunnerContext,
-  Runner,
+  ExtractorSchema,
+  ExtractorContext,
+  Extractor,
   Crawler,
   ConnectionToDatastoreCore,
-  PassthroughRunner,
+  PassthroughExtractor,
   Schema,
 };
 
 export default cjsImport.default;
-
-setupAutorunMjsHack();

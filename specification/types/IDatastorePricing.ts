@@ -16,12 +16,12 @@ const DatastorePricing = z.object({
     .optional(),
 });
 
-export const DatastoreRunnerPricing = DatastorePricing.extend({
+export const DatastoreExtractorPricing = DatastorePricing.extend({
   remoteMeta: z
     .object({
       host: z.string().describe('The remote host'),
       datastoreVersionHash: datastoreVersionHashValidation,
-      runnerName: z.string().describe('The remote runner name'),
+      extractorName: z.string().describe('The remote extractor name'),
     })
     .optional(),
 });
@@ -47,7 +47,7 @@ export const DatastoreTablePricing = z.object({
     .optional(),
 });
 
-type IDatastoreRunnerPricing = z.infer<typeof DatastoreRunnerPricing>;
+type IDatastoreExtractorPricing = z.infer<typeof DatastoreExtractorPricing>;
 type IDatastoreCrawlerPricing = z.infer<typeof DatastoreCrawlerPricing>;
 
-export { IDatastoreRunnerPricing, IDatastoreCrawlerPricing };
+export { IDatastoreExtractorPricing, IDatastoreCrawlerPricing };

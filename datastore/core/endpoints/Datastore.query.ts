@@ -1,7 +1,3 @@
-import { SqlParser } from '@ulixee/sql-engine';
-import Datastore from '@ulixee/datastore';
-import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
-import SqlQuery from '../lib/SqlQuery';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreCore from '../index';
 import PaymentProcessor from '../lib/PaymentProcessor';
@@ -13,130 +9,138 @@ export default new DatastoreApiHandler('Datastore.query', {
     request.boundValues ??= [];
 
     const startTime = Date.now();
-    const datastoreVersion = await context.datastoreRegistry.getByVersionHash(request.versionHash);
+    const manifestWithStats = await context.datastoreRegistry.getByVersionHash(request.versionHash);
 
-    const storage = await context.datastoreRegistry.getStorage(request.versionHash);
+    const storage = context.datastoreRegistry.getStorage(request.versionHash);
 
-    const db = storage.db;
-    const datastore = await DatastoreVm.open(datastoreVersion.path, datastoreVersion);
+    const datastore = await DatastoreVm.open(manifestWithStats.path, storage, manifestWithStats);
 
     await validateAuthentication(datastore, request.payment, request.authentication);
 
-    const sqlParser = new SqlParser(request.sql);
-    if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
-
-    sqlParser.tableNames.forEach(name => {
-      const table = datastore.tables[name];
-      if (!table.isPublic) throw new Error(`Table ${name} is not publicly accessible.`);
-    });
-
-    const inputByFunctionName = sqlParser.extractFunctionCallInputs(
-      storage.schemasByFunctionName,
-      request.boundValues,
-    );
-    const outputsByFunctionName: { [name: string]: any[] } = {};
-
     const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
 
-    const functionCallsWithTempIds = Object.keys(inputByFunctionName).map((x, i) => {
-      return {
-        name: x,
-        id: i,
-      };
-    });
+    const heroSessionIds: string[] = [];
 
-    await paymentProcessor.createHold(
-      datastoreVersion,
-      functionCallsWithTempIds,
-      request.pricingPreferences,
-    );
+    const finalResult = await datastore
+      .queryInternal(request.sql, request.boundValues, request.id, {
+        async beforeAll({ sqlParser, functionCallsById }) {
+          if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
 
-    for (const { name, id } of functionCallsWithTempIds) {
-      const runStart = Date.now();
-      const input = inputByFunctionName[name];
-      validateFunctionCoreVersions(datastoreVersion, name, context);
+          for (const name of sqlParser.tableNames) {
+            const table = datastore.tables[name];
+            if (!table.isPublic) throw new Error(`Table ${name} is not publicly accessible.`);
+          }
 
-      const outputs = await context.workTracker.trackRun(
-        runDatastoreFunction(datastore, name, input, request),
-      );
-      outputsByFunctionName[name] = outputs;
+          await paymentProcessor.createHold(
+            manifestWithStats,
+            functionCallsById,
+            request.pricingPreferences,
+          );
+        },
+        async onFunction(id, name, options, run) {
+          const runStart = Date.now();
+          validateFunctionCoreVersions(manifestWithStats, name, context);
 
-      // release the hold
-      const bytes = PaymentProcessor.getOfficialBytes(outputs);
-      const microgons = paymentProcessor.releaseLocalFunctionHold(id, bytes);
+          Object.assign(options, {
+            payment: request.payment,
+            authentication: request.authentication,
+            affiliateId: request.affiliateId,
+            versionHash: request.versionHash,
+          });
+          options.trackMetadata = (metaName, metaValue) => {
+            if (metaName === 'heroSessionId') {
+              if (!heroSessionIds.includes(metaValue)) heroSessionIds.push(metaValue);
+            }
+          };
+          for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
+            if (plugin.beforeRunExtractor)
+              await plugin.beforeRunExtractor(options, {
+                scriptEntrypoint: manifestWithStats.path,
+                functionName: name,
+              });
+          }
 
-      const milliseconds = Date.now() - runStart;
-      context.datastoreRegistry.recordStats(request.versionHash, name, {
-        bytes,
-        microgons,
-        milliseconds,
-      });
+          let runError: Error;
+          let outputs: any;
+          let bytes = 0;
+          let microgons = 0;
+          try {
+            outputs = await context.workTracker.trackRun(run(options));
+            // release the hold
+            bytes = PaymentProcessor.getOfficialBytes(outputs);
+            microgons = paymentProcessor.releaseLocalFunctionHold(id, bytes);
+          } catch (error) {
+            runError = error;
+          }
+
+          const milliseconds = Date.now() - runStart;
+          context.datastoreRegistry.recordItemStats(
+            request.versionHash,
+            name,
+            {
+              bytes,
+              microgons,
+              milliseconds,
+              isCredits: !!request.payment?.credits,
+            },
+            runError,
+          );
+          // Do we need to rollback the stats? We won't finalize payment in this scenario.
+          if (runError) throw runError;
+          return outputs;
+        },
+        async onPassthroughTable(name, options, run) {
+          Object.assign(options, {
+            payment: request.payment,
+            authentication: request.authentication,
+            versionHash: request.versionHash,
+          });
+          return await context.workTracker.trackRun(run(options));
+        },
+      })
+      .catch(error => error);
+
+    let outputs: any[];
+    let runError: Error;
+    if (finalResult instanceof Error) {
+      runError = finalResult;
+    } else {
+      outputs = finalResult;
     }
-
-    const recordsByVirtualTableName: { [tableName: string]: Record<string, any>[] } = {};
-    for (const table of sqlParser.tableNames) {
-      if (storage.isVirtualTable(table)) {
-        const sqlInputs = sqlParser.extractTableQuery(table, request.boundValues);
-        recordsByVirtualTableName[table] = await context.workTracker.trackRun(
-          runDatastorePassthroughQuery(datastore, table, sqlInputs.sql, sqlInputs.args, request),
-        );
-      }
-    }
-
-    const boundValues = sqlParser.convertToBoundValuesSqliteMap(request.boundValues);
-    const sqlQuery = new SqlQuery(sqlParser, storage, db);
-    const outputs = sqlQuery.execute(
-      inputByFunctionName,
-      outputsByFunctionName,
-      recordsByVirtualTableName,
-      boundValues,
-    );
-
-    const resultBytes = PaymentProcessor.getOfficialBytes(outputs);
+    const resultBytes = outputs ? PaymentProcessor.getOfficialBytes(outputs) : 0;
     const microgons = await paymentProcessor.settle(resultBytes);
+
+    const metadata = {
+      bytes: resultBytes,
+      microgons,
+      milliseconds: Date.now() - startTime,
+    };
+
+    context.datastoreRegistry.recordQuery(
+      request.id,
+      request.sql,
+      startTime,
+      request.boundValues,
+      outputs,
+      request.versionHash,
+      {
+        ...metadata,
+        isCredits: !!request.payment?.credits,
+      },
+      request.payment?.micronote?.micronoteId,
+      request.payment?.credits?.id,
+      request.affiliateId,
+      runError,
+      heroSessionIds,
+    );
+
+    // TODO: should we return this to client so that the rest of the metadata is visible?
+    if (runError) throw runError;
+
     return {
       outputs,
-      latestVersionHash: datastoreVersion.latestVersionHash,
-      metadata: {
-        bytes: resultBytes,
-        microgons,
-        milliseconds: Date.now() - startTime,
-      },
+      latestVersionHash: manifestWithStats.latestVersionHash,
+      metadata,
     };
   },
 });
-
-async function runDatastoreFunction<T>(
-  datastore: Datastore,
-  name: string,
-  input: any,
-  request: IDatastoreApiTypes['Datastore.query']['args'],
-): Promise<T> {
-  const options = {
-    input,
-    payment: request.payment,
-    authentication: request.authentication,
-    affiliateId: request.affiliateId,
-  };
-  for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
-    if (plugin.beforeExecRunner) await plugin.beforeExecRunner(options);
-  }
-
-  const func = datastore.runners[name] ?? datastore.crawlers[name];
-
-  return await func.runInternal(options);
-}
-
-async function runDatastorePassthroughQuery<T>(
-  datastore: Datastore,
-  tableName: string,
-  sql: string,
-  boundValues: any[],
-  request: IDatastoreApiTypes['Datastore.query']['args'],
-): Promise<T> {
-  const options = {
-    payment: request.payment,
-    authentication: request.authentication,
-  };
-  return await datastore.tables[tableName].queryInternal(sql, boundValues, options);
-}

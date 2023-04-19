@@ -17,7 +17,7 @@ if [ ! -f "$SECURE_PROFILE" ]; then
 fi
 
 ## Configure the PORT ulixee will run on
-port="${PORT:=8080}"
+port="${PORT:=1818}"
 ## Enable verbose logs
 DEBUG=ubk*,ulx*
 ## NOTE: these are unix oriented. adjust as needed for Windows

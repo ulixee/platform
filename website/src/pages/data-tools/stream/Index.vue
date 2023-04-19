@@ -26,12 +26,12 @@
 
     <section>
       <header>Script Locally, Run Remotely</header>
-      <p>Add as many queries and Miners, and let Stream handle managing the parallel operation.</p>
+      <p>Add as many queries and Clouds, and let Stream handle managing the parallel operation.</p>
     </section>
 
     <section>
       <header>Intelligent Parallelization</header>
-      <p>Stream monitors each Miner’s load capacity to distribute your queries in the most efficient manner possible.</p>
+      <p>Stream monitors each Cloud node’s load capacity to distribute your queries in the most efficient manner possible.</p>
     </section>
 
     <section>

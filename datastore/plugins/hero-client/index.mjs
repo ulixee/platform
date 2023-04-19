@@ -1,24 +1,21 @@
-import { setupAutorunMjsHack } from '@ulixee/datastore/lib/utils/Autorun.mjs';
 import cjsImport from './index.js';
 
 const {
-  HeroRunnerPlugin,
+  HeroExtractorPlugin,
   Observable,
   Datastore,
-  Runner,
+  Extractor,
   Crawler,
-  PassthroughRunner,
+  PassthroughExtractor,
   Schema,
 } = cjsImport;
 
 export {
-  HeroRunnerPlugin,
+  HeroExtractorPlugin,
   Observable,
   Datastore,
-  Runner,
+  Extractor,
   Crawler,
-  PassthroughRunner,
+  PassthroughExtractor,
   Schema,
 };
-
-setupAutorunMjsHack();

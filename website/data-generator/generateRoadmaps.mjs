@@ -14,7 +14,7 @@ const rawMilestones = Fs.readFileSync(milestonesPath, 'utf-8');
 const milestones = JSON.parse(rawMilestones);
 
 const roadmapPaths = [
-  'miner/ROADMAP-Miner.md',
+  'cloud/ROADMAP-Miner.md',
   'stream/ROADMAP-Stream.md',
   'hero/ROADMAP-Hero.md',
   'datastore/ROADMAP-Datastore.md',
