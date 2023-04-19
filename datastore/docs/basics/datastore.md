@@ -8,7 +8,7 @@ import Datastore from '@ulixee/datastore';
 export default new Datastore({
   extractors: {
     nameOfExtractor: new Extractor(extractorContext => {
-      extractorContext.output = `Hello ${extractorContext.input.firstName}`;
+      extractorContext.Output.emit({ message: `Hello ${extractorContext.input.firstName}` });
     }),
   },
 });

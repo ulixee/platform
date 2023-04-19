@@ -3,7 +3,6 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
-import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import sourcemaps from './sourcemaps';
 
 const commonjs = require('@rollup/plugin-commonjs');

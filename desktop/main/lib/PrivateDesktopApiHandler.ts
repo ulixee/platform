@@ -10,7 +10,11 @@ import * as Path from 'path';
 import { getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
 import * as Os from 'os';
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
-import { IDatastoreResultItem, IDesktopAppPrivateApis, TCredit } from '@ulixee/desktop-interfaces/apis';
+import {
+  IDatastoreResultItem,
+  IDesktopAppPrivateApis,
+  TCredit,
+} from '@ulixee/desktop-interfaces/apis';
 import IDesktopAppPrivateEvents from '@ulixee/desktop-interfaces/events/IDesktopAppPrivateEvents';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
@@ -20,6 +24,7 @@ import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import { IncomingMessage } from 'http';
 import { ConnectionToClient, WsTransportToClient } from '@ulixee/net';
 import WebSocket = require('ws');
+import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import ArgonFile from './ArgonFile';
 import ApiManager from './ApiManager';
 
@@ -149,9 +154,11 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     const adminIdentity = this.apiManager.localUserProfile.getAdminIdentity(versionHash, cloudName);
 
     if (!cloudHost) throw new Error('No cloud host available.');
-    // TODO: download from api client. If it's a local file, do we build for them?
-    const dbx = Buffer.from([]);
     const apiClient = new DatastoreApiClient(cloudHost);
+    if (versionHash.includes(DatastoreManifest.TemporaryIdPrefix)) {
+      throw new Error('This Datastore has only been started. You need to deploy it.')
+    }
+    const dbx = await apiClient.download(versionHash, { identity: adminIdentity });
     await apiClient.upload(dbx, { identity: adminIdentity });
   }
 

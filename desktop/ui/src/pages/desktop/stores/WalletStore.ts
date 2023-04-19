@@ -20,7 +20,8 @@ export const useWalletStore = defineStore('walletStore', () => {
     await load();
   }
 
-   function saveCash(_cash: IArgonFile['cash']) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function saveCash(_cash: IArgonFile['cash']) {
     throw new Error('Not implemented');
     // await window.desktopApi.send('Argon.saveCash', { cash });
     // await load();

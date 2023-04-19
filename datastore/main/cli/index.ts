@@ -2,7 +2,6 @@ import { Command } from 'commander';
 import type * as CliCommands from '@ulixee/datastore-packager/lib/cliCommands';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import * as Path from 'path';
-import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import DatastoreApiClient from '../lib/DatastoreApiClient';
 import creditsCli from './creditsCli';
 import cloneDatastore from './cloneDatastore';

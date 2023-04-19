@@ -27,13 +27,13 @@ import { Extractor } from '@ulixee/datastore';
 import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 
 export default new Extractor(
-        {
-          run(ctx) {
-            const hero = new ctx.Hero();
-            ctx.Output.emit({ name: `Hello ${ctx.input.firstName}` });
-          },
-        },
-        HeroExtractorPlugin,
+  {
+    run(ctx) {
+      const hero = new ctx.Hero();
+      ctx.Output.emit({ name: `Hello ${ctx.input.firstName}` });
+    },
+  },
+  HeroExtractorPlugin,
 );
 ```
 

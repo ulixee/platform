@@ -1,53 +1,49 @@
 # Deployment
 
-## Packaged Datastores (.dbx)
+## Packaged Datastores (DBX directories)
 
-Datastores are packaged into a single javascript file for deployment. They include a sourcemap and manifest file indicating how to run the Datastore functions. These files are TarGzipped into a final `.dbx` file.
+Datastores are packaged into a single javascript file for deployment. They include a sourcemap and manifest file indicating how to run the Datastore functions. These files are aggregated and deployed in a `.dbx` folder adjacent to your script entrypoint.
 
 We provide a packaging tool out of the box to combine your Datastore and included modules into a single file. It can be run using the Datastore CLI commands or the Ulixee CLI.
 
-### Packaged .dbx Files
+### <Script>.dbx folders
 
-Your Datastore will be packaged into a file with the same name and path as your script, but with the extension `.dbx`. These files are safe to check-in to source control so other developers on your team can package and deploy the datastores without a need to re-build them. You can also ftp them onto a Cloud Node to [deploy](#deploying) them.
+Your Datastore will be packaged into a folder with the same name and path as your script, but with the extension `.dbx`. These files are safe to check-in to source control so other developers on your team can package and deploy the datastores without a need to re-build them. You can also ftp them onto a Cloud Node to [deploy](#deploying) them.
 
-A `.dbx` file has the following files in it:
+A `.dbx` folder has the following files in it:
 
 - `datastore.js` The single file containing all your javascript code and a default export containing a `Datastore` instance.
 - `datastore.js.map` A source map for your javascript.
 - `datastore-manifest.json` A manifest file with a valid hash code. See Manifest section.
+- `docpage.json` A configuration for controlling the documentation website.
 - `storage.db` A Sqlite3 db containing your bootstrapped records and table structures.
 
 #### Out Directory
 
-If you want to build all your `.dbx` files so they can be deployed manually onto a Cloud (eg, if you have a Docker image and wish to pre-deploy `.dbx` files), you can do so in two ways:
+If you want to build all your `.dbx` folders so they can be deployed manually onto a Cloud (eg, if you have a Docker image and wish to pre-deploy `.dbx` files), you can do so in two ways:
 
 1. `Configuration`. You can add a `datastoreOutDir` parameter to a Ulixee config file (`.ulixee/config.json` in the hierarchy of your project). The path should be relative to the `config.json` file.
 2. `npx @ulixee/datastore build --out-dir=<path>`. During build, you can specify an out directory.
 
-#### Working Directory
+#### DBX Compliation Process
 
-While your `.dbx` file is being created, a working directory will be created at `<Path to dbx>.build`. The process for creating a `.dbx` is:
+While your `.dbx` is being created, the following steps will occur:
 
-1. Unpack any existing `.dbx`.
-2. Rollup source code into a single javascript file and sourcemap.
-3. Create a SHA3 256 hash of the script.
-4. Load any User-defined Manifest Settings (`${entrypoint}-manifest.json`, Project level `.ulixee/datastores.json`, Global settings). Details can be found [here](#manifest)
-5. Lookup the Datastore runtime and version.
-6. Add a previous `versionHash` to the linked versions, unless `linkedVersions` property in manifest is set to an empty list.
-7. Hash the manifest details into a `versionHash`.
-8. Tar.gz the script, sourcemap and manifest into a `.dbx file`
-
-#### Unpacking
-
-Packaged Datastore files are simply GZIP compressed Tar files. You can use normal Unix (or other) commands to explore their contents:
-
-`tar -xf script.dbx`
+1. Rollup source code into a single javascript file and sourcemap.
+2. Build Documentation site configuration.
+3. Generate and seed a Storage database.
+4. Create a SHA 256 hash of the script.
+5. Load any User-defined Manifest Settings (`${entrypoint}-manifest.json`, Project level `.ulixee/datastores.json`, Global settings). Details can be found [here](#manifest)
+6. Lookup the Datastore runtime and version.
+7. Add a previous `versionHash` to the linked versions, unless `linkedVersions` property in manifest is set to an empty list.
+8. Hash the manifest details into a `versionHash`.
+9. If deploying, Tar.gz the script, sourcemap and manifest into a `.dbx.gz file`
 
 #### Deploying {#deploying}
 
-You can copy `.dbx` files into the configured [`Datastore Storage`](./configuration.md#storage) directory of your CloudNode host machine before boot-up, and the CloudNode will automatically unpack and install them.
+You can copy `.dbx` folders (or compressed `.dbx.tgz` files) into the configured [`Datastore Storage`](./configuration.md#storage) directory of your CloudNode before boot-up, and the CloudNode will automatically unpack and install them.
 
-NOTE: If you want to configure all your `.dbx` files to be output to the same directory, you can use the `outDir` option of the build command.
+NOTE: If you want to configure all your `.dbx` folders to be output to the same directory, you can use the `outDir` option of the build command.
 
 ### Typescript Support
 
@@ -59,7 +55,7 @@ The packager can process ES Modules or CommonJS. It will output a commonjs file 
 
 ### Versioning
 
-Every version of your script is hashed using a SHA3 256 algorithm, and encoded using Bech32m (a standard formalized by the Bitcoin working group to create file and url-safe base32 hash encodings).
+Every version of your script is hashed using a SHA 256 algorithm, and encoded using Bech32m (a standard formalized by the Bitcoin working group to create file and url-safe base32 hash encodings).
 
 When you package up a new version of your Datastore, it will maintain a list of the sequence of versions. Anytime your Datastore is used on a Ulixee CloudNode, it will return the latest version hash. This helps inform users of your Datastore when they're using an out-of-date version.
 
@@ -80,13 +76,17 @@ When you package a Datastore, a Manifest is created with the following propertie
 - scriptEntrypoint `string`. The relative path to your file (from the closest package.json).
 - coreVersion `string`. The version of the Datastore Core module. Your script will be checked for compatibility with the CloudNode npm modules before it runs.
 - schemaInterface `string`. A string containing a typescript declaration interface for all extractors in this Datastore.
-- extractorsByName `object`. A key value of Datastore Extractor name to:
+- extractorsByName|crawlersByName `object`. A key value of Datastore Extractor/Crawler name to:
   - corePlugins `string`. An object containing a list of npm packages/versions that are core Extractor plugins.
   - prices `array`. Array of prices for each "step" in a function. The first entry is _this_ function's pricing.
     - minimum `number`. Optional minimum microgons that must be held in a Micronote for the given function step.
     - perQuery `number`. Optional price per query for the given Extractor (in Ulixee Sidechain microgons - 1 microgon = ~1/1,000,000 of a dollar).
     - addOns `object`. Optional price add-ons. Currently only `perKb` is supported.
-    - remoteMeta `object`. Optional information about the remote Datastore Extractor being invoked (if applicable). 
+    - remoteMeta `object`. Optional information about the remote Datastore Extractor being invoked (if applicable).
+- tablesByName `object`. A key value of Datastore Table name to:
+  - prices `array`. Array of prices for each "step" in a function. The first entry is _this_ function's pricing.
+    - minimum `number`. Optional minimum microgons that must be held in a Micronote for the given function step.
+    - remoteMeta `object`. Optional information about the remote Datastore Extractor being invoked (if applicable).
 - paymentAddress `string`. Optional address to use with the Ulixee Sidechain for payments.
 
 ### Setting values:
@@ -101,9 +101,10 @@ This file will be automatically generated by the CLI. The full settings from the
 
 Settings for a Datastore can be configured in a few places.
 
-1. `dbx` A file called `datastore-manifest.json` is created in your `.dbx` file with your final settings. You can modify this file, but note that most changes will change your `versionHash`, so this should generally be a last resort.
-2. `Entrypoint` A manifest can be created adjacent to your `scriptEntrypoint` with the extension replaced with `-manifest.json`. Eg, `src/sites/script1.ts` -> `src/sites/script1-manifest.json`
-3. `Project` You can add a `.ulixee` folder in the hierarchy of your project (most commonly next to your package.json). Within this folder, you must create a `datastore.json` file. When you add this file, it will keep track of all uploaded `versionHashes`.
+1. Most settings can be configured in the Datastore itself.
+2. `dbx` A file called `datastore-manifest.json` is created in your `.dbx` folder with your final settings. You can modify this file, but note that most changes will change your `versionHash`, so this should generally be a last resort.
+3. `Entrypoint` A manifest can be created adjacent to your `scriptEntrypoint` with the extension replaced with `-manifest.json`. Eg, `src/sites/script1.ts` -> `src/sites/script1-manifest.json`
+4. `Project` You can add a `.ulixee` folder in the hierarchy of your project (most commonly next to your package.json). Within this folder, you must create a `datastore.json` file. When you add this file, it will keep track of all uploaded `versionHashes`.
 
 The file should have the following structure:
 
@@ -181,11 +182,11 @@ Options below show a short and long form.
 - `-i, --identity-path <path>`. A path to a Ulixee Identity. Necessary for signing if a CloudNode is running in `production` serverEnvironment - `NODE_ENV=production`. (env: ULX_IDENTITY_PATH)
 - `-p, --identity-passphrase <path>`. A decryption passphrase to the Ulixee identity (only necessary if specified during key creation). (env: ULX_IDENTITY_PASSPHRASE)
 
-### Building a .dbx
+### Building a .dbx.gz
 
-To build a Datastore and keep it on the filesystem, you can use the embedded CLI tool to point at your script entrypoint.
+To build a compressed Datastore and keep it on the filesystem, you can use the embedded CLI tool to point at your script entrypoint.
 
-NOTE: this option is most useful when you plan to deploy your `.dbx` files to many environments and want to preserve the same package.
+NOTE: this option is most useful when you plan to deploy your `.dbx.gz` files to many environments and want to preserve the same package.
 
 ```bash
  npx @ulixee/datastore build [path to datastore entrypoint]
@@ -214,30 +215,32 @@ Options below show a short and long form.
 - `-s, --compiled-source-path <path>` Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).
 - `-t, --tsconfig <path>`. A path to a TypeScript config file (if needed). Will be auto-located based on the entrypoint if it ends in ".ts"
 
-### Uploading a .dbx
+### Developing a Datastore
 
-You can upload Datastores to a Ulixee CloudNode automatically when you package them. If you decide to first examine the package, you can also choose to upload later (or deploy directly to the [Datastores directory](./configuration.md#storage) during your CloudNode installation).
+While developing, the easiest way to run a Datastore is to start it from the CLI. You can optionally watch the files for changes. The Datastore will keep a single, temporary version hash in place of a sha-256 version to simplify querying during development.
 
 If you upload using the CLI, you can use the following command:
 
 ```bash
- npx @ulixee/datastore upload [path to pre-packaged datastore]
+ npx @ulixee/datastore start [path to pre-packaged datastore]
 ```
 
 ... or via Ulixee CLI:
 
 ```bash
- ulixee datastore upload [path to pre-packaged datastore]
+ ulixee datastore start [path to pre-packaged datastore]
 ```
 
-You must provide a path to the pre-packaged `.dbx` file (eg, `<pathToScript/scriptNameMinusExtension>.dbx`).
+You must provide a path to the entrypoint of your script.
 
 #### CLI Options
 
 Options below show a short and long form.
 
-- `-h, --cloud-host <host>`. Upload this package to the given CloudNode host. Will try to auto-connect if none specified.
-- `-a, --allow-new-version-history` Allow uploaded Datastore to create a new version history for the script entrypoint. (default: false)
+- `-w, --watch` Monitor files for changes and continue to push new versions as they change.
+- `-s, --compiled-source-path <path>` Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).
+- `-o, --out-dir <path>` A directory path where you want packaged .dbx files to be saved.
+- `-t, --tsconfig <path>`. A path to a TypeScript config file (if needed). Will be auto-located based on the entrypoint if it ends in ".ts"
 
 ### Installing a Datastore locally.
 
@@ -267,44 +270,6 @@ Options below show a short and long form.
 
 - `-a, --alias <name>`. Add a shortcut name to reference this Datastore hash. (eg, -a flights will let you use `ITypes['flights']['flightsDotCom']`)
 - `-h, --host <host>`. Connect to the given host CloudNode. Will try to automatically connect if omitted.
-
-### Opening a .dbx
-
-You can open a Datastore `.dbx` into it's working directory using the open command:
-
-```bash
- npx @ulixee/datastore open [.dbxFile]
-```
-
-... or via Ulixee CLI:
-
-```bash
- ulixee datastore open [.dbxFile]
-```
-
-You must provide a path to a pre-packaged `.dbx` file (eg, `<pathToScript/scriptNameMinusExtension>.dbx`).
-
-### Closing a .dbx
-
-You can close a Datastore `.dbx` file after you're done inspecting the contents. Changes are automatically repackaged into the `.dbx`. NOTE: no manifest changes are examined, so if you change contents, you might break the versionHash.
-
-```bash
- npx @ulixee/datastore close [.dbxFile]
-```
-
-... or via Ulixee CLI:
-
-```bash
- ulixee datastore close [.dbxFile]
-```
-
-You must provide a path to the `.dbx` file.
-
-#### CLI Options
-
-Options below show a short and long form.
-
-- `-x, --discard-changes` The working for the given .dbx file. Defaults to a `.dbx.build/[scriptFilename]` directory next to the dbx file.
 
 ## Datastore Core Sandboxes
 

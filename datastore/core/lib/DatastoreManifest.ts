@@ -22,6 +22,7 @@ type IDatastoreSources = [
 ];
 
 export default class DatastoreManifest implements IDatastoreManifest {
+  public static TemporaryIdPrefix = `dbx1startedtempver`;
   public name: string;
   public description: string;
   public domain: string;
@@ -165,7 +166,9 @@ export default class DatastoreManifest implements IDatastoreManifest {
         await Fs.writeFile(tempVersionHashPath, JSON.stringify(tempVersions, null, 2));
       }
 
-      this.versionHash = `dbx1startedtempver${tempVersions[this.scriptEntrypoint]}`;
+      this.versionHash = `${DatastoreManifest.TemporaryIdPrefix}${
+        tempVersions[this.scriptEntrypoint]
+      }`;
     } else {
       await this.computeVersionHash();
     }
@@ -299,7 +302,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
           path: source.path,
           overrides: explicitSettings,
         });
-        const { extractorsByName, crawlersByName, tablesByName, ...otherSettings } = explicitSettings;
+        const { extractorsByName, crawlersByName, tablesByName, ...otherSettings } =
+          explicitSettings;
         if (extractorsByName) {
           for (const [name, funcMeta] of Object.entries(extractorsByName)) {
             if (this.extractorsByName[name]) {

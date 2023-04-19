@@ -51,7 +51,7 @@ The simplest Datastore is initialized with a single Extractor:
 export default new Datastore({
   extractors: {
     default: new Extractor(ctx => {
-      ctx.output = `Hello ${ctx.input.firstName}`;
+      ctx.Output = `Hello ${ctx.input.firstName}`;
     }),
   },
 });
