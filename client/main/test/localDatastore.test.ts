@@ -1,32 +1,8 @@
-import * as Fs from 'fs';
-import * as Path from 'path';
-import { CloudNode } from '@ulixee/cloud';
-import { ConnectionToDatastoreCore } from '@ulixee/datastore';
 import Client from '..';
 import localDatastore from './datastores/localDatastore';
 
-const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Client.localDatastore.test');
-let cloudNode: CloudNode;
-let connectionToCore: ConnectionToDatastoreCore;
-
-beforeAll(async () => {
-  cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
-    datastoresDir: storageDir,
-    datastoresTmpDir: Path.join(storageDir, 'tmp'),
-  };
-  await cloudNode.listen();
-  connectionToCore = ConnectionToDatastoreCore.remote(await cloudNode.address);
-});
-
-afterAll(async () => {
-  await cloudNode.close();
-  await connectionToCore.disconnect();
-  if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
-});
-
 test('should be able to query a datastore using sql', async () => {
-  const client = Client.forDatastore(localDatastore, { connectionToCore });
+  const client = Client.forDatastore(localDatastore);
   const results = await client.query(
     'SELECT * FROM test(shouldTest => $1) LEFT JOIN testers on testers.lastName=test.lastName',
     [true],
@@ -44,7 +20,7 @@ test('should be able to query a datastore using sql', async () => {
 });
 
 test('should be able to run a datastore extractor', async () => {
-  const client = Client.forDatastore(localDatastore, { connectionToCore });
+  const client = Client.forDatastore(localDatastore);
 
   // @ts-expect-error - must be a valid function
   await expect(() => client.run('test1', {})).toThrowError();

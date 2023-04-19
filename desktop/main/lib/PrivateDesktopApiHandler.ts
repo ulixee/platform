@@ -250,6 +250,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
         accelerator: 'CmdOrCtrl+C',
         click() {
           try {
+            // eslint-disable-next-line import/no-unresolved
             const clipboardEx = require('electron-clipboard-ex');
             clipboardEx.writeFilePaths([file]);
           } catch (e) {}

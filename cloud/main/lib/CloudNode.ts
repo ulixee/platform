@@ -77,7 +77,10 @@ export default class CloudNode {
     return this.router.dataDir;
   }
 
-  public async listen(options?: ListenOptions, shouldAutoRouteToHost = true): Promise<AddressInfo> {
+  public async listen(
+    options?: ListenOptions,
+    shouldAutoRouteToHost = process.env.NODE_ENV !== 'test',
+  ): Promise<AddressInfo> {
     if (this.listeningPromise.isResolved) return this.listeningPromise.promise;
 
     const listenOptions = { ...(options ?? { port: 0 }) };

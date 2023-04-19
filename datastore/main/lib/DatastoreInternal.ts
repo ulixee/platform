@@ -111,7 +111,7 @@ export default class DatastoreInternal<
   }
 
   public bind(config: IDatastoreBinding): DatastoreInternal {
-    const { manifest, datastoreStorage, connectionToCore, apiClientLoader } = config;
+    const { manifest, datastoreStorage, connectionToCore, apiClientLoader } = config ?? {};
     this.manifest = manifest;
     this.storage = datastoreStorage ?? new DatastoreStorage();
     this.storage.open(this);

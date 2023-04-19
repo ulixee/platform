@@ -2,6 +2,7 @@ import * as Fs from 'fs';
 import * as Path from 'path';
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import DatastoreStorage from '@ulixee/datastore/lib/DatastoreStorage';
 import directDatastore from './datastores/direct';
 import directExtractor from './datastores/directExtractor';
 import directTable from './datastores/directTable';
@@ -9,6 +10,7 @@ import directTable from './datastores/directTable';
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.queryInternal.test');
 
 let cloudNode: CloudNode;
+const storages: DatastoreStorage[] = [];
 
 beforeAll(async () => {
   jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
@@ -20,13 +22,18 @@ beforeAll(async () => {
 
   cloudNode = new CloudNode();
   cloudNode.router.datastoreConfiguration = { datastoresDir: storageDir };
-  await directDatastore.bind({});
-  await directExtractor.bind({});
-  await directTable.bind({});
+  const storage1 = new DatastoreStorage();
+  const storage2 = new DatastoreStorage();
+  const storage3 = new DatastoreStorage();
+  await directDatastore.bind({ datastoreStorage: storage1 });
+  await directExtractor.bind({ datastoreStorage: storage2 });
+  await directTable.bind({ datastoreStorage: storage3 });
+  storages.push(storage1, storage2, storage3);
   await cloudNode.listen();
 });
 
 afterAll(async () => {
+  for (const storage of storages) storage.db.close();
   await cloudNode.close();
   if (Fs.existsSync(storageDir)) Fs.rmdirSync(storageDir, { recursive: true });
 });

@@ -21,28 +21,37 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
 
   private transportBridge: TransportBridge<any>;
 
-  public nodeVmUseSandbox(name: string): boolean {
-    if (
-      // Requires linkedom, so use in base
-      name.includes('@ulixee/hero/lib/DetachedElement.js') ||
-      // Need a single instance so we can inject vm2
-      name.includes('@ulixee/hero/lib/CallsiteLocator') ||
-      // requires readline, which we don't want to expose in sandbox
-      name.includes('@ulixee/hero/lib/CoreKeepAlivePrompt') ||
-      // requires @ulixee/net @ulixee/cloud
-      name.includes('@ulixee/hero/connections')
-    )
-      return false;
+  private nodeVmSandboxList = [
+    '@ulixee/hero',
+    '@ulixee/awaited-dom',
+    '@ulixee/execute-js-plugin/index',
+    '@ulixee/execute-js-plugin/lib/ClientPlugin',
+    '@ulixee/datastore-plugins-hero',
+    'TypedEventEmitter',
+    'eventUtils',
+  ];
 
-    return (
-      name.includes('@ulixee/hero') ||
-      name.includes('@ulixee/awaited-dom') ||
-      name.includes('@ulixee/execute-js-plugin/index') ||
-      name.includes('@ulixee/execute-js-plugin/lib/ClientPlugin') ||
-      name.includes('@ulixee/datastore-plugins-hero') ||
-      name.includes('TypedEventEmitter') ||
-      name.includes('eventUtils')
-    );
+  private nodeVmSandboxExceptionsList = [
+    // Requires linkedom, so require in host
+    '@ulixee/hero/lib/DetachedElement.js',
+    // Need a single instance so we can inject vm2
+    '@ulixee/hero/lib/CallsiteLocator',
+    // requires readline, which we don't want to expose in sandbox
+    '@ulixee/hero/lib/CoreKeepAlivePrompt',
+    // requires @ulixee/net @ulixee/cloud
+    '@ulixee/hero/connections',
+  ];
+
+  public nodeVmUseSandbox(name: string): boolean {
+    // exclude exceptions first
+
+    for (const noSandboxModuleName of this.nodeVmSandboxExceptionsList) {
+      if (name.includes(noSandboxModuleName)) return false;
+    }
+
+    for (const sandboxed of this.nodeVmSandboxList) {
+      if (name.includes(sandboxed)) return true;
+    }
   }
 
   public async onCoreStart(): Promise<void> {
@@ -52,6 +61,12 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
       CallsiteLocator.ignoreModulePaths.push(vm2);
     }
 
+    if (process.platform === 'win32') {
+      this.nodeVmSandboxList = this.nodeVmSandboxList.map(x => x.replace(/\//g, '\\'));
+      this.nodeVmSandboxExceptionsList = this.nodeVmSandboxExceptionsList.map(x =>
+        x.replace(/\//g, '\\'),
+      );
+    }
     const bridge = new TransportBridge();
     HeroCore.addConnection(bridge.transportToClient);
     this.transportBridge = bridge;

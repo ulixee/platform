@@ -45,7 +45,7 @@ afterAll(async () => {
 test('should be able to clone a datastore', async () => {
   const url = `ulx://${await cloudNode.address}/${versionHash}`;
   await expect(cloneDatastore(url, `${__dirname}/datastores/cloned`)).resolves.toEqual({
-    datastoreFilePath: `${__dirname}/datastores/cloned/datastore.ts`,
+    datastoreFilePath: Path.join(__dirname, 'datastores', 'cloned', 'datastore.ts'),
   });
 
   expect(Fs.existsSync(`${__dirname}/datastores/cloned/datastore.ts`)).toBeTruthy();
