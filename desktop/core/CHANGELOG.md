@@ -3,6 +3,37 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.20](https://github.com/ulixee/platform/compare/v2.0.0-alpha.19...v2.0.0-alpha.20) (2023-04-20)
+
+
+### Bug Fixes
+
+* **datastore:** output rebuilding ([8d10cc7](https://github.com/ulixee/platform/commit/8d10cc7e24cfd1ad65725a3e14dc4a3a2a3d5954))
+* **desktop:** binary not loading properly ([3b0b641](https://github.com/ulixee/platform/commit/3b0b6414dbec9a798fba0e802ef06fd8ff790c6e))
+
+
+### chore
+
+* rename miner to cloud node ([a3c949e](https://github.com/ulixee/platform/commit/a3c949e4af806cc6a4acdd4b4b04305946add19b))
+
+
+### Features
+
+* **datastore:** simplify query to live in main ([b7dd56a](https://github.com/ulixee/platform/commit/b7dd56a69fdcdbb51170758c06b6d23cbd9e0585))
+* **desktop:** add datastore details page ([a6bce0b](https://github.com/ulixee/platform/commit/a6bce0b9f5ac1121d37c3029bd8fd20f147e9324))
+* **desktop:** getting started guide ([1e3fd87](https://github.com/ulixee/platform/commit/1e3fd87973807e8862a5696421aa768a6cd02bb6))
+* **desktop:** query ability on queries tab ([3960c7b](https://github.com/ulixee/platform/commit/3960c7b9fda1f9bea3a81850bb4fdadf9f54b2d4))
+
+
+### BREAKING CHANGES
+
+* @ulixee/miner package is now @ulixee/cloud.
+You must import {CloudNode} from @ulixee/cloud and use in place of Miner.
+
+
+
+
+
 # [2.0.0-alpha.19](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.19) (2023-02-25)
 
 

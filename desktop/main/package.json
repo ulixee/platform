@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/desktop",
-  "version": "2.0.0-alpha.19",
+  "version": "2.0.0-alpha.20",
   "private": true,
   "main": "index.js",
   "scripts": {
@@ -18,20 +18,20 @@
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
+    "@ulixee/cloud": "2.0.0-alpha.20",
     "@ulixee/commons": "2.0.0-alpha.20",
-    "@ulixee/datastore": "2.0.0-alpha.19",
     "@ulixee/crypto": "2.0.0-alpha.20",
-    "@ulixee/sidechain": "2.0.0-alpha.20",
-    "@ulixee/datastore-core": "2.0.0-alpha.19",
-    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.19",
+    "@ulixee/datastore": "2.0.0-alpha.20",
+    "@ulixee/datastore-core": "2.0.0-alpha.20",
+    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.20",
     "@ulixee/default-browser-emulator": "2.0.0-alpha.20",
-    "@ulixee/desktop-core": "2.0.0-alpha.19",
-    "@ulixee/desktop-interfaces": "2.0.0-alpha.19",
-    "@ulixee/specification": "2.0.0-alpha.20",
-    "@ulixee/platform-specification": "2.0.0-alpha.19",
+    "@ulixee/desktop-core": "2.0.0-alpha.20",
+    "@ulixee/desktop-interfaces": "2.0.0-alpha.20",
     "@ulixee/hero-core": "2.0.0-alpha.20",
-    "@ulixee/cloud": "2.0.0-alpha.19",
     "@ulixee/net": "2.0.0-alpha.20",
+    "@ulixee/platform-specification": "2.0.0-alpha.20",
+    "@ulixee/sidechain": "2.0.0-alpha.20",
+    "@ulixee/specification": "2.0.0-alpha.20",
     "electron-log": "^4.4.6",
     "electron-positioner": "^4.1.0",
     "electron-updater": "^5.0.1",
@@ -42,16 +42,16 @@
   },
   "devDependencies": {
     "@electron/notarize": "^1.2.3",
-    "@ulixee/datastore-packager": "2.0.0-alpha.19",
+    "@ulixee/datastore-packager": "2.0.0-alpha.20",
     "cross-env": "^7.0.3",
     "electron": "22.3.1",
     "electron-builder": "^24.0.0-alpha.13",
     "tslib": "^2.3.1"
   },
   "optionalDependencies": {
+    "electron-clipboard-ex": "^1.3.3",
     "global-mouse-events": "1.1.0",
-    "nseventmonitor": "1.0.3",
-    "electron-clipboard-ex": "^1.3.3"
+    "nseventmonitor": "1.0.3"
   },
   "build": {
     "appId": "dev.ulixee.desktop",

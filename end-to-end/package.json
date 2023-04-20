@@ -1,13 +1,13 @@
 {
   "name": "@ulixee/end-to-end",
   "private": true,
-  "version": "2.0.0-alpha.19",
+  "version": "2.0.0-alpha.20",
   "dependencies": {
+    "@ulixee/cloud": "2.0.0-alpha.20",
     "@ulixee/commons": "2.0.0-alpha.20",
     "@ulixee/crypto": "2.0.0-alpha.20",
-    "@ulixee/datastore": "2.0.0-alpha.19",
-    "@ulixee/datastore-packager": "2.0.0-alpha.19",
-    "@ulixee/cloud": "2.0.0-alpha.19",
+    "@ulixee/datastore": "2.0.0-alpha.20",
+    "@ulixee/datastore-packager": "2.0.0-alpha.20",
     "@ulixee/net": "2.0.0-alpha.20",
     "@ulixee/sidechain": "2.0.0-alpha.20",
     "@ulixee/specification": "2.0.0-alpha.20"

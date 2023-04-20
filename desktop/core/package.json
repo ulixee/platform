@@ -1,20 +1,20 @@
 {
   "name": "@ulixee/desktop-core",
-  "version": "2.0.0-alpha.19",
+  "version": "2.0.0-alpha.20",
   "main": "index.js",
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.20",
-    "@ulixee/datastore": "2.0.0-alpha.19",
-    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.19",
+    "@ulixee/datastore": "2.0.0-alpha.20",
+    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.20",
     "@ulixee/default-browser-emulator": "2.0.0-alpha.20",
-    "@ulixee/desktop-interfaces": "2.0.0-alpha.19",
+    "@ulixee/desktop-interfaces": "2.0.0-alpha.20",
     "@ulixee/hero-interfaces": "2.0.0-alpha.20",
     "@ulixee/hero-plugin-utils": "2.0.0-alpha.20",
     "@ulixee/hero-timetravel": "2.0.0-alpha.20",
     "@ulixee/net": "2.0.0-alpha.20",
-    "@ulixee/platform-specification": "2.0.0-alpha.19",
+    "@ulixee/platform-specification": "2.0.0-alpha.20",
     "@ulixee/unblocked-agent": "2.0.0-alpha.20",
     "@ulixee/unblocked-specification": "2.0.0-alpha.20",
     "fuse.js": "^6.5.3",
@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.154",
-    "@ulixee/datastore-testing": "2.0.0-alpha.19",
+    "@ulixee/datastore-testing": "2.0.0-alpha.20",
     "linkedom": "^0.14.11"
   }
 }
