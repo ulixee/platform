@@ -5,25 +5,25 @@
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.19",
+    "@ulixee/commons": "2.0.0-alpha.20",
     "@ulixee/datastore": "2.0.0-alpha.19",
     "@ulixee/datastore-plugins-hero": "2.0.0-alpha.19",
-    "@ulixee/default-browser-emulator": "2.0.0-alpha.19",
+    "@ulixee/default-browser-emulator": "2.0.0-alpha.20",
     "@ulixee/desktop-interfaces": "2.0.0-alpha.19",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.19",
-    "@ulixee/hero-plugin-utils": "2.0.0-alpha.19",
-    "@ulixee/hero-timetravel": "2.0.0-alpha.19",
-    "@ulixee/net": "2.0.0-alpha.19",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.20",
+    "@ulixee/hero-plugin-utils": "2.0.0-alpha.20",
+    "@ulixee/hero-timetravel": "2.0.0-alpha.20",
+    "@ulixee/net": "2.0.0-alpha.20",
     "@ulixee/platform-specification": "2.0.0-alpha.19",
-    "@ulixee/unblocked-agent": "2.0.0-alpha.19",
-    "@ulixee/unblocked-specification": "2.0.0-alpha.19",
+    "@ulixee/unblocked-agent": "2.0.0-alpha.20",
+    "@ulixee/unblocked-specification": "2.0.0-alpha.20",
     "fuse.js": "^6.5.3",
     "nanoid": "^3.1.30",
     "ws": "^7.4.6"
   },
   "peerDependencies": {
     "@ulixee/datastore-core": "2.0.0-alpha.19",
-    "@ulixee/hero-core": "2.0.0-alpha.19"
+    "@ulixee/hero-core": "2.0.0-alpha.20"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.154",

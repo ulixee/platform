@@ -24,13 +24,13 @@
     }
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.19",
+    "@ulixee/commons": "2.0.0-alpha.20",
     "@ulixee/datastore-core": "2.0.0-alpha.19",
     "@ulixee/datastore-plugins-hero-core": "2.0.0-alpha.19",
-    "@ulixee/hero-core": "2.0.0-alpha.19",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.19",
-    "@ulixee/net": "2.0.0-alpha.19",
-    "@ulixee/specification": "2.0.0-alpha.19",
+    "@ulixee/hero-core": "2.0.0-alpha.20",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.20",
+    "@ulixee/net": "2.0.0-alpha.20",
+    "@ulixee/specification": "2.0.0-alpha.20",
     "@ulixee/platform-specification": "2.0.0-alpha.19",
     "commander": "^9.3.0",
     "ws": "^7.4.6"

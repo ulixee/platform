@@ -50,11 +50,18 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
 
   onNewSession(heroSession: HeroSession): void {
     const id = heroSession.id;
+    const scriptInvocationMeta = heroSession.options?.scriptInvocationMeta;
     const entry: IHeroSessionsListResult = {
       heroSessionId: id,
-      scriptEntrypoint: this.processEntrypoint(
-        heroSession.options?.scriptInvocationMeta?.entrypoint,
-      ),
+      scriptEntrypoint: this.processEntrypoint(scriptInvocationMeta?.entrypoint),
+      datastore:
+        scriptInvocationMeta?.runtime === 'datastore'
+          ? {
+              versionHash: scriptInvocationMeta.version,
+              functionName: scriptInvocationMeta.entryFunction,
+              queryId: scriptInvocationMeta.runId,
+            }
+          : null,
       dbPath: heroSession.db.path,
       startTime: new Date(heroSession.createdTime),
       state: 'running',

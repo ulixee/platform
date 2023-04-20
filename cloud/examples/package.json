@@ -3,7 +3,7 @@
   "version": "2.0.0-alpha.19",
   "private": true,
   "dependencies": {
-    "@ulixee/hero": "2.0.0-alpha.19",
+    "@ulixee/hero": "2.0.0-alpha.20",
     "@ulixee/cloud": "2.0.0-alpha.19"
   }
 }

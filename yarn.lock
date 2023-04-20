@@ -3374,6 +3374,13 @@
   dependencies:
     "@ulixee/js-path" "^2.0.0-alpha.18"
 
+"@ulixee/chrome-109-0@^5414.120.7":
+  version "5414.120.7"
+  resolved "https://registry.yarnpkg.com/@ulixee/chrome-109-0/-/chrome-109-0-5414.120.7.tgz#f49fef8bbd2a5106d8993d0e2616fa7249a6fa96"
+  integrity sha512-h59RUgBaGtpuNKM0hnCxPoLjvRtSG/xAbfccf/hy3DxKAKSVy3yA1SaVGR3f5e+TuR5AFK+UDv3E5EnluMe+tQ==
+  dependencies:
+    "@ulixee/chrome-app" "^1.0.3"
+
 "@ulixee/chrome-112-0@^5615.121.7":
   version "5615.121.7"
   resolved "https://registry.yarnpkg.com/@ulixee/chrome-112-0/-/chrome-112-0-5615.121.7.tgz#6c1a247d42249aefa9030e11651f52b3fd6e04da"
@@ -3406,6 +3413,22 @@
     progress "^2.0.3"
     tar "^6.1.11"
 
+"@ulixee/commons@2.0.0-alpha.19":
+  version "2.0.0-alpha.19"
+  resolved "https://registry.yarnpkg.com/@ulixee/commons/-/commons-2.0.0-alpha.19.tgz#fb10db08c76e3add4a850296ae48c379cc93cfbe"
+  integrity sha512-e38OYkCCA6PulZ8E+Kc74d5Vulx4ytizS28M2t2SvGW7BLQrhyxPfpoXBW+JgL4DL8ji4xojzQ/u/02xdCutuQ==
+  dependencies:
+    bech32 "^2.0.0"
+    devtools-protocol "^0.0.981744"
+    https-proxy-agent "^5.0.0"
+    semver "^7.3.7"
+    source-map-js "^1.0.1"
+
+"@ulixee/js-path@2.0.0-alpha.19":
+  version "2.0.0-alpha.19"
+  resolved "https://registry.yarnpkg.com/@ulixee/js-path/-/js-path-2.0.0-alpha.19.tgz#3858bd64764825201433653bba4cbdb6514dc133"
+  integrity sha512-OJBPioGzvf3FabCY+1xBsz2AdEtkTlXZIqHdk3LX0Ieg3iaVLtlt5jWFyThR7vHg9Yf4rjabM1rQi2n7u/NT7g==
+
 "@ulixee/repo-tools@^1.0.22":
   version "1.0.22"
   resolved "https://registry.yarnpkg.com/@ulixee/repo-tools/-/repo-tools-1.0.22.tgz#b906737cf464b5fc3ea0be5b2c958e0fedb76921"
@@ -3429,6 +3452,49 @@
     prettier "^2.6.2"
     pretty-quick "^3.1.0"
     typescript "^4.7.2"
+
+"@ulixee/unblocked-agent-mitm-socket@2.0.0-alpha.19":
+  version "2.0.0-alpha.19"
+  resolved "https://registry.yarnpkg.com/@ulixee/unblocked-agent-mitm-socket/-/unblocked-agent-mitm-socket-2.0.0-alpha.19.tgz#cf5be5211a22b497bba69c3853e3e6a3a09eff64"
+  integrity sha512-/d0xR0/Gwb/2VjQ+5WFQaHEaOyzvOZBGGbEDlGzNje7WTBxwB2HHOpOInNhaGe6Ff4l+aOSafOAZa3vACKFG9A==
+  dependencies:
+    "@ulixee/commons" "2.0.0-alpha.19"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.19"
+    nanoid "^3.1.30"
+
+"@ulixee/unblocked-agent-mitm@2.0.0-alpha.19":
+  version "2.0.0-alpha.19"
+  resolved "https://registry.yarnpkg.com/@ulixee/unblocked-agent-mitm/-/unblocked-agent-mitm-2.0.0-alpha.19.tgz#bb81b17a60a428b59b906be1bff1b78f7272d393"
+  integrity sha512-MveYv+FCc4FB5CmDX+hLx03P0mQA2Bk30RYbwplQZMTXBT1r6NOsT0rrgGyKEsbpDA6Jh9P3Qs91SIgHneZ2jw==
+  dependencies:
+    "@ulixee/commons" "2.0.0-alpha.19"
+    "@ulixee/unblocked-agent-mitm-socket" "2.0.0-alpha.19"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.19"
+    dns-packet "^5.2.4"
+    moment "^2.29.4"
+
+"@ulixee/unblocked-agent@2.0.0-alpha.19":
+  version "2.0.0-alpha.19"
+  resolved "https://registry.yarnpkg.com/@ulixee/unblocked-agent/-/unblocked-agent-2.0.0-alpha.19.tgz#693166ba69ee3038256725d922128c9e21cc3715"
+  integrity sha512-nizcbbDMyEypMrx3CG7LjVLsZxGVO0voRcP42PyRwieuPHOf7XMaOd9G8WB3BbeUhYT9cZl72wwi778tPFiFyw==
+  dependencies:
+    "@ulixee/chrome-109-0" "^5414.120.7"
+    "@ulixee/chrome-app" "^1.0.3"
+    "@ulixee/commons" "2.0.0-alpha.19"
+    "@ulixee/js-path" "2.0.0-alpha.19"
+    "@ulixee/unblocked-agent-mitm" "2.0.0-alpha.19"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.19"
+    devtools-protocol "^0.0.981744"
+    nanoid "^3.3.3"
+    tough-cookie "^4.0.0"
+
+"@ulixee/unblocked-specification@2.0.0-alpha.19":
+  version "2.0.0-alpha.19"
+  resolved "https://registry.yarnpkg.com/@ulixee/unblocked-specification/-/unblocked-specification-2.0.0-alpha.19.tgz#a99f254b50718566e5897209207cd31da2ce4760"
+  integrity sha512-/Tps5o4DP+SvpK9omBiJaKYJRINHjNGGhus9WZ5Q+qh9atAAFZm2GT8I/scFfWvx4BEYIOOjEdvQqPno9va7cQ==
+  dependencies:
+    "@ulixee/js-path" "2.0.0-alpha.19"
+    devtools-protocol "^0.0.981744"
 
 "@vue/babel-helper-vue-jsx-merge-props@^1.4.0":
   version "1.4.0"

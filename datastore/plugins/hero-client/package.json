@@ -10,15 +10,15 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.19",
+    "@ulixee/commons": "2.0.0-alpha.20",
     "@ulixee/datastore": "2.0.0-alpha.19",
-    "@ulixee/hero": "2.0.0-alpha.19"
+    "@ulixee/hero": "2.0.0-alpha.20"
   },
   "devDependencies": {
     "@ulixee/datastore-testing": "2.0.0-alpha.19",
-    "@ulixee/hero-core": "2.0.0-alpha.19",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.19",
-    "@ulixee/net": "2.0.0-alpha.19",
-    "@ulixee/schema": "2.0.0-alpha.19"
+    "@ulixee/hero-core": "2.0.0-alpha.20",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.20",
+    "@ulixee/net": "2.0.0-alpha.20",
+    "@ulixee/schema": "2.0.0-alpha.20"
   }
 }

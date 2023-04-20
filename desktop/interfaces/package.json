@@ -5,9 +5,9 @@
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/hero-interfaces": "2.0.0-alpha.19",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.20",
     "@ulixee/platform-specification": "2.0.0-alpha.19",
-    "@ulixee/specification": "2.0.0-alpha.19",
-    "@ulixee/unblocked-specification": "2.0.0-alpha.19"
+    "@ulixee/specification": "2.0.0-alpha.20",
+    "@ulixee/unblocked-specification": "2.0.0-alpha.20"
   }
 }

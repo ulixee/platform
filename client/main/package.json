@@ -6,17 +6,17 @@
   "license": "MIT",
   "scripts": {},
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.19",
+    "@ulixee/commons": "2.0.0-alpha.20",
     "@ulixee/datastore": "2.0.0-alpha.19",
-    "@ulixee/net": "2.0.0-alpha.19",
-    "@ulixee/schema": "2.0.0-alpha.19"
+    "@ulixee/net": "2.0.0-alpha.20",
+    "@ulixee/schema": "2.0.0-alpha.20"
   },
   "devDependencies": {
-    "@ulixee/crypto": "2.0.0-alpha.19",
+    "@ulixee/crypto": "2.0.0-alpha.20",
     "@ulixee/datastore-packager": "2.0.0-alpha.19",
     "@ulixee/cloud": "2.0.0-alpha.19",
-    "@ulixee/schema": "2.0.0-alpha.19",
-    "@ulixee/specification": "2.0.0-alpha.19",
+    "@ulixee/schema": "2.0.0-alpha.20",
+    "@ulixee/specification": "2.0.0-alpha.20",
     "@ulixee/sql-ast": "2.0.0-alpha.19",
     "@ulixee/sql-engine": "2.0.0-alpha.19"
   }
