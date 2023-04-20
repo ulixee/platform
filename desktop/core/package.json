@@ -22,7 +22,7 @@
     "ws": "^7.4.6"
   },
   "peerDependencies": {
-    "@ulixee/datastore-core": "2.0.0-alpha.19",
+    "@ulixee/datastore-core": "2.0.0-alpha.20",
     "@ulixee/hero-core": "2.0.0-alpha.20"
   },
   "devDependencies": {

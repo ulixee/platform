@@ -54,7 +54,6 @@ export class Menubar extends EventEmitter {
     app.on('open-file', this.onFileOpened.bind(this));
     app.setAppLogsPath();
     (process.env as any).ELECTRON_DISABLE_SECURITY_WARNINGS = true;
-    ShutdownHandler.register(() => this.appExit());
 
     this.staticServer = new StaticServer(Path.resolve(__dirname, '..', 'ui'));
     void this.appReady();
@@ -170,15 +169,15 @@ export class Menubar extends EventEmitter {
     await this.#apiManager?.close();
     await this.stopCloud();
     await this.#windowManager.close();
-  }
-
-  private async appExit(): Promise<void> {
-    await this.beforeQuit();
     if (this.#installUpdateOnExit) {
       log.debug('Installing update before exit');
       await this.#updateInfoPromise;
       await autoUpdater.quitAndInstall(false, true);
     }
+  }
+
+  private async appExit(): Promise<void> {
+    await this.beforeQuit();
     app.exit();
   }
 

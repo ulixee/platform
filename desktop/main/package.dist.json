@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "packages/*/*",
+      "packages/datastore/plugins/hero-*",
+      "packages/hero/plugins/*"
+    ]
+  }
+}

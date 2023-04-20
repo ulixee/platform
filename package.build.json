@@ -8,5 +8,29 @@
     "jest-environment-node": "^28.1.0",
     "jest-summary-reporter": "^0.0.2",
     "cross-env": "^7.0.3"
+  },
+  "workspaces": {
+    "packages": [
+      "desktop/core",
+      "desktop/interfaces",
+      "datastore/*",
+      "datastore/plugins/*",
+      "cloud/*",
+      "sql/*",
+      "client/*",
+      "cli",
+      "specification",
+      "end-to-end",
+      "playgrounds/*",
+      "hero/build/*",
+      "hero/build/plugins/*",
+      "../shared/build/*",
+      "../payments/build/sidechain/client",
+      "../unblocked/build/agent/*",
+      "../unblocked/build/plugins/*",
+      "../unblocked/build/specification",
+      "../unblocked/build/js-path",
+      "../unblocked/build/real-user-agents"
+    ]
   }
 }

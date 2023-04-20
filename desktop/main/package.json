@@ -10,8 +10,8 @@
     "build:ui": "yarn workspace @ulixee/desktop-ui build && yarn workspace @ulixee/desktop-chrome-extension build",
     "watch": "yarn copy:build --watch",
     "copy:build": "cd ../../build/desktop/main && node builder/copySources.js ./packages",
-    "copy:dist": "shx cp -r ../../build/desktop/main/ui ../../build-dist/desktop/main/ui && shx cp -r ../../build/desktop/main/assets/ulixee-docs.dbx.tgz ../../build-dist/desktop/main/assets",
-    "dist": "yarn build:bundled-datastore && yarn build:ui && yarn copy:dist && cd ../../build-dist/desktop/main && yarn && electron-builder --publish onTagOrDraft",
+    "copy:dist": "shx cp -r ../../build/desktop/main/ui ../../build-dist/desktop/main/ui && shx cp -r ../../build/desktop/main/assets/ulixee-docs.dbx.tgz ../../build-dist/desktop/main/assets  && cd ../../build-dist/desktop/main && cross-env OUT_DIR=\"build-dist\" node builder/copySources.js ./packages",
+    "dist": "yarn build:bundled-datastore && yarn build:ui && yarn copy:dist && cd ../../build-dist/desktop/main && yarn && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -m",
     "dist:basic": "yarn copy:dist && cd ../../build-dist/desktop/main && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -m",
     "start": "yarn copy:build && cd ../../build/desktop/main && electron ."
   },
@@ -44,8 +44,8 @@
     "@electron/notarize": "^1.2.3",
     "@ulixee/datastore-packager": "2.0.0-alpha.20",
     "cross-env": "^7.0.3",
-    "electron": "22.3.1",
-    "electron-builder": "^24.0.0-alpha.13",
+    "electron": "24.1.2",
+    "electron-builder": "^24.2.1",
     "tslib": "^2.3.1"
   },
   "optionalDependencies": {
@@ -58,6 +58,7 @@
     "productName": "Ulixee",
     "afterSign": "scripts/notarize.js",
     "asarUnpack": [
+      "node_modules/@ulixee/datastore-docpage",
       "ui"
     ],
     "directories": {
@@ -109,6 +110,7 @@
     "global-mouse-events",
     "nseventmonitor",
     "electron-updater",
-    "better-sqlite3"
+    "better-sqlite3",
+    "electron-clipboard-ex"
   ]
 }

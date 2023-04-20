@@ -16,7 +16,7 @@
     "preversion": "node ../../build/cloud/main/scripts/gatherEnvSettings.js"
   },
   "peerDependencies": {
-    "@ulixee/desktop-core": "2.0.0-alpha.19"
+    "@ulixee/desktop-core": "2.0.0-alpha.20"
   },
   "peerDependenciesMeta": {
     "@ulixee/desktop-core": {

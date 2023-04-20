@@ -4,11 +4,9 @@ import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { app, screen } from 'electron';
 import { ClientOptions } from 'ws';
-import * as Http from 'http';
-import { IncomingMessage } from 'http';
+import * as http from 'http';
 import { CloudNode } from '@ulixee/cloud';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { httpGet } from '@ulixee/commons/lib/downloadFile';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import QueryLog from '@ulixee/datastore/lib/QueryLog';
@@ -20,6 +18,7 @@ import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
 import { AddressInfo } from 'net';
 import WebSocket = require('ws');
+import DesktopCore from '@ulixee/desktop-core';
 import ApiClient from './ApiClient';
 import ArgonFile, { IArgonFile } from './ArgonFile';
 import DeploymentWatcher from './DeploymentWatcher';
@@ -79,7 +78,7 @@ export default class ApiManager<
 
   public async start(): Promise<void> {
     this.debuggerUrl = await this.getDebuggerUrl();
-    this.privateDesktopWsServer = new WebSocket.Server({ port:0});
+    this.privateDesktopWsServer = new WebSocket.Server({ port: 0 });
     this.events.on(
       this.privateDesktopWsServer,
       'connection',
@@ -88,7 +87,7 @@ export default class ApiManager<
     this.privateDesktopWsServerAddress = await new Promise<string>(resolve => {
       this.privateDesktopWsServer.once('listening', () => {
         const address = this.privateDesktopWsServer.address() as AddressInfo;
-        resolve(`ws://localhost:${address.port}`);
+        resolve(`ws://127.0.0.1:${address.port}`);
       });
     });
     if (!this.localUserProfile.defaultAddress) {
@@ -116,6 +115,7 @@ export default class ApiManager<
     if (this.exited) return;
     this.exited = true;
 
+    await DesktopCore.shutdown();
     this.privateDesktopWsServer.close();
     await this.privateDesktopApiHandler.close();
     this.events.close('error');
@@ -146,7 +146,7 @@ export default class ApiManager<
     if (!localCloudAddress) {
       adminIdentity = this.localUserProfile.defaultAdminIdentity.bech32;
       await DatastoreCore.installCompressedDbx(bundledDatastoreExample);
-      this.localCloud ??= new CloudNode();
+      this.localCloud ??= new CloudNode('localhost', false);
       this.localCloud.router.datastoreConfiguration ??= {};
       this.localCloud.router.datastoreConfiguration.cloudAdminIdentities ??= [];
       this.localCloud.router.datastoreConfiguration.cloudAdminIdentities.push(adminIdentity);
@@ -339,18 +339,22 @@ export default class ApiManager<
     return ws;
   }
 
-  private handlePrivateApiWsConnection(ws: WebSocket, req: IncomingMessage): void {
+  private handlePrivateApiWsConnection(ws: WebSocket, req: http.IncomingMessage): void {
     this.privateDesktopApiHandler.onConnection(ws, req);
   }
 
   private async getDebuggerUrl(): Promise<string> {
-    const res = await new Promise<Http.IncomingMessage>(resolve =>
-      httpGet(`http://localhost:8315/json/version`, resolve),
-    );
-    res.setEncoding('utf8');
-    let jsonString = '';
-    for await (const chunk of res) jsonString += chunk;
-    const debugEndpoints = JSON.parse(jsonString);
+    const responseBody = await new Promise<string>((resolve, reject) => {
+      const request = http.get(`http://127.0.0.1:8315/json/version`, async res => {
+        let jsonString = '';
+        res.setEncoding('utf8');
+        for await (const chunk of res) jsonString += chunk;
+        resolve(jsonString);
+      });
+      request.once('error', reject);
+      request.end();
+    });
+    const debugEndpoints = JSON.parse(responseBody);
 
     return debugEndpoints.webSocketDebuggerUrl;
   }
