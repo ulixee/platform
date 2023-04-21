@@ -6,12 +6,16 @@
   "scripts": {
     "build": "yarn build:ui && yarn build:basic && yarn build:bundled-datastore",
     "build:bundled-datastore": "cd ../../build && npx @ulixee/datastore build ./datastore/examples/ulixee-docs.js -o ./desktop/main/assets",
-    "build:basic": "cd ../.. && yarn run tsc && cd desktop/main && yarn build:bundled-datastore && yarn copy:build && cd ../../build/desktop/main && yarn && electron-builder install-app-deps",
+    "build:deps": "cd ../../build/desktop/main && yarn && cross-env DEBUG=* electron-builder install-app-deps",
+    "build:monorepo-ts": "cd ../.. && yarn run tsc",
+    "build:basic": "yarn build:monorepo-ts && yarn build:bundled-datastore && yarn copy:build && yarn build:deps",
     "build:ui": "yarn workspace @ulixee/desktop-ui build && yarn workspace @ulixee/desktop-chrome-extension build",
     "watch": "yarn copy:build --watch",
     "copy:build": "cd ../../build/desktop/main && node builder/copySources.js ./packages",
-    "copy:dist": "shx cp -r ../../build/desktop/main/ui ../../build-dist/desktop/main/ui && shx cp -r ../../build/desktop/main/assets/ulixee-docs.dbx.tgz ../../build-dist/desktop/main/assets  && cd ../../build-dist/desktop/main && cross-env OUT_DIR=\"build-dist\" node builder/copySources.js ./packages",
-    "dist": "yarn build:bundled-datastore && yarn build:ui && yarn copy:dist && cd ../../build-dist/desktop/main && yarn && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -m",
+    "copy:dist-ui": "shx cp -r ../../build/desktop/main/ui ../../build-dist/desktop/main/ui",
+    "copy:dist-dbx": "shx cp -r ../../build/desktop/main/assets/ulixee-docs.dbx.tgz ../../build-dist/desktop/main/assets",
+    "copy:dist": "yarn copy:dist-ui && yarn copy:dist-dbx && cd ../../build-dist/desktop/main && cross-env OUT_DIR=\"build-dist\" node builder/copySources.js ./packages",
+    "dist": "yarn build:bundled-datastore && yarn build:ui && yarn copy:dist && cd ../../build-dist/desktop/main && yarn && electron-builder --publish onTagOrDraft",
     "dist:basic": "yarn copy:dist && cd ../../build-dist/desktop/main && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -m",
     "start": "yarn copy:build && cd ../../build/desktop/main && electron ."
   },
@@ -33,7 +37,6 @@
     "@ulixee/sidechain": "2.0.0-alpha.20",
     "@ulixee/specification": "2.0.0-alpha.20",
     "electron-log": "^4.4.6",
-    "electron-positioner": "^4.1.0",
     "electron-updater": "^5.0.1",
     "nanoid": "^3.1.30",
     "node-static": "^0.7.11",
@@ -58,6 +61,8 @@
     "productName": "Ulixee",
     "afterSign": "scripts/notarize.js",
     "asarUnpack": [
+      "**/*.node",
+      "node_modules/better-sqlite3",
       "node_modules/@ulixee/datastore-docpage",
       "ui"
     ],

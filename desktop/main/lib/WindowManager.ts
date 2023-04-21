@@ -111,8 +111,7 @@ export class WindowManager {
   }
 
   private async onArgonFileOpened(file: IArgonFile): Promise<void> {
-    if (!this.desktopWindow.isOpen) await this.openDesktop();
-    this.desktopWindow.focus();
+    await this.openDesktop();
     await this.apiManager.privateDesktopApiHandler.onArgonFileOpened(file);
   }
 

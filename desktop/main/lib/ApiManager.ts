@@ -2,7 +2,7 @@ import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEven
 import { IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import { app, screen } from 'electron';
+import { screen } from 'electron';
 import { ClientOptions } from 'ws';
 import * as http from 'http';
 import { CloudNode } from '@ulixee/cloud';
@@ -17,14 +17,12 @@ import DatastoreCore from '@ulixee/datastore-core';
 import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
 import { AddressInfo } from 'net';
-import WebSocket = require('ws');
 import DesktopCore from '@ulixee/desktop-core';
+import WebSocket = require('ws');
 import ApiClient from './ApiClient';
 import ArgonFile, { IArgonFile } from './ArgonFile';
 import DeploymentWatcher from './DeploymentWatcher';
 import PrivateDesktopApiHandler from './PrivateDesktopApiHandler';
-
-app.commandLine.appendSwitch('remote-debugging-port', '8315');
 
 const { version } = require('../package.json');
 
@@ -345,7 +343,7 @@ export default class ApiManager<
 
   private async getDebuggerUrl(): Promise<string> {
     const responseBody = await new Promise<string>((resolve, reject) => {
-      const request = http.get(`http://127.0.0.1:8315/json/version`, async res => {
+      const request = http.get(`http://127.0.0.1:${process.env.DEVTOOLS_PORT}/json/version`, async res => {
         let jsonString = '';
         res.setEncoding('utf8');
         for await (const chunk of res) jsonString += chunk;

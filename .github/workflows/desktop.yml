@@ -25,6 +25,12 @@ jobs:
         with:
           node-version: 18
           cache: 'yarn'
+          
+      - name: Chocolatey Install Action
+        if: ${{ matrix.os == 'windows-latest' }}
+        uses: crazy-max/ghaction-chocolatey@v2
+        with:
+          args: install python2 visualcpp-build-tools -y
 
       - name: Add msbuild to PATH
         if: matrix.os == 'windows-latest'

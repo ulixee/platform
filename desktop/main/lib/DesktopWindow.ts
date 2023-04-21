@@ -12,7 +12,7 @@ export default class DesktopWindow extends TypedEventEmitter<{
   focus: void;
 }> {
   public get isOpen(): boolean {
-    return !!this.#window;
+    return this.#window?.isVisible() === true;
   }
 
   public get isFocused(): boolean {
@@ -36,17 +36,20 @@ export default class DesktopWindow extends TypedEventEmitter<{
   }
 
   public focus(): void {
-    this.#window.focus();
+    this.#window.moveTop();
   }
 
   public async open(show = true): Promise<void> {
     if (this.#window) {
-      if (show) this.#window.show();
-      this.#window.focus();
+      if (show) {
+        this.#window.setAlwaysOnTop(true);
+        this.#window.show();
+        this.#window.setAlwaysOnTop(false);
+      }
       return;
     }
     this.#window = new BrowserWindow({
-      show,
+      show: false,
       acceptFirstMouse: true,
       useContentSize: true,
       titleBarStyle: 'hiddenInset',
@@ -72,17 +75,25 @@ export default class DesktopWindow extends TypedEventEmitter<{
     this.#events.on(this.#window.webContents, 'context-menu', (e, params) => {
       generateContextMenu(params, this.#window.webContents).popup();
     });
-    this.#events.once(this.#window, 'focus', this.emit.bind(this, 'focus'));
-    this.#events.once(this.#window, 'close', this.close.bind(this));
+    this.#events.on(this.#window, 'focus', this.emit.bind(this, 'focus'));
+    this.#events.on(this.#window, 'close', this.close.bind(this));
 
     await this.#window.webContents.loadURL(this.#webpageUrl);
 
-    this.#window.focus();
+    if (show) {
+      this.#window.show();
+      this.#window.moveTop();
+    }
   }
 
-  public close(): void {
-    this.#events.close();
-    this.#window = null;
+  public close(e, force = false): void {
+    if (force) {
+      this.#events.close();
+      this.#window = null;
+    } else {
+      this.#window.hide();
+      e.preventDefault();
+    }
     this.emit('close');
   }
 }

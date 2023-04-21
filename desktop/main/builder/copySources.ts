@@ -23,6 +23,7 @@ const dirsNotToInclude = new Set([
 ]);
 
 function copyDir(baseDir: string, outDir: string): void {
+  if (!Fs.existsSync(baseDir)) return;
   if (!Fs.existsSync(outDir)) Fs.mkdirSync(outDir, { recursive: true });
 
   const packageJson = Fs.existsSync(`${baseDir}/package.json`)
@@ -68,12 +69,14 @@ if (process.env.NODE_ENV !== 'production') {
   copyDir(`${baseBuild}/../shared/${buildDir}/specification`, `${dest}/ulixee-specification`);
   copyDir(`${baseBuild}/../shared/${buildDir}/schema`, `${dest}/schema`);
   copyDir(`${baseBuild}/../unblocked/${buildDir}/plugins`, `${dest}/unblocked-plugins`);
-  Fs.writeFileSync(
-    `${dest}/unblocked-plugins/default-browser-emulator/paths.json`,
-    JSON.stringify({
-      'emulator-data': '../../browser-emulator-builder/data',
-    }),
-  );
+  if (Fs.existsSync(`${dest}/unblocked-plugins`)) {
+    Fs.writeFileSync(
+      `${dest}/unblocked-plugins/default-browser-emulator/paths.json`,
+      JSON.stringify({
+        'emulator-data': '../../browser-emulator-builder/data',
+      }),
+    );
+  }
 }
 
 // eslint-disable-next-line no-console
