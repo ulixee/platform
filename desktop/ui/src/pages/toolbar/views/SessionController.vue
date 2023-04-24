@@ -230,7 +230,7 @@ function createDefaultSession(): IHeroSessionUpdatedEvent {
   background-color: var(--toolbarBackgroundColor);
   height: 36px;
   cursor: default;
-  //-webkit-app-region: no-drag;
+  -webkit-app-region: no-drag;
   &.isRestarting {
     background-color: transparent;
     .MenuButton,

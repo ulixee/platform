@@ -1,10 +1,10 @@
 {
   "name": "@ulixee/platform-specification",
-  "version": "2.0.0-alpha.20",
+  "version": "2.0.0-alpha.21",
   "description": "",
   "main": "./index.js",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/specification": "2.0.0-alpha.20"
+    "@ulixee/specification": "2.0.0-alpha.21"
   }
 }

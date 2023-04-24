@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/desktop-chrome-extension",
-  "version": "2.0.0-alpha.20",
+  "version": "2.0.0-alpha.21",
   "private": true,
   "license": "MIT",
   "description": "Chrome extension helps ChromeAlive Sessions work",
@@ -14,10 +14,10 @@
   "dependencies": {
     "@babel/core": "^7.0.0",
     "@babel/runtime-corejs3": "^7.13.10",
-    "@ulixee/commons": "2.0.0-alpha.20",
-    "@ulixee/desktop-core": "2.0.0-alpha.20",
-    "@ulixee/desktop-interfaces": "2.0.0-alpha.20",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.20",
+    "@ulixee/commons": "2.0.0-alpha.21",
+    "@ulixee/desktop-core": "2.0.0-alpha.21",
+    "@ulixee/desktop-interfaces": "2.0.0-alpha.21",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.21",
     "@webcomponents/custom-elements": "^1.5.0",
     "core-js": "^3.21.1",
     "nanoid": "^3.1.30"

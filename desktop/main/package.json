@@ -36,13 +36,6 @@
     "appId": "dev.ulixee.desktop",
     "productName": "Ulixee",
     "afterSign": "scripts/notarize.js",
-    "asarUnpack": [
-      "ui",
-      "node_modules/better-sqlite3",
-      "node_modules/electron-clipboard-ex",
-      "node_modules/global-mouse-events",
-      "node_modules/nseventmonitor"
-    ],
     "directories": {
       "buildResources": "app/assets"
     },
@@ -53,7 +46,17 @@
       "!packages",
       "!dist"
     ],
+    "asarUnpack": [
+      "ui",
+      "node_modules/better-sqlite3",
+      "node_modules/electron-clipboard-ex",
+      "node_modules/global-mouse-events",
+      "node_modules/nseventmonitor"
+    ],
     "mac": {
+      "files": [
+        "!**/prebuilds/win32-*"
+      ],
       "category": "public.app-category.developer-tools",
       "target": {
         "target": "default",
@@ -71,6 +74,9 @@
       "entitlementsInherit": "app/assets/entitlements.mac.plist"
     },
     "win": {
+      "files": [
+        "!**/prebuilds/darwin-*"
+      ],
       "target": "NSIS"
     },
     "linux": {

@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/datastore-plugins-hero",
-  "version": "2.0.0-alpha.20",
+  "version": "2.0.0-alpha.21",
   "description": "The Datastore Hero Plugin",
   "exports": {
     ".": {
@@ -10,15 +10,15 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.20",
-    "@ulixee/datastore": "2.0.0-alpha.20",
-    "@ulixee/hero": "2.0.0-alpha.20"
+    "@ulixee/commons": "2.0.0-alpha.21",
+    "@ulixee/datastore": "2.0.0-alpha.21",
+    "@ulixee/hero": "2.0.0-alpha.21"
   },
   "devDependencies": {
-    "@ulixee/datastore-testing": "2.0.0-alpha.20",
-    "@ulixee/hero-core": "2.0.0-alpha.20",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.20",
-    "@ulixee/net": "2.0.0-alpha.20",
-    "@ulixee/schema": "2.0.0-alpha.20"
+    "@ulixee/datastore-testing": "2.0.0-alpha.21",
+    "@ulixee/hero-core": "2.0.0-alpha.21",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.21",
+    "@ulixee/net": "2.0.0-alpha.21",
+    "@ulixee/schema": "2.0.0-alpha.21"
   }
 }
