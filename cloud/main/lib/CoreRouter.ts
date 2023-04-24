@@ -231,6 +231,6 @@ function safeRegisterModule(path: string): void {
     // eslint-disable-next-line import/no-dynamic-require
     require(path);
   } catch (err) {
-    /* no-op */
+    console.warn('Default Datastore Plugin not installed', path, err.message)
   }
 }

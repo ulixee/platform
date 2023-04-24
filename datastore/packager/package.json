@@ -20,7 +20,7 @@
     "@ulixee/sql-engine": "2.0.0-alpha.20",
     "better-sqlite3": "^8.0.1",
     "rollup": "^3.20.2",
-    "rollup-plugin-terser": "^7.0.2",
+    "@rollup/plugin-terser": "^0.4.1",
     "tar": "^6.1.11",
     "ws": "^7.4.6"
   },

@@ -1,8 +1,6 @@
 {
   "scripts": {},
-  "dependencies": {
-    "fs-extra": "^11.1.0"
-  },
+  "dependencies": {},
   "devDependencies": {},
   "nohoist": [],
   "resolutions": {}

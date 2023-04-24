@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: 18
           cache: 'yarn'
-          
+
       - name: Chocolatey Install Action
         if: ${{ matrix.os == 'windows-latest' }}
         uses: crazy-max/ghaction-chocolatey@v2
@@ -37,7 +37,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.1
 
       - name: Yarn build
-        run: yarn && yarn build && yarn build:dist
+        run: yarn && yarn build && yarn build:dist && cd build-dist && yarn
 
       - run: mkdir ~/.private_keys && echo "$APPLE_NOTARIZE_KEY" > ~/.private_keys/AuthKey_5VH6PQ3585.p8
         if: ${{ matrix.os == 'macos-latest' }}
@@ -46,7 +46,7 @@ jobs:
           APPLE_NOTARIZE_KEY: ${{secrets.APPLE_NOTARIZE_KEY}}
 
       - name: Build Desktop
-        run: yarn dist
+        run: yarn build && yarn dist
         working-directory: ./desktop/main
         env:
           NODE_ENV: production

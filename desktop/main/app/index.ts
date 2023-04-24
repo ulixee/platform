@@ -1,11 +1,9 @@
+import './lib/util/defaultEnvVars';
 import './lib/util/UlixeeLogger';
 import '@ulixee/commons/lib/SourceMapSupport';
 import { app } from 'electron';
 import { Menubar } from './lib/Menubar';
 
-if (app.isPackaged) {
-  process.env.DEBUG = [process.env.DEBUG ?? '', 'ulx:*'].filter(Boolean).join(',');
-}
 
 process.env.DEVTOOLS_PORT ??= '8315';
 app.commandLine.appendSwitch('remote-debugging-port', process.env.DEVTOOLS_PORT);

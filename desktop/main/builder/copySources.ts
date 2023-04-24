@@ -1,6 +1,5 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
-// eslint-disable-next-line import/no-unresolved
 
 const dest = Path.join(process.cwd(), process.argv[2]);
 
@@ -13,6 +12,8 @@ const dirsNotToInclude = new Set([
   'end-to-end',
   'website',
   'chrome-extension',
+  'testing',
+  'datastore/testing',
   'desktop/main',
   'desktop/ui',
   'desktop/chrome-extension',
@@ -52,7 +53,7 @@ function copyDir(baseDir: string, outDir: string): void {
   }
 }
 
-const buildDir = process.env.OUT_DIR ?? 'build'
+const buildDir = process.env.SOURCE_DIR ?? 'build'
 
 copyDir(`${baseBuild}/${buildDir}`, dest);
 if (process.env.NODE_ENV !== 'production') {

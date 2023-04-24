@@ -3,7 +3,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 const srcDir = path.join(__dirname, 'src');
 const outDir = process.env.BUILD_DIR ?? 'build';
-const outputDir = path.resolve(__dirname, path.join('../..', outDir, 'desktop/main/ui'));
+const outputDir = path.resolve(__dirname, path.join('../..', outDir, 'desktop/main/app/ui'));
 
 module.exports = {
   devtool: 'inline-source-map',

@@ -74,11 +74,10 @@
             <td class="px-3 py-4 text-sm text-gray-500">
               {{ item.input }}
             </td>
-            <td class="px-3 py-4 text-sm text-gray-500" v-if="item.error">
-              {{ item.error }}
-            </td>
-            <td class="px-3 py-4 text-sm text-gray-500" v-else>
-              {{ item.outputs?.length ?? 0 }} Records
+            <td class="px-3 py-4 text-sm text-gray-500">
+              <template v-if="item.error">{{ item.error }}</template>
+              <template v-else-if="item.outputs"> {{ item.outputs?.length ?? 0 }} Records</template>
+              <template v-else>Running...</template>
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">
               {{ item.bytes }}
@@ -91,7 +90,7 @@
           <tr v-if="selectedId === item.id">
             <td
               colspan="8"
-              class="border-b border-fuchsia-800/80 p-0.5 shadow-inner shadow-fuchsia-800 max-w-full overflow-x-auto"
+              class="max-w-full overflow-x-auto border-b border-fuchsia-800/80 p-0.5 shadow-inner shadow-fuchsia-800"
             >
               <div
                 class="whitespace-pre-wrap py-8 pl-10 text-sm font-light text-gray-800"

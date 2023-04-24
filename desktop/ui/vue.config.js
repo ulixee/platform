@@ -1,5 +1,5 @@
 module.exports = {
-  outputDir: '../../build/desktop/main/ui',
+  outputDir: '../../build/desktop/main/app/ui',
   filenameHashing: false,
   pages: {
     desktop: {

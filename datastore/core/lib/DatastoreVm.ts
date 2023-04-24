@@ -111,6 +111,7 @@ export default class DatastoreVm {
       ...plugins.map(x => x.nodeVmRequireWhitelist || []).flat(),
       '@ulixee/datastore',
       '@ulixee/*-plugin',
+      '@ulixee/net',
       '@ulixee/commons',
       '@ulixee/schema',
       '@ulixee/specification',

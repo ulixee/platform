@@ -58,22 +58,3 @@ test('can get the stack trace of a compiled datastore', async () => {
   }
 }, 45e3);
 
-
-test('can inject a ScriptInstance to a Vm', async () => {
-  const packager = new Packager(require.resolve('./datastores/errorStackDatastore.ts'));
-  const dbx = await packager.build();
-  await dbx.upload(await cloudNode.address);
-  const expectedPath = Path.join(
-    `errorStackDatastore@${packager.manifest.versionHash}.dbx`,
-    'datastore',
-    'core',
-    'test',
-    'datastores',
-    'errorStack.ts',
-  );
-  try {
-    await client.stream(packager.manifest.versionHash, 'errorStack', {});
-  } catch (error) {
-    expect(error.stack).toContain(`at multiply (${expectedPath}:15:25)`);
-  }
-}, 45e3);

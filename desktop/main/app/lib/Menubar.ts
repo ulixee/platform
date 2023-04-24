@@ -14,6 +14,7 @@ const { version } = require('../package.json');
 // Forked from https://github.com/maxogden/menubar
 
 const iconPath = Path.resolve(__dirname, '..', 'assets', 'IconTemplate.png');
+const uiDir = require.resolve('../index.js').replace('index.js', 'ui');
 
 export class Menubar extends EventEmitter {
   readonly staticServer: StaticServer;
@@ -52,7 +53,7 @@ export class Menubar extends EventEmitter {
     app.on('open-file', this.onFileOpened.bind(this));
     app.setAppLogsPath();
     (process.env as any).ELECTRON_DISABLE_SECURITY_WARNINGS = true;
-    this.staticServer = new StaticServer(Path.resolve(__dirname, '..', 'ui'));
+    this.staticServer = new StaticServer(uiDir);
     void this.appReady();
   }
 
@@ -168,14 +169,13 @@ export class Menubar extends EventEmitter {
         await this.#apiManager.onArgonFileOpened(this.#argonFileOpen);
         this.#argonFileOpen = null;
       }
-      await installDefaultChrome();
       await this.updateLocalCloudStatus();
 
       await this.createWindow();
 
       this.#tray = new Tray(iconPath);
 
-      app.on('activate', _event => {
+      app.on('activate', () => {
         if (!this.#windowManager.desktopWindow.isOpen) {
           this.#windowManager.desktopWindow.focus();
         }
@@ -186,18 +186,12 @@ export class Menubar extends EventEmitter {
       this.#tray.on('click', this.clicked.bind(this));
       this.#tray.on('right-click', this.rightClicked.bind(this));
       this.#tray.setToolTip(this.#options.tooltip || '');
-
-      autoUpdater.logger = null;
-      autoUpdater.autoDownload = true;
-      autoUpdater.autoInstallOnAppQuit = false;
-      autoUpdater.allowDowngrade = true;
-      autoUpdater.allowPrerelease = version.includes('alpha');
-      autoUpdater.on('update-not-available', this.noUpdateAvailable.bind(this));
-      autoUpdater.on('update-available', this.onUpdateAvailable.bind(this));
-      autoUpdater.signals.progress(this.onDownloadProgress.bind(this));
+      app.dock?.hide();
 
       this.emit('ready');
-      app.dock?.hide();
+
+      this.initUpdater();
+      await installDefaultChrome();
     } catch (error) {
       console.error('ERROR in appReady: ', error);
     }
@@ -229,6 +223,21 @@ export class Menubar extends EventEmitter {
         if (!isOutsideX && !isOutsideY) return;
         if (event.button === 1 || event.button === 2) this.hideMenu();
       });
+    }
+  }
+
+  private initUpdater(): void {
+    try {
+      autoUpdater.logger = null;
+      autoUpdater.autoDownload = true;
+      autoUpdater.autoInstallOnAppQuit = false;
+      autoUpdater.allowDowngrade = true;
+      autoUpdater.allowPrerelease = version.includes('alpha');
+      autoUpdater.on('update-not-available', this.noUpdateAvailable.bind(this));
+      autoUpdater.on('update-available', this.onUpdateAvailable.bind(this));
+      autoUpdater.signals.progress(this.onDownloadProgress.bind(this));
+    } catch (error) {
+      log.error('Error initializing AutoUpdater', { error });
     }
   }
 
