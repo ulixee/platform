@@ -1,4 +1,4 @@
-FROM node:16-slim
+FROM node:18-slim
 
 ARG ADD_TO_INSTALL=true
 ARG VERSION
@@ -7,9 +7,7 @@ LABEL org.opencontainers.image.description="The open data platform. This image p
 LABEL org.opencontainers.image.licenses=MIT
 
 # fonts
-RUN echo "deb http://httpredir.debian.org/debian buster main contrib non-free" > /etc/apt/sources.list \
-    && echo "deb http://httpredir.debian.org/debian buster-updates main contrib non-free" >> /etc/apt/sources.list \
-    && echo "deb http://security.debian.org/ buster/updates main contrib non-free" >> /etc/apt/sources.list \
+RUN echo "deb http://deb.debian.org/debian/ buster main contrib non-free" >> /etc/apt/sources.list \
     && echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections \
     && apt-get update \
     && apt-get install -y \
@@ -24,6 +22,7 @@ RUN echo "deb http://httpredir.debian.org/debian buster main contrib non-free" >
         ttf-mscorefonts-installer \
         fonts-freefont-ttf \
         xvfb \
+        git \
         curl \
     && apt-get clean \
     && apt-get autoremove -y \

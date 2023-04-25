@@ -29,7 +29,7 @@ chmod 777 $DATASTORES_MOUNT
 
 # To add an environment configuration file:
 # `--env-file ./.env`
-# All environment configurations can be found at: `miner/main/.env.defaults`
+# All environment configurations can be found at: `cloud/main/.env.defaults`
 docker run -it --init \
     --ipc=host \
     --user ulixee \
@@ -44,5 +44,5 @@ docker run -it --init \
     -p "$port:$port" \
     -e DEBUG=$DEBUG \
     -e DISPLAY=:99 \
-    ulixee-miner \
-    xvfb-run npx @ulixee/miner start --port=${port}
+    ulixee-cloud \
+    xvfb-run npx @ulixee/cloud start --port=${port}

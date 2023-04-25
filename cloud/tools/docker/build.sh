@@ -12,7 +12,7 @@ else
 fi
 
 
-docker build -t ulixee-miner:$VERSION -t ulixee-miner:latest \
+docker build -t ulixee-cloud:$VERSION -t ulixee-cloud:latest \
   --build-arg ADD_TO_INSTALL="$ADD_TO_INSTALL" \
   --build-arg VERSION="$VERSION" \
   .
