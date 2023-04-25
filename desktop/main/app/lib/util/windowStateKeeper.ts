@@ -7,7 +7,7 @@ export default class WindowStateKeeper {
   public windowState: Rectangle & { isMaximized?: boolean } = {
     x: undefined,
     y: undefined,
-    width: 1200,
+    width: 1400,
     height: 800,
     isMaximized: false,
   };

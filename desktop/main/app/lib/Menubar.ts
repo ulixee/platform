@@ -1,33 +1,30 @@
-import { app, BrowserWindow, shell, systemPreferences, Event, Tray } from 'electron';
+import { app, BrowserWindow, Event, shell, systemPreferences, Tray } from 'electron';
 import log from 'electron-log';
 import { EventEmitter } from 'events';
-import * as Positioner from 'electron-positioner';
 import * as Path from 'path';
-import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import { autoUpdater, ProgressInfo, UpdateInfo } from 'electron-updater';
 import IMenubarOptions from '../interfaces/IMenubarOptions';
-import { getWindowPosition } from './util/getWindowPosition';
 import installDefaultChrome from './util/installDefaultChrome';
 import StaticServer from './StaticServer';
 import { WindowManager } from './WindowManager';
 import ApiManager from './ApiManager';
+import trayPositioner from './util/trayPositioner';
 
 const { version } = require('../package.json');
 // Forked from https://github.com/maxogden/menubar
 
 const iconPath = Path.resolve(__dirname, '..', 'assets', 'IconTemplate.png');
+const uiDir = require.resolve('../index.js').replace('index.js', 'ui');
 
 export class Menubar extends EventEmitter {
   readonly staticServer: StaticServer;
 
   #tray?: Tray;
-  #browserWindow?: BrowserWindow;
+  #menuWindow?: BrowserWindow;
   #blurTimeout: NodeJS.Timeout | null = null; // track blur events with timeout
   #isVisible: boolean; // track visibility
-  #cachedBounds?: Electron.Rectangle; // _cachedBounds are needed for double-clicked event
-  #options: IMenubarOptions;
   #nsEventMonitor: unknown;
-  #positioner: Positioner | undefined;
+  #winMouseEvents: unknown;
   #windowManager: WindowManager;
   #isClosing = false;
   #updateInfoPromise: Promise<UpdateInfo>;
@@ -36,8 +33,9 @@ export class Menubar extends EventEmitter {
   #apiManager: ApiManager;
 
   #argonFileOpen: string;
+  #options: IMenubarOptions;
 
-  constructor(options?: IMenubarOptions) {
+  constructor(options: IMenubarOptions) {
     super();
     this.#options = options;
     this.#isVisible = false;
@@ -46,6 +44,7 @@ export class Menubar extends EventEmitter {
       app.quit();
       return;
     }
+
     // hide the dock icon if it shows
     if (process.platform === 'darwin') {
       app.setActivationPolicy('accessory');
@@ -54,9 +53,7 @@ export class Menubar extends EventEmitter {
     app.on('open-file', this.onFileOpened.bind(this));
     app.setAppLogsPath();
     (process.env as any).ELECTRON_DISABLE_SECURITY_WARNINGS = true;
-    ShutdownHandler.register(() => this.appExit());
-
-    this.staticServer = new StaticServer(Path.resolve(__dirname, '..', 'ui'));
+    this.staticServer = new StaticServer(uiDir);
     void this.appReady();
   }
 
@@ -66,17 +63,32 @@ export class Menubar extends EventEmitter {
     return this.#tray;
   }
 
-  private hideWindow(): void {
+  private bindSignals(): void {
+    let didRun = false;
+    const exit = (): Promise<void> => {
+      if (didRun) return;
+      didRun = true;
+      return this.appExit();
+    };
+    process.once('beforeExit', exit);
+    process.once('exit' as any, exit);
+    process.once('SIGTERM', exit);
+    process.once('SIGINT', exit);
+    process.once('SIGQUIT', exit);
+  }
+
+  private hideMenu(): void {
     if (this.#blurTimeout) {
       clearTimeout(this.#blurTimeout);
       this.#blurTimeout = null;
     }
     (this.#nsEventMonitor as any)?.stop();
+    (this.#winMouseEvents as any)?.pauseMouseEvents();
 
     this.#isVisible = false;
     try {
-      if (this.#browserWindow?.isVisible() && !this.#browserWindow?.isDestroyed()) {
-        this.#browserWindow?.hide();
+      if (this.#menuWindow?.isVisible() && !this.#menuWindow?.isDestroyed()) {
+        this.#menuWindow?.hide();
       }
     } catch (error) {
       if (!String(error).includes('Object has been destroyed')) throw error;
@@ -102,60 +114,22 @@ export class Menubar extends EventEmitter {
     }
   }
 
-  private async showWindow(trayPos?: Electron.Rectangle): Promise<void> {
+  private async showMenu(trayPos?: Electron.Rectangle): Promise<void> {
     if (!this.#tray) {
       throw new Error('Tray should have been instantiated by now');
     }
 
-    if (!this.#browserWindow) {
+    if (!this.#menuWindow) {
       await this.createWindow();
     }
 
     // Use guard for TypeScript, to avoid ! everywhere
-    if (!this.#browserWindow) {
+    if (!this.#menuWindow) {
       throw new Error('Window has been initialized just above. qed.');
     }
 
-    // 'Windows' taskbar: sync windows position each time before showing
-    // https://github.com/maxogden/menubar/issues/232
-    if (['win32', 'linux'].includes(process.platform)) {
-      // Fill in this.#options.windowPosition when taskbar position is available
-      this.#options.windowPosition = getWindowPosition(this.#tray);
-    }
-
-    if (trayPos && trayPos.x !== 0) {
-      // Cache the bounds
-      this.#cachedBounds = trayPos;
-    } else if (this.#cachedBounds) {
-      // Cached value will be used if showWindow is called without bounds data
-      trayPos = this.#cachedBounds;
-    } else if (this.#tray.getBounds) {
-      // Get the current tray bounds
-      trayPos = this.#tray.getBounds();
-    }
-
-    // Default the window to the right if `trayPos` bounds are undefined or null.
-    let noBoundsPosition;
-    if (
-      (trayPos === undefined || trayPos.x === 0) &&
-      this.#options.windowPosition &&
-      this.#options.windowPosition.startsWith('tray')
-    ) {
-      noBoundsPosition = process.platform === 'win32' ? 'bottomRight' : 'topRight';
-    }
-
-    const position = this.#positioner.calculate(
-      this.#options.windowPosition || noBoundsPosition,
-      trayPos,
-    ) as { x: number; y: number };
-
-    const x = position.x;
-    const y = position.y;
-
-    // `.setPosition` crashed on non-integers
-    // https://github.com/maxogden/menubar/issues/233
-    this.#browserWindow.setPosition(Math.round(x), Math.round(y));
-    this.#browserWindow.show();
+    trayPositioner.alignTrayMenu(this.#menuWindow, trayPos);
+    this.#menuWindow.show();
     this.listenForMouseDown();
 
     this.#isVisible = true;
@@ -166,19 +140,19 @@ export class Menubar extends EventEmitter {
     this.#isClosing = true;
     console.warn('Quitting Ulixee Menubar');
     this.#tray?.removeAllListeners();
-    this.hideWindow();
+    this.hideMenu();
     await this.#apiManager?.close();
     await this.stopCloud();
     await this.#windowManager.close();
-  }
-
-  private async appExit(): Promise<void> {
-    await this.beforeQuit();
     if (this.#installUpdateOnExit) {
       log.debug('Installing update before exit');
       await this.#updateInfoPromise;
       await autoUpdater.quitAndInstall(false, true);
     }
+  }
+
+  private async appExit(): Promise<void> {
+    await this.beforeQuit();
     app.exit();
   }
 
@@ -190,46 +164,34 @@ export class Menubar extends EventEmitter {
       this.#apiManager = new ApiManager();
       this.#windowManager = new WindowManager(this, this.#apiManager);
       await this.#apiManager.start();
+      this.bindSignals();
       if (this.#argonFileOpen) {
         await this.#apiManager.onArgonFileOpened(this.#argonFileOpen);
         this.#argonFileOpen = null;
       }
-      await installDefaultChrome();
       await this.updateLocalCloudStatus();
 
       await this.createWindow();
 
       this.#tray = new Tray(iconPath);
 
-      app.on('activate', (_event, hasVisibleWindows) => {
-        if (!hasVisibleWindows) {
-          this.showWindow().catch(console.error);
+      app.on('activate', () => {
+        if (!this.#windowManager.desktopWindow.isOpen) {
+          this.#windowManager.desktopWindow.focus();
         }
       });
 
       app.once('before-quit', this.beforeQuit.bind(this));
 
       this.#tray.on('click', this.clicked.bind(this));
-      this.#tray.on('right-click', this.clicked.bind(this));
-      this.#tray.on('double-click', this.doubleClicked.bind(this));
+      this.#tray.on('right-click', this.rightClicked.bind(this));
       this.#tray.setToolTip(this.#options.tooltip || '');
-
-      autoUpdater.logger = null;
-      autoUpdater.autoDownload = true;
-      autoUpdater.autoInstallOnAppQuit = false;
-      autoUpdater.allowDowngrade = true;
-      autoUpdater.allowPrerelease = version.includes('alpha');
-      autoUpdater.on('update-not-available', this.noUpdateAvailable.bind(this));
-      autoUpdater.on('update-available', this.onUpdateAvailable.bind(this));
-      autoUpdater.signals.progress(this.onDownloadProgress.bind(this));
-
-      if (!this.#options.windowPosition) {
-        // Fill in this.#options.windowPosition when taskbar position is available
-        this.#options.windowPosition = getWindowPosition(this.#tray);
-      }
+      app.dock?.hide();
 
       this.emit('ready');
-      app.dock?.hide();
+
+      this.initUpdater();
+      await installDefaultChrome();
     } catch (error) {
       console.error('ERROR in appReady: ', error);
     }
@@ -243,14 +205,39 @@ export class Menubar extends EventEmitter {
       this.#nsEventMonitor ??= new NSEventMonitor();
       (this.#nsEventMonitor as any).start(
         NSEventMask.leftMouseDown | NSEventMask.rightMouseDown,
-        this.hideWindow.bind(this),
+        this.hideMenu.bind(this),
       );
     } else if (process.platform === 'win32') {
+      if (this.#winMouseEvents) {
+        (this.#winMouseEvents as any).resumeMouseEvents();
+        return;
+      }
       // eslint-disable-next-line import/no-unresolved,global-require
       const mouseEvents = require('global-mouse-events') as any;
+      this.#winMouseEvents = mouseEvents;
       mouseEvents.on('mousedown', event => {
-        if (event.button === 1 || event.button === 2) this.hideWindow();
+        const { x, y } = event;
+        const bounds = this.#menuWindow.getBounds();
+        const isOutsideX = x < bounds.x || x > bounds.x + bounds.width;
+        const isOutsideY = y < bounds.y || y > bounds.y + bounds.height;
+        if (!isOutsideX && !isOutsideY) return;
+        if (event.button === 1 || event.button === 2) this.hideMenu();
       });
+    }
+  }
+
+  private initUpdater(): void {
+    try {
+      autoUpdater.logger = null;
+      autoUpdater.autoDownload = true;
+      autoUpdater.autoInstallOnAppQuit = false;
+      autoUpdater.allowDowngrade = true;
+      autoUpdater.allowPrerelease = version.includes('alpha');
+      autoUpdater.on('update-not-available', this.noUpdateAvailable.bind(this));
+      autoUpdater.on('update-available', this.onUpdateAvailable.bind(this));
+      autoUpdater.signals.progress(this.onDownloadProgress.bind(this));
+    } catch (error) {
+      log.error('Error initializing AutoUpdater', { error });
     }
   }
 
@@ -298,25 +285,21 @@ export class Menubar extends EventEmitter {
     await autoUpdater.quitAndInstall(false, true);
   }
 
-  private async doubleClicked(): Promise<void> {
-    // if blur was invoked clear timeout
-    if (this.#blurTimeout) {
-      clearInterval(this.#blurTimeout);
-    }
-
-    if (this.#browserWindow && this.#isVisible) {
-      this.hideWindow();
+  private async clicked(): Promise<void> {
+    if (this.#menuWindow && this.#isVisible) {
+      this.hideMenu();
     }
 
     await this.#windowManager.openDesktop();
+    await this.checkForUpdates();
   }
 
-  private async clicked(
+  private async rightClicked(
     event?: Electron.KeyboardEvent,
     bounds?: Electron.Rectangle,
   ): Promise<void> {
     if (event && (event.shiftKey || event.ctrlKey || event.metaKey)) {
-      return this.hideWindow();
+      return this.hideMenu();
     }
 
     // if blur was invoked clear timeout
@@ -324,13 +307,15 @@ export class Menubar extends EventEmitter {
       clearInterval(this.#blurTimeout);
     }
 
-    if (this.#browserWindow && this.#isVisible) {
-      return this.hideWindow();
+    if (this.#menuWindow && this.#isVisible) {
+      return this.hideMenu();
     }
 
-    this.#cachedBounds = bounds || this.#cachedBounds;
-    await this.showWindow(this.#cachedBounds);
+    await this.showMenu(bounds);
+    await this.checkForUpdates();
+  }
 
+  private async checkForUpdates(): Promise<void> {
     try {
       if (!this.#updateInfoPromise) {
         this.#updateInfoPromise = autoUpdater
@@ -351,7 +336,7 @@ export class Menubar extends EventEmitter {
       height: this.#options.height,
     };
 
-    this.#browserWindow = new BrowserWindow({
+    this.#menuWindow = new BrowserWindow({
       ...defaults,
       roundedCorners: true,
       skipTaskbar: true,
@@ -365,23 +350,21 @@ export class Menubar extends EventEmitter {
       },
     });
 
-    this.#positioner = new Positioner(this.#browserWindow);
-
-    this.#browserWindow.on('blur', () => {
-      if (!this.#browserWindow || this.#isClosing) {
+    this.#menuWindow.on('blur', () => {
+      if (!this.#menuWindow || this.#isClosing) {
         return;
       }
-      this.#blurTimeout = setTimeout(() => this.hideWindow(), 100);
+      this.#blurTimeout = setTimeout(() => this.hideMenu(), 100);
     });
 
-    this.#browserWindow.setVisibleOnAllWorkspaces(true);
-    this.#browserWindow.on('close', this.windowClear.bind(this));
-    this.#browserWindow.webContents.on('ipc-message', async (e, message, ...args) => {
+    this.#menuWindow.setVisibleOnAllWorkspaces(true);
+    this.#menuWindow.on('close', this.windowClear.bind(this));
+    this.#menuWindow.webContents.on('ipc-message', async (e, message, ...args) => {
       if (message === 'desktop:api') {
         const [api] = args;
 
-        if (api === 'mousedown' && this.#browserWindow && this.#isVisible) {
-          this.hideWindow();
+        if (api === 'mousedown' && this.#menuWindow && this.#isVisible) {
+          this.hideMenu();
         }
 
         if (api === 'App.quit') {
@@ -429,9 +412,9 @@ export class Menubar extends EventEmitter {
     const backgroundPref = process.platform === 'win32' ? 'window' : 'window-background';
     const windowBackground = systemPreferences.getColor(backgroundPref)?.replace('#', '') ?? '';
     const url = this.staticServer.getPath(`menubar.html?windowBackground=${windowBackground}`);
-    await this.#browserWindow.loadURL(url);
+    await this.#menuWindow.loadURL(url);
     if (process.env.OPEN_DEVTOOLS) {
-      this.#browserWindow.webContents.openDevTools({ mode: 'detach' });
+      this.#menuWindow.webContents.openDevTools({ mode: 'detach' });
     }
     if (this.#apiManager.localCloud) {
       await this.updateLocalCloudStatus();
@@ -439,13 +422,13 @@ export class Menubar extends EventEmitter {
   }
 
   private windowClear(): void {
-    this.#browserWindow = undefined;
+    this.#menuWindow = undefined;
   }
 
   /// //// CLOUD MANAGEMENT ////////////////////////////////////////////////////////////////////////////////////////////
 
   private async stopCloud(): Promise<void> {
-    if (!this.#apiManager.localCloud) return;
+    if (!this.#apiManager?.localCloud) return;
 
     // eslint-disable-next-line no-console
     console.log(`CLOSING ULIXEE CLOUD`);
@@ -474,9 +457,9 @@ export class Menubar extends EventEmitter {
   }
 
   private async sendToFrontend(eventType: string, data: any): Promise<void> {
-    if (this.#browserWindow) {
+    if (this.#menuWindow) {
       const json = { detail: { eventType, data } };
-      await this.#browserWindow.webContents.executeJavaScript(`(()=>{
+      await this.#menuWindow.webContents.executeJavaScript(`(()=>{
       const evt = ${JSON.stringify(json)};
       document.dispatchEvent(new CustomEvent('desktop:event', evt));
     })()`);

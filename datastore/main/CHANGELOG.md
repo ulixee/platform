@@ -3,6 +3,48 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.21](https://github.com/ulixee/platform/compare/v2.0.0-alpha.20...v2.0.0-alpha.21) (2023-04-24)
+
+**Note:** Version bump only for package @ulixee/datastore
+
+
+
+
+
+# [2.0.0-alpha.20](https://github.com/ulixee/platform/compare/v2.0.0-alpha.19...v2.0.0-alpha.20) (2023-04-20)
+
+
+### Bug Fixes
+
+* **datastore:** failing tests ([8e3f881](https://github.com/ulixee/platform/commit/8e3f881876a59c2b241806c04260d73e03d37617))
+* **datastore:** output rebuilding ([8d10cc7](https://github.com/ulixee/platform/commit/8d10cc7e24cfd1ad65725a3e14dc4a3a2a3d5954))
+* **desktop:** binary not loading properly ([3b0b641](https://github.com/ulixee/platform/commit/3b0b6414dbec9a798fba0e802ef06fd8ff790c6e))
+
+
+### chore
+
+* rename miner to cloud node ([a3c949e](https://github.com/ulixee/platform/commit/a3c949e4af806cc6a4acdd4b4b04305946add19b))
+
+
+### Features
+
+* **datastore:** add ability to “start” and watch ([e9c92bc](https://github.com/ulixee/platform/commit/e9c92bcc684331752e3e11a6b72bba83b91e0736))
+* **datastore:** add docs ([da39923](https://github.com/ulixee/platform/commit/da39923c0ba5f21359e58a55fc205e82af708e65))
+* **datastore:** simplify query to live in main ([b7dd56a](https://github.com/ulixee/platform/commit/b7dd56a69fdcdbb51170758c06b6d23cbd9e0585))
+* **desktop:** getting started guide ([1e3fd87](https://github.com/ulixee/platform/commit/1e3fd87973807e8862a5696421aa768a6cd02bb6))
+* **desktop:** log user queries locally ([33fb721](https://github.com/ulixee/platform/commit/33fb7215afca7bde722217a827a82e4b89082a8c))
+* **desktop:** query ability on queries tab ([3960c7b](https://github.com/ulixee/platform/commit/3960c7b9fda1f9bea3a81850bb4fdadf9f54b2d4))
+
+
+### BREAKING CHANGES
+
+* @ulixee/miner package is now @ulixee/cloud.
+You must import {CloudNode} from @ulixee/cloud and use in place of Miner.
+
+
+
+
+
 # [2.0.0-alpha.19](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.19) (2023-02-25)
 
 **Note:** Version bump only for package @ulixee/datastore

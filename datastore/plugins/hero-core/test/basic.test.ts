@@ -79,10 +79,6 @@ test('it should be able to capture stack origins', async () => {
   const manifest = packager.manifest;
   const remoteTransport = ConnectionToDatastoreCore.remote(host);
   Helpers.onClose(() => remoteTransport.disconnect());
-  // @ts-expect-error
-  const registry = DatastoreCore.datastoreRegistry;
-  // @ts-expect-error
-  const { queryLogDb } = registry;
 
   const heroSession = await remoteTransport.sendRequest({
     command: 'Datastore.query',

@@ -3,6 +3,43 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.21](https://github.com/ulixee/platform/compare/v2.0.0-alpha.20...v2.0.0-alpha.21) (2023-04-24)
+
+**Note:** Version bump only for package @ulixee/datastore-examples
+
+
+
+
+
+# [2.0.0-alpha.20](https://github.com/ulixee/platform/compare/v2.0.0-alpha.19...v2.0.0-alpha.20) (2023-04-20)
+
+
+### Bug Fixes
+
+* **datastore:** output rebuilding ([8d10cc7](https://github.com/ulixee/platform/commit/8d10cc7e24cfd1ad65725a3e14dc4a3a2a3d5954))
+
+
+### chore
+
+* rename miner to cloud node ([a3c949e](https://github.com/ulixee/platform/commit/a3c949e4af806cc6a4acdd4b4b04305946add19b))
+
+
+### Features
+
+* **datastore:** add ability to “start” and watch ([e9c92bc](https://github.com/ulixee/platform/commit/e9c92bcc684331752e3e11a6b72bba83b91e0736))
+* **desktop:** getting started guide ([1e3fd87](https://github.com/ulixee/platform/commit/1e3fd87973807e8862a5696421aa768a6cd02bb6))
+* **desktop:** query ability on queries tab ([3960c7b](https://github.com/ulixee/platform/commit/3960c7b9fda1f9bea3a81850bb4fdadf9f54b2d4))
+
+
+### BREAKING CHANGES
+
+* @ulixee/miner package is now @ulixee/cloud.
+You must import {CloudNode} from @ulixee/cloud and use in place of Miner.
+
+
+
+
+
 # [2.0.0-alpha.19](https://github.com/ulixee/platform/compare/v2.0.0-alpha.17...v2.0.0-alpha.19) (2023-02-25)
 
 

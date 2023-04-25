@@ -141,7 +141,7 @@ export default Vue.defineComponent({
     onClose(isFromBackdrop: boolean) {
       if (!isFromBackdrop || !this.credit) {
         this.modal.close();
-        this.credit = null;
+        requestAnimationFrame(() => (this.credit = null));
       }
     },
   },

@@ -9,7 +9,7 @@ import {
 import { app } from 'electron';
 import * as Path from 'path';
 
-// Object.assign(console, log.functions);
+Object.assign(console, log.functions);
 
 export default class UlixeeLogger extends Log {
   constructor(module: NodeModule, boundContext?: any) {

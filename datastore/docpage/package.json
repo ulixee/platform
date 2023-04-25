@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/datastore-docpage",
-  "version": "2.0.0-alpha.19",
+  "version": "2.0.0-alpha.21",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build --mode production",
@@ -31,7 +31,6 @@
     "eslint-plugin-promise": "^6.1.1",
     "eslint-plugin-standard": "^5.0.0",
     "eslint-plugin-vue": "^8.5.0",
-    "fs-extra": "^11.1.0",
     "hastscript": "^7.0.2",
     "js-yaml": "^4.1.0",
     "lint-staged": "^9.5.0",
@@ -61,7 +60,7 @@
     "vue-router": "^4.0.0-0"
   },
   "devDependencies": {
-    "@ulixee/datastore-packager": "2.0.0-alpha.19",
+    "@ulixee/datastore-packager": "2.0.0-alpha.21",
     "file-loader": "^6.2.0",
     "modify-source-webpack-plugin": "^4.0.0-beta.2",
     "typescript": "^4.5.5"

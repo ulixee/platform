@@ -1,15 +1,15 @@
 {
   "name": "@ulixee/end-to-end",
   "private": true,
-  "version": "2.0.0-alpha.19",
+  "version": "2.0.0-alpha.21",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.19",
-    "@ulixee/crypto": "2.0.0-alpha.19",
-    "@ulixee/datastore": "2.0.0-alpha.19",
-    "@ulixee/datastore-packager": "2.0.0-alpha.19",
-    "@ulixee/cloud": "2.0.0-alpha.19",
-    "@ulixee/net": "2.0.0-alpha.19",
-    "@ulixee/sidechain": "2.0.0-alpha.19",
-    "@ulixee/specification": "2.0.0-alpha.19"
+    "@ulixee/cloud": "2.0.0-alpha.21",
+    "@ulixee/commons": "2.0.0-alpha.21",
+    "@ulixee/crypto": "2.0.0-alpha.21",
+    "@ulixee/datastore": "2.0.0-alpha.21",
+    "@ulixee/datastore-packager": "2.0.0-alpha.21",
+    "@ulixee/net": "2.0.0-alpha.21",
+    "@ulixee/sidechain": "2.0.0-alpha.21",
+    "@ulixee/specification": "2.0.0-alpha.21"
   }
 }

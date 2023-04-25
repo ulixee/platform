@@ -59,6 +59,7 @@
   "workspaces": {
     "packages": [
       "desktop/*",
+      "desktop/main/app",
       "datastore/*",
       "datastore/plugins/*",
       "cloud/*",
@@ -81,6 +82,11 @@
     "nohoist": [
       "**/babel-loader",
       "**/electron-webpack",
+      "**/@electron",
+      "**/@electron/**",
+      "**/electron",
+      "**/electron-*",
+      "**/electron-builder",
       "**/electron-webpack/**",
       "**/@ulixee/repo-tools",
       "**/@vue/**",

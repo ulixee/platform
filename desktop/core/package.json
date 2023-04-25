@@ -1,33 +1,33 @@
 {
   "name": "@ulixee/desktop-core",
-  "version": "2.0.0-alpha.19",
+  "version": "2.0.0-alpha.21",
   "main": "index.js",
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.19",
-    "@ulixee/datastore": "2.0.0-alpha.19",
-    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.19",
-    "@ulixee/default-browser-emulator": "2.0.0-alpha.19",
-    "@ulixee/desktop-interfaces": "2.0.0-alpha.19",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.19",
-    "@ulixee/hero-plugin-utils": "2.0.0-alpha.19",
-    "@ulixee/hero-timetravel": "2.0.0-alpha.19",
-    "@ulixee/net": "2.0.0-alpha.19",
-    "@ulixee/platform-specification": "2.0.0-alpha.19",
-    "@ulixee/unblocked-agent": "2.0.0-alpha.19",
-    "@ulixee/unblocked-specification": "2.0.0-alpha.19",
+    "@ulixee/commons": "2.0.0-alpha.21",
+    "@ulixee/datastore": "2.0.0-alpha.21",
+    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.21",
+    "@ulixee/default-browser-emulator": "2.0.0-alpha.21",
+    "@ulixee/desktop-interfaces": "2.0.0-alpha.21",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.21",
+    "@ulixee/hero-plugin-utils": "2.0.0-alpha.21",
+    "@ulixee/hero-timetravel": "2.0.0-alpha.21",
+    "@ulixee/net": "2.0.0-alpha.21",
+    "@ulixee/platform-specification": "2.0.0-alpha.21",
+    "@ulixee/unblocked-agent": "2.0.0-alpha.21",
+    "@ulixee/unblocked-specification": "2.0.0-alpha.21",
     "fuse.js": "^6.5.3",
     "nanoid": "^3.1.30",
     "ws": "^7.4.6"
   },
   "peerDependencies": {
-    "@ulixee/datastore-core": "2.0.0-alpha.19",
-    "@ulixee/hero-core": "2.0.0-alpha.19"
+    "@ulixee/datastore-core": "2.0.0-alpha.21",
+    "@ulixee/hero-core": "2.0.0-alpha.21"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.154",
-    "@ulixee/datastore-testing": "2.0.0-alpha.19",
+    "@ulixee/datastore-testing": "2.0.0-alpha.21",
     "linkedom": "^0.14.11"
   }
 }

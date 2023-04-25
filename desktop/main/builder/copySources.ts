@@ -1,6 +1,5 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
-// eslint-disable-next-line import/no-unresolved
 
 const dest = Path.join(process.cwd(), process.argv[2]);
 
@@ -11,8 +10,13 @@ const dirsNotToInclude = new Set([
   'packages',
   'playgrounds',
   'end-to-end',
+  'website',
   'chrome-extension',
+  'testing',
+  'datastore/testing',
   'desktop/main',
+  'desktop/ui',
+  'desktop/chrome-extension',
   'examples',
   'test',
   'tools',
@@ -20,6 +24,7 @@ const dirsNotToInclude = new Set([
 ]);
 
 function copyDir(baseDir: string, outDir: string): void {
+  if (!Fs.existsSync(baseDir)) return;
   if (!Fs.existsSync(outDir)) Fs.mkdirSync(outDir, { recursive: true });
 
   const packageJson = Fs.existsSync(`${baseDir}/package.json`)
@@ -48,27 +53,31 @@ function copyDir(baseDir: string, outDir: string): void {
   }
 }
 
-copyDir(`${baseBuild}/build`, dest);
+const buildDir = process.env.SOURCE_DIR ?? 'build'
+
+copyDir(`${baseBuild}/${buildDir}`, dest);
 if (process.env.NODE_ENV !== 'production') {
-  copyDir(`${baseBuild}/hero/build`, `${dest}/hero`);
+  copyDir(`${baseBuild}/hero/${buildDir}`, `${dest}/hero`);
   copyDir(
     `${baseBuild}/../unblocked/browser-emulator-builder/data`,
     `${dest}/browser-emulator-builder/data`,
   );
-  copyDir(`${baseBuild}/../unblocked/build/agent`, `${dest}/agent`);
-  copyDir(`${baseBuild}/../unblocked/build/specification`, `${dest}/unblocked-specification`);
-  copyDir(`${baseBuild}/../shared/build/net`, `${dest}/net`);
-  copyDir(`${baseBuild}/../shared/build/crypto`, `${dest}/crypto`);
-  copyDir(`${baseBuild}/../shared/build/commons`, `${dest}/commons`);
-  copyDir(`${baseBuild}/../shared/build/specification`, `${dest}/ulixee-specification`);
-  copyDir(`${baseBuild}/../shared/build/schema`, `${dest}/schema`);
-  copyDir(`${baseBuild}/../unblocked/build/plugins`, `${dest}/unblocked-plugins`);
-  Fs.writeFileSync(
-    `${dest}/unblocked-plugins/default-browser-emulator/paths.json`,
-    JSON.stringify({
-      'emulator-data': '../../browser-emulator-builder/data',
-    }),
-  );
+  copyDir(`${baseBuild}/../unblocked/${buildDir}/agent`, `${dest}/agent`);
+  copyDir(`${baseBuild}/../unblocked/${buildDir}/specification`, `${dest}/unblocked-specification`);
+  copyDir(`${baseBuild}/../shared/${buildDir}/net`, `${dest}/net`);
+  copyDir(`${baseBuild}/../shared/${buildDir}/crypto`, `${dest}/crypto`);
+  copyDir(`${baseBuild}/../shared/${buildDir}/commons`, `${dest}/commons`);
+  copyDir(`${baseBuild}/../shared/${buildDir}/specification`, `${dest}/ulixee-specification`);
+  copyDir(`${baseBuild}/../shared/${buildDir}/schema`, `${dest}/schema`);
+  copyDir(`${baseBuild}/../unblocked/${buildDir}/plugins`, `${dest}/unblocked-plugins`);
+  if (Fs.existsSync(`${dest}/unblocked-plugins`)) {
+    Fs.writeFileSync(
+      `${dest}/unblocked-plugins/default-browser-emulator/paths.json`,
+      JSON.stringify({
+        'emulator-data': '../../browser-emulator-builder/data',
+      }),
+    );
+  }
 }
 
 // eslint-disable-next-line no-console

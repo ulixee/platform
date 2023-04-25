@@ -3,6 +3,31 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.21](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.20...v2.0.0-alpha.21) (2023-04-24)
+
+**Note:** Version bump only for package @ulixee/cli
+
+
+
+
+
+# [2.0.0-alpha.20](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.19...v2.0.0-alpha.20) (2023-04-20)
+
+
+### chore
+
+* rename miner to cloud node ([a3c949e](https://github.com/ulixee/ulixee/commit/a3c949e4af806cc6a4acdd4b4b04305946add19b))
+
+
+### BREAKING CHANGES
+
+* @ulixee/miner package is now @ulixee/cloud.
+You must import {CloudNode} from @ulixee/cloud and use in place of Miner.
+
+
+
+
+
 # [2.0.0-alpha.19](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.17...v2.0.0-alpha.19) (2023-02-25)
 
 **Note:** Version bump only for package @ulixee/cli

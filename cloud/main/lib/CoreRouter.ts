@@ -125,16 +125,13 @@ export default class CoreRouter {
       await DatastoreCore.start({ ipAddress, port: this.serverAddress.port });
 
       if (DesktopUtils.isInstalled()) {
-        const chromeAliveCore = DesktopUtils.getDesktop();
+        const desktopCore = DesktopUtils.getDesktop();
         const wsAddress = Promise.resolve(`ws://${cloudNodeAddress}`);
         const bridge = new TransportBridge();
         this.addCloudApiConnection(bridge.transportToClient);
 
-        chromeAliveCore.setLocalCloudAddress(
-          wsAddress,
-          new ConnectionToCore(bridge.transportToCore),
-        );
-        await chromeAliveCore.activatePlugin();
+        desktopCore.setLocalCloudAddress(wsAddress, new ConnectionToCore(bridge.transportToCore));
+        await desktopCore.activatePlugin();
       }
     } finally {
       log.stats('CloudNode.started', {
@@ -155,7 +152,9 @@ export default class CoreRouter {
         await connection.disconnect();
       }
       if (DesktopUtils.isInstalled()) {
-        await DesktopUtils.getDesktop().shutdown();
+        const desktopCore = DesktopUtils.getDesktop();
+        desktopCore.setLocalCloudAddress(null, null);
+        // Don't shutdown, since we didn't start it
       }
       await DatastoreCore.close();
       await HeroCore.shutdown();
@@ -232,6 +231,6 @@ function safeRegisterModule(path: string): void {
     // eslint-disable-next-line import/no-dynamic-require
     require(path);
   } catch (err) {
-    /* no-op */
+    console.warn('Default Datastore Plugin not installed', path, err.message)
   }
 }

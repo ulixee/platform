@@ -14,12 +14,13 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
   public nodeVmRequireWhitelist = [
     '@ulixee/hero',
     '@ulixee/unblocked-agent',
+    '@ulixee/unblocked-specification',
     '@ulixee/awaited-dom',
     '@ulixee/execute-js-plugin',
     '@ulixee/datastore-plugins-hero',
   ];
 
-  private transportBridge: TransportBridge<any>;
+  private connectionToCore: ConnectionToHeroCore;
 
   private nodeVmSandboxList = [
     '@ulixee/hero',
@@ -34,7 +35,7 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
   private nodeVmSandboxExceptionsList = [
     // Requires linkedom, so require in host
     '@ulixee/hero/lib/DetachedElement.js',
-    // Need a single instance so we can inject vm2
+    // Need a single instance so we can inject vm2 into ignore list
     '@ulixee/hero/lib/CallsiteLocator',
     // requires readline, which we don't want to expose in sandbox
     '@ulixee/hero/lib/CoreKeepAlivePrompt',
@@ -69,7 +70,7 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
     }
     const bridge = new TransportBridge();
     HeroCore.addConnection(bridge.transportToClient);
-    this.transportBridge = bridge;
+    this.connectionToCore = new ConnectionToHeroCore(bridge.transportToCore);
   }
 
   public beforeRunExtractor(
@@ -84,15 +85,11 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
       runtime: 'datastore',
     };
 
-    options.callsiteLocator = new CallsiteLocator(runtime.scriptEntrypoint);
-    options.connectionToCore = new ConnectionToHeroCore(
-      this.transportBridge.transportToCore,
-      null,
-      options.callsiteLocator,
-    );
+    options.connectionToCore = this.connectionToCore;
   }
 
   public async onCoreClose(): Promise<void> {
+    await this.connectionToCore.disconnect();
     await HeroCore.shutdown();
   }
 
