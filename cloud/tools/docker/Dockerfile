@@ -3,7 +3,7 @@ FROM node:16-slim
 ARG ADD_TO_INSTALL=true
 ARG VERSION
 LABEL org.opencontainers.image.source=https://github.com/ulixee/platform
-LABEL org.opencontainers.image.description="The open data platform. This image packages Ulixee Miner, Hero and the last 2 Chrome versions."
+LABEL org.opencontainers.image.description="The open data platform. This image packages Ulixee Cloud, Hero and the last 2 Chrome versions."
 LABEL org.opencontainers.image.licenses=MIT
 
 # fonts
@@ -41,7 +41,7 @@ WORKDIR /app/ulixee
 ENV BROWSERS_DIR /ulixee/browsers
 
 RUN cd /app/ulixee && yarn init -yp \
-    && yarn add @ulixee/miner@$VERSION \
+    && yarn add @ulixee/cloud@$VERSION \
     && $ADD_TO_INSTALL \
     && $(npx install-browser-deps) \
     && groupadd -r ulixee && useradd -r -g ulixee -G audio,video ulixee \
@@ -57,5 +57,5 @@ RUN cd /app/ulixee && yarn init -yp \
 # Add below to run as unprivileged user. It's not included by default, but you can use docker run `--user ulixee`.
 # USER ulixee
 
-CMD npx @ulixee/miner start
+CMD npx @ulixee/cloud start
 # To run this docker, please see ./run.sh
