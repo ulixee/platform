@@ -15,8 +15,7 @@ export interface IPassthroughTableComponents<
   TRemoteSources extends Record<string, string>,
   TTableName extends string,
   TSchema,
-  TSeedlings,
-> extends ITableComponents<TSchema, TSeedlings> {
+> extends ITableComponents<TSchema> {
   remoteTable: `${keyof TRemoteSources & string}.${TTableName}`;
 }
 
@@ -28,10 +27,9 @@ export default class PassthroughTable<
   TComponents extends IPassthroughTableComponents<
     TRemoteSources,
     TTableName,
-    TSchema,
-    TSchemaType
-  > = IPassthroughTableComponents<TRemoteSources, TTableName, TSchema, TSchemaType>,
-> extends Table<TSchema, TSchemaType> {
+    TSchema
+  > = IPassthroughTableComponents<TRemoteSources, TTableName, TSchema>,
+> extends Table<TSchema> {
   public readonly remoteSource: string;
   public readonly remoteTable: string;
   public datastoreVersionHash: string;

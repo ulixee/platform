@@ -1,6 +1,6 @@
 <template>
   <li
-    class="ol-span-1 cursor-pointer divide-y divide-gray-200 rounded-lg bg-white shadow-md hover:shadow-sm overflow-hidden"
+    class="ol-span-1 cursor-pointer divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow-md hover:shadow-sm"
     :class="{ 'opacity-50': !datastore.isStarted }"
     @click.prevent="navigate"
   >
@@ -17,8 +17,20 @@
         >
           {{ datastore.description }}
         </p>
-        <p class="mt-1 truncate text-sm font-light italic text-gray-500" v-else>
-          <span>version</span> {{ datastore.versionHash }}
+        <p class="mt-1 truncate text-sm font-light italic text-gray-500" v-if="includeVersion">
+          <span
+            v-if="datastore.versionHash === datastore.latestVersionHash"
+            class="inline-flex items-center rounded-md bg-fuchsia-50 px-2 py-1 text-xs font-medium text-fuchsia-800 ring-1 ring-inset ring-fuchsia-700/20"
+            >Latest</span
+          >
+          <span
+            v-else
+            class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-800 ring-1 ring-inset ring-gray-700/20"
+            >{{ datastore.versionHash }}
+          </span>
+          <span class="ml-2 px-2 py-1 text-xs font-medium text-gray-800"
+            >{{ formatDate(datastore.versionTimestamp) }}
+          </span>
         </p>
       </div>
 
@@ -80,6 +92,7 @@ export default Vue.defineComponent({
       // workaround for typing
       default: () => ({} as IDatastoreList[0]),
     },
+    includeVersion: Boolean,
   },
   components: {
     HeartIcon,
@@ -107,6 +120,15 @@ export default Vue.defineComponent({
   methods: {
     navigate() {
       return this.$router.push(`/datastore/${this.datastore.versionHash}`);
+    },
+    formatDate(date: Date): string {
+      if (!date) return 'now';
+      return date.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+      });
     },
     spent() {
       const credits = this.userBalance.credits.filter(

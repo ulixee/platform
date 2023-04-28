@@ -23,7 +23,7 @@ export async function packDbx(fromDirectory: string): Promise<Buffer> {
       cwd: fromDirectory,
       file: `${fromDirectory}.tgz`,
     },
-    ['datastore.js', 'datastore.js.map', 'datastore-manifest.json', 'storage.db', 'docpage.json'],
+    ['datastore.js', 'datastore.js.map', 'datastore-manifest.json', 'docpage.json'],
   );
   const buffer = await Fs.readFile(`${fromDirectory}.tgz`);
   await Fs.unlink(`${fromDirectory}.tgz`);

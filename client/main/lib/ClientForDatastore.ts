@@ -1,17 +1,18 @@
 import ResultIterable from '@ulixee/datastore/lib/ResultIterable';
 import Datastore, { ConnectionToDatastoreCore } from '@ulixee/datastore';
-import DatastoreStorage from '@ulixee/datastore/lib/DatastoreStorage';
+import StorageEngine from '@ulixee/datastore/lib/StorageEngine';
 import { IOutputSchema } from '../interfaces/IInputOutput';
 
 export default class ClientForDatastore<TDatastore extends Datastore> {
   private datastore: TDatastore;
+  private readyPromise: Promise<any>;
 
   constructor(
     datastore: TDatastore,
-    options?: { connectionToCore: ConnectionToDatastoreCore; storage?: DatastoreStorage },
+    options?: { connectionToCore: ConnectionToDatastoreCore; storage?: StorageEngine },
   ) {
     this.datastore = datastore;
-    this.datastore.bind(options);
+    this.readyPromise = this.datastore.bind(options).catch(() => null);
   }
 
   public fetch<T extends keyof TDatastore['extractors']>(
@@ -25,7 +26,14 @@ export default class ClientForDatastore<TDatastore extends Datastore> {
   public fetch(name, inputFilter): any {
     const instance = this.datastore.extractors[name] || this.datastore.tables[name];
     if (!instance) throw new Error(`${name} is not a valid Datastore Extractor or Table name.`);
-    return instance.runInternal({ input: inputFilter });
+    return instance.runInternal(
+      { input: inputFilter },
+      {
+        beforeAll() {
+          return this.readyPromise;
+        },
+      },
+    );
   }
 
   public run<T extends keyof TDatastore['extractors']>(
@@ -44,7 +52,14 @@ export default class ClientForDatastore<TDatastore extends Datastore> {
     name: T,
     inputFilter: TDatastore['crawlers'][T]['schemaType']['input'],
   ): any {
-    return this.datastore.crawlers[name].runInternal({ input: inputFilter });
+    return this.datastore.crawlers[name].runInternal(
+      { input: inputFilter },
+      {
+        beforeAll() {
+          return this.readyPromise;
+        },
+      },
+    );
   }
 
   public query<TResult extends IOutputSchema = IOutputSchema>(

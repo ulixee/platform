@@ -11,7 +11,7 @@ export default new DatastoreApiHandler('Datastore.creditsIssued', {
     const datastoreVersion = await context.datastoreRegistry.getByVersionHash(
       request.datastoreVersionHash,
     );
-    const storage = context.datastoreRegistry.getStorage(request.datastoreVersionHash);
+    const storage = context.storageEngineRegistry.get(request.datastoreVersionHash);
     const datastore = await DatastoreVm.open(datastoreVersion.path, storage, datastoreVersion);
     const { count, microgons } = await datastore.tables[CreditsTable.tableName].summary();
     return { count, issuedCredits: microgons ?? 0 };

@@ -38,7 +38,7 @@ export default new DatastoreApiHandler('Datastore.admin', {
       throw new InvalidSignatureError('Your Admin signature is invalid for this function call.');
     }
 
-    const storage = context.datastoreRegistry.getStorage(request.versionHash);
+    const storage = context.storageEngineRegistry.get(request.versionHash);
     const datastore = await DatastoreVm.open(datastoreVersion.path, storage, datastoreVersion);
 
     if (adminFunction.ownerType === 'datastore') {

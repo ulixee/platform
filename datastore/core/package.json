@@ -18,7 +18,7 @@
     "@ulixee/sql-engine": "2.0.0-alpha.21",
     "better-sqlite3": "^8.3.0",
     "finalhandler": "^1.2.0",
-    "nanoid": "^3.1.32",
+    "nanoid": "^3.3.6",
     "serve-static": "^1.15.0",
     "tar": "^6.1.11",
     "vm2": "https://github.com/ulixee/vm2#pathContext"

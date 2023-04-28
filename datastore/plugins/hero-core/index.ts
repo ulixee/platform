@@ -5,6 +5,7 @@ import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import { IHeroExtractorRunOptions } from '@ulixee/datastore-plugins-hero';
 import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 import CallsiteLocator from '@ulixee/hero/lib/CallsiteLocator';
+import { nanoid } from 'nanoid';
 
 const pkg = require('@ulixee/datastore-plugins-hero/package.json');
 
@@ -84,12 +85,14 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
       entryFunction: runtime.functionName,
       runtime: 'datastore',
     };
+    options.sessionId = `query-${  options.id  }-${  nanoid(3)}`;
+    options.sessionDbDirectory = DatastoreCore.queryHeroSessionsDir;
 
     options.connectionToCore = this.connectionToCore;
   }
 
   public async onCoreClose(): Promise<void> {
-    await this.connectionToCore.disconnect();
+    await this.connectionToCore?.disconnect();
     await HeroCore.shutdown();
   }
 

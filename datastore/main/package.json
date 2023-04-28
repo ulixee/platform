@@ -13,9 +13,10 @@
     "./package.json": "./package.json",
     "./lib/*": "./lib/*.js",
     "./cli/*": "./cli/*.js",
+    "./sql-connections/*": "./sql-connections/*.js",
     "./connections/*": "./connections/*.js",
-    "./types/*": "./types/*",
-    "./interfaces/*": "./interfaces/*"
+    "./interfaces/*": "./interfaces/*",
+    "./types/*": "./types/*"
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.21",

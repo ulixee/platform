@@ -6,11 +6,13 @@ loadEnv(process.cwd());
 loadEnv(__dirname);
 const env = process.env;
 if (env.ULX_DATASTORE_DIR) env.ULX_DATASTORE_DIR = parseEnvPath(env.ULX_DATASTORE_DIR);
+if (env.ULX_QUERY_HERO_SESSIONS_DIR) env.ULX_QUERY_HERO_SESSIONS_DIR = parseEnvPath(env.ULX_QUERY_HERO_SESSIONS_DIR);
 if (env.ULX_IDENTITY_PATH) env.ULX_IDENTITY_PATH = parseEnvPath(env.ULX_IDENTITY_PATH);
 
 export default {
   serverEnvironment: env.ULX_SERVER_ENVIRONMENT,
   datastoresDir: env.ULX_DATASTORE_DIR,
+  queryHeroSessionsDir: env.ULX_QUERY_HERO_SESSIONS_DIR,
   enableSqliteWalMode: env.ULX_ENABLE_SQLITE_WAL,
   // list of identities who can upload to this Cloud [@ulixee/crypto/lib/Identity.bech32]
   cloudAdminIdentities: parseIdentities(env.ULX_CLOUD_ADMIN_IDENTITIES, 'Admin Identities'),

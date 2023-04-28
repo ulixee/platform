@@ -324,7 +324,7 @@ export default class ChromeAliveWindow {
 
   private createApi(baseHost: string): void {
     const address = new URL(`/chromealive/${this.session.heroSessionId}`, baseHost);
-    if (!this.session.dbPath.includes(SessionDb.databaseDir)) {
+    if (!this.session.dbPath.includes(SessionDb.defaultDatabaseDir)) {
       address.searchParams.set('path', this.session.dbPath);
     }
     this.api = new ApiClient(address.href, this.onChromeAliveEvent);

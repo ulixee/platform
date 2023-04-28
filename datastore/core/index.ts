@@ -39,6 +39,7 @@ import DatastoreStart from './endpoints/Datastore.start';
 import DatastoreDownload from './endpoints/Datastore.download';
 import DatastoreCreditsIssued from './endpoints/Datastore.creditsIssued';
 import { translateStats } from './lib/translateDatastoreMetadata';
+import StorageEngineRegistry from './lib/StorageEngineRegistry';
 
 const { log } = Logger(module);
 
@@ -59,10 +60,15 @@ export default class DatastoreCore {
     return this.options.datastoresDir;
   }
 
+  public static get queryHeroSessionsDir(): string {
+    return this.options.queryHeroSessionsDir;
+  }
+
   // SETTINGS
   public static options: IDatastoreCoreConfigureOptions = {
     serverEnvironment: env.serverEnvironment as any,
     datastoresDir: env.datastoresDir,
+    queryHeroSessionsDir: env.queryHeroSessionsDir,
     datastoresTmpDir: Path.join(Os.tmpdir(), '.ulixee', 'datastore'),
     maxRuntimeMs: 10 * 60e3,
     waitForDatastoreCompletionOnShutdown: false,
@@ -96,6 +102,7 @@ export default class DatastoreCore {
   ]);
 
   private static datastoreRegistry: DatastoreRegistry;
+  private static storageEngineRegistry: StorageEngineRegistry;
   private static sidechainClientManager: SidechainClientManager;
   private static isStarted = new Resolvable<void>();
 
@@ -109,6 +116,13 @@ export default class DatastoreCore {
       transport,
       context,
     );
+    const logger = context.logger;
+    connection.on('response', ({ response, request }) => {
+      logger.info(`api/${request.command} (${request.messageId})`, {
+        args: request.args?.[0],
+        response: response.data,
+      });
+    });
     context.connectionToClient = connection;
     connection.once('disconnected', () => {
       this.connections.delete(connection);
@@ -233,6 +247,7 @@ export default class DatastoreCore {
       options: this.options,
       sessionId: null,
     });
+
     this.serverAddress = config;
     try {
       this.close = this.close.bind(this);
@@ -247,10 +262,18 @@ export default class DatastoreCore {
       if (!(await existsAsync(this.options.datastoresTmpDir))) {
         await Fs.mkdir(this.options.datastoresTmpDir, { recursive: true });
       }
+      if (!(await existsAsync(this.options.queryHeroSessionsDir))) {
+        await Fs.mkdir(this.options.queryHeroSessionsDir, { recursive: true });
+      }
+      this.storageEngineRegistry = new StorageEngineRegistry(this.options.datastoresDir);
       this.datastoreRegistry = new DatastoreRegistry(this.options.datastoresDir);
-      await this.datastoreRegistry.installManuallyUploadedDbxFiles();
-
-      await new Promise(resolve => process.nextTick(resolve));
+      const installations = await this.datastoreRegistry.installManuallyUploadedDbxFiles();
+      for (const install of installations) {
+        const previous = await this.datastoreRegistry.getPreviousVersion(
+          install.manifest.versionHash,
+        );
+        await this.storageEngineRegistry.create(install.dbxPath, install.manifest, previous);
+      }
 
       for (const plugin of Object.values(this.pluginCoresByName)) {
         if (plugin.onCoreStart) await plugin.onCoreStart();
@@ -310,7 +333,8 @@ export default class DatastoreCore {
         await connection.disconnect();
       }
       this.connections.clear();
-      this.datastoreRegistry?.close();
+      await this.datastoreRegistry?.close();
+      await this.storageEngineRegistry?.close();
       await DatastoreVm.close();
     } finally {
       closingPromise.resolve();
@@ -345,6 +369,7 @@ export default class DatastoreCore {
       configuration: this.options,
       pluginCoresByName: this.pluginCoresByName,
       sidechainClientManager: this.sidechainClientManager,
+      storageEngineRegistry: this.storageEngineRegistry,
     };
   }
 

@@ -20,7 +20,7 @@
     "@ulixee/hero-interfaces": "2.0.0-alpha.21",
     "@webcomponents/custom-elements": "^1.5.0",
     "core-js": "^3.21.1",
-    "nanoid": "^3.1.30"
+    "nanoid": "^3.3.6"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.154",

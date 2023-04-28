@@ -7,7 +7,7 @@ import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
-import DatastoreStorage from '@ulixee/datastore/lib/DatastoreStorage';
+import StorageEngine from '@ulixee/datastore/lib/StorageEngine';
 import * as Path from 'path';
 import DatastoreCore from '../index';
 
@@ -28,19 +28,8 @@ export default class DatastoreVm {
     return this._connectionToDatastoreCore;
   }
 
-  public static async open(
-    path: string,
-    storage: DatastoreStorage,
-    manifest: IDatastoreManifest,
-  ): Promise<Datastore> {
-    if (!isSemverSatisfied(manifest.coreVersion, version)) {
-      throw new Error(
-        `The current version of Core (${version}) is incompatible with this Datastore version (${manifest.coreVersion})`,
-      );
-    }
-
+  public static async getDatastore(path: string): Promise<Datastore> {
     const script = await this.getVMScript(path);
-
     let datastore = this.getVm().run(script) as Datastore;
     if (datastore instanceof Extractor) {
       const extractor = datastore;
@@ -53,14 +42,31 @@ export default class DatastoreVm {
         crawlers: { [crawler.name ?? 'default']: crawler },
       }) as Datastore;
     }
+    return datastore;
+  }
+
+  public static async open(
+    path: string,
+    storage: StorageEngine,
+    manifest: IDatastoreManifest,
+  ): Promise<Datastore> {
+    if (!isSemverSatisfied(manifest.coreVersion, version)) {
+      throw new Error(
+        `The current version of Core (${version}) is incompatible with this Datastore version (${manifest.coreVersion})`,
+      );
+    }
+
+    const datastore = await this.getDatastore(path);
+
     if (!(datastore instanceof Datastore)) {
       throw new Error(
         'The default export from this script needs to inherit from "@ulixee/datastore"',
       );
     }
-    datastore.bind({
+
+    await datastore.bind({
       connectionToCore: this.connectionToDatastoreCore,
-      datastoreStorage: storage,
+      storageEngine: storage,
       manifest,
       apiClientLoader: this.getCachedApiClient.bind(this),
     });

@@ -1,6 +1,5 @@
 import Datastore, { IExtractorRunOptions } from '@ulixee/datastore';
 import IDatastoreApis from '@ulixee/platform-specification/datastore/DatastoreApis';
-import { SqlGenerator } from '@ulixee/sql-engine';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreCore from '../index';
 import PaymentProcessor from '../lib/PaymentProcessor';
@@ -13,7 +12,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
   async handler(request, context) {
     const startTime = Date.now();
     const manifestWithStats = await context.datastoreRegistry.getByVersionHash(request.versionHash);
-    const storage = context.datastoreRegistry.getStorage(request.versionHash);
+    const storage = context.storageEngineRegistry.get(request.versionHash);
     const datastore = await DatastoreVm.open(manifestWithStats.path, storage, manifestWithStats);
     await validateAuthentication(datastore, request.payment, request.authentication);
     const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
@@ -191,27 +190,14 @@ async function extractFunctionOutputs(
   );
 }
 
-function extractTableOutputs(
+async function extractTableOutputs(
   datastore: Datastore,
   request: IDatastoreApis['Datastore.stream']['args'],
   context: IDatastoreApiContext,
-): any[] {
-  const storage = context.datastoreRegistry.getStorage(request.versionHash);
+): Promise<any[]> {
+  const records = await datastore.tables[request.name].fetchInternal({ input: request.input });
 
-  const db = storage.db;
-  const schema = storage.getTableSchema(request.name);
-  const { sql, boundValues } = SqlGenerator.createWhereClause(
-    request.name,
-    request.input,
-    ['*'],
-    1000,
-  );
-
-  const results = db.prepare(sql).all(boundValues);
-
-  SqlGenerator.convertRecordsFromSqlite(results, [schema]);
-
-  for (const result of results) {
+  for (const result of records) {
     context.connectionToClient.sendEvent({
       listenerId: request.id,
       data: result as any,
@@ -219,5 +205,5 @@ function extractTableOutputs(
     });
   }
 
-  return results;
+  return records;
 }

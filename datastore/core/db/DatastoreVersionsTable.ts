@@ -38,11 +38,11 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
   }
 
   public findAnyWithEntrypoint(entrypoint: string): IDatastoreVersionRecord {
-    return this.findByEntrypointQuery.get(entrypoint) as any;
+    return this.findByEntrypointQuery.get(entrypoint) as IDatastoreVersionRecord;
   }
 
   public findLatestByDomain(domain: string): IDatastoreVersionRecord {
-    return this.findWithDomainQuery.get(domain.toLowerCase()) as any;
+    return this.findWithDomainQuery.get(domain.toLowerCase()) as IDatastoreVersionRecord;
   }
 
   public allCached(): IDatastoreVersionRecord[] {
@@ -91,7 +91,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       domain,
       isStarted,
     };
-    this.versionsByBaseHash[baseVersionHash] ??= this.getPreviousVersions(baseVersionHash);
+    this.versionsByBaseHash[baseVersionHash] ??= this.getLinkedVersions(baseVersionHash);
     if (!this.versionsByBaseHash[baseVersionHash].some(x => x.versionHash === versionHash)) {
       this.versionsByBaseHash[baseVersionHash].unshift({ versionHash, versionTimestamp });
       this.versionsByBaseHash[baseVersionHash].sort(
@@ -102,15 +102,15 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
 
   public getLatestVersion(versionHash: string): string {
     const baseHash = this.getBaseHash(versionHash) ?? versionHash;
-    const versions = this.getPreviousVersions(baseHash);
+    const versions = this.getLinkedVersions(baseHash);
     if (!versions.length) return versionHash;
     return versions[0]?.versionHash;
   }
 
-  public getPreviousVersions(baseVersionHash: string): IVersionHistoryEntry[] {
+  public getLinkedVersions(baseVersionHash: string): IVersionHistoryEntry[] {
     if (!this.versionsByBaseHash[baseVersionHash]) {
-      const versionRecords: IDatastoreVersionRecord[] =
-        this.findWithBaseHashQuery.all(baseVersionHash) as any;
+      const versionRecords =
+        this.findWithBaseHashQuery.all(baseVersionHash) as IDatastoreVersionRecord[];
       const seenVersions = new Set<string>();
       this.versionsByBaseHash[baseVersionHash] = versionRecords
         .map(x => {

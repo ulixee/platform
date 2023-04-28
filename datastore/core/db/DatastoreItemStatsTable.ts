@@ -42,7 +42,7 @@ export default class DatastoreItemStatsTable extends SqliteTable<IDatastoreItemS
     bytes: number,
     milliseconds: number,
     creditsUsed: number,
-    isError: boolean
+    isError: boolean,
   ): void {
     price ??= 0;
 
@@ -87,10 +87,11 @@ export default class DatastoreItemStatsTable extends SqliteTable<IDatastoreItemS
   }
 
   public getByVersionHash(versionHash: string, name: string): IDatastoreItemStatsRecord {
-    DatastoreItemStatsTable.byVersionHashAndName[`${versionHash}_${name}`] ??= this.getQuery.get(
+    DatastoreItemStatsTable.byVersionHashAndName[`${versionHash}_${name}`] ??= (this.getQuery.get(
       versionHash,
       name,
-    ) as any ?? {
+    ) as IDatastoreItemStatsRecord) ?? {
+      name,
       lastRunTimestamp: Date.now(),
       runs: 0,
       errors: 0,

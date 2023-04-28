@@ -292,9 +292,10 @@ export default class DatastoreApiClient {
     return result?.compressedDatastore;
   }
 
-  public async startDatastore(dbxPath: string): Promise<{ success: boolean }> {
+  public async startDatastore(dbxPath: string, watch = false): Promise<{ success: boolean }> {
     const { success } = await this.runApi('Datastore.start', {
       dbxPath,
+      watch,
     });
     return { success };
   }

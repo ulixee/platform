@@ -97,6 +97,7 @@ export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
       } = extractorInternal.options as IExtractorRunOptions<ISchema>;
       /* eslint-enable @typescript-eslint/no-unused-vars */
 
+
       const heroOptions: IHeroCreateOptions = {
         ...heroApplicableOptions,
         input: this.extractorInternal.input,
@@ -130,16 +131,13 @@ export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
       };
       // eslint-disable-next-line @typescript-eslint/no-shadow
       context.HeroReplay = class HeroReplay extends HeroReplayBase {
-        constructor(options: IHeroReplayCreateOptions | ICrawlerOutputSchema = {}) {
-          // extract sessionId so that we don't try to reload
-          const { sessionId, crawler: _c, version: _v, ...replayOptions } = options as any;
-
+        constructor(options: IHeroReplayCreateOptions) {
           const replaySessionId =
-            sessionId || heroOptions.replaySessionId || process.env.ULX_REPLAY_SESSION_ID;
+            (options as any).replaySessionId || process.env.ULX_REPLAY_SESSION_ID;
 
           super({
             ...heroOptions,
-            ...replayOptions,
+            ...options,
             replaySessionId,
           });
           container.heroReplays.add(this);
@@ -156,9 +154,12 @@ export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
           crawler: T,
           options: T['runArgsType'] = {},
         ): Promise<HeroReplay> {
-          if (heroOptions.replaySessionId) return new context.HeroReplay(heroOptions);
-          const crawl = await context.crawl(crawler, options);
-          return new context.HeroReplay(crawl);
+          if (!heroOptions.replaySessionId) {
+            const crawl = await context.crawl(crawler, options);
+            heroOptions.replaySessionId = crawl.sessionId;
+            heroOptions.input = options.input;
+          }
+          return new context.HeroReplay(heroOptions);
         }
       };
 

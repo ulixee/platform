@@ -11,7 +11,7 @@ export default new DatastoreApiHandler('Datastore.query', {
     const startTime = Date.now();
     const manifestWithStats = await context.datastoreRegistry.getByVersionHash(request.versionHash);
 
-    const storage = context.datastoreRegistry.getStorage(request.versionHash);
+    const storage = context.storageEngineRegistry.get(request.versionHash);
 
     const datastore = await DatastoreVm.open(manifestWithStats.path, storage, manifestWithStats);
 

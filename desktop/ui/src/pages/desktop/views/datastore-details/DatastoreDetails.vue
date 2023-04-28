@@ -29,9 +29,11 @@
         <div class="md:flex md:items-center md:justify-between">
           <div
             class="mb-5 flex flex-row flex-wrap content-end items-center justify-between gap-x-4 divide-x divide-gray-400"
-            v-if='datastore.description'
+            v-if="datastore.description"
           >
-            <div class="text-sm font-light text-gray-900 whitespace-pre-line">{{ datastore.description }}</div>
+            <div class="whitespace-pre-line text-sm font-light text-gray-900">
+              {{ datastore.description }}
+            </div>
           </div>
           <div class="absolute bottom-3 right-0 mt-3 mt-0 flex">
             <button
@@ -40,9 +42,10 @@
               @click.prevent="openDocs"
             >
               <DocumentTextIcon
-                class="group-hover:text-gray-950 -ml-0.5 mr-2 h-5 w-5 text-gray-900"
+                class="group-hover:text-gray-950 -ml-0.5 h-5 w-5 text-gray-900"
                 aria-hidden="true"
               />
+              <ArrowTopRightOnSquareIcon class="relative -mt-3 -ml-2 mr-1 w-4 inline h-3 bg-white text-gray-600" />
               View Docs
             </button>
             <button
@@ -132,7 +135,11 @@ import {
   CreditCardIcon,
   HeartIcon,
 } from '@heroicons/vue/20/solid';
-import { DocumentTextIcon, DocumentDuplicateIcon } from '@heroicons/vue/24/outline';
+import {
+  DocumentTextIcon,
+  DocumentDuplicateIcon,
+  ArrowTopRightOnSquareIcon,
+} from '@heroicons/vue/24/outline';
 import { storeToRefs } from 'pinia';
 import { useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
@@ -149,6 +156,7 @@ export default Vue.defineComponent({
     Earnings,
     CloudIcon,
     ChartBarIcon,
+    ArrowTopRightOnSquareIcon,
     CreditCardIcon,
     DocumentDuplicateIcon,
     DocumentTextIcon,

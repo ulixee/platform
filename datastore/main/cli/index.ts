@@ -88,9 +88,10 @@ export default function datastoreCommands(): Command {
       '-t, --tsconfig <path>',
       'A path to a TypeScript config file if needed. Will be auto-located based on the entrypoint if it ends in ".ts"',
     )
-    .option('-d, --no-docs', "Don't automatically display the deployed documentation website.")
+    .option('-d, --skip-docs', "Don't automatically display the deployed documentation website.", false)
     .addOption(identityPrivateKeyPathOption)
     .addOption(identityPrivateKeyPassphraseOption)
+    .enablePositionalOptions(true)
     .action(async (path, args) => {
       const {
         tsconfig,
@@ -99,7 +100,7 @@ export default function datastoreCommands(): Command {
         clearVersionHistory,
         identityPath,
         identityPassphrase,
-        noDocs,
+        skipDocs,
       } = args;
       await getPackagerCommands().deploy(path, {
         tsconfig,
@@ -108,7 +109,7 @@ export default function datastoreCommands(): Command {
         clearVersionHistory,
         identityPath,
         identityPassphrase,
-        dontAutoshowDocs: noDocs,
+        dontAutoshowDocs: skipDocs,
       });
     });
 
@@ -131,7 +132,7 @@ export default function datastoreCommands(): Command {
       '-t, --tsconfig <path>',
       'A path to a TypeScript config file if needed. Will be auto-located based on the entrypoint if it ends in ".ts"',
     )
-    .option('-w, --watch', 'Watch for file changes in your datastore.')
+    .option('-w, --watch', 'Watch for file changes in your datastore.', false)
     .action(async (path, options) => {
       const { tsconfig, outDir, compiledSourcePath, watch } = options;
 

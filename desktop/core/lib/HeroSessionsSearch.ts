@@ -11,6 +11,8 @@ import FuseJs from 'fuse.js';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
+import DatastoreCore from '@ulixee/datastore-core';
+import * as Path from 'path';
 import OutputRebuilder from './OutputRebuilder';
 
 const Fuse = require('fuse.js/dist/fuse.common.js');
@@ -80,10 +82,21 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
   list(): IHeroSessionsListResult[] {
     if (this.hasLoaded) return this.sessions;
 
-    if (Fs.existsSync(SessionDb.databaseDir)) {
-      for (const dbName of Fs.readdirSync(SessionDb.databaseDir)) {
+    if (Fs.existsSync(SessionDb.defaultDatabaseDir)) {
+      for (const dbName of Fs.readdirSync(SessionDb.defaultDatabaseDir)) {
         if (!dbName.endsWith('.db')) continue;
         const session = this.processSession(dbName.replace('.db', ''));
+
+        this.sessions.push(session);
+      }
+    }
+    if (Fs.existsSync(DatastoreCore.queryHeroSessionsDir)) {
+      for (const dbName of Fs.readdirSync(DatastoreCore.queryHeroSessionsDir)) {
+        if (!dbName.endsWith('.db')) continue;
+        const session = this.processSession(
+          dbName.replace('.db', ''),
+          Path.join(DatastoreCore.queryHeroSessionsDir, dbName),
+        );
 
         this.sessions.push(session);
       }
@@ -124,8 +137,8 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
     return this.list().filter(x => x.state === 'error');
   }
 
-  private processSession(sessionId: string): IHeroSessionsListResult {
-    const sessionDb = SessionDb.getCached(sessionId);
+  private processSession(sessionId: string, customPath?: string): IHeroSessionsListResult {
+    const sessionDb = SessionDb.getCached(sessionId, true, customPath);
     const session = sessionDb.session.get();
     // might not be loaded yet
     if (!session) return;
@@ -221,7 +234,7 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
   }
 
   private onHeroSessionClosed(entry: IHeroSessionsListResult): void {
-    const update = this.processSession(entry.heroSessionId);
+    const update = this.processSession(entry.heroSessionId, entry.dbPath);
     Object.assign(entry, update);
     entry.endTime ??= new Date();
     entry.state = 'complete';
@@ -231,7 +244,7 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
   }
 
   private onHeroSessionKeptAlive(entry: IHeroSessionsListResult): void {
-    const update = this.processSession(entry.heroSessionId);
+    const update = this.processSession(entry.heroSessionId, entry.dbPath);
     entry.state = 'kept-alive';
     Object.assign(entry, update);
     this.emit('update', [entry]);

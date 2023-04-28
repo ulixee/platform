@@ -108,7 +108,9 @@ export default new Datastore({
         name: string(),
         title: string(),
       },
-      seedlings: [{ title: 'Hello', name: 'World' }, { title: 'World', name: 'none' }]
+      onCreated() {
+        return this.insertInternal({ title: 'Hello', name: 'World' }, { title: 'World', name: 'none' })
+      }
     }),
   },
 });`,

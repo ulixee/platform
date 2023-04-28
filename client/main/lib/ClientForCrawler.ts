@@ -5,10 +5,11 @@ import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSch
 
 export default class ClientForCrawler<TCrawler extends Crawler> {
   private crawler: TCrawler;
+  private readonly readyPromise: Promise<any>;
 
   constructor(crawler: TCrawler, options?: IDatastoreBinding) {
     this.crawler = crawler;
-    this.crawler.bind(options);
+    this.readyPromise = this.crawler.bind(options).catch(() => null);
   }
 
   public crawl(inputFilter: TCrawler['schemaType']['input']): ResultIterable<ICrawlerOutputSchema> {

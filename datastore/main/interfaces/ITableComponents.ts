@@ -1,8 +1,11 @@
-export default interface ITableComponents<TSchema, TSeedlings> {
+import Table from '../lib/Table';
+
+export default interface ITableComponents<TSchema> {
   name?: string;
   description?: string;
   pricePerQuery?: number;
   schema: TSchema;
-  seedlings?: TSeedlings[];
   isPublic?: boolean;
+  onCreated?(this: Table<TSchema>): Promise<void>;
+  onVersionMigrated?(this: Table<TSchema>, previousVersion: Table<unknown>): Promise<void>;
 }

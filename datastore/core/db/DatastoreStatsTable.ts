@@ -82,7 +82,9 @@ export default class DatastoreStatsTable extends SqliteTable<IDatastoreStatsReco
   }
 
   public getByVersionHash(versionHash: string): IDatastoreStatsRecord {
-    DatastoreStatsTable.byVersionHash[versionHash] ??= this.getQuery.get(versionHash) as any ?? {
+    DatastoreStatsTable.byVersionHash[versionHash] ??= (this.getQuery.get(
+      versionHash,
+    ) as IDatastoreStatsRecord) ?? {
       lastRunTimestamp: Date.now(),
       runs: 0,
       errors: 0,

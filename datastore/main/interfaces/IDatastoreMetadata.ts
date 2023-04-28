@@ -5,7 +5,12 @@ import IDatastoreComponents from './IDatastoreComponents';
 export default interface IDatastoreMetadata
   extends Omit<
     IDatastoreComponents<any, any, any>,
-    'authenticateIdentity' | 'crawlers' | 'extractors' | 'tables'
+    | 'authenticateIdentity'
+    | 'crawlers'
+    | 'extractors'
+    | 'tables'
+    | 'onCreated'
+    | 'onVersionMigrated'
   > {
   coreVersion: string;
   extractorsByName: {
@@ -29,6 +34,6 @@ export default interface IDatastoreMetadata
       remoteTable?: string;
       remoteSource?: string;
       remoteDatastoreVersionHash?: string;
-    } & Omit<ITableComponents<any, any>, 'seedlings'>;
+    } & Omit<ITableComponents<any>, 'onCreated' | 'onVersionMigrated'>;
   };
 }

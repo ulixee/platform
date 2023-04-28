@@ -174,7 +174,10 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
 
         // lookup upstream pricing
         if (crawler.remoteCrawler) {
-          const extractorDetails = await this.lookupRemoteDatastoreCrawlerPricing(this.meta, crawler);
+          const extractorDetails = await this.lookupRemoteDatastoreCrawlerPricing(
+            this.meta,
+            crawler,
+          );
           crawlersByName[name].prices.push(...extractorDetails.priceBreakdown);
         }
       }
@@ -234,7 +237,6 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
   ): Promise<void> {
     this.meta = await this.findDatastoreMeta();
     const dbx = this.dbx;
-    dbx.createOrUpdateDatabase(this.meta.tablesByName, this.meta.tableSeedlingsByName);
 
     this.manifest.addToVersionHistory = createTemporaryVersionHash !== true;
 
@@ -332,7 +334,9 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     host: string,
     datastoreVersionHash: string,
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
-    const datastoreApiClient = new DatastoreApiClient(host, { consoleLogErrors: this.logToConsole });
+    const datastoreApiClient = new DatastoreApiClient(host, {
+      consoleLogErrors: this.logToConsole,
+    });
     try {
       return await datastoreApiClient.getMeta(datastoreVersionHash);
     } finally {

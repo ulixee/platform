@@ -22,7 +22,6 @@ export class Menubar extends EventEmitter {
   #tray?: Tray;
   #menuWindow?: BrowserWindow;
   #blurTimeout: NodeJS.Timeout | null = null; // track blur events with timeout
-  #isVisible: boolean; // track visibility
   #nsEventMonitor: unknown;
   #winMouseEvents: unknown;
   #windowManager: WindowManager;
@@ -38,7 +37,6 @@ export class Menubar extends EventEmitter {
   constructor(options: IMenubarOptions) {
     super();
     this.#options = options;
-    this.#isVisible = false;
 
     if (!app.requestSingleInstanceLock()) {
       app.quit();
@@ -82,36 +80,40 @@ export class Menubar extends EventEmitter {
       clearTimeout(this.#blurTimeout);
       this.#blurTimeout = null;
     }
-    (this.#nsEventMonitor as any)?.stop();
-    (this.#winMouseEvents as any)?.pauseMouseEvents();
-
-    this.#isVisible = false;
     try {
-      if (this.#menuWindow?.isVisible() && !this.#menuWindow?.isDestroyed()) {
+      if (!this.#menuWindow?.isDestroyed()) {
         this.#menuWindow?.hide();
       }
     } catch (error) {
       if (!String(error).includes('Object has been destroyed')) throw error;
     }
+
+    (this.#nsEventMonitor as any)?.stop();
+    (this.#winMouseEvents as any)?.pauseMouseEvents();
   }
 
   private onSecondInstance(_, argv: string[]): void {
     const argonFile = argv.find(x => x.endsWith('.arg'));
     if (argonFile) {
-      if (this.#apiManager) void this.#apiManager.onArgonFileOpened(argonFile);
-      else this.#argonFileOpen = argonFile;
+      this.handleArgonFile(argonFile);
     }
   }
 
-  private onFileOpened(e: Event, path: string): void {
-    if (!path.endsWith('.arg') && !path.endsWith('.arc')) return;
+  private handleArgonFile(path: string): void {
+    if (!path.endsWith('.arg')) return;
 
-    e.preventDefault();
     if (this.#apiManager) {
       void this.#apiManager.onArgonFileOpened(path);
     } else {
       this.#argonFileOpen = path;
     }
+  }
+
+  private onFileOpened(e: Event, path: string): void {
+    if (!path.endsWith('.arg')) return;
+
+    e.preventDefault();
+    this.handleArgonFile(path);
   }
 
   private async showMenu(trayPos?: Electron.Rectangle): Promise<void> {
@@ -131,8 +133,6 @@ export class Menubar extends EventEmitter {
     trayPositioner.alignTrayMenu(this.#menuWindow, trayPos);
     this.#menuWindow.show();
     this.listenForMouseDown();
-
-    this.#isVisible = true;
   }
 
   private async beforeQuit(): Promise<void> {
@@ -185,6 +185,7 @@ export class Menubar extends EventEmitter {
 
       this.#tray.on('click', this.clicked.bind(this));
       this.#tray.on('right-click', this.rightClicked.bind(this));
+      this.#tray.on('drop-files', this.onDropFiles.bind(this));
       this.#tray.setToolTip(this.#options.tooltip || '');
       app.dock?.hide();
 
@@ -286,7 +287,7 @@ export class Menubar extends EventEmitter {
   }
 
   private async clicked(): Promise<void> {
-    if (this.#menuWindow && this.#isVisible) {
+    if (this.#menuWindow?.isVisible()) {
       this.hideMenu();
     }
 
@@ -305,14 +306,21 @@ export class Menubar extends EventEmitter {
     // if blur was invoked clear timeout
     if (this.#blurTimeout) {
       clearInterval(this.#blurTimeout);
+      this.#blurTimeout = null;
     }
 
-    if (this.#menuWindow && this.#isVisible) {
+    if (this.#menuWindow?.isVisible()) {
       return this.hideMenu();
     }
 
     await this.showMenu(bounds);
     await this.checkForUpdates();
+  }
+
+  private onDropFiles(_, files: string[]): void {
+    for (const file of files) {
+      if (file.endsWith('.arg')) this.handleArgonFile(file);
+    }
   }
 
   private async checkForUpdates(): Promise<void> {
@@ -356,6 +364,10 @@ export class Menubar extends EventEmitter {
       }
       this.#blurTimeout = setTimeout(() => this.hideMenu(), 100);
     });
+    this.#menuWindow.on('focus', () => {
+      clearTimeout(this.#blurTimeout);
+      this.#blurTimeout = null;
+    });
 
     this.#menuWindow.setVisibleOnAllWorkspaces(true);
     this.#menuWindow.on('close', this.windowClear.bind(this));
@@ -363,7 +375,7 @@ export class Menubar extends EventEmitter {
       if (message === 'desktop:api') {
         const [api] = args;
 
-        if (api === 'mousedown' && this.#menuWindow && this.#isVisible) {
+        if (api === 'mousedown') {
           this.hideMenu();
         }
 

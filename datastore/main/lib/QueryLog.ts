@@ -1,7 +1,7 @@
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import * as Fs from 'fs';
 import * as Readline from 'readline';
-import { getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
+import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import * as Path from 'path';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
@@ -9,7 +9,7 @@ import IQueryLogEntry from '../interfaces/IQueryLogEntry';
 
 export default class QueryLog {
   public queriesById: { [id: string]: IQueryLogEntry } = {};
-  public queryLogPath = Path.join(getCacheDirectory(), 'ulixee', 'user-querylog.jsonl');
+  public queryLogPath = Path.join(getDataDirectory(), 'ulixee', 'user-querylog.jsonl');
 
   private fileWatcher: Fs.FSWatcher;
   private queryLogBytesRead = 0;

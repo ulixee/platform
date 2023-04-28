@@ -2,7 +2,6 @@ import { defineStore, storeToRefs } from 'pinia';
 import { computed, Ref, ref } from 'vue';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import type IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
-import moment from 'moment';
 import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import { Client } from '@/api/Client';
 import ICloudConnection from '@/api/ICloudConnection';
@@ -19,6 +18,7 @@ export type IDatastoresByVersion = {
     datastore: IDatastoreMeta;
     createdCredits: { credit: TCredit; filename: string; cloud: string }[];
     adminIdentity: string;
+    versions: Set<string>;
     isInstalled: boolean;
     deploymentsByCloud: { [cloud: string]: IDatastoreList[0] };
   };
@@ -119,10 +119,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
       docsUrl.search = `?${credit.creditsId}`;
     }
 
-    const left = window.screenLeft + 25;
-    const top = window.screenTop + 25;
-    const features = `top=${top},left=${left},width=${window.outerWidth},height=${window.outerHeight}`;
-    window.open(docsUrl.href, `Docs${versionHash}`, features);
+    window.open(docsUrl.href, `Docs${versionHash}`);
   }
 
   function getAdminDetails(versionHash: string, cloudName: string): Ref<string> {
@@ -180,7 +177,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
 
     await cloudsStore.connectToCloud(datastoreUrl.host, `${datastoreUrl.host}`);
 
-    const endDate = moment().add(5, 'seconds').toDate().getTime();
+    const endDate = Date.now() + 5e3;
     while (Date.now() < endDate) {
       const datastore = datastoresByVersion.value[versionHash]?.summary;
       if (datastore) return datastore;
@@ -262,6 +259,17 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     );
   }
 
+  function calculateNewAverage(
+    stat1: number,
+    count1: number,
+    stat2: number,
+    count2: number,
+  ): number {
+    const stat1Sum = stat1 * count1;
+    const stat2Sum = stat2 * count2;
+    return Math.round(stat1Sum + stat2Sum / (count1 + count2));
+  }
+
   function onDatastoreSummary(datastore: IDatastoreList[0], cloud: ICloudConnection) {
     const versionHash = datastore.versionHash;
     const cloudName = cloud.name;
@@ -270,17 +278,65 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
       summary: datastore,
       deploymentsByCloud: {},
       createdCredits: [],
+      versions: new Set(),
       isInstalled: false,
       adminIdentity: null,
     };
     userQueriesByDatastore.value[versionHash] ??= {};
-    datastoresByVersion.value[versionHash].adminIdentity ??= getDatastoreAdminIdentity(
-      versionHash,
-      cloudName,
-    );
-    datastoresByVersion.value[versionHash].deploymentsByCloud[cloud.name] = datastore;
-    datastoresByVersion.value[versionHash].isInstalled =
-      installedDatastoreVersions.has(versionHash);
+
+    const entry = datastoresByVersion.value[versionHash];
+    entry.adminIdentity ??= getDatastoreAdminIdentity(versionHash, cloudName);
+    entry.deploymentsByCloud[cloud.name] = datastore;
+    entry.isInstalled = installedDatastoreVersions.has(versionHash);
+
+    if (versionHash !== datastore.latestVersionHash) {
+      entry.versions.add(datastore.latestVersionHash);
+    }
+  }
+
+  function getAggregateVersionStats(
+    latestVersionHash: string,
+    onlyShowDeployment?: string,
+  ): IDatastoreList[0]['stats'] {
+    const stats: IDatastoreList[0]['stats'] = {} as any;
+    for (const datastoreVersion of Object.values(datastoresByVersion.value)) {
+      // Aggregate stats across all versions
+      if (datastoreVersion.summary.latestVersionHash === latestVersionHash) {
+        for (const [name, deployment] of Object.entries(datastoreVersion.deploymentsByCloud)) {
+          if (onlyShowDeployment && onlyShowDeployment !== name) continue;
+          const versionStats = deployment.stats;
+          stats.queries += versionStats.queries;
+          stats.errors += versionStats.errors;
+          stats.totalSpend += versionStats.totalSpend;
+          stats.totalCreditSpend += versionStats.totalCreditSpend;
+          stats.maxBytesPerQuery = Math.max(stats.maxBytesPerQuery, versionStats.maxBytesPerQuery);
+          stats.maxPricePerQuery = Math.max(stats.maxPricePerQuery, versionStats.maxPricePerQuery);
+          stats.maxMilliseconds = Math.max(stats.maxMilliseconds, versionStats.maxMilliseconds);
+          stats.maxPricePerQuery = Math.max(stats.maxPricePerQuery, versionStats.maxPricePerQuery);
+          stats.maxMilliseconds = Math.max(stats.maxMilliseconds, versionStats.maxMilliseconds);
+
+          stats.averageBytesPerQuery = calculateNewAverage(
+            stats.averageBytesPerQuery,
+            stats.queries,
+            versionStats.averageBytesPerQuery,
+            versionStats.queries,
+          );
+          stats.averageMilliseconds = calculateNewAverage(
+            stats.averageMilliseconds,
+            stats.queries,
+            versionStats.averageMilliseconds,
+            versionStats.queries,
+          );
+          stats.averageTotalPricePerQuery = calculateNewAverage(
+            stats.averageTotalPricePerQuery,
+            stats.queries,
+            versionStats.averageTotalPricePerQuery,
+            versionStats.queries,
+          );
+        }
+      }
+    }
+    return stats;
   }
 
   async function load() {
@@ -312,6 +368,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     createCredit,
     deploy,
     getCloudAddress,
+    getAggregateVersionStats,
     runQuery,
     getWithHash,
     installDatastore,

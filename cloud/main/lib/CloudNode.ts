@@ -74,7 +74,7 @@ export default class CloudNode {
   }
 
   public get dataDir(): string {
-    return this.router.dataDir;
+    return this.router.datastoresDir;
   }
 
   public async listen(

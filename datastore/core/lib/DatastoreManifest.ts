@@ -6,7 +6,7 @@ import IDatastoreManifest, {
 import { existsAsync, readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import * as Path from 'path';
 import UlixeeConfig from '@ulixee/commons/config';
-import { findProjectPathAsync, getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
+import { findProjectPathAsync, getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import { assert } from '@ulixee/commons/lib/utils';
 import { promises as Fs } from 'fs';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
@@ -154,7 +154,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     this.scriptHash = scriptHash;
     if (createTemporaryVersionHash) {
       const tempVersionHashPath = Path.join(
-        getCacheDirectory(),
+        getDataDirectory(),
         'ulixee',
         'datastore-temp-ids.json',
       );

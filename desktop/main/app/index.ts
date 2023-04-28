@@ -12,7 +12,7 @@ const { version } = require('./package.json');
 
 const menubar = new Menubar({
   width: 300,
-  height: 325,
+  height: 300,
   tooltip: 'Ulixee',
 });
 

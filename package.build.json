@@ -32,6 +32,32 @@
       "../unblocked/build/specification",
       "../unblocked/build/js-path",
       "../unblocked/build/real-user-agents"
+    ],
+    "nohoist": [
+      "**/babel-loader",
+      "**/electron-webpack",
+      "**/@electron",
+      "**/@electron/**",
+      "**/electron",
+      "**/electron-*",
+      "**/electron-builder",
+      "**/electron-webpack/**",
+      "**/nseventmonitor",
+      "**/global-mouse-events",
+      "**/electron-clipboard-ex",
+      "**/@ulixee/repo-tools",
+      "**/@vue/**",
+      "**/@vue/**/**",
+      "**/vue",
+      "**/vue-loader",
+      "**/vue-template-compiler",
+      "**/vue-class-component",
+      "**/@types/web",
+      "**/autoprefixer",
+      "**/postcss",
+      "**/tailwindcss",
+      "**/@nodelib",
+      "**/@nodelib/**"
     ]
   }
 }

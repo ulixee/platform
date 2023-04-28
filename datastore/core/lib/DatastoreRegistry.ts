@@ -5,7 +5,6 @@ import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import * as Path from 'path';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
-import DatastoreStorage from '@ulixee/datastore/lib/DatastoreStorage';
 import Logger from '@ulixee/commons/lib/Logger';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import DatastoresDb from '../db';
@@ -58,21 +57,19 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
 
   #datastoresDb: DatastoresDb;
   #queryLogDb: QueryLogDb;
-  #storageByPath = new Map<string, DatastoreStorage>();
   #openedManifestsByDbxPath = new Map<string, IDatastoreManifest>();
 
   constructor(readonly datastoresDir: string) {
     super();
   }
 
-  public close(): void {
+  public close(): Promise<void> {
     this.#datastoresDb?.close();
     this.#queryLogDb?.close();
-    for (const storage of this.#storageByPath.values()) {
-      storage.db.close();
-    }
     this.#openedManifestsByDbxPath.clear();
-    this.#storageByPath.clear();
+    this.#datastoresDb = null;
+    this.#queryLogDb = null;
+    return Promise.resolve();
   }
 
   public hasVersionHash(versionHash: string): boolean {
@@ -125,23 +122,11 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
       return null;
     }
 
-    const scriptPath = Path.join(versionRecord.dbxPath, 'datastore.js');
-    let manifest = this.#openedManifestsByDbxPath.get(versionRecord.dbxPath);
-
-    if (!manifest) {
-      const manifestPath = Path.join(versionRecord.dbxPath, 'datastore-manifest.json');
-      manifest = await readFileAsJson<IDatastoreManifest>(manifestPath).catch(() => null);
-      if (manifest && !DatastoreVm.doNotCacheList.has(scriptPath)) {
-        this.#openedManifestsByDbxPath.set(versionRecord.dbxPath, manifest);
-      }
+    const manifest = await this.getManifest(versionRecord.dbxPath);
+    if (!manifest && throwIfNotExists) {
+      throw new DatastoreNotFoundError('Datastore not found on Cloud.', latestVersionHash);
     }
 
-    if (!manifest) {
-      if (throwIfNotExists) {
-        throw new DatastoreNotFoundError('Datastore not found on Cloud.', latestVersionHash);
-      }
-      return null;
-    }
     const statsByItemName: IStatsByName = {};
     for (const name of [
       ...Object.keys(manifest.extractorsByName),
@@ -153,8 +138,9 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
         name,
       );
     }
+
     return {
-      path: scriptPath,
+      path: Path.join(versionRecord.dbxPath, 'datastore.js'),
       stats: this.datastoresDb.datastoreStats.getByVersionHash(versionHash),
       isStarted: versionRecord.isStarted,
       statsByItemName,
@@ -221,12 +207,19 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     );
   }
 
-  public getStorage(versionHash: string): DatastoreStorage {
-    const storagePath = this.getStoragePath(versionHash);
-    if (this.#storageByPath.has(storagePath)) return this.#storageByPath.get(storagePath);
-    const storage = new DatastoreStorage(storagePath);
-    this.#storageByPath.set(storagePath, storage);
-    return storage;
+  public async getManifest(dbxPath: string): Promise<IDatastoreManifest> {
+    const scriptPath = Path.join(dbxPath, 'datastore.js');
+    let manifest = this.#openedManifestsByDbxPath.get(dbxPath);
+    if (manifest) return manifest;
+
+    const manifestPath = Path.join(dbxPath, 'datastore-manifest.json');
+    manifest = await readFileAsJson<IDatastoreManifest>(manifestPath).catch(() => null);
+    if (manifest && !DatastoreVm.doNotCacheList.has(scriptPath)) {
+      this.#openedManifestsByDbxPath.set(dbxPath, manifest);
+    }
+    if (manifest) return manifest;
+
+    return null;
   }
 
   public getLatestVersion(hash: string): string {
@@ -237,8 +230,12 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     return this.datastoresDb.datastoreVersions.findLatestByDomain(domain);
   }
 
-  public async installManuallyUploadedDbxFiles(): Promise<void> {
-    if (!(await existsAsync(this.datastoresDir))) return;
+  public async installManuallyUploadedDbxFiles(): Promise<
+    { dbxPath: string; manifest: IDatastoreManifest }[]
+  > {
+    const installations: { dbxPath: string; manifest: IDatastoreManifest }[] = [];
+
+    if (!(await existsAsync(this.datastoresDir))) return installations;
 
     for (const filepath of await Fs.readdir(this.datastoresDir, { withFileTypes: true })) {
       const file = filepath.name;
@@ -247,9 +244,10 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
       if (!filepath.isDirectory()) {
         if (file.endsWith('.dbx.tgz')) {
           const destPath = path.replace('.dbx.tgz', '.dbx');
-          if (await existsAsync(destPath)) continue;
-          await Fs.mkdir(destPath);
-          await unpackDbxFile(path, destPath);
+          if (!(await existsAsync(destPath))) {
+            await Fs.mkdir(destPath);
+            await unpackDbxFile(path, destPath);
+          }
           path = destPath;
         } else {
           continue;
@@ -265,7 +263,39 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
         sessionId: null,
       });
 
-      await this.save(path, null, true, true);
+      try {
+        const install = await this.save(path, null, true, true);
+        if (install.didInstall) {
+          installations.push(install);
+        }
+      } catch (err) {
+        await Fs.rm(path, { recursive: true }).catch(() => null);
+        throw err;
+      }
+    }
+    return installations;
+  }
+
+  public async getPreviousVersion(
+    versionHash: string,
+  ): Promise<{ manifest: IDatastoreManifest; dbxPath: string }> {
+    const baseVersionHash = this.datastoresDb.datastoreVersions.getBaseHash(versionHash);
+    const previousVersions = this.datastoresDb.datastoreVersions
+      .getLinkedVersions(baseVersionHash)
+      .map(x => x.versionHash)
+      .filter(x => x !== versionHash);
+
+    if (previousVersions.length) {
+      previousVersions.reverse();
+      for (const previousVersion of previousVersions) {
+        const version = this.datastoresDb.datastoreVersions.getByHash(previousVersion);
+        if (version.dbxPath) {
+          const manifest = await this.getManifest(version.dbxPath);
+          if (!manifest) continue;
+
+          return { manifest, dbxPath: version.dbxPath };
+        }
+      }
     }
   }
 
@@ -275,13 +305,13 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     allowNewLinkedVersionHistory = false,
     hasServerAdminIdentity = false,
     requireAdmin = false,
-  ): Promise<{ dbxPath: string }> {
+  ): Promise<{ dbxPath: string; manifest: IDatastoreManifest; didInstall: boolean }> {
     const manifest = await readFileAsJson<IDatastoreManifest>(
       `${datastoreTmpPath}/datastore-manifest.json`,
     );
     const storedPath = this.datastoresDb.datastoreVersions.getByHash(manifest.versionHash)?.dbxPath;
     if (storedPath) {
-      return { dbxPath: storedPath };
+      return { dbxPath: storedPath, manifest, didInstall: false };
     }
 
     await DatastoreManifest.validate(manifest);
@@ -306,12 +336,6 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     }
 
     const dbxPath = this.createDbxPath(manifest);
-    const storagePath = Path.join(dbxPath, 'storage.db');
-    // make sure to close any existing db
-    this.#storageByPath.get(storagePath)?.db?.close();
-    try {
-      await Fs.unlink(storagePath);
-    } catch (e) {}
 
     if (!allowNewLinkedVersionHistory) this.checkMatchingEntrypointVersions(manifest);
 
@@ -325,35 +349,36 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     if (dbxPath !== datastoreTmpPath) {
       // remove any existing folder at dbxPath
       if (await existsAsync(dbxPath)) await Fs.rm(dbxPath, { recursive: true });
-
       await Fs.rename(datastoreTmpPath, dbxPath);
     }
 
     this.#openedManifestsByDbxPath.set(dbxPath, manifest);
     this.saveManifestMetadata(manifest, dbxPath);
 
-    this.emit('new', {
-      activity: 'uploaded',
-      datastore: await this.getByVersionHash(manifest.versionHash),
-    });
-
-    return { dbxPath };
+    return { dbxPath, manifest, didInstall: true };
   }
 
-  public async startAtPath(dbxPath: string): Promise<void> {
+  public async publishDatastore(
+    versionHash: string,
+    activity: 'uploaded' | 'started' = 'uploaded',
+  ): Promise<void> {
+    this.emit('new', {
+      activity,
+      datastore: await this.getByVersionHash(versionHash),
+    });
+  }
+
+  public async startAtPath(dbxPath: string): Promise<IDatastoreManifest> {
+    const scriptPath = Path.join(dbxPath, 'datastore.js');
+    if (!(await existsAsync(scriptPath))) throw new Error("This script entrypoint doesn't exist");
+
     const manifest = await readFileAsJson<IDatastoreManifest>(`${dbxPath}/datastore-manifest.json`);
     this.checkDatastoreCoreInstalled(manifest.coreVersion);
 
     this.saveManifestMetadata(manifest, dbxPath);
-    const scriptPath = Path.join(dbxPath, 'datastore.js');
-    const storagePath = Path.join(dbxPath, 'storage.db');
-    this.#storageByPath.get(storagePath)?.db?.close();
-    this.#storageByPath.delete(storagePath);
+
     DatastoreVm.doNotCacheList.add(scriptPath);
-    this.emit('new', {
-      activity: 'started',
-      datastore: await this.getByVersionHash(manifest.versionHash),
-    });
+    return manifest;
   }
 
   public stopAtPath(dbxPath: string): void {
@@ -415,7 +440,7 @@ Please try to re-upload after testing with the version available on this Cloud.`
       manifest.scriptEntrypoint,
     );
     if (versionWithEntrypoint) {
-      const fullVersionHistory = this.datastoresDb.datastoreVersions.getPreviousVersions(
+      const fullVersionHistory = this.datastoresDb.datastoreVersions.getLinkedVersions(
         versionWithEntrypoint.baseVersionHash,
       );
       throw new MissingLinkedScriptVersionsError(
@@ -429,7 +454,7 @@ Please try to re-upload after testing with the version available on this Cloud.`
     const versions = manifest.linkedVersions;
     if (!versions.length) return;
 
-    const storedPreviousVersions = this.datastoresDb.datastoreVersions.getPreviousVersions(
+    const storedPreviousVersions = this.datastoresDb.datastoreVersions.getLinkedVersions(
       versions[versions.length - 1]?.versionHash,
     );
 
@@ -450,12 +475,6 @@ Please try to re-upload after testing with the version available on this Cloud.`
         fullVersionHistory,
       );
     }
-  }
-
-  private getStoragePath(versionHash: string): string {
-    const dbxPath = this.datastoresDb.datastoreVersions.getByHash(versionHash)?.dbxPath;
-    if (!dbxPath) return null;
-    return Path.join(dbxPath, 'storage.db');
   }
 
   private createDbxPath(manifest: IDatastoreManifest): string {

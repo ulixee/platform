@@ -12,8 +12,6 @@ const dirsNotToInclude = new Set([
   'end-to-end',
   'website',
   'chrome-extension',
-  'testing',
-  'datastore/testing',
   'desktop/main',
   'desktop/ui',
   'desktop/chrome-extension',
@@ -55,8 +53,13 @@ function copyDir(baseDir: string, outDir: string): void {
 
 const buildDir = process.env.SOURCE_DIR ?? 'build';
 
+if (buildDir !== 'build') {
+  dirsNotToInclude.add('testing');
+  dirsNotToInclude.add('datastore/testing');
+}
+
 copyDir(`${baseBuild}/${buildDir}`, dest);
-if (process.env.NODE_ENV !== 'production') {
+if (buildDir === 'build') {
   copyDir(`${baseBuild}/hero/${buildDir}`, `${dest}/hero`);
   copyDir(
     `${baseBuild}/../unblocked/browser-emulator-builder/data`,

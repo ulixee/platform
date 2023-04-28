@@ -16,10 +16,12 @@ export default new Datastore({
         title: string(),
         success: boolean(),
       },
-      seedlings: [
-        { title: 'Hello', success: true },
-        { title: 'World', success: false },
-      ],
+      async onCreated(): Promise<void> {
+        await this.insertInternal(
+          { title: 'Hello', success: true },
+          { title: 'World', success: false },
+        );
+      },
     }),
   },
 });

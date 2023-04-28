@@ -5,6 +5,7 @@ export default interface IDatastoreCoreConfigureOptions {
   serverEnvironment: 'development' | 'production';
   maxRuntimeMs: number;
   datastoresDir: string;
+  queryHeroSessionsDir: string;
   datastoresTmpDir: string;
   waitForDatastoreCompletionOnShutdown: boolean;
   paymentAddress: string;

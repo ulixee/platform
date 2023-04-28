@@ -6,7 +6,7 @@ import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
   constructor(db: SqliteDatabase) {
     super(
-      db,
+      db as any,
       'QueryLog',
       [
         ['id', 'TEXT', 'NOT NULL PRIMARY KEY'],

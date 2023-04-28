@@ -15,7 +15,7 @@
       </nav>
     </div>
 
-    <div class="isolate mb-5 mt-10 border-b border-gray-200 pb-5">
+    <div class="isolate mt-10 mb-5 flex flex-row justify-center border-b border-gray-200 pb-5">
       <div
         class="relative mx-auto flex w-1/2 flex-row items-center justify-center rounded-full shadow"
       >
@@ -69,6 +69,29 @@
           />
         </button>
       </div>
+      <SwitchGroup as="div" class="relative -ml-20 flex flex-shrink justify-end gap-3 pt-2">
+        <SwitchLabel
+          as="span"
+          class="flex-shrink text-sm font-medium leading-6 text-gray-900"
+          passive
+          >Latest Versions Only</SwitchLabel
+        >
+        <Switch
+          v-model="showLatest"
+          :class="[
+            showLatest ? 'bg-fuchsia-800' : 'bg-gray-200',
+            'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-fuchsia-800 focus:ring-offset-2',
+          ]"
+        >
+          <span
+            aria-hidden="true"
+            :class="[
+              showLatest ? 'translate-x-5' : 'translate-x-0',
+              'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+            ]"
+          />
+        </Switch>
+      </SwitchGroup>
     </div>
 
     <div class="mt-5">
@@ -78,6 +101,7 @@
           v-for="datastore in datastores"
           :key="datastore.versionHash"
           :datastore="datastore"
+          :includeVersion="!showLatest"
         />
       </ul>
     </div>
@@ -93,6 +117,7 @@ import DatastoreCard from '@/pages/desktop/components/DatastoreCard.vue';
 import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
 import { IDatastoreList, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 import { storeToRefs } from 'pinia';
+import { Switch, SwitchDescription, SwitchGroup, SwitchLabel } from '@headlessui/vue';
 
 export default Vue.defineComponent({
   name: 'Datastores',
@@ -103,18 +128,31 @@ export default Vue.defineComponent({
     HeartIcon,
     ChartBarIcon,
     ChevronRightIcon,
+    Switch,
+    SwitchDescription,
+    SwitchGroup,
+    SwitchLabel,
   },
   setup() {
     const datastoresStore = useDatastoreStore();
     const cloudsStore = useCloudsStore();
     const { datastoresByVersion } = storeToRefs(datastoresStore);
     const { getCloudName, getAdmin } = cloudsStore;
+    const showLatest = Vue.ref(true);
 
     const active = Vue.ref<'local' | 'admin' | 'installed'>('local');
 
     const datastores = computed(() => {
       const list: IDatastoreList = [];
       for (const entry of Object.values(datastoresByVersion.value)) {
+        // don't show older versions
+        if (
+          showLatest.value &&
+          entry.summary.latestVersionHash !== entry.summary.versionHash &&
+          datastoresByVersion.value[entry.summary.latestVersionHash]
+        ) {
+          continue;
+        }
         if (active.value === 'local') {
           const localEntry = entry.deploymentsByCloud.local;
           if (localEntry) {
@@ -145,6 +183,7 @@ export default Vue.defineComponent({
       argonActive: Vue.ref(false),
       refreshing: Vue.ref(false),
       getCloudName,
+      showLatest,
     };
   },
   emits: [],

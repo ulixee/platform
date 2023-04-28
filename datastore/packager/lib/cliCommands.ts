@@ -121,6 +121,7 @@ async function upload(
     });
     console.log('Your Datastore has been uploaded!');
   } catch (error) {
+    console.log(error)
     if (error.code === 'InvalidScriptVersionHistoryError' && error.versionHistory) {
       handleInvalidScriptVersionHistory(manifest, dbx, error.versionHistory, cloudHost);
     } else if (error.code === 'MissingLinkedScriptVersionsError' && error.previousVersions) {
@@ -180,7 +181,7 @@ export async function startDatastore(
   if (!host.includes('://')) host = `ulx://${host}`;
 
   const client = new DatastoreApiClient(host);
-  await client.startDatastore(dbx.path);
+  await client.startDatastore(dbx.path, options.watch);
   const dbxPath = dbx.path;
   ShutdownHandler.register(() => {
     console.log('removing dir', dbxPath);

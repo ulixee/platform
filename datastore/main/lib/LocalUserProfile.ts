@@ -1,5 +1,5 @@
 import * as Fs from 'fs';
-import { getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
+import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import Address from '@ulixee/crypto/lib/Address';
 import * as Path from 'path';
 import { safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
@@ -8,7 +8,7 @@ import Identity from '@ulixee/crypto/lib/Identity';
 import ILocalUserProfile from '../interfaces/ILocalUserProfile';
 
 export default class LocalUserProfile {
-  public static path = Path.join(getCacheDirectory(), 'ulixee', 'user-profile.json');
+  public static path = Path.join(getDataDirectory(), 'ulixee', 'user-profile.json');
   public clouds: (ILocalUserProfile['clouds'][0] & { adminIdentity?: string })[] = [];
   public installedDatastores: ILocalUserProfile['installedDatastores'] = [];
   public datastoreAdminIdentities: (ILocalUserProfile['datastoreAdminIdentities'][0] & {
@@ -93,13 +93,13 @@ export default class LocalUserProfile {
   }
 
   public async createDefaultArgonAddress(): Promise<void> {
-    const addressPath = Path.join(getCacheDirectory(), 'ulixee', 'addresses', 'UlixeeAddress.json');
+    const addressPath = Path.join(getDataDirectory(), 'ulixee', 'addresses', 'UlixeeAddress.json');
     // eslint-disable-next-line no-console
     console.log(
       'Creating a Default Ulixee Argon Address. `@ulixee/crypto address UU "%s"`',
       addressPath,
     );
-    await CryptoCli().parseAsync(['address', 'UU', addressPath, '-q'], { from: 'user' });
+    await CryptoCli().parseAsync(['address', '-q', 'UU', addressPath], { from: 'user' });
     this.defaultAddressPath = addressPath;
     await this.save();
   }
@@ -107,7 +107,7 @@ export default class LocalUserProfile {
   public async createDefaultAdminIdentity(): Promise<string> {
     const identity = await Identity.create();
     this.defaultAdminIdentityPath = Path.join(
-      getCacheDirectory(),
+      getDataDirectory(),
       'ulixee',
       'identities',
       'adminIdentity.pem',

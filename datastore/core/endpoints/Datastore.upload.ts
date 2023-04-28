@@ -7,7 +7,7 @@ import { unpackDbx } from '../lib/dbxUtils';
 
 export default new DatastoreApiHandler('Datastore.upload', {
   async handler(request, context): Promise<{ success: boolean }> {
-    const { workTracker, datastoreRegistry, configuration } = context;
+    const { workTracker, datastoreRegistry, storageEngineRegistry, configuration } = context;
     const { compressedDatastore, allowNewLinkedVersionHistory, adminIdentity, adminSignature } =
       request;
 
@@ -32,13 +32,21 @@ export default new DatastoreApiHandler('Datastore.upload', {
         const tmpDir = await Fs.mkdtemp(`${configuration.datastoresTmpDir}/`);
         try {
           await unpackDbx(compressedDatastore, tmpDir);
-          await datastoreRegistry.save(
+          const { manifest, dbxPath, didInstall } = await datastoreRegistry.save(
             tmpDir,
             adminIdentity,
             allowNewLinkedVersionHistory,
             hasServerAdminIdentity,
             configuration.requireDatastoreAdminIdentities,
           );
+          if (didInstall) {
+            const previousVersion = await datastoreRegistry.getPreviousVersion(
+              manifest.versionHash,
+            );
+            await storageEngineRegistry.create(dbxPath, manifest, previousVersion);
+
+            await datastoreRegistry.publishDatastore(manifest.versionHash, 'uploaded');
+          }
         } finally {
           // remove tmp dir in case of errors
           await Fs.rm(tmpDir, { recursive: true }).catch(() => null);

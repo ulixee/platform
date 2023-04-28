@@ -43,6 +43,14 @@ export default class Datastore<
     return this.#datastoreInternal.components.authenticateIdentity;
   }
 
+  public get onCreated(): TComponents['onCreated'] {
+    return this.#datastoreInternal.components.onCreated;
+  }
+
+  public get onVersionMigrated(): TComponents['onVersionMigrated'] {
+    return this.#datastoreInternal.components.onVersionMigrated;
+  }
+
   constructor(
     components: TComponents,
     datastoreInternal?: DatastoreInternal<TTable, TExtractor, TCrawler, TComponents>,
@@ -59,7 +67,7 @@ export default class Datastore<
     return this.#datastoreInternal.queryInternal(sql, boundValues, queryId, callbacks);
   }
 
-  public bind(config: IDatastoreBinding): DatastoreInternal {
+  public bind(config: IDatastoreBinding): Promise<DatastoreInternal> {
     return this.#datastoreInternal.bind(config);
   }
 }

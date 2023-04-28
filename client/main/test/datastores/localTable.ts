@@ -1,5 +1,5 @@
 import { Table } from '@ulixee/datastore';
-import { bigint, boolean, date, string } from '@ulixee/schema';
+import { bigint, date, string } from '@ulixee/schema';
 
 export default new Table({
   schema: {
@@ -8,8 +8,10 @@ export default new Table({
     birthdate: date({ optional: true }),
     commits: bigint({ optional: true }),
   },
-  seedlings: [
-    { firstName: 'Caleb', lastName: 'Clark', birthdate: new Date('1982/09/30') },
-    { firstName: 'Blake', lastName: 'Byrnes', commits: 1n },
-  ],
+  async onCreated(): Promise<void> {
+    await this.insertInternal(
+      { firstName: 'Caleb', lastName: 'Clark', birthdate: new Date('1982/09/30') },
+      { firstName: 'Blake', lastName: 'Byrnes', commits: 1n },
+    );
+  },
 });

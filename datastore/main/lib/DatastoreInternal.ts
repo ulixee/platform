@@ -2,7 +2,6 @@ import ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { IDatastoreApis } from '@ulixee/platform-specification/datastore';
 import { IApiSpec } from '@ulixee/net/interfaces/IApiHandlers';
-import { Database as SqliteDatabase } from 'better-sqlite3';
 import IUnixTime from '@ulixee/net/interfaces/IUnixTime';
 import { ISchemaAny } from '@ulixee/schema';
 import { SqlParser } from '@ulixee/sql-engine';
@@ -21,8 +20,7 @@ import type PassthroughExtractor from './PassthroughExtractor';
 import PassthroughTable, { IPassthroughQueryRunOptions } from './PassthroughTable';
 import CreditsTable from './CreditsTable';
 import DatastoreApiClient from './DatastoreApiClient';
-import DatastoreStorage from './DatastoreStorage';
-import SqlQuery from './SqlQuery';
+import StorageEngine from './StorageEngine';
 import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
 
 const pkg = require('../package.json');
@@ -42,7 +40,7 @@ export default class DatastoreInternal<
   #connectionToCore: ConnectionToDatastoreCore;
   #isClosingPromise: Promise<void>;
 
-  public storage: DatastoreStorage;
+  public storageEngine: StorageEngine;
   public manifest: IDatastoreManifest;
   public readonly metadata: IDatastoreMetadata;
   public instanceId: string;
@@ -52,10 +50,6 @@ export default class DatastoreInternal<
   public readonly tables: TTable = {} as any;
   public readonly crawlers: TCrawler = {} as any;
   public readonly affiliateId: string;
-
-  public get db(): SqliteDatabase {
-    return this.storage.db;
-  }
 
   public get remoteDatastores(): TComponents['remoteDatastores'] {
     return this.components.remoteDatastores;
@@ -74,6 +68,14 @@ export default class DatastoreInternal<
 
   public set connectionToCore(connectionToCore: ConnectionToDatastoreCore) {
     this.#connectionToCore = connectionToCore;
+  }
+
+  public get onCreated(): TComponents['onCreated'] {
+    return this.components.onCreated;
+  }
+
+  public get onVersionMigrated(): TComponents['onVersionMigrated'] {
+    return this.components.onVersionMigrated;
   }
 
   constructor(components: TComponents) {
@@ -110,11 +112,15 @@ export default class DatastoreInternal<
     this.metadata = this.createMetadata();
   }
 
-  public bind(config: IDatastoreBinding): DatastoreInternal {
-    const { manifest, datastoreStorage, connectionToCore, apiClientLoader } = config ?? {};
+  public async bind(config: IDatastoreBinding): Promise<DatastoreInternal> {
+    const { manifest, storageEngine, connectionToCore, apiClientLoader } = config ?? {};
     this.manifest = manifest;
-    this.storage = datastoreStorage ?? new DatastoreStorage();
-    this.storage.open(this);
+    this.storageEngine = storageEngine;
+    if (!this.storageEngine) {
+      this.storageEngine = new StorageEngine();
+      await this.storageEngine.create(this as any);
+    }
+    this.storageEngine.bind(this);
     this.connectionToCore = connectionToCore;
     if (apiClientLoader) this.createApiClient = apiClientLoader;
     return this;
@@ -144,7 +150,9 @@ export default class DatastoreInternal<
       if (extractor.schema) inputSchemas[key] = extractor.schema.input;
     }
     const inputByFunctionName = sqlParser.extractFunctionCallInputs(inputSchemas, boundValues);
-    const outputByFunctionName: { [name: string]: any[] } = {};
+    const virtualEntitiesByName: {
+      [name: string]: { records: Record<string, any>[]; input?: Record<string, any> };
+    } = {};
 
     const functionCallsById = Object.keys(inputByFunctionName).map((x, i) => {
       return {
@@ -159,9 +167,10 @@ export default class DatastoreInternal<
 
     for (const { name, id } of functionCallsById) {
       const input = inputByFunctionName[name];
+      virtualEntitiesByName[name] = { input, records: [] };
       const func = this.extractors[name] ?? this.crawlers[name];
       callbacks.onFunction ??= (_id, _name, options, run) => run(options);
-      outputByFunctionName[name] = await callbacks.onFunction(
+      virtualEntitiesByName[name].records = await callbacks.onFunction(
         id,
         name,
         { input, id: queryId },
@@ -169,13 +178,14 @@ export default class DatastoreInternal<
       );
     }
 
-    const recordsByVirtualTableName: { [name: string]: Record<string, any>[] } = {};
     for (const tableName of sqlParser.tableNames) {
-      if (!this.storage.isVirtualTable(tableName)) continue;
+      if (!this.storageEngine.isVirtualTable(tableName)) continue;
+
+      virtualEntitiesByName[tableName] = { records: [] };
 
       const sqlInputs = sqlParser.extractTableQuery(tableName, boundValues);
       callbacks.onPassthroughTable ??= (_, options, run) => run(options);
-      recordsByVirtualTableName[tableName] = await callbacks.onPassthroughTable(
+      virtualEntitiesByName[tableName].records = await callbacks.onPassthroughTable(
         tableName,
         {
           id: queryId,
@@ -184,27 +194,7 @@ export default class DatastoreInternal<
       );
     }
 
-    const db = this.db;
-    sql = sqlParser.toSql();
-    const queryBoundValues = sqlParser.convertToBoundValuesSqliteMap(boundValues);
-
-    if (sqlParser.isInsert() || sqlParser.isUpdate() || sqlParser.isDelete()) {
-      if (sqlParser.hasReturn()) {
-        return db.prepare(sql).get(queryBoundValues) as any;
-      }
-      const result = db.prepare(sql).run(queryBoundValues);
-      return { changes: result?.changes } as any;
-    }
-
-    if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
-
-    const sqlQuery = new SqlQuery(sqlParser, this.storage);
-    return sqlQuery.execute(
-      inputByFunctionName,
-      outputByFunctionName,
-      recordsByVirtualTableName,
-      queryBoundValues,
-    );
+    return await this.storageEngine.query(sqlParser, boundValues, virtualEntitiesByName);
   }
 
   public createApiClient(host: string): DatastoreApiClient {
@@ -344,7 +334,7 @@ export default class DatastoreInternal<
 
 export interface IDatastoreBinding {
   connectionToCore?: ConnectionToDatastoreCore;
-  datastoreStorage?: DatastoreStorage;
+  storageEngine?: StorageEngine;
   manifest?: IDatastoreManifest;
   apiClientLoader?: (url: string) => DatastoreApiClient;
 }

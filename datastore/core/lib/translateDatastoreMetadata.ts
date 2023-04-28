@@ -16,6 +16,7 @@ export default async function translateDatastoreMetadata(
     scriptEntrypoint: datastore.scriptEntrypoint,
     versionHash: datastore.versionHash,
     latestVersionHash: datastore.latestVersionHash,
+    versionTimestamp: new Date(datastore.versionTimestamp),
     schemaInterface: datastore.schemaInterface,
     stats: translateStats(datastore.stats),
     crawlersByName: {},

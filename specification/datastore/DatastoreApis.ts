@@ -68,6 +68,7 @@ export const DatastoreApiSchemas = {
   'Datastore.start': {
     args: z.object({
       dbxPath: z.string().describe('Path to a local file system Database path.'),
+      watch: z.boolean().describe('Whether to watch for updates'),
     }),
     result: z.object({
       success: z.boolean(),
@@ -141,6 +142,7 @@ export const DatastoreApiSchemas = {
         .describe('Only relevant in development mode - is this Datastore started.'),
       scriptEntrypoint: z.string(),
       versionHash: datastoreVersionHashValidation,
+      versionTimestamp: z.date(),
       latestVersionHash: datastoreVersionHashValidation.describe(
         'The latest version hash of this datastore',
       ),
@@ -282,6 +284,7 @@ export const DatastoreApiSchemas = {
             .describe('Only relevant in development mode - is this Datastore started.'),
           scriptEntrypoint: z.string(),
           versionHash: datastoreVersionHashValidation,
+          versionTimestamp: z.date(),
           domain: z
             .string()
             .optional()
