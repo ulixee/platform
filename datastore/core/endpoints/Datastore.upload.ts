@@ -7,9 +7,18 @@ import { unpackDbx } from '../lib/dbxUtils';
 
 export default new DatastoreApiHandler('Datastore.upload', {
   async handler(request, context): Promise<{ success: boolean }> {
-    const { workTracker, datastoreRegistry, storageEngineRegistry, configuration } = context;
+    const { workTracker, datastoreRegistry, storageEngineRegistry, configuration, cluster, vm } =
+      context;
     const { compressedDatastore, allowNewLinkedVersionHistory, adminIdentity, adminSignature } =
       request;
+
+    // if there's a cluster storage engine, we need to delegate this call there
+    if (cluster.serviceAddresses?.storageEngine) {
+      const storageEngineHost = context.datastoreApiClients.get(
+        cluster.serviceAddresses.storageEngine.host,
+      );
+      return await storageEngineHost.request('Datastore.upload', request);
+    }
 
     let hasServerAdminIdentity = false;
     if (configuration.cloudAdminIdentities.length) {
@@ -43,7 +52,7 @@ export default new DatastoreApiHandler('Datastore.upload', {
             const previousVersion = await datastoreRegistry.getPreviousVersion(
               manifest.versionHash,
             );
-            await storageEngineRegistry.create(dbxPath, manifest, previousVersion);
+            await storageEngineRegistry.create(vm, dbxPath, manifest, previousVersion);
 
             await datastoreRegistry.publishDatastore(manifest.versionHash, 'uploaded');
           }

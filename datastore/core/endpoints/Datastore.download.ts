@@ -40,7 +40,7 @@ export default new DatastoreApiHandler('Datastore.download', {
     const datastore = await datastoreRegistry.getByVersionHash(versionHash);
 
     return {
-      compressedDatastore: await packDbx(Path.dirname(datastore.path)),
+      compressedDatastore: await packDbx(Path.dirname(datastore.entrypointPath)),
     };
   },
 });

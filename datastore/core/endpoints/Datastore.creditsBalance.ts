@@ -1,7 +1,6 @@
 import CreditsTable from '@ulixee/datastore/lib/CreditsTable';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
-import DatastoreVm from '../lib/DatastoreVm';
 
 export default new DatastoreApiHandler('Datastore.creditsBalance', {
   async handler(
@@ -11,8 +10,12 @@ export default new DatastoreApiHandler('Datastore.creditsBalance', {
     const datastoreVersion = await context.datastoreRegistry.getByVersionHash(
       request.datastoreVersionHash,
     );
-    const storage = context.storageEngineRegistry.get(request.datastoreVersionHash);
-    const datastore = await DatastoreVm.open(datastoreVersion.path, storage, datastoreVersion);
+    const storage = context.storageEngineRegistry.get(datastoreVersion);
+    const datastore = await context.vm.open(
+      datastoreVersion.entrypointPath,
+      storage,
+      datastoreVersion,
+    );
     const credits = await datastore.tables[CreditsTable.tableName].get(request.creditId);
     return { balance: credits?.remainingCredits ?? 0, issuedCredits: credits?.issuedCredits ?? 0 };
   },

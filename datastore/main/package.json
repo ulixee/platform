@@ -13,7 +13,7 @@
     "./package.json": "./package.json",
     "./lib/*": "./lib/*.js",
     "./cli/*": "./cli/*.js",
-    "./sql-connections/*": "./sql-connections/*.js",
+    "./storage-engines/*": "./storage-engines/*.js",
     "./connections/*": "./connections/*.js",
     "./interfaces/*": "./interfaces/*",
     "./types/*": "./types/*"

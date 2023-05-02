@@ -2,14 +2,10 @@ import Database = require('better-sqlite3');
 import { Database as SqliteDatabase } from 'better-sqlite3';
 import * as Fs from 'fs';
 import DatastoreVersionsTable from './DatastoreVersionsTable';
-import DatastoreItemStatsTable from './DatastoreItemStatsTable';
-import DatastoreStatsTable from './DatastoreStatsTable';
 import env from '../env';
 
 export default class DatastoresDb {
-  public readonly datastoreStats: DatastoreStatsTable;
-  public readonly datastoreItemStats: DatastoreItemStatsTable;
-  public readonly datastoreVersions: DatastoreVersionsTable;
+  public readonly versions: DatastoreVersionsTable;
 
   private db: SqliteDatabase;
 
@@ -21,9 +17,7 @@ export default class DatastoresDb {
       this.db.pragma('journal_mode = WAL');
     }
 
-    this.datastoreStats = new DatastoreStatsTable(this.db);
-    this.datastoreItemStats = new DatastoreItemStatsTable(this.db);
-    this.datastoreVersions = new DatastoreVersionsTable(this.db);
+    this.versions = new DatastoreVersionsTable(this.db);
   }
 
   public close(): void {

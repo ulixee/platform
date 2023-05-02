@@ -168,20 +168,20 @@ export default class SessionController extends TypedEventEmitter<{
 
     this.selectorRecommendations = new SelectorRecommendations(this.scriptInvocationMeta);
 
-    if (this.scriptInvocationMeta.entrypoint.endsWith('.ts')) {
-      this.scriptEntrypointTs = this.scriptInvocationMeta.entrypoint;
-    }
     if (this.options.input) {
       this.inputBytes = Buffer.byteLength(JSON.stringify(this.options.input));
     }
 
     this.sourceCodeTimeline = new SourceCodeTimeline(this.scriptInvocationMeta.entrypoint);
+    if (this.sourceCodeTimeline.entrypoint.endsWith('.ts') || this.scriptInvocationMeta.entrypoint.endsWith('.ts')) {
+      this.scriptEntrypointTs = this.sourceCodeTimeline.entrypoint;
+    }
 
     const sourceCode = this.sourceCodeTimeline;
     this.events.on(sourceCode, 'command', this.sendApiEvent.bind(this, 'Command.updated'));
     this.events.on(sourceCode, 'source', this.sendApiEvent.bind(this, 'SourceCode.updated'));
 
-    if (this.sourceCodeTimeline.scriptExists) {
+    if (Fs.existsSync(this.sourceCodeTimeline.entrypoint)) {
       this.scriptLastModifiedTime = Fs.statSync(this.scriptInvocationMeta.entrypoint)?.mtimeMs;
       this.watchHandle = Fs.watch(
         this.scriptInvocationMeta.entrypoint,

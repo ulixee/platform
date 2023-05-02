@@ -89,7 +89,7 @@ test('should be able to upload and retrieve the datastore', async () => {
 
   const uploaded = await registry.getByVersionHash(versionHash);
   expect(uploaded).toBeTruthy();
-  expect(readFileSync(uploaded.path, 'utf8')).toBe(script);
+  expect(readFileSync(uploaded.entrypointPath, 'utf8')).toBe(script);
 });
 
 test('should allow a user to override updating with no history', async () => {
@@ -250,7 +250,7 @@ test('should provide a newer version hash if old script not available', async ()
   const registry = new DatastoreRegistry(storageDir);
   Helpers.needsClosing.push(registry);
   // @ts-ignore
-  registry.datastoresDb.datastoreVersions.save(
+  registry.datastoresDb.versions.save(
     'maybe-there',
     './new-version.ts',
     Date.now(),

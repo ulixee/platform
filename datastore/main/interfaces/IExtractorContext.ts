@@ -7,6 +7,7 @@ import Extractor from '../lib/Extractor';
 import Table from '../lib/Table';
 import ResultIterable from '../lib/ResultIterable';
 import ICrawlerOutputSchema from './ICrawlerOutputSchema';
+import { TQueryCallMeta } from './IStorageEngine';
 
 export default interface IExtractorContext<TSchema extends IExtractorSchema> {
   input?: ExtractSchemaType<TSchema['input']>;
@@ -28,6 +29,6 @@ export default interface IExtractorContext<TSchema extends IExtractorSchema> {
     options?: T['runArgsType'],
   ): ResultIterable<ExtractSchemaType<T['schema']['output']>>;
   // TODO: add table options typing
-  fetch<T extends Table>(table: T, options?: any): ResultIterable<ExtractSchemaType<T['schema']>>;
-  query<TResult>(sql: string, boundValues: any[]): Promise<TResult>;
+  fetch<T extends Table>(table: T, options?: TQueryCallMeta): ResultIterable<ExtractSchemaType<T['schema']>>;
+  query<TResult>(sql: string, boundValues: any[], options: TQueryCallMeta): Promise<TResult>;
 }

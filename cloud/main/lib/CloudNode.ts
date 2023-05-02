@@ -21,6 +21,8 @@ export type IHttpHandleFn = (
 ) => Promise<boolean | void> | void;
 type IWsHandleFn = (ws: WebSocket, request: Http.IncomingMessage, params: string[]) => void;
 
+const isTestEnv = process.env.NODE_ENV === 'test';
+
 export default class CloudNode {
   public readonly wsServer: WebSocket.Server;
   public readonly router: CoreRouter;
@@ -54,13 +56,13 @@ export default class CloudNode {
   private readonly httpRoutes: [url: RegExp | string, method: string, handler: IHttpHandleFn][];
   private readonly wsRoutes: [RegExp | string, IWsHandleFn][] = [];
 
-  constructor(addressHost = 'localhost', readonly shouldShutdownOnSignals = true) {
+  constructor(addressHost?: string, readonly shouldShutdownOnSignals = true) {
     this.httpServer = new Http.Server();
     bindFunctions(this);
     this.httpServer.on('error', this.onHttpError);
     this.httpServer.on('request', this.handleHttpRequest);
     this.httpServer.on('connection', this.handleHttpConnection);
-    this.addressHost = addressHost;
+    this.addressHost = addressHost ?? 'localhost';
     this.wsServer = new WebSocket.Server({
       server: this.httpServer,
       perMessageDeflate: { threshold: 500, serverNoContextTakeover: false },
@@ -79,13 +81,13 @@ export default class CloudNode {
 
   public async listen(
     options?: ListenOptions,
-    shouldAutoRouteToHost = process.env.NODE_ENV !== 'test',
+    shouldAutoRouteToHost = !isTestEnv,
   ): Promise<AddressInfo> {
     if (this.listeningPromise.isResolved) return this.listeningPromise.promise;
 
     const listenOptions = { ...(options ?? { port: 0 }) };
 
-    if (!listenOptions.port) {
+    if (!listenOptions.port && !isTestEnv) {
       const is1818InUse = await isPortInUse(1818);
       if (!is1818InUse) listenOptions.port = 1818;
     }

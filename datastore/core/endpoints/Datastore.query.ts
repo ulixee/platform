@@ -1,103 +1,113 @@
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreCore from '../index';
 import PaymentProcessor from '../lib/PaymentProcessor';
-import DatastoreVm from '../lib/DatastoreVm';
 import { validateAuthentication, validateFunctionCoreVersions } from '../lib/datastoreUtils';
 
 export default new DatastoreApiHandler('Datastore.query', {
   async handler(request, context) {
     request.boundValues ??= [];
+    const { id: queryId, affiliateId, payment, authentication, versionHash } = request;
 
     const startTime = Date.now();
-    const manifestWithStats = await context.datastoreRegistry.getByVersionHash(request.versionHash);
+    const manifestWithRuntime = await context.datastoreRegistry.getByVersionHash(versionHash);
 
-    const storage = context.storageEngineRegistry.get(request.versionHash);
+    const storage = context.storageEngineRegistry.get(manifestWithRuntime);
 
-    const datastore = await DatastoreVm.open(manifestWithStats.path, storage, manifestWithStats);
+    const datastore = await context.vm.open(manifestWithRuntime.entrypointPath, storage, manifestWithRuntime);
 
-    await validateAuthentication(datastore, request.payment, request.authentication);
+    await validateAuthentication(datastore, payment, authentication);
 
-    const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
+    const paymentProcessor = new PaymentProcessor(payment, datastore, context);
 
     const heroSessionIds: string[] = [];
 
     const finalResult = await datastore
-      .queryInternal(request.sql, request.boundValues, request.id, {
-        async beforeAll({ sqlParser, functionCallsById }) {
-          if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
-
-          for (const name of sqlParser.tableNames) {
-            const table = datastore.tables[name];
-            if (!table.isPublic) throw new Error(`Table ${name} is not publicly accessible.`);
-          }
-
-          await paymentProcessor.createHold(
-            manifestWithStats,
-            functionCallsById,
-            request.pricingPreferences,
-          );
+      .queryInternal(
+        request.sql,
+        request.boundValues,
+        {
+          versionHash,
+          id: queryId,
+          payment,
+          authentication,
         },
-        async onFunction(id, name, options, run) {
-          const runStart = Date.now();
-          validateFunctionCoreVersions(manifestWithStats, name, context);
+        {
+          async beforeAll({ sqlParser, functionCallsById }) {
+            if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
 
-          Object.assign(options, {
-            payment: request.payment,
-            authentication: request.authentication,
-            affiliateId: request.affiliateId,
-            versionHash: request.versionHash,
-          });
-          options.trackMetadata = (metaName, metaValue) => {
-            if (metaName === 'heroSessionId') {
-              if (!heroSessionIds.includes(metaValue)) heroSessionIds.push(metaValue);
+            for (const name of sqlParser.tableNames) {
+              const table = datastore.tables[name];
+              if (!table.isPublic) throw new Error(`Table ${name} is not publicly accessible.`);
             }
-          };
-          for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
-            if (plugin.beforeRunExtractor)
-              await plugin.beforeRunExtractor(options, {
-                scriptEntrypoint: manifestWithStats.path,
-                functionName: name,
-              });
-          }
 
-          let runError: Error;
-          let outputs: any;
-          let bytes = 0;
-          let microgons = 0;
-          try {
-            outputs = await context.workTracker.trackRun(run(options));
-            // release the hold
-            bytes = PaymentProcessor.getOfficialBytes(outputs);
-            microgons = paymentProcessor.releaseLocalFunctionHold(id, bytes);
-          } catch (error) {
-            runError = error;
-          }
+            await paymentProcessor.createHold(
+              manifestWithRuntime,
+              functionCallsById,
+              request.pricingPreferences,
+            );
+          },
+          async onFunction(id, name, options, run) {
+            const runStart = Date.now();
+            validateFunctionCoreVersions(manifestWithRuntime, name, context);
 
-          const milliseconds = Date.now() - runStart;
-          context.datastoreRegistry.recordItemStats(
-            request.versionHash,
-            name,
-            {
-              bytes,
-              microgons,
-              milliseconds,
-              isCredits: !!request.payment?.credits,
-            },
-            runError,
-          );
-          // Do we need to rollback the stats? We won't finalize payment in this scenario.
-          if (runError) throw runError;
-          return outputs;
+            Object.assign(options, {
+              payment,
+              authentication,
+              affiliateId,
+              versionHash,
+            });
+            options.trackMetadata = (metaName, metaValue) => {
+              if (metaName === 'heroSessionId') {
+                if (!heroSessionIds.includes(metaValue)) heroSessionIds.push(metaValue);
+              }
+            };
+            for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
+              if (plugin.beforeRunExtractor)
+                await plugin.beforeRunExtractor(options, {
+                  scriptEntrypoint: manifestWithRuntime.entrypointPath,
+                  functionName: name,
+                });
+            }
+
+            let runError: Error;
+            let outputs: any;
+            let bytes = 0;
+            let microgons = 0;
+            try {
+              outputs = await context.workTracker.trackRun(run(options));
+              // release the hold
+              bytes = PaymentProcessor.getOfficialBytes(outputs);
+              microgons = paymentProcessor.releaseLocalFunctionHold(id, bytes);
+            } catch (error) {
+              runError = error;
+            }
+
+            const milliseconds = Date.now() - runStart;
+            context.statsTracker.recordEntityStats(
+              request.versionHash,
+              name,
+              {
+                bytes,
+                microgons,
+                milliseconds,
+                isCredits: !!request.payment?.credits,
+              },
+              runError,
+            );
+            // Do we need to rollback the stats? We won't finalize payment in this scenario.
+            if (runError) throw runError;
+            return outputs;
+          },
+          async onPassthroughTable(name, options, run) {
+            Object.assign(options, {
+              payment,
+              authentication,
+              versionHash,
+            });
+            return await context.workTracker.trackRun(run(options));
+          },
         },
-        async onPassthroughTable(name, options, run) {
-          Object.assign(options, {
-            payment: request.payment,
-            authentication: request.authentication,
-            versionHash: request.versionHash,
-          });
-          return await context.workTracker.trackRun(run(options));
-        },
-      })
+      )
       .catch(error => error);
 
     let outputs: any[];
@@ -116,20 +126,20 @@ export default new DatastoreApiHandler('Datastore.query', {
       milliseconds: Date.now() - startTime,
     };
 
-    context.datastoreRegistry.recordQuery(
-      request.id,
+    context.statsTracker.recordQuery(
+      queryId,
       request.sql,
       startTime,
       request.boundValues,
       outputs,
-      request.versionHash,
+      versionHash,
       {
         ...metadata,
-        isCredits: !!request.payment?.credits,
+        isCredits: !!payment?.credits,
       },
-      request.payment?.micronote?.micronoteId,
-      request.payment?.credits?.id,
-      request.affiliateId,
+      payment?.micronote?.micronoteId,
+      payment?.credits?.id,
+      affiliateId,
       runError,
       heroSessionIds,
     );
@@ -139,7 +149,7 @@ export default new DatastoreApiHandler('Datastore.query', {
 
     return {
       outputs,
-      latestVersionHash: manifestWithStats.latestVersionHash,
+      latestVersionHash: manifestWithRuntime.latestVersionHash,
       metadata,
     };
   },

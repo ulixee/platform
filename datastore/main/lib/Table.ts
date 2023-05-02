@@ -3,6 +3,7 @@ import { SqlGenerator, SqlParser } from '@ulixee/sql-engine';
 import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import ITableComponents from '../interfaces/ITableComponents';
 import DatastoreInternal, { IDatastoreBinding } from './DatastoreInternal';
+import { TQueryCallMeta } from '../interfaces/IStorageEngine';
 
 export type IExpandedTableSchema<T> = T extends Record<string, ISchemaAny>
   ? {
@@ -56,12 +57,14 @@ export default class Table<
     return this.#datastoreInternal;
   }
 
-  public async fetchInternal(options?: { input: TSchemaType }): Promise<TSchemaType[]> {
+  public async fetchInternal(
+    options?: TQueryCallMeta & { input: TSchemaType },
+  ): Promise<TSchemaType[]> {
     const name = this.name;
 
     const engine = this.datastoreInternal.storageEngine;
     const { sql, boundValues } = SqlGenerator.createWhereClause(name, options?.input, ['*'], 1000);
-    return await engine.query(sql, boundValues);
+    return await engine.query(sql, boundValues, {}, options);
   }
 
   public async insertInternal(...records: TSchemaType[]): Promise<void> {
@@ -72,12 +75,16 @@ export default class Table<
     }
   }
 
-  public async queryInternal<T = TSchemaType[]>(sql: string, boundValues: any[] = []): Promise<T> {
+  public async queryInternal<T = TSchemaType[]>(
+    sql: string,
+    boundValues: any[] = [],
+    options?: TQueryCallMeta,
+  ): Promise<T> {
     const name = this.name;
     const engine = this.datastoreInternal.storageEngine;
 
     const sqlParser = new SqlParser(sql, { table: name });
-    return await engine.query(sqlParser, boundValues);
+    return await engine.query(sqlParser, boundValues, {}, options);
   }
 
   public attachToDatastore(

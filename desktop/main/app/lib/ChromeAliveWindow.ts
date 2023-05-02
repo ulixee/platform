@@ -34,7 +34,7 @@ export default class ChromeAliveWindow {
 
   window: BrowserWindow;
   api: ApiClient<IChromeAliveSessionApis, IChromeAliveSessionEvents>;
-  enableDevtoolsOnDevtools = false;
+  enableDevtoolsOnDevtools = process.env.DEVTOOLS ?? false;
 
   private get activeTab(): IReplayTab {
     return this.#replayTabs[this.#activeTabIdx];

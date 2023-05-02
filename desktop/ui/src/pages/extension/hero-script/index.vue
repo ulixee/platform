@@ -1,15 +1,15 @@
 <template>
   <div class="flex h-screen flex-row divide-x divide-chrome pt-6">
-    <div class="controls fixed top-0 left-0 right-0 bg-chrome h-6">
-      <span class="inline-block p-1 mx-3">Playback script</span>
+    <div class="controls fixed top-0 left-0 right-0 h-6 bg-chrome">
+      <span class="mx-3 inline-block p-1">Playback script</span>
       <PlayIcon
         v-if="playback === 'manual'"
-        class="inline-block h-4 text-slate-800 hover:text-slate-1000"
+        class="hover:text-slate-1000 inline-block h-4 text-slate-800"
         @click.prevent="playScript"
       />
       <PauseIcon
         v-else
-        class="inline-block h-4 text-slate-800 hover:text-slate-1000"
+        class="hover:text-slate-1000 inline-block h-4 text-slate-800"
         @click.prevent="pauseScript"
       />
     </div>
@@ -46,24 +46,20 @@
       </div>
     </div>
     <div class="basis-2/6 overflow-auto p-3">
-      <h5 class="text-base font-bold">
-        Raw Command
-      </h5>
+      <h5 class="text-base font-bold">Raw Command</h5>
       <ul v-if="focusedCommand" class="list-inside list-decimal p-2">
         {{
           focusedCommand.label
         }}
       </ul>
-      <h5 class="mt-2 text-base font-bold">
-        Result
-      </h5>
-      <hr>
+      <h5 class="mt-2 text-base font-bold">Result</h5>
+      <hr />
       <div v-if="focusedCommand" class="p-2">
         <img
           v-if="focusedCommand.resultType === 'image'"
           :src="focusedCommand.result"
           class="object-contain"
-        >
+        />
         <div v-else class="whitespace-pre">
           {{ focusedCommand.result }}
         </div>
@@ -251,6 +247,12 @@ export default Vue.defineComponent({
 
     setFocusedPositions(positions: ICommandUpdatedEvent['originalSourcePosition']) {
       positions ??= [];
+      positions = positions.map(x => {
+        return {
+          ...x,
+          filename: x.source ?? x.filename,
+        };
+      });
       this.focusedPositions.length = positions.length;
       Object.assign(this.focusedPositions, positions);
     },

@@ -13,7 +13,7 @@ export default class ClientForTable<TTable extends Table> {
 
   public async fetch(inputFilter: Partial<TTable['schemaType']>): Promise<TTable['schemaType'][]> {
     await this.readyPromise;
-    return this.table.fetchInternal({ input: inputFilter });
+    return this.table.fetchInternal({ input: inputFilter } as any);
   }
 
   public async run(inputFilter?: Partial<TTable['schemaType']>): Promise<TTable['schemaType'][]> {
@@ -26,6 +26,6 @@ export default class ClientForTable<TTable extends Table> {
     boundValues: any[] = [],
   ): Promise<TOutputSchema[]> {
     await this.readyPromise;
-    return this.table.queryInternal(sql, boundValues);
+    return this.table.queryInternal(sql, boundValues, {} as any);
   }
 }

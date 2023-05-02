@@ -36,6 +36,7 @@ export default class ExtractorInternal<
 
   constructor(options: TOptions, private components: IExtractorComponents<TSchema, any>) {
     super();
+    options ??= {} as TOptions;
     this.options = options;
     this.schema = components.schema;
     this.#input = (options.input ?? {}) as TInput;

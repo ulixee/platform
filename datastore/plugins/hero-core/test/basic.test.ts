@@ -38,9 +38,9 @@ afterAll(Helpers.afterAll);
 
 test('it should be able to upload a datastore and run it by hash', async () => {
   // @ts-expect-error
-  const registry = DatastoreCore.datastoreRegistry;
+  const statsTracker = DatastoreCore.statsTracker;
   // @ts-expect-error
-  const { queryLogDb, datastoresDb } = registry;
+  const { queryLogDb, statsDb } = statsTracker;
 
   const manifest = packager.manifest;
 
@@ -69,7 +69,7 @@ test('it should be able to upload a datastore and run it by hash', async () => {
   expect(queryLogDb.logTable.all()[0].query).toBe(`SELECT title FROM default(url => $1)`);
   const heroSessionIds = JSON.parse(queryLogDb.logTable.all()[0].heroSessionIds);
   expect(heroSessionIds).toHaveLength(2);
-  const stats = datastoresDb.datastoreItemStats.all();
+  const stats = statsDb.datastoreEntities.all();
   expect(stats).toHaveLength(2);
   expect(stats.some(x => x.name === 'default')).toBeTruthy();
   expect(stats.some(x => x.name === 'defaultCrawl')).toBeTruthy();
@@ -94,7 +94,7 @@ test('it should be able to capture stack origins', async () => {
 
   expect(heroSession.outputs[0].sessionId).toBeTruthy();
 
-  const db = SessionDb.getCached(heroSession.outputs[0].sessionId);
+  const db = SessionDb.getCached(heroSession.outputs[0].sessionId, true);
   const gotoCommand = db.commands.all().find(x => x.name === 'goto');
   expect(gotoCommand).toBeTruthy();
   expect(gotoCommand.callsite).toContain('_testDatastore@dbx1');

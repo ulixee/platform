@@ -8,7 +8,7 @@ import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import DatastoresDb from '../db';
-import { IDatastoreItemStatsRecord } from '../db/DatastoreItemStatsTable';
+import { IDatastoreEntityStatsRecord } from '../db/DatastoreEntityStatsTable';
 import { IDatastoreVersionRecord } from '../db/DatastoreVersionsTable';
 import {
   DatastoreNotFoundError,
@@ -17,8 +17,6 @@ import {
   MissingLinkedScriptVersionsError,
 } from './errors';
 import DatastoreManifest from './DatastoreManifest';
-import { IDatastoreStatsRecord } from '../db/DatastoreStatsTable';
-import QueryLogDb from '../db/QueryLogDb';
 import DatastoreVm from './DatastoreVm';
 import { unpackDbxFile } from './dbxUtils';
 
@@ -26,78 +24,52 @@ const datastorePackageJson = require(`../package.json`);
 const { log } = Logger(module);
 
 export interface IStatsByName {
-  [name: string]: IDatastoreItemStatsRecord;
+  [name: string]: IDatastoreEntityStatsRecord;
 }
 
-export type IDatastoreManifestWithStats = IDatastoreManifest & {
-  stats: IDatastoreStatsRecord;
-  statsByItemName: IStatsByName;
-  path: string;
+export type IDatastoreManifestWithRuntime = IDatastoreManifest & {
+  entrypointPath: string;
   isStarted: boolean;
   latestVersionHash: string;
 };
 
 export default class DatastoreRegistry extends TypedEventEmitter<{
   new: {
-    datastore: IDatastoreManifestWithStats;
+    datastore: IDatastoreManifestWithRuntime;
     activity: 'started' | 'uploaded';
   };
   stopped: { versionHash: string };
-  stats: IDatastoreStatsRecord;
 }> {
   private get datastoresDb(): DatastoresDb {
     this.#datastoresDb ??= new DatastoresDb(this.datastoresDir);
     return this.#datastoresDb;
   }
 
-  private get queryLogDb(): QueryLogDb {
-    this.#queryLogDb ??= new QueryLogDb(this.datastoresDir);
-    return this.#queryLogDb;
-  }
-
   #datastoresDb: DatastoresDb;
-  #queryLogDb: QueryLogDb;
   #openedManifestsByDbxPath = new Map<string, IDatastoreManifest>();
 
-  constructor(readonly datastoresDir: string) {
+  constructor(readonly datastoresDir: string, readonly externalStorageEngineEndpoint?: string) {
     super();
   }
 
   public close(): Promise<void> {
     this.#datastoresDb?.close();
-    this.#queryLogDb?.close();
     this.#openedManifestsByDbxPath.clear();
     this.#datastoresDb = null;
-    this.#queryLogDb = null;
     return Promise.resolve();
   }
 
-  public hasVersionHash(versionHash: string): boolean {
-    return !!this.datastoresDb.datastoreVersions.getByHash(versionHash);
-  }
-
-  public count(): number {
+  public async all(): Promise<IDatastoreManifestWithRuntime[]> {
+    const results: IDatastoreManifestWithRuntime[] = [];
     const hashesSet = new Set<string>();
-    for (const datastore of this.datastoresDb.datastoreVersions.all()) {
-      if (datastore.dbxPath) hashesSet.add(datastore.versionHash);
-    }
-    for (const datastore of this.datastoresDb.datastoreVersions.allCached()) {
-      if (datastore.dbxPath) hashesSet.add(datastore.versionHash);
-    }
-    return hashesSet.size;
-  }
-
-  public async all(): Promise<IDatastoreManifestWithStats[]> {
-    const results: IDatastoreManifestWithStats[] = [];
-    const hashesSet = new Set<string>();
-    for (const datastore of this.datastoresDb.datastoreVersions.all()) {
+    for (const datastore of this.datastoresDb.versions.all()) {
       const entry = await this.getByVersionHash(datastore.versionHash, false);
       if (entry) {
         results.push(entry);
         hashesSet.add(entry.versionHash);
       }
     }
-    for (const datastore of this.datastoresDb.datastoreVersions.allCached()) {
+    for (const datastore of this.datastoresDb.versions.allCached()) {
       if (!datastore || hashesSet.has(datastore.versionHash)) continue;
       const entry = await this.getByVersionHash(datastore.versionHash, false);
       // check that it's still on disk
@@ -111,8 +83,8 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
   public async getByVersionHash(
     versionHash: string,
     throwIfNotExists = true,
-  ): Promise<IDatastoreManifestWithStats> {
-    const versionRecord = this.datastoresDb.datastoreVersions.getByHash(versionHash);
+  ): Promise<IDatastoreManifestWithRuntime> {
+    const versionRecord = this.datastoresDb.versions.getByHash(versionHash);
     const latestVersionHash = this.getLatestVersion(versionHash);
 
     if (!versionRecord?.dbxPath) {
@@ -127,84 +99,14 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
       throw new DatastoreNotFoundError('Datastore not found on Cloud.', latestVersionHash);
     }
 
-    const statsByItemName: IStatsByName = {};
-    for (const name of [
-      ...Object.keys(manifest.extractorsByName),
-      ...Object.keys(manifest.tablesByName),
-      ...Object.keys(manifest.crawlersByName),
-    ]) {
-      statsByItemName[name] = this.datastoresDb.datastoreItemStats.getByVersionHash(
-        versionHash,
-        name,
-      );
-    }
+    if (!manifest) return null;
 
     return {
-      path: Path.join(versionRecord.dbxPath, 'datastore.js'),
-      stats: this.datastoresDb.datastoreStats.getByVersionHash(versionHash),
+      entrypointPath: Path.join(versionRecord.dbxPath, 'datastore.js'),
       isStarted: versionRecord.isStarted,
-      statsByItemName,
       latestVersionHash,
       ...manifest,
     };
-  }
-
-  public recordItemStats(
-    versionHash: string,
-    name: string,
-    stats: { bytes: number; microgons: number; milliseconds: number; isCredits: boolean },
-    error: Error,
-  ): void {
-    this.datastoresDb.datastoreItemStats.record(
-      versionHash,
-      name,
-      stats.microgons,
-      stats.bytes,
-      stats.milliseconds,
-      stats.isCredits ? stats.microgons : 0,
-      !!error,
-    );
-  }
-
-  public recordQuery(
-    id: string,
-    query: string,
-    startTime: number,
-    input: any,
-    outputs: any[],
-    datastoreVersionHash: string,
-    stats: { bytes: number; microgons: number; milliseconds: number; isCredits: boolean },
-    micronoteId: string,
-    creditId: string,
-    affiliateId: string,
-    error?: Error,
-    heroSessionIds?: string[],
-  ): void {
-    const newStats = this.datastoresDb.datastoreStats.record(
-      datastoreVersionHash,
-      stats.microgons,
-      stats.bytes,
-      stats.milliseconds,
-      stats.isCredits ? stats.microgons : 0,
-      !!error,
-    );
-    this.emit('stats', newStats);
-    this.queryLogDb.logTable.record(
-      id,
-      datastoreVersionHash,
-      query,
-      startTime,
-      affiliateId,
-      input,
-      outputs,
-      error,
-      micronoteId,
-      creditId,
-      stats.microgons,
-      stats.bytes,
-      stats.milliseconds,
-      heroSessionIds,
-    );
   }
 
   public async getManifest(dbxPath: string): Promise<IDatastoreManifest> {
@@ -223,11 +125,11 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
   }
 
   public getLatestVersion(hash: string): string {
-    return this.datastoresDb.datastoreVersions.getLatestVersion(hash);
+    return this.datastoresDb.versions.getLatestVersion(hash);
   }
 
-  public getByDomain(domain: string): IDatastoreVersionRecord {
-    return this.datastoresDb.datastoreVersions.findLatestByDomain(domain);
+  public getByDomain(domain: string): Promise<IDatastoreVersionRecord> {
+    return Promise.resolve(this.datastoresDb.versions.findLatestByDomain(domain));
   }
 
   public async installManuallyUploadedDbxFiles(): Promise<
@@ -279,8 +181,8 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
   public async getPreviousVersion(
     versionHash: string,
   ): Promise<{ manifest: IDatastoreManifest; dbxPath: string }> {
-    const baseVersionHash = this.datastoresDb.datastoreVersions.getBaseHash(versionHash);
-    const previousVersions = this.datastoresDb.datastoreVersions
+    const baseVersionHash = this.datastoresDb.versions.getBaseHash(versionHash);
+    const previousVersions = this.datastoresDb.versions
       .getLinkedVersions(baseVersionHash)
       .map(x => x.versionHash)
       .filter(x => x !== versionHash);
@@ -288,7 +190,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     if (previousVersions.length) {
       previousVersions.reverse();
       for (const previousVersion of previousVersions) {
-        const version = this.datastoresDb.datastoreVersions.getByHash(previousVersion);
+        const version = this.datastoresDb.versions.getByHash(previousVersion);
         if (version.dbxPath) {
           const manifest = await this.getManifest(version.dbxPath);
           if (!manifest) continue;
@@ -309,7 +211,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     const manifest = await readFileAsJson<IDatastoreManifest>(
       `${datastoreTmpPath}/datastore-manifest.json`,
     );
-    const storedPath = this.datastoresDb.datastoreVersions.getByHash(manifest.versionHash)?.dbxPath;
+    const storedPath = this.datastoresDb.versions.getByHash(manifest.versionHash)?.dbxPath;
     if (storedPath) {
       return { dbxPath: storedPath, manifest, didInstall: false };
     }
@@ -382,7 +284,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
   }
 
   public stopAtPath(dbxPath: string): void {
-    const datastore = this.datastoresDb.datastoreVersions.setDbxStopped(dbxPath);
+    const datastore = this.datastoresDb.versions.setDbxStopped(dbxPath);
     if (datastore) {
       this.emit('stopped', {
         versionHash: datastore.versionHash,
@@ -436,11 +338,11 @@ Please try to re-upload after testing with the version available on this Cloud.`
 
   private checkMatchingEntrypointVersions(manifest: IDatastoreManifest): void {
     if (manifest.linkedVersions.length) return;
-    const versionWithEntrypoint = this.datastoresDb.datastoreVersions.findAnyWithEntrypoint(
+    const versionWithEntrypoint = this.datastoresDb.versions.findAnyWithEntrypoint(
       manifest.scriptEntrypoint,
     );
     if (versionWithEntrypoint) {
-      const fullVersionHistory = this.datastoresDb.datastoreVersions.getLinkedVersions(
+      const fullVersionHistory = this.datastoresDb.versions.getLinkedVersions(
         versionWithEntrypoint.baseVersionHash,
       );
       throw new MissingLinkedScriptVersionsError(
@@ -454,7 +356,7 @@ Please try to re-upload after testing with the version available on this Cloud.`
     const versions = manifest.linkedVersions;
     if (!versions.length) return;
 
-    const storedPreviousVersions = this.datastoresDb.datastoreVersions.getLinkedVersions(
+    const storedPreviousVersions = this.datastoresDb.versions.getLinkedVersions(
       versions[versions.length - 1]?.versionHash,
     );
 
@@ -490,17 +392,17 @@ Please try to re-upload after testing with the version available on this Cloud.`
 
     for (const version of manifest.linkedVersions) {
       if (version.versionHash === baseVersionHash) continue;
-      this.datastoresDb.datastoreVersions.save(
+      this.datastoresDb.versions.save(
         version.versionHash,
         manifest.scriptEntrypoint,
         version.versionTimestamp,
-        this.datastoresDb.datastoreVersions.getByHash(version.versionHash)?.dbxPath,
+        this.datastoresDb.versions.getByHash(version.versionHash)?.dbxPath,
         baseVersionHash,
         manifest.domain,
       );
     }
 
-    this.datastoresDb.datastoreVersions.save(
+    this.datastoresDb.versions.save(
       manifest.versionHash,
       manifest.scriptEntrypoint,
       manifest.versionTimestamp,

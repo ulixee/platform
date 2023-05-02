@@ -13,7 +13,7 @@ export default new DatastoreApiHandler('Datastore.start', {
     await storageEngineRegistry.deleteExisting(manifest.versionHash);
     const previous = await datastoreRegistry.getPreviousVersion(manifest.versionHash);
 
-    await storageEngineRegistry.create(dbxPath, manifest, previous, request.watch);
+    await storageEngineRegistry.create(context.vm, dbxPath, manifest, previous, request.watch);
 
     await datastoreRegistry.publishDatastore(manifest.versionHash, 'started');
     context.connectionToClient.once('disconnected', () => datastoreRegistry.stopAtPath(dbxPath));

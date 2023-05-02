@@ -20,8 +20,9 @@ import type PassthroughExtractor from './PassthroughExtractor';
 import PassthroughTable, { IPassthroughQueryRunOptions } from './PassthroughTable';
 import CreditsTable from './CreditsTable';
 import DatastoreApiClient from './DatastoreApiClient';
-import StorageEngine from './StorageEngine';
 import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
+import IStorageEngine, { TQueryCallMeta } from '../interfaces/IStorageEngine';
+import SqliteStorageEngine from '../storage-engines/SqliteStorageEngine';
 
 const pkg = require('../package.json');
 
@@ -40,7 +41,7 @@ export default class DatastoreInternal<
   #connectionToCore: ConnectionToDatastoreCore;
   #isClosingPromise: Promise<void>;
 
-  public storageEngine: StorageEngine;
+  public storageEngine: IStorageEngine;
   public manifest: IDatastoreManifest;
   public readonly metadata: IDatastoreMetadata;
   public instanceId: string;
@@ -117,7 +118,7 @@ export default class DatastoreInternal<
     this.manifest = manifest;
     this.storageEngine = storageEngine;
     if (!this.storageEngine) {
-      this.storageEngine = new StorageEngine();
+      this.storageEngine = new SqliteStorageEngine();
       await this.storageEngine.create(this as any);
     }
     this.storageEngine.bind(this);
@@ -140,10 +141,11 @@ export default class DatastoreInternal<
 
   public async queryInternal<TResultType = any[]>(
     sql: string,
-    boundValues: any[] = [],
-    queryId?: string,
+    boundValues?: any[],
+    options?: TQueryCallMeta,
     callbacks: IQueryInternalCallbacks = {},
   ): Promise<TResultType> {
+    boundValues ??= [];
     const sqlParser = new SqlParser(sql);
     const inputSchemas: { [extractorName: string]: ISchemaAny } = {};
     for (const [key, extractor] of Object.entries(this.extractors)) {
@@ -151,7 +153,7 @@ export default class DatastoreInternal<
     }
     const inputByFunctionName = sqlParser.extractFunctionCallInputs(inputSchemas, boundValues);
     const virtualEntitiesByName: {
-      [name: string]: { records: Record<string, any>[]; input?: Record<string, any> };
+      [name: string]: { records: Record<string, any>[]; parameters?: Record<string, any> };
     } = {};
 
     const functionCallsById = Object.keys(inputByFunctionName).map((x, i) => {
@@ -166,35 +168,33 @@ export default class DatastoreInternal<
     }
 
     for (const { name, id } of functionCallsById) {
-      const input = inputByFunctionName[name];
-      virtualEntitiesByName[name] = { input, records: [] };
+      const parameters = inputByFunctionName[name];
+      virtualEntitiesByName[name] = { parameters, records: [] };
       const func = this.extractors[name] ?? this.crawlers[name];
       callbacks.onFunction ??= (_id, _name, options, run) => run(options);
       virtualEntitiesByName[name].records = await callbacks.onFunction(
         id,
         name,
-        { input, id: queryId },
-        options => func.runInternal(options, callbacks),
+        { ...options, input: parameters },
+        opts => func.runInternal(opts, callbacks),
       );
     }
 
     for (const tableName of sqlParser.tableNames) {
-      if (!this.storageEngine.isVirtualTable(tableName)) continue;
+      if (!this.storageEngine.virtualTableNames.has(tableName)) continue;
 
       virtualEntitiesByName[tableName] = { records: [] };
 
       const sqlInputs = sqlParser.extractTableQuery(tableName, boundValues);
-      callbacks.onPassthroughTable ??= (_, options, run) => run(options);
+      callbacks.onPassthroughTable ??= (_, opts, run) => run(opts);
       virtualEntitiesByName[tableName].records = await callbacks.onPassthroughTable(
         tableName,
-        {
-          id: queryId,
-        },
-        options => this.tables[tableName].queryInternal(sqlInputs.sql, sqlInputs.args, options),
+        options,
+        opts => this.tables[tableName].queryInternal(sqlInputs.sql, sqlInputs.args, opts),
       );
     }
 
-    return await this.storageEngine.query(sqlParser, boundValues, virtualEntitiesByName);
+    return await this.storageEngine.query(sqlParser, boundValues, virtualEntitiesByName, options);
   }
 
   public createApiClient(host: string): DatastoreApiClient {
@@ -334,7 +334,7 @@ export default class DatastoreInternal<
 
 export interface IDatastoreBinding {
   connectionToCore?: ConnectionToDatastoreCore;
-  storageEngine?: StorageEngine;
+  storageEngine?: IStorageEngine;
   manifest?: IDatastoreManifest;
   apiClientLoader?: (url: string) => DatastoreApiClient;
 }

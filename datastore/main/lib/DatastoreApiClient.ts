@@ -355,6 +355,14 @@ export default class DatastoreApiClient {
     });
   }
 
+  public request<T extends keyof IDatastoreApiTypes & string>(
+    command: T,
+    args: IDatastoreApiTypes[T]['args'],
+    timeoutMs?: number,
+  ): Promise<IDatastoreApiTypes[T]['result']> {
+    return this.connectionToCore.sendRequest({ command, args: [args] as any }, timeoutMs);
+  }
+
   protected onEvent<T extends keyof IDatastoreEvents>(
     event: ICoreEventPayload<IDatastoreEvents, T>,
   ): void {

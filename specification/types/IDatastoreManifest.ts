@@ -9,6 +9,10 @@ export const DatastoreManifestSchema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
   versionHash: datastoreVersionHashValidation,
+  storageEngineEndpoint: z
+    .string()
+    .url('The storage endpoint to use for this Datastore. If empty, will default to a local store.')
+    .optional(),
   domain: z
     .string()
     .optional()

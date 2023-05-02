@@ -1,6 +1,6 @@
 import ResultIterable from '@ulixee/datastore/lib/ResultIterable';
 import Datastore, { ConnectionToDatastoreCore } from '@ulixee/datastore';
-import StorageEngine from '@ulixee/datastore/lib/StorageEngine';
+import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
 import { IOutputSchema } from '../interfaces/IInputOutput';
 
 export default class ClientForDatastore<TDatastore extends Datastore> {
@@ -9,7 +9,7 @@ export default class ClientForDatastore<TDatastore extends Datastore> {
 
   constructor(
     datastore: TDatastore,
-    options?: { connectionToCore: ConnectionToDatastoreCore; storage?: StorageEngine },
+    options?: { connectionToCore: ConnectionToDatastoreCore; storage?: IStorageEngine },
   ) {
     this.datastore = datastore;
     this.readyPromise = this.datastore.bind(options).catch(() => null);

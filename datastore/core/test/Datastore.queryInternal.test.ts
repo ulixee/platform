@@ -2,7 +2,7 @@ import * as Fs from 'fs';
 import * as Path from 'path';
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import StorageEngine from '@ulixee/datastore/lib/StorageEngine';
+import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
 import directDatastore from './datastores/direct';
 import directExtractor from './datastores/directExtractor';
 import directTable from './datastores/directTable';
@@ -10,7 +10,7 @@ import directTable from './datastores/directTable';
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.queryInternal.test');
 
 let cloudNode: CloudNode;
-const storages: StorageEngine[] = [];
+const storages: IStorageEngine[] = [];
 
 beforeAll(async () => {
   jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);

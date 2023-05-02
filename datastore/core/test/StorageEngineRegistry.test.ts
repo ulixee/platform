@@ -120,7 +120,7 @@ export default new Datastore({
   await packager.build();
   await client.upload(await packager.dbx.tarGzip());
 
-  const datastores2 = datastoresDb.datastoreVersions.all();
+  const datastores2 = datastoresDb.versions.all();
   expect(datastores2).toHaveLength(2);
 
   await expect(

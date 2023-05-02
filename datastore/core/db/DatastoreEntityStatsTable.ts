@@ -1,15 +1,15 @@
 import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 import SqliteTable from '@ulixee/commons/lib/SqliteTable';
 
-export default class DatastoreItemStatsTable extends SqliteTable<IDatastoreItemStatsRecord> {
-  private static byVersionHashAndName: { [hash_name: string]: IDatastoreItemStatsRecord } = {};
+export default class DatastoreEntityStatsTable extends SqliteTable<IDatastoreEntityStatsRecord> {
+  private static byVersionHashAndName: { [hash_name: string]: IDatastoreEntityStatsRecord } = {};
 
   private getQuery: Statement<[string, string]>;
 
   constructor(db: SqliteDatabase) {
     super(
       db,
-      'DatastoreItemStats',
+      'DatastoreEntityStats',
       [
         ['versionHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
         ['name', 'TEXT', 'NOT NULL PRIMARY KEY'],
@@ -86,11 +86,11 @@ export default class DatastoreItemStatsTable extends SqliteTable<IDatastoreItemS
     ]);
   }
 
-  public getByVersionHash(versionHash: string, name: string): IDatastoreItemStatsRecord {
-    DatastoreItemStatsTable.byVersionHashAndName[`${versionHash}_${name}`] ??= (this.getQuery.get(
+  public getByVersionHash(versionHash: string, name: string): IDatastoreEntityStatsRecord {
+    DatastoreEntityStatsTable.byVersionHashAndName[`${versionHash}_${name}`] ??= (this.getQuery.get(
       versionHash,
       name,
-    ) as IDatastoreItemStatsRecord) ?? {
+    ) as IDatastoreEntityStatsRecord) ?? {
       name,
       lastRunTimestamp: Date.now(),
       runs: 0,
@@ -108,7 +108,7 @@ export default class DatastoreItemStatsTable extends SqliteTable<IDatastoreItemS
       totalSpend: 0,
       totalCreditSpend: 0,
     };
-    return DatastoreItemStatsTable.byVersionHashAndName[`${versionHash}_${name}`];
+    return DatastoreEntityStatsTable.byVersionHashAndName[`${versionHash}_${name}`];
   }
 }
 
@@ -117,7 +117,7 @@ function calculateNewAverage(oldAverage: number, value: number, newTotalValues: 
   return Math.round(oldAverage + (value - oldAverage) / newTotalValues);
 }
 
-export interface IDatastoreItemStatsRecord {
+export interface IDatastoreEntityStatsRecord {
   versionHash: string;
   name: string;
   runs: number;

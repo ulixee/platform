@@ -30,6 +30,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
   public versionTimestamp: number;
   public scriptHash: string;
   public scriptEntrypoint: string;
+  public storageEngineEndpoint: string;
 
   public coreVersion: string;
   public schemaInterface: string;
@@ -91,7 +92,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     tablesByName: IDatastoreManifest['tablesByName'],
     metadata: Pick<
       IDatastoreMetadata,
-      'coreVersion' | 'paymentAddress' | 'adminIdentities' | 'domain' | 'name' | 'description'
+      'coreVersion' | 'paymentAddress' | 'adminIdentities' | 'domain' | 'name' | 'description' | 'storageEngineEndpoint'
     >,
     logger?: (message: string, ...args: any[]) => any,
     createTemporaryVersionHash = false,
@@ -107,7 +108,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     this.extractorsByName = {};
     this.crawlersByName = {};
 
-    const { name, description, coreVersion, paymentAddress, adminIdentities, domain } = metadata;
+    const { name, description, coreVersion, paymentAddress, adminIdentities, domain, storageEngineEndpoint } = metadata;
 
     Object.assign(this, {
       coreVersion,
@@ -117,6 +118,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       domain,
       description,
       name,
+      storageEngineEndpoint,
     });
     this.adminIdentities ??= [];
 

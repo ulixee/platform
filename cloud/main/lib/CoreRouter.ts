@@ -1,6 +1,7 @@
 import * as WebSocket from 'ws';
 import { IncomingMessage, ServerResponse } from 'http';
 import DatastoreCore from '@ulixee/datastore-core';
+import ICluster from '@ulixee/platform-specification/types/ICluster';
 import HeroCore from '@ulixee/hero-core';
 import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
@@ -15,12 +16,12 @@ import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import { ICloudApis } from '@ulixee/platform-specification/cloud/index';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import { ConnectionToCore } from '@ulixee/net';
-import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreVersionHashValidation';
 import ICloudEvents from '../interfaces/ICloudEvents';
 import CloudStatus from '../endpoints/Cloud.status';
 import ICloudApiContext from '../interfaces/ICloudApiContext';
 import CloudNode, { IHttpHandleFn } from './CloudNode';
 import DesktopUtils from './DesktopUtils';
+import env from '../env';
 
 const { log } = Logger(module);
 
@@ -32,7 +33,7 @@ export default class CoreRouter {
 
   public heroConfiguration: ICoreConfigureOptions;
   public datastoreConfiguration: Partial<IDatastoreCoreConfigureOptions>;
-  private serverAddress: { ipAddress: string; port: number };
+  private nodeAddress: URL;
 
   public get dataDir(): string {
     return HeroCore.dataDir;
@@ -64,9 +65,6 @@ export default class CoreRouter {
   private httpRoutersByType: {
     [key: string]: IHttpHandleFn;
   } = {
-    datastore: DatastoreCore.routeHttp.bind(DatastoreCore),
-    datastoreCreditBalance: DatastoreCore.routeCreditsBalanceApi.bind(DatastoreCore),
-    datastoreRoot: DatastoreCore.routeHttpRoot.bind(DatastoreCore),
     datastoreOptions: DatastoreCore.routeOptions.bind(DatastoreCore),
   };
 
@@ -76,18 +74,7 @@ export default class CoreRouter {
     cloudNode.addWsRoute('/hero', this.handleSocketRequest.bind(this, 'hero'));
     cloudNode.addWsRoute('/datastore', this.handleSocketRequest.bind(this, 'datastore'));
     cloudNode.addHttpRoute('/server-details', 'GET', this.handleHttpServerDetails.bind(this));
-    cloudNode.addHttpRoute(
-      /.*\/free-credits\/?\?crd[A-Za-z0-9_]{8}.*/,
-      'GET',
-      this.handleHttpRequest.bind(this, 'datastoreCreditBalance'),
-    );
-    cloudNode.addHttpRoute(
-      new RegExp(`/(${datastoreRegex.source})(.*)`),
-      'GET',
-      this.handleHttpRequest.bind(this, 'datastore'),
-    );
-    cloudNode.addHttpRoute(/\/(.*)/, 'GET', this.handleHttpRequest.bind(this, 'datastoreRoot'));
-    cloudNode.addHttpRoute('/', 'OPTIONS', this.handleHttpRequest.bind(this, 'datastoreOptions'));
+    DatastoreCore.registerHttpRoutes(this.addHttpRoute.bind(this, cloudNode));
     // last option
     cloudNode.addHttpRoute('/', 'GET', this.handleHome.bind(this));
 
@@ -105,6 +92,17 @@ export default class CoreRouter {
     }
   }
 
+  public addHttpRoute(
+    cloudNode: CloudNode,
+    route: string | RegExp,
+    method: 'GET' | 'OPTIONS' | 'POST' | 'UPDATE' | 'DELETE',
+    callbackFn: IHttpHandleFn,
+  ): void {
+    const key = `${method}_${route.toString()}`;
+    this.httpRoutersByType[key] = callbackFn;
+    this.cloudNode.addHttpRoute(route, method, this.handleHttpRequest.bind(this, key));
+  }
+
   public async start(cloudNodeAddress: string): Promise<void> {
     const startLogId = log.info('CloudNode.start', {
       cloudNodeAddress,
@@ -120,13 +118,24 @@ export default class CoreRouter {
         Object.assign(DatastoreCore.options, this.datastoreConfiguration);
       }
 
-      const [ipAddress, port] = cloudNodeAddress.split(':');
-      this.serverAddress = { ipAddress, port: Number(port) };
-      await DatastoreCore.start({ ipAddress, port: this.serverAddress.port });
+      if (!cloudNodeAddress.includes('://')) cloudNodeAddress = `ws://${cloudNodeAddress}`;
+      const nodeAddress = new URL(cloudNodeAddress);
+      this.nodeAddress = nodeAddress;
+
+      let cluster: ICluster;
+      if (env.leadNodeHost && cloudNodeAddress !== env.leadNodeHost) {
+        cluster = {
+          leadNodeAddress: new URL(env.leadNodeHost, 'ws://'),
+          // TODO: lookup cluster info from leader
+          serviceAddresses: null,
+        };
+      }
+
+      await DatastoreCore.start(nodeAddress, cluster);
 
       if (DesktopUtils.isInstalled()) {
         const desktopCore = DesktopUtils.getDesktop();
-        const wsAddress = Promise.resolve(`ws://${cloudNodeAddress}`);
+        const wsAddress = Promise.resolve(nodeAddress.origin);
         const bridge = new TransportBridge();
         this.addCloudApiConnection(bridge.transportToClient);
 
@@ -218,11 +227,9 @@ export default class CoreRouter {
     return await this.httpRoutersByType[connectionType](req, res, params);
   }
 
-  private handleHttpServerDetails(req: IncomingMessage, res: ServerResponse): void {
+  private handleHttpServerDetails(_: IncomingMessage, res: ServerResponse): void {
     res.setHeader('Content-Type', 'application/json');
-    res.end(
-      JSON.stringify({ ipAddress: this.serverAddress.ipAddress, port: this.serverAddress.port }),
-    );
+    res.end(JSON.stringify({ ipAddress: this.nodeAddress.hostname, port: this.nodeAddress.port }));
   }
 }
 

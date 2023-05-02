@@ -160,7 +160,7 @@ export default class Extractor<
     const input = inputsByFunction[name];
     const records = await this.runInternal({ input } as TRunArgs);
     const engine = this.datastoreInternal.storageEngine;
-    return engine.query(sqlParser, boundValues, { [name]: { records, input } });
+    return engine.query(sqlParser, boundValues, { [name]: { records, parameters: input } });
   }
 
   public attachToDatastore(

@@ -167,13 +167,13 @@ test('should be able to run a datastore function with payments', async () => {
     'Micronote.settle',
   ]);
   // @ts-ignore
-  const registry = DatastoreCore.datastoreRegistry;
-  const entry = await registry.getByVersionHash(manifest.versionHash);
+  const statsTracker = DatastoreCore.statsTracker;
+  const entry = await statsTracker.getForDatastore(manifest);
   expect(entry.stats.runs).toBe(3);
   expect(entry.stats.errors).toBe(2);
   expect(entry.stats.maxPrice).toBe(1255);
-  expect(entry.statsByItemName.putout.runs).toBe(1);
-  expect(entry.statsByItemName.putout.maxPrice).toBe(1250);
+  expect(entry.statsByEntityName.putout.runs).toBe(1);
+  expect(entry.statsByEntityName.putout.maxPrice).toBe(1250);
 
   const streamed = client.stream(manifest.versionHash, 'putout', {}, { payment });
   await expect(streamed.resultMetadata).resolves.toEqual({

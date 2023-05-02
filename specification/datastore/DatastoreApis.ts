@@ -266,6 +266,62 @@ export const DatastoreApiSchemas = {
         .optional(),
     }),
   },
+  'Datastore.queryStorageEngine': {
+    args: z.object({
+      id: z.string().describe('The unique id of this query.'),
+      versionHash: datastoreVersionHashValidation.describe('The Datastore version to be queried.'),
+      sql: z.string().describe('The SQL command you want to run.'),
+      boundValues: z
+        .array(z.any())
+        .optional()
+        .describe('An array of values you want to use as bound parameters.'),
+      virtualEntitiesByName: z
+        .record(
+          z
+            .string()
+            .describe(
+              'Name of the passthrough table, extractor or crawler defined in the Datastore schema.',
+            ),
+          z.object({
+            parameters: z
+              .record(
+                z.string().describe("Parameter name matching the entity's schema."),
+                z
+                  .any()
+                  .describe('Parameter value as a Javascript type (will be converted by engine).'),
+              )
+              .optional()
+              .describe('Parameters to simulate for this virtual function or table'),
+            records: z
+              .any()
+              .array()
+              .describe('Records to simulate (NOTE: must match the Datastore schema).'),
+          }),
+        )
+        .optional()
+        .describe(
+          'Virtual passthrough tables, extractors or crawlers being simulated in the sql query.',
+        ),
+      payment: PaymentSchema.optional().describe('Payment for this request.'),
+      authentication: z
+        .object({
+          identity: identityValidation,
+          signature: signatureValidation,
+          nonce: z.string().length(10).describe('A random nonce adding signature noise.'),
+        })
+        .optional(),
+    }),
+    result: z.object({
+      outputs: z.any().array(),
+      metadata: z
+        .object({
+          microgons: micronoteTokenValidation,
+          bytes: z.number().int().nonnegative(),
+          milliseconds: z.number().int().nonnegative(),
+        })
+        .optional(),
+    }),
+  },
   'Datastores.list': {
     args: z.object({
       offset: z

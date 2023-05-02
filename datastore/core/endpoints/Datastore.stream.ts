@@ -3,17 +3,22 @@ import IDatastoreApis from '@ulixee/platform-specification/datastore/DatastoreAp
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import DatastoreCore from '../index';
 import PaymentProcessor from '../lib/PaymentProcessor';
-import DatastoreVm from '../lib/DatastoreVm';
 import { validateAuthentication, validateFunctionCoreVersions } from '../lib/datastoreUtils';
-import { IDatastoreManifestWithStats } from '../lib/DatastoreRegistry';
+import { IDatastoreManifestWithRuntime } from '../lib/DatastoreRegistry';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 
 export default new DatastoreApiHandler('Datastore.stream', {
   async handler(request, context) {
     const startTime = Date.now();
-    const manifestWithStats = await context.datastoreRegistry.getByVersionHash(request.versionHash);
-    const storage = context.storageEngineRegistry.get(request.versionHash);
-    const datastore = await DatastoreVm.open(manifestWithStats.path, storage, manifestWithStats);
+    const manifestWithRuntime = await context.datastoreRegistry.getByVersionHash(
+      request.versionHash,
+    );
+    const storage = context.storageEngineRegistry.get(manifestWithRuntime);
+    const datastore = await context.vm.open(
+      manifestWithRuntime.entrypointPath,
+      storage,
+      manifestWithRuntime,
+    );
     await validateAuthentication(datastore, request.payment, request.authentication);
     const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
 
@@ -32,13 +37,13 @@ export default new DatastoreApiHandler('Datastore.stream', {
 
     try {
       await paymentProcessor.createHold(
-        manifestWithStats,
+        manifestWithRuntime,
         [{ name: request.name, id: 1 }],
         request.pricingPreferences,
       );
     } catch (error) {
       runError = error;
-      context.datastoreRegistry.recordQuery(
+      context.statsTracker.recordQuery(
         request.id,
         `stream(${request.name})`,
         startTime,
@@ -62,7 +67,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
     try {
       if (datastoreFunction) {
         outputs = await extractFunctionOutputs(
-          manifestWithStats,
+          manifestWithRuntime,
           datastore,
           request,
           context,
@@ -87,8 +92,8 @@ export default new DatastoreApiHandler('Datastore.stream', {
       milliseconds,
       isCredits,
     };
-    context.datastoreRegistry.recordItemStats(request.versionHash, request.name, stats, runError);
-    context.datastoreRegistry.recordQuery(
+    context.statsTracker.recordEntityStats(request.versionHash, request.name, stats, runError);
+    context.statsTracker.recordQuery(
       request.id,
       `stream(${request.name})`,
       startTime,
@@ -106,7 +111,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
     if (runError) throw runError;
 
     return {
-      latestVersionHash: manifestWithStats.latestVersionHash,
+      latestVersionHash: manifestWithRuntime.latestVersionHash,
       metadata: {
         bytes,
         microgons,
@@ -117,13 +122,13 @@ export default new DatastoreApiHandler('Datastore.stream', {
 });
 
 async function extractFunctionOutputs(
-  manifestWithStats: IDatastoreManifestWithStats,
+  manifestWithRuntime: IDatastoreManifestWithRuntime,
   datastore: Datastore,
   request: IDatastoreApis['Datastore.stream']['args'],
   context: IDatastoreApiContext,
   heroSessionIds: string[],
 ): Promise<any[]> {
-  validateFunctionCoreVersions(manifestWithStats, request.name, context);
+  validateFunctionCoreVersions(manifestWithRuntime, request.name, context);
   const options: IExtractorRunOptions<any> = {
     input: request.input,
     authentication: request.authentication,
@@ -140,7 +145,7 @@ async function extractFunctionOutputs(
       for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
         if (plugin.beforeRunExtractor) {
           await plugin.beforeRunExtractor(options, {
-            scriptEntrypoint: manifestWithStats.path,
+            scriptEntrypoint: manifestWithRuntime.entrypointPath,
             functionName: request.name,
           });
         }
@@ -163,7 +168,7 @@ async function extractFunctionOutputs(
           }
 
           const milliseconds = Date.now() - runStart;
-          context.datastoreRegistry.recordItemStats(
+          context.statsTracker.recordEntityStats(
             request.versionHash,
             name,
             {

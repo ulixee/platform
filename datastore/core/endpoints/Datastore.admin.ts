@@ -4,15 +4,12 @@ import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import { InvalidPermissionsError } from '../lib/errors';
-import DatastoreVm from '../lib/DatastoreVm';
 
 export default new DatastoreApiHandler('Datastore.admin', {
   async handler(request, context): Promise<IDatastoreApiTypes['Datastore.admin']['result']> {
     const { adminSignature, adminIdentity, adminFunction, functionArgs } = request;
 
-    const datastoreVersion = await context.datastoreRegistry.getByVersionHash(
-      request.versionHash,
-    );
+    const datastoreVersion = await context.datastoreRegistry.getByVersionHash(request.versionHash);
 
     const approvedAdmins = new Set<string>([
       ...datastoreVersion.adminIdentities,
@@ -38,8 +35,12 @@ export default new DatastoreApiHandler('Datastore.admin', {
       throw new InvalidSignatureError('Your Admin signature is invalid for this function call.');
     }
 
-    const storage = context.storageEngineRegistry.get(request.versionHash);
-    const datastore = await DatastoreVm.open(datastoreVersion.path, storage, datastoreVersion);
+    const storage = context.storageEngineRegistry.get(datastoreVersion);
+    const datastore = await context.vm.open(
+      datastoreVersion.entrypointPath,
+      storage,
+      datastoreVersion,
+    );
 
     if (adminFunction.ownerType === 'datastore') {
       if (typeof datastore[functionName] !== 'function')

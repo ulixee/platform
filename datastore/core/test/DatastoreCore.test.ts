@@ -47,7 +47,8 @@ test('should install new datastores on startup', async () => {
   await copyDir(bootupDbx.path, `${storageDir}/bootup.dbx`);
   const registry = new DatastoreRegistry(storageDir);
   await registry.installManuallyUploadedDbxFiles();
-  expect(registry.hasVersionHash(bootupPackager.manifest.versionHash)).toBe(true);
+  // @ts-expect-error
+  expect(!!registry.datastoreVersions.getByHash(bootupPackager.manifest.versionHash)).toBe(true);
   // @ts-expect-error
   const dbxPath = registry.createDbxPath(bootupPackager.manifest);
   await expect(existsAsync(dbxPath)).resolves.toBeTruthy();
@@ -85,7 +86,7 @@ test('can get metadata about an uploaded datastore', async () => {
     runApi('Datastore.meta', { versionHash: bootupPackager.manifest.versionHash }),
   ).resolves.toEqual(<IDatastoreApiTypes['Datastore.meta']['result']>{
     versionHash: bootupPackager.manifest.versionHash,
-    versionTimestamp: new Date(),
+    versionTimestamp: expect.any(Date),
     description: undefined,
     isStarted: true,
     scriptEntrypoint: bootupPackager.manifest.scriptEntrypoint,

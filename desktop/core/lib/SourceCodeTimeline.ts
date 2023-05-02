@@ -9,13 +9,13 @@ import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import ICommandUpdatedEvent from '@ulixee/desktop-interfaces/events/ICommandUpdatedEvent';
 import ISourceCodeUpdatedEvent from '@ulixee/desktop-interfaces/events/ISourceCodeUpdatedEvent';
 import CommandFormatter from '@ulixee/hero-core/lib/CommandFormatter';
-import * as Fs from 'fs';
+import * as Path from 'path';
+import DatastoreCore from '@ulixee/datastore-core';
 
 export default class SourceCodeTimeline extends TypedEventEmitter<{
   source: ISourceCodeUpdatedEvent;
   command: ICommandUpdatedEvent;
 }> {
-  public scriptExists = true;
   private sourceFileLines: { [path: string]: string[] } = {};
   private events = new EventSubscriber();
   private commandsById: { [id: number]: ICommandUpdatedEvent } = {};
@@ -24,13 +24,13 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
     super();
     bindFunctions(this);
 
+    if (this.entrypoint.includes(DatastoreCore.datastoresDir)) {
+      SourceMapSupport.retrieveSourceMap(this.entrypoint, Path.dirname(this.entrypoint));
+    }
     const sourceLookup = SourceMapSupport.getSourceFile(this.entrypoint);
+    this.entrypoint = sourceLookup.path;
 
-    this.scriptExists = Fs.existsSync(sourceLookup.path);
-    if (this.scriptExists) {
-      this.sourceFileLines[this.entrypoint] =
-        SourceLoader.getFileContents(sourceLookup.path, false)?.split(/\r?\n/) ?? [];
-    } else if (sourceLookup.content) {
+    if (sourceLookup.content) {
       this.sourceFileLines[this.entrypoint] = sourceLookup.content.split(/\r?\n/);
     }
   }
@@ -97,28 +97,18 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
     if (!skipEmit) this.emit('command', this.commandsById[command.id]);
   }
 
-  private checkForSourceUpdates(sourceLocations: (ISourceCodeLocation & { source?: string })[]): void {
+  private checkForSourceUpdates(
+    sourceLocations: (ISourceCodeLocation & { source?: string })[],
+  ): void {
     for (const sourcePosition of sourceLocations) {
-      const { filename } = sourcePosition;
-      if (!this.sourceFileLines[filename]) {
-        if (this.scriptExists) {
-          this.sourceFileLines[filename] =
-            SourceLoader.getFileContents(filename, false)?.split(/\r?\n/) ?? [];
-        } else {
-          const sourceLookup = SourceMapSupport.getOriginalSourcePosition(
-            { ...sourcePosition, filename: sourcePosition.source ?? sourcePosition.filename },
-            true,
-          );
-          if (sourceLookup.content) {
-            this.sourceFileLines[filename] = sourceLookup.content.split(/\r?\n/);
-          }
-        }
+      const filename = sourcePosition.source ?? sourcePosition.filename;
+      this.sourceFileLines[filename] ??=
+        SourceLoader.getSource(sourcePosition)?.code?.split(/\r?\n/) ?? [];
 
-        this.emit('source', {
-          filename,
-          lines: this.sourceFileLines[filename],
-        });
-      }
+      this.emit('source', {
+        filename,
+        lines: this.sourceFileLines[filename],
+      });
     }
   }
 }

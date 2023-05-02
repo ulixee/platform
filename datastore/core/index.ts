@@ -1,9 +1,7 @@
 import * as Os from 'os';
 import * as Path from 'path';
-import { createReadStream, promises as Fs } from 'fs';
+import { promises as Fs } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
-import * as Finalhandler from 'finalhandler';
-import * as ServeStatic from 'serve-static';
 import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import Logger from '@ulixee/commons/lib/Logger';
@@ -18,14 +16,16 @@ import Ed25519 from '@ulixee/crypto/lib/Ed25519';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import IDatastoreDomainResponse from '@ulixee/datastore/interfaces/IDatastoreDomainResponse';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
-import DocspageDir from '@ulixee/datastore-docpage';
+import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreVersionHashValidation';
+import ICluster from '@ulixee/platform-specification/types/ICluster';
+import { ConnectionToDatastoreCore } from '@ulixee/datastore';
+import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
 import env from './env';
 import DatastoreRegistry from './lib/DatastoreRegistry';
 import WorkTracker from './lib/WorkTracker';
 import IDatastoreApiContext from './interfaces/IDatastoreApiContext';
 import SidechainClientManager from './lib/SidechainClientManager';
-import DatastoreUpload from './endpoints/Datastore.upload';
 import DatastoreQuery from './endpoints/Datastore.query';
 import DatastoreMeta from './endpoints/Datastore.meta';
 import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
@@ -36,14 +36,17 @@ import DatastoreVm from './lib/DatastoreVm';
 import { DatastoreNotFoundError } from './lib/errors';
 import DatastoresList from './endpoints/Datastores.list';
 import DatastoreStart from './endpoints/Datastore.start';
-import DatastoreDownload from './endpoints/Datastore.download';
 import DatastoreCreditsIssued from './endpoints/Datastore.creditsIssued';
 import { translateStats } from './lib/translateDatastoreMetadata';
 import StorageEngineRegistry from './lib/StorageEngineRegistry';
+import ServeDocPages from './lib/ServeDocPages';
+import DatastoreDownload from './endpoints/Datastore.download';
+import DatastoreUpload from './endpoints/Datastore.upload';
+import DatastoreQueryStorageEngine from './endpoints/Datastore.queryStorageEngine';
+import DatastoreApiClients from './lib/DatastoreApiClients';
+import StatsTracker from './lib/StatsTracker';
 
 const { log } = Logger(module);
-
-const docPageServer = ServeStatic(DocspageDir);
 
 export default class DatastoreCore {
   public static connections = new Set<IDatastoreConnectionToClient>();
@@ -88,9 +91,8 @@ export default class DatastoreCore {
   public static pluginCoresByName: { [name: string]: IExtractorPluginCore } = {};
   public static isClosing: Promise<void>;
   public static workTracker: WorkTracker;
+
   public static apiRegistry = new ApiRegistry<IDatastoreApiContext>([
-    DatastoreUpload,
-    DatastoreDownload,
     DatastoreQuery,
     DatastoreStream,
     DatastoresList,
@@ -99,14 +101,23 @@ export default class DatastoreCore {
     DatastoreCreditsIssued,
     DatastoreStart,
     DatastoreMeta,
+    DatastoreDownload,
+    DatastoreUpload,
+    DatastoreQueryStorageEngine,
   ]);
 
   private static datastoreRegistry: DatastoreRegistry;
+  private static statsTracker: StatsTracker;
   private static storageEngineRegistry: StorageEngineRegistry;
   private static sidechainClientManager: SidechainClientManager;
   private static isStarted = new Resolvable<void>();
+  private static docPages: ServeDocPages;
+  private static cluster: ICluster;
+  private static cloudNodeAddress: URL;
+  private static datastoreApiClients: DatastoreApiClients;
+  private static vm: DatastoreVm;
 
-  private static serverAddress: { ipAddress: string; port: number };
+  private static loopbackConnection: ConnectionToDatastoreCore;
 
   public static addConnection(
     transport: ITransportToClient<IDatastoreApis, IDatastoreEvents>,
@@ -131,8 +142,25 @@ export default class DatastoreCore {
     return connection;
   }
 
+  public static registerHttpRoutes(
+    addHttpRoute: (
+      route: string | RegExp,
+      method: 'GET' | 'OPTIONS' | 'POST' | 'UPDATE' | 'DELETE',
+      callbackFn: IHttpHandleFn,
+    ) => any,
+  ): void {
+    addHttpRoute(/.*\/free-credits\/?\?crd[A-Za-z0-9_]{8}.*/, 'GET', (req, res) =>
+      this.docPages.routeCreditsBalanceApi(req, res),
+    );
+    addHttpRoute(new RegExp(`/(${datastoreRegex.source})(.*)`), 'GET', (req, res, params) =>
+      this.docPages.routeHttp(req, res, params),
+    );
+    addHttpRoute(/\/(.*)/, 'GET', (req, res) => this.docPages.routeHttpRoot(req, res));
+    addHttpRoute('/', 'OPTIONS', this.routeOptions.bind(this));
+  }
+
   public static async routeOptions(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    const host = req.headers.host.replace(`:${this.serverAddress.port}`, '').split('://').pop();
+    const host = new URL(req.headers.host).hostname;
 
     const domainVersion = await this.datastoreRegistry.getByDomain(host);
     if (!domainVersion) {
@@ -148,107 +176,24 @@ export default class DatastoreCore {
       res.end(
         TypeSerializer.stringify(<IDatastoreDomainResponse>{
           datastoreVersionHash: domainVersion.versionHash,
-          host: `${this.serverAddress.ipAddress}:${this.serverAddress.port}`,
+          host: this.cloudNodeAddress.host,
         }),
       );
     }
-  }
-
-  public static async routeCreditsBalanceApi(
-    req: IncomingMessage,
-    res: ServerResponse,
-  ): Promise<boolean> {
-    if (req.headers.accept !== 'application/json') return false;
-    let datastoreVersionHash = '';
-
-    let host = req.headers.host ?? `${this.serverAddress.ipAddress}:${this.serverAddress.port}`;
-    if (!host.includes('://')) host = `http://${host}`;
-    const url = new URL(req.url, host);
-
-    if (!url.host.includes('localhost')) {
-      const domainVersion = this.datastoreRegistry.getByDomain(url.hostname);
-      datastoreVersionHash = domainVersion?.versionHash;
-    }
-    if (!datastoreVersionHash) {
-      const match = url.pathname.match(/(dbx1[ac-hj-np-z02-9]{18})(\/(.+)?)?/);
-      datastoreVersionHash = match[1];
-    }
-    if (!datastoreVersionHash) {
-      res.writeHead(409, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: 'No valid Datastore VersionHash could be found.' }));
-    }
-
-    const creditId = url.searchParams.keys().next().value.split(':').shift();
-    const result = await DatastoreCreditsBalance.handler(
-      { datastoreVersionHash, creditId },
-      this.getApiContext(),
-    );
-
-    res.writeHead(200, { 'content-type': 'application/json' });
-    res.end(JSON.stringify(result));
-    return true;
-  }
-
-  public static async routeHttpRoot(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
-    const host = req.headers.host.replace(`:${this.serverAddress.port}`, '').split('://').pop();
-
-    const domainVersion = this.datastoreRegistry.getByDomain(host);
-    if (!domainVersion) return false;
-
-    const params = [domainVersion.versionHash];
-    if (req.url.length) params.push(req.url);
-    await this.routeHttp(req, res, params);
-  }
-
-  public static async routeHttp(
-    req: IncomingMessage,
-    res: ServerResponse,
-    params: string[],
-  ): Promise<void> {
-    if (!params[1]) {
-      const url = new URL(req.url, 'http://localhost/');
-      url.pathname += '/';
-      const search = url.search !== '?' ? url.search : '';
-      res.writeHead(301, { location: `${url.pathname}${search}` });
-      res.end();
-      return;
-    }
-
-    if (req.url.includes('docpage.json')) {
-      const versionHash = params[0];
-      const { path } = await this.datastoreRegistry.getByVersionHash(versionHash);
-      const docpagePath = path.replace('datastore.js', 'docpage.json');
-      res.writeHead(200, { 'content-type': 'application/json' });
-      createReadStream(docpagePath, { autoClose: true }).pipe(res, { end: true });
-      return;
-    }
-
-    if (
-      params[1].startsWith('/js/') ||
-      params[1].startsWith('/css/') ||
-      params[1].startsWith('/img/') ||
-      params[1] === '/favicon.ico'
-    ) {
-      req.url = params[1];
-    } else {
-      req.url = '/';
-    }
-    const done = Finalhandler(req, res);
-    docPageServer(req, res, done);
   }
 
   public static registerPlugin(pluginCore: IExtractorPluginCore): void {
     this.pluginCoresByName[pluginCore.name] = pluginCore;
   }
 
-  public static async start(config: { ipAddress: string; port: number }): Promise<void> {
+  public static async start(nodeAddress: URL, cluster: ICluster): Promise<void> {
     if (this.isStarted.isResolved) return this.isStarted.promise;
     const startLogId = log.info('DatastoreCore.start', {
       options: this.options,
       sessionId: null,
     });
 
-    this.serverAddress = config;
+    this.cluster = cluster;
     try {
       this.close = this.close.bind(this);
 
@@ -265,14 +210,34 @@ export default class DatastoreCore {
       if (!(await existsAsync(this.options.queryHeroSessionsDir))) {
         await Fs.mkdir(this.options.queryHeroSessionsDir, { recursive: true });
       }
-      this.storageEngineRegistry = new StorageEngineRegistry(this.options.datastoresDir);
+
+      const bridge = new TransportBridge();
+      this.loopbackConnection = new ConnectionToDatastoreCore(bridge.transportToCore);
+      this.addConnection(bridge.transportToClient);
+      this.datastoreApiClients = new DatastoreApiClients();
+
+      this.vm = new DatastoreVm(this.loopbackConnection, this.datastoreApiClients);
+
+      this.storageEngineRegistry = new StorageEngineRegistry(
+        this.options.datastoresDir,
+        this.cloudNodeAddress,
+      );
+      this.statsTracker = new StatsTracker(this.options.datastoresDir);
       this.datastoreRegistry = new DatastoreRegistry(this.options.datastoresDir);
+      this.docPages = new ServeDocPages(this.datastoreRegistry, this.cloudNodeAddress, args =>
+        DatastoreCreditsBalance.handler(args, this.getApiContext()),
+      );
       const installations = await this.datastoreRegistry.installManuallyUploadedDbxFiles();
       for (const install of installations) {
         const previous = await this.datastoreRegistry.getPreviousVersion(
           install.manifest.versionHash,
         );
-        await this.storageEngineRegistry.create(install.dbxPath, install.manifest, previous);
+        await this.storageEngineRegistry.create(
+          this.vm,
+          install.dbxPath,
+          install.manifest,
+          previous,
+        );
       }
 
       for (const plugin of Object.values(this.pluginCoresByName)) {
@@ -290,7 +255,7 @@ export default class DatastoreCore {
 
       // must be started before we can register for events
       this.datastoreRegistry.on('new', this.onNewDatastore.bind(this));
-      this.datastoreRegistry.on('stats', this.onDatastoreStats.bind(this));
+      this.statsTracker.on('stats', this.onDatastoreStats.bind(this));
       this.datastoreRegistry.on('stopped', this.onDatastoreStopped.bind(this));
     } catch (error) {
       log.stats('DatastoreCore.startError', {
@@ -335,7 +300,7 @@ export default class DatastoreCore {
       this.connections.clear();
       await this.datastoreRegistry?.close();
       await this.storageEngineRegistry?.close();
-      await DatastoreVm.close();
+      await this.datastoreApiClients?.close();
     } finally {
       closingPromise.resolve();
     }
@@ -354,7 +319,7 @@ export default class DatastoreCore {
     this.events.emit('stopped', event);
   }
 
-  private static onDatastoreStats(event: DatastoreRegistry['EventTypes']['stats']): void {
+  private static onDatastoreStats(event: StatsTracker['EventTypes']['stats']): void {
     this.events.emit('stats', { versionHash: event.versionHash, stats: translateStats(event) });
   }
 
@@ -370,6 +335,11 @@ export default class DatastoreCore {
       pluginCoresByName: this.pluginCoresByName,
       sidechainClientManager: this.sidechainClientManager,
       storageEngineRegistry: this.storageEngineRegistry,
+      cluster: this.cluster,
+      cloudNodeAddress: this.cloudNodeAddress,
+      vm: this.vm,
+      datastoreApiClients: this.datastoreApiClients,
+      statsTracker: this.statsTracker,
     };
   }
 
@@ -403,3 +373,8 @@ export default class DatastoreCore {
 \n\n`);
   }
 }
+type IHttpHandleFn = (
+  req: IncomingMessage,
+  res: ServerResponse,
+  params: string[],
+) => Promise<boolean | void>;

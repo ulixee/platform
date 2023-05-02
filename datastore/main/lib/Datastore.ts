@@ -6,6 +6,7 @@ import IDatastoreComponents, {
 } from '../interfaces/IDatastoreComponents';
 import DatastoreInternal, { IDatastoreBinding, IQueryInternalCallbacks } from './DatastoreInternal';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
+import { TQueryCallMeta } from '../interfaces/IStorageEngine';
 
 export default class Datastore<
   TTable extends TTables = TTables,
@@ -60,11 +61,11 @@ export default class Datastore<
 
   public queryInternal<TResultType = any[]>(
     sql: string,
-    boundValues: any[] = [],
-    queryId?: string,
+    boundValues?: any[],
+    options?: TQueryCallMeta,
     callbacks: IQueryInternalCallbacks = {},
   ): Promise<TResultType> {
-    return this.#datastoreInternal.queryInternal(sql, boundValues, queryId, callbacks);
+    return this.#datastoreInternal.queryInternal(sql, boundValues, options, callbacks);
   }
 
   public bind(config: IDatastoreBinding): Promise<DatastoreInternal> {
