@@ -12,7 +12,7 @@ export default new DatastoreApiHandler('Datastore.creditsBalance', {
     );
     const storage = context.storageEngineRegistry.get(datastoreVersion);
     const datastore = await context.vm.open(
-      datastoreVersion.entrypointPath,
+      datastoreVersion.runtimePath,
       storage,
       datastoreVersion,
     );

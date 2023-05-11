@@ -19,6 +19,7 @@ import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
 import { AddressInfo } from 'net';
 import DesktopCore from '@ulixee/desktop-core';
 import WebSocket = require('ws');
+import { toUrl } from '@ulixee/commons/lib/utils';
 import ApiClient from './ApiClient';
 import ArgonFile, { IArgonFile } from './ArgonFile';
 import DeploymentWatcher from './DeploymentWatcher';
@@ -144,7 +145,7 @@ export default class ApiManager<
     if (!localCloudAddress) {
       adminIdentity = this.localUserProfile.defaultAdminIdentity.bech32;
       await DatastoreCore.installCompressedDbx(bundledDatastoreExample);
-      this.localCloud ??= new CloudNode('localhost', false);
+      this.localCloud ??= new CloudNode('localhost', { shouldShutdownOnSignals: false });
       this.localCloud.router.datastoreConfiguration ??= {};
       this.localCloud.router.datastoreConfiguration.cloudAdminIdentities ??= [];
       this.localCloud.router.datastoreConfiguration.cloudAdminIdentities.push(adminIdentity);
@@ -155,8 +156,7 @@ export default class ApiManager<
   }
 
   public getDatastoreClient(cloudHost: string): DatastoreApiClient {
-    if (!cloudHost.startsWith('ws:')) cloudHost = `ws://${cloudHost}`;
-    const hostUrl = new URL(cloudHost);
+    const hostUrl = toUrl(cloudHost);
     this.datastoreApiClientsByAddress[cloudHost] ??= new DatastoreApiClient(hostUrl.origin);
     return this.datastoreApiClientsByAddress[cloudHost];
   }
@@ -343,12 +343,15 @@ export default class ApiManager<
 
   private async getDebuggerUrl(): Promise<string> {
     const responseBody = await new Promise<string>((resolve, reject) => {
-      const request = http.get(`http://127.0.0.1:${process.env.DEVTOOLS_PORT}/json/version`, async res => {
-        let jsonString = '';
-        res.setEncoding('utf8');
-        for await (const chunk of res) jsonString += chunk;
-        resolve(jsonString);
-      });
+      const request = http.get(
+        `http://127.0.0.1:${process.env.DEVTOOLS_PORT}/json/version`,
+        async res => {
+          let jsonString = '';
+          res.setEncoding('utf8');
+          for await (const chunk of res) jsonString += chunk;
+          resolve(jsonString);
+        },
+      );
       request.once('error', reject);
       request.end();
     });
@@ -358,15 +361,9 @@ export default class ApiManager<
   }
 
   private formatCloudAddress(host: string): string {
-    if (!host) return host;
-    if (host.endsWith('/')) host = host.slice(0, -1);
-    if (!host.endsWith('/desktop')) {
-      host += '/desktop';
-    }
-    if (!host.includes('://')) {
-      host = `ws://${host}`;
-    }
-    return host;
+    const url = toUrl(host);
+    url.pathname = '/desktop';
+    return url.href;
   }
 }
 

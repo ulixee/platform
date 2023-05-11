@@ -61,6 +61,14 @@ export default class DesktopCore {
     this.connectionToCloudCore = cloudApiConnection;
   }
 
+  public static registerWsRoutes(
+    addWsRoute: (route: string | RegExp, callbackFn: IWsHandleFn, useTransport?: boolean) => any,
+  ): void {
+    addWsRoute(/\/desktop-devtools\?id=.+/, this.addAppDevtoolsWebsocket.bind(this), true);
+    addWsRoute(/\/desktop(\?.+)?/, this.addDesktopConnection.bind(this));
+    addWsRoute(/\/chromealive\/.+/, this.addChromeAliveConnection.bind(this));
+  }
+
   public static addAppDevtoolsWebsocket(ws: WebSocket, request: IncomingMessage): void {
     const url = new URL(request.url, 'http://localhost');
     const id = url.searchParams.get('id');
@@ -346,3 +354,8 @@ export default class DesktopCore {
     }
   }
 }
+type IWsHandleFn = (
+  wsOrTransport: WebSocket | ITransportToClient<any>,
+  request: IncomingMessage,
+  params: string[],
+) => void;

@@ -121,8 +121,9 @@ export default Vue.defineComponent({
     navigate() {
       return this.$router.push(`/datastore/${this.datastore.versionHash}`);
     },
-    formatDate(date: Date): string {
+    formatDate(date: Date | number): string {
       if (!date) return 'now';
+      if (typeof date === 'number') date = new Date(date);
       return date.toLocaleString(undefined, {
         month: 'short',
         day: 'numeric',

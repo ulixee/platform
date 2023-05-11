@@ -167,8 +167,10 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     if (versionHash.includes(DatastoreManifest.TemporaryIdPrefix)) {
       throw new Error('This Datastore has only been started. You need to deploy it.');
     }
-    const dbx = await apiClient.download(versionHash, { identity: adminIdentity });
-    await apiClient.upload(dbx, { identity: adminIdentity });
+    const download = await apiClient.download(versionHash, {
+      identity: adminIdentity,
+    });
+    await apiClient.upload(download.compressedDbx, { forwardedSignature: download });
   }
 
   public async installDatastore(arg: {

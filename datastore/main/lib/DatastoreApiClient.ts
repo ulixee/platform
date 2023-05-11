@@ -13,6 +13,7 @@ import ICoreEventPayload from '@ulixee/net/interfaces/ICoreEventPayload';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import * as Http from 'http';
 import * as Https from 'https';
+import { toUrl } from '@ulixee/commons/lib/utils';
 import ITypes from '../types';
 import installDatastoreSchema, { addDatastoreAlias } from '../types/installDatastoreSchema';
 import IItemInputOutput from '../interfaces/IItemInputOutput';
@@ -39,8 +40,7 @@ export default class DatastoreApiClient {
     this.options = options ?? ({} as any);
     this.options.consoleLogErrors ??= false;
     this.options.storeQueryLog ??= process.env.NODE_ENV !== 'test';
-    if (!host.includes('://')) host = `ulx://${host}`;
-    const url = new URL(host);
+    const url = toUrl(host);
     const transport = new WsTransportToCore(`ws://${url.host}/datastore`);
     this.connectionToCore = new ConnectionToCore(transport);
     this.connectionToCore.on('event', this.onEvent.bind(this));
@@ -225,6 +225,7 @@ export default class DatastoreApiClient {
       allowNewLinkedVersionHistory?: boolean;
       timeoutMs?: number;
       identity?: Identity;
+      forwardedSignature?: { adminIdentity: string; adminSignature: Buffer };
     } = {},
   ): Promise<{ success: boolean }> {
     options.allowNewLinkedVersionHistory ??= false;
@@ -241,6 +242,8 @@ export default class DatastoreApiClient {
         allowNewLinkedVersionHistory,
       );
       adminSignature = identity.sign(message);
+    } else if (options.forwardedSignature) {
+      ({ adminIdentity, adminSignature } = options.forwardedSignature);
     }
 
     const { success } = await this.runApi(
@@ -259,13 +262,14 @@ export default class DatastoreApiClient {
   public async download(
     versionHash: string,
     options: {
+      payment?: IPayment;
       timeoutMs?: number;
       identity?: Identity;
     } = {},
-  ): Promise<Buffer> {
+  ): Promise<IDatastoreApiTypes['Datastore.download']['result']> {
     options.timeoutMs ??= 120e3;
     const requestDate = new Date();
-    const { timeoutMs } = options;
+    const { timeoutMs, payment } = options;
 
     let adminSignature: Buffer;
     let adminIdentity: string;
@@ -279,17 +283,17 @@ export default class DatastoreApiClient {
       adminSignature = identity.sign(message);
     }
 
-    const result = await this.runApi(
+    return await this.runApi(
       'Datastore.download',
       {
         versionHash,
         requestDate,
         adminSignature,
         adminIdentity,
+        payment,
       },
       timeoutMs,
     );
-    return result?.compressedDatastore;
   }
 
   public async startDatastore(dbxPath: string, watch = false): Promise<{ success: boolean }> {

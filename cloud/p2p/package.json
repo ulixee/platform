@@ -1,0 +1,33 @@
+{
+  "name": "@ulixee/cloud-p2p",
+  "version": "2.0.0-alpha.21",
+  "description": "Peer to peer library for the Ulixee network.",
+  "dependencies": {
+    "@brillout/import": "^0.2.3",
+    "@ulixee/commons": "2.0.0-alpha.21",
+    "@ulixee/crypto": "2.0.0-alpha.21",
+    "@ulixee/platform-specification": "2.0.0-alpha.21",
+    "libp2p": "^0.44.0",
+    "@libp2p/bootstrap": "^6.0.3",
+    "@libp2p/crypto": "^1.0.15",
+    "@libp2p/kad-dht": "^8.0.12",
+    "@chainsafe/libp2p-yamux": "^4.0.1",
+    "@libp2p/websockets": "^6.0.1",
+    "@libp2p/peer-id-factory": "^2.0.3",
+    "@libp2p/peer-id": "^2.0.3",
+    "@libp2p/peer-store": "^7.0.2",
+    "@libp2p/interface-peer-id": "^2.0.0",
+    "@libp2p/interface-peer-info": "^1.0.0",
+    "it-pipe": "^3.0.1",
+    "it-first": "^3.0.1",
+    "it-length-prefixed": "^9.0.1",
+    "datastore-core": "^9.1.1",
+    "interface-datastore": "^8.2.0",
+    "multiformats": "^11.0.2",
+    "@multiformats/multiaddr": "^12.0.0",
+    "better-sqlite3": "^8.3.0"
+  },
+  "devDependencies": {
+    "@ulixee/datastore-testing": "2.0.0-alpha.21"
+  }
+}

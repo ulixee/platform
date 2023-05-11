@@ -5,7 +5,10 @@ import { UlixeeError } from '@ulixee/commons/lib/errors';
 
 export class DatastoreNotFoundError extends Error {
   public code = 'ERR_DATASTORE_NOT_FOUND';
-  constructor(message: string, readonly latestVersionHash?: string) {
+  constructor(
+    message: string,
+    readonly data?: { versionHash?: string; latestVersionHash?: string },
+  ) {
     super(message);
     this.name = 'DatastoreNotFoundError';
   }

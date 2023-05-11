@@ -1,6 +1,5 @@
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
 import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
-import ICluster from '@ulixee/platform-specification/types/ICluster';
 import IDatastoreCoreConfigureOptions from './IDatastoreCoreConfigureOptions';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
 import WorkTracker from '../lib/WorkTracker';
@@ -20,7 +19,6 @@ export default interface IDatastoreApiContext {
   pluginCoresByName: { [name: string]: IExtractorPluginCore<unknown> };
   sidechainClientManager: SidechainClientManager;
   connectionToClient?: IDatastoreConnectionToClient;
-  cluster: ICluster;
   cloudNodeAddress: URL;
   vm: DatastoreVm;
   datastoreApiClients: DatastoreApiClients;

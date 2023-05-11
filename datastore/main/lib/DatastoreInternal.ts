@@ -171,7 +171,7 @@ export default class DatastoreInternal<
       const parameters = inputByFunctionName[name];
       virtualEntitiesByName[name] = { parameters, records: [] };
       const func = this.extractors[name] ?? this.crawlers[name];
-      callbacks.onFunction ??= (_id, _name, options, run) => run(options);
+      callbacks.onFunction ??= (_id, _name, opts, run) => run(opts);
       virtualEntitiesByName[name].records = await callbacks.onFunction(
         id,
         name,

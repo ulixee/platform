@@ -7,15 +7,8 @@ export default new DatastoreApiHandler('Datastore.start', {
     }
     const { dbxPath } = request;
 
-    const { datastoreRegistry, storageEngineRegistry } = context;
-    const manifest = await datastoreRegistry.startAtPath(dbxPath);
-
-    await storageEngineRegistry.deleteExisting(manifest.versionHash);
-    const previous = await datastoreRegistry.getPreviousVersion(manifest.versionHash);
-
-    await storageEngineRegistry.create(context.vm, dbxPath, manifest, previous, request.watch);
-
-    await datastoreRegistry.publishDatastore(manifest.versionHash, 'started');
+    const { datastoreRegistry } = context;
+    await datastoreRegistry.startAtPath(dbxPath, request.watch);
     context.connectionToClient.once('disconnected', () => datastoreRegistry.stopAtPath(dbxPath));
     return { success: true };
   },

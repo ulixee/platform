@@ -13,6 +13,7 @@ import {
 } from '../types/IDatastorePricing';
 import { DatastoreStatsSchema } from '../types/IDatastoreStats';
 import { datastoreVersionHashValidation } from '../types/datastoreVersionHashValidation';
+import { DatastoreManifestWithLatest } from '../services/DatastoreRegistryApis';
 
 const FunctionMetaSchema = z.object({
   description: z.string().optional(),
@@ -41,6 +42,7 @@ export const DatastoreApiSchemas = {
       adminSignature: signatureValidation
         .optional()
         .describe('A signature from an approved AdminIdentity'),
+      payment: PaymentSchema.optional(),
     }),
     result: z.object({
       success: z.boolean(),
@@ -60,9 +62,16 @@ export const DatastoreApiSchemas = {
       adminSignature: signatureValidation
         .optional()
         .describe('A signature from an approved AdminIdentity'),
+      payment: PaymentSchema.optional(),
     }),
     result: z.object({
-      compressedDatastore: z.instanceof(Buffer).describe('Bytes of the compressed .dbx directory.'),
+      adminIdentity: identityValidation.describe(
+        'The admin identity who uploaded this Datastore (used for proof in public network).',
+      ),
+      adminSignature: signatureValidation.describe(
+        'The signature of the uploader of this Datastore (used for proof in public network).',
+      ),
+      compressedDbx: z.instanceof(Buffer).describe('Bytes of the compressed .dbx directory.'),
     }),
   },
   'Datastore.start': {
@@ -134,18 +143,7 @@ export const DatastoreApiSchemas = {
         .optional()
         .describe('Include JSON describing the schema for each function'),
     }),
-    result: z.object({
-      name: z.string().optional(),
-      description: z.string().optional(),
-      isStarted: z
-        .boolean()
-        .describe('Only relevant in development mode - is this Datastore started.'),
-      scriptEntrypoint: z.string(),
-      versionHash: datastoreVersionHashValidation,
-      versionTimestamp: z.date(),
-      latestVersionHash: datastoreVersionHashValidation.describe(
-        'The latest version hash of this datastore',
-      ),
+    result: DatastoreManifestWithLatest.extend({
       stats: DatastoreStatsSchema,
       extractorsByName: z.record(
         z.string().describe('The name of the extractor'),
@@ -340,7 +338,7 @@ export const DatastoreApiSchemas = {
             .describe('Only relevant in development mode - is this Datastore started.'),
           scriptEntrypoint: z.string(),
           versionHash: datastoreVersionHashValidation,
-          versionTimestamp: z.date(),
+          versionTimestamp: z.number().int().positive().describe('Millis since epoch'),
           domain: z
             .string()
             .optional()

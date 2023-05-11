@@ -7,6 +7,7 @@ import ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
 import ICoreRequestPayload from '@ulixee/net/interfaces/ICoreRequestPayload';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
 import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
+import { toUrl } from '@ulixee/commons/lib/utils';
 
 export default class ApiClient<
   TApis extends IDesktopAppApis | IChromeAliveSessionApis,
@@ -24,8 +25,7 @@ export default class ApiClient<
   ) {
     super();
     try {
-      if (!address.includes('://')) address = `ws://${address};`;
-      const url = new URL(address);
+      const url = toUrl(address);
       url.hostname.replace('localhost', '127.0.0.1');
       this.address = url.href;
     } catch (error) {

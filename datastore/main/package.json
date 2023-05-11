@@ -15,8 +15,8 @@
     "./cli/*": "./cli/*.js",
     "./storage-engines/*": "./storage-engines/*.js",
     "./connections/*": "./connections/*.js",
-    "./interfaces/*": "./interfaces/*",
-    "./types/*": "./types/*"
+    "./types/*": "./types/*",
+    "./interfaces/*": "./interfaces/*"
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.21",

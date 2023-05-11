@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.21",
+    "@ulixee/crypto": "2.0.0-alpha.21",
     "@ulixee/datastore-core": "2.0.0-alpha.21",
     "@ulixee/datastore-plugins-hero-core": "2.0.0-alpha.21",
     "@ulixee/hero-core": "2.0.0-alpha.21",
@@ -32,6 +33,7 @@
     "@ulixee/net": "2.0.0-alpha.21",
     "@ulixee/platform-specification": "2.0.0-alpha.21",
     "@ulixee/specification": "2.0.0-alpha.21",
+    "@ulixee/cloud-p2p": "2.0.0-alpha.21",
     "commander": "^9.3.0",
     "ws": "^7.4.6"
   },

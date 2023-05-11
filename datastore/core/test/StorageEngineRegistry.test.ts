@@ -82,7 +82,7 @@ export default new Datastore({
   await client.upload(await packager.dbx.tarGzip());
 
   // @ts-expect-error
-  const datastoresDb = DatastoreCore.datastoreRegistry.datastoresDb;
+  const datastoresDb = DatastoreCore.datastoreRegistry.diskStore.datastoresDb;
 
   await expect(
     client.stream(packager.manifest.versionHash, 'migrator', { success: false }),

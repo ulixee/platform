@@ -1,26 +1,19 @@
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import PaymentProcessor from './PaymentProcessor';
-import { IDatastoreManifestWithRuntime } from './DatastoreRegistry';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 import { IDatastoreStatsRecord } from '../db/DatastoreStatsTable';
 import { IDatastoreStats } from './StatsTracker';
+import { IDatastoreManifestWithLatest } from '../interfaces/IDatastoreRegistryStore';
 
 export default async function translateDatastoreMetadata(
-  datastore: IDatastoreManifestWithRuntime,
+  datastore: IDatastoreManifestWithLatest,
   datastoreStats: IDatastoreStats,
   context: IDatastoreApiContext,
   includeSchemaAsJson: boolean,
 ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
   const result: IDatastoreApiTypes['Datastore.meta']['result'] = {
-    name: datastore.name,
-    description: datastore.description,
-    isStarted: datastore.isStarted,
-    scriptEntrypoint: datastore.scriptEntrypoint,
-    versionHash: datastore.versionHash,
-    latestVersionHash: datastore.latestVersionHash,
-    versionTimestamp: new Date(datastore.versionTimestamp),
-    schemaInterface: datastore.schemaInterface,
-    stats: translateStats(datastoreStats.stats),
+    ...datastore,
+    stats: datastoreStats.stats,
     crawlersByName: {},
     extractorsByName: {},
     tablesByName: {},
@@ -34,7 +27,7 @@ export default async function translateDatastoreMetadata(
 
     result.extractorsByName[name] = {
       description: result.description,
-      stats: translateStats(stats),
+      stats,
       pricePerQuery,
       minimumPrice: pricePerQuery + settlementFee,
       priceBreakdown: prices,
@@ -48,7 +41,7 @@ export default async function translateDatastoreMetadata(
 
     result.crawlersByName[name] = {
       description: result.description,
-      stats: translateStats(stats),
+      stats,
       pricePerQuery,
       minimumPrice: pricePerQuery + settlementFee,
       priceBreakdown: prices,
@@ -63,7 +56,7 @@ export default async function translateDatastoreMetadata(
 
     result.tablesByName[name] = {
       description: result.description,
-      stats: translateStats(stats),
+      stats,
       pricePerQuery: pricePerQuery + settlementFee,
       priceBreakdown: prices,
       schemaJson: includeSchemaAsJson ? meta.schemaAsJson : undefined,

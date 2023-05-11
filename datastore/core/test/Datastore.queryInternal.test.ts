@@ -32,7 +32,7 @@ beforeAll(async () => {
 afterAll(async () => {
   for (const storage of storages) await storage.close();
   await cloudNode.close();
-  if (Fs.existsSync(storageDir)) Fs.rmdirSync(storageDir, { recursive: true });
+  if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
 });
 
 test('query datastore table', async () => {

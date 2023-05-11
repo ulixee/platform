@@ -6,9 +6,9 @@ import { TQueryCallMeta } from '../interfaces/IStorageEngine';
 
 export default class RemoteStorageEngine extends AbstractStorageEngine {
   protected connectionToCore: ConnectionToDatastoreCore;
-  constructor(readonly storageEngineEndpoint: string) {
+  constructor(readonly storageEngineHost: string) {
     super();
-    this.connectionToCore = ConnectionToDatastoreCore.remote(storageEngineEndpoint);
+    this.connectionToCore = ConnectionToDatastoreCore.remote(storageEngineHost);
   }
 
   public override async close(): Promise<void> {

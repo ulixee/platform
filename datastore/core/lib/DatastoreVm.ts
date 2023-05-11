@@ -123,14 +123,13 @@ export default class DatastoreVm {
       wrapper: 'commonjs',
       strict: true,
       require: {
-        context: 'host',
         external: {
           modules: Array.from(whitelist),
           transitive: false,
         },
         // This is needed because the underlying node vm/Script can't see the origin line numbers
         // from the "host", so we need Hero to be loaded into the Sandbox
-        pathContext(name) {
+        context(name) {
           for (const plugin of plugins) {
             if (plugin.nodeVmUseSandbox?.(name) === true) {
               return 'sandbox';

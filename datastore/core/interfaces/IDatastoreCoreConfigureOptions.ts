@@ -3,6 +3,7 @@ import Identity from '@ulixee/crypto/lib/Identity';
 
 export default interface IDatastoreCoreConfigureOptions {
   serverEnvironment: 'development' | 'production';
+  cloudType: 'public' | 'private';
   maxRuntimeMs: number;
   datastoresDir: string;
   queryHeroSessionsDir: string;
@@ -11,7 +12,7 @@ export default interface IDatastoreCoreConfigureOptions {
   paymentAddress: string;
   enableDatastoreWatchMode: boolean;
   cloudAdminIdentities: string[];
-  requireDatastoreAdminIdentities: boolean;
+  datastoresMustHaveOwnAdminIdentity: boolean;
   defaultBytesForPaymentEstimates: number;
   computePricePerQuery: number;
   approvedSidechains: IBlockSettings['sidechains'];
@@ -19,4 +20,9 @@ export default interface IDatastoreCoreConfigureOptions {
   defaultSidechainHost: string;
   defaultSidechainRootIdentity: string;
   identityWithSidechain: Identity;
+
+  // services settings
+  datastoreRegistryHost: string;
+  storageEngineHost: string;
+  statsTrackerHost: string;
 }

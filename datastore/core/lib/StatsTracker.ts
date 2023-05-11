@@ -1,119 +1,48 @@
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
-import { IDatastoreEntityStatsRecord } from '../db/DatastoreEntityStatsTable';
+import { IStatsTrackerApiTypes } from '@ulixee/platform-specification/services/StatsTrackerApis';
 import { IDatastoreStatsRecord } from '../db/DatastoreStatsTable';
-import QueryLogDb from '../db/QueryLogDb';
-import StatsDb from '../db/StatsDb';
+import StatsTrackerDiskStore from './StatsTrackerDiskStore';
+import StatsTrackerClusterStore from './StatsTrackerClusterStore';
 
-export interface IStatsByName {
-  [name: string]: IDatastoreEntityStatsRecord;
-}
-
-export type IDatastoreStats = {
-  stats: IDatastoreStatsRecord;
-  statsByEntityName: IStatsByName;
-};
+export type IDatastoreStats = IStatsTrackerApiTypes['StatsTracker.get']['result'];
 
 export default class StatsTracker extends TypedEventEmitter<{
   stats: IDatastoreStatsRecord;
 }> {
-  private get statsDb(): StatsDb {
-    this.#statsDb ??= new StatsDb(this.datastoresDir);
-    return this.#statsDb;
-  }
+  public diskStore?: StatsTrackerDiskStore;
+  public clusterStore?: StatsTrackerClusterStore;
 
-  private get queryLogDb(): QueryLogDb {
-    this.#queryLogDb ??= new QueryLogDb(this.datastoresDir);
-    return this.#queryLogDb;
-  }
-
-  #statsDb: StatsDb;
-  #queryLogDb: QueryLogDb;
-
-  constructor(readonly datastoresDir: string) {
+  constructor(readonly datastoresDir: string, statsEndpoint?: URL) {
     super();
-  }
-
-  public close(): Promise<void> {
-    this.#statsDb.close();
-    this.#queryLogDb?.close();
-    this.#statsDb = null;
-    this.#queryLogDb = null;
-    return Promise.resolve();
-  }
-
-  public getForDatastore(manifest: IDatastoreManifest): IDatastoreStats {
-    const versionHash = manifest.versionHash;
-    const statsByEntityName: IStatsByName = {};
-    for (const name of [
-      ...Object.keys(manifest.extractorsByName),
-      ...Object.keys(manifest.tablesByName),
-      ...Object.keys(manifest.crawlersByName),
-    ]) {
-      statsByEntityName[name] = this.statsDb.datastoreEntities.getByVersionHash(versionHash, name);
+    if (statsEndpoint) {
+      this.clusterStore = new StatsTrackerClusterStore(statsEndpoint);
+    } else {
+      this.diskStore = new StatsTrackerDiskStore(datastoresDir);
     }
-
-    return {
-      stats: this.statsDb.datastores.getByVersionHash(versionHash),
-      statsByEntityName,
-    };
   }
 
-  public recordEntityStats(
-    versionHash: string,
-    name: string,
-    stats: { bytes: number; microgons: number; milliseconds: number; isCredits: boolean },
-    error: Error,
-  ): void {
-    this.statsDb.datastoreEntities.record(
-      versionHash,
-      name,
-      stats.microgons,
-      stats.bytes,
-      stats.milliseconds,
-      stats.isCredits ? stats.microgons : 0,
-      !!error,
-    );
+  async close(): Promise<void> {
+    await this.clusterStore?.close();
+    await this.diskStore?.close();
   }
 
-  public recordQuery(
-    id: string,
-    query: string,
-    startTime: number,
-    input: any,
-    outputs: any[],
-    datastoreVersionHash: string,
-    stats: { bytes: number; microgons: number; milliseconds: number; isCredits: boolean },
-    micronoteId: string,
-    creditId: string,
-    affiliateId: string,
-    error?: Error,
-    heroSessionIds?: string[],
-  ): void {
-    const newStats = this.statsDb.datastores.record(
-      datastoreVersionHash,
-      stats.microgons,
-      stats.bytes,
-      stats.milliseconds,
-      stats.isCredits ? stats.microgons : 0,
-      !!error,
-    );
-    this.emit('stats', newStats);
-    this.queryLogDb.logTable.record(
-      id,
-      datastoreVersionHash,
-      query,
-      startTime,
-      affiliateId,
-      input,
-      outputs,
-      error,
-      micronoteId,
-      creditId,
-      stats.microgons,
-      stats.bytes,
-      stats.milliseconds,
-      heroSessionIds,
-    );
+  public async getForDatastore(manifest: IDatastoreManifest): Promise<IDatastoreStats> {
+    if (this.clusterStore) return this.clusterStore.getForDatastore(manifest.versionHash);
+    return this.diskStore.getForDatastore(manifest);
+  }
+
+  public async recordEntityStats(
+    details: IStatsTrackerApiTypes['StatsTracker.recordEntityStats']['args'],
+  ): Promise<void> {
+    if (this.clusterStore) await this.clusterStore.recordEntityStats(details);
+    else this.diskStore.recordEntityStats(details);
+  }
+
+  public async recordQuery(
+    details: IStatsTrackerApiTypes['StatsTracker.recordQuery']['args'],
+  ): Promise<void> {
+    if (this.clusterStore) await this.clusterStore.recordQuery(details);
+    else this.diskStore.recordQuery(details);
   }
 }

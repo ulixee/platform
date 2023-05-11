@@ -75,7 +75,7 @@ test('should be able to download dbx files', async () => {
   DatastoreCore.options.cloudAdminIdentities = [identity.bech32];
 
   await expect(client.download(manifest.versionHash)).rejects.toThrowError(
-    'valid AdminIdentity signature',
+    'Admin Identity does not have permissions',
   );
   await expect(client.download(manifest.versionHash, { identity })).resolves.toBeTruthy();
 });

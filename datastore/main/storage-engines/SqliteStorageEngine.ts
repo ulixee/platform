@@ -2,7 +2,7 @@ import { SqlParser } from '@ulixee/sql-engine';
 import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
 import { IDbJsTypes, IDbTypeNames } from '@ulixee/sql-engine/interfaces/IDbTypes';
 import SqliteAdapter from '@ulixee/sql-engine/adapters/SqliteAdapter';
-import * as Database from 'better-sqlite3';
+import Database = require('better-sqlite3');
 import { Database as SqliteDatabase } from 'better-sqlite3';
 import AbstractStorageEngine from './AbstractStorageEngine';
 

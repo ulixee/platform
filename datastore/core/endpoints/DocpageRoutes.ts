@@ -1,10 +1,15 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { createReadStream } from 'fs';
 import DocspageDir from '@ulixee/datastore-docpage';
-import DatastoreRegistry from './DatastoreRegistry';
-import createStaticFileHandler from './staticServe';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
+import IDatastoreDomainResponse from '@ulixee/datastore/interfaces/IDatastoreDomainResponse';
+import { isIPv4, isIPv6 } from 'net';
+import { toUrl } from '@ulixee/commons/lib/utils';
+import DatastoreRegistry from '../lib/DatastoreRegistry';
+import createStaticFileHandler from '../lib/staticServe';
+import { DatastoreNotFoundError } from '../lib/errors';
 
-export default class ServeDocPages {
+export default class DocpageRoutes {
   private staticServe: (req: IncomingMessage, res: ServerResponse) => Promise<any>;
 
   constructor(
@@ -25,8 +30,7 @@ export default class ServeDocPages {
     const url = new URL(req.url, host);
 
     if (!url.host.includes('localhost')) {
-      const domainVersion = await this.datastoreRegistry.getByDomain(url.hostname);
-      datastoreVersionHash = domainVersion?.versionHash;
+      datastoreVersionHash = await this.datastoreRegistry.getByDomain(url.hostname);
     }
     if (!datastoreVersionHash) {
       const match = url.pathname.match(/(dbx1[ac-hj-np-z02-9]{18})(\/(.+)?)?/);
@@ -46,37 +50,63 @@ export default class ServeDocPages {
   }
 
   public async routeHttpRoot(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
-    const host = req.headers.host.replace(`:${this.serverAddress.port}`, '').split('://').pop();
+    const domain = toUrl(req.headers.host).hostname;
+    if (isIPv4(domain) || isIPv6(domain)) return false;
 
-    const domainVersion = await this.datastoreRegistry.getByDomain(host);
+    const domainVersion = await this.datastoreRegistry.getByDomain(domain);
     if (!domainVersion) return false;
 
-    const params = [domainVersion.versionHash];
+    const params = [domainVersion];
     if (req.url.length) params.push(req.url);
-    await this.routeHttp(req, res, params);
+    return await this.routeHttp(req, res, params);
+  }
+
+  public async routeOptionsRoot(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+    const domain = toUrl(req.headers.host).hostname;
+    if (isIPv4(domain) || isIPv6(domain)) return false;
+
+    const domainVersion = await this.datastoreRegistry.getByDomain(domain);
+    if (!domainVersion) {
+      res.writeHead(404);
+      res.end(
+        TypeSerializer.stringify(
+          new DatastoreNotFoundError(
+            `A datastore mapped to the domain ${domain} could not be located.`,
+          ),
+        ),
+      );
+    } else {
+      res.end(
+        TypeSerializer.stringify(<IDatastoreDomainResponse>{
+          datastoreVersionHash: domainVersion,
+          host: this.serverAddress.host,
+        }),
+      );
+    }
+    return true;
   }
 
   public async routeHttp(
     req: IncomingMessage,
     res: ServerResponse,
     params: string[],
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (!params[1]) {
       const url = new URL(req.url, 'http://localhost/');
       url.pathname += '/';
       const search = url.search !== '?' ? url.search : '';
       res.writeHead(301, { location: `${url.pathname}${search}` });
       res.end();
-      return;
+      return true;
     }
 
     if (req.url.includes('docpage.json')) {
       const versionHash = params[0];
-      const { entrypointPath } = await this.datastoreRegistry.getByVersionHash(versionHash);
-      const docpagePath = entrypointPath.replace('datastore.js', 'docpage.json');
+      const { runtimePath } = await this.datastoreRegistry.getByVersionHash(versionHash);
+      const docpagePath = runtimePath.replace('datastore.js', 'docpage.json');
       res.writeHead(200, { 'content-type': 'application/json' });
       createReadStream(docpagePath, { autoClose: true }).pipe(res, { end: true });
-      return;
+      return true;
     }
 
     if (
@@ -90,5 +120,6 @@ export default class ServeDocPages {
       req.url = '/';
     }
     await this.staticServe(req, res);
+    return true;
   }
 }

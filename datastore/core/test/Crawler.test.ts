@@ -15,7 +15,7 @@ const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Crawler.test')
 let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 let registry: DatastoreRegistry;
-let statsTracker: StatsTracker
+let statsTracker: StatsTracker;
 const findCachedSpy = jest.spyOn<any, any>(Crawler.prototype, 'findCached');
 
 beforeAll(async () => {
@@ -57,8 +57,7 @@ test('should be able to run a crawler', async () => {
   await expect(
     client.stream(crawler.manifest.versionHash, 'crawlCall', {}, { affiliateId }),
   ).resolves.toEqual([{ version: '1', crawler: 'none', runCrawlerTime: expect.any(Date) }]);
-  // @ts-expect-error
-  const { queryLogDb, statsDb } = statsTracker;
+  const { queryLogDb, statsDb } = statsTracker.diskStore;
   expect(queryLogDb.logTable.all()).toHaveLength(1);
   expect(queryLogDb.logTable.all()[0].query).toBe(`stream(crawlCall)`);
   expect(queryLogDb.logTable.all()[0].affiliateId).toBe(affiliateId);
@@ -72,12 +71,9 @@ test('should be able to query a crawler', async () => {
   const crawler = new DatastorePackager(`${__dirname}/datastores/crawl.js`);
   await crawler.build();
   await client.upload(await crawler.dbx.tarGzip());
-  // @ts-expect-error
-  const { queryLogDb, statsDb } = registry;
+  const { queryLogDb, statsDb } = statsTracker.diskStore;
   queryLogDb.logTable.db.exec(`delete from ${queryLogDb.logTable.tableName}`);
-  statsDb.datastoreEntities.db.exec(
-    `delete from ${statsDb.datastoreEntities.tableName}`,
-  );
+  statsDb.datastoreEntities.db.exec(`delete from ${statsDb.datastoreEntities.tableName}`);
   const affiliateId = `aff${nanoid(12)}`;
   await expect(
     client.query(crawler.manifest.versionHash, 'select * from crawlCall()', { affiliateId }),

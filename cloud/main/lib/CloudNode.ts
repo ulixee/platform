@@ -1,46 +1,39 @@
-import * as WebSocket from 'ws';
-import * as Http from 'http';
-import { IncomingMessage, ServerResponse } from 'http';
-import { AddressInfo, ListenOptions, Socket } from 'net';
+import { AddressInfo, ListenOptions } from 'net';
 import Log from '@ulixee/commons/lib/Logger';
-import { bindFunctions, createPromise, isPortInUse } from '@ulixee/commons/lib/utils';
-import { isWsOpen } from '@ulixee/net/lib/WsUtils';
-import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import { bindFunctions, isPortInUse } from '@ulixee/commons/lib/utils';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
+import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
+import * as Path from 'path';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import P2pConnection from '@ulixee/cloud-p2p';
+import * as Http from 'http';
 import CoreRouter from './CoreRouter';
+import RoutableServer from './RoutableServer';
+import env from '../env';
 
 const pkg = require('../package.json');
 
-const { log } = Log(module);
-
-export type IHttpHandleFn = (
-  req: Http.IncomingMessage,
-  res: Http.ServerResponse,
-  params: string[],
-) => Promise<boolean | void> | void;
-type IWsHandleFn = (ws: WebSocket, request: Http.IncomingMessage, params: string[]) => void;
-
 const isTestEnv = process.env.NODE_ENV === 'test';
 
+const { log } = Log(module);
+
 export default class CloudNode {
-  public readonly wsServer: WebSocket.Server;
+  public readonly publicServer: RoutableServer;
+  public readonly hostedServicesServer: RoutableServer;
+  public peerServer: Http.Server;
+  public peerNetwork?: IPeerNetwork;
+
+  public readonly shouldShutdownOnSignals: boolean = true;
+
   public readonly router: CoreRouter;
 
-  public get address(): Promise<string> {
-    return this.listeningPromise.promise.then(x => {
-      return `${this.addressHost}:${x.port}`;
-    });
-  }
-
   public get port(): Promise<number> {
-    return this.listeningPromise.promise.then(x => {
-      return x.port;
-    });
+    return this.publicServer.port;
   }
 
-  public get hasConnections(): boolean {
-    return this.wsServer.clients.size > 0;
+  public get address(): Promise<string> {
+    return this.publicServer.host;
   }
 
   public get version(): string {
@@ -48,89 +41,50 @@ export default class CloudNode {
   }
 
   private isClosing: Promise<any>;
+  private isReady = new Resolvable<void>();
   private didAutoroute = false;
-  private sockets = new Set<Socket>();
-  private listeningPromise = createPromise<AddressInfo>();
-  private readonly addressHost: string;
-  private readonly httpServer: Http.Server;
-  private readonly httpRoutes: [url: RegExp | string, method: string, handler: IHttpHandleFn][];
-  private readonly wsRoutes: [RegExp | string, IWsHandleFn][] = [];
 
-  constructor(addressHost?: string, readonly shouldShutdownOnSignals = true) {
-    this.httpServer = new Http.Server();
+  constructor(
+    publicServerIpOrDomain?: string,
+    config: {
+      servicesServerIpOrDomain?: string;
+      shouldShutdownOnSignals?: boolean;
+    } = { shouldShutdownOnSignals: true },
+  ) {
     bindFunctions(this);
-    this.httpServer.on('error', this.onHttpError);
-    this.httpServer.on('request', this.handleHttpRequest);
-    this.httpServer.on('connection', this.handleHttpConnection);
-    this.addressHost = addressHost ?? 'localhost';
-    this.wsServer = new WebSocket.Server({
-      server: this.httpServer,
-      perMessageDeflate: { threshold: 500, serverNoContextTakeover: false },
-    });
-    this.wsServer.on('connection', this.handleWsConnection);
-    this.httpRoutes = [];
+
+    this.shouldShutdownOnSignals = config.shouldShutdownOnSignals;
+    this.publicServer = new RoutableServer(this.isReady.promise, publicServerIpOrDomain);
+    if (config.servicesServerIpOrDomain) {
+      this.hostedServicesServer = new RoutableServer(
+        this.isReady.promise,
+        config.servicesServerIpOrDomain,
+      );
+    }
     this.router = new CoreRouter(this);
 
-    if (!shouldShutdownOnSignals) ShutdownHandler.disableSignals = true;
+    if (config.shouldShutdownOnSignals === true) ShutdownHandler.disableSignals = true;
     ShutdownHandler.register(this.autoClose);
   }
 
-  public get dataDir(): string {
-    return this.router.datastoresDir;
-  }
-
   public async listen(
-    options?: ListenOptions,
-    shouldAutoRouteToHost = !isTestEnv,
-  ): Promise<AddressInfo> {
-    if (this.listeningPromise.isResolved) return this.listeningPromise.promise;
+    publicServerOptions?: ListenOptions,
+    hostedServicesOptions?: ListenOptions,
+    peerServerOptions?: ListenOptions,
+  ): Promise<void> {
+    publicServerOptions ??= {};
+    hostedServicesOptions ??= {};
+    const nodeAddress = await this.startPublicServer(publicServerOptions);
 
-    const listenOptions = { ...(options ?? { port: 0 }) };
-
-    if (!listenOptions.port && !isTestEnv) {
-      const is1818InUse = await isPortInUse(1818);
-      if (!is1818InUse) listenOptions.port = 1818;
+    if (!hostedServicesOptions.port && !isTestEnv) {
+      if (!(await isPortInUse(18181))) hostedServicesOptions.port = 18181;
     }
+    await this.hostedServicesServer?.listen(hostedServicesOptions);
 
-    try {
-      const addressHost = await new Promise<AddressInfo>((resolve, reject) => {
-        this.httpServer.once('error', reject);
-        this.httpServer
-          .listen(listenOptions, () => {
-            this.httpServer.off('error', reject);
-            resolve(this.httpServer.address() as AddressInfo);
-          })
-          .ref();
-      });
-      const isLocalhost =
-        addressHost.address === '127.0.0.1' ||
-        addressHost.address === '::' ||
-        addressHost.address === '::1';
-
-      // if we're dealing with local or no configuration, set the local version host
-      if (isLocalhost && !options?.port && shouldAutoRouteToHost) {
-        // publish port with the version
-        await UlixeeHostsConfig.global.setVersionHost(
-          this.version,
-          `localhost:${addressHost.port}`,
-        );
-        this.didAutoroute = true;
-        ShutdownHandler.register(() => UlixeeHostsConfig.global.setVersionHost(this.version, null));
-      }
-      await this.router.start(`${this.addressHost}:${addressHost.port}`);
-      this.listeningPromise.resolve(addressHost);
-    } catch (error) {
-      this.listeningPromise.reject(error);
-    }
-    return this.listeningPromise;
-  }
-
-  public addHttpRoute(route: RegExp | string, method: string, handleFn: IHttpHandleFn): void {
-    this.httpRoutes.push([route, method, handleFn]);
-  }
-
-  public addWsRoute(route: RegExp | string, handleFn: IWsHandleFn): void {
-    this.wsRoutes.push([route, handleFn]);
+    await this.startPeerServices(peerServerOptions);
+    await this.router.start(nodeAddress, await this.hostedServicesServer?.host, this.peerNetwork);
+    // wait until router is registered before accepting traffic
+    this.isReady.resolve();
   }
 
   public async close(closeDependencies = true): Promise<void> {
@@ -143,25 +97,18 @@ export default class CloudNode {
         closeDependencies,
         sessionId: null,
       });
-
       if (this.didAutoroute) {
-        UlixeeHostsConfig.global.setVersionHost(this.version, null);
+        this.clearReservedPort();
       }
 
       if (closeDependencies) {
         await this.router.close();
       }
 
-      for (const ws of this.wsServer.clients) {
-        if (isWsOpen(ws)) ws.terminate();
-      }
-
-      for (const socket of this.sockets) {
-        socket.unref();
-        socket.destroy();
-      }
-
-      if (this.httpServer.listening) this.httpServer.unref().close();
+      await this.publicServer.close();
+      await this.hostedServicesServer?.close();
+      await this.peerServer?.close();
+      await this.peerNetwork?.close();
       log.stats('CloudNode.Closed', { parentLogId: logid, sessionId: null });
       resolvable.resolve();
     } catch (error) {
@@ -174,53 +121,55 @@ export default class CloudNode {
     return resolvable.promise;
   }
 
+  private async startPublicServer(publicServerOptions: ListenOptions): Promise<string> {
+    const wasOpenPublicPort = !publicServerOptions.port;
+    if (wasOpenPublicPort && !isTestEnv) {
+      if (!(await isPortInUse(1818))) publicServerOptions.port = 1818;
+    }
+    const { address, port } = await this.publicServer.listen(publicServerOptions);
+    // if we're dealing with local or no configuration, set the local version host
+    if (isLocalhost(address) && wasOpenPublicPort && !isTestEnv) {
+      // publish port with the version
+      await UlixeeHostsConfig.global.setVersionHost(this.version, `localhost:${port}`);
+      this.didAutoroute = true;
+      ShutdownHandler.register(this.clearReservedPort, true);
+    }
+    return await this.publicServer.host;
+  }
+
+  private clearReservedPort(): void {
+    UlixeeHostsConfig.global.setVersionHost(this.version, null);
+  }
+
   private autoClose(): Promise<void> {
     return this.close(true);
   }
 
-  private async handleHttpRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    await this.listeningPromise;
-    for (const [route, method, handlerFn] of this.httpRoutes) {
-      if (req.method !== method) continue;
-      if (route instanceof RegExp && route.test(req.url)) {
-        const args = route.exec(req.url);
-        const handled = await handlerFn(req, res, args?.length ? args.slice(1) : []);
-        if (handled !== false) return;
-      }
-      if (req.url === route) {
-        const handled = await handlerFn(req, res, []);
-        if (handled !== false) return;
-      }
+  private async startPeerServices(listenOptions: ListenOptions = {}): Promise<void> {
+    if (!env.dhtBootstrapPeers?.length && env.cloudType !== 'public') return;
+    if (!env.p2pIdentity)
+      throw new Error('You must configure a PeerNetwork Identity to join a cloud.');
+
+    if (!listenOptions.port && !isTestEnv) {
+      if (!(await isPortInUse(18182))) listenOptions.port = 18182;
     }
-    res.writeHead(404);
-    res.end('Route not found');
-  }
 
-  private handleHttpConnection(socket: Socket): void {
-    this.sockets.add(socket);
-    socket.on('close', () => this.sockets.delete(socket));
-  }
+    this.peerServer = new Http.Server();
+    await new Promise<void>(resolve => this.peerServer.listen(listenOptions, resolve));
+    const peerPort = (this.peerServer.address() as AddressInfo).port;
 
-  private async handleWsConnection(ws: WebSocket, req: Http.IncomingMessage): Promise<void> {
-    await this.listeningPromise;
-    for (const [route, handlerFn] of this.wsRoutes) {
-      if (route instanceof RegExp && route.test(req.url)) {
-        const args = route.exec(req.url);
-        handlerFn(ws, req, args?.length ? args.slice(1) : []);
-        return;
-      }
-      if (req.url === route) {
-        handlerFn(ws, req, []);
-        return;
-      }
-    }
-    ws.close();
+    this.peerNetwork = await new P2pConnection({
+      ulixeeApiHost: await this.publicServer.host,
+      dbPath: Path.resolve(this.router.datastoresDir, '../network'),
+      port: peerPort,
+      ipOrDomain: this.publicServer.hostname,
+      identity: env.p2pIdentity,
+    }).start(env.dhtBootstrapPeers, this.peerServer);
   }
+}
 
-  private onHttpError(error: Error): void {
-    log.warn('Error on CloudNode.httpServer', {
-      error,
-      sessionId: null,
-    });
-  }
+function isLocalhost(address: string): boolean {
+  return (
+    address === '127.0.0.1' || address === 'localhost' || address === '::' || address === '::1'
+  );
 }

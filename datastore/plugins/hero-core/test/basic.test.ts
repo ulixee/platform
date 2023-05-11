@@ -22,7 +22,7 @@ beforeAll(async () => {
   };
   Helpers.onClose(() => cloudNode.close(), true);
   koaServer = await Helpers.runKoaServer();
-  await cloudNode.listen(null, false);
+  await cloudNode.listen();
   if (Fs.existsSync(`${__dirname}/_testDatastore.dbx`))
     await Fs.promises.rm(`${__dirname}/_testDatastore.dbx`, { recursive: true });
   packager = new Packager(require.resolve('./_testDatastore.js'));
@@ -39,8 +39,7 @@ afterAll(Helpers.afterAll);
 test('it should be able to upload a datastore and run it by hash', async () => {
   // @ts-expect-error
   const statsTracker = DatastoreCore.statsTracker;
-  // @ts-expect-error
-  const { queryLogDb, statsDb } = statsTracker;
+  const { queryLogDb, statsDb } = statsTracker.diskStore;
 
   const manifest = packager.manifest;
 

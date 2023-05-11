@@ -15,7 +15,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
     );
     const storage = context.storageEngineRegistry.get(manifestWithRuntime);
     const datastore = await context.vm.open(
-      manifestWithRuntime.entrypointPath,
+      manifestWithRuntime.runtimePath,
       storage,
       manifestWithRuntime,
     );
@@ -28,7 +28,17 @@ export default new DatastoreApiHandler('Datastore.stream', {
     let bytes = 0;
     let runError: Error;
     let microgons = 0;
-    const isCredits = !!request.payment?.credits;
+    const didUseCredits = !!request.payment?.credits;
+
+    const requestDetailsForStats = {
+      id: request.id,
+      input: request.input,
+      versionHash: request.versionHash,
+      micronoteId: request.payment?.micronote?.micronoteId,
+      creditId: request.payment?.credits?.id,
+      affiliateId: request.affiliateId,
+      didUseCredits,
+    };
 
     const datastoreFunction =
       datastore.metadata.extractorsByName[request.name] ??
@@ -43,24 +53,16 @@ export default new DatastoreApiHandler('Datastore.stream', {
       );
     } catch (error) {
       runError = error;
-      context.statsTracker.recordQuery(
-        request.id,
-        `stream(${request.name})`,
+      await context.statsTracker.recordQuery({
+        ...requestDetailsForStats,
+        query: `stream(${request.name})`,
         startTime,
-        request.input,
         outputs,
-        request.versionHash,
-        {
-          milliseconds: Date.now() - startTime,
-          microgons,
-          bytes,
-          isCredits,
-        },
-        request.payment?.micronote?.micronoteId,
-        request.payment?.credits?.id,
-        request.affiliateId,
-        runError,
-      );
+        milliseconds: Date.now() - startTime,
+        microgons,
+        bytes,
+        error: runError,
+      });
       throw runError;
     }
 
@@ -86,27 +88,26 @@ export default new DatastoreApiHandler('Datastore.stream', {
     }
 
     const milliseconds = Date.now() - startTime;
-    const stats = {
+    const resultStats = {
       bytes,
       microgons,
       milliseconds,
-      isCredits,
     };
-    context.statsTracker.recordEntityStats(request.versionHash, request.name, stats, runError);
-    context.statsTracker.recordQuery(
-      request.id,
-      `stream(${request.name})`,
+    await context.statsTracker.recordEntityStats({
+      ...requestDetailsForStats,
+      entityName: request.name,
+      ...resultStats,
+      error: runError,
+    });
+    await context.statsTracker.recordQuery({
+      ...resultStats,
+      ...requestDetailsForStats,
+      query: `stream(${request.name})`,
       startTime,
-      request.input,
       outputs,
-      request.versionHash,
-      stats,
-      request.payment?.micronote?.micronoteId,
-      request.payment?.credits?.id,
-      request.affiliateId,
-      runError,
+      error: runError,
       heroSessionIds,
-    );
+    });
 
     if (runError) throw runError;
 
@@ -145,7 +146,7 @@ async function extractFunctionOutputs(
       for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
         if (plugin.beforeRunExtractor) {
           await plugin.beforeRunExtractor(options, {
-            scriptEntrypoint: manifestWithRuntime.entrypointPath,
+            scriptEntrypoint: manifestWithRuntime.runtimePath,
             functionName: request.name,
           });
         }
@@ -168,17 +169,15 @@ async function extractFunctionOutputs(
           }
 
           const milliseconds = Date.now() - runStart;
-          context.statsTracker.recordEntityStats(
-            request.versionHash,
-            name,
-            {
-              bytes,
-              microgons,
-              milliseconds,
-              isCredits: !!request.payment?.credits,
-            },
-            runError,
-          );
+          await context.statsTracker.recordEntityStats({
+            versionHash: request.versionHash,
+            entityName: name,
+            bytes,
+            microgons,
+            milliseconds,
+            didUseCredits: !!request.payment?.credits,
+            error: runError,
+          });
           if (runError instanceof Error) throw runError;
           return outputs;
         },

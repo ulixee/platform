@@ -3,7 +3,7 @@ import * as Path from 'path';
 import Packager from '@ulixee/datastore-packager';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { CloudNode } from '@ulixee/cloud';
-import * as Moment from 'moment';
+import moment = require('moment');
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreVm.test');
 const tmpDir = `${storageDir}/tmp`;
@@ -36,7 +36,7 @@ test('can run a Datastore with momentjs', async () => {
 
   await expect(
     client.stream(packager.manifest.versionHash, 'moment', { date: '2021-02-01' }),
-  ).resolves.toEqual([{ date: Moment('2021-02-01').toDate() }]);
+  ).resolves.toEqual([{ date: moment('2021-02-01').toDate() }]);
 }, 45e3);
 
 test('can get the stack trace of a compiled datastore', async () => {

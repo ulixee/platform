@@ -12,7 +12,7 @@ export default new DatastoreApiHandler('Datastore.queryStorageEngine', {
 
     const storage = context.storageEngineRegistry.get(manifestWithEntrypoint);
     const datastore = await context.vm.open(
-      manifestWithEntrypoint.entrypointPath,
+      manifestWithEntrypoint.runtimePath,
       storage,
       manifestWithEntrypoint,
     );

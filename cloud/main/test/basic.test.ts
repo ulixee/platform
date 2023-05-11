@@ -6,7 +6,7 @@ const pkg = require('../package.json');
 describe('basic CloudNode tests', () => {
   it('starts, responds to request and shuts down', async () => {
     const cloudNode = new CloudNode();
-    await cloudNode.listen({ port: 8099 }, false);
+    await cloudNode.listen();
     const url = `http://${await cloudNode.address}/`;
 
     const response = await new Promise(resolve => {

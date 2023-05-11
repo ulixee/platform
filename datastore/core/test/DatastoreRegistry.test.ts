@@ -89,7 +89,7 @@ test('should be able to upload and retrieve the datastore', async () => {
 
   const uploaded = await registry.getByVersionHash(versionHash);
   expect(uploaded).toBeTruthy();
-  expect(readFileSync(uploaded.entrypointPath, 'utf8')).toBe(script);
+  expect(readFileSync(uploaded.runtimePath, 'utf8')).toBe(script);
 });
 
 test('should allow a user to override updating with no history', async () => {
@@ -148,11 +148,15 @@ test('should allow a user to override updating with no history', async () => {
     await expect(registry.save(datastoreTmpDir)).rejects.toThrow(
       'link to previous version history',
     );
-    expect(registry.getLatestVersion(originalVersionHash)).toBe(originalVersionHash);
+    await expect(registry.getLatestVersion(originalVersionHash)).resolves.toBe(originalVersionHash);
     // force new history
-    await expect(registry.save(datastoreTmpDir, null, true)).resolves.toBeTruthy();
-    expect(registry.getLatestVersion(originalVersionHash)).toBe(originalVersionHash);
-    expect(registry.getLatestVersion(manifest.versionHash)).toBe(manifest.versionHash);
+    await expect(
+      registry.save(datastoreTmpDir, { allowNewLinkedVersionHistory: true }),
+    ).resolves.toBeTruthy();
+    await expect(registry.getLatestVersion(originalVersionHash)).resolves.toBe(originalVersionHash);
+    await expect(registry.getLatestVersion(manifest.versionHash)).resolves.toBe(
+      manifest.versionHash,
+    );
   }
 });
 
@@ -219,8 +223,12 @@ test('should throw an error with version history if current versions are unmatch
     await expect(registry.save(datastoreTmpDir)).resolves.toBeTruthy();
 
     await expect(registry.getByVersionHash(manifest.versionHash)).resolves.toBeTruthy();
-    expect(registry.getLatestVersion(versions[1].versionHash)).toBe(manifest.versionHash);
-    expect(registry.getLatestVersion(manifest.versionHash)).toBe(manifest.versionHash);
+    await expect(registry.getLatestVersion(versions[1].versionHash)).resolves.toBe(
+      manifest.versionHash,
+    );
+    await expect(registry.getLatestVersion(manifest.versionHash)).resolves.toBe(
+      manifest.versionHash,
+    );
   }
 
   {
@@ -249,20 +257,26 @@ test('should throw an error with version history if current versions are unmatch
 test('should provide a newer version hash if old script not available', async () => {
   const registry = new DatastoreRegistry(storageDir);
   Helpers.needsClosing.push(registry);
-  // @ts-ignore
-  registry.datastoresDb.versions.save(
+  // @ts-expect-error
+  const versions = registry.diskStore.datastoresDb.versions;
+  versions.save(
     'maybe-there',
     './new-version.ts',
     Date.now(),
     './new-version.ts',
     'not-there',
     null,
+    'manual',
+    '',
+    null,
+    null,
+    null,
   );
   try {
     await registry.getByVersionHash('not-there');
   } catch (e) {
     expect(e).toBeInstanceOf(DatastoreNotFoundError);
-    expect(e.latestVersionHash).toBe('maybe-there');
+    expect(e.data?.latestVersionHash).toBe('maybe-there');
   }
 });
 
@@ -298,7 +312,9 @@ test('should require a new upload to be signed by a previous admin identity', as
 
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
     await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script);
-    await expect(registry.save(datastoreTmpDir, identity.bech32)).resolves.toBeTruthy();
+    await expect(
+      registry.save(datastoreTmpDir, { adminIdentity: identity.bech32 }),
+    ).resolves.toBeTruthy();
   }
   {
     await Fs.mkdir(datastoreTmpDir, { recursive: true });
@@ -329,7 +345,9 @@ test('should require a new upload to be signed by a previous admin identity', as
     const adminOverwriteAttempt = Identity.createSync();
     // TEST 2: try to sign empty list with a new identity
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
-    await expect(registry.save(datastoreTmpDir, adminOverwriteAttempt.bech32)).rejects.toThrow(
+    await expect(
+      registry.save(datastoreTmpDir, { adminIdentity: adminOverwriteAttempt.bech32 }),
+    ).rejects.toThrow(
       'You are trying to overwrite a previous version of this Datastore with an AdminIdentity that was not present in the previous version',
     );
 
@@ -338,7 +356,9 @@ test('should require a new upload to be signed by a previous admin identity', as
     manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
     // can't just overwrite the admins without a previous one
-    await expect(registry.save(datastoreTmpDir, adminOverwriteAttempt.bech32)).rejects.toThrow(
+    await expect(
+      registry.save(datastoreTmpDir, { adminIdentity: adminOverwriteAttempt.bech32 }),
+    ).rejects.toThrow(
       'You are trying to overwrite a previous version of this Datastore with an AdminIdentity that was not present in the previous version',
     );
 
@@ -346,6 +366,8 @@ test('should require a new upload to be signed by a previous admin identity', as
     manifest.adminIdentities = [adminOverwriteAttempt.bech32, identity.bech32];
     manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
-    await expect(registry.save(datastoreTmpDir, identity.bech32)).resolves.toBeTruthy();
+    await expect(
+      registry.save(datastoreTmpDir, { adminIdentity: identity.bech32 }),
+    ).resolves.toBeTruthy();
   }
 });

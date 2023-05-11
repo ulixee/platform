@@ -169,11 +169,11 @@ test('should be able to run a datastore function with payments', async () => {
   // @ts-ignore
   const statsTracker = DatastoreCore.statsTracker;
   const entry = await statsTracker.getForDatastore(manifest);
-  expect(entry.stats.runs).toBe(3);
+  expect(entry.stats.queries).toBe(3);
   expect(entry.stats.errors).toBe(2);
-  expect(entry.stats.maxPrice).toBe(1255);
-  expect(entry.statsByEntityName.putout.runs).toBe(1);
-  expect(entry.statsByEntityName.putout.maxPrice).toBe(1250);
+  expect(entry.stats.maxPricePerQuery).toBe(1255);
+  expect(entry.statsByEntityName.putout.queries).toBe(1);
+  expect(entry.statsByEntityName.putout.maxPricePerQuery).toBe(1250);
 
   const streamed = client.stream(manifest.versionHash, 'putout', {}, { payment });
   await expect(streamed.resultMetadata).resolves.toEqual({
@@ -329,8 +329,9 @@ test('should be able to embed Credits in a Datastore', async () => {
       issuedCredits: 1002,
     });
   }
+
   // @ts-expect-error
-  expect(DatastoreVm.apiClientCacheByUrl).toEqual({
+  expect(DatastoreCore.vm.apiClientCache.apiClientCacheByUrl).toEqual({
     [`ulx://${await cloudNode.address}`]: expect.any(DatastoreApiClient),
   });
 }, 60e3);

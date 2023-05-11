@@ -388,7 +388,7 @@ export class Menubar extends EventEmitter {
         }
 
         if (api === 'App.openDataDirectory') {
-          await shell.openPath(this.#apiManager.localCloud.dataDir);
+          await shell.openPath(this.#apiManager.localCloud.router.datastoresDir);
         }
 
         if (api === 'App.openHeroSession') {

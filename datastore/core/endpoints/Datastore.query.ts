@@ -13,7 +13,11 @@ export default new DatastoreApiHandler('Datastore.query', {
 
     const storage = context.storageEngineRegistry.get(manifestWithRuntime);
 
-    const datastore = await context.vm.open(manifestWithRuntime.entrypointPath, storage, manifestWithRuntime);
+    const datastore = await context.vm.open(
+      manifestWithRuntime.runtimePath,
+      storage,
+      manifestWithRuntime,
+    );
 
     await validateAuthentication(datastore, payment, authentication);
 
@@ -64,7 +68,7 @@ export default new DatastoreApiHandler('Datastore.query', {
             for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
               if (plugin.beforeRunExtractor)
                 await plugin.beforeRunExtractor(options, {
-                  scriptEntrypoint: manifestWithRuntime.entrypointPath,
+                  scriptEntrypoint: manifestWithRuntime.runtimePath,
                   functionName: name,
                 });
             }
@@ -83,17 +87,15 @@ export default new DatastoreApiHandler('Datastore.query', {
             }
 
             const milliseconds = Date.now() - runStart;
-            context.statsTracker.recordEntityStats(
-              request.versionHash,
-              name,
-              {
-                bytes,
-                microgons,
-                milliseconds,
-                isCredits: !!request.payment?.credits,
-              },
-              runError,
-            );
+            await context.statsTracker.recordEntityStats({
+              versionHash: request.versionHash,
+              entityName: name,
+              bytes,
+              microgons,
+              milliseconds,
+              didUseCredits: !!request.payment?.credits,
+              error: runError,
+            });
             // Do we need to rollback the stats? We won't finalize payment in this scenario.
             if (runError) throw runError;
             return outputs;
@@ -126,23 +128,20 @@ export default new DatastoreApiHandler('Datastore.query', {
       milliseconds: Date.now() - startTime,
     };
 
-    context.statsTracker.recordQuery(
-      queryId,
-      request.sql,
+    await context.statsTracker.recordQuery({
+      id: queryId,
+      query: request.sql,
       startTime,
-      request.boundValues,
+      input: request.boundValues,
       outputs,
       versionHash,
-      {
-        ...metadata,
-        isCredits: !!payment?.credits,
-      },
-      payment?.micronote?.micronoteId,
-      payment?.credits?.id,
+      ...metadata,
+      micronoteId: payment?.micronote?.micronoteId,
+      creditId: payment?.credits?.id,
       affiliateId,
-      runError,
+      error: runError,
       heroSessionIds,
-    );
+    });
 
     // TODO: should we return this to client so that the rest of the metadata is visible?
     if (runError) throw runError;

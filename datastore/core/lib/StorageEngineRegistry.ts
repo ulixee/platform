@@ -4,15 +4,15 @@ import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreM
 import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
 import * as Fs from 'fs';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import SqliteStorageEngine from '@ulixee/datastore/storage-engines/SqliteStorageEngine';
 import RemoteStorageEngine from '@ulixee/datastore/storage-engines/RemoteStorageEngine';
+import { toUrl } from '@ulixee/commons/lib/utils';
 import DatastoreVm from './DatastoreVm';
+import { IDatastoreManifestWithRuntime } from './DatastoreRegistry';
 
 export default class StorageEngineRegistry {
   public readonly dataDir: string;
 
-  #storageApiClientsByAddress: { [address: string]: DatastoreApiClient } = {};
   #nodeAddress: URL;
   #storageByVersionHash = new Map<string, IStorageEngine>();
 
@@ -24,26 +24,21 @@ export default class StorageEngineRegistry {
 
   public async close(): Promise<void> {
     await Promise.allSettled([...this.#storageByVersionHash.values()].map(x => x.close()));
-    await Promise.allSettled(
-      [...Object.values(this.#storageApiClientsByAddress)].map(x => x.disconnect()),
-    );
-    this.#storageApiClientsByAddress = {};
     this.#storageByVersionHash.clear();
   }
 
-  public isHostingStorageEndpoint(storageEngineEndpoint: string): boolean {
-    if (storageEngineEndpoint) {
-      const engineUrl = new URL(storageEngineEndpoint);
-      engineUrl.protocol ??= 'ws:';
+  public isHostingStorageEngine(storageEngineHost: string): boolean {
+    if (storageEngineHost) {
+      const engineUrl = toUrl(storageEngineHost);
       return engineUrl.host === this.#nodeAddress.host;
     }
     return true;
   }
 
   public get(
-    manifest: Pick<IDatastoreManifest, 'versionHash' | 'storageEngineEndpoint'>,
+    manifest: Pick<IDatastoreManifest, 'versionHash' | 'storageEngineHost'>,
   ): IStorageEngine {
-    const { storageEngineEndpoint, versionHash } = manifest;
+    const { storageEngineHost, versionHash } = manifest;
 
     if (this.#storageByVersionHash.has(versionHash)) {
       return this.#storageByVersionHash.get(versionHash);
@@ -51,10 +46,10 @@ export default class StorageEngineRegistry {
 
     let engine: IStorageEngine;
     // if no endpoint, or it's this machine, use file storage
-    if (this.isHostingStorageEndpoint(storageEngineEndpoint)) {
+    if (this.isHostingStorageEngine(storageEngineHost)) {
       engine = new SqliteStorageEngine(Path.join(this.dataDir, `${versionHash}.db`));
     } else {
-      engine = new RemoteStorageEngine(storageEngineEndpoint);
+      engine = new RemoteStorageEngine(storageEngineHost);
     }
     this.#storageByVersionHash.set(versionHash, engine);
     return engine;
@@ -72,28 +67,35 @@ export default class StorageEngineRegistry {
 
   public async create(
     vm: DatastoreVm,
-    dbxPath: string,
-    manifest: IDatastoreManifest,
-    previousVersion: { manifest: IDatastoreManifest; dbxPath: string },
-    watch?: boolean,
+    version: IDatastoreManifestWithRuntime,
+    previousVersion: IDatastoreManifestWithRuntime | null,
+    options?: {
+      clearExisting?: boolean;
+      isWatching?: boolean;
+    },
   ): Promise<void> {
-    if (!this.isHostingStorageEndpoint(manifest.storageEngineEndpoint)) {
+    if (!this.isHostingStorageEngine(version.storageEngineHost)) {
       throw new Error(
-        `Cannot migrate on this Host. Not the Storage Endpoint (${manifest.storageEngineEndpoint})`,
+        `Cannot migrate on this Host. Not the Storage Endpoint (${version.storageEngineHost})`,
       );
     }
-    const storagePath = Path.join(this.dataDir, `${manifest.versionHash}.db`);
+    const storagePath = Path.join(this.dataDir, `${version.versionHash}.db`);
+
+    if (options?.clearExisting) {
+      await this.deleteExisting(version.versionHash);
+    }
+
     if (await existsAsync(storagePath)) {
       return;
     }
-    const storage = this.get(manifest);
-    const datastore = await vm.getDatastore(Path.join(dbxPath, 'datastore.js'));
+    const storage = this.get(version);
+    const datastore = await vm.getDatastore(version.runtimePath);
     let previous: Datastore;
     if (previousVersion) {
       previous = await vm.open(
-        Path.join(previousVersion.dbxPath, 'datastore.js'),
-        this.get(previousVersion.manifest),
-        previousVersion.manifest,
+        previousVersion.runtimePath,
+        this.get(previousVersion),
+        previousVersion,
       );
     }
 
@@ -102,22 +104,23 @@ export default class StorageEngineRegistry {
     await datastore.bind({ storageEngine: storage });
     await storage.create(datastore, previous);
 
-    if (watch) {
+    if (options?.isWatching) {
+      const runtimePath = version.runtimePath;
+      const versionHash = version.versionHash;
       let watcher: Fs.FSWatcher;
       const callback = async (): Promise<void> => {
-        if (!Fs.existsSync(dbxPath)) {
+        if (!Fs.existsSync(runtimePath)) {
           if (watcher) watcher.close();
-          else Fs.unwatchFile(dbxPath);
+          else Fs.unwatchFile(runtimePath);
         } else {
           await this.deleteExisting(versionHash);
-          await this.create(vm, dbxPath, manifest, previousVersion);
+          await this.create(vm, version, previousVersion);
         }
       };
-      const versionHash = manifest.versionHash;
       if (process.platform === 'win32' || process.platform === 'darwin') {
-        watcher = Fs.watch(dbxPath, { persistent: false }, () => callback());
+        watcher = Fs.watch(runtimePath, { persistent: false }, () => callback());
       } else {
-        Fs.watchFile(dbxPath, { persistent: false }, () => callback());
+        Fs.watchFile(runtimePath, { persistent: false }, () => callback());
       }
     }
   }
