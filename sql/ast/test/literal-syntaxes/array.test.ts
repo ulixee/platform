@@ -9,7 +9,7 @@ describe('Array literals', () => {
 
   const hasContent = [
     /^value$/,
-  ]
+  ];
   function next(expected: any) {
     const result = lexer.next() as Optional<Token>;
     delete result.toString;
@@ -36,19 +36,19 @@ describe('Array literals', () => {
   });
 
   it('parses single array', () => {
-    expect(parseArrayLiteral('{a}')).toEqual(['a'])
-  })
+    expect(parseArrayLiteral('{a}')).toEqual(['a']);
+  });
 
   it('parses double array', () => {
-    expect(parseArrayLiteral('{a, b}')).toEqual(['a', 'b'])
-  })
+    expect(parseArrayLiteral('{a, b}')).toEqual(['a', 'b']);
+  });
 
 
   it('parses empty array', () => {
     expect(parseArrayLiteral('{}')).toEqual([]);
-  })
+  });
 
   it('parses two dimensions', () => {
-    expect(parseArrayLiteral('{{a}, {b, c}}')).toEqual([['a'], ['b', 'c']])
-  })
+    expect(parseArrayLiteral('{{a}, {b, c}}')).toEqual([['a'], ['b', 'c']]);
+  });
 });

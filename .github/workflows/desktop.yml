@@ -52,8 +52,8 @@ jobs:
           NODE_ENV: production
           USE_HARD_LINKS: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          CSC_LINK: ${{ matrix.os == 'windows-latest' && secrets.WIN_CSC_LINK || secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ matrix.os == 'windows-latest' && secrets.WIN_CSC_KEY_PASSWORD || secrets.CSC_KEY_PASSWORD }}
 
       - name: Upload App
         if: startsWith(github.ref, 'refs/tags/v') == false || failure()

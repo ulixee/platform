@@ -5,7 +5,7 @@ export type IStatement = ISelectStatement
   | IUpdateStatement
   | IDeleteStatement
   | ICommentStatement
-  | IValuesStatement
+  | IValuesStatement;
 
 export default interface ISqlNode {
   _location?: INodeLocation;
@@ -175,7 +175,7 @@ export interface ISelectedColumn extends ISqlNode {
 
 export type IFrom = FromTable
   | IFromStatement
-  | IFromCall
+  | IFromCall;
 
 
 export interface IFromCall extends IExprCall, ISqlNode {

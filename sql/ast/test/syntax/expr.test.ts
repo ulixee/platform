@@ -322,7 +322,7 @@ line`,
           value: 'b',
         }]
       }]
-    })
+    });
 
     checkInvalidExpr(`ARRAY[ARRAY['a'], ['b']]`);
     checkInvalidExpr(`ARRAY[['a'], ARRAY['b']]`);
@@ -517,7 +517,7 @@ line`,
         }
       },
     });
-  })
+  });
 
 
   // ====================================
@@ -969,7 +969,7 @@ line`,
       });
 
       expect(generated).toBe('(a IN (a, b, c))');
-    })
+    });
 
     checkTreeExpr(['a in (b)', 'a in ( b )'], {
       type: 'binary',
@@ -1005,7 +1005,7 @@ line`,
       opSchema: 'pg_catalog',
       left: { type: 'ref', name: 'a' },
       right: { type: 'ref', name: 'b' },
-    })
+    });
   });
 
 
@@ -1130,7 +1130,7 @@ line`,
         _location: { start: 4, end: 5 },
         type: 'ref', name: 'c'
       }
-    })
+    });
 
     checkTreeExpr(['a . b[c]', 'a."b"["c"]', '(("a"."b")[("c")] )'], {
       type: 'arrayIndex',
@@ -1140,7 +1140,7 @@ line`,
         name: 'b',
       },
       index: { type: 'ref', name: 'c' }
-    })
+    });
 
     checkTreeExpr(['a[c+2]', '"a"["c"+2]', '(("a")[("c"+2)] )'], {
       type: 'arrayIndex',
@@ -1154,7 +1154,7 @@ line`,
         left: { type: 'ref', name: 'c' },
         right: { type: 'integer', value: 2 },
       }
-    })
+    });
   });
 
 
@@ -1252,7 +1252,7 @@ line`,
         type: 'integer',
         value: 4,
       }]
-    })
+    });
 
     checkTreeExpr([`pg_catalog.set_config('search_path', '', false)`], {
       type: 'call',
@@ -1267,7 +1267,7 @@ line`,
         type: 'boolean',
         value: false,
       }]
-    })
+    });
 
     checkTreeExpr([`extract (century from timestamp 'value')`], {
       type: 'extract',
@@ -1434,7 +1434,7 @@ line`,
         type: 'select',
         columns: [{ expr: { type: 'integer', value: 1 } }],
       },
-    })
+    });
   });
 
 
@@ -1444,14 +1444,14 @@ line`,
       type: 'call',
       args: [star],
       function: { name: 'count' },
-    })
+    });
 
     checkTreeExpr(`count(ALL *)`, {
       type: 'call',
       args: [star],
       function: { name: 'count' },
       distinct: 'all',
-    })
+    });
 
 
     checkTreeExpr(`count(DISTINCT *)`, {
@@ -1459,7 +1459,7 @@ line`,
       args: [star],
       function: { name: 'count' },
       distinct: 'distinct',
-    })
+    });
 
 
     checkTreeExpr(`string_agg(distinct a, b)`, {
@@ -1467,7 +1467,7 @@ line`,
       args: [ref('a'), ref('b')],
       function: { name: 'string_agg' },
       distinct: 'distinct',
-    })
+    });
 
     checkTreeExpr(`count(distinct (a, b))`, {
       type: 'call',
@@ -1487,7 +1487,7 @@ line`,
       args: [ref('a'), ref('b')],
       function: { name: 'count' },
       distinct: 'distinct',
-    })
+    });
 
     checkTreeExpr(`count(*) filter (where val)`, {
       type: 'call',
@@ -1503,7 +1503,7 @@ line`,
       over: {
         orderBy: [{ by: ref('v'), order: 'DESC' }],
       }
-    })
+    });
 
     checkTreeExpr(`ROW_NUMBER() OVER (PARTITION BY v)`, {
       type: 'call',
@@ -1512,7 +1512,7 @@ line`,
       over: {
         partitionBy: [ref('v')],
       }
-    })
+    });
 
     checkTreeExpr(`ROW_NUMBER() OVER ()`, {
       type: 'call',
@@ -1520,7 +1520,7 @@ line`,
       function: { name: 'row_number' },
       over: {
       }
-    })
+    });
 
     checkTreeExpr(`ROW_NUMBER() OVER (PARTITION BY a ORDER BY b DESC)`, {
       type: 'call',
@@ -1530,7 +1530,7 @@ line`,
         partitionBy: [ref('a')],
         orderBy: [{ by: ref('b'), order: 'DESC' }],
       }
-    })
+    });
 
     checkTreeExpr(`pg_catalog.count(*) filter (where val)`, {
       type: 'call',
@@ -1562,7 +1562,7 @@ line`,
       args: [ref('c')],
       orderBy: [{ by: ref('o') }]
     });
-  })
+  });
 
 
   describe('Value keywords', () => {
@@ -1601,5 +1601,5 @@ line`,
       },
       args: [],
     });
-  })
+  });
 });

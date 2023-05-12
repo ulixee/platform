@@ -24,7 +24,7 @@ describe('Ast mapper', () => {
       columns: [{
         expr
       }]
-    })
+    });
   }
 
   function testExprs(statement: string, map: MapperBuilder, exprs: IExpr[]) {
@@ -33,7 +33,7 @@ describe('Ast mapper', () => {
     expect(mapped).toEqual({
       type: 'select',
       columns: exprs.map(expr => ({ expr })),
-    })
+    });
   }
 
   it('maps a select constant', () => {
@@ -130,7 +130,7 @@ describe('Ast mapper', () => {
       type: 'ref',
       name: 'a',
     });
-  })
+  });
 
   it('maps multiple calls', () => {
     testExprs('select fn(a), fn(b), fn(c)', () => ({
@@ -147,7 +147,7 @@ describe('Ast mapper', () => {
         name: 'c',
       }
     ]);
-  })
+  });
 
   it('maps array literal', () => {
     testExpr('select (a,b)', b => ({
@@ -156,7 +156,7 @@ describe('Ast mapper', () => {
       type: 'ref',
       name: 'b',
     });
-  })
+  });
 
   it('maps ref', () => {
     testExpr('select a', b => ({
@@ -177,21 +177,21 @@ describe('Ast mapper', () => {
             // (I wrote this like that for the sake of explainability)
             ...t,
             name: 'bar',
-          }
+          };
         }
 
         // call the default implementation of 'tableRef'
         // this will ensure that the subtree is also traversed.
         return map.super().tableRef(t);
       }
-    }))
+    }));
 
     // parse + map + reconvert to sql
     const modified = mapper.statement(parseFirst('select * from foo'));
 
     expect(modified).toBeTruthy();
     expect(toSql.statement(modified as IStatement)).toBe('SELECT *  FROM bar');
-  })
+  });
 
 
   it('allows super call', () => {
@@ -201,24 +201,24 @@ describe('Ast mapper', () => {
         const sup = map.super();
         return sup.tableRef(t);
       }
-    }))
+    }));
 
     // parse + map + reconvert to sql
     const modified = mapper.statement(parseFirst('select * from foo'));
     expect(modified).toBeTruthy();
     expect(toSql.statement(modified)).toEqual('SELECT *  FROM foo');
-  })
+  });
 
   it('removes node', () => {
     // create a mapper
     const mapper = astMapper(map => ({
       ref: c => c.name === 'foo' ? null : c,
-    }))
+    }));
 
     // process sql
     const result = mapper.statement(parseFirst('select foo, bar from test'));
 
     expect(toSql.statement(result)).toEqual('SELECT bar  FROM test');
 
-  })
+  });
 });

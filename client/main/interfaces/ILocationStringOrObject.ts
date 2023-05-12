@@ -1,6 +1,6 @@
 type ILocationStringOrObject = string | ILocationObject;
 
-export default ILocationStringOrObject
+export default ILocationStringOrObject;
 
 interface ILocationObject {
   connectionString?: string;

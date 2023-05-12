@@ -1,4 +1,4 @@
-import * as Database from 'better-sqlite3';
+import Database = require('better-sqlite3');
 import { Database as SqliteDatabase } from 'better-sqlite3';
 import * as Fs from 'fs';
 import QueryLogTable from './QueryLogTable';

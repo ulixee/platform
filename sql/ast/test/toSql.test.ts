@@ -61,22 +61,22 @@ describe('SQL builder', () => {
   it('quotes identifiers', () => {
     expect(stm(`select "select"`))
       .toEqual(`SELECT "select"`);
-  })
+  });
 
   it('quotes uppercases', () => {
     expect(stm(`select "whAtever"`))
       .toEqual(`SELECT "whAtever"`);
-  })
+  });
 
   it('quotes spaced', () => {
     expect(stm(`select "ab cd"`))
       .toEqual(`SELECT "ab cd"`);
-  })
+  });
 
   it('doesnt quote simples', () => {
     expect(stm(`select "abc042"`))
       .toEqual(`SELECT abc042`);
     expect(stm(`select "a"`))
       .toEqual(`SELECT a`);
-  })
+  });
 });

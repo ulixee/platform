@@ -37,5 +37,5 @@ ${MitmEnv}`),
 function clean(env: string): string {
   return env
     .replace(/\n## Sub-tool env settings\n/g, '')
-    .replace(/# @ulixee.*\n/g, '')
+    .replace(/# @ulixee.*\n/g, '');
 }

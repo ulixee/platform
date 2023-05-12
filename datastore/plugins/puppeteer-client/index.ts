@@ -7,7 +7,10 @@ import {
   IExtractorSchema,
 } from '@ulixee/datastore';
 import * as Puppeteer from 'puppeteer';
-import { Browser as PuppeteerBrowser, LaunchOptions as IPuppeteerLaunchOptions } from 'puppeteer';
+import {
+  Browser as PuppeteerBrowser,
+  PuppeteerLaunchOptions as IPuppeteerLaunchOptions,
+} from 'puppeteer';
 import ExtractorInternal from '@ulixee/datastore/lib/ExtractorInternal';
 
 const pkg = require('./package.json');
@@ -57,7 +60,8 @@ export class PuppeteerExtractorPlugin<ISchema extends IExtractorSchema>
   }
 
   protected initializePuppeteer(): Promise<PuppeteerBrowser> {
-    const options: Puppeteer.LaunchOptions = {
+    const options: Puppeteer.PuppeteerLaunchOptions = {
+      headless: 'new',
       ...this.runOptions,
       handleSIGTERM: true,
       handleSIGHUP: true,

@@ -210,7 +210,7 @@ export default class AstDefaultMapper implements IAstMapper {
     return assignChanged(from, {
       statement,
       join,
-    })
+    });
   }
 
   values(from: a.IValuesStatement): a.ISelectStatement | INil {
@@ -242,7 +242,7 @@ export default class AstDefaultMapper implements IAstMapper {
     return assignChanged(from, {
       name: nfrom,
       join,
-    })
+    });
   }
 
   selectionColumn(val: a.ISelectedColumn): a.ISelectedColumn | INil {
@@ -285,7 +285,7 @@ export default class AstDefaultMapper implements IAstMapper {
       case 'call':
         return this.call(val);
       case 'cast':
-        return this.cast(val)
+        return this.cast(val);
       case 'case':
         return this.case(val);
       case 'member':
@@ -328,7 +328,7 @@ export default class AstDefaultMapper implements IAstMapper {
     if (!from) {
       return null;
     }
-    return assignChanged(st, { from })
+    return assignChanged(st, { from });
   }
 
   valueKeyword(val: a.IExprValueKeyword): a.IExpr | INil {
@@ -429,7 +429,7 @@ export default class AstDefaultMapper implements IAstMapper {
       value: this.expr(val.value),
       from: this.expr(val.from),
       for: this.expr(val.for),
-    })
+    });
   }
 
   callOverlay(val: a.IExprOverlay): a.IExpr | INil {
@@ -438,7 +438,7 @@ export default class AstDefaultMapper implements IAstMapper {
       placing: this.expr(val.placing),
       from: this.expr(val.from),
       for: this.expr(val.for),
-    })
+    });
   }
 
   array(val: a.IExprList): a.IExpr | INil {
@@ -509,7 +509,7 @@ for (const k of Object.getOwnPropertyNames(proto)) {
           return orig.apply(this, args);
         }
         return impl.apply(this.wrapped, args);
-      }
+      };
     }
   });
 }
@@ -533,7 +533,7 @@ for (const k of Object.getOwnPropertyNames(proto)) {
       return function (this: SkipModifier, ...args: []) {
         this.parent.skipNext = true;
         return orig.apply(this.parent, args);
-      }
+      };
     }
   });
 }

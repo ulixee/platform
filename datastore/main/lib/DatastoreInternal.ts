@@ -160,7 +160,7 @@ export default class DatastoreInternal<
     for (const { name, id } of functionCallsById) {
       const input = inputByFunctionName[name];
       const func = this.extractors[name] ?? this.crawlers[name];
-      callbacks.onFunction ??= (_, __, options, run) => run(options);
+      callbacks.onFunction ??= (_id, _name, options, run) => run(options);
       outputByFunctionName[name] = await callbacks.onFunction(
         id,
         name,
@@ -190,7 +190,7 @@ export default class DatastoreInternal<
 
     if (sqlParser.isInsert() || sqlParser.isUpdate() || sqlParser.isDelete()) {
       if (sqlParser.hasReturn()) {
-        return db.prepare(sql).get(queryBoundValues);
+        return db.prepare(sql).get(queryBoundValues) as any;
       }
       const result = db.prepare(sql).run(queryBoundValues);
       return { changes: result?.changes } as any;

@@ -454,7 +454,7 @@ function openSelectorGeneratorPanel() {
     payload: {
       event: MessageEventType.OpenSelectorGeneratorPanel,
     }
-  }
+  };
   const packedMessage = packMessage(message);
   window[___sendToCore](packedMessage);
 }

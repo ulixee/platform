@@ -1,6 +1,6 @@
 import { array, boolean, dateAdd, number, object, string, ExtractSchemaType } from '@ulixee/schema';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
-import * as moment from 'moment';
+import moment = require('moment');
 import { Extractor, ExtractorSchema } from '../index';
 
 describe('Schemas', () => {
@@ -18,7 +18,9 @@ describe('Schemas', () => {
       schema,
     });
 
-    await expect(extractor.runInternal({ input: {} as any })).rejects.toThrowError('input did not match');
+    await expect(extractor.runInternal({ input: {} as any })).rejects.toThrowError(
+      'input did not match',
+    );
   });
 
   it('will supply defaults to params if not given', async () => {
@@ -37,7 +39,7 @@ describe('Schemas', () => {
       ],
     });
 
-    const runResolver = new Resolvable<ExtractSchemaType<typeof schema['input']>>();
+    const runResolver = new Resolvable<ExtractSchemaType<(typeof schema)['input']>>();
     const extractor = new Extractor({
       async run(ctx) {
         runResolver.resolve(ctx.input);
@@ -46,7 +48,9 @@ describe('Schemas', () => {
       schema,
     });
 
-    await expect(extractor.runInternal({ input: { plan: false, for: 1 } } as any)).resolves.toBeTruthy();
+    await expect(
+      extractor.runInternal({ input: { plan: false, for: 1 } } as any),
+    ).resolves.toBeTruthy();
     const input = await runResolver;
     expect(input.date).toBe(moment().add(1, 'days').format('YYYY-MM-DD'));
     expect(input.plan).toBe(false);

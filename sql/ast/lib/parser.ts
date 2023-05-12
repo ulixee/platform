@@ -50,7 +50,7 @@ export function parse(sql: string, optEntry?: string | IParseOptions): any {
 
   // always return an array of statements.
   if (typeof optEntry !== 'string' && !Array.isArray(parsed)) {
-    parsed = [parsed]
+    parsed = [parsed];
   }
   return parsed;
 }

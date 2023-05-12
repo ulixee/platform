@@ -15,11 +15,10 @@ export default function sourcemaps(): Plugin {
         return null;
       }
       try {
-        const { rawMap } = SourceMapSupport.retrieveSourceMap(id);
-        if (rawMap) {
+        const { map, rawMap } = SourceMapSupport.retrieveSourceMap(id);
+        if (map) {
           if (rawMap.sourcesContent === undefined) {
-            const sourceFiles = SourceMapSupport.getSourceFilePaths(id);
-            rawMap.sourcesContent = sourceFiles.map(x => SourceLoader.getFileContents(x));
+            rawMap.sourcesContent = [...map.sourcesContent];
           }
           result.map = rawMap;
         }

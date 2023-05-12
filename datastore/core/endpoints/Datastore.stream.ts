@@ -214,7 +214,7 @@ function extractTableOutputs(
   for (const result of results) {
     context.connectionToClient.sendEvent({
       listenerId: request.id,
-      data: result,
+      data: result as any,
       eventType: 'Stream.output',
     });
   }

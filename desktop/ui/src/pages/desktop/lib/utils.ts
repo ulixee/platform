@@ -6,5 +6,5 @@ export function toArgons(amount: number, isMicrogons = false): string {
     centagons = Number(ArgonUtils.microgonsToCentagons(amount));
   }
   centagons = Number(centagons) / 100;
-  return `₳${centagons.toFixed(2)}`
+  return `₳${centagons.toFixed(2)}`;
 }

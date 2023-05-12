@@ -83,6 +83,8 @@ export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
     const container = this;
     try {
       const HeroReplayBase = HeroReplay;
+
+      /* eslint-disable @typescript-eslint/no-unused-vars */
       const {
         input,
         affiliateId,
@@ -93,6 +95,7 @@ export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
         versionHash,
         ...heroApplicableOptions
       } = extractorInternal.options as IExtractorRunOptions<ISchema>;
+      /* eslint-enable @typescript-eslint/no-unused-vars */
 
       const heroOptions: IHeroCreateOptions = {
         ...heroApplicableOptions,
@@ -129,7 +132,7 @@ export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
       context.HeroReplay = class HeroReplay extends HeroReplayBase {
         constructor(options: IHeroReplayCreateOptions | ICrawlerOutputSchema = {}) {
           // extract sessionId so that we don't try to reload
-          const { sessionId, crawler, version, ...replayOptions } = options as any;
+          const { sessionId, crawler: _c, version: _v, ...replayOptions } = options as any;
 
           const replaySessionId =
             sessionId || heroOptions.replaySessionId || process.env.ULX_REPLAY_SESSION_ID;

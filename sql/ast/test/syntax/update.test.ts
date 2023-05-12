@@ -51,7 +51,7 @@ describe('Update', () => {
       column: { name: 'value' },
       value: { type: 'default' },
     }],
-  })
+  });
 
   checkUpdate([`update mytable
     set col = subsel.subcol
@@ -81,5 +81,5 @@ describe('Update', () => {
       left: { type: 'ref', name: 'id', table: { name: 'subsel' } },
       right: { type: 'ref', name: 'id', table: { name: 'mytable' } },
     }
-  })
+  });
 });

@@ -1,6 +1,6 @@
 import { Database as SqliteDatabase } from 'better-sqlite3';
 import SqliteTable from '@ulixee/commons/lib/SqliteTable';
-import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry'
+import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 
 export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {

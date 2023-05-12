@@ -9,7 +9,7 @@
     "credits:create": "@ulixee/datastore credits create"
   },
   "engines": {
-    "node": ">=14.20.0"
+    "node": ">=16"
   },
   "dependencies": {
     "@ulixee/datastore": "2.0.0-alpha.18"

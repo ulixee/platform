@@ -38,11 +38,11 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
   }
 
   public findAnyWithEntrypoint(entrypoint: string): IDatastoreVersionRecord {
-    return this.findByEntrypointQuery.get(entrypoint);
+    return this.findByEntrypointQuery.get(entrypoint) as any;
   }
 
   public findLatestByDomain(domain: string): IDatastoreVersionRecord {
-    return this.findWithDomainQuery.get(domain.toLowerCase());
+    return this.findWithDomainQuery.get(domain.toLowerCase()) as any;
   }
 
   public allCached(): IDatastoreVersionRecord[] {
@@ -110,7 +110,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
   public getPreviousVersions(baseVersionHash: string): IVersionHistoryEntry[] {
     if (!this.versionsByBaseHash[baseVersionHash]) {
       const versionRecords: IDatastoreVersionRecord[] =
-        this.findWithBaseHashQuery.all(baseVersionHash);
+        this.findWithBaseHashQuery.all(baseVersionHash) as any;
       const seenVersions = new Set<string>();
       this.versionsByBaseHash[baseVersionHash] = versionRecords
         .map(x => {
@@ -133,7 +133,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
 
   public getByHash(versionHash: string): IDatastoreVersionRecord {
     if (!this.cacheByVersionHash[versionHash]) {
-      const entry = this.getQuery.get(versionHash);
+      const entry = this.getQuery.get(versionHash) as IDatastoreVersionRecord;
       if (entry) {
         entry.isStarted = !!entry.isStarted;
         this.cacheByVersionHash[versionHash] = entry;

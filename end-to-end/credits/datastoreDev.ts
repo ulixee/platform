@@ -1,6 +1,6 @@
 import { spawn } from 'child_process';
 import * as Path from 'path';
-import * as assert from 'assert';
+import assert = require('assert');
 import { execAndLog, getCloudAddress } from '../utils';
 
 export default async function main(

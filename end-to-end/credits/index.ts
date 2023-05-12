@@ -15,7 +15,7 @@ async function main(): Promise<void> {
   try {
     const result = await datastoreDev(needsClosing, buildDir);
     await dataUser(result, buildDir);
-    console.log('Completed!')
+    console.log('Completed!');
   } catch (error) {
     console.error(error);
   }

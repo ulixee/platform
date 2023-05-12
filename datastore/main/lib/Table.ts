@@ -72,7 +72,7 @@ export default class Table<
 
     if (sqlParser.isInsert() || sqlParser.isDelete() || sqlParser.isUpdate()) {
       if (sqlParser.hasReturn()) {
-        return db.prepare(sql).get(queryValues);
+        return db.prepare(sql).get(queryValues) as any;
       }
       const result = db.prepare(sql).run(queryValues);
       return { changes: result?.changes } as any;

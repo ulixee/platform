@@ -57,9 +57,11 @@ export default class ExtractorContext<
   ) {
     this.#extractorInternal = extractorInternal;
     this.#callbacks = callbacks ?? {};
-    this.#callbacks.onFunction ??= (_, __, options, run) => run(options);
+    this.#callbacks.onFunction ??= (_id, _name, options, run) => run(options);
 
-    const { affiliateId, payment, input, authentication, ...otherOptions } = extractorInternal.options;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { affiliateId, payment, input, authentication, ...otherOptions } =
+      extractorInternal.options;
     this.extraOptions = otherOptions;
     this.datastoreMetadata = datastoreInternal.metadata;
     this.datastoreAffiliateId = datastoreInternal.affiliateId;
@@ -94,8 +96,10 @@ export default class ExtractorContext<
       );
     }
     if ('remoteSource' in extractorOrTable) {
-      return this.#callbacks.onPassthroughTable(extractorOrTable.name, finalOptions, modifiedOptions =>
-        extractorOrTable.fetchInternal(modifiedOptions, this.#callbacks),
+      return this.#callbacks.onPassthroughTable(
+        extractorOrTable.name,
+        finalOptions,
+        modifiedOptions => extractorOrTable.fetchInternal(modifiedOptions, this.#callbacks),
       );
     }
 

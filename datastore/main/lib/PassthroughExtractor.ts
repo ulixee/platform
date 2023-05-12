@@ -1,4 +1,4 @@
-import * as assert from 'assert';
+import assert = require('assert');
 import { ExtractSchemaType } from '@ulixee/schema';
 import Extractor from './Extractor';
 import IExtractorSchema from '../interfaces/IExtractorSchema';

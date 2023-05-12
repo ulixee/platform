@@ -11,10 +11,11 @@
       "require": "./index.cjs"
     },
     "./package.json": "./package.json",
-    "./lib/utils/Autorun.mjs": "./lib/utils/Autorun.mjs",
     "./lib/*": "./lib/*.js",
     "./cli/*": "./cli/*.js",
-    "./types/*": "./types/*"
+    "./connections/*": "./connections/*.js",
+    "./types/*": "./types/*",
+    "./interfaces/*": "./interfaces/*"
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.21",
@@ -26,10 +27,9 @@
     "@ulixee/specification": "2.0.0-alpha.21",
     "@ulixee/sql-ast": "2.0.0-alpha.21",
     "@ulixee/sql-engine": "2.0.0-alpha.21",
-    "better-sqlite3": "^8.0.1",
+    "better-sqlite3": "^8.3.0",
     "commander": "^9.3.0",
-    "nanoid": "^3.1.32",
-    "yargs-parser": "^20.2.9"
+    "nanoid": "^3.3.6"
   },
   "devDependencies": {
     "@ulixee/datastore-packager": "2.0.0-alpha.21",

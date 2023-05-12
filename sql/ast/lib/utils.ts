@@ -82,7 +82,7 @@ export function trimNullish<T>(value: T, depth = 5): T {
   if (depth < 0)
     return value;
   if (value instanceof Array) {
-    value.forEach(x => trimNullish(x, depth - 1))
+    value.forEach(x => trimNullish(x, depth - 1));
   }
   if (typeof value !== 'object' || value instanceof Date)
     return value;

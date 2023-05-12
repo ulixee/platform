@@ -1,5 +1,5 @@
 import { ExtractSchemaType } from '@ulixee/schema';
-import * as assert from 'assert';
+import assert = require('assert');
 import { SqlParser } from '@ulixee/sql-engine';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import Table, { IExpandedTableSchema } from './Table';

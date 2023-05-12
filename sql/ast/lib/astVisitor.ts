@@ -7,14 +7,14 @@ import { ReplaceReturnType } from './utils';
 
 
 
-export type IAstPartialVisitor = { [key in keyof IAstPartialMapper]: ReplaceReturnType<IAstPartialMapper[key], any> }
+export type IAstPartialVisitor = { [key in keyof IAstPartialMapper]: ReplaceReturnType<IAstPartialMapper[key], any> };
 export type IAstFullVisitor = {
   [key in keyof IAstPartialVisitor]-?: IAstPartialVisitor[key];
-}
+};
 
 export type IAstVisitor = IAstFullVisitor & {
   super(): IAstVisitor;
-}
+};
 
 class Visitor {
   mapper?: IAstMapper;
@@ -46,9 +46,9 @@ for (const k of Object.getOwnPropertyNames(mapperProto)) {
         //    in the ast-modifier language.
         impl.apply(this.visitor, args);
         return args[0];
-      }
+      };
     }
-  })
+  });
 }
 
 
@@ -68,7 +68,7 @@ for (const k of Object.getOwnPropertyNames(mapperProto)) {
     get() {
       return function get(this: SkipVisitor, ...args: []) {
         return orig.apply(this.parent, args);
-      }
+      };
     }
   });
 }
@@ -99,5 +99,5 @@ export function astVisitor<T extends IAstPartialVisitor = IAstPartialVisitor>(vi
     ret.mapper = m;
     ret.visitor = visitorBuilder(ret as any);
     return ret as any;
-  })
+  });
 }

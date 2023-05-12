@@ -35,7 +35,7 @@ describe('Lexer', () => {
 
     lexer.reset(`1 -- 2`);
     next({ type: 'int', value: '1' });
-    expect(lexer.next()).toEqual(undefined)
+    expect(lexer.next()).toEqual(undefined);
   });
 
   it('member and minus ops are not confused', () => {
@@ -53,7 +53,7 @@ describe('Lexer', () => {
 
     lexer.reset(`1 /* 2 */`);
     next({ type: 'int', value: '1' });
-    expect(lexer.next()).toEqual(undefined)
+    expect(lexer.next()).toEqual(undefined);
   });
 
   it('like/ilike ops', () => {
@@ -135,7 +135,7 @@ describe('Lexer', () => {
   it('keeps case in non-quoted names', () => {
     lexer.reset(`Name`);
     next({ type: 'word', value: 'Name' });
-  })
+  });
 
   it('supports edge cases names', () => {
     lexer.reset(`_Name "_Name" a_b Name_`);
@@ -143,7 +143,7 @@ describe('Lexer', () => {
     next({ type: 'quoted_word', value: '_Name' });
     next({ type: 'word', value: 'a_b' });
     next({ type: 'word', value: 'Name_' });
-  })
+  });
 
   it('tokenizes additive binaries', () => {
     lexer.reset('2+2');
@@ -157,7 +157,7 @@ describe('Lexer', () => {
     next({ type: 'int', value: '2' });
     next({ type: 'comma' });
     next({ type: 'int', value: '2' });
-  })
+  });
 
 
   it('tokenizes floats', () => {
@@ -175,7 +175,7 @@ describe('Lexer', () => {
     next({ type: 'float', value: '10.' });
     next({ type: 'comma' });
     next({ type: 'float', value: '-10.' });
-  })
+  });
 
   it('tokenizes ->', () => {
     lexer.reset('a->b');
@@ -192,9 +192,9 @@ describe('Lexer', () => {
   });
 
   it('tokenises empty string', () => {
-    lexer.reset(`''`)
+    lexer.reset(`''`);
     next({ type: 'string' });
-  })
+  });
 
   it(`tokenizes SELECT pg_catalog.set_config('search_path', '', false);`, () => {
     lexer.reset(`SELECT pg_catalog.set_config('search_path', '', false);`);
@@ -207,21 +207,21 @@ describe('Lexer', () => {
     next({ type: 'comma' });
     next({ type: 'string' });
     next({ type: 'comma' });
-  })
+  });
 
   it('tokenizes code block', () => {
     lexer.reset(`before $$ code $ block $$ after`);
     next({ type: 'word', value: 'before' });
     next({ type: 'codeblock', value: ' code $ block ' });
     next({ type: 'word', value: 'after' });
-  })
+  });
 
   it('tokenizes multiline code block', () => {
     const multi = `code
         block`;
     lexer.reset(`$$${multi}$$`);
     next({ type: 'codeblock', value: multi });
-  })
+  });
 
   it('can parse multiple full comments', () => {
     lexer.reset('select /* comment a */ * from /* comment b */ tbl');
@@ -234,10 +234,10 @@ describe('Lexer', () => {
   it('can parse an empty full comment', () => {
     lexer.reset('/**/ select');
     next({ type: 'kw_select' });
-  })
+  });
 
   it('can parse nested full comments', () => {
     lexer.reset('/* /* */ /* /* */ */ */ select');
     next({ type: 'kw_select' });
-  })
+  });
 });

@@ -35,4 +35,4 @@ export default {
   query_timeout: false,
 
   connect_timeout: 0,
-}
+};

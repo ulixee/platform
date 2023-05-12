@@ -9,7 +9,7 @@ const types: [keyof IInterval, number][] = [
   ['minutes', 60],
   ['seconds', 1000],
   ['milliseconds', 0],
-]
+];
 
 type E = [keyof IInterval, number];
 type K = E | K[];
@@ -26,7 +26,7 @@ function* unwrap(k: K): IterableIterator<E> {
 export function buildInterval(orig: string, vals: 'invalid' | K): IInterval {
   const ret: IInterval = {};
   if (vals === 'invalid') {
-    throw new Error(`invalid input syntax for type interval: "${orig}"`)
+    throw new Error(`invalid input syntax for type interval: "${orig}"`);
   }
   for (const [k, v] of unwrap(vals)) {
     ret[k] = (ret[k] ?? 0) + v;
@@ -125,9 +125,9 @@ export function intervalToString(value: IInterval): String {
   }
   if (value.hours || value.minutes || value.seconds || value.milliseconds) {
 
-    let time = `${num(value.hours ?? 0)}:${num(value.minutes ?? 0)}:${num(value.seconds ?? 0)}`
+    let time = `${num(value.hours ?? 0)}:${num(value.minutes ?? 0)}:${num(value.seconds ?? 0)}`;
     if (value.milliseconds) {
-      time += (value.milliseconds / 1000).toString().substr(1)
+      time += (value.milliseconds / 1000).toString().substr(1);
 
     }
     if (neg(value.hours) || neg(value.minutes) || neg(value.seconds) || neg(value.milliseconds)) {

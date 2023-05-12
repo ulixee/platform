@@ -123,7 +123,7 @@ function checkTree<T>(value: string | string[], expected: T, mapper: (parsed: T,
     it(`parses ${sql}`, () => {
       const gram = Grammar.fromCompiled(grammar);
       if (start) {
-        gram.start = start
+        gram.start = start;
       }
       function doParse(psql: string) {
         const parser = new Parser(gram);
@@ -205,7 +205,7 @@ export function checkInvalid(sql: string, start?: string) {
   it(`does not parses ${sql}`, () => {
     const gram = Grammar.fromCompiled(grammar);
     if (start) {
-      gram.start = start
+      gram.start = start;
     }
     const parser = new Parser(gram);
     parser.feed(sql);
@@ -218,7 +218,7 @@ export function checkValid(sql: string, start?: string) {
   it(`parses ${sql}`, () => {
     const gram = Grammar.fromCompiled(grammar);
     if (start) {
-      gram.start = start
+      gram.start = start;
     }
     const parser = new Parser(gram);
     parser.feed(sql);
@@ -249,7 +249,7 @@ export function checkInterval(input: string | string[], expected: IInterval) {
   for (const v of Array.isArray(input) ? input : [input]) {
     it(`parses interval "${v}"`, () => {
       expect(normalizeInterval(parseIntervalLiteral(v))).toEqual(expected);
-    })
+    });
   }
 }
 

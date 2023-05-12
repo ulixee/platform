@@ -11,7 +11,7 @@ import findSelectors from './lib/content/findSelectors';
 customElements.define('chromealive-element-options-overlay', ElementOptionsOverlay);
 
 let elementOptionsOverlay: ElementOptionsOverlay;
-const elementsBucket = new ElementsBucket()
+const elementsBucket = new ElementsBucket();
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function openSelectorMenu(_options: { backendNodeId?: number, element?: HTMLElement }) {
@@ -62,14 +62,14 @@ onMessagePayload(async payload => {
   } else if (event === MessageEventType.UpdateElementOptions) {
     if ('isIncluded' in payload) {
       if (payload.isIncluded) {
-        const element = await elementsBucket.getByBackendNodeId(backendNodeId)
+        const element = await elementsBucket.getByBackendNodeId(backendNodeId);
         elementsBucket.addIncludedElement(backendNodeId, element);
       } else {
         elementsBucket.removeIncludedElement(backendNodeId);
       }
     } else if ('isExcluded' in payload) {
       if (payload.isExcluded) {
-        const element = await elementsBucket.getByBackendNodeId(backendNodeId)
+        const element = await elementsBucket.getByBackendNodeId(backendNodeId);
         elementsBucket.addExcludedElement(backendNodeId, element);
       } else {
         elementsBucket.removeExcludedElement(backendNodeId);

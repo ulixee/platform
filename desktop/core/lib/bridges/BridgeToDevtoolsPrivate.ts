@@ -200,7 +200,7 @@ function openSelectorGeneratorPanel(DevToolsAPI: any, extensionId: string): void
 }
 
 function toggleInspectElementMode(InspectorFrontendAPI: any): void {
-  InspectorFrontendAPI.enterInspectElementMode()
+  InspectorFrontendAPI.enterInspectElementMode();
 }
 
 const interceptInspectElementMode = `

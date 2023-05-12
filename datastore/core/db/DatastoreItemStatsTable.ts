@@ -90,7 +90,7 @@ export default class DatastoreItemStatsTable extends SqliteTable<IDatastoreItemS
     DatastoreItemStatsTable.byVersionHashAndName[`${versionHash}_${name}`] ??= this.getQuery.get(
       versionHash,
       name,
-    ) ?? {
+    ) as any ?? {
       lastRunTimestamp: Date.now(),
       runs: 0,
       errors: 0,

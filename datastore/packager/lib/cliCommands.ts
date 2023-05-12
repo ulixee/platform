@@ -8,7 +8,7 @@ import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { findProjectPathSync } from '@ulixee/commons/lib/dirUtils';
-import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile'
+import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { CloudNode } from '@ulixee/cloud';

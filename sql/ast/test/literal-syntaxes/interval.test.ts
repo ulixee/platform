@@ -17,7 +17,7 @@ describe('Interval literals', () => {
     '2 month',
     '2month',
     'P2M',
-  ], { months: 2 })
+  ], { months: 2 });
 
   checkInterval(['2 days',
     '2 day',

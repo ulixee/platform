@@ -36,12 +36,13 @@ export class Client<Type extends 'session' | 'desktop' | 'internal' = 'session'>
 
   private lastEventByEventType: { [event: string]: any } = {};
 
-  private id = (clientId += 1);
+  private readonly id: number;
 
   constructor(address?: string) {
     this.connect = this.connect.bind(this);
     this.send = this.send.bind(this);
     this.address ??= address;
+    this.id = clientId++;
   }
 
   connect(): Promise<void> {

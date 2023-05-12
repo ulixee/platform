@@ -16,7 +16,7 @@
     "@ulixee/specification": "2.0.0-alpha.21",
     "@ulixee/sql-ast": "2.0.0-alpha.21",
     "@ulixee/sql-engine": "2.0.0-alpha.21",
-    "better-sqlite3": "^8.0.1",
+    "better-sqlite3": "^8.3.0",
     "finalhandler": "^1.2.0",
     "nanoid": "^3.1.32",
     "serve-static": "^1.15.0",

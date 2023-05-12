@@ -161,7 +161,7 @@ export default class DomNodeState {
   }
 
   constructor(readonly frameId: number, private nodesById: Record<number, DomNodeState>, readonly nodeId: number) {
-    this.frameNodeId = `${frameId}_${nodeId}`
+    this.frameNodeId = `${frameId}_${nodeId}`;
   }
 
   remove(highlight: boolean): void {

@@ -65,56 +65,56 @@ export default class ConnectionString {
     let pathname = result.pathname;
     if (!config.host && pathname && /^%2f/i.test(pathname)) {
       const pathnameSplit = pathname.split('/');
-      config.host = decodeURIComponent(pathnameSplit[0])
+      config.host = decodeURIComponent(pathnameSplit[0]);
       pathname = pathnameSplit.splice(1).join('/');
     }
     // result.pathname is not always guaranteed to have a '/' prefix (e.g. relative urls)
     // only strip the slash if it is present.
     if (pathname && pathname.charAt(0) === '/') {
-      pathname = pathname.slice(1) || null
+      pathname = pathname.slice(1) || null;
     }
     config.database = pathname && decodeURI(pathname) || '';
 
     if ((config.ssl as any) === 'true' || (config.ssl as any) === '1') {
-      config.ssl = true
+      config.ssl = true;
     }
 
     if ((config.ssl as any) === '0') {
-      config.ssl = false
+      config.ssl = false;
     }
 
     if (config.sslcert || config.sslkey || config.sslrootcert || config.sslmode) {
-      config.ssl = {}
+      config.ssl = {};
       if (config.sslcert) {
-        config.ssl.cert = Fs.readFileSync(config.sslcert).toString()
+        config.ssl.cert = Fs.readFileSync(config.sslcert).toString();
       }
     
       if (config.sslkey) {
-        config.ssl.key = Fs.readFileSync(config.sslkey).toString()
+        config.ssl.key = Fs.readFileSync(config.sslkey).toString();
       }
     
       if (config.sslrootcert) {
-        config.ssl.ca = Fs.readFileSync(config.sslrootcert).toString()
+        config.ssl.ca = Fs.readFileSync(config.sslrootcert).toString();
       }  
 
       switch (config.sslmode) {
         case 'disable': {
-          config.ssl = false
-          break
+          config.ssl = false;
+          break;
         }
         case 'prefer':
         case 'require':
         case 'verify-ca':
         case 'verify-full': {
-          break
+          break;
         }
         case 'no-verify': {
-          config.ssl.rejectUnauthorized = false
-          break
+          config.ssl.rejectUnauthorized = false;
+          break;
         }
       }
     }
 
-    return config
+    return config;
   }
 }

@@ -15,7 +15,7 @@
       </nav>
     </div>
 
-    <div class="isolate mt-10 mb-5 border-b border-gray-200 pb-5">
+    <div class="isolate mb-5 mt-10 border-b border-gray-200 pb-5">
       <div
         class="relative mx-auto flex w-1/2 flex-row items-center justify-center rounded-full shadow"
       >

@@ -3,4 +3,4 @@
 import '@ulixee/commons/lib/SourceMapSupport';
 import cli from '../index';
 
-cli().parseAsync().catch(console.error)
+cli().parseAsync().catch(console.error);

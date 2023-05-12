@@ -1,9 +1,9 @@
 import * as http from 'http';
 import { Server } from 'http';
 import * as https from 'https';
-import * as Koa from 'koa';
-import * as KoaRouter from '@koa/router';
-import * as KoaMulter from '@koa/multer';
+import Koa = require('koa');
+import KoaRouter = require('@koa/router');
+import KoaMulter = require('@koa/multer');
 import * as net from 'net';
 import * as http2 from 'http2';
 import Core from '@ulixee/hero-core';

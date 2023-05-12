@@ -16,7 +16,7 @@ function loadNearlyFile(filePath) {
   const opts = {
     args: [filePath],
     alreadycompiled: [],
-  }
+  };
   const compilation = compile(parser.results[0], opts);
   lint(compilation, {});
   const ret = generate(compilation, 'grammar');

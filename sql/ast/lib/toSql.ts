@@ -7,7 +7,7 @@ import INil from '../interfaces/INil';
 import IAstPartialMapper from '../interfaces/IAstPartialMapper';
 import AstDefaultMapper from './AstDefaultMapper';
 
-export type IAstToSql = { readonly [key in keyof IAstPartialMapper]-?: ReplaceReturnType<IAstPartialMapper[key], string> }
+export type IAstToSql = { readonly [key in keyof IAstPartialMapper]-?: ReplaceReturnType<IAstPartialMapper[key], string> };
 
 const kwSet = new Set(sqlKeywords.map(x => x.toLowerCase()));
 
@@ -61,7 +61,7 @@ function visitOrderBy(m: IAstVisitor, orderBy: IOrderByStatement[]): void {
       ret.push(' ', e.order, ' ');
     }
     if (e.nulls) {
-      ret.push(' NULLS ', e.nulls, ' ')
+      ret.push(' NULLS ', e.nulls, ' ');
     }
   }, false);
 }
@@ -81,7 +81,7 @@ function join(m: IAstVisitor, j: IJoinClause | INil, tbl: () => void): void {
   ret.push(j.type, ' ');
   tbl();
   if (j.on) {
-    ret.push('ON ')
+    ret.push('ON ');
     m.expr(j.on);
   }
   if (j.using) {
@@ -199,7 +199,7 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
   },
 
   case: c => {
-    ret.push('CASE ')
+    ret.push('CASE ');
     if (c.value) {
       m.expr(c.value);
     }
@@ -207,7 +207,7 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
     for (const e of c.whens) {
       ret.push(' WHEN ');
       m.expr(e.when);
-      ret.push(' THEN ')
+      ret.push(' THEN ');
       m.expr(e.value);
     }
 
@@ -276,7 +276,7 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
 
   dataType: (d?: IDataTypeDef) => {
     if (d?.kind === 'array') {
-      m.dataType((d as IArrayDataTypeDef).arrayOf)
+      m.dataType((d as IArrayDataTypeDef).arrayOf);
       ret.push('[]');
       return;
     }
@@ -348,20 +348,20 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
     join(m, s.join, () => {
       m.call(s);
       if (s.withOrdinality) {
-        ret.push(' WITH ORDINALITY')
+        ret.push(' WITH ORDINALITY');
       }
       if (s.alias) {
         ret.push(' AS ', name<IName>(s.alias), ' ');
         const len = s.alias.columns?.length ?? 0;
         if (len > 0) {
-          ret.push('(')
+          ret.push('(');
           for (let ix = 0; ix < len; ++ix) {
             if (ix !== 0) {
-              ret.push(', ')
+              ret.push(', ');
             }
             ret.push(name(s.alias.columns[ix]));
           }
-          ret.push(')')
+          ret.push(')');
         }
       }
     });
@@ -483,12 +483,12 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
     ret.push(' ');
     if (s.from) {
       ret.push('FROM ');
-      const tblCnt = s.from.length
+      const tblCnt = s.from.length;
       for (let i = 0; i < tblCnt; i++) {
         const f = s.from[i];
         if (i > 0 && !f.join) {
           // implicit cross join (https://www.postgresql.org/docs/9.5/sql-select.html#SQL-FROM)
-          ret.push(',')
+          ret.push(',');
         }
         m.from(f);
       }

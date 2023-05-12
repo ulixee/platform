@@ -43,7 +43,7 @@ test('extractFunctionInput', () => {
       count: number(),
       success: string(),
     }
-  }
+  };
   const inputs = sqlParser.extractFunctionCallInputs(inputSchemas, []);
 
   expect(inputs.extractor).toMatchObject({
@@ -59,7 +59,7 @@ test('extractFunctionInput with boundValues', () => {
       count: number(),
       success: string(),
     }
-  }
+  };
   const inputs = sqlParser.extractFunctionCallInputs(inputSchemas, [0, 'yes']);
 
   expect(inputs.extractor).toMatchObject({

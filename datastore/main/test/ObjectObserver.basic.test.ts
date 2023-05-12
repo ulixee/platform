@@ -197,7 +197,7 @@ test('buffer - records changes', () => {
   const events = [];
   const buffer = Buffer.from('This is a test');
   const po = ObjectObserver.create({ buffer }, changes => {
-    events.push(...changes)
+    events.push(...changes);
   });
 
   expect(po.buffer.toString('utf8')).toBe('This is a test');

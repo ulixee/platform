@@ -366,14 +366,14 @@ describe('Select statements', () => {
       },
       alias: 'd',
     }]
-  })
+  });
 
   checkSelect(['select * from test group by grp', 'select * from test group by (grp)'], {
     type: 'select',
     columns: columns({ type: 'ref', name: '*' }),
     from: [tbl('test')],
     groupBy: [{ type: 'ref', name: 'grp' }]
-  })
+  });
 
   checkSelect(['select * from test group by a,b', 'select * from test group by (a,b)'], {
     type: 'select',
@@ -383,7 +383,7 @@ describe('Select statements', () => {
       { type: 'ref', name: 'a' },
       { type: 'ref', name: 'b' }
     ]
-  })
+  });
 
 
   function buildJoin(t: IJoinType): ISelectStatement {
@@ -411,7 +411,7 @@ describe('Select statements', () => {
           }
         }
       }]
-    }
+    };
   }
 
   checkInvalid('select * from ta full inner join tb on ta.id=tb.id');
@@ -582,7 +582,7 @@ describe('Select statements', () => {
         args: [],
       }
     }]
-  })
+  });
 
 
   checkSelect(`select '1'::double precision`, {
@@ -633,7 +633,7 @@ describe('Select statements', () => {
         to: { name: 'time without time zone' },
       }
     }]
-  })
+  });
 
   checkSelect(['select distinct a from test'], {
     type: 'select',
@@ -693,7 +693,7 @@ describe('Select statements', () => {
       [int(1), binary(int(1), '+', int(1))],
       [int(3), int(4)],
     ]
-  })
+  });
 
   checkSelect([`select * from (values (1, 'one'), (2, 'two')) as vals (num, letter)`], {
     type: 'select',
@@ -765,7 +765,7 @@ describe('Select statements', () => {
         }
       }
     }]
-  })
+  });
 
 
   checkSelect([`select * from concat('a', 'b')`], {
@@ -779,7 +779,7 @@ describe('Select statements', () => {
       ]
     }],
     columns: columns({ type: 'ref', name: '*' }),
-  })
+  });
 
   checkSelect([`select * from concat('a') as a join concat('b') as b on b=a`], {
     type: 'select',
@@ -815,7 +815,7 @@ describe('Select statements', () => {
     }],
     columns: columns({ type: 'ref', name: '*' }),
 
-  })
+  });
 
 
   checkSelect([`select * from concat('a', 'b') as tbl`], {
@@ -830,7 +830,7 @@ describe('Select statements', () => {
       ]
     }],
     columns: columns({ type: 'ref', name: '*' }),
-  })
+  });
 
   checkSelect([`select 1 from fn() alias`, `select 1 from fn() as alias`], {
     type: 'select',
@@ -841,7 +841,7 @@ describe('Select statements', () => {
       args: [],
     }],
     columns: columns({ type: 'integer', value: 1 }),
-  })
+  });
 
   checkSelect('select * from test for update', {
     type: 'select',

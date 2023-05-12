@@ -97,8 +97,14 @@ export default class Crawler<
     originalRun: ICrawlerComponents<TSchema, TContext>['run'],
     context: TContext,
   ): Promise<void> {
-    const { outputs, Output, datastoreMetadata, input, schema, ...rest } =
-      context as IExtractorContext<TSchema>;
+    const {
+      outputs: _o,
+      Output,
+      datastoreMetadata: _d,
+      input,
+      schema,
+      ...rest
+    } = context as IExtractorContext<TSchema>;
     const cached = await this.findCached(input as TContext['input']);
     if (cached) {
       Output.emit(cached as any);
@@ -146,7 +152,7 @@ export default class Crawler<
   }
 
   protected getSerializedInput(input: TContext['input']): string {
-    const { maxTimeInCache, sessionId, ...inputArgs } = input;
+    const { maxTimeInCache: _m, sessionId: _s, ...inputArgs } = input;
     return TypeSerializer.stringify(inputArgs, { sortKeys: true });
   }
 }

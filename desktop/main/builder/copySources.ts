@@ -53,7 +53,7 @@ function copyDir(baseDir: string, outDir: string): void {
   }
 }
 
-const buildDir = process.env.SOURCE_DIR ?? 'build'
+const buildDir = process.env.SOURCE_DIR ?? 'build';
 
 copyDir(`${baseBuild}/${buildDir}`, dest);
 if (process.env.NODE_ENV !== 'production') {

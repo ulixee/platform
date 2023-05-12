@@ -9,7 +9,7 @@ export type IAstFullMapper = {
 export type IAstMapper = IAstFullMapper & {
   /** Forces the next call to use the default implementation, not yours */
   super(): IAstMapper;
-}
+};
 
 
 /**

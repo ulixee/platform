@@ -1,5 +1,5 @@
 import type TDesktopCore from '@ulixee/desktop-core';
-import Env from '../env'
+import Env from '../env';
 
 export default class DesktopUtils {
   public static isInstalled(): boolean {

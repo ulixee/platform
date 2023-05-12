@@ -1,7 +1,7 @@
 // NOTE: you must start your own Ulixee Cloud to run this example.
 
 import { Crawler, Datastore, Extractor, HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
-import * as moment from 'moment';
+import moment = require('moment');
 
 const datastore = new Datastore({
   crawlers: {

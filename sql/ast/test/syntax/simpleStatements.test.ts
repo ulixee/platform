@@ -10,7 +10,7 @@ describe('Simple statements', () => {
       type: 'table',
       name: { name: 'groups' }
     }
-  })
+  });
 
   checkStatement(`COMMENT ON TABLE public.groups is 'some text'`, {
     type: 'comment',
@@ -19,7 +19,7 @@ describe('Simple statements', () => {
       type: 'table',
       name: { schema: 'public', name: 'groups', }
     }
-  })
+  });
 
   checkStatement(`COMMENT ON COLUMN groups.members is 'some text'`, {
     type: 'comment',
@@ -28,7 +28,7 @@ describe('Simple statements', () => {
       type: 'column',
       column: { table: 'groups', column: 'members', }
     }
-  })
+  });
 
   checkStatement(`COMMENT ON COLUMN public.groups.members is 'some text'`, {
     type: 'comment',
@@ -48,7 +48,7 @@ describe('Simple statements', () => {
       columns: [{ expr: { type: 'ref', name: '*' } }],
       from: [tbl('tbl')],
     }]);
-    expect(comments.map(c => c.comment)).toMatchObject(['/* comment a */ ', '/* comment b */ '])
+    expect(comments.map(c => c.comment)).toMatchObject(['/* comment a */ ', '/* comment b */ ']);
   });
 
   // https://www.postgresql.org/docs/13/sql-syntax-lexical.html#SQL-SYNTAX-COMMENTS
@@ -59,7 +59,7 @@ describe('Simple statements', () => {
       columns: [{ expr: { type: 'ref', name: '*' } }],
       from: [tbl('tbl')],
     }]);
-    expect(comments.map(c => c.comment)).toMatchObject(['/* comment /* nest */ a */ ', '/* comment /* nest1 /* nest2 */ */ b */ '])
+    expect(comments.map(c => c.comment)).toMatchObject(['/* comment /* nest */ a */ ', '/* comment /* nest1 /* nest2 */ */ b */ ']);
   });
 
   checkStatement(`select * from (select a from mytable) myalias(col_renamed)`, {

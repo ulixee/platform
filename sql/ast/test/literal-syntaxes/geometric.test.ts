@@ -11,7 +11,7 @@ describe('Geometric literals', () => {
   const hasContent = [
     /^int$/,
     /^float$/,
-  ]
+  ];
   function next(expected: any) {
     const result = lexer.next() as Optional<Token>;
     delete result.toString;
@@ -43,7 +43,7 @@ describe('Geometric literals', () => {
     next({ type: 'int', value: '2' });
     next({ type: 'comma' });
     next({ type: 'int', value: '2' });
-  })
+  });
 
 
   it('Lexer: tokenizes floats', () => {
@@ -61,20 +61,20 @@ describe('Geometric literals', () => {
     next({ type: 'float', value: '10.' });
     next({ type: 'comma' });
     next({ type: 'float', value: '-10.' });
-  })
+  });
 
   it('parses point', () => {
     const point: IPoint = { x: 1, y: 2 };
     expect(parseGeometricLiteral('(1,2)', 'point')).toEqual(point);
     expect(parseGeometricLiteral('.1,2.', 'point')).toEqual({ x: .1, y: 2 });
     expect(parseGeometricLiteral(' 1.1 , .2 ', 'point')).toEqual({ x: 1.1, y: 0.2 });
-  })
+  });
 
 
   it('parses line', () => {
     const line: ILine = { a: 1, b: 2, c: 3 };
     expect(parseGeometricLiteral('{1,2,3}', 'line')).toEqual(line);
-  })
+  });
 
   it('parses box', () => {
     const box: IBox = [{ x: 1, y: 2 }, { x: 3, y: 4 }];
@@ -82,7 +82,7 @@ describe('Geometric literals', () => {
     expect(parseGeometricLiteral('(1,2),(3,4)', 'box')).toEqual(box);
     expect(parseGeometricLiteral('(1,2,3,4)', 'box')).toEqual(box);
     expect(parseGeometricLiteral('1 , 2 , 3 , 4', 'box')).toEqual(box);
-  })
+  });
 
   it('parses segment', () => {
     const lseg: ISegment = [{ x: 1, y: 2 }, { x: 3, y: 4 }];
@@ -91,7 +91,7 @@ describe('Geometric literals', () => {
     expect(parseGeometricLiteral('(1,2),(3,4)', 'lseg')).toEqual(lseg);
     expect(parseGeometricLiteral('(1,2,3,4)', 'lseg')).toEqual(lseg);
     expect(parseGeometricLiteral('1 , 2 , 3 , 4', 'lseg')).toEqual(lseg);
-  })
+  });
 
   it('parses closed paths', () => {
     const path = { closed: true, path: [{ x: 1, y: 2 }, { x: 3, y: 4 }, { x: 5, y: 6 }] };
@@ -99,7 +99,7 @@ describe('Geometric literals', () => {
     expect(parseGeometricLiteral('(1,2),(3,4), 5,6', 'path')).toEqual(path);
     expect(parseGeometricLiteral('(1,2,3,4, (5,6))', 'path')).toEqual(path);
     expect(parseGeometricLiteral('1 , 2 , 3 , 4, (5,6)', 'path')).toEqual(path);
-  })
+  });
 
   it('parses open paths', () => {
     const path = { closed: false, path: [{ x: 1, y: 2 }, { x: 3, y: 4 }, { x: 5, y: 6 }] };

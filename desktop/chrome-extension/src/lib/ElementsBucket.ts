@@ -64,7 +64,7 @@ export default class ElementsBucket {
     this.excludedElementsById.set(backendNodeId, element);
     this.removeIncludedElement(backendNodeId);
 
-    const payload = { event: MessageEventType.AddExcludedElement, backendNodeId, name: tagText }
+    const payload = { event: MessageEventType.AddExcludedElement, backendNodeId, name: tagText };
     sendToDevtoolsScript(payload);
     sendToDevtoolsPrivate(payload);
   }
@@ -98,4 +98,4 @@ window.onElementFromCore = function onElementFromCore(backendNodeId: number, ele
   if (!elementPromisesById[backendNodeId]) return;
   elementPromisesById[backendNodeId].resolve(element);
   delete elementPromisesById[backendNodeId];
-}
+};

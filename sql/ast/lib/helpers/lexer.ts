@@ -9,8 +9,8 @@ for (const k of sqlKeywords) {
 }
 
 function caseInsensitiveKeywords(map: any): (text: string) => string {
-  const transform = keywords(map)
-  return (text: string) => transform(text.toUpperCase())
+  const transform = keywords(map);
+  return (text: string) => transform(text.toUpperCase());
 }
 
 // build lexer
@@ -116,7 +116,7 @@ lexer.next = (next => () => {
           nested: 0,
           offset: tok.offset,
           text: tok.text
-        }
+        };
         continue;
       }
       commentFull.nested++;
@@ -127,7 +127,7 @@ lexer.next = (next => () => {
 
       if (tok.type === 'commentFullClose') {
         if (commentFull.nested === 0) { // finish comment, if not nested
-          comments?.push(makeComment(commentFull))
+          comments?.push(makeComment(commentFull));
           commentFull = null;
           continue;
         }
@@ -139,7 +139,7 @@ lexer.next = (next => () => {
       continue;
     }
     if (tok.type === 'commentLine') {
-      comments?.push(makeComment(tok))
+      comments?.push(makeComment(tok));
       continue;
     }
     break;
