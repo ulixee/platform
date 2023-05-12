@@ -1,6 +1,8 @@
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
+import { bindFunctions } from '@ulixee/commons/lib/utils';
+import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { IDatastoreEntityStatsRecord } from '../db/DatastoreEntityStatsTable';
 import { DatastoreNotFoundError } from './errors';
 import IDatastoreRegistryStore, {
@@ -55,6 +57,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     private installCallbackFn?: TOnDatastoreInstalledCallbackFn,
   ) {
     super();
+    bindFunctions(this);
 
     this.diskStore = new DatastoreRegistryDiskStore(
       datastoreDir,
@@ -68,12 +71,14 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
 
     if (peerNetwork) {
       this.networkStore = new DatastoreRegistryNetworkStore(peerNetwork, apiClients);
+      this.networkStore.peerNetwork.on('provide-expired', this.onProvideExpired);
     }
 
     this.stores = [this.diskStore, this.clusterStore, this.networkStore].filter(Boolean);
   }
 
   public async close(): Promise<void> {
+    this.networkStore?.peerNetwork.off('provide-expired', this.onProvideExpired);
     await Promise.allSettled(this.stores.map(x => x.close()));
   }
 
@@ -171,9 +176,16 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     }
   }
 
+  private async onProvideExpired(provided: { hash: Buffer }): Promise<void> {
+    const versionHash = encodeBuffer(provided.hash, 'dbx');
+    if (!(await this.diskStore.isHostingExpired(versionHash))) {
+      await this.networkStore.publish(versionHash);
+    }
+  }
+
   private async onDatastoreInstalled(
     version: IDatastoreManifestWithRuntime,
-    source: IDatastoreSourceDetails,
+    _source: IDatastoreSourceDetails,
     previous?: IDatastoreManifestWithRuntime,
     options?: {
       clearExisting?: boolean;

@@ -69,6 +69,19 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
     return results;
   }
 
+  async isHostingExpired(versionHash: string): Promise<boolean> {
+    const versionRecord = this.datastoresDb.versions.getByHash(versionHash);
+    if (versionRecord?.expiresTimestamp && versionRecord.expiresTimestamp < Date.now()) {
+      if (versionRecord.dbxPath) {
+        this.#openedManifestsByDbxPath.delete(versionRecord.dbxPath);
+        await Fs.rm(versionRecord.dbxPath, { recursive: true });
+        this.datastoresDb.versions.cleanup(versionHash);
+      }
+      return true;
+    }
+    return false;
+  }
+
   async get(versionHash: string): Promise<IDatastoreManifestWithLatest> {
     const versionRecord = this.datastoresDb.versions.getByHash(versionHash);
     const latestVersionHash = await this.getLatestVersion(versionHash);
@@ -101,7 +114,7 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
     if (!versionHash) return null;
 
     const versionRecord = this.datastoresDb.versions.getByHash(versionHash);
-    if (!versionRecord) return null;
+    if (!versionRecord?.dbxPath) return null;
 
     return Promise.resolve({
       runtimePath: Path.join(versionRecord.dbxPath, 'datastore.js'),
@@ -115,7 +128,7 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
     if (!versionHash) return null;
 
     const versionRecord = this.datastoresDb.versions.getByHash(versionHash);
-    if (!versionRecord) return null;
+    if (!versionRecord?.dbxPath) return null;
 
     const compressedDbx = await packDbx(versionRecord.dbxPath);
     return {

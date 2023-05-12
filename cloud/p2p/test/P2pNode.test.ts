@@ -2,6 +2,7 @@ import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { Helpers } from '@ulixee/datastore-testing';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
+import { isPortInUse } from '@ulixee/commons/lib/utils';
 import P2pConnection from '../lib/P2pConnection';
 
 test('should correctly register peers', async () => {
@@ -33,11 +34,15 @@ test('should provide and find providers', async () => {
 
   const key = sha256('test');
 
-  await p2pConnection2.provide('test', key);
+  const { providerKey } = await p2pConnection2.provide(key);
   const providerPeers: INodeInfo[] = [];
-  for await (const node of p2pConnection1.findProviderNodes('test', key)) {
+  for await (const node of p2pConnection1.findProviderNodes(key)) {
     providerPeers.push(node);
   }
+
+  // @ts-expect-error - check that we can decode properly in this private method
+  const originalKey = await p2pConnection1.onDatastoreEntryDeleted({ key: providerKey });
+  expect(originalKey).toStrictEqual(key);
 
   await p2pConnection1.close();
   await p2pConnection2.close();
@@ -45,21 +50,13 @@ test('should provide and find providers', async () => {
   expect(providerPeers).toHaveLength(1);
 });
 
-test.todo("should not connect to nodes that don't have the ulixee protocol");
-
 test('start and connect multiple mining-bits', async () => {
-  const p2pConnections = await Promise.all([
-    startP2p({ port: 3020 }),
-    startP2p({ port: 3021 }),
-    startP2p({ port: 3022 }),
-    startP2p({ port: 3023 }),
-    startP2p({ port: 3024 }),
-    startP2p({ port: 3025 }),
-    startP2p({ port: 3026 }),
-    startP2p({ port: 3027 }),
-    startP2p({ port: 3028 }),
-    startP2p({ port: 3029 }),
-  ]);
+  const p2pConnections = await Promise.all(
+    Array(10)
+      .fill(0)
+      .map((_, i) => startP2p({ ulixeeApiHost: '127.0.0.1:1818', port: 18181 + i })),
+  );
+
   for (let i = 0; i < p2pConnections.length; i += 1) {
     let nextIdx = i + 1;
     if (nextIdx > p2pConnections.length - 1) nextIdx = 0;
@@ -68,6 +65,7 @@ test('start and connect multiple mining-bits', async () => {
       p2pConnections[nextIdx].multiaddrs,
     );
   }
+
   await Promise.all(p2pConnections.map(x => x.ensureNetworkConnect()));
   let i = 0;
   for (const conn of p2pConnections) {
@@ -79,7 +77,7 @@ test('start and connect multiple mining-bits', async () => {
     p2pConnections[8].libp2p.peerId,
   );
   expect(peerLookup).toBeTruthy();
-  expect(peerLookup.multiaddrs[0].toString()).toContain('tcp/3028');
+  expect(p2pConnections[8].multiaddrs[0].toString()).toContain(peerLookup.multiaddrs[0].toString());
   await Promise.all(p2pConnections.map(x => x.close()));
 }, 30000);
 
@@ -98,12 +96,13 @@ async function startP2p({
   ulixeeApiHost?: string;
 }) {
   const identity = await Identity.create();
+
   const p2pConnection = new P2pConnection({
     identity,
     ipOrDomain: '127.0.0.1',
     port,
     dbPath: process.env.ULX_DATA_DIR,
-    ulixeeApiHost: ulixeeApiHost ?? `127.0.0.1:${port}`,
+    ulixeeApiHost: ulixeeApiHost ?? '127.0.0.1:1818',
   });
   Helpers.needsClosing.push(p2pConnection);
   return await p2pConnection.start(bootstrapPeers);

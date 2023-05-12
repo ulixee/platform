@@ -55,16 +55,32 @@ export async function base32(data: Uint8Array): Promise<string> {
   return Base32.base32.encode(data).substring(1);
 }
 
-export async function createRawCIDV1(data: Buffer | Uint8Array): Promise<CID> {
-  const {
-    CID: { createV1 },
-  } = await dynamicImport<typeof import('multiformats')>('multiformats');
+export async function decodeBase32(data: string): Promise<Uint8Array> {
+  const Base32 = await dynamicImport<typeof import('multiformats/bases/base32')>(
+    'multiformats/bases/base32',
+  );
+  if (!data.startsWith(Base32.base32.prefix)) data = Base32.base32.prefix + data;
+  return Base32.base32.decode(data);
+}
+
+export async function encodeSha256AsCID(sha256Bytes: Buffer | Uint8Array): Promise<CID> {
+  const { CID } = await dynamicImport<typeof import('multiformats')>('multiformats');
   const RawMultiformatCodec = await dynamicImport<typeof import('multiformats/codecs/raw')>(
     'multiformats/codecs/raw',
   );
-  const { sha256 } = await dynamicImport<typeof import('multiformats/hashes/sha2')>(
-    'multiformats/hashes/sha2',
+  const { from } = await dynamicImport<typeof import('multiformats/hashes/hasher')>(
+    'multiformats/hashes/hasher',
   );
-  const hash = await sha256.digest(data);
-  return createV1(RawMultiformatCodec.code, hash);
+  const multihash = from({
+    name: 'sha2-256',
+    code: 0x12,
+    encode: () => new Uint8Array(sha256Bytes.buffer),
+  });
+  return CID.createV1(RawMultiformatCodec.code, await multihash.digest(sha256Bytes));
+}
+
+export async function decodeCIDFromBase32(data: string): Promise<CID> {
+  const { CID } = await dynamicImport<typeof import('multiformats')>('multiformats');
+  const buffer = await decodeBase32(data);
+  return CID.decode(buffer);
 }

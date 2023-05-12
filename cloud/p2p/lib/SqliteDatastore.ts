@@ -1,12 +1,16 @@
 import Database = require('better-sqlite3');
 import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 import type { Batch, Key, KeyQuery, Pair, Query, Datastore } from 'interface-datastore';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { dynamicImport } from './utils';
 
 const InterfaceDatastore =
   dynamicImport<typeof import('interface-datastore')>('interface-datastore');
 
-export default class SqliteDatastore implements Datastore {
+export default class SqliteDatastore
+  extends TypedEventEmitter<{ delete: { key: string } }>
+  implements Datastore
+{
   private tableName = 'libp2p';
 
   private putStatement: Statement<[key: string, value: Uint8Array]>;
@@ -17,6 +21,7 @@ export default class SqliteDatastore implements Datastore {
   private readonly db: SqliteDatabase;
 
   constructor(private dbPath: string) {
+    super();
     this.db = new Database(dbPath);
 
     this.db.exec(
@@ -31,37 +36,86 @@ export default class SqliteDatastore implements Datastore {
     this.allStatement = this.db.prepare(`SELECT * FROM ${this.tableName} LIMIT ? OFFSET ?`);
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async close(): Promise<void> {
+  close(): Promise<void> {
     this.db?.close();
+    return Promise.resolve();
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async put(key: Key, val: Uint8Array): Promise<Key> {
+  put(key: Key, val: Uint8Array): Promise<Key> {
     try {
       this.putStatement.run(key.toString(), val);
 
-      return key;
+      return Promise.resolve(key);
     } catch (err: any) {
-      throw dbWriteFailedError(err);
+      return Promise.reject(errCode(err, 'ERR_DB_WRITE_FAILED'));
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async get(key: Key): Promise<Uint8Array> {
+  get(key: Key): Promise<Uint8Array> {
     let val: Uint8Array | undefined;
 
     try {
       val = this.getStatement.pluck().get(key.toString()) as Buffer;
     } catch (err: any) {
-      throw dbReadFailedError(err);
+      return Promise.reject(errCode(err, 'ERR_DB_READ_FAILED'));
     }
 
     if (val === undefined) {
-      throw notFoundError();
+      const err = new Error('Not Found');
+      return Promise.reject(errCode(err, 'ERR_NOT_FOUND'));
     }
 
-    return val;
+    return Promise.resolve(val);
+  }
+
+  has(key: Key): Promise<boolean> {
+    try {
+      const count = this.hasStatement.pluck().get(key.toString()) as number;
+      return Promise.resolve(count > 0);
+    } catch (err: any) {
+      return Promise.reject(errCode(err, 'ERR_DB_READ_FAILED'));
+    }
+  }
+
+  delete(key: Key): Promise<void> {
+    try {
+      const keyString = key.toString();
+      this.deleteStatement.run(keyString);
+      this.emit('delete', { key: keyString });
+      return Promise.resolve();
+    } catch (err: any) {
+      return Promise.reject(errCode(err, 'ERR_DB_WRITE_FAILED'));
+    }
+  }
+
+  batch(): Batch {
+    const puts: Pair[] = [];
+    const dels: Key[] = [];
+
+    return {
+      put(key, value) {
+        puts.push({ key, value });
+      },
+      delete(key) {
+        dels.push(key);
+      },
+      commit: () => {
+        this.db.transaction(() => {
+          const deleteKeys = new Set<string>();
+          for (const del of dels) {
+            const key = del.toString();
+            deleteKeys.add(key);
+            this.deleteStatement.run(key);
+          }
+
+          for (const put of puts) {
+            if (deleteKeys.has(put.key.toString())) continue;
+            this.putStatement.run(put.key.toString(), put.value);
+          }
+        })();
+        return Promise.resolve();
+      },
+    };
   }
 
   async *putMany(source: AsyncGenerator<Pair>): AsyncGenerator<Key> {
@@ -87,72 +141,15 @@ export default class SqliteDatastore implements Datastore {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async has(key: Key): Promise<boolean> {
-    try {
-      return (this.hasStatement.pluck().get(key.toString()) as number) > 0;
-    } catch (err: any) {
-      throw dbReadFailedError(err);
-    }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async delete(key: Key): Promise<void> {
-    try {
-      this.deleteStatement.run(key.toString());
-    } catch (err: any) {
-      throw dbWriteFailedError(err);
-    }
-  }
-
-  batch(): Batch {
-    const puts: Pair[] = [];
-    const dels: Key[] = [];
-
-    return {
-      put(key, value) {
-        puts.push({ key, value });
-      },
-      delete(key) {
-        dels.push(key);
-      },
-      // eslint-disable-next-line @typescript-eslint/require-await
-      commit: async () => {
-        if (this.db == null) {
-          throw new Error('Datastore needs to be opened.');
-        }
-
-        this.db.transaction(() => {
-          const deleteKeys = new Set<string>();
-          for (const del of dels) {
-            const key = del.toString();
-            deleteKeys.add(key);
-            this.deleteStatement.run(key);
-          }
-
-          for (const put of puts) {
-            if (deleteKeys.has(put.key.toString())) continue;
-            this.putStatement.run(put.key.toString(), put.value);
-          }
-        })();
-      },
-    };
-  }
-
-  // eslint-disable-next-line @typescript-eslint/require-await
   async *query(q: Query): AsyncIterable<Pair> {
-    const records = await this.#internalQuery(q, (key, value) => {
-      return { key, value };
-    });
-
-    const results: Pair[] = [];
-    for (const record of records) {
-      if (Array.isArray(q.filters)) {
-        const isFiltered = q.filters.some(x => x(record));
-        if (isFiltered) continue;
-      }
-      results.push(record);
-    }
+    q.filters ??= [];
+    const results = await this.#internalQuery(
+      q,
+      (key, value) => {
+        return { key, value };
+      },
+      ...q.filters,
+    );
 
     if (Array.isArray(q.orders)) {
       for (const order of q.orders) {
@@ -163,18 +160,9 @@ export default class SqliteDatastore implements Datastore {
     for (const result of results) yield result;
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
   async *queryKeys(q: KeyQuery): AsyncIterable<Key> {
-    const records = await this.#internalQuery(q, key => key);
-
-    const results: Key[] = [];
-    for (const record of records) {
-      if (Array.isArray(q.filters)) {
-        const isFiltered = q.filters.some(x => x(record));
-        if (isFiltered) continue;
-      }
-      results.push(record);
-    }
+    q.filters ??= [];
+    const results = await this.#internalQuery(q, key => key, ...q.filters);
 
     if (Array.isArray(q.orders)) {
       for (const order of q.orders) {
@@ -188,6 +176,7 @@ export default class SqliteDatastore implements Datastore {
   async #internalQuery<T>(
     q: { prefix?: string; offset?: number; limit?: number },
     transform: (key: Key, value: Uint8Array) => T,
+    ...filters: ((record: T) => boolean)[]
   ): Promise<T[]> {
     const { Key } = await InterfaceDatastore;
 
@@ -200,7 +189,13 @@ export default class SqliteDatastore implements Datastore {
       if (value == null) continue;
       if (q.prefix != null && !key.startsWith(q.prefix)) continue;
 
-      results.push(transform(new Key(key), value));
+      const result = transform(new Key(key), value);
+      if (filters.length) {
+        const isFiltered = filters.some(x => x(result));
+        if (isFiltered) continue;
+      }
+
+      results.push(result);
     }
     return results;
   }
@@ -208,21 +203,6 @@ export default class SqliteDatastore implements Datastore {
   async destroy(): Promise<void> {
     await this.db.exec(`TRUNCATE ${this.tableName}`);
   }
-}
-
-function dbWriteFailedError(err: Error): Error {
-  err = err ?? new Error('Write failed');
-  return errCode(err, 'ERR_DB_WRITE_FAILED');
-}
-
-function dbReadFailedError(err: Error): Error {
-  err = err ?? new Error('Read failed');
-  return errCode(err, 'ERR_DB_READ_FAILED');
-}
-
-function notFoundError(err?: Error): Error {
-  err = err ?? new Error('Not Found');
-  return errCode(err, 'ERR_NOT_FOUND');
 }
 
 function errCode(err: Error, code: string): Error {

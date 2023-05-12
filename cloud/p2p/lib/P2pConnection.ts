@@ -11,14 +11,18 @@ import type * as KadDHT from '@libp2p/kad-dht';
 import type * as Websockets from '@libp2p/websockets';
 import * as http from 'http';
 import { isIPv4 } from 'net';
-import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
+import IPeerNetwork, {
+  IPeerNetworkEvents,
+} from '@ulixee/platform-specification/types/IPeerNetwork';
 import * as Fs from 'fs';
 import type { Peer } from '@libp2p/interface-peer-store';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import IP2pConnectionOptions from '../interfaces/IP2pConnectionOptions';
 import {
   base32,
-  createRawCIDV1,
+  decodeCIDFromBase32,
   dynamicImport,
+  encodeSha256AsCID,
   parseMultiaddrs,
   peerIdFromIdentity,
   peerIdFromNodeId,
@@ -30,7 +34,10 @@ type Libp2pOptions = Libp2pModule.Libp2pOptions;
 
 const { log } = Log(module);
 
-export default class P2pConnection implements IPeerNetwork {
+export default class P2pConnection
+  extends TypedEventEmitter<IPeerNetworkEvents>
+  implements IPeerNetwork
+{
   public nodeId: string;
   public multiaddrs: Multiaddr[];
   public nodeInfo: INodeInfo;
@@ -42,10 +49,12 @@ export default class P2pConnection implements IPeerNetwork {
   private dhtReadyPromise: Resolvable<void>;
   private closeAbortController = new AbortController();
   private pendingOperationAborts = new Set<AbortController>();
+  private datastore?: SqliteDatastore;
 
   constructor(private readonly options: IP2pConnectionOptions) {
-    this.options.ipOrDomain ??= '127.0.0.1';
-    this.options.port ??= 0;
+    super();
+    this.options.ipOrDomain ??= '0.0.0.0';
+    this.onDatastoreEntryDeleted = this.onDatastoreEntryDeleted.bind(this);
   }
 
   public createP2pMultiaddr(port: number, publicIpOrDomain = '0.0.0.0'): string {
@@ -74,7 +83,8 @@ export default class P2pConnection implements IPeerNetwork {
         .mkdir(Path.dirname(this.options.dbPath), { recursive: true })
         .catch(() => null);
     }
-    const datastore = new SqliteDatastore(this.options.dbPath);
+    this.datastore = new SqliteDatastore(this.options.dbPath);
+    this.datastore.on('delete', this.onDatastoreEntryDeleted);
 
     const { createLibp2p } = await dynamicImport<typeof Libp2pModule>('libp2p');
     const { bootstrap } = await dynamicImport<typeof Bootstrap>('@libp2p/bootstrap');
@@ -117,7 +127,7 @@ export default class P2pConnection implements IPeerNetwork {
       identify: {
         protocolPrefix: 'ulx', // doesn't want leading slash
       },
-      datastore,
+      datastore: this.datastore,
     };
     if (boostrapList?.length) {
       config.peerDiscovery.push(
@@ -131,8 +141,7 @@ export default class P2pConnection implements IPeerNetwork {
     this.libp2p.addEventListener('peer:connect', async event => {
       const connection = event.detail;
       const peerId = connection.remotePeer;
-      await this.lookupNodeInfo(peerId).catch(() => null);
-      if (!this.dhtReadyPromise.isResolved) {
+      if (!this.dhtReadyPromise.isResolved && connection.remoteAddr) {
         await (this.libp2p.dht as any).refreshRoutingTable();
         this.dhtReadyPromise.resolve();
       }
@@ -181,6 +190,7 @@ export default class P2pConnection implements IPeerNetwork {
 
     log.info('P2p.Started', {
       nodeInfo: this.nodeInfo,
+      addrs: this.multiaddrs.map(x => x.toString()),
       sessionId: null,
     });
 
@@ -207,6 +217,7 @@ export default class P2pConnection implements IPeerNetwork {
       await this.libp2p?.stop();
       // ensure we stop this no matter what. can get stuck open if libp2p startup has errors
       await (this.libp2p?.dht as any).stop();
+      await this.datastore.close();
       this.isClosing.resolve();
     } catch (error) {
       this.isClosing.reject(error);
@@ -247,7 +258,6 @@ export default class P2pConnection implements IPeerNetwork {
    * Search the dht for up to `K` providers of the given CID.
    */
   public async *findProviderNodes(
-    bucket: string,
     hash: Buffer,
     { timeout = 5000, abort = null as AbortSignal } = {},
   ): AsyncGenerator<INodeInfo> {
@@ -263,8 +273,7 @@ export default class P2pConnection implements IPeerNetwork {
         abortController.signal.onabort = () => clearTimeout(timer);
       }
 
-      const key = Buffer.concat([Buffer.from(`/${bucket}/`), hash]);
-      const cid = await createRawCIDV1(key);
+      const cid = await encodeSha256AsCID(hash);
       const query = this.libp2p.contentRouting.findProviders(cid, {
         signal: abortController.signal,
       });
@@ -313,11 +322,10 @@ export default class P2pConnection implements IPeerNetwork {
   /**
    * Announce to the network that we can provide given key's value.
    */
-  public async provide(bucket: string, hash: Buffer): Promise<{ providerKey: string }> {
-    const key = Buffer.concat([Buffer.from(`/${bucket}/`), hash]);
+  public async provide(sha256Hash: Buffer): Promise<{ providerKey: string }> {
     await this.ensureNetworkConnect();
-    log.info('ProvidingKeyToNetwork', { key, sessionId: null });
-    const cid = await createRawCIDV1(key);
+    log.info('ProvidingKeyToNetwork', { sha256Hash, sessionId: null });
+    const cid = await encodeSha256AsCID(sha256Hash);
     await this.libp2p.contentRouting.provide(cid);
     const base32Encoded = await base32(cid.multihash.bytes);
     // have to hardcode.. can't get out of libp2p
@@ -326,6 +334,15 @@ export default class P2pConnection implements IPeerNetwork {
   }
 
   // PRIVATE METHODS ///////////////////////////////////////////////////////////////////////////////
+
+  private async onDatastoreEntryDeleted(event: { key: string }): Promise<Buffer> {
+    if (!event.key.startsWith('/dht')) return;
+    const cidBase32 = event.key.replace('/dht/provider/', '');
+    const cid = await decodeCIDFromBase32(cidBase32);
+    const bytes = Buffer.from(cid.multihash.digest);
+    this.emit('provide-expired', { hash: bytes });
+    return bytes;
+  }
 
   private async lookupNodeInfo(peerId: PeerId): Promise<INodeInfo> {
     const nodeId = peerId.toString();

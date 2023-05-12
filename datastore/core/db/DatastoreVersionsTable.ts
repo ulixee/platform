@@ -28,7 +28,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       ['isStarted', 'INTEGER'],
     ]);
     this.getQuery = db.prepare(`select * from ${this.tableName} where versionHash = ? limit 1`);
-    this.allQuery = db.prepare(`select * from ${this.tableName} limit ? offset ?`);
+    this.allQuery = db.prepare(`select * from ${this.tableName} where dbxPath IS NOT NULL limit ? offset ?`);
     this.findWithBaseHashQuery = db.prepare(
       `select * from ${this.tableName} where baseVersionHash = ? order by versionTimestamp desc`,
     );
@@ -66,6 +66,15 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
         return cached;
       }
     }
+  }
+
+  public cleanup(versionHash: string): void {
+    // we might want to just delete these records eventually, but need to ensure it isn't the baseVersionHash for other versions
+    this.db
+      .prepare(
+        `update ${this.tableName} set dbxPath=null, adminIdentity=null, adminSignature=null where versionHash=$versionHash`,
+      )
+      .run({ versionHash });
   }
 
   public update(

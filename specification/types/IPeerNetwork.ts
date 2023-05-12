@@ -1,13 +1,13 @@
 import * as http from 'http';
+import type ITypedEventEmitter from '@ulixee/commons/interfaces/ITypedEventEmitter';
 import INodeInfo from './INodeInfo';
 
-export default interface IPeerNetwork {
+export default interface IPeerNetwork extends ITypedEventEmitter<IPeerNetworkEvents> {
   start(boostrapList: string[], attachToServer?: http.Server): Promise<IPeerNetwork>;
   close(): Promise<void>;
-  provide(bucket: string, hash: Buffer): Promise<{ providerKey: string }>;
+  provide(sha256Hash: Buffer): Promise<{ providerKey: string }>;
   findProviderNodes(
-    bucket: string,
-    hash: Buffer,
+    sha256Hash: Buffer,
     options?: { maxNumProviders?: number; timeout?: number; abort?: AbortSignal },
   ): AsyncGenerator<INodeInfo>;
   getKnownNodes(maxNodes?: number): Promise<INodeInfo[]>;
@@ -15,4 +15,8 @@ export default interface IPeerNetwork {
     hash: Buffer,
     options?: { maxPeers?: number; timeout?: number },
   ): Promise<INodeInfo[]>;
+}
+
+export interface IPeerNetworkEvents {
+  'provide-expired': { hash: Buffer };
 }

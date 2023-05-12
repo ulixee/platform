@@ -23,7 +23,7 @@ export default class DatastoreRegistryNetworkStore implements IDatastoreRegistry
   async get(versionHash: string): Promise<IDatastoreManifestWithLatest> {
     const buffer = decodeBuffer(versionHash, 'dbx');
     const abort = new AbortController();
-    for await (const node of this.peerNetwork.findProviderNodes('datastore', buffer)) {
+    for await (const node of this.peerNetwork.findProviderNodes(buffer)) {
       const client = this.datastoreApiClients.get(node.ulixeeApiHost);
       const result = await client.getMeta(versionHash);
       if (result) {
@@ -60,6 +60,6 @@ export default class DatastoreRegistryNetworkStore implements IDatastoreRegistry
 
   async publish(versionHash: string): Promise<{ providerKey: string }> {
     const buffer = decodeBuffer(versionHash, 'dbx');
-    return await this.peerNetwork.provide('datastore', buffer);
+    return await this.peerNetwork.provide(buffer);
   }
 }
