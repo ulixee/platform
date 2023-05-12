@@ -14,7 +14,7 @@ const rawMilestones = Fs.readFileSync(milestonesPath, 'utf-8');
 const milestones = JSON.parse(rawMilestones);
 
 const roadmapPaths = [
-  'cloud/ROADMAP-Miner.md',
+  'cloud/ROADMAP-Cloud.md',
   'stream/ROADMAP-Stream.md',
   'hero/ROADMAP-Hero.md',
   'datastore/ROADMAP-Datastore.md',
@@ -28,7 +28,7 @@ const roadmapPaths = [
   'coming-soon/ROADMAP-Manager.md',
   'coming-soon/ROADMAP-Marketplace.md',
   'coming-soon/ROADMAP-NFTs.md',
-  'apps/ROADMAP-ChromeAlive.md',
+  'desktop/ROADMAP-Desktop.md',
 ];
 
 for (const roadmapPath of roadmapPaths) {

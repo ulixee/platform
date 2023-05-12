@@ -43,7 +43,7 @@ const rootDir = Path.resolve(__dirname, '../../');
 {
   const mdDocsRootPath = `${rootDir}/cloud/docs`;
   walkDirectory(mdDocsRootPath, async filePath => {
-    await saveToWebsite(mdDocsRootPath, filePath, 'miner');
+    await saveToWebsite(mdDocsRootPath, filePath, 'cloud');
   });
-  ensureIndexFile(mdDocsRootPath, 'miner');
+  ensureIndexFile(mdDocsRootPath, 'cloud');
 }
