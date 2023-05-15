@@ -1,23 +1,24 @@
-import Resolvable from '@ulixee/commons/lib/Resolvable';
-import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
-import Log from '@ulixee/commons/lib/Logger';
-import type * as Libp2pModule from 'libp2p';
-import type * as TransportLevelSecurity from 'libp2p/insecure';
-import * as Path from 'path';
-import type { PeerId } from '@libp2p/interface-peer-id';
-import type { Multiaddr } from '@multiformats/multiaddr';
 import type * as Bootstrap from '@libp2p/bootstrap';
+import type { PeerId } from '@libp2p/interface-peer-id';
+import type { Peer } from '@libp2p/interface-peer-store';
 import type * as KadDHT from '@libp2p/kad-dht';
+import { RoutingTable } from '@libp2p/kad-dht/dist/src/routing-table';
 import type * as Websockets from '@libp2p/websockets';
-import * as http from 'http';
-import { isIPv4 } from 'net';
+import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
+import Log from '@ulixee/commons/lib/Logger';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import IPeerNetwork, {
+  IPeerNetworkConfig,
   IPeerNetworkEvents,
 } from '@ulixee/platform-specification/types/IPeerNetwork';
 import * as Fs from 'fs';
-import type { Peer } from '@libp2p/interface-peer-store';
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import IP2pConnectionOptions from '../interfaces/IP2pConnectionOptions';
+import type * as Libp2pModule from 'libp2p';
+import type * as TransportLevelSecurity from 'libp2p/insecure';
+import { isIPv4 } from 'net';
+import * as Path from 'path';
+import SqliteDatastore from './SqliteDatastore';
 import {
   base32,
   decodeCIDFromBase32,
@@ -27,7 +28,6 @@ import {
   peerIdFromIdentity,
   peerIdFromNodeId,
 } from './utils';
-import SqliteDatastore from './SqliteDatastore';
 
 type Libp2p = Libp2pModule.Libp2p;
 type Libp2pOptions = Libp2pModule.Libp2pOptions;
@@ -39,51 +39,63 @@ export default class P2pConnection
   implements IPeerNetwork
 {
   public nodeId: string;
-  public multiaddrs: Multiaddr[];
+  public multiaddrs: string[];
+
+  public get connectedPeers(): number {
+    return this.libp2p.getPeers().length;
+  }
+
   public nodeInfo: INodeInfo;
   public libp2p: Libp2p;
   public peerId: PeerId;
 
+  private readonly nodeIdLastSeenDates: { [id: string]: Date } = {};
   private readonly nodeInfoById: { [id: string]: Promise<INodeInfo> } = {};
   private isClosing: Resolvable<void>;
   private dhtReadyPromise: Resolvable<void>;
   private closeAbortController = new AbortController();
   private pendingOperationAborts = new Set<AbortController>();
   private datastore?: SqliteDatastore;
+  private logger: IBoundLog;
+  private identifyBytes: Buffer;
 
-  constructor(private readonly options: IP2pConnectionOptions) {
+  constructor() {
     super();
-    this.options.ipOrDomain ??= '0.0.0.0';
     this.onDatastoreEntryDeleted = this.onDatastoreEntryDeleted.bind(this);
   }
 
-  public createP2pMultiaddr(port: number, publicIpOrDomain = '0.0.0.0'): string {
+  public createP2pMultiaddr(peerId: string, port: number, publicIpOrDomain = '0.0.0.0'): string {
     const isIp = isIPv4(publicIpOrDomain);
     if (!isIp) {
-      return `/dnsaddr/${publicIpOrDomain}/tcp/${port}/ws`;
+      return `/dnsaddr/${publicIpOrDomain}/tcp/${port}/ws/p2p/${peerId}`;
     }
-    return `/ip4/${publicIpOrDomain}/tcp/${port}/ws`;
+    return `/ip4/${publicIpOrDomain}/tcp/${port}/ws/p2p/${peerId}`;
   }
 
-  public async start(boostrapList: string[], attachToServer?: http.Server): Promise<this> {
-    const { identity, port, ipOrDomain, ulixeeApiHost } = this.options;
+  public async start(options: IPeerNetworkConfig): Promise<this> {
+    options.ipOrDomain ??= '0.0.0.0';
+    const { identity, port, ipOrDomain, ulixeeApiHost, boostrapList, attachToServer } = options;
 
     this.peerId = await peerIdFromIdentity(identity);
     this.nodeId = P2pConnection.createNodeId(this.peerId);
+    this.logger = log.createChild(module, {
+      nodeId: this.nodeId,
+    });
     this.nodeInfo = {
       nodeId: this.nodeId,
+      identity: identity.bech32,
+      multiaddrs: [],
       ulixeeApiHost,
     };
+    this.identifyBytes = Buffer.from(`${this.nodeInfo.ulixeeApiHost}/${this.nodeInfo.identity}`);
 
-    if (!this.options.dbPath) {
-      this.options.dbPath = ':memory:';
-    } else if (!this.options.dbPath.endsWith('.db')) {
-      this.options.dbPath = Path.join(this.options.dbPath, `${this.nodeId}.db`);
-      await Fs.promises
-        .mkdir(Path.dirname(this.options.dbPath), { recursive: true })
-        .catch(() => null);
+    if (!options.dbPath) {
+      options.dbPath = ':memory:';
+    } else if (!options.dbPath.endsWith('.db')) {
+      options.dbPath = Path.join(options.dbPath, `${this.nodeId}.db`);
+      await Fs.promises.mkdir(Path.dirname(options.dbPath), { recursive: true }).catch(() => null);
     }
-    this.datastore = new SqliteDatastore(this.options.dbPath);
+    this.datastore = new SqliteDatastore(options.dbPath);
     this.datastore.on('delete', this.onDatastoreEntryDeleted);
 
     const { createLibp2p } = await dynamicImport<typeof Libp2pModule>('libp2p');
@@ -98,13 +110,16 @@ export default class P2pConnection
       '@libp2p/websockets/filters',
     );
 
-    const address = this.createP2pMultiaddr(port, ipOrDomain);
+    const address = this.createP2pMultiaddr(this.nodeId, port, ipOrDomain);
     const config: Libp2pOptions = {
       start: false,
       peerId: this.peerId,
       addresses: {
         announce: [address],
         listen: [address],
+      },
+      ping: {
+        protocolPrefix: 'ulx',
       },
       transports: [
         webSockets({
@@ -138,35 +153,41 @@ export default class P2pConnection
       );
     }
     this.libp2p = await createLibp2p(config);
-    this.libp2p.addEventListener('peer:connect', async event => {
+    this.libp2p.addEventListener('peer:connect', event => {
       const connection = event.detail;
       const peerId = connection.remotePeer;
-      if (!this.dhtReadyPromise.isResolved && connection.remoteAddr) {
-        await (this.libp2p.dht as any).refreshRoutingTable();
-        this.dhtReadyPromise.resolve();
-      }
-      log.stats('P2pPeer.connect', {
-        nodeId: peerId.toString(),
-        sessionId: null,
+      const nodeId = peerId.toString();
+      this.nodeIdLastSeenDates[nodeId] = new Date();
+      this.logger.stats('P2pPeer.connect', {
+        nodeId,
       });
+      this.sawNode(nodeId);
     });
 
     this.libp2p.addEventListener('peer:discovery', async event => {
       try {
         const peers = this.libp2p.getPeers();
-        if (peers.length < 5) {
-          const peerInfo = event.detail;
-          let addresses = peerInfo.multiaddrs;
-          if (('addresses' in peerInfo) as unknown as Peer) {
-            addresses = (peerInfo as unknown as Peer).addresses.map(x => x.multiaddr);
-          }
-          if (addresses.length) {
-            await this.libp2p.dial(addresses, { signal: this.closeAbortController.signal });
-          }
+        if (peers.length >= 5) return; // let autodial handle connecting
+
+        const peerInfo = event.detail;
+        let addresses = peerInfo.multiaddrs;
+        if (('addresses' in peerInfo) as unknown as Peer) {
+          addresses = (peerInfo as unknown as Peer).addresses.map(x => x.multiaddr);
+        }
+        if (addresses.length) {
+          await this.libp2p.dial(addresses, { signal: this.closeAbortController.signal });
         }
       } catch (error) {
-        if (this.closeAbortController.signal.aborted) return;
-        log.error('Could not connect to discovered peer', { error });
+        if (!this.closeAbortController.signal.aborted) {
+          // don't log encryption failing before connect
+          if (
+            error.code === 'ERR_ENCRYPTION_FAILED' &&
+            error.message.includes('stream ended before 1 bytes became available')
+          )
+            return;
+
+          this.logger.error('Could not connect to discovered peer', { error, event });
+        }
       }
     });
     await this.handleNodeInfoRequests();
@@ -176,22 +197,29 @@ export default class P2pConnection
       `Network startup timed-out connecting to Peer network`,
     );
 
-    this.multiaddrs = this.libp2p.getMultiaddrs();
-    log.info('P2p.Starting', {
-      addrs: this.multiaddrs.map(x => x.toString()),
-      sessionId: null,
-    });
-
     await this.libp2p.start();
+    this.multiaddrs = this.libp2p.getMultiaddrs().map(x => x.toString());
+    this.nodeInfo.multiaddrs = this.multiaddrs;
+    const kBucketTree = (this.libp2p.dht.lan.routingTable as RoutingTable).kb;
+    kBucketTree.on('updated' as any, selection => {
+      const nodeId = selection.peer?.toString();
+      this.nodeIdLastSeenDates[nodeId] = new Date();
+      this.sawNode(nodeId);
+    });
+    kBucketTree.on('added', record => {
+      const nodeId = record.peer?.toString();
+      this.nodeIdLastSeenDates[nodeId] = new Date();
+      this.sawNode(nodeId);
+      this.dhtReadyPromise.resolve();
+    });
 
     if (boostrapList?.length) {
       await this.ensureNetworkConnect();
     }
 
-    log.info('P2p.Started', {
+    this.logger.info('P2p.Started', {
       nodeInfo: this.nodeInfo,
       addrs: this.multiaddrs.map(x => x.toString()),
-      sessionId: null,
     });
 
     return this;
@@ -222,21 +250,37 @@ export default class P2pConnection
     } catch (error) {
       this.isClosing.reject(error);
     }
-    log.info('P2p.stopped');
+    this.logger.info('P2p.stopped');
   }
 
-  public async addPeer(nodeId: string, multiaddrs: (Multiaddr | string)[]): Promise<void> {
+  public async addPeer(peer: { nodeId?: string; multiaddrs: string[] }): Promise<void> {
+    const multiaddrs = await parseMultiaddrs(peer.multiaddrs);
+    const nodeId = peer.nodeId ?? multiaddrs.find(x => !!x.getPeerId())?.getPeerId();
+    if (!nodeId) throw new Error('Cannot connect to a peer without any nodeId.');
+
     if (this.nodeId === nodeId) return;
+
     const peerId = await peerIdFromNodeId(nodeId);
-    await this.libp2p.peerStore.addressBook.add(peerId, await parseMultiaddrs(multiaddrs));
+
+    // we're good, don't need to add more peers
+    if (this.libp2p.getPeers().length > 50 || (await this.libp2p.peerStore.has(peerId))) {
+      return;
+    }
+
+    await this.libp2p.peerStore.addressBook.add(peerId, multiaddrs);
     await this.libp2p.dial(peerId, { signal: this.closeAbortController.signal });
-    await (this.libp2p.dht as any).refreshRoutingTable().catch(() => null);
+    await this.libp2p.dht.refreshRoutingTable().catch(() => null);
   }
 
-  public async getKnownNodes(maxNodes = 25): Promise<INodeInfo[]> {
+  public async getKnownNodes(maxNodes = 25): Promise<(INodeInfo & { lastSeenDate: Date })[]> {
     const peers = (await this.libp2p.peerStore.all()).slice(0, maxNodes).map(x => x.id);
     const nodeInfos = await Promise.all(peers.map(x => this.lookupNodeInfo(x).catch(() => null)));
-    return nodeInfos.filter(Boolean) as INodeInfo[];
+    const results: (INodeInfo & { lastSeenDate: Date })[] = [];
+    for (const node of nodeInfos) {
+      if (!node) continue;
+      results.push({ ...node, lastSeenDate: this.nodeIdLastSeenDates[node.nodeId] });
+    }
+    return results;
   }
 
   /**
@@ -324,7 +368,7 @@ export default class P2pConnection
    */
   public async provide(sha256Hash: Buffer): Promise<{ providerKey: string }> {
     await this.ensureNetworkConnect();
-    log.info('ProvidingKeyToNetwork', { sha256Hash, sessionId: null });
+    this.logger.info('ProvidingKeyToNetwork', { sha256Hash });
     const cid = await encodeSha256AsCID(sha256Hash);
     await this.libp2p.contentRouting.provide(cid);
     const base32Encoded = await base32(cid.multihash.bytes);
@@ -352,24 +396,45 @@ export default class P2pConnection
     return this.nodeInfoById[nodeId];
   }
 
+  private sawNode(nodeId: string): void {
+    if (this.nodeInfoById[nodeId]) {
+      void this.nodeInfoById[nodeId].then(info =>
+        this.emit('node-seen', {
+          node: { ...info, lastSeenDate: this.nodeIdLastSeenDates[nodeId] },
+        }),
+      );
+    }
+  }
+
   private async dialNodeLookup(nodeId: string, peerId: PeerId, attempt = 0): Promise<INodeInfo> {
     const stream = await this.libp2p.dialProtocol(peerId, '/ulx/apiInfo/v1', {
       signal: this.closeAbortController.signal,
     });
     const { pipe, lp, first } = await getIterators();
 
+    const address = await this.libp2p.peerStore.get(peerId);
+    const nodePath = `/p2p/${nodeId}`;
+    const multiaddrs = address.addresses.map(x => {
+      const addr = x.multiaddr.toString();
+      if (!addr.includes('/p2p/')) return addr + nodePath;
+      return addr;
+    });
+
     try {
-      return await pipe(
-        [Buffer.from(this.nodeInfo.ulixeeApiHost)],
+      const node = await pipe(
+        [this.identifyBytes],
         source => lp.encode(source),
         stream,
         source => lp.decode(source),
         async source => {
           try {
             const response = await first(source);
-            const ulixeeApiHost = Buffer.from(response.subarray()).toString();
+            const result = Buffer.from(response.subarray());
+            const [ulixeeApiHost, identity] = result.toString().split('/');
             return {
               nodeId,
+              multiaddrs,
+              identity,
               ulixeeApiHost,
             };
           } catch (error) {
@@ -383,6 +448,13 @@ export default class P2pConnection
           }
         },
       );
+      if (node) {
+        this.nodeIdLastSeenDates[nodeId] ??= new Date();
+        this.emit('node-seen', {
+          node: { ...node, lastSeenDate: this.nodeIdLastSeenDates[nodeId] },
+        });
+      }
+      return node;
     } catch (error) {
       if (this.closeAbortController.signal.aborted) return;
       throw error;
@@ -390,10 +462,9 @@ export default class P2pConnection
   }
 
   private async handleNodeInfoRequests(): Promise<void> {
-    const nodeInfo = Buffer.from(this.nodeInfo.ulixeeApiHost);
+    const nodeInfo = this.identifyBytes;
     const { pipe, lp, first } = await getIterators();
     const hostNodeInfo = this.nodeInfoById;
-
     await this.libp2p.handle('/ulx/apiInfo/v1', ({ stream, connection }) => {
       pipe(
         stream,
@@ -402,9 +473,17 @@ export default class P2pConnection
           try {
             const entry = await first(source);
             const result = Buffer.from(entry.subarray());
-            const ulixeeApiHost = result.toString();
+            const [ulixeeApiHost, identity] = result.toString().split('/');
+            let multiaddr = connection.remoteAddr.toString();
             const nodeId = connection.remotePeer.toString();
-            hostNodeInfo[nodeId] = Promise.resolve({ nodeId, ulixeeApiHost });
+            if (!multiaddr.includes('/p2p/')) multiaddr += `/p2p/${nodeId}`;
+
+            hostNodeInfo[nodeId] = Promise.resolve({
+              nodeId,
+              multiaddrs: [multiaddr],
+              ulixeeApiHost,
+              identity,
+            });
 
             yield nodeInfo;
           } catch (error) {}
@@ -413,7 +492,7 @@ export default class P2pConnection
         stream,
       ).catch(error => {
         if (this.closeAbortController.signal.aborted) return;
-        log.error('ERROR returning nodeInfo', error);
+        this.logger.error('ERROR returning nodeInfo', error);
       });
     });
   }

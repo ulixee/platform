@@ -38,6 +38,10 @@ export default class RoutableServer {
     return this.wsServer.clients.size > 0;
   }
 
+  public get connections(): number {
+    return this.wsServer.clients.size;
+  }
+
   public get version(): string {
     return pkg.version;
   }

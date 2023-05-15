@@ -7,3 +7,5 @@ stream
 sql/ast/syntax/compiled
 datastore/docpage/src
 !playgrounds/hero
+build
+build-dist

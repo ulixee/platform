@@ -1,8 +1,8 @@
-import { promises as Fs } from 'fs';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { InvalidSignatureError } from '@ulixee/crypto/lib/errors';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
+import { promises as Fs } from 'fs';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import { unpackDbx } from '../lib/dbxUtils';
 
@@ -21,12 +21,12 @@ export default new DatastoreApiHandler('Datastore.upload', {
       verifyAdminSignature(request);
     }
 
-    // if there's a cluster storage engine, we need to delegate this call there
+    // Check if this DatastoreRegistry should be the "owner" of this datastore. If not, proxy it through.
     if (!context.datastoreRegistry.diskStore.isSourceOfTruth) {
-      const storageEngineHost = context.datastoreApiClients.get(
+      const registryServiceClient = context.datastoreApiClients.get(
         context.datastoreRegistry.sourceOfTruthAddress.host,
       );
-      return await storageEngineHost.request('Datastore.upload', request);
+      return await registryServiceClient.request('Datastore.upload', request);
     }
 
     // TODO: do we require payment for hosting per day?

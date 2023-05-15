@@ -2,7 +2,6 @@ import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { Helpers } from '@ulixee/datastore-testing';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
-import { isPortInUse } from '@ulixee/commons/lib/utils';
 import P2pConnection from '../lib/P2pConnection';
 
 test('should correctly register peers', async () => {
@@ -11,7 +10,7 @@ test('should correctly register peers', async () => {
 
   const p2pConnection1 = await startP2p({ port: publicPort1, ulixeeApiHost: '127.0.0.1:1818' });
   const p2pConnection2 = await startP2p({ port: publicPort2, ulixeeApiHost: '192.168.0.1:1818' });
-  await p2pConnection2.addPeer(p2pConnection1.nodeId, p2pConnection1.multiaddrs);
+  await p2pConnection2.addPeer(p2pConnection1);
   await p2pConnection2.ensureNetworkConnect();
 
   const nodeInfos1 = await p2pConnection1.getKnownNodes();
@@ -27,7 +26,7 @@ test('should correctly register peers', async () => {
 test('should provide and find providers', async () => {
   const p2pConnection1 = await startP2p({ port: 3020 });
   const p2pConnection2 = await startP2p({
-    bootstrapPeers: [p2pConnection1.multiaddrs[0].toString()],
+    boostrapList: [p2pConnection1.multiaddrs[0].toString()],
     port: 3021,
     waitForPeerConnect: true,
   });
@@ -60,10 +59,7 @@ test('start and connect multiple mining-bits', async () => {
   for (let i = 0; i < p2pConnections.length; i += 1) {
     let nextIdx = i + 1;
     if (nextIdx > p2pConnections.length - 1) nextIdx = 0;
-    await p2pConnections[i].addPeer(
-      p2pConnections[nextIdx].nodeId,
-      p2pConnections[nextIdx].multiaddrs,
-    );
+    await p2pConnections[i].addPeer(p2pConnections[nextIdx]);
   }
 
   await Promise.all(p2pConnections.map(x => x.ensureNetworkConnect()));
@@ -87,23 +83,24 @@ afterEach(Helpers.afterEach);
 afterAll(Helpers.afterAll);
 async function startP2p({
   port,
-  bootstrapPeers,
+  boostrapList,
   ulixeeApiHost,
 }: {
   port?: number;
   waitForPeerConnect?: boolean;
-  bootstrapPeers?: string[];
+  boostrapList?: string[];
   ulixeeApiHost?: string;
 }) {
   const identity = await Identity.create();
 
-  const p2pConnection = new P2pConnection({
+  const p2pConnection = new P2pConnection();
+  Helpers.needsClosing.push(p2pConnection);
+  return await p2pConnection.start({
     identity,
     ipOrDomain: '127.0.0.1',
+    boostrapList,
     port,
     dbPath: process.env.ULX_DATA_DIR,
     ulixeeApiHost: ulixeeApiHost ?? '127.0.0.1:1818',
   });
-  Helpers.needsClosing.push(p2pConnection);
-  return await p2pConnection.start(bootstrapPeers);
 }

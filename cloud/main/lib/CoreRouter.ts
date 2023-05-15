@@ -13,7 +13,7 @@ import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions
 import Logger from '@ulixee/commons/lib/Logger';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
-import { ConnectionToCore } from '@ulixee/net';
+import { ConnectionToClient, ConnectionToCore } from '@ulixee/net';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import * as https from 'https';
 import IServicesSetup from '@ulixee/platform-specification/types/IServicesSetup';
@@ -23,7 +23,10 @@ import ICloudApiContext, { ICloudConfiguration } from '../interfaces/ICloudApiCo
 import CloudNode from './CloudNode';
 import DesktopUtils from './DesktopUtils';
 import env from '../env';
-import { IHttpHandleFn } from './RoutableServer';
+import RoutableServer, { IHttpHandleFn } from './RoutableServer';
+import NodeRegistry from './NodeRegistry';
+import HostedServicesEndpoints from '../endpoints/HostedServicesEndpoints';
+import NodeTracker from './NodeTracker';
 
 const { log } = Logger(module);
 
@@ -44,9 +47,6 @@ export default class CoreRouter {
 
   public peerNetwork?: IPeerNetwork;
 
-  private nodeAddress: URL;
-  private hostedServicesAddress: URL;
-
   public get dataDir(): string {
     return HeroCore.dataDir;
   }
@@ -55,8 +55,13 @@ export default class CoreRouter {
     return DatastoreCore.datastoresDir;
   }
 
+  private nodeAddress: URL;
+  private hostedServicesAddress: URL; // if client
+  private hostedServicesEndpoints: HostedServicesEndpoints; // if host
   private isClosing: Promise<void>;
   private cloudNode: CloudNode;
+  private nodeRegistry: NodeRegistry;
+  private nodeTracker: NodeTracker;
   private readonly connections = new Set<IConnectionToClient<any, any>>();
 
   private cloudApiRegistry = new ApiRegistry<ICloudApiContext>([CloudStatus]);
@@ -64,8 +69,8 @@ export default class CoreRouter {
   private wsConnectionByType = {
     hero: transport => HeroCore.addConnection(transport),
     datastore: transport => DatastoreCore.addConnection(transport) as any,
-    services: transport => DatastoreCore.addHostedServicesConnection(transport) as any,
-    cloud: transport => this.cloudApiRegistry.createConnection(transport, this.getCloudMetadata()),
+    services: transport => this.addHostedServicesConnection(transport),
+    cloud: transport => this.cloudApiRegistry.createConnection(transport, this.getApiContext()),
   } as const;
 
   private httpRoutersByType: {
@@ -110,41 +115,14 @@ export default class CoreRouter {
     }
   }
 
-  public addHttpRoute(
-    cloudNode: CloudNode,
-    route: string | RegExp,
-    method: 'GET' | 'OPTIONS' | 'POST' | 'UPDATE' | 'DELETE',
-    callbackFn: IHttpHandleFn,
-  ): void {
-    const key = `${method}_${route.toString()}`;
-    this.httpRoutersByType[key] = callbackFn;
-    this.cloudNode.publicServer.addHttpRoute(route, method, this.handleHttpRequest.bind(this, key));
-  }
-
-  public addWsRoute(
-    cloudNode: CloudNode,
-    route: string | RegExp,
-    callbackFn: (
-      wsOrTransport: ITransportToClient<any> | WebSocket,
-      request: IncomingMessage,
-      params: string[],
-    ) => any,
-    useTransport = true,
-  ): void {
-    const key = `${route.toString()}`;
-    this.wsConnectionByType[key] = callbackFn;
-    if (useTransport) {
-      this.cloudNode.publicServer.addWsRoute(route, this.handleSocketRequest.bind(this, key));
-    } else {
-      this.cloudNode.publicServer.addWsRoute(route, this.handleRawSocketRequest.bind(this, key));
-    }
-  }
-
   public async start(
-    cloudNodeAddress: string,
-    hostedServicesAddress?: string,
+    publicApiServer: RoutableServer,
+    hostedServicesServer?: RoutableServer,
     peerNetwork?: IPeerNetwork,
   ): Promise<void> {
+    const cloudNodeAddress = await publicApiServer.host;
+    const hostedServicesAddress = await hostedServicesServer?.host;
+
     const startLogId = log.info('CloudNode.start', {
       cloudNodeAddress,
       hostedServicesAddress,
@@ -153,22 +131,34 @@ export default class CoreRouter {
     try {
       this.nodeAddress = toUrl(cloudNodeAddress);
       this.hostedServicesAddress = toUrl(hostedServicesAddress);
+      this.hostedServicesEndpoints = !this.hostedServicesAddress
+        ? new HostedServicesEndpoints()
+        : null;
+      this.peerNetwork = peerNetwork;
+      this.nodeTracker = new NodeTracker();
+      this.nodeRegistry = new NodeRegistry({
+        publicServer: publicApiServer,
+        serviceHost: this.hostedServicesAddress,
+        peerNetwork: this.peerNetwork,
+        nodeTracker: this.nodeTracker,
+      });
+      await this.nodeRegistry.register(this.nodeAddress, env.networkIdentity);
 
+      /// START HERO
       HeroCore.onShutdown = () => this.cloudNode.close();
       this.heroConfiguration ??= {};
       this.heroConfiguration.shouldShutdownOnSignals ??= this.cloudNode.shouldShutdownOnSignals;
       await HeroCore.start(this.heroConfiguration);
-
-      if (this.datastoreConfiguration) {
-        Object.assign(DatastoreCore.options, this.datastoreConfiguration);
-      }
 
       let servicesSetup: IServicesSetup;
       if (env.servicesSetupHost && this.nodeAddress.host !== env.servicesSetupHost) {
         servicesSetup = await this.getServicesSetup(env.servicesSetupHost);
       }
 
-      this.peerNetwork = peerNetwork;
+      /// START DATASTORE
+      if (this.datastoreConfiguration) {
+        Object.assign(DatastoreCore.options, this.datastoreConfiguration);
+      }
 
       await DatastoreCore.start({
         nodeAddress: this.nodeAddress,
@@ -178,6 +168,7 @@ export default class CoreRouter {
         cloudType: this.cloudConfiguration.cloudType,
       });
 
+      /// START DESKTOP
       if (DesktopUtils.isInstalled()) {
         const desktopCore = DesktopUtils.getDesktop();
         const wsAddress = Promise.resolve(this.nodeAddress.origin);
@@ -221,11 +212,49 @@ export default class CoreRouter {
     return closeResolvable.promise;
   }
 
-  private getCloudMetadata(): ICloudApiContext {
+  private async addHostedServicesConnection(
+    transport: ITransportToClient<any>,
+  ): Promise<ConnectionToClient<any, any>> {
+    const connection = await DatastoreCore.addHostedServicesConnection(transport);
+    this.hostedServicesEndpoints?.attachToConnection(connection as any, this.getApiContext());
+    return connection as any;
+  }
+
+  private addHttpRoute(
+    cloudNode: CloudNode,
+    route: string | RegExp,
+    method: 'GET' | 'OPTIONS' | 'POST' | 'UPDATE' | 'DELETE',
+    callbackFn: IHttpHandleFn,
+  ): void {
+    const key = `${method}_${route.toString()}`;
+    this.httpRoutersByType[key] = callbackFn;
+    this.cloudNode.publicServer.addHttpRoute(route, method, this.handleHttpRequest.bind(this, key));
+  }
+
+  private addWsRoute(
+    cloudNode: CloudNode,
+    route: string | RegExp,
+    callbackFn: (
+      wsOrTransport: ITransportToClient<any> | WebSocket,
+      request: IncomingMessage,
+      params: string[],
+    ) => any,
+    useTransport = true,
+  ): void {
+    const key = `${route.toString()}`;
+    this.wsConnectionByType[key] = callbackFn;
+    if (useTransport) {
+      this.cloudNode.publicServer.addWsRoute(route, this.handleSocketRequest.bind(this, key));
+    } else {
+      this.cloudNode.publicServer.addWsRoute(route, this.handleRawSocketRequest.bind(this, key));
+    }
+  }
+
+  private getApiContext(): ICloudApiContext {
     return {
       logger: log.createChild(module, {}),
-      connectedNodes: 0,
-      cloudNodes: 1,
+      nodeRegistry: this.nodeRegistry,
+      nodeTracker: this.nodeTracker,
       cloudConfiguration: this.cloudConfiguration,
       version: this.cloudNode.version,
     };
@@ -323,6 +352,7 @@ function safeRegisterModule(path: string): void {
     // eslint-disable-next-line import/no-dynamic-require
     require(path);
   } catch (err) {
-    console.warn('Default Datastore Plugin not installed', path, err.message);
+    // NOTE: don't show this by default
+    // console.warn('Default Datastore Plugin not installed', path, err.message);
   }
 }

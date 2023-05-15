@@ -1,7 +1,7 @@
 // eslint-disable-next-line max-classes-per-file
 import { registerSerializableErrorType } from '@ulixee/commons/lib/TypeSerializer';
-import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { UlixeeError } from '@ulixee/commons/lib/errors';
+import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
 
 export class DatastoreNotFoundError extends Error {
   public code = 'ERR_DATASTORE_NOT_FOUND';
@@ -19,6 +19,14 @@ export class InvalidScriptVersionHistoryError extends Error {
   constructor(message: string, readonly versionHistory?: IVersionHistoryEntry[]) {
     super(message);
     this.name = 'InvalidScriptVersionHistoryError';
+  }
+}
+
+export class MissingRequiredSettingError extends Error {
+  public code = 'ERR_MISSING_SETTING';
+  constructor(message: string, readonly setting:string,readonly defaultValue?: any) {
+    super(message);
+    this.name = 'MissingRequiredSettingError';
   }
 }
 

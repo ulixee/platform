@@ -1,54 +1,54 @@
-import * as Os from 'os';
-import * as Path from 'path';
-import { promises as Fs } from 'fs';
-import { IncomingMessage, ServerResponse } from 'http';
-import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
-import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
-import { IServicesSetupApiTypes } from '@ulixee/platform-specification/services/SetupApis';
 import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
-import { existsAsync } from '@ulixee/commons/lib/fileUtils';
-import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
-import { IDatastoreApis, IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
-import IDatastoreEvents from '@ulixee/datastore/interfaces/IDatastoreEvents';
-import Identity from '@ulixee/crypto/lib/Identity';
-import Ed25519 from '@ulixee/crypto/lib/Ed25519';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
-import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreVersionHashValidation';
-import { ConnectionToDatastoreCore } from '@ulixee/datastore';
-import TransportBridge from '@ulixee/net/lib/TransportBridge';
+import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import { toUrl } from '@ulixee/commons/lib/utils';
+import Ed25519 from '@ulixee/crypto/lib/Ed25519';
+import Identity from '@ulixee/crypto/lib/Identity';
+import { ConnectionToDatastoreCore } from '@ulixee/datastore';
+import IDatastoreEvents from '@ulixee/datastore/interfaces/IDatastoreEvents';
+import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
+import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
+import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
+import TransportBridge from '@ulixee/net/lib/TransportBridge';
+import { IDatastoreApiTypes, IDatastoreApis } from '@ulixee/platform-specification/datastore';
+import { IServicesSetupApiTypes } from '@ulixee/platform-specification/services/SetupApis';
 import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
-import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
-import env from './env';
-import DatastoreRegistry from './lib/DatastoreRegistry';
-import WorkTracker from './lib/WorkTracker';
-import IDatastoreApiContext from './interfaces/IDatastoreApiContext';
-import SidechainClientManager from './lib/SidechainClientManager';
-import DatastoreQuery from './endpoints/Datastore.query';
-import DatastoreMeta from './endpoints/Datastore.meta';
-import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
-import DatastoreStream from './endpoints/Datastore.stream';
+import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreVersionHashValidation';
+import { promises as Fs } from 'fs';
+import { IncomingMessage, ServerResponse } from 'http';
+import * as Os from 'os';
+import * as Path from 'path';
 import DatastoreAdmin from './endpoints/Datastore.admin';
 import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
-import DatastoreVm from './lib/DatastoreVm';
-import DatastoresList from './endpoints/Datastores.list';
-import DatastoreStart from './endpoints/Datastore.start';
 import DatastoreCreditsIssued from './endpoints/Datastore.creditsIssued';
-import { translateStats } from './lib/translateDatastoreMetadata';
-import StorageEngineRegistry from './lib/StorageEngineRegistry';
-import DocpageRoutes from './endpoints/DocpageRoutes';
 import DatastoreDownload from './endpoints/Datastore.download';
-import DatastoreUpload from './endpoints/Datastore.upload';
+import DatastoreMeta from './endpoints/Datastore.meta';
+import DatastoreQuery from './endpoints/Datastore.query';
 import DatastoreQueryStorageEngine from './endpoints/Datastore.queryStorageEngine';
+import DatastoreStart from './endpoints/Datastore.start';
+import DatastoreStream from './endpoints/Datastore.stream';
+import DatastoreUpload from './endpoints/Datastore.upload';
+import DatastoresList from './endpoints/Datastores.list';
+import DocpageRoutes from './endpoints/DocpageRoutes';
 import HostedServicesEndpoints, {
   TConnectionToServicesClient,
   TServicesApis,
 } from './endpoints/HostedServicesEndpoints';
+import env from './env';
+import IDatastoreApiContext from './interfaces/IDatastoreApiContext';
+import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
+import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
 import DatastoreApiClients from './lib/DatastoreApiClients';
+import DatastoreRegistry from './lib/DatastoreRegistry';
+import DatastoreVm from './lib/DatastoreVm';
+import SidechainClientManager from './lib/SidechainClientManager';
 import StatsTracker from './lib/StatsTracker';
+import StorageEngineRegistry from './lib/StorageEngineRegistry';
+import WorkTracker from './lib/WorkTracker';
+import { translateStats } from './lib/translateDatastoreMetadata';
 
 const { log } = Logger(module);
 
@@ -60,6 +60,8 @@ export default class DatastoreCore {
       activity: 'started' | 'uploaded';
     };
     stats: Pick<IDatastoreApiTypes['Datastore.meta']['result'], 'stats' | 'versionHash'>;
+    query: { versionHash: string };
+    connection: { connection: IDatastoreConnectionToClient };
     stopped: { versionHash: string };
   }>();
 
@@ -147,6 +149,7 @@ export default class DatastoreCore {
     connection.once('disconnected', () => {
       this.connections.delete(connection);
     });
+    this.events.emit('connection', { connection });
     this.connections.add(connection);
     return connection;
   }
@@ -257,6 +260,7 @@ export default class DatastoreCore {
         this.datastoreApiClients,
         parseInClusterHost(this.options.datastoreRegistryHost),
         options.peerNetwork,
+        this.options.storageEngineHost,
         this.storageEngineRegistry.create.bind(this.storageEngineRegistry, this.vm),
       );
       this.docPages = new DocpageRoutes(this.datastoreRegistry, this.cloudNodeAddress, args =>

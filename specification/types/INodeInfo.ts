@@ -1,4 +1,6 @@
 export default interface INodeInfo {
-  nodeId: string; // base58 string of peerId
+  nodeId: string;
+  multiaddrs: string[];
+  identity: string;
   ulixeeApiHost: string;
 }

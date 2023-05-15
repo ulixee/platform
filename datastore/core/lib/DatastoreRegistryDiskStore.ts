@@ -1,24 +1,25 @@
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import * as Path from 'path';
-import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
-import { promises as Fs } from 'fs';
-import * as HashUtils from '@ulixee/commons/lib/hashUtils';
-import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
-import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import Logger from '@ulixee/commons/lib/Logger';
+import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
+import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
+import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
+import * as HashUtils from '@ulixee/commons/lib/hashUtils';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { promises as Fs } from 'fs';
+import * as Path from 'path';
+import DatastoresDb from '../db';
 import IDatastoreRegistryStore, {
   IDatastoreManifestWithLatest,
 } from '../interfaces/IDatastoreRegistryStore';
-import DatastoresDb from '../db';
-import DatastoreVm from './DatastoreVm';
 import DatastoreManifest from './DatastoreManifest';
+import { IDatastoreManifestWithRuntime } from './DatastoreRegistry';
+import DatastoreVm from './DatastoreVm';
+import { packDbx, unpackDbx, unpackDbxFile } from './dbxUtils';
 import {
   InvalidPermissionsError,
   InvalidScriptVersionHistoryError,
   MissingLinkedScriptVersionsError,
+  MissingRequiredSettingError,
 } from './errors';
-import { packDbx, unpackDbx, unpackDbxFile } from './dbxUtils';
-import { IDatastoreManifestWithRuntime } from './DatastoreRegistry';
 
 const datastorePackageJson = require(`../package.json`);
 const { log } = Logger(module);
@@ -48,6 +49,7 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
   constructor(
     readonly datastoresDir: string,
     readonly isSourceOfTruth: boolean,
+    readonly defaultStorageEngineHost: string,
     readonly onInstallCallbackFn: TInstallDatastoreCallbackFn,
   ) {}
 
@@ -216,6 +218,11 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
     if (storedPath) {
       return { dbxPath: storedPath, manifest, didInstall: false };
     }
+
+    if (!manifest.storageEngineHost && !!this.defaultStorageEngineHost) {
+      throw new MissingRequiredSettingError('This cloud requires a storage engine host to be specified.', 'storageEngineHost', this.defaultStorageEngineHost);
+    }
+    
 
     await DatastoreManifest.validate(manifest);
 

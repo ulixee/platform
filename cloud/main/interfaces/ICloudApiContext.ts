@@ -1,9 +1,11 @@
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
+import NodeTracker from '../lib/NodeTracker';
+import NodeRegistry from '../lib/NodeRegistry';
 
 export default interface ICloudApiContext {
   logger: IBoundLog;
-  cloudNodes: number;
-  connectedNodes: number;
+  nodeTracker: NodeTracker;
+  nodeRegistry: NodeRegistry;
   cloudConfiguration: ICloudConfiguration;
   nodeAddress?: URL;
   inClusterNodeAddress?: URL;

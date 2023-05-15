@@ -74,7 +74,7 @@ export default class CloudNode {
   ): Promise<void> {
     publicServerOptions ??= {};
     hostedServicesOptions ??= {};
-    const nodeAddress = await this.startPublicServer(publicServerOptions);
+    await this.startPublicServer(publicServerOptions);
 
     if (!hostedServicesOptions.port && !isTestEnv) {
       if (!(await isPortInUse(18181))) hostedServicesOptions.port = 18181;
@@ -82,7 +82,7 @@ export default class CloudNode {
     await this.hostedServicesServer?.listen(hostedServicesOptions);
 
     await this.startPeerServices(peerServerOptions);
-    await this.router.start(nodeAddress, await this.hostedServicesServer?.host, this.peerNetwork);
+    await this.router.start(this.publicServer, this.hostedServicesServer, this.peerNetwork);
     // wait until router is registered before accepting traffic
     this.isReady.resolve();
   }
@@ -147,8 +147,10 @@ export default class CloudNode {
 
   private async startPeerServices(listenOptions: ListenOptions = {}): Promise<void> {
     if (!env.dhtBootstrapPeers?.length && env.cloudType !== 'public') return;
-    if (!env.p2pIdentity)
-      throw new Error('You must configure a PeerNetwork Identity to join a cloud.');
+    if (!env.networkIdentity)
+      throw new Error(
+        'You must configure a PeerNetwork Identity (env.ULX_NETWORK_IDENTITY_PATH) to join a cloud.',
+      );
 
     if (!listenOptions.port && !isTestEnv) {
       if (!(await isPortInUse(18182))) listenOptions.port = 18182;
@@ -158,13 +160,15 @@ export default class CloudNode {
     await new Promise<void>(resolve => this.peerServer.listen(listenOptions, resolve));
     const peerPort = (this.peerServer.address() as AddressInfo).port;
 
-    this.peerNetwork = await new P2pConnection({
+    this.peerNetwork = await new P2pConnection().start({
       ulixeeApiHost: await this.publicServer.host,
       dbPath: Path.resolve(this.router.datastoresDir, '../network'),
       port: peerPort,
       ipOrDomain: this.publicServer.hostname,
-      identity: env.p2pIdentity,
-    }).start(env.dhtBootstrapPeers, this.peerServer);
+      identity: env.networkIdentity,
+      attachToServer: this.peerServer,
+      boostrapList: env.dhtBootstrapPeers,
+    });
   }
 }
 

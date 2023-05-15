@@ -9,6 +9,7 @@ export type IDatastoreStats = IStatsTrackerApiTypes['StatsTracker.get']['result'
 
 export default class StatsTracker extends TypedEventEmitter<{
   stats: IDatastoreStatsRecord;
+  query: { versionHash: string };
 }> {
   public diskStore?: StatsTrackerDiskStore;
   public clusterStore?: StatsTrackerClusterStore;
@@ -19,6 +20,7 @@ export default class StatsTracker extends TypedEventEmitter<{
       this.clusterStore = new StatsTrackerClusterStore(statsEndpoint);
     } else {
       this.diskStore = new StatsTrackerDiskStore(datastoresDir);
+      this.diskStore.addEventEmitter(this, ['stats']);
     }
   }
 
@@ -42,6 +44,7 @@ export default class StatsTracker extends TypedEventEmitter<{
   public async recordQuery(
     details: IStatsTrackerApiTypes['StatsTracker.recordQuery']['args'],
   ): Promise<void> {
+    this.emit('query', { versionHash: details.versionHash });
     if (this.clusterStore) await this.clusterStore.recordQuery(details);
     else this.diskStore.recordQuery(details);
   }

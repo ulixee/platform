@@ -1,17 +1,17 @@
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
-import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
-import { bindFunctions } from '@ulixee/commons/lib/utils';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
+import { bindFunctions } from '@ulixee/commons/lib/utils';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
 import { IDatastoreEntityStatsRecord } from '../db/DatastoreEntityStatsTable';
-import { DatastoreNotFoundError } from './errors';
 import IDatastoreRegistryStore, {
   IDatastoreManifestWithLatest,
 } from '../interfaces/IDatastoreRegistryStore';
-import DatastoreRegistryDiskStore, { IDatastoreSourceDetails } from './DatastoreRegistryDiskStore';
-import DatastoreRegistryClusterStore from './DatastoreRegistryClusterStore';
-import DatastoreRegistryNetworkStore from './DatastoreRegistryNetworkStore';
 import DatastoreApiClients from './DatastoreApiClients';
+import DatastoreRegistryClusterStore from './DatastoreRegistryClusterStore';
+import DatastoreRegistryDiskStore, { IDatastoreSourceDetails } from './DatastoreRegistryDiskStore';
+import DatastoreRegistryNetworkStore from './DatastoreRegistryNetworkStore';
+import { DatastoreNotFoundError } from './errors';
 
 export interface IStatsByName {
   [name: string]: IDatastoreEntityStatsRecord;
@@ -54,6 +54,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     apiClients?: DatastoreApiClients,
     datastoreRegistryEndpoint?: URL,
     peerNetwork?: IPeerNetwork,
+    defaultStorageEngineHost?: string,
     private installCallbackFn?: TOnDatastoreInstalledCallbackFn,
   ) {
     super();
@@ -62,6 +63,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     this.diskStore = new DatastoreRegistryDiskStore(
       datastoreDir,
       !datastoreRegistryEndpoint,
+      defaultStorageEngineHost,
       this.onDatastoreInstalled.bind(this),
     );
 
