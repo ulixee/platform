@@ -1,17 +1,15 @@
-import { mkdirSync, rmSync } from 'fs';
-import * as Path from 'path';
-import Packager from '@ulixee/datastore-packager';
-import { copyDir, existsAsync } from '@ulixee/commons/lib/fileUtils';
-import Dbx from '@ulixee/datastore-packager/lib/Dbx';
-import SidechainClient from '@ulixee/sidechain';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import * as Hostile from 'hostile';
 import { CloudNode } from '@ulixee/cloud';
+import { copyDir, existsAsync } from '@ulixee/commons/lib/fileUtils';
+import Packager from '@ulixee/datastore-packager';
+import Dbx from '@ulixee/datastore-packager/lib/Dbx';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import SidechainClient from '@ulixee/sidechain';
+import { mkdirSync, rmSync } from 'fs';
+import * as Hostile from 'hostile';
+import * as Path from 'path';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
-import DatastoreCore from '../index';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreCore.test');
-const tmpDir = `${storageDir}/tmp`;
 let bootupPackager: Packager;
 let bootupDbx: Dbx;
 let cloudNode: CloudNode;
@@ -19,8 +17,6 @@ let client: DatastoreApiClient;
 
 beforeAll(async () => {
   mkdirSync(storageDir, { recursive: true });
-  DatastoreCore.options.datastoresTmpDir = tmpDir;
-  DatastoreCore.options.datastoresDir = storageDir;
   cloudNode = new CloudNode();
   cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,

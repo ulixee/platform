@@ -1,11 +1,10 @@
-import * as Fs from 'fs';
 import { CloudNode } from '@ulixee/cloud';
-import { Helpers } from '@ulixee/datastore-testing';
-import DatastoreCore from '@ulixee/datastore-core';
-import Packager from '@ulixee/datastore-packager';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
-import * as Path from 'path';
+import Packager from '@ulixee/datastore-packager';
+import { Helpers } from '@ulixee/datastore-testing';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
+import * as Fs from 'fs';
+import * as Path from 'path';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'hero-core/basic.test');
 
@@ -38,7 +37,7 @@ afterAll(Helpers.afterAll);
 
 test('it should be able to upload a datastore and run it by hash', async () => {
   // @ts-expect-error
-  const statsTracker = DatastoreCore.statsTracker;
+  const statsTracker = cloudNode.router.datastoreCore.statsTracker;
   const { queryLogDb, statsDb } = statsTracker.diskStore;
 
   const manifest = packager.manifest;

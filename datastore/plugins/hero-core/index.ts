@@ -1,10 +1,10 @@
-import HeroCore from '@ulixee/hero-core';
-import DatastoreCore from '@ulixee/datastore-core';
-import { ConnectionToHeroCore } from '@ulixee/hero';
-import TransportBridge from '@ulixee/net/lib/TransportBridge';
+import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import { IHeroExtractorRunOptions } from '@ulixee/datastore-plugins-hero';
 import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
+import { ConnectionToHeroCore } from '@ulixee/hero';
+import HeroCore from '@ulixee/hero-core';
 import CallsiteLocator from '@ulixee/hero/lib/CallsiteLocator';
+import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import { nanoid } from 'nanoid';
 
 const pkg = require('@ulixee/datastore-plugins-hero/package.json');
@@ -22,6 +22,7 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
   ];
 
   private connectionToCore: ConnectionToHeroCore;
+  private sessionDbDirectory: string;
 
   private nodeVmSandboxList = [
     '@ulixee/hero',
@@ -56,8 +57,9 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
     }
   }
 
-  public async onCoreStart(): Promise<void> {
+  public async onCoreStart(options: IDatastoreCoreConfigureOptions): Promise<void> {
     await HeroCore.start();
+    this.sessionDbDirectory = options.queryHeroSessionsDir;
     const vm2 = require.resolve('vm2').replace('index.js', '');
     if (!CallsiteLocator.ignoreModulePaths.includes(vm2)) {
       CallsiteLocator.ignoreModulePaths.push(vm2);
@@ -85,8 +87,8 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
       entryFunction: runtime.functionName,
       runtime: 'datastore',
     };
-    options.sessionId = `query-${  options.id  }-${  nanoid(3)}`;
-    options.sessionDbDirectory = DatastoreCore.queryHeroSessionsDir;
+    options.sessionId = `query-${options.id}-${nanoid(3)}`;
+    options.sessionDbDirectory = this.sessionDbDirectory;
 
     options.connectionToCore = this.connectionToCore;
   }
@@ -94,9 +96,5 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
   public async onCoreClose(): Promise<void> {
     await this.connectionToCore?.disconnect();
     await HeroCore.shutdown();
-  }
-
-  public static register(): void {
-    DatastoreCore.registerPlugin(new DatastoreForHeroPluginCore());
   }
 }

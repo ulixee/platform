@@ -1,12 +1,14 @@
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
-import NodeTracker from '../lib/NodeTracker';
+import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import NodeRegistry from '../lib/NodeRegistry';
+import NodeTracker from '../lib/NodeTracker';
 
 export default interface ICloudApiContext {
   logger: IBoundLog;
   nodeTracker: NodeTracker;
   nodeRegistry: NodeRegistry;
   cloudConfiguration: ICloudConfiguration;
+  datastoreConfiguration: IDatastoreCoreConfigureOptions;
   nodeAddress?: URL;
   inClusterNodeAddress?: URL;
   version: string;

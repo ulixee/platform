@@ -52,58 +52,35 @@ import { translateStats } from './lib/translateDatastoreMetadata';
 
 const { log } = Logger(module);
 
-export default class DatastoreCore {
-  public static connections = new Set<IDatastoreConnectionToClient>();
-  public static events = new TypedEventEmitter<{
-    new: {
-      datastore: IDatastoreApiTypes['Datastore.meta']['result'];
-      activity: 'started' | 'uploaded';
-    };
-    stats: Pick<IDatastoreApiTypes['Datastore.meta']['result'], 'stats' | 'versionHash'>;
-    query: { versionHash: string };
-    connection: { connection: IDatastoreConnectionToClient };
-    stopped: { versionHash: string };
-  }>();
+export default class DatastoreCore extends TypedEventEmitter<{
+  new: {
+    datastore: IDatastoreApiTypes['Datastore.meta']['result'];
+    activity: 'started' | 'uploaded';
+  };
+  stats: Pick<IDatastoreApiTypes['Datastore.meta']['result'], 'stats' | 'versionHash'>;
+  query: { versionHash: string };
+  connection: { connection: IDatastoreConnectionToClient };
+  stopped: { versionHash: string };
+}> {
+  public pluginCoresByName: { [name: string]: IExtractorPluginCore } = {};
 
-  public static get datastoresDir(): string {
+  public connections = new Set<IDatastoreConnectionToClient>();
+
+  public get datastoresDir(): string {
     return this.options.datastoresDir;
   }
 
-  public static get queryHeroSessionsDir(): string {
+  public get queryHeroSessionsDir(): string {
     return this.options.queryHeroSessionsDir;
   }
 
   // SETTINGS
-  public static options: IDatastoreCoreConfigureOptions = {
-    serverEnvironment: env.serverEnvironment as any,
-    datastoresDir: env.datastoresDir,
-    queryHeroSessionsDir: env.queryHeroSessionsDir,
-    datastoresTmpDir: Path.join(Os.tmpdir(), '.ulixee', 'datastore'),
-    maxRuntimeMs: 10 * 60e3,
-    waitForDatastoreCompletionOnShutdown: false,
-    enableDatastoreWatchMode: env.serverEnvironment === 'development',
-    paymentAddress: env.paymentAddress,
-    datastoresMustHaveOwnAdminIdentity: env.datastoresMustHaveOwnAdminIdentity,
-    cloudAdminIdentities: env.cloudAdminIdentities,
-    computePricePerQuery: env.computePricePerQuery,
-    defaultBytesForPaymentEstimates: 256,
-    approvedSidechains: env.approvedSidechains,
-    defaultSidechainHost: env.defaultSidechainHost,
-    defaultSidechainRootIdentity: env.defaultSidechainRootIdentity,
-    identityWithSidechain: env.identityWithSidechain,
-    approvedSidechainsRefreshInterval: 60e3 * 60, // 1 hour
+  public readonly options: IDatastoreCoreConfigureOptions;
 
-    datastoreRegistryHost: env.datastoreRegistryHost,
-    storageEngineHost: env.storageEngineHost,
-    statsTrackerHost: env.statsTrackerHost,
-    cloudType: 'private',
-  };
+  public isClosing: Promise<void>;
+  public workTracker: WorkTracker;
 
-  public static pluginCoresByName: { [name: string]: IExtractorPluginCore } = {};
-  public static isClosing: Promise<void>;
-  public static workTracker: WorkTracker;
-
-  public static apiRegistry = new ApiRegistry<IDatastoreApiContext>([
+  public apiRegistry = new ApiRegistry<IDatastoreApiContext>([
     DatastoreQuery,
     DatastoreStream,
     DatastoresList,
@@ -117,20 +94,53 @@ export default class DatastoreCore {
     DatastoreQueryStorageEngine,
   ]);
 
-  private static datastoreRegistry: DatastoreRegistry;
-  private static statsTracker: StatsTracker;
-  private static storageEngineRegistry: StorageEngineRegistry;
-  private static sidechainClientManager: SidechainClientManager;
-  private static isStarted = new Resolvable<void>();
-  private static docPages: DocpageRoutes;
-  private static cloudNodeAddress: URL;
-  private static hostedServicesEndpoints: HostedServicesEndpoints;
-  private static datastoreApiClients: DatastoreApiClients;
-  private static vm: DatastoreVm;
+  private datastoreRegistry: DatastoreRegistry;
+  private statsTracker: StatsTracker;
+  private storageEngineRegistry: StorageEngineRegistry;
+  private sidechainClientManager: SidechainClientManager;
+  private isStarted = new Resolvable<void>();
+  private docPages: DocpageRoutes;
+  private cloudNodeAddress: URL;
+  private hostedServicesEndpoints: HostedServicesEndpoints;
+  private datastoreApiClients: DatastoreApiClients;
+  private vm: DatastoreVm;
 
-  private static connectionToThisCore: ConnectionToDatastoreCore;
+  private connectionToThisCore: ConnectionToDatastoreCore;
 
-  public static addConnection(
+  constructor(options: Partial<IDatastoreCoreConfigureOptions>, plugins?: IExtractorPluginCore[]) {
+    super();
+    this.options = {
+      serverEnvironment: env.serverEnvironment as any,
+      datastoresDir: env.datastoresDir,
+      queryHeroSessionsDir: env.queryHeroSessionsDir,
+      datastoresTmpDir: Path.join(Os.tmpdir(), '.ulixee', 'datastore'),
+      maxRuntimeMs: 10 * 60e3,
+      waitForDatastoreCompletionOnShutdown: false,
+      enableDatastoreWatchMode: env.serverEnvironment === 'development',
+      paymentAddress: env.paymentAddress,
+      datastoresMustHaveOwnAdminIdentity: env.datastoresMustHaveOwnAdminIdentity,
+      cloudAdminIdentities: env.cloudAdminIdentities,
+      computePricePerQuery: env.computePricePerQuery,
+      defaultBytesForPaymentEstimates: 256,
+      approvedSidechains: env.approvedSidechains,
+      defaultSidechainHost: env.defaultSidechainHost,
+      defaultSidechainRootIdentity: env.defaultSidechainRootIdentity,
+      identityWithSidechain: env.identityWithSidechain,
+      approvedSidechainsRefreshInterval: 60e3 * 60, // 1 hour
+
+      datastoreRegistryHost: env.datastoreRegistryHost,
+      storageEngineHost: env.storageEngineHost,
+      statsTrackerHost: env.statsTrackerHost,
+      cloudType: 'private',
+      ...(options ?? {}),
+    };
+    if (plugins)
+      for (const pluginCore of plugins) {
+        this.pluginCoresByName[pluginCore.name] = pluginCore;
+      }
+  }
+
+  public addConnection(
     transport: ITransportToClient<IDatastoreApis, IDatastoreEvents>,
   ): IDatastoreConnectionToClient {
     const context = this.getApiContext(transport.remoteId);
@@ -149,12 +159,12 @@ export default class DatastoreCore {
     connection.once('disconnected', () => {
       this.connections.delete(connection);
     });
-    this.events.emit('connection', { connection });
+    this.emit('connection', { connection });
     this.connections.add(connection);
     return connection;
   }
 
-  public static addHostedServicesConnection(
+  public addHostedServicesConnection(
     transport: ITransportToClient<TServicesApis, {}>,
   ): TConnectionToServicesClient {
     if (!this.hostedServicesEndpoints) {
@@ -164,7 +174,7 @@ export default class DatastoreCore {
     return this.hostedServicesEndpoints.addConnection(transport, context);
   }
 
-  public static registerHttpRoutes(
+  public registerHttpRoutes(
     addHttpRoute: (
       route: string | RegExp,
       method: 'GET' | 'OPTIONS' | 'POST' | 'UPDATE' | 'DELETE',
@@ -181,11 +191,7 @@ export default class DatastoreCore {
     addHttpRoute('/', 'OPTIONS', (req, res) => this.docPages.routeOptionsRoot(req, res));
   }
 
-  public static registerPlugin(pluginCore: IExtractorPluginCore): void {
-    this.pluginCoresByName[pluginCore.name] = pluginCore;
-  }
-
-  public static async start(options: {
+  public async start(options: {
     nodeAddress: URL;
     hostedServicesAddress?: URL;
     cloudType?: 'public' | 'private';
@@ -236,7 +242,11 @@ export default class DatastoreCore {
       this.connectionToThisCore = new ConnectionToDatastoreCore(bridge.transportToCore);
       this.datastoreApiClients = new DatastoreApiClients();
 
-      this.vm = new DatastoreVm(this.connectionToThisCore, this.datastoreApiClients);
+      this.vm = new DatastoreVm(
+        this.connectionToThisCore,
+        this.datastoreApiClients,
+        Object.values(this.pluginCoresByName),
+      );
 
       const parseInClusterHost: (host: string) => URL = host => {
         const hostURL = toUrl(host);
@@ -272,7 +282,7 @@ export default class DatastoreCore {
       );
 
       for (const plugin of Object.values(this.pluginCoresByName)) {
-        if (plugin.onCoreStart) await plugin.onCoreStart();
+        if (plugin.onCoreStart) await plugin.onCoreStart(this.options);
       }
 
       this.workTracker = new WorkTracker(this.options.maxRuntimeMs);
@@ -300,7 +310,7 @@ export default class DatastoreCore {
     return this.isStarted;
   }
 
-  public static async installCompressedDbx(path: string): Promise<void> {
+  public async installCompressedDbx(path: string): Promise<void> {
     const filename = Path.basename(path);
     const dest = Path.join(this.options.datastoresDir, filename);
     if (!(await existsAsync(dest))) {
@@ -311,7 +321,7 @@ export default class DatastoreCore {
     }
   }
 
-  public static async close(): Promise<void> {
+  public async close(): Promise<void> {
     if (this.isClosing) return this.isClosing;
     const closingPromise = new Resolvable<void>();
     this.isClosing = closingPromise.promise;
@@ -338,24 +348,24 @@ export default class DatastoreCore {
     }
   }
 
-  private static onNewDatastore(event: DatastoreRegistry['EventTypes']['new']): void {
+  private onNewDatastore(event: DatastoreRegistry['EventTypes']['new']): void {
     void DatastoreMeta.handler(
       { versionHash: event.datastore.versionHash },
       this.getApiContext(),
     ).then(x => {
-      return this.events.emit('new', { activity: event.activity, datastore: x });
+      return this.emit('new', { activity: event.activity, datastore: x });
     });
   }
 
-  private static onDatastoreStopped(event: DatastoreRegistry['EventTypes']['stopped']): void {
-    this.events.emit('stopped', event);
+  private onDatastoreStopped(event: DatastoreRegistry['EventTypes']['stopped']): void {
+    this.emit('stopped', event);
   }
 
-  private static onDatastoreStats(event: StatsTracker['EventTypes']['stats']): void {
-    this.events.emit('stats', { versionHash: event.versionHash, stats: translateStats(event) });
+  private onDatastoreStats(event: StatsTracker['EventTypes']['stats']): void {
+    this.emit('stats', { versionHash: event.versionHash, stats: translateStats(event) });
   }
 
-  private static getApiContext(remoteId?: string): IDatastoreApiContext {
+  private getApiContext(remoteId?: string): IDatastoreApiContext {
     if (!this.isStarted.isResolved) {
       throw new Error('DatastoreCore has not started');
     }
@@ -374,7 +384,7 @@ export default class DatastoreCore {
     };
   }
 
-  private static showTemporaryAdminIdentityPrompt(): void {
+  private showTemporaryAdminIdentityPrompt(): void {
     const tempIdentity = Identity.createSync();
     this.options.cloudAdminIdentities.push(tempIdentity.bech32);
     const key = Ed25519.getPrivateKeyBytes(tempIdentity.privateKey);
@@ -404,6 +414,7 @@ export default class DatastoreCore {
 \n\n`);
   }
 }
+
 type IHttpHandleFn = (
   req: IncomingMessage,
   res: ServerResponse,

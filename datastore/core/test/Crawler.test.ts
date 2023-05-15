@@ -1,13 +1,12 @@
-import * as Fs from 'fs';
-import * as Path from 'path';
+import { CloudNode } from '@ulixee/cloud';
+import { Crawler } from '@ulixee/datastore';
 import DatastorePackager from '@ulixee/datastore-packager';
 import { Helpers } from '@ulixee/datastore-testing';
-import { CloudNode } from '@ulixee/cloud';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { Crawler } from '@ulixee/datastore';
+import * as Fs from 'fs';
 import { nanoid } from 'nanoid';
+import * as Path from 'path';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
-import DatastoreCore from '../index';
 import StatsTracker from '../lib/StatsTracker';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Crawler.test');
@@ -30,9 +29,9 @@ beforeAll(async () => {
   };
   await cloudNode.listen();
   // @ts-expect-error
-  registry = DatastoreCore.datastoreRegistry;
+  registry = cloudNode.router.datastoreCore.datastoreRegistry;
   // @ts-expect-error
-  statsTracker = DatastoreCore.statsTracker;
+  statsTracker = cloudNode.router.datastoreCore.statsTracker;
   client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 });

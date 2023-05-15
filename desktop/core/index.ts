@@ -1,67 +1,68 @@
-import HeroCore, { Session, Session as HeroSession } from '@ulixee/hero-core';
-import Log from '@ulixee/commons/lib/Logger';
-import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
-import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
+import Log from '@ulixee/commons/lib/Logger';
 import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
-import { IncomingMessage } from 'http';
-import { nanoid } from 'nanoid';
-import IAppApi from '@ulixee/desktop-interfaces/apis/IAppApi';
+import { ConnectionToDatastoreCore } from '@ulixee/datastore';
+import DatastoreCore from '@ulixee/datastore-core';
 import { IChromeAliveSessionApis, IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
-import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
-import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
+import IAppApi from '@ulixee/desktop-interfaces/apis/IAppApi';
+import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
 import IDesktopAppEvents, {
   INewHeroSessionEvent,
 } from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
-import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
-import TransportBridge from '@ulixee/net/lib/TransportBridge';
-import { ConnectionToDatastoreCore } from '@ulixee/datastore';
-import DatastoreCore from '@ulixee/datastore-core';
-import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
-import { ICloudApis, ICloudApiTypes } from '@ulixee/platform-specification/cloud';
+import HeroCore, { Session as HeroSession, Session } from '@ulixee/hero-core';
+import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
+import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
 import { ConnectionToCore } from '@ulixee/net';
+import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
+import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
+import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
+import TransportBridge from '@ulixee/net/lib/TransportBridge';
+import { ICloudApiTypes, ICloudApis } from '@ulixee/platform-specification/cloud';
+import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
+import { IncomingMessage } from 'http';
+import { nanoid } from 'nanoid';
 import WebSocket = require('ws');
-import SessionController from './lib/SessionController';
-import FullscreenHeroCorePlugin from './lib/FullscreenHeroCorePlugin';
-import Workarea from './lib/Workarea';
 import AppDevtoolsConnection from './lib/AppDevtoolsConnection';
+import FullscreenHeroCorePlugin from './lib/FullscreenHeroCorePlugin';
 import HeroSessionsSearch from './lib/HeroSessionsSearch';
+import SessionController from './lib/SessionController';
+import Workarea from './lib/Workarea';
 
 const { log } = Log(module);
 
 type IConnectionToDesktopClient = IConnectionToClient<IDesktopAppApis, IDesktopAppEvents>;
 
 export default class DesktopCore {
-  public static sessionControllersById = new Map<string, SessionController>();
-  public static localCloudAddress?: Promise<string>;
-  private static appConnectionsById = new Map<string, IConnectionToDesktopClient>();
-  private static appDevtoolsConnectionsById = new Map<string, AppDevtoolsConnection>();
-  private static heroSessionsSearch = new HeroSessionsSearch();
-  private static _connectionToDatastoreCore: ConnectionToDatastoreCore;
+  public sessionControllersById = new Map<string, SessionController>();
+  private appConnectionsById = new Map<string, IConnectionToDesktopClient>();
+  private appDevtoolsConnectionsById = new Map<string, AppDevtoolsConnection>();
+  private heroSessionsSearch: HeroSessionsSearch;
+  private _connectionToDatastoreCore: ConnectionToDatastoreCore;
 
-  private static get connectionToDatastoreCore(): ConnectionToDatastoreCore {
+  private get connectionToDatastoreCore(): ConnectionToDatastoreCore {
     if (!this._connectionToDatastoreCore) {
       const bridge = new TransportBridge();
       this._connectionToDatastoreCore = new ConnectionToDatastoreCore(bridge.transportToCore);
-      DatastoreCore.addConnection(bridge.transportToClient);
+      this.datastoreCore.addConnection(bridge.transportToClient);
     }
     return this._connectionToDatastoreCore;
   }
 
-  private static connectionToCloudCore: ConnectionToCore<ICloudApis, {}>;
+  private events = new EventSubscriber();
 
-  private static events = new EventSubscriber();
-
-  public static setLocalCloudAddress(
-    address: Promise<string>,
-    cloudApiConnection: ConnectionToCore<ICloudApis, {}>,
-  ): void {
-    this.localCloudAddress = address;
-    this.connectionToCloudCore = cloudApiConnection;
+  constructor(
+    public datastoreCore: DatastoreCore,
+    private connectionToCloudCore: ConnectionToCore<ICloudApis, {}>,
+  ) {
+    this.heroSessionsSearch = new HeroSessionsSearch(datastoreCore.options.queryHeroSessionsDir);
   }
 
-  public static registerWsRoutes(
+  public disconnect(): void {
+    this.datastoreCore = null;
+    this.connectionToCloudCore = null;
+  }
+
+  public registerWsRoutes(
     addWsRoute: (route: string | RegExp, callbackFn: IWsHandleFn, useTransport?: boolean) => any,
   ): void {
     addWsRoute(/\/desktop-devtools\?id=.+/, this.addAppDevtoolsWebsocket.bind(this), true);
@@ -69,7 +70,7 @@ export default class DesktopCore {
     addWsRoute(/\/chromealive\/.+/, this.addChromeAliveConnection.bind(this));
   }
 
-  public static addAppDevtoolsWebsocket(ws: WebSocket, request: IncomingMessage): void {
+  public addAppDevtoolsWebsocket(ws: WebSocket, request: IncomingMessage): void {
     const url = new URL(request.url, 'http://localhost');
     const id = url.searchParams.get('id');
     if (!id) throw new Error('A ChromeAlive devtools connection was made without an id parameter.');
@@ -78,7 +79,7 @@ export default class DesktopCore {
     connection.onCloseFns.push(() => this.appDevtoolsConnectionsById.delete(id));
   }
 
-  public static addChromeAliveConnection(
+  public addChromeAliveConnection(
     transport: ITransportToClient<IChromeAliveSessionApis>,
     request: IncomingMessage,
   ): IConnectionToClient<IChromeAliveSessionApis, IChromeAliveSessionEvents> {
@@ -92,7 +93,7 @@ export default class DesktopCore {
     }
   }
 
-  public static addDesktopConnection(
+  public addDesktopConnection(
     transport: ITransportToClient<IDesktopAppApis>,
     request: IncomingMessage,
   ): IConnectionToClient<IDesktopAppApis, IDesktopAppEvents> {
@@ -130,13 +131,13 @@ export default class DesktopCore {
       this.events.on(this.heroSessionsSearch, 'update', x =>
         connection.sendEvent({ data: x, eventType: 'Sessions.listUpdated' }),
       ),
-      this.events.on(DatastoreCore.events, 'new', x => {
+      this.events.on(this.datastoreCore, 'new', x => {
         connection.sendEvent({ data: x, eventType: 'Datastore.new' });
       }),
-      this.events.on(DatastoreCore.events, 'stats', x => {
+      this.events.on(this.datastoreCore, 'stats', x => {
         connection.sendEvent({ data: x, eventType: 'Datastore.stats' });
       }),
-      this.events.on(DatastoreCore.events, 'stopped', x => {
+      this.events.on(this.datastoreCore, 'stopped', x => {
         connection.sendEvent({ data: x, eventType: 'Datastore.stopped' });
       }),
       this.events.on(connection, 'request', msg => {
@@ -165,7 +166,7 @@ export default class DesktopCore {
     return connection as any;
   }
 
-  public static activatePlugin(): void {
+  public activatePlugin(): void {
     log.info('Registering ChromeAlive!');
 
     this.events.on(HeroSession.events, 'new', this.onHeroSessionCreated.bind(this));
@@ -173,7 +174,7 @@ export default class DesktopCore {
     HeroCore.use(FullscreenHeroCorePlugin);
   }
 
-  public static async onAppConnect(
+  public async onAppConnect(
     id: string,
     args: Parameters<IAppApi['connect']>[0],
   ): ReturnType<IAppApi['connect']> {
@@ -186,7 +187,7 @@ export default class DesktopCore {
     return { id, cloudNodes: nodes };
   }
 
-  public static async shutdown(): Promise<void> {
+  public async shutdown(): Promise<void> {
     log.info('Shutting down ChromeAlive!');
 
     for (const connection of this.appConnectionsById.values()) {
@@ -200,7 +201,7 @@ export default class DesktopCore {
     this.sessionControllersById.clear();
   }
 
-  private static async onHeroSessionCreated(event: { session: HeroSession }): Promise<void> {
+  private async onHeroSessionCreated(event: { session: HeroSession }): Promise<void> {
     const { session: heroSession } = event;
     const sessionId = heroSession.id;
 
@@ -271,7 +272,7 @@ export default class DesktopCore {
     }
   }
 
-  private static createSessionController(
+  private createSessionController(
     db: SessionDb,
     options: ISessionCreateOptions,
   ): { sessionController: SessionController; appConnectionId: string } {
@@ -283,7 +284,12 @@ export default class DesktopCore {
 
     const sessionId = db.sessionId;
     const devtoolsConnection = this.appDevtoolsConnectionsById.get(appConnectionId);
-    const sessionController = new SessionController(db, options, devtoolsConnection);
+    const sessionController = new SessionController(
+      db,
+      options,
+      this.datastoreCore.options.datastoresDir,
+      devtoolsConnection,
+    );
     this.sessionControllersById.set(sessionId, sessionController);
     this.events.once(sessionController, 'closed', () => {
       this.sessionControllersById.delete(sessionId);
@@ -292,7 +298,7 @@ export default class DesktopCore {
     return { sessionController, appConnectionId };
   }
 
-  private static delegateToDatastoreCore<TCommand extends keyof IDatastoreApiTypes & string>(
+  private delegateToDatastoreCore<TCommand extends keyof IDatastoreApiTypes & string>(
     command: TCommand,
     args: IDatastoreApiTypes[TCommand]['args'],
   ): Promise<IDatastoreApiTypes[TCommand]['result']> {
@@ -302,7 +308,7 @@ export default class DesktopCore {
     });
   }
 
-  private static delegateToCloudCore<TCommand extends keyof ICloudApiTypes & string>(
+  private delegateToCloudCore<TCommand extends keyof ICloudApiTypes & string>(
     command: TCommand,
     args: ICloudApiTypes[TCommand]['args'],
   ): Promise<ICloudApiTypes[TCommand]['result']> {
@@ -312,7 +318,7 @@ export default class DesktopCore {
     });
   }
 
-  private static loadSessionController(
+  private loadSessionController(
     heroSessionId: string,
     transport: ITransportToClient<any>,
     request: IncomingMessage,
@@ -345,7 +351,7 @@ export default class DesktopCore {
     return apiConnection;
   }
 
-  private static broadcastAppEvent<T extends keyof IDesktopAppEvents & string>(
+  private broadcastAppEvent<T extends keyof IDesktopAppEvents & string>(
     eventType: T,
     data: IDesktopAppEvents[T],
   ): void {

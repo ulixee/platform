@@ -1,13 +1,13 @@
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import { NodeVM, VMScript } from 'vm2';
-import { promises as Fs } from 'fs';
-import Datastore, { ConnectionToDatastoreCore, Crawler } from '@ulixee/datastore';
-import Extractor from '@ulixee/datastore/lib/Extractor';
-import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
+import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
+import Datastore, { ConnectionToDatastoreCore, Crawler } from '@ulixee/datastore';
+import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
+import Extractor from '@ulixee/datastore/lib/Extractor';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { promises as Fs } from 'fs';
 import * as Path from 'path';
-import DatastoreCore from '../index';
+import { NodeVM, VMScript } from 'vm2';
 import DatastoreApiClients from './DatastoreApiClients';
 
 const { version } = require('../package.json');
@@ -21,6 +21,7 @@ export default class DatastoreVm {
   constructor(
     connectionToDatastoreCore: ConnectionToDatastoreCore,
     apiClientCache: DatastoreApiClients,
+    readonly plugins: IExtractorPluginCore[],
   ) {
     this.apiClientCache = apiClientCache;
     this.connectionToDatastoreCore = connectionToDatastoreCore;
@@ -100,7 +101,7 @@ export default class DatastoreVm {
   }
 
   private getVm(): NodeVM {
-    const plugins = [...Object.values(DatastoreCore.pluginCoresByName)];
+    const plugins = this.plugins;
     const whitelist: Set<string> = new Set([
       ...plugins.map(x => x.nodeVmRequireWhitelist || []).flat(),
       '@ulixee/datastore',

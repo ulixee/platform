@@ -1,4 +1,5 @@
 import Identity from '@ulixee/crypto/lib/Identity';
+import DatastoreCore from '@ulixee/datastore-core';
 import { ICloudNodeMeta } from '@ulixee/platform-specification/services/NodeRegistryApis';
 import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
 import NodeRegistryServiceClient from './NodeRegistryServiceClient';
@@ -17,6 +18,7 @@ export default class NodeRegistry {
       serviceHost?: URL;
       peerNetwork?: IPeerNetwork;
       nodeTracker: NodeTracker;
+      datastoreCore: DatastoreCore;
     },
   ) {
     const { serviceHost, nodeTracker, peerNetwork } = config;
@@ -28,10 +30,14 @@ export default class NodeRegistry {
     this.peerNetwork?.on('node-seen', this.nodeTracker.onSeen);
 
     if (serviceHost) {
-      this.serviceClient = new NodeRegistryServiceClient(serviceHost, () => ({
-        clients: this.config.publicServer.connections,
-        peers: this.peerNetwork?.connectedPeers ?? 0,
-      }));
+      this.serviceClient = new NodeRegistryServiceClient(
+        serviceHost,
+        this.config.datastoreCore,
+        () => ({
+          clients: this.config.publicServer.connections,
+          peers: this.peerNetwork?.connectedPeers ?? 0,
+        }),
+      );
     }
   }
 

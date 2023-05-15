@@ -1,3 +1,4 @@
+import type IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import type IExtractorRunOptions from '@ulixee/datastore/interfaces/IExtractorRunOptions';
 import type IExtractorSchema from '@ulixee/datastore/interfaces/IExtractorSchema';
 
@@ -6,7 +7,7 @@ export default interface IExtractorPluginCore<ISchema extends IExtractorSchema =
   version: string;
   nodeVmRequireWhitelist?: string[];
   nodeVmUseSandbox?(moduleName: string): boolean;
-  onCoreStart?(): void | Promise<void>;
+  onCoreStart?(coreConfiguration: IDatastoreCoreConfigureOptions): void | Promise<void>;
   beforeRunExtractor?(
     options: IExtractorRunOptions<ISchema>,
     runtime?: {

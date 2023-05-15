@@ -1,12 +1,11 @@
+import { CloudNode } from '@ulixee/cloud';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import Identity from '@ulixee/crypto/lib/Identity';
+import DatastorePackager from '@ulixee/datastore-packager';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import DatastorePackager from '@ulixee/datastore-packager';
-import { CloudNode } from '@ulixee/cloud';
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import Identity from '@ulixee/crypto/lib/Identity';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import DatastoreCore from '../index';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.upload.test');
 
@@ -64,7 +63,7 @@ test('should be able upload a datastore', async () => {
 
 test('should be able to restrict uploads', async () => {
   const identity = await Identity.create();
-  DatastoreCore.options.cloudAdminIdentities = [identity.bech32];
+  cloudNode.router.datastoreCore.options.cloudAdminIdentities = [identity.bech32];
 
   await expect(client.upload(dbxFile)).rejects.toThrowError('valid AdminIdentity signature');
   await expect(client.upload(dbxFile, { identity })).resolves.toBeTruthy();
@@ -72,7 +71,7 @@ test('should be able to restrict uploads', async () => {
 
 test('should be able to download dbx files', async () => {
   const identity = await Identity.create();
-  DatastoreCore.options.cloudAdminIdentities = [identity.bech32];
+  cloudNode.router.datastoreCore.options.cloudAdminIdentities = [identity.bech32];
 
   await expect(client.download(manifest.versionHash)).rejects.toThrowError(
     'Admin Identity does not have permissions',

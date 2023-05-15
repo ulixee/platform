@@ -1,16 +1,16 @@
-import { AddressInfo, ListenOptions } from 'net';
-import Log from '@ulixee/commons/lib/Logger';
-import { bindFunctions, isPortInUse } from '@ulixee/commons/lib/utils';
-import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
-import Resolvable from '@ulixee/commons/lib/Resolvable';
-import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
-import * as Path from 'path';
-import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import P2pConnection from '@ulixee/cloud-p2p';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import Log from '@ulixee/commons/lib/Logger';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import { bindFunctions, isPortInUse } from '@ulixee/commons/lib/utils';
+import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
 import * as Http from 'http';
+import { AddressInfo, ListenOptions } from 'net';
+import * as Path from 'path';
+import env from '../env';
 import CoreRouter from './CoreRouter';
 import RoutableServer from './RoutableServer';
-import env from '../env';
 
 const pkg = require('../package.json');
 
@@ -41,6 +41,7 @@ export default class CloudNode {
   }
 
   private isClosing: Promise<any>;
+  private beforeListenCallbacks: (() => Promise<any>)[] = [];
   private isReady = new Resolvable<void>();
   private didAutoroute = false;
 
@@ -67,6 +68,10 @@ export default class CloudNode {
     ShutdownHandler.register(this.autoClose);
   }
 
+  public beforeListen(callbackFn: () => Promise<any>): void {
+    this.beforeListenCallbacks.push(callbackFn);
+  }
+
   public async listen(
     publicServerOptions?: ListenOptions,
     hostedServicesOptions?: ListenOptions,
@@ -83,6 +88,7 @@ export default class CloudNode {
 
     await this.startPeerServices(peerServerOptions);
     await this.router.start(this.publicServer, this.hostedServicesServer, this.peerNetwork);
+    await Promise.all(this.beforeListenCallbacks);
     // wait until router is registered before accepting traffic
     this.isReady.resolve();
   }

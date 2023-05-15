@@ -1,11 +1,11 @@
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import DatastoreCore from '@ulixee/datastore-core';
+import HeroCore from '@ulixee/hero-core';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
 import {
-  INodeRegistryApis,
   INodeRegistryApiTypes,
+  INodeRegistryApis,
 } from '@ulixee/platform-specification/services/NodeRegistryApis';
-import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import HeroCore from '@ulixee/hero-core';
-import DatastoreCore from '@ulixee/datastore-core';
 
 const MINUTE = 60e3;
 export default class NodeRegistryServiceClient {
@@ -21,13 +21,17 @@ export default class NodeRegistryServiceClient {
     return this.statsBuckets[this.statsBuckets.length - 1];
   }
 
-  constructor(hostAddress: URL, private getConnections: () => { clients: number; peers: number }) {
+  constructor(
+    hostAddress: URL,
+    datastoreCore: DatastoreCore,
+    private getConnections: () => { clients: number; peers: number },
+  ) {
     this.hostAddress = new URL('/services', hostAddress);
     this.client = new ConnectionToCore(new WsTransportToCore(this.hostAddress.href));
     this.heartbeatInternal = setInterval(this.heartbeat.bind(this), 5 * MINUTE);
     this.eventSubscriber.on(HeroCore.pool, 'agent-created', () => (this.stats.sessions += 1));
-    this.eventSubscriber.on(DatastoreCore.events, 'connection', () => (this.stats.clients += 1));
-    this.eventSubscriber.on(DatastoreCore.events, 'query', () => (this.stats.queries += 1));
+    this.eventSubscriber.on(datastoreCore, 'connection', () => (this.stats.clients += 1));
+    this.eventSubscriber.on(datastoreCore, 'query', () => (this.stats.queries += 1));
     this.statsBuckets.push({ sessions: 0, queries: 0, clients: 0, startDate: new Date() });
   }
 

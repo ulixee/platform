@@ -1,13 +1,12 @@
+import { CloudNode } from '@ulixee/cloud';
+import UlixeeConfig from '@ulixee/commons/config';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import DatastorePackager from '@ulixee/datastore-packager';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import * as Fs from 'fs';
 import { mkdirSync, rmSync } from 'fs';
 import * as Path from 'path';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { CloudNode } from '@ulixee/cloud';
-import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import DatastorePackager from '@ulixee/datastore-packager';
-import UlixeeConfig from '@ulixee/commons/config';
 import DatastoreManifest from '../lib/DatastoreManifest';
-import DatastoreCore from '../index';
 
 jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
 // @ts-expect-error
@@ -31,8 +30,7 @@ beforeAll(async () => {
   await Fs.promises
     .rm(`${__dirname}/datastores/migrator.dbx`, { recursive: true })
     .catch(() => null);
-  DatastoreCore.options.datastoresTmpDir = tmpDir;
-  DatastoreCore.options.datastoresDir = storageDir;
+
   cloudNode = new CloudNode();
   cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
@@ -82,7 +80,7 @@ export default new Datastore({
   await client.upload(await packager.dbx.tarGzip());
 
   // @ts-expect-error
-  const datastoresDb = DatastoreCore.datastoreRegistry.diskStore.datastoresDb;
+  const datastoresDb = cloudNode.router.datastoreCore.datastoreRegistry.diskStore.datastoresDb;
 
   await expect(
     client.stream(packager.manifest.versionHash, 'migrator', { success: false }),

@@ -1,17 +1,16 @@
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
+import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
+import { bindFunctions } from '@ulixee/commons/lib/utils';
 import {
   IHeroSessionsListResult,
   IHeroSessionsSearchResult,
 } from '@ulixee/desktop-interfaces/apis/IHeroSessionsApi';
 import { Session as HeroSession } from '@ulixee/hero-core';
-import * as Fs from 'fs';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import CommandFormatter from '@ulixee/hero-core/lib/CommandFormatter';
-import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
+import * as Fs from 'fs';
 import FuseJs from 'fuse.js';
-import { bindFunctions } from '@ulixee/commons/lib/utils';
-import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
-import DatastoreCore from '@ulixee/datastore-core';
 import * as Path from 'path';
 import OutputRebuilder from './OutputRebuilder';
 
@@ -41,7 +40,7 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
   private hasLoaded = false;
   private events = new EventSubscriber();
 
-  constructor() {
+  constructor(private queryHeroSessionsDir: string) {
     super();
     bindFunctions(this);
   }
@@ -90,12 +89,12 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
         this.sessions.push(session);
       }
     }
-    if (Fs.existsSync(DatastoreCore.queryHeroSessionsDir)) {
-      for (const dbName of Fs.readdirSync(DatastoreCore.queryHeroSessionsDir)) {
+    if (Fs.existsSync(this.queryHeroSessionsDir)) {
+      for (const dbName of Fs.readdirSync(this.queryHeroSessionsDir)) {
         if (!dbName.endsWith('.db')) continue;
         const session = this.processSession(
           dbName.replace('.db', ''),
-          Path.join(DatastoreCore.queryHeroSessionsDir, dbName),
+          Path.join(this.queryHeroSessionsDir, dbName),
         );
 
         this.sessions.push(session);

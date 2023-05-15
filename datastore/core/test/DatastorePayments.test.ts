@@ -1,28 +1,26 @@
-import * as Fs from 'fs';
-import * as Path from 'path';
-import DatastorePackager from '@ulixee/datastore-packager';
 import { CloudNode } from '@ulixee/cloud';
-import Identity from '@ulixee/crypto/lib/Identity';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
-import MicronoteBatchFunding from '@ulixee/sidechain/lib/MicronoteBatchFunding';
-import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
-import SidechainClient from '@ulixee/sidechain';
+import Address from '@ulixee/crypto/lib/Address';
+import Identity from '@ulixee/crypto/lib/Identity';
+import DatastorePackager from '@ulixee/datastore-packager';
+import cloneDatastore from '@ulixee/datastore/cli/cloneDatastore';
+import CreditsStore from '@ulixee/datastore/lib/CreditsStore';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import ICoreRequestPayload from '@ulixee/net/interfaces/ICoreRequestPayload';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import SidechainClient from '@ulixee/sidechain';
+import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
+import MicronoteBatchFunding from '@ulixee/sidechain/lib/MicronoteBatchFunding';
+import { IBlockSettings } from '@ulixee/specification';
 import { ISidechainApis } from '@ulixee/specification/sidechain';
 import IMicronoteApis from '@ulixee/specification/sidechain/MicronoteApis';
-import Address from '@ulixee/crypto/lib/Address';
 import IMicronoteBatchApis from '@ulixee/specification/sidechain/MicronoteBatchApis';
-import { IBlockSettings } from '@ulixee/specification';
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import ISidechainInfoApis from '@ulixee/specification/sidechain/SidechainInfoApis';
-import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import CreditsStore from '@ulixee/datastore/lib/CreditsStore';
-import cloneDatastore from '@ulixee/datastore/cli/cloneDatastore';
+import * as Fs from 'fs';
+import * as Path from 'path';
 import moment = require('moment');
-import DatastoreCore from '../index';
-import DatastoreVm from '../lib/DatastoreVm';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastorePayments.test');
 
@@ -37,12 +35,6 @@ const batchSlug = 'ABCDEF12345125';
 const address = Address.createFromSigningIdentities([clientIdentity]);
 
 const apiCalls = jest.fn();
-DatastoreCore.options.identityWithSidechain = Identity.createSync();
-DatastoreCore.options.defaultSidechainHost = 'http://localhost:1337';
-DatastoreCore.options.defaultSidechainRootIdentity = sidechainIdentity.bech32;
-DatastoreCore.options.approvedSidechains = [
-  { rootIdentity: sidechainIdentity.bech32, url: 'http://localhost:1337' },
-];
 CreditsStore.storePath = Path.join(storageDir, `credits.json`);
 jest.spyOn<any, any>(CreditsStore, 'writeToDisk').mockImplementation(() => null);
 jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
@@ -80,6 +72,10 @@ beforeAll(async () => {
   cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
+    identityWithSidechain: Identity.createSync(),
+    defaultSidechainHost: 'http://localhost:1337',
+    defaultSidechainRootIdentity: sidechainIdentity.bech32,
+    approvedSidechains: [{ rootIdentity: sidechainIdentity.bech32, url: 'http://localhost:1337' }],
   };
   await cloudNode.listen();
   client = new DatastoreApiClient(await cloudNode.address, { consoleLogErrors: true });
@@ -167,7 +163,7 @@ test('should be able to run a datastore function with payments', async () => {
     'Micronote.settle',
   ]);
   // @ts-ignore
-  const statsTracker = DatastoreCore.statsTracker;
+  const statsTracker = cloudNode.router.datastoreCore.statsTracker;
   const entry = await statsTracker.getForDatastore(manifest);
   expect(entry.stats.queries).toBe(3);
   expect(entry.stats.errors).toBe(2);
@@ -331,7 +327,7 @@ test('should be able to embed Credits in a Datastore', async () => {
   }
 
   // @ts-expect-error
-  expect(DatastoreCore.vm.apiClientCache.apiClientCacheByUrl).toEqual({
+  expect(cloudNode.router.datastoreCore.vm.apiClientCache.apiClientCacheByUrl).toEqual({
     [`ulx://${await cloudNode.address}`]: expect.any(DatastoreApiClient),
   });
 }, 60e3);

@@ -1,25 +1,24 @@
-import * as Fs from 'fs';
-import * as Path from 'path';
-import DatastorePackager from '@ulixee/datastore-packager';
 import { CloudNode } from '@ulixee/cloud';
-import Identity from '@ulixee/crypto/lib/Identity';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { Helpers } from '@ulixee/datastore-testing';
+import UlixeeConfig from '@ulixee/commons/config';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
-import MicronoteBatchFunding from '@ulixee/sidechain/lib/MicronoteBatchFunding';
-import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
-import SidechainClient from '@ulixee/sidechain';
+import Address from '@ulixee/crypto/lib/Address';
+import Identity from '@ulixee/crypto/lib/Identity';
+import DatastorePackager from '@ulixee/datastore-packager';
+import { Helpers } from '@ulixee/datastore-testing';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import ICoreRequestPayload from '@ulixee/net/interfaces/ICoreRequestPayload';
+import SidechainClient from '@ulixee/sidechain';
+import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
+import MicronoteBatchFunding from '@ulixee/sidechain/lib/MicronoteBatchFunding';
+import { IBlockSettings } from '@ulixee/specification';
 import { ISidechainApis } from '@ulixee/specification/sidechain';
 import IMicronoteApis from '@ulixee/specification/sidechain/MicronoteApis';
-import { IBlockSettings } from '@ulixee/specification';
 import ISidechainInfoApis from '@ulixee/specification/sidechain/SidechainInfoApis';
-import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import Address from '@ulixee/crypto/lib/Address';
-import UlixeeConfig from '@ulixee/commons/config';
+import * as Fs from 'fs';
 import { customAlphabet } from 'nanoid';
-import DatastoreCore from '../index';
+import * as Path from 'path';
 import DatastoreManifest from '../lib/DatastoreManifest';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughExtractors.test');
@@ -31,12 +30,6 @@ const batchIdentity = Identity.createSync();
 const batchSlug = customAlphabet('0123456789ABCDEF', 14)();
 
 const apiCalls = jest.fn();
-DatastoreCore.options.identityWithSidechain = Identity.createSync();
-DatastoreCore.options.defaultSidechainHost = 'http://localhost:1337';
-DatastoreCore.options.defaultSidechainRootIdentity = sidechainIdentity.bech32;
-DatastoreCore.options.approvedSidechains = [
-  { rootIdentity: sidechainIdentity.bech32, url: 'http://localhost:1337' },
-];
 
 // @ts-expect-error
 const write = DatastoreManifest.writeToDisk;
@@ -91,6 +84,10 @@ beforeAll(async () => {
   cloudNode.router.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
+    identityWithSidechain: Identity.createSync(),
+    defaultSidechainHost: 'http://localhost:1337',
+    defaultSidechainRootIdentity: sidechainIdentity.bech32,
+    approvedSidechains: [{ rootIdentity: sidechainIdentity.bech32, url: 'http://localhost:1337' }],
   };
   await cloudNode.listen();
   client = new DatastoreApiClient(await cloudNode.address);
@@ -229,7 +226,9 @@ export default new Datastore({
 });`,
   );
 
-  const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughExtractorUpcharge.js`);
+  const passthrough = new DatastorePackager(
+    `${__dirname}/datastores/passthroughExtractorUpcharge.js`,
+  );
   await passthrough.build();
   await client.upload(await passthrough.dbx.tarGzip());
 

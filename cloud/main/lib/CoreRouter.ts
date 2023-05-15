@@ -1,39 +1,41 @@
 import WebSocket = require('ws');
-import * as http from 'http';
-import { IncomingMessage, ServerResponse } from 'http';
-import DatastoreCore from '@ulixee/datastore-core';
-import { toUrl } from '@ulixee/commons/lib/utils';
-import HeroCore from '@ulixee/hero-core';
-import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
-import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
-import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
-import Resolvable from '@ulixee/commons/lib/Resolvable';
-import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
-import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
 import Logger from '@ulixee/commons/lib/Logger';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import { toUrl } from '@ulixee/commons/lib/utils';
+import DatastoreCore from '@ulixee/datastore-core';
+import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
+import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
+import type DesktopCore from '@ulixee/desktop-core';
+import HeroCore from '@ulixee/hero-core';
+import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
+import { ConnectionToClient, ConnectionToCore } from '@ulixee/net';
+import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
+import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
-import { ConnectionToClient, ConnectionToCore } from '@ulixee/net';
-import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
-import * as https from 'https';
-import IServicesSetup from '@ulixee/platform-specification/types/IServicesSetup';
+import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
 import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
+import IServicesSetup from '@ulixee/platform-specification/types/IServicesSetup';
+import * as http from 'http';
+import { IncomingMessage, ServerResponse } from 'http';
+import * as https from 'https';
 import CloudStatus from '../endpoints/Cloud.status';
+import HostedServicesEndpoints from '../endpoints/HostedServicesEndpoints';
+import env from '../env';
 import ICloudApiContext, { ICloudConfiguration } from '../interfaces/ICloudApiContext';
 import CloudNode from './CloudNode';
 import DesktopUtils from './DesktopUtils';
-import env from '../env';
-import RoutableServer, { IHttpHandleFn } from './RoutableServer';
 import NodeRegistry from './NodeRegistry';
-import HostedServicesEndpoints from '../endpoints/HostedServicesEndpoints';
 import NodeTracker from './NodeTracker';
+import RoutableServer, { IHttpHandleFn } from './RoutableServer';
 
 const { log } = Logger(module);
 
 export default class CoreRouter {
   public static datastorePluginsToRegister = [
-    '@ulixee/datastore-plugins-hero-core/register',
-    '@ulixee/datastore-plugins-puppeteer-core/register',
+    '@ulixee/datastore-plugins-hero-core',
+    '@ulixee/datastore-plugins-puppeteer-core',
   ];
 
   public heroConfiguration: ICoreConfigureOptions;
@@ -45,6 +47,9 @@ export default class CoreRouter {
     servicesSetupHost: env.servicesSetupHost,
   };
 
+  public datastoreCore: DatastoreCore;
+  public desktopCore?: DesktopCore;
+
   public peerNetwork?: IPeerNetwork;
 
   public get dataDir(): string {
@@ -52,7 +57,7 @@ export default class CoreRouter {
   }
 
   public get datastoresDir(): string {
-    return DatastoreCore.datastoresDir;
+    return this.datastoreCore.datastoresDir;
   }
 
   private nodeAddress: URL;
@@ -68,7 +73,7 @@ export default class CoreRouter {
 
   private wsConnectionByType = {
     hero: transport => HeroCore.addConnection(transport),
-    datastore: transport => DatastoreCore.addConnection(transport) as any,
+    datastore: transport => this.datastoreCore.addConnection(transport) as any,
     services: transport => this.addHostedServicesConnection(transport),
     cloud: transport => this.cloudApiRegistry.createConnection(transport, this.getApiContext()),
   } as const;
@@ -102,17 +107,6 @@ export default class CoreRouter {
       'GET',
       this.handleHttpServerDetails.bind(this),
     );
-    DatastoreCore.registerHttpRoutes(this.addHttpRoute.bind(this, cloudNode));
-    // last option
-    cloudNode.publicServer.addHttpRoute('/', 'GET', this.handleHome.bind(this));
-
-    for (const module of CoreRouter.datastorePluginsToRegister) {
-      safeRegisterModule(module);
-    }
-
-    if (DesktopUtils.isInstalled()) {
-      DesktopUtils.getDesktop().registerWsRoutes(this.addWsRoute.bind(this, cloudNode));
-    }
   }
 
   public async start(
@@ -129,6 +123,11 @@ export default class CoreRouter {
       sessionId: null,
     });
     try {
+      this.datastoreCore = new DatastoreCore(
+        this.datastoreConfiguration,
+        this.getInstalledDatastorePlugins(),
+      );
+
       this.nodeAddress = toUrl(cloudNodeAddress);
       this.hostedServicesAddress = toUrl(hostedServicesAddress);
       this.hostedServicesEndpoints = !this.hostedServicesAddress
@@ -137,6 +136,7 @@ export default class CoreRouter {
       this.peerNetwork = peerNetwork;
       this.nodeTracker = new NodeTracker();
       this.nodeRegistry = new NodeRegistry({
+        datastoreCore: this.datastoreCore,
         publicServer: publicApiServer,
         serviceHost: this.hostedServicesAddress,
         peerNetwork: this.peerNetwork,
@@ -156,11 +156,8 @@ export default class CoreRouter {
       }
 
       /// START DATASTORE
-      if (this.datastoreConfiguration) {
-        Object.assign(DatastoreCore.options, this.datastoreConfiguration);
-      }
-
-      await DatastoreCore.start({
+      this.datastoreCore.registerHttpRoutes(this.addHttpRoute.bind(this));
+      await this.datastoreCore.start({
         nodeAddress: this.nodeAddress,
         hostedServicesAddress: this.hostedServicesAddress,
         defaultServices: servicesSetup,
@@ -170,15 +167,17 @@ export default class CoreRouter {
 
       /// START DESKTOP
       if (DesktopUtils.isInstalled()) {
-        const desktopCore = DesktopUtils.getDesktop();
-        const wsAddress = Promise.resolve(this.nodeAddress.origin);
-
+        const DesktopCore = DesktopUtils.getDesktop();
         const bridge = new TransportBridge();
         this.cloudApiRegistry.createConnection(bridge.transportToClient);
         const loopbackConnection = new ConnectionToCore(bridge.transportToCore);
-        desktopCore.setLocalCloudAddress(wsAddress, loopbackConnection);
-        await desktopCore.activatePlugin();
+
+        this.desktopCore = new DesktopCore(this.datastoreCore, loopbackConnection);
+        this.desktopCore.registerWsRoutes(this.addWsRoute.bind(this));
+        await this.desktopCore.activatePlugin();
       }
+      // last option
+      this.cloudNode.publicServer.addHttpRoute('/', 'GET', this.handleHome.bind(this));
     } finally {
       log.stats('CloudNode.started', {
         parentLogId: startLogId,
@@ -197,12 +196,10 @@ export default class CoreRouter {
       for (const connection of this.connections) {
         await connection.disconnect();
       }
-      if (DesktopUtils.isInstalled()) {
-        const desktopCore = DesktopUtils.getDesktop();
-        desktopCore.setLocalCloudAddress(null, null);
-        // Don't shutdown, since we didn't start it
-      }
-      await DatastoreCore.close();
+      await this.nodeRegistry?.close();
+      this.desktopCore?.disconnect();
+      await this.datastoreCore.close();
+      this.cloudNode = null;
       await HeroCore.shutdown();
       await ShutdownHandler.run();
       closeResolvable.resolve();
@@ -215,13 +212,12 @@ export default class CoreRouter {
   private async addHostedServicesConnection(
     transport: ITransportToClient<any>,
   ): Promise<ConnectionToClient<any, any>> {
-    const connection = await DatastoreCore.addHostedServicesConnection(transport);
+    const connection = await this.datastoreCore.addHostedServicesConnection(transport);
     this.hostedServicesEndpoints?.attachToConnection(connection as any, this.getApiContext());
     return connection as any;
   }
 
   private addHttpRoute(
-    cloudNode: CloudNode,
     route: string | RegExp,
     method: 'GET' | 'OPTIONS' | 'POST' | 'UPDATE' | 'DELETE',
     callbackFn: IHttpHandleFn,
@@ -232,7 +228,6 @@ export default class CoreRouter {
   }
 
   private addWsRoute(
-    cloudNode: CloudNode,
     route: string | RegExp,
     callbackFn: (
       wsOrTransport: ITransportToClient<any> | WebSocket,
@@ -256,6 +251,7 @@ export default class CoreRouter {
       nodeRegistry: this.nodeRegistry,
       nodeTracker: this.nodeTracker,
       cloudConfiguration: this.cloudConfiguration,
+      datastoreConfiguration: this.datastoreCore.options,
       version: this.cloudNode.version,
     };
   }
@@ -307,7 +303,8 @@ export default class CoreRouter {
   private handleHostedServicesRoot(_: IncomingMessage, res: ServerResponse): void {
     res.setHeader('Content-Type', 'application/json');
 
-    const { datastoreRegistryHost, storageEngineHost, statsTrackerHost } = DatastoreCore.options;
+    const { datastoreRegistryHost, storageEngineHost, statsTrackerHost } =
+      this.datastoreCore.options;
     const { nodeRegistryHost } = this.cloudConfiguration;
 
     const settings = <IServicesSetup>{
@@ -345,14 +342,20 @@ export default class CoreRouter {
         .end();
     });
   }
-}
 
-function safeRegisterModule(path: string): void {
-  try {
-    // eslint-disable-next-line import/no-dynamic-require
-    require(path);
-  } catch (err) {
-    // NOTE: don't show this by default
-    // console.warn('Default Datastore Plugin not installed', path, err.message);
+  private getInstalledDatastorePlugins(): IExtractorPluginCore[] {
+    return CoreRouter.datastorePluginsToRegister
+      .map(x => {
+        try {
+          let Plugin = require(x); // eslint-disable-line import/no-dynamic-require
+          Plugin = Plugin.default || Plugin;
+          return new Plugin();
+        } catch (err) {
+          // NOTE: don't warning this by default
+          // console.warn('Default Datastore Plugin not installed', path, err.message);
+        }
+        return null;
+      })
+      .filter(Boolean);
   }
 }

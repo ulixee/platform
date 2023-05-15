@@ -1,16 +1,15 @@
-import { Session } from '@ulixee/hero-core';
-import { bindFunctions } from '@ulixee/commons/lib/utils';
-import SourceLoader from '@ulixee/commons/lib/SourceLoader';
-import ICommandMeta from '@ulixee/hero-interfaces/ICommandMeta';
-import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import SourceLoader from '@ulixee/commons/lib/SourceLoader';
+import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import { bindFunctions } from '@ulixee/commons/lib/utils';
 import ICommandUpdatedEvent from '@ulixee/desktop-interfaces/events/ICommandUpdatedEvent';
 import ISourceCodeUpdatedEvent from '@ulixee/desktop-interfaces/events/ISourceCodeUpdatedEvent';
+import { Session } from '@ulixee/hero-core';
 import CommandFormatter from '@ulixee/hero-core/lib/CommandFormatter';
+import ICommandMeta from '@ulixee/hero-interfaces/ICommandMeta';
 import * as Path from 'path';
-import DatastoreCore from '@ulixee/datastore-core';
 
 export default class SourceCodeTimeline extends TypedEventEmitter<{
   source: ISourceCodeUpdatedEvent;
@@ -20,11 +19,11 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
   private events = new EventSubscriber();
   private commandsById: { [id: number]: ICommandUpdatedEvent } = {};
 
-  constructor(readonly entrypoint: string) {
+  constructor(readonly entrypoint: string, datastoresDir: string) {
     super();
     bindFunctions(this);
 
-    if (this.entrypoint.includes(DatastoreCore.datastoresDir)) {
+    if (this.entrypoint.includes(datastoresDir)) {
       SourceMapSupport.retrieveSourceMap(this.entrypoint, Path.dirname(this.entrypoint));
     }
     const sourceLookup = SourceMapSupport.getSourceFile(this.entrypoint);

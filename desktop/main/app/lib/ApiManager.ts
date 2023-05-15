@@ -1,25 +1,23 @@
-import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
-import { IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
-import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import { screen } from 'electron';
-import { ClientOptions } from 'ws';
-import * as http from 'http';
 import { CloudNode } from '@ulixee/cloud';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
-import QueryLog from '@ulixee/datastore/lib/QueryLog';
-import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
-import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
-import * as Path from 'path';
-import DatastoreCore from '@ulixee/datastore-core';
-import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
-import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
-import { AddressInfo } from 'net';
-import DesktopCore from '@ulixee/desktop-core';
-import WebSocket = require('ws');
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { toUrl } from '@ulixee/commons/lib/utils';
+import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
+import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
+import QueryLog from '@ulixee/datastore/lib/QueryLog';
+import { IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
+import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
+import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
+import { screen } from 'electron';
+import * as http from 'http';
+import { AddressInfo } from 'net';
+import * as Path from 'path';
+import { ClientOptions } from 'ws';
+import WebSocket = require('ws');
 import ApiClient from './ApiClient';
 import ArgonFile, { IArgonFile } from './ArgonFile';
 import DeploymentWatcher from './DeploymentWatcher';
@@ -114,7 +112,7 @@ export default class ApiManager<
     if (this.exited) return;
     this.exited = true;
 
-    await DesktopCore.shutdown();
+    await this.localCloud.router.desktopCore.shutdown();
     this.privateDesktopWsServer.close();
     await this.privateDesktopApiHandler.close();
     this.events.close('error');
@@ -144,11 +142,14 @@ export default class ApiManager<
     let adminIdentity: string;
     if (!localCloudAddress) {
       adminIdentity = this.localUserProfile.defaultAdminIdentity.bech32;
-      await DatastoreCore.installCompressedDbx(bundledDatastoreExample);
       this.localCloud ??= new CloudNode('localhost', { shouldShutdownOnSignals: false });
-      this.localCloud.router.datastoreConfiguration ??= {};
-      this.localCloud.router.datastoreConfiguration.cloudAdminIdentities ??= [];
-      this.localCloud.router.datastoreConfiguration.cloudAdminIdentities.push(adminIdentity);
+      this.localCloud.router.datastoreConfiguration = {
+        cloudAdminIdentities: [adminIdentity],
+      };
+      const router = this.localCloud.router;
+      this.localCloud.beforeListen(() =>
+        router.datastoreCore.installCompressedDbx(bundledDatastoreExample),
+      );
       await this.localCloud.listen();
       localCloudAddress = await this.localCloud.address;
     }

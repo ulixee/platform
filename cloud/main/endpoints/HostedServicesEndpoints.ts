@@ -1,13 +1,12 @@
-import { DatastoreRegistryApiSchemas } from '@ulixee/platform-specification/services/DatastoreRegistryApis';
+import { IAsyncFunc } from '@ulixee/net/interfaces/IApiHandlers';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
-import { StatsTrackerApiSchemas } from '@ulixee/platform-specification/services/StatsTrackerApis';
+import { DatastoreRegistryApiSchemas } from '@ulixee/platform-specification/services/DatastoreRegistryApis';
 import { INodeRegistryApis } from '@ulixee/platform-specification/services/NodeRegistryApis';
 import { IServicesSetupApis } from '@ulixee/platform-specification/services/SetupApis';
-import { IAsyncFunc } from '@ulixee/net/interfaces/IApiHandlers';
+import { StatsTrackerApiSchemas } from '@ulixee/platform-specification/services/StatsTrackerApis';
 import { IZodApiTypes } from '@ulixee/specification/utils/IZodApi';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
-import DatastoreCore from '@ulixee/datastore-core';
 import ICloudApiContext from '../interfaces/ICloudApiContext';
 
 export type TServicesApis = IServicesSetupApis & INodeRegistryApis;
@@ -23,7 +22,7 @@ export default class HostedServicesEndpoints {
     this.handlersByCommand = {
       'Services.getSetup': async (_, ctx: ICloudApiContext) => {
         const { datastoreRegistryHost, storageEngineHost, statsTrackerHost } =
-          DatastoreCore.options;
+          ctx.datastoreConfiguration;
         const { nodeRegistryHost } = ctx.cloudConfiguration;
 
         return Promise.resolve({

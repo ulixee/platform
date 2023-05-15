@@ -1,11 +1,10 @@
 import Datastore, { IExtractorRunOptions } from '@ulixee/datastore';
 import IDatastoreApis from '@ulixee/platform-specification/datastore/DatastoreApis';
+import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
-import DatastoreCore from '../index';
+import { IDatastoreManifestWithRuntime } from '../lib/DatastoreRegistry';
 import PaymentProcessor from '../lib/PaymentProcessor';
 import { validateAuthentication, validateFunctionCoreVersions } from '../lib/datastoreUtils';
-import { IDatastoreManifestWithRuntime } from '../lib/DatastoreRegistry';
-import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 
 export default new DatastoreApiHandler('Datastore.stream', {
   async handler(request, context) {
@@ -129,6 +128,7 @@ async function extractFunctionOutputs(
   context: IDatastoreApiContext,
   heroSessionIds: string[],
 ): Promise<any[]> {
+  const { pluginCoresByName } = context;
   validateFunctionCoreVersions(manifestWithRuntime, request.name, context);
   const options: IExtractorRunOptions<any> = {
     input: request.input,
@@ -143,7 +143,7 @@ async function extractFunctionOutputs(
   };
   return await context.workTracker.trackRun(
     (async () => {
-      for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
+      for (const plugin of Object.values(pluginCoresByName)) {
         if (plugin.beforeRunExtractor) {
           await plugin.beforeRunExtractor(options, {
             scriptEntrypoint: manifestWithRuntime.runtimePath,

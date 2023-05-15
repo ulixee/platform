@@ -1,13 +1,13 @@
-import * as Fs from 'fs';
-import * as Path from 'path';
-import Axios from 'axios';
-import DatastorePackager from '@ulixee/datastore-packager';
 import { CloudNode } from '@ulixee/cloud';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import * as Hostile from 'hostile';
 import Identity from '@ulixee/crypto/lib/Identity';
+import DatastorePackager from '@ulixee/datastore-packager';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import Axios from 'axios';
+import * as Fs from 'fs';
+import * as Hostile from 'hostile';
+import * as Path from 'path';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.docpage.test');
 

@@ -1,8 +1,8 @@
-import { mkdirSync, rmSync } from 'fs';
-import * as Path from 'path';
+import { CloudNode } from '@ulixee/cloud';
 import Packager from '@ulixee/datastore-packager';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { CloudNode } from '@ulixee/cloud';
+import { mkdirSync, rmSync } from 'fs';
+import * as Path from 'path';
 import moment = require('moment');
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreVm.test');
@@ -57,4 +57,3 @@ test('can get the stack trace of a compiled datastore', async () => {
     expect(error.stack).toContain(`at multiply (${expectedPath}:15:25)`);
   }
 }, 45e3);
-

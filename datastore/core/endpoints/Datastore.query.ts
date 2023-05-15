@@ -1,5 +1,4 @@
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
-import DatastoreCore from '../index';
 import PaymentProcessor from '../lib/PaymentProcessor';
 import { validateAuthentication, validateFunctionCoreVersions } from '../lib/datastoreUtils';
 
@@ -7,6 +6,7 @@ export default new DatastoreApiHandler('Datastore.query', {
   async handler(request, context) {
     request.boundValues ??= [];
     const { id: queryId, affiliateId, payment, authentication, versionHash } = request;
+    const { pluginCoresByName } = context;
 
     const startTime = Date.now();
     const manifestWithRuntime = await context.datastoreRegistry.getByVersionHash(versionHash);
@@ -65,7 +65,7 @@ export default new DatastoreApiHandler('Datastore.query', {
                 if (!heroSessionIds.includes(metaValue)) heroSessionIds.push(metaValue);
               }
             };
-            for (const plugin of Object.values(DatastoreCore.pluginCoresByName)) {
+            for (const plugin of Object.values(pluginCoresByName)) {
               if (plugin.beforeRunExtractor)
                 await plugin.beforeRunExtractor(options, {
                   scriptEntrypoint: manifestWithRuntime.runtimePath,
