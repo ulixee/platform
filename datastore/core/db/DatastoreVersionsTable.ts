@@ -1,6 +1,6 @@
-import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 import SqliteTable from '@ulixee/commons/lib/SqliteTable';
 import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 
 export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersionRecord> {
   private getQuery: Statement<string>;
@@ -21,6 +21,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       ['domain', 'TEXT'],
       ['source', 'TEXT'],
       ['sourceHost', 'TEXT'],
+      ['installAllowedNewLinkedVersionHistory', 'INTEGER'],
       ['adminIdentity', 'TEXT'],
       ['adminSignature', 'BLOB'],
       ['expiresTimestamp', 'DATETIME'],
@@ -28,7 +29,9 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       ['isStarted', 'INTEGER'],
     ]);
     this.getQuery = db.prepare(`select * from ${this.tableName} where versionHash = ? limit 1`);
-    this.allQuery = db.prepare(`select * from ${this.tableName} where dbxPath IS NOT NULL limit ? offset ?`);
+    this.allQuery = db.prepare(
+      `select * from ${this.tableName} where dbxPath IS NOT NULL limit ? offset ?`,
+    );
     this.findWithBaseHashQuery = db.prepare(
       `select * from ${this.tableName} where baseVersionHash = ? order by versionTimestamp desc`,
     );
@@ -68,7 +71,20 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
     }
   }
 
+  public delete(versionHash: string): IDatastoreVersionRecord {
+    const record = this.getByHash(versionHash);
+    this.db
+      .prepare(`delete from ${this.tableName} where versionHash=$versionHash`)
+      .run({ versionHash });
+    delete this.cacheByVersionHash[versionHash];
+    return record;
+  }
+
   public cleanup(versionHash: string): void {
+    const cached = this.cacheByVersionHash[versionHash];
+    cached.dbxPath = null;
+    cached.adminIdentity = null;
+    cached.adminSignature = null;
     // we might want to just delete these records eventually, but need to ensure it isn't the baseVersionHash for other versions
     this.db
       .prepare(
@@ -105,6 +121,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
     domain: string,
     source: IDatastoreVersionRecord['source'],
     sourceHost: string,
+    installAllowedNewLinkedVersionHistory: boolean,
     adminIdentity: string,
     adminSignature: Buffer,
     expiresTimestamp: number,
@@ -123,6 +140,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       domain,
       source,
       sourceHost,
+      installAllowedNewLinkedVersionHistory ? 1 : 0,
       adminIdentity,
       adminSignature,
       expiresTimestamp,
@@ -139,6 +157,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       isStarted,
       source,
       sourceHost,
+      installAllowedNewLinkedVersionHistory,
       adminIdentity,
       adminSignature,
       expiresTimestamp,
@@ -216,6 +235,7 @@ export interface IDatastoreVersionRecord {
   publishedToNetworkTimestamp: number;
   source: 'manual' | 'upload' | 'cluster' | 'network';
   sourceHost: string;
+  installAllowedNewLinkedVersionHistory: boolean;
   adminIdentity: string | undefined;
   adminSignature: Buffer | undefined;
   isStarted: boolean;

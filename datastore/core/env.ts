@@ -1,6 +1,6 @@
-import { addressValidation, identityValidation } from '@ulixee/specification/common';
-import Identity from '@ulixee/crypto/lib/Identity';
 import { loadEnv, parseEnvBool, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
+import Identity from '@ulixee/crypto/lib/Identity';
+import { addressValidation, identityValidation } from '@ulixee/specification/common';
 
 loadEnv(process.cwd());
 loadEnv(__dirname);
@@ -17,8 +17,7 @@ export default {
   enableSqliteWalMode: env.ULX_ENABLE_SQLITE_WAL,
   // list of identities who can upload to this Cloud [@ulixee/crypto/lib/Identity.bech32]
   cloudAdminIdentities: parseIdentities(env.ULX_CLOUD_ADMIN_IDENTITIES, 'Admin Identities'),
-  datastoresMustHaveOwnAdminIdentity:
-    parseEnvBool(env.ULX_DATASTORES_MUST_HAVE_OWN_ADMIN) ?? false,
+  datastoresMustHaveOwnAdminIdentity: parseEnvBool(env.ULX_DATASTORES_MUST_HAVE_OWN_ADMIN) ?? false,
   paymentAddress: parseAddress(env.ULX_PAYMENT_ADDRESS),
   computePricePerQuery: parseEnvInt(env.ULX_PRICE_PER_QUERY),
   approvedSidechains: [],
@@ -30,6 +29,7 @@ export default {
     env.ULX_IDENTITY_PASSPHRASE,
   ),
 
+  enableGlobalConfigs: parseEnvBool(env.ULX_ENABLE_GLOBAL_CONFIG) ?? true,
   statsTrackerHost: env.ULX_DATASTORE_STATS_HOST,
   datastoreRegistryHost: env.ULX_DATASTORE_REGISTRY_HOST,
   storageEngineHost: env.ULX_STORAGE_ENGINE_HOST,

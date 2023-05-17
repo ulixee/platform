@@ -1,27 +1,27 @@
-import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
-import DatastoreApiSchemas, {
-  IDatastoreApis,
-  IDatastoreApiTypes,
-} from '@ulixee/platform-specification/datastore';
-import { sha256 } from '@ulixee/commons/lib/hashUtils';
-import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
-import Identity from '@ulixee/crypto/lib/Identity';
-import ValidationError from '@ulixee/specification/utils/ValidationError';
-import { IPayment } from '@ulixee/platform-specification';
-import { nanoid } from 'nanoid';
-import ICoreEventPayload from '@ulixee/net/interfaces/ICoreEventPayload';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
+import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
+import { toUrl } from '@ulixee/commons/lib/utils';
+import Identity from '@ulixee/crypto/lib/Identity';
+import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
+import ICoreEventPayload from '@ulixee/net/interfaces/ICoreEventPayload';
+import { IPayment } from '@ulixee/platform-specification';
+import DatastoreApiSchemas, {
+  IDatastoreApiTypes,
+  IDatastoreApis,
+} from '@ulixee/platform-specification/datastore';
+import ValidationError from '@ulixee/specification/utils/ValidationError';
 import * as Http from 'http';
 import * as Https from 'https';
-import { toUrl } from '@ulixee/commons/lib/utils';
+import { nanoid } from 'nanoid';
+import IDatastoreDomainResponse from '../interfaces/IDatastoreDomainResponse';
+import IDatastoreEvents from '../interfaces/IDatastoreEvents';
+import IItemInputOutput from '../interfaces/IItemInputOutput';
 import ITypes from '../types';
 import installDatastoreSchema, { addDatastoreAlias } from '../types/installDatastoreSchema';
-import IItemInputOutput from '../interfaces/IItemInputOutput';
-import ResultIterable from './ResultIterable';
-import IDatastoreEvents from '../interfaces/IDatastoreEvents';
 import CreditsTable from './CreditsTable';
-import IDatastoreDomainResponse from '../interfaces/IDatastoreDomainResponse';
 import QueryLog from './QueryLog';
+import ResultIterable from './ResultIterable';
 
 export type IDatastoreExecResult = Omit<IDatastoreApiTypes['Datastore.query']['result'], 'outputs'>;
 export type IDatastoreExecRelayArgs = Pick<
@@ -220,7 +220,7 @@ export default class DatastoreApiClient {
   }
 
   public async upload(
-    compressedDatastore: Buffer,
+    compressedDbx: Buffer,
     options: {
       allowNewLinkedVersionHistory?: boolean;
       timeoutMs?: number;
@@ -238,7 +238,7 @@ export default class DatastoreApiClient {
       const identity = options.identity;
       adminIdentity = identity.bech32;
       const message = DatastoreApiClient.createUploadSignatureMessage(
-        compressedDatastore,
+        compressedDbx,
         allowNewLinkedVersionHistory,
       );
       adminSignature = identity.sign(message);
@@ -249,7 +249,7 @@ export default class DatastoreApiClient {
     const { success } = await this.runApi(
       'Datastore.upload',
       {
-        compressedDatastore,
+        compressedDbx,
         allowNewLinkedVersionHistory,
         adminSignature,
         adminIdentity,
@@ -480,11 +480,11 @@ export default class DatastoreApiClient {
   }
 
   public static createUploadSignatureMessage(
-    compressedDatastore: Buffer,
+    compressedDbx: Buffer,
     allowNewLinkedVersionHistory: boolean,
   ): Buffer {
     return sha256(
-      concatAsBuffer('Datastore.upload', compressedDatastore, String(allowNewLinkedVersionHistory)),
+      concatAsBuffer('Datastore.upload', compressedDbx, String(allowNewLinkedVersionHistory)),
     );
   }
 

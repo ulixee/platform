@@ -1,6 +1,4 @@
 import { CloudNode } from '@ulixee/cloud';
-import UlixeeConfig from '@ulixee/commons/config';
-import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import Address from '@ulixee/crypto/lib/Address';
@@ -19,7 +17,6 @@ import ISidechainInfoApis from '@ulixee/specification/sidechain/SidechainInfoApi
 import * as Fs from 'fs';
 import { customAlphabet } from 'nanoid';
 import * as Path from 'path';
-import DatastoreManifest from '../lib/DatastoreManifest';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughExtractors.test');
 
@@ -31,14 +28,7 @@ const batchSlug = customAlphabet('0123456789ABCDEF', 14)();
 
 const apiCalls = jest.fn();
 
-// @ts-expect-error
-const write = DatastoreManifest.writeToDisk;
-// @ts-expect-error
-jest.spyOn(DatastoreManifest, 'writeToDisk').mockImplementation(async (path, data) => {
-  if (path.includes(UlixeeConfig.global.directoryPath)) return;
-  return write.call(DatastoreManifest, path, data);
-});
-jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
+Helpers.blockGlobalConfigWrites();
 
 const mock = {
   sidechainClient: {

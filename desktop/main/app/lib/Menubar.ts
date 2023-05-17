@@ -1,14 +1,14 @@
 import { app, BrowserWindow, Event, shell, systemPreferences, Tray } from 'electron';
 import log from 'electron-log';
+import { autoUpdater, ProgressInfo, UpdateInfo } from 'electron-updater';
 import { EventEmitter } from 'events';
 import * as Path from 'path';
-import { autoUpdater, ProgressInfo, UpdateInfo } from 'electron-updater';
 import IMenubarOptions from '../interfaces/IMenubarOptions';
-import installDefaultChrome from './util/installDefaultChrome';
-import StaticServer from './StaticServer';
-import { WindowManager } from './WindowManager';
 import ApiManager from './ApiManager';
+import StaticServer from './StaticServer';
+import installDefaultChrome from './util/installDefaultChrome';
 import trayPositioner from './util/trayPositioner';
+import { WindowManager } from './WindowManager';
 
 const { version } = require('../package.json');
 // Forked from https://github.com/maxogden/menubar
@@ -388,7 +388,7 @@ export class Menubar extends EventEmitter {
         }
 
         if (api === 'App.openDataDirectory') {
-          await shell.openPath(this.#apiManager.localCloud.router.datastoresDir);
+          await shell.openPath(this.#apiManager.localCloud.datastoreCore.options.datastoresDir);
         }
 
         if (api === 'App.openHeroSession') {

@@ -49,12 +49,13 @@ export default class DesktopCore {
   }
 
   private events = new EventSubscriber();
-
-  constructor(
-    public datastoreCore: DatastoreCore,
-    private connectionToCloudCore: ConnectionToCore<ICloudApis, {}>,
-  ) {
+  private connectionToCloudCore: ConnectionToCore<ICloudApis, {}>;
+  constructor(public datastoreCore: DatastoreCore) {
     this.heroSessionsSearch = new HeroSessionsSearch(datastoreCore.options.queryHeroSessionsDir);
+  }
+
+  public bindConnection(connectionToCloudCore: ConnectionToCore<ICloudApis, {}>): void {
+    this.connectionToCloudCore = connectionToCloudCore;
   }
 
   public disconnect(): void {

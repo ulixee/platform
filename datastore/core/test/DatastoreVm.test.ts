@@ -13,7 +13,7 @@ let client: DatastoreApiClient;
 beforeAll(async () => {
   mkdirSync(storageDir, { recursive: true });
   cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = { datastoresDir: storageDir, datastoresTmpDir: tmpDir };
+  cloudNode.datastoreConfiguration = { datastoresDir: storageDir, datastoresTmpDir: tmpDir };
   await cloudNode.listen();
   client = new DatastoreApiClient(await cloudNode.address);
 }, 30e3);

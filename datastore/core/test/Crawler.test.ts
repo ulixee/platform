@@ -23,15 +23,13 @@ beforeAll(async () => {
   }
 
   cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
+  cloudNode.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
   await cloudNode.listen();
-  // @ts-expect-error
-  registry = cloudNode.router.datastoreCore.datastoreRegistry;
-  // @ts-expect-error
-  statsTracker = cloudNode.router.datastoreCore.statsTracker;
+  registry = cloudNode.datastoreCore.datastoreRegistry;
+  statsTracker = cloudNode.datastoreCore.statsTracker;
   client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 });

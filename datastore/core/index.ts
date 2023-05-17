@@ -1,6 +1,5 @@
 import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
-import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
@@ -9,7 +8,7 @@ import Ed25519 from '@ulixee/crypto/lib/Ed25519';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
 import IDatastoreEvents from '@ulixee/datastore/interfaces/IDatastoreEvents';
-import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
+import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
@@ -22,6 +21,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import * as Os from 'os';
 import * as Path from 'path';
 import DatastoreAdmin from './endpoints/Datastore.admin';
+import DatastoreCreateStorageEngine from './endpoints/Datastore.createStorageEngine';
 import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
 import DatastoreCreditsIssued from './endpoints/Datastore.creditsIssued';
 import DatastoreDownload from './endpoints/Datastore.download';
@@ -42,7 +42,7 @@ import IDatastoreApiContext from './interfaces/IDatastoreApiContext';
 import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
 import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
 import DatastoreApiClients from './lib/DatastoreApiClients';
-import DatastoreRegistry from './lib/DatastoreRegistry';
+import DatastoreRegistry, { IDatastoreManifestWithRuntime } from './lib/DatastoreRegistry';
 import DatastoreVm from './lib/DatastoreVm';
 import SidechainClientManager from './lib/SidechainClientManager';
 import StatsTracker from './lib/StatsTracker';
@@ -92,18 +92,20 @@ export default class DatastoreCore extends TypedEventEmitter<{
     DatastoreDownload,
     DatastoreUpload,
     DatastoreQueryStorageEngine,
+    DatastoreCreateStorageEngine,
   ]);
 
-  private datastoreRegistry: DatastoreRegistry;
-  private statsTracker: StatsTracker;
-  private storageEngineRegistry: StorageEngineRegistry;
-  private sidechainClientManager: SidechainClientManager;
+  public datastoreRegistry: DatastoreRegistry;
+  public statsTracker: StatsTracker;
+  public storageEngineRegistry: StorageEngineRegistry;
+  public sidechainClientManager: SidechainClientManager;
+  public datastoreApiClients: DatastoreApiClients;
+  public vm: DatastoreVm;
+
   private isStarted = new Resolvable<void>();
   private docPages: DocpageRoutes;
   private cloudNodeAddress: URL;
   private hostedServicesEndpoints: HostedServicesEndpoints;
-  private datastoreApiClients: DatastoreApiClients;
-  private vm: DatastoreVm;
 
   private connectionToThisCore: ConnectionToDatastoreCore;
 
@@ -271,7 +273,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
         parseInClusterHost(this.options.datastoreRegistryHost),
         options.peerNetwork,
         this.options.storageEngineHost,
-        this.storageEngineRegistry.create.bind(this.storageEngineRegistry, this.vm),
+        this.onDatastoreInstalled.bind(this),
       );
       this.docPages = new DocpageRoutes(this.datastoreRegistry, this.cloudNodeAddress, args =>
         DatastoreCreditsBalance.handler(args, this.getApiContext()),
@@ -325,9 +327,9 @@ export default class DatastoreCore extends TypedEventEmitter<{
     if (this.isClosing) return this.isClosing;
     const closingPromise = new Resolvable<void>();
     this.isClosing = closingPromise.promise;
-
-    ShutdownHandler.unregister(this.close);
-
+    const logid = log.stats('DatastoreCore.Closing', {
+      sessionId: null,
+    });
     try {
       await this.workTracker?.stop(this.options.waitForDatastoreCompletionOnShutdown);
 
@@ -342,9 +344,35 @@ export default class DatastoreCore extends TypedEventEmitter<{
       this.connections.clear();
       await this.datastoreRegistry?.close();
       await this.storageEngineRegistry?.close();
+
       await this.datastoreApiClients?.close();
-    } finally {
+
       closingPromise.resolve();
+    } catch (error) {
+      closingPromise.reject(error);
+    } finally {
+      log.stats('DatastoreCore.Closed', { parentLogId: logid, sessionId: null });
+    }
+  }
+
+  private async onDatastoreInstalled(
+    version: IDatastoreManifestWithRuntime,
+    previous?: IDatastoreManifestWithRuntime,
+    options?: {
+      clearExisting?: boolean;
+      isWatching?: boolean;
+    },
+  ): Promise<void> {
+    if (this.storageEngineRegistry.isHostingStorageEngine(version.storageEngineHost)) {
+      await this.storageEngineRegistry.create(this.vm, version, previous, options);
+    } else {
+      const versionDbx = await this.datastoreRegistry.diskStore.getCompressedDbx(
+        version.versionHash,
+      );
+      const previousDbx = await this.datastoreRegistry.diskStore.getCompressedDbx(
+        previous?.versionHash,
+      );
+      await this.storageEngineRegistry.createRemote(version, versionDbx, previousDbx);
     }
   }
 

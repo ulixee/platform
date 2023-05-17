@@ -1,8 +1,8 @@
-import ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import { IDatastoreApis } from '@ulixee/platform-specification/datastore';
 import { IApiSpec } from '@ulixee/net/interfaces/IApiHandlers';
+import ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
 import IUnixTime from '@ulixee/net/interfaces/IUnixTime';
+import { IDatastoreApis } from '@ulixee/platform-specification/datastore';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { ISchemaAny } from '@ulixee/schema';
 import { SqlParser } from '@ulixee/sql-engine';
 import ConnectionFactory from '../connections/ConnectionFactory';
@@ -12,17 +12,17 @@ import IDatastoreComponents, {
   TExtractors,
   TTables,
 } from '../interfaces/IDatastoreComponents';
-import Extractor from './Extractor';
-import Table from './Table';
-import type Crawler from './Crawler';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
-import type PassthroughExtractor from './PassthroughExtractor';
-import PassthroughTable, { IPassthroughQueryRunOptions } from './PassthroughTable';
-import CreditsTable from './CreditsTable';
-import DatastoreApiClient from './DatastoreApiClient';
 import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
 import IStorageEngine, { TQueryCallMeta } from '../interfaces/IStorageEngine';
 import SqliteStorageEngine from '../storage-engines/SqliteStorageEngine';
+import type Crawler from './Crawler';
+import CreditsTable from './CreditsTable';
+import DatastoreApiClient from './DatastoreApiClient';
+import Extractor from './Extractor';
+import type PassthroughExtractor from './PassthroughExtractor';
+import PassthroughTable, { IPassthroughQueryRunOptions } from './PassthroughTable';
+import Table from './Table';
 
 const pkg = require('../package.json');
 
@@ -269,6 +269,7 @@ export default class DatastoreInternal<
       remoteDatastores,
       remoteDatastoreEmbeddedCredits,
       adminIdentities,
+      storageEngineHost,
     } = this.components;
 
     const metadata: IDatastoreMetadata = {
@@ -280,6 +281,7 @@ export default class DatastoreInternal<
       remoteDatastores,
       remoteDatastoreEmbeddedCredits,
       adminIdentities,
+      storageEngineHost,
       coreVersion: pkg.version,
       tablesByName: {},
       extractorsByName: {},

@@ -9,8 +9,7 @@ import { unpackDbx } from '../lib/dbxUtils';
 export default new DatastoreApiHandler('Datastore.upload', {
   async handler(request, context): Promise<{ success: boolean }> {
     const { workTracker, datastoreRegistry, configuration } = context;
-    const { compressedDatastore, allowNewLinkedVersionHistory, adminIdentity, adminSignature } =
-      request;
+    const { compressedDbx, allowNewLinkedVersionHistory, adminIdentity, adminSignature } = request;
     const { datastoresTmpDir, cloudAdminIdentities, datastoresMustHaveOwnAdminIdentity } =
       configuration;
 
@@ -36,7 +35,7 @@ export default new DatastoreApiHandler('Datastore.upload', {
         let success: boolean;
         const tmpDir = await Fs.mkdtemp(`${datastoresTmpDir}/`);
         try {
-          await unpackDbx(compressedDatastore, tmpDir);
+          await unpackDbx(compressedDbx, tmpDir);
           const { didInstall } = await datastoreRegistry.save(
             tmpDir,
             {
@@ -65,7 +64,7 @@ export default new DatastoreApiHandler('Datastore.upload', {
 
 function verifyAdminSignature(request: IDatastoreApiTypes['Datastore.upload']['args']): void {
   const message = DatastoreApiClient.createUploadSignatureMessage(
-    request.compressedDatastore,
+    request.compressedDbx,
     request.allowNewLinkedVersionHistory,
   );
   if (!Identity.verify(request.adminIdentity, message, request.adminSignature)) {

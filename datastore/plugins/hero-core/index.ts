@@ -1,6 +1,6 @@
 import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import { IHeroExtractorRunOptions } from '@ulixee/datastore-plugins-hero';
-import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
+import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 import { ConnectionToHeroCore } from '@ulixee/hero';
 import HeroCore from '@ulixee/hero-core';
 import CallsiteLocator from '@ulixee/hero/lib/CallsiteLocator';

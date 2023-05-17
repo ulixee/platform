@@ -1,14 +1,15 @@
-import * as Path from 'path';
-import Datastore from '@ulixee/datastore/index';
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
-import * as Fs from 'fs';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
-import SqliteStorageEngine from '@ulixee/datastore/storage-engines/SqliteStorageEngine';
-import RemoteStorageEngine from '@ulixee/datastore/storage-engines/RemoteStorageEngine';
 import { toUrl } from '@ulixee/commons/lib/utils';
-import DatastoreVm from './DatastoreVm';
+import Datastore from '@ulixee/datastore/index';
+import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
+import RemoteStorageEngine from '@ulixee/datastore/storage-engines/RemoteStorageEngine';
+import SqliteStorageEngine from '@ulixee/datastore/storage-engines/SqliteStorageEngine';
+import IDatastoreApiTypes from '@ulixee/platform-specification/datastore/DatastoreApis';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import * as Fs from 'fs';
+import * as Path from 'path';
 import { IDatastoreManifestWithRuntime } from './DatastoreRegistry';
+import DatastoreVm from './DatastoreVm';
 
 export default class StorageEngineRegistry {
   public readonly dataDir: string;
@@ -63,6 +64,20 @@ export default class StorageEngineRegistry {
     if (entry instanceof SqliteStorageEngine) {
       await Fs.promises.rm(entry.path).catch(() => null);
     }
+  }
+
+  public async createRemote(
+    manifest: IDatastoreManifest,
+    version: IDatastoreApiTypes['Datastore.upload']['args'],
+    previousVersion: IDatastoreApiTypes['Datastore.upload']['args'],
+  ): Promise<void> {
+    const client = this.get(manifest) as RemoteStorageEngine;
+    if (this.isHostingStorageEngine(manifest.storageEngineHost)) {
+      throw new Error(
+        'This datastore needs to be uploaded to the local storage engine host, not a remote one.',
+      );
+    }
+    await client.createRemote(version, previousVersion);
   }
 
   public async create(

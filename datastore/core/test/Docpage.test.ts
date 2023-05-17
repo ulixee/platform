@@ -29,7 +29,7 @@ beforeAll(async () => {
   dbxFile = await packager.dbx.tarGzip();
   manifest = packager.manifest.toJSON();
   cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
+  cloudNode.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
     cloudAdminIdentities: [adminIdentity.bech32],

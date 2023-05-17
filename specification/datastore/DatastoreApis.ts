@@ -1,19 +1,19 @@
 import { z } from '@ulixee/specification';
-import { IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
 import {
   identityValidation,
   micronoteTokenValidation,
   signatureValidation,
 } from '@ulixee/specification/common';
-import { PaymentSchema } from '../types/IPayment';
+import { IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
+import { DatastoreManifestWithLatest } from '../services/DatastoreRegistryApis';
 import {
   DatastoreCrawlerPricing,
   DatastoreExtractorPricing,
   DatastoreTablePricing,
 } from '../types/IDatastorePricing';
 import { DatastoreStatsSchema } from '../types/IDatastoreStats';
+import { PaymentSchema } from '../types/IPayment';
 import { datastoreVersionHashValidation } from '../types/datastoreVersionHashValidation';
-import { DatastoreManifestWithLatest } from '../services/DatastoreRegistryApis';
 
 const FunctionMetaSchema = z.object({
   description: z.string().optional(),
@@ -28,7 +28,7 @@ const FunctionMetaSchema = z.object({
 export const DatastoreApiSchemas = {
   'Datastore.upload': {
     args: z.object({
-      compressedDatastore: z.instanceof(Buffer).describe('Bytes of a compressed .dbx directory.'),
+      compressedDbx: z.instanceof(Buffer).describe('Bytes of a compressed .dbx directory.'),
       allowNewLinkedVersionHistory: z
         .boolean()
         .describe(
@@ -262,6 +262,49 @@ export const DatastoreApiSchemas = {
           milliseconds: z.number().int().nonnegative(),
         })
         .optional(),
+    }),
+  },
+  'Datastore.createStorageEngine': {
+    args: z.object({
+      version: z.object({
+        compressedDbx: z.instanceof(Buffer).describe('Bytes of a compressed .dbx directory.'),
+        allowNewLinkedVersionHistory: z
+          .boolean()
+          .describe(
+            'Did this upload create a new version history (necessary for signature message)',
+          ),
+        adminIdentity: identityValidation
+          .optional()
+          .describe(
+            'If this server is in production mode, an AdminIdentity approved on the Server or Datastore.',
+          ),
+        adminSignature: signatureValidation
+          .optional()
+          .describe('A signature from an approved AdminIdentity'),
+      }),
+      previousVersion: z
+        .object({
+          compressedDbx: z.instanceof(Buffer).describe('Bytes of a compressed .dbx directory.'),
+          allowNewLinkedVersionHistory: z
+            .boolean()
+            .describe(
+              'Did this upload create a new version history (necessary for signature message)',
+            ),
+          adminIdentity: identityValidation
+            .optional()
+            .describe(
+              'If this server is in production mode, an AdminIdentity approved on the Server or Datastore.',
+            ),
+          adminSignature: signatureValidation
+            .optional()
+            .describe('A signature from an approved AdminIdentity'),
+        })
+        .nullable()
+        .optional(),
+      payment: PaymentSchema.optional(),
+    }),
+    result: z.object({
+      success: z.boolean(),
     }),
   },
   'Datastore.queryStorageEngine': {

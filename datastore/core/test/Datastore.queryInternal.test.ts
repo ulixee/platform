@@ -1,10 +1,10 @@
-import * as Fs from 'fs';
-import * as Path from 'path';
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
+import * as Fs from 'fs';
+import * as Path from 'path';
 import directDatastore from './datastores/direct';
-import directExtractor from './datastores/directExtractor';
+import directExtractorInternal from './datastores/directExtractorInternal';
 import directTable from './datastores/directTable';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.queryInternal.test');
@@ -14,7 +14,7 @@ const storages: IStorageEngine[] = [];
 
 beforeAll(async () => {
   jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
-  for (const dbx of ['directExtractor', 'direct', 'directTable']) {
+  for (const dbx of ['directExtractorInternal', 'direct', 'directTable']) {
     if (Fs.existsSync(`${__dirname}/datastores/${dbx}.dbx`)) {
       await Fs.promises.rm(`${__dirname}/datastores/${dbx}.dbx`, { recursive: true });
     }
@@ -23,7 +23,7 @@ beforeAll(async () => {
   cloudNode = new CloudNode();
   cloudNode.router.datastoreConfiguration = { datastoresDir: storageDir };
   const storage1 = (await directDatastore.bind({})).storageEngine;
-  const storage2 = (await directExtractor.bind({})).storageEngine;
+  const storage2 = (await directExtractorInternal.bind({})).storageEngine;
   const storage3 = (await directTable.bind({})).storageEngine;
   storages.push(storage1, storage2, storage3);
   await cloudNode.listen();
@@ -76,7 +76,7 @@ test('left join table on extractors', async () => {
 }, 30e3);
 
 test('should be able to query function directly', async () => {
-  const data = await directExtractor.queryInternal('SELECT * FROM self(tester => true)');
+  const data = await directExtractorInternal.queryInternal('SELECT * FROM self(tester => true)');
   expect(data).toMatchObject([{ testerEcho: true }]);
 }, 30e3);
 

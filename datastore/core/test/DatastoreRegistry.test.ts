@@ -1,16 +1,16 @@
+import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import * as HashUtils from '@ulixee/commons/lib/hashUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
+import Identity from '@ulixee/crypto/lib/Identity';
+import { Helpers } from '@ulixee/datastore-testing';
 import IDatastoreManifest, {
   IVersionHistoryEntry,
 } from '@ulixee/platform-specification/types/IDatastoreManifest';
-import { existsSync, mkdirSync, promises as Fs, readFileSync, rmSync } from 'fs';
-import { Helpers } from '@ulixee/datastore-testing';
+import { promises as Fs, existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import * as Path from 'path';
-import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
-import Identity from '@ulixee/crypto/lib/Identity';
+import DatastoreManifest from '../lib/DatastoreManifest';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
 import { DatastoreNotFoundError } from '../lib/errors';
-import DatastoreManifest from '../lib/DatastoreManifest';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreRegistry.test');
 
@@ -268,6 +268,7 @@ test('should provide a newer version hash if old script not available', async ()
     null,
     'manual',
     '',
+    false,
     null,
     null,
     null,

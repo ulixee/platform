@@ -1,6 +1,6 @@
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import Log from '@ulixee/commons/lib/Logger';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
-import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { WsTransportToCore } from '@ulixee/net';
 import ConnectionToDatastoreCore from './ConnectionToDatastoreCore';
 
@@ -52,7 +52,9 @@ npx @ulixee/cloud start
     };
 
     connection.connect(true).then(onError).catch(onError);
-    ShutdownHandler.register(() => connection.disconnect());
+    const closeFn = (): Promise<any> => connection.disconnect();
+    ShutdownHandler.register(closeFn);
+    connection.once('disconnected', () => ShutdownHandler.unregister(closeFn));
 
     return connection;
   }

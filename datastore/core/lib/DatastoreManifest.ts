@@ -1,19 +1,20 @@
+import UlixeeConfig from '@ulixee/commons/config';
+import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
+import { findProjectPathAsync, getDataDirectory } from '@ulixee/commons/lib/dirUtils';
+import { existsAsync, readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import * as HashUtils from '@ulixee/commons/lib/hashUtils';
+import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
+import { assert } from '@ulixee/commons/lib/utils';
+import IDatastoreMetadata from '@ulixee/datastore/interfaces/IDatastoreMetadata';
 import IDatastoreManifest, {
   DatastoreManifestSchema,
   IVersionHistoryEntry,
 } from '@ulixee/platform-specification/types/IDatastoreManifest';
-import { existsAsync, readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
-import * as Path from 'path';
-import UlixeeConfig from '@ulixee/commons/config';
-import { findProjectPathAsync, getDataDirectory } from '@ulixee/commons/lib/dirUtils';
-import { assert } from '@ulixee/commons/lib/utils';
-import { promises as Fs } from 'fs';
-import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
-import ValidationError from '@ulixee/specification/utils/ValidationError';
-import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
-import IDatastoreMetadata from '@ulixee/datastore/interfaces/IDatastoreMetadata';
 import { datastoreVersionHashValidation } from '@ulixee/platform-specification/types/datastoreVersionHashValidation';
+import ValidationError from '@ulixee/specification/utils/ValidationError';
+import { promises as Fs } from 'fs';
+import * as Path from 'path';
+import env from '../env';
 
 type IDatastoreSources = [
   global: DatastoreManifest,
@@ -92,7 +93,13 @@ export default class DatastoreManifest implements IDatastoreManifest {
     tablesByName: IDatastoreManifest['tablesByName'],
     metadata: Pick<
       IDatastoreMetadata,
-      'coreVersion' | 'paymentAddress' | 'adminIdentities' | 'domain' | 'name' | 'description' | 'storageEngineHost'
+      | 'coreVersion'
+      | 'paymentAddress'
+      | 'adminIdentities'
+      | 'domain'
+      | 'name'
+      | 'description'
+      | 'storageEngineHost'
     >,
     logger?: (message: string, ...args: any[]) => any,
     createTemporaryVersionHash = false,
@@ -108,18 +115,29 @@ export default class DatastoreManifest implements IDatastoreManifest {
     this.extractorsByName = {};
     this.crawlersByName = {};
 
-    const { name, description, coreVersion, paymentAddress, adminIdentities, domain, storageEngineHost } = metadata;
-
-    Object.assign(this, {
+    const {
+      name,
+      description,
       coreVersion,
-      schemaInterface,
       paymentAddress,
       adminIdentities,
       domain,
-      description,
-      name,
       storageEngineHost,
-    });
+    } = metadata;
+
+    Object.assign(
+      this,
+      filterUndefined({
+        coreVersion,
+        schemaInterface,
+        paymentAddress,
+        adminIdentities,
+        domain,
+        description,
+        name,
+        storageEngineHost,
+      }),
+    );
     this.adminIdentities ??= [];
 
     for (const [funcName, funcMeta] of Object.entries(extractorsByName)) {
@@ -216,6 +234,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
   public async save(): Promise<void> {
     let json: any;
     if (this.source === 'global' || this.source === 'project') {
+      if (!env.enableGlobalConfigs) return;
+
       const config = (await readFileAsJson(this.path)) ?? {};
       config[this.sharedConfigFileKey] = this.toConfigManifest();
       json = config;
@@ -256,6 +276,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       schemaInterface: this.schemaInterface,
       extractorsByName: this.extractorsByName,
       crawlersByName: this.crawlersByName,
+      storageEngineHost: this.storageEngineHost,
       tablesByName: this.tablesByName,
       paymentAddress: this.paymentAddress,
       adminIdentities: this.adminIdentities,
@@ -376,6 +397,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     manifest: Pick<
       IDatastoreManifest,
       | 'scriptHash'
+      | 'storageEngineHost'
       | 'versionTimestamp'
       | 'scriptEntrypoint'
       | 'linkedVersions'
@@ -395,6 +417,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       tablesByName,
       paymentAddress,
       linkedVersions,
+      storageEngineHost,
       adminIdentities,
     } = manifest;
     linkedVersions.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
@@ -427,6 +450,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       scriptHash,
       versionTimestamp,
       scriptEntrypoint,
+      storageEngineHost,
       ...extractorPrices,
       ...crawlerPrices,
       ...tablePrices,

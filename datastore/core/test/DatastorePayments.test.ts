@@ -69,7 +69,7 @@ beforeAll(async () => {
   mock.sidechainClient.sendRequest.mockImplementation(mockSidechainServer);
 
   cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
+  cloudNode.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
     identityWithSidechain: Identity.createSync(),
@@ -163,7 +163,7 @@ test('should be able to run a datastore function with payments', async () => {
     'Micronote.settle',
   ]);
   // @ts-ignore
-  const statsTracker = cloudNode.router.datastoreCore.statsTracker;
+  const statsTracker = cloudNode.datastoreCore.statsTracker;
   const entry = await statsTracker.getForDatastore(manifest);
   expect(entry.stats.queries).toBe(3);
   expect(entry.stats.errors).toBe(2);
@@ -327,7 +327,7 @@ test('should be able to embed Credits in a Datastore', async () => {
   }
 
   // @ts-expect-error
-  expect(cloudNode.router.datastoreCore.vm.apiClientCache.apiClientCacheByUrl).toEqual({
+  expect(cloudNode.datastoreCore.vm.apiClientCache.apiClientCacheByUrl).toEqual({
     [`ulx://${await cloudNode.address}`]: expect.any(DatastoreApiClient),
   });
 }, 60e3);

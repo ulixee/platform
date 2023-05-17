@@ -1,13 +1,13 @@
-import * as Tar from 'tar';
-import * as Fs from 'fs/promises';
-import * as Path from 'path';
-import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import Identity from '@ulixee/crypto/lib/Identity';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import { IExtractorSchema } from '@ulixee/datastore';
 import { IFetchMetaResponseData } from '@ulixee/datastore-core/interfaces/ILocalDatastoreProcess';
+import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import ExtractorInternal from '@ulixee/datastore/lib/ExtractorInternal';
 import StringSchema from '@ulixee/schema/lib/StringSchema';
-import { IExtractorSchema } from '@ulixee/datastore';
+import * as Fs from 'fs/promises';
+import * as Path from 'path';
+import * as Tar from 'tar';
 import moment = require('moment');
 import IDocpageConfig from '../interfaces/IDocpageConfig';
 
@@ -157,11 +157,11 @@ export default class Dbx {
       timeoutMs?: number;
     } = {},
   ): Promise<{ success: boolean }> {
-    const compressedDatastore = await this.tarGzip();
+    const compressedDbx = await this.tarGzip();
 
     const client = new DatastoreApiClient(host);
     try {
-      return await client.upload(compressedDatastore, options);
+      return await client.upload(compressedDbx, options);
     } finally {
       await client.disconnect();
     }

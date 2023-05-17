@@ -1,54 +1,30 @@
-import { CloudNode } from '@ulixee/cloud';
-import UlixeeConfig from '@ulixee/commons/config';
-import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import DatastorePackager from '@ulixee/datastore-packager';
+import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import * as Fs from 'fs';
-import { mkdirSync, rmSync } from 'fs';
 import * as Path from 'path';
-import DatastoreManifest from '../lib/DatastoreManifest';
 
-jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
-// @ts-expect-error
-const write = DatastoreManifest.writeToDisk;
-// @ts-expect-error
-jest.spyOn(DatastoreManifest, 'writeToDisk').mockImplementation(async (path, data) => {
-  if (path.includes(UlixeeConfig.global.directoryPath)) return;
-  return write.call(DatastoreManifest, path, data);
-});
-
-const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'StorageEngineRegistry.test');
-const tmpDir = `${storageDir}/tmp`;
-let cloudNode: CloudNode;
-let client: DatastoreApiClient;
+Helpers.blockGlobalConfigWrites();
+const datastoresDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'StorageEngineRegistry.test');
 
 beforeAll(async () => {
-  try {
-    rmSync(storageDir, { recursive: true });
-  } catch (err) {}
-  mkdirSync(storageDir, { recursive: true });
+  await Fs.promises.rm(`${__dirname}/datastores/remoteStorage-manifest.json`).catch(() => null);
   await Fs.promises
     .rm(`${__dirname}/datastores/migrator.dbx`, { recursive: true })
     .catch(() => null);
-
-  cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
-    datastoresDir: storageDir,
-    datastoresTmpDir: tmpDir,
-  };
-  await cloudNode.listen();
-  client = new DatastoreApiClient(await cloudNode.address);
 }, 60e3);
 
-afterAll(async () => {
-  await cloudNode.close();
-  await client.disconnect();
-  try {
-    rmSync(storageDir, { recursive: true });
-  } catch (err) {}
-});
+afterAll(async () => Helpers.afterAll());
+
+afterEach(Helpers.afterEach);
 
 test('should run migrations on start', async () => {
+  const cloudNode = await Helpers.createLocalNode({
+    datastoresDir,
+  });
+  const client = new DatastoreApiClient(await cloudNode.address);
+  Helpers.onClose(() => client.disconnect());
+
   const path = Path.join(__dirname, 'datastores', 'migrator.ts');
   await Fs.promises.writeFile(
     path,
@@ -80,7 +56,7 @@ export default new Datastore({
   await client.upload(await packager.dbx.tarGzip());
 
   // @ts-expect-error
-  const datastoresDb = cloudNode.router.datastoreCore.datastoreRegistry.diskStore.datastoresDb;
+  const datastoresDb = cloudNode.datastoreCore.datastoreRegistry.diskStore.datastoresDb;
 
   await expect(
     client.stream(packager.manifest.versionHash, 'migrator', { success: false }),
@@ -124,4 +100,75 @@ export default new Datastore({
   await expect(
     client.stream(packager.manifest.versionHash, 'migrator', { success: false }),
   ).resolves.toEqual([{ title: 'World', newColumn: 'ought', success: false }]);
+}, 45e3);
+
+test('should require uploaded datastores to have a storage engine endpoint if configured', async () => {
+  // force cloud node to host
+  const storageNode = await Helpers.createLocalNode({
+    storageEngineHost: 'localhost:1818/notreal',
+    datastoresDir,
+  });
+  Helpers.needsClosing.push(storageNode);
+  await Fs.promises.rm(`${__dirname}/datastores/remoteStorage-manifest.json`).catch(() => null);
+  await Fs.promises
+    .rm(`${__dirname}/datastores/remoteStorage.dbx`, { recursive: true })
+    .catch(() => null);
+  const packager = new DatastorePackager(`${__dirname}/datastores/remoteStorage.ts`);
+  await packager.build();
+  expect(packager.manifest.storageEngineHost).not.toBeTruthy();
+  const newClient = new DatastoreApiClient(await storageNode.address);
+  Helpers.onClose(() => newClient.disconnect());
+  await expect(newClient.upload(await packager.dbx.tarGzip())).rejects.toThrowError(
+    'storage engine host',
+  );
+});
+
+test('should be able to use a remote storage engine endpoint', async () => {
+  // force cloud node to host
+  const storageHostNode = await Helpers.createLocalNode({
+    datastoresDir,
+  });
+
+  const clusterNode = await Helpers.createLocalNode({
+    datastoresDir,
+    storageEngineHost: await storageHostNode.host,
+  });
+
+  const storageNodeRegistrySpy = jest.spyOn(
+    storageHostNode.datastoreCore.storageEngineRegistry,
+    'get',
+  );
+  const clusterNodeRegistrySpy = jest.spyOn(
+    storageHostNode.datastoreCore.storageEngineRegistry,
+    'get',
+  );
+
+  await Fs.promises
+    .rm(`${__dirname}/datastores/remoteStorage.dbx`, { recursive: true })
+    .catch(() => null);
+  await Fs.promises.writeFile(
+    `${__dirname}/datastores/remoteStorage-manifest.json`,
+    JSON.stringify({
+      storageEngineHost: await storageHostNode.host,
+    }),
+  );
+  const packager = new DatastorePackager(`${__dirname}/datastores/remoteStorage.ts`);
+  await packager.build();
+  const client = new DatastoreApiClient(await clusterNode.host);
+  Helpers.onClose(() => client.disconnect());
+
+  await expect(client.upload(await packager.dbx.tarGzip())).resolves.toBeTruthy();
+  expect(storageNodeRegistrySpy).toHaveBeenCalledTimes(1);
+  expect(clusterNodeRegistrySpy).toHaveBeenCalledTimes(1);
+
+  await expect(
+    client.query(packager.manifest.versionHash, 'select * from intro where visible=true', {}),
+  ).resolves.toEqual({
+    outputs: [{ title: 'Hello', visible: true }],
+    metadata: expect.any(Object),
+    latestVersionHash: expect.any(String),
+  });
+
+  expect(storageNodeRegistrySpy).toHaveBeenCalledTimes(2);
+  expect(clusterNodeRegistrySpy).toHaveBeenCalledTimes(2);
 }, 45e3);

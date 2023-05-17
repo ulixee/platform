@@ -1,7 +1,7 @@
 import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import Datastore, { ConnectionToDatastoreCore, Crawler } from '@ulixee/datastore';
-import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
+import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
 import Extractor from '@ulixee/datastore/lib/Extractor';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';

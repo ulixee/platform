@@ -162,15 +162,15 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     uploaderSource?: IDatastoreSourceDetails,
   ): Promise<{ dbxPath: string; manifest: IDatastoreManifest; didInstall: boolean }> {
     adminDetails ??= {};
-    return await this.diskStore?.install(datastoreTmpPath, adminDetails, uploaderSource);
+    return await this.diskStore.install(datastoreTmpPath, adminDetails, uploaderSource);
   }
 
   public async startAtPath(dbxPath: string, watch: boolean): Promise<IDatastoreManifest> {
-    return await this.diskStore?.startAtPath(dbxPath, watch);
+    return await this.diskStore.startAtPath(dbxPath, watch);
   }
 
   public stopAtPath(dbxPath: string): void {
-    const datastore = this.diskStore?.stopAtPath(dbxPath);
+    const datastore = this.diskStore.stopAtPath(dbxPath);
     if (datastore) {
       this.emit('stopped', {
         versionHash: datastore.versionHash,

@@ -1,18 +1,62 @@
+import CloudNode from '@ulixee/cloud'; // eslint-disable-line import/no-extraneous-dependencies
+import UlixeeConfig from '@ulixee/commons/config';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
+import Logger from '@ulixee/commons/lib/Logger';
+import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
+import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
+import Core from '@ulixee/hero-core';
+import * as Fs from 'fs/promises';
 import * as http from 'http';
 import { Server } from 'http';
+import * as http2 from 'http2';
 import * as https from 'https';
+import * as net from 'net';
+import * as Path from 'path';
 import Koa = require('koa');
 import KoaRouter = require('@koa/router');
 import KoaMulter = require('@koa/multer');
-import * as net from 'net';
-import * as http2 from 'http2';
-import Core from '@ulixee/hero-core';
-import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
-import Logger from '@ulixee/commons/lib/Logger';
 
 const { log } = Logger(module);
 
+let didRegisteryBlock = false;
+export function blockGlobalConfigWrites(): void {
+  if (didRegisteryBlock) return;
+  didRegisteryBlock = true;
+  // block writing to global files!
+  jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
+  // @ts-expect-error
+  const write = DatastoreManifest.writeToDisk;
+  // @ts-expect-error
+  jest.spyOn(DatastoreManifest, 'writeToDisk').mockImplementation(async (path, data) => {
+    if (path.includes(UlixeeConfig.global.directoryPath)) return;
+    return write.call(DatastoreManifest, path, data);
+  });
+}
+
+blockGlobalConfigWrites();
+
 export const needsClosing: { close: () => Promise<any> | void; onlyCloseOnFinal?: boolean }[] = [];
+
+export async function createLocalNode(
+  config: Partial<IDatastoreCoreConfigureOptions>,
+): Promise<CloudNode> {
+  if (config.datastoresDir) {
+    config.datastoresTmpDir ??= Path.join(config.datastoresDir, 'tmp');
+
+    try {
+      await Fs.rm(config.datastoresDir, { recursive: true });
+    } catch {}
+    await Fs.mkdir(config.datastoresDir, { recursive: true });
+  }
+  needsClosing.push({ close: () => Fs.rm(config.datastoresDir, { recursive: true }) });
+
+  const cloudNode = new CloudNode();
+  cloudNode.datastoreConfiguration = config;
+  await cloudNode.listen();
+  onClose(() => cloudNode.close(), true);
+  return cloudNode;
+}
 
 export function onClose(closeFn: (() => Promise<any>) | (() => any), onlyCloseOnFinal = false) {
   needsClosing.push({ close: closeFn, onlyCloseOnFinal });
@@ -127,4 +171,3 @@ function destroyServerFn(
       });
     });
 }
-

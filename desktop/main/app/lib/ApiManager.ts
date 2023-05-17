@@ -112,7 +112,7 @@ export default class ApiManager<
     if (this.exited) return;
     this.exited = true;
 
-    await this.localCloud.router.desktopCore.shutdown();
+    await this.localCloud.desktopCore.shutdown();
     this.privateDesktopWsServer.close();
     await this.privateDesktopApiHandler.close();
     this.events.close('error');
@@ -146,9 +146,8 @@ export default class ApiManager<
       this.localCloud.router.datastoreConfiguration = {
         cloudAdminIdentities: [adminIdentity],
       };
-      const router = this.localCloud.router;
       this.localCloud.beforeListen(() =>
-        router.datastoreCore.installCompressedDbx(bundledDatastoreExample),
+        this.localCloud.datastoreCore.installCompressedDbx(bundledDatastoreExample),
       );
       await this.localCloud.listen();
       localCloudAddress = await this.localCloud.address;

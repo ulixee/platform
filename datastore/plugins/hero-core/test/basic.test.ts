@@ -15,7 +15,7 @@ let host: string;
 
 beforeAll(async () => {
   cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
+  cloudNode.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
@@ -36,8 +36,7 @@ beforeAll(async () => {
 afterAll(Helpers.afterAll);
 
 test('it should be able to upload a datastore and run it by hash', async () => {
-  // @ts-expect-error
-  const statsTracker = cloudNode.router.datastoreCore.statsTracker;
+  const statsTracker = cloudNode.datastoreCore.statsTracker;
   const { queryLogDb, statsDb } = statsTracker.diskStore;
 
   const manifest = packager.manifest;

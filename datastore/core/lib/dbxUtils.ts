@@ -1,9 +1,9 @@
-import * as Tar from 'tar';
-import { PassThrough } from 'stream';
 import * as Fs from 'fs/promises';
+import { PassThrough } from 'stream';
+import * as Tar from 'tar';
 
-export function unpackDbx(compressedDatastore: Buffer, toDirectory: string): Promise<void> {
-  const dbxStream = new PassThrough().end(compressedDatastore);
+export function unpackDbx(compressedDbx: Buffer, toDirectory: string): Promise<void> {
+  const dbxStream = new PassThrough().end(compressedDbx);
   return new Promise(resolve => {
     dbxStream
       .pipe(
