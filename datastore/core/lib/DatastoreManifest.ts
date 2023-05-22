@@ -459,6 +459,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
       JSON.stringify(linkedVersions),
     );
     const sha = HashUtils.sha256(hashMessage);
+    // ~208,000 years of work to have a 1% chance of collision.
+    // Bech32m is a bit of an odd choice since we're lopping off the checksum, but keeping for now to keep encoding consistent.
     return encodeBuffer(sha, 'dbx').substring(0, 22);
   }
 

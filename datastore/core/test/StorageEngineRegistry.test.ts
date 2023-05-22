@@ -1,18 +1,23 @@
 import DatastorePackager from '@ulixee/datastore-packager';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import SqliteStorageEngine from '@ulixee/datastore/storage-engines/SqliteStorageEngine';
 import * as Fs from 'fs';
 import * as Path from 'path';
 
 Helpers.blockGlobalConfigWrites();
 const datastoresDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'StorageEngineRegistry.test');
 
-beforeAll(async () => {
+beforeEach(async () => {
+  await Fs.promises.rm(datastoresDir, { recursive: true }).catch(() => null);
   await Fs.promises.rm(`${__dirname}/datastores/remoteStorage-manifest.json`).catch(() => null);
   await Fs.promises
     .rm(`${__dirname}/datastores/migrator.dbx`, { recursive: true })
     .catch(() => null);
-}, 60e3);
+  await Fs.promises
+    .rm(`${__dirname}/datastores/remoteStorage.dbx`, { recursive: true })
+    .catch(() => null);
+});
 
 afterAll(async () => Helpers.afterAll());
 
@@ -20,7 +25,7 @@ afterEach(Helpers.afterEach);
 
 test('should run migrations on start', async () => {
   const cloudNode = await Helpers.createLocalNode({
-    datastoresDir,
+    datastoreConfiguration: { datastoresDir },
   });
   const client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect());
@@ -105,14 +110,10 @@ export default new Datastore({
 test('should require uploaded datastores to have a storage engine endpoint if configured', async () => {
   // force cloud node to host
   const storageNode = await Helpers.createLocalNode({
-    storageEngineHost: 'localhost:1818/notreal',
-    datastoresDir,
+    datastoreConfiguration: { storageEngineHost: 'localhost:1818/notreal', datastoresDir },
   });
   Helpers.needsClosing.push(storageNode);
-  await Fs.promises.rm(`${__dirname}/datastores/remoteStorage-manifest.json`).catch(() => null);
-  await Fs.promises
-    .rm(`${__dirname}/datastores/remoteStorage.dbx`, { recursive: true })
-    .catch(() => null);
+
   const packager = new DatastorePackager(`${__dirname}/datastores/remoteStorage.ts`);
   await packager.build();
   expect(packager.manifest.storageEngineHost).not.toBeTruthy();
@@ -126,26 +127,27 @@ test('should require uploaded datastores to have a storage engine endpoint if co
 test('should be able to use a remote storage engine endpoint', async () => {
   // force cloud node to host
   const storageHostNode = await Helpers.createLocalNode({
-    datastoresDir,
+    datastoreConfiguration: { datastoresDir: Path.join(datastoresDir, 'storage-node') },
   });
 
   const clusterNode = await Helpers.createLocalNode({
-    datastoresDir,
-    storageEngineHost: await storageHostNode.host,
+    datastoreConfiguration: {
+      datastoresDir: Path.join(datastoresDir, 'cluster-node'),
+      storageEngineHost: await storageHostNode.host,
+    },
   });
 
   const storageNodeRegistrySpy = jest.spyOn(
     storageHostNode.datastoreCore.storageEngineRegistry,
     'get',
   );
-  const clusterNodeRegistrySpy = jest.spyOn(
+  const storageNodeInstallStorageSpy = jest.spyOn(
     storageHostNode.datastoreCore.storageEngineRegistry,
-    'get',
+    'create',
   );
 
-  await Fs.promises
-    .rm(`${__dirname}/datastores/remoteStorage.dbx`, { recursive: true })
-    .catch(() => null);
+  const clusterNodeRegistrySpy = jest.spyOn(clusterNode.datastoreCore.storageEngineRegistry, 'get');
+
   await Fs.promises.writeFile(
     `${__dirname}/datastores/remoteStorage-manifest.json`,
     JSON.stringify({
@@ -159,7 +161,9 @@ test('should be able to use a remote storage engine endpoint', async () => {
 
   await expect(client.upload(await packager.dbx.tarGzip())).resolves.toBeTruthy();
   expect(storageNodeRegistrySpy).toHaveBeenCalledTimes(1);
+  expect(storageNodeRegistrySpy.mock.results[0].value).toBeInstanceOf(SqliteStorageEngine);
   expect(clusterNodeRegistrySpy).toHaveBeenCalledTimes(1);
+  expect(storageNodeInstallStorageSpy).toHaveBeenCalled();
 
   await expect(
     client.query(packager.manifest.versionHash, 'select * from intro where visible=true', {}),
@@ -172,3 +176,116 @@ test('should be able to use a remote storage engine endpoint', async () => {
   expect(storageNodeRegistrySpy).toHaveBeenCalledTimes(2);
   expect(clusterNodeRegistrySpy).toHaveBeenCalledTimes(2);
 }, 45e3);
+
+test('should not create a websocket connection to localhost if on same machine', async () => {
+  const node = await Helpers.createLocalNode({
+    datastoreConfiguration: { datastoresDir },
+  });
+
+  const nodeRegistrySpy = jest.spyOn(node.datastoreCore.storageEngineRegistry, 'get');
+
+  const packager = new DatastorePackager(`${__dirname}/datastores/remoteStorage.ts`);
+  await packager.build();
+
+  await Fs.promises.writeFile(
+    `${__dirname}/datastores/remoteStorage-manifest.json`,
+    JSON.stringify({
+      storageEngineHost: await node.host,
+    }),
+  );
+
+  const client = new DatastoreApiClient(await node.host);
+  Helpers.onClose(() => client.disconnect());
+
+  await expect(client.upload(await packager.dbx.tarGzip())).resolves.toBeTruthy();
+  expect(nodeRegistrySpy).toHaveBeenCalledTimes(1);
+  expect(nodeRegistrySpy.mock.results[0].value).toBeInstanceOf(SqliteStorageEngine);
+
+  await expect(
+    client.query(packager.manifest.versionHash, 'select * from intro where visible=true', {}),
+  ).resolves.toEqual({
+    outputs: [{ title: 'Hello', visible: true }],
+    metadata: expect.any(Object),
+    latestVersionHash: expect.any(String),
+  });
+
+  expect(nodeRegistrySpy).toHaveBeenCalledTimes(2);
+  expect(nodeRegistrySpy.mock.results[1].value).toBeInstanceOf(SqliteStorageEngine);
+});
+
+test('should not install storage engine when downloading from cluster', async () => {
+  const datastoreRegistryHost = await Helpers.createLocalNode({
+    datastoreConfiguration: {
+      datastoresDir: Path.join(datastoresDir, 'registry-node'),
+      storageEngineHost: 'localhost:18181',
+    },
+    listenOptions: {
+      hostedServicesPort: 0
+    }
+  });
+  // force cloud node to host
+  const storageHostNode = await Helpers.createLocalNode({
+    listenOptions: {
+      publicPort: 18181,
+    },
+    datastoreConfiguration: {
+      datastoresDir: Path.join(datastoresDir, 'storage-node'),
+      datastoreRegistryHost: await datastoreRegistryHost.hostedServicesServer.host,
+      storageEngineHost: 'localhost:18181',
+    },
+  });
+
+  const clusterNode = await Helpers.createLocalNode({
+    datastoreConfiguration: {
+      datastoresDir: Path.join(datastoresDir, 'cluster-node'),
+      storageEngineHost: await storageHostNode.host,
+      datastoreRegistryHost: await datastoreRegistryHost.hostedServicesServer.host,
+    },
+  });
+
+  const storageNodeRegistrySpy = jest.spyOn(
+    storageHostNode.datastoreCore.storageEngineRegistry,
+    'get',
+  );
+  const storageNodeInstallStorageSpy = jest.spyOn(
+    storageHostNode.datastoreCore.storageEngineRegistry,
+    'create',
+  );
+
+  const clusterNodeRegistrySpy = jest.spyOn(clusterNode.datastoreCore.storageEngineRegistry, 'get');
+
+  await Fs.promises.writeFile(
+    `${__dirname}/datastores/remoteStorage-manifest.json`,
+    JSON.stringify({
+      storageEngineHost: await storageHostNode.host,
+    }),
+  );
+  const packager = new DatastorePackager(`${__dirname}/datastores/remoteStorage.ts`);
+  await packager.build();
+
+  const datastoreRegistryHostClient = new DatastoreApiClient(await datastoreRegistryHost.host);
+  Helpers.onClose(() => datastoreRegistryHostClient.disconnect());
+  await expect(datastoreRegistryHostClient.upload(await packager.dbx.tarGzip())).resolves.toBeTruthy();
+
+  expect(storageNodeRegistrySpy).toHaveBeenCalledTimes(1);
+  expect(storageNodeRegistrySpy.mock.results[0].value).toBeInstanceOf(SqliteStorageEngine);
+  expect(storageNodeInstallStorageSpy).toHaveBeenCalledTimes(1);
+  expect(clusterNodeRegistrySpy).toHaveBeenCalledTimes(0);
+
+  const client = new DatastoreApiClient(await clusterNode.host);
+  Helpers.onClose(() => client.disconnect());
+
+  storageNodeInstallStorageSpy.mockReset();
+  storageNodeRegistrySpy.mockReset();
+  await expect(
+    client.query(packager.manifest.versionHash, 'select * from intro where visible=true', {}),
+  ).resolves.toEqual({
+    outputs: [{ title: 'Hello', visible: true }],
+    metadata: expect.any(Object),
+    latestVersionHash: expect.any(String),
+  });
+
+  expect(storageNodeRegistrySpy).toHaveBeenCalledTimes(1);
+  expect(clusterNodeRegistrySpy).toHaveBeenCalledTimes(1);
+  expect(storageNodeInstallStorageSpy).toHaveBeenCalledTimes(0);
+});

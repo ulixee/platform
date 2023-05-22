@@ -48,6 +48,7 @@ export default class P2pConnection
   public nodeInfo: INodeInfo;
   public libp2p: Libp2p;
   public peerId: PeerId;
+  public datastore?: SqliteDatastore;
 
   private readonly nodeIdLastSeenDates: { [id: string]: Date } = {};
   private readonly nodeInfoById: { [id: string]: Promise<INodeInfo> } = {};
@@ -55,7 +56,6 @@ export default class P2pConnection
   private dhtReadyPromise: Resolvable<void>;
   private closeAbortController = new AbortController();
   private pendingOperationAborts = new Set<AbortController>();
-  private datastore?: SqliteDatastore;
   private logger: IBoundLog;
   private identifyBytes: Buffer;
 
@@ -65,6 +65,7 @@ export default class P2pConnection
   }
 
   public createP2pMultiaddr(peerId: string, port: number, publicIpOrDomain = '0.0.0.0'): string {
+    if (publicIpOrDomain === 'localhost') publicIpOrDomain = '127.0.0.1';
     const isIp = isIPv4(publicIpOrDomain);
     if (!isIp) {
       return `/dnsaddr/${publicIpOrDomain}/tcp/${port}/ws/p2p/${peerId}`;
@@ -115,7 +116,6 @@ export default class P2pConnection
       start: false,
       peerId: this.peerId,
       addresses: {
-        announce: [address],
         listen: [address],
       },
       ping: {
@@ -170,6 +170,7 @@ export default class P2pConnection
         if (peers.length >= 5) return; // let autodial handle connecting
 
         const peerInfo = event.detail;
+        if (peerInfo.id.equals(this.peerId)) return;
         let addresses = peerInfo.multiaddrs;
         if (('addresses' in peerInfo) as unknown as Peer) {
           addresses = (peerInfo as unknown as Peer).addresses.map(x => x.multiaddr);
@@ -198,8 +199,14 @@ export default class P2pConnection
     );
 
     await this.libp2p.start();
-    this.multiaddrs = this.libp2p.getMultiaddrs().map(x => x.toString());
+
+    this.multiaddrs = this.libp2p.getMultiaddrs().map(x => {
+      let multiaddr = x.toString();
+      if (!multiaddr.includes('/p2p/')) multiaddr += `/p2p/${this.nodeId}`;
+      return multiaddr;
+    });
     this.nodeInfo.multiaddrs = this.multiaddrs;
+
     const kBucketTree = (this.libp2p.dht.lan.routingTable as RoutingTable).kb;
     kBucketTree.on('updated' as any, selection => {
       const nodeId = selection.peer?.toString();
@@ -381,7 +388,10 @@ export default class P2pConnection
 
   private async onDatastoreEntryDeleted(event: { key: string }): Promise<Buffer> {
     if (!event.key.startsWith('/dht')) return;
-    const cidBase32 = event.key.replace('/dht/provider/', '');
+    const [cidBase32, nodeId] = event.key.replace('/dht/provider/', '').split('/');
+    if (nodeId !== this.nodeId) {
+      return;
+    }
     const cid = await decodeCIDFromBase32(cidBase32);
     const bytes = Buffer.from(cid.multihash.digest);
     this.emit('provide-expired', { hash: bytes });
@@ -407,6 +417,8 @@ export default class P2pConnection
   }
 
   private async dialNodeLookup(nodeId: string, peerId: PeerId, attempt = 0): Promise<INodeInfo> {
+    if (nodeId === this.nodeId) return this.nodeInfo;
+
     const stream = await this.libp2p.dialProtocol(peerId, '/ulx/apiInfo/v1', {
       signal: this.closeAbortController.signal,
     });

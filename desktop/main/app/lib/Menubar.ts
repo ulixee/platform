@@ -195,6 +195,7 @@ export class Menubar extends EventEmitter {
       await installDefaultChrome();
     } catch (error) {
       console.error('ERROR in appReady: ', error);
+      await this.appExit();
     }
   }
 

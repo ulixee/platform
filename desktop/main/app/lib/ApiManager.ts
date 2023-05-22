@@ -64,6 +64,7 @@ export default class ApiManager<
   privateDesktopWsServerAddress: string;
 
   datastoreApiClientsByAddress: { [address: string]: DatastoreApiClient } = {};
+  private reconnectsByAddress: { [address: string]: NodeJS.Timeout } = {};
 
   constructor() {
     super();
@@ -112,8 +113,9 @@ export default class ApiManager<
     if (this.exited) return;
     this.exited = true;
 
-    await this.localCloud.desktopCore.shutdown();
-    this.privateDesktopWsServer.close();
+    await this.localCloud?.desktopCore?.shutdown();
+    await this.stopLocalCloud();
+    this.privateDesktopWsServer?.close();
     await this.privateDesktopApiHandler.close();
     this.events.close('error');
     for (const connection of this.apiByCloudAddress.values()) {
@@ -142,13 +144,14 @@ export default class ApiManager<
     let adminIdentity: string;
     if (!localCloudAddress) {
       adminIdentity = this.localUserProfile.defaultAdminIdentity.bech32;
-      this.localCloud ??= new CloudNode('localhost', { shouldShutdownOnSignals: false });
-      this.localCloud.router.datastoreConfiguration = {
-        cloudAdminIdentities: [adminIdentity],
-      };
-      this.localCloud.beforeListen(() =>
-        this.localCloud.datastoreCore.installCompressedDbx(bundledDatastoreExample),
-      );
+      this.localCloud ??= new CloudNode({
+        shouldShutdownOnSignals: false,
+        listenOptions: { publicHostname: 'localhost' },
+        datastoreConfiguration: {
+          cloudAdminIdentities: [adminIdentity],
+        },
+      });
+      await this.localCloud.datastoreCore.copyDbxToStartDir(bundledDatastoreExample);
       await this.localCloud.listen();
       localCloudAddress = await this.localCloud.address;
     }
@@ -167,13 +170,7 @@ export default class ApiManager<
     }
   }
 
-  public async connectToCloud(cloud: {
-    address: string;
-    adminIdentity?: string;
-    type: 'public' | 'private' | 'local';
-    name?: string;
-    oldAddress?: string;
-  }): Promise<void> {
+  public async connectToCloud(cloud: ICloudSetup): Promise<void> {
     const { adminIdentity, oldAddress, type } = cloud;
     let { address, name } = cloud;
     if (!address) return;
@@ -197,7 +194,7 @@ export default class ApiManager<
         this.onDesktopEvent.bind(this, address),
       );
       await api.connect();
-      const onApiClosed = this.events.once(api, 'close', this.onApiClosed.bind(this, address));
+      const onApiClosed = this.events.once(api, 'close', this.onApiClosed.bind(this, cloud));
 
       const mainScreen = screen.getPrimaryDisplay();
       const workarea = mainScreen.workArea;
@@ -224,17 +221,18 @@ export default class ApiManager<
         this.connectToWebSocket(url.href, { perMessageDeflate: true }),
         this.connectToWebSocket(this.debuggerUrl),
       ]);
+      clearInterval(this.reconnectsByAddress[address]);
       const events = [
         this.events.on(wsToCore, 'message', msg => wsToDevtoolsProtocol.send(msg)),
         this.events.on(wsToCore, 'error', this.onDevtoolsError.bind(this, wsToCore)),
-        this.events.once(wsToCore, 'close', this.onApiClosed.bind(this, address)),
+        this.events.once(wsToCore, 'close', this.onApiClosed.bind(this, cloud)),
         this.events.on(wsToDevtoolsProtocol, 'message', msg => wsToCore.send(msg)),
         this.events.on(
           wsToDevtoolsProtocol,
           'error',
           this.onDevtoolsError.bind(this, wsToDevtoolsProtocol),
         ),
-        this.events.once(wsToDevtoolsProtocol, 'close', this.onApiClosed.bind(this, address)),
+        this.events.once(wsToDevtoolsProtocol, 'close', this.onApiClosed.bind(this, cloud)),
       ];
       this.events.group(`ws-${address}`, onApiClosed, ...events);
       cloudApi.resolvable.resolve({
@@ -305,14 +303,32 @@ export default class ApiManager<
     }
   }
 
-  private onApiClosed(address: string): void {
-    console.warn('Api Disconnected', address);
+  private onApiClosed(cloud: ICloudSetup): void {
+    const { address, name } = cloud;
+    console.warn('Api Disconnected', address, name);
     const api = this.apiByCloudAddress.get(address);
     this.events.endGroup(`ws-${address}`);
     if (api) {
       void this.closeApiGroup(api.resolvable);
     }
     this.apiByCloudAddress.delete(address);
+    if (!this.exited) {
+      this.reconnectsByAddress[cloud.address] = setTimeout(
+        this.reconnect.bind(this, cloud, 1e3),
+        1e3,
+      ).unref();
+    }
+  }
+
+  private reconnect(cloud: ICloudSetup, delay: number): void {
+    if (this.exited) return;
+    console.warn('Reconnecting to Api', { address: cloud.address, name: cloud.name });
+    void this.connectToCloud(cloud).catch(() => {
+      this.reconnectsByAddress[cloud.address] = setTimeout(
+        this.reconnect.bind(this, cloud, delay * 2),
+        Math.min(5 * 60e3, delay * 2),
+      ).unref();
+    });
   }
 
   private async closeApiGroup(group: Resolvable<IApiGroup>): Promise<void> {
@@ -372,4 +388,12 @@ interface IApiGroup {
   id: string;
   wsToCore: WebSocket;
   wsToDevtoolsProtocol: WebSocket;
+}
+
+interface ICloudSetup {
+  address: string;
+  adminIdentity?: string;
+  type: 'public' | 'private' | 'local';
+  name?: string;
+  oldAddress?: string;
 }

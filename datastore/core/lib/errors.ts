@@ -24,7 +24,7 @@ export class InvalidScriptVersionHistoryError extends Error {
 
 export class MissingRequiredSettingError extends Error {
   public code = 'ERR_MISSING_SETTING';
-  constructor(message: string, readonly setting:string,readonly defaultValue?: any) {
+  constructor(message: string, readonly setting: string, readonly defaultValue?: any) {
     super(message);
     this.name = 'MissingRequiredSettingError';
   }

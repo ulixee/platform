@@ -3,13 +3,13 @@ import { InvalidSignatureError } from '@ulixee/crypto/lib/errors';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
-import { InvalidPermissionsError, MicronotePaymentRequiredError } from '../lib/errors';
+import { InvalidPermissionsError } from '../lib/errors';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 
 export default new DatastoreApiHandler('Datastore.download', {
   async handler(request, context): Promise<IDatastoreApiTypes['Datastore.download']['result']> {
     const { datastoreRegistry, configuration } = context;
-    const { versionHash, requestDate, payment } = request;
+    const { versionHash, requestDate } = request;
 
     if (Date.now() - requestDate.getTime() > 10e3) {
       throw new Error('This download request date is too old. Please try again.');
@@ -19,10 +19,6 @@ export default new DatastoreApiHandler('Datastore.download', {
       await verifyAdminIdentity(request, context);
     } else {
       // TODO: add real payment processing
-      // eslint-disable-next-line no-lonely-if
-      if (!payment.micronote) {
-        throw new MicronotePaymentRequiredError('This download needs payment', 10e3);
-      }
     }
 
     // don't go out to the network

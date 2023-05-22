@@ -1,6 +1,6 @@
 import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
-import { decodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { IPayment } from '@ulixee/platform-specification';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import DatastoreApiClients from './DatastoreApiClients';
 import IDatastoreRegistryStore, {
   IDatastoreManifestWithLatest,
@@ -21,14 +21,18 @@ export default class DatastoreRegistryNetworkStore implements IDatastoreRegistry
   }
 
   async get(versionHash: string): Promise<IDatastoreManifestWithLatest> {
-    const buffer = decodeBuffer(versionHash, 'dbx');
+    const buffer = DatastoreRegistryNetworkStore.createNetworkKey(versionHash);
     const abort = new AbortController();
-    for await (const node of this.peerNetwork.findProviderNodes(buffer)) {
+    const timeout = setTimeout(abort.abort.bind(abort,'Timeout'), 30e3).unref();
+    for await (const node of this.peerNetwork.findProviderNodes(buffer, { abort: abort.signal })) {
       const client = this.datastoreApiClients.get(node.ulixeeApiHost);
       const result = await client.getMeta(versionHash);
       if (result) {
         this.recentFoundVersionsToHost[versionHash] = node.ulixeeApiHost;
         abort.abort();
+        clearTimeout(timeout);
+
+
         return result;
       }
     }
@@ -59,7 +63,11 @@ export default class DatastoreRegistryNetworkStore implements IDatastoreRegistry
   }
 
   async publish(versionHash: string): Promise<{ providerKey: string }> {
-    const buffer = decodeBuffer(versionHash, 'dbx');
-    return await this.peerNetwork.provide(buffer);
+    const key = DatastoreRegistryNetworkStore.createNetworkKey(versionHash);
+    return await this.peerNetwork.provide(key);
+  }
+
+  public static createNetworkKey(versionHash: string): Buffer {
+    return sha256(Buffer.from(`/datastore/${versionHash}`));
   }
 }

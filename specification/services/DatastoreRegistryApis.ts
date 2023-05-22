@@ -1,6 +1,6 @@
 import { z } from '@ulixee/specification';
-import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
 import { identityValidation, signatureValidation } from '@ulixee/specification/common';
+import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
 import { DatastoreManifestSchema } from '../types/IDatastoreManifest';
 import { datastoreVersionHashValidation } from '../types/datastoreVersionHashValidation';
 
@@ -63,10 +63,34 @@ export const DatastoreRegistryApiSchemas = {
       compressedDbx: z.instanceof(Buffer),
     }),
   },
+  'DatastoreRegistry.upload': {
+    args: z.object({
+      compressedDbx: z.instanceof(Buffer).describe('Bytes of a compressed .dbx directory.'),
+      allowNewLinkedVersionHistory: z
+        .boolean()
+        .describe(
+          'Allow this upload to start a new version chain (do not link to previous versions)',
+        ),
+      adminIdentity: identityValidation
+        .optional()
+        .describe(
+          'If this server is in production mode, an AdminIdentity approved on the Server or Datastore.',
+        ),
+      adminSignature: signatureValidation
+        .optional()
+        .describe('A signature from an approved AdminIdentity'),
+    }),
+    result: z.object({
+      success: z.boolean(),
+    }),
+  },
 };
 
 export type IDatastoreRegistryApiTypes = IZodSchemaToApiTypes<typeof DatastoreRegistryApiSchemas>;
-export type IDatastoreRegistryApis = IZodHandlers<typeof DatastoreRegistryApiSchemas>;
+export type IDatastoreRegistryApis<TContext = any> = IZodHandlers<
+  typeof DatastoreRegistryApiSchemas,
+  TContext
+>;
 export type IDatastoreManifestWithLatest = z.infer<typeof DatastoreManifestWithLatest>;
 
 export default IDatastoreRegistryApiTypes;

@@ -31,8 +31,8 @@ export default async function cloneDatastore(
   const passthroughExtractors = Object.entries(meta.extractorsByName).map(([x, extractor]) => {
     let schemaLine = '';
     imports.add('PassthroughExtractor');
-    if (extractor.schemaJson) {
-      schemasByName[`${x}`] = { isTable: false, schemaJson: extractor.schemaJson };
+    if (extractor.schemaAsJson) {
+      schemasByName[`${x}`] = { isTable: false, schemaJson: extractor.schemaAsJson };
       schemaLine = `\n  schema: ${x}(),\n`;
     }
     let descriptionLine = '';
@@ -47,8 +47,8 @@ export default async function cloneDatastore(
   const passthroughTables = Object.entries(meta.tablesByName).map(([x, table]) => {
     let schemaLine = '';
     imports.add('PassthroughTable');
-    if (table.schemaJson) {
-      schemasByName[`${x}`] = { isTable: true, schemaJson: table.schemaJson };
+    if (table.schemaAsJson) {
+      schemasByName[`${x}`] = { isTable: true, schemaJson: table.schemaAsJson };
       schemaLine = `\n  schema: ${x}(),\n`;
     }
 

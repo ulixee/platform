@@ -10,6 +10,9 @@ export const ServicesSetupApiSchemas = {
 };
 
 export type IServicesSetupApiTypes = IZodSchemaToApiTypes<typeof ServicesSetupApiSchemas>;
-export type IServicesSetupApis = IZodHandlers<typeof ServicesSetupApiSchemas>;
+export type IServicesSetupApis<TContext = any> = IZodHandlers<
+  typeof ServicesSetupApiSchemas,
+  TContext
+>;
 
 export default IServicesSetupApiTypes;

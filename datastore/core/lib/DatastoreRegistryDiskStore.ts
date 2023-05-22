@@ -20,6 +20,7 @@ import {
   MissingLinkedScriptVersionsError,
   MissingRequiredSettingError,
 } from './errors';
+import DatastoreRegistryNetworkStore from './DatastoreRegistryNetworkStore';
 
 const datastorePackageJson = require(`../package.json`);
 const { log } = Logger(module);
@@ -71,22 +72,23 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
     return results;
   }
 
-  async isHostingExpired(versionHash: string): Promise<boolean> {
-    const versionRecord = this.datastoresDb.versions.getByHash(versionHash);
+  async didExpireNetworkHosting(
+    networkKey: Buffer,
+  ): Promise<{ versionHash: string; isExpired: boolean }> {
+    const versionRecord = this.datastoresDb.versions.getByNetworkKey(networkKey);
     if (versionRecord?.expiresTimestamp && versionRecord.expiresTimestamp < Date.now()) {
       if (versionRecord.dbxPath) {
         this.#openedManifestsByDbxPath.delete(versionRecord.dbxPath);
         await Fs.rm(versionRecord.dbxPath, { recursive: true });
-        this.datastoresDb.versions.cleanup(versionHash);
+        this.datastoresDb.versions.cleanup(versionRecord.versionHash);
       }
-      return true;
+      return { versionHash: versionRecord.versionHash, isExpired: true };
     }
-    return false;
+    return { versionHash: versionRecord?.versionHash, isExpired: false };
   }
 
   async get(versionHash: string): Promise<IDatastoreManifestWithLatest> {
     const versionRecord = this.datastoresDb.versions.getByHash(versionHash);
-    const latestVersionHash = await this.getLatestVersion(versionHash);
 
     if (!versionRecord?.dbxPath) {
       return null;
@@ -105,6 +107,7 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
 
     if (!manifest) return null;
 
+    const latestVersionHash = await this.getLatestVersion(versionHash);
     return {
       ...manifest,
       isStarted: versionRecord.isStarted,
@@ -153,6 +156,7 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
       await service.downloadDbx(versionHash);
     const tmpDir = Path.join(this.datastoresDir, `${versionHash}.dbx`);
     try {
+      await Fs.mkdir(tmpDir, { recursive: true });
       await unpackDbx(compressedDbx, tmpDir);
       await this.install(
         tmpDir,
@@ -164,6 +168,7 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
           adminIdentity,
           adminSignature,
           source: service.source === 'cluster' ? 'cluster' : 'network',
+          networkKey: DatastoreRegistryNetworkStore.createNetworkKey(versionHash),
           expirationTimestamp,
           host: ulixeeApiHost,
         },
@@ -210,7 +215,7 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
     },
     sourceDetails?: IDatastoreSourceDetails,
   ): Promise<{ dbxPath: string; manifest: IDatastoreManifest; didInstall: boolean }> {
-    if (!this.isSourceOfTruth) {
+    if (!this.isSourceOfTruth && sourceDetails?.source === 'upload') {
       throw new Error(
         'Installations cannot be made directly against this DatastoreRegistryService. This should have been redirected to a cluster leader or network endpoint.',
       );
@@ -254,7 +259,8 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
 
     const dbxPath = this.createDbxPath(manifest);
 
-    if (!adminOptions.allowNewLinkedVersionHistory) this.checkMatchingEntrypointVersions(manifest);
+    if (!adminOptions.allowNewLinkedVersionHistory)
+      this.checkMatchingEntrypointVersions(manifest, sourceDetails?.adminIdentity);
 
     this.checkVersionHistoryMatch(manifest);
 
@@ -287,7 +293,7 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
     return { dbxPath, manifest, didInstall: true };
   }
 
-  async installManualUploads(
+  async installOnDiskUploads(
     cloudAdminIdentities: string[],
     cloudNodeHost: string,
   ): Promise<{ dbxPath: string; manifest: IDatastoreManifest }[]> {
@@ -344,7 +350,7 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
             adminIdentity: cloudAdminIdentities?.[0],
             adminSignature: null,
             host: cloudNodeHost,
-            source: 'manual',
+            source: 'disk',
           },
         );
         if (install.didInstall) {
@@ -358,7 +364,11 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
     return installations;
   }
 
-  async startAtPath(dbxPath: string, watch: boolean): Promise<IDatastoreManifest> {
+  async startAtPath(
+    dbxPath: string,
+    sourceHost: string,
+    watch: boolean,
+  ): Promise<IDatastoreManifest> {
     const scriptPath = Path.join(dbxPath, 'datastore.js');
     if (!(await existsAsync(scriptPath))) throw new Error("This script entrypoint doesn't exist");
 
@@ -368,12 +378,16 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
     this.saveManifestMetadata(manifest, dbxPath, true);
 
     DatastoreVm.doNotCacheList.add(scriptPath);
-    await this.onInstalled(manifest, null, true, watch);
+    await this.onInstalled(manifest, { source: 'start', host: sourceHost }, true, watch);
     return manifest;
   }
 
   stopAtPath(dbxPath: string): { versionHash: string } {
     return this.datastoresDb.versions.setDbxStopped(dbxPath);
+  }
+
+  recordPublished(versionHash: string, timestamp: number): void {
+    this.datastoresDb.versions.recordPublishedToNetworkDate(versionHash, timestamp);
   }
 
   async onInstalled(
@@ -406,7 +420,7 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
         { clearExisting, isWatching },
       );
     } catch (err) {
-      // if intall callback fails, we need to rollback
+      // if install callback fails, we need to rollback
       const record = this.datastoresDb.versions.delete(manifest.versionHash);
       await Fs.rm(record.dbxPath, { recursive: true }).catch(() => null);
       throw err;
@@ -457,15 +471,21 @@ Please try to re-upload after testing with the version available on this Cloud.`
     }
   }
 
-  private checkMatchingEntrypointVersions(manifest: IDatastoreManifest): void {
+  private checkMatchingEntrypointVersions(
+    manifest: IDatastoreManifest,
+    adminIdentity: string,
+  ): void {
     if (manifest.linkedVersions.length) return;
     const versionWithEntrypoint = this.datastoresDb.versions.findAnyWithEntrypoint(
       manifest.scriptEntrypoint,
+      adminIdentity,
     );
     if (versionWithEntrypoint) {
-      const fullVersionHistory = this.datastoresDb.versions.getLinkedVersions(
-        versionWithEntrypoint.baseVersionHash,
-      );
+      const fullVersionHistory = this.datastoresDb.versions
+        .getLinkedVersions(versionWithEntrypoint.baseVersionHash)
+        .filter(x => !x.versionHash.startsWith(DatastoreManifest.TemporaryIdPrefix));
+      if (!fullVersionHistory.length) return;
+
       throw new MissingLinkedScriptVersionsError(
         `You uploaded a script without any link to previous version history.`,
         fullVersionHistory,
@@ -481,11 +501,19 @@ Please try to re-upload after testing with the version available on this Cloud.`
       versions[versions.length - 1]?.versionHash,
     );
 
+    // if we already have newer versions, don't update
+    if (storedPreviousVersions.some(x => x.versionTimestamp > manifest.versionTimestamp)) return;
+
+    const manifestVersions = new Set(manifest.linkedVersions.map(x => x.versionHash));
+
     let includesAllCurrentlyStoredVersions = true;
-    const fullVersionHistory = [...manifest.linkedVersions];
+    const fullVersionHistory = [];
     for (const versionEntry of storedPreviousVersions) {
       fullVersionHistory.push(versionEntry);
-      if (!manifest.linkedVersions.some(x => x.versionHash === versionEntry.versionHash)) {
+      if (
+        manifest.versionHash !== versionEntry.versionHash &&
+        !manifestVersions.has(versionEntry.versionHash)
+      ) {
         includesAllCurrentlyStoredVersions = false;
       }
     }
@@ -519,14 +547,7 @@ Please try to re-upload after testing with the version available on this Cloud.`
     for (const version of manifest.linkedVersions) {
       if (version.versionHash === baseVersionHash) continue;
       const existing = this.datastoresDb.versions.getByHash(version.versionHash);
-      if (existing) {
-        this.datastoresDb.versions.update(
-          version.versionHash,
-          version.versionTimestamp,
-          baseVersionHash,
-          source?.expirationTimestamp,
-        );
-      } else {
+      if (!existing) {
         this.datastoresDb.versions.save(
           version.versionHash,
           manifest.scriptEntrypoint,
@@ -539,32 +560,43 @@ Please try to re-upload after testing with the version available on this Cloud.`
           installAllowedNewLinkedVersionHistory,
           source?.adminIdentity,
           source?.adminSignature,
-          source?.expirationTimestamp,
+          null,
+          DatastoreRegistryNetworkStore.createNetworkKey(version.versionHash),
         );
       }
     }
-
-    this.datastoresDb.versions.save(
-      manifest.versionHash,
-      manifest.scriptEntrypoint,
-      manifest.versionTimestamp,
-      dbxPath,
-      baseVersionHash,
-      manifest.domain,
-      source?.source,
-      source?.host,
-      installAllowedNewLinkedVersionHistory,
-      source?.adminIdentity,
-      source?.adminSignature,
-      source?.expirationTimestamp,
-    );
+    const existing = this.datastoresDb.versions.getByHash(manifest.versionHash);
+    if (existing) {
+      this.datastoresDb.versions.restore(
+        manifest.versionHash,
+        dbxPath,
+        source?.expirationTimestamp,
+      );
+    } else {
+      this.datastoresDb.versions.save(
+        manifest.versionHash,
+        manifest.scriptEntrypoint,
+        manifest.versionTimestamp,
+        dbxPath,
+        baseVersionHash,
+        manifest.domain,
+        source?.source,
+        source?.host,
+        installAllowedNewLinkedVersionHistory,
+        source?.adminIdentity,
+        source?.adminSignature,
+        source?.expirationTimestamp,
+        source?.networkKey ?? DatastoreRegistryNetworkStore.createNetworkKey(manifest.versionHash),
+      );
+    }
   }
 }
 
 export interface IDatastoreSourceDetails {
   host: string;
-  source: 'manual' | 'upload' | 'cluster' | 'network';
+  source: 'disk' | 'upload' | 'upload:create-storage' | 'start' | 'cluster' | 'network';
   adminIdentity?: string;
   adminSignature?: Buffer;
+  networkKey?: Buffer;
   expirationTimestamp?: number;
 }

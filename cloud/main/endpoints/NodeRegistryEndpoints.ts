@@ -1,26 +1,28 @@
 import { IAsyncFunc } from '@ulixee/net/interfaces/IApiHandlers';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
-import { DatastoreRegistryApiSchemas } from '@ulixee/platform-specification/services/DatastoreRegistryApis';
-import { INodeRegistryApis } from '@ulixee/platform-specification/services/NodeRegistryApis';
+import {
+  INodeRegistryApis,
+  NodeRegistryApiSchemas,
+} from '@ulixee/platform-specification/services/NodeRegistryApis';
 import { IServicesSetupApis } from '@ulixee/platform-specification/services/SetupApis';
-import { StatsTrackerApiSchemas } from '@ulixee/platform-specification/services/StatsTrackerApis';
 import { IZodApiTypes } from '@ulixee/specification/utils/IZodApi';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
 import ICloudApiContext from '../interfaces/ICloudApiContext';
 
-export type TServicesApis = IServicesSetupApis & INodeRegistryApis;
+export type TServicesApis = IServicesSetupApis<ICloudApiContext> &
+  INodeRegistryApis<ICloudApiContext>;
 
 export type TConnectionToServicesClient = IConnectionToClient<TServicesApis, {}>;
 
-export default class HostedServicesEndpoints {
+export default class NodeRegistryEndpoints {
   public connections = new Set<TConnectionToServicesClient>();
 
   private readonly handlersByCommand: TServicesApis;
 
   constructor() {
     this.handlersByCommand = {
-      'Services.getSetup': async (_, ctx: ICloudApiContext) => {
+      'Services.getSetup': async (_, ctx) => {
         const { datastoreRegistryHost, storageEngineHost, statsTrackerHost } =
           ctx.datastoreConfiguration;
         const { nodeRegistryHost } = ctx.cloudConfiguration;
@@ -32,26 +34,31 @@ export default class HostedServicesEndpoints {
           statsTrackerHost,
         });
       },
-      'NodeRegistry.getNodes': async ({ count }, ctx: ICloudApiContext) => {
+      'NodeRegistry.getNodes': async ({ count }, ctx) => {
         const nodes = await ctx.nodeRegistry.getNodes(count);
         return { nodes };
       },
-      'NodeRegistry.register': async (registration, ctx: ICloudApiContext) => {
-        return await ctx.nodeTracker.track({
+      'NodeRegistry.register': async (registration, ctx) => {
+       return await ctx.nodeTracker.track({
           ...registration,
           lastSeenDate: new Date(),
           isClusterNode: true,
         });
       },
-      'NodeRegistry.health': async (health, ctx: ICloudApiContext) => {
+      'NodeRegistry.health': async (health, ctx) => {
         await ctx.nodeTracker.checkin(health);
         return { success: true };
       },
     };
 
     for (const [api, handler] of Object.entries(this.handlersByCommand)) {
-      const validationSchema = DatastoreRegistryApiSchemas[api] ?? StatsTrackerApiSchemas[api];
-      this.handlersByCommand[api] = validateThenRun.bind(api, handler.bind(this), validationSchema);
+      const validationSchema = NodeRegistryApiSchemas[api];
+      this.handlersByCommand[api] = validateThenRun.bind(
+        this,
+        api,
+        handler.bind(this),
+        validationSchema,
+      );
     }
   }
 
@@ -73,7 +80,7 @@ function validateThenRun(
   args: any,
   context: ICloudApiContext,
 ): Promise<any> {
-  if (!validationSchema) return handler(args);
+  if (!validationSchema) return handler(args, context);
   // NOTE: mutates `errors`
   const result = validationSchema.args.safeParse(args);
   if (result.success === true) return handler(result.data, context);

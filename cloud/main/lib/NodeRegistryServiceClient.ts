@@ -28,8 +28,8 @@ export default class NodeRegistryServiceClient {
   ) {
     this.hostAddress = new URL('/services', hostAddress);
     this.client = new ConnectionToCore(new WsTransportToCore(this.hostAddress.href));
-    this.heartbeatInternal = setInterval(this.heartbeat.bind(this), 5 * MINUTE);
-    this.eventSubscriber.on(HeroCore.pool, 'agent-created', () => (this.stats.sessions += 1));
+    this.heartbeatInternal = setInterval(this.heartbeat.bind(this), 5 * MINUTE) as any;
+    this.eventSubscriber.on(HeroCore.events, 'agent-created', () => (this.stats.sessions += 1));
     this.eventSubscriber.on(datastoreCore, 'connection', () => (this.stats.clients += 1));
     this.eventSubscriber.on(datastoreCore, 'query', () => (this.stats.queries += 1));
     this.statsBuckets.push({ sessions: 0, queries: 0, clients: 0, startDate: new Date() });

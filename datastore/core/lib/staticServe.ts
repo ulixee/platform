@@ -1,7 +1,7 @@
-import * as http from 'http';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 import * as crypto from 'crypto';
+import * as fs from 'fs/promises';
+import * as http from 'http';
+import * as path from 'path';
 
 export default function staticServe(
   staticDir: string,
@@ -11,7 +11,10 @@ export default function staticServe(
     req: http.IncomingMessage,
     res: http.ServerResponse,
   ) {
-    let filePath = path.join(staticDir, req.url);
+    if (req.url.startsWith('//')) req.url = req.url.slice(1);
+    // strip off any query string
+    const url = new URL(req.url, 'http://localhost');
+    let filePath = path.join(staticDir, url.pathname);
 
     if (filePath.endsWith('/')) {
       filePath = path.join(filePath, `index.html`);
@@ -61,7 +64,10 @@ export default function staticServe(
           res.end();
         } else {
           res.setHeader('Content-Type', contentType);
-          res.setHeader('Content-Security-Policy', "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src *");
+          res.setHeader(
+            'Content-Security-Policy',
+            "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src *",
+          );
           res.setHeader('X-Content-Type-Options', 'nosniff');
           res.setHeader('Cache-Control', `max-age=${cacheTime / 1000}`);
           res.setHeader('ETag', etag);

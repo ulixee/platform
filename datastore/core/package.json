@@ -24,6 +24,7 @@
   "devDependencies": {
     "@ulixee/cloud": "2.0.0-alpha.21",
     "@ulixee/datastore-packager": "2.0.0-alpha.21",
+    "@ulixee/cloud-p2p": "2.0.0-alpha.21",
     "@ulixee/datastore-plugins-hero-core": "2.0.0-alpha.21",
     "@ulixee/datastore-testing": "2.0.0-alpha.21",
     "axios": "^0.26.1",

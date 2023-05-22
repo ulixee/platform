@@ -1,6 +1,6 @@
 import { z } from '@ulixee/specification';
-import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
 import { identityValidation } from '@ulixee/specification/common';
+import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
 
 const CloudNodeMetaSchema = z.object({
   identity: identityValidation.describe('Network identity of the node.'),
@@ -53,6 +53,9 @@ export const NodeRegistryApiSchemas = {
 
 export type ICloudNodeMeta = z.infer<typeof CloudNodeMetaSchema>;
 export type INodeRegistryApiTypes = IZodSchemaToApiTypes<typeof NodeRegistryApiSchemas>;
-export type INodeRegistryApis = IZodHandlers<typeof NodeRegistryApiSchemas>;
+export type INodeRegistryApis<TContext = any> = IZodHandlers<
+  typeof NodeRegistryApiSchemas,
+  TContext
+>;
 
 export default INodeRegistryApiTypes;

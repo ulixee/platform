@@ -3,7 +3,6 @@ import UlixeeConfig from '@ulixee/commons/config';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import Logger from '@ulixee/commons/lib/Logger';
-import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import Core from '@ulixee/hero-core';
 import * as Fs from 'fs/promises';
@@ -39,22 +38,27 @@ blockGlobalConfigWrites();
 export const needsClosing: { close: () => Promise<any> | void; onlyCloseOnFinal?: boolean }[] = [];
 
 export async function createLocalNode(
-  config: Partial<IDatastoreCoreConfigureOptions>,
+  config: ConstructorParameters<typeof CloudNode>[0],
+  onlyCloseOnFinal = false,
 ): Promise<CloudNode> {
-  if (config.datastoresDir) {
-    config.datastoresTmpDir ??= Path.join(config.datastoresDir, 'tmp');
+  const datastoreConfig = config.datastoreConfiguration;
+  if (datastoreConfig.datastoresDir) {
+    datastoreConfig.datastoresTmpDir ??= Path.join(datastoreConfig.datastoresDir, 'tmp');
 
     try {
-      await Fs.rm(config.datastoresDir, { recursive: true });
+      await Fs.rm(datastoreConfig.datastoresDir, { recursive: true });
     } catch {}
-    await Fs.mkdir(config.datastoresDir, { recursive: true });
+    await Fs.mkdir(datastoreConfig.datastoresDir, { recursive: true });
+    await Fs.mkdir(datastoreConfig.datastoresTmpDir, { recursive: true });
   }
-  needsClosing.push({ close: () => Fs.rm(config.datastoresDir, { recursive: true }) });
+  needsClosing.push({
+    close: () => Fs.rm(datastoreConfig.datastoresDir, { recursive: true }).catch(() => null),
+    onlyCloseOnFinal,
+  });
 
-  const cloudNode = new CloudNode();
-  cloudNode.datastoreConfiguration = config;
+  const cloudNode = new CloudNode(config);
+  onClose(() => cloudNode.close(), onlyCloseOnFinal);
   await cloudNode.listen();
-  onClose(() => cloudNode.close(), true);
   return cloudNode;
 }
 

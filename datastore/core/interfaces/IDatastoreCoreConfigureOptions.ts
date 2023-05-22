@@ -22,7 +22,7 @@ export default interface IDatastoreCoreConfigureOptions {
   identityWithSidechain: Identity;
 
   // services settings
-  datastoreRegistryHost: string;
-  storageEngineHost: string;
-  statsTrackerHost: string;
+  datastoreRegistryHost: string | 'self';
+  storageEngineHost: string | 'self';
+  statsTrackerHost: string | 'self';
 }

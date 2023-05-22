@@ -1,8 +1,10 @@
+import { readFileAsJson } from '@ulixee/commons/lib/fileUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { InvalidSignatureError } from '@ulixee/crypto/lib/errors';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import IDatastoreApiTypes from '@ulixee/platform-specification/datastore/DatastoreApis';
 import { promises as Fs } from 'fs';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import { IDatastoreSourceDetails } from '../lib/DatastoreRegistryDiskStore';
@@ -45,15 +47,24 @@ async function install(
   context: IDatastoreApiContext,
   forceInstall = false,
 ): Promise<void> {
-  const { configuration, datastoreRegistry } = context;
+  const { configuration, datastoreRegistry, storageEngineRegistry } = context;
   const tmpVersionDir = await Fs.mkdtemp(`${configuration.datastoresTmpDir}/`);
   try {
     await unpackDbx(version.compressedDbx, tmpVersionDir);
+    const manifest = await readFileAsJson<IDatastoreManifest>(
+      `${tmpVersionDir}/datastore-manifest.json`,
+    );
+    if (!storageEngineRegistry.isHostingStorageEngine(manifest.storageEngineHost)) {
+      throw new Error(
+        `Uploaded to invalid Datastore.createStorageEngine host. Should have been ${manifest.storageEngineHost}.`,
+      );
+    }
+
     const { adminIdentity, adminSignature, allowNewLinkedVersionHistory } = version;
     // install will trigger storage engine installation
     const sourceDetails: IDatastoreSourceDetails = {
       host: context.connectionToClient?.transport.remoteId,
-      source: 'upload',
+      source: 'upload:create-storage',
       adminIdentity,
       adminSignature,
     };
@@ -66,7 +77,9 @@ async function install(
       },
       sourceDetails,
     );
-    if (forceInstall) await datastoreRegistry.diskStore.onInstalled(result.manifest, sourceDetails);
+    if (forceInstall && !result.didInstall) {
+      await datastoreRegistry.diskStore.onInstalled(result.manifest, sourceDetails);
+    }
   } finally {
     // remove tmp dir in case of errors
     await Fs.rm(tmpVersionDir, { recursive: true }).catch(() => null);

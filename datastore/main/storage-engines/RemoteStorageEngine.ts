@@ -7,13 +7,19 @@ import AbstractStorageEngine from './AbstractStorageEngine';
 
 export default class RemoteStorageEngine extends AbstractStorageEngine {
   protected connectionToCore: ConnectionToDatastoreCore;
-  constructor(readonly storageEngineHost: string) {
+  constructor(
+    readonly storageEngineHost: string,
+    onDisconnected: (instance: RemoteStorageEngine) => any,
+  ) {
     super();
     this.connectionToCore = ConnectionToDatastoreCore.remote(storageEngineHost);
+    this.connectionToCore.once('disconnected', () => onDisconnected(this));
   }
 
   public override async close(): Promise<void> {
     await this.connectionToCore.disconnect();
+    this.connectionToCore.removeAllListeners();
+    this.connectionToCore = null;
   }
 
   public override async query<TResult>(

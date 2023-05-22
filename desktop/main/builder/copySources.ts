@@ -21,13 +21,12 @@ const dirsNotToInclude = new Set([
   'ui',
 ]);
 
-function copyDir(baseDir: string, outDir: string): void {
+function copyDir(baseDir: string, outPath?: string): void {
   if (!Fs.existsSync(baseDir)) return;
-  if (!Fs.existsSync(outDir)) Fs.mkdirSync(outDir, { recursive: true });
 
   const packageJson = Fs.existsSync(`${baseDir}/package.json`)
     ? JSON.parse(Fs.readFileSync(`${baseDir}/package.json`, 'utf8'))
-    : { private: false };
+    : { private: false, name: '' };
 
   for (const dirOrFile of Fs.readdirSync(baseDir)) {
     const dirPath = `${baseDir}/${dirOrFile}`;
@@ -37,16 +36,14 @@ function copyDir(baseDir: string, outDir: string): void {
       [...dirsNotToInclude].some(x => dirPath.endsWith(x))
     )
       continue;
-    const outPath = `${outDir}/${dirOrFile}`;
 
+    const packageName = packageJson.name?.replace('@ulixee', '');
+    const packageDir = packageName ? `${dest}/${packageName}` : outPath;
     if (Fs.statSync(dirPath).isDirectory()) {
-      if (!Fs.existsSync(outPath)) {
-        Fs.mkdirSync(outPath, { recursive: true });
-      }
-
-      copyDir(dirPath, outPath);
+      copyDir(dirPath, `${packageDir}/${dirOrFile}`);
     } else if (!packageJson.workspaces || packageJson.workspaces?.length === 0) {
-      Fs.copyFileSync(dirPath, outPath);
+      if (!Fs.existsSync(packageDir)) Fs.mkdirSync(packageDir, { recursive: true });
+      Fs.copyFileSync(dirPath, `${packageDir}/${dirOrFile}`);
     }
   }
 }
@@ -58,30 +55,30 @@ if (buildDir !== 'build') {
   dirsNotToInclude.add('datastore/testing');
 }
 
-copyDir(`${baseBuild}/${buildDir}`, dest);
+copyDir(`${baseBuild}/${buildDir}`);
 if (buildDir === 'build') {
-  copyDir(`${baseBuild}/hero/${buildDir}`, `${dest}/hero`);
+  copyDir(`${baseBuild}/hero/${buildDir}`);
+  copyDir(`${baseBuild}/../unblocked/${buildDir}/agent`);
+  copyDir(`${baseBuild}/../unblocked/${buildDir}/specification`);
+  copyDir(`${baseBuild}/../shared/${buildDir}/net`);
+  copyDir(`${baseBuild}/../shared/${buildDir}/crypto`);
+  copyDir(`${baseBuild}/../shared/${buildDir}/commons`);
+  copyDir(`${baseBuild}/../shared/${buildDir}/specification`);
+  copyDir(`${baseBuild}/../shared/${buildDir}/schema`);
+  copyDir(`${baseBuild}/../unblocked/${buildDir}/plugins`);
   copyDir(
     `${baseBuild}/../unblocked/browser-emulator-builder/data`,
-    `${dest}/browser-emulator-builder/data`,
+    `${dest}/default-browser-emulator/data`,
   );
-  copyDir(`${baseBuild}/../unblocked/${buildDir}/agent`, `${dest}/agent`);
-  copyDir(`${baseBuild}/../unblocked/${buildDir}/specification`, `${dest}/unblocked-specification`);
-  copyDir(`${baseBuild}/../shared/${buildDir}/net`, `${dest}/net`);
-  copyDir(`${baseBuild}/../shared/${buildDir}/crypto`, `${dest}/crypto`);
-  copyDir(`${baseBuild}/../shared/${buildDir}/commons`, `${dest}/commons`);
-  copyDir(`${baseBuild}/../shared/${buildDir}/specification`, `${dest}/ulixee-specification`);
-  copyDir(`${baseBuild}/../shared/${buildDir}/schema`, `${dest}/schema`);
-  copyDir(`${baseBuild}/../unblocked/${buildDir}/plugins`, `${dest}/unblocked-plugins`);
-  if (Fs.existsSync(`${dest}/unblocked-plugins`)) {
+  if (Fs.existsSync(`${dest}/default-browser-emulator`)) {
     Fs.writeFileSync(
-      `${dest}/unblocked-plugins/default-browser-emulator/paths.json`,
+      `${dest}/default-browser-emulator/paths.json`,
       JSON.stringify({
-        'emulator-data': '../../browser-emulator-builder/data',
+        'emulator-data': './data',
       }),
     );
   }
 }
 
 // eslint-disable-next-line no-console
-console.log('Copied files to dest', dest);
+console.log('Copied files to dest');

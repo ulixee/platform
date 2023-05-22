@@ -76,7 +76,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
   function refreshMetadata(versionHash: string, cloudName = 'local'): Promise<void> {
     const cloud = clouds.value.find(x => x.name === cloudName);
     const client = cloud.clientsByAddress.values().next().value;
-    return client.send('Datastore.meta', { versionHash }).then(x => onDatastoreMeta(x, cloud));
+    return client.send('Datastore.meta', { versionHash, includeSchemasAsJson: true }).then(x => onDatastoreMeta(x, cloud));
   }
 
   function findAdminIdentity(versionHash: string) {
@@ -288,9 +288,12 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     entry.adminIdentity ??= getDatastoreAdminIdentity(versionHash, cloudName);
     entry.deploymentsByCloud[cloud.name] = datastore;
     entry.isInstalled = installedDatastoreVersions.has(versionHash);
+    entry.summary = datastore;
 
-    if (versionHash !== datastore.latestVersionHash) {
-      entry.versions.add(datastore.latestVersionHash);
+    if (versionHash === datastore.latestVersionHash) {
+      for (const version of datastore.linkedVersions) {
+        if (datastoresByVersion.value[version.versionHash]) datastoresByVersion.value[version.versionHash].summary.latestVersionHash = versionHash;
+      }
     }
   }
 

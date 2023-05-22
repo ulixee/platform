@@ -266,7 +266,7 @@ test('should provide a newer version hash if old script not available', async ()
     './new-version.ts',
     'not-there',
     null,
-    'manual',
+    'disk',
     '',
     false,
     null,

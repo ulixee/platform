@@ -3,6 +3,7 @@ import { IDatastoreRegistryApis } from '@ulixee/platform-specification/services/
 import IDatastoreRegistryStore, {
   IDatastoreManifestWithLatest,
 } from '../interfaces/IDatastoreRegistryStore';
+import { TDatastoreUpload } from './DatastoreRegistry';
 
 export default class DatastoreRegistryClusterStore implements IDatastoreRegistryStore {
   public source = 'cluster' as const;
@@ -73,5 +74,12 @@ export default class DatastoreRegistryClusterStore implements IDatastoreRegistry
       adminSignature,
       ulixeeApiHost: this.client.transport.host,
     };
+  }
+
+  async upload(datastore: TDatastoreUpload): Promise<{ success: boolean }> {
+    return await this.client.sendRequest({
+      command: 'DatastoreRegistry.upload',
+      args: [datastore],
+    });
   }
 }

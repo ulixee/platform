@@ -16,7 +16,7 @@ export default class StaticServer {
     const fileServer = staticServe(distFolder, cacheTime);
 
     this.#httpServer = Http.createServer((req, res) => {
-      void fileServer(req, res).catch(() => null);
+     void fileServer(req, res).catch(() => null);
     });
   }
 

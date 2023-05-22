@@ -1,3 +1,4 @@
+import { toUrl } from '@ulixee/commons/lib/utils';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 /**
  * This is a cache of all the connections to other machines that we keep
@@ -14,10 +15,18 @@ export default class DatastoreApiClients {
   }
 
   public get(host: string): DatastoreApiClient {
-    if (!host.includes('://')) host = `ulx://${host}`;
-    const url = new URL(host);
+    const url = toUrl(host);
     host = `ulx://${url.host}`;
-    this.apiClientCacheByUrl[host] ??= new DatastoreApiClient(host);
+    if (!this.apiClientCacheByUrl[host]) {
+      const client = new DatastoreApiClient(host);
+      this.apiClientCacheByUrl[host] = client;
+      client.connectionToCore.once('disconnected', () => {
+        if (this.apiClientCacheByUrl[host] === client) {
+          delete this.apiClientCacheByUrl[host];
+        }
+      });
+    }
+
     return this.apiClientCacheByUrl[host];
   }
 }

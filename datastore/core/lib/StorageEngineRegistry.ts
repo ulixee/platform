@@ -8,6 +8,7 @@ import IDatastoreApiTypes from '@ulixee/platform-specification/datastore/Datasto
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import * as Fs from 'fs';
 import * as Path from 'path';
+import env from '../env';
 import { IDatastoreManifestWithRuntime } from './DatastoreRegistry';
 import DatastoreVm from './DatastoreVm';
 
@@ -50,7 +51,10 @@ export default class StorageEngineRegistry {
     if (this.isHostingStorageEngine(storageEngineHost)) {
       engine = new SqliteStorageEngine(Path.join(this.dataDir, `${versionHash}.db`));
     } else {
-      engine = new RemoteStorageEngine(storageEngineHost);
+      engine = new RemoteStorageEngine(
+        storageEngineHost,
+        this.onEngineDisconnected.bind(this, versionHash),
+      );
     }
     this.#storageByVersionHash.set(versionHash, engine);
     return engine;
@@ -96,7 +100,7 @@ export default class StorageEngineRegistry {
     }
     const storagePath = Path.join(this.dataDir, `${version.versionHash}.db`);
 
-    if (options?.clearExisting) {
+    if (options?.clearExisting && env.serverEnvironment !== 'production') {
       await this.deleteExisting(version.versionHash);
     }
 
@@ -137,6 +141,12 @@ export default class StorageEngineRegistry {
       } else {
         Fs.watchFile(runtimePath, { persistent: false }, () => callback());
       }
+    }
+  }
+
+  private onEngineDisconnected(versionHash: string, engine: RemoteStorageEngine): void {
+    if (this.#storageByVersionHash[versionHash] === engine) {
+      delete this.#storageByVersionHash[versionHash];
     }
   }
 }

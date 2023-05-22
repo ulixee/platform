@@ -22,7 +22,7 @@ const FunctionMetaSchema = z.object({
   minimumPrice: micronoteTokenValidation.describe(
     'Minimum microgons that must be allocated for a query to be accepted.',
   ),
-  schemaJson: z.any().optional().describe('The schema JSON if requested'),
+  schemaAsJson: z.any().optional().describe('The schema JSON if requested'),
 });
 
 export const DatastoreApiSchemas = {
@@ -133,6 +133,14 @@ export const DatastoreApiSchemas = {
     }),
     result: z.any().describe('A flexible result based on the type of api.'),
   },
+  'Datastore.manifest': {
+    args: z.object({
+      versionHash: datastoreVersionHashValidation.describe(
+        'The hash of a unique datastore version',
+      ),
+    }),
+    result: DatastoreManifestWithLatest,
+  },
   'Datastore.meta': {
     args: z.object({
       versionHash: datastoreVersionHashValidation.describe(
@@ -148,13 +156,13 @@ export const DatastoreApiSchemas = {
       extractorsByName: z.record(
         z.string().describe('The name of the extractor'),
         FunctionMetaSchema.extend({
-          priceBreakdown: DatastoreExtractorPricing.array(),
+          prices: DatastoreExtractorPricing.array(),
         }),
       ),
       crawlersByName: z.record(
         z.string().describe('The name of the crawler'),
         FunctionMetaSchema.extend({
-          priceBreakdown: DatastoreCrawlerPricing.array(),
+          prices: DatastoreCrawlerPricing.array(),
         }),
       ),
       tablesByName: z.record(
@@ -163,8 +171,8 @@ export const DatastoreApiSchemas = {
           description: z.string().optional(),
           stats: DatastoreStatsSchema,
           pricePerQuery: micronoteTokenValidation.describe('The table base price per query.'),
-          priceBreakdown: DatastoreTablePricing.array(),
-          schemaJson: z.any().optional().describe('The schema JSON if requested'),
+          prices: DatastoreTablePricing.array(),
+          schemaAsJson: z.any().optional().describe('The schema JSON if requested'),
         }),
       ),
       schemaInterface: z
@@ -382,10 +390,8 @@ export const DatastoreApiSchemas = {
           scriptEntrypoint: z.string(),
           versionHash: datastoreVersionHashValidation,
           versionTimestamp: z.number().int().positive().describe('Millis since epoch'),
-          domain: z
-            .string()
-            .optional()
-            .describe('A Custom DNS name pointing at the latest version of the Datastore.'),
+          linkedVersions: DatastoreManifestWithLatest.shape.linkedVersions,
+          domain: DatastoreManifestWithLatest.shape.domain,
           latestVersionHash: datastoreVersionHashValidation.describe(
             'The latest version hash of this datastore',
           ),

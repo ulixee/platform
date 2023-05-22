@@ -478,7 +478,7 @@ export default class SessionController extends TypedEventEmitter<{
   public getSourceCodeAtCommandId(commandId: number): (ISourceCodeLocation & { code: string })[] {
     const command = this.db.commands.loadHistory().find(x => x.id === commandId);
     if (!command) return [];
-    return command.callsite.map(x => SourceLoader.getSource(x));
+    return command.callsite.map(x => SourceLoader.getSource(x)).filter(Boolean);
   }
 
   public addSourceCodeLocation(record: { commandId: number } & ISourceCodeReference): void {

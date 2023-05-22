@@ -122,9 +122,9 @@ async function upload(
     console.log('Your Datastore has been uploaded!');
   } catch (error) {
     console.log(error);
-    if (error.code === 'InvalidScriptVersionHistoryError' && error.versionHistory) {
+    if (error.code === 'ERR_INVALID_SCRIPT_VERSION_HISTORY' && error.versionHistory) {
       handleInvalidScriptVersionHistory(manifest, dbx, error.versionHistory, cloudHost);
-    } else if (error.code === 'MissingLinkedScriptVersionsError' && error.previousVersions) {
+    } else if (error.code === 'ERR_MISSING_VERSIONS' && error.previousVersions) {
       handleMissingLinkedVersions(manifest, dbx, error.previousVersions, cloudHost);
     } else {
       console.error(error.message, error.stack);

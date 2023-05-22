@@ -1,28 +1,29 @@
-import * as Fs from 'fs';
-import * as Path from 'path';
-import DatastorePackager from '@ulixee/datastore-packager';
 import { CloudNode } from '@ulixee/cloud';
 import Identity from '@ulixee/crypto/lib/Identity';
+import DatastorePackager from '@ulixee/datastore-packager';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import { Helpers } from '@ulixee/datastore-testing';
+import * as Fs from 'fs';
+import * as Path from 'path';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.stream.test');
 let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 
 beforeAll(async () => {
-  cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
-    datastoresDir: storageDir,
-    datastoresTmpDir: Path.join(storageDir, 'tmp'),
-  };
+  cloudNode = await Helpers.createLocalNode({
+    datastoreConfiguration: {
+      datastoresDir: storageDir,
+    },
+  }, true);
   await Fs.promises.rm(`${__dirname}/datastores/stream.dbx`, { recursive: true }).catch(() => null);
   await cloudNode.listen();
   client = new DatastoreApiClient(await cloudNode.address);
+  Helpers.onClose(() => client.disconnect(), true);
 });
 
 afterAll(async () => {
-  await cloudNode.close();
-  if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
+  await Helpers.afterAll();
 });
 
 test('should be able to stream a datastore extractor', async () => {

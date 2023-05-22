@@ -1,21 +1,22 @@
+import { IAsyncFunc } from '@ulixee/net/interfaces/IApiHandlers';
+import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
+import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import {
   DatastoreRegistryApiSchemas,
   IDatastoreRegistryApis,
 } from '@ulixee/platform-specification/services/DatastoreRegistryApis';
-import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
-import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
-import ValidationError from '@ulixee/specification/utils/ValidationError';
-import { IZodApiTypes } from '@ulixee/specification/utils/IZodApi';
-import { IAsyncFunc } from '@ulixee/net/interfaces/IApiHandlers';
 import {
   IStatsTrackerApis,
   StatsTrackerApiSchemas,
 } from '@ulixee/platform-specification/services/StatsTrackerApis';
+import { IZodApiTypes } from '@ulixee/specification/utils/IZodApi';
+import ValidationError from '@ulixee/specification/utils/ValidationError';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 import { DatastoreNotFoundError } from '../lib/errors';
 
-export type TServicesApis = IDatastoreRegistryApis & IStatsTrackerApis;
+export type TServicesApis = IDatastoreRegistryApis<IDatastoreApiContext> &
+  IStatsTrackerApis<IDatastoreApiContext>;
 
 export type TConnectionToServicesClient = IConnectionToClient<TServicesApis, {}>;
 
@@ -57,6 +58,12 @@ export default class HostedServicesEndpoints {
         const datastores = await ctx.datastoreRegistry.diskStore.all(count, offset);
         return { datastores };
       },
+      'DatastoreRegistry.upload': async (request, ctx) => {
+        const { datastoreRegistry, workTracker } = ctx;
+        return workTracker.trackUpload(
+          datastoreRegistry.saveDbx(request, ctx.connectionToClient?.transport.remoteId),
+        );
+      },
       'StatsTracker.recordEntityStats': async (args, ctx) => {
         await ctx.statsTracker.recordEntityStats(args);
         return { success: true };
@@ -67,13 +74,19 @@ export default class HostedServicesEndpoints {
       },
       'StatsTracker.get': async ({ versionHash }, ctx) => {
         const manifest = await ctx.datastoreRegistry.getByVersionHash(versionHash);
-        return await ctx.statsTracker.get(manifest);
+        return await ctx.statsTracker.getForDatastore(manifest);
       },
     };
 
     for (const [api, handler] of Object.entries(this.handlersByCommand)) {
       const validationSchema = DatastoreRegistryApiSchemas[api] ?? StatsTrackerApiSchemas[api];
-      this.handlersByCommand[api] = validateThenRun.bind(api, handler.bind(this), validationSchema);
+      if (!validationSchema) throw new Error(`invalid api ${  api}`);
+      this.handlersByCommand[api] = validateThenRun.bind(
+        this,
+        api,
+        handler.bind(this),
+        validationSchema,
+      );
     }
   }
 
@@ -95,7 +108,7 @@ function validateThenRun(
   args: any,
   context: IDatastoreApiContext,
 ): Promise<any> {
-  if (!validationSchema) return handler(args);
+  if (!validationSchema) return handler(args, context);
   // NOTE: mutates `errors`
   const result = validationSchema.args.safeParse(args);
   if (result.success === true) return handler(result.data, context);

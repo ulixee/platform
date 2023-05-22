@@ -1,59 +1,232 @@
 import { CloudNode } from '@ulixee/cloud';
-import { copyDir, existsAsync } from '@ulixee/commons/lib/fileUtils';
-import Packager from '@ulixee/datastore-packager';
-import Dbx from '@ulixee/datastore-packager/lib/Dbx';
+import DatastorePackager from '@ulixee/datastore-packager';
+import P2pConnection from '@ulixee/cloud-p2p';
+import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { mkdirSync, rmSync } from 'fs';
-import * as Hostile from 'hostile';
+import * as Fs from 'fs';
 import * as Path from 'path';
-import DatastoreRegistry from '../lib/DatastoreRegistry';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreRegistryService.test');
-const tmpDir = `${storageDir}/tmp`;
-let bootupPackager: Packager;
-let bootupDbx: Dbx;
-let cloudNode: CloudNode;
+
+let nodeOutsideCluster: CloudNode;
+
+let plainNode: CloudNode;
+let nodeWithServices: CloudNode;
 let client: DatastoreApiClient;
+let packager: DatastorePackager;
 
 beforeAll(async () => {
-  mkdirSync(storageDir, { recursive: true });
-  cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
-    datastoresDir: storageDir,
-    datastoresTmpDir: Path.join(storageDir, 'tmp'),
-  };
-  await cloudNode.listen();
-  client = new DatastoreApiClient(await cloudNode.address);
-  bootupPackager = new Packager(require.resolve('./datastores/bootup.ts'));
-  bootupDbx = await bootupPackager.build();
-  if (process.env.CI !== 'true') Hostile.set('127.0.0.1', 'bootup-datastore.com');
+  nodeWithServices = await Helpers.createLocalNode(
+    {
+      cloudType: 'public', // Turning on so that download are enabled... eventually uses payment
+      datastoreConfiguration: {
+        datastoresDir: Path.join(storageDir, 'with-services'),
+      },
+      listenOptions: {
+        hostedServicesHostname: 'localhost',
+        peerPort: 0,
+      },
+    },
+    true,
+  );
+  plainNode = await Helpers.createLocalNode(
+    {
+      datastoreConfiguration: {
+        datastoresDir: Path.join(storageDir, 'plain'),
+      },
+      servicesSetupHost: await nodeWithServices.hostedServicesServer.host,
+    },
+    true,
+  );
+
+  nodeOutsideCluster = await Helpers.createLocalNode(
+    {
+      datastoreConfiguration: {
+        datastoresDir: Path.join(storageDir, 'outside'),
+      },
+      dhtBootstrapPeers: [...nodeWithServices.peerNetwork.multiaddrs],
+      listenOptions: {
+        peerPort: 0,
+      },
+    },
+    true,
+  );
+
+  client = new DatastoreApiClient(await plainNode.address);
+  Fs.writeFileSync(
+    `${__dirname}/datastores/DatastoreRegistryService1-manifest.json`,
+    JSON.stringify({ storageEngineHost: await nodeWithServices.host }),
+  );
+  await Fs.promises
+    .rm(`${__dirname}/datastores/DatastoreRegistryService1.dbx`, { recursive: true })
+    .catch(() => null);
+  packager = new DatastorePackager(`${__dirname}/datastores/DatastoreRegistryService1.js`);
+  await packager.build();
+  Helpers.onClose(() => client.disconnect(), true);
 }, 60e3);
 
-afterAll(async () => {
-  await cloudNode.close();
-  await client.disconnect();
-  if (process.env.CI !== 'true') Hostile.remove('127.0.0.1', 'bootup-datastore.com');
-  try {
-    rmSync(storageDir, { recursive: true });
-  } catch (err) {}
+afterAll(Helpers.afterAll);
+afterEach(Helpers.afterEach);
+
+test('should proxy datastore uploads to the registry owner', async () => {
+  expect(plainNode.datastoreCore.options.datastoreRegistryHost).toContain(
+    await nodeWithServices.hostedServicesServer.host,
+  );
+  const registryHomeSave = jest.spyOn(nodeWithServices.datastoreCore.datastoreRegistry, 'save');
+  const dbxFile = await packager.dbx.tarGzip();
+  await expect(client.upload(dbxFile)).resolves.toBeTruthy();
+  expect(registryHomeSave).toHaveBeenCalledTimes(1);
 });
 
-test('should install new datastores on startup', async () => {
-  await copyDir(bootupDbx.path, `${storageDir}/bootup.dbx`);
-  const registry = new DatastoreRegistry(storageDir);
-  await registry.diskStore.installManualUploads([], '127.0.0.1:1818');
-  // @ts-expect-error
-  const entry = registry.diskStore.datastoresDb.versions.getByHash(
-    bootupPackager.manifest.versionHash,
+test('should look for datastores in the hosted service', async () => {
+  await packager.dbx.upload(await nodeWithServices.host);
+  const clusterNodeGet = jest.spyOn(
+    nodeWithServices.datastoreCore.datastoreRegistry,
+    'getByVersionHash',
   );
-  expect(entry).toBeTruthy();
+  const plainNodeCheckCluster = jest.spyOn(
+    plainNode.datastoreCore.datastoreRegistry.clusterStore,
+    'get',
+  );
+  const plainNodeDownloadFromCluster = jest.spyOn(
+    plainNode.datastoreCore.datastoreRegistry.clusterStore,
+    'downloadDbx',
+  );
+  await expect(client.getMeta(packager.manifest.versionHash)).resolves.toBeTruthy();
+  expect(clusterNodeGet).toHaveBeenCalled();
+  expect(plainNodeCheckCluster).toHaveBeenCalledTimes(1);
+  expect(plainNodeDownloadFromCluster).toHaveBeenCalledTimes(1);
+});
 
-  await expect(existsAsync(entry.dbxPath)).resolves.toBeTruthy();
-}, 45e3);
+test('should look in the peer network for a datastore', async () => {
+  await packager.dbx.upload(await nodeWithServices.host);
+  const externalNodeGet = jest.spyOn(
+    nodeWithServices.datastoreCore.datastoreRegistry,
+    'getByVersionHash',
+  );
+  const outsideNodeCheckNetwork = jest.spyOn(
+    nodeOutsideCluster.datastoreCore.datastoreRegistry.networkStore,
+    'get',
+  );
+  const outsideNodeDownload = jest.spyOn(
+    nodeOutsideCluster.datastoreCore.datastoreRegistry.networkStore,
+    'downloadDbx',
+  );
+  const outsideNodeClient = new DatastoreApiClient(await nodeOutsideCluster.host);
+  Helpers.onClose(() => outsideNodeClient.disconnect());
+  await expect(outsideNodeClient.getMeta(packager.manifest.versionHash)).resolves.toBeTruthy();
+  expect(externalNodeGet).toHaveBeenCalled();
+  expect(outsideNodeCheckNetwork).toHaveBeenCalledTimes(1);
+  expect(outsideNodeDownload).toHaveBeenCalledTimes(1);
+});
 
-test.todo('should proxy datastore uploads to the registry owner');
-test.todo('should look for datastores in the hosted service');
-test.todo('should download source code from the hosted service');
-test.todo('should look in the peer network for a datastore');
-test.todo('should expire datastores');
-test.todo('should re-download expired datastores if not available');
+test('should expire datastores and be able to re-install them when needed', async () => {
+  await packager.dbx.upload(await nodeWithServices.host);
+  const outsideNodeClient = new DatastoreApiClient(await nodeOutsideCluster.host);
+  Helpers.onClose(() => outsideNodeClient.disconnect());
+  const versionHash = packager.manifest.versionHash;
+  await expect(outsideNodeClient.getMeta(versionHash)).resolves.toBeTruthy();
+  const onExpire = jest.spyOn(
+    nodeOutsideCluster.datastoreCore.datastoreRegistry.diskStore,
+    'didExpireNetworkHosting',
+  );
+
+  // should be able to re-retrieve it
+  await expect(outsideNodeClient.query(versionHash, 'select * from streamer()')).resolves.toEqual(
+    expect.objectContaining({
+      outputs: [{ record: 0 }, { record: 1 }, { record: 2 }],
+    }),
+  );
+
+  // @ts-expect-error
+  const db = nodeOutsideCluster.datastoreCore.datastoreRegistry.diskStore.datastoresDb;
+  let dbxPath: string;
+  {
+    const record = db.versions.getByHash(versionHash);
+    expect(record.expiresTimestamp).toBeTruthy();
+    dbxPath = record.dbxPath;
+    db.versions.restore(versionHash, dbxPath, Date.now() - 1);
+  }
+
+  const datastore = (nodeOutsideCluster.peerNetwork as P2pConnection).datastore;
+  const keys = await datastore.queryKeys({});
+  for await (const key of keys) {
+    if (key.toString().startsWith('/dht/provider')) {
+      // eslint-disable-next-line no-eval
+      const varint = await eval(`import("varint")`);
+      await datastore.put(key, Buffer.from(varint.encode(Date.now() - 25 * 60 * 60e3)));
+    }
+  }
+  await (
+    (nodeOutsideCluster.peerNetwork as P2pConnection).libp2p.dht.wan as any
+  ).providers._cleanup();
+  await (
+    (nodeOutsideCluster.peerNetwork as P2pConnection).libp2p.dht.lan as any
+  ).providers._cleanup();
+
+  await new Promise(setImmediate);
+
+  expect(onExpire).toHaveBeenCalled();
+  // need to wait for this callback to finish
+  await onExpire.mock.results[0].value;
+  {
+    const record = db.versions.getByHash(versionHash);
+    expect(record.dbxPath).toBeNull();
+    expect(Fs.existsSync(dbxPath)).toBeFalsy();
+  }
+
+  // should be able to re-retrieve it
+  // TOOD: causes infinite loop right now
+  // await expect(outsideNodeClient.query(versionHash, 'select * from streamer()')).resolves.toEqual(
+  //   expect.objectContaining({
+  //     outputs: [{ record: 0 }, { record: 1 }, { record: 2 }],
+  //   }),
+  // );
+});
+
+test('should republish datastores on expired from libp2p if not expired locally', async () => {
+  await packager.dbx.upload(await nodeWithServices.host);
+  const outsideNodeClient = new DatastoreApiClient(await nodeOutsideCluster.host);
+  Helpers.onClose(() => outsideNodeClient.disconnect());
+  const versionHash = packager.manifest.versionHash;
+  await expect(outsideNodeClient.getMeta(versionHash)).resolves.toBeTruthy();
+  const onExpire = jest.spyOn(
+    nodeOutsideCluster.datastoreCore.datastoreRegistry.diskStore,
+    'didExpireNetworkHosting',
+  );
+  const reprovide = jest.spyOn(nodeOutsideCluster.peerNetwork, 'provide');
+
+  // @ts-expect-error
+  const db = nodeOutsideCluster.datastoreCore.datastoreRegistry.diskStore.datastoresDb;
+  const firstVersionPublish = db.versions.getByHash(versionHash).publishedToNetworkTimestamp;
+
+  const datastore = (nodeOutsideCluster.peerNetwork as P2pConnection).datastore;
+  const keys = await datastore.queryKeys({});
+  for await (const key of keys) {
+    if (key.toString().startsWith('/dht/provider')) {
+      // eslint-disable-next-line no-eval
+      const varint = await eval(`import("varint")`);
+      await datastore.put(key, Buffer.from(varint.encode(Date.now() - 25 * 60 * 60e3)));
+    }
+  }
+  await (
+    (nodeOutsideCluster.peerNetwork as P2pConnection).libp2p.dht.wan as any
+  ).providers._cleanup();
+  await (
+    (nodeOutsideCluster.peerNetwork as P2pConnection).libp2p.dht.lan as any
+  ).providers._cleanup();
+
+  await new Promise(setImmediate);
+
+  expect(onExpire).toHaveBeenCalled();
+  // need to wait for this callback to finish
+  await onExpire.mock.results[0].value;
+  expect(reprovide).toHaveBeenCalled();
+  // need to wait for this callback to finish
+  await reprovide.mock.results[0].value;
+  {
+    const record = db.versions.getByHash(versionHash);
+    expect(record.dbxPath).toBeTruthy();
+    expect(record.publishedToNetworkTimestamp).toBeGreaterThan(firstVersionPublish);
+  }
+});

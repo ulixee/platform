@@ -11,19 +11,24 @@ let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 let remoteVersionHash: string;
 beforeAll(async () => {
-  for (const file of ['remoteTable.dbx', 'passthroughTable.js', 'passthroughTable.dbx', 'passthroughTable2.dbx']) {
+  for (const file of [
+    'remoteTable.dbx',
+    'passthroughTable.js',
+    'passthroughTable.dbx',
+    'passthroughTable2.dbx',
+  ]) {
     if (Fs.existsSync(`${__dirname}/datastores/${file}`)) {
       await Fs.promises.rm(`${__dirname}/datastores/${file}`, { recursive: true });
     }
   }
 
-  cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
-    datastoresDir: storageDir,
-    datastoresTmpDir: Path.join(storageDir, 'tmp'),
-  };
-  await cloudNode.listen();
+  cloudNode = await Helpers.createLocalNode({
+    datastoreConfiguration: {
+      datastoresDir: storageDir,
+    },
+  }, true);
   client = new DatastoreApiClient(await cloudNode.address);
+  Helpers.onClose(() => client.disconnect(), true);
 
   const packager = new DatastorePackager(`${__dirname}/datastores/remoteTable.js`);
   await packager.build();
@@ -33,9 +38,7 @@ beforeAll(async () => {
 afterEach(Helpers.afterEach);
 
 afterAll(async () => {
-  await cloudNode?.close();
   await Helpers.afterAll();
-  Fs.rmSync(storageDir, { recursive: true });
 });
 
 test('should be able to have a passthrough table', async () => {

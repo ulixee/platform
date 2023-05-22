@@ -26,12 +26,12 @@ export default async function translateDatastoreMetadata(
     const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
 
     result.extractorsByName[name] = {
-      description: result.description,
+      description: extractor.description,
       stats,
       pricePerQuery,
       minimumPrice: pricePerQuery + settlementFee,
-      priceBreakdown: prices,
-      schemaJson: includeSchemaAsJson ? schemaAsJson : undefined,
+      prices,
+      schemaAsJson: includeSchemaAsJson ? schemaAsJson : undefined,
     };
   }
   for (const [name, crawler] of Object.entries(datastore.crawlersByName)) {
@@ -40,12 +40,12 @@ export default async function translateDatastoreMetadata(
     const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
 
     result.crawlersByName[name] = {
-      description: result.description,
+      description: crawler.description,
       stats,
       pricePerQuery,
       minimumPrice: pricePerQuery + settlementFee,
-      priceBreakdown: prices,
-      schemaJson: includeSchemaAsJson ? schemaAsJson : undefined,
+      prices,
+      schemaAsJson: includeSchemaAsJson ? schemaAsJson : undefined,
     };
   }
 
@@ -55,11 +55,11 @@ export default async function translateDatastoreMetadata(
     const stats = datastoreStats.statsByEntityName[name];
 
     result.tablesByName[name] = {
-      description: result.description,
+      description: meta.description,
       stats,
       pricePerQuery: pricePerQuery + settlementFee,
-      priceBreakdown: prices,
-      schemaJson: includeSchemaAsJson ? meta.schemaAsJson : undefined,
+      prices,
+      schemaAsJson: includeSchemaAsJson ? meta.schemaAsJson : undefined,
     };
   }
   return result;

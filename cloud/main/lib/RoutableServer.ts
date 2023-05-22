@@ -1,11 +1,11 @@
 import WebSocket = require('ws');
+import Log from '@ulixee/commons/lib/Logger';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
+import { bindFunctions, createPromise } from '@ulixee/commons/lib/utils';
+import { isWsOpen } from '@ulixee/net/lib/WsUtils';
 import * as Http from 'http';
 import { IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo, ListenOptions, Socket } from 'net';
-import Log from '@ulixee/commons/lib/Logger';
-import { bindFunctions, createPromise } from '@ulixee/commons/lib/utils';
-import { isWsOpen } from '@ulixee/net/lib/WsUtils';
-import Resolvable from '@ulixee/commons/lib/Resolvable';
 
 const pkg = require('../package.json');
 
@@ -136,23 +136,28 @@ export default class RoutableServer {
   }
 
   private async handleHttpRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    await this.listeningPromise;
-    await this.isReadyToServe;
-    for (const [route, method, handlerFn] of this.httpRoutes) {
-      if (req.method !== method) continue;
-      if (route instanceof RegExp && route.test(req.url)) {
-        const args = route.exec(req.url);
-        const handled = await handlerFn(req, res, args?.length ? args.slice(1) : []);
-        if (handled !== false) return;
+    try {
+      await this.listeningPromise;
+      await this.isReadyToServe;
+      for (const [route, method, handlerFn] of this.httpRoutes) {
+        if (req.method !== method) continue;
+        if (route instanceof RegExp && route.test(req.url)) {
+          const args = route.exec(req.url);
+          const handled = await handlerFn(req, res, args?.length ? args.slice(1) : []);
+          if (handled !== false) return;
+        }
+        if (req.url === route) {
+          const handled = await handlerFn(req, res, []);
+          if (handled !== false) return;
+        }
       }
-      if (req.url === route) {
-        const handled = await handlerFn(req, res, []);
-        if (handled !== false) return;
-      }
-    }
 
-    res.writeHead(404);
-    res.end('Route not found');
+      res.writeHead(404);
+      res.end('Route not found');
+    } catch (error) {
+      res.writeHead(500);
+      res.end('Unhandled Error', error.message);
+    }
   }
 
   private handleHttpConnection(socket: Socket): void {

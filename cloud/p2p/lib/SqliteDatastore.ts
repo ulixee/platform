@@ -4,9 +4,6 @@ import type { Batch, Key, KeyQuery, Pair, Query, Datastore } from 'interface-dat
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { dynamicImport } from './utils';
 
-const InterfaceDatastore =
-  dynamicImport<typeof import('interface-datastore')>('interface-datastore');
-
 export default class SqliteDatastore
   extends TypedEventEmitter<{ delete: { key: string } }>
   implements Datastore
@@ -106,6 +103,7 @@ export default class SqliteDatastore
             const key = del.toString();
             deleteKeys.add(key);
             this.deleteStatement.run(key);
+            this.emit('delete', { key });
           }
 
           for (const put of puts) {
@@ -178,7 +176,9 @@ export default class SqliteDatastore
     transform: (key: Key, value: Uint8Array) => T,
     ...filters: ((record: T) => boolean)[]
   ): Promise<T[]> {
-    const { Key } = await InterfaceDatastore;
+    const { Key } = await dynamicImport<typeof import('interface-datastore')>(
+      'interface-datastore',
+    );
 
     const results: T[] = [];
     const all = this.allStatement.all(q.limit ?? 1000, q.offset ?? 0) as {

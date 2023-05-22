@@ -48,7 +48,9 @@ import SidechainClientManager from './lib/SidechainClientManager';
 import StatsTracker from './lib/StatsTracker';
 import StorageEngineRegistry from './lib/StorageEngineRegistry';
 import WorkTracker from './lib/WorkTracker';
+import { MissingRequiredSettingError } from './lib/errors';
 import { translateStats } from './lib/translateDatastoreMetadata';
+import { IDatastoreSourceDetails } from './lib/DatastoreRegistryDiskStore';
 
 const { log } = Logger(module);
 
@@ -173,7 +175,15 @@ export default class DatastoreCore extends TypedEventEmitter<{
       throw new Error('This CloudNode has not been configured to provide Services services.');
     }
     const context = this.getApiContext(transport.remoteId);
-    return this.hostedServicesEndpoints.addConnection(transport, context);
+    const connection = this.hostedServicesEndpoints.addConnection(transport, context);
+    const logger = context.logger;
+    connection.on('response', ({ response, request }) => {
+      logger.info(`services/api/${request.command} (${request.messageId})`, {
+        args: request.args?.[0],
+        response: response.data,
+      });
+    });
+    return connection;
   }
 
   public registerHttpRoutes(
@@ -201,12 +211,37 @@ export default class DatastoreCore extends TypedEventEmitter<{
     peerNetwork?: IPeerNetwork;
   }): Promise<void> {
     if (this.isStarted.isResolved) return this.isStarted.promise;
+
+    const { nodeAddress, cloudType, defaultServices, hostedServicesAddress } = options;
+    if (defaultServices) {
+      Object.assign(this.options, filterUndefined(defaultServices));
+    }
+    if (this.options.storageEngineHost === 'self') {
+      this.options.storageEngineHost = nodeAddress.href;
+    }
+
+    if (hostedServicesAddress) {
+      // if this node is hosting services, default hosts here
+      const servicesHost = hostedServicesAddress?.href;
+      // if there's a hosted services address, a storage engine host is required!
+      //  -- otherwise, engine db could be on different host than datastore storage
+      this.options.storageEngineHost ??= nodeAddress.href;
+
+      // replace "self" if provided
+      if (this.options.statsTrackerHost === 'self') this.options.statsTrackerHost = servicesHost;
+      if (this.options.datastoreRegistryHost === 'self')
+        this.options.datastoreRegistryHost = servicesHost;
+
+      this.options.statsTrackerHost ??= servicesHost;
+      this.options.datastoreRegistryHost ??= servicesHost;
+      // start a services services provider
+      this.hostedServicesEndpoints = new HostedServicesEndpoints();
+    }
+
     const startLogId = log.info('DatastoreCore.start', {
       options: this.options,
       sessionId: null,
     });
-
-    const { nodeAddress, cloudType, defaultServices, hostedServicesAddress } = options;
 
     this.cloudNodeAddress = nodeAddress;
     if (cloudType) this.options.cloudType = cloudType;
@@ -227,17 +262,11 @@ export default class DatastoreCore extends TypedEventEmitter<{
         await Fs.mkdir(this.options.queryHeroSessionsDir, { recursive: true });
       }
 
-      if (defaultServices) {
-        Object.assign(this.options, filterUndefined(defaultServices));
-      }
-      if (hostedServicesAddress) {
-        // if this node is hosting services, default hosts here
-        const servicesHost = hostedServicesAddress?.href;
-        this.options.storageEngineHost ??= nodeAddress.href;
-        this.options.statsTrackerHost ??= servicesHost;
-        this.options.datastoreRegistryHost ??= servicesHost;
-        // start a services services provider
-        this.hostedServicesEndpoints = new HostedServicesEndpoints();
+      if (this.options.datastoreRegistryHost && !this.options.storageEngineHost) {
+        throw new MissingRequiredSettingError(
+          'DatastoreCore has been configured with a remote Datastore Registry, but no StorageEngineHost (ULX_STORAGE_ENGINE_HOST). Remote Datastores must have an IP addressable storage engine.',
+          'storageEngineHost',
+        );
       }
 
       const bridge = new TransportBridge();
@@ -272,13 +301,13 @@ export default class DatastoreCore extends TypedEventEmitter<{
         this.datastoreApiClients,
         parseInClusterHost(this.options.datastoreRegistryHost),
         options.peerNetwork,
-        this.options.storageEngineHost,
+        this.options,
         this.onDatastoreInstalled.bind(this),
       );
       this.docPages = new DocpageRoutes(this.datastoreRegistry, this.cloudNodeAddress, args =>
         DatastoreCreditsBalance.handler(args, this.getApiContext()),
       );
-      await this.datastoreRegistry.diskStore.installManualUploads(
+      await this.datastoreRegistry.diskStore.installOnDiskUploads(
         this.options.cloudAdminIdentities,
         this.cloudNodeAddress.host,
       );
@@ -312,7 +341,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
     return this.isStarted;
   }
 
-  public async installCompressedDbx(path: string): Promise<void> {
+  public async copyDbxToStartDir(path: string): Promise<void> {
     const filename = Path.basename(path);
     const dest = Path.join(this.options.datastoresDir, filename);
     if (!(await existsAsync(dest))) {
@@ -357,12 +386,14 @@ export default class DatastoreCore extends TypedEventEmitter<{
 
   private async onDatastoreInstalled(
     version: IDatastoreManifestWithRuntime,
+    source: IDatastoreSourceDetails['source'],
     previous?: IDatastoreManifestWithRuntime,
     options?: {
       clearExisting?: boolean;
       isWatching?: boolean;
     },
   ): Promise<void> {
+    if (source === 'cluster' || source === 'network') return;
     if (this.storageEngineRegistry.isHostingStorageEngine(version.storageEngineHost)) {
       await this.storageEngineRegistry.create(this.vm, version, previous, options);
     } else {

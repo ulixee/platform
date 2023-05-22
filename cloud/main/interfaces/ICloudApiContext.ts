@@ -2,6 +2,7 @@ import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
 import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import NodeRegistry from '../lib/NodeRegistry';
 import NodeTracker from '../lib/NodeTracker';
+import ICloudConfiguration from './ICloudConfiguration';
 
 export default interface ICloudApiContext {
   logger: IBoundLog;
@@ -12,11 +13,4 @@ export default interface ICloudApiContext {
   nodeAddress?: URL;
   inClusterNodeAddress?: URL;
   version: string;
-}
-
-export interface ICloudConfiguration {
-  servicesSetupHost: string;
-  nodeRegistryHost: string;
-  cloudType: 'private' | 'public';
-  dhtBootstrapPeers: string[];
 }

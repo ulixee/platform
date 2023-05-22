@@ -1,10 +1,10 @@
-import { Command } from 'commander';
-import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import { applyEnvironmentVariables, parseEnvBool } from '@ulixee/commons/lib/envUtils';
-import * as Path from 'path';
+import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import { parseIdentities } from '@ulixee/datastore-core/env';
-import { CloudNode } from '../index';
+import { Command } from 'commander';
+import * as Path from 'path';
 import CloudNodeEnv from '../env';
+import { CloudNode } from '../index';
 
 const pkg = require('../package.json');
 
@@ -16,14 +16,51 @@ export default function cliCommands(): Command {
     .description('start a Ulixee CloudNode')
     .addOption(
       program
-        .createOption('-p, --port <number>', 'The port to use. Defaults to any available port.')
+        .createOption(
+          '-p, --port <number>',
+          'The port to use. Defaults to any 1818, or any available port.',
+        )
         .env('PORT'),
     )
     .addOption(
-      program.createOption(
-        '-h, --host <host>',
-        'The host the Cloud node should listen on. (default: localhost)',
-      ),
+      program
+        .createOption(
+          '-h, --hostname <host>',
+          'The hostname the Cloud node should listen on. (default: localhost)',
+        )
+        .env('ULX_HOSTNAME'),
+    )
+    .addOption(
+      program
+        .createOption(
+          '--peer-port <number>',
+          'Connect to the peer network on this node, and listen on this public port. Defaults to any 18182, or any available port (0).',
+        )
+        .env('ULX_PEER_PORT'),
+    )
+    .addOption(
+      program
+        .createOption(
+          '--hosted-services-port <number>',
+          'Activate hosted services on this node at this port (datastore registry, node registry). Defaults to any 18181, or any available port (0).',
+        )
+        .env('ULX_HOSTED_SERVICES_PORT'),
+    )
+    .addOption(
+      program
+        .createOption(
+          '--hosted-services-hostname <host>',
+          'The ip or host that Cluster Services should listed on. You should make this a private-to-your-cloud ip if possible. (default: localhost)',
+        )
+        .env('ULX_HOSTED_SERVICES_HOSTNAME'),
+    )
+    .addOption(
+      program
+        .createOption(
+          '-s, --setup-host <number>',
+          'Setup services for this node with another node in your cluster. NOTE: this should be the hosted services address of your cluster node.',
+        )
+        .env('ULX_SERVICES_SETUP_HOST'),
     )
     .addOption(
       program.createOption('-e, --env <file>', 'Load environment settings from a .env file.'),
@@ -101,35 +138,50 @@ export default function cliCommands(): Command {
     .allowUnknownOption(true)
     .action(async opts => {
       console.log('Starting Ulixee Cloud with configuration:', opts);
-      const { port, disableChromeAlive, host, env } = opts;
+      const {
+        port,
+        disableChromeAlive,
+        hostname,
+        peerPort,
+        setupHost,
+        hostedServicesPort,
+        hostedServicesHostname,
+        env,
+      } = opts;
       if (env) {
         applyEnvironmentVariables(Path.resolve(env), process.env);
       }
       if (disableChromeAlive) CloudNodeEnv.disableChromeAlive = disableChromeAlive;
 
-      const cloudNode = new CloudNode(host);
-
       const { unblockedPlugins, heroDataDir, maxConcurrentHeroes } = opts;
-      cloudNode.router.heroConfiguration = filterUndefined({
-        maxConcurrentClientCount: maxConcurrentHeroes,
-        dataDir: heroDataDir,
-        defaultUnblockedPlugins: unblockedPlugins?.map(x => {
-          // eslint-disable-next-line import/no-dynamic-require
-          const mod: any = require(x);
-          if (mod.default) return mod.default;
-          return mod;
+      const cloudNode = new CloudNode({
+        listenOptions: {
+          publicPort: port,
+          publicHostname: hostname,
+          peerPort,
+          hostedServicesHostname,
+          hostedServicesPort,
+        },
+        servicesSetupHost: setupHost,
+        heroConfiguration: filterUndefined({
+          maxConcurrentClientCount: maxConcurrentHeroes,
+          dataDir: heroDataDir,
+          defaultUnblockedPlugins: unblockedPlugins?.map(x => {
+            // eslint-disable-next-line import/no-dynamic-require
+            const mod: any = require(x);
+            if (mod.default) return mod.default;
+            return mod;
+          }),
+        }),
+        datastoreConfiguration: filterUndefined({
+          datastoresDir: opts.datastoreStorageDir,
+          datastoresTmpDir: opts.datastoreTmpDir,
+          maxRuntimeMs: opts.maxDatastoreRuntimeMs,
+          waitForDatastoreCompletionOnShutdown: opts.datastoreWaitForCompletion,
+          adminIdentities: parseIdentities(opts.adminIdentities, 'Admin Identities'),
         }),
       });
-
-      cloudNode.router.datastoreConfiguration = filterUndefined({
-        datastoresDir: opts.datastoreStorageDir,
-        datastoresTmpDir: opts.datastoreTmpDir,
-        maxRuntimeMs: opts.maxDatastoreRuntimeMs,
-        waitForDatastoreCompletionOnShutdown: opts.datastoreWaitForCompletion,
-        adminIdentities: parseIdentities(opts.adminIdentities, 'Admin Identities'),
-      });
-
-      await cloudNode.listen({ port });
+      await cloudNode.listen();
       console.log('Ulixee Cloud listening at %s', await cloudNode.address);
     });
 

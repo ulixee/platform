@@ -9,8 +9,10 @@ import ISourceCodeUpdatedEvent from '@ulixee/desktop-interfaces/events/ISourceCo
 import { Session } from '@ulixee/hero-core';
 import CommandFormatter from '@ulixee/hero-core/lib/CommandFormatter';
 import ICommandMeta from '@ulixee/hero-interfaces/ICommandMeta';
+import CallsiteLocator from '@ulixee/hero/lib/CallsiteLocator';
 import * as Path from 'path';
 
+const bundledPath = Path.join('build', 'desktop', 'main', 'app', 'packages');
 export default class SourceCodeTimeline extends TypedEventEmitter<{
   source: ISourceCodeUpdatedEvent;
   command: ICommandUpdatedEvent;
@@ -22,6 +24,8 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
   constructor(readonly entrypoint: string, datastoresDir: string) {
     super();
     bindFunctions(this);
+
+    CallsiteLocator.ignoreModulePathFragments.push(bundledPath);
 
     if (this.entrypoint.includes(datastoresDir)) {
       SourceMapSupport.retrieveSourceMap(this.entrypoint, Path.dirname(this.entrypoint));
@@ -70,9 +74,9 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
 
   private onCommandStart(command: ICommandMeta): void {
     if (!command.callsite) return;
-    const originalSourcePosition = command.callsite.map(x =>
-      SourceMapSupport.getOriginalSourcePosition(x),
-    );
+    const originalSourcePosition = command.callsite
+      .map(x => SourceMapSupport.getOriginalSourcePosition(x))
+      .filter(this.filterDesktopPaths.bind(this));
     this.checkForSourceUpdates(originalSourcePosition);
     this.commandsById[command.id] = {
       command: CommandFormatter.parseResult(command),
@@ -84,9 +88,9 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
 
   private onCommandFinished(command: ICommandMeta, skipEmit = false): void {
     if (!command.callsite) return;
-    const originalSourcePosition = command.callsite.map(x =>
-      SourceMapSupport.getOriginalSourcePosition(x),
-    );
+    const originalSourcePosition = command.callsite
+      .map(x => SourceMapSupport.getOriginalSourcePosition(x))
+      .filter(this.filterDesktopPaths.bind(this));
     this.checkForSourceUpdates(originalSourcePosition);
     this.commandsById[command.id] = {
       command: CommandFormatter.parseResult(command),
@@ -100,14 +104,18 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
     sourceLocations: (ISourceCodeLocation & { source?: string })[],
   ): void {
     for (const sourcePosition of sourceLocations) {
-      const filename = sourcePosition.source ?? sourcePosition.filename;
-      this.sourceFileLines[filename] ??=
-        SourceLoader.getSource(sourcePosition)?.code?.split(/\r?\n/) ?? [];
+      const source = sourcePosition.source ?? sourcePosition.filename;
+      this.sourceFileLines[source] ??= SourceLoader.getSourceLines(sourcePosition);
 
       this.emit('source', {
-        filename,
-        lines: this.sourceFileLines[filename],
+        source,
+        lines: this.sourceFileLines[source],
       });
     }
+  }
+
+  private filterDesktopPaths(sourceLocation: ISourceCodeLocation & { source?: string }): boolean {
+    if (sourceLocation.filename.includes(bundledPath)) return false;
+    return true;
   }
 }

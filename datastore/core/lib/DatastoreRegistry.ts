@@ -1,9 +1,10 @@
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
-import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
+import { promises as Fs } from 'fs';
 import { IDatastoreEntityStatsRecord } from '../db/DatastoreEntityStatsTable';
+import IDatastoreCoreConfigureOptions from '../interfaces/IDatastoreCoreConfigureOptions';
 import IDatastoreRegistryStore, {
   IDatastoreManifestWithLatest,
 } from '../interfaces/IDatastoreRegistryStore';
@@ -11,6 +12,7 @@ import DatastoreApiClients from './DatastoreApiClients';
 import DatastoreRegistryClusterStore from './DatastoreRegistryClusterStore';
 import DatastoreRegistryDiskStore, { IDatastoreSourceDetails } from './DatastoreRegistryDiskStore';
 import DatastoreRegistryNetworkStore from './DatastoreRegistryNetworkStore';
+import { unpackDbx } from './dbxUtils';
 import { DatastoreNotFoundError } from './errors';
 
 export interface IStatsByName {
@@ -24,6 +26,7 @@ export type IDatastoreManifestWithRuntime = IDatastoreManifestWithLatest & {
 
 type TOnDatastoreInstalledCallbackFn = (
   version: IDatastoreManifestWithRuntime,
+  source: IDatastoreSourceDetails['source'],
   previous?: IDatastoreManifestWithRuntime,
   options?: {
     clearExisting?: boolean;
@@ -52,9 +55,9 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
   constructor(
     datastoreDir: string,
     apiClients?: DatastoreApiClients,
-    datastoreRegistryEndpoint?: URL,
+    datastoreRegistryHost?: URL,
     peerNetwork?: IPeerNetwork,
-    defaultStorageEngineHost?: string,
+    private config?: IDatastoreCoreConfigureOptions,
     private installCallbackFn?: TOnDatastoreInstalledCallbackFn,
   ) {
     super();
@@ -62,13 +65,13 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
 
     this.diskStore = new DatastoreRegistryDiskStore(
       datastoreDir,
-      !datastoreRegistryEndpoint,
-      defaultStorageEngineHost,
+      !datastoreRegistryHost,
+      config?.storageEngineHost,
       this.onDatastoreInstalled.bind(this),
     );
 
-    if (datastoreRegistryEndpoint) {
-      this.clusterStore = new DatastoreRegistryClusterStore(datastoreRegistryEndpoint);
+    if (datastoreRegistryHost) {
+      this.clusterStore = new DatastoreRegistryClusterStore(datastoreRegistryHost);
     }
 
     if (peerNetwork) {
@@ -97,11 +100,11 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
   ): Promise<IDatastoreManifestWithRuntime> {
     let manifestWithLatest: IDatastoreManifestWithRuntime;
     for (const service of this.stores) {
-      manifestWithLatest = (await service.get(versionHash)) as any;
+      manifestWithLatest = (await service.get(versionHash)) as IDatastoreManifestWithRuntime;
       if (manifestWithLatest) {
         // must install into local disk store
         let runtime = await this.diskStore.getRuntime(versionHash);
-        if (!runtime) {
+        if (!runtime && service.source !== 'disk') {
           let expirationTimestamp: number;
           if (service.source === 'network') {
             expirationTimestamp = Date.now() + this.networkCacheTimeMins * 60e3;
@@ -120,7 +123,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     if (manifestWithLatest) return manifestWithLatest;
     if (throwIfNotExists) {
       const latestVersionHash = await this.getLatestVersion(versionHash);
-      throw new DatastoreNotFoundError('Datastore not found on Cloud.', {
+      throw new DatastoreNotFoundError(`Datastore version (${versionHash}) not found on Cloud.`, {
         latestVersionHash,
         versionHash,
       });
@@ -151,6 +154,44 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     }
   }
 
+  public async saveDbx(
+    details: TDatastoreUpload,
+    sourceHost?: string,
+    source: IDatastoreSourceDetails['source'] = 'upload',
+  ): Promise<{ success: boolean }> {
+    const { compressedDbx, adminIdentity, adminSignature, allowNewLinkedVersionHistory } = details;
+    const { cloudAdminIdentities, datastoresMustHaveOwnAdminIdentity, datastoresTmpDir } =
+      this.config;
+    const tmpDir = await Fs.mkdtemp(`${datastoresTmpDir}/`);
+
+    try {
+      await unpackDbx(compressedDbx, tmpDir);
+      const { didInstall } = await this.save(
+        tmpDir,
+        {
+          adminIdentity,
+          allowNewLinkedVersionHistory,
+          hasServerAdminIdentity: cloudAdminIdentities.includes(adminIdentity ?? '-1'),
+          datastoresMustHaveOwnAdminIdentity,
+        },
+        {
+          host: sourceHost,
+          source,
+          adminIdentity,
+          adminSignature,
+        },
+      );
+      return { success: didInstall };
+    } finally {
+      // remove tmp dir in case of errors
+      await Fs.rm(tmpDir, { recursive: true }).catch(() => null);
+    }
+  }
+
+  public uploadToSourceOfTruth(datastore: TDatastoreUpload): Promise<{ success: boolean }> {
+    return this.clusterStore?.upload(datastore);
+  }
+
   public async save(
     datastoreTmpPath: string,
     adminDetails?: {
@@ -165,8 +206,8 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     return await this.diskStore.install(datastoreTmpPath, adminDetails, uploaderSource);
   }
 
-  public async startAtPath(dbxPath: string, watch: boolean): Promise<IDatastoreManifest> {
-    return await this.diskStore.startAtPath(dbxPath, watch);
+  public async startAtPath(dbxPath: string, sourceHost:string, watch: boolean): Promise<IDatastoreManifest> {
+    return await this.diskStore.startAtPath(dbxPath, sourceHost, watch);
   }
 
   public stopAtPath(dbxPath: string): void {
@@ -179,26 +220,37 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
   }
 
   private async onProvideExpired(provided: { hash: Buffer }): Promise<void> {
-    const versionHash = encodeBuffer(provided.hash, 'dbx');
-    if (!(await this.diskStore.isHostingExpired(versionHash))) {
-      await this.networkStore.publish(versionHash);
+    const result = await this.diskStore.didExpireNetworkHosting(provided.hash);
+    if (!result.isExpired) {
+      this.diskStore.recordPublished(result.versionHash, Date.now());
+      await this.networkStore.publish(result.versionHash);
     }
   }
 
   private async onDatastoreInstalled(
     version: IDatastoreManifestWithRuntime,
-    _source: IDatastoreSourceDetails,
+    source: IDatastoreSourceDetails,
     previous?: IDatastoreManifestWithRuntime,
     options?: {
       clearExisting?: boolean;
       isWatching?: boolean;
     },
   ): Promise<void> {
-    await this.installCallbackFn?.(version, previous, options);
+    await this.installCallbackFn?.(version, source?.source, previous, options);
     this.emit('new', {
-      activity: version.isStarted ? 'started' : 'uploaded',
+      activity: source?.source === 'start'  ? 'started' : 'uploaded',
       datastore: await this.getByVersionHash(version.versionHash),
     });
-    await this.networkStore?.publish(version.versionHash);
+    if (this.networkStore) {
+      await this.networkStore?.publish(version.versionHash);
+      this.diskStore.recordPublished(version.versionHash, Date.now());
+    }
   }
+}
+
+export interface TDatastoreUpload {
+  compressedDbx: Buffer;
+  allowNewLinkedVersionHistory: boolean;
+  adminIdentity?: string;
+  adminSignature?: Buffer;
 }

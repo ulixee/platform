@@ -1,8 +1,8 @@
 import { z } from '@ulixee/specification';
-import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
 import { micronoteIdValidation, micronoteTokenValidation } from '@ulixee/specification/common';
-import { datastoreVersionHashValidation } from '../types/datastoreVersionHashValidation';
+import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
 import { DatastoreStatsSchema } from '../types/IDatastoreStats';
+import { datastoreVersionHashValidation } from '../types/datastoreVersionHashValidation';
 
 export const StatsTrackerApiSchemas = {
   'StatsTracker.get': {
@@ -56,6 +56,9 @@ export const StatsTrackerApiSchemas = {
 };
 
 export type IStatsTrackerApiTypes = IZodSchemaToApiTypes<typeof StatsTrackerApiSchemas>;
-export type IStatsTrackerApis = IZodHandlers<typeof StatsTrackerApiSchemas>;
+export type IStatsTrackerApis<TContext = any> = IZodHandlers<
+  typeof StatsTrackerApiSchemas,
+  TContext
+>;
 
 export default IStatsTrackerApiTypes;

@@ -1,3 +1,4 @@
+import { toUrl } from '@ulixee/commons/lib/utils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreCore from '@ulixee/datastore-core';
 import { ICloudNodeMeta } from '@ulixee/platform-specification/services/NodeRegistryApis';
@@ -8,6 +9,7 @@ import RoutableServer from './RoutableServer';
 
 export default class NodeRegistry {
   public serviceClient?: NodeRegistryServiceClient;
+  public nodeMeta: ICloudNodeMeta;
 
   private readonly peerNetwork?: IPeerNetwork;
   private readonly nodeTracker: NodeTracker;
@@ -15,13 +17,13 @@ export default class NodeRegistry {
   constructor(
     private config: {
       publicServer: RoutableServer;
-      serviceHost?: URL;
+      servicesHost?: string;
       peerNetwork?: IPeerNetwork;
       nodeTracker: NodeTracker;
       datastoreCore: DatastoreCore;
     },
   ) {
-    const { serviceHost, nodeTracker, peerNetwork } = config;
+    const { servicesHost, nodeTracker, peerNetwork } = config;
     this.peerNetwork = peerNetwork;
     this.nodeTracker = nodeTracker;
 
@@ -29,9 +31,9 @@ export default class NodeRegistry {
     this.nodeTracker.on('new', this.trackPeer);
     this.peerNetwork?.on('node-seen', this.nodeTracker.onSeen);
 
-    if (serviceHost) {
+    if (servicesHost) {
       this.serviceClient = new NodeRegistryServiceClient(
-        serviceHost,
+        toUrl(servicesHost),
         this.config.datastoreCore,
         () => ({
           clients: this.config.publicServer.connections,
@@ -50,20 +52,26 @@ export default class NodeRegistry {
     this.serviceClient = null;
   }
 
-  public async register(nodeAddress: URL, identity: Identity): Promise<void> {
-    if (!this.serviceClient) return;
-    if (!identity)
-      throw new Error(
-        'You must configure a network identity (ULX_NETWORK_IDENTITY_PATH) to use the node registry service.',
-      );
+  public async register(identity: Identity): Promise<void> {
+    this.nodeMeta = {
+      identity: identity?.bech32,
+      ulixeeApiHost: await this.config.publicServer.host,
+      peerMultiaddrs: this.peerNetwork?.multiaddrs ?? [],
+      isClusterNode: true,
+      lastSeenDate: new Date()
+    };
+    this.nodeTracker.track(this.nodeMeta);
 
-    const { nodes } = await this.serviceClient.register({
-      identity: identity.bech32,
-      ulixeeApiHost: nodeAddress.host,
-      peerMultiaddrs: this.peerNetwork?.multiaddrs,
-    });
-    for (const node of nodes) {
-      this.nodeTracker.track(node);
+    if (this.serviceClient) {
+      if (!identity)
+        throw new Error(
+          'You must configure a network identity (ULX_NETWORK_IDENTITY_PATH) to use the node registry service.',
+        );
+
+      const { nodes } = await this.serviceClient.register(this.nodeMeta);
+      for (const node of nodes) {
+        this.nodeTracker.track(node);
+      }
     }
   }
 

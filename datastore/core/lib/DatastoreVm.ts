@@ -12,6 +12,8 @@ import DatastoreApiClients from './DatastoreApiClients';
 
 const { version } = require('../package.json');
 
+const bundledPath = Path.join('build', 'desktop', 'main', 'app', 'packages');
+
 export default class DatastoreVm {
   public static doNotCacheList = new Set<string>();
   private compiledScriptsByPath = new Map<string, Promise<VMScript>>();
@@ -76,7 +78,7 @@ export default class DatastoreVm {
 
   private getVMScript(path: string): Promise<VMScript> {
     path = Path.resolve(path);
-    if (this.compiledScriptsByPath.has(path)) {
+    if (this.compiledScriptsByPath.has(path) && !DatastoreVm.doNotCacheList.has(path)) {
       return this.compiledScriptsByPath.get(path);
     }
 
@@ -126,13 +128,19 @@ export default class DatastoreVm {
       require: {
         external: {
           modules: Array.from(whitelist),
-          transitive: false,
+          transitive: true,
         },
         // This is needed because the underlying node vm/Script can't see the origin line numbers
         // from the "host", so we need Hero to be loaded into the Sandbox
-        context(name) {
+        context(name: string) {
           for (const plugin of plugins) {
-            if (plugin.nodeVmUseSandbox?.(name) === true) {
+            if (
+              plugin.nodeVmUseSandbox?.(name) === true ||
+              plugin.nodeVmUseSandbox?.(
+                name
+                  .replace(bundledPath, '@ulixee'),
+              ) === true
+            ) {
               return 'sandbox';
             }
           }

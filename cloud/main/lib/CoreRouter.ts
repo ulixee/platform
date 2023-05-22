@@ -1,6 +1,5 @@
 import WebSocket = require('ws');
 import Logger from '@ulixee/commons/lib/Logger';
-import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { toUrl } from '@ulixee/commons/lib/utils';
 import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import HeroCore from '@ulixee/hero-core';
@@ -13,8 +12,8 @@ import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
 import IServicesSetup from '@ulixee/platform-specification/types/IServicesSetup';
 import { IncomingMessage, ServerResponse } from 'http';
 import CloudStatus from '../endpoints/Cloud.status';
-import HostedServicesEndpoints from '../endpoints/HostedServicesEndpoints';
-import ICloudApiContext, { ICloudConfiguration } from '../interfaces/ICloudApiContext';
+import NodeRegistryEndpoints from '../endpoints/NodeRegistryEndpoints';
+import ICloudApiContext from '../interfaces/ICloudApiContext';
 import CloudNode from './CloudNode';
 import { IHttpHandleFn } from './RoutableServer';
 
@@ -31,14 +30,8 @@ export default class CoreRouter {
     this.cloudNode.heroConfiguration = value;
   }
 
-  // @deprecated - use CloudNode.cloudConfiguration
-  public set cloudConfiguration(value: Partial<ICloudConfiguration>) {
-    this.cloudNode.cloudConfiguration ??= {} as any;
-    Object.assign(this.cloudNode.cloudConfiguration, value);
-  }
-
   private nodeAddress: URL;
-  private hostedServicesEndpoints: HostedServicesEndpoints; // if host
+  private nodeRegistryEndpoints: NodeRegistryEndpoints; // if host
   private isClosing: Promise<void>;
   private readonly connections = new Set<IConnectionToClient<any, any>>();
 
@@ -84,16 +77,16 @@ export default class CoreRouter {
     );
     this.nodeAddress = toUrl(cloudNodeAddress);
     if (this.cloudNode.hostedServicesServer)
-      this.hostedServicesEndpoints = new HostedServicesEndpoints();
+      this.nodeRegistryEndpoints = new NodeRegistryEndpoints();
 
     this.cloudNode.datastoreCore.registerHttpRoutes(this.addHttpRoute.bind(this));
 
     if (this.cloudNode.desktopCore) {
       const bridge = new TransportBridge();
-      this.cloudApiRegistry.createConnection(bridge.transportToClient);
+      this.cloudApiRegistry.createConnection(bridge.transportToClient, this.getApiContext());
       const loopbackConnection = new ConnectionToCore(bridge.transportToCore);
       this.cloudNode.desktopCore.bindConnection(loopbackConnection);
-      this.cloudNode.desktopCore?.registerWsRoutes(this.addWsRoute.bind(this));
+      this.cloudNode.desktopCore.registerWsRoutes(this.addWsRoute.bind(this));
     }
 
     // last option
@@ -101,25 +94,17 @@ export default class CoreRouter {
   }
 
   public async close(): Promise<void> {
-    if (this.isClosing) return this.isClosing;
-    const closeResolvable = new Resolvable<void>();
-    this.isClosing = closeResolvable.promise;
-    try {
-      for (const connection of this.connections) {
-        await connection.disconnect();
-      }
-      closeResolvable.resolve();
-    } catch (error) {
-      closeResolvable.reject(error);
-    }
-    return closeResolvable.promise;
+    this.isClosing ??= Promise.allSettled([...this.connections].map(x => x.disconnect())).then(
+      () => null,
+    );
+    return this.isClosing;
   }
 
-  private async addHostedServicesConnection(
+  private addHostedServicesConnection(
     transport: ITransportToClient<any>,
-  ): Promise<ConnectionToClient<any, any>> {
-    const connection = await this.cloudNode.datastoreCore.addHostedServicesConnection(transport);
-    this.hostedServicesEndpoints?.attachToConnection(connection as any, this.getApiContext());
+  ): ConnectionToClient<any, any> {
+    const connection = this.cloudNode.datastoreCore.addHostedServicesConnection(transport);
+    this.nodeRegistryEndpoints?.attachToConnection(connection as any, this.getApiContext());
     return connection as any;
   }
 
@@ -187,7 +172,9 @@ export default class CoreRouter {
   ): void {
     const transport = new WsTransportToClient(ws, req);
     const connection = (this.wsConnectionByType[connectionType] as any)(transport, req);
-    if (!connection) throw new Error(`Unknown connection protocol attempted "${connectionType}"`);
+    if (!connection) {
+      throw new Error(`Unknown connection protocol attempted "${connectionType}"`);
+    }
     this.connections.add(connection);
     connection.once('disconnected', () => this.connections.delete(connection));
   }
@@ -211,7 +198,7 @@ export default class CoreRouter {
 
     const { datastoreRegistryHost, storageEngineHost, statsTrackerHost } =
       this.cloudNode.datastoreCore.options;
-    const { nodeRegistryHost } = this.cloudConfiguration;
+    const { nodeRegistryHost } = this.cloudNode.cloudConfiguration;
 
     const settings = <IServicesSetup>{
       datastoreRegistryHost,

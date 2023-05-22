@@ -104,7 +104,7 @@ export default class Dbx {
           [name]: {
             name,
             description: entry.description || '',
-            schema: entry.schema,
+            schema: entry.schema ?? { input: {}, output: {} },
             prices: manifest.extractorsByName[name].prices,
           },
         });
@@ -114,7 +114,7 @@ export default class Dbx {
           [name]: {
             name,
             description: entry.description || '',
-            schema: entry.schema,
+            schema: entry.schema ?? { input: {}, output: {} },
             prices: manifest.crawlersByName[name].prices,
           },
         });
@@ -125,7 +125,7 @@ export default class Dbx {
           [name]: {
             name,
             description: entry.description || '',
-            schema: entry.schema,
+            schema: entry.schema ?? {},
             prices: manifest.tablesByName[name].prices,
           },
         });

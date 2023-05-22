@@ -4,31 +4,42 @@ import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 
 export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersionRecord> {
   private getQuery: Statement<string>;
+  private getByNetworkKeyQuery: Statement<Buffer>;
   private allQuery: Statement<[limit: number, offset: number]>;
   private findWithBaseHashQuery: Statement<string>;
   private findWithDomainQuery: Statement<string>;
+  private findByEntrypointAndAdminQuery: Statement<[entrypoint: string, adminIdentity: string]>;
   private findByEntrypointQuery: Statement<string>;
   private versionsByBaseHash: Record<string, IVersionHistoryEntry[]> = {};
   private cacheByVersionHash: Record<string, IDatastoreVersionRecord> = {};
 
   constructor(db: SqliteDatabase) {
-    super(db, 'DatastoreVersions', [
-      ['versionHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
-      ['baseVersionHash', 'TEXT'],
-      ['dbxPath', 'TEXT'],
-      ['versionTimestamp', 'DATETIME'],
-      ['scriptEntrypoint', 'TEXT'],
-      ['domain', 'TEXT'],
-      ['source', 'TEXT'],
-      ['sourceHost', 'TEXT'],
-      ['installAllowedNewLinkedVersionHistory', 'INTEGER'],
-      ['adminIdentity', 'TEXT'],
-      ['adminSignature', 'BLOB'],
-      ['expiresTimestamp', 'DATETIME'],
-      ['publishedToNetworkTimestamp', 'DATETIME'],
-      ['isStarted', 'INTEGER'],
-    ]);
+    super(
+      db,
+      'DatastoreVersions',
+      [
+        ['versionHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
+        ['baseVersionHash', 'TEXT'],
+        ['dbxPath', 'TEXT'],
+        ['versionTimestamp', 'DATETIME'],
+        ['scriptEntrypoint', 'TEXT'],
+        ['domain', 'TEXT'],
+        ['source', 'TEXT'],
+        ['sourceHost', 'TEXT'],
+        ['installAllowedNewLinkedVersionHistory', 'INTEGER'],
+        ['adminIdentity', 'TEXT'],
+        ['adminSignature', 'BLOB'],
+        ['expiresTimestamp', 'DATETIME'],
+        ['networkKeyHash', 'BLOB'],
+        ['publishedToNetworkTimestamp', 'DATETIME'],
+        ['isStarted', 'INTEGER'],
+      ],
+      true,
+    );
     this.getQuery = db.prepare(`select * from ${this.tableName} where versionHash = ? limit 1`);
+    this.getByNetworkKeyQuery = db.prepare(
+      `select * from ${this.tableName} where networkKeyHash = ?`,
+    );
     this.allQuery = db.prepare(
       `select * from ${this.tableName} where dbxPath IS NOT NULL limit ? offset ?`,
     );
@@ -39,12 +50,19 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       `select versionHash from ${this.tableName} where domain = ? order by versionTimestamp desc limit 1`,
     );
     this.findByEntrypointQuery = db.prepare(
-      `select * from ${this.tableName} where scriptEntrypoint = ? limit 1`,
+      `select * from ${this.tableName} where scriptEntrypoint = ? and adminIdentity is NULL limit 1`,
+    );
+    this.findByEntrypointAndAdminQuery = db.prepare(
+      `select * from ${this.tableName} where scriptEntrypoint = ? and adminIdentity = ? limit 1`,
     );
   }
 
-  public findAnyWithEntrypoint(entrypoint: string): IDatastoreVersionRecord {
-    return this.findByEntrypointQuery.get(entrypoint) as IDatastoreVersionRecord;
+  public findAnyWithEntrypoint(entrypoint: string, adminIdentity: string): IDatastoreVersionRecord {
+    return (
+      adminIdentity
+        ? this.findByEntrypointAndAdminQuery.get(entrypoint, adminIdentity)
+        : this.findByEntrypointQuery.get(entrypoint)
+    ) as IDatastoreVersionRecord;
   }
 
   public findLatestByDomain(domain: string): string {
@@ -82,34 +100,40 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
 
   public cleanup(versionHash: string): void {
     const cached = this.cacheByVersionHash[versionHash];
-    cached.dbxPath = null;
-    cached.adminIdentity = null;
-    cached.adminSignature = null;
+    if (cached) {
+      cached.dbxPath = null;
+    }
     // we might want to just delete these records eventually, but need to ensure it isn't the baseVersionHash for other versions
     this.db
-      .prepare(
-        `update ${this.tableName} set dbxPath=null, adminIdentity=null, adminSignature=null where versionHash=$versionHash`,
-      )
+      .prepare(`update ${this.tableName} set dbxPath=null where versionHash=$versionHash`)
       .run({ versionHash });
   }
 
-  public update(
-    versionHash: string,
-    versionTimestamp: number,
-    baseVersionHash: string,
-    expiresTimestamp: number,
-  ): void {
+  public restore(versionHash: string, dbxPath: string, expiresTimestamp: number): void {
     this.db
       .prepare(
-        `update ${this.tableName} set baseVersionHash=$baseVersionHash, expiresTimestamp=$expiresTimestamp where versionHash=$versionHash`,
+        `update ${this.tableName} set dbxPath=$dbxPath, expiresTimestamp=$expiresTimestamp where versionHash=$versionHash`,
       )
-      .run({ versionHash, versionTimestamp, expiresTimestamp, baseVersionHash });
+      .run({ versionHash, dbxPath, expiresTimestamp });
     const cached = this.cacheByVersionHash[versionHash];
     if (cached) {
       cached.expiresTimestamp = expiresTimestamp;
-      cached.baseVersionHash = baseVersionHash;
     }
-    this.updateBaseVersionCache(versionHash, versionTimestamp, baseVersionHash);
+  }
+
+  public recordPublishedToNetworkDate(
+    versionHash: string,
+    publishedToNetworkTimestamp: number,
+  ): void {
+    this.db
+      .prepare(
+        `update ${this.tableName} set publishedToNetworkTimestamp=$publishedToNetworkTimestamp where versionHash=$versionHash`,
+      )
+      .run({ versionHash, publishedToNetworkTimestamp });
+    const cached = this.cacheByVersionHash[versionHash];
+    if (cached) {
+      cached.publishedToNetworkTimestamp = publishedToNetworkTimestamp;
+    }
   }
 
   public save(
@@ -125,6 +149,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
     adminIdentity: string,
     adminSignature: Buffer,
     expiresTimestamp: number,
+    networkKeyHash?: Buffer,
     publishedToNetworkTimestamp?: number,
   ): void {
     domain = domain?.toLowerCase();
@@ -144,6 +169,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       adminIdentity,
       adminSignature,
       expiresTimestamp,
+      networkKeyHash,
       publishedToNetworkTimestamp,
       isStarted ? 1 : 0,
     ]);
@@ -161,6 +187,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       adminIdentity,
       adminSignature,
       expiresTimestamp,
+      networkKeyHash,
       publishedToNetworkTimestamp,
     };
     this.updateBaseVersionCache(versionHash, versionTimestamp, baseVersionHash);
@@ -210,6 +237,10 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
     return this.cacheByVersionHash[versionHash];
   }
 
+  public getByNetworkKey(key: Buffer): IDatastoreVersionRecord {
+    return this.getByNetworkKeyQuery.get(key) as IDatastoreVersionRecord;
+  }
+
   private updateBaseVersionCache(
     versionHash: string,
     versionTimestamp: number,
@@ -232,8 +263,9 @@ export interface IDatastoreVersionRecord {
   scriptEntrypoint: string;
   dbxPath: string;
   expiresTimestamp: number;
+  networkKeyHash: Buffer;
   publishedToNetworkTimestamp: number;
-  source: 'manual' | 'upload' | 'cluster' | 'network';
+  source: 'disk' | 'start' | 'upload' | 'upload:create-storage' | 'cluster' | 'network';
   sourceHost: string;
   installAllowedNewLinkedVersionHistory: boolean;
   adminIdentity: string | undefined;

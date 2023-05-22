@@ -3,7 +3,10 @@ import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import Log from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import { bindFunctions, isPortInUse, toUrl } from '@ulixee/commons/lib/utils';
+import Ed25519 from '@ulixee/crypto/lib/Ed25519';
+import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreCore from '@ulixee/datastore-core';
 import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
@@ -14,10 +17,9 @@ import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
 import IServicesSetup from '@ulixee/platform-specification/types/IServicesSetup';
 import * as Http from 'http';
 import * as Https from 'https';
-import { AddressInfo, ListenOptions } from 'net';
 import * as Path from 'path';
 import env from '../env';
-import { ICloudConfiguration } from '../interfaces/ICloudApiContext';
+import ICloudConfiguration from '../interfaces/ICloudConfiguration';
 import CoreRouter from './CoreRouter';
 import DesktopUtils from './DesktopUtils';
 import NodeRegistry from './NodeRegistry';
@@ -36,8 +38,8 @@ export default class CloudNode {
     '@ulixee/datastore-plugins-puppeteer-core',
   ];
 
-  public readonly publicServer: RoutableServer;
-  public readonly hostedServicesServer?: RoutableServer;
+  public publicServer: RoutableServer;
+  public hostedServicesServer?: RoutableServer;
   public peerServer: Http.Server;
   public peerNetwork?: IPeerNetwork;
 
@@ -57,6 +59,14 @@ export default class CloudNode {
     cloudType: env.cloudType as any,
     dhtBootstrapPeers: env.dhtBootstrapPeers,
     servicesSetupHost: env.servicesSetupHost,
+    networkIdentity: env.networkIdentity,
+    listenOptions: {
+      publicPort: env.publicPort,
+      publicHostname: env.publicHostname,
+      hostedServicesPort: env.hostedServicesPort,
+      hostedServicesHostname: env.hostedServicesHostname,
+      peerPort: env.peerPort,
+    },
   };
 
   public get datastoreConfiguration(): IDatastoreCoreConfigureOptions {
@@ -85,68 +95,60 @@ export default class CloudNode {
   }
 
   private isClosing: Promise<any>;
-  private beforeListenCallbacks: (() => Promise<any>)[] = [];
   private isReady = new Resolvable<void>();
   private didReservePort = false;
 
   constructor(
-    publicServerIpOrDomain?: string,
-    config: {
-      servicesServerIpOrDomain?: string;
+    config: Partial<ICloudConfiguration> & {
       shouldShutdownOnSignals?: boolean;
+      // remove cloud type since it's also on cloud configruation
+      datastoreConfiguration?: Partial<Omit<IDatastoreCoreConfigureOptions, 'cloudType'>>;
+      heroConfiguration?: Partial<ICoreConfigureOptions>;
     } = { shouldShutdownOnSignals: true },
   ) {
     bindFunctions(this);
 
-    this.shouldShutdownOnSignals = config.shouldShutdownOnSignals;
-    this.publicServer = new RoutableServer(this.isReady.promise, publicServerIpOrDomain);
-    if (config.servicesServerIpOrDomain) {
-      this.hostedServicesServer = new RoutableServer(
-        this.isReady.promise,
-        config.servicesServerIpOrDomain,
-      );
-    }
-    this.router = new CoreRouter(this);
-    this.datastoreCore = new DatastoreCore({}, this.getInstalledDatastorePlugins());
+    const {
+      heroConfiguration,
+      datastoreConfiguration,
+      shouldShutdownOnSignals,
+      ...cloudConfiguration
+    } = config;
 
-    if (config.shouldShutdownOnSignals === true) ShutdownHandler.disableSignals = true;
+    const { listenOptions, ...other } = cloudConfiguration;
+    Object.assign(this.cloudConfiguration, other ?? {});
+    Object.assign(this.cloudConfiguration.listenOptions, listenOptions ?? {});
+    if (heroConfiguration) this.heroConfiguration = heroConfiguration;
+
+    this.router = new CoreRouter(this);
+    this.datastoreCore = new DatastoreCore(
+      datastoreConfiguration ?? {},
+      this.getInstalledDatastorePlugins(),
+    );
+
+    this.shouldShutdownOnSignals = shouldShutdownOnSignals;
+    if (this.shouldShutdownOnSignals === true) ShutdownHandler.disableSignals = true;
     ShutdownHandler.register(this.close);
   }
 
-  public beforeListen(callbackFn: () => Promise<any>): void {
-    this.beforeListenCallbacks.push(callbackFn);
-  }
-
-  public async listen(
-    publicServerOptions?: ListenOptions,
-    hostedServicesOptions?: ListenOptions,
-    peerServerOptions?: ListenOptions,
-  ): Promise<void> {
-    publicServerOptions ??= {};
-    hostedServicesOptions ??= {};
-
+  public async listen(): Promise<void> {
     const startLogId = log.info('CloudNode.start');
 
     try {
-      await this.startPublicServer(publicServerOptions);
-
-      if (!hostedServicesOptions.port && !isTestEnv) {
-        if (!(await isPortInUse(18181))) hostedServicesOptions.port = 18181;
-      }
-      await this.hostedServicesServer?.listen(hostedServicesOptions);
-
-      await this.startPeerServices(peerServerOptions);
+      await this.startPublicServer();
+      await this.startHostedServices();
+      await this.startPeerServices();
 
       await this.startCores();
+      // NOTE: must wait for cores to be available
       await this.router.register();
-      await Promise.all(this.beforeListenCallbacks);
       // wait until router is registered before accepting traffic
       this.isReady.resolve();
     } finally {
       log.stats('CloudNode.started', {
         publicHost: await this.publicServer.host,
         hostedServicesHost: await this.hostedServicesServer?.host,
-        peerAddresses: await this.peerNetwork?.multiaddrs,
+        peerAddresses: this.peerNetwork?.multiaddrs,
         cloudConfiguration: this.cloudConfiguration,
         parentLogId: startLogId,
         sessionId: null,
@@ -177,10 +179,12 @@ export default class CloudNode {
 
       await HeroCore.shutdown();
 
-      await this.publicServer.close();
-      await this.hostedServicesServer?.close();
-      await this.peerServer?.close();
-      await this.peerNetwork?.close();
+      await Promise.allSettled([
+        this.publicServer.close(),
+        this.hostedServicesServer?.close(),
+        this.peerServer?.close(),
+        this.peerNetwork?.close(),
+      ]);
       resolvable.resolve();
     } catch (error) {
       log.error('Error closing socket connections', {
@@ -197,16 +201,47 @@ export default class CloudNode {
     const nodeAddress = toUrl(await this.publicServer.host);
     const hostedServicesAddress = toUrl(await this.hostedServicesServer?.host);
 
+    if (this.cloudConfiguration.nodeRegistryHost === 'self') {
+      this.cloudConfiguration.nodeRegistryHost = hostedServicesAddress.host;
+    }
+
+    let servicesSetup: IServicesSetup;
+    const setupHost = toUrl(this.cloudConfiguration.servicesSetupHost);
+    // don't dial self
+    if (
+      setupHost &&
+      nodeAddress.host !== setupHost.host &&
+      hostedServicesAddress?.host !== setupHost.host
+    ) {
+      servicesSetup = await this.getServicesSetup(setupHost.host);
+      this.cloudConfiguration.nodeRegistryHost ??= servicesSetup.nodeRegistryHost;
+      log.info('CloudNode.servicesSetup', { servicesSetup, sessionId: null });
+    }
+
+    const parseInClusterHost: (host: string) => string = host => {
+      const hostURL = toUrl(host);
+
+      // safeguard against looping back to self
+      if (!hostURL || hostedServicesAddress?.origin === hostURL.origin) return null;
+      return hostURL.host;
+    };
+
     this.nodeTracker = new NodeTracker();
 
     this.nodeRegistry = new NodeRegistry({
       datastoreCore: this.datastoreCore,
       publicServer: this.publicServer,
-      serviceHost: hostedServicesAddress,
+      servicesHost: parseInClusterHost(this.cloudConfiguration.nodeRegistryHost),
       peerNetwork: this.peerNetwork,
       nodeTracker: this.nodeTracker,
     });
-    await this.nodeRegistry.register(nodeAddress, env.networkIdentity);
+    if (
+      (this.nodeRegistry.serviceClient || this.cloudConfiguration.nodeRegistryHost) &&
+      !this.cloudConfiguration.networkIdentity
+    ) {
+      await this.createTemporaryNetworkIdentity();
+    }
+    await this.nodeRegistry.register(this.cloudConfiguration.networkIdentity);
 
     /// START HERO
     HeroCore.onShutdown = () => this.close();
@@ -214,10 +249,6 @@ export default class CloudNode {
     this.heroConfiguration.shouldShutdownOnSignals ??= this.shouldShutdownOnSignals;
     await HeroCore.start(this.heroConfiguration);
 
-    let servicesSetup: IServicesSetup;
-    if (env.servicesSetupHost && nodeAddress.host !== env.servicesSetupHost) {
-      servicesSetup = await this.getServicesSetup(env.servicesSetupHost);
-    }
     await this.datastoreCore.start({
       nodeAddress,
       hostedServicesAddress,
@@ -234,14 +265,21 @@ export default class CloudNode {
     }
   }
 
-  private async startPublicServer(publicServerOptions: ListenOptions): Promise<string> {
-    const wasOpenPublicPort = !publicServerOptions.port;
-    if (wasOpenPublicPort && !isTestEnv) {
-      if (!(await isPortInUse(1818))) publicServerOptions.port = 1818;
+  private async startPublicServer(): Promise<string> {
+    const { publicPort, publicHostname } = this.cloudConfiguration.listenOptions;
+
+    const listenOptions = {
+      port: publicPort ? Number(publicPort) : undefined,
+      host: publicHostname,
+    };
+    this.publicServer = new RoutableServer(this.isReady.promise, listenOptions.host);
+    const isPortUnreserved = !listenOptions.port;
+    if (isPortUnreserved && !isTestEnv) {
+      if (!(await isPortInUse(1818))) listenOptions.port = 1818;
     }
-    const { address, port } = await this.publicServer.listen(publicServerOptions);
+    const { address, port } = await this.publicServer.listen(listenOptions);
     // if we're dealing with local or no configuration, set the local version host
-    if (isLocalhost(address) && wasOpenPublicPort && !isTestEnv) {
+    if (isLocalhost(address) && isPortUnreserved && !isTestEnv) {
       // publish port with the version
       await UlixeeHostsConfig.global.setVersionHost(this.version, `localhost:${port}`);
       this.didReservePort = true;
@@ -254,29 +292,57 @@ export default class CloudNode {
     UlixeeHostsConfig.global.setVersionHost(this.version, null);
   }
 
-  private async startPeerServices(listenOptions: ListenOptions = {}): Promise<void> {
-    if (!env.dhtBootstrapPeers?.length && env.cloudType !== 'public') return;
-    if (!env.networkIdentity)
-      throw new Error(
-        'You must configure a PeerNetwork Identity (env.ULX_NETWORK_IDENTITY_PATH) to join a cloud.',
+  private async startHostedServices(): Promise<void> {
+    const { hostedServicesPort, hostedServicesHostname } = this.cloudConfiguration.listenOptions;
+    if (!hostedServicesPort && hostedServicesPort !== 0 && !hostedServicesHostname) return;
+
+    const listenOptions = {
+      port: hostedServicesPort ? Number(hostedServicesPort) : undefined,
+      host: hostedServicesHostname,
+    };
+
+    this.hostedServicesServer = new RoutableServer(this.isReady.promise, listenOptions.host);
+    if (!listenOptions.port && !isTestEnv) {
+      if (!(await isPortInUse(18181))) listenOptions.port = 18181;
+    }
+    await this.hostedServicesServer?.listen(listenOptions);
+  }
+
+  private async startPeerServices(): Promise<void> {
+    const { peerPort, publicHostname } = this.cloudConfiguration.listenOptions;
+    if (!peerPort && peerPort !== 0) return;
+    if (!this.cloudConfiguration.networkIdentity) {
+      await this.createTemporaryNetworkIdentity();
+    }
+    if (
+      this.cloudConfiguration.cloudType === 'public' &&
+      !this.cloudConfiguration.dhtBootstrapPeers?.length
+    ) {
+      console.warn(
+        "You're running a public cloud node without any bootstrap peers, which means you will not get any data from the network." +
+          '\n\nConfigure bootstrap peers to connect to using env.ULX_BOOTSTRAP_PEERS.',
       );
+    }
+
+    const listenOptions = {
+      port: peerPort ? Number(peerPort) : undefined,
+      host: publicHostname,
+    };
 
     if (!listenOptions.port && !isTestEnv) {
       if (!(await isPortInUse(18182))) listenOptions.port = 18182;
     }
 
     this.peerServer = new Http.Server();
-    await new Promise<void>(resolve => this.peerServer.listen(listenOptions, resolve));
-    const peerPort = (this.peerServer.address() as AddressInfo).port;
 
     this.peerNetwork = await new P2pConnection().start({
       ulixeeApiHost: await this.publicServer.host,
-      dbPath: Path.resolve(this.datastoreCore.options.datastoresDir, '../network'),
-      port: peerPort,
+      dbPath: Path.resolve(this.datastoreCore.options.datastoresDir, '../libp2p'),
+      port: listenOptions.port,
       ipOrDomain: this.publicServer.hostname,
-      identity: env.networkIdentity,
+      identity: this.cloudConfiguration.networkIdentity,
       attachToServer: this.peerServer,
-      boostrapList: env.dhtBootstrapPeers,
+      boostrapList: this.cloudConfiguration.dhtBootstrapPeers,
     });
   }
 
@@ -297,10 +363,8 @@ export default class CloudNode {
   }
 
   private getServicesSetup(servicesHost: string): Promise<IServicesSetup> {
-    // default to http
-    if (!servicesHost.includes('://')) servicesHost = `http://${servicesHost}`;
-
-    const url = new URL('/', servicesHost);
+    const url = new URL('/', toUrl(servicesHost));
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') url.protocol = 'http:';
     const httpModule = url.protocol === 'http:' ? Http : Https;
 
     return new Promise<IServicesSetup>((resolve, reject) => {
@@ -321,6 +385,37 @@ export default class CloudNode {
         .on('error', reject)
         .end();
     });
+  }
+
+  private async createTemporaryNetworkIdentity(): Promise<void> {
+    const tempIdentity = await Identity.create();
+    this.cloudConfiguration.networkIdentity = tempIdentity;
+    const key = Ed25519.getPrivateKeyBytes(tempIdentity.privateKey);
+    const path = Path.join(getDataDirectory(), 'ulixee', 'networkIdentity.pem');
+    console.warn(`\n
+############################################################################################
+############################################################################################
+###########################  TEMPORARY ADMIN IDENTITY  #####################################
+############################################################################################
+############################################################################################
+
+            A temporary networkIdentity has been installed on your server. 
+
+       To create a long-term network identity, you should save and use this Identity 
+                          from your local system:
+
+ npx @ulixee/crypto save-identity --privateKey=${key.toString('base64')} --filename="${path}"
+
+--------------------------------------------------------------------------------------------
+       
+           To dismiss this message, add the following environment variable:
+           
+ ULX_NETWORK_IDENTITY_PATH="${path}",
+
+############################################################################################
+############################################################################################
+############################################################################################
+\n\n`);
   }
 }
 

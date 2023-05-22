@@ -63,6 +63,14 @@ export default class DatastoreApiClient {
     });
   }
 
+  public async getManifest(
+    versionHash: string,
+  ): Promise<IDatastoreApiTypes['Datastore.manifest']['result']> {
+    return await this.runApi('Datastore.manifest', {
+      versionHash,
+    });
+  }
+
   public async getExtractorPricing<
     IVersionHash extends keyof ITypes & string = any,
     IExtractorName extends keyof ITypes[IVersionHash]['extractors'] & string = 'default',

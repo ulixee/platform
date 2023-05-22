@@ -66,7 +66,7 @@ export default class DesktopCore {
   public registerWsRoutes(
     addWsRoute: (route: string | RegExp, callbackFn: IWsHandleFn, useTransport?: boolean) => any,
   ): void {
-    addWsRoute(/\/desktop-devtools\?id=.+/, this.addAppDevtoolsWebsocket.bind(this), true);
+    addWsRoute(/\/desktop-devtools\?id=.+/, this.addAppDevtoolsWebsocket.bind(this), false);
     addWsRoute(/\/desktop(\?.+)?/, this.addDesktopConnection.bind(this));
     addWsRoute(/\/chromealive\/.+/, this.addChromeAliveConnection.bind(this));
   }

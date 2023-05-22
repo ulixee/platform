@@ -41,7 +41,7 @@ afterAll(async () => {
 test('should install new datastores on startup', async () => {
   await copyDir(bootupDbx.path, `${storageDir}/bootup.dbx`);
   const registry = new DatastoreRegistry(storageDir);
-  await registry.diskStore.installManualUploads([], '127.0.0.1:1818');
+  await registry.diskStore.installOnDiskUploads([], '127.0.0.1:1818');
   // @ts-expect-error
   const entry = registry.diskStore.datastoresDb.versions.getByHash(
     bootupPackager.manifest.versionHash,

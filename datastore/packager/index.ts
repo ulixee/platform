@@ -113,7 +113,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
 
     if (this.meta.extractorsByName) {
       for (const [name, extractorMeta] of Object.entries(this.meta.extractorsByName)) {
-        const { schema, pricePerQuery, minimumPrice, corePlugins } = extractorMeta;
+        const { schema, pricePerQuery, minimumPrice, corePlugins, description } = extractorMeta;
         if (schema) {
           const fields = filterUndefined({
             input: schemaFromJson(schema?.input),
@@ -125,6 +125,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
         }
 
         extractorsByName[name] = {
+          description,
           corePlugins,
           prices: [
             {
@@ -142,14 +143,14 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
             this.meta,
             extractorMeta,
           );
-          extractorsByName[name].prices.push(...extractorDetails.priceBreakdown);
+          extractorsByName[name].prices.push(...extractorDetails.prices);
         }
       }
     }
 
     if (this.meta.crawlersByName) {
       for (const [name, crawler] of Object.entries(this.meta.crawlersByName)) {
-        const { schema, pricePerQuery, minimumPrice, corePlugins } = crawler;
+        const { schema, pricePerQuery, minimumPrice, corePlugins, description } = crawler;
         if (schema) {
           const fields = filterUndefined({
             input: schemaFromJson(schema?.input),
@@ -161,6 +162,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
         }
 
         crawlersByName[name] = {
+          description,
           corePlugins,
           prices: [
             {
@@ -178,7 +180,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
             this.meta,
             crawler,
           );
-          crawlersByName[name].prices.push(...extractorDetails.priceBreakdown);
+          crawlersByName[name].prices.push(...extractorDetails.prices);
         }
       }
     }
@@ -187,12 +189,13 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
       for (const [name, tableMeta] of Object.entries(this.meta.tablesByName)) {
         // don't publish private tables
         if (tableMeta.isPublic === false) continue;
-        const { schema } = tableMeta;
+        const { schema, description } = tableMeta;
         if (schema) {
           schemaInterface.tables[name] = schemaFromJson(schema);
         }
 
         tablesByName[name] = {
+          description,
           schemaAsJson: schema,
           prices: [{ perQuery: tableMeta.pricePerQuery ?? 0 }],
         };
@@ -200,7 +203,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
         // lookup upstream pricing
         if (tableMeta.remoteTable) {
           const paymentDetails = await this.lookupRemoteDatastoreTablePricing(this.meta, tableMeta);
-          tablesByName[name].prices.push(...paymentDetails.priceBreakdown);
+          tablesByName[name].prices.push(...paymentDetails.prices);
         }
       }
     }
@@ -270,7 +273,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     try {
       const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreVersionHash);
       const remoteExtractorDetails = upstreamMeta.extractorsByName[extractorName];
-      remoteExtractorDetails.priceBreakdown[0].remoteMeta = remoteMeta;
+      remoteExtractorDetails.prices[0].remoteMeta = remoteMeta;
       return remoteExtractorDetails;
     } catch (error) {
       console.error('ERROR loading remote datastore pricing', remoteMeta, error);
@@ -295,7 +298,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     try {
       const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreVersionHash);
       const remoteExtractorDetails = upstreamMeta.crawlersByName[crawlerName];
-      remoteExtractorDetails.priceBreakdown[0].remoteMeta = remoteMeta;
+      remoteExtractorDetails.prices[0].remoteMeta = remoteMeta;
       return remoteExtractorDetails;
     } catch (error) {
       console.error('ERROR loading remote datastore pricing', remoteMeta, error);
@@ -322,7 +325,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     try {
       const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreVersionHash);
       const remoteDetails = upstreamMeta.tablesByName[tableName];
-      remoteDetails.priceBreakdown[0].remoteMeta = remoteMeta;
+      remoteDetails.prices[0].remoteMeta = remoteMeta;
       return remoteDetails;
     } catch (error) {
       console.error('ERROR loading remote datastore pricing', remoteMeta, error);
