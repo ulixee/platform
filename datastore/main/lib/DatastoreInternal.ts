@@ -151,6 +151,9 @@ export default class DatastoreInternal<
     for (const [key, extractor] of Object.entries(this.extractors)) {
       if (extractor.schema) inputSchemas[key] = extractor.schema.input;
     }
+    for (const [key, crawler] of Object.entries(this.crawlers)) {
+      if (crawler.schema) inputSchemas[key] = crawler.schema.input;
+    }
     const inputByFunctionName = sqlParser.extractFunctionCallInputs(inputSchemas, boundValues);
     const virtualEntitiesByName: {
       [name: string]: { records: Record<string, any>[]; parameters?: Record<string, any> };
@@ -194,7 +197,7 @@ export default class DatastoreInternal<
       );
     }
 
-    return await this.storageEngine.query(sqlParser, boundValues, virtualEntitiesByName, options);
+    return await this.storageEngine.query(sqlParser, boundValues, options, virtualEntitiesByName);
   }
 
   public createApiClient(host: string): DatastoreApiClient {

@@ -145,7 +145,11 @@ export default class Extractor<
     return resultsIterable;
   }
 
-  public async queryInternal(sql: string, boundValues: any[] = []): Promise<any> {
+  public async queryInternal(
+    sql: string,
+    boundValues: any[] = [],
+    options?: TRunArgs,
+  ): Promise<any> {
     const name = this.components.name;
 
     const sqlParser = new SqlParser(sql, { function: name });
@@ -160,7 +164,9 @@ export default class Extractor<
     const input = inputsByFunction[name];
     const records = await this.runInternal({ input } as TRunArgs);
     const engine = this.datastoreInternal.storageEngine;
-    return engine.query(sqlParser, boundValues, { [name]: { records, parameters: input } });
+    return engine.query(sqlParser, boundValues, options as any, {
+      [name]: { records, parameters: input },
+    });
   }
 
   public attachToDatastore(

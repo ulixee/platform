@@ -1,9 +1,13 @@
+import { ConnectionToCore } from '@ulixee/net';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
-import { IStatsTrackerApiTypes } from '@ulixee/platform-specification/services/StatsTrackerApis';
+import {
+  IStatsTrackerApis,
+  IStatsTrackerApiTypes,
+} from '@ulixee/platform-specification/services/StatsTrackerApis';
 import { IDatastoreStatsRecord } from '../db/DatastoreStatsTable';
 import StatsTrackerDiskStore from './StatsTrackerDiskStore';
-import StatsTrackerClusterStore from './StatsTrackerClusterStore';
+import StatsTrackerServiceClient from './StatsTrackerServiceClient';
 
 export type IDatastoreStats = IStatsTrackerApiTypes['StatsTracker.get']['result'];
 
@@ -12,12 +16,15 @@ export default class StatsTracker extends TypedEventEmitter<{
   query: { versionHash: string };
 }> {
   public diskStore?: StatsTrackerDiskStore;
-  public clusterStore?: StatsTrackerClusterStore;
+  public serviceClient?: StatsTrackerServiceClient;
 
-  constructor(readonly datastoresDir: string, statsEndpoint?: URL) {
+  constructor(
+    readonly datastoresDir: string,
+    connectionToServiceCore?: ConnectionToCore<IStatsTrackerApis, {}>,
+  ) {
     super();
-    if (statsEndpoint) {
-      this.clusterStore = new StatsTrackerClusterStore(statsEndpoint);
+    if (connectionToServiceCore) {
+      this.serviceClient = new StatsTrackerServiceClient(connectionToServiceCore);
     } else {
       this.diskStore = new StatsTrackerDiskStore(datastoresDir);
       this.diskStore.addEventEmitter(this, ['stats']);
@@ -25,19 +32,18 @@ export default class StatsTracker extends TypedEventEmitter<{
   }
 
   async close(): Promise<void> {
-    await this.clusterStore?.close();
     await this.diskStore?.close();
   }
 
   public async getForDatastore(manifest: IDatastoreManifest): Promise<IDatastoreStats> {
-    if (this.clusterStore) return this.clusterStore.getForDatastore(manifest.versionHash);
+    if (this.serviceClient) return this.serviceClient.getForDatastore(manifest.versionHash);
     return this.diskStore.getForDatastore(manifest);
   }
 
   public async recordEntityStats(
     details: IStatsTrackerApiTypes['StatsTracker.recordEntityStats']['args'],
   ): Promise<void> {
-    if (this.clusterStore) await this.clusterStore.recordEntityStats(details);
+    if (this.serviceClient) await this.serviceClient.recordEntityStats(details);
     else this.diskStore.recordEntityStats(details);
   }
 
@@ -45,7 +51,7 @@ export default class StatsTracker extends TypedEventEmitter<{
     details: IStatsTrackerApiTypes['StatsTracker.recordQuery']['args'],
   ): Promise<void> {
     this.emit('query', { versionHash: details.versionHash });
-    if (this.clusterStore) await this.clusterStore.recordQuery(details);
+    if (this.serviceClient) await this.serviceClient.recordQuery(details);
     else this.diskStore.recordQuery(details);
   }
 }

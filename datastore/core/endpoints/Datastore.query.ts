@@ -11,7 +11,12 @@ export default new DatastoreApiHandler('Datastore.query', {
     const startTime = Date.now();
     const manifestWithRuntime = await context.datastoreRegistry.getByVersionHash(versionHash);
 
-    const storage = context.storageEngineRegistry.get(manifestWithRuntime);
+    const storage = context.storageEngineRegistry.get(manifestWithRuntime, {
+      id: queryId,
+      payment,
+      authentication,
+      versionHash,
+    });
 
     const datastore = await context.vm.open(
       manifestWithRuntime.runtimePath,
@@ -24,6 +29,9 @@ export default new DatastoreApiHandler('Datastore.query', {
     const paymentProcessor = new PaymentProcessor(payment, datastore, context);
 
     const heroSessionIds: string[] = [];
+
+    const cloudNodeHost = context.cloudNodeAddress.host;
+    const cloudNodeIdentity = context.cloudNodeIdentity?.bech32;
 
     const finalResult = await datastore
       .queryInternal(
@@ -94,6 +102,8 @@ export default new DatastoreApiHandler('Datastore.query', {
               microgons,
               milliseconds,
               didUseCredits: !!request.payment?.credits,
+              cloudNodeHost,
+              cloudNodeIdentity,
               error: runError,
             });
             // Do we need to rollback the stats? We won't finalize payment in this scenario.
@@ -141,6 +151,8 @@ export default new DatastoreApiHandler('Datastore.query', {
       affiliateId,
       error: runError,
       heroSessionIds,
+      cloudNodeHost,
+      cloudNodeIdentity,
     });
 
     // TODO: should we return this to client so that the rest of the metadata is visible?

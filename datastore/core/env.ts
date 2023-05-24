@@ -14,6 +14,7 @@ export default {
   serverEnvironment: env.ULX_SERVER_ENVIRONMENT,
   datastoresDir: env.ULX_DATASTORE_DIR,
   queryHeroSessionsDir: env.ULX_QUERY_HERO_SESSIONS_DIR,
+  replayRegistryHost: env.ULX_REPLAY_REGISTRY_HOST,
   enableSqliteWalMode: env.ULX_ENABLE_SQLITE_WAL,
   // list of identities who can upload to this Cloud [@ulixee/crypto/lib/Identity.bech32]
   cloudAdminIdentities: parseIdentities(env.ULX_CLOUD_ADMIN_IDENTITIES, 'Admin Identities'),

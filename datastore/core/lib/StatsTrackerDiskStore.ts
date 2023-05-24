@@ -93,6 +93,8 @@ export default class StatsTrackerDiskStore extends TypedEventEmitter<{
       details.bytes,
       details.milliseconds,
       details.heroSessionIds,
+      details.cloudNodeHost,
+      details.cloudNodeIdentity,
     );
   }
 }

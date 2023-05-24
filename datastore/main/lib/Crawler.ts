@@ -158,7 +158,6 @@ export default class Crawler<
       `SELECT * FROM self WHERE runTime >= $1 AND input=$2 LIMIT 1`,
       [maxAge, serializedInput],
     );
-
     if (cached.length) {
       const [{ sessionId, version, crawler }] = cached;
       return { sessionId, version, crawler };

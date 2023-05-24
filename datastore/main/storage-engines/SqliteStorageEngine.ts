@@ -4,6 +4,7 @@ import { IDbJsTypes, IDbTypeNames } from '@ulixee/sql-engine/interfaces/IDbTypes
 import SqliteAdapter from '@ulixee/sql-engine/adapters/SqliteAdapter';
 import Database = require('better-sqlite3');
 import { Database as SqliteDatabase } from 'better-sqlite3';
+import { TQueryCallMeta } from '../interfaces/IStorageEngine';
 import AbstractStorageEngine from './AbstractStorageEngine';
 
 type ISchema = Record<string, IAnySchemaJson>;
@@ -28,6 +29,7 @@ export default class SqliteStorageEngine extends AbstractStorageEngine {
   public override query<TResult>(
     sql: string | SqlParser,
     boundValues: IDbJsTypes[],
+    metadata?: TQueryCallMeta,
     virtualEntitiesByName?: {
       [name: string]: { parameters?: Record<string, any>; records: Record<string, any>[] };
     },

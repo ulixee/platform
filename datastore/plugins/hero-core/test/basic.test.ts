@@ -2,7 +2,7 @@ import { CloudNode } from '@ulixee/cloud';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
 import Packager from '@ulixee/datastore-packager';
 import { Helpers } from '@ulixee/datastore-testing';
-import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
+import HeroCore from '@ulixee/hero-core';
 import * as Fs from 'fs';
 import * as Path from 'path';
 
@@ -91,7 +91,7 @@ test('it should be able to capture stack origins', async () => {
 
   expect(heroSession.outputs[0].sessionId).toBeTruthy();
 
-  const db = SessionDb.getCached(heroSession.outputs[0].sessionId, true);
+  const db = await cloudNode.heroCore.sessionRegistry.get(heroSession.outputs[0].sessionId);
   const gotoCommand = db.commands.all().find(x => x.name === 'goto');
   expect(gotoCommand).toBeTruthy();
   expect(gotoCommand.callsite).toContain('_testDatastore@dbx1');

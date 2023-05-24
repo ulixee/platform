@@ -57,6 +57,8 @@ export default class QueryLog {
     startDate: Date,
     outputs: any[],
     metadata: IDatastoreApiTypes['Datastore.query']['result']['metadata'],
+    cloudNodeHost: string,
+    cloudNodeIdentity?: string,
     error?: Error,
   ): void {
     const { id, versionHash, affiliateId, payment } = query;
@@ -76,6 +78,8 @@ export default class QueryLog {
         query: 'sql' in query ? query.sql : `stream(${streamQuery.name})`,
         outputs,
         error,
+        cloudNodeHost,
+        cloudNodeIdentity,
         ...(metadata ?? {}),
       };
       const op = Fs.promises

@@ -10,7 +10,10 @@ export default new DatastoreApiHandler('Datastore.creditsIssued', {
     const datastoreVersion = await context.datastoreRegistry.getByVersionHash(
       request.datastoreVersionHash,
     );
-    const storage = context.storageEngineRegistry.get(datastoreVersion);
+    const storage = context.storageEngineRegistry.get(datastoreVersion, {
+      versionHash: request.datastoreVersionHash,
+      id: context.connectionToClient?.transport.remoteId ?? 'creditsIssued',
+    });
     const datastore = await context.vm.open(
       datastoreVersion.runtimePath,
       storage,

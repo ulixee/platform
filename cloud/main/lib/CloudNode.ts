@@ -13,6 +13,7 @@ import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPl
 import type DesktopCore from '@ulixee/desktop-core';
 import HeroCore from '@ulixee/hero-core';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
+import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
 import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
 import IServicesSetup from '@ulixee/platform-specification/types/IServicesSetup';
 import * as Http from 'http';
@@ -40,10 +41,12 @@ export default class CloudNode {
 
   public publicServer: RoutableServer;
   public hostedServicesServer?: RoutableServer;
+  public hostedServicesHostURL?: URL;
   public peerServer: Http.Server;
   public peerNetwork?: IPeerNetwork;
 
   public datastoreCore: DatastoreCore;
+  public heroCore: HeroCore;
   public desktopCore?: DesktopCore;
   public nodeRegistry: NodeRegistry;
   public nodeTracker: NodeTracker;
@@ -98,6 +101,8 @@ export default class CloudNode {
   private isReady = new Resolvable<void>();
   private didReservePort = false;
 
+  private connectionsToServicesByHost: { [host: string]: ConnectionToCore<any, any> } = {};
+
   constructor(
     config: Partial<ICloudConfiguration> & {
       shouldShutdownOnSignals?: boolean;
@@ -118,13 +123,16 @@ export default class CloudNode {
     const { listenOptions, ...other } = cloudConfiguration;
     Object.assign(this.cloudConfiguration, other ?? {});
     Object.assign(this.cloudConfiguration.listenOptions, listenOptions ?? {});
-    if (heroConfiguration) this.heroConfiguration = heroConfiguration;
 
     this.router = new CoreRouter(this);
     this.datastoreCore = new DatastoreCore(
       datastoreConfiguration ?? {},
       this.getInstalledDatastorePlugins(),
     );
+
+    this.heroConfiguration = heroConfiguration ?? {};
+    this.heroConfiguration.shouldShutdownOnSignals ??= this.shouldShutdownOnSignals;
+    this.heroCore = new HeroCore(this.heroConfiguration);
 
     this.shouldShutdownOnSignals = shouldShutdownOnSignals;
     if (this.shouldShutdownOnSignals === true) ShutdownHandler.disableSignals = true;
@@ -160,11 +168,13 @@ export default class CloudNode {
     if (this.isClosing) {
       return this.isClosing;
     }
-    ShutdownHandler.unregister(this.close);
     const resolvable = new Resolvable<void>();
     const logid = log.stats('CloudNode.Closing');
     try {
       this.isClosing = resolvable.promise;
+
+      ShutdownHandler.unregister(this.close);
+      this.heroCore.off('close', this.close);
 
       if (this.didReservePort) {
         this.clearReservedPort();
@@ -172,14 +182,14 @@ export default class CloudNode {
 
       await this.router.close();
 
-      HeroCore.onShutdown = null;
       await this.nodeRegistry?.close();
       this.desktopCore?.disconnect();
+
+      await this.heroCore.close();
       await this.datastoreCore.close();
 
-      await HeroCore.shutdown();
-
       await Promise.allSettled([
+        ...Object.values(this.connectionsToServicesByHost).map(x => x.disconnect()),
         this.publicServer.close(),
         this.hostedServicesServer?.close(),
         this.peerServer?.close(),
@@ -218,23 +228,16 @@ export default class CloudNode {
       log.info('CloudNode.servicesSetup', { servicesSetup, sessionId: null });
     }
 
-    const parseInClusterHost: (host: string) => string = host => {
-      const hostURL = toUrl(host);
-
-      // safeguard against looping back to self
-      if (!hostURL || hostedServicesAddress?.origin === hostURL.origin) return null;
-      return hostURL.host;
-    };
-
     this.nodeTracker = new NodeTracker();
-
     this.nodeRegistry = new NodeRegistry({
       datastoreCore: this.datastoreCore,
+      heroCore: this.heroCore,
       publicServer: this.publicServer,
-      servicesHost: parseInClusterHost(this.cloudConfiguration.nodeRegistryHost),
+      serviceClient: this.createConnectionToServiceHost(this.cloudConfiguration.nodeRegistryHost),
       peerNetwork: this.peerNetwork,
       nodeTracker: this.nodeTracker,
     });
+
     if (
       (this.nodeRegistry.serviceClient || this.cloudConfiguration.nodeRegistryHost) &&
       !this.cloudConfiguration.networkIdentity
@@ -243,26 +246,45 @@ export default class CloudNode {
     }
     await this.nodeRegistry.register(this.cloudConfiguration.networkIdentity);
 
-    /// START HERO
-    HeroCore.onShutdown = () => this.close();
-    this.heroConfiguration ??= {} as any;
-    this.heroConfiguration.shouldShutdownOnSignals ??= this.shouldShutdownOnSignals;
-    await HeroCore.start(this.heroConfiguration);
+    await this.heroCore.start();
+    this.heroCore.once('close', this.close);
 
     await this.datastoreCore.start({
       nodeAddress,
+      networkIdentity: this.cloudConfiguration.networkIdentity,
       hostedServicesAddress,
       defaultServices: servicesSetup,
       peerNetwork: this.peerNetwork,
       cloudType: this.cloudConfiguration.cloudType,
+      createConnectionToServiceHost: this.createConnectionToServiceHost,
+      getSystemCore: (name: 'heroCore' | 'datastoreCore' | 'desktopCore') => {
+        if (name === 'heroCore') return this.heroCore;
+        if (name === 'datastoreCore') return this.datastoreCore;
+        if (name === 'desktopCore') return this.desktopCore;
+      },
     });
 
     /// START DESKTOP
     if (DesktopUtils.isInstalled()) {
       const DesktopCore = DesktopUtils.getDesktop();
-      this.desktopCore = new DesktopCore(this.datastoreCore);
+      this.desktopCore = new DesktopCore(this.datastoreCore, this.heroCore);
       await this.desktopCore.activatePlugin();
     }
+  }
+
+  private createConnectionToServiceHost(serviceHost: string): ConnectionToCore<any, any> {
+    const serviceURL = toUrl(serviceHost);
+    if (!serviceURL) return null;
+
+    const hostURL = new URL('/services', serviceURL);
+
+    // safeguard against looping back to self
+    if (!hostURL || this.hostedServicesHostURL?.origin === hostURL.origin) return null;
+
+    this.connectionsToServicesByHost[hostURL.host] ??= new ConnectionToCore<any, any>(
+      new WsTransportToCore(hostURL.href),
+    );
+    return this.connectionsToServicesByHost[hostURL.host];
   }
 
   private async startPublicServer(): Promise<string> {
@@ -305,7 +327,8 @@ export default class CloudNode {
     if (!listenOptions.port && !isTestEnv) {
       if (!(await isPortInUse(18181))) listenOptions.port = 18181;
     }
-    await this.hostedServicesServer?.listen(listenOptions);
+    await this.hostedServicesServer.listen(listenOptions);
+    this.hostedServicesHostURL = toUrl(await this.hostedServicesServer.host);
   }
 
   private async startPeerServices(): Promise<void> {
@@ -395,7 +418,7 @@ export default class CloudNode {
     console.warn(`\n
 ############################################################################################
 ############################################################################################
-###########################  TEMPORARY ADMIN IDENTITY  #####################################
+###########################  TEMPORARY NETWORK IDENTITY  ###################################
 ############################################################################################
 ############################################################################################
 

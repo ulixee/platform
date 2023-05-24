@@ -4,14 +4,20 @@ import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPl
 import { ConnectionToHeroCore } from '@ulixee/hero';
 import HeroCore from '@ulixee/hero-core';
 import CallsiteLocator from '@ulixee/hero/lib/CallsiteLocator';
+import { ConnectionToClient, ConnectionToCore } from '@ulixee/net';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import { nanoid } from 'nanoid';
+import * as Path from 'path';
+import ReplayRegistryEndpoints from './endpoints/ReplayRegistryEndpoints';
+import ReplayRegistry from './lib/ReplayRegistry';
 
 const pkg = require('@ulixee/datastore-plugins-hero/package.json');
 
 export default class DatastoreForHeroPluginCore implements IExtractorPluginCore {
   public name = pkg.name;
   public version = pkg.version;
+  public replayRegistry: ReplayRegistry;
+
   public nodeVmRequireWhitelist = [
     '@ulixee/hero',
     '@ulixee/unblocked-agent',
@@ -22,7 +28,6 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
   ];
 
   private connectionToCore: ConnectionToHeroCore;
-  private sessionDbDirectory: string;
 
   private nodeVmSandboxList = [
     '@ulixee/hero',
@@ -45,6 +50,8 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
     '@ulixee/hero/connections',
   ];
 
+  private endpoints: ReplayRegistryEndpoints;
+
   public nodeVmUseSandbox(name: string): boolean {
     // exclude exceptions first
 
@@ -57,9 +64,27 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
     }
   }
 
-  public async onCoreStart(options: IDatastoreCoreConfigureOptions): Promise<void> {
-    await HeroCore.start();
-    this.sessionDbDirectory = options.queryHeroSessionsDir;
+  // eslint-disable-next-line @typescript-eslint/require-await
+  public async onCoreStart(
+    coreConfigureOptions: IDatastoreCoreConfigureOptions,
+    options: {
+      createConnectionToServiceHost: (host: string) => ConnectionToCore<any, any>;
+      getSystemCore: (name: 'heroCore' | 'datastoreCore' | 'desktopCore') => any;
+    },
+  ): Promise<void> {
+    const heroCore = options.getSystemCore('heroCore') as HeroCore;
+    if (!heroCore) {
+      throw new Error('Could not find a heroCore instance to attach to!!');
+    }
+
+    this.replayRegistry = new ReplayRegistry({
+      queryHeroStorageDir: coreConfigureOptions.queryHeroSessionsDir,
+      defaultHeroStorageDir: Path.join(heroCore.dataDir, 'hero-sessions'),
+      serviceClient: options.createConnectionToServiceHost(coreConfigureOptions.replayRegistryHost),
+    });
+    heroCore.sessionRegistry = this.replayRegistry;
+    this.endpoints = new ReplayRegistryEndpoints();
+
     const vm2 = require.resolve('vm2').replace('index.js', '');
     if (!CallsiteLocator.ignoreModulePaths.includes(vm2)) {
       CallsiteLocator.ignoreModulePaths.push(vm2);
@@ -72,7 +97,7 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
       );
     }
     const bridge = new TransportBridge();
-    HeroCore.addConnection(bridge.transportToClient);
+    heroCore.addConnection(bridge.transportToClient);
     this.connectionToCore = new ConnectionToHeroCore(bridge.transportToCore);
   }
 
@@ -88,13 +113,14 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
       runtime: 'datastore',
     };
     options.sessionId = `query-${options.id}-${nanoid(3)}`;
-    options.sessionDbDirectory = this.sessionDbDirectory;
-
     options.connectionToCore = this.connectionToCore;
+  }
+
+  public registerHostedServices(connectionToClient: ConnectionToClient<any, any>): void {
+    this.endpoints?.attachToConnection(connectionToClient, { replayRegistry: this.replayRegistry });
   }
 
   public async onCoreClose(): Promise<void> {
     await this.connectionToCore?.disconnect();
-    await HeroCore.shutdown();
   }
 }

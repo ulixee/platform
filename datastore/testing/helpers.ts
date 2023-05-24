@@ -51,10 +51,10 @@ export async function createLocalNode(
     await Fs.mkdir(datastoreConfig.datastoresDir, { recursive: true });
     await Fs.mkdir(datastoreConfig.datastoresTmpDir, { recursive: true });
   }
-  needsClosing.push({
-    close: () => Fs.rm(datastoreConfig.datastoresDir, { recursive: true }).catch(() => null),
-    onlyCloseOnFinal,
-  });
+  // needsClosing.push({
+  //   close: () => Fs.rm(datastoreConfig.datastoresDir, { recursive: true }).catch(() => null),
+  //   onlyCloseOnFinal,
+  // });
 
   const cloudNode = new CloudNode(config);
   onClose(() => cloudNode.close(), onlyCloseOnFinal);

@@ -1,6 +1,6 @@
 export default interface IHeroSessionsApi {
-  list(withError?: boolean): IHeroSessionsListResult[];
-  search(keyword: string): IHeroSessionsSearchResult[];
+  list(withError?: boolean): Promise<IHeroSessionsListResult[]>;
+  search(keyword: string): Promise<IHeroSessionsSearchResult[]>;
 }
 
 export interface IHeroSessionsListResult {

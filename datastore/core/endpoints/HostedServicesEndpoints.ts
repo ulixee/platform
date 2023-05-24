@@ -1,5 +1,4 @@
 import { IAsyncFunc } from '@ulixee/net/interfaces/IApiHandlers';
-import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import {
@@ -18,7 +17,7 @@ import { DatastoreNotFoundError } from '../lib/errors';
 export type TServicesApis = IDatastoreRegistryApis<IDatastoreApiContext> &
   IStatsTrackerApis<IDatastoreApiContext>;
 
-export type TConnectionToServicesClient = IConnectionToClient<TServicesApis, {}>;
+export type TConnectionToServicesClient = ConnectionToClient<TServicesApis, {}>;
 
 export default class HostedServicesEndpoints {
   public connections = new Set<TConnectionToServicesClient>();
@@ -80,7 +79,7 @@ export default class HostedServicesEndpoints {
 
     for (const [api, handler] of Object.entries(this.handlersByCommand)) {
       const validationSchema = DatastoreRegistryApiSchemas[api] ?? StatsTrackerApiSchemas[api];
-      if (!validationSchema) throw new Error(`invalid api ${  api}`);
+      if (!validationSchema) throw new Error(`invalid api ${api}`);
       this.handlersByCommand[api] = validateThenRun.bind(
         this,
         api,
@@ -101,7 +100,7 @@ export default class HostedServicesEndpoints {
   }
 }
 
-function validateThenRun(
+export function validateThenRun(
   api: string,
   handler: IAsyncFunc,
   validationSchema: IZodApiTypes | undefined,

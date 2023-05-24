@@ -64,7 +64,7 @@ export default class Table<
 
     const engine = this.datastoreInternal.storageEngine;
     const { sql, boundValues } = SqlGenerator.createWhereClause(name, options?.input, ['*'], 1000);
-    return await engine.query(sql, boundValues, {}, options);
+    return await engine.query(sql, boundValues, options);
   }
 
   public async insertInternal(...records: TSchemaType[]): Promise<void> {
@@ -84,7 +84,7 @@ export default class Table<
     const engine = this.datastoreInternal.storageEngine;
 
     const sqlParser = new SqlParser(sql, { table: name });
-    return await engine.query(sqlParser, boundValues, {}, options);
+    return await engine.query(sqlParser, boundValues, options);
   }
 
   public attachToDatastore(

@@ -1,21 +1,21 @@
+import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import Logger from '@ulixee/commons/lib/Logger';
+import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
-import { existsAsync } from '@ulixee/commons/lib/fileUtils';
-import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
-import { toUrl } from '@ulixee/commons/lib/utils';
 import Ed25519 from '@ulixee/crypto/lib/Ed25519';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
 import IDatastoreEvents from '@ulixee/datastore/interfaces/IDatastoreEvents';
 import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
+import { ConnectionToCore } from '@ulixee/net';
 import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
-import { IDatastoreApiTypes, IDatastoreApis } from '@ulixee/platform-specification/datastore';
+import { IDatastoreApis, IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import { IServicesSetupApiTypes } from '@ulixee/platform-specification/services/SetupApis';
-import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
 import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreVersionHashValidation';
+import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
 import { promises as Fs } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import * as Os from 'os';
@@ -43,14 +43,14 @@ import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToCli
 import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
 import DatastoreApiClients from './lib/DatastoreApiClients';
 import DatastoreRegistry, { IDatastoreManifestWithRuntime } from './lib/DatastoreRegistry';
+import { IDatastoreSourceDetails } from './lib/DatastoreRegistryDiskStore';
 import DatastoreVm from './lib/DatastoreVm';
+import { MissingRequiredSettingError } from './lib/errors';
 import SidechainClientManager from './lib/SidechainClientManager';
 import StatsTracker from './lib/StatsTracker';
 import StorageEngineRegistry from './lib/StorageEngineRegistry';
-import WorkTracker from './lib/WorkTracker';
-import { MissingRequiredSettingError } from './lib/errors';
 import { translateStats } from './lib/translateDatastoreMetadata';
-import { IDatastoreSourceDetails } from './lib/DatastoreRegistryDiskStore';
+import WorkTracker from './lib/WorkTracker';
 
 const { log } = Logger(module);
 
@@ -107,6 +107,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
   private isStarted = new Resolvable<void>();
   private docPages: DocpageRoutes;
   private cloudNodeAddress: URL;
+  private cloudNodeIdentity: Identity;
   private hostedServicesEndpoints: HostedServicesEndpoints;
 
   private connectionToThisCore: ConnectionToDatastoreCore;
@@ -116,7 +117,6 @@ export default class DatastoreCore extends TypedEventEmitter<{
     this.options = {
       serverEnvironment: env.serverEnvironment as any,
       datastoresDir: env.datastoresDir,
-      queryHeroSessionsDir: env.queryHeroSessionsDir,
       datastoresTmpDir: Path.join(Os.tmpdir(), '.ulixee', 'datastore'),
       maxRuntimeMs: 10 * 60e3,
       waitForDatastoreCompletionOnShutdown: false,
@@ -135,6 +135,8 @@ export default class DatastoreCore extends TypedEventEmitter<{
       datastoreRegistryHost: env.datastoreRegistryHost,
       storageEngineHost: env.storageEngineHost,
       statsTrackerHost: env.statsTrackerHost,
+      queryHeroSessionsDir: env.queryHeroSessionsDir,
+      replayRegistryHost: env.replayRegistryHost,
       cloudType: 'private',
       ...(options ?? {}),
     };
@@ -153,10 +155,11 @@ export default class DatastoreCore extends TypedEventEmitter<{
       context,
     );
     const logger = context.logger;
-    connection.on('response', ({ response, request }) => {
+    connection.on('response', ({ response, request, metadata }) => {
       logger.info(`api/${request.command} (${request.messageId})`, {
         args: request.args?.[0],
         response: response.data,
+        ...metadata,
       });
     });
     context.connectionToClient = connection;
@@ -176,11 +179,16 @@ export default class DatastoreCore extends TypedEventEmitter<{
     }
     const context = this.getApiContext(transport.remoteId);
     const connection = this.hostedServicesEndpoints.addConnection(transport, context);
+
+    for (const plugin of Object.values(this.pluginCoresByName)) {
+      plugin.registerHostedServices?.(connection);
+    }
     const logger = context.logger;
-    connection.on('response', ({ response, request }) => {
+    connection.on('response', ({ response, request, metadata }) => {
       logger.info(`services/api/${request.command} (${request.messageId})`, {
         args: request.args?.[0],
         response: response.data,
+        ...metadata,
       });
     });
     return connection;
@@ -209,10 +217,20 @@ export default class DatastoreCore extends TypedEventEmitter<{
     cloudType?: 'public' | 'private';
     defaultServices?: IServicesSetupApiTypes['Services.getSetup']['result'];
     peerNetwork?: IPeerNetwork;
+    networkIdentity: Identity;
+    getSystemCore: (name: 'heroCore' | 'datastoreCore' | 'desktopCore') => any;
+    createConnectionToServiceHost: (host: string) => ConnectionToCore<any, any>; // create connection to a services host
   }): Promise<void> {
     if (this.isStarted.isResolved) return this.isStarted.promise;
 
-    const { nodeAddress, cloudType, defaultServices, hostedServicesAddress } = options;
+    const {
+      nodeAddress,
+      networkIdentity,
+      cloudType,
+      defaultServices,
+      hostedServicesAddress,
+      createConnectionToServiceHost,
+    } = options;
     if (defaultServices) {
       Object.assign(this.options, filterUndefined(defaultServices));
     }
@@ -231,6 +249,8 @@ export default class DatastoreCore extends TypedEventEmitter<{
       if (this.options.statsTrackerHost === 'self') this.options.statsTrackerHost = servicesHost;
       if (this.options.datastoreRegistryHost === 'self')
         this.options.datastoreRegistryHost = servicesHost;
+      if (this.options.replayRegistryHost === 'self')
+        this.options.replayRegistryHost = servicesHost;
 
       this.options.statsTrackerHost ??= servicesHost;
       this.options.datastoreRegistryHost ??= servicesHost;
@@ -244,6 +264,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
     });
 
     this.cloudNodeAddress = nodeAddress;
+    this.cloudNodeIdentity = networkIdentity;
     if (cloudType) this.options.cloudType = cloudType;
     try {
       this.close = this.close.bind(this);
@@ -279,14 +300,6 @@ export default class DatastoreCore extends TypedEventEmitter<{
         Object.values(this.pluginCoresByName),
       );
 
-      const parseInClusterHost: (host: string) => URL = host => {
-        const hostURL = toUrl(host);
-
-        // safeguard against looping back to self
-        if (!hostURL || hostedServicesAddress?.origin === hostURL.origin) return null;
-        return hostURL;
-      };
-
       this.storageEngineRegistry = new StorageEngineRegistry(
         this.options.datastoresDir,
         this.cloudNodeAddress,
@@ -294,12 +307,12 @@ export default class DatastoreCore extends TypedEventEmitter<{
 
       this.statsTracker = new StatsTracker(
         this.options.datastoresDir,
-        parseInClusterHost(this.options.statsTrackerHost),
+        createConnectionToServiceHost(this.options.statsTrackerHost),
       );
       this.datastoreRegistry = new DatastoreRegistry(
         this.options.datastoresDir,
         this.datastoreApiClients,
-        parseInClusterHost(this.options.datastoreRegistryHost),
+        createConnectionToServiceHost(this.options.datastoreRegistryHost),
         options.peerNetwork,
         this.options,
         this.onDatastoreInstalled.bind(this),
@@ -313,7 +326,10 @@ export default class DatastoreCore extends TypedEventEmitter<{
       );
 
       for (const plugin of Object.values(this.pluginCoresByName)) {
-        if (plugin.onCoreStart) await plugin.onCoreStart(this.options);
+        await plugin.onCoreStart?.(this.options, {
+          createConnectionToServiceHost,
+          getSystemCore: options.getSystemCore,
+        });
       }
 
       this.workTracker = new WorkTracker(this.options.maxRuntimeMs);
@@ -437,6 +453,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
       sidechainClientManager: this.sidechainClientManager,
       storageEngineRegistry: this.storageEngineRegistry,
       cloudNodeAddress: this.cloudNodeAddress,
+      cloudNodeIdentity: this.cloudNodeIdentity,
       vm: this.vm,
       datastoreApiClients: this.datastoreApiClients,
       statsTracker: this.statsTracker,

@@ -26,10 +26,10 @@ export default abstract class AbstractStorageEngine implements IStorageEngine {
   public abstract query<TResult>(
     sql: string | SqlParser,
     boundValues: IDbJsTypes[],
+    metadata?: TQueryCallMeta,
     virtualEntitiesByName?: {
       [name: string]: { parameters?: Record<string, any>; records: Record<string, any>[] };
     },
-    metadata?: TQueryCallMeta,
   ): Promise<TResult>;
 
   public bind(datastore: IDatastoreComponents<TTables, TExtractors, TCrawlers>): void {

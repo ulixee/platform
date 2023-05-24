@@ -5,7 +5,10 @@ import {
   INodeRegistryApis,
   NodeRegistryApiSchemas,
 } from '@ulixee/platform-specification/services/NodeRegistryApis';
-import { IServicesSetupApis } from '@ulixee/platform-specification/services/SetupApis';
+import {
+  IServicesSetupApis,
+  ServicesSetupApiSchemas,
+} from '@ulixee/platform-specification/services/SetupApis';
 import { IZodApiTypes } from '@ulixee/specification/utils/IZodApi';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
 import ICloudApiContext from '../interfaces/ICloudApiContext';
@@ -15,15 +18,13 @@ export type TServicesApis = IServicesSetupApis<ICloudApiContext> &
 
 export type TConnectionToServicesClient = IConnectionToClient<TServicesApis, {}>;
 
-export default class NodeRegistryEndpoints {
-  public connections = new Set<TConnectionToServicesClient>();
-
+export default class HostedServiceEndpoints {
   private readonly handlersByCommand: TServicesApis;
 
   constructor() {
     this.handlersByCommand = {
       'Services.getSetup': async (_, ctx) => {
-        const { datastoreRegistryHost, storageEngineHost, statsTrackerHost } =
+        const { datastoreRegistryHost, storageEngineHost, statsTrackerHost, replayRegistryHost } =
           ctx.datastoreConfiguration;
         const { nodeRegistryHost } = ctx.cloudConfiguration;
 
@@ -32,6 +33,7 @@ export default class NodeRegistryEndpoints {
           datastoreRegistryHost,
           nodeRegistryHost,
           statsTrackerHost,
+          replayRegistryHost,
         });
       },
       'NodeRegistry.getNodes': async ({ count }, ctx) => {
@@ -39,7 +41,7 @@ export default class NodeRegistryEndpoints {
         return { nodes };
       },
       'NodeRegistry.register': async (registration, ctx) => {
-       return await ctx.nodeTracker.track({
+        return await ctx.nodeTracker.track({
           ...registration,
           lastSeenDate: new Date(),
           isClusterNode: true,
@@ -52,7 +54,7 @@ export default class NodeRegistryEndpoints {
     };
 
     for (const [api, handler] of Object.entries(this.handlersByCommand)) {
-      const validationSchema = NodeRegistryApiSchemas[api];
+      const validationSchema = NodeRegistryApiSchemas[api] ?? ServicesSetupApiSchemas[api];
       this.handlersByCommand[api] = validateThenRun.bind(
         this,
         api,
@@ -68,7 +70,6 @@ export default class NodeRegistryEndpoints {
   ): TConnectionToServicesClient {
     Object.assign(connection.apiHandlers, this.handlersByCommand);
     Object.assign(connection.handlerMetadata, context);
-    this.connections.add(connection);
     return connection;
   }
 }

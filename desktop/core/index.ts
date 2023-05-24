@@ -36,7 +36,7 @@ export default class DesktopCore {
   public sessionControllersById = new Map<string, SessionController>();
   private appConnectionsById = new Map<string, IConnectionToDesktopClient>();
   private appDevtoolsConnectionsById = new Map<string, AppDevtoolsConnection>();
-  private heroSessionsSearch: HeroSessionsSearch;
+  private readonly heroSessionsSearch: HeroSessionsSearch;
   private _connectionToDatastoreCore: ConnectionToDatastoreCore;
 
   private get connectionToDatastoreCore(): ConnectionToDatastoreCore {
@@ -50,8 +50,8 @@ export default class DesktopCore {
 
   private events = new EventSubscriber();
   private connectionToCloudCore: ConnectionToCore<ICloudApis, {}>;
-  constructor(public datastoreCore: DatastoreCore) {
-    this.heroSessionsSearch = new HeroSessionsSearch(datastoreCore.options.queryHeroSessionsDir);
+  constructor(public datastoreCore: DatastoreCore, public heroCore: HeroCore) {
+    this.heroSessionsSearch = new HeroSessionsSearch(heroCore);
   }
 
   public bindConnection(connectionToCloudCore: ConnectionToCore<ICloudApis, {}>): void {
@@ -80,17 +80,17 @@ export default class DesktopCore {
     connection.onCloseFns.push(() => this.appDevtoolsConnectionsById.delete(id));
   }
 
-  public addChromeAliveConnection(
+  public async addChromeAliveConnection(
     transport: ITransportToClient<IChromeAliveSessionApis>,
     request: IncomingMessage,
-  ): IConnectionToClient<IChromeAliveSessionApis, IChromeAliveSessionEvents> {
+  ): Promise<IConnectionToClient<IChromeAliveSessionApis, IChromeAliveSessionEvents>> {
     const chromeAliveMatch = request.url.match(/\/chromealive\/([0-9a-zA-Z-_]{6,21}).*/);
     if (chromeAliveMatch) {
       const heroSessionId = chromeAliveMatch[1];
       const controller = this.sessionControllersById.get(heroSessionId);
 
       if (controller) return controller.addConnection(transport, request) as any;
-      return this.loadSessionController(heroSessionId, transport, request);
+      return await this.loadSessionController(heroSessionId, transport, request);
     }
   }
 
@@ -319,17 +319,17 @@ export default class DesktopCore {
     });
   }
 
-  private loadSessionController(
+  private async loadSessionController(
     heroSessionId: string,
     transport: ITransportToClient<any>,
     request: IncomingMessage,
-  ): IConnectionToClient<any, any> {
+  ): Promise<IConnectionToClient<any, any>> {
     const requestUrl = new URL(request.url, 'http://localhost');
     const customDbPath = requestUrl.searchParams.get('path');
 
-    const db = SessionDb.getCached(heroSessionId, true, customDbPath);
+    const db = await this.heroCore.sessionRegistry.get(heroSessionId, customDbPath);
     const dbSession = db.session.get();
-    const options = Session.restoreOptionsFromSessionRecord({}, heroSessionId);
+    const options = await Session.restoreOptionsFromSessionRecord({}, heroSessionId, this.heroCore);
 
     options.scriptInvocationMeta = {
       entrypoint: dbSession.scriptEntrypoint,

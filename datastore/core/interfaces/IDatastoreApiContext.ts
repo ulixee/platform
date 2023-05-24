@@ -1,4 +1,5 @@
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
+import Identity from '@ulixee/crypto/lib/Identity';
 import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 import IDatastoreCoreConfigureOptions from './IDatastoreCoreConfigureOptions';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
@@ -20,6 +21,7 @@ export default interface IDatastoreApiContext {
   sidechainClientManager: SidechainClientManager;
   connectionToClient?: IDatastoreConnectionToClient;
   cloudNodeAddress: URL;
+  cloudNodeIdentity?: Identity;
   vm: DatastoreVm;
   datastoreApiClients: DatastoreApiClients;
   statsTracker: StatsTracker;

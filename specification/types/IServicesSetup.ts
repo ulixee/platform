@@ -5,6 +5,7 @@ export const ServicesSetupSchema = z.object({
   storageEngineHost: z.string().url().optional(),
   statsTrackerHost: z.string().url().optional(),
   nodeRegistryHost: z.string().url().optional(),
+  replayRegistryHost: z.string().url().optional(),
 });
 
 type IServicesSetup = z.infer<typeof ServicesSetupSchema>;

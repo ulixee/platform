@@ -26,6 +26,6 @@ export default class ClientForTable<TTable extends Table> {
     boundValues: any[] = [],
   ): Promise<TOutputSchema[]> {
     await this.readyPromise;
-    return this.table.queryInternal(sql, boundValues, {} as any);
+    return this.table.queryInternal(sql, boundValues);
   }
 }

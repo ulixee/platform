@@ -1,21 +1,21 @@
-import { Helpers } from '@ulixee/datastore-testing';
-import ConnectionFactory from '@ulixee/hero/connections/ConnectionFactory';
-import { buffer, date, object, string } from '@ulixee/schema';
-import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
-import { Extractor, Observable } from '@ulixee/datastore';
-import TransportBridge from '@ulixee/net/lib/TransportBridge';
-import Core from '@ulixee/hero-core';
-import { ConnectionToHeroCore } from '@ulixee/hero';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
+import { Extractor, Observable } from '@ulixee/datastore';
+import { Helpers } from '@ulixee/datastore-testing';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import OutputRebuilder from '@ulixee/desktop-core/lib/OutputRebuilder';
-import MockConnectionToHeroCore from './_MockConnectionToHeroCore';
+import { ConnectionToHeroCore } from '@ulixee/hero';
+import Core from '@ulixee/hero-core';
+import ConnectionFactory from '@ulixee/hero/connections/ConnectionFactory';
+import TransportBridge from '@ulixee/net/lib/TransportBridge';
+import { buffer, date, object, string } from '@ulixee/schema';
 import { HeroExtractorPlugin } from '../index';
+import MockConnectionToHeroCore from './_MockConnectionToHeroCore';
 
 let connectionToCore: ConnectionToHeroCore;
+const core = new Core();
 beforeAll(() => {
   const bridge = new TransportBridge();
-  Core.addConnection(bridge.transportToClient);
+  core.addConnection(bridge.transportToClient);
   connectionToCore = new ConnectionToHeroCore(bridge.transportToCore);
   Helpers.onClose(() => connectionToCore.disconnect(), true);
 });
@@ -102,7 +102,7 @@ describe('basic output tests', () => {
     await extractor.runInternal({ connectionToCore });
 
     const sessionId = await sessionIdPromise;
-    const db = new SessionDb(sessionId, { readonly: true });
+    const db = await core.sessionRegistry.get(sessionId);
     const outputs = db.output.all();
     expect(outputs).toHaveLength(4);
     expect(outputs[1]).toEqual({
@@ -172,7 +172,7 @@ describe('basic output tests', () => {
 
     const sessionId = await sessionIdPromise;
 
-    const db = new SessionDb(sessionId, { readonly: true });
+    const db = await core.sessionRegistry.get(sessionId);
     const outputs = db.output.all();
     expect(outputs).toHaveLength(5);
     expect(outputs[1]).toEqual({

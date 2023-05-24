@@ -2,6 +2,7 @@ import * as Fs from 'fs';
 import * as Path from 'path';
 import DatastorePackager from '@ulixee/datastore-packager';
 import { CloudNode } from '@ulixee/cloud';
+import { Helpers } from '@ulixee/datastore-testing';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 
@@ -25,10 +26,12 @@ beforeAll(async () => {
   };
   await cloudNode.listen();
   client = new DatastoreApiClient(await cloudNode.address);
+  Helpers.onClose(() => client.disconnect(), true);
 });
 
 afterAll(async () => {
   await cloudNode.close();
+  await Helpers.afterAll();
   if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
 });
 

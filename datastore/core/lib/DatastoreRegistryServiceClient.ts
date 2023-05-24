@@ -1,23 +1,21 @@
-import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
+import { toUrl } from '@ulixee/commons/lib/utils';
+import { ConnectionToCore } from '@ulixee/net';
 import { IDatastoreRegistryApis } from '@ulixee/platform-specification/services/DatastoreRegistryApis';
 import IDatastoreRegistryStore, {
   IDatastoreManifestWithLatest,
 } from '../interfaces/IDatastoreRegistryStore';
 import { TDatastoreUpload } from './DatastoreRegistry';
 
-export default class DatastoreRegistryClusterStore implements IDatastoreRegistryStore {
+export default class DatastoreRegistryServiceClient implements IDatastoreRegistryStore {
   public source = 'cluster' as const;
+  public hostAddress: URL;
 
-  client: ConnectionToCore<IDatastoreRegistryApis, {}>;
-  hostAddress: URL;
-
-  constructor(hostAddress: URL) {
-    this.hostAddress = new URL('/services', hostAddress);
-    this.client = new ConnectionToCore(new WsTransportToCore(this.hostAddress.href));
+  constructor(public client: ConnectionToCore<IDatastoreRegistryApis, {}>) {
+    this.hostAddress = toUrl(client.transport.host);
   }
 
   async close(): Promise<void> {
-    await this.client.disconnect();
+    return Promise.resolve();
   }
 
   async all(count?: number, offset?: number): Promise<IDatastoreManifestWithLatest[]> {

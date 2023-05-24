@@ -9,17 +9,21 @@ import { validateAuthentication, validateFunctionCoreVersions } from '../lib/dat
 export default new DatastoreApiHandler('Datastore.stream', {
   async handler(request, context) {
     const startTime = Date.now();
-    const manifestWithRuntime = await context.datastoreRegistry.getByVersionHash(
-      request.versionHash,
-    );
-    const storage = context.storageEngineRegistry.get(manifestWithRuntime);
+    const { authentication, payment, id, versionHash } = request;
+    const manifestWithRuntime = await context.datastoreRegistry.getByVersionHash(versionHash);
+    const storage = context.storageEngineRegistry.get(manifestWithRuntime, {
+      authentication,
+      payment,
+      id,
+      versionHash,
+    });
     const datastore = await context.vm.open(
       manifestWithRuntime.runtimePath,
       storage,
       manifestWithRuntime,
     );
-    await validateAuthentication(datastore, request.payment, request.authentication);
-    const paymentProcessor = new PaymentProcessor(request.payment, datastore, context);
+    await validateAuthentication(datastore, payment, authentication);
+    const paymentProcessor = new PaymentProcessor(payment, datastore, context);
 
     const heroSessionIds: string[] = [];
 
@@ -27,14 +31,14 @@ export default new DatastoreApiHandler('Datastore.stream', {
     let bytes = 0;
     let runError: Error;
     let microgons = 0;
-    const didUseCredits = !!request.payment?.credits;
+    const didUseCredits = !!payment?.credits;
 
     const requestDetailsForStats = {
-      id: request.id,
+      id,
+      versionHash,
       input: request.input,
-      versionHash: request.versionHash,
-      micronoteId: request.payment?.micronote?.micronoteId,
-      creditId: request.payment?.credits?.id,
+      micronoteId: payment?.micronote?.micronoteId,
+      creditId: payment?.credits?.id,
       affiliateId: request.affiliateId,
       didUseCredits,
     };
@@ -43,6 +47,9 @@ export default new DatastoreApiHandler('Datastore.stream', {
       datastore.metadata.extractorsByName[request.name] ??
       datastore.metadata.crawlersByName[request.name];
     const datastoreTable = datastore.metadata.tablesByName[request.name];
+
+    const cloudNodeHost = context.cloudNodeAddress.host;
+    const cloudNodeIdentity = context.cloudNodeIdentity?.bech32;
 
     try {
       await paymentProcessor.createHold(
@@ -61,6 +68,8 @@ export default new DatastoreApiHandler('Datastore.stream', {
         microgons,
         bytes,
         error: runError,
+        cloudNodeHost,
+        cloudNodeIdentity,
       });
       throw runError;
     }
@@ -97,6 +106,8 @@ export default new DatastoreApiHandler('Datastore.stream', {
       entityName: request.name,
       ...resultStats,
       error: runError,
+      cloudNodeHost,
+      cloudNodeIdentity,
     });
     await context.statsTracker.recordQuery({
       ...resultStats,
@@ -106,6 +117,8 @@ export default new DatastoreApiHandler('Datastore.stream', {
       outputs,
       error: runError,
       heroSessionIds,
+      cloudNodeHost,
+      cloudNodeIdentity,
     });
 
     if (runError) throw runError;
@@ -129,6 +142,9 @@ async function extractFunctionOutputs(
   heroSessionIds: string[],
 ): Promise<any[]> {
   const { pluginCoresByName } = context;
+  const cloudNodeHost = context.cloudNodeAddress.host;
+  const cloudNodeIdentity = context.cloudNodeIdentity?.bech32;
+
   validateFunctionCoreVersions(manifestWithRuntime, request.name, context);
   const options: IExtractorRunOptions<any> = {
     input: request.input,
@@ -177,6 +193,8 @@ async function extractFunctionOutputs(
             milliseconds,
             didUseCredits: !!request.payment?.credits,
             error: runError,
+            cloudNodeHost,
+            cloudNodeIdentity,
           });
           if (runError instanceof Error) throw runError;
           return outputs;

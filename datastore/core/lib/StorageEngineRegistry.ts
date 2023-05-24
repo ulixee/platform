@@ -1,7 +1,7 @@
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import { toUrl } from '@ulixee/commons/lib/utils';
-import Datastore from '@ulixee/datastore/index';
-import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
+import Datastore, { ConnectionToDatastoreCore } from '@ulixee/datastore';
+import IStorageEngine, { TQueryCallMeta } from '@ulixee/datastore/interfaces/IStorageEngine';
 import RemoteStorageEngine from '@ulixee/datastore/storage-engines/RemoteStorageEngine';
 import SqliteStorageEngine from '@ulixee/datastore/storage-engines/SqliteStorageEngine';
 import IDatastoreApiTypes from '@ulixee/platform-specification/datastore/DatastoreApis';
@@ -16,7 +16,8 @@ export default class StorageEngineRegistry {
   public readonly dataDir: string;
 
   #nodeAddress: URL;
-  #storageByVersionHash = new Map<string, IStorageEngine>();
+  #localStorageByVersionHash = new Map<string, IStorageEngine>();
+  #remoteConnectionsByHost = new Map<string, ConnectionToDatastoreCore>();
 
   constructor(dataDir: string, nodeAddress: URL) {
     this.dataDir = Path.join(dataDir, 'storage');
@@ -25,8 +26,9 @@ export default class StorageEngineRegistry {
   }
 
   public async close(): Promise<void> {
-    await Promise.allSettled([...this.#storageByVersionHash.values()].map(x => x.close()));
-    this.#storageByVersionHash.clear();
+    await Promise.allSettled([...this.#localStorageByVersionHash.values()].map(x => x.close()));
+    await Promise.allSettled([...this.#remoteConnectionsByHost.values()].map(x => x.disconnect()));
+    this.#localStorageByVersionHash.clear();
   }
 
   public isHostingStorageEngine(storageEngineHost: string): boolean {
@@ -39,32 +41,31 @@ export default class StorageEngineRegistry {
 
   public get(
     manifest: Pick<IDatastoreManifest, 'versionHash' | 'storageEngineHost'>,
+    queryMetadata: TQueryCallMeta,
   ): IStorageEngine {
     const { storageEngineHost, versionHash } = manifest;
 
-    if (this.#storageByVersionHash.has(versionHash)) {
-      return this.#storageByVersionHash.get(versionHash);
+    if (this.#localStorageByVersionHash.has(versionHash)) {
+      return this.#localStorageByVersionHash.get(versionHash);
     }
 
     let engine: IStorageEngine;
     // if no endpoint, or it's this machine, use file storage
     if (this.isHostingStorageEngine(storageEngineHost)) {
       engine = new SqliteStorageEngine(Path.join(this.dataDir, `${versionHash}.db`));
+      this.#localStorageByVersionHash.set(versionHash, engine);
     } else {
-      engine = new RemoteStorageEngine(
-        storageEngineHost,
-        this.onEngineDisconnected.bind(this, versionHash),
-      );
+      const connection = this.getRemoteConnection(storageEngineHost);
+      engine = new RemoteStorageEngine(connection, queryMetadata);
     }
-    this.#storageByVersionHash.set(versionHash, engine);
     return engine;
   }
 
   public async deleteExisting(versionHash: string): Promise<void> {
-    const entry = this.#storageByVersionHash.get(versionHash);
+    const entry = this.#localStorageByVersionHash.get(versionHash);
     if (!entry) return;
     await entry.close();
-    this.#storageByVersionHash.delete(versionHash);
+    this.#localStorageByVersionHash.delete(versionHash);
     if (entry instanceof SqliteStorageEngine) {
       await Fs.promises.rm(entry.path).catch(() => null);
     }
@@ -75,7 +76,10 @@ export default class StorageEngineRegistry {
     version: IDatastoreApiTypes['Datastore.upload']['args'],
     previousVersion: IDatastoreApiTypes['Datastore.upload']['args'],
   ): Promise<void> {
-    const client = this.get(manifest) as RemoteStorageEngine;
+    const client = this.get(manifest, {
+      versionHash: manifest.versionHash,
+      id: 'StorageEngine.createRemote',
+    }) as RemoteStorageEngine;
     if (this.isHostingStorageEngine(manifest.storageEngineHost)) {
       throw new Error(
         'This datastore needs to be uploaded to the local storage engine host, not a remote one.',
@@ -107,13 +111,19 @@ export default class StorageEngineRegistry {
     if (await existsAsync(storagePath)) {
       return;
     }
-    const storage = this.get(version);
+    const storage = this.get(version, {
+      versionHash: version.versionHash,
+      id: 'StorageEngine.create',
+    });
     const datastore = await vm.getDatastore(version.runtimePath);
     let previous: Datastore;
     if (previousVersion) {
       previous = await vm.open(
         previousVersion.runtimePath,
-        this.get(previousVersion),
+        this.get(previousVersion, {
+          versionHash: previousVersion.versionHash,
+          id: 'StorageEngine.create',
+        }),
         previousVersion,
       );
     }
@@ -144,9 +154,19 @@ export default class StorageEngineRegistry {
     }
   }
 
-  private onEngineDisconnected(versionHash: string, engine: RemoteStorageEngine): void {
-    if (this.#storageByVersionHash[versionHash] === engine) {
-      delete this.#storageByVersionHash[versionHash];
+  private onEngineDisconnected(storageHost: string, connection: ConnectionToDatastoreCore): void {
+    if (this.#remoteConnectionsByHost.get(storageHost) === connection) {
+      this.#remoteConnectionsByHost.delete(storageHost);
     }
+  }
+
+  private getRemoteConnection(storageHost: string): ConnectionToDatastoreCore {
+    const cleanStorageHost = toUrl(storageHost).host;
+    if (!this.#remoteConnectionsByHost.has(cleanStorageHost)) {
+      const connection = ConnectionToDatastoreCore.remote(cleanStorageHost);
+      connection.once('disconnected', () => this.onEngineDisconnected(storageHost, connection));
+      this.#remoteConnectionsByHost.set(cleanStorageHost, connection);
+    }
+    return this.#remoteConnectionsByHost.get(cleanStorageHost);
   }
 }

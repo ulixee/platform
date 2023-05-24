@@ -1,8 +1,8 @@
 import { z } from '@ulixee/specification';
-import { micronoteIdValidation, micronoteTokenValidation } from '@ulixee/specification/common';
+import { micronoteIdValidation } from '@ulixee/specification/common';
 import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
-import { DatastoreStatsSchema } from '../types/IDatastoreStats';
 import { datastoreVersionHashValidation } from '../types/datastoreVersionHashValidation';
+import { DatastoreStatsSchema } from '../types/IDatastoreStats';
 
 export const StatsTrackerApiSchemas = {
   'StatsTracker.get': {
@@ -17,10 +17,15 @@ export const StatsTrackerApiSchemas = {
   'StatsTracker.recordEntityStats': {
     args: z.object({
       versionHash: datastoreVersionHashValidation,
+      cloudNodeHost: z.string().describe('The node hosting this query.'),
+      cloudNodeIdentity: z
+        .string()
+        .optional()
+        .describe('The network identity of the query running node.'),
       entityName: z.string().optional(),
       error: z.instanceof(Error).optional(),
       bytes: z.number().int(),
-      microgons: micronoteTokenValidation,
+      microgons: z.number().int().nonnegative(),
       milliseconds: z.number().int(),
       didUseCredits: z.boolean(),
     }),
@@ -32,21 +37,26 @@ export const StatsTrackerApiSchemas = {
     args: z.object({
       versionHash: datastoreVersionHashValidation,
       id: z.string().describe('Query Id'),
+      cloudNodeHost: z.string().describe('The node hosting this query.'),
+      cloudNodeIdentity: z
+        .string()
+        .optional()
+        .describe('The network identity of the query running node.'),
       query: z.string().describe('The sql query run'),
       startTime: z.number().describe('Date epoch millis'),
       input: z.any(),
-      outputs: z.any().array(),
+      outputs: z.any().array().optional(),
       error: z.instanceof(Error).optional(),
       micronoteId: micronoteIdValidation.optional(),
-      creditId: z.string().describe('Any credit spent on this item'),
-      affiliateId: z.string().describe('An affiliate id used for this query'),
+      creditId: z.string().optional().describe('Any credit spent on this item'),
+      affiliateId: z.string().optional().describe('An affiliate id used for this query'),
       heroSessionIds: z
         .string()
         .array()
         .optional()
         .describe('Any hero session ids used for this query'),
       bytes: z.number().int(),
-      microgons: micronoteTokenValidation,
+      microgons: z.number().int().nonnegative(),
       milliseconds: z.number().int(),
     }),
     result: z.object({

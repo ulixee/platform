@@ -6,29 +6,25 @@ import { TQueryCallMeta } from '../interfaces/IStorageEngine';
 import AbstractStorageEngine from './AbstractStorageEngine';
 
 export default class RemoteStorageEngine extends AbstractStorageEngine {
-  protected connectionToCore: ConnectionToDatastoreCore;
   constructor(
-    readonly storageEngineHost: string,
-    onDisconnected: (instance: RemoteStorageEngine) => any,
+    protected connectionToCore: ConnectionToDatastoreCore,
+    protected metadata: TQueryCallMeta,
   ) {
     super();
-    this.connectionToCore = ConnectionToDatastoreCore.remote(storageEngineHost);
-    this.connectionToCore.once('disconnected', () => onDisconnected(this));
   }
 
-  public override async close(): Promise<void> {
-    await this.connectionToCore.disconnect();
-    this.connectionToCore.removeAllListeners();
+  public override close(): Promise<void> {
     this.connectionToCore = null;
+    return Promise.resolve();
   }
 
   public override async query<TResult>(
     sql: string | SqlParser,
     boundValues: IDbJsTypes[],
+    metadata?: TQueryCallMeta,
     virtualEntitiesByName?: {
       [name: string]: { parameters?: Record<string, any>; records: Record<string, any>[] };
     },
-    metadata?: TQueryCallMeta,
   ): Promise<TResult> {
     if (sql instanceof SqlParser) sql = sql.toSql();
     const result = (await this.connectionToCore.sendRequest({
@@ -38,7 +34,8 @@ export default class RemoteStorageEngine extends AbstractStorageEngine {
           sql,
           boundValues,
           virtualEntitiesByName,
-          ...metadata,
+          ...this.metadata,
+          ...metadata ?? {},
         },
       ],
     })) as any;

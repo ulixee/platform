@@ -14,10 +14,10 @@ export default interface IStorageEngine {
   query<TResult>(
     sql: string | SqlParser,
     boundValues: IDbJsTypes[],
+    metadata?: TQueryCallMeta,
     virtualEntitiesByName?: {
       [name: string]: { parameters?: Record<string, any>; records: Record<string, any>[] };
     },
-    metadata?: TQueryCallMeta,
   ): Promise<TResult>;
   close(): Promise<void>;
 }

@@ -10,7 +10,12 @@ export default new DatastoreApiHandler('Datastore.queryStorageEngine', {
     const startTime = Date.now();
     const manifestWithEntrypoint = await context.datastoreRegistry.getByVersionHash(versionHash);
 
-    const storage = context.storageEngineRegistry.get(manifestWithEntrypoint);
+    const storage = context.storageEngineRegistry.get(manifestWithEntrypoint, {
+      id,
+      payment,
+      authentication,
+      versionHash,
+    });
     const datastore = await context.vm.open(
       manifestWithEntrypoint.runtimePath,
       storage,
@@ -27,8 +32,8 @@ export default new DatastoreApiHandler('Datastore.queryStorageEngine', {
       outputs = await storage.query(
         request.sql,
         request.boundValues,
-        request.virtualEntitiesByName,
         { id, payment, authentication, versionHash },
+        request.virtualEntitiesByName,
       );
     } catch (error) {
       runError = error;

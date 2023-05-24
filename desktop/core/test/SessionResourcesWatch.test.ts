@@ -1,7 +1,7 @@
 import { Helpers } from '@ulixee/datastore-testing';
 import { ITestKoaServer } from '@ulixee/datastore-testing/helpers';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import { Session } from '@ulixee/hero-core';
+import HeroCore, { Session } from '@ulixee/hero-core';
 import SessionResourcesWatch from '../lib/SessionResourcesWatch';
 
 let koaServer: ITestKoaServer;
@@ -37,7 +37,7 @@ afterEach(Helpers.afterEach);
 describe('basic SessionResourcesWatch tests', () => {
   it('can find a resource', async () => {
     const exampleUrl = `${koaServer.baseUrl}/resources-search`;
-    const { session, tab } = await Session.create({});
+    const { session, tab } = await Session.create({}, new HeroCore());
     const resourceSearch = new SessionResourcesWatch(session.db, new EventSubscriber());
     tab.on('resource', resourceSearch.onTabResource.bind(resourceSearch, tab.id));
 

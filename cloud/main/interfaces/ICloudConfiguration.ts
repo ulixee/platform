@@ -13,6 +13,5 @@ export default interface ICloudConfiguration {
 
     hostedServicesPort?: string | number;
     hostedServicesHostname?: string;
-
   };
 }

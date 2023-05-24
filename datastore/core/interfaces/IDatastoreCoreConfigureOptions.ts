@@ -25,4 +25,5 @@ export default interface IDatastoreCoreConfigureOptions {
   datastoreRegistryHost: string | 'self';
   storageEngineHost: string | 'self';
   statsTrackerHost: string | 'self';
+  replayRegistryHost: string | 'self';
 }

@@ -10,7 +10,7 @@ export default interface ICloudApiContext {
   nodeRegistry: NodeRegistry;
   cloudConfiguration: ICloudConfiguration;
   datastoreConfiguration: IDatastoreCoreConfigureOptions;
-  nodeAddress?: URL;
-  inClusterNodeAddress?: URL;
+  nodeAddress: URL;
+  hostedServicesAddress: URL;
   version: string;
 }

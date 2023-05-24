@@ -1,19 +1,9 @@
-import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
-import {
-  IStatsTrackerApis,
-  IStatsTrackerApiTypes,
-} from '@ulixee/platform-specification/services/StatsTrackerApis';
+import { ConnectionToCore } from '@ulixee/net';
+import { IStatsTrackerApis, IStatsTrackerApiTypes } from '@ulixee/platform-specification/services/StatsTrackerApis';
 import { IDatastoreStats } from './StatsTracker';
 
-export default class StatsTrackerClusterStore {
-  client: ConnectionToCore<IStatsTrackerApis, {}>;
-  hostAddress: URL;
-
-  constructor(hostAddress: URL) {
-    this.hostAddress = new URL(hostAddress);
-    this.hostAddress.pathname = '/services';
-    this.client = new ConnectionToCore(new WsTransportToCore(this.hostAddress.href));
-  }
+export default class StatsTrackerServiceClient {
+  constructor(public client: ConnectionToCore<IStatsTrackerApis, {}>) {}
 
   async close(): Promise<void> {
     await this.client.disconnect();

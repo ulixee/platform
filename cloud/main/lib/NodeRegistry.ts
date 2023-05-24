@@ -1,7 +1,11 @@
-import { toUrl } from '@ulixee/commons/lib/utils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreCore from '@ulixee/datastore-core';
-import { ICloudNodeMeta } from '@ulixee/platform-specification/services/NodeRegistryApis';
+import HeroCore from '@ulixee/hero-core';
+import { ConnectionToCore } from '@ulixee/net';
+import {
+  ICloudNodeMeta,
+  INodeRegistryApis,
+} from '@ulixee/platform-specification/services/NodeRegistryApis';
 import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
 import NodeRegistryServiceClient from './NodeRegistryServiceClient';
 import NodeTracker from './NodeTracker';
@@ -17,13 +21,14 @@ export default class NodeRegistry {
   constructor(
     private config: {
       publicServer: RoutableServer;
-      servicesHost?: string;
+      serviceClient?: ConnectionToCore<INodeRegistryApis, {}>;
       peerNetwork?: IPeerNetwork;
       nodeTracker: NodeTracker;
       datastoreCore: DatastoreCore;
+      heroCore: HeroCore;
     },
   ) {
-    const { servicesHost, nodeTracker, peerNetwork } = config;
+    const { nodeTracker, peerNetwork, serviceClient } = config;
     this.peerNetwork = peerNetwork;
     this.nodeTracker = nodeTracker;
 
@@ -31,10 +36,11 @@ export default class NodeRegistry {
     this.nodeTracker.on('new', this.trackPeer);
     this.peerNetwork?.on('node-seen', this.nodeTracker.onSeen);
 
-    if (servicesHost) {
+    if (serviceClient) {
       this.serviceClient = new NodeRegistryServiceClient(
-        toUrl(servicesHost),
+        serviceClient,
         this.config.datastoreCore,
+        this.config.heroCore,
         () => ({
           clients: this.config.publicServer.connections,
           peers: this.peerNetwork?.connectedPeers ?? 0,
@@ -58,7 +64,7 @@ export default class NodeRegistry {
       ulixeeApiHost: await this.config.publicServer.host,
       peerMultiaddrs: this.peerNetwork?.multiaddrs ?? [],
       isClusterNode: true,
-      lastSeenDate: new Date()
+      lastSeenDate: new Date(),
     };
     this.nodeTracker.track(this.nodeMeta);
 

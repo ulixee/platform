@@ -1,16 +1,15 @@
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import DatastoreCore from '@ulixee/datastore-core';
 import HeroCore from '@ulixee/hero-core';
-import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
+import { ConnectionToCore } from '@ulixee/net';
 import {
-  INodeRegistryApiTypes,
   INodeRegistryApis,
+  INodeRegistryApiTypes,
 } from '@ulixee/platform-specification/services/NodeRegistryApis';
 
 const MINUTE = 60e3;
 export default class NodeRegistryServiceClient {
   client: ConnectionToCore<INodeRegistryApis, {}>;
-  hostAddress: URL;
   private lastClusterCheckTimestamp: number;
   private heartbeatInternal: NodeJS.Timeout;
   private eventSubscriber = new EventSubscriber();
@@ -22,12 +21,12 @@ export default class NodeRegistryServiceClient {
   }
 
   constructor(
-    hostAddress: URL,
+    connectionToCore: ConnectionToCore<INodeRegistryApis, {}>,
     datastoreCore: DatastoreCore,
+    private heroCore: HeroCore,
     private getConnections: () => { clients: number; peers: number },
   ) {
-    this.hostAddress = new URL('/services', hostAddress);
-    this.client = new ConnectionToCore(new WsTransportToCore(this.hostAddress.href));
+    this.client = connectionToCore;
     this.heartbeatInternal = setInterval(this.heartbeat.bind(this), 5 * MINUTE) as any;
     this.eventSubscriber.on(HeroCore.events, 'agent-created', () => (this.stats.sessions += 1));
     this.eventSubscriber.on(datastoreCore, 'connection', () => (this.stats.clients += 1));
@@ -41,6 +40,7 @@ export default class NodeRegistryServiceClient {
     clearInterval(this.heartbeatInternal);
     this.eventSubscriber.close();
     await this.client.disconnect();
+    this.heroCore = null;
   }
 
   public async getNodes(
@@ -83,8 +83,9 @@ export default class NodeRegistryServiceClient {
       peerConnections: connections.peers,
       coreMetrics: {
         periodStartTime: stats.startDate,
-        heroPoolSize: HeroCore.pool.maxConcurrentAgents,
-        heroPoolAvailable: HeroCore.pool.maxConcurrentAgents - HeroCore.pool.activeAgentsCount,
+        heroPoolSize: this.heroCore.pool.maxConcurrentAgents,
+        heroPoolAvailable:
+          this.heroCore.pool.maxConcurrentAgents - this.heroCore.pool.activeAgentsCount,
         datastoreQueries: stats.queries,
         heroSessions: stats.sessions,
       },

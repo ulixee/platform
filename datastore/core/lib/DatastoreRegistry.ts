@@ -1,6 +1,8 @@
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
+import { ConnectionToCore } from '@ulixee/net';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { IDatastoreRegistryApis } from '@ulixee/platform-specification/services/DatastoreRegistryApis';
 import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
 import { promises as Fs } from 'fs';
 import { IDatastoreEntityStatsRecord } from '../db/DatastoreEntityStatsTable';
@@ -9,7 +11,7 @@ import IDatastoreRegistryStore, {
   IDatastoreManifestWithLatest,
 } from '../interfaces/IDatastoreRegistryStore';
 import DatastoreApiClients from './DatastoreApiClients';
-import DatastoreRegistryClusterStore from './DatastoreRegistryClusterStore';
+import DatastoreRegistryServiceClient from './DatastoreRegistryServiceClient';
 import DatastoreRegistryDiskStore, { IDatastoreSourceDetails } from './DatastoreRegistryDiskStore';
 import DatastoreRegistryNetworkStore from './DatastoreRegistryNetworkStore';
 import { unpackDbx } from './dbxUtils';
@@ -42,7 +44,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
   stopped: { versionHash: string };
 }> {
   public diskStore: DatastoreRegistryDiskStore;
-  public clusterStore: DatastoreRegistryClusterStore;
+  public clusterStore: DatastoreRegistryServiceClient;
   public networkStore: DatastoreRegistryNetworkStore;
   public networkCacheTimeMins = 48 * 60; // 48 hours
 
@@ -55,7 +57,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
   constructor(
     datastoreDir: string,
     apiClients?: DatastoreApiClients,
-    datastoreRegistryHost?: URL,
+    connectionToHostedServiceCore?: ConnectionToCore<IDatastoreRegistryApis, {}>,
     peerNetwork?: IPeerNetwork,
     private config?: IDatastoreCoreConfigureOptions,
     private installCallbackFn?: TOnDatastoreInstalledCallbackFn,
@@ -65,13 +67,13 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
 
     this.diskStore = new DatastoreRegistryDiskStore(
       datastoreDir,
-      !datastoreRegistryHost,
+      !connectionToHostedServiceCore,
       config?.storageEngineHost,
       this.onDatastoreInstalled.bind(this),
     );
 
-    if (datastoreRegistryHost) {
-      this.clusterStore = new DatastoreRegistryClusterStore(datastoreRegistryHost);
+    if (connectionToHostedServiceCore) {
+      this.clusterStore = new DatastoreRegistryServiceClient(connectionToHostedServiceCore);
     }
 
     if (peerNetwork) {
@@ -206,7 +208,11 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     return await this.diskStore.install(datastoreTmpPath, adminDetails, uploaderSource);
   }
 
-  public async startAtPath(dbxPath: string, sourceHost:string, watch: boolean): Promise<IDatastoreManifest> {
+  public async startAtPath(
+    dbxPath: string,
+    sourceHost: string,
+    watch: boolean,
+  ): Promise<IDatastoreManifest> {
     return await this.diskStore.startAtPath(dbxPath, sourceHost, watch);
   }
 
@@ -238,7 +244,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
   ): Promise<void> {
     await this.installCallbackFn?.(version, source?.source, previous, options);
     this.emit('new', {
-      activity: source?.source === 'start'  ? 'started' : 'uploaded',
+      activity: source?.source === 'start' ? 'started' : 'uploaded',
       datastore: await this.getByVersionHash(version.versionHash),
     });
     if (this.networkStore) {

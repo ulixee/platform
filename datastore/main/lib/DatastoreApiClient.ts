@@ -167,17 +167,19 @@ export default class DatastoreApiClient {
       affiliateId: options.affiliateId,
     };
 
+    const host = this.connectionToCore.transport.host;
+    const hostIdentity = null; // TODO: exchange identity
     void this.runApi('Datastore.stream', query)
       .then(result => {
         onFinalized?.(result.metadata);
         results.done(result);
-        this.queryLog?.log(query, startDate, results.results, result.metadata);
+        this.queryLog?.log(query, startDate, results.results, result.metadata, host, hostIdentity);
         this.activeStreamByQueryId.delete(id);
         return null;
       })
       .catch(error => {
         onFinalized?.(null, error);
-        this.queryLog?.log(query, startDate, null, null, error);
+        this.queryLog?.log(query, startDate, null, null, host, hostIdentity, error);
         results.reject(error);
       });
 
@@ -211,18 +213,20 @@ export default class DatastoreApiClient {
       authentication: options.authentication,
       affiliateId: options.affiliateId,
     };
+    const host = this.connectionToCore.transport.host;
+    const hostIdentity = null; // TODO: exchange identity
     try {
       const result = await this.runApi('Datastore.query', query);
       if (options.payment?.onFinalized) {
         options.payment.onFinalized(result.metadata);
       }
-      this.queryLog?.log(query, startDate, result.outputs, result.metadata);
+      this.queryLog?.log(query, startDate, result.outputs, result.metadata, host, hostIdentity);
       return result;
     } catch (error) {
       if (options.payment?.onFinalized) {
         options.payment.onFinalized(null, error);
       }
-      this.queryLog?.log(query, startDate, null, null, error);
+      this.queryLog?.log(query, startDate, null, null, host, hostIdentity, error);
       throw error;
     }
   }
