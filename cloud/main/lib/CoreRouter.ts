@@ -40,6 +40,7 @@ export default class CoreRouter {
   private wsConnectionByType = {
     hero: transport => this.cloudNode.heroCore.addConnection(transport),
     datastore: transport => this.cloudNode.datastoreCore.addConnection(transport) as any,
+    kad: transport => this.cloudNode.kad.addConnection(transport) as any,
     services: transport => this.addHostedServicesConnection(transport),
     cloud: transport => this.cloudApiRegistry.createConnection(transport, this.getApiContext()),
   } as const;
@@ -65,6 +66,7 @@ export default class CoreRouter {
     );
 
     /// PUBLIC APIS /////////////
+    this.cloudNode.publicServer.addWsRoute('/kad', this.handleSocketRequest.bind(this, 'kad'));
     this.cloudNode.publicServer.addWsRoute('/hero', this.handleSocketRequest.bind(this, 'hero'));
     this.cloudNode.publicServer.addWsRoute(
       '/datastore',

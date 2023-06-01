@@ -14,14 +14,14 @@ export default class ReplayRegistry
   implements ISessionRegistry
 {
   public get defaultDir(): string {
-    return this.tempRegistry.defaultDir;
+    return this.defaultSessionRegistry.defaultDir;
   }
 
-  public readonly storageRegistry?: ReplayRegistryDiskStore;
+  public readonly replayStorageRegistry?: ReplayRegistryDiskStore;
   private readonly serviceClient?: ReplayRegistryServiceClient;
   private readonly storePromises = new Set<Promise<any>>();
 
-  private tempRegistry: DefaultSessionRegistry;
+  private defaultSessionRegistry: DefaultSessionRegistry;
 
   constructor(
     private config: {
@@ -35,37 +35,44 @@ export default class ReplayRegistry
       ? new ReplayRegistryServiceClient(config.serviceClient)
       : null;
     if (!this.serviceClient) {
-      this.storageRegistry = new ReplayRegistryDiskStore(config.queryHeroStorageDir);
+      this.replayStorageRegistry = new ReplayRegistryDiskStore(config.queryHeroStorageDir);
     }
-    this.tempRegistry = new DefaultSessionRegistry(config.defaultHeroStorageDir);
+    this.defaultSessionRegistry = new DefaultSessionRegistry(config.defaultHeroStorageDir);
   }
 
   public async shutdown(): Promise<void> {
-    await Promise.allSettled(this.storePromises);
-    this.storePromises.clear();
+    await this.flush();
     this.config = null;
   }
 
+  public async flush(): Promise<void> {
+    const storage = [...this.storePromises];
+    this.storePromises.clear();
+    await Promise.allSettled(storage);
+  }
+
   public create(sessionId: string, customPath?: string): SessionDb {
-    return this.tempRegistry.create(sessionId, customPath);
+    return this.defaultSessionRegistry.create(sessionId, customPath);
   }
 
   public async get(sessionId: string, customPath?: string): Promise<SessionDb> {
-    const record = await this.tempRegistry.get(sessionId, customPath).catch(() => null);
+    const record = await this.defaultSessionRegistry.get(sessionId, customPath).catch(() => null);
     if (record) return record;
 
-    for (const store of [this.storageRegistry, this.serviceClient]) {
+    for (const store of [this.replayStorageRegistry, this.serviceClient]) {
       if (!store) continue;
       const entry = await store.get(sessionId);
-      if (entry?.db) return await this.tempRegistry.store(sessionId, entry.db);
+      if (entry?.db) return await this.defaultSessionRegistry.store(sessionId, entry.db);
     }
   }
 
   public async ids(): Promise<string[]> {
-    const idSet = new Set<string>(await this.tempRegistry.ids());
-    const localEntries = await this.storageRegistry.ids();
-    for (const id of localEntries.sessionIds) {
-      if (!idSet.has(id)) {
+    const idSet = new Set<string>(await this.defaultSessionRegistry.ids());
+
+    for (const store of [this.replayStorageRegistry, this.serviceClient]) {
+      if (!store) continue;
+      const entries = await store.ids();
+      for (const id of entries.sessionIds) {
         idSet.add(id);
       }
     }
@@ -74,12 +81,12 @@ export default class ReplayRegistry
 
   public async onClosed(sessionId: string, isDeleteRequested: boolean): Promise<void> {
     const timestamp = Date.now();
-    const entry = await this.tempRegistry.get(sessionId);
+    const entry = await this.defaultSessionRegistry.get(sessionId);
     const sessionRecord = entry?.session.get();
     if (sessionRecord.scriptRuntime === 'datastore') {
       this.enqueue(this.store(sessionId, timestamp, entry.path));
     }
-    await this.tempRegistry.onClosed(sessionId, isDeleteRequested);
+    await this.defaultSessionRegistry.onClosed(sessionId, isDeleteRequested);
   }
 
   private async store(sessionId: string, timestamp: number, path: string): Promise<void> {
@@ -91,12 +98,12 @@ export default class ReplayRegistry
         db,
       });
     } else {
-      await this.storageRegistry.store(sessionId, db);
+      await this.replayStorageRegistry.store(sessionId, db);
     }
   }
 
   private enqueue(promise: Promise<any>): void {
     this.storePromises.add(promise);
-    void promise.then(() => this.storePromises.delete(promise));
+    void promise.then(() => this.storePromises.delete(promise)).catch(console.error);
   }
 }

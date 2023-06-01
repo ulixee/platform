@@ -5,6 +5,7 @@ import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
 import * as HashUtils from '@ulixee/commons/lib/hashUtils';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { promises as Fs } from 'fs';
+import { nanoid } from 'nanoid';
 import * as Path from 'path';
 import DatastoresDb from '../db';
 import IDatastoreRegistryStore, {
@@ -152,9 +153,10 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
     service: IDatastoreRegistryStore,
     expirationTimestamp?: number,
   ): Promise<{ runtimePath: string; isStarted: boolean }> {
-    const { compressedDbx, adminIdentity, adminSignature, ulixeeApiHost } =
-      await service.downloadDbx(versionHash);
-    const tmpDir = Path.join(this.datastoresDir, `${versionHash}.dbx`);
+    const { compressedDbx, adminIdentity, adminSignature, apiHost } = await service.downloadDbx(
+      versionHash,
+    );
+    const tmpDir = Path.join(this.datastoresDir, `${versionHash}.dbx.tmp.${nanoid(3)}`);
     try {
       await Fs.mkdir(tmpDir, { recursive: true });
       await unpackDbx(compressedDbx, tmpDir);
@@ -170,7 +172,7 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
           source: service.source === 'cluster' ? 'cluster' : 'network',
           networkKey: DatastoreRegistryNetworkStore.createNetworkKey(versionHash),
           expirationTimestamp,
-          host: ulixeeApiHost,
+          host: apiHost,
         },
       );
     } finally {

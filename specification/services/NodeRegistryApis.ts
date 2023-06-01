@@ -1,21 +1,20 @@
 import { z } from '@ulixee/specification';
 import { identityValidation } from '@ulixee/specification/common';
 import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
+import { NodeInfoSchema } from '../types/INodeInfo';
 
-const CloudNodeMetaSchema = z.object({
-  identity: identityValidation.describe('Network identity of the node.'),
-  peerMultiaddrs: z
-    .string()
-    .array()
-    .describe('Libp2p formatted multiaddrs this peer is reachable in network'),
-  ulixeeApiHost: z.string().describe('IpOrDomain:port where Ulixee APIs are reachable.'),
+const CloudNodeMetaSchema = NodeInfoSchema.extend({
   isClusterNode: z.boolean(),
   lastSeenDate: z.date(),
+  kadHost: NodeInfoSchema.shape.kadHost.optional(),
 });
 
 export const NodeRegistryApiSchemas = {
   'NodeRegistry.register': {
-    args: CloudNodeMetaSchema.omit({ lastSeenDate: true, isClusterNode: true }),
+    args: CloudNodeMetaSchema.omit({
+      lastSeenDate: true,
+      isClusterNode: true,
+    }),
     result: z.object({
       nodes: CloudNodeMetaSchema.array().describe(
         'Nodes connected to this host (for use boostrapping connection).',
@@ -32,7 +31,7 @@ export const NodeRegistryApiSchemas = {
   },
   'NodeRegistry.health': {
     args: z.object({
-      identity: identityValidation.describe('Network identity of the node.'),
+      nodeId: identityValidation.describe('Network identity of the node.'),
       coreMetrics: z.object({
         datastoreQueries: z.number().describe('Queries since last run-time.'),
         heroSessions: z.number().describe('Hero sessions created since last run-time.'),

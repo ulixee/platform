@@ -20,6 +20,8 @@ export default class NodeRegistryServiceClient {
     return this.statsBuckets[this.statsBuckets.length - 1];
   }
 
+  private nodeId: string;
+
   constructor(
     connectionToCore: ConnectionToCore<INodeRegistryApis, {}>,
     datastoreCore: DatastoreCore,
@@ -58,6 +60,7 @@ export default class NodeRegistryServiceClient {
   public async register(
     details: INodeRegistryApiTypes['NodeRegistry.register']['args'],
   ): Promise<INodeRegistryApiTypes['NodeRegistry.register']['result']> {
+    this.nodeId = details.nodeId;
     return await this.client.sendRequest({
       command: 'NodeRegistry.register',
       args: [details],
@@ -73,12 +76,12 @@ export default class NodeRegistryServiceClient {
     });
   }
 
-  private async heartbeat(identity: string): Promise<void> {
+  private async heartbeat(): Promise<void> {
     const stats = this.stats;
     this.statsBuckets.push({ sessions: 0, queries: 0, clients: 0, startDate: new Date() });
     const connections = this.getConnections();
     await this.sendHealth({
-      identity,
+      nodeId: this.nodeId,
       clientConnections: connections.clients,
       peerConnections: connections.peers,
       coreMetrics: {

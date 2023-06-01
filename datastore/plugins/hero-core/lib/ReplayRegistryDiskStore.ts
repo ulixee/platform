@@ -2,11 +2,8 @@ import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import { IReplayRegistryApiTypes } from '@ulixee/platform-specification/services/ReplayRegistryApis';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import { promisify } from 'util';
-import { gunzip, gzip } from 'zlib';
-
-const gunzipAsync = promisify(gunzip);
-const gzipAsync = promisify(gzip);
+import { pipeline } from 'stream/promises';
+import { createGunzip, createGzip } from 'zlib';
 
 export default class ReplayRegistryDiskStore {
   constructor(readonly storageDir: string) {}
@@ -16,10 +13,18 @@ export default class ReplayRegistryDiskStore {
   ): Promise<IReplayRegistryApiTypes['ReplayRegistry.get']['result']> {
     const path = Path.join(this.storageDir, `${sessionId}.db.gz`);
     if (await existsAsync(path)) {
-      const buffer = await Fs.promises.readFile(path);
-      return {
-        db: await gunzipAsync(buffer),
-      };
+      return await pipeline(
+        Fs.createReadStream(path),
+        createGunzip(),
+        async result => {
+          const buffers: Buffer[] = [];
+          for await (const chunk of result) {
+            buffers.push(chunk);
+          }
+          return { db: Buffer.concat(buffers) };
+        },
+        { end: true },
+      );
     }
   }
 
@@ -44,7 +49,17 @@ export default class ReplayRegistryDiskStore {
   }
 
   public static async getCompressedDb(path: string): Promise<Buffer> {
-    const file = await Fs.promises.readFile(path);
-    return gzipAsync(file);
+    return await pipeline(
+      Fs.createReadStream(path),
+      createGzip(),
+      async result => {
+        const buffers: Buffer[] = [];
+        for await (const chunk of result) {
+          buffers.push(chunk);
+        }
+        return Buffer.concat(buffers);
+      },
+      { end: true },
+    );
   }
 }

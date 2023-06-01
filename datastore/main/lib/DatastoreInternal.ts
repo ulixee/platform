@@ -135,7 +135,7 @@ export default class DatastoreInternal<
       startTime?: IUnixTime;
     },
     timeoutMs?: number,
-  ): Promise<ICoreResponsePayload<any, any>['data']> {
+  ): Promise<ICoreResponsePayload<IDatastoreApis, T>['data']> {
     return this.connectionToCore.sendRequest(payload, timeoutMs);
   }
 

@@ -1,37 +1,38 @@
-import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
-import { IPayment } from '@ulixee/platform-specification';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
-import DatastoreApiClients from './DatastoreApiClients';
+import { IPayment } from '@ulixee/platform-specification';
+import IKad from '@ulixee/platform-specification/types/IKad';
 import IDatastoreRegistryStore, {
   IDatastoreManifestWithLatest,
 } from '../interfaces/IDatastoreRegistryStore';
+import DatastoreApiClients from './DatastoreApiClients';
 import { DatastoreNotFoundError } from './errors';
 
 export default class DatastoreRegistryNetworkStore implements IDatastoreRegistryStore {
   public source = 'network' as const;
   private recentFoundVersionsToHost: { [versionHash: string]: string } = {};
 
-  constructor(
-    readonly peerNetwork: IPeerNetwork,
-    readonly datastoreApiClients: DatastoreApiClients,
-  ) {}
+  constructor(readonly kad: IKad, readonly datastoreApiClients: DatastoreApiClients) {}
 
   async close(): Promise<void> {
-    await this.peerNetwork.close();
+    return Promise.resolve();
   }
 
   async get(versionHash: string): Promise<IDatastoreManifestWithLatest> {
     const buffer = DatastoreRegistryNetworkStore.createNetworkKey(versionHash);
     const abort = new AbortController();
-    const timeout = setTimeout(abort.abort.bind(abort,'Timeout'), 30e3).unref();
-    for await (const node of this.peerNetwork.findProviderNodes(buffer, { abort: abort.signal })) {
-      const client = this.datastoreApiClients.get(node.ulixeeApiHost);
+    for await (const node of this.kad.findProviderNodes(buffer, {
+      abort: abort.signal,
+      timeout: 30e3,
+    })) {
+      if (node.kadHost === this.kad.nodeInfo.kadHost || node.nodeId === this.kad.nodeInfo.nodeId) {
+        console.warn('self found, skipping', node, this.kad.nodeInfo);
+        continue;
+      }
+      const client = this.datastoreApiClients.get(node.apiHost);
       const result = await client.getMeta(versionHash);
       if (result) {
-        this.recentFoundVersionsToHost[versionHash] = node.ulixeeApiHost;
+        this.recentFoundVersionsToHost[versionHash] = node.apiHost;
         abort.abort();
-        clearTimeout(timeout);
-
 
         return result;
       }
@@ -59,12 +60,12 @@ export default class DatastoreRegistryNetworkStore implements IDatastoreRegistry
     const { compressedDbx, adminSignature, adminIdentity } = await client.download(versionHash, {
       payment,
     });
-    return { compressedDbx, adminSignature, adminIdentity, ulixeeApiHost: host };
+    return { compressedDbx, adminSignature, adminIdentity, apiHost: host };
   }
 
-  async publish(versionHash: string): Promise<{ providerKey: string }> {
+  async publish(versionHash: string): Promise<void> {
     const key = DatastoreRegistryNetworkStore.createNetworkKey(versionHash);
-    return await this.peerNetwork.provide(key);
+    return await this.kad.provide(key);
   }
 
   public static createNetworkKey(versionHash: string): Buffer {

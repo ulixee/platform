@@ -34,8 +34,8 @@ test('should get hero sessions from the registry', async () => {
     },
   });
   const heroPluginCore = getPlugin(storageNode);
-  const storageStoreSpy = jest.spyOn(heroPluginCore.replayRegistry.storageRegistry, 'store');
-  const storageGetSpy = jest.spyOn(heroPluginCore.replayRegistry.storageRegistry, 'get');
+  const storageStoreSpy = jest.spyOn(heroPluginCore.replayRegistry.replayStorageRegistry, 'store');
+  const storageGetSpy = jest.spyOn(heroPluginCore.replayRegistry.replayStorageRegistry, 'get');
 
   const childNode = await Helpers.createLocalNode({
     datastoreConfiguration: {
@@ -69,7 +69,7 @@ test('should get hero sessions from the registry', async () => {
   await packager.build();
 
   const client = new DatastoreApiClient(await childNode.address);
-  Helpers.onClose(() => client.disconnect(), true);
+  Helpers.onClose(() => client.disconnect());
   await client.upload(await packager.dbx.tarGzip());
 
   await expect(
@@ -91,8 +91,10 @@ test('should get hero sessions from the registry', async () => {
   ).resolves.toBeTruthy();
   expect(storageGetSpy).toHaveBeenCalledTimes(1);
 
+  await getPlugin(childNode2).replayRegistry.flush();
+
   await expect(getPlugin(storageNode).replayRegistry.ids()).resolves.toHaveLength(3);
-});
+}, 60e3);
 
 function getPlugin(node: CloudNode): DatastoreForHeroPluginCore {
   return node.datastoreCore.pluginCoresByName[

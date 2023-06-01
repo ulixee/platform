@@ -33,7 +33,7 @@
     "@ulixee/net": "2.0.0-alpha.21",
     "@ulixee/platform-specification": "2.0.0-alpha.21",
     "@ulixee/specification": "2.0.0-alpha.21",
-    "@ulixee/cloud-p2p": "2.0.0-alpha.21",
+    "@ulixee/kad": "2.0.0-alpha.21",
     "commander": "^9.3.0",
     "ws": "^7.4.6"
   },

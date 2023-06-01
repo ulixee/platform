@@ -118,6 +118,7 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
     const cached = this.cacheByVersionHash[versionHash];
     if (cached) {
       cached.expiresTimestamp = expiresTimestamp;
+      cached.dbxPath = dbxPath;
     }
   }
 

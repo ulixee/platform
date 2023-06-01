@@ -3,7 +3,7 @@ import { InvalidSignatureError } from '@ulixee/crypto/lib/errors';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
-import { InvalidPermissionsError } from '../lib/errors';
+import { DatastoreNotFoundError, InvalidPermissionsError } from '../lib/errors';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 
 export default new DatastoreApiHandler('Datastore.download', {
@@ -22,7 +22,10 @@ export default new DatastoreApiHandler('Datastore.download', {
     }
 
     // don't go out to the network
-    return await datastoreRegistry.diskStore.getCompressedDbx(versionHash);
+    const result = await datastoreRegistry.diskStore.getCompressedDbx(versionHash);
+    if (!result)
+      throw new DatastoreNotFoundError('Could not find this Datastore runtime.', { versionHash });
+    return result;
   },
 });
 

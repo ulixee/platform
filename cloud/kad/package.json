@@ -1,0 +1,20 @@
+{
+  "name": "@ulixee/kad",
+  "version": "2.0.0-alpha.21",
+  "description": "Ulixee implementation of S/Kadmelia for peer discovery.",
+  "dependencies": {
+    "@ulixee/commons": "2.0.0-alpha.21",
+    "@ulixee/crypto": "2.0.0-alpha.21",
+    "@ulixee/net": "2.0.0-alpha.21",
+    "@ulixee/specification": "2.0.0-alpha.21",
+    "@ulixee/platform-specification": "2.0.0-alpha.21",
+    "k-bucket": "^5.1.0",
+    "better-sqlite3": "^8.4.0",
+    "nanoid": "^3.3.6"
+  },
+  "devDependencies": {
+    "@types/k-bucket": "^5.0.1",
+    "@ulixee/datastore-testing": "2.0.0-alpha.21",
+    "@ulixee/cloud": "2.0.0-alpha.21"
+  }
+}

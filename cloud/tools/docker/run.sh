@@ -19,7 +19,7 @@ fi
 ## Configure the PORT ulixee will run on
 port="${PORT:=1818}"
 ## Enable verbose logs
-DEBUG=ubk*,ulx*
+DEBUG=ulx*
 ## NOTE: these are unix oriented. adjust as needed for Windows
 DATASTORES_MOUNT=$HOME/.cache/ulixee/datastores
 DATADIR_MOUNT=/tmp/.ulixee

@@ -27,18 +27,16 @@ test('should dial the node registry on start', async () => {
   await expect(node1.nodeRegistry.getNodes()).resolves.toEqual(
     expect.arrayContaining([
       {
-        identity: node2.cloudConfiguration.networkIdentity.bech32,
+        nodeId: node2.cloudConfiguration.networkIdentity.bech32,
         isClusterNode: true,
         lastSeenDate: expect.any(Date),
-        peerMultiaddrs: [],
-        ulixeeApiHost: await node2.publicServer.host,
+        apiHost: await node2.publicServer.host,
       },
       {
-        identity: node3.cloudConfiguration.networkIdentity.bech32,
+        nodeId: node3.cloudConfiguration.networkIdentity.bech32,
         isClusterNode: true,
         lastSeenDate: expect.any(Date),
-        peerMultiaddrs: [],
-        ulixeeApiHost: await node3.publicServer.host,
+        apiHost: await node3.publicServer.host,
       },
     ]),
   );
@@ -47,21 +45,17 @@ test('should dial the node registry on start', async () => {
   await expect(node3.nodeRegistry.getNodes()).resolves.toEqual(
     expect.arrayContaining([
       {
-        identity: node1.cloudConfiguration.networkIdentity.bech32,
+        nodeId: node1.cloudConfiguration.networkIdentity.bech32,
         isClusterNode: true,
         lastSeenDate: expect.any(Date),
-        peerMultiaddrs: [],
-        ulixeeApiHost: await node1.publicServer.host,
+        apiHost: await node1.publicServer.host,
       },
       {
-        identity: node3.cloudConfiguration.networkIdentity.bech32,
+        nodeId: node3.cloudConfiguration.networkIdentity.bech32,
         isClusterNode: true,
         lastSeenDate: expect.any(Date),
-        peerMultiaddrs: [],
-        ulixeeApiHost: await node3.publicServer.host,
+        apiHost: await node3.publicServer.host,
       },
     ]),
   );
-
-
 });

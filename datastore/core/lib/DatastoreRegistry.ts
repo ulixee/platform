@@ -1,9 +1,11 @@
+import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
+import Logger from '@ulixee/commons/lib/Logger';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import { ConnectionToCore } from '@ulixee/net';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { IDatastoreRegistryApis } from '@ulixee/platform-specification/services/DatastoreRegistryApis';
-import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
+import IKad from '@ulixee/platform-specification/types/IKad';
 import { promises as Fs } from 'fs';
 import { IDatastoreEntityStatsRecord } from '../db/DatastoreEntityStatsTable';
 import IDatastoreCoreConfigureOptions from '../interfaces/IDatastoreCoreConfigureOptions';
@@ -36,6 +38,8 @@ type TOnDatastoreInstalledCallbackFn = (
   },
 ) => Promise<void>;
 
+const { log } = Logger(module);
+
 export default class DatastoreRegistry extends TypedEventEmitter<{
   new: {
     datastore: IDatastoreManifestWithRuntime;
@@ -53,18 +57,19 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
   }
 
   private readonly stores: IDatastoreRegistryStore[] = [];
+  private log: IBoundLog;
 
   constructor(
     datastoreDir: string,
     apiClients?: DatastoreApiClients,
     connectionToHostedServiceCore?: ConnectionToCore<IDatastoreRegistryApis, {}>,
-    peerNetwork?: IPeerNetwork,
+    kad?: IKad,
     private config?: IDatastoreCoreConfigureOptions,
     private installCallbackFn?: TOnDatastoreInstalledCallbackFn,
   ) {
     super();
     bindFunctions(this);
-
+    this.log = log.createChild(module);
     this.diskStore = new DatastoreRegistryDiskStore(
       datastoreDir,
       !connectionToHostedServiceCore,
@@ -76,16 +81,16 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
       this.clusterStore = new DatastoreRegistryServiceClient(connectionToHostedServiceCore);
     }
 
-    if (peerNetwork) {
-      this.networkStore = new DatastoreRegistryNetworkStore(peerNetwork, apiClients);
-      this.networkStore.peerNetwork.on('provide-expired', this.onProvideExpired);
+    if (kad) {
+      this.networkStore = new DatastoreRegistryNetworkStore(kad, apiClients);
+      this.networkStore.kad.on('provide-expired', this.onProvideExpired);
     }
 
     this.stores = [this.diskStore, this.clusterStore, this.networkStore].filter(Boolean);
   }
 
   public async close(): Promise<void> {
-    this.networkStore?.peerNetwork.off('provide-expired', this.onProvideExpired);
+    this.networkStore?.kad.off('provide-expired', this.onProvideExpired);
     await Promise.allSettled(this.stores.map(x => x.close()));
   }
 
@@ -104,21 +109,33 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     for (const service of this.stores) {
       manifestWithLatest = (await service.get(versionHash)) as IDatastoreManifestWithRuntime;
       if (manifestWithLatest) {
-        // must install into local disk store
-        let runtime = await this.diskStore.getRuntime(versionHash);
-        if (!runtime && service.source !== 'disk') {
-          let expirationTimestamp: number;
-          if (service.source === 'network') {
-            expirationTimestamp = Date.now() + this.networkCacheTimeMins * 60e3;
+        try {
+          // must install into local disk store
+          let runtime = await this.diskStore.getRuntime(versionHash);
+          if (!runtime && service.source !== 'disk') {
+            this.log.info(`getByVersionHash:MissingRuntime`, {
+              versionHash,
+              searchInService: service.source,
+            });
+            let expirationTimestamp: number;
+            if (service.source === 'network') {
+              expirationTimestamp = Date.now() + this.networkCacheTimeMins * 60e3;
+            }
+            runtime = await this.diskStore.installFromService(
+              versionHash,
+              service,
+              expirationTimestamp,
+            );
           }
-          runtime = await this.diskStore.installFromService(
+          Object.assign(manifestWithLatest, runtime);
+          break;
+        } catch (error) {
+          this.log.warn(`getByVersionHash:ErrorInstallingRuntime`, {
             versionHash,
-            service,
-            expirationTimestamp,
-          );
+            searchInService: service.source,
+            error,
+          });
         }
-        Object.assign(manifestWithLatest, runtime);
-        break;
       }
     }
 
@@ -225,8 +242,8 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     }
   }
 
-  private async onProvideExpired(provided: { hash: Buffer }): Promise<void> {
-    const result = await this.diskStore.didExpireNetworkHosting(provided.hash);
+  private async onProvideExpired(provided: { key: Buffer, providerNodeId: string }): Promise<void> {
+    const result = await this.diskStore.didExpireNetworkHosting(provided.key);
     if (!result.isExpired) {
       this.diskStore.recordPublished(result.versionHash, Date.now());
       await this.networkStore.publish(result.versionHash);
@@ -245,7 +262,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     await this.installCallbackFn?.(version, source?.source, previous, options);
     this.emit('new', {
       activity: source?.source === 'start' ? 'started' : 'uploaded',
-      datastore: await this.getByVersionHash(version.versionHash),
+      datastore: version,
     });
     if (this.networkStore) {
       await this.networkStore?.publish(version.versionHash);

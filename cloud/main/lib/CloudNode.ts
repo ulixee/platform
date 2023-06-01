@@ -1,9 +1,8 @@
-import P2pConnection from '@ulixee/cloud-p2p';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import Log from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
-import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import { bindFunctions, isPortInUse, toUrl } from '@ulixee/commons/lib/utils';
 import Ed25519 from '@ulixee/crypto/lib/Ed25519';
 import Identity from '@ulixee/crypto/lib/Identity';
@@ -13,8 +12,8 @@ import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPl
 import type DesktopCore from '@ulixee/desktop-core';
 import HeroCore from '@ulixee/hero-core';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
+import Kad from '@ulixee/kad';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
-import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
 import IServicesSetup from '@ulixee/platform-specification/types/IServicesSetup';
 import * as Http from 'http';
 import * as Https from 'https';
@@ -42,8 +41,7 @@ export default class CloudNode {
   public publicServer: RoutableServer;
   public hostedServicesServer?: RoutableServer;
   public hostedServicesHostURL?: URL;
-  public peerServer: Http.Server;
-  public peerNetwork?: IPeerNetwork;
+  public kad?: Kad;
 
   public datastoreCore: DatastoreCore;
   public heroCore: HeroCore;
@@ -60,7 +58,9 @@ export default class CloudNode {
   public cloudConfiguration: ICloudConfiguration = {
     nodeRegistryHost: env.nodeRegistryHost,
     cloudType: env.cloudType as any,
-    dhtBootstrapPeers: env.dhtBootstrapPeers,
+    kadEnabled: env.kadEnabled,
+    kadDbPath: env.kadDbPath,
+    kadBootstrapPeers: env.kadBootstrapPeers,
     servicesSetupHost: env.servicesSetupHost,
     networkIdentity: env.networkIdentity,
     listenOptions: {
@@ -68,7 +68,6 @@ export default class CloudNode {
       publicHostname: env.publicHostname,
       hostedServicesPort: env.hostedServicesPort,
       hostedServicesHostname: env.hostedServicesHostname,
-      peerPort: env.peerPort,
     },
   };
 
@@ -106,7 +105,7 @@ export default class CloudNode {
   constructor(
     config: Partial<ICloudConfiguration> & {
       shouldShutdownOnSignals?: boolean;
-      // remove cloud type since it's also on cloud configruation
+      // remove cloud type since it's also on cloud configuration
       datastoreConfiguration?: Partial<Omit<IDatastoreCoreConfigureOptions, 'cloudType'>>;
       heroConfiguration?: Partial<ICoreConfigureOptions>;
     } = { shouldShutdownOnSignals: true },
@@ -139,7 +138,7 @@ export default class CloudNode {
     ShutdownHandler.register(this.close);
   }
 
-  public async listen(): Promise<void> {
+  public async listen(): Promise<this> {
     const startLogId = log.info('CloudNode.start');
 
     try {
@@ -156,12 +155,13 @@ export default class CloudNode {
       log.stats('CloudNode.started', {
         publicHost: await this.publicServer.host,
         hostedServicesHost: await this.hostedServicesServer?.host,
-        peerAddresses: this.peerNetwork?.multiaddrs,
+        kadHost: this.kad?.nodeInfo?.kadHost,
         cloudConfiguration: this.cloudConfiguration,
         parentLogId: startLogId,
         sessionId: null,
       });
     }
+    return this;
   }
 
   public async close(): Promise<void> {
@@ -192,8 +192,7 @@ export default class CloudNode {
         ...Object.values(this.connectionsToServicesByHost).map(x => x.disconnect()),
         this.publicServer.close(),
         this.hostedServicesServer?.close(),
-        this.peerServer?.close(),
-        this.peerNetwork?.close(),
+        this.kad?.close(),
       ]);
       resolvable.resolve();
     } catch (error) {
@@ -234,7 +233,7 @@ export default class CloudNode {
       heroCore: this.heroCore,
       publicServer: this.publicServer,
       serviceClient: this.createConnectionToServiceHost(this.cloudConfiguration.nodeRegistryHost),
-      peerNetwork: this.peerNetwork,
+      kad: this.kad,
       nodeTracker: this.nodeTracker,
     });
 
@@ -254,7 +253,7 @@ export default class CloudNode {
       networkIdentity: this.cloudConfiguration.networkIdentity,
       hostedServicesAddress,
       defaultServices: servicesSetup,
-      peerNetwork: this.peerNetwork,
+      kad: this.kad,
       cloudType: this.cloudConfiguration.cloudType,
       createConnectionToServiceHost: this.createConnectionToServiceHost,
       getSystemCore: (name: 'heroCore' | 'datastoreCore' | 'desktopCore') => {
@@ -332,41 +331,36 @@ export default class CloudNode {
   }
 
   private async startPeerServices(): Promise<void> {
-    const { peerPort, publicHostname } = this.cloudConfiguration.listenOptions;
-    if (!peerPort && peerPort !== 0) return;
+    if (
+      this.cloudConfiguration.cloudType === 'public' ||
+      (this.cloudConfiguration.kadBootstrapPeers?.length &&
+        this.cloudConfiguration.kadEnabled !== false)
+    ) {
+      this.cloudConfiguration.kadEnabled = true;
+    }
+
+    if (!this.cloudConfiguration.kadEnabled) return;
     if (!this.cloudConfiguration.networkIdentity) {
       await this.createTemporaryNetworkIdentity();
     }
     if (
       this.cloudConfiguration.cloudType === 'public' &&
-      !this.cloudConfiguration.dhtBootstrapPeers?.length
+      !this.cloudConfiguration.kadBootstrapPeers?.length
     ) {
       console.warn(
-        "You're running a public cloud node without any bootstrap peers, which means you will not get any data from the network." +
+        "You're running a public cloud node without any kad bootstrap peers, which means you will not get any data from the network." +
           '\n\nConfigure bootstrap peers to connect to using env.ULX_BOOTSTRAP_PEERS.',
       );
     }
 
-    const listenOptions = {
-      port: peerPort ? Number(peerPort) : undefined,
-      host: publicHostname,
-    };
-
-    if (!listenOptions.port && !isTestEnv) {
-      if (!(await isPortInUse(18182))) listenOptions.port = 18182;
-    }
-
-    this.peerServer = new Http.Server();
-
-    this.peerNetwork = await new P2pConnection().start({
-      ulixeeApiHost: await this.publicServer.host,
-      dbPath: Path.resolve(this.datastoreCore.options.datastoresDir, '../libp2p'),
-      port: listenOptions.port,
+    this.kad = await new Kad({
+      apiHost: await this.publicServer.host,
+      dbPath: this.cloudConfiguration.kadDbPath,
+      port: await this.publicServer.port,
       ipOrDomain: this.publicServer.hostname,
       identity: this.cloudConfiguration.networkIdentity,
-      attachToServer: this.peerServer,
-      boostrapList: this.cloudConfiguration.dhtBootstrapPeers,
-    });
+      boostrapList: this.cloudConfiguration.kadBootstrapPeers,
+    }).start();
   }
 
   private getInstalledDatastorePlugins(): IExtractorPluginCore[] {

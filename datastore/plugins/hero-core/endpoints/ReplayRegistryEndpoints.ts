@@ -14,11 +14,11 @@ export default class ReplayRegistryEndpoints {
   constructor() {
     this.handlersByCommand = {
       'ReplayRegistry.store': async ({ sessionId, db }, ctx) => {
-        await ctx.replayRegistry.storageRegistry.store(sessionId, db);
+        await ctx.replayRegistry.replayStorageRegistry.store(sessionId, db);
         return { success: true };
       },
       'ReplayRegistry.get': async ({ sessionId }, ctx) => {
-        const result = await ctx.replayRegistry.storageRegistry.get(sessionId);
+        const result = await ctx.replayRegistry.replayStorageRegistry.get(sessionId);
         if (result) return { db: await result.db };
         return null;
       },

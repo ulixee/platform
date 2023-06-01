@@ -121,6 +121,7 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
   }
 
   public async onCoreClose(): Promise<void> {
+    await this.replayRegistry?.shutdown();
     await this.connectionToCore?.disconnect();
   }
 }

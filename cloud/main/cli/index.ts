@@ -33,14 +33,6 @@ export default function cliCommands(): Command {
     .addOption(
       program
         .createOption(
-          '--peer-port <number>',
-          'Connect to the peer network on this node, and listen on this public port. Defaults to any 18182, or any available port (0).',
-        )
-        .env('ULX_PEER_PORT'),
-    )
-    .addOption(
-      program
-        .createOption(
           '--hosted-services-port <number>',
           'Activate hosted services on this node at this port (datastore registry, node registry). Defaults to any 18181, or any available port (0).',
         )
@@ -142,7 +134,6 @@ export default function cliCommands(): Command {
         port,
         disableChromeAlive,
         hostname,
-        peerPort,
         setupHost,
         hostedServicesPort,
         hostedServicesHostname,
@@ -158,7 +149,6 @@ export default function cliCommands(): Command {
         listenOptions: {
           publicPort: port,
           publicHostname: hostname,
-          peerPort,
           hostedServicesHostname,
           hostedServicesPort,
         },

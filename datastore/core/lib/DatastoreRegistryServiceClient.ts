@@ -70,7 +70,7 @@ export default class DatastoreRegistryServiceClient implements IDatastoreRegistr
       compressedDbx,
       adminIdentity,
       adminSignature,
-      ulixeeApiHost: this.client.transport.host,
+      apiHost: this.client.transport.host,
     };
   }
 

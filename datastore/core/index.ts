@@ -15,7 +15,7 @@ import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import { IDatastoreApis, IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import { IServicesSetupApiTypes } from '@ulixee/platform-specification/services/SetupApis';
 import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreVersionHashValidation';
-import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
+import IKad from '@ulixee/platform-specification/types/IKad';
 import { promises as Fs } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import * as Os from 'os';
@@ -119,7 +119,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
       datastoresDir: env.datastoresDir,
       datastoresTmpDir: Path.join(Os.tmpdir(), '.ulixee', 'datastore'),
       maxRuntimeMs: 10 * 60e3,
-      waitForDatastoreCompletionOnShutdown: false,
+      waitForDatastoreCompletionOnShutdown: true,
       enableDatastoreWatchMode: env.serverEnvironment === 'development',
       paymentAddress: env.paymentAddress,
       datastoresMustHaveOwnAdminIdentity: env.datastoresMustHaveOwnAdminIdentity,
@@ -216,7 +216,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
     hostedServicesAddress?: URL;
     cloudType?: 'public' | 'private';
     defaultServices?: IServicesSetupApiTypes['Services.getSetup']['result'];
-    peerNetwork?: IPeerNetwork;
+    kad?: IKad;
     networkIdentity: Identity;
     getSystemCore: (name: 'heroCore' | 'datastoreCore' | 'desktopCore') => any;
     createConnectionToServiceHost: (host: string) => ConnectionToCore<any, any>; // create connection to a services host
@@ -313,7 +313,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
         this.options.datastoresDir,
         this.datastoreApiClients,
         createConnectionToServiceHost(this.options.datastoreRegistryHost),
-        options.peerNetwork,
+        options.kad,
         this.options,
         this.onDatastoreInstalled.bind(this),
       );

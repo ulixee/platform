@@ -1,5 +1,6 @@
 import { loadEnv, parseEnvBool, parseEnvList, parseEnvPath } from '@ulixee/commons/lib/envUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
+import * as Path from 'path';
 
 loadEnv(process.cwd());
 loadEnv(__dirname);
@@ -13,7 +14,9 @@ export default {
   servicesSetupHost: env.ULX_SERVICES_SETUP_HOST,
   nodeRegistryHost: env.ULX_NODE_REGISTRY_HOST,
   cloudType: env.ULX_CLOUD_TYPE === 'public' ? 'public' : 'private',
-  dhtBootstrapPeers: parseEnvList(env.ULX_BOOTSTRAP_PEERS),
+  kadEnabled: parseEnvBool(env.ULX_ENABLE_KAD),
+  kadBootstrapPeers: parseEnvList(env.ULX_BOOTSTRAP_PEERS),
+  kadDbPath: env.ULX_KAD_PATH ?? Path.resolve(env.ULX_DATASTORE_DIR, '../kad.db'),
   networkIdentity: env.ULX_NETWORK_IDENTITY_PATH
     ? Identity.loadFromFile(env.ULX_NETWORK_IDENTITY_PATH, {
         keyPassphrase: env.ULX_NETWORK_IDENTITY_PASSPHRASE,
@@ -23,5 +26,4 @@ export default {
   publicHostname: env.ULX_HOSTNAME,
   hostedServicesPort: env.ULX_HOSTED_SERVICES_PORT,
   hostedServicesHostname: env.ULX_HOSTED_SERVICES_HOSTNAME,
-  peerPort: env.ULX_PEER_PORT,
 };

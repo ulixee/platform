@@ -6,7 +6,7 @@ import {
   ICloudNodeMeta,
   INodeRegistryApis,
 } from '@ulixee/platform-specification/services/NodeRegistryApis';
-import IPeerNetwork from '@ulixee/platform-specification/types/IPeerNetwork';
+import IKad from '@ulixee/platform-specification/types/IKad';
 import NodeRegistryServiceClient from './NodeRegistryServiceClient';
 import NodeTracker from './NodeTracker';
 import RoutableServer from './RoutableServer';
@@ -15,26 +15,25 @@ export default class NodeRegistry {
   public serviceClient?: NodeRegistryServiceClient;
   public nodeMeta: ICloudNodeMeta;
 
-  private readonly peerNetwork?: IPeerNetwork;
+  private readonly kad?: IKad;
   private readonly nodeTracker: NodeTracker;
 
   constructor(
     private config: {
       publicServer: RoutableServer;
       serviceClient?: ConnectionToCore<INodeRegistryApis, {}>;
-      peerNetwork?: IPeerNetwork;
+      kad?: IKad;
       nodeTracker: NodeTracker;
       datastoreCore: DatastoreCore;
       heroCore: HeroCore;
     },
   ) {
-    const { nodeTracker, peerNetwork, serviceClient } = config;
-    this.peerNetwork = peerNetwork;
+    const { nodeTracker, kad, serviceClient } = config;
+    this.kad = kad;
     this.nodeTracker = nodeTracker;
 
     this.trackPeer = this.trackPeer.bind(this);
     this.nodeTracker.on('new', this.trackPeer);
-    this.peerNetwork?.on('node-seen', this.nodeTracker.onSeen);
 
     if (serviceClient) {
       this.serviceClient = new NodeRegistryServiceClient(
@@ -43,7 +42,7 @@ export default class NodeRegistry {
         this.config.heroCore,
         () => ({
           clients: this.config.publicServer.connections,
-          peers: this.peerNetwork?.connectedPeers ?? 0,
+          peers: this.kad?.connectedPeers ?? 0,
         }),
       );
     }
@@ -52,7 +51,6 @@ export default class NodeRegistry {
   public async close(): Promise<void> {
     await this.serviceClient?.close();
     this.nodeTracker.off('new', this.trackPeer);
-    this.peerNetwork?.off('node-seen', this.nodeTracker.onSeen);
     // clear out memory
     this.config = null;
     this.serviceClient = null;
@@ -60,9 +58,9 @@ export default class NodeRegistry {
 
   public async register(identity: Identity): Promise<void> {
     this.nodeMeta = {
-      identity: identity?.bech32,
-      ulixeeApiHost: await this.config.publicServer.host,
-      peerMultiaddrs: this.peerNetwork?.multiaddrs ?? [],
+      nodeId: identity?.bech32,
+      apiHost: await this.config.publicServer.host,
+      kadHost: this.kad?.nodeInfo.kadHost,
       isClusterNode: true,
       lastSeenDate: new Date(),
     };
@@ -89,13 +87,13 @@ export default class NodeRegistry {
       }
     }
 
-    if (this.nodeTracker.nodes.length < count && this.peerNetwork) {
-      const networkNodes = await this.peerNetwork.getKnownNodes(count);
+    if (this.nodeTracker.nodes.length < count && this.kad) {
+      const networkNodes = this.kad.getKnownNodes(count);
       for (const node of networkNodes) {
         this.nodeTracker.track({
-          peerMultiaddrs: node.multiaddrs,
-          identity: node.identity,
-          ulixeeApiHost: node.ulixeeApiHost,
+          nodeId: node.nodeId,
+          apiHost: node.apiHost,
+          kadHost: node.kadHost,
           lastSeenDate: node.lastSeenDate,
           isClusterNode: false,
         });
@@ -107,8 +105,8 @@ export default class NodeRegistry {
 
   private trackPeer(evt: { node: ICloudNodeMeta }): void {
     const { node } = evt;
-    if (this.peerNetwork && node.peerMultiaddrs?.length) {
-      void this.peerNetwork.addPeer({ multiaddrs: node.peerMultiaddrs }).catch(() => null);
+    if (this.kad && node.kadHost) {
+      void this.kad.addPeer(node as any).catch(() => null);
     }
   }
 }

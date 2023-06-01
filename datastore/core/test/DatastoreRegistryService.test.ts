@@ -1,6 +1,6 @@
 import { CloudNode } from '@ulixee/cloud';
 import DatastorePackager from '@ulixee/datastore-packager';
-import P2pConnection from '@ulixee/cloud-p2p';
+import Kad from '@ulixee/kad';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import * as Fs from 'fs';
@@ -24,8 +24,8 @@ beforeAll(async () => {
       },
       listenOptions: {
         hostedServicesHostname: 'localhost',
-        peerPort: 0,
       },
+      kadEnabled: true,
     },
     true,
   );
@@ -44,10 +44,8 @@ beforeAll(async () => {
       datastoreConfiguration: {
         datastoresDir: Path.join(storageDir, 'outside'),
       },
-      dhtBootstrapPeers: [...nodeWithServices.peerNetwork.multiaddrs],
-      listenOptions: {
-        peerPort: 0,
-      },
+      kadBootstrapPeers: [nodeWithServices.kad.nodeHost],
+      kadEnabled: true,
     },
     true,
   );
@@ -148,21 +146,11 @@ test('should expire datastores and be able to re-install them when needed', asyn
     db.versions.restore(versionHash, dbxPath, Date.now() - 1);
   }
 
-  const datastore = (nodeOutsideCluster.peerNetwork as P2pConnection).datastore;
-  const keys = await datastore.queryKeys({});
-  for await (const key of keys) {
-    if (key.toString().startsWith('/dht/provider')) {
-      // eslint-disable-next-line no-eval
-      const varint = await eval(`import("varint")`);
-      await datastore.put(key, Buffer.from(varint.encode(Date.now() - 25 * 60 * 60e3)));
-    }
+  const kadDb = nodeOutsideCluster.kad.db;
+  for (const record of kadDb.providers.all()) {
+    kadDb.providers.updateExpiration(record.providerNodeId, record.key, Date.now() - 1);
   }
-  await (
-    (nodeOutsideCluster.peerNetwork as P2pConnection).libp2p.dht.wan as any
-  ).providers._cleanup();
-  await (
-    (nodeOutsideCluster.peerNetwork as P2pConnection).libp2p.dht.lan as any
-  ).providers._cleanup();
+  nodeOutsideCluster.kad.providers.cleanup();
 
   await new Promise(setImmediate);
 
@@ -176,15 +164,14 @@ test('should expire datastores and be able to re-install them when needed', asyn
   }
 
   // should be able to re-retrieve it
-  // TOOD: causes infinite loop right now
-  // await expect(outsideNodeClient.query(versionHash, 'select * from streamer()')).resolves.toEqual(
-  //   expect.objectContaining({
-  //     outputs: [{ record: 0 }, { record: 1 }, { record: 2 }],
-  //   }),
-  // );
-});
+  await expect(outsideNodeClient.query(versionHash, 'select * from streamer()')).resolves.toEqual(
+    expect.objectContaining({
+      outputs: [{ record: 0 }, { record: 1 }, { record: 2 }],
+    }),
+  );
+}, 5e3);
 
-test('should republish datastores on expired from libp2p if not expired locally', async () => {
+test('should republish datastores on expired from kad if not expired locally', async () => {
   await packager.dbx.upload(await nodeWithServices.host);
   const outsideNodeClient = new DatastoreApiClient(await nodeOutsideCluster.host);
   Helpers.onClose(() => outsideNodeClient.disconnect());
@@ -194,27 +181,19 @@ test('should republish datastores on expired from libp2p if not expired locally'
     nodeOutsideCluster.datastoreCore.datastoreRegistry.diskStore,
     'didExpireNetworkHosting',
   );
-  const reprovide = jest.spyOn(nodeOutsideCluster.peerNetwork, 'provide');
+  onExpire.mockReset();
+  const reprovide = jest.spyOn(nodeOutsideCluster.kad, 'provide');
 
   // @ts-expect-error
   const db = nodeOutsideCluster.datastoreCore.datastoreRegistry.diskStore.datastoresDb;
   const firstVersionPublish = db.versions.getByHash(versionHash).publishedToNetworkTimestamp;
+  expect(db.versions.getByHash(versionHash).dbxPath).not.toBeNull();
 
-  const datastore = (nodeOutsideCluster.peerNetwork as P2pConnection).datastore;
-  const keys = await datastore.queryKeys({});
-  for await (const key of keys) {
-    if (key.toString().startsWith('/dht/provider')) {
-      // eslint-disable-next-line no-eval
-      const varint = await eval(`import("varint")`);
-      await datastore.put(key, Buffer.from(varint.encode(Date.now() - 25 * 60 * 60e3)));
-    }
+  const kadDb = nodeOutsideCluster.kad.db;
+  for (const record of kadDb.providers.all()) {
+    await kadDb.providers.updateExpiration(record.providerNodeId, record.key, Date.now() - 1);
   }
-  await (
-    (nodeOutsideCluster.peerNetwork as P2pConnection).libp2p.dht.wan as any
-  ).providers._cleanup();
-  await (
-    (nodeOutsideCluster.peerNetwork as P2pConnection).libp2p.dht.lan as any
-  ).providers._cleanup();
+  nodeOutsideCluster.kad.providers.cleanup();
 
   await new Promise(setImmediate);
 
@@ -229,4 +208,4 @@ test('should republish datastores on expired from libp2p if not expired locally'
     expect(record.dbxPath).toBeTruthy();
     expect(record.publishedToNetworkTimestamp).toBeGreaterThan(firstVersionPublish);
   }
-});
+}, 5e3);

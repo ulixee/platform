@@ -14,7 +14,7 @@ export default interface IDatastoreRegistryStore {
     payment?: IPayment,
   ): Promise<{
     compressedDbx: Buffer;
-    ulixeeApiHost: string;
+    apiHost: string;
     adminIdentity: string;
     adminSignature: Buffer;
   }>;
