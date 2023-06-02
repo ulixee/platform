@@ -3,9 +3,9 @@ import Logger from '@ulixee/commons/lib/Logger';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import NodeId from '../interfaces/NodeId';
 import type { Kad } from './Kad';
-import type { Network } from './network';
+import type { Network } from './Network';
 import type { PeerRouting } from './PeerRouting';
-import type { Providers } from './providers';
+import type { Providers } from './Providers';
 import type { QueryManager, IQueryOptions } from './QueryManager';
 import type { RoutingTable } from './RoutingTable';
 

@@ -6,7 +6,7 @@ import Identity from '@ulixee/crypto/lib/Identity';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import NodeId from '../interfaces/NodeId';
 import type { Kad } from './Kad';
-import type { Network } from './network';
+import type { Network } from './Network';
 import { PeerDistanceList } from './PeerDistanceList';
 import type { QueryManager, IQueryOptions } from './QueryManager';
 import type { RoutingTable } from './RoutingTable';
