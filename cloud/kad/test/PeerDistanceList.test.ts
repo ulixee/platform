@@ -1,6 +1,7 @@
 import { decodeBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { PeerDistanceList } from '../lib/PeerDistanceList';
+import { nodeIdToKadId } from './_helpers';
 
 describe('PeerDistanceList', () => {
   const [p1, p2, p3, p4, p6] = [
@@ -19,6 +20,12 @@ describe('PeerDistanceList', () => {
   let key: Buffer;
   beforeAll(async () => {
     key = decodeBuffer(p1, Identity.encodingPrefix);
+    // we don't need to test the hashing here - better to have predictable distances
+    jest
+      .spyOn<any, any>(PeerDistanceList.prototype, 'nodeIdToKadId')
+      .mockImplementation((x: string) => {
+        return decodeBuffer(x, Identity.encodingPrefix);
+      });
   });
 
   describe('basics', () => {

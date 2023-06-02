@@ -6,13 +6,11 @@ Ulixee Clouds use a distributed hash table that uses the s/kademlia (kad) specif
 
 A distributed hash table (or DHT) is a lookup table for nodes and data that can run across a number of unrelated (or decentralized) nodes. These nodes are able to use the DHT to content and other nodes throughout a network without any central locator table.
 
-A DHT works by using each Node's "nodeId" to find the "closest" nodeIds in the network to a given key or other nodeId. This "closeness" is determined using an "xor" of the bits of two different buffers. Nodes keep track "buckets" of ids starting with different prefixes. When a node needs to find content (a sha256 hash of the content) in the network, it finds the nodeIds closest to the content hash and then asks each of those nodes if it knows the given content "provider" or any closer nodes. This process repeats for the closer nodes until the content is found (or no closer options are available).
+A DHT works by using each Node's "nodeId" to find the "closest" nodeIds in the network to a given key or sha256 of a nodeId. This "closeness" is determined using an "xor" of the bits of two different buffers. Nodes keep track "buckets" of ids starting with different prefixes. When a node needs to find content (a sha256 hash of the content) in the network, it finds the nodeIds closest to the content hash and then asks each of those nodes if it knows the given content "provider" or any closer nodes. This process repeats for the closer nodes until the content is found (or no closer options are available).
 
 ## Network Identities (NodeIds)
 
-The secure (s) part of Kademlia is provided by using "network ids" that are ED25519 keypairs. The public key of this keypair is encoded into an identity on the network. This `Identity` (`@ulixee/crypto/lib/Identity`) has a "Bech32m"\* public encoding (ie, `id1xv7empyzlwuvlshs2vlf9eruf72jeesr8yxrrd3esusj75qsr6jqj6dv3p`). You can always identify an identity using the `id1` prefix.
-
-Public keys provide a cryptographic randomization that prevent attacks on the network where simulated ids try to corner off lookups of certain values. Nodes must provide their public key and verify they own them during the initial handshake.
+The secure (s) part of Kademlia is provided by using nodeIds that are encoded ED25519 keypairs. The routing table sorts these nodeIds as sha256 of their public key bytes. This provides cryptographic randomization to prevent attacks on the network where simulated ids try to corner off lookups of certain values. Nodes must provide their public key and verify they own them during the initial `Kad.connect/Kad.verify` handshake.
 
 \*Bech32m is a specification created for Bitcoin that encodes a buffer into a Base32 encoding with a checksum to avoid mistyping keys.
 

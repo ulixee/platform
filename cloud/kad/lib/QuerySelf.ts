@@ -3,7 +3,6 @@ import { debounce } from '@ulixee/commons/lib/asyncUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import Signals from '@ulixee/commons/lib/Signals';
-import Identity from '@ulixee/crypto/lib/Identity';
 import { setMaxListeners } from 'node:events';
 import {
   K,
@@ -112,7 +111,7 @@ export class QuerySelf {
       try {
         this.running = true;
         let found = 0;
-        const nodeKadId = Identity.getBytes(this.kad.nodeInfo.nodeId);
+        const nodeKadId = this.kad.nodeInfo.kadId;
         for await (const _ of this.kad.peerRouting.getClosestPeers(nodeKadId, {
           signal,
           isSelfQuery: true,

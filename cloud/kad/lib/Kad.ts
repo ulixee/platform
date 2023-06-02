@@ -2,6 +2,7 @@ import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
 import { first } from '@ulixee/commons/lib/asyncUtils';
 import { bufferToBigInt } from '@ulixee/commons/lib/bufferUtils';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import Identity from '@ulixee/crypto/lib/Identity';
@@ -9,8 +10,9 @@ import type ITransport from '@ulixee/net/interfaces/ITransport';
 import IKad, { IKadConfig, IKadEvents } from '@ulixee/platform-specification/types/IKad';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import KadDb from '../db/KadDb';
-import NodeId from '../interfaces/NodeId';
 import IKadOptions from '../interfaces/IKadOptions';
+import NodeId from '../interfaces/NodeId';
+import { nodeIdToKadId } from '../test/_helpers';
 import ConnectionToKadClient from './ConnectionToKadClient';
 import { ContentRouting } from './ContentRouting';
 import { Network } from './Network';
@@ -34,7 +36,7 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
   public network: Network;
   public peerRouting: PeerRouting;
   public db: KadDb;
-  public nodeInfo: INodeInfo;
+  public nodeInfo: INodeInfo & { kadId: Buffer };
   public peerStore: PeerStore;
   public identity: Identity;
   public readonly contentRouting: ContentRouting;
@@ -79,6 +81,7 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
     this.running = false;
     this.nodeInfo = {
       nodeId: identity.bech32,
+      kadId: sha256(identity.bech32),
       apiHost,
       kadHost: `${ipOrDomain ?? 'localhost'}:${port}`,
     };
@@ -229,8 +232,8 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
     const rootNode = Identity.createSync().bech32;
     // track "parent" nodes.
     // tree is initialized with a parent nodes
-    const id = bufferToBigInt(Identity.getBytes(this.nodeId));
-    const root = bufferToBigInt(Identity.getBytes(rootNode));
+    const id = bufferToBigInt(this.nodeInfo.kadId);
+    const root = bufferToBigInt(nodeIdToKadId(rootNode));
     const m = 2n ** 256n; // 2 ^ bits
     const k = BigInt(this.init.kBucketSize);
     const rootDistance = (root - id) % m;

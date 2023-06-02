@@ -1,5 +1,4 @@
 import { all } from '@ulixee/commons/lib/asyncUtils';
-import { xor } from '@ulixee/commons/lib/bufferUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import Identity from '@ulixee/crypto/lib/Identity';
@@ -7,9 +6,9 @@ import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import NodeId from '../interfaces/NodeId';
 import { PeerDistanceList } from '../lib/PeerDistanceList';
 import { PeerStore } from '../lib/PeerStore';
-import { IKadQueryFn, QueryManager, IQueryManagerInit } from '../lib/QueryManager';
+import { IKadQueryFn, IQueryManagerInit, QueryManager } from '../lib/QueryManager';
 import { RoutingTable } from '../lib/RoutingTable';
-import { createNodeIds, delay, idBytes } from './_helpers';
+import { createNodeIds, delay, nodeIdToKadId } from './_helpers';
 
 const ourIdentity = Identity.createSync();
 const ourNodeId = ourIdentity.bech32;
@@ -30,6 +29,7 @@ beforeEach(async () => {
     {
       nodeInfo: {
         nodeId: ourNodeId,
+        kadId: nodeIdToKadId(ourNodeId),
         kadHost: 'localhost:1818',
         apiHost: 'localhost:1818',
       },

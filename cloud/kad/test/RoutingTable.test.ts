@@ -8,7 +8,7 @@ import * as Path from 'path';
 import KadDb from '../db/KadDb';
 import { PeerStore } from '../lib/PeerStore';
 import { KAD_CLOSE_TAG_NAME, KBUCKET_SIZE, RoutingTable } from '../lib/RoutingTable';
-import { createNodeIds, idBytes } from './_helpers';
+import { createNodeIds, nodeIdToKadId } from './_helpers';
 
 const dbPath = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'RoutingTable.test', 'kad.db');
 
@@ -32,6 +32,7 @@ beforeEach(async () => {
     {
       nodeInfo: {
         nodeId: identity.bech32,
+        kadId: nodeIdToKadId(identity.bech32),
         kadHost: 'localhost:1818',
         apiHost: 'localhost:1818',
       },
@@ -63,7 +64,7 @@ test('can add to the routing table', async () => {
   await Promise.all(
     Array.from({ length: 20 }).map(async () => {
       const id = pickRandom(ids);
-      const key = idBytes(id);
+      const key = nodeIdToKadId(id);
 
       expect(table.closestPeers(key, 5).length).toBeGreaterThan(0);
     }),
@@ -78,7 +79,7 @@ test('can remove routingTable entries', async () => {
     }),
   );
 
-  const key = idBytes(nodeIds[2]);
+  const key = nodeIdToKadId(nodeIds[2]);
   expect(table.closestPeers(key, 10)).toHaveLength(10);
 
   await table.remove(nodeIds[5]);
@@ -94,7 +95,7 @@ test('can find closest peers', async () => {
     }),
   );
 
-  const key = idBytes(nodeIds[2]);
+  const key = nodeIdToKadId(nodeIds[2]);
   expect(table.closestPeers(key, 15)).toHaveLength(15);
 });
 
@@ -113,12 +114,12 @@ test('favors old nodeIds that respond to pings', async () => {
   const nodeIds = createNodeIds(2);
 
   const oldPeer = {
-    id: idBytes(nodeIds[0]),
+    id: nodeIdToKadId(nodeIds[0]),
     nodeId: nodeIds[0],
     vectorClock: 0,
   };
   const newPeer = {
-    id: idBytes(nodeIds[1]),
+    id: nodeIdToKadId(nodeIds[1]),
     nodeId: nodeIds[1],
     vectorClock: 0,
   };
@@ -168,12 +169,12 @@ test('evicts oldest peer that does not respond to ping', async () => {
   const nodeIds = createNodeIds(2);
 
   const oldPeer = {
-    id: idBytes(nodeIds[0]),
+    id: nodeIdToKadId(nodeIds[0]),
     nodeId: nodeIds[0],
     vectorClock: 0,
   };
   const newPeer = {
-    id: idBytes(nodeIds[1]),
+    id: nodeIdToKadId(nodeIds[1]),
     nodeId: nodeIds[1],
     vectorClock: 0,
   };
@@ -227,7 +228,7 @@ test('removes tags from kad-close nodeIds when closer nodeIds are found', async 
 
   const localNodeId = Buffer.from(table.kb.localNodeId);
   const sortedPeerList = createNodeIds(KBUCKET_SIZE + 1).sort((a, b) => {
-    return xor(idBytes(a), localNodeId).compare(xor(idBytes(b), localNodeId));
+    return xor(nodeIdToKadId(a), localNodeId).compare(xor(nodeIdToKadId(b), localNodeId));
   });
 
   // sort list furthest -> closest

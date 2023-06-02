@@ -7,10 +7,10 @@ import Queue from '@ulixee/commons/lib/Queue';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import Signals, { IClearableSignal } from '@ulixee/commons/lib/Signals';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
-import Identity from '@ulixee/crypto/lib/Identity';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import { setMaxListeners } from 'node:events';
 import NodeId from '../interfaces/NodeId';
+import { nodeIdToKadId } from '../test/_helpers';
 import { ALPHA, DEFAULT_QUERY_TIMEOUT, K } from './constants';
 import type { Kad } from './Kad';
 import type { RoutingTable } from './RoutingTable';
@@ -188,7 +188,7 @@ export class QueryManager {
 
     peersSeen.add(peerNodeId);
 
-    const peerKadId = Identity.getBytes(peerNodeId);
+    const peerKadId = nodeIdToKadId(peerNodeId);
     const peerXor = bufferToBigInt(xor(peerKadId, key));
 
     queue
@@ -218,7 +218,7 @@ export class QueryManager {
               continue;
             }
 
-            const closerPeerKadId = await Identity.getBytes(closerPeer.nodeId);
+            const closerPeerKadId = await nodeIdToKadId(closerPeer.nodeId);
             const closerPeerXor = bufferToBigInt(xor(closerPeerKadId, key));
             // only continue query if closer peer is actually closer
             if (closerPeerXor > peerXor) {

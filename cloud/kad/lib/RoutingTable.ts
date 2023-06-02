@@ -4,9 +4,9 @@ import { debounce } from '@ulixee/commons/lib/asyncUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import Queue from '@ulixee/commons/lib/Queue';
 import Signals from '@ulixee/commons/lib/Signals';
-import Identity from '@ulixee/crypto/lib/Identity';
 import KBucket = require('k-bucket');
 import NodeId from '../interfaces/NodeId';
+import { nodeIdToKadId } from '../test/_helpers';
 import type { Kad } from './Kad';
 
 export const KAD_CLOSE_TAG_NAME = 'kad-close';
@@ -78,7 +78,7 @@ export class RoutingTable {
     this.running = true;
 
     this.kb = new KBucket({
-      localNodeId: Identity.getBytes(this.kad.nodeInfo.nodeId),
+      localNodeId: this.kad.nodeInfo.kadId,
       numberOfNodesPerKBucket: this.kBucketSize,
       numberOfNodesToPing: 1,
     }) as KBucketTree;
@@ -130,7 +130,7 @@ export class RoutingTable {
     // don't add self
     if (nodeId === this.kad.nodeInfo.nodeId) return;
 
-    const id = Identity.getBytes(nodeId);
+    const id = nodeIdToKadId(nodeId);
 
     this.kb.add({ id, nodeId, vectorClock: Date.now() });
 
@@ -145,7 +145,7 @@ export class RoutingTable {
       throw new Error('RoutingTable is not started');
     }
 
-    const id = Identity.getBytes(nodeId);
+    const id = nodeIdToKadId(nodeId);
 
     this.kb.remove(id);
   }

@@ -1,6 +1,6 @@
 import { xor } from '@ulixee/commons/lib/bufferUtils';
-import Identity from '@ulixee/crypto/lib/Identity';
 import NodeId from '../interfaces/NodeId';
+import { nodeIdToKadId } from '../test/_helpers';
 
 interface PeerDistance {
   nodeId: NodeId;
@@ -27,6 +27,7 @@ export class PeerDistanceList {
     this.originDhtKey = originDhtKey;
     this.capacity = capacity;
     this.peerDistances = [];
+    this.nodeIdToKadId = this.nodeIdToKadId.bind(this);
   }
 
   /**
@@ -51,10 +52,10 @@ export class PeerDistanceList {
       return;
     }
 
-    const dhtKey = Identity.getBytes(nodeId);
+    const kadId = this.nodeIdToKadId(nodeId);
     const el = {
       nodeId,
-      distance: xor(this.originDhtKey, dhtKey),
+      distance: xor(this.originDhtKey, kadId),
     };
 
     this.peerDistances.push(el);
@@ -75,7 +76,7 @@ export class PeerDistanceList {
       return true;
     }
 
-    const dhtKeys = nodeIds.map(Identity.getBytes);
+    const dhtKeys = nodeIds.map(this.nodeIdToKadId);
     const furthestDistance = this.peerDistances[this.peerDistances.length - 1].distance;
 
     for (const dhtKey of dhtKeys) {
@@ -87,5 +88,9 @@ export class PeerDistanceList {
     }
 
     return false;
+  }
+
+  private nodeIdToKadId(nodeId: string): Buffer {
+    return nodeIdToKadId(nodeId);
   }
 }

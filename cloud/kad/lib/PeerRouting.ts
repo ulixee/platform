@@ -2,13 +2,13 @@ import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
 import { CodeError } from '@ulixee/commons/lib/errors';
 import Logger from '@ulixee/commons/lib/Logger';
 import Signals from '@ulixee/commons/lib/Signals';
-import Identity from '@ulixee/crypto/lib/Identity';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import NodeId from '../interfaces/NodeId';
+import { nodeIdToKadId } from '../test/_helpers';
 import type { Kad } from './Kad';
 import type { Network } from './Network';
 import { PeerDistanceList } from './PeerDistanceList';
-import type { QueryManager, IQueryOptions } from './QueryManager';
+import type { IQueryOptions, QueryManager } from './QueryManager';
 import type { RoutingTable } from './RoutingTable';
 
 const { log } = Logger(module);
@@ -57,7 +57,7 @@ export class PeerRouting {
     }
 
     let foundPeer = false;
-    const key = Identity.getBytes(id);
+    const key = nodeIdToKadId(id);
     const abortSignal = new AbortController();
     options.signal = options.signal
       ? Signals.any(abortSignal.signal, options.signal)

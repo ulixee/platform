@@ -21,14 +21,10 @@ test('should correctly register peers', async () => {
   const nodeInfos1 = node1.kad.getKnownNodes();
   const nodeInfos2 = node2.kad.getKnownNodes();
 
-  expect(nodeInfos1[0]).toMatchObject({
-    ...node2.kad.nodeInfo,
-    lastSeenDate: expect.any(Date),
-  });
-  expect(nodeInfos2[0]).toMatchObject({
-    ...node1.kad.nodeInfo,
-    lastSeenDate: expect.any(Date),
-  });
+  expect(nodeInfos1[0].nodeId).toBe(node2.kad.nodeId);
+  expect(nodeInfos1[0].kadHost).toBe(node2.kad.nodeInfo.kadHost);
+  expect(nodeInfos2[0].nodeId).toBe(node1.kad.nodeId);
+  expect(nodeInfos2[0].kadHost).toBe(node1.kad.nodeInfo.kadHost);
 });
 
 test('should provide and find providers', async () => {
@@ -102,7 +98,7 @@ test('can find closer peers in the network', async () => {
   const closers: INodeInfo[] = await dhts[1].kad.findClosestNodes(sha256('foo'));
 
   expect(closers).not.toHaveLength(0);
-}, 24e3);
+});
 
 // HELPERS /////////////////////////////////////////////////////////////////////////////////////////
 let counter = 0;

@@ -1,12 +1,10 @@
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
-import { encodeBuffer, xor } from '@ulixee/commons/lib/bufferUtils';
-import Logger from '@ulixee/commons/lib/Logger';
-import Identity from '@ulixee/crypto/lib/Identity';
-import { randomBytes } from 'node:crypto';
 import { length } from '@ulixee/commons/lib/asyncUtils';
+import { xor } from '@ulixee/commons/lib/bufferUtils';
+import Logger from '@ulixee/commons/lib/Logger';
 import Signals from '@ulixee/commons/lib/Signals';
-import NodeId from '../interfaces/NodeId';
+import { randomBytes } from 'node:crypto';
 import { TABLE_REFRESH_INTERVAL, TABLE_REFRESH_QUERY_TIMEOUT } from './constants';
 import GENERATED_PREFIXES from './generatedPrefixList';
 import { Kad } from './Kad';
@@ -137,22 +135,22 @@ export class RoutingTableRefresh {
     }
 
     // gen a key for the query to refresh the cpl
-    const nodeId = await this.generateRandomNodeId(commonPrefixLength);
+    const kadKey = await this.generateRandomKadKey(commonPrefixLength);
 
     const parentLogId = this.logger.info(`refreshCommonPrefixLength:before`, {
-      imaginaryPeer: nodeId,
+      imaginaryKey: kadKey,
       commonPrefixLength,
       routingTableSize: this.routingTable.size,
     });
 
     const peers = await length(
-      this.peerRouting.getClosestPeers(Identity.getBytes(nodeId), {
+      this.peerRouting.getClosestPeers(kadKey, {
         signal: Signals.timeout(this.refreshQueryTimeout),
       }),
     );
 
     this.logger.stats(`refreshCommonPrefixLength:after`, {
-      imaginaryPeer: nodeId,
+      imaginaryKey: kadKey,
       closestPeers: peers,
       commonPrefixLength,
       routingTableSize: this.routingTable.size,
@@ -175,24 +173,21 @@ export class RoutingTableRefresh {
     return dates;
   }
 
-  private async generateRandomNodeId(targetCommonPrefixLength: number): Promise<NodeId> {
+  private async generateRandomKadKey(targetCommonPrefixLength: number): Promise<Buffer> {
     if (this.routingTable.kb === null) {
       throw new Error('Routing table not started');
     }
 
     const randomData = randomBytes(2);
     const randomUint16 = (randomData[1] << 8) + randomData[0];
-
-    const key = await this.makeNodeId(
+    return await this.makeKadKey(
       this.routingTable.kb.localNodeId,
       randomUint16,
       targetCommonPrefixLength,
     );
-
-    return encodeBuffer(key, Identity.encodingPrefix);
   }
 
-  private async makeNodeId(
+  private async makeKadKey(
     localKadId: Uint8Array,
     randomPrefix: number,
     targetCommonPrefixLength: number,
