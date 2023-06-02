@@ -43,7 +43,7 @@ jobs:
         working-directory: ./hero
 
       - name: Yarn build
-        run: yarn && yarn build
+        run: yarn --ignore-engines && yarn build --ignore-engines
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 
