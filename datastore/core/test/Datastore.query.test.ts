@@ -64,7 +64,7 @@ test('should be able to require authentication for a datastore', async () => {
   const auth = DatastoreApiClient.createExecAuthentication(null, id);
   await expect(
     client.query(packager.manifest.versionHash, 'select * from authme()'),
-  ).rejects.toThrowError('authentication');
+  ).rejects.toThrow('authentication');
 
   await expect(
     client.query(packager.manifest.versionHash, 'select * from authme()', { authentication: auth }),

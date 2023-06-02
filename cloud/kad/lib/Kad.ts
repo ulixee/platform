@@ -226,14 +226,16 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
 
   // TODO: complete implementation
   public async broadcast(_content: any): Promise<boolean> {
+    const rootNode = Identity.createSync().bech32;
     // track "parent" nodes.
     // tree is initialized with a parent nodes
     const id = bufferToBigInt(Identity.getBytes(this.nodeId));
-    const root = BigInt(Buffer.from('pre-shared-or-from-peer').toString('hex'));
+    const root = bufferToBigInt(Identity.getBytes(rootNode));
     const m = 2n ** 256n; // 2 ^ bits
-    const k = 20n; // k bucket size?
+    const k = BigInt(this.init.kBucketSize);
     const rootDistance = (root - id) % m;
     let parentId: BigInt;
+    // on left of tree
     if (rootDistance > 0 && rootDistance <= m / 2n) {
       parentId = (root + rootDistance / k) % m;
     } else {

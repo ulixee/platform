@@ -70,7 +70,7 @@ test('it should ensure a payment has enough microgons', async () => {
       } as unknown as IDatastoreManifest,
       [{ id: 1, name: 'fun1' }],
     ),
-  ).rejects.toThrowError('insufficient');
+  ).rejects.toThrow('insufficient');
 });
 
 test('it should allow adding multiple payees', async () => {
@@ -189,7 +189,7 @@ test('the processor should take all available funds if a query exceeds the micro
   expect(processor.releaseLocalFunctionHold(1, 1e3)).toBe(494);
   expect(processor.releaseLocalFunctionHold(2, 1e3)).toBe(501);
 
-  await expect(processor.settle(23)).rejects.toThrowError('will not cover');
+  await expect(processor.settle(23)).rejects.toThrow('will not cover');
   expect(settleSpy).toHaveBeenCalledTimes(1);
   expect(settleSpy).toHaveBeenCalledWith('1', '123', 'hold456', { ar1: 994, ar2: 1 }, true);
 });

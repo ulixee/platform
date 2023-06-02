@@ -49,13 +49,13 @@ beforeAll(async () => {
 
   client = new DatastoreApiClient(await plainNode.address);
   Fs.writeFileSync(
-    `${__dirname}/datastores/DatastoreRegistryService1-manifest.json`,
+    `${__dirname}/datastores/datastoreRegistryService1-manifest.json`,
     JSON.stringify({ storageEngineHost: await nodeWithServices.host }),
   );
   await Fs.promises
-    .rm(`${__dirname}/datastores/DatastoreRegistryService1.dbx`, { recursive: true })
+    .rm(`${__dirname}/datastores/datastoreRegistryService1.dbx`, { recursive: true })
     .catch(() => null);
-  packager = new DatastorePackager(`${__dirname}/datastores/DatastoreRegistryService1.js`);
+  packager = new DatastorePackager(`${__dirname}/datastores/datastoreRegistryService1.js`);
   await packager.build();
   Helpers.onClose(() => client.disconnect(), true);
 }, 60e3);

@@ -77,7 +77,7 @@ describe('basic Datastore tests', () => {
       await hero.interact('click');
     }, HeroExtractorPlugin);
 
-    await expect(datastoreExtractor.runInternal({})).rejects.toThrowError();
+    await expect(datastoreExtractor.runInternal({})).rejects.toThrow();
 
     const outgoingHeroCommands = connection.outgoingSpy.mock.calls;
     expect(outgoingHeroCommands.map(c => c[0].command)).toContain('Session.close');

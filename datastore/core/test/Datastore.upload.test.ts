@@ -65,7 +65,7 @@ test('should be able to restrict uploads', async () => {
   const identity = await Identity.create();
   cloudNode.datastoreCore.options.cloudAdminIdentities = [identity.bech32];
 
-  await expect(client.upload(dbxFile)).rejects.toThrowError('valid AdminIdentity signature');
+  await expect(client.upload(dbxFile)).rejects.toThrow('valid AdminIdentity signature');
   await expect(client.upload(dbxFile, { identity })).resolves.toBeTruthy();
 });
 
@@ -73,7 +73,7 @@ test('should be able to download dbx files', async () => {
   const identity = await Identity.create();
   cloudNode.datastoreCore.options.cloudAdminIdentities = [identity.bech32];
 
-  await expect(client.download(manifest.versionHash)).rejects.toThrowError(
+  await expect(client.download(manifest.versionHash)).rejects.toThrow(
     'Admin Identity does not have permissions',
   );
   await expect(client.download(manifest.versionHash, { identity })).resolves.toBeTruthy();

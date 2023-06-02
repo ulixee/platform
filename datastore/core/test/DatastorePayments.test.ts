@@ -116,10 +116,10 @@ test('should be able to run a datastore function with payments', async () => {
   expect(manifest.extractorsByName.putout.prices[0].perQuery).toBe(1250);
   await client.upload(await dbx.tarGzip());
 
-  await expect(client.query(manifest.versionHash, 'SELECT * FROM putout()')).rejects.toThrowError(
+  await expect(client.query(manifest.versionHash, 'SELECT * FROM putout()')).rejects.toThrow(
     'requires payment',
   );
-  await expect(client.stream(manifest.versionHash, 'putout', {})).rejects.toThrowError(
+  await expect(client.stream(manifest.versionHash, 'putout', {})).rejects.toThrow(
     'requires payment',
   );
   const sidechainClient = new SidechainClient('http://localhost:1337', {
@@ -203,7 +203,7 @@ test('should be able run a Datastore with Credits', async () => {
 
   await expect(
     client.query(manifest.versionHash, 'SELECT * FROM putout()', {}),
-  ).rejects.toThrowError('requires payment');
+  ).rejects.toThrow('requires payment');
 
   const credits = await client.createCredits(manifest.versionHash, 1001, adminIdentity);
   expect(credits).toEqual({
@@ -231,7 +231,7 @@ test('should be able run a Datastore with Credits', async () => {
 
   await expect(
     client.query(manifest.versionHash, 'SELECT * FROM putout()', { payment: { credits } }),
-  ).rejects.toThrowError('insufficient balance');
+  ).rejects.toThrow('insufficient balance');
 });
 
 test('should remove an empty Credits from the local cache', async () => {

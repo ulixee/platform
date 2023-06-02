@@ -119,7 +119,7 @@ test('should require uploaded datastores to have a storage engine endpoint if co
   expect(packager.manifest.storageEngineHost).not.toBeTruthy();
   const newClient = new DatastoreApiClient(await storageNode.address);
   Helpers.onClose(() => newClient.disconnect());
-  await expect(newClient.upload(await packager.dbx.tarGzip())).rejects.toThrowError(
+  await expect(newClient.upload(await packager.dbx.tarGzip())).rejects.toThrow(
     'storage engine host',
   );
 });

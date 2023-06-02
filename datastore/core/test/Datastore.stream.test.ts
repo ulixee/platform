@@ -86,7 +86,7 @@ test('should be able to require authentication for a streamed extractor', async 
   await packager.build();
   await client.upload(await packager.dbx.tarGzip());
   const auth = DatastoreApiClient.createExecAuthentication(null, id);
-  await expect(client.stream(packager.manifest.versionHash, 'authme', {})).rejects.toThrowError(
+  await expect(client.stream(packager.manifest.versionHash, 'authme', {})).rejects.toThrow(
     'authentication',
   );
 

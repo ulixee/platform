@@ -23,7 +23,7 @@ test('should be able to run a datastore extractor', async () => {
   const client = Client.forDatastore(localDatastore);
 
   // @ts-expect-error - must be a valid function
-  await expect(() => client.run('test1', {})).toThrowError();
+  await expect(() => client.run('test1', {})).toThrow();
   // @ts-expect-error
   await expect(client.run('test', { notValid: 1 })).rejects.toThrow('Extractor input');
 

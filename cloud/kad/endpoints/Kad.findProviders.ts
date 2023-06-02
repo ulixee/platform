@@ -16,7 +16,7 @@ export default new KadApiHandler('Kad.findProviders', {
     const localProviders = providers.getProviders(key);
     const providerPeers: INodeInfo[] = [];
     for (const nodeId of localProviders) {
-      // don't tell them about themself
+      // don't tell them about themselves
       if (nodeId === peerNodeInfo.nodeId) continue;
       const nodeInfo = peerStore.get(nodeId);
       if (nodeInfo) providerPeers.push(nodeInfo);

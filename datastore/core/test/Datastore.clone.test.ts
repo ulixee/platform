@@ -80,7 +80,7 @@ test('should be able to clone a datastore', async () => {
 
   await expect(
     client.stream(packager.manifest.versionHash, 'cloneUpstream', {}),
-  ).rejects.toThrowError('input');
+  ).rejects.toThrow('input');
 
   await expect(
     client.stream(packager.manifest.versionHash, 'cloneUpstream', {
