@@ -1,5 +1,5 @@
 import { IAsyncFunc } from '@ulixee/net/interfaces/IApiHandlers';
-import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
+import ITransport from '@ulixee/net/interfaces/ITransport';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import {
   DatastoreRegistryApiSchemas,
@@ -90,7 +90,7 @@ export default class HostedServicesEndpoints {
   }
 
   public addConnection(
-    transport: ITransportToClient<TServicesApis>,
+    transport: ITransport,
     context: IDatastoreApiContext,
   ): TConnectionToServicesClient {
     const connection = new ConnectionToClient(transport, this.handlersByCommand);

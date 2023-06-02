@@ -78,16 +78,18 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
       options?.createTemporaryVersionHash,
     );
 
-    rollup.events.on(
-      'change',
-      async ({ code, sourceMap }) =>
-        await this.generateDetails(
-          code,
-          sourceMap,
-          options?.createNewVersionHistory,
-          options?.createTemporaryVersionHash,
-        ),
-    );
+    if (options?.watch) {
+      rollup.events.on(
+        'change',
+        async ({ code, sourceMap }) =>
+          await this.generateDetails(
+            code,
+            sourceMap,
+            options?.createNewVersionHistory,
+            options?.createTemporaryVersionHash,
+          ),
+      );
+    }
     return this.dbx;
   }
 

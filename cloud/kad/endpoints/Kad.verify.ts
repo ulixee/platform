@@ -8,6 +8,7 @@ export default new KadApiHandler('Kad.verify', {
     const presharedNonce = context.connection.presharedNonce;
     const connectingNodeId = context.connection.nodeInfo.nodeId;
     const thisNodeId = context.kad.nodeInfo.nodeId;
+
     const signatureMessage = sha256(
       `${[presharedNonce, context.connection.ourNonce, connectingNodeId, thisNodeId].join('_')}`,
     );

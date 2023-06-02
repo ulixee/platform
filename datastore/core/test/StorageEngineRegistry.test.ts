@@ -30,13 +30,13 @@ test('should run migrations on start', async () => {
   const client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect());
 
-  const path = Path.join(__dirname, 'datastores', 'migrator.ts');
+  const path = Path.join(__dirname, 'datastores', 'migrator.js');
   await Fs.promises.writeFile(
     path,
-    `import Datastore, { Table } from '@ulixee/datastore';
-import { boolean, string } from '@ulixee/schema';
+    `const { default: Datastore, Table } = require("@ulixee/datastore");
+const { boolean, string } = require("@ulixee/schema");
 
-export default new Datastore({
+module.exports = new Datastore({
   tables: {
    migrator: new Table({
     schema: {
@@ -56,7 +56,7 @@ export default new Datastore({
     'utf8',
   );
 
-  const packager = new DatastorePackager(`${__dirname}/datastores/migrator.ts`);
+  const packager = new DatastorePackager(path);
   await packager.build();
   await client.upload(await packager.dbx.tarGzip());
 
@@ -69,10 +69,10 @@ export default new Datastore({
 
   await Fs.promises.writeFile(
     path,
-    `import Datastore, { Table } from '@ulixee/datastore';
-import { boolean, string } from '@ulixee/schema';
+    `const { default: Datastore, Table } = require("@ulixee/datastore");
+const { boolean, string } = require("@ulixee/schema");
 
-export default new Datastore({
+module.exports = new Datastore({
   tables: {
    migrator: new Table({
     schema: {
@@ -110,11 +110,11 @@ export default new Datastore({
 test('should require uploaded datastores to have a storage engine endpoint if configured', async () => {
   // force cloud node to host
   const storageNode = await Helpers.createLocalNode({
-    datastoreConfiguration: { storageEngineHost: 'localhost:1818/notreal', datastoresDir },
+    datastoreConfiguration: { storageEngineHost: 'localhost:1811/notreal', datastoresDir },
   });
   Helpers.needsClosing.push(storageNode);
 
-  const packager = new DatastorePackager(`${__dirname}/datastores/remoteStorage.ts`);
+  const packager = new DatastorePackager(`${__dirname}/datastores/remoteStorage.js`);
   await packager.build();
   expect(packager.manifest.storageEngineHost).not.toBeTruthy();
   const newClient = new DatastoreApiClient(await storageNode.address);
@@ -154,7 +154,7 @@ test('should be able to use a remote storage engine endpoint', async () => {
       storageEngineHost: await storageHostNode.host,
     }),
   );
-  const packager = new DatastorePackager(`${__dirname}/datastores/remoteStorage.ts`);
+  const packager = new DatastorePackager(`${__dirname}/datastores/remoteStorage.js`);
   await packager.build();
   const client = new DatastoreApiClient(await clusterNode.host);
   Helpers.onClose(() => client.disconnect());
@@ -184,7 +184,7 @@ test('should not create a websocket connection to localhost if on same machine',
 
   const nodeRegistrySpy = jest.spyOn(node.datastoreCore.storageEngineRegistry, 'get');
 
-  const packager = new DatastorePackager(`${__dirname}/datastores/remoteStorage.ts`);
+  const packager = new DatastorePackager(`${__dirname}/datastores/remoteStorage.js`);
   await packager.build();
 
   await Fs.promises.writeFile(
@@ -217,21 +217,17 @@ test('should not install storage engine when downloading from cluster', async ()
   const datastoreRegistryHost = await Helpers.createLocalNode({
     datastoreConfiguration: {
       datastoresDir: Path.join(datastoresDir, 'registry-node'),
-      storageEngineHost: 'localhost:18181',
+      storageEngineHost: 'localhost:1819',
     },
-    listenOptions: {
-      hostedServicesPort: 0
-    }
+    hostedServicesServerOptions: { port: 0 },
   });
   // force cloud node to host
   const storageHostNode = await Helpers.createLocalNode({
-    listenOptions: {
-      publicPort: 18181,
-    },
+    port: 1819,
     datastoreConfiguration: {
       datastoresDir: Path.join(datastoresDir, 'storage-node'),
       datastoreRegistryHost: await datastoreRegistryHost.hostedServicesServer.host,
-      storageEngineHost: 'localhost:18181',
+      storageEngineHost: 'self',
     },
   });
 
@@ -260,12 +256,14 @@ test('should not install storage engine when downloading from cluster', async ()
       storageEngineHost: await storageHostNode.host,
     }),
   );
-  const packager = new DatastorePackager(`${__dirname}/datastores/remoteStorage.ts`);
+  const packager = new DatastorePackager(`${__dirname}/datastores/remoteStorage.js`);
   await packager.build();
 
   const datastoreRegistryHostClient = new DatastoreApiClient(await datastoreRegistryHost.host);
   Helpers.onClose(() => datastoreRegistryHostClient.disconnect());
-  await expect(datastoreRegistryHostClient.upload(await packager.dbx.tarGzip())).resolves.toBeTruthy();
+  await expect(
+    datastoreRegistryHostClient.upload(await packager.dbx.tarGzip()),
+  ).resolves.toBeTruthy();
 
   expect(storageNodeRegistrySpy).toHaveBeenCalledTimes(1);
   expect(storageNodeRegistrySpy.mock.results[0].value).toBeInstanceOf(SqliteStorageEngine);

@@ -1,7 +1,7 @@
 import SqliteTable from '@ulixee/commons/lib/SqliteTable';
 import { Database as SqliteDatabase } from 'better-sqlite3';
 
-export default class PeersTable extends SqliteTable<IProvidersRecord> {
+export default class ProvidersTable extends SqliteTable<IProvidersRecord> {
   constructor(db: SqliteDatabase) {
     super(
       db as any,
@@ -28,7 +28,7 @@ export default class PeersTable extends SqliteTable<IProvidersRecord> {
       .run({ providerNodeId, key, timestamp });
   }
 
-  public getProviders(key: Buffer): IProvidersRecord[] {
+  public getWithKey(key: Buffer): IProvidersRecord[] {
     return this.db
       .prepare(`select * from ${this.tableName} where key=$key`)
       .all({ key }) as IProvidersRecord[];

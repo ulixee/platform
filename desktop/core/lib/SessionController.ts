@@ -2,14 +2,12 @@ import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Log from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import SourceLoader from '@ulixee/commons/lib/SourceLoader';
 import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
-import IDatastoreCollectedAssets from '@ulixee/desktop-interfaces/IDatastoreCollectedAssets';
-import { ISelectorMap } from '@ulixee/desktop-interfaces/ISelectorMap';
 import { IChromeAliveSessionApis } from '@ulixee/desktop-interfaces/apis';
 import IChromeAliveSessionApi, {
   ISessionResumeArgs,
@@ -19,6 +17,8 @@ import IDatastoreCollectedAssetEvent from '@ulixee/desktop-interfaces/events/IDa
 import IDatastoreOutputEvent from '@ulixee/desktop-interfaces/events/IDatastoreOutputEvent';
 import IHeroSessionUpdatedEvent from '@ulixee/desktop-interfaces/events/IHeroSessionUpdatedEvent';
 import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';
+import IDatastoreCollectedAssets from '@ulixee/desktop-interfaces/IDatastoreCollectedAssets';
+import { ISelectorMap } from '@ulixee/desktop-interfaces/ISelectorMap';
 import { Session as HeroSession, Tab } from '@ulixee/hero-core';
 import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import DetachedAssets from '@ulixee/hero-core/lib/DetachedAssets';
@@ -35,21 +35,21 @@ import TimelineWatch from '@ulixee/hero-timetravel/lib/TimelineWatch';
 import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
 import TimetravelTicks, { ITabDetails } from '@ulixee/hero-timetravel/player/TimetravelTicks';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
-import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
+import ITransport from '@ulixee/net/interfaces/ITransport';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import { LoadStatus } from '@ulixee/unblocked-specification/agent/browser/Location';
 import IResourceMeta from '@ulixee/unblocked-specification/agent/net/IResourceMeta';
 import { spawn } from 'child_process';
 import * as Fs from 'fs';
 import { IncomingMessage } from 'http';
+import DevtoolsBackdoorModule from './app-extension-modules/DevtoolsBackdoorModule';
+import ElementsModule from './app-extension-modules/ElementsModule';
 import AppDevtoolsConnection from './AppDevtoolsConnection';
 import ChromeAliveWindowController from './ChromeAliveWindowController';
 import OutputRebuilder from './OutputRebuilder';
 import SelectorRecommendations from './SelectorRecommendations';
 import SessionResourcesWatch from './SessionResourcesWatch';
 import SourceCodeTimeline from './SourceCodeTimeline';
-import DevtoolsBackdoorModule from './app-extension-modules/DevtoolsBackdoorModule';
-import ElementsModule from './app-extension-modules/ElementsModule';
 
 const { log } = Log(module);
 
@@ -81,7 +81,7 @@ export default class SessionController extends TypedEventEmitter<{
 
   public mirrorPagePauseRefreshing = false;
   public chromeAliveWindowController: ChromeAliveWindowController;
-  public replayTransport: ITransportToClient<any>;
+  public replayTransport: ITransport;
 
   private selectorRecommendations: SelectorRecommendations;
   private timelineWatch: TimelineWatch;
@@ -278,7 +278,7 @@ export default class SessionController extends TypedEventEmitter<{
   }
 
   public addConnection(
-    transport: ITransportToClient<any>,
+    transport: ITransport,
     request: IncomingMessage,
   ): TConnectionToChromeAliveSessionClient {
     if (request.url.includes('/devtools')) {

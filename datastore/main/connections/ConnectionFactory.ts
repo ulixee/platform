@@ -51,7 +51,7 @@ npx @ulixee/cloud start
       }
     };
 
-    connection.connect(true).then(onError).catch(onError);
+    connection.connect(true).catch(onError);
     const closeFn = (): Promise<any> => connection.disconnect();
     ShutdownHandler.register(closeFn);
     connection.once('disconnected', () => ShutdownHandler.unregister(closeFn));

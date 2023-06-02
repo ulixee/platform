@@ -25,7 +25,7 @@ export default function cliCommands(): Command {
     .addOption(
       program
         .createOption(
-          '-h, --hostname <host>',
+          '-h, --hostname <hostname>',
           'The hostname the Cloud node should listen on. (default: localhost)',
         )
         .env('ULX_HOSTNAME'),
@@ -41,7 +41,7 @@ export default function cliCommands(): Command {
     .addOption(
       program
         .createOption(
-          '--hosted-services-hostname <host>',
+          '--hosted-services-hostname <hostname>',
           'The ip or host that Cluster Services should listed on. You should make this a private-to-your-cloud ip if possible. (default: localhost)',
         )
         .env('ULX_HOSTED_SERVICES_HOSTNAME'),
@@ -49,18 +49,24 @@ export default function cliCommands(): Command {
     .addOption(
       program
         .createOption(
-          '-s, --setup-host <number>',
+          '--setup-host <host>',
           'Setup services for this node with another node in your cluster. NOTE: this should be the hosted services address of your cluster node.',
         )
         .env('ULX_SERVICES_SETUP_HOST'),
     )
+    .addOption(program.createOption('--env <path>', 'Load environment settings from a .env file.'))
     .addOption(
-      program.createOption('-e, --env <file>', 'Load environment settings from a .env file.'),
+      program
+        .createOption(
+          '--network-identity-path <path>',
+          'Filesystem path to your network identity keypair',
+        )
+        .env('ULX_NETWORK_IDENTITY_PATH'),
     )
     .addOption(
       program
         .createOption(
-          '-a, --admin-identities',
+          '--admin-identities <ids...>',
           'Your admin identity public ids (starting with id1)',
         )
         .env('ULX_CLOUD_ADMIN_IDENTITIES'),
@@ -68,7 +74,7 @@ export default function cliCommands(): Command {
     .addOption(
       program
         .createOption(
-          '-x, --disable-chrome-alive',
+          '--disable-chrome-alive',
           'Do not enable ChromeAlive! even if installed locally.',
         )
         .argParser(parseEnvBool)
@@ -77,7 +83,7 @@ export default function cliCommands(): Command {
     .addOption(
       program
         .createOption(
-          '-m, --max-concurrent-heroes <count>',
+          '--max-concurrent-heroes <count>',
           'Max number of concurrent Datastores/Heroes to run at a time.',
         )
         .argParser(parseInt)
@@ -86,21 +92,21 @@ export default function cliCommands(): Command {
     .addOption(
       program
         .createOption(
-          '-r, --max-datastore-runtime-ms <millis>',
+          '--max-datastore-runtime-ms <millis>',
           'Max runtime allowed for a Datastore to complete. (default: 10 mins)',
         )
         .argParser(parseInt),
     )
     .addOption(
       program.createOption(
-        '-u, --unblocked-plugins <plugins...>',
+        '--unblocked-plugins <plugins...>',
         'Register default Unblocked Plugin npm module names for all Hero instances to load.',
       ),
     )
     .addOption(
       program
         .createOption(
-          '-d, --hero-data-dir <dir>',
+          '--hero-data-dir <dir>',
           'Override the default data directory for Hero sessions and dbs.',
         )
         .env('ULX_DATA_DIR'),
@@ -108,21 +114,21 @@ export default function cliCommands(): Command {
     .addOption(
       program
         .createOption(
-          '-s, --datastore-storage-dir <dir>',
+          '--datastore-storage-dir <dir>',
           'Override the default storage directory where Datastores are located.',
         )
         .env('ULX_DATASTORE_DIR'),
     )
     .addOption(
       program.createOption(
-        '-t, --datastore-tmp-dir <dir>',
+        '--datastore-tmp-dir <dir>',
         'Override the default temp directory where uploaded Datastores are processed.',
       ),
     )
     .addOption(
       program
         .createOption(
-          '-w, --datastore-wait-for-completion',
+          '--datastore-wait-for-completion',
           'Wait for all in-process Datastores to complete before shutting down the Cloud node.',
         )
         .default(false),
@@ -145,32 +151,35 @@ export default function cliCommands(): Command {
       if (disableChromeAlive) CloudNodeEnv.disableChromeAlive = disableChromeAlive;
 
       const { unblockedPlugins, heroDataDir, maxConcurrentHeroes } = opts;
-      const cloudNode = new CloudNode({
-        listenOptions: {
-          publicPort: port,
-          publicHostname: hostname,
-          hostedServicesHostname,
-          hostedServicesPort,
-        },
-        servicesSetupHost: setupHost,
-        heroConfiguration: filterUndefined({
-          maxConcurrentClientCount: maxConcurrentHeroes,
-          dataDir: heroDataDir,
-          defaultUnblockedPlugins: unblockedPlugins?.map(x => {
-            // eslint-disable-next-line import/no-dynamic-require
-            const mod: any = require(x);
-            if (mod.default) return mod.default;
-            return mod;
+
+      const cloudNode = new CloudNode(
+        filterUndefined({
+          port,
+          host: hostname,
+          hostedServicesServerOptions:
+            !!hostedServicesHostname || hostedServicesPort !== undefined
+              ? { port: hostedServicesPort, host: hostedServicesHostname }
+              : undefined,
+          servicesSetupHost: setupHost,
+          heroConfiguration: filterUndefined({
+            maxConcurrentClientCount: maxConcurrentHeroes,
+            dataDir: heroDataDir,
+            defaultUnblockedPlugins: unblockedPlugins?.map(x => {
+              // eslint-disable-next-line import/no-dynamic-require
+              const mod: any = require(x);
+              if (mod.default) return mod.default;
+              return mod;
+            }),
+          }),
+          datastoreConfiguration: filterUndefined({
+            datastoresDir: opts.datastoreStorageDir,
+            datastoresTmpDir: opts.datastoreTmpDir,
+            maxRuntimeMs: opts.maxDatastoreRuntimeMs,
+            waitForDatastoreCompletionOnShutdown: opts.datastoreWaitForCompletion,
+            adminIdentities: parseIdentities(opts.adminIdentities, 'Admin Identities'),
           }),
         }),
-        datastoreConfiguration: filterUndefined({
-          datastoresDir: opts.datastoreStorageDir,
-          datastoresTmpDir: opts.datastoreTmpDir,
-          maxRuntimeMs: opts.maxDatastoreRuntimeMs,
-          waitForDatastoreCompletionOnShutdown: opts.datastoreWaitForCompletion,
-          adminIdentities: parseIdentities(opts.adminIdentities, 'Admin Identities'),
-        }),
-      });
+      );
       await cloudNode.listen();
       console.log('Ulixee Cloud listening at %s', await cloudNode.address);
     });

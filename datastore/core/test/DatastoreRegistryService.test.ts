@@ -1,6 +1,5 @@
 import { CloudNode } from '@ulixee/cloud';
 import DatastorePackager from '@ulixee/datastore-packager';
-import Kad from '@ulixee/kad';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import * as Fs from 'fs';
@@ -22,9 +21,7 @@ beforeAll(async () => {
       datastoreConfiguration: {
         datastoresDir: Path.join(storageDir, 'with-services'),
       },
-      listenOptions: {
-        hostedServicesHostname: 'localhost',
-      },
+      hostedServicesServerOptions: { port: 0 },
       kadEnabled: true,
     },
     true,

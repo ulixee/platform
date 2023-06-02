@@ -6,13 +6,12 @@ import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import Ed25519 from '@ulixee/crypto/lib/Ed25519';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
-import IDatastoreEvents from '@ulixee/datastore/interfaces/IDatastoreEvents';
 import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 import { ConnectionToCore } from '@ulixee/net';
-import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
+import ITransport from '@ulixee/net/interfaces/ITransport';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
-import { IDatastoreApis, IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
+import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import { IServicesSetupApiTypes } from '@ulixee/platform-specification/services/SetupApis';
 import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreVersionHashValidation';
 import IKad from '@ulixee/platform-specification/types/IKad';
@@ -35,7 +34,6 @@ import DatastoresList from './endpoints/Datastores.list';
 import DocpageRoutes from './endpoints/DocpageRoutes';
 import HostedServicesEndpoints, {
   TConnectionToServicesClient,
-  TServicesApis,
 } from './endpoints/HostedServicesEndpoints';
 import env from './env';
 import IDatastoreApiContext from './interfaces/IDatastoreApiContext';
@@ -146,9 +144,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
       }
   }
 
-  public addConnection(
-    transport: ITransportToClient<IDatastoreApis, IDatastoreEvents>,
-  ): IDatastoreConnectionToClient {
+  public addConnection(transport: ITransport): IDatastoreConnectionToClient {
     const context = this.getApiContext(transport.remoteId);
     const connection: IDatastoreConnectionToClient = this.apiRegistry.createConnection(
       transport,
@@ -171,9 +167,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
     return connection;
   }
 
-  public addHostedServicesConnection(
-    transport: ITransportToClient<TServicesApis, {}>,
-  ): TConnectionToServicesClient {
+  public addHostedServicesConnection(transport: ITransport): TConnectionToServicesClient {
     if (!this.hostedServicesEndpoints) {
       throw new Error('This CloudNode has not been configured to provide Services services.');
     }

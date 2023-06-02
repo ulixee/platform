@@ -2,6 +2,7 @@ import Logger from '@ulixee/commons/lib/Logger';
 import LruCache from '@ulixee/commons/lib/LruCache';
 import Queue from '@ulixee/commons/lib/Queue';
 import KadDb from '../db/KadDb';
+import IKadOptions from '../interfaces/IKadOptions';
 import NodeId from '../interfaces/NodeId';
 import {
   PROVIDERS_CLEANUP_INTERVAL,
@@ -11,18 +12,6 @@ import {
 import type { Kad } from './Kad';
 
 const { log } = Logger(module);
-
-export interface IProvidersInit {
-  cacheSize?: number;
-  /**
-   * How often invalid records are cleaned. (in seconds)
-   */
-  cleanupInterval?: number;
-  /**
-   * How long is a provider valid for. (in seconds)
-   */
-  provideValidity?: number;
-}
 
 /**
  * This class manages known providers.
@@ -45,7 +34,7 @@ export class Providers {
   private cleaner?: NodeJS.Timer;
   private onExpiredFns: ((event: { key: Buffer; providerNodeId: string }) => Promise<any>)[] = [];
 
-  constructor(private kad: Pick<Kad, 'db'>, init: IProvidersInit = {}) {
+  constructor(private kad: Pick<Kad, 'db'>, init: IKadOptions['providers'] = {}) {
     const { cacheSize, cleanupInterval, provideValidity } = init;
 
     this.cleanupInterval = cleanupInterval ?? PROVIDERS_CLEANUP_INTERVAL;
@@ -199,7 +188,7 @@ export class Providers {
 
 function loadProviders(db: KadDb, key: Buffer): Map<string, Date> {
   const providers = new Map<string, Date>();
-  const query = db.providers.getProviders(key);
+  const query = db.providers.getWithKey(key);
 
   for (const { providerNodeId, expirationTimestamp } of query) {
     providers.set(providerNodeId, new Date(expirationTimestamp));

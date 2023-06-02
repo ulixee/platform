@@ -1,30 +1,22 @@
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
+import { first } from '@ulixee/commons/lib/asyncUtils';
 import { bufferToBigInt } from '@ulixee/commons/lib/bufferUtils';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import Identity from '@ulixee/crypto/lib/Identity';
-import type ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
-import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
-import { IKadApis } from '@ulixee/platform-specification/cloud/KadApis';
+import type ITransport from '@ulixee/net/interfaces/ITransport';
 import IKad, { IKadConfig, IKadEvents } from '@ulixee/platform-specification/types/IKad';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
-import { first } from '@ulixee/commons/lib/asyncUtils';
 import KadDb from '../db/KadDb';
-import KadProvide from '../endpoints/Kad.provide';
-import KadConnect from '../endpoints/Kad.connect';
-import KadFindNode from '../endpoints/Kad.findNode';
-import KadGetProviders from '../endpoints/Kad.getProviders';
-import KadPing from '../endpoints/Kad.ping';
-import KadVerify from '../endpoints/Kad.verify';
-import IKadApiContext from '../interfaces/IKadApiContext';
 import NodeId from '../interfaces/NodeId';
+import IKadOptions from '../interfaces/IKadOptions';
 import ConnectionToKadClient from './ConnectionToKadClient';
 import { ContentRouting } from './ContentRouting';
 import { Network } from './Network';
 import { PeerRouting } from './PeerRouting';
 import { PeerStore } from './PeerStore';
-import { IProvidersInit, Providers } from './Providers';
+import { Providers } from './Providers';
 import { QueryManager } from './QueryManager';
 import { QuerySelf } from './QuerySelf';
 import { RoutingTable } from './RoutingTable';
@@ -67,14 +59,6 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
   private readonly kBucketSize: number;
   private closeAbortController = new AbortController();
   private readonly routingTableRefresh: RoutingTableRefresh;
-  private apiHandlers = new ApiRegistry<IKadApiContext>([
-    KadProvide,
-    KadConnect,
-    KadFindNode,
-    KadGetProviders,
-    KadPing,
-    KadVerify,
-  ]);
 
   constructor(private init: IKadOptions & IKadConfig) {
     super();
@@ -112,6 +96,7 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
     this.db = new KadDb(dbPath);
     this.peerStore = new PeerStore(this.db);
     this.peerStore.on('new', this.onPeer.bind(this));
+    this.peerStore.add(this.nodeInfo, true);
     this.providers = new Providers(this, providersInit ?? {});
     this.providers.onExpire(this.onProvideExpired);
 
@@ -130,7 +115,6 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
     this.queryManager = new QueryManager(this, {
       // Number of disjoint query paths to use - This is set to `kBucketSize/2` per the S/Kademlia paper
       disjointPaths: Math.ceil(this.kBucketSize / 2),
-      lan: false,
       initialQuerySelfHasRun,
       routingTable: this.routingTable,
     });
@@ -146,27 +130,8 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
     });
   }
 
-  public async addConnection(transport: ITransportToClient<any>): Promise<ConnectionToKadClient> {
-    const connection = new ConnectionToKadClient(
-      transport,
-      this.apiHandlers.handlersByCommand as IKadApis,
-    );
-    const logger = this.logger.createChild(module, { remoteId: transport.remoteId });
-    connection.on('response', ({ response, request, metadata }) => {
-      logger.info(`kad/${request.command} (${request.messageId})`, {
-        args: request.args?.[0],
-        response: response.data,
-        ...metadata,
-      });
-    });
-    connection.handlerMetadata = {
-      connection,
-      kad: this,
-      logger,
-    };
-
-    await this.network.addConnectionToClient(connection);
-    return connection;
+  public async addConnection(transport: ITransport): Promise<ConnectionToKadClient> {
+    return await this.network.addConnectionToClient(transport);
   }
 
   ensureNetworkConnected(): Promise<void> {
@@ -200,7 +165,8 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
     if (this.init.boostrapList) {
       for (const bootstrap of this.init.boostrapList) {
         const [host, id] = bootstrap.split('/');
-        await this.network.dial(host, id);
+        if (id) await this.network.dial(host, id);
+        else await this.network.blindDial(host);
       }
     }
 
@@ -237,7 +203,10 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
   }
 
   public getKnownNodes(maxNodes = 25): (INodeInfo & { lastSeenDate: Date })[] {
-    return this.peerStore.all(true).slice(0, maxNodes);
+    return this.peerStore
+      .all(true)
+      .filter(x => x.nodeId !== this.nodeId)
+      .slice(0, maxNodes);
   }
 
   /**
@@ -352,49 +321,4 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
     this.connectedToNodesPromise.resolve();
     this.emit('peer-connected', { node: nodeInfo });
   }
-}
-
-export interface IKadOptions {
-  /**
-   * How many peers to store in each kBucket (default 20)
-   */
-  kBucketSize?: number;
-
-  /**
-   * How often to query our own NodeId in order to ensure we have a
-   * good view on the KAD address space local to our NodeId
-   */
-  querySelfInterval?: number;
-
-  /**
-   * During startup we run the self-query at a shorter interval to ensure
-   * the containing node can respond to queries quickly. Set this interval
-   * here in ms (default: 1000)
-   */
-  initialQuerySelfInterval?: number;
-
-  /**
-   * After startup by default all queries will be paused until the initial
-   * self-query has run and there are some peers in the routing table.
-   *
-   * Pass true here to disable this behaviour. (default: false)
-   */
-  allowQueryWithZeroPeers?: boolean;
-
-  /**
-   * How long to wait in ms when pinging DHT peers to decide if they
-   * should be evicted from the routing table or not (default 10000)
-   */
-  pingTimeout?: number;
-
-  /**
-   * How many peers to ping in parallel when deciding if they should
-   * be evicted from the routing table or not (default 10)
-   */
-  pingConcurrency?: number;
-
-  /**
-   * Initialization options for the Providers component
-   */
-  providers?: IProvidersInit;
 }

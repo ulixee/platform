@@ -6,5 +6,8 @@
   "license": "MIT",
   "dependencies": {
     "@ulixee/specification": "2.0.0-alpha.21"
+  },
+  "devDependencies": {
+    "@ulixee/net": "2.0.0-alpha.21"
   }
 }

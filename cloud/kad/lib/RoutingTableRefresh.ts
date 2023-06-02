@@ -28,7 +28,7 @@ export interface RoutingTableRefreshInit {
  * retrieval for peers.
  */
 export class RoutingTableRefresh {
-  private readonly log: IBoundLog;
+  private readonly logger: IBoundLog;
   private readonly peerRouting: PeerRouting;
   private readonly routingTable: RoutingTable;
   private readonly refreshInterval: number;
@@ -37,7 +37,7 @@ export class RoutingTableRefresh {
   private refreshTimeoutId?: NodeJS.Timer;
 
   constructor(kad: Kad) {
-    this.log = Logger(module).log;
+    this.logger = Logger(module).log;
     this.peerRouting = kad.peerRouting;
     this.routingTable = kad.routingTable;
     this.refreshInterval = TABLE_REFRESH_INTERVAL;
@@ -48,7 +48,7 @@ export class RoutingTableRefresh {
   }
 
   async start(): Promise<void> {
-    this.log.info(`RoutingTableRefresh.start()`, { refreshInterval: this.refreshInterval });
+    this.logger.info(`RoutingTableRefresh.start()`, { refreshInterval: this.refreshInterval });
     this.refreshTable(true);
   }
 
@@ -67,7 +67,7 @@ export class RoutingTableRefresh {
   refreshTable(force = false): void {
     const prefixLength = this.maxCommonPrefix();
     const refreshCpls = this.getTrackedCommonPrefixLengthsForRefresh(prefixLength);
-    const parentLogId = this.log.info('refreshTable.Starting', {
+    const parentLogId = this.logger.info('refreshTable.Starting', {
       maxCommonPrefixLength: prefixLength,
       refreshDateByPrefixLength: refreshCpls,
     });
@@ -94,10 +94,11 @@ export class RoutingTableRefresh {
           if (
             error.code === 'ERR_QUERY_ABORTED' ||
             error.code === 'ABORT_ERR' ||
+            error.code === 'ERR_DB_CLOSED' ||
             error instanceof CanceledPromiseError
           )
             return;
-          this.log.error('refreshCommonPrefixLength.base', { error });
+          this.logger.error('refreshCommonPrefixLength.base', { error });
         }
 
         if (this.numPeersForCpl(prefixLength) === 0) {
@@ -110,18 +111,19 @@ export class RoutingTableRefresh {
               if (
                 error.code === 'ERR_QUERY_ABORTED' ||
                 error.code === 'ABORT_ERR' ||
+                error.code === 'ERR_DB_CLOSED' ||
                 error instanceof CanceledPromiseError
               )
                 return;
 
-              this.log.error(`refreshCommonPrefixLength(${n})`, { error });
+              this.logger.error(`refreshCommonPrefixLength(${n})`, { error });
             }
           }
         }
       }),
     ).finally(() => {
       this.refreshTimeoutId = setTimeout(this.refreshTable, this.refreshInterval).unref();
-      this.log.stats('refreshTable.Done', { parentLogId });
+      this.logger.stats('refreshTable.Done', { parentLogId });
     });
   }
 
@@ -137,7 +139,7 @@ export class RoutingTableRefresh {
     // gen a key for the query to refresh the cpl
     const nodeId = await this.generateRandomNodeId(commonPrefixLength);
 
-    const parentLogId = this.log.info(`refreshCommonPrefixLength:before`, {
+    const parentLogId = this.logger.info(`refreshCommonPrefixLength:before`, {
       imaginaryPeer: nodeId,
       commonPrefixLength,
       routingTableSize: this.routingTable.size,
@@ -149,7 +151,7 @@ export class RoutingTableRefresh {
       }),
     );
 
-    this.log.stats(`refreshCommonPrefixLength:after`, {
+    this.logger.stats(`refreshCommonPrefixLength:after`, {
       imaginaryPeer: nodeId,
       closestPeers: peers,
       commonPrefixLength,

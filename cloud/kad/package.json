@@ -1,7 +1,7 @@
 {
   "name": "@ulixee/kad",
   "version": "2.0.0-alpha.21",
-  "description": "Ulixee implementation of S/Kadmelia for peer discovery.",
+  "description": "Ulixee implementation of S/Kademlia for peer discovery.",
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.21",
     "@ulixee/crypto": "2.0.0-alpha.21",

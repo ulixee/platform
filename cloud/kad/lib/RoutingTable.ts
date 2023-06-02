@@ -42,7 +42,7 @@ export class RoutingTable {
   public kb?: KBucketTree = null;
   public pingQueue: Queue;
 
-  private readonly log: IBoundLog;
+  private readonly logger: IBoundLog;
   private readonly pingTimeout: number;
   private readonly pingConcurrency: number;
   private running: boolean;
@@ -56,7 +56,7 @@ export class RoutingTable {
   ) {
     const { kBucketSize, pingTimeout, pingConcurrency, tagName, tagValue } = init;
 
-    this.log = Logger(module).log;
+    this.logger = Logger(module).log;
     this.kBucketSize = kBucketSize ?? KBUCKET_SIZE;
     this.pingTimeout = pingTimeout ?? PING_TIMEOUT;
     this.pingConcurrency = pingConcurrency ?? PING_CONCURRENCY;
@@ -134,7 +134,7 @@ export class RoutingTable {
 
     this.kb.add({ id, nodeId, vectorClock: Date.now() });
 
-    this.log.info('RoutingTable.add', { nodeId });
+    this.logger.info('RoutingTable.add', { nodeId });
   }
 
   /**
@@ -200,9 +200,10 @@ export class RoutingTable {
       await Promise.allSettled(
         oldContacts.map(async oldContact => {
           if (!this.running) return;
+          if (oldContact.nodeId === this.kad.nodeInfo.nodeId) return;
 
           try {
-            this.log.info('RoutingTable.ping', { nodeId: oldContact.nodeId });
+            this.logger.info('RoutingTable.ping', { nodeId: oldContact.nodeId });
             const nodeInfo = this.kad.peerStore.get(oldContact.nodeId);
             await this.kad.network.sendRequest(nodeInfo, 'Kad.ping', undefined, {
               signal: Signals.timeout(this.pingTimeout),
@@ -213,6 +214,7 @@ export class RoutingTable {
               !this.running &&
               (error.code === 'ERR_QUERY_ABORTED' ||
                 error.code === 'ABORT_ERR' ||
+                error.code === 'ERR_DB_CLOSED' ||
                 error instanceof CanceledPromiseError)
             ) {
               return;
@@ -220,7 +222,7 @@ export class RoutingTable {
             if (this.running && this.kb) {
               // only evict peers if we are still running, otherwise we evict when dialing is
               // cancelled due to shutdown in progress
-              this.log.warn('RoutingTable.ping - could not ping peer. Evicting.', {
+              this.logger.warn('RoutingTable.ping - could not ping peer. Evicting.', {
                 nodeId: oldContact.nodeId,
                 error,
               });
@@ -231,7 +233,7 @@ export class RoutingTable {
       );
 
       if (this.running && responded < oldContacts.length && this.kb) {
-        this.log.info('RoutingTable.afterPing - newContact', { nodeId: newContact.nodeId });
+        this.logger.info('RoutingTable.afterPing - newContact', { nodeId: newContact.nodeId });
         this.kb.add(newContact);
       }
     });

@@ -146,7 +146,7 @@ export default class ApiManager<
       adminIdentity = this.localUserProfile.defaultAdminIdentity.bech32;
       this.localCloud ??= new CloudNode({
         shouldShutdownOnSignals: false,
-        listenOptions: { publicHostname: 'localhost' },
+        host: 'localhost',
         datastoreConfiguration: {
           cloudAdminIdentities: [adminIdentity],
         },

@@ -2,7 +2,7 @@ import { Serializable } from 'child_process';
 import { IChromeAliveSessionApis, IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
-import ITransportToCore from '@ulixee/net/interfaces/ITransportToCore';
+import ITransport from '@ulixee/net/interfaces/ITransport';
 import ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
 import ICoreRequestPayload from '@ulixee/net/interfaces/ICoreRequestPayload';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
@@ -16,7 +16,7 @@ export default class ApiClient<
 > extends TypedEventEmitter<{ close: void }> {
   public isConnected = false;
   public address: string;
-  public readonly transport: ITransportToCore;
+  public readonly transport: ITransport;
   private connection: ConnectionToCore<TApis, TEvents>;
 
   constructor(

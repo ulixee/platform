@@ -11,9 +11,7 @@ test('should dial the node registry on start', async () => {
   const node1 = await Helpers.createLocalNode({
     datastoreConfiguration: { datastoresDir: Path.join(datastoresDir, '1') },
     nodeRegistryHost: 'self',
-    listenOptions: {
-      hostedServicesPort: 0,
-    },
+    hostedServicesServerOptions: { port: 0 },
   });
   const node2 = await Helpers.createLocalNode({
     datastoreConfiguration: { datastoresDir: Path.join(datastoresDir, '2') },

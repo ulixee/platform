@@ -29,9 +29,7 @@ test('should get hero sessions from the registry', async () => {
     heroConfiguration: {
       dataDir: Path.join(datastoresDir, '1', 'hero'),
     },
-    listenOptions: {
-      hostedServicesPort: 0,
-    },
+    hostedServicesServerOptions: { port: 0 },
   });
   const heroPluginCore = getPlugin(storageNode);
   const storageStoreSpy = jest.spyOn(heroPluginCore.replayRegistry.replayStorageRegistry, 'store');

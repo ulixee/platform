@@ -379,9 +379,10 @@ export default class DatastoreApiClient {
     return this.connectionToCore.sendRequest({ command, args: [args] as any }, timeoutMs);
   }
 
-  protected onEvent<T extends keyof IDatastoreEvents>(
-    event: ICoreEventPayload<IDatastoreEvents, T>,
-  ): void {
+  protected onEvent<T extends keyof IDatastoreEvents>(evt: {
+    event: ICoreEventPayload<IDatastoreEvents, T>;
+  }): void {
+    const { event } = evt;
     if (event.eventType === 'Stream.output') {
       const data = event.data as IDatastoreEvents['Stream.output'];
       this.activeStreamByQueryId.get(event.listenerId)?.push(data);

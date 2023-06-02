@@ -14,10 +14,10 @@ import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
 import { ConnectionToCore } from '@ulixee/net';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
-import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
+import ITransport from '@ulixee/net/interfaces/ITransport';
 import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
-import { ICloudApiTypes, ICloudApis } from '@ulixee/platform-specification/cloud';
+import { ICloudApis, ICloudApiTypes } from '@ulixee/platform-specification/cloud';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import { IncomingMessage } from 'http';
 import { nanoid } from 'nanoid';
@@ -81,7 +81,7 @@ export default class DesktopCore {
   }
 
   public async addChromeAliveConnection(
-    transport: ITransportToClient<IChromeAliveSessionApis>,
+    transport: ITransport,
     request: IncomingMessage,
   ): Promise<IConnectionToClient<IChromeAliveSessionApis, IChromeAliveSessionEvents>> {
     const chromeAliveMatch = request.url.match(/\/chromealive\/([0-9a-zA-Z-_]{6,21}).*/);
@@ -95,7 +95,7 @@ export default class DesktopCore {
   }
 
   public addDesktopConnection(
-    transport: ITransportToClient<IDesktopAppApis>,
+    transport: ITransport,
     request: IncomingMessage,
   ): IConnectionToClient<IDesktopAppApis, IDesktopAppEvents> {
     const url = new URL(request.url, 'https://localhost');
@@ -113,7 +113,7 @@ export default class DesktopCore {
     log.info('Desktop app connected', { id, host, sessionId: null });
 
     // Desktop initiates a connection to Core. This Core could be remote or local.
-    const connection = new ConnectionToClient(transport, <IDesktopAppApis>{
+    const connection = new ConnectionToClient<IDesktopAppApis, IDesktopAppEvents>(transport, {
       'App.connect': this.onAppConnect.bind(this, id),
       'Sessions.search': this.heroSessionsSearch.search,
       'Sessions.list': this.heroSessionsSearch.list,
@@ -321,7 +321,7 @@ export default class DesktopCore {
 
   private async loadSessionController(
     heroSessionId: string,
-    transport: ITransportToClient<any>,
+    transport: ITransport,
     request: IncomingMessage,
   ): Promise<IConnectionToClient<any, any>> {
     const requestUrl = new URL(request.url, 'http://localhost');
@@ -362,7 +362,7 @@ export default class DesktopCore {
   }
 }
 type IWsHandleFn = (
-  wsOrTransport: WebSocket | ITransportToClient<any>,
+  wsOrTransport: WebSocket | ITransport,
   request: IncomingMessage,
   params: string[],
 ) => void;

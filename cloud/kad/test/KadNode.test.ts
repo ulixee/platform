@@ -5,6 +5,7 @@ import { Helpers } from '@ulixee/datastore-testing';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import * as Fs from 'fs';
 import * as Path from 'path';
+import ConnectionToKadCore from '../lib/ConnectionToKadCore';
 
 const dbFolder = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'KadNode.test');
 
@@ -31,10 +32,10 @@ test('should correctly register peers', async () => {
 });
 
 test('should provide and find providers', async () => {
-  const node1 = await startKadNode({ port: 3020 });
+  const connectSpy = jest.spyOn(ConnectionToKadCore.prototype, 'sendRequest');
+  const node1 = await startKadNode();
   const node2 = await startKadNode({
     boostrapList: [node1.kad.nodeHost],
-    port: 3021,
   });
 
   const key = sha256('test');
@@ -46,6 +47,13 @@ test('should provide and find providers', async () => {
   }
 
   expect(providerPeers).toHaveLength(1);
+
+  const commands = connectSpy.mock.calls.map(x => x[0].command);
+  // should re-use the initial connection for both directions
+  expect(commands.filter(x => x === 'Kad.connect')).toHaveLength(1);
+  expect(commands.filter(x => x === 'Kad.verify')).toHaveLength(1);
+  expect(commands.filter(x => x === 'Kad.provide')).toHaveLength(1);
+  expect(commands.filter(x => x === 'Kad.findProviders')).toHaveLength(1);
 });
 
 test('start and connect multiple nodes', async () => {
@@ -101,9 +109,11 @@ let counter = 0;
 async function startKadNode({
   boostrapList,
   port,
+  dontStart,
 }: {
   boostrapList?: string[];
   port?: number;
+  dontStart?: boolean;
 } = {}): Promise<CloudNode> {
   const dir = Path.join(dbFolder, String(++counter));
   Fs.mkdirSync(dir, { recursive: true });
@@ -113,8 +123,9 @@ async function startKadNode({
     networkIdentity: Identity.createSync(),
     kadBootstrapPeers: boostrapList,
     kadDbPath: Path.join(dir, 'kad.db'),
-    listenOptions: { publicPort: port },
+    port,
   });
   Helpers.needsClosing.push(node);
+  if (dontStart === true) return node;
   return await node.listen();
 }

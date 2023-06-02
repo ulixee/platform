@@ -3,20 +3,19 @@ import KadApiHandler from './KadApiHandler';
 export default new KadApiHandler('Kad.provide', {
   async handler({ key }, context) {
     const { connection, kad, logger } = context;
-    const nodeInfo = connection.nodeInfo;
+    const peerNodeInfo = connection.nodeInfo;
 
     logger.stats('Provider.received', {
       key,
-      kadHost: nodeInfo.kadHost,
-      providerNodeId: nodeInfo.nodeId,
+      kadHost: peerNodeInfo.kadHost,
+      providerNodeId: peerNodeInfo.nodeId,
     });
 
-    kad.providers.addProvider(key, nodeInfo.nodeId);
-    // don't send back the requestor
+    kad.providers.addProvider(key, peerNodeInfo.nodeId);
     const closerPeers = context.kad.peerRouting.getCloserPeersOffline(
       key,
       kad.nodeInfo.nodeId,
-      nodeInfo.nodeId,
+      peerNodeInfo.nodeId,
     );
 
     return {

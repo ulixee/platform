@@ -3,6 +3,8 @@ import { signatureValidation } from '@ulixee/specification/common';
 import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
 import { NodeInfoSchema } from '../types/INodeInfo';
 
+const KadKeySchema = z.instanceof(Buffer).refine(x => x.byteLength === 32, 'Key must be 32 bytes');
+
 export const KadApiSchemas = {
   'Kad.connect': {
     args: z.object({
@@ -13,7 +15,7 @@ export const KadApiSchemas = {
         .string()
         .length(18)
         .describe('A pre-sent nonce that this node should reply with.'),
-      connectToNodeId: z.string().describe('A nodeId to connect with.'),
+      connectToNodeId: z.string().optional().describe('A nodeId to connect with.'),
     }),
     result: z.object({
       nodeInfo: NodeInfoSchema.describe("This node's full node info."),
@@ -34,7 +36,7 @@ export const KadApiSchemas = {
   },
   'Kad.findNode': {
     args: z.object({
-      key: z.instanceof(Buffer).refine(x => x.length > 0, 'Key must have a length greater than 0'),
+      key: KadKeySchema,
     }),
     result: z.object({
       closerPeers: NodeInfoSchema.array(),
@@ -46,15 +48,15 @@ export const KadApiSchemas = {
   },
   'Kad.provide': {
     args: z.object({
-      key: z.instanceof(Buffer).refine(x => x.length > 0, 'Key must have a length greater than 0'),
+      key: KadKeySchema,
     }),
     result: z.object({
       closerPeers: NodeInfoSchema.array().describe('Peers closer to the provided value'),
     }),
   },
-  'Kad.getProviders': {
+  'Kad.findProviders': {
     args: z.object({
-      key: z.instanceof(Buffer).refine(x => x.length > 0, 'Key must have a length greater than 0'),
+      key: KadKeySchema,
     }),
     result: z.object({
       closerPeers: NodeInfoSchema.array().describe('Peers closer to a key in a query'),

@@ -5,8 +5,9 @@ import Resolvable from '@ulixee/commons/lib/Resolvable';
 import Identity from '@ulixee/crypto/lib/Identity';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import NodeId from '../interfaces/NodeId';
+import { PeerDistanceList } from '../lib/PeerDistanceList';
 import { PeerStore } from '../lib/PeerStore';
-import { IKadQueryFn, QueryManager, QueryManagerInit } from '../lib/QueryManager';
+import { IKadQueryFn, QueryManager, IQueryManagerInit } from '../lib/QueryManager';
 import { RoutingTable } from '../lib/RoutingTable';
 import { createNodeIds, delay, idBytes } from './_helpers';
 
@@ -565,23 +566,13 @@ function createPeerTopology(
 }
 
 function sortClosestPeers(peerNodeIds: NodeId[], kadId: Buffer): NodeId[] {
-  const distances = peerNodeIds.map(peer => {
-    const id = idBytes(peer);
-
-    return {
-      peer,
-      distance: xor(id, kadId),
-    };
-  });
-
-  const sorted = distances.sort((a, b) => {
-    return Buffer.compare(a.distance, b.distance);
-  });
-  return sorted.map(d => d.peer);
+  const peerList = new PeerDistanceList(kadId, Infinity);
+  for (const peer of peerNodeIds) peerList.add(peer);
+  return peerList.peers;
 }
 
-const defaultInit = (): QueryManagerInit => {
-  const init: QueryManagerInit = {
+const defaultInit = (): IQueryManagerInit => {
+  const init: IQueryManagerInit = {
     initialQuerySelfHasRun: new Resolvable<any>(),
     routingTable,
   };

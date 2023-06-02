@@ -1,18 +1,16 @@
 import Identity from '@ulixee/crypto/lib/Identity';
+import { ServerOptions } from 'https';
+import { ListenOptions } from 'node:net';
 
-export default interface ICloudConfiguration {
-  servicesSetupHost: string;
-  nodeRegistryHost: string | 'self';
+export default interface ICloudConfiguration extends ListenOptions, ServerOptions {
   cloudType: 'private' | 'public';
+
   kadBootstrapPeers: string[];
   kadEnabled: boolean;
   kadDbPath: string;
   networkIdentity?: Identity;
-  listenOptions?: {
-    publicPort?: string | number;
-    publicHostname?: string;
 
-    hostedServicesPort?: string | number;
-    hostedServicesHostname?: string;
-  };
+  nodeRegistryHost: string | 'self';
+  hostedServicesServerOptions?: ListenOptions & ServerOptions;
+  servicesSetupHost: string;
 }

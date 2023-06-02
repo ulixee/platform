@@ -6,12 +6,12 @@ import type { Kad } from './Kad';
 import type { Network } from './network';
 import type { PeerRouting } from './PeerRouting';
 import type { Providers } from './providers';
-import type { QueryManager, QueryOptions } from './QueryManager';
+import type { QueryManager, IQueryOptions } from './QueryManager';
 import type { RoutingTable } from './RoutingTable';
 
 const { log } = Logger(module);
 export class ContentRouting {
-  private readonly log: IBoundLog;
+  private readonly logger: IBoundLog;
   private readonly network: Network;
   private readonly peerRouting: PeerRouting;
   private readonly queryManager: QueryManager;
@@ -19,7 +19,7 @@ export class ContentRouting {
   private readonly providers: Providers;
 
   constructor(private readonly kad: Kad) {
-    this.log = log.createChild(module, {});
+    this.logger = log.createChild(module, {});
     this.network = kad.network;
     this.peerRouting = kad.peerRouting;
     this.queryManager = kad.queryManager;
@@ -33,9 +33,9 @@ export class ContentRouting {
    */
   async *provide(
     key: Buffer,
-    options: QueryOptions = {},
+    options: IQueryOptions = {},
   ): AsyncGenerator<{ notifiedPeer: NodeId }, void, undefined> {
-    this.log.info('ContentRouting.provide', { key });
+    this.logger.info('ContentRouting.provide', { key });
     // Add self as provider
     await this.providers.addProvider(key, this.kad.nodeInfo.nodeId);
 
@@ -45,7 +45,7 @@ export class ContentRouting {
       key,
       async ({ nodeInfo, signal }) => {
         const nodeId = nodeInfo.nodeId;
-        const parentLogId = this.log.info('ContentRouting.provide', { key, nodeId });
+        const parentLogId = this.logger.info('ContentRouting.provide', { key, nodeId });
         try {
           const result = await this.network.sendRequest(
             nodeInfo,
@@ -53,18 +53,23 @@ export class ContentRouting {
             { key },
             { signal },
           );
-          this.log.stats('ContentRouting.provided', { key, nodeId, parentLogId, sent });
+          this.logger.stats('ContentRouting.provided', { key, nodeId, parentLogId, sent });
           sent++;
           return result;
         } catch (error) {
-          this.log.error('ContentRouting.provideError', { nodeId, error, parentLogId, sent });
+          this.logger.error('ContentRouting.provideError', { nodeId, error, parentLogId, sent });
         }
       },
       options,
     );
 
-    for await (const peer of resultIterator) {
-      yield { notifiedPeer: peer.fromNodeId };
+    for await (const result of resultIterator) {
+      if (result.error) {
+        this.logger.info('Error in provide for node', result);
+        continue;
+      }
+
+      yield { notifiedPeer: result.fromNodeId };
     }
   }
 
@@ -73,11 +78,11 @@ export class ContentRouting {
    */
   async *findProviders(
     key: Buffer,
-    options: QueryOptions,
+    options: IQueryOptions,
   ): AsyncGenerator<{ fromNodeId: NodeId; providers: INodeInfo[] }> {
     const toFind = this.routingTable.kBucketSize;
 
-    const parentLogId = this.log.info('ContentRouting.findProviders:start', { key });
+    const parentLogId = this.logger.info('ContentRouting.findProviders:start', { key });
 
     const providerNodeIds = this.providers.getProviders(key);
 
@@ -90,6 +95,11 @@ export class ContentRouting {
         if (nodeInfo) providers.push(nodeInfo);
       }
 
+      this.logger.stats('ContentRouting.findProviders(local)', {
+        parentLogId,
+        providers: providers.length,
+        key,
+      });
       yield { fromNodeId: this.kad.nodeInfo.nodeId, providers };
     }
 
@@ -99,20 +109,21 @@ export class ContentRouting {
     }
 
     const providers = new Set(providerNodeIds);
+    const closerPeers = new Set<string>();
 
     for await (const result of this.queryManager.runOnClosestPeers(
       key,
       ({ nodeInfo, signal }) => {
-        return this.network.sendRequest(nodeInfo, 'Kad.getProviders', { key }, { signal });
+        return this.network.sendRequest(nodeInfo, 'Kad.findProviders', { key }, { signal });
       },
       options,
     )) {
-      this.log.stats('ContentRouting.findProviders', {
-        parentLogId,
-        providers: result.providerPeers.length,
-        key,
-        closerPeers: result.closerPeers.length,
-      });
+      if (result.error) {
+        this.logger.info('Error in findProviders for node', result);
+        continue;
+      }
+
+      for (const peer of result.closerPeers) closerPeers.add(peer.nodeId);
 
       const newProviders = [];
 
@@ -129,9 +140,16 @@ export class ContentRouting {
         yield { fromNodeId: result.fromNodeId, providers: newProviders };
       }
 
-      if (providers.size === toFind) {
-        return;
+      if (providers.size >= toFind) {
+        break;
       }
     }
+
+    this.logger.stats('ContentRouting.findProviders', {
+      parentLogId,
+      providers: providers.size,
+      key,
+      closerPeers: closerPeers.size,
+    });
   }
 }

@@ -5,7 +5,7 @@ import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/ID
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
 import { ConnectionToClient, ConnectionToCore, TransportBridge } from '@ulixee/net';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
-import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
+import ITransport from '@ulixee/net/interfaces/ITransport';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import WsTransportToClient from '@ulixee/net/lib/WsTransportToClient';
 import IServicesSetup from '@ulixee/platform-specification/types/IServicesSetup';
@@ -93,6 +93,15 @@ export default class CoreRouter {
       this.cloudNode.desktopCore.registerWsRoutes(this.addWsRoute.bind(this));
     }
 
+    if (this.cloudNode.kad) {
+      this.cloudNode.kad.on('duplex-created', ({ connectionToClient }) => {
+        if (!this.connections.has(connectionToClient)) {
+          this.connections.add(connectionToClient);
+          connectionToClient.once('disconnected', () => this.connections.delete(connectionToClient));
+        }
+      });
+    }
+
     // last option
     this.cloudNode.publicServer.addHttpRoute('/', 'GET', this.handleHome.bind(this));
   }
@@ -104,9 +113,7 @@ export default class CoreRouter {
     return this.isClosing;
   }
 
-  private addHostedServicesConnection(
-    transport: ITransportToClient<any>,
-  ): ConnectionToClient<any, any> {
+  private addHostedServicesConnection(transport: ITransport): ConnectionToClient<any, any> {
     const connection = this.cloudNode.datastoreCore.addHostedServicesConnection(transport);
     this.hostedServiceEndpoints?.attachToConnection(connection as any, this.getApiContext());
     return connection as any;
@@ -125,7 +132,7 @@ export default class CoreRouter {
   private addWsRoute(
     route: string | RegExp,
     callbackFn: (
-      wsOrTransport: ITransportToClient<any> | WebSocket,
+      wsOrTransport: ITransport | WebSocket,
       request: IncomingMessage,
       params: string[],
     ) => any,

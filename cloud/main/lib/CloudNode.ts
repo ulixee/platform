@@ -63,12 +63,15 @@ export default class CloudNode {
     kadBootstrapPeers: env.kadBootstrapPeers,
     servicesSetupHost: env.servicesSetupHost,
     networkIdentity: env.networkIdentity,
-    listenOptions: {
-      publicPort: env.publicPort,
-      publicHostname: env.publicHostname,
-      hostedServicesPort: env.hostedServicesPort,
-      hostedServicesHostname: env.hostedServicesHostname,
-    },
+    port: env.publicPort ? Number(env.publicPort) : undefined,
+    host: env.publicHostname,
+    hostedServicesServerOptions:
+      env.hostedServicesPort ?? env.hostedServicesHostname
+        ? {
+            port: env.hostedServicesPort ? Number(env.hostedServicesPort) : undefined,
+            host: env.hostedServicesHostname,
+          }
+        : null,
   };
 
   public get datastoreConfiguration(): IDatastoreCoreConfigureOptions {
@@ -119,9 +122,15 @@ export default class CloudNode {
       ...cloudConfiguration
     } = config;
 
-    const { listenOptions, ...other } = cloudConfiguration;
+    const { hostedServicesServerOptions, ...other } = cloudConfiguration;
     Object.assign(this.cloudConfiguration, other ?? {});
-    Object.assign(this.cloudConfiguration.listenOptions, listenOptions ?? {});
+    if (hostedServicesServerOptions) {
+      this.cloudConfiguration.hostedServicesServerOptions ??= {};
+      Object.assign(
+        this.cloudConfiguration.hostedServicesServerOptions,
+        hostedServicesServerOptions ?? {},
+      );
+    }
 
     this.router = new CoreRouter(this);
     this.datastoreCore = new DatastoreCore(
@@ -287,12 +296,8 @@ export default class CloudNode {
   }
 
   private async startPublicServer(): Promise<string> {
-    const { publicPort, publicHostname } = this.cloudConfiguration.listenOptions;
+    const listenOptions = this.cloudConfiguration;
 
-    const listenOptions = {
-      port: publicPort ? Number(publicPort) : undefined,
-      host: publicHostname,
-    };
     this.publicServer = new RoutableServer(this.isReady.promise, listenOptions.host);
     const isPortUnreserved = !listenOptions.port;
     if (isPortUnreserved && !isTestEnv) {
@@ -314,13 +319,8 @@ export default class CloudNode {
   }
 
   private async startHostedServices(): Promise<void> {
-    const { hostedServicesPort, hostedServicesHostname } = this.cloudConfiguration.listenOptions;
-    if (!hostedServicesPort && hostedServicesPort !== 0 && !hostedServicesHostname) return;
-
-    const listenOptions = {
-      port: hostedServicesPort ? Number(hostedServicesPort) : undefined,
-      host: hostedServicesHostname,
-    };
+    const listenOptions = this.cloudConfiguration.hostedServicesServerOptions;
+    if (!listenOptions) return;
 
     this.hostedServicesServer = new RoutableServer(this.isReady.promise, listenOptions.host);
     if (!listenOptions.port && !isTestEnv) {

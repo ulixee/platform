@@ -1,6 +1,6 @@
 import { IDatastoreApis } from '@ulixee/platform-specification/datastore';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
-import ITransportToCore from '@ulixee/net/interfaces/ITransportToCore';
+import ITransport from '@ulixee/net/interfaces/ITransport';
 import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 
 interface IConnectionToCoreOptions {
@@ -10,7 +10,7 @@ interface IConnectionToCoreOptions {
 export default class ConnectionToDatastoreCore extends ConnectionToCore<IDatastoreApis, {}> {
   public options: IConnectionToCoreOptions;
 
-  constructor(transport: ITransportToCore<any, any>, options?: IConnectionToCoreOptions) {
+  constructor(transport: ITransport, options?: IConnectionToCoreOptions) {
     super(transport);
     this.options = options ?? {};
   }

@@ -25,7 +25,6 @@ export default class DatastoreRegistryNetworkStore implements IDatastoreRegistry
       timeout: 30e3,
     })) {
       if (node.kadHost === this.kad.nodeInfo.kadHost || node.nodeId === this.kad.nodeInfo.nodeId) {
-        console.warn('self found, skipping', node, this.kad.nodeInfo);
         continue;
       }
       const client = this.datastoreApiClients.get(node.apiHost);
@@ -69,6 +68,6 @@ export default class DatastoreRegistryNetworkStore implements IDatastoreRegistry
   }
 
   public static createNetworkKey(versionHash: string): Buffer {
-    return sha256(Buffer.from(`/datastore/${versionHash}`));
+    return sha256(`/datastore/${versionHash}`);
   }
 }

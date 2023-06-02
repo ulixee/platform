@@ -15,36 +15,16 @@ import { ALPHA, DEFAULT_QUERY_TIMEOUT, K } from './constants';
 import type { Kad } from './Kad';
 import type { RoutingTable } from './RoutingTable';
 
-export interface ICleanUpEvents {
-  cleanup: void;
-}
 const MAX_XOR = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
+const log = Logger(module).log;
 
-export interface QueryManagerInit {
-  lan?: boolean;
+export interface IQueryManagerInit {
   disjointPaths?: number;
   alpha?: number;
   initialQuerySelfHasRun: Resolvable<void>;
   routingTable: RoutingTable;
 }
 
-export interface QueryOptions {
-  queryTimeout?: number;
-  isSelfQuery?: boolean;
-  signal?: AbortSignal;
-}
-
-interface IQueryContext {
-  key: Buffer;
-  nodeInfo: INodeInfo;
-  signal: AbortSignal;
-}
-
-export interface IKadQueryFn<T extends { closerPeers?: INodeInfo[] }> {
-  (context: IQueryContext): Promise<T>;
-}
-
-const logger = Logger(module).log;
 /**
  * Keeps track of all running queries
  */
@@ -59,7 +39,7 @@ export class QueryManager {
   private readonly routingTable: RoutingTable;
   private initialQuerySelfHasRun: Resolvable<void>;
 
-  constructor(private readonly kad: Pick<Kad, 'nodeId' | 'peerStore'>, init: QueryManagerInit) {
+  constructor(private readonly kad: Pick<Kad, 'nodeId' | 'peerStore'>, init: IQueryManagerInit) {
     const { disjointPaths = K, alpha = ALPHA } = init;
 
     this.disjointPaths = disjointPaths ?? K;
@@ -92,7 +72,7 @@ export class QueryManager {
   async *runOnClosestPeers<T extends { closerPeers?: INodeInfo[] } = { closerPeers?: INodeInfo[] }>(
     key: Buffer,
     queryFunc: IKadQueryFn<T>,
-    options: QueryOptions = {},
+    options: IQueryOptions = {},
   ): AsyncGenerator<T & { fromNodeId: NodeId; error?: Error }> {
     if (!this.running) {
       throw new Error('QueryManager not started');
@@ -111,14 +91,13 @@ export class QueryManager {
 
     this.queryIdCounter++;
     const queryId = this.queryIdCounter;
-    const log = logger.createChild(module, { key, queryId });
+    const logger = log.createChild(module, { key, queryId });
 
     // query a subset of peers up to `kBucketSize / 2` in length
-    const cleanUp = new TypedEventEmitter<ICleanUpEvents>();
-    const parentLogId = log.stats('Query:start');
+    const parentLogId = logger.stats('Query:start');
 
     if (options.isSelfQuery !== true && !this.initialQuerySelfHasRun.isResolved) {
-      log.stats('Query:waitFor(query-self)', options);
+      logger.stats('Query:waitFor(query-self)', options);
 
       await Promise.race([
         new Promise((_resolve, reject) => {
@@ -130,6 +109,7 @@ export class QueryManager {
       ]);
     }
 
+    const cleanUp = new TypedEventEmitter<ICleanUpEvents>();
     try {
       this.activeQueries++;
 
@@ -138,7 +118,7 @@ export class QueryManager {
       const peersToQuery = peers.slice(0, Math.min(this.disjointPaths, peers.length));
 
       if (peers.length === 0) {
-        log.error('Query:no-peers');
+        logger.error('Query:no-peers');
         return;
       }
 
@@ -155,7 +135,7 @@ export class QueryManager {
         queryTimeout: options.queryTimeout,
         cleanUp,
         isSelfQuery: false,
-        log,
+        logger: log,
         peersSeen,
         startStack: new Error('').stack.slice(8),
       };
@@ -176,7 +156,9 @@ export class QueryManager {
         // ignore all canceled errors.
       } else if (
         !this.running &&
-        (error.code === 'ERR_QUERY_ABORTED' || error.code === 'ABORT_ERR')
+        (error.code === 'ERR_QUERY_ABORTED' ||
+          error.code === 'ABORT_ERR' ||
+          error.code === 'ERR_DB_CLOSED')
       ) {
         // ignore query aborted errors that were thrown during query manager shutdown
       } else {
@@ -188,7 +170,7 @@ export class QueryManager {
       this.activeQueries--;
 
       cleanUp.emit('cleanup');
-      log.stats('Query:done', { parentLogId });
+      logger.stats('Query:done', { parentLogId });
     }
   }
 
@@ -200,7 +182,7 @@ export class QueryManager {
    * other path has passed through this peer
    */
   private queueQueryPeer(queue: Queue, peerNodeInfo: INodeInfo, options: IQueryPathOptions): void {
-    const { log, signal, query, key, peersSeen } = options;
+    const { logger, signal, query, key, peersSeen } = options;
     const peerNodeId = peerNodeInfo?.nodeId;
     if (!peerNodeInfo || peersSeen.has(peerNodeId) || peerNodeId === this.kad.nodeId) return;
 
@@ -228,7 +210,7 @@ export class QueryManager {
           // if there are closer peers and the query has not completed, continue the query
           for (const closerPeer of result.closerPeers ?? []) {
             if (options.peersSeen.has(closerPeer.nodeId)) {
-              log.stats('Query:alreadySeen', { nodeId: closerPeer.nodeId });
+              logger.stats('Query:alreadySeen', { nodeId: closerPeer.nodeId });
               continue;
             }
 
@@ -240,7 +222,7 @@ export class QueryManager {
             const closerPeerXor = bufferToBigInt(xor(closerPeerKadId, key));
             // only continue query if closer peer is actually closer
             if (closerPeerXor > peerXor) {
-              log.stats('Query:peerNotCloser', {
+              logger.stats('Query:peerNotCloser', {
                 closerPeer: closerPeer.nodeId,
                 closerPeerDistance: closerPeerXor,
                 nodeId: peerNodeId,
@@ -249,7 +231,7 @@ export class QueryManager {
               continue;
             }
 
-            log.stats('Query:queuePeer', { nodeId: closerPeer.nodeId });
+            logger.stats('Query:queuePeer', { nodeId: closerPeer.nodeId });
             this.queueQueryPeer(queue, closerPeer, options);
           }
           return { ...result, fromNodeId: peerNodeId };
@@ -264,45 +246,41 @@ export class QueryManager {
         // ignore discarded items
         if (error instanceof CanceledPromiseError) return;
         // ignore query aborted errors that were thrown during query manager shutdown
-        if (!this.running && (error.code === 'ERR_QUERY_ABORTED' || error.code === 'ABORT_ERR'))
+        if (
+          !this.running &&
+          (error.code === 'ERR_QUERY_ABORTED' ||
+            error.code === 'ABORT_ERR' ||
+            error.code === 'ERR_DB_CLOSED')
+        )
           return;
 
         error.stack += `\n  ${options.startStack}`;
-        log.error(`queueQueryPeer:Error`, { error });
+        logger.error(`queueQueryPeer:Error`, { error });
       });
   }
 }
 
+export interface IQueryOptions {
+  queryTimeout?: number;
+  isSelfQuery?: boolean;
+  signal?: AbortSignal;
+}
+
+export interface IKadQueryFn<T extends { closerPeers?: INodeInfo[] }> {
+  (context: { key: Buffer; nodeInfo: INodeInfo; signal: AbortSignal }): Promise<T>;
+}
+
+interface ICleanUpEvents {
+  cleanup: void;
+}
+
 interface IQueryPathOptions<T extends { closerPeers?: INodeInfo[] } = { closerPeers?: INodeInfo[] }>
-  extends QueryOptions {
-  /**
-   * What are we trying to find
-   */
+  extends IQueryOptions {
   key: Buffer;
-
-  /**
-   * When to stop querying
-   */
   signal: IClearableSignal;
-
-  /**
-   * The query function to run with each peer
-   */
   query: IKadQueryFn<T>;
-
-  /**
-   * will emit a 'cleanup' event if the caller exits the for..await of early
-   */
   cleanUp: TypedEventEmitter<ICleanUpEvents>;
-
-  /**
-   * Query log
-   */
-  log: IBoundLog;
-
-  /**
-   * Set of peers seen by this and other paths
-   */
+  logger: IBoundLog;
   peersSeen: Set<string>;
   startStack: string;
 }

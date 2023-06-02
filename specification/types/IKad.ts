@@ -1,5 +1,7 @@
 import type ITypedEventEmitter from '@ulixee/commons/interfaces/ITypedEventEmitter';
 import type Identity from '@ulixee/crypto/lib/Identity';
+import type { ConnectionToClient, ConnectionToCore } from '@ulixee/net';
+import { IKadApis } from '../cloud/KadApis';
 import INodeInfo from './INodeInfo';
 
 export default interface IKad extends ITypedEventEmitter<IKadEvents> {
@@ -15,7 +17,7 @@ export default interface IKad extends ITypedEventEmitter<IKadEvents> {
     key: Buffer,
     options?: { maxNumProviders?: number; timeout?: number; abort?: AbortSignal },
   ): AsyncGenerator<INodeInfo>;
-  getKnownNodes( maxNodes?: number): (INodeInfo & { lastSeenDate: Date })[];
+  getKnownNodes(maxNodes?: number): (INodeInfo & { lastSeenDate: Date })[];
   findClosestNodes(
     key: Buffer,
     options?: { maxPeers?: number; timeout?: number },
@@ -25,6 +27,10 @@ export default interface IKad extends ITypedEventEmitter<IKadEvents> {
 export interface IKadEvents {
   'provide-expired': { key: Buffer; providerNodeId: string };
   'peer-connected': { node: INodeInfo };
+  'duplex-created': {
+    connectionToClient: ConnectionToClient<IKadApis, {}>;
+    connectionToCore: ConnectionToCore<IKadApis, {}>;
+  };
 }
 
 export interface IKadConfig {

@@ -8,7 +8,7 @@ import NodeId from '../interfaces/NodeId';
 import type { Kad } from './Kad';
 import type { Network } from './network';
 import { PeerDistanceList } from './PeerDistanceList';
-import type { QueryManager, QueryOptions } from './QueryManager';
+import type { QueryManager, IQueryOptions } from './QueryManager';
 import type { RoutingTable } from './RoutingTable';
 
 const { log } = Logger(module);
@@ -38,7 +38,7 @@ export class PeerRouting {
    */
   async *findPeer(
     id: NodeId,
-    options: QueryOptions = {},
+    options: IQueryOptions = {},
   ): AsyncGenerator<{ fromNodeId: NodeId; nodeInfo: INodeInfo }> {
     this.logger.stats('findPeer', { nodeId: id });
 
@@ -70,6 +70,11 @@ export class PeerRouting {
       },
       options,
     )) {
+      if (result.error) {
+        this.logger.info('Error in findPeer for node', result);
+        continue;
+      }
+
       const match = result.closerPeers.find(p => p.nodeId === id);
 
       // found the peer
@@ -88,7 +93,7 @@ export class PeerRouting {
   /**
    * Kademlia 'node lookup' operation on a key, which should be a sha256 hash
    */
-  async *getClosestPeers(key: Buffer, options: QueryOptions = {}): AsyncGenerator<INodeInfo> {
+  async *getClosestPeers(key: Buffer, options: IQueryOptions = {}): AsyncGenerator<INodeInfo> {
     this.logger.stats('getClosestPeers', { key });
 
     const distanceList = new PeerDistanceList(key, this.routingTable.kBucketSize);
@@ -101,6 +106,10 @@ export class PeerRouting {
       },
       options,
     )) {
+      if (result.error) {
+        this.logger.info('Error in getClosestPeers for node', result);
+        continue;
+      }
       for (const peer of result.closerPeers) {
         if (peer.nodeId !== this.kad.nodeId) distanceList.add(peer.nodeId);
       }

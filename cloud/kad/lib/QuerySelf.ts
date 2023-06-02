@@ -26,7 +26,7 @@ const { log } = Logger(module);
  * Receives notifications of new peers joining the network that support the DHT protocol
  */
 export class QuerySelf {
-  private readonly log: IBoundLog;
+  private readonly logger: IBoundLog;
   private readonly count: number;
   private readonly interval: number;
   private readonly initialInterval: number;
@@ -40,7 +40,7 @@ export class QuerySelf {
   constructor(private readonly kad: Kad, init: IQuerySelfInit) {
     const { count, interval, queryTimeout } = init;
 
-    this.log = log.createChild(module);
+    this.logger = log.createChild(module);
     this.running = false;
     this.started = false;
     this.count = count ?? K;
@@ -90,7 +90,7 @@ export class QuerySelf {
         nextInterval = this.initialInterval;
       }
 
-      this.log.info('querySelf.skip - routingTableEmpty', { nextInterval });
+      this.logger.info('querySelf.skip - routingTableEmpty', { nextInterval });
       clearTimeout(this.timeoutId);
       this.timeoutId = setTimeout(this.querySelf, nextInterval);
       return;
@@ -102,7 +102,7 @@ export class QuerySelf {
     // this controller will get used for lots of dial attempts so make sure we don't cause warnings to be logged
     setMaxListeners(Infinity, signal);
 
-    const parentLogId = this.log.info(`querySelf.run(x/${this.count})`, {
+    const parentLogId = this.logger.info(`querySelf.run(x/${this.count})`, {
       searchForPeers: this.count,
       timeout: this.queryTimeout,
     });
@@ -123,7 +123,7 @@ export class QuerySelf {
           }
         }
 
-        this.log.stats(`querySelf.complete(${found}/${this.count})`, {
+        this.logger.stats(`querySelf.complete(${found}/${this.count})`, {
           peersFound: found,
           parentLogId,
         });
@@ -131,7 +131,7 @@ export class QuerySelf {
         this.initialQuerySelfHasRun?.resolve();
       } catch (error) {
         if (this.started) {
-          this.log.error('querySelf.error', { error, parentLogId });
+          this.logger.error('querySelf.error', { error, parentLogId });
         }
         // eslint-disable-next-line promise/always-return
       } finally {
@@ -141,7 +141,7 @@ export class QuerySelf {
         clearTimeout(this.timeoutId);
 
         if (this.started) {
-          this.log.stats('querySelf.nextRun', { millis: this.interval });
+          this.logger.stats('querySelf.nextRun', { millis: this.interval });
           this.timeoutId = setTimeout(this.querySelf, this.interval);
         }
       }

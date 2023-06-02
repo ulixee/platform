@@ -57,7 +57,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
   }
 
   private readonly stores: IDatastoreRegistryStore[] = [];
-  private log: IBoundLog;
+  private logger: IBoundLog;
 
   constructor(
     datastoreDir: string,
@@ -69,7 +69,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
   ) {
     super();
     bindFunctions(this);
-    this.log = log.createChild(module);
+    this.logger = log.createChild(module);
     this.diskStore = new DatastoreRegistryDiskStore(
       datastoreDir,
       !connectionToHostedServiceCore,
@@ -113,7 +113,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
           // must install into local disk store
           let runtime = await this.diskStore.getRuntime(versionHash);
           if (!runtime && service.source !== 'disk') {
-            this.log.info(`getByVersionHash:MissingRuntime`, {
+            this.logger.info(`getByVersionHash:MissingRuntime`, {
               versionHash,
               searchInService: service.source,
             });
@@ -130,7 +130,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
           Object.assign(manifestWithLatest, runtime);
           break;
         } catch (error) {
-          this.log.warn(`getByVersionHash:ErrorInstallingRuntime`, {
+          this.logger.warn(`getByVersionHash:ErrorInstallingRuntime`, {
             versionHash,
             searchInService: service.source,
             error,
