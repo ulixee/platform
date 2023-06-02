@@ -228,24 +228,25 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
   }
 
   // TODO: complete implementation
-  public async broadcast(_content: any): Promise<boolean> {
+  public async broadcast(_content: Buffer): Promise<boolean> {
+    // tree is initialized with a parent node (would be coded?)
     const rootNode = Identity.createSync().bech32;
-    // track "parent" nodes.
-    // tree is initialized with a parent nodes
-    const id = bufferToBigInt(this.nodeInfo.kadId);
-    const root = bufferToBigInt(nodeIdToKadId(rootNode));
+
+    const thisKadId = bufferToBigInt(this.nodeInfo.kadId);
+    const rootKadId = bufferToBigInt(nodeIdToKadId(rootNode));
     const m = 2n ** 256n; // 2 ^ bits
-    const k = BigInt(this.init.kBucketSize);
-    const rootDistance = (root - id) % m;
-    let parentId: BigInt;
+
+    const rootDistance = (rootKadId - thisKadId) % m;
+    const bucketSize = rootDistance / BigInt(this.init.kBucketSize);
+    let parentKadIdBig: BigInt;
     // on left of tree
     if (rootDistance > 0 && rootDistance <= m / 2n) {
-      parentId = (root + rootDistance / k) % m;
+      parentKadIdBig = (rootKadId + bucketSize) % m;
     } else {
-      parentId = (root - (m - rootDistance / k)) % m;
+      parentKadIdBig = (rootKadId - (m - bucketSize)) % m;
     }
-    const parentBytes = Buffer.from(parentId.toString(16), 'hex');
-    const _parent = await this.peerRouting.getClosestPeers(parentBytes);
+    const parentKadId = Buffer.from(parentKadIdBig.toString(16), 'hex');
+    const _parent = await this.peerRouting.getClosestPeers(parentKadId);
     // TODO: need to track as closer peers comes in and out. Registration process:
     // 1. send to parent that we are child
     // 2. parent keeps list of children

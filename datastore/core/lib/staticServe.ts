@@ -1,30 +1,30 @@
-import * as crypto from 'crypto';
-import * as fs from 'fs/promises';
-import * as http from 'http';
-import * as path from 'path';
+import * as Crypto from 'crypto';
+import * as Fs from 'fs/promises';
+import * as Http from 'http';
+import * as Path from 'path';
 
 export default function staticServe(
   staticDir: string,
   cacheTime = 3600,
-): (req: http.IncomingMessage, res: http.ServerResponse) => Promise<void> {
+): (req: Http.IncomingMessage, res: Http.ServerResponse) => Promise<void> {
   return async function handleStaticFileRequest(
-    req: http.IncomingMessage,
-    res: http.ServerResponse,
+    req: Http.IncomingMessage,
+    res: Http.ServerResponse,
   ) {
     if (req.url.startsWith('//')) req.url = req.url.slice(1);
     // strip off any query string
     const url = new URL(req.url, 'http://localhost');
-    let filePath = path.join(staticDir, url.pathname);
+    let filePath = Path.join(staticDir, url.pathname);
 
-    if (filePath.endsWith('/')) {
-      filePath = path.join(filePath, `index.html`);
+    if (filePath.endsWith(Path.sep)) {
+      filePath = Path.join(filePath, `index.html`);
     }
 
     try {
-      const stats = await fs.stat(filePath);
+      const stats = await Fs.stat(filePath);
       if (stats.isFile()) {
         // File found
-        const ext = path.extname(filePath);
+        const ext = Path.extname(filePath);
         let contentType = 'text/plain';
 
         switch (ext) {
@@ -55,8 +55,8 @@ export default function staticServe(
             break;
         }
 
-        const data = await fs.readFile(filePath);
-        const hash = crypto.createHash('md5').update(data).digest('hex');
+        const data = await Fs.readFile(filePath);
+        const hash = Crypto.createHash('md5').update(data).digest('hex');
         const etag = `"${hash}"`;
 
         if (req.headers['if-none-match'] === etag) {

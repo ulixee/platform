@@ -12,9 +12,9 @@ import * as http2 from 'http2';
 import * as https from 'https';
 import * as net from 'net';
 import * as Path from 'path';
-import Koa = require('koa');
-import KoaRouter = require('@koa/router');
 import KoaMulter = require('@koa/multer');
+import KoaRouter = require('@koa/router');
+import Koa = require('koa');
 
 const { log } = Logger(module);
 
@@ -52,10 +52,6 @@ export async function createLocalNode(
     await Fs.mkdir(datastoreConfig.datastoresDir, { recursive: true });
     await Fs.mkdir(datastoreConfig.datastoresTmpDir, { recursive: true });
   }
-  // needsClosing.push({
-  //   close: () => Fs.rm(datastoreConfig.datastoresDir, { recursive: true }).catch(() => null),
-  //   onlyCloseOnFinal,
-  // });
 
   const cloudNode = new CloudNode(config);
   onClose(() => cloudNode.close(), onlyCloseOnFinal);
