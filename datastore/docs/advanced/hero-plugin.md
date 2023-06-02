@@ -91,3 +91,7 @@ The HeroExtractorPlugin modifies the Extractor constructor with the following ch
 #### **Arguments**:
 
 - run: `function`(extractorContext): `Promise<any>`. Adds a Hero and HeroReplay constructor to the run function as per [above](#run-hero).
+
+## Hosted Services
+
+The HeroExtractorPlugin adds a "ReplayRegistry" to store sessions created by Datastore Queries so they can be replayed in a cluster environment. This is transparent to any work the user must perform.
