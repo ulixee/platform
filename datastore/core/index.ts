@@ -385,6 +385,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
       await this.storageEngineRegistry?.close();
 
       await this.datastoreApiClients?.close();
+      await this.statsTracker?.close();
 
       closingPromise.resolve();
     } catch (error) {

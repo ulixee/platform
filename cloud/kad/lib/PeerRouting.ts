@@ -115,7 +115,7 @@ export class PeerRouting {
       }
     }
 
-    this.logger.stats('getClosestPeers', { found: distanceList.length, key });
+    this.logger.stats('getClosestPeers:result', { found: distanceList.length, key });
 
     for (const nodeId of distanceList.peers) {
       const nodeInfo = this.kad.peerStore.get(nodeId);

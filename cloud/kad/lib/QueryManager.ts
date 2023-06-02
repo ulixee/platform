@@ -245,14 +245,7 @@ export class QueryManager {
       .catch(error => {
         // ignore discarded items
         if (error instanceof CanceledPromiseError) return;
-        // ignore query aborted errors that were thrown during query manager shutdown
-        if (
-          !this.running &&
-          (error.code === 'ERR_QUERY_ABORTED' ||
-            error.code === 'ABORT_ERR' ||
-            error.code === 'ERR_DB_CLOSED')
-        )
-          return;
+        if (!this.running || options.isSelfQuery) return;
 
         error.stack += `\n  ${options.startStack}`;
         logger.error(`queueQueryPeer:Error`, { error });

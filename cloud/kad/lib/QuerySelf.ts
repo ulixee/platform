@@ -129,7 +129,7 @@ export class QuerySelf {
 
         this.initialQuerySelfHasRun?.resolve();
       } catch (error) {
-        if (this.started) {
+        if (this.started && error.code !== 'ERR_QUERY_ABORTED') {
           this.logger.error('querySelf.error', { error, parentLogId });
         }
         // eslint-disable-next-line promise/always-return
