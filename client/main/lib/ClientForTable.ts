@@ -4,24 +4,28 @@ import { IOutputSchema } from '../interfaces/IInputOutput';
 
 export default class ClientForTable<TTable extends Table> {
   private table: TTable;
+  private readonly readyPromise: Promise<any>;
 
   constructor(table: TTable, options?: IDatastoreBinding) {
     this.table = table;
-    table.bind(options);
+    this.readyPromise = this.table.bind(options).catch(() => null);
   }
 
-  public fetch(inputFilter: Partial<TTable['schemaType']>): Promise<TTable['schemaType'][]> {
-    return this.table.fetchInternal({ input: inputFilter });
+  public async fetch(inputFilter: Partial<TTable['schemaType']>): Promise<TTable['schemaType'][]> {
+    await this.readyPromise;
+    return this.table.fetchInternal({ input: inputFilter } as any);
   }
 
-  public run(inputFilter?: Partial<TTable['schemaType']>): Promise<TTable['schemaType'][]> {
+  public async run(inputFilter?: Partial<TTable['schemaType']>): Promise<TTable['schemaType'][]> {
+    await this.readyPromise;
     return this.fetch(inputFilter);
   }
 
-  public query<TOutputSchema extends IOutputSchema = IOutputSchema>(
+  public async query<TOutputSchema extends IOutputSchema = IOutputSchema>(
     sql: string,
     boundValues: any[] = [],
   ): Promise<TOutputSchema[]> {
+    await this.readyPromise;
     return this.table.queryInternal(sql, boundValues);
   }
 }

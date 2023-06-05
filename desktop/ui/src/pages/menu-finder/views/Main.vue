@@ -8,18 +8,20 @@
         <div class="header-bar flex flex-none flex-row content-between justify-between p-3">
           <a
             href="javascript:void(0)"
-            class="icon ml-2 mt-2 mr-3 mt-1 inline-block h-6 justify-center align-middle"
+            class="icon ml-2 mt-2 mr-3 mt-1 inline-block h-6 justify-center align-middle no-drag"
             @click="hideMenu"
-          >X</a>
+            >X</a
+          >
           <img
             src="@/assets/icons/node_search_icon.svg"
-            class="icon ml-3 mr-2 mt-1 h-6 flex-none self-end"
+            class="icon ml-3 mr-2 mt-1 h-6 flex-none self-end no-drag cursor-pointer"
             @click="enableSelectMode"
           />
         </div>
         <div class="content mt-4 flex flex-1 flex-col overflow-y-auto overflow-x-hidden p-3">
-          <div v-if="selectedElement"
-               class="flex flex-none flex-row"
+          <div
+            v-if="selectedElement"
+            class="flex flex-none flex-row"
             @mouseenter="highlightNode(selectedElement)"
             @mouseleave="hideHighlight"
           >
@@ -60,7 +62,10 @@
             @mouseleave="hideHighlight"
           >
             <label class="mr-5 flex-none text-slate-600">Selected Element</label>
-            <img src="@/assets/icons/element.svg" class="icon mr-2 mt-1 h-4 flex-none align-middle" />
+            <img
+              src="@/assets/icons/element.svg"
+              class="icon mr-2 mt-1 h-4 flex-none align-middle"
+            />
 
             <div class="w-64 flex-initial truncate">
               {{ generateNodePreview(devtoolsElement) }}
@@ -73,11 +78,11 @@
 </template>
 
 <script lang="ts">
-import * as Vue from 'vue';
 import Client from '@/api/Client';
 import { CheckIcon, ChevronLeftIcon } from '@heroicons/vue/24/solid';
 import IElementSummary from '@ulixee/desktop-interfaces/IElementSummary';
 import { ISelectorMap } from '@ulixee/desktop-interfaces/ISelectorMap';
+import * as Vue from 'vue';
 
 function roundFloor(num: number): number {
   return Math.round(10 * num) / 10;
@@ -220,7 +225,6 @@ export default Vue.defineComponent({
         }),
       );
     },
-
   },
   mounted() {
     Client.on('Session.appMode', ev => {
@@ -262,7 +266,8 @@ export default Vue.defineComponent({
   height: calc(100% - 20px);
   -webkit-app-region: no-drag;
 }
-.content {
+.content,
+.no-drag {
   -webkit-app-region: no-drag;
 }
 

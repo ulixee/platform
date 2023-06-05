@@ -1,13 +1,24 @@
 import { astVisitor, IAstVisitor, IAstFullVisitor } from './astVisitor';
 import { NotSupported, ReplaceReturnType, NoExtraProperties } from './utils';
-import { IJoinClause, IQName, IQColumn, IName, IOrderByStatement, IArrayDataTypeDef, IDataTypeDef, IBasicDataTypeDef } from '../interfaces/ISqlNode';
+import {
+  IJoinClause,
+  IQName,
+  IQColumn,
+  IName,
+  IOrderByStatement,
+  IArrayDataTypeDef,
+  IDataTypeDef,
+  IBasicDataTypeDef,
+} from '../interfaces/ISqlNode';
 import pgEscape from './pgEscape';
 import { sqlKeywords } from './helpers/keywords';
 import INil from '../interfaces/INil';
 import IAstPartialMapper from '../interfaces/IAstPartialMapper';
 import AstDefaultMapper from './AstDefaultMapper';
 
-export type IAstToSql = { readonly [key in keyof IAstPartialMapper]-?: ReplaceReturnType<IAstPartialMapper[key], string> };
+export type IAstToSql = {
+  readonly [key in keyof IAstPartialMapper]-?: ReplaceReturnType<IAstPartialMapper[key], string>;
+};
 
 const kwSet = new Set(sqlKeywords.map(x => x.toLowerCase()));
 
@@ -45,7 +56,6 @@ function list<T>(elems: T[], act: (e: T) => any, addParen: boolean): void {
   }
 }
 
-
 function visitQualifiedName(cs: IQName, forceDoubleQuote?: boolean): void {
   if (cs.schema) {
     ret.push(ident(cs.schema), '.');
@@ -55,15 +65,19 @@ function visitQualifiedName(cs: IQName, forceDoubleQuote?: boolean): void {
 
 function visitOrderBy(m: IAstVisitor, orderBy: IOrderByStatement[]): void {
   ret.push(' ORDER BY ');
-  list(orderBy, e => {
-    m.expr(e.by);
-    if (e.order) {
-      ret.push(' ', e.order, ' ');
-    }
-    if (e.nulls) {
-      ret.push(' NULLS ', e.nulls, ' ');
-    }
-  }, false);
+  list(
+    orderBy,
+    e => {
+      m.expr(e.by);
+      if (e.order) {
+        ret.push(' ', e.order, ' ');
+      }
+      if (e.nulls) {
+        ret.push(' NULLS ', e.nulls, ' ');
+      }
+    },
+    false,
+  );
 }
 
 function visitQColumn(col: IQColumn): void {
@@ -92,7 +106,7 @@ function join(m: IAstVisitor, j: IJoinClause | INil, tbl: () => void): void {
   ret.push(' ');
 }
 
-function visitOp(v: { op: string; opSchema?: string; }): void {
+function visitOp(v: { op: string; opSchema?: string }): void {
   if (v.opSchema) {
     ret.push(' operator(', ident(v.opSchema), '.', v.op, ') ');
   } else {
@@ -101,33 +115,32 @@ function visitOp(v: { op: string; opSchema?: string; }): void {
 }
 
 const visitor = astVisitor<IAstFullVisitor>(m => ({
-
-  array: (v) => {
+  array: v => {
     ret.push(v.type === 'array' ? 'ARRAY[' : '(');
     list(v.expressions, e => m.expr(e), false);
     ret.push(v.type === 'array' ? ']' : ')');
   },
 
-  arrayIndex: (v) => {
+  arrayIndex: v => {
     m.expr(v.array);
     ret.push('[');
     m.expr(v.index);
     ret.push('] ');
   },
 
-  expr: (e) => {
+  expr: e => {
     if (e.type === 'ref') {
       m.ref(e);
       return;
     }
     // lists can become incorrect with an additional set of parentheses
-    if (e.type === 'list') {
+    if (e.type === 'list' || e.type === 'parameter') {
       m.super().expr(e);
       return;
     }
 
     // this forces to respect precedence
-    // (however, it will introduce lots of unecessary parenthesis)
+    // (however, it will introduce lots of unnecessary parenthesis)
     ret.push('(');
     m.super().expr(e);
     ret.push(')');
@@ -173,7 +186,24 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
     if (v.distinct) {
       ret.push(v.distinct, ' ');
     }
-    list(v.args, e => m.expr(e), false);
+    list(
+      v.args,
+      e => {
+        if (
+          e.type === 'integer' ||
+          e.type === 'string' ||
+          e.type === 'boolean' ||
+          e.type === 'numeric' ||
+          e.type === 'constant' ||
+          e.type === 'null'
+        )
+          return m.constant(e);
+        if (e.type === 'parameter') return m.parameter(e);
+        if (e.type === 'values') return m.values(e);
+        return m.expr(e);
+      },
+      false,
+    );
     if (v.orderBy) {
       visitOrderBy(m, v.orderBy);
     }
@@ -344,7 +374,6 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
   from: t => m.super().from(t),
 
   fromCall: s => {
-
     join(m, s.join, () => {
       m.call(s);
       if (s.withOrdinality) {
@@ -370,7 +399,6 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
   },
 
   fromStatement: s => {
-
     // todo: use 's.db' if defined
     join(m, s.join, () => {
       ret.push('(');
@@ -390,11 +418,19 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
 
   values: s => {
     ret.push('VALUES ');
-    list(s.values, vlist => {
-      list(vlist, e => {
-        m.expr(e);
-      }, true);
-    }, false);
+    list(
+      s.values,
+      vlist => {
+        list(
+          vlist,
+          e => {
+            m.expr(e);
+          },
+          true,
+        );
+      },
+      false,
+    );
   },
 
   fromTable: s => {
@@ -418,11 +454,7 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
     m.tableRef(i.into);
 
     if (i.columns) {
-      ret.push(
-        '('
-        , i.columns.map(name).join(', ')
-        , ')'
-      );
+      ret.push('(', i.columns.map(name).join(', '), ')');
     }
     ret.push(' ');
     if (i.overriding) {
@@ -445,9 +477,7 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
   member: e => {
     m.expr(e.operand);
     ret.push(e.op);
-    ret.push(typeof e.member === 'number'
-      ? e.member.toString(10)
-      : pgEscape(e.member));
+    ret.push(typeof e.member === 'number' ? e.member.toString(10) : pgEscape(e.member));
   },
 
   ref: r => {
@@ -459,6 +489,10 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
   },
 
   parameter: p => {
+    // NOTE: commented out because this isn't supported in Sqlite, but will be needed in Postgres
+    // if ('key' in p) {
+    //   ret.push(ident((p as any).key), ' => ');
+    // }
     ret.push(p.name);
   },
 
@@ -516,7 +550,6 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
       if (s.limit.offset) {
         ret.push(`OFFSET `);
         m.expr(s.limit.offset);
-
       }
       if (s.limit.limit) {
         ret.push(`LIMIT `);
@@ -549,7 +582,6 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
     ret.push(' ');
   },
 
-
   statement: s => m.super().statement(s),
 
   tableRef: r => {
@@ -559,7 +591,6 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
     }
     ret.push(' ');
   },
-
 
   ternary: t => {
     m.expr(t.value);
@@ -614,7 +645,6 @@ const visitor = astVisitor<IAstFullVisitor>(m => ({
       ret.push(' ');
     }
   },
-
 }));
 
 export const toSql = {} as IAstToSql;

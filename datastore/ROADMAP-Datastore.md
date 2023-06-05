@@ -16,7 +16,7 @@ When writing a number of Datastores inside the same Domain, it can be beneficial
 Each Domain comes with a documentation website containing pricing information, example usage and input/output details.
 
 ## 2.10 - Datastore Registry
-Datastores can be published to one or more centralized registries or marketplaces.
+- Datastores can be published to one or more centralized registries or marketplaces.
 
 ## 2.11 - Auto-generated Schemas
 - Auto-generate Schemas from Results

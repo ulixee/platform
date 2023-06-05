@@ -13,6 +13,7 @@
     "./package.json": "./package.json",
     "./lib/*": "./lib/*.js",
     "./cli/*": "./cli/*.js",
+    "./storage-engines/*": "./storage-engines/*.js",
     "./connections/*": "./connections/*.js",
     "./types/*": "./types/*",
     "./interfaces/*": "./interfaces/*"
@@ -27,7 +28,7 @@
     "@ulixee/specification": "2.0.0-alpha.21",
     "@ulixee/sql-ast": "2.0.0-alpha.21",
     "@ulixee/sql-engine": "2.0.0-alpha.21",
-    "better-sqlite3": "^8.3.0",
+    "better-sqlite3": "^8.4.0",
     "commander": "^9.3.0",
     "nanoid": "^3.3.6"
   },

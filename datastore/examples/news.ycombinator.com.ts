@@ -1,6 +1,6 @@
 // NOTE: you must start your own Ulixee Cloud to run this example.
 
-import { Extractor, HeroExtractorPlugin, Datastore } from '@ulixee/datastore-plugins-hero';
+import { Datastore, Extractor, HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 import { number, object, string } from '@ulixee/schema';
 
 export default new Datastore({
@@ -21,7 +21,7 @@ export default new Datastore({
             const extraElem = await story.nextElementSibling;
             const record = new Output();
 
-            const titleElem = story.querySelector('a.titlelink');
+            const titleElem = story.querySelector('.titleline > a');
 
             record.score = parseInt(
               await extraElem.querySelector('.score').textContent.catch(() => '0'),
@@ -43,7 +43,9 @@ export default new Datastore({
               : 0;
 
             lastStory = commentsLink;
-            record.url = await titleElem.getAttribute('href');
+            let url = await titleElem.getAttribute('href');
+            if (!url.includes('://')) url = new URL(url, 'https://news.ycombinator.com/').href;
+            record.url = url;
             record.emit();
           }
 

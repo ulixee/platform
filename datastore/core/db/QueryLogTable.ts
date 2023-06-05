@@ -6,7 +6,7 @@ import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
   constructor(db: SqliteDatabase) {
     super(
-      db,
+      db as any,
       'QueryLog',
       [
         ['id', 'TEXT', 'NOT NULL PRIMARY KEY'],
@@ -23,6 +23,8 @@ export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
         ['milliseconds', 'INTEGER'],
         ['microgons', 'INTEGER'],
         ['heroSessionIds', 'TEXT'],
+        ['cloudNodeHost', 'TEXT'],
+        ['cloudNodeIdentity', 'TEXT'],
       ],
       true,
     );
@@ -43,6 +45,8 @@ export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
     bytes: number,
     milliseconds: number,
     heroSessionIds: string[],
+    cloudNodeHost: string,
+    cloudNodeIdentity: string,
   ): void {
     microgons ??= 0;
 
@@ -61,6 +65,8 @@ export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
       milliseconds,
       microgons,
       heroSessionIds ? TypeSerializer.stringify(heroSessionIds) : undefined,
+      cloudNodeHost,
+      cloudNodeIdentity,
     ]);
   }
 }

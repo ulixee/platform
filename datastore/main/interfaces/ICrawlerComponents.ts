@@ -14,5 +14,6 @@ export default interface ICrawlerComponents<
   minimumPrice?: number;
   schema?: TSchema;
   disableCache?: TDisableCache;
+  backwardsCompatible?: boolean;
   run(context: TContext): Promise<{ toCrawlerOutput(): Promise<ICrawlerOutputSchema> }>;
 }

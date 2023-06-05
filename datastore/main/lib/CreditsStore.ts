@@ -1,9 +1,9 @@
 import { readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
-import { getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
+import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import { IPayment } from '@ulixee/platform-specification';
 
 export default class CreditsStore {
-  public static storePath = `${getCacheDirectory()}/ulixee/credits.json`;
+  public static storePath = `${getDataDirectory()}/ulixee/credits.json`;
 
   private static creditsByDatastore: Promise<ICreditsStore>;
 

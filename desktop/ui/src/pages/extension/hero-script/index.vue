@@ -1,22 +1,22 @@
 <template>
   <div class="flex h-screen flex-row divide-x divide-chrome pt-6">
-    <div class="controls fixed top-0 left-0 right-0 bg-chrome h-6">
-      <span class="inline-block p-1 mx-3">Playback script</span>
+    <div class="controls fixed top-0 left-0 right-0 h-6 bg-chrome">
+      <span class="mx-3 inline-block p-1">Playback script</span>
       <PlayIcon
         v-if="playback === 'manual'"
-        class="inline-block h-4 text-slate-800 hover:text-slate-1000"
+        class="hover:text-slate-1000 inline-block h-4 text-slate-800"
         @click.prevent="playScript"
       />
       <PauseIcon
         v-else
-        class="inline-block h-4 text-slate-800 hover:text-slate-1000"
+        class="hover:text-slate-1000 inline-block h-4 text-slate-800"
         @click.prevent="pauseScript"
       />
     </div>
     <div ref="scriptRef" class="basis-4/6 overflow-auto">
-      <h5>{{ activeFilename }}</h5>
+      <h5>{{ activeSource }}</h5>
       <div
-        v-for="(line, i) in activeFileLines"
+        v-for="(line, i) in activeSourceLines"
         :key="i"
         :ref="
           el => {
@@ -25,7 +25,7 @@
         "
         class="line"
         :class="getClassesForLineIndex(i)"
-        @click="clickLine(i + 1, activeFilename)"
+        @click="clickLine(i + 1, activeSource)"
       >
         <span class="line-number">{{ i + 1 }}.</span>
         <div class="inline-block h-4 w-4">
@@ -46,24 +46,20 @@
       </div>
     </div>
     <div class="basis-2/6 overflow-auto p-3">
-      <h5 class="text-base font-bold">
-        Raw Command
-      </h5>
+      <h5 class="text-base font-bold">Raw Command</h5>
       <ul v-if="focusedCommand" class="list-inside list-decimal p-2">
         {{
           focusedCommand.label
         }}
       </ul>
-      <h5 class="mt-2 text-base font-bold">
-        Result
-      </h5>
-      <hr>
+      <h5 class="mt-2 text-base font-bold">Result</h5>
+      <hr />
       <div v-if="focusedCommand" class="p-2">
         <img
           v-if="focusedCommand.resultType === 'image'"
           :src="focusedCommand.result"
           class="object-contain"
-        >
+        />
         <div v-else class="whitespace-pre">
           {{ focusedCommand.result }}
         </div>
@@ -73,15 +69,15 @@
 </template>
 
 <script lang="ts">
-import * as Vue from 'vue';
-import json5 from 'json5';
-import ICommandUpdatedEvent from '@ulixee/desktop-interfaces/events/ICommandUpdatedEvent';
+import { ExclamationTriangleIcon, PauseIcon, PlayIcon } from '@heroicons/vue/24/outline';
 import ICommandFocusedEvent from '@ulixee/desktop-interfaces/events/ICommandFocusedEvent';
-import ISourceCodeUpdatedEvent from '@ulixee/desktop-interfaces/events/ISourceCodeUpdatedEvent';
+import ICommandUpdatedEvent from '@ulixee/desktop-interfaces/events/ICommandUpdatedEvent';
 import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';
 import ISessionTimetravelEvent from '@ulixee/desktop-interfaces/events/ISessionTimetravelEvent';
+import ISourceCodeUpdatedEvent from '@ulixee/desktop-interfaces/events/ISourceCodeUpdatedEvent';
 import ICommandWithResult from '@ulixee/hero-core/interfaces/ICommandWithResult';
-import { ExclamationTriangleIcon, PauseIcon, PlayIcon } from '@heroicons/vue/24/outline';
+import json5 from 'json5';
+import * as Vue from 'vue';
 import Client from '../../../api/Client';
 
 export default Vue.defineComponent({
@@ -91,11 +87,11 @@ export default Vue.defineComponent({
     return {
       commandIdsByLineKey: {} as { [filename_line: string]: Set<number> },
       lineElemsByIdx: Vue.reactive<{ [index: number]: HTMLElement }>({}),
-      focusedPositions: Vue.reactive<{ line: number; filename: string }[]>([]),
+      focusedPositions: Vue.reactive<{ line: number; source: string }[]>([]),
       focusedCommandId: Vue.ref<number>(null),
       hasTrueFocus: Vue.ref<boolean>(false),
       scriptRef: Vue.ref<HTMLDivElement>(),
-      scriptsByFilename: Vue.reactive<Record<string, ISourceCodeUpdatedEvent['lines']>>({}),
+      sourceLinesByName: Vue.reactive<Record<string, ISourceCodeUpdatedEvent['lines']>>({}),
       commandsById: Vue.reactive<{ [commandId: number]: ICommandUpdatedEvent }>({}),
       scrollOnTimeout: -1,
       mode: Vue.ref<ISessionAppModeEvent['mode']>('Live'),
@@ -114,13 +110,13 @@ export default Vue.defineComponent({
     },
   },
   computed: {
-    activeFileLines(): string[] {
-      const filename = this.activeFilename;
-      if (!filename) return [];
-      return this.scriptsByFilename[filename] ?? [];
+    activeSourceLines(): string[] {
+      const source = this.activeSource;
+      if (!source) return [];
+      return this.sourceLinesByName[source] ?? [];
     },
-    activeFilename(): string {
-      return this.focusedPositions?.length ? this.focusedPositions[0].filename : null;
+    activeSource(): string {
+      return this.focusedPositions?.length ? this.focusedPositions[0].source : null;
     },
     focusedCommand(): ICommandWithResult {
       return this.commandsById[this.focusedCommandId]?.command;
@@ -147,9 +143,9 @@ export default Vue.defineComponent({
       return json5.stringify(json, null, 2);
     },
     getCallsForLine(line: number): { commandId: number; callInfo: string; active: boolean }[] {
-      const filename = this.activeFilename;
-      if (!filename) return [];
-      const commands = this.getCommandsAtPosition(line, filename);
+      const source = this.activeSource;
+      if (!source) return [];
+      const commands = this.getCommandsAtPosition(line, source);
       if (!commands?.length) return [];
       return commands.map((x, i) => {
         return {
@@ -167,31 +163,31 @@ export default Vue.defineComponent({
         commandId: this.focusedCommandId,
       }).catch(err => alert(err.message));
     },
-    clickLine(line: number, filename: string): Promise<void> {
-      const commandIds: Set<number> = this.commandIdsByLineKey[`${filename}_${line}`];
+    clickLine(line: number, source: string): Promise<void> {
+      const commandIds: Set<number> = this.commandIdsByLineKey[`${source}_${line}`];
       if (!commandIds?.size) return;
       Client.send('Session.timetravel', {
         commandId: [...commandIds][0],
       }).catch(err => alert(err.message));
     },
-    getCommandsAtPosition(line: number, filename: string): ICommandUpdatedEvent[] {
-      if (!filename || line === undefined || line === null) return [];
-      const commandIds: Set<number> = this.commandIdsByLineKey[`${filename}_${line}`];
+    getCommandsAtPosition(line: number, source: string): ICommandUpdatedEvent[] {
+      if (!source || line === undefined || line === null) return [];
+      const commandIds: Set<number> = this.commandIdsByLineKey[`${source}_${line}`];
       if (commandIds) {
         return [...commandIds].map(id => this.commandsById[id]).filter(Boolean);
       }
       return [];
     },
     lineHasError(index: number): boolean {
-      const commandsAtLine = this.getCommandsAtPosition(index + 1, this.activeFilename);
+      const commandsAtLine = this.getCommandsAtPosition(index + 1, this.activeSource);
       return commandsAtLine.some(x => x.command.resultType?.includes('Error'));
     },
     getClassesForLineIndex(index: number) {
-      const filename = this.activeFilename;
+      const source = this.activeSource;
       const active =
-        this.focusedPositions?.some(x => x.line === index + 1 && x.filename === filename) ?? false;
+        this.focusedPositions?.some(x => x.line === index + 1 && x.source === source) ?? false;
 
-      const commandsAtLine = this.getCommandsAtPosition(index + 1, this.activeFilename);
+      const commandsAtLine = this.getCommandsAtPosition(index + 1, this.activeSource);
       return {
         active,
         error: this.lineHasError(index),
@@ -202,7 +198,7 @@ export default Vue.defineComponent({
     onCommandUpdated(message: ICommandUpdatedEvent) {
       this.commandsById[message.command.id] = message;
       for (const position of message.originalSourcePosition ?? []) {
-        const key = `${position.filename}_${position.line}`;
+        const key = `${position.source}_${position.line}`;
         this.commandIdsByLineKey[key] ??= new Set();
         this.commandIdsByLineKey[key].add(message.command.id);
       }
@@ -219,9 +215,9 @@ export default Vue.defineComponent({
       this.setFocusedPositions(position);
     },
     onSourceCodeUpdated(message: ISourceCodeUpdatedEvent) {
-      this.scriptsByFilename[message.filename] = message.lines;
+      this.sourceLinesByName[message.source] = message.lines;
       if (!this.focusedPositions.length) {
-        this.focusedPositions.push({ filename: message.filename, line: 1 });
+        this.focusedPositions.push({ source: message.source, line: 1 });
       }
     },
 
@@ -234,8 +230,8 @@ export default Vue.defineComponent({
       for (const ev of Object.values(message.commandsById)) {
         this.onCommandUpdated(ev);
       }
-      for (const [filename, lines] of Object.entries(message.sourceFileLines)) {
-        this.onSourceCodeUpdated({ filename, lines });
+      for (const [source, lines] of Object.entries(message.sourceFileLines)) {
+        this.onSourceCodeUpdated({ source, lines });
       }
       if (message.focusedCommandId) {
         this.onCommandFocused({ commandId: message.focusedCommandId });
@@ -251,6 +247,12 @@ export default Vue.defineComponent({
 
     setFocusedPositions(positions: ICommandUpdatedEvent['originalSourcePosition']) {
       positions ??= [];
+      positions = positions.map(x => {
+        return {
+          ...x,
+          source: x.source ?? x.filename,
+        };
+      });
       this.focusedPositions.length = positions.length;
       Object.assign(this.focusedPositions, positions);
     },
@@ -317,10 +319,15 @@ h5 {
     pointer-events: initial;
     &.multi-call {
       .call-marker {
+        background-color: white;
         display: none;
         float: right;
+        margin-top: -3px;
+        margin-bottom: -3px;
+        z-index: 2;
+        padding: 2px 23px 2px 8px;
         font-size: 11px;
-        width: 60px;
+        min-width: 70px;
       }
       &:hover .call-marker {
         display: block;

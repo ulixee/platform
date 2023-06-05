@@ -1,4 +1,4 @@
-import { BrowserWindow, WebContents } from 'electron';
+import { BrowserWindow, WebContents, shell } from 'electron';
 import * as Path from 'path';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
@@ -70,6 +70,11 @@ export default class DesktopWindow extends TypedEventEmitter<{
     });
     this.#window.webContents.ipc.on('getPrivateApiHost', e => {
       e.returnValue = this.apiManager.privateDesktopWsServerAddress;
+    });
+
+    this.#window.webContents.setWindowOpenHandler(details => {
+      void shell.openExternal(details.url);
+      return { action: 'deny' };
     });
 
     this.#events.on(this.#window.webContents, 'context-menu', (e, params) => {

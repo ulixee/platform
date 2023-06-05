@@ -1,19 +1,20 @@
-import * as Fs from 'fs';
-import * as Path from 'path';
+import { CloudNode } from '@ulixee/cloud';
+import { Crawler } from '@ulixee/datastore';
 import DatastorePackager from '@ulixee/datastore-packager';
 import { Helpers } from '@ulixee/datastore-testing';
-import { CloudNode } from '@ulixee/cloud';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { Crawler } from '@ulixee/datastore';
+import * as Fs from 'fs';
 import { nanoid } from 'nanoid';
+import * as Path from 'path';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
-import DatastoreCore from '../index';
+import StatsTracker from '../lib/StatsTracker';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Crawler.test');
 
 let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 let registry: DatastoreRegistry;
+let statsTracker: StatsTracker;
 const findCachedSpy = jest.spyOn<any, any>(Crawler.prototype, 'findCached');
 
 beforeAll(async () => {
@@ -22,13 +23,13 @@ beforeAll(async () => {
   }
 
   cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
+  cloudNode.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
   await cloudNode.listen();
-  // @ts-expect-error
-  registry = DatastoreCore.datastoreRegistry;
+  registry = cloudNode.datastoreCore.datastoreRegistry;
+  statsTracker = cloudNode.datastoreCore.statsTracker;
   client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 });
@@ -53,12 +54,11 @@ test('should be able to run a crawler', async () => {
   await expect(
     client.stream(crawler.manifest.versionHash, 'crawlCall', {}, { affiliateId }),
   ).resolves.toEqual([{ version: '1', crawler: 'none', runCrawlerTime: expect.any(Date) }]);
-  // @ts-expect-error
-  const { queryLogDb, datastoresDb } = registry;
+  const { queryLogDb, statsDb } = statsTracker.diskStore;
   expect(queryLogDb.logTable.all()).toHaveLength(1);
   expect(queryLogDb.logTable.all()[0].query).toBe(`stream(crawlCall)`);
   expect(queryLogDb.logTable.all()[0].affiliateId).toBe(affiliateId);
-  const stats = datastoresDb.datastoreItemStats.all();
+  const stats = statsDb.datastoreEntities.all();
   expect(stats).toHaveLength(2);
   expect(stats.some(x => x.name === 'crawlCall')).toBeTruthy();
   expect(stats.some(x => x.name === 'crawl')).toBeTruthy();
@@ -68,12 +68,9 @@ test('should be able to query a crawler', async () => {
   const crawler = new DatastorePackager(`${__dirname}/datastores/crawl.js`);
   await crawler.build();
   await client.upload(await crawler.dbx.tarGzip());
-  // @ts-expect-error
-  const { queryLogDb, datastoresDb } = registry;
+  const { queryLogDb, statsDb } = statsTracker.diskStore;
   queryLogDb.logTable.db.exec(`delete from ${queryLogDb.logTable.tableName}`);
-  datastoresDb.datastoreItemStats.db.exec(
-    `delete from ${datastoresDb.datastoreItemStats.tableName}`,
-  );
+  statsDb.datastoreEntities.db.exec(`delete from ${statsDb.datastoreEntities.tableName}`);
   const affiliateId = `aff${nanoid(12)}`;
   await expect(
     client.query(crawler.manifest.versionHash, 'select * from crawlCall()', { affiliateId }),
@@ -88,7 +85,7 @@ test('should be able to query a crawler', async () => {
   expect(queryLogDb.logTable.all()).toHaveLength(1);
   expect(queryLogDb.logTable.all()[0].query).toBe(`select * from crawlCall()`);
   expect(queryLogDb.logTable.all()[0].affiliateId).toBe(affiliateId);
-  const stats = datastoresDb.datastoreItemStats.all();
+  const stats = statsDb.datastoreEntities.all();
   expect(stats).toHaveLength(2);
   expect(stats.some(x => x.name === 'crawlCall')).toBeTruthy();
   expect(stats.some(x => x.name === 'crawl')).toBeTruthy();

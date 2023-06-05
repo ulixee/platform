@@ -64,7 +64,7 @@ import { Cloud } from '@ulixee/cloud';
 
 (async () => {
   const cloud = new Cloud();
-  await cloud.listen({ port: 8080 });
+  await cloud.listen();
 })();
 ```
 
@@ -76,7 +76,7 @@ NOTE: connection details on a local machine are optional. If you don't supply an
 import Hero from '@ulixee/hero';
 
 (async () => {
-  const hero = new Hero({ connectionToCore: { host: 'ws://localhost:8080' } });
+  const hero = new Hero({ connectionToCore: 'ws://localhost:1818' });
   await hero.goto('https://example.org');
   await hero.close();
 })();

@@ -29,19 +29,24 @@
         <div class="md:flex md:items-center md:justify-between">
           <div
             class="mb-5 flex flex-row flex-wrap content-end items-center justify-between gap-x-4 divide-x divide-gray-400"
-            v-if='datastore.description'
+            v-if="datastore.description"
           >
-            <div class="text-sm font-light text-gray-900 whitespace-pre-line">{{ datastore.description }}</div>
+            <div class="whitespace-pre-line text-sm font-light text-gray-900">
+              {{ datastore.description }}
+            </div>
           </div>
-          <div class="absolute bottom-3 right-0 mt-3 mt-0 flex">
+          <div class="absolute bottom-3 right-0 mt-0 mt-3 flex">
             <button
               type="button"
               class="group inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
               @click.prevent="openDocs"
             >
               <DocumentTextIcon
-                class="group-hover:text-gray-950 -ml-0.5 mr-2 h-5 w-5 text-gray-900"
+                class="-ml-0.5 h-5 w-5 text-gray-900 group-hover:text-gray-950"
                 aria-hidden="true"
+              />
+              <ArrowTopRightOnSquareIcon
+                class="relative -ml-2 -mt-3 mr-1 inline h-3 w-4 bg-white text-gray-600"
               />
               View Docs
             </button>
@@ -51,7 +56,7 @@
               @click.prevent="cloneModal.open()"
             >
               <DocumentDuplicateIcon
-                class="group-hover:text-gray-950 -ml-0.5 mr-2 h-5 w-5 text-gray-900"
+                class="-ml-0.5 mr-2 h-5 w-5 text-gray-900 group-hover:text-gray-950"
                 aria-hidden="true"
               />
               Clone It!
@@ -63,7 +68,7 @@
               @click.prevent="install"
             >
               <ArrowDownTrayIcon
-                class="group-hover:text-gray-950 -ml-0.5 mr-2 h-5 w-5 text-gray-900"
+                class="-ml-0.5 mr-2 h-5 w-5 text-gray-900 group-hover:text-gray-950"
                 aria-hidden="true"
               />
               Install
@@ -89,7 +94,7 @@
                 $route.name === tab.name
                   ? 'border-fuchsia-700 text-fuchsia-800'
                   : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
-                'group inline-flex items-center whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium',
+                'group inline-flex items-center whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium',
               ]"
             >
               <component
@@ -109,8 +114,8 @@
       </div>
     </div>
     <div class="mt-8 flow-root">
-      <div class="-my-2 -mx-4 -mx-8 overflow-x-auto">
-        <div class="inline-block min-w-full py-2 px-8 align-middle">
+      <div class="-mx-4 -mx-8 -my-2 overflow-x-auto">
+        <div class="inline-block min-w-full px-8 py-2 align-middle">
           <router-view />
         </div>
       </div>
@@ -128,11 +133,16 @@ import {
   ChartBarIcon,
   ChevronRightIcon,
   CloudArrowUpIcon,
+  CircleStackIcon,
   CloudIcon,
   CreditCardIcon,
   HeartIcon,
 } from '@heroicons/vue/20/solid';
-import { DocumentTextIcon, DocumentDuplicateIcon } from '@heroicons/vue/24/outline';
+import {
+  DocumentTextIcon,
+  DocumentDuplicateIcon,
+  ArrowTopRightOnSquareIcon,
+} from '@heroicons/vue/24/outline';
 import { storeToRefs } from 'pinia';
 import { useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
@@ -149,6 +159,7 @@ export default Vue.defineComponent({
     Earnings,
     CloudIcon,
     ChartBarIcon,
+    ArrowTopRightOnSquareIcon,
     CreditCardIcon,
     DocumentDuplicateIcon,
     DocumentTextIcon,
@@ -174,6 +185,7 @@ export default Vue.defineComponent({
     const tabs = [
       { name: 'Earned', path: 'earnings', icon: BanknotesIcon },
       { name: 'Spent', path: 'spend', icon: CreditCardIcon },
+      { name: 'Entities', path: 'entities', icon: CircleStackIcon },
       { name: 'Queries', path: 'queries', icon: ChartBarIcon },
       { name: 'Reliability', path: 'reliability', icon: HeartIcon },
       { name: 'DatastoreClouds', label: 'Clouds', path: 'clouds', icon: CloudIcon },

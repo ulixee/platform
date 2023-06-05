@@ -1,9 +1,9 @@
-import { mkdirSync, rmSync } from 'fs';
-import * as Path from 'path';
+import { CloudNode } from '@ulixee/cloud';
 import Packager from '@ulixee/datastore-packager';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { CloudNode } from '@ulixee/cloud';
-import * as Moment from 'moment';
+import { mkdirSync, rmSync } from 'fs';
+import * as Path from 'path';
+import moment = require('moment');
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreVm.test');
 const tmpDir = `${storageDir}/tmp`;
@@ -13,7 +13,7 @@ let client: DatastoreApiClient;
 beforeAll(async () => {
   mkdirSync(storageDir, { recursive: true });
   cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = { datastoresDir: storageDir, datastoresTmpDir: tmpDir };
+  cloudNode.datastoreConfiguration = { datastoresDir: storageDir, datastoresTmpDir: tmpDir };
   await cloudNode.listen();
   client = new DatastoreApiClient(await cloudNode.address);
 }, 30e3);
@@ -36,7 +36,7 @@ test('can run a Datastore with momentjs', async () => {
 
   await expect(
     client.stream(packager.manifest.versionHash, 'moment', { date: '2021-02-01' }),
-  ).resolves.toEqual([{ date: Moment('2021-02-01').toDate() }]);
+  ).resolves.toEqual([{ date: moment('2021-02-01').toDate() }]);
 }, 45e3);
 
 test('can get the stack trace of a compiled datastore', async () => {
@@ -57,4 +57,3 @@ test('can get the stack trace of a compiled datastore', async () => {
     expect(error.stack).toContain(`at multiply (${expectedPath}:15:25)`);
   }
 }, 45e3);
-

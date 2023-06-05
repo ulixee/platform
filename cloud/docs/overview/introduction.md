@@ -42,11 +42,20 @@ You can run the start command from the command line as `npx @ulixee/cloud start`
 
 ### Command Options:
 
-- `-p, --port <number>` The port to use. Defaults to any available port.
-- `-h, --host <host>` The host the cloud node should listen on. (default: localhost)
-- `-x, --disable-chrome-alive` Do not enable ChromeAlive! even if installed locally.
-- `-m, --max-concurrent-heroes <count>` Max number of concurrent Datastores/Heroes to run at a time. (default: 10)
-- `-r, --max-datastore-runtime-ms <millis>` Max runtime allowed for a Datastore to complete. (default: 10 mins)
+- `-p, --port <number>` The port to use. Defaults to any 1818, or any available port. (env: PORT)
+- `-h, --hostname <hostname>` The hostname the Cloud node should listen on. (default: localhost) (env: ULX_HOSTNAME)
+- `--hosted-services-port <number>` Activate hosted services on this node at this port (datastore registry, node registry). Defaults to any 18181, or any available port
+  (0). (env: ULX_HOSTED_SERVICES_PORT)
+- `--hosted-services-hostname <hostname>` The ip or host that Cluster Services should listed on. You should make this a private-to-your-cloud ip if possible. (default:
+  localhost) (env: ULX_HOSTED_SERVICES_HOSTNAME)
+- `--setup-host <host>` Setup services for this node with another node in your cluster. NOTE: this should be the hosted services address of your cluster
+  node. (env: ULX_SERVICES_SETUP_HOST)
+- `--env <path>` Load environment settings from a .env file.
+- `--network-identity-path <path>` Filesystem path to your network identity keypair (env: ULX_NETWORK_IDENTITY_PATH)
+- `--admin-identities <ids...>` Comma separated list of admin identity public ids (starting with id1) (env: ULX_CLOUD_ADMIN_IDENTITIES)
+- `--disable-chrome-alive` Do not enable ChromeAlive! even if installed locally.
+- `--max-concurrent-heroes <count>` Max number of concurrent Datastores/Heroes to run at a time. (default: 10)
+- `--max-datastore-runtime-ms <millis>` Max runtime allowed for a Datastore to complete. (default: 10 mins)
 - `-u, --unblocked-plugins <plugins...>` Register default Unblocked Plugin npm module names for all Hero instances to load.
 - `-d, --hero-data-dir <dir>` Override the default data directory for Hero sessions and dbs.
 - `-s, --datastore-storage-dir <dir>` Override the default storage directory where Datastores are located.
@@ -70,7 +79,7 @@ import { CloudNode } from '@ulixee/cloud';
 
 (async () => {
   const cloudNode = new CloudNode();
-  await cloudNode.listen({ port: 8080 });
+  await cloudNode.listen();
 })();
 ```
 
@@ -82,7 +91,7 @@ NOTE: connection details on a local machine are optional. If you don't supply an
 import Hero from '@ulixee/hero';
 
 (async () => {
-  const hero = new Hero({ connectionToCore: { host: 'ws://localhost:8080' } });
+  const hero = new Hero({ connectionToCore: 'ws://localhost:1818' });
   await hero.goto('https://example.org');
   await hero.close();
 })();

@@ -41,7 +41,14 @@
             <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt class="text-sm font-medium text-gray-500">Documentation</dt>
               <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                <a href="#" @click.prevent="showDatastoreDocs">View docs</a>
+                <a
+                  href="#"
+                  @click.prevent="showDatastoreDocs"
+                  class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
+                >
+                  View docs
+                  <ArrowTopRightOnSquareIcon class="ml-2 -mt-1 inline h-4 text-gray-500" />
+                </a>
               </dd>
             </div>
             <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
@@ -128,6 +135,7 @@ import Modal from '../components/Modal.vue';
 import { DocumentArrowDownIcon, XMarkIcon } from '@heroicons/vue/24/outline';
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
 import { toArgons } from '@/pages/desktop/lib/utils';
+import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/outline';
 import { IDatastoreList, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 import { useWalletStore } from '@/pages/desktop/stores/WalletStore';
 import { storeToRefs } from 'pinia';
@@ -137,6 +145,7 @@ export default Vue.defineComponent({
   components: {
     Modal,
     DocumentArrowDownIcon,
+    ArrowTopRightOnSquareIcon,
     XMarkIcon,
   },
   props: {
@@ -184,13 +193,8 @@ export default Vue.defineComponent({
   methods: {
     showDatastoreDocs() {
       const argonFile = this.argonFile;
-      const versionHash = this.datastore.versionHash;
-      const docsUrl = new URL(argonFile.credit.datastoreUrl);
-      docsUrl.protocol = 'http:';
-      const left = window.screenLeft + 25;
-      const top = window.screenTop + 25;
-      const features = `top=${top},left=${left},width=${window.outerWidth},height=${window.outerHeight}`;
-      window.open(docsUrl.href, 'Docs' + versionHash, features);
+      const versionHash = this.datastore?.versionHash ?? 'unknown';
+      window.open(argonFile.credit.datastoreUrl, 'Docs' + versionHash);
     },
     async acceptDatastore() {
       const argonFile = this.argonFile;

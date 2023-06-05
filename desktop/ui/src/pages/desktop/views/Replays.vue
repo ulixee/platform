@@ -82,45 +82,52 @@
       </div>
     </div>
 
-    <table class="w-full table-auto">
-      <thead class='h-0 invisible'>
-        <tr class="hidden h-1">
-          <th class="h-0 w-14">&nbsp;</th>
-          <th class="w-4/10 h-0">&nbsp;</th>
-          <th class="w-4/10 h-0">&nbsp;</th>
-          <th class="h-0 w-10">&nbsp;</th>
+    <table class="w-full table-fixed">
+      <thead class="invisible h-0">
+        <tr class="collapse">
+          <th style="width: 150px" class="h-0">&nbsp;</th>
+          <th style="width: 45%" class="h-0">&nbsp;</th>
+          <th style="width: 40%" class="h-0">&nbsp;</th>
+          <th style="width: 45px" class="h-0">&nbsp;</th>
         </tr>
       </thead>
       <tbody>
         <tr
           v-for="session in filteredSessions"
           :key="session.heroSessionId"
-          class="text-sm v-top group border-b border-slate-100 text-left last:border-none hover:bg-gray-100/50"
+          class="v-top group border-b border-slate-100 text-left text-sm last:border-none hover:bg-gray-100/50"
         >
           <td class="whitespace-nowrap px-4 py-5 font-light text-slate-500">
-            {{ formatDate(session.startTime) }}
+            <div>
+              {{ formatDate(session.startTime) }}
+            </div>
           </td>
-          <td
-            class="text-ellipsis whitespace-nowrap px-4 py-5 text-left font-semibold text-slate-500"
-          >
-            {{ session.scriptEntrypoint
-            }}<span class="ml-0.5 text-gray-400" v-if="session.datastore?.functionName"
-              >#{{ session.datastore.functionName }}</span
-            >
+          <td class="text-ellipsis px-4 py-5 text-left font-semibold text-slate-500">
+            <div>
+              {{ session.scriptEntrypoint }}
+              <div
+                class="mt-0.5 text-sm font-light text-gray-500"
+                v-if="session.datastore?.functionName"
+              >
+                {{ session.datastore.functionName }} {{ session.datastore.queryId }}
+              </div>
+            </div>
           </td>
-          <td class="text-sm">
-            <div v-if="session.state === 'error'">
+          <td class="px-4 py-5 text-left">
+            <div v-if="session.state === 'error'" class="flex flex-row items-start">
               <ExclamationTriangleIcon class="relative mr-2 inline w-4 text-amber-800/60" />
-              <span class="font-reg mr-1 italic text-slate-600">error at:</span
-              ><span class="font-light text-slate-600">{{ session.errorCommand }}</span>
+              <div class="-mt-2">
+                <span class="font-reg mr-1 italic text-slate-600">error at:</span
+                ><span class="font-light text-slate-600">{{ session.errorCommand }}</span>
 
-              <div class="ml-6 mt-1 -mb-1.5 whitespace-pre text-xs">
-                {{ session.error ?? 'Error' }}
+                <div class="mt-1 -mb-1.5 whitespace-pre text-xs">
+                  {{ session.error }}
+                </div>
               </div>
             </div>
             <span
               class="mx-4 my-5 rounded-md bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-800"
-              v-if='session.state !== "complete"'
+              v-else-if="session.state !== 'complete'"
               >{{ session.state }}</span
             >
           </td>
@@ -152,7 +159,6 @@ import {
 } from '@headlessui/vue';
 import { CheckIcon, ChevronUpDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/20/solid';
 import { IHeroSessionsListResult } from '@ulixee/desktop-interfaces/apis/IHeroSessionsApi';
-import moment from 'moment';
 import { ExclamationTriangleIcon, PlayCircleIcon } from '@heroicons/vue/24/outline';
 import { useReplaysStore } from '@/pages/desktop/stores/ReplaysStore';
 import { storeToRefs } from 'pinia';
@@ -225,8 +231,13 @@ export default Vue.defineComponent({
   },
   methods: {
     formatDate(date: Date): string {
-      if (!date) return 'now';
-      return moment(date).format('M/D [at] hh:mma');
+      if (!date) return '';
+      return date.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+      });
     },
 
     isShowing(session: IHeroSessionsListResult): boolean {

@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ macos-latest, windows-latest, ubuntu-latest ]
-        node-version: [16, 18]
+        node-version: [16, 18, 20]
 
     runs-on: ${{ matrix.os }}
 
@@ -94,7 +94,7 @@ jobs:
         working-directory: ../shared
 
       - name: Yarn build
-        run: yarn && yarn build
+        run: yarn --ignore-engines && yarn build --ignore-engines
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 

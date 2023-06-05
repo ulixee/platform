@@ -26,7 +26,7 @@ test('should check that micronotes come from trusted sidechains', async () => {
   });
   await expect(
     manager.withIdentity(encodeBuffer(sha256('NewNoteIdentity'), 'id')),
-  ).rejects.toThrowError('not approved');
+  ).rejects.toThrow('not approved');
 });
 
 test('can update the approved sidechain list from the main sidechain', async () => {

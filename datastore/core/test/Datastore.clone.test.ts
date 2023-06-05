@@ -1,10 +1,10 @@
+import { CloudNode } from '@ulixee/cloud';
+import DatastorePackager from '@ulixee/datastore-packager';
+import { Helpers } from '@ulixee/datastore-testing';
+import cloneDatastore from '@ulixee/datastore/cli/cloneDatastore';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import DatastorePackager from '@ulixee/datastore-packager';
-import { CloudNode } from '@ulixee/cloud';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import cloneDatastore from '@ulixee/datastore/cli/cloneDatastore';
-import { Helpers } from '@ulixee/datastore-testing';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.clone.test');
 
@@ -80,7 +80,7 @@ test('should be able to clone a datastore', async () => {
 
   await expect(
     client.stream(packager.manifest.versionHash, 'cloneUpstream', {}),
-  ).rejects.toThrowError('input');
+  ).rejects.toThrow('input');
 
   await expect(
     client.stream(packager.manifest.versionHash, 'cloneUpstream', {

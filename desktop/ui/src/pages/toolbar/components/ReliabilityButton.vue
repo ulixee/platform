@@ -10,7 +10,7 @@
     <Borders :isSelected="isSelected" :isFocused="isFocused" :hasRightCircle="true" />
 
     <img src="@/assets/icons/heart.svg" class="icon" />
-    <span class="label" v-if="!isMinimal">36% Reliability</span>
+    <span class="label" v-if="!isMinimal">Reliability</span>
   </div>
 </template>
 
@@ -29,7 +29,7 @@
       },
       isFocused: {
         type: Boolean,
-      }, 
+      },
       isMinimal: {
         type: Boolean,
       },

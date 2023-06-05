@@ -1,8 +1,8 @@
 import * as Http from 'http';
-import * as NodeStatic from 'node-static';
 import { AddressInfo } from 'net';
 import { app } from 'electron';
 import * as Fs from 'fs';
+import staticServe from '@ulixee/datastore-core/lib/staticServe';
 
 export default class StaticServer {
   #httpServer: Http.Server;
@@ -13,10 +13,10 @@ export default class StaticServer {
 
     if (!Fs.existsSync(distFolder))
       throw new Error(`Static UI files could not be found: ${distFolder}`);
-    const staticServer = new NodeStatic.Server(distFolder, { cache: cacheTime });
+    const fileServer = staticServe(distFolder, cacheTime);
 
     this.#httpServer = Http.createServer((req, res) => {
-      staticServer.serve(req, res);
+     void fileServer(req, res).catch(() => null);
     });
   }
 

@@ -2,8 +2,7 @@
   "extends": "./node_modules/@ulixee/repo-tools/tsconfig.json",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "./build",
-    "noImplicitOverride": true
+    "outDir": "./build"
   },
   "references": [
     {

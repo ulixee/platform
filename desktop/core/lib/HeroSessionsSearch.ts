@@ -1,16 +1,14 @@
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
+import { bindFunctions } from '@ulixee/commons/lib/utils';
 import {
   IHeroSessionsListResult,
   IHeroSessionsSearchResult,
 } from '@ulixee/desktop-interfaces/apis/IHeroSessionsApi';
-import { Session as HeroSession } from '@ulixee/hero-core';
-import * as Fs from 'fs';
-import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
+import HeroCore, { Session as HeroSession } from '@ulixee/hero-core';
 import CommandFormatter from '@ulixee/hero-core/lib/CommandFormatter';
-import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import FuseJs from 'fuse.js';
-import { bindFunctions } from '@ulixee/commons/lib/utils';
-import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import OutputRebuilder from './OutputRebuilder';
 
 const Fuse = require('fuse.js/dist/fuse.common.js');
@@ -39,13 +37,14 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
   private hasLoaded = false;
   private events = new EventSubscriber();
 
-  constructor() {
+  constructor(private heroCore: HeroCore) {
     super();
     bindFunctions(this);
   }
 
   close(): void {
     this.events.off();
+    this.heroCore = null;
   }
 
   onNewSession(heroSession: HeroSession): void {
@@ -77,22 +76,19 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
     );
   }
 
-  list(): IHeroSessionsListResult[] {
+  async list(): Promise<IHeroSessionsListResult[]> {
     if (this.hasLoaded) return this.sessions;
 
-    if (Fs.existsSync(SessionDb.databaseDir)) {
-      for (const dbName of Fs.readdirSync(SessionDb.databaseDir)) {
-        if (!dbName.endsWith('.db')) continue;
-        const session = this.processSession(dbName.replace('.db', ''));
-
-        this.sessions.push(session);
-      }
+    const sessionIds = await this.heroCore.sessionRegistry.ids();
+    for (const id of sessionIds) {
+      const session = await this.processSession(id);
+      this.sessions.push(session);
     }
     this.hasLoaded = true;
     return this.sessions;
   }
 
-  search(query: string): IHeroSessionsSearchResult[] {
+  search(query: string): Promise<IHeroSessionsSearchResult[]> {
     const finalQuery: string = query
       .split(/\s+/)
       .map(x => {
@@ -117,15 +113,19 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
         matches,
       });
     }
-    return results;
+    return Promise.resolve(results);
   }
 
-  withErrors(): IHeroSessionsListResult[] {
-    return this.list().filter(x => x.state === 'error');
+  async withErrors(): Promise<IHeroSessionsListResult[]> {
+    const list = await this.list();
+    return list.filter(x => x.state === 'error');
   }
 
-  private processSession(sessionId: string): IHeroSessionsListResult {
-    const sessionDb = SessionDb.getCached(sessionId);
+  private async processSession(
+    sessionId: string,
+    customPath?: string,
+  ): Promise<IHeroSessionsListResult> {
+    const sessionDb = await this.heroCore.sessionRegistry.get(sessionId, customPath);
     const session = sessionDb.session.get();
     // might not be loaded yet
     if (!session) return;
@@ -220,8 +220,8 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
     this.emit('update', [entry]);
   }
 
-  private onHeroSessionClosed(entry: IHeroSessionsListResult): void {
-    const update = this.processSession(entry.heroSessionId);
+  private async onHeroSessionClosed(entry: IHeroSessionsListResult): Promise<void> {
+    const update = await this.processSession(entry.heroSessionId, entry.dbPath);
     Object.assign(entry, update);
     entry.endTime ??= new Date();
     entry.state = 'complete';
@@ -230,8 +230,8 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
     this.events.endGroup(entry.heroSessionId);
   }
 
-  private onHeroSessionKeptAlive(entry: IHeroSessionsListResult): void {
-    const update = this.processSession(entry.heroSessionId);
+  private async onHeroSessionKeptAlive(entry: IHeroSessionsListResult): Promise<void> {
+    const update = await this.processSession(entry.heroSessionId, entry.dbPath);
     entry.state = 'kept-alive';
     Object.assign(entry, update);
     this.emit('update', [entry]);

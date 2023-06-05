@@ -7,7 +7,7 @@ import { ICloudConnected, IUserBalance } from '@ulixee/desktop-interfaces/apis/I
 import { dialog, Menu, WebContents } from 'electron';
 import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
 import * as Path from 'path';
-import { getCacheDirectory } from '@ulixee/commons/lib/dirUtils';
+import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import * as Os from 'os';
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
 import {
@@ -23,9 +23,9 @@ import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import { IncomingMessage } from 'http';
 import { ConnectionToClient, WsTransportToClient } from '@ulixee/net';
-import WebSocket = require('ws');
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
+import WebSocket = require('ws');
 import ArgonFile from './ArgonFile';
 import ApiManager from './ApiManager';
 
@@ -167,8 +167,10 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     if (versionHash.includes(DatastoreManifest.TemporaryIdPrefix)) {
       throw new Error('This Datastore has only been started. You need to deploy it.');
     }
-    const dbx = await apiClient.download(versionHash, { identity: adminIdentity });
-    await apiClient.upload(dbx, { identity: adminIdentity });
+    const download = await apiClient.download(versionHash, {
+      identity: adminIdentity,
+    });
+    await apiClient.upload(download.compressedDbx, { forwardedSignature: download });
   }
 
   public async installDatastore(arg: {
@@ -287,7 +289,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     const result = await dialog.showOpenDialog({
       properties: ['openFile', 'showHiddenFiles'],
       message: 'Select your Admin Identity for this Datastore to enable administrative features.',
-      defaultPath: Path.join(getCacheDirectory(), 'ulixee', 'identities'),
+      defaultPath: Path.join(getDataDirectory(), 'ulixee', 'identities'),
       filters: [{ name: 'Identities', extensions: ['pem'] }],
     });
     if (result.filePaths.length) {
@@ -301,7 +303,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     const result = await dialog.showOpenDialog({
       properties: ['openFile', 'showHiddenFiles'],
       message: 'Select your Admin Identity for this Cloud to enable administrative features.',
-      defaultPath: Path.join(getCacheDirectory(), 'ulixee', 'identities'),
+      defaultPath: Path.join(getDataDirectory(), 'ulixee', 'identities'),
       filters: [{ name: 'Identities', extensions: ['pem'] }],
     });
     if (result.filePaths.length) {

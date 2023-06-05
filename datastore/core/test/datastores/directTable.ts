@@ -7,8 +7,10 @@ export default new Table({
     title: string(),
     success: boolean(),
   },
-  seedlings: [
-    { title: 'Hello', success: true },
-    { title: 'World', success: false }
-  ]
+  async onCreated() {
+    await this.insertInternal(
+      { title: 'Hello', success: true },
+      { title: 'World', success: false },
+    );
+  },
 });

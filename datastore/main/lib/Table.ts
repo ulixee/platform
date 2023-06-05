@@ -3,6 +3,7 @@ import { SqlGenerator, SqlParser } from '@ulixee/sql-engine';
 import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import ITableComponents from '../interfaces/ITableComponents';
 import DatastoreInternal, { IDatastoreBinding } from './DatastoreInternal';
+import { TQueryCallMeta } from '../interfaces/IStorageEngine';
 
 export type IExpandedTableSchema<T> = T extends Record<string, ISchemaAny>
   ? {
@@ -17,15 +18,9 @@ export default class Table<
   // dummy type holders
   declare readonly schemaType: TSchemaType;
 
-  seedlings: TSchemaType[];
   #datastoreInternal: DatastoreInternal;
 
-  protected readonly components: ITableComponents<TSchema, TSchemaType>;
-
-  constructor(components: ITableComponents<TSchema, TSchemaType>) {
-    this.seedlings = components.seedlings;
-    this.components = { ...components };
-  }
+  protected readonly components: ITableComponents<TSchema>;
 
   public get isPublic(): boolean {
     return this.components.isPublic !== false;
@@ -43,6 +38,18 @@ export default class Table<
     return this.components.description;
   }
 
+  constructor(components: ITableComponents<TSchema>) {
+    this.components = { ...components };
+  }
+
+  public onCreated(): Promise<void> {
+    return this.components.onCreated?.call(this);
+  }
+
+  public onVersionMigrated(previousVersion: Table<TSchema>): Promise<void> {
+    return this.components.onVersionMigrated?.call(this, previousVersion);
+  }
+
   protected get datastoreInternal(): DatastoreInternal {
     if (!this.#datastoreInternal) {
       this.#datastoreInternal = new DatastoreInternal({ tables: { [this.name]: this } });
@@ -50,39 +57,34 @@ export default class Table<
     return this.#datastoreInternal;
   }
 
-  public async fetchInternal(options: {
-    input: ExtractSchemaType<TSchema>;
-  }): Promise<TSchemaType[]> {
+  public async fetchInternal(
+    options?: TQueryCallMeta & { input: TSchemaType },
+  ): Promise<TSchemaType[]> {
     const name = this.name;
 
-    const db = this.datastoreInternal.db;
-    const { sql, boundValues } = SqlGenerator.createWhereClause(name, options.input, ['*'], 1000);
-    const results = db.prepare(sql).all(boundValues);
-
-    return await SqlGenerator.convertRecordsFromSqlite(results, [this.schema]);
+    const engine = this.datastoreInternal.storageEngine;
+    const { sql, boundValues } = SqlGenerator.createWhereClause(name, options?.input, ['*'], 1000);
+    return await engine.query(sql, boundValues, options);
   }
 
-  public async queryInternal<T = TSchemaType[]>(sql: string, boundValues: any[] = []): Promise<T> {
+  public async insertInternal(...records: TSchemaType[]): Promise<void> {
+    const engine = this.datastoreInternal.storageEngine;
+    const inserts = SqlGenerator.createInsertsFromRecords(this.name, this.schema, ...records);
+    for (const { sql, boundValues } of inserts) {
+      await engine.query(sql, boundValues);
+    }
+  }
+
+  public async queryInternal<T = TSchemaType[]>(
+    sql: string,
+    boundValues: any[] = [],
+    options?: TQueryCallMeta,
+  ): Promise<T> {
     const name = this.name;
-    const db = this.datastoreInternal.db;
+    const engine = this.datastoreInternal.storageEngine;
 
     const sqlParser = new SqlParser(sql, { table: name });
-    sql = sqlParser.toSql();
-    const queryValues = sqlParser.convertToBoundValuesSqliteMap(boundValues);
-
-    if (sqlParser.isInsert() || sqlParser.isDelete() || sqlParser.isUpdate()) {
-      if (sqlParser.hasReturn()) {
-        return db.prepare(sql).get(queryValues) as any;
-      }
-      const result = db.prepare(sql).run(queryValues);
-      return { changes: result?.changes } as any;
-    }
-
-    if (!sqlParser.isSelect()) throw new Error('Invalid SQL command');
-
-    const records = db.prepare(sql).all(queryValues);
-
-    return await SqlGenerator.convertRecordsFromSqlite(records, [this.schema]);
+    return await engine.query(sqlParser, boundValues, options);
   }
 
   public attachToDatastore(
@@ -98,8 +100,8 @@ export default class Table<
     this.#datastoreInternal = datastoreInternal;
   }
 
-  public bind(config: IDatastoreBinding): void {
-    this.datastoreInternal.bind(config ?? {});
+  public bind(config: IDatastoreBinding): Promise<DatastoreInternal> {
+    return this.datastoreInternal.bind(config ?? {});
   }
 }
 addGlobalInstance(Table);

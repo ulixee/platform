@@ -33,7 +33,7 @@ Datastore Core stores and retrieves [packaged Datastores](./deployment) from a c
 1. `dbx*`. Packaged datastores organized into folders by their Bech32m encoded hashes.
 2. `metadata.db`. A sqlite3 file containing version history and stats of all Datastores installed locally. This index will be automatically updated if new compressed .dbx.tgz files are added to the directory.
 
-During bootup, any Packaged Datastore files (`.dbx`) in this directory will be automatically unpacked and loaded.
+During bootup, any Packaged Datastores (`.dbx.tgz`) in this directory will be automatically unpacked and loaded.
 
 ### Server Environment {#env}
 
@@ -52,12 +52,14 @@ Datastore Core installs some administrative features for built-in Datastores. Th
 
 #### Environment Variable
 
-- ULX_DATASTORE_DIR `string`. Absolute path to a directory containing Datastores. Defaults to `<CACHE>/ulixee/datastores`.
+- ULX_DATASTORE_DIR `string`. Absolute path to a directory containing Datastores. Defaults to `<DATA>/ulixee/datastores`.
+- ULX_QUERY_HERO_SESSIONS_DIR `string`. Absolute path to a directory storing the Hero Session databases output by Datastores. Defaults to `<DATA>/ulixee/query-hero-sessions`.
 
-#### Cache Directory {#cache}
 
-CACHE is determined as:
+#### Data Directory {#data}
 
-- Mac: ~/Library/Cache
-- Linux: ~/.cache (environment variable XDG_CACHE_HOME)
+DATA is determined as:
+
+- Mac: ~/Library/Application Support
+- Linux: ~/.local/share (environment variable XDG_DATA_HOME)
 - Windows: ~/AppData/Local (environment variable LOCALAPPDATA)

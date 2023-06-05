@@ -10,7 +10,6 @@ import IExtractorComponents from '../interfaces/IExtractorComponents';
 import ExtractorPlugins from './ExtractorPlugins';
 import DatastoreInternal, { IDatastoreBinding, IQueryInternalCallbacks } from './DatastoreInternal';
 import ResultIterable from './ResultIterable';
-import SqlQuery from './SqlQuery';
 
 export default class Extractor<
   TSchema extends IExtractorSchema = IExtractorSchema,
@@ -146,7 +145,11 @@ export default class Extractor<
     return resultsIterable;
   }
 
-  public async queryInternal(sql: string, boundValues: any[] = []): Promise<any> {
+  public async queryInternal(
+    sql: string,
+    boundValues: any[] = [],
+    options?: TRunArgs,
+  ): Promise<any> {
     const name = this.components.name;
 
     const sqlParser = new SqlParser(sql, { function: name });
@@ -159,10 +162,11 @@ export default class Extractor<
       boundValues,
     );
     const input = inputsByFunction[name];
-    const outputs = await this.runInternal({ input } as TRunArgs);
-
-    const query = new SqlQuery(sqlParser, this.datastoreInternal.storage);
-    return query.execute(inputsByFunction, { [name]: outputs }, {}, boundValues);
+    const records = await this.runInternal({ input } as TRunArgs);
+    const engine = this.datastoreInternal.storageEngine;
+    return engine.query(sqlParser, boundValues, options as any, {
+      [name]: { records, parameters: input },
+    });
   }
 
   public attachToDatastore(
@@ -178,8 +182,8 @@ export default class Extractor<
     this.#datastoreInternal = datastoreInternal;
   }
 
-  public bind(config: IDatastoreBinding): void {
-    this.datastoreInternal.bind(config ?? {});
+  public bind(config: IDatastoreBinding): Promise<DatastoreInternal> {
+    return this.datastoreInternal.bind(config ?? {});
   }
 }
 

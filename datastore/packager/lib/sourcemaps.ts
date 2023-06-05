@@ -9,7 +9,7 @@ export default function sourcemaps(): Plugin {
     load(id): Promise<{ code: string; map: any }> {
       const result = { code: null, map: null };
       try {
-        result.code = SourceLoader.getFileContents(id, true);
+        result.code = SourceLoader.getFileContents(id, false);
         if (result.code === null) return null;
       } catch (_a) {
         return null;

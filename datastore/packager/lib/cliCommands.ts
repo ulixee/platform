@@ -1,24 +1,24 @@
+import { CloudNode } from '@ulixee/cloud';
+import UlixeeConfig from '@ulixee/commons/config';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import { createInterface } from 'readline';
-import * as Path from 'path';
-import * as Fs from 'fs';
-import { existsSync } from 'fs';
-import { inspect } from 'util';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
-import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import { findProjectPathSync } from '@ulixee/commons/lib/dirUtils';
-import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
-import { CloudNode } from '@ulixee/cloud';
-import { execSync } from 'child_process';
-import UlixeeConfig from '@ulixee/commons/config';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
-import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
-import Dbx from './Dbx';
+import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
+import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { execSync } from 'child_process';
+import * as Fs from 'fs';
+import { existsSync } from 'fs';
+import * as Path from 'path';
+import { createInterface } from 'readline';
+import { inspect } from 'util';
 import DatastorePackager from '../index';
 import { version } from '../package.json';
+import Dbx from './Dbx';
 
 inspect.defaultOptions.depth = 10;
 
@@ -121,9 +121,10 @@ async function upload(
     });
     console.log('Your Datastore has been uploaded!');
   } catch (error) {
-    if (error.code === 'InvalidScriptVersionHistoryError' && error.versionHistory) {
+    console.log(error);
+    if (error.code === 'ERR_INVALID_SCRIPT_VERSION_HISTORY' && error.versionHistory) {
       handleInvalidScriptVersionHistory(manifest, dbx, error.versionHistory, cloudHost);
-    } else if (error.code === 'MissingLinkedScriptVersionsError' && error.previousVersions) {
+    } else if (error.code === 'ERR_MISSING_VERSIONS' && error.previousVersions) {
       handleMissingLinkedVersions(manifest, dbx, error.previousVersions, cloudHost);
     } else {
       console.error(error.message, error.stack);
@@ -180,10 +181,9 @@ export async function startDatastore(
   if (!host.includes('://')) host = `ulx://${host}`;
 
   const client = new DatastoreApiClient(host);
-  await client.startDatastore(dbx.path);
+  await client.startDatastore(dbx.path, options.watch);
   const dbxPath = dbx.path;
   ShutdownHandler.register(() => {
-    console.log('removing dir', dbxPath);
     Fs.rmSync(dbxPath, { recursive: true });
     return client.disconnect();
   });

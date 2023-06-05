@@ -6,6 +6,7 @@ import IDatastoreComponents, {
 } from '../interfaces/IDatastoreComponents';
 import DatastoreInternal, { IDatastoreBinding, IQueryInternalCallbacks } from './DatastoreInternal';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
+import { TQueryCallMeta } from '../interfaces/IStorageEngine';
 
 export default class Datastore<
   TTable extends TTables = TTables,
@@ -43,6 +44,14 @@ export default class Datastore<
     return this.#datastoreInternal.components.authenticateIdentity;
   }
 
+  public get onCreated(): TComponents['onCreated'] {
+    return this.#datastoreInternal.components.onCreated;
+  }
+
+  public get onVersionMigrated(): TComponents['onVersionMigrated'] {
+    return this.#datastoreInternal.components.onVersionMigrated;
+  }
+
   constructor(
     components: TComponents,
     datastoreInternal?: DatastoreInternal<TTable, TExtractor, TCrawler, TComponents>,
@@ -52,14 +61,14 @@ export default class Datastore<
 
   public queryInternal<TResultType = any[]>(
     sql: string,
-    boundValues: any[] = [],
-    queryId?: string,
+    boundValues?: any[],
+    options?: TQueryCallMeta,
     callbacks: IQueryInternalCallbacks = {},
   ): Promise<TResultType> {
-    return this.#datastoreInternal.queryInternal(sql, boundValues, queryId, callbacks);
+    return this.#datastoreInternal.queryInternal(sql, boundValues, options, callbacks);
   }
 
-  public bind(config: IDatastoreBinding): DatastoreInternal {
+  public bind(config: IDatastoreBinding): Promise<DatastoreInternal> {
     return this.#datastoreInternal.bind(config);
   }
 }

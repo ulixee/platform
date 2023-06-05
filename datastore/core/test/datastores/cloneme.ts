@@ -31,7 +31,9 @@ export default new Datastore({
         name: string(),
         birthdate: date(),
       },
-      seedlings: [{ name: 'me', birthdate: new Date() }],
+      onCreated(): Promise<void> {
+        return this.insertInternal({ name: 'me', birthdate: new Date() });
+      },
     }),
     private: new Table({
       isPublic: false,

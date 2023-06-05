@@ -5,15 +5,24 @@ import { IOutputSchema } from '../interfaces/IInputOutput';
 
 export default class ClientForExtractor<TExtractor extends Extractor> {
   private extractor: TExtractor;
+  private readonly readyPromise: Promise<any>;
+
   constructor(extractor: TExtractor, options?: IDatastoreBinding) {
     this.extractor = extractor;
-    extractor.bind(options);
+    this.readyPromise = this.extractor.bind(options).catch(() => null);
   }
 
   public fetch(
     inputFilter: TExtractor['schemaType']['input'],
   ): ResultIterable<TExtractor['schema']['output']> {
-    return this.extractor.runInternal({ input: inputFilter });
+    return this.extractor.runInternal(
+      { input: inputFilter },
+      {
+        beforeAll() {
+          return this.readyPromise;
+        },
+      },
+    );
   }
 
   public run(
@@ -22,10 +31,11 @@ export default class ClientForExtractor<TExtractor extends Extractor> {
     return this.fetch(inputFilter);
   }
 
-  public query<TSchema extends IOutputSchema = IOutputSchema>(
+  public async query<TSchema extends IOutputSchema = IOutputSchema>(
     sql: string,
     boundValues: any[] = [],
   ): Promise<TSchema[]> {
+    await this.readyPromise;
     return this.extractor.queryInternal(sql, boundValues);
   }
 }

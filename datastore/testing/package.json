@@ -7,8 +7,10 @@
   "dependencies": {
     "@koa/multer": "^3.0.0",
     "@koa/router": "^8.0.8",
+    "@ulixee/cloud": "2.0.0-alpha.21",
     "@ulixee/commons": "2.0.0-alpha.21",
     "@ulixee/datastore": "2.0.0-alpha.21",
+    "@ulixee/datastore-core": "2.0.0-alpha.21",
     "@ulixee/datastore-plugins-hero": "2.0.0-alpha.21",
     "@ulixee/hero": "2.0.0-alpha.21",
     "@ulixee/hero-core": "2.0.0-alpha.21",

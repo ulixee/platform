@@ -1,44 +1,98 @@
-import * as WebSocket from 'ws';
-import * as Http from 'http';
-import { IncomingMessage, ServerResponse } from 'http';
-import { AddressInfo, ListenOptions, Socket } from 'net';
-import Log from '@ulixee/commons/lib/Logger';
-import { bindFunctions, createPromise, isPortInUse } from '@ulixee/commons/lib/utils';
-import { isWsOpen } from '@ulixee/net/lib/WsUtils';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
+import Log from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
+import { bindFunctions, isPortInUse, toUrl } from '@ulixee/commons/lib/utils';
+import Ed25519 from '@ulixee/crypto/lib/Ed25519';
+import Identity from '@ulixee/crypto/lib/Identity';
+import DatastoreCore from '@ulixee/datastore-core';
+import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
+import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
+import type DesktopCore from '@ulixee/desktop-core';
+import HeroCore from '@ulixee/hero-core';
+import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
+import Kad from '@ulixee/kad';
+import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
+import IServicesSetup from '@ulixee/platform-specification/types/IServicesSetup';
+import * as Http from 'http';
+import * as Https from 'https';
+import * as Path from 'path';
+import env from '../env';
+import ICloudConfiguration from '../interfaces/ICloudConfiguration';
 import CoreRouter from './CoreRouter';
+import DesktopUtils from './DesktopUtils';
+import NodeRegistry from './NodeRegistry';
+import NodeTracker from './NodeTracker';
+import RoutableServer from './RoutableServer';
 
 const pkg = require('../package.json');
 
+const isTestEnv = process.env.NODE_ENV === 'test';
+
 const { log } = Log(module);
 
-export type IHttpHandleFn = (
-  req: Http.IncomingMessage,
-  res: Http.ServerResponse,
-  params: string[],
-) => Promise<boolean | void> | void;
-type IWsHandleFn = (ws: WebSocket, request: Http.IncomingMessage, params: string[]) => void;
-
 export default class CloudNode {
-  public readonly wsServer: WebSocket.Server;
+  public static datastorePluginsToRegister = [
+    '@ulixee/datastore-plugins-hero-core',
+    '@ulixee/datastore-plugins-puppeteer-core',
+  ];
+
+  public publicServer: RoutableServer;
+  public hostedServicesServer?: RoutableServer;
+  public hostedServicesHostURL?: URL;
+  public kad?: Kad;
+
+  public datastoreCore: DatastoreCore;
+  public heroCore: HeroCore;
+  public desktopCore?: DesktopCore;
+  public nodeRegistry: NodeRegistry;
+  public nodeTracker: NodeTracker;
+
+  public readonly shouldShutdownOnSignals: boolean = true;
+
   public readonly router: CoreRouter;
 
-  public get address(): Promise<string> {
-    return this.listeningPromise.promise.then(x => {
-      return `${this.addressHost}:${x.port}`;
-    });
+  public heroConfiguration: ICoreConfigureOptions;
+
+  public cloudConfiguration: ICloudConfiguration = {
+    nodeRegistryHost: env.nodeRegistryHost,
+    cloudType: env.cloudType as any,
+    kadEnabled: env.kadEnabled,
+    kadDbPath: env.kadDbPath,
+    kadBootstrapPeers: env.kadBootstrapPeers,
+    servicesSetupHost: env.servicesSetupHost,
+    networkIdentity: env.networkIdentity,
+    port: env.publicPort ? Number(env.publicPort) : undefined,
+    host: env.publicHostname,
+    hostedServicesServerOptions:
+      env.hostedServicesPort ?? env.hostedServicesHostname
+        ? {
+            port: env.hostedServicesPort ? Number(env.hostedServicesPort) : undefined,
+            host: env.hostedServicesHostname,
+          }
+        : null,
+  };
+
+  public get datastoreConfiguration(): IDatastoreCoreConfigureOptions {
+    return this.datastoreCore.options;
+  }
+
+  public set datastoreConfiguration(value: Partial<IDatastoreCoreConfigureOptions>) {
+    Object.assign(this.datastoreCore.options, value);
   }
 
   public get port(): Promise<number> {
-    return this.listeningPromise.promise.then(x => {
-      return x.port;
-    });
+    return this.publicServer.port;
   }
 
-  public get hasConnections(): boolean {
-    return this.wsServer.clients.size > 0;
+  public get host(): Promise<string> {
+    return this.publicServer.host;
+  }
+
+  // @deprecated - use host
+  public get address(): Promise<string> {
+    return this.publicServer.host;
   }
 
   public get version(): string {
@@ -46,179 +100,344 @@ export default class CloudNode {
   }
 
   private isClosing: Promise<any>;
-  private didAutoroute = false;
-  private sockets = new Set<Socket>();
-  private listeningPromise = createPromise<AddressInfo>();
-  private readonly addressHost: string;
-  private readonly httpServer: Http.Server;
-  private readonly httpRoutes: [url: RegExp | string, method: string, handler: IHttpHandleFn][];
-  private readonly wsRoutes: [RegExp | string, IWsHandleFn][] = [];
+  private isReady = new Resolvable<void>();
+  private didReservePort = false;
 
-  constructor(addressHost = 'localhost', readonly shouldShutdownOnSignals = true) {
-    this.httpServer = new Http.Server();
+  private connectionsToServicesByHost: { [host: string]: ConnectionToCore<any, any> } = {};
+
+  constructor(
+    config: Partial<ICloudConfiguration> & {
+      shouldShutdownOnSignals?: boolean;
+      // remove cloud type since it's also on cloud configuration
+      datastoreConfiguration?: Partial<Omit<IDatastoreCoreConfigureOptions, 'cloudType'>>;
+      heroConfiguration?: Partial<ICoreConfigureOptions>;
+    } = { shouldShutdownOnSignals: true },
+  ) {
     bindFunctions(this);
-    this.httpServer.on('error', this.onHttpError);
-    this.httpServer.on('request', this.handleHttpRequest);
-    this.httpServer.on('connection', this.handleHttpConnection);
-    this.addressHost = addressHost;
-    this.wsServer = new WebSocket.Server({
-      server: this.httpServer,
-      perMessageDeflate: { threshold: 500, serverNoContextTakeover: false },
-    });
-    this.wsServer.on('connection', this.handleWsConnection);
-    this.httpRoutes = [];
+
+    const {
+      heroConfiguration,
+      datastoreConfiguration,
+      shouldShutdownOnSignals,
+      ...cloudConfiguration
+    } = config;
+
+    const { hostedServicesServerOptions, ...other } = cloudConfiguration;
+    Object.assign(this.cloudConfiguration, other ?? {});
+    if (hostedServicesServerOptions) {
+      this.cloudConfiguration.hostedServicesServerOptions ??= {};
+      Object.assign(
+        this.cloudConfiguration.hostedServicesServerOptions,
+        hostedServicesServerOptions ?? {},
+      );
+    }
+
     this.router = new CoreRouter(this);
+    this.datastoreCore = new DatastoreCore(
+      datastoreConfiguration ?? {},
+      this.getInstalledDatastorePlugins(),
+    );
 
-    if (!shouldShutdownOnSignals) ShutdownHandler.disableSignals = true;
-    ShutdownHandler.register(this.autoClose);
+    this.heroConfiguration = heroConfiguration ?? {};
+    this.heroConfiguration.shouldShutdownOnSignals ??= this.shouldShutdownOnSignals;
+    this.heroCore = new HeroCore(this.heroConfiguration);
+
+    this.shouldShutdownOnSignals = shouldShutdownOnSignals;
+    if (this.shouldShutdownOnSignals === true) ShutdownHandler.disableSignals = true;
+    ShutdownHandler.register(this.close);
   }
 
-  public get dataDir(): string {
-    return this.router.dataDir;
-  }
-
-  public async listen(
-    options?: ListenOptions,
-    shouldAutoRouteToHost = process.env.NODE_ENV !== 'test',
-  ): Promise<AddressInfo> {
-    if (this.listeningPromise.isResolved) return this.listeningPromise.promise;
-
-    const listenOptions = { ...(options ?? { port: 0 }) };
-
-    if (!listenOptions.port) {
-      const is1818InUse = await isPortInUse(1818);
-      if (!is1818InUse) listenOptions.port = 1818;
-    }
+  public async listen(): Promise<this> {
+    const startLogId = log.info('CloudNode.start');
 
     try {
-      const addressHost = await new Promise<AddressInfo>((resolve, reject) => {
-        this.httpServer.once('error', reject);
-        this.httpServer
-          .listen(listenOptions, () => {
-            this.httpServer.off('error', reject);
-            resolve(this.httpServer.address() as AddressInfo);
-          })
-          .ref();
-      });
-      const isLocalhost =
-        addressHost.address === '127.0.0.1' ||
-        addressHost.address === '::' ||
-        addressHost.address === '::1';
+      await this.startPublicServer();
+      await this.startHostedServices();
+      await this.startPeerServices();
 
-      // if we're dealing with local or no configuration, set the local version host
-      if (isLocalhost && !options?.port && shouldAutoRouteToHost) {
-        // publish port with the version
-        await UlixeeHostsConfig.global.setVersionHost(
-          this.version,
-          `localhost:${addressHost.port}`,
-        );
-        this.didAutoroute = true;
-        ShutdownHandler.register(() => UlixeeHostsConfig.global.setVersionHost(this.version, null));
-      }
-      await this.router.start(`${this.addressHost}:${addressHost.port}`);
-      this.listeningPromise.resolve(addressHost);
-    } catch (error) {
-      this.listeningPromise.reject(error);
-    }
-    return this.listeningPromise;
-  }
-
-  public addHttpRoute(route: RegExp | string, method: string, handleFn: IHttpHandleFn): void {
-    this.httpRoutes.push([route, method, handleFn]);
-  }
-
-  public addWsRoute(route: RegExp | string, handleFn: IWsHandleFn): void {
-    this.wsRoutes.push([route, handleFn]);
-  }
-
-  public async close(closeDependencies = true): Promise<void> {
-    if (this.isClosing) return this.isClosing;
-    const resolvable = new Resolvable<void>();
-    try {
-      this.isClosing = resolvable.promise;
-      ShutdownHandler.unregister(this.autoClose);
-      const logid = log.stats('CloudNode.Closing', {
-        closeDependencies,
+      await this.startCores();
+      // NOTE: must wait for cores to be available
+      await this.router.register();
+      // wait until router is registered before accepting traffic
+      this.isReady.resolve();
+    } finally {
+      log.stats('CloudNode.started', {
+        publicHost: await this.publicServer.host,
+        hostedServicesHost: await this.hostedServicesServer?.host,
+        kadHost: this.kad?.nodeInfo?.kadHost,
+        cloudConfiguration: this.cloudConfiguration,
+        parentLogId: startLogId,
         sessionId: null,
       });
+    }
+    return this;
+  }
 
-      if (this.didAutoroute) {
-        UlixeeHostsConfig.global.setVersionHost(this.version, null);
+  public async close(): Promise<void> {
+    if (this.isClosing) {
+      return this.isClosing;
+    }
+    const resolvable = new Resolvable<void>();
+    const logid = log.stats('CloudNode.Closing');
+    try {
+      this.isClosing = resolvable.promise;
+
+      ShutdownHandler.unregister(this.close);
+      this.heroCore.off('close', this.close);
+
+      if (this.didReservePort) {
+        this.clearReservedPort();
       }
 
-      if (closeDependencies) {
-        await this.router.close();
-      }
+      await this.router.close();
 
-      for (const ws of this.wsServer.clients) {
-        if (isWsOpen(ws)) ws.terminate();
-      }
+      await this.nodeRegistry?.close();
+      this.desktopCore?.disconnect();
 
-      for (const socket of this.sockets) {
-        socket.unref();
-        socket.destroy();
-      }
+      await this.heroCore.close();
+      await this.datastoreCore.close();
 
-      if (this.httpServer.listening) this.httpServer.unref().close();
-      log.stats('CloudNode.Closed', { parentLogId: logid, sessionId: null });
+      await Promise.allSettled([
+        ...Object.values(this.connectionsToServicesByHost).map(x => x.disconnect()),
+        this.publicServer.close(),
+        this.hostedServicesServer?.close(),
+        this.kad?.close(),
+      ]);
       resolvable.resolve();
     } catch (error) {
       log.error('Error closing socket connections', {
         error,
-        sessionId: null,
       });
       resolvable.reject(error);
+    } finally {
+      log.stats('CloudNode.Closed', { parentLogId: logid, sessionId: null });
     }
     return resolvable.promise;
   }
 
-  private autoClose(): Promise<void> {
-    return this.close(true);
-  }
+  private async startCores(): Promise<void> {
+    const nodeAddress = toUrl(await this.publicServer.host);
+    const hostedServicesAddress = toUrl(await this.hostedServicesServer?.host);
 
-  private async handleHttpRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    await this.listeningPromise;
-    for (const [route, method, handlerFn] of this.httpRoutes) {
-      if (req.method !== method) continue;
-      if (route instanceof RegExp && route.test(req.url)) {
-        const args = route.exec(req.url);
-        const handled = await handlerFn(req, res, args?.length ? args.slice(1) : []);
-        if (handled !== false) return;
-      }
-      if (req.url === route) {
-        const handled = await handlerFn(req, res, []);
-        if (handled !== false) return;
-      }
+    if (this.cloudConfiguration.nodeRegistryHost === 'self') {
+      this.cloudConfiguration.nodeRegistryHost = hostedServicesAddress.host;
     }
-    res.writeHead(404);
-    res.end('Route not found');
-  }
 
-  private handleHttpConnection(socket: Socket): void {
-    this.sockets.add(socket);
-    socket.on('close', () => this.sockets.delete(socket));
-  }
-
-  private async handleWsConnection(ws: WebSocket, req: Http.IncomingMessage): Promise<void> {
-    await this.listeningPromise;
-    for (const [route, handlerFn] of this.wsRoutes) {
-      if (route instanceof RegExp && route.test(req.url)) {
-        const args = route.exec(req.url);
-        handlerFn(ws, req, args?.length ? args.slice(1) : []);
-        return;
-      }
-      if (req.url === route) {
-        handlerFn(ws, req, []);
-        return;
-      }
+    let servicesSetup: IServicesSetup;
+    const setupHost = toUrl(this.cloudConfiguration.servicesSetupHost);
+    // don't dial self
+    if (
+      setupHost &&
+      nodeAddress.host !== setupHost.host &&
+      hostedServicesAddress?.host !== setupHost.host
+    ) {
+      servicesSetup = await this.getServicesSetup(setupHost.host);
+      this.cloudConfiguration.nodeRegistryHost ??= servicesSetup.nodeRegistryHost;
+      log.info('CloudNode.servicesSetup', { servicesSetup, sessionId: null });
     }
-    ws.close();
+
+    this.nodeTracker = new NodeTracker();
+    this.nodeRegistry = new NodeRegistry({
+      datastoreCore: this.datastoreCore,
+      heroCore: this.heroCore,
+      publicServer: this.publicServer,
+      serviceClient: this.createConnectionToServiceHost(this.cloudConfiguration.nodeRegistryHost),
+      kad: this.kad,
+      nodeTracker: this.nodeTracker,
+    });
+
+    if (
+      (this.nodeRegistry.serviceClient || this.cloudConfiguration.nodeRegistryHost) &&
+      !this.cloudConfiguration.networkIdentity
+    ) {
+      await this.createTemporaryNetworkIdentity();
+    }
+    await this.nodeRegistry.register(this.cloudConfiguration.networkIdentity);
+
+    await this.heroCore.start();
+    this.heroCore.once('close', this.close);
+
+    await this.datastoreCore.start({
+      nodeAddress,
+      networkIdentity: this.cloudConfiguration.networkIdentity,
+      hostedServicesAddress,
+      defaultServices: servicesSetup,
+      kad: this.kad,
+      cloudType: this.cloudConfiguration.cloudType,
+      createConnectionToServiceHost: this.createConnectionToServiceHost,
+      getSystemCore: (name: 'heroCore' | 'datastoreCore' | 'desktopCore') => {
+        if (name === 'heroCore') return this.heroCore;
+        if (name === 'datastoreCore') return this.datastoreCore;
+        if (name === 'desktopCore') return this.desktopCore;
+      },
+    });
+
+    /// START DESKTOP
+    if (DesktopUtils.isInstalled()) {
+      const DesktopCore = DesktopUtils.getDesktop();
+      this.desktopCore = new DesktopCore(this.datastoreCore, this.heroCore);
+      await this.desktopCore.activatePlugin();
+    }
   }
 
-  private onHttpError(error: Error): void {
-    log.warn('Error on CloudNode.httpServer', {
-      error,
-      sessionId: null,
+  private createConnectionToServiceHost(serviceHost: string): ConnectionToCore<any, any> {
+    const serviceURL = toUrl(serviceHost);
+    if (!serviceURL) return null;
+
+    const hostURL = new URL('/services', serviceURL);
+
+    // safeguard against looping back to self
+    if (!hostURL || this.hostedServicesHostURL?.origin === hostURL.origin) return null;
+
+    this.connectionsToServicesByHost[hostURL.host] ??= new ConnectionToCore<any, any>(
+      new WsTransportToCore(hostURL.href),
+    );
+    return this.connectionsToServicesByHost[hostURL.host];
+  }
+
+  private async startPublicServer(): Promise<string> {
+    const listenOptions = this.cloudConfiguration;
+
+    this.publicServer = new RoutableServer(this.isReady.promise, listenOptions.host);
+    const isPortUnreserved = !listenOptions.port;
+    if (isPortUnreserved && !isTestEnv) {
+      if (!(await isPortInUse(1818))) listenOptions.port = 1818;
+    }
+    const { address, port } = await this.publicServer.listen(listenOptions);
+    // if we're dealing with local or no configuration, set the local version host
+    if (isLocalhost(address) && isPortUnreserved && !isTestEnv) {
+      // publish port with the version
+      await UlixeeHostsConfig.global.setVersionHost(this.version, `localhost:${port}`);
+      this.didReservePort = true;
+      ShutdownHandler.register(this.clearReservedPort, true);
+    }
+    return await this.publicServer.host;
+  }
+
+  private clearReservedPort(): void {
+    UlixeeHostsConfig.global.setVersionHost(this.version, null);
+  }
+
+  private async startHostedServices(): Promise<void> {
+    const listenOptions = this.cloudConfiguration.hostedServicesServerOptions;
+    if (!listenOptions) return;
+
+    this.hostedServicesServer = new RoutableServer(this.isReady.promise, listenOptions.host);
+    if (!listenOptions.port && !isTestEnv) {
+      if (!(await isPortInUse(18181))) listenOptions.port = 18181;
+    }
+    await this.hostedServicesServer.listen(listenOptions);
+    this.hostedServicesHostURL = toUrl(await this.hostedServicesServer.host);
+  }
+
+  private async startPeerServices(): Promise<void> {
+    if (
+      this.cloudConfiguration.cloudType === 'public' ||
+      (this.cloudConfiguration.kadBootstrapPeers?.length &&
+        this.cloudConfiguration.kadEnabled !== false)
+    ) {
+      this.cloudConfiguration.kadEnabled = true;
+    }
+
+    if (!this.cloudConfiguration.kadEnabled) return;
+    if (!this.cloudConfiguration.networkIdentity) {
+      await this.createTemporaryNetworkIdentity();
+    }
+    if (
+      this.cloudConfiguration.cloudType === 'public' &&
+      !this.cloudConfiguration.kadBootstrapPeers?.length
+    ) {
+      console.warn(
+        "You're running a public cloud node without any kad bootstrap peers, which means you will not get any data from the network." +
+          '\n\nConfigure bootstrap peers to connect to using env.ULX_BOOTSTRAP_PEERS.',
+      );
+    }
+
+    this.kad = await new Kad({
+      apiHost: await this.publicServer.host,
+      dbPath: this.cloudConfiguration.kadDbPath,
+      port: await this.publicServer.port,
+      ipOrDomain: this.publicServer.hostname,
+      identity: this.cloudConfiguration.networkIdentity,
+      boostrapList: this.cloudConfiguration.kadBootstrapPeers,
+    }).start();
+  }
+
+  private getInstalledDatastorePlugins(): IExtractorPluginCore[] {
+    return CloudNode.datastorePluginsToRegister
+      .map(x => {
+        try {
+          let Plugin = require(x); // eslint-disable-line import/no-dynamic-require
+          Plugin = Plugin.default || Plugin;
+          return new Plugin();
+        } catch (err) {
+          // NOTE: don't warning this by default
+          // console.warn('Default Datastore Plugin not installed', path, err.message);
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }
+
+  private getServicesSetup(servicesHost: string): Promise<IServicesSetup> {
+    const url = new URL('/', toUrl(servicesHost));
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') url.protocol = 'http:';
+    const httpModule = url.protocol === 'http:' ? Http : Https;
+
+    return new Promise<IServicesSetup>((resolve, reject) => {
+      httpModule
+        .get(url, async res => {
+          res.on('error', reject);
+          res.setEncoding('utf8');
+          try {
+            let result = '';
+            for await (const chunk of res) {
+              result += chunk;
+            }
+            resolve(JSON.parse(result));
+          } catch (err) {
+            reject(err);
+          }
+        })
+        .on('error', reject)
+        .end();
     });
   }
+
+  private async createTemporaryNetworkIdentity(): Promise<void> {
+    const tempIdentity = await Identity.create();
+    this.cloudConfiguration.networkIdentity = tempIdentity;
+    const key = Ed25519.getPrivateKeyBytes(tempIdentity.privateKey);
+    const path = Path.join(getDataDirectory(), 'ulixee', 'networkIdentity.pem');
+    console.warn(`\n
+############################################################################################
+############################################################################################
+###########################  TEMPORARY NETWORK IDENTITY  ###################################
+############################################################################################
+############################################################################################
+
+            A temporary networkIdentity has been installed on your server. 
+
+       To create a long-term network identity, you should save and use this Identity 
+                          from your local system:
+
+ npx @ulixee/crypto save-identity --privateKey=${key.toString('base64')} --filename="${path}"
+
+--------------------------------------------------------------------------------------------
+       
+           To dismiss this message, add the following environment variable:
+           
+ ULX_NETWORK_IDENTITY_PATH="${path}",
+
+############################################################################################
+############################################################################################
+############################################################################################
+\n\n`);
+  }
+}
+
+function isLocalhost(address: string): boolean {
+  return (
+    address === '127.0.0.1' || address === 'localhost' || address === '::' || address === '::1'
+  );
 }

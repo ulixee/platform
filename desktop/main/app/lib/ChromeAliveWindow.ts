@@ -1,18 +1,18 @@
-import { app, BrowserWindow, MenuItem, screen, shell } from 'electron';
-import * as Path from 'path';
-import { nanoid } from 'nanoid';
-import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';
-import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
-import { IChromeAliveSessionApis } from '@ulixee/desktop-interfaces/apis';
-import { bindFunctions } from '@ulixee/commons/lib/utils';
-import Queue from '@ulixee/commons/lib/Queue';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
+import Queue from '@ulixee/commons/lib/Queue';
+import { bindFunctions } from '@ulixee/commons/lib/utils';
+import { IChromeAliveSessionApis } from '@ulixee/desktop-interfaces/apis';
+import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
+import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';
+import HeroCore from '@ulixee/hero-core';
+import { app, BrowserWindow, MenuItem, screen, shell } from 'electron';
+import { nanoid } from 'nanoid';
+import * as Path from 'path';
 import moment = require('moment');
-import View from './View';
-import StaticServer from './StaticServer';
-import ApiClient from './ApiClient';
 import generateContextMenu from '../menus/generateContextMenu';
+import ApiClient from './ApiClient';
+import StaticServer from './StaticServer';
+import View from './View';
 import BrowserView = Electron.BrowserView;
 
 // make electron packaging friendly
@@ -34,7 +34,7 @@ export default class ChromeAliveWindow {
 
   window: BrowserWindow;
   api: ApiClient<IChromeAliveSessionApis, IChromeAliveSessionEvents>;
-  enableDevtoolsOnDevtools = false;
+  enableDevtoolsOnDevtools = process.env.DEVTOOLS ?? false;
 
   private get activeTab(): IReplayTab {
     return this.#replayTabs[this.#activeTabIdx];
@@ -324,7 +324,7 @@ export default class ChromeAliveWindow {
 
   private createApi(baseHost: string): void {
     const address = new URL(`/chromealive/${this.session.heroSessionId}`, baseHost);
-    if (!this.session.dbPath.includes(SessionDb.databaseDir)) {
+    if (!this.session.dbPath.includes(HeroCore.dataDir)) {
       address.searchParams.set('path', this.session.dbPath);
     }
     this.api = new ApiClient(address.href, this.onChromeAliveEvent);

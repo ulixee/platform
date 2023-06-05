@@ -1,47 +1,38 @@
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import { NodeVM, VMScript } from 'vm2';
-import { promises as Fs } from 'fs';
-import Datastore, { ConnectionToDatastoreCore, Crawler } from '@ulixee/datastore';
-import Extractor from '@ulixee/datastore/lib/Extractor';
-import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
-import TransportBridge from '@ulixee/net/lib/TransportBridge';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
-import DatastoreStorage from '@ulixee/datastore/lib/DatastoreStorage';
+import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
+import Datastore, { ConnectionToDatastoreCore, Crawler } from '@ulixee/datastore';
+import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
+import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
+import Extractor from '@ulixee/datastore/lib/Extractor';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { promises as Fs } from 'fs';
 import * as Path from 'path';
-import DatastoreCore from '../index';
+import { NodeVM, VMScript } from 'vm2';
+import DatastoreApiClients from './DatastoreApiClients';
 
 const { version } = require('../package.json');
 
+const bundledPath = Path.join('build', 'desktop', 'main', 'app', 'packages');
+
 export default class DatastoreVm {
   public static doNotCacheList = new Set<string>();
-  private static compiledScriptsByPath = new Map<string, Promise<VMScript>>();
-  private static _connectionToDatastoreCore: ConnectionToDatastoreCore;
-  private static apiClientCacheByUrl: { [url: string]: DatastoreApiClient } = {};
+  private compiledScriptsByPath = new Map<string, Promise<VMScript>>();
+  private readonly connectionToDatastoreCore: ConnectionToDatastoreCore;
+  private readonly apiClientCache: DatastoreApiClients;
 
-  private static get connectionToDatastoreCore(): ConnectionToDatastoreCore {
-    if (!this._connectionToDatastoreCore) {
-      const bridge = new TransportBridge();
-      this._connectionToDatastoreCore = new ConnectionToDatastoreCore(bridge.transportToCore);
-      DatastoreCore.addConnection(bridge.transportToClient);
-    }
-    return this._connectionToDatastoreCore;
+  constructor(
+    connectionToDatastoreCore: ConnectionToDatastoreCore,
+    apiClientCache: DatastoreApiClients,
+    readonly plugins: IExtractorPluginCore[],
+  ) {
+    this.apiClientCache = apiClientCache;
+    this.connectionToDatastoreCore = connectionToDatastoreCore;
   }
 
-  public static async open(
-    path: string,
-    storage: DatastoreStorage,
-    manifest: IDatastoreManifest,
-  ): Promise<Datastore> {
-    if (!isSemverSatisfied(manifest.coreVersion, version)) {
-      throw new Error(
-        `The current version of Core (${version}) is incompatible with this Datastore version (${manifest.coreVersion})`,
-      );
-    }
-
+  public async getDatastore(path: string): Promise<Datastore> {
     const script = await this.getVMScript(path);
-
-    let datastore = this.getVm().run(script) as Datastore;
+    const vm = this.getVm();
+    let datastore = vm.run(script) as Datastore;
     if (datastore instanceof Extractor) {
       const extractor = datastore;
       datastore = new Datastore({
@@ -53,45 +44,51 @@ export default class DatastoreVm {
         crawlers: { [crawler.name ?? 'default']: crawler },
       }) as Datastore;
     }
+    return datastore;
+  }
+
+  public async open(
+    path: string,
+    storage: IStorageEngine,
+    manifest: IDatastoreManifest,
+  ): Promise<Datastore> {
+    if (!isSemverSatisfied(manifest.coreVersion, version)) {
+      throw new Error(
+        `The current version of Core (${version}) is incompatible with this Datastore version (${manifest.coreVersion})`,
+      );
+    }
+
+    const datastore = await this.getDatastore(path);
+
     if (!(datastore instanceof Datastore)) {
       throw new Error(
         'The default export from this script needs to inherit from "@ulixee/datastore"',
       );
     }
-    datastore.bind({
+
+    await datastore.bind({
       connectionToCore: this.connectionToDatastoreCore,
-      datastoreStorage: storage,
+      storageEngine: storage,
       manifest,
-      apiClientLoader: this.getCachedApiClient.bind(this),
+      apiClientLoader: this.apiClientCache.get.bind(this.apiClientCache),
     });
 
     return datastore;
   }
 
-  public static async close(): Promise<void> {
-    for (const client of Object.values(this.apiClientCacheByUrl)) {
-      await client.disconnect();
-    }
-    this.apiClientCacheByUrl = {};
-  }
-
-  private static getCachedApiClient(host: string): DatastoreApiClient {
-    if (!host.includes('://')) host = `ulx://${host}`;
-    const url = new URL(host);
-    host = `ulx://${url.host}`;
-    this.apiClientCacheByUrl[host] ??= new DatastoreApiClient(host);
-    return this.apiClientCacheByUrl[host];
-  }
-
-  private static getVMScript(path: string): Promise<VMScript> {
-    if (this.compiledScriptsByPath.has(path)) {
+  private getVMScript(path: string): Promise<VMScript> {
+    path = Path.resolve(path);
+    if (this.compiledScriptsByPath.has(path) && !DatastoreVm.doNotCacheList.has(path)) {
       return this.compiledScriptsByPath.get(path);
     }
 
-    SourceMapSupport.clearStackPath(`${Path.dirname(Path.dirname(Path.resolve(path)))}${Path.sep}`);
+    const srcDir = `${Path.dirname(Path.dirname(path))}${Path.sep}`;
+    SourceMapSupport.clearStackPath(srcDir);
+    SourceMapSupport.retrieveSourceMap(path, Path.dirname(path));
 
     const script = new Promise<VMScript>(async resolve => {
       const file = await Fs.readFile(path, 'utf8');
+
       const vmScript = new VMScript(file, {
         filename: path,
         compiler: 'javascript',
@@ -99,14 +96,14 @@ export default class DatastoreVm {
       resolve(vmScript);
     });
 
-    if (!this.doNotCacheList.has(path)) {
+    if (!DatastoreVm.doNotCacheList.has(path)) {
       this.compiledScriptsByPath.set(path, script);
     }
     return script;
   }
 
-  private static getVm(): NodeVM {
-    const plugins = [...Object.values(DatastoreCore.pluginCoresByName)];
+  private getVm(): NodeVM {
+    const plugins = this.plugins;
     const whitelist: Set<string> = new Set([
       ...plugins.map(x => x.nodeVmRequireWhitelist || []).flat(),
       '@ulixee/datastore',
@@ -122,22 +119,28 @@ export default class DatastoreVm {
       console: 'inherit',
       sandbox: {
         URL: Object.freeze(URL),
+        vmStack: {},
       },
       wasm: false,
       eval: false,
       wrapper: 'commonjs',
       strict: true,
       require: {
-        context: 'host',
         external: {
           modules: Array.from(whitelist),
-          transitive: false,
+          transitive: true,
         },
         // This is needed because the underlying node vm/Script can't see the origin line numbers
         // from the "host", so we need Hero to be loaded into the Sandbox
-        pathContext(name) {
+        context(name: string) {
           for (const plugin of plugins) {
-            if (plugin.nodeVmUseSandbox?.(name) === true) {
+            if (
+              plugin.nodeVmUseSandbox?.(name) === true ||
+              plugin.nodeVmUseSandbox?.(
+                name
+                  .replace(bundledPath, '@ulixee'),
+              ) === true
+            ) {
               return 'sandbox';
             }
           }

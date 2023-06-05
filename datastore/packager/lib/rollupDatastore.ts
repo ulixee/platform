@@ -81,7 +81,7 @@ export default async function rollupDatastore(
           )
             return;
         }
-        console.warn(warning.message, warning.code);
+        console.warn(warning.frame, warning.message, warning.code);
       },
     };
 

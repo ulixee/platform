@@ -9,7 +9,8 @@ export default new DatastoreApiHandler('Datastores.list', {
     // TODO: this method might not return consistent offsets, and this is obviously not optimized
     const datastores = await context.datastoreRegistry.all();
     for (const datastore of datastores.slice(request.offset ?? 0, 100)) {
-      const result = await translateDatastoreMetadata(datastore, context, true);
+      const stats = await context.statsTracker.getForDatastore(datastore);
+      const result = await translateDatastoreMetadata(datastore, stats, context, true);
       results.push(result);
     }
     return { datastores: results, count: datastores.length, offset: request.offset };

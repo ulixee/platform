@@ -1,55 +1,55 @@
-import { Session as HeroSession, Tab } from '@ulixee/hero-core';
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import * as Fs from 'fs';
-import IScriptInvocationMeta from '@ulixee/hero-interfaces/IScriptInvocationMeta';
-import { bindFunctions } from '@ulixee/commons/lib/utils';
-import IHeroSessionUpdatedEvent from '@ulixee/desktop-interfaces/events/IHeroSessionUpdatedEvent';
-import type { IOutputChangeRecord } from '@ulixee/hero-core/models/OutputTable';
-import IDatastoreOutputEvent from '@ulixee/desktop-interfaces/events/IDatastoreOutputEvent';
-import IDatastoreCollectedAssets from '@ulixee/desktop-interfaces/IDatastoreCollectedAssets';
-import IDatastoreCollectedAssetEvent from '@ulixee/desktop-interfaces/events/IDatastoreCollectedAssetEvent';
-import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';
-import { spawn } from 'child_process';
-import Log from '@ulixee/commons/lib/Logger';
-import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
-import TimelineWatch from '@ulixee/hero-timetravel/lib/TimelineWatch';
+import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
+import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
+import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import Log from '@ulixee/commons/lib/Logger';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
+import SourceLoader from '@ulixee/commons/lib/SourceLoader';
+import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
+import { bindFunctions } from '@ulixee/commons/lib/utils';
+import { IChromeAliveSessionApis } from '@ulixee/desktop-interfaces/apis';
 import IChromeAliveSessionApi, {
   ISessionResumeArgs,
 } from '@ulixee/desktop-interfaces/apis/IChromeAliveSessionApi';
-import SourceLoader from '@ulixee/commons/lib/SourceLoader';
-import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation';
-import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
-import MirrorPage from '@ulixee/hero-timetravel/lib/MirrorPage';
-import CommandTimeline from '@ulixee/hero-timetravel/lib/CommandTimeline';
-import { LoadStatus } from '@ulixee/unblocked-specification/agent/browser/Location';
-import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
-import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
-import { ISelectorMap } from '@ulixee/desktop-interfaces/ISelectorMap';
-import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
-import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
-import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
-import ITransportToClient from '@ulixee/net/interfaces/ITransportToClient';
-import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
-import { IChromeAliveSessionApis } from '@ulixee/desktop-interfaces/apis';
-import { IncomingMessage } from 'http';
-import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
-import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
-import DetachedAssets from '@ulixee/hero-core/lib/DetachedAssets';
-import MirrorNetwork from '@ulixee/hero-timetravel/lib/MirrorNetwork';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
-import TimetravelTicks, { ITabDetails } from '@ulixee/hero-timetravel/player/TimetravelTicks';
+import IDatastoreCollectedAssetEvent from '@ulixee/desktop-interfaces/events/IDatastoreCollectedAssetEvent';
+import IDatastoreOutputEvent from '@ulixee/desktop-interfaces/events/IDatastoreOutputEvent';
+import IHeroSessionUpdatedEvent from '@ulixee/desktop-interfaces/events/IHeroSessionUpdatedEvent';
+import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';
+import IDatastoreCollectedAssets from '@ulixee/desktop-interfaces/IDatastoreCollectedAssets';
+import { ISelectorMap } from '@ulixee/desktop-interfaces/ISelectorMap';
+import { Session as HeroSession, Tab } from '@ulixee/hero-core';
+import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
+import DetachedAssets from '@ulixee/hero-core/lib/DetachedAssets';
 import { IDomRecording } from '@ulixee/hero-core/models/DomChangesTable';
-import Resolvable from '@ulixee/commons/lib/Resolvable';
+import type { IOutputChangeRecord } from '@ulixee/hero-core/models/OutputTable';
+import IScriptInvocationMeta from '@ulixee/hero-interfaces/IScriptInvocationMeta';
+import ISessionCreateOptions from '@ulixee/hero-interfaces/ISessionCreateOptions';
+import ISourceCodeReference from '@ulixee/hero-interfaces/ISourceCodeReference';
+import ITimelineMetadata from '@ulixee/hero-interfaces/ITimelineMetadata';
+import CommandTimeline from '@ulixee/hero-timetravel/lib/CommandTimeline';
+import MirrorNetwork from '@ulixee/hero-timetravel/lib/MirrorNetwork';
+import MirrorPage from '@ulixee/hero-timetravel/lib/MirrorPage';
+import TimelineWatch from '@ulixee/hero-timetravel/lib/TimelineWatch';
+import TimetravelPlayer from '@ulixee/hero-timetravel/player/TimetravelPlayer';
+import TimetravelTicks, { ITabDetails } from '@ulixee/hero-timetravel/player/TimetravelTicks';
+import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
+import ITransport from '@ulixee/net/interfaces/ITransport';
+import ConnectionToClient from '@ulixee/net/lib/ConnectionToClient';
+import { LoadStatus } from '@ulixee/unblocked-specification/agent/browser/Location';
 import IResourceMeta from '@ulixee/unblocked-specification/agent/net/IResourceMeta';
-import SessionResourcesWatch from './SessionResourcesWatch';
-import ElementsModule from './app-extension-modules/ElementsModule';
+import { spawn } from 'child_process';
+import * as Fs from 'fs';
+import { IncomingMessage } from 'http';
 import DevtoolsBackdoorModule from './app-extension-modules/DevtoolsBackdoorModule';
-import SourceCodeTimeline from './SourceCodeTimeline';
-import OutputRebuilder from './OutputRebuilder';
-import SelectorRecommendations from './SelectorRecommendations';
+import ElementsModule from './app-extension-modules/ElementsModule';
 import AppDevtoolsConnection from './AppDevtoolsConnection';
 import ChromeAliveWindowController from './ChromeAliveWindowController';
+import OutputRebuilder from './OutputRebuilder';
+import SelectorRecommendations from './SelectorRecommendations';
+import SessionResourcesWatch from './SessionResourcesWatch';
+import SourceCodeTimeline from './SourceCodeTimeline';
 
 const { log } = Log(module);
 
@@ -81,7 +81,7 @@ export default class SessionController extends TypedEventEmitter<{
 
   public mirrorPagePauseRefreshing = false;
   public chromeAliveWindowController: ChromeAliveWindowController;
-  public replayTransport: ITransportToClient<any>;
+  public replayTransport: ITransport;
 
   private selectorRecommendations: SelectorRecommendations;
   private timelineWatch: TimelineWatch;
@@ -114,6 +114,7 @@ export default class SessionController extends TypedEventEmitter<{
   constructor(
     private readonly db: SessionDb,
     private readonly options: ISessionCreateOptions,
+    private readonly datastoresDir: string,
     devtoolsConnection: AppDevtoolsConnection,
   ) {
     super();
@@ -168,20 +169,26 @@ export default class SessionController extends TypedEventEmitter<{
 
     this.selectorRecommendations = new SelectorRecommendations(this.scriptInvocationMeta);
 
-    if (this.scriptInvocationMeta.entrypoint.endsWith('.ts')) {
-      this.scriptEntrypointTs = this.scriptInvocationMeta.entrypoint;
-    }
     if (this.options.input) {
       this.inputBytes = Buffer.byteLength(JSON.stringify(this.options.input));
     }
 
-    this.sourceCodeTimeline = new SourceCodeTimeline(this.scriptInvocationMeta.entrypoint);
+    this.sourceCodeTimeline = new SourceCodeTimeline(
+      this.scriptInvocationMeta.entrypoint,
+      datastoresDir,
+    );
+    if (
+      this.sourceCodeTimeline.entrypoint.endsWith('.ts') ||
+      this.scriptInvocationMeta.entrypoint.endsWith('.ts')
+    ) {
+      this.scriptEntrypointTs = this.sourceCodeTimeline.entrypoint;
+    }
 
     const sourceCode = this.sourceCodeTimeline;
     this.events.on(sourceCode, 'command', this.sendApiEvent.bind(this, 'Command.updated'));
     this.events.on(sourceCode, 'source', this.sendApiEvent.bind(this, 'SourceCode.updated'));
 
-    if (this.sourceCodeTimeline.scriptExists) {
+    if (Fs.existsSync(this.sourceCodeTimeline.entrypoint)) {
       this.scriptLastModifiedTime = Fs.statSync(this.scriptInvocationMeta.entrypoint)?.mtimeMs;
       this.watchHandle = Fs.watch(
         this.scriptInvocationMeta.entrypoint,
@@ -271,7 +278,7 @@ export default class SessionController extends TypedEventEmitter<{
   }
 
   public addConnection(
-    transport: ITransportToClient<any>,
+    transport: ITransport,
     request: IncomingMessage,
   ): TConnectionToChromeAliveSessionClient {
     if (request.url.includes('/devtools')) {
@@ -471,7 +478,7 @@ export default class SessionController extends TypedEventEmitter<{
   public getSourceCodeAtCommandId(commandId: number): (ISourceCodeLocation & { code: string })[] {
     const command = this.db.commands.loadHistory().find(x => x.id === commandId);
     if (!command) return [];
-    return command.callsite.map(x => SourceLoader.getSource(x));
+    return command.callsite.map(x => SourceLoader.getSource(x)).filter(Boolean);
   }
 
   public addSourceCodeLocation(record: { commandId: number } & ISourceCodeReference): void {

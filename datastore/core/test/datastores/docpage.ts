@@ -29,10 +29,12 @@ export default new Datastore({
         lastName: string(),
         isTester: boolean({ optional: true }),
       },
-      seedlings: [
-        { firstName: 'Caleb', lastName: 'Clark', isTester: true },
-        { firstName: 'Blake', lastName: 'Byrnes' },
-      ],
+      onCreated(): Promise<void> {
+        return this.insertInternal(
+          { firstName: 'Caleb', lastName: 'Clark', isTester: true },
+          { firstName: 'Blake', lastName: 'Byrnes' },
+        );
+      },
     }),
   },
 });

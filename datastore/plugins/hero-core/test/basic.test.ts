@@ -1,11 +1,10 @@
-import * as Fs from 'fs';
 import { CloudNode } from '@ulixee/cloud';
-import { Helpers } from '@ulixee/datastore-testing';
-import DatastoreCore from '@ulixee/datastore-core';
-import Packager from '@ulixee/datastore-packager';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
+import Packager from '@ulixee/datastore-packager';
+import { Helpers } from '@ulixee/datastore-testing';
+import HeroCore from '@ulixee/hero-core';
+import * as Fs from 'fs';
 import * as Path from 'path';
-import SessionDb from '@ulixee/hero-core/dbs/SessionDb';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'hero-core/basic.test');
 
@@ -16,13 +15,13 @@ let host: string;
 
 beforeAll(async () => {
   cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
+  cloudNode.datastoreConfiguration = {
     datastoresDir: storageDir,
     datastoresTmpDir: Path.join(storageDir, 'tmp'),
   };
   Helpers.onClose(() => cloudNode.close(), true);
   koaServer = await Helpers.runKoaServer();
-  await cloudNode.listen(null, false);
+  await cloudNode.listen();
   if (Fs.existsSync(`${__dirname}/_testDatastore.dbx`))
     await Fs.promises.rm(`${__dirname}/_testDatastore.dbx`, { recursive: true });
   packager = new Packager(require.resolve('./_testDatastore.js'));
@@ -37,10 +36,8 @@ beforeAll(async () => {
 afterAll(Helpers.afterAll);
 
 test('it should be able to upload a datastore and run it by hash', async () => {
-  // @ts-expect-error
-  const registry = DatastoreCore.datastoreRegistry;
-  // @ts-expect-error
-  const { queryLogDb, datastoresDb } = registry;
+  const statsTracker = cloudNode.datastoreCore.statsTracker;
+  const { queryLogDb, statsDb } = statsTracker.diskStore;
 
   const manifest = packager.manifest;
 
@@ -69,7 +66,7 @@ test('it should be able to upload a datastore and run it by hash', async () => {
   expect(queryLogDb.logTable.all()[0].query).toBe(`SELECT title FROM default(url => $1)`);
   const heroSessionIds = JSON.parse(queryLogDb.logTable.all()[0].heroSessionIds);
   expect(heroSessionIds).toHaveLength(2);
-  const stats = datastoresDb.datastoreItemStats.all();
+  const stats = statsDb.datastoreEntities.all();
   expect(stats).toHaveLength(2);
   expect(stats.some(x => x.name === 'default')).toBeTruthy();
   expect(stats.some(x => x.name === 'defaultCrawl')).toBeTruthy();
@@ -94,7 +91,7 @@ test('it should be able to capture stack origins', async () => {
 
   expect(heroSession.outputs[0].sessionId).toBeTruthy();
 
-  const db = SessionDb.getCached(heroSession.outputs[0].sessionId);
+  const db = await cloudNode.heroCore.sessionRegistry.get(heroSession.outputs[0].sessionId);
   const gotoCommand = db.commands.all().find(x => x.name === 'goto');
   expect(gotoCommand).toBeTruthy();
   expect(gotoCommand.callsite).toContain('_testDatastore@dbx1');

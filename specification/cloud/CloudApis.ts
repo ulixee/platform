@@ -6,7 +6,7 @@ export const CloudApiSchemas = {
     args: z.object({}),
     result: z.object({
       version: z.string({ description: 'The version of Ulixee.' }),
-      nodes: z.number().describe('Number of installed nodes.'),
+      nodes: z.number().describe('Number of known nodes.'),
     }),
   },
 };

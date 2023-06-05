@@ -1,23 +1,19 @@
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import PaymentProcessor from './PaymentProcessor';
-import { IDatastoreManifestWithStats } from './DatastoreRegistry';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 import { IDatastoreStatsRecord } from '../db/DatastoreStatsTable';
+import { IDatastoreStats } from './StatsTracker';
+import { IDatastoreManifestWithLatest } from '../interfaces/IDatastoreRegistryStore';
 
 export default async function translateDatastoreMetadata(
-  datastore: IDatastoreManifestWithStats,
+  datastore: IDatastoreManifestWithLatest,
+  datastoreStats: IDatastoreStats,
   context: IDatastoreApiContext,
   includeSchemaAsJson: boolean,
 ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
   const result: IDatastoreApiTypes['Datastore.meta']['result'] = {
-    name: datastore.name,
-    description: datastore.description,
-    isStarted: datastore.isStarted,
-    scriptEntrypoint: datastore.scriptEntrypoint,
-    versionHash: datastore.versionHash,
-    latestVersionHash: datastore.latestVersionHash,
-    schemaInterface: datastore.schemaInterface,
-    stats: translateStats(datastore.stats),
+    ...datastore,
+    stats: datastoreStats.stats,
     crawlersByName: {},
     extractorsByName: {},
     tablesByName: {},
@@ -26,44 +22,44 @@ export default async function translateDatastoreMetadata(
 
   for (const [name, extractor] of Object.entries(datastore.extractorsByName)) {
     const { prices, schemaAsJson } = extractor;
-    const stats = datastore.statsByItemName[name];
+    const stats = datastoreStats.statsByEntityName[name];
     const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
 
     result.extractorsByName[name] = {
-      description: result.description,
-      stats: translateStats(stats),
+      description: extractor.description,
+      stats,
       pricePerQuery,
       minimumPrice: pricePerQuery + settlementFee,
-      priceBreakdown: prices,
-      schemaJson: includeSchemaAsJson ? schemaAsJson : undefined,
+      prices,
+      schemaAsJson: includeSchemaAsJson ? schemaAsJson : undefined,
     };
   }
   for (const [name, crawler] of Object.entries(datastore.crawlersByName)) {
     const { prices, schemaAsJson } = crawler;
-    const stats = datastore.statsByItemName[name];
+    const stats = datastoreStats.statsByEntityName[name];
     const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
 
     result.crawlersByName[name] = {
-      description: result.description,
-      stats: translateStats(stats),
+      description: crawler.description,
+      stats,
       pricePerQuery,
       minimumPrice: pricePerQuery + settlementFee,
-      priceBreakdown: prices,
-      schemaJson: includeSchemaAsJson ? schemaAsJson : undefined,
+      prices,
+      schemaAsJson: includeSchemaAsJson ? schemaAsJson : undefined,
     };
   }
 
   for (const [name, meta] of Object.entries(datastore.tablesByName)) {
     const { prices } = meta;
     const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
-    const stats = datastore.statsByItemName[name];
+    const stats = datastoreStats.statsByEntityName[name];
 
     result.tablesByName[name] = {
-      description: result.description,
-      stats: translateStats(stats),
+      description: meta.description,
+      stats,
       pricePerQuery: pricePerQuery + settlementFee,
-      priceBreakdown: prices,
-      schemaJson: includeSchemaAsJson ? meta.schemaAsJson : undefined,
+      prices,
+      schemaAsJson: includeSchemaAsJson ? meta.schemaAsJson : undefined,
     };
   }
   return result;

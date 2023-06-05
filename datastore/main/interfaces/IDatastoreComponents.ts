@@ -2,6 +2,7 @@ import Crawler from '../lib/Crawler';
 import Extractor from '../lib/Extractor';
 import Table from '../lib/Table';
 import CreditsTable from '../lib/CreditsTable';
+import Datastore from '../lib/Datastore';
 
 export default interface IDatastoreComponents<
   TTable extends TTables,
@@ -11,6 +12,7 @@ export default interface IDatastoreComponents<
   name?: string;
   description?: string;
   domain?: string;
+  storageEngineHost?: string;
   remoteDatastores?: {
     [source: string]: string;
   };
@@ -23,10 +25,18 @@ export default interface IDatastoreComponents<
   paymentAddress?: string;
   affiliateId?: string;
   adminIdentities?: string[];
+  onCreated?(this: Datastore<TTable, TExtractor, TCrawler, this>): Promise<void>;
+  onVersionMigrated?(
+    this: Datastore<TTable, TExtractor, TCrawler, this>,
+    previousVersion: Datastore,
+  ): Promise<void>;
   authenticateIdentity?(identity: string, nonce: string): Promise<boolean> | boolean;
 }
 
-export type TExtractors<T = any, TFunc extends Extractor = Extractor> = T extends Record<string, TFunc>
+export type TExtractors<T = any, TFunc extends Extractor = Extractor> = T extends Record<
+  string,
+  TFunc
+>
   ? {
       [K in keyof T]: T[K];
     }

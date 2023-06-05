@@ -18,7 +18,7 @@ describe('Schemas', () => {
       schema,
     });
 
-    await expect(extractor.runInternal({ input: {} as any })).rejects.toThrowError(
+    await expect(extractor.runInternal({ input: {} as any })).rejects.toThrow(
       'input did not match',
     );
   });
@@ -72,7 +72,7 @@ describe('Schemas', () => {
       schema,
     });
 
-    await expect(extractor.runInternal({})).rejects.toThrowError('Output did not match');
+    await expect(extractor.runInternal({})).rejects.toThrow('Output did not match');
   });
 
   it('will validate output and abort at the first error', async () => {
@@ -103,7 +103,7 @@ describe('Schemas', () => {
       },
     });
 
-    await expect(extractor.runInternal({})).rejects.toThrowError('Output did not match');
+    await expect(extractor.runInternal({})).rejects.toThrow('Output did not match');
     expect(counter).toBe(2);
   });
 

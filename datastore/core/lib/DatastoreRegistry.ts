@@ -1,363 +1,240 @@
-import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
-import { promises as Fs } from 'fs';
-import * as HashUtils from '@ulixee/commons/lib/hashUtils';
-import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
-import * as Path from 'path';
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
-import DatastoreStorage from '@ulixee/datastore/lib/DatastoreStorage';
+import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
 import Logger from '@ulixee/commons/lib/Logger';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
-import DatastoresDb from '../db';
-import { IDatastoreItemStatsRecord } from '../db/DatastoreItemStatsTable';
-import { IDatastoreVersionRecord } from '../db/DatastoreVersionsTable';
-import {
-  DatastoreNotFoundError,
-  InvalidPermissionsError,
-  InvalidScriptVersionHistoryError,
-  MissingLinkedScriptVersionsError,
-} from './errors';
-import DatastoreManifest from './DatastoreManifest';
-import { IDatastoreStatsRecord } from '../db/DatastoreStatsTable';
-import QueryLogDb from '../db/QueryLogDb';
-import DatastoreVm from './DatastoreVm';
-import { unpackDbxFile } from './dbxUtils';
-
-const datastorePackageJson = require(`../package.json`);
-const { log } = Logger(module);
+import { bindFunctions } from '@ulixee/commons/lib/utils';
+import { ConnectionToCore } from '@ulixee/net';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { IDatastoreRegistryApis } from '@ulixee/platform-specification/services/DatastoreRegistryApis';
+import IKad from '@ulixee/platform-specification/types/IKad';
+import { promises as Fs } from 'fs';
+import { IDatastoreEntityStatsRecord } from '../db/DatastoreEntityStatsTable';
+import IDatastoreCoreConfigureOptions from '../interfaces/IDatastoreCoreConfigureOptions';
+import IDatastoreRegistryStore, {
+  IDatastoreManifestWithLatest,
+} from '../interfaces/IDatastoreRegistryStore';
+import DatastoreApiClients from './DatastoreApiClients';
+import DatastoreRegistryServiceClient from './DatastoreRegistryServiceClient';
+import DatastoreRegistryDiskStore, { IDatastoreSourceDetails } from './DatastoreRegistryDiskStore';
+import DatastoreRegistryNetworkStore from './DatastoreRegistryNetworkStore';
+import { unpackDbx } from './dbxUtils';
+import { DatastoreNotFoundError } from './errors';
 
 export interface IStatsByName {
-  [name: string]: IDatastoreItemStatsRecord;
+  [name: string]: IDatastoreEntityStatsRecord;
 }
 
-export type IDatastoreManifestWithStats = IDatastoreManifest & {
-  stats: IDatastoreStatsRecord;
-  statsByItemName: IStatsByName;
-  path: string;
+export type IDatastoreManifestWithRuntime = IDatastoreManifestWithLatest & {
+  runtimePath: string;
   isStarted: boolean;
-  latestVersionHash: string;
 };
+
+type TOnDatastoreInstalledCallbackFn = (
+  version: IDatastoreManifestWithRuntime,
+  source: IDatastoreSourceDetails['source'],
+  previous?: IDatastoreManifestWithRuntime,
+  options?: {
+    clearExisting?: boolean;
+    isWatching?: boolean;
+  },
+) => Promise<void>;
+
+const { log } = Logger(module);
 
 export default class DatastoreRegistry extends TypedEventEmitter<{
   new: {
-    datastore: IDatastoreManifestWithStats;
+    datastore: IDatastoreManifestWithRuntime;
     activity: 'started' | 'uploaded';
   };
   stopped: { versionHash: string };
-  stats: IDatastoreStatsRecord;
 }> {
-  private get datastoresDb(): DatastoresDb {
-    this.#datastoresDb ??= new DatastoresDb(this.datastoresDir);
-    return this.#datastoresDb;
+  public diskStore: DatastoreRegistryDiskStore;
+  public clusterStore: DatastoreRegistryServiceClient;
+  public networkStore: DatastoreRegistryNetworkStore;
+  public networkCacheTimeMins = 48 * 60; // 48 hours
+
+  public get sourceOfTruthAddress(): URL {
+    return this.clusterStore?.hostAddress;
   }
 
-  private get queryLogDb(): QueryLogDb {
-    this.#queryLogDb ??= new QueryLogDb(this.datastoresDir);
-    return this.#queryLogDb;
-  }
+  private readonly stores: IDatastoreRegistryStore[] = [];
+  private logger: IBoundLog;
 
-  #datastoresDb: DatastoresDb;
-  #queryLogDb: QueryLogDb;
-  #storageByPath = new Map<string, DatastoreStorage>();
-  #openedManifestsByDbxPath = new Map<string, IDatastoreManifest>();
-
-  constructor(readonly datastoresDir: string) {
+  constructor(
+    datastoreDir: string,
+    apiClients?: DatastoreApiClients,
+    connectionToHostedServiceCore?: ConnectionToCore<IDatastoreRegistryApis, {}>,
+    kad?: IKad,
+    private config?: IDatastoreCoreConfigureOptions,
+    private installCallbackFn?: TOnDatastoreInstalledCallbackFn,
+  ) {
     super();
+    bindFunctions(this);
+    this.logger = log.createChild(module);
+    this.diskStore = new DatastoreRegistryDiskStore(
+      datastoreDir,
+      !connectionToHostedServiceCore,
+      config?.storageEngineHost,
+      this.onDatastoreInstalled.bind(this),
+    );
+
+    if (connectionToHostedServiceCore) {
+      this.clusterStore = new DatastoreRegistryServiceClient(connectionToHostedServiceCore);
+    }
+
+    if (kad) {
+      this.networkStore = new DatastoreRegistryNetworkStore(kad, apiClients);
+      this.networkStore.kad.on('provide-expired', this.onProvideExpired);
+    }
+
+    this.stores = [this.diskStore, this.clusterStore, this.networkStore].filter(Boolean);
   }
 
-  public close(): void {
-    this.#datastoresDb?.close();
-    this.#queryLogDb?.close();
-    for (const storage of this.#storageByPath.values()) {
-      storage.db.close();
-    }
-    this.#openedManifestsByDbxPath.clear();
-    this.#storageByPath.clear();
+  public async close(): Promise<void> {
+    this.networkStore?.kad.off('provide-expired', this.onProvideExpired);
+    await Promise.allSettled(this.stores.map(x => x.close()));
   }
 
-  public hasVersionHash(versionHash: string): boolean {
-    return !!this.datastoresDb.datastoreVersions.getByHash(versionHash);
-  }
-
-  public count(): number {
-    const hashesSet = new Set<string>();
-    for (const datastore of this.datastoresDb.datastoreVersions.all()) {
-      if (datastore.dbxPath) hashesSet.add(datastore.versionHash);
-    }
-    for (const datastore of this.datastoresDb.datastoreVersions.allCached()) {
-      if (datastore.dbxPath) hashesSet.add(datastore.versionHash);
-    }
-    return hashesSet.size;
-  }
-
-  public async all(): Promise<IDatastoreManifestWithStats[]> {
-    const results: IDatastoreManifestWithStats[] = [];
-    const hashesSet = new Set<string>();
-    for (const datastore of this.datastoresDb.datastoreVersions.all()) {
-      const entry = await this.getByVersionHash(datastore.versionHash, false);
-      if (entry) {
-        results.push(entry);
-        hashesSet.add(entry.versionHash);
-      }
-    }
-    for (const datastore of this.datastoresDb.datastoreVersions.allCached()) {
-      if (!datastore || hashesSet.has(datastore.versionHash)) continue;
-      const entry = await this.getByVersionHash(datastore.versionHash, false);
-      // check that it's still on disk
-      if (entry) {
-        results.push(entry);
-      }
-    }
-    return results;
+  public async all(
+    source: 'disk' | 'cluster' = 'cluster',
+  ): Promise<IDatastoreManifestWithLatest[]> {
+    const service = (source === 'cluster' && this.clusterStore) ?? this.diskStore;
+    return await service.all();
   }
 
   public async getByVersionHash(
     versionHash: string,
     throwIfNotExists = true,
-  ): Promise<IDatastoreManifestWithStats> {
-    const versionRecord = this.datastoresDb.datastoreVersions.getByHash(versionHash);
-    const latestVersionHash = this.getLatestVersion(versionHash);
-
-    if (!versionRecord?.dbxPath) {
-      if (throwIfNotExists) {
-        throw new DatastoreNotFoundError('Datastore not found on Cloud.', latestVersionHash);
-      }
-      return null;
-    }
-
-    const scriptPath = Path.join(versionRecord.dbxPath, 'datastore.js');
-    let manifest = this.#openedManifestsByDbxPath.get(versionRecord.dbxPath);
-
-    if (!manifest) {
-      const manifestPath = Path.join(versionRecord.dbxPath, 'datastore-manifest.json');
-      manifest = await readFileAsJson<IDatastoreManifest>(manifestPath).catch(() => null);
-      if (manifest && !DatastoreVm.doNotCacheList.has(scriptPath)) {
-        this.#openedManifestsByDbxPath.set(versionRecord.dbxPath, manifest);
-      }
-    }
-
-    if (!manifest) {
-      if (throwIfNotExists) {
-        throw new DatastoreNotFoundError('Datastore not found on Cloud.', latestVersionHash);
-      }
-      return null;
-    }
-    const statsByItemName: IStatsByName = {};
-    for (const name of [
-      ...Object.keys(manifest.extractorsByName),
-      ...Object.keys(manifest.tablesByName),
-      ...Object.keys(manifest.crawlersByName),
-    ]) {
-      statsByItemName[name] = this.datastoresDb.datastoreItemStats.getByVersionHash(
-        versionHash,
-        name,
-      );
-    }
-    return {
-      path: scriptPath,
-      stats: this.datastoresDb.datastoreStats.getByVersionHash(versionHash),
-      isStarted: versionRecord.isStarted,
-      statsByItemName,
-      latestVersionHash,
-      ...manifest,
-    };
-  }
-
-  public recordItemStats(
-    versionHash: string,
-    name: string,
-    stats: { bytes: number; microgons: number; milliseconds: number; isCredits: boolean },
-    error: Error,
-  ): void {
-    this.datastoresDb.datastoreItemStats.record(
-      versionHash,
-      name,
-      stats.microgons,
-      stats.bytes,
-      stats.milliseconds,
-      stats.isCredits ? stats.microgons : 0,
-      !!error,
-    );
-  }
-
-  public recordQuery(
-    id: string,
-    query: string,
-    startTime: number,
-    input: any,
-    outputs: any[],
-    datastoreVersionHash: string,
-    stats: { bytes: number; microgons: number; milliseconds: number; isCredits: boolean },
-    micronoteId: string,
-    creditId: string,
-    affiliateId: string,
-    error?: Error,
-    heroSessionIds?: string[],
-  ): void {
-    const newStats = this.datastoresDb.datastoreStats.record(
-      datastoreVersionHash,
-      stats.microgons,
-      stats.bytes,
-      stats.milliseconds,
-      stats.isCredits ? stats.microgons : 0,
-      !!error,
-    );
-    this.emit('stats', newStats);
-    this.queryLogDb.logTable.record(
-      id,
-      datastoreVersionHash,
-      query,
-      startTime,
-      affiliateId,
-      input,
-      outputs,
-      error,
-      micronoteId,
-      creditId,
-      stats.microgons,
-      stats.bytes,
-      stats.milliseconds,
-      heroSessionIds,
-    );
-  }
-
-  public getStorage(versionHash: string): DatastoreStorage {
-    const storagePath = this.getStoragePath(versionHash);
-    if (this.#storageByPath.has(storagePath)) return this.#storageByPath.get(storagePath);
-    const storage = new DatastoreStorage(storagePath);
-    this.#storageByPath.set(storagePath, storage);
-    return storage;
-  }
-
-  public getLatestVersion(hash: string): string {
-    return this.datastoresDb.datastoreVersions.getLatestVersion(hash);
-  }
-
-  public getByDomain(domain: string): IDatastoreVersionRecord {
-    return this.datastoresDb.datastoreVersions.findLatestByDomain(domain);
-  }
-
-  public async installManuallyUploadedDbxFiles(): Promise<void> {
-    if (!(await existsAsync(this.datastoresDir))) return;
-
-    for (const filepath of await Fs.readdir(this.datastoresDir, { withFileTypes: true })) {
-      const file = filepath.name;
-      let path = Path.join(this.datastoresDir, file);
-
-      if (!filepath.isDirectory()) {
-        if (file.endsWith('.dbx.tgz')) {
-          const destPath = path.replace('.dbx.tgz', '.dbx');
-          if (await existsAsync(destPath)) continue;
-          await Fs.mkdir(destPath);
-          await unpackDbxFile(path, destPath);
-          path = destPath;
-        } else {
-          continue;
+  ): Promise<IDatastoreManifestWithRuntime> {
+    let manifestWithLatest: IDatastoreManifestWithRuntime;
+    for (const service of this.stores) {
+      manifestWithLatest = (await service.get(versionHash)) as IDatastoreManifestWithRuntime;
+      if (manifestWithLatest) {
+        try {
+          // must install into local disk store
+          let runtime = await this.diskStore.getRuntime(versionHash);
+          if (!runtime && service.source !== 'disk') {
+            this.logger.info(`getByVersionHash:MissingRuntime`, {
+              versionHash,
+              searchInService: service.source,
+            });
+            let expirationTimestamp: number;
+            if (service.source === 'network') {
+              expirationTimestamp = Date.now() + this.networkCacheTimeMins * 60e3;
+            }
+            runtime = await this.diskStore.installFromService(
+              versionHash,
+              service,
+              expirationTimestamp,
+            );
+          }
+          Object.assign(manifestWithLatest, runtime);
+          break;
+        } catch (error) {
+          this.logger.warn(`getByVersionHash:ErrorInstallingRuntime`, {
+            versionHash,
+            searchInService: service.source,
+            error,
+          });
         }
       }
-
-      if (!path.endsWith('.dbx')) {
-        continue;
-      }
-
-      log.info('Found Datastore folder in datastores directory. Checking for import.', {
-        file,
-        sessionId: null,
-      });
-
-      await this.save(path, null, true, true);
     }
+
+    if (manifestWithLatest) return manifestWithLatest;
+    if (throwIfNotExists) {
+      const latestVersionHash = await this.getLatestVersion(versionHash);
+      throw new DatastoreNotFoundError(`Datastore version (${versionHash}) not found on Cloud.`, {
+        latestVersionHash,
+        versionHash,
+      });
+    }
+    return null;
+  }
+
+  public async getByDomain(domain: string): Promise<string> {
+    for (const service of this.stores) {
+      const latestVersion = await service.getLatestVersionForDomain(domain);
+      if (latestVersion) return latestVersion;
+    }
+  }
+
+  public async getLatestVersion(versionHash: string): Promise<string> {
+    for (const service of this.stores) {
+      const latestVersion = await service.getLatestVersion(versionHash);
+      if (latestVersion) return latestVersion;
+    }
+  }
+
+  public async getInstalledPreviousVersion(
+    versionHash: string,
+  ): Promise<IDatastoreManifestWithRuntime> {
+    const previousVersionHash = await this.diskStore.getPreviousInstalledVersion(versionHash);
+    if (previousVersionHash) {
+      return this.getByVersionHash(previousVersionHash);
+    }
+  }
+
+  public async saveDbx(
+    details: TDatastoreUpload,
+    sourceHost?: string,
+    source: IDatastoreSourceDetails['source'] = 'upload',
+  ): Promise<{ success: boolean }> {
+    const { compressedDbx, adminIdentity, adminSignature, allowNewLinkedVersionHistory } = details;
+    const { cloudAdminIdentities, datastoresMustHaveOwnAdminIdentity, datastoresTmpDir } =
+      this.config;
+    const tmpDir = await Fs.mkdtemp(`${datastoresTmpDir}/`);
+
+    try {
+      await unpackDbx(compressedDbx, tmpDir);
+      const { didInstall } = await this.save(
+        tmpDir,
+        {
+          adminIdentity,
+          allowNewLinkedVersionHistory,
+          hasServerAdminIdentity: cloudAdminIdentities.includes(adminIdentity ?? '-1'),
+          datastoresMustHaveOwnAdminIdentity,
+        },
+        {
+          host: sourceHost,
+          source,
+          adminIdentity,
+          adminSignature,
+        },
+      );
+      return { success: didInstall };
+    } finally {
+      // remove tmp dir in case of errors
+      await Fs.rm(tmpDir, { recursive: true }).catch(() => null);
+    }
+  }
+
+  public uploadToSourceOfTruth(datastore: TDatastoreUpload): Promise<{ success: boolean }> {
+    return this.clusterStore?.upload(datastore);
   }
 
   public async save(
     datastoreTmpPath: string,
-    adminIdentity?: string,
-    allowNewLinkedVersionHistory = false,
-    hasServerAdminIdentity = false,
-    requireAdmin = false,
-  ): Promise<{ dbxPath: string }> {
-    const manifest = await readFileAsJson<IDatastoreManifest>(
-      `${datastoreTmpPath}/datastore-manifest.json`,
-    );
-    const storedPath = this.datastoresDb.datastoreVersions.getByHash(manifest.versionHash)?.dbxPath;
-    if (storedPath) {
-      return { dbxPath: storedPath };
-    }
-
-    await DatastoreManifest.validate(manifest);
-
-    if (!manifest) throw new Error('Could not read the provided Datastore manifest.');
-    this.checkDatastoreCoreInstalled(manifest.coreVersion);
-
-    // validate hash
-    const scriptBuffer = await Fs.readFile(`${datastoreTmpPath}/datastore.js`);
-    const sha = HashUtils.sha256(Buffer.from(scriptBuffer));
-    const expectedScriptHash = encodeBuffer(sha, 'scr');
-    if (manifest.scriptHash !== expectedScriptHash) {
-      throw new Error(
-        'Mismatched Datastore scriptHash provided. Should be sha256 256 in Bech32m encoding.',
-      );
-    }
-    const expectedVersionHash = DatastoreManifest.createVersionHash(manifest);
-    if (expectedVersionHash !== manifest.versionHash) {
-      throw new Error(
-        'Mismatched Datastore versionHash provided. Should be sha256 256 in Bech32m encoding.',
-      );
-    }
-
-    const dbxPath = this.createDbxPath(manifest);
-    const storagePath = Path.join(dbxPath, 'storage.db');
-    // make sure to close any existing db
-    this.#storageByPath.get(storagePath)?.db?.close();
-    try {
-      await Fs.unlink(storagePath);
-    } catch (e) {}
-
-    if (!allowNewLinkedVersionHistory) this.checkMatchingEntrypointVersions(manifest);
-
-    this.checkVersionHistoryMatch(manifest);
-
-    if (!hasServerAdminIdentity && requireAdmin && !manifest.adminIdentities?.length) {
-      throw new Error('This Cloud requires Datastores to include an AdminIdentity');
-    }
-    if (!hasServerAdminIdentity) await this.verifyAdminIdentity(manifest, adminIdentity);
-
-    if (dbxPath !== datastoreTmpPath) {
-      // remove any existing folder at dbxPath
-      if (await existsAsync(dbxPath)) await Fs.rm(dbxPath, { recursive: true });
-
-      await Fs.rename(datastoreTmpPath, dbxPath);
-    }
-
-    this.#openedManifestsByDbxPath.set(dbxPath, manifest);
-    this.saveManifestMetadata(manifest, dbxPath);
-
-    this.emit('new', {
-      activity: 'uploaded',
-      datastore: await this.getByVersionHash(manifest.versionHash),
-    });
-
-    return { dbxPath };
+    adminDetails?: {
+      adminIdentity?: string;
+      allowNewLinkedVersionHistory?: boolean;
+      hasServerAdminIdentity?: boolean;
+      datastoresMustHaveOwnAdminIdentity?: boolean;
+    },
+    uploaderSource?: IDatastoreSourceDetails,
+  ): Promise<{ dbxPath: string; manifest: IDatastoreManifest; didInstall: boolean }> {
+    adminDetails ??= {};
+    return await this.diskStore.install(datastoreTmpPath, adminDetails, uploaderSource);
   }
 
-  public async startAtPath(dbxPath: string): Promise<void> {
-    const manifest = await readFileAsJson<IDatastoreManifest>(`${dbxPath}/datastore-manifest.json`);
-    this.checkDatastoreCoreInstalled(manifest.coreVersion);
-
-    this.saveManifestMetadata(manifest, dbxPath);
-    const scriptPath = Path.join(dbxPath, 'datastore.js');
-    const storagePath = Path.join(dbxPath, 'storage.db');
-    this.#storageByPath.get(storagePath)?.db?.close();
-    this.#storageByPath.delete(storagePath);
-    DatastoreVm.doNotCacheList.add(scriptPath);
-    this.emit('new', {
-      activity: 'started',
-      datastore: await this.getByVersionHash(manifest.versionHash),
-    });
+  public async startAtPath(
+    dbxPath: string,
+    sourceHost: string,
+    watch: boolean,
+  ): Promise<IDatastoreManifest> {
+    return await this.diskStore.startAtPath(dbxPath, sourceHost, watch);
   }
 
   public stopAtPath(dbxPath: string): void {
-    const datastore = this.datastoresDb.datastoreVersions.setDbxStopped(dbxPath);
+    const datastore = this.diskStore.stopAtPath(dbxPath);
     if (datastore) {
       this.emit('stopped', {
         versionHash: datastore.versionHash,
@@ -365,129 +242,38 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     }
   }
 
-  private async verifyAdminIdentity(
-    manifest: IDatastoreManifest,
-    adminIdentity: string,
+  private async onProvideExpired(provided: { key: Buffer, providerNodeId: string }): Promise<void> {
+    const result = await this.diskStore.didExpireNetworkHosting(provided.key);
+    if (!result.isExpired) {
+      this.diskStore.recordPublished(result.versionHash, Date.now());
+      await this.networkStore.publish(result.versionHash);
+    }
+  }
+
+  private async onDatastoreInstalled(
+    version: IDatastoreManifestWithRuntime,
+    source: IDatastoreSourceDetails,
+    previous?: IDatastoreManifestWithRuntime,
+    options?: {
+      clearExisting?: boolean;
+      isWatching?: boolean;
+    },
   ): Promise<void> {
-    // ensure admin is in the new list
-    if (manifest.adminIdentities.length && !manifest.adminIdentities.includes(adminIdentity)) {
-      if (adminIdentity)
-        throw new InvalidPermissionsError(
-          `Your AdminIdentity is not authorized to upload Datastores to this Cloud (${adminIdentity}).`,
-        );
-      else {
-        throw new InvalidPermissionsError(
-          `You must sign this request with an AdminIdentity authorized for this Datastore or Cloud.`,
-        );
-      }
-    }
-    // ensure admin is from the previous linked version
-    if (manifest.linkedVersions?.length) {
-      const previous = manifest.linkedVersions[manifest.linkedVersions.length - 1];
-      const previousEntry = await this.getByVersionHash(previous.versionHash, false);
-      // if there were admins, must be in previous list!
-      if (
-        previousEntry &&
-        previousEntry.adminIdentities.length &&
-        (!previousEntry.adminIdentities.includes(adminIdentity) || !adminIdentity)
-      ) {
-        throw new InvalidPermissionsError(
-          'You are trying to overwrite a previous version of this Datastore with an AdminIdentity that was not present in the previous version.\n\n' +
-            'You must sign this version with a previous AdminIdentity, or use an authorized Server AdminIdentity.',
-        );
-      }
+    await this.installCallbackFn?.(version, source?.source, previous, options);
+    this.emit('new', {
+      activity: source?.source === 'start' ? 'started' : 'uploaded',
+      datastore: version,
+    });
+    if (this.networkStore) {
+      await this.networkStore?.publish(version.versionHash);
+      this.diskStore.recordPublished(version.versionHash, Date.now());
     }
   }
+}
 
-  private checkDatastoreCoreInstalled(requiredVersion: string): void {
-    const installedVersion = datastorePackageJson.version;
-    if (!isSemverSatisfied(requiredVersion, installedVersion)) {
-      throw new Error(
-        `The installed Datastore Core (${installedVersion}) is not compatible with the version required by your Datastore Package (${requiredVersion}).\n
-Please try to re-upload after testing with the version available on this Cloud.`,
-      );
-    }
-  }
-
-  private checkMatchingEntrypointVersions(manifest: IDatastoreManifest): void {
-    if (manifest.linkedVersions.length) return;
-    const versionWithEntrypoint = this.datastoresDb.datastoreVersions.findAnyWithEntrypoint(
-      manifest.scriptEntrypoint,
-    );
-    if (versionWithEntrypoint) {
-      const fullVersionHistory = this.datastoresDb.datastoreVersions.getPreviousVersions(
-        versionWithEntrypoint.baseVersionHash,
-      );
-      throw new MissingLinkedScriptVersionsError(
-        `You uploaded a script without any link to previous version history.`,
-        fullVersionHistory,
-      );
-    }
-  }
-
-  private checkVersionHistoryMatch(manifest: IDatastoreManifest): void {
-    const versions = manifest.linkedVersions;
-    if (!versions.length) return;
-
-    const storedPreviousVersions = this.datastoresDb.datastoreVersions.getPreviousVersions(
-      versions[versions.length - 1]?.versionHash,
-    );
-
-    let includesAllCurrentlyStoredVersions = true;
-    const fullVersionHistory = [...manifest.linkedVersions];
-    for (const versionEntry of storedPreviousVersions) {
-      fullVersionHistory.push(versionEntry);
-      if (!manifest.linkedVersions.some(x => x.versionHash === versionEntry.versionHash)) {
-        includesAllCurrentlyStoredVersions = false;
-      }
-    }
-
-    // if previous version is not already set to this one, or set to itself, we have a mismatch
-    if (!includesAllCurrentlyStoredVersions) {
-      fullVersionHistory.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
-      throw new InvalidScriptVersionHistoryError(
-        `The uploaded Datastore has a different version history than your local version.`,
-        fullVersionHistory,
-      );
-    }
-  }
-
-  private getStoragePath(versionHash: string): string {
-    const dbxPath = this.datastoresDb.datastoreVersions.getByHash(versionHash)?.dbxPath;
-    if (!dbxPath) return null;
-    return Path.join(dbxPath, 'storage.db');
-  }
-
-  private createDbxPath(manifest: IDatastoreManifest): string {
-    const entrypoint = manifest.scriptEntrypoint;
-    const filename = Path.basename(entrypoint, Path.extname(entrypoint));
-    return Path.resolve(this.datastoresDir, `${filename}@${manifest.versionHash}.dbx`);
-  }
-
-  private saveManifestMetadata(manifest: IDatastoreManifest, dbxPath: string): void {
-    const baseVersionHash =
-      manifest.linkedVersions[manifest.linkedVersions.length - 1]?.versionHash ??
-      manifest.versionHash;
-
-    for (const version of manifest.linkedVersions) {
-      if (version.versionHash === baseVersionHash) continue;
-      this.datastoresDb.datastoreVersions.save(
-        version.versionHash,
-        manifest.scriptEntrypoint,
-        version.versionTimestamp,
-        this.datastoresDb.datastoreVersions.getByHash(version.versionHash)?.dbxPath,
-        baseVersionHash,
-        manifest.domain,
-      );
-    }
-
-    this.datastoresDb.datastoreVersions.save(
-      manifest.versionHash,
-      manifest.scriptEntrypoint,
-      manifest.versionTimestamp,
-      dbxPath,
-      baseVersionHash,
-      manifest.domain,
-    );
-  }
+export interface TDatastoreUpload {
+  compressedDbx: Buffer;
+  allowNewLinkedVersionHistory: boolean;
+  adminIdentity?: string;
+  adminSignature?: Buffer;
 }

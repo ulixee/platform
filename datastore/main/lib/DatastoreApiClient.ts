@@ -1,26 +1,27 @@
-import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
-import DatastoreApiSchemas, {
-  IDatastoreApis,
-  IDatastoreApiTypes,
-} from '@ulixee/platform-specification/datastore';
-import { sha256 } from '@ulixee/commons/lib/hashUtils';
-import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
-import Identity from '@ulixee/crypto/lib/Identity';
-import ValidationError from '@ulixee/specification/utils/ValidationError';
-import { IPayment } from '@ulixee/platform-specification';
-import { nanoid } from 'nanoid';
-import ICoreEventPayload from '@ulixee/net/interfaces/ICoreEventPayload';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
+import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
+import { toUrl } from '@ulixee/commons/lib/utils';
+import Identity from '@ulixee/crypto/lib/Identity';
+import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
+import ICoreEventPayload from '@ulixee/net/interfaces/ICoreEventPayload';
+import { IPayment } from '@ulixee/platform-specification';
+import DatastoreApiSchemas, {
+  IDatastoreApiTypes,
+  IDatastoreApis,
+} from '@ulixee/platform-specification/datastore';
+import ValidationError from '@ulixee/specification/utils/ValidationError';
 import * as Http from 'http';
 import * as Https from 'https';
+import { nanoid } from 'nanoid';
+import IDatastoreDomainResponse from '../interfaces/IDatastoreDomainResponse';
+import IDatastoreEvents from '../interfaces/IDatastoreEvents';
+import IItemInputOutput from '../interfaces/IItemInputOutput';
 import ITypes from '../types';
 import installDatastoreSchema, { addDatastoreAlias } from '../types/installDatastoreSchema';
-import IItemInputOutput from '../interfaces/IItemInputOutput';
-import ResultIterable from './ResultIterable';
-import IDatastoreEvents from '../interfaces/IDatastoreEvents';
 import CreditsTable from './CreditsTable';
-import IDatastoreDomainResponse from '../interfaces/IDatastoreDomainResponse';
 import QueryLog from './QueryLog';
+import ResultIterable from './ResultIterable';
 
 export type IDatastoreExecResult = Omit<IDatastoreApiTypes['Datastore.query']['result'], 'outputs'>;
 export type IDatastoreExecRelayArgs = Pick<
@@ -39,8 +40,7 @@ export default class DatastoreApiClient {
     this.options = options ?? ({} as any);
     this.options.consoleLogErrors ??= false;
     this.options.storeQueryLog ??= process.env.NODE_ENV !== 'test';
-    if (!host.includes('://')) host = `ulx://${host}`;
-    const url = new URL(host);
+    const url = toUrl(host);
     const transport = new WsTransportToCore(`ws://${url.host}/datastore`);
     this.connectionToCore = new ConnectionToCore(transport);
     this.connectionToCore.on('event', this.onEvent.bind(this));
@@ -60,6 +60,14 @@ export default class DatastoreApiClient {
     return await this.runApi('Datastore.meta', {
       versionHash,
       includeSchemasAsJson: includeSchemas,
+    });
+  }
+
+  public async getManifest(
+    versionHash: string,
+  ): Promise<IDatastoreApiTypes['Datastore.manifest']['result']> {
+    return await this.runApi('Datastore.manifest', {
+      versionHash,
     });
   }
 
@@ -159,17 +167,19 @@ export default class DatastoreApiClient {
       affiliateId: options.affiliateId,
     };
 
+    const host = this.connectionToCore.transport.host;
+    const hostIdentity = null; // TODO: exchange identity
     void this.runApi('Datastore.stream', query)
       .then(result => {
         onFinalized?.(result.metadata);
         results.done(result);
-        this.queryLog?.log(query, startDate, results.results, result.metadata);
+        this.queryLog?.log(query, startDate, results.results, result.metadata, host, hostIdentity);
         this.activeStreamByQueryId.delete(id);
         return null;
       })
       .catch(error => {
         onFinalized?.(null, error);
-        this.queryLog?.log(query, startDate, null, null, error);
+        this.queryLog?.log(query, startDate, null, null, host, hostIdentity, error);
         results.reject(error);
       });
 
@@ -203,28 +213,31 @@ export default class DatastoreApiClient {
       authentication: options.authentication,
       affiliateId: options.affiliateId,
     };
+    const host = this.connectionToCore.transport.host;
+    const hostIdentity = null; // TODO: exchange identity
     try {
       const result = await this.runApi('Datastore.query', query);
       if (options.payment?.onFinalized) {
         options.payment.onFinalized(result.metadata);
       }
-      this.queryLog?.log(query, startDate, result.outputs, result.metadata);
+      this.queryLog?.log(query, startDate, result.outputs, result.metadata, host, hostIdentity);
       return result;
     } catch (error) {
       if (options.payment?.onFinalized) {
         options.payment.onFinalized(null, error);
       }
-      this.queryLog?.log(query, startDate, null, null, error);
+      this.queryLog?.log(query, startDate, null, null, host, hostIdentity, error);
       throw error;
     }
   }
 
   public async upload(
-    compressedDatastore: Buffer,
+    compressedDbx: Buffer,
     options: {
       allowNewLinkedVersionHistory?: boolean;
       timeoutMs?: number;
       identity?: Identity;
+      forwardedSignature?: { adminIdentity: string; adminSignature: Buffer };
     } = {},
   ): Promise<{ success: boolean }> {
     options.allowNewLinkedVersionHistory ??= false;
@@ -237,16 +250,18 @@ export default class DatastoreApiClient {
       const identity = options.identity;
       adminIdentity = identity.bech32;
       const message = DatastoreApiClient.createUploadSignatureMessage(
-        compressedDatastore,
+        compressedDbx,
         allowNewLinkedVersionHistory,
       );
       adminSignature = identity.sign(message);
+    } else if (options.forwardedSignature) {
+      ({ adminIdentity, adminSignature } = options.forwardedSignature);
     }
 
     const { success } = await this.runApi(
       'Datastore.upload',
       {
-        compressedDatastore,
+        compressedDbx,
         allowNewLinkedVersionHistory,
         adminSignature,
         adminIdentity,
@@ -259,13 +274,14 @@ export default class DatastoreApiClient {
   public async download(
     versionHash: string,
     options: {
+      payment?: IPayment;
       timeoutMs?: number;
       identity?: Identity;
     } = {},
-  ): Promise<Buffer> {
+  ): Promise<IDatastoreApiTypes['Datastore.download']['result']> {
     options.timeoutMs ??= 120e3;
     const requestDate = new Date();
-    const { timeoutMs } = options;
+    const { timeoutMs, payment } = options;
 
     let adminSignature: Buffer;
     let adminIdentity: string;
@@ -279,22 +295,23 @@ export default class DatastoreApiClient {
       adminSignature = identity.sign(message);
     }
 
-    const result = await this.runApi(
+    return await this.runApi(
       'Datastore.download',
       {
         versionHash,
         requestDate,
         adminSignature,
         adminIdentity,
+        payment,
       },
       timeoutMs,
     );
-    return result?.compressedDatastore;
   }
 
-  public async startDatastore(dbxPath: string): Promise<{ success: boolean }> {
+  public async startDatastore(dbxPath: string, watch = false): Promise<{ success: boolean }> {
     const { success } = await this.runApi('Datastore.start', {
       dbxPath,
+      watch,
     });
     return { success };
   }
@@ -354,9 +371,18 @@ export default class DatastoreApiClient {
     });
   }
 
-  protected onEvent<T extends keyof IDatastoreEvents>(
-    event: ICoreEventPayload<IDatastoreEvents, T>,
-  ): void {
+  public request<T extends keyof IDatastoreApiTypes & string>(
+    command: T,
+    args: IDatastoreApiTypes[T]['args'],
+    timeoutMs?: number,
+  ): Promise<IDatastoreApiTypes[T]['result']> {
+    return this.connectionToCore.sendRequest({ command, args: [args] as any }, timeoutMs);
+  }
+
+  protected onEvent<T extends keyof IDatastoreEvents>(evt: {
+    event: ICoreEventPayload<IDatastoreEvents, T>;
+  }): void {
+    const { event } = evt;
     if (event.eventType === 'Stream.output') {
       const data = event.data as IDatastoreEvents['Stream.output'];
       this.activeStreamByQueryId.get(event.listenerId)?.push(data);
@@ -467,11 +493,11 @@ export default class DatastoreApiClient {
   }
 
   public static createUploadSignatureMessage(
-    compressedDatastore: Buffer,
+    compressedDbx: Buffer,
     allowNewLinkedVersionHistory: boolean,
   ): Buffer {
     return sha256(
-      concatAsBuffer('Datastore.upload', compressedDatastore, String(allowNewLinkedVersionHistory)),
+      concatAsBuffer('Datastore.upload', compressedDbx, String(allowNewLinkedVersionHistory)),
     );
   }
 

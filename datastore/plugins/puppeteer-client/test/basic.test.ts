@@ -26,7 +26,7 @@ describe('basic puppeteerExtractor tests', () => {
       await page.goto('https://example.org');
     }, PuppeteerExtractorPlugin);
     await puppeteerExtractor.runInternal({});
-    expect(closeSpy).toBeCalledTimes(1);
+    expect(closeSpy).toHaveBeenCalledTimes(1);
   });
 
   it('should emit close puppeteer on error', async () => {
@@ -40,7 +40,7 @@ describe('basic puppeteerExtractor tests', () => {
       });
     }, PuppeteerExtractorPlugin);
 
-    await expect(puppeteerExtractor.runInternal({})).rejects.toThrowError('testy');
-    expect(closeSpy).toBeCalledTimes(1);
+    await expect(puppeteerExtractor.runInternal({})).rejects.toThrow('testy');
+    expect(closeSpy).toHaveBeenCalledTimes(1);
   });
 });

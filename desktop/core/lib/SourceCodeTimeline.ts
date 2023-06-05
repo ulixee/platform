@@ -1,36 +1,39 @@
-import { Session } from '@ulixee/hero-core';
-import { bindFunctions } from '@ulixee/commons/lib/utils';
-import SourceLoader from '@ulixee/commons/lib/SourceLoader';
-import ICommandMeta from '@ulixee/hero-interfaces/ICommandMeta';
-import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import ISourceCodeLocation from '@ulixee/commons/interfaces/ISourceCodeLocation';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import SourceLoader from '@ulixee/commons/lib/SourceLoader';
+import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import { bindFunctions } from '@ulixee/commons/lib/utils';
 import ICommandUpdatedEvent from '@ulixee/desktop-interfaces/events/ICommandUpdatedEvent';
 import ISourceCodeUpdatedEvent from '@ulixee/desktop-interfaces/events/ISourceCodeUpdatedEvent';
+import { Session } from '@ulixee/hero-core';
 import CommandFormatter from '@ulixee/hero-core/lib/CommandFormatter';
-import * as Fs from 'fs';
+import ICommandMeta from '@ulixee/hero-interfaces/ICommandMeta';
+import CallsiteLocator from '@ulixee/hero/lib/CallsiteLocator';
+import * as Path from 'path';
 
+const bundledPath = Path.join('build', 'desktop', 'main', 'app', 'packages');
 export default class SourceCodeTimeline extends TypedEventEmitter<{
   source: ISourceCodeUpdatedEvent;
   command: ICommandUpdatedEvent;
 }> {
-  public scriptExists = true;
   private sourceFileLines: { [path: string]: string[] } = {};
   private events = new EventSubscriber();
   private commandsById: { [id: number]: ICommandUpdatedEvent } = {};
 
-  constructor(readonly entrypoint: string) {
+  constructor(readonly entrypoint: string, datastoresDir: string) {
     super();
     bindFunctions(this);
 
-    const sourceLookup = SourceMapSupport.getSourceFile(this.entrypoint);
+    CallsiteLocator.ignoreModulePathFragments.push(bundledPath);
 
-    this.scriptExists = Fs.existsSync(sourceLookup.path);
-    if (this.scriptExists) {
-      this.sourceFileLines[this.entrypoint] =
-        SourceLoader.getFileContents(sourceLookup.path, false)?.split(/\r?\n/) ?? [];
-    } else if (sourceLookup.content) {
+    if (this.entrypoint.includes(datastoresDir)) {
+      SourceMapSupport.retrieveSourceMap(this.entrypoint, Path.dirname(this.entrypoint));
+    }
+    const sourceLookup = SourceMapSupport.getSourceFile(this.entrypoint);
+    this.entrypoint = sourceLookup.path;
+
+    if (sourceLookup.content) {
       this.sourceFileLines[this.entrypoint] = sourceLookup.content.split(/\r?\n/);
     }
   }
@@ -71,9 +74,9 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
 
   private onCommandStart(command: ICommandMeta): void {
     if (!command.callsite) return;
-    const originalSourcePosition = command.callsite.map(x =>
-      SourceMapSupport.getOriginalSourcePosition(x),
-    );
+    const originalSourcePosition = command.callsite
+      .map(x => SourceMapSupport.getOriginalSourcePosition(x))
+      .filter(this.filterDesktopPaths.bind(this));
     this.checkForSourceUpdates(originalSourcePosition);
     this.commandsById[command.id] = {
       command: CommandFormatter.parseResult(command),
@@ -85,9 +88,9 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
 
   private onCommandFinished(command: ICommandMeta, skipEmit = false): void {
     if (!command.callsite) return;
-    const originalSourcePosition = command.callsite.map(x =>
-      SourceMapSupport.getOriginalSourcePosition(x),
-    );
+    const originalSourcePosition = command.callsite
+      .map(x => SourceMapSupport.getOriginalSourcePosition(x))
+      .filter(this.filterDesktopPaths.bind(this));
     this.checkForSourceUpdates(originalSourcePosition);
     this.commandsById[command.id] = {
       command: CommandFormatter.parseResult(command),
@@ -97,28 +100,22 @@ export default class SourceCodeTimeline extends TypedEventEmitter<{
     if (!skipEmit) this.emit('command', this.commandsById[command.id]);
   }
 
-  private checkForSourceUpdates(sourceLocations: (ISourceCodeLocation & { source?: string })[]): void {
+  private checkForSourceUpdates(
+    sourceLocations: (ISourceCodeLocation & { source?: string })[],
+  ): void {
     for (const sourcePosition of sourceLocations) {
-      const { filename } = sourcePosition;
-      if (!this.sourceFileLines[filename]) {
-        if (this.scriptExists) {
-          this.sourceFileLines[filename] =
-            SourceLoader.getFileContents(filename, false)?.split(/\r?\n/) ?? [];
-        } else {
-          const sourceLookup = SourceMapSupport.getOriginalSourcePosition(
-            { ...sourcePosition, filename: sourcePosition.source ?? sourcePosition.filename },
-            true,
-          );
-          if (sourceLookup.content) {
-            this.sourceFileLines[filename] = sourceLookup.content.split(/\r?\n/);
-          }
-        }
+      const source = sourcePosition.source ?? sourcePosition.filename;
+      this.sourceFileLines[source] ??= SourceLoader.getSourceLines(sourcePosition);
 
-        this.emit('source', {
-          filename,
-          lines: this.sourceFileLines[filename],
-        });
-      }
+      this.emit('source', {
+        source,
+        lines: this.sourceFileLines[source],
+      });
     }
+  }
+
+  private filterDesktopPaths(sourceLocation: ISourceCodeLocation & { source?: string }): boolean {
+    if (sourceLocation.filename.includes(bundledPath)) return false;
+    return true;
   }
 }

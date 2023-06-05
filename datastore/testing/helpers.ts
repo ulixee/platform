@@ -1,18 +1,63 @@
-import * as http from 'http';
-import { Server } from 'http';
-import * as https from 'https';
-import Koa = require('koa');
-import KoaRouter = require('@koa/router');
-import KoaMulter = require('@koa/multer');
-import * as net from 'net';
-import * as http2 from 'http2';
-import Core from '@ulixee/hero-core';
+import CloudNode from '@ulixee/cloud'; // eslint-disable-line import/no-extraneous-dependencies
+import UlixeeConfig from '@ulixee/commons/config';
+import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import Logger from '@ulixee/commons/lib/Logger';
+import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
+import Core from '@ulixee/hero-core';
+import * as Fs from 'fs/promises';
+import * as http from 'http';
+import { Server } from 'http';
+import * as http2 from 'http2';
+import * as https from 'https';
+import * as net from 'net';
+import * as Path from 'path';
+import KoaMulter = require('@koa/multer');
+import KoaRouter = require('@koa/router');
+import Koa = require('koa');
 
 const { log } = Logger(module);
 
+let didRegisteryBlock = false;
+export function blockGlobalConfigWrites(): void {
+  if (didRegisteryBlock) return;
+  didRegisteryBlock = true;
+  // block writing to global files!
+  jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
+  // @ts-expect-error
+  const write = DatastoreManifest.writeToDisk;
+  // @ts-expect-error
+  jest.spyOn(DatastoreManifest, 'writeToDisk').mockImplementation(async (path, data) => {
+    if (path.includes(UlixeeConfig.global.directoryPath)) return;
+    return write.call(DatastoreManifest, path, data);
+  });
+}
+
+blockGlobalConfigWrites();
+
 export const needsClosing: { close: () => Promise<any> | void; onlyCloseOnFinal?: boolean }[] = [];
+
+export async function createLocalNode(
+  config: ConstructorParameters<typeof CloudNode>[0],
+  onlyCloseOnFinal = false,
+): Promise<CloudNode> {
+  const datastoreConfig = config.datastoreConfiguration;
+  if (datastoreConfig.datastoresDir) {
+    datastoreConfig.datastoresTmpDir ??= Path.join(datastoreConfig.datastoresDir, 'tmp');
+    config.kadDbPath ??= Path.join(datastoreConfig.datastoresDir, 'kad.db');
+
+    try {
+      await Fs.rm(datastoreConfig.datastoresDir, { recursive: true });
+    } catch {}
+    await Fs.mkdir(datastoreConfig.datastoresDir, { recursive: true });
+    await Fs.mkdir(datastoreConfig.datastoresTmpDir, { recursive: true });
+  }
+
+  const cloudNode = new CloudNode(config);
+  onClose(() => cloudNode.close(), onlyCloseOnFinal);
+  await cloudNode.listen();
+  return cloudNode;
+}
 
 export function onClose(closeFn: (() => Promise<any>) | (() => any), onlyCloseOnFinal = false) {
   needsClosing.push({ close: closeFn, onlyCloseOnFinal });
@@ -127,4 +172,3 @@ function destroyServerFn(
       });
     });
 }
-

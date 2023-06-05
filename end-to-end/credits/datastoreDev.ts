@@ -39,7 +39,7 @@ export default async function main(
 
   // For some reason, nodejs is taking CWD, but then going to closest package.json, so have to prefix with ./credits
   const datastoreResult = execAndLog(
-    `npx @ulixee/datastore deploy ./credits/datastore/index.js -h ${cloudAddress}`,
+    `npx @ulixee/datastore deploy -h ${cloudAddress} ./credits/datastore/index.js`,
     {
       cwd: __dirname,
       env: {
@@ -55,7 +55,7 @@ export default async function main(
   console.log('Datastore VersionHash', datastoreHash);
 
   const creditResult = execAndLog(
-    `npx @ulixee/datastore credits create ${cloudAddress}/datastore/${datastoreHash} --argons=5`,
+    `npx @ulixee/datastore credits create --argons=5 ${cloudAddress}/datastore/${datastoreHash}`,
     {
       cwd: __dirname,
       env: {

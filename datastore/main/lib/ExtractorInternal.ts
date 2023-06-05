@@ -1,18 +1,18 @@
+import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import BaseSchema from '@ulixee/schema/lib/BaseSchema';
+import { bindFunctions, pickRandom } from '@ulixee/commons/lib/utils';
 import { DateUtilities, ObjectSchema } from '@ulixee/schema';
 import { IValidationError } from '@ulixee/schema/interfaces/IValidationResult';
-import { bindFunctions, pickRandom } from '@ulixee/commons/lib/utils';
+import BaseSchema from '@ulixee/schema/lib/BaseSchema';
 import StringSchema from '@ulixee/schema/lib/StringSchema';
-import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
-import DatastoreSchemaError from './DatastoreSchemaError';
-import IExtractorSchema, { ExtractSchemaType } from '../interfaces/IExtractorSchema';
-import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
-import createOutputGenerator, { IOutputClass } from './Output';
-import IObservableChange, { ObservableChangeType } from '../interfaces/IObservableChange';
-import ResultIterable from './ResultIterable';
 import IExtractorComponents from '../interfaces/IExtractorComponents';
 import IExtractorContext from '../interfaces/IExtractorContext';
+import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
+import IExtractorSchema, { ExtractSchemaType } from '../interfaces/IExtractorSchema';
+import IObservableChange, { ObservableChangeType } from '../interfaces/IObservableChange';
+import DatastoreSchemaError from './DatastoreSchemaError';
+import createOutputGenerator, { IOutputClass } from './Output';
+import ResultIterable from './ResultIterable';
 
 export default class ExtractorInternal<
   TSchema extends IExtractorSchema<any, any>,
@@ -36,6 +36,7 @@ export default class ExtractorInternal<
 
   constructor(options: TOptions, private components: IExtractorComponents<TSchema, any>) {
     super();
+    options ??= {} as TOptions;
     this.options = options;
     this.schema = components.schema;
     this.#input = (options.input ?? {}) as TInput;
@@ -165,7 +166,7 @@ export default class ExtractorInternal<
         for (const change of changes) {
           const path = `.${change.path.join('.')}`;
           let keyPaths: string[] = [];
-          if (change.type === 'insert' && typeof change.value === 'object') {
+          if (change.type === 'insert' && change.value && typeof change.value === 'object') {
             keyPaths = Object.keys(change.value).map(x => `${path}.${x}`);
           }
           for (const error of err.errors) {

@@ -34,8 +34,8 @@ module.exports = {
   setupFilesAfterEnv: ['./jest.setupPerTest.js'],
   globalTeardown: './jest.teardown.js',
   testTimeout: 20e3,
-  reporters: ['default', 'jest-summary-reporter'],
+  reporters: ['default', ['github-actions', { silent: true }], 'summary'],
   roots: workspaces.map(x => `${x}/`),
   moduleDirectories: ['node_modules', ...workspaces.map(x => `${x}/node_modules`)],
-  modulePathIgnorePatterns: ['build/desktop/main/packages'],
+  modulePathIgnorePatterns: ['build/desktop/main/app/packages', 'build/datastore/core/test/datastores'],
 };

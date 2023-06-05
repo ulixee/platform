@@ -11,6 +11,7 @@ import Extractor from './Extractor';
 import Crawler from './Crawler';
 import ICrawlerOutputSchema from '../interfaces/ICrawlerOutputSchema';
 import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
+import { TQueryCallMeta } from '../interfaces/IStorageEngine';
 
 export default class ExtractorContext<
   ISchema extends IExtractorSchema,
@@ -120,9 +121,12 @@ export default class ExtractorContext<
     return crawl;
   }
 
-  public query<TResult>(sql: string, boundValues: any[], queryId?: string): Promise<TResult> {
-    // const finalOptions = this.#extractorInternal.options;
-    return this.#datastoreInternal.queryInternal(sql, boundValues, queryId, this.#callbacks);
+  public query<TResult>(
+    sql: string,
+    boundValues: any[],
+    options: TQueryCallMeta,
+  ): Promise<TResult> {
+    return this.#datastoreInternal.queryInternal(sql, boundValues, options, this.#callbacks);
   }
 
   private getMergedOptions<T extends IExtractorRunOptions<any>>(options: T): T {

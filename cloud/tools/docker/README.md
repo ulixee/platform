@@ -40,4 +40,4 @@ The [run.sh](./run.sh) file can be a starting point to run the docker on your se
 * `-v $DATASTORES_MOUNT:/home/ulixee/.cache/ulixee/datastores` Mount and chmod 777 a directory on the host OS where Datastores can be packaged for deployment.
 * `-v $DATADIR_MOUNT:/tmp/.ulixee` Mount a tmp directory and chmod 777 so that the `ulixee` user can store Session databases in this directory.
 * `-e DISPLAY=:99`, `xvfb-run` Allows headed Chrome with a virtual display.
-* `-e DEBUG=ubk*,ulx*` Configures Ulixee to emit very verbose logs to the console. Removing ubk* will remove devtools logging.
+* `-e DEBUG=ulx*` Configures Ulixee to emit very verbose logs to the console. Removing * will remove devtools and internal network logging.

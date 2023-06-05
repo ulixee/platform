@@ -18,6 +18,10 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
       description: 'Private table tracking Credits issued for the containing Datastore.',
       schema: CreditsSchema,
       pricePerQuery: 0,
+      async onVersionMigrated(previousVersion: Table<typeof CreditsSchema>): Promise<void> {
+        const previousCredits = await previousVersion.fetchInternal();
+        await this.insertInternal(...previousCredits);
+      },
     });
   }
 

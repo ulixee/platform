@@ -1,13 +1,14 @@
-import * as Fs from 'fs';
-import * as Path from 'path';
-import Axios from 'axios';
-import DatastorePackager from '@ulixee/datastore-packager';
 import { CloudNode } from '@ulixee/cloud';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import * as Hostile from 'hostile';
+import { registerNamespaceMapping } from '@ulixee/commons/lib/Logger';
 import Identity from '@ulixee/crypto/lib/Identity';
+import DatastorePackager from '@ulixee/datastore-packager';
+import * as Helpers from '@ulixee/datastore-testing/helpers';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import Axios from 'axios';
+import * as Fs from 'fs';
+import * as Hostile from 'hostile';
+import * as Path from 'path';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.docpage.test');
 
@@ -18,33 +19,37 @@ let client: DatastoreApiClient;
 const adminIdentity = Identity.createSync();
 
 beforeAll(async () => {
-  jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
+  Helpers.blockGlobalConfigWrites();
 
-  if (Fs.existsSync(`${__dirname}/datastores/docpage.dbx.build`)) {
-    Fs.rmSync(`${__dirname}/datastores/docpage.dbx.build`, { recursive: true });
+  if (Fs.existsSync(`${__dirname}/datastores/docpage.dbx`)) {
+    Fs.rmSync(`${__dirname}/datastores/docpage.dbx`, { recursive: true });
   }
-  if (process.env.CI !== 'true') Hostile.set('127.0.0.1', 'docs.datastoresrus.com');
+  if (process.env.CI !== 'true') {
+    Hostile.set('127.0.0.1', 'docs.datastoresrus.com');
+    Helpers.onClose(() => Hostile.remove('127.0.0.1', 'docs.datastoresrus.com'), true);
+  }
   const packager = new DatastorePackager(`${__dirname}/datastores/docpage.js`);
   await packager.build();
   dbxFile = await packager.dbx.tarGzip();
   manifest = packager.manifest.toJSON();
-  cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
-    datastoresDir: storageDir,
-    datastoresTmpDir: Path.join(storageDir, 'tmp'),
-    cloudAdminIdentities: [adminIdentity.bech32],
-  };
-  await cloudNode.listen();
+
+  cloudNode = await Helpers.createLocalNode(
+    {
+      datastoreConfiguration: {
+        datastoresDir: storageDir,
+        cloudAdminIdentities: [adminIdentity.bech32],
+      },
+    },
+    true,
+  );
   client = new DatastoreApiClient(await cloudNode.address);
   await client.upload(dbxFile, { identity: adminIdentity });
 });
 
+afterEach(Helpers.afterEach);
+
 afterAll(async () => {
-  await cloudNode?.close();
-  if (process.env.CI !== 'true') Hostile.remove('127.0.0.1', 'docs.datastoresrus.com');
-  if (Fs.existsSync(storageDir)) {
-    if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
-  }
+  await Helpers.afterAll();
 });
 
 test('should be able to load datastore documentation', async () => {

@@ -29,6 +29,7 @@ import GettingStartedClone from '@/pages/desktop/views/getting-started/Clone.vue
 import GettingStartedQuery from '@/pages/desktop/views/getting-started/Query.vue';
 import { Client } from '@/api/Client';
 import App from './index.vue';
+import Entities from '@/pages/desktop/views/datastore-details/Entities.vue';
 
 declare global {
   interface Window {
@@ -88,6 +89,11 @@ const router = VueRouter.createRouter({
           path: 'queries',
           name: 'Queries',
           component: Queries,
+        },
+        {
+          path: 'entities',
+          name: 'Entities',
+          component: Entities,
         },
         {
           path: 'reliability',

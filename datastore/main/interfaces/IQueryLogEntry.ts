@@ -12,4 +12,6 @@ export default interface IQueryLogEntry {
   microgons: number;
   creditId?: string;
   micronoteId?: string;
+  cloudNodeHost: string;
+  cloudNodeIdentity?: string;
 }

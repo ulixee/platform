@@ -7,9 +7,13 @@ export default new DatastoreApiHandler('Datastore.start', {
     }
     const { dbxPath } = request;
 
-    await context.datastoreRegistry.startAtPath(dbxPath);
-    const registry = context.datastoreRegistry;
-    context.connectionToClient.once('disconnected', () => registry.stopAtPath(dbxPath));
+    const { datastoreRegistry } = context;
+    await datastoreRegistry.startAtPath(
+      dbxPath,
+      context.connectionToClient?.transport.remoteId,
+      request.watch,
+    );
+    context.connectionToClient.once('disconnected', () => datastoreRegistry.stopAtPath(dbxPath));
     return { success: true };
   },
 });
