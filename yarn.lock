@@ -15555,9 +15555,9 @@ vm2@^3.9.17:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
 
-"vm2@https://github.com/ulixee/vm2#pathContext":
-  version "3.9.17"
-  resolved "https://github.com/ulixee/vm2#1728bdf8d2e59c74264396948394f005e3f9a431"
+"vm2@https://github.com/patriksimek/vm2":
+  version "3.9.19"
+  resolved "https://github.com/patriksimek/vm2#1663f231ec02db473ed5b743e3b91b8a2ffc7982"
   dependencies:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"

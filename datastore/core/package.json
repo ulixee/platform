@@ -19,7 +19,7 @@
     "better-sqlite3": "^8.4.0",
     "nanoid": "^3.3.6",
     "tar": "^6.1.11",
-    "vm2": "https://github.com/ulixee/vm2#pathContext"
+    "vm2": "https://github.com/patriksimek/vm2"
   },
   "devDependencies": {
     "@ulixee/cloud": "2.0.0-alpha.21",
