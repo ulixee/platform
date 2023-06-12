@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_URL: https://github.com/${{ github.repository }}
-      ADD_CHROME_VERSION: 111
+      ADD_CHROME_VERSION: 113
       IMAGE: ulixee/ulixee-cloud
 
     steps:
