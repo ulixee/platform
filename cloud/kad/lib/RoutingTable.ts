@@ -6,7 +6,7 @@ import Queue from '@ulixee/commons/lib/Queue';
 import Signals from '@ulixee/commons/lib/Signals';
 import KBucket = require('k-bucket');
 import NodeId from '../interfaces/NodeId';
-import { nodeIdToKadId } from '../test/_helpers';
+import { nodeIdToKadId } from './Kad';
 import type { Kad } from './Kad';
 
 export const KAD_CLOSE_TAG_NAME = 'kad-close';

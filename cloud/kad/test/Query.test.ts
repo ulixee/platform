@@ -4,11 +4,12 @@ import Resolvable from '@ulixee/commons/lib/Resolvable';
 import Identity from '@ulixee/crypto/lib/Identity';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import NodeId from '../interfaces/NodeId';
+import { nodeIdToKadId } from '../lib/Kad';
 import { PeerDistanceList } from '../lib/PeerDistanceList';
 import { PeerStore } from '../lib/PeerStore';
 import { IKadQueryFn, IQueryManagerInit, QueryManager } from '../lib/QueryManager';
 import { RoutingTable } from '../lib/RoutingTable';
-import { createNodeIds, delay, nodeIdToKadId } from './_helpers';
+import { createNodeIds, delay } from './_helpers';
 
 const ourIdentity = Identity.createSync();
 const ourNodeId = ourIdentity.bech32;

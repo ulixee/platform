@@ -1,6 +1,6 @@
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
 import { first } from '@ulixee/commons/lib/asyncUtils';
-import { bufferToBigInt } from '@ulixee/commons/lib/bufferUtils';
+import { bufferToBigInt, decodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import Logger from '@ulixee/commons/lib/Logger';
@@ -12,7 +12,6 @@ import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import KadDb from '../db/KadDb';
 import IKadOptions from '../interfaces/IKadOptions';
 import NodeId from '../interfaces/NodeId';
-import { nodeIdToKadId } from '../test/_helpers';
 import ConnectionToKadClient from './ConnectionToKadClient';
 import { ContentRouting } from './ContentRouting';
 import { Network } from './Network';
@@ -327,4 +326,8 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
     this.connectedToNodesPromise.resolve();
     this.emit('peer-connected', { node: nodeInfo });
   }
+}
+
+export function nodeIdToKadId(id: string): Buffer {
+  return sha256(decodeBuffer(id, Identity.encodingPrefix));
 }
