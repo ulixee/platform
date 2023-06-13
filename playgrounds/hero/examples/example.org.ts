@@ -1,8 +1,21 @@
-import Hero, { LocationTrigger } from '@ulixee/hero-playground';
+import DefaultBrowserEmulator from '@ulixee/default-browser-emulator';
+import { ConnectionToHeroCore } from '@ulixee/hero';
+import HeroCore from '@ulixee/hero-core';
+import ExecuteJsPlugin from '@ulixee/execute-js-plugin';
+import Hero, { LocationTrigger } from '@ulixee/hero';
+import TransportBridge from '@ulixee/net/lib/TransportBridge';
 
-// NOTE: You need to start a Ulixee Cloud to run this example
+
 async function run() {
-  const hero = new Hero();
+  HeroCore.defaultUnblockedPlugins = [DefaultBrowserEmulator];
+  HeroCore.use(ExecuteJsPlugin);
+  const bridge = new TransportBridge();
+  const connectionToCore = new ConnectionToHeroCore(bridge.transportToCore);
+
+  const heroCore = new HeroCore();
+  heroCore.addConnection(bridge.transportToClient);
+
+  const hero = new Hero({ connectionToCore });
   await hero.goto('https://example.org/');
   await hero.waitForPaintingStable();
 
@@ -28,6 +41,7 @@ async function run() {
   console.log('-------------------------------------');
 
   await hero.close();
+  await heroCore.close();
 }
 
 run().catch(error => console.log(error));
