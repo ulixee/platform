@@ -23,10 +23,6 @@ const roadmapPaths = [
   '../payments/sidechain/ROADMAP-Sidechain.md',
   '../unblocked/ROADMAP-DoubleAgent.md',
   '../unblocked/ROADMAP-ScraperReport.md',
-  'coming-soon/ROADMAP-Pipeline.md',
-  'coming-soon/ROADMAP-Domain.md',
-  'coming-soon/ROADMAP-Manager.md',
-  'coming-soon/ROADMAP-Marketplace.md',
   'coming-soon/ROADMAP-NFTs.md',
   'desktop/ROADMAP-Desktop.md',
 ];
