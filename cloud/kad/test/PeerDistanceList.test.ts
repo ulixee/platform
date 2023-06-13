@@ -1,7 +1,7 @@
 import { decodeBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { PeerDistanceList } from '../lib/PeerDistanceList';
-import { nodeIdToKadId } from './_helpers';
+import { nodeIdToKadId } from '../lib/Kad';
 
 describe('PeerDistanceList', () => {
   const [p1, p2, p3, p4, p6] = [

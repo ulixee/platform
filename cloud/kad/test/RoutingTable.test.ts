@@ -6,9 +6,10 @@ import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import * as Fs from 'fs';
 import * as Path from 'path';
 import KadDb from '../db/KadDb';
+import { nodeIdToKadId } from '../lib/Kad';
 import { PeerStore } from '../lib/PeerStore';
 import { KAD_CLOSE_TAG_NAME, KBUCKET_SIZE, RoutingTable } from '../lib/RoutingTable';
-import { createNodeIds, nodeIdToKadId } from './_helpers';
+import { createNodeIds } from './_helpers';
 
 const dbPath = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'RoutingTable.test', 'kad.db');
 
@@ -50,7 +51,6 @@ afterEach(async () => {
   db.close();
   await Fs.promises.rm(dbPath, { recursive: true });
 });
-
 
 test('can add to the routing table', async () => {
   const ids = createNodeIds(20);

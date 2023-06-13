@@ -1,6 +1,6 @@
 import { xor } from '@ulixee/commons/lib/bufferUtils';
 import NodeId from '../interfaces/NodeId';
-import { nodeIdToKadId } from '../test/_helpers';
+import { nodeIdToKadId } from './Kad';
 
 interface PeerDistance {
   nodeId: NodeId;

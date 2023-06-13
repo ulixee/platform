@@ -10,7 +10,7 @@ import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import { setMaxListeners } from 'node:events';
 import NodeId from '../interfaces/NodeId';
-import { nodeIdToKadId } from '../test/_helpers';
+import { nodeIdToKadId } from './Kad';
 import { ALPHA, DEFAULT_QUERY_TIMEOUT, K } from './constants';
 import type { Kad } from './Kad';
 import type { RoutingTable } from './RoutingTable';

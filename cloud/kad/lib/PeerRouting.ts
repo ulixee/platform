@@ -4,7 +4,7 @@ import Logger from '@ulixee/commons/lib/Logger';
 import Signals from '@ulixee/commons/lib/Signals';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import NodeId from '../interfaces/NodeId';
-import { nodeIdToKadId } from '../test/_helpers';
+import { nodeIdToKadId } from './Kad';
 import type { Kad } from './Kad';
 import type { Network } from './Network';
 import { PeerDistanceList } from './PeerDistanceList';
