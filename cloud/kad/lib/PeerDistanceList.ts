@@ -90,6 +90,7 @@ export class PeerDistanceList {
     return false;
   }
 
+  // embedded in a function so it can be overridden
   private nodeIdToKadId(nodeId: string): Buffer {
     return nodeIdToKadId(nodeId);
   }

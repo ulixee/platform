@@ -4,10 +4,12 @@ import * as Fs from 'fs';
 import * as Path from 'path';
 import PeersTable from './PeersTable';
 import ProvidersTable from './ProvidersTable';
+import RecordsTable from './RecordsTable';
 
 export default class KadDb {
   public readonly peers: PeersTable;
   public readonly providers: ProvidersTable;
+  public readonly records: RecordsTable;
 
   public get isOpen(): boolean {
     return this.db?.open ?? false;
@@ -24,6 +26,7 @@ export default class KadDb {
 
     this.peers = new PeersTable(this.db);
     this.providers = new ProvidersTable(this.db);
+    this.records = new RecordsTable(this.db);
   }
 
   public close(): void {
