@@ -11,6 +11,8 @@ export default interface IDatastoreComponents<
 > {
   name?: string;
   description?: string;
+  id?: string;
+  version?: string;
   domain?: string;
   storageEngineHost?: string;
   remoteDatastores?: {

@@ -24,6 +24,8 @@ Creates a new Datastore instance.
 
 #### **Arguments**:
 
+- datastoreId `string`. The unique id of this Datastore. Required for deployment.
+- version `string`. A semver string for the Datastore version.
 - name `string`. Optional name for this Datastore to be used in Documentation websites.
 - description `string`. Optional description for this Datastore to be used in Documentation websites.
 - storageEngineHost `string`. The ip:port where storage engine requests should be sent. NOTE: you MUST set this property when deploying into a cluster of nodes.
@@ -49,6 +51,8 @@ Creates a new Datastore instance.
 import Datastore, { Extractor } from '@ulixee/datastore';
 
 export default new Datastore({
+  id: 'test',
+  version: '0.0.1',
   extractors: {
     instance: new Extractor({
       run({ input, Output }) {
@@ -88,7 +92,7 @@ Object containing [Tables](./table.md) keyed by their name.
 
 ### remoteDatastores `{ [name]: url }` {#remote-datastores}
 
-Object containing an optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughExtractors](./passthrough-extractor.md). Urls take the format `ulx://<CloudAddress>/<DatastoreVersionHash>`.
+Object containing an optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughExtractors](./passthrough-extractor.md). Urls take the format `ulx://<CloudAddress>/<DatastoreVersion>`.
 
 ### authenticateIdentity _(identity, nonce)_ {#authenticateIdentity}
 
@@ -109,7 +113,7 @@ let payment = null; // fill in with payment if needed
 // this authentication message will be passed to the Datastore queries.
 const authentication = DatastoreApiClient.createExecAuthentication(payment, identity);
 const client = new DatastoreApiClient();
-await client.stream('dbx1tn43ect3qkwg0patvq', 'extractorName', { authentication });
+await client.stream('test', '1.0.0', 'extractorName', { authentication });
 ```
 
 Your Datastore can then only allow your distributed Identities:

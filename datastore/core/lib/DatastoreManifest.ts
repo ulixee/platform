@@ -1,16 +1,13 @@
 import UlixeeConfig from '@ulixee/commons/config';
-import { concatAsBuffer, encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
-import { findProjectPathAsync, getDataDirectory } from '@ulixee/commons/lib/dirUtils';
+import { findProjectPathAsync } from '@ulixee/commons/lib/dirUtils';
 import { existsAsync, readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
-import * as HashUtils from '@ulixee/commons/lib/hashUtils';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import { assert } from '@ulixee/commons/lib/utils';
 import IDatastoreMetadata from '@ulixee/datastore/interfaces/IDatastoreMetadata';
+import { datastoreIdValidation } from '@ulixee/platform-specification/types/datastoreIdValidation';
 import IDatastoreManifest, {
   DatastoreManifestSchema,
-  IVersionHistoryEntry,
 } from '@ulixee/platform-specification/types/IDatastoreManifest';
-import { datastoreVersionHashValidation } from '@ulixee/platform-specification/types/datastoreVersionHashValidation';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
 import { promises as Fs } from 'fs';
 import * as Path from 'path';
@@ -23,11 +20,12 @@ type IDatastoreSources = [
 ];
 
 export default class DatastoreManifest implements IDatastoreManifest {
-  public static TemporaryIdPrefix = `dbx1startedtempver`;
+  public static TemporaryIdPrefix = 'tmp';
+  public id: string;
+  public version: string;
   public name: string;
   public description: string;
   public domain: string;
-  public versionHash: string;
   public versionTimestamp: number;
   public scriptHash: string;
   public scriptEntrypoint: string;
@@ -42,11 +40,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
   public adminIdentities: string[];
   // Payment details
   public paymentAddress?: string;
-
-  public linkedVersions: IVersionHistoryEntry[];
-  public allVersions: IVersionHistoryEntry[];
-  public hasClearedLinkedVersions = false;
-  public addToVersionHistory = true;
 
   public explicitSettings: Partial<IDatastoreManifest>;
   public source: 'dbx' | 'entrypoint' | 'project' | 'global';
@@ -72,17 +65,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
     return await existsAsync(this.path);
   }
 
-  public async setLinkedVersions(
-    absoluteScriptEntrypoint: string,
-    linkedVersions: IVersionHistoryEntry[],
-  ): Promise<void> {
-    this.linkedVersions = linkedVersions;
-    this.computeVersionHash();
-    await this.save();
-    const manifestSources = DatastoreManifest.getCustomSources(absoluteScriptEntrypoint);
-    await this.syncGeneratedManifests(manifestSources);
-  }
-
   public async update(
     absoluteScriptEntrypoint: string,
     scriptHash: string,
@@ -93,6 +75,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
     tablesByName: IDatastoreManifest['tablesByName'],
     metadata: Pick<
       IDatastoreMetadata,
+      | 'id'
+      | 'version'
       | 'coreVersion'
       | 'paymentAddress'
       | 'adminIdentities'
@@ -102,7 +86,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       | 'storageEngineHost'
     >,
     logger?: (message: string, ...args: any[]) => any,
-    createTemporaryVersionHash = false,
+    createTemporaryVersion = false,
   ): Promise<void> {
     await this.load();
 
@@ -111,7 +95,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
 
     const manifestSources = DatastoreManifest.getCustomSources(absoluteScriptEntrypoint);
     await this.loadGeneratedManifests(manifestSources);
-    this.linkedVersions ??= [];
     this.extractorsByName = {};
     this.crawlersByName = {};
 
@@ -123,6 +106,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
       adminIdentities,
       domain,
       storageEngineHost,
+      version,
+      id,
     } = metadata;
 
     Object.assign(
@@ -136,6 +121,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
         description,
         name,
         storageEngineHost,
+        version,
+        id,
       }),
     );
     this.adminIdentities ??= [];
@@ -166,38 +153,22 @@ export default class DatastoreManifest implements IDatastoreManifest {
     // allow manifest to override above values
     await this.loadExplicitSettings(manifestSources, logger);
 
-    if (this.versionHash && !this.hasClearedLinkedVersions) {
-      this.addVersionHashToHistory();
-    }
     this.scriptEntrypoint = scriptEntrypoint;
     this.versionTimestamp = versionTimestamp;
     this.scriptHash = scriptHash;
-    if (createTemporaryVersionHash) {
-      const tempVersionHashPath = Path.join(
-        getDataDirectory(),
-        'ulixee',
-        'datastore-temp-ids.json',
+    if (createTemporaryVersion) {
+      const filename = Path.basename(this.scriptEntrypoint).replace(
+        Path.extname(this.scriptEntrypoint),
+        '',
       );
-      // DBX validation: [ac-hj-np-z02-9]{18}
-      const tempVersions = (await readFileAsJson(tempVersionHashPath).catch(() => {})) ?? {};
-      if (!tempVersions[this.scriptEntrypoint]) {
-        const next = Object.keys(tempVersions).length + 1;
-        tempVersions[this.scriptEntrypoint] = String(next).replace(/1/g, 'l').padStart(4, '0');
-        await Fs.writeFile(tempVersionHashPath, JSON.stringify(tempVersions, null, 2));
-      }
-
-      this.versionHash = `${DatastoreManifest.TemporaryIdPrefix}${
-        tempVersions[this.scriptEntrypoint]
-      }`;
-    } else {
-      await this.computeVersionHash();
+      this.id = `${DatastoreManifest.TemporaryIdPrefix}-${filename
+        .toLowerCase()
+        .replaceAll(/[^a-z0-9-]/g, '-')}`;
+      this.version ||= '0.0.1';
     }
+
     await this.save();
     await this.syncGeneratedManifests(manifestSources);
-  }
-
-  public computeVersionHash(): void {
-    this.versionHash = DatastoreManifest.createVersionHash(this);
   }
 
   public async load(): Promise<boolean> {
@@ -213,20 +184,14 @@ export default class DatastoreManifest implements IDatastoreManifest {
         data = data[this.sharedConfigFileKey];
       }
       if (data) {
-        const {
-          __GENERATED_LAST_VERSION__: generated,
-          __VERSION_HISTORY__: allVersions,
-          ...explicitSettings
-        } = data;
+        const { __GENERATED_LAST_VERSION__: generated, ...explicitSettings } = data;
         this.explicitSettings = filterUndefined(explicitSettings);
         Object.assign(this, filterUndefined(generated));
-        if (allVersions) this.allVersions = allVersions;
 
         return true;
       }
     } else if (this.source === 'global') {
       await safeOverwriteFile(this.path, '{}');
-      this.allVersions = [];
     }
     return false;
   }
@@ -258,18 +223,17 @@ export default class DatastoreManifest implements IDatastoreManifest {
     return {
       ...this.explicitSettings,
       __GENERATED_LAST_VERSION__: this.toJSON(),
-      __VERSION_HISTORY__: this.allVersions,
     };
   }
 
   public toJSON(): IDatastoreManifest {
     return {
+      id: this.id,
       name: this.name,
       description: this.description,
       domain: this.domain,
-      versionHash: this.versionHash,
+      version: this.version,
       versionTimestamp: this.versionTimestamp,
-      linkedVersions: this.linkedVersions,
       scriptEntrypoint: this.scriptEntrypoint,
       scriptHash: this.scriptHash,
       coreVersion: this.coreVersion,
@@ -286,13 +250,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
   private async syncGeneratedManifests(sources: IDatastoreSources): Promise<void> {
     for (const source of sources) {
       if (!source || !(await source.exists())) continue;
-      source.allVersions ??= [];
-      if (!source.allVersions.some(x => x.versionHash === this.versionHash)) {
-        source.allVersions.unshift({
-          versionHash: this.versionHash,
-          versionTimestamp: this.versionTimestamp,
-        });
-      }
+
       Object.assign(source, this.toJSON());
       await source.save();
     }
@@ -369,106 +327,14 @@ export default class DatastoreManifest implements IDatastoreManifest {
           }
         }
         Object.assign(this, otherSettings);
-        if (explicitSettings.linkedVersions?.length === 0) {
-          this.hasClearedLinkedVersions = true;
-        }
       }
     }
-    // only cleared if explicitly cleared and also not re-set at a different layer
-    this.hasClearedLinkedVersions &&= this.linkedVersions.length === 0;
-  }
-
-  private addVersionHashToHistory(): void {
-    if (
-      this.addToVersionHistory &&
-      this.versionHash &&
-      !this.versionHash.includes('tempver') &&
-      !this.linkedVersions.some(x => x.versionHash === this.versionHash)
-    ) {
-      this.linkedVersions.unshift({
-        versionHash: this.versionHash,
-        versionTimestamp: this.versionTimestamp,
-      });
-      this.linkedVersions.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
-    }
-  }
-
-  public static createVersionHash(
-    manifest: Pick<
-      IDatastoreManifest,
-      | 'scriptHash'
-      | 'storageEngineHost'
-      | 'versionTimestamp'
-      | 'scriptEntrypoint'
-      | 'linkedVersions'
-      | 'paymentAddress'
-      | 'extractorsByName'
-      | 'crawlersByName'
-      | 'tablesByName'
-      | 'adminIdentities'
-    >,
-  ): string {
-    const {
-      scriptHash,
-      versionTimestamp,
-      scriptEntrypoint,
-      extractorsByName,
-      crawlersByName,
-      tablesByName,
-      paymentAddress,
-      linkedVersions,
-      storageEngineHost,
-      adminIdentities,
-    } = manifest;
-    linkedVersions.sort((a, b) => b.versionTimestamp - a.versionTimestamp);
-    const extractors = Object.keys(extractorsByName ?? {}).sort();
-    const extractorPrices: (string | number)[] = [];
-    for (const name of extractors) {
-      const func = extractorsByName[name];
-      func.prices ??= [{ perQuery: 0, minimum: 0 }];
-      for (const price of func.prices) {
-        extractorPrices.push(price.perQuery, price.minimum, price.addOns?.perKb);
-      }
-    }
-    const crawlerPrices: (string | number)[] = [];
-    for (const name of Object.keys(crawlersByName ?? {}).sort()) {
-      const func = crawlersByName[name];
-      func.prices ??= [{ perQuery: 0, minimum: 0 }];
-      for (const price of func.prices) {
-        crawlerPrices.push(price.perQuery, price.minimum, price.addOns?.perKb);
-      }
-    }
-    const tablePrices: (string | number)[] = [];
-    for (const name of Object.keys(tablesByName ?? {}).sort()) {
-      const table = tablesByName[name];
-      table.prices ??= [{ perQuery: 0 }];
-      for (const price of table.prices) {
-        tablePrices.push(price.perQuery);
-      }
-    }
-    const hashMessage = concatAsBuffer(
-      scriptHash,
-      versionTimestamp,
-      scriptEntrypoint,
-      storageEngineHost,
-      ...extractorPrices,
-      ...crawlerPrices,
-      ...tablePrices,
-      paymentAddress,
-      ...(adminIdentities ?? []),
-      JSON.stringify(linkedVersions),
-    );
-    const sha = HashUtils.sha256(hashMessage);
-    // ~208,000 years of work to have a 1% chance of collision.
-    // Bech32m is a bit of an odd choice since we're lopping off the checksum, but keeping for now to keep encoding consistent.
-    return encodeBuffer(sha, 'dbx').substring(0, 22);
   }
 
   public static validate(json: IDatastoreManifest): void {
     try {
       DatastoreManifestSchema.parse(json);
     } catch (error) {
-      console.error('Error validating DatastoreManifest', error);
       throw ValidationError.fromZodValidation(
         'This Manifest has errors that need to be fixed.',
         error,
@@ -476,11 +342,11 @@ export default class DatastoreManifest implements IDatastoreManifest {
     }
   }
 
-  public static validateVersionHash(versionHash: string): void {
+  public static validateId(id: string): void {
     try {
-      datastoreVersionHashValidation.parse(versionHash);
+      datastoreIdValidation.parse(id);
     } catch (error) {
-      throw ValidationError.fromZodValidation('This is not a valid datastore versionHash', error);
+      throw ValidationError.fromZodValidation('This is not a valid datastore id', error);
     }
   }
 
@@ -533,5 +399,4 @@ export default class DatastoreManifest implements IDatastoreManifest {
 
 interface IDatastoreManifestJson extends Partial<IDatastoreManifest> {
   __GENERATED_LAST_VERSION__: IDatastoreManifest;
-  __VERSION_HISTORY__: IVersionHistoryEntry[];
 }

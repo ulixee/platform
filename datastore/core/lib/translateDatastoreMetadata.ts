@@ -22,7 +22,7 @@ export default async function translateDatastoreMetadata(
 
   for (const [name, extractor] of Object.entries(datastore.extractorsByName)) {
     const { prices, schemaAsJson } = extractor;
-    const stats = datastoreStats.statsByEntityName[name];
+    const { stats } = datastoreStats.statsByEntityName[name];
     const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
 
     result.extractorsByName[name] = {
@@ -36,7 +36,7 @@ export default async function translateDatastoreMetadata(
   }
   for (const [name, crawler] of Object.entries(datastore.crawlersByName)) {
     const { prices, schemaAsJson } = crawler;
-    const stats = datastoreStats.statsByEntityName[name];
+    const { stats } = datastoreStats.statsByEntityName[name];
     const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
 
     result.crawlersByName[name] = {
@@ -52,7 +52,7 @@ export default async function translateDatastoreMetadata(
   for (const [name, meta] of Object.entries(datastore.tablesByName)) {
     const { prices } = meta;
     const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
-    const stats = datastoreStats.statsByEntityName[name];
+    const { stats } = datastoreStats.statsByEntityName[name];
 
     result.tablesByName[name] = {
       description: meta.description,

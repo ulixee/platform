@@ -1,5 +1,8 @@
 import { ConnectionToCore } from '@ulixee/net';
-import { IStatsTrackerApis, IStatsTrackerApiTypes } from '@ulixee/platform-specification/services/StatsTrackerApis';
+import {
+  IStatsTrackerApis,
+  IStatsTrackerApiTypes,
+} from '@ulixee/platform-specification/services/StatsTrackerApis';
 import { IDatastoreStats } from './StatsTracker';
 
 export default class StatsTrackerServiceClient {
@@ -9,10 +12,27 @@ export default class StatsTrackerServiceClient {
     await this.client.disconnect();
   }
 
-  public async getForDatastore(versionHash: string): Promise<IDatastoreStats> {
+  public async getForDatastoreVersion(
+    datastoreId: string,
+    version: string,
+  ): Promise<IDatastoreStats> {
+    return await this.client.sendRequest({
+      command: 'StatsTracker.getByVersion',
+      args: [{ datastoreId, version }],
+    });
+  }
+
+  public async getForDatastore(datastoreId: string): Promise<IDatastoreStats> {
     return await this.client.sendRequest({
       command: 'StatsTracker.get',
-      args: [{ versionHash }],
+      args: [{ datastoreId }],
+    });
+  }
+
+  public async getDatastoreSummary(datastoreId: string): Promise<Pick<IDatastoreStats, 'stats'>> {
+    return await this.client.sendRequest({
+      command: 'StatsTracker.getSummary',
+      args: [{ datastoreId }],
     });
   }
 

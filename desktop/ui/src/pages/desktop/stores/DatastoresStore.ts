@@ -8,19 +8,24 @@ import ICloudConnection from '@/api/ICloudConnection';
 import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
 import { useWalletStore } from '@/pages/desktop/stores/WalletStore';
 
-export type IDatastoreList = IDatastoreApiTypes['Datastores.list']['result']['datastores'];
-export type IDatastoreMeta = IDatastoreApiTypes['Datastore.meta']['result'];
+export type IDatastoreSummary = IDatastoreApiTypes['Datastores.list']['result']['datastores'][0];
+export type IDatastoreMeta = IDatastoreApiTypes['Datastore.meta']['result'] & {
+  examplesByEntityName: { [name: string]: { formatted: string; args: Record<string, any> } };
+};
+export type IDatastoreVersions = IDatastoreApiTypes['Datastore.versions']['result']['versions'];
 export type TCredit = { datastoreUrl: string; microgons: number };
 
-export type IDatastoresByVersion = {
-  [versionHash: string]: {
-    summary: IDatastoreList[0];
-    datastore: IDatastoreMeta;
+export type IDatastoresById = {
+  [datastoreId: string]: {
+    summary: IDatastoreSummary & { cloudName: string }; // aggregated stats
+    details: IDatastoreMeta;
     createdCredits: { credit: TCredit; filename: string; cloud: string }[];
     adminIdentity: string;
-    versions: Set<string>;
+    versions?: IDatastoreVersions;
+    cloudsByVersion: {
+      [version: string]: string[];
+    };
     isInstalled: boolean;
-    deploymentsByCloud: { [cloud: string]: IDatastoreList[0] };
   };
 };
 
@@ -29,20 +34,20 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
   const { clouds } = storeToRefs(cloudsStore);
 
   const installedDatastoreVersions = new Set<string>();
-  const datastoreAdminIdentities = ref<{ [versionHash: string]: string }>({});
+  const datastoreAdminIdentities = ref<{ [datastoreId: string]: string }>({});
   const userQueriesByDatastore = ref<{
-    [versionHash: string]: { [queryId: string]: IQueryLogEntry };
+    [datastoreId: string]: { [queryId: string]: IQueryLogEntry };
   }>({});
 
-  const datastoresByVersion = ref<IDatastoresByVersion>({});
+  const datastoresById = ref<IDatastoresById>({});
 
   function onDeployed(event: IDatastoreDeployLogEntry) {
-    const { versionHash, cloudHost, adminIdentity } = event;
-    const entry = datastoresByVersion.value[versionHash];
+    const { datastoreId, version, cloudHost, adminIdentity } = event;
+    const entry = datastoresById.value[datastoreId];
     const cloud = cloudsStore.getCloudWithAddress(cloudHost);
-    void refreshMetadata(versionHash, cloud).then(() => {
+    void refreshMetadata(datastoreId, version, cloud).then(() => {
       // eslint-disable-next-line promise/always-return
-      datastoresByVersion.value[versionHash].adminIdentity ??= adminIdentity;
+      datastoresById.value[datastoreId].adminIdentity ??= adminIdentity;
     });
     if (entry) {
       entry.adminIdentity ??= adminIdentity;
@@ -53,133 +58,187 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     onDeployed(data);
   });
   window.desktopApi.on('User.onQuery', query => {
-    userQueriesByDatastore.value[query.versionHash] ??= {};
-    userQueriesByDatastore.value[query.versionHash][query.id] = query;
+    userQueriesByDatastore.value[query.datastoreId] ??= {};
+    userQueriesByDatastore.value[query.datastoreId][query.queryId] = query;
   });
 
-  function getWithHash(versionHash: string): { summary: IDatastoreList[0]; cloud: string } {
-    const entry = datastoresByVersion.value[versionHash];
-    if (entry) {
-      const deployments = Object.entries(entry.deploymentsByCloud);
-      deployments.sort((a, b) => {
-        if (a[0] === 'public') return -1;
-        if (b[0] === 'public') return 1;
-        if (a[0] === 'private') return -1;
-        if (b[0] === 'private') return 1;
-        return 0;
-      });
-      const [cloud, summary] = deployments[0];
-      return { summary, cloud };
-    }
+  function get(datastoreId: string): IDatastoreSummary {
+    return datastoresById.value[datastoreId]?.summary;
   }
 
-  function refreshMetadata(versionHash: string, cloudName = 'local'): Promise<void> {
+  function getHostedClouds(summary: IDatastoreSummary): string[] {
+    return datastoresById.value[summary.id]?.cloudsByVersion[summary.version] ?? [];
+  }
+
+  function getCloud(id: string, version: string): string {
+    const versionClouds = datastoresById.value[id]?.cloudsByVersion[version] ?? [];
+    if (versionClouds.length > 1) return versionClouds.find(x => x !== 'local');
+    return versionClouds[0];
+  }
+
+  function refreshMetadata(id: string, version: string, cloudName = 'local'): Promise<void> {
     const cloud = clouds.value.find(x => x.name === cloudName);
     const client = cloud.clientsByAddress.values().next().value;
-    return client.send('Datastore.meta', { versionHash, includeSchemasAsJson: true }).then(x => onDatastoreMeta(x, cloud));
+    return client
+      .send('Datastore.meta', { id, version, includeSchemasAsJson: true })
+      .then(x => onDatastoreMeta(x, cloud));
   }
 
-  function findAdminIdentity(versionHash: string) {
+  function getStats(
+    id: string,
+    version: string,
+    cloudName = 'local',
+  ): Promise<IDatastoreApiTypes['Datastore.stats']['result']> {
+    const cloud = clouds.value.find(x => x.name === cloudName);
+    const client = cloud.clientsByAddress.values().next().value;
+    return client.send('Datastore.stats', { id, version });
+  }
+
+  async function getVersions(
+    id: string,
+    cloudName = 'local',
+    refresh = false,
+  ): Promise<{ version: string; timestamp: number }[]> {
+    const cloud = clouds.value.find(x => x.name === cloudName);
+    const client = cloud.clientsByAddress.values().next().value;
+    if (!client) return [];
+    const entry = datastoresById.value[id];
+    if (!entry.versions || refresh) {
+      const versions = await client.send('Datastore.versions', { id });
+      entry.versions = versions.versions;
+    }
+    return entry.versions as any;
+  }
+
+  function findAdminIdentity(datastoreId: string) {
     void window.desktopApi
-      .send('Datastore.findAdminIdentity', versionHash)
-      .then(x => (datastoresByVersion.value[versionHash].adminIdentity = x));
+      .send('Datastore.findAdminIdentity', datastoreId)
+      .then(x => (datastoresById.value[datastoreId].adminIdentity = x));
   }
 
-  function getCloudAddress(versionHash: string, cloudName: string): URL {
+  function getCloudAddress(id: string, version: string, cloudName: string): URL {
     const cloudHost = cloudsStore.getCloudHost(cloudName);
-    const cloudAddress = new URL(`/${versionHash}`, cloudHost);
+    const cloudAddress = new URL(`/${id}/${version}`, cloudHost);
     cloudAddress.protocol = 'ulx:';
     return cloudAddress;
   }
 
-  async function runQuery(versionHash: string, query: string): Promise<void> {
-    const datastore = datastoresByVersion.value[versionHash];
-    const cloudName = Object.keys(datastore.deploymentsByCloud)[0];
+  async function runQuery(id: string, version: string, query: string): Promise<void> {
+    const datastore = datastoresById.value[id];
+    const cloudName = datastore.cloudsByVersion[version][0];
     const cloudHost = cloudsStore.getCloudHost(cloudName);
 
     const queryStart = await window.desktopApi.send('Datastore.query', {
-      versionHash,
+      id,
+      version,
       cloudHost,
       query,
     });
-    userQueriesByDatastore.value[versionHash] ??= {};
-    userQueriesByDatastore.value[versionHash][queryStart.id] = queryStart;
+    userQueriesByDatastore.value[id] ??= {};
+    userQueriesByDatastore.value[id][queryStart.queryId] = queryStart;
   }
 
-  function openDocs(versionHash: string, cloudName: string) {
+  function openDocs(id: string, version: string, cloudName: string) {
     const cloudHost = cloudsStore.getCloudHost(cloudName);
-    const docsUrl = new URL(`/${versionHash}/`, cloudHost);
+    const docsUrl = new URL(`/docs/${id}/${version}/`, cloudHost);
     docsUrl.protocol = 'http:';
 
     const credits = useWalletStore().userBalance.credits.filter(
-      x => x.datastoreVersionHash === versionHash,
+      x => x.datastoreId === id && x.datastoreVersion === version,
     );
     const credit = credits.find(x => x.remainingBalance > 0) ?? credits[0];
     if (credit) {
       docsUrl.search = `?${credit.creditsId}`;
     }
 
-    window.open(docsUrl.href, `Docs${versionHash}`);
+    window.open(docsUrl.href, `Docs${version}`);
   }
 
-  function getAdminDetails(versionHash: string, cloudName: string): Ref<string> {
-    const datastore = datastoresByVersion.value[versionHash];
+  function getDocsUrl(datastoreUrl: string): string {
+    const creditUrl = new URL(datastoreUrl.replace('ulx:', 'http:'));
+    const creditId = creditUrl.username;
+    const secret = creditUrl.password;
+    creditUrl.username = '';
+    creditUrl.password = '';
+    creditUrl.search = `?${creditId}:${secret}`;
+    creditUrl.pathname = `/docs${creditUrl.pathname}/free-credits`;
+    return creditUrl.href;
+  }
+
+  function getAdminDetails(datastoreId: string, cloudName: string): Ref<string> {
+    const datastore = datastoresById.value[datastoreId];
 
     const adminIdentity = computed(() => datastore.adminIdentity);
-    datastore.adminIdentity ??= getDatastoreAdminIdentity(versionHash, cloudName);
+    datastore.adminIdentity ??= getDatastoreAdminIdentity(datastoreId, cloudName);
 
     return adminIdentity;
   }
 
-  async function deploy(datastore: IDatastoreList[0], cloudName: string): Promise<void> {
+  async function deploy(id: string, version: string, cloudName: string): Promise<void> {
     const cloudHost = cloudsStore.getCloudHost(cloudName);
     await window.desktopApi.send('Datastore.deploy', {
-      versionHash: datastore.versionHash,
+      id,
+      version,
       cloudName,
       cloudHost,
     });
   }
 
-  async function installDatastore(versionHash: string, cloud = 'local'): Promise<void> {
-    const entry = datastoresByVersion.value[versionHash];
+  async function installDatastore(id: string, version: string, cloud = 'local'): Promise<void> {
+    const entry = datastoresById.value[id];
     const cloudHost = cloudsStore.getCloudHost(cloud);
 
     await window.desktopApi.send('Datastore.install', {
       cloudHost,
-      datastoreVersionHash: versionHash,
+      id,
+      version,
     });
-    installedDatastoreVersions.add(versionHash);
+    installedDatastoreVersions.add(`${id}_${version}`);
     entry.isInstalled = true;
   }
 
-  async function installDatastoreByUrl(datastore: IDatastoreList[0], url: string): Promise<void> {
+  async function uninstallDatastore(id: string, version: string, cloud = 'local'): Promise<void> {
+    const entry = datastoresById.value[id];
+    const cloudHost = cloudsStore.getCloudHost(cloud);
+
+    await window.desktopApi.send('Datastore.uninstall', {
+      cloudHost,
+      id,
+      version,
+    });
+    installedDatastoreVersions.delete(`${id}_${version}`);
+    entry.isInstalled = false;
+  }
+
+  async function installDatastoreByUrl(datastore: IDatastoreSummary, url: string): Promise<void> {
     const datastoreUrl = new URL(url);
     datastoreUrl.protocol = 'ws:';
-    const datastoreVersionHash = datastore.versionHash;
-    const entry = datastoresByVersion.value[datastore.versionHash];
+    const { id, version } = datastore;
+    const entry = datastoresById.value[id];
 
     await window.desktopApi.send('Datastore.install', {
       cloudHost: datastoreUrl.host,
-      datastoreVersionHash,
+      id,
+      version,
     });
-    installedDatastoreVersions.add(datastore.versionHash);
+    installedDatastoreVersions.add(`${id}_${version}`);
     entry.isInstalled = true;
   }
 
-  async function getByUrl(url: string): Promise<IDatastoreList[0]> {
+  async function getByUrl(url: string): Promise<IDatastoreSummary> {
     if (!url.includes('://')) url = `ws://${url}`;
     const datastoreUrl = new URL(url);
     datastoreUrl.protocol = 'ws:';
-    const versionHash = datastoreUrl.pathname.slice(1);
+    const [datastoreId] = datastoreUrl.pathname.slice(1).split('/');
 
-    if (datastoresByVersion.value[versionHash]?.summary)
-      return datastoresByVersion.value[versionHash].summary;
+    if (datastoresById.value[datastoreId]?.summary)
+      return datastoresById.value[datastoreId].summary;
 
     await cloudsStore.connectToCloud(datastoreUrl.host, `${datastoreUrl.host}`);
 
     const endDate = Date.now() + 5e3;
     while (Date.now() < endDate) {
-      const datastore = datastoresByVersion.value[versionHash]?.summary;
+      const datastore = datastoresById.value[datastoreId]?.summary;
       if (datastore) return datastore;
       await new Promise(requestAnimationFrame);
     }
@@ -189,53 +248,56 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     client.removeEventListeners('Datastore.new');
     client.on('Datastore.new', x => onDatastoreMeta(x.datastore, cloud));
     client.removeEventListeners('Datastore.stats');
-    client.on('Datastore.stats', x => updateStats(x.versionHash, cloud.name, x.stats));
+    client.on('Datastore.stats', x => updateStats(x.id, x.version, cloud.name, x.stats));
     client.removeEventListeners('Datastore.stopped');
-    client.on('Datastore.stopped', x => onDatastoreStopped(x.versionHash, cloud.name));
+    client.on('Datastore.stopped', x => onDatastoreStopped(x.id));
 
     const results = await client.send('Datastores.list', {});
     if (!results) return;
-    const { datastores, count } = results;
+    const { datastores, total } = results;
     for (const datastore of datastores) {
       onDatastoreSummary(datastore, cloud);
     }
-    cloud.datastores = count;
+    cloud.datastores = total;
   }
 
-  function onDatastoreStopped(versionHash: string, cloudName: string) {
-    if (datastoresByVersion.value[versionHash]?.datastore) {
-      datastoresByVersion.value[versionHash].datastore.isStarted = false;
+  function onDatastoreStopped(id: string) {
+    if (datastoresById.value[id]?.summary) {
+      datastoresById.value[id].summary.isStarted = false;
     }
-    if (datastoresByVersion.value[versionHash]?.deploymentsByCloud[cloudName]) {
-      datastoresByVersion.value[versionHash].deploymentsByCloud[cloudName].isStarted = false;
+    if (datastoresById.value[id]?.details) {
+      datastoresById.value[id].details.isStarted = false;
     }
   }
 
   function onDatastoreMeta(meta: IDatastoreMeta, cloud: ICloudConnection) {
     onDatastoreSummary(meta, cloud);
-    datastoresByVersion.value[meta.versionHash].datastore = meta;
-    updateStats(meta.versionHash, cloud.name, meta.stats);
+    datastoresById.value[meta.id].details = meta;
+    updateStats(meta.id, meta.version, cloud.name, meta.stats);
     let totalByCloud = 0;
-    for (const entry of Object.values(datastoresByVersion.value)) {
-      if (entry.deploymentsByCloud[cloud.name]) totalByCloud += 1;
+    for (const entry of Object.values(datastoresById.value)) {
+      if (entry.cloudsByVersion[meta.version]?.includes(cloud.name)) totalByCloud += 1;
     }
     if (totalByCloud > cloud.datastores) cloud.datastores = totalByCloud;
   }
 
-  function updateStats(versionHash: string, cloudName: string, stats: IDatastoreMeta['stats']) {
-    if (datastoresByVersion.value[versionHash]) {
-      datastoresByVersion.value[versionHash].summary.stats = stats;
-      if (datastoresByVersion.value[versionHash].deploymentsByCloud[cloudName]) {
-        datastoresByVersion.value[versionHash].deploymentsByCloud[cloudName].stats = stats;
-      }
+  function updateStats(
+    id: string,
+    version: string,
+    cloudName: string,
+    stats: IDatastoreMeta['stats'],
+  ) {
+    if (datastoresById.value[id]) {
+      datastoresById.value[id].summary.stats = stats;
     }
   }
 
-  async function createCredit(datastore: IDatastoreList[0], argons: number, cloud: string) {
+  async function createCredit(datastore: IDatastoreSummary, argons: number, cloud: string) {
     const data = {
       argons,
       datastore: {
-        versionHash: datastore.versionHash,
+        id: datastore.id,
+        version: datastore.version,
         name: datastore.name,
         domain: datastore.domain,
         scriptEntrypoint: datastore.scriptEntrypoint,
@@ -243,139 +305,85 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
       cloud,
     };
     const { filename, credit } = await window.desktopApi.send('Credit.create', data);
-    datastoresByVersion.value[datastore.versionHash].createdCredits.push({
+    datastoresById.value[datastore.id].createdCredits.push({
       credit,
       filename,
       cloud,
     });
-    void refreshMetadata(datastore.versionHash, cloud);
+    void refreshMetadata(datastore.id, datastore.version, cloud);
     return { filename, credit };
   }
 
-  function getDatastoreAdminIdentity(versionHash: string, cloudName: string) {
+  function getDatastoreAdminIdentity(datastoreId: string, cloudName: string) {
     return (
-      datastoreAdminIdentities.value[versionHash] ??
+      datastoreAdminIdentities.value[datastoreId] ??
       clouds.value.find(x => x.name === cloudName)?.adminIdentity
     );
   }
 
-  function calculateNewAverage(
-    stat1: number,
-    count1: number,
-    stat2: number,
-    count2: number,
-  ): number {
-    const stat1Sum = stat1 * count1;
-    const stat2Sum = stat2 * count2;
-    return Math.round(stat1Sum + stat2Sum / (count1 + count2));
-  }
-
-  function onDatastoreSummary(datastore: IDatastoreList[0], cloud: ICloudConnection) {
-    const versionHash = datastore.versionHash;
+  function onDatastoreSummary(datastore: IDatastoreSummary, cloud: ICloudConnection) {
+    const datastoreId = datastore.id;
     const cloudName = cloud.name;
-    datastoresByVersion.value[versionHash] ??= {
-      datastore: null,
-      summary: datastore,
-      deploymentsByCloud: {},
+    datastoresById.value[datastoreId] ??= {
+      details: null,
+      summary: { ...datastore, cloudName },
+      cloudsByVersion: {},
+      versions: [],
       createdCredits: [],
-      versions: new Set(),
       isInstalled: false,
       adminIdentity: null,
     };
-    userQueriesByDatastore.value[versionHash] ??= {};
+    userQueriesByDatastore.value[datastoreId] ??= {};
 
-    const entry = datastoresByVersion.value[versionHash];
-    entry.adminIdentity ??= getDatastoreAdminIdentity(versionHash, cloudName);
-    entry.deploymentsByCloud[cloud.name] = datastore;
-    entry.isInstalled = installedDatastoreVersions.has(versionHash);
-    entry.summary = datastore;
+    const entry = datastoresById.value[datastoreId];
+    entry.adminIdentity ??= getDatastoreAdminIdentity(datastoreId, cloudName);
+    entry.cloudsByVersion[datastore.version] ??= [];
+    if (!entry.cloudsByVersion[datastore.version].includes(cloud.name))
+      entry.cloudsByVersion[datastore.version].push(cloud.name);
+    entry.isInstalled = installedDatastoreVersions.has(`${datastore.id}_${datastore.version}`);
 
-    if (versionHash === datastore.latestVersionHash) {
-      for (const version of datastore.linkedVersions) {
-        if (datastoresByVersion.value[version.versionHash]) datastoresByVersion.value[version.versionHash].summary.latestVersionHash = versionHash;
-      }
-    }
-  }
-
-  function getAggregateVersionStats(
-    latestVersionHash: string,
-    onlyShowDeployment?: string,
-  ): IDatastoreList[0]['stats'] {
-    const stats: IDatastoreList[0]['stats'] = {} as any;
-    for (const datastoreVersion of Object.values(datastoresByVersion.value)) {
-      // Aggregate stats across all versions
-      if (datastoreVersion.summary.latestVersionHash === latestVersionHash) {
-        for (const [name, deployment] of Object.entries(datastoreVersion.deploymentsByCloud)) {
-          if (onlyShowDeployment && onlyShowDeployment !== name) continue;
-          const versionStats = deployment.stats;
-          stats.queries += versionStats.queries;
-          stats.errors += versionStats.errors;
-          stats.totalSpend += versionStats.totalSpend;
-          stats.totalCreditSpend += versionStats.totalCreditSpend;
-          stats.maxBytesPerQuery = Math.max(stats.maxBytesPerQuery, versionStats.maxBytesPerQuery);
-          stats.maxPricePerQuery = Math.max(stats.maxPricePerQuery, versionStats.maxPricePerQuery);
-          stats.maxMilliseconds = Math.max(stats.maxMilliseconds, versionStats.maxMilliseconds);
-          stats.maxPricePerQuery = Math.max(stats.maxPricePerQuery, versionStats.maxPricePerQuery);
-          stats.maxMilliseconds = Math.max(stats.maxMilliseconds, versionStats.maxMilliseconds);
-
-          stats.averageBytesPerQuery = calculateNewAverage(
-            stats.averageBytesPerQuery,
-            stats.queries,
-            versionStats.averageBytesPerQuery,
-            versionStats.queries,
-          );
-          stats.averageMilliseconds = calculateNewAverage(
-            stats.averageMilliseconds,
-            stats.queries,
-            versionStats.averageMilliseconds,
-            versionStats.queries,
-          );
-          stats.averageTotalPricePerQuery = calculateNewAverage(
-            stats.averageTotalPricePerQuery,
-            stats.queries,
-            versionStats.averageTotalPricePerQuery,
-            versionStats.queries,
-          );
-        }
-      }
-    }
-    return stats;
+    entry.summary = { ...datastore, cloudName };
   }
 
   async function load() {
     const datastores = await window.desktopApi.send('Datastore.getInstalled');
-    for (const { cloudHost, datastoreVersionHash } of datastores) {
-      installedDatastoreVersions.add(datastoreVersionHash);
+    for (const { datastoreId, cloudHost, datastoreVersion } of datastores) {
+      installedDatastoreVersions.add(`${datastoreId}_${datastoreVersion}`);
       if (!cloudsStore.connectedToHost(cloudHost) && !cloudHost.includes('localhost:1818')) {
         await cloudsStore.connectToCloud(cloudHost, `Installed from ${cloudHost}`);
       }
     }
 
     const adminIdentities = await window.desktopApi.send('Desktop.getAdminIdentities');
-    datastoreAdminIdentities.value = adminIdentities.datastoresByVersion;
+    datastoreAdminIdentities.value = adminIdentities.datastoresById;
 
     const userQueries = await window.desktopApi.send('User.getQueries');
     for (const query of userQueries) {
-      userQueriesByDatastore.value[query.versionHash] ??= {};
-      userQueriesByDatastore.value[query.versionHash][query.id] = query;
+      userQueriesByDatastore.value[query.datastoreId] ??= {};
+      userQueriesByDatastore.value[query.datastoreId][query.queryId] = query;
     }
   }
 
   void load();
 
   return {
-    datastoresByVersion,
+    datastoresById,
     userQueriesByDatastore,
     getAdminDetails,
     getByUrl,
+    getHostedClouds,
+    getCloud,
     createCredit,
     deploy,
     getCloudAddress,
-    getAggregateVersionStats,
+    getDocsUrl,
     runQuery,
-    getWithHash,
+    getVersions,
+    get,
+    getStats,
     installDatastore,
     installDatastoreByUrl,
+    uninstallDatastore,
     onClient,
     load,
     refreshMetadata,

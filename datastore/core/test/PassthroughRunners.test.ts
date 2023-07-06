@@ -40,7 +40,8 @@ const mock = {
   },
 };
 
-let remoteVersionHash: string;
+let remoteVersion: string;
+let remoteDatastoreId: string;
 beforeAll(async () => {
   for (const file of [
     'passthroughExtractor',
@@ -70,23 +71,28 @@ beforeAll(async () => {
 
   mock.sidechainClient.sendRequest.mockImplementation(mockSidechainServer);
 
-  cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
-    datastoresDir: storageDir,
-    datastoresTmpDir: Path.join(storageDir, 'tmp'),
-    identityWithSidechain: Identity.createSync(),
-    defaultSidechainHost: 'http://localhost:1337',
-    defaultSidechainRootIdentity: sidechainIdentity.bech32,
-    approvedSidechains: [{ rootIdentity: sidechainIdentity.bech32, url: 'http://localhost:1337' }],
-  };
-  await cloudNode.listen();
+  cloudNode = await Helpers.createLocalNode(
+    {
+      datastoreConfiguration: {
+        datastoresDir: storageDir,
+        identityWithSidechain: Identity.createSync(),
+        defaultSidechainHost: 'http://localhost:1337',
+        defaultSidechainRootIdentity: sidechainIdentity.bech32,
+        approvedSidechains: [
+          { rootIdentity: sidechainIdentity.bech32, url: 'http://localhost:1337' },
+        ],
+      },
+    },
+    true,
+  );
   client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 
   const packager = new DatastorePackager(`${__dirname}/datastores/remoteExtractor.js`);
   await packager.build();
   await client.upload(await packager.dbx.tarGzip());
-  remoteVersionHash = packager.manifest.versionHash;
+  remoteVersion = packager.manifest.version;
+  remoteDatastoreId = packager.manifest.id;
 });
 
 beforeEach(() => {
@@ -98,15 +104,13 @@ beforeEach(() => {
 afterEach(Helpers.afterEach);
 
 afterAll(async () => {
-  await cloudNode.close();
   await Helpers.afterAll();
-  Fs.rmSync(storageDir, { recursive: true });
 });
 
 test('should be able to have a passthrough extractor', async () => {
-  await expect(client.stream(remoteVersionHash, 'remote', { test: '123d' })).resolves.toEqual([
-    { iAmRemote: true, echo: '123d' },
-  ]);
+  await expect(
+    client.stream(remoteDatastoreId, remoteVersion, 'remote', { test: '123d' }),
+  ).resolves.toEqual([{ iAmRemote: true, echo: '123d' }]);
 
   Fs.writeFileSync(
     `${__dirname}/datastores/passthroughExtractor.js`,
@@ -115,7 +119,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await cloudNode.address}/${remoteVersionHash}',
+    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}/${remoteVersion}',
   },
   extractors: {
     pass: new Datastore.PassthroughExtractor({
@@ -141,18 +145,20 @@ export default new Datastore({
   );
 
   const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughExtractor.js`);
-  await passthrough.build();
+  await passthrough.build({ createTemporaryVersion: true });
   await client.upload(await passthrough.dbx.tarGzip());
 
   await expect(
-    client.stream(passthrough.manifest.versionHash, 'pass', { test: '123d' }),
+    client.stream(passthrough.manifest.id, passthrough.manifest.version, 'pass', {
+      test: '123d',
+    }),
   ).resolves.toEqual([{ iAmRemote: true, echo: '123d', addOn: 'phew' }]);
 });
 
 test('should re-emit output automatically if no onResponse is provided', async () => {
-  await expect(client.stream(remoteVersionHash, 'remote', { test: '123d' })).resolves.toEqual([
-    { iAmRemote: true, echo: '123d' },
-  ]);
+  await expect(
+    client.stream(remoteDatastoreId, remoteVersion, 'remote', { test: '123d' }),
+  ).resolves.toEqual([{ iAmRemote: true, echo: '123d' }]);
 
   Fs.writeFileSync(
     `${__dirname}/datastores/passthroughExtractorNoOnresponse.js`,
@@ -161,7 +167,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await cloudNode.address}/${remoteVersionHash}',
+    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}/${remoteVersion}',
   },
   extractors: {
     pass: new Datastore.PassthroughExtractor({
@@ -183,11 +189,13 @@ export default new Datastore({
   const passthrough = new DatastorePackager(
     `${__dirname}/datastores/passthroughExtractorNoOnresponse.js`,
   );
-  await passthrough.build();
+  await passthrough.build({ createTemporaryVersion: true });
   await client.upload(await passthrough.dbx.tarGzip());
 
   await expect(
-    client.stream(passthrough.manifest.versionHash, 'pass', { test: '123d' }),
+    client.stream(passthrough.manifest.id, passthrough.manifest.version, 'pass', {
+      test: '123d',
+    }),
   ).resolves.toEqual([{ iAmRemote: true, echo: '123d' }]);
 });
 
@@ -200,7 +208,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await cloudNode.address}/${remoteVersionHash}',
+    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}/${remoteVersion}',
   },
   extractors: {
     pass: new Datastore.PassthroughExtractor({
@@ -219,10 +227,10 @@ export default new Datastore({
   const passthrough = new DatastorePackager(
     `${__dirname}/datastores/passthroughExtractorUpcharge.js`,
   );
-  await passthrough.build();
+  await passthrough.build({ createTemporaryVersion: true });
   await client.upload(await passthrough.dbx.tarGzip());
 
-  const meta = await client.getMeta(passthrough.manifest.versionHash);
+  const meta = await client.getMeta(passthrough.manifest.id, passthrough.manifest.version);
   expect(meta.extractorsByName.pass.minimumPrice).toBe(405);
 });
 
@@ -230,7 +238,8 @@ test('should be able to add charges from multiple extractors', async () => {
   apiCalls.mockReset();
   holdAmounts.length = 0;
   const address1 = Address.createFromSigningIdentities([Identity.createSync()]);
-  let versionHash: string;
+  let version: string;
+  let datastoreId: string;
   {
     Fs.writeFileSync(
       `${__dirname}/datastores/source.js`,
@@ -254,15 +263,16 @@ export default new Datastore({
     );
 
     const dbx = new DatastorePackager(`${__dirname}/datastores/source.js`);
-    await dbx.build();
+    await dbx.build({ createTemporaryVersion: true });
     Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/source.js`));
     Helpers.onClose(() =>
       Fs.promises.rm(`${__dirname}/datastores/source.dbx`, { recursive: true }),
     );
     await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.tarGzip());
-    versionHash = dbx.manifest.versionHash;
+    version = dbx.manifest.version;
+    datastoreId = dbx.manifest.id;
     expect(dbx.manifest.paymentAddress).toBeTruthy();
-    const price = await client.getExtractorPricing(versionHash, 'source');
+    const price = await client.getExtractorPricing(datastoreId, version, 'source');
     expect(price.minimumPrice).toBe(6 + 5);
   }
 
@@ -276,7 +286,7 @@ const { boolean, string } = require('@ulixee/schema');
 export default new Datastore({
   paymentAddress: '${address1.bech32}',
   remoteDatastores: {
-    hop0: 'ulx://${await cloudNode.address}/${versionHash}',
+    hop0: 'ulx://${await cloudNode.address}/${datastoreId}/${version}',
   },
   extractors: {
     source2: new Datastore.PassthroughExtractor({
@@ -295,10 +305,11 @@ export default new Datastore({
     const dbx = new DatastorePackager(`${__dirname}/datastores/hop1.js`);
     Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/hop1.js`));
     Helpers.onClose(() => Fs.promises.rm(`${__dirname}/datastores/hop1.dbx`, { recursive: true }));
-    await dbx.build();
+    await dbx.build({ createTemporaryVersion: true });
     await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.tarGzip());
-    versionHash = dbx.manifest.versionHash;
-    const price = await client.getExtractorPricing(versionHash, 'source2');
+    version = dbx.manifest.version;
+    datastoreId = dbx.manifest.id;
+    const price = await client.getExtractorPricing(datastoreId, version, 'source2');
     expect(price.minimumPrice).toBe(6 + 5 + 11);
   }
 
@@ -311,7 +322,7 @@ const { boolean, string } = require('@ulixee/schema');
 export default new Datastore({
   paymentAddress: '${address1.bech32}',
   remoteDatastores: {
-    hop1: 'ulx://${await cloudNode.address}/${versionHash}',
+    hop1: 'ulx://${await cloudNode.address}/${datastoreId}/${version}',
   },
   extractors: {
     last: new Datastore.PassthroughExtractor({
@@ -328,10 +339,14 @@ export default new Datastore({
   );
 
   const lastHop = new DatastorePackager(`${__dirname}/datastores/hop2.js`);
-  await lastHop.build();
+  await lastHop.build({ createTemporaryVersion: true });
   await client.upload(await lastHop.dbx.tarGzip());
 
-  const price = await client.getExtractorPricing(lastHop.manifest.versionHash, 'last');
+  const price = await client.getExtractorPricing(
+    lastHop.manifest.id,
+    lastHop.manifest.version,
+    'last',
+  );
   expect(price.minimumPrice).toBe(3 + 11 + 6 + 5);
 
   const clientIdentity = Identity.createSync();
@@ -343,9 +358,14 @@ export default new Datastore({
     microgons: price.minimumPrice,
     ...price,
   });
-  const result = await client.query(lastHop.manifest.versionHash, 'select * from last()', {
-    payment,
-  });
+  const result = await client.query(
+    lastHop.manifest.id,
+    lastHop.manifest.version,
+    'select * from last()',
+    {
+      payment,
+    },
+  );
   expect(result.outputs[0].calls).toBe(3);
   expect(result.outputs[0].lastRun).toBe('hop2');
 

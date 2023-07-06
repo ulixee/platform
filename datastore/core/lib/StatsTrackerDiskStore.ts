@@ -1,6 +1,6 @@
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import { IStatsTrackerApiTypes } from '@ulixee/platform-specification/services/StatsTrackerApis';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { IDatastoreStatsRecord } from '../db/DatastoreStatsTable';
 import QueryLogDb from '../db/QueryLogDb';
 import StatsDb from '../db/StatsDb';
@@ -35,22 +35,53 @@ export default class StatsTrackerDiskStore extends TypedEventEmitter<{
     return Promise.resolve();
   }
 
-  public getForDatastore(manifest: IDatastoreManifest): IDatastoreStats {
-    const versionHash = manifest.versionHash;
+  public getForDatastoreVersion(manifest: IDatastoreManifest): IDatastoreStats {
+    const { version, id } = manifest;
     const statsByEntityName: IDatastoreStats['statsByEntityName'] = {};
-    for (const name of [
-      ...Object.keys(manifest.extractorsByName),
-      ...Object.keys(manifest.tablesByName),
-      ...Object.keys(manifest.crawlersByName),
+    for (const [type, name] of [
+      ...Object.keys(manifest.extractorsByName).map(x => ['Extractor', x]),
+      ...Object.keys(manifest.tablesByName).map(x => ['Table', x]),
+      ...Object.keys(manifest.crawlersByName).map(x => ['Crawler', x]),
     ]) {
-      statsByEntityName[name] = translateStats(
-        this.statsDb.datastoreEntities.getByVersionHash(versionHash, name),
-      );
+      statsByEntityName[name] = {
+        name,
+        type: type as any,
+        stats: translateStats(
+          this.statsDb.datastoreEntities.getByVersion(id, version, name),
+        ),
+      };
     }
 
     return {
-      stats: translateStats(this.statsDb.datastores.getByVersionHash(versionHash)),
+      stats: translateStats(this.statsDb.datastores.getByVersion(id, version)),
       statsByEntityName,
+    };
+  }
+
+  public getForDatastore(manifest: IDatastoreManifest): IDatastoreStats {
+    const { id } = manifest;
+    const statsByEntityName: IDatastoreStats['statsByEntityName'] = {};
+    for (const [type, name] of [
+      ...Object.keys(manifest.extractorsByName).map(x => ['Extractor', x]),
+      ...Object.keys(manifest.tablesByName).map(x => ['Table', x]),
+      ...Object.keys(manifest.crawlersByName).map(x => ['Crawler', x]),
+    ]) {
+      statsByEntityName[name] = {
+        name,
+        type: type as any,
+        stats: translateStats(this.statsDb.datastoreEntities.getByDatastore(id, name)),
+      };
+    }
+
+    return {
+      stats: translateStats(this.statsDb.datastores.get(id)),
+      statsByEntityName,
+    };
+  }
+
+  public getDatastoreSummary(id: string): { stats: IDatastoreStats['stats'] } {
+    return {
+      stats: translateStats(this.statsDb.datastores.get(id)),
     };
   }
 
@@ -58,7 +89,8 @@ export default class StatsTrackerDiskStore extends TypedEventEmitter<{
     details: IStatsTrackerApiTypes['StatsTracker.recordEntityStats']['args'],
   ): void {
     this.statsDb.datastoreEntities.record(
-      details.versionHash,
+      details.datastoreId,
+      details.version,
       details.entityName,
       details.microgons,
       details.bytes,
@@ -69,18 +101,20 @@ export default class StatsTrackerDiskStore extends TypedEventEmitter<{
   }
 
   public recordQuery(details: IStatsTrackerApiTypes['StatsTracker.recordQuery']['args']): void {
-    const newStats = this.statsDb.datastores.record(
-      details.versionHash,
+    const { datastoreStats } = this.statsDb.datastores.record(
+      details.datastoreId,
+      details.version,
       details.microgons,
       details.bytes,
       details.milliseconds,
       details.creditId ? details.microgons : 0,
       !!details.error,
     );
-    this.emit('stats', newStats);
+    this.emit('stats', datastoreStats);
     this.queryLogDb.logTable.record(
-      details.id,
-      details.versionHash,
+      details.queryId,
+      details.datastoreId,
+      details.version,
       details.query,
       details.startTime,
       details.affiliateId,

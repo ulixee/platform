@@ -1,13 +1,20 @@
-import { IncomingMessage, ServerResponse } from 'http';
-import { createReadStream } from 'fs';
-import DocspageDir from '@ulixee/datastore-docpage';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
-import IDatastoreDomainResponse from '@ulixee/datastore/interfaces/IDatastoreDomainResponse';
-import { isIPv4, isIPv6 } from 'net';
 import { toUrl } from '@ulixee/commons/lib/utils';
+import DocspageDir from '@ulixee/datastore-docpage';
+import IDatastoreDomainResponse from '@ulixee/datastore/interfaces/IDatastoreDomainResponse';
+import IDatastoreApiTypes from '@ulixee/platform-specification/datastore/DatastoreApis';
+import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreIdValidation';
+import { semverRegex } from '@ulixee/platform-specification/types/semverValidation';
+import { createReadStream } from 'fs';
+import { IncomingMessage, ServerResponse } from 'http';
+import { isIPv4, isIPv6 } from 'net';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
-import createStaticFileHandler from '../lib/staticServe';
 import { DatastoreNotFoundError } from '../lib/errors';
+import createStaticFileHandler from '../lib/staticServe';
+
+export const datastorePathRegex = new RegExp(
+  `/docs/(${datastoreRegex.source})/(${semverRegex.source})(/(.+)?)?`,
+);
 
 export default class DocpageRoutes {
   private staticServe: (req: IncomingMessage, res: ServerResponse) => Promise<any>;
@@ -15,7 +22,9 @@ export default class DocpageRoutes {
   constructor(
     private datastoreRegistry: DatastoreRegistry,
     private serverAddress: URL,
-    private getCredits: (args: { datastoreVersionHash: string; creditId: string }) => Promise<any>,
+    private getCredits: (
+      args: IDatastoreApiTypes['Datastore.creditsBalance']['args'],
+    ) => Promise<any>,
     private cacheTime = 3600,
   ) {
     this.staticServe = createStaticFileHandler(DocspageDir, this.cacheTime);
@@ -23,26 +32,32 @@ export default class DocpageRoutes {
 
   public async routeCreditsBalanceApi(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
     if (req.headers.accept !== 'application/json') return false;
-    let datastoreVersionHash = '';
+    let version = '';
+    let datastoreId = '';
 
     let host = req.headers.host ?? this.serverAddress.host;
     if (!host.includes('://')) host = `http://${host}`;
     const url = new URL(req.url, host);
 
     if (!url.host.includes('localhost')) {
-      datastoreVersionHash = await this.datastoreRegistry.getByDomain(url.hostname);
+      const domainVersion = await this.datastoreRegistry.getByDomain(url.hostname);
+      if (domainVersion) {
+        datastoreId = domainVersion.id;
+        version = domainVersion.version;
+      }
     }
-    if (!datastoreVersionHash) {
-      const match = url.pathname.match(/(dbx1[ac-hj-np-z02-9]{18})(\/(.+)?)?/);
-      datastoreVersionHash = match[1];
+    if (!version) {
+      const match = url.pathname.match(datastorePathRegex);
+      datastoreId = match[1];
+      version = match[2];
     }
-    if (!datastoreVersionHash) {
+    if (!version) {
       res.writeHead(409, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: 'No valid Datastore VersionHash could be found.' }));
+      res.end(JSON.stringify({ error: 'No valid Datastore version could be found.' }));
     }
 
     const creditId = url.searchParams.keys().next().value.split(':').shift();
-    const result = await this.getCredits({ datastoreVersionHash, creditId });
+    const result = await this.getCredits({ id: datastoreId, version, creditId });
 
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify(result));
@@ -56,7 +71,7 @@ export default class DocpageRoutes {
     const domainVersion = await this.datastoreRegistry.getByDomain(domain);
     if (!domainVersion) return false;
 
-    const params = [domainVersion];
+    const params = [domainVersion.id, domainVersion.version];
     if (req.url.length) params.push(req.url);
     return await this.routeHttp(req, res, params);
   }
@@ -78,7 +93,8 @@ export default class DocpageRoutes {
     } else {
       res.end(
         TypeSerializer.stringify(<IDatastoreDomainResponse>{
-          datastoreVersionHash: domainVersion,
+          datastoreId: domainVersion.id,
+          datastoreVersion: domainVersion.version,
           host: this.serverAddress.host,
         }),
       );
@@ -91,7 +107,7 @@ export default class DocpageRoutes {
     res: ServerResponse,
     params: string[],
   ): Promise<boolean> {
-    if (!params[1]) {
+    if (!params[2]) {
       const url = new URL(req.url, 'http://localhost/');
       url.pathname += '/';
       const search = url.search !== '?' ? url.search : '';
@@ -101,8 +117,9 @@ export default class DocpageRoutes {
     }
 
     if (req.url.includes('docpage.json')) {
-      const versionHash = params[0];
-      const { runtimePath } = await this.datastoreRegistry.getByVersionHash(versionHash);
+      const datastoreId = params[0];
+      const version = params[1];
+      const { runtimePath } = await this.datastoreRegistry.get(datastoreId, version);
       const docpagePath = runtimePath.replace('datastore.js', 'docpage.json');
       res.writeHead(200, { 'content-type': 'application/json' });
       createReadStream(docpagePath, { autoClose: true }).pipe(res, { end: true });
@@ -110,12 +127,12 @@ export default class DocpageRoutes {
     }
 
     if (
-      params[1].startsWith('/js/') ||
-      params[1].startsWith('/css/') ||
-      params[1].startsWith('/img/') ||
-      params[1] === '/favicon.ico'
+      params[2].startsWith('/js/') ||
+      params[2].startsWith('/css/') ||
+      params[2].startsWith('/img/') ||
+      params[2] === '/favicon.ico'
     ) {
-      req.url = params[1];
+      req.url = params[2];
     } else {
       req.url = '/';
     }

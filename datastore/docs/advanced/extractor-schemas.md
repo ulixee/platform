@@ -12,41 +12,44 @@ ExtractorSchemas are not a runtime class, but an interface of a few properties t
 import { Extractor, HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 import { string } from '@ulixee/schema';
 
-export default new Extractor({
-  async run(datastore) {
-    const { input, Output, Hero } = datastore;
+export default new Extractor(
+  {
+    async run(datastore) {
+      const { input, Output, Hero } = datastore;
 
-    const hero = new Hero();
-    await hero.goto(input.url);
-    const title = await hero.document.title;
+      const hero = new Hero();
+      await hero.goto(input.url);
+      const title = await hero.document.title;
 
-    const output = new Output();
-    output.title = title;
-    output.resolvedUrl = await hero.url;
-    // ERROR: body expects a string, not a Promise<string>!
-    output.body = hero.document.body.textContent;
-  },
-  // ExtractorSchema definition
-  schema: {
-    name: 'TitleAndHtmlPageResolver',
-    input: {
-      url: string({ format: 'url' }),
+      const output = new Output();
+      output.title = title;
+      output.resolvedUrl = await hero.url;
+      // ERROR: body expects a string, not a Promise<string>!
+      output.body = hero.document.body.textContent;
     },
-    output: {
-      title: string(),
-      body: string(),
-      resolvedUrl: string({ format: 'url' }),
+    // ExtractorSchema definition
+    schema: {
+      name: 'TitleAndHtmlPageResolver',
+      input: {
+        url: string({ format: 'url' }),
+      },
+      output: {
+        title: string(),
+        body: string(),
+        resolvedUrl: string({ format: 'url' }),
+      },
+      inputExamples: [
+        {
+          url: 'https://example.org',
+        },
+        {
+          url: 'https://ulixee.org',
+        },
+      ],
     },
-    inputExamples: [
-      {
-        url: 'https://example.org',
-      },
-      {
-        url: 'https://ulixee.org',
-      },
-    ],
   },
-}, HeroExtractorPlugin);
+  HeroExtractorPlugin,
+);
 ```
 
 When you package a `Datastore` (or a `Extractor` auto-wrapped into a `Datastore`) for [deployment](../overview/deployment), a few other type utilities are added:
@@ -54,24 +57,25 @@ When you package a `Datastore` (or a `Extractor` auto-wrapped into a `Datastore`
 - Types are automatically created so that you can import Datastore Extractor types.
 
   ```bash
-  npx @ulixee/datastore deploy ./index.js; // Datastore Version hash is dbx12343
+  npx @ulixee/datastore deploy ./index.js; // Id=test, version=1.0.0
   ```
 
   ```js
   import ITypes from '@ulixee/datastore/types';
 
-  type IIndexExtractorSchema = ITypes['dbx1tn43ect3qkwg0patvq']['default']; // default is the name if auto-packaged
+  type IIndexExtractorSchema = ITypes['test']['default']; // default is the name if auto-packaged
   ```
 
 - Typing of parameters and results are automatically referenced when running a Datastore function.
+
   ```js
   import DatastoreClient from '@ulixee/datastore/lib/DatastoreApiClient';
   const client = new DatastoreClient('localhost:8080');
-  const result = client.stream('dbx1tn43ect3qkwg0patvq', 'default', { url: 'https://ulixee.org ' });
+  const result = client.stream('test', '1.0.0', 'default', { url: 'https://ulixee.org ' });
   // result has type inferred automatically.
   ```
 
-- Consumers of your `Datastore` can `install` your `DatastoreVersionHash` and the accompanying types using `@ulixee/datastore install <DatastoreVersionHash>`.
+- Consumers of your `Datastore` can `install` your `DatastoreVersion` and the accompanying types using `@ulixee/datastore install <DatastoreVersion>`.
 
 ## Documentation Generation
 

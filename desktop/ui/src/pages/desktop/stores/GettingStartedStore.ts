@@ -107,8 +107,8 @@ export const useGettingStartedStore = defineStore('gettingStartedStore', () => {
     },
     datastore(done) {
       const datastoreStore = useDatastoreStore();
-      const { datastoresByVersion } = storeToRefs(datastoreStore);
-      const stopWatch = watch(datastoresByVersion.value, value => {
+      const { datastoresById } = storeToRefs(datastoreStore);
+      const stopWatch = watch(datastoresById.value, value => {
         if (Object.values(value).some(x => x.summary.scriptEntrypoint.includes('ulixee.org.'))) {
           stopWatch();
           done();
@@ -117,8 +117,8 @@ export const useGettingStartedStore = defineStore('gettingStartedStore', () => {
     },
     query(done) {
       const datastoreStore = useDatastoreStore();
-      const { datastoresByVersion } = storeToRefs(datastoreStore);
-      const stopWatch = watch(datastoresByVersion.value, value => {
+      const { datastoresById } = storeToRefs(datastoreStore);
+      const stopWatch = watch(datastoresById.value, value => {
         for (const entry of Object.values(value)) {
           if (
             entry.summary.scriptEntrypoint.includes('ulixee.org.') &&
@@ -132,13 +132,13 @@ export const useGettingStartedStore = defineStore('gettingStartedStore', () => {
     },
     payment(done) {
       const datastoreStore = useDatastoreStore();
-      const { datastoresByVersion } = storeToRefs(datastoreStore);
-      const stopWatch = watch(datastoresByVersion.value, value => {
+      const { datastoresById } = storeToRefs(datastoreStore);
+      const stopWatch = watch(datastoresById.value, value => {
         for (const entry of Object.values(value)) {
           if (
             entry.summary.scriptEntrypoint.includes('ulixee.org.') &&
-            entry.datastore &&
-            Object.values(entry.datastore.extractorsByName).some(x => x.pricePerQuery > 0)
+            entry.details &&
+            Object.values(entry.details.extractorsByName).some(x => x.pricePerQuery > 0)
           ) {
             stopWatch();
             done();
@@ -148,12 +148,12 @@ export const useGettingStartedStore = defineStore('gettingStartedStore', () => {
     },
     deploy(done) {
       const datastoreStore = useDatastoreStore();
-      const { datastoresByVersion } = storeToRefs(datastoreStore);
-      const stopWatch = watch(datastoresByVersion.value, value => {
+      const { datastoresById } = storeToRefs(datastoreStore);
+      const stopWatch = watch(datastoresById.value, value => {
         for (const entry of Object.values(value)) {
           if (
             entry.summary.scriptEntrypoint.includes('ulixee.org.') &&
-            Object.keys(entry.deploymentsByCloud).some(x => x !== 'local')
+            Object.values(entry.cloudsByVersion).some(x => !x.includes('local'))
           ) {
             stopWatch();
             done();
@@ -163,8 +163,8 @@ export const useGettingStartedStore = defineStore('gettingStartedStore', () => {
     },
     credit(done) {
       const datastoreStore = useDatastoreStore();
-      const { datastoresByVersion } = storeToRefs(datastoreStore);
-      const stopWatch = watch(datastoresByVersion.value, value => {
+      const { datastoresById } = storeToRefs(datastoreStore);
+      const stopWatch = watch(datastoresById.value, value => {
         for (const entry of Object.values(value)) {
           if (
             entry.summary.scriptEntrypoint.includes('ulixee.org.') &&
@@ -178,10 +178,13 @@ export const useGettingStartedStore = defineStore('gettingStartedStore', () => {
     },
     clone(done) {
       const datastoreStore = useDatastoreStore();
-      const { datastoresByVersion } = storeToRefs(datastoreStore);
-      const stopWatch = watch(datastoresByVersion.value, value => {
+      const { datastoresById } = storeToRefs(datastoreStore);
+      const stopWatch = watch(datastoresById.value, value => {
         for (const entry of Object.values(value)) {
-          if (entry.summary.name === 'Ulixee Docs v2' && entry.deploymentsByCloud.local) {
+          if (
+            entry.summary.name === 'Ulixee Docs v2' &&
+            Object.values(entry.cloudsByVersion).some(x => x.includes('local'))
+          ) {
             stopWatch();
             done();
           }

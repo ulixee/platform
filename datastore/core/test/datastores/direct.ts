@@ -2,6 +2,8 @@ import Datastore, { Extractor, Table } from '@ulixee/datastore';
 import { boolean, string } from '@ulixee/schema';
 
 export default new Datastore({
+  id: 'direct',
+  version: '0.0.1',
   extractors: {
     test: new Extractor({
       run(ctx) {

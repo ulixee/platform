@@ -1,6 +1,6 @@
+import IDatastoreComponents from './IDatastoreComponents';
 import IExtractorComponents from './IExtractorComponents';
 import ITableComponents from './ITableComponents';
-import IDatastoreComponents from './IDatastoreComponents';
 
 export default interface IDatastoreMetadata
   extends Omit<
@@ -18,7 +18,8 @@ export default interface IDatastoreMetadata
       corePlugins: { [name: string]: string };
       remoteExtractor?: string;
       remoteSource?: string;
-      remoteDatastoreVersionHash?: string;
+      remoteDatastoreId?: string;
+      remoteDatastoreVersion?: string;
     } & Omit<IExtractorComponents<any, any>, 'run'>;
   };
   crawlersByName: {
@@ -26,14 +27,16 @@ export default interface IDatastoreMetadata
       corePlugins: { [name: string]: string };
       remoteCrawler?: string;
       remoteSource?: string;
-      remoteDatastoreVersionHash?: string;
+      remoteDatastoreId?: string;
+      remoteDatastoreVersion?: string;
     } & Omit<IExtractorComponents<any, any>, 'run'>;
   };
   tablesByName: {
     [name: string]: {
       remoteTable?: string;
       remoteSource?: string;
-      remoteDatastoreVersionHash?: string;
+      remoteDatastoreId?: string;
+      remoteDatastoreVersion?: string;
     } & Omit<ITableComponents<any>, 'onCreated' | 'onVersionMigrated'>;
   };
 }

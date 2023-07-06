@@ -1,3 +1,4 @@
+import { UlixeeError } from '@ulixee/commons/lib/errors';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { InvalidSignatureError } from '@ulixee/crypto/lib/errors';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
@@ -16,11 +17,19 @@ export default new DatastoreApiHandler('Datastore.upload', {
       return await context.datastoreRegistry.uploadToSourceOfTruth(request);
     }
 
-    // TODO: do we require payment for hosting per day?
-
-    return await workTracker.trackUpload(
+    const result = await workTracker.trackUpload(
       datastoreRegistry.saveDbx(request, context.connectionToClient?.transport.remoteId),
     );
+    if (result.manifest && !result.didInstall) {
+      throw new UlixeeError(
+        'This datastore version has already been uploaded',
+        'ERR_DUPLICATE_VERSION',
+        {
+          version: result.manifest.version,
+        },
+      );
+    }
+    return { success: result?.didInstall ?? false };
   },
 });
 
@@ -32,10 +41,7 @@ export function verifyAdminSignature(
     configuration.cloudAdminIdentities.length ||
     configuration.serverEnvironment === 'production'
   ) {
-    const message = DatastoreApiClient.createUploadSignatureMessage(
-      request.compressedDbx,
-      request.allowNewLinkedVersionHistory,
-    );
+    const message = DatastoreApiClient.createUploadSignatureMessage(request.compressedDbx);
     if (!Identity.verify(request.adminIdentity, message, request.adminSignature)) {
       throw new InvalidSignatureError(
         'This uploaded Datastore did not have a valid AdminIdentity signature.',

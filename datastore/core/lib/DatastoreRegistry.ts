@@ -3,9 +3,11 @@ import Logger from '@ulixee/commons/lib/Logger';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import { bindFunctions } from '@ulixee/commons/lib/utils';
 import { ConnectionToCore } from '@ulixee/net';
+import {
+  IDatastoreListEntry,
+  IDatastoreRegistryApis,
+} from '@ulixee/platform-specification/services/DatastoreRegistryApis';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import { IDatastoreRegistryApis } from '@ulixee/platform-specification/services/DatastoreRegistryApis';
-import IKad from '@ulixee/platform-specification/types/IKad';
 import { promises as Fs } from 'fs';
 import { IDatastoreEntityStatsRecord } from '../db/DatastoreEntityStatsTable';
 import IDatastoreCoreConfigureOptions from '../interfaces/IDatastoreCoreConfigureOptions';
@@ -13,9 +15,8 @@ import IDatastoreRegistryStore, {
   IDatastoreManifestWithLatest,
 } from '../interfaces/IDatastoreRegistryStore';
 import DatastoreApiClients from './DatastoreApiClients';
-import DatastoreRegistryServiceClient from './DatastoreRegistryServiceClient';
 import DatastoreRegistryDiskStore, { IDatastoreSourceDetails } from './DatastoreRegistryDiskStore';
-import DatastoreRegistryNetworkStore from './DatastoreRegistryNetworkStore';
+import DatastoreRegistryServiceClient from './DatastoreRegistryServiceClient';
 import { unpackDbx } from './dbxUtils';
 import { DatastoreNotFoundError } from './errors';
 
@@ -45,11 +46,10 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     datastore: IDatastoreManifestWithRuntime;
     activity: 'started' | 'uploaded';
   };
-  stopped: { versionHash: string };
+  stopped: { id: string; version: string };
 }> {
   public diskStore: DatastoreRegistryDiskStore;
   public clusterStore: DatastoreRegistryServiceClient;
-  public networkStore: DatastoreRegistryNetworkStore;
   public networkCacheTimeMins = 48 * 60; // 48 hours
 
   public get sourceOfTruthAddress(): URL {
@@ -63,7 +63,6 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     datastoreDir: string,
     apiClients?: DatastoreApiClients,
     connectionToHostedServiceCore?: ConnectionToCore<IDatastoreRegistryApis, {}>,
-    kad?: IKad,
     private config?: IDatastoreCoreConfigureOptions,
     private installCallbackFn?: TOnDatastoreInstalledCallbackFn,
   ) {
@@ -81,57 +80,52 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
       this.clusterStore = new DatastoreRegistryServiceClient(connectionToHostedServiceCore);
     }
 
-    if (kad) {
-      this.networkStore = new DatastoreRegistryNetworkStore(kad, apiClients);
-      this.networkStore.kad.on('provide-expired', this.onProvideExpired);
-    }
-
-    this.stores = [this.diskStore, this.clusterStore, this.networkStore].filter(Boolean);
+    this.stores = [this.diskStore, this.clusterStore].filter(Boolean);
   }
 
   public async close(): Promise<void> {
-    this.networkStore?.kad.off('provide-expired', this.onProvideExpired);
     await Promise.allSettled(this.stores.map(x => x.close()));
   }
 
-  public async all(
-    source: 'disk' | 'cluster' = 'cluster',
-  ): Promise<IDatastoreManifestWithLatest[]> {
-    const service = (source === 'cluster' && this.clusterStore) ?? this.diskStore;
-    return await service.all();
+  public async list(
+    count = 100,
+    offset = 0,
+  ): Promise<{ datastores: IDatastoreListEntry[]; total: number }> {
+    const service = this.clusterStore ?? this.diskStore;
+    return await service.list(count, offset);
   }
 
-  public async getByVersionHash(
-    versionHash: string,
+  public async getVersions(id: string): Promise<{ version: string; timestamp: number }[]> {
+    const service = this.clusterStore ?? this.diskStore;
+    return await service.getVersions(id);
+  }
+
+  public async get(
+    id: string,
+    version?: string,
     throwIfNotExists = true,
   ): Promise<IDatastoreManifestWithRuntime> {
     let manifestWithLatest: IDatastoreManifestWithRuntime;
+    const latestVersion = await this.getLatestVersion(id);
+    version ??= latestVersion;
     for (const service of this.stores) {
-      manifestWithLatest = (await service.get(versionHash)) as IDatastoreManifestWithRuntime;
+      manifestWithLatest = (await service.get(id, version)) as IDatastoreManifestWithRuntime;
       if (manifestWithLatest) {
         try {
           // must install into local disk store
-          let runtime = await this.diskStore.getRuntime(versionHash);
+          let runtime = await this.diskStore.getRuntime(id, version);
           if (!runtime && service.source !== 'disk') {
-            this.logger.info(`getByVersionHash:MissingRuntime`, {
-              versionHash,
+            this.logger.info(`getByVersion:MissingRuntime`, {
+              version,
               searchInService: service.source,
             });
-            let expirationTimestamp: number;
-            if (service.source === 'network') {
-              expirationTimestamp = Date.now() + this.networkCacheTimeMins * 60e3;
-            }
-            runtime = await this.diskStore.installFromService(
-              versionHash,
-              service,
-              expirationTimestamp,
-            );
+            runtime = await this.diskStore.installFromService(id, version, service);
           }
           Object.assign(manifestWithLatest, runtime);
           break;
         } catch (error) {
-          this.logger.warn(`getByVersionHash:ErrorInstallingRuntime`, {
-            versionHash,
+          this.logger.warn(`getByVersion:ErrorInstallingRuntime`, {
+            version,
             searchInService: service.source,
             error,
           });
@@ -141,35 +135,28 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
 
     if (manifestWithLatest) return manifestWithLatest;
     if (throwIfNotExists) {
-      const latestVersionHash = await this.getLatestVersion(versionHash);
-      throw new DatastoreNotFoundError(`Datastore version (${versionHash}) not found on Cloud.`, {
-        latestVersionHash,
-        versionHash,
+      throw new DatastoreNotFoundError(`Datastore version (${version}) not found on Cloud.`, {
+        latestVersion,
+        version,
       });
     }
     return null;
   }
 
-  public async getByDomain(domain: string): Promise<string> {
+  public async getByDomain(domain: string): Promise<{
+    id: string;
+    version: string;
+  }> {
     for (const service of this.stores) {
       const latestVersion = await service.getLatestVersionForDomain(domain);
       if (latestVersion) return latestVersion;
     }
   }
 
-  public async getLatestVersion(versionHash: string): Promise<string> {
+  public async getLatestVersion(id: string): Promise<string> {
     for (const service of this.stores) {
-      const latestVersion = await service.getLatestVersion(versionHash);
+      const latestVersion = await service.getLatestVersion(id);
       if (latestVersion) return latestVersion;
-    }
-  }
-
-  public async getInstalledPreviousVersion(
-    versionHash: string,
-  ): Promise<IDatastoreManifestWithRuntime> {
-    const previousVersionHash = await this.diskStore.getPreviousInstalledVersion(versionHash);
-    if (previousVersionHash) {
-      return this.getByVersionHash(previousVersionHash);
     }
   }
 
@@ -177,30 +164,27 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     details: TDatastoreUpload,
     sourceHost?: string,
     source: IDatastoreSourceDetails['source'] = 'upload',
-  ): Promise<{ success: boolean }> {
-    const { compressedDbx, adminIdentity, adminSignature, allowNewLinkedVersionHistory } = details;
+  ): Promise<{ didInstall: boolean; dbxPath: string; manifest: IDatastoreManifest }> {
+    const { compressedDbx, adminIdentity, adminSignature } = details;
     const { cloudAdminIdentities, datastoresMustHaveOwnAdminIdentity, datastoresTmpDir } =
       this.config;
     const tmpDir = await Fs.mkdtemp(`${datastoresTmpDir}/`);
 
     try {
       await unpackDbx(compressedDbx, tmpDir);
-      const { didInstall } = await this.save(
+      return await this.save(
         tmpDir,
         {
           adminIdentity,
-          allowNewLinkedVersionHistory,
           hasServerAdminIdentity: cloudAdminIdentities.includes(adminIdentity ?? '-1'),
           datastoresMustHaveOwnAdminIdentity,
         },
         {
-          host: sourceHost,
           source,
           adminIdentity,
           adminSignature,
         },
       );
-      return { success: didInstall };
     } finally {
       // remove tmp dir in case of errors
       await Fs.rm(tmpDir, { recursive: true }).catch(() => null);
@@ -215,7 +199,6 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     datastoreTmpPath: string,
     adminDetails?: {
       adminIdentity?: string;
-      allowNewLinkedVersionHistory?: boolean;
       hasServerAdminIdentity?: boolean;
       datastoresMustHaveOwnAdminIdentity?: boolean;
     },
@@ -237,16 +220,9 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     const datastore = this.diskStore.stopAtPath(dbxPath);
     if (datastore) {
       this.emit('stopped', {
-        versionHash: datastore.versionHash,
+        id: datastore.id,
+        version: datastore.version,
       });
-    }
-  }
-
-  private async onProvideExpired(provided: { key: Buffer, providerNodeId: string }): Promise<void> {
-    const result = await this.diskStore.didExpireNetworkHosting(provided.key);
-    if (!result.isExpired) {
-      this.diskStore.recordPublished(result.versionHash, Date.now());
-      await this.networkStore.publish(result.versionHash);
     }
   }
 
@@ -264,16 +240,11 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
       activity: source?.source === 'start' ? 'started' : 'uploaded',
       datastore: version,
     });
-    if (this.networkStore) {
-      await this.networkStore?.publish(version.versionHash);
-      this.diskStore.recordPublished(version.versionHash, Date.now());
-    }
   }
 }
 
 export interface TDatastoreUpload {
   compressedDbx: Buffer;
-  allowNewLinkedVersionHistory: boolean;
   adminIdentity?: string;
   adminSignature?: Buffer;
 }

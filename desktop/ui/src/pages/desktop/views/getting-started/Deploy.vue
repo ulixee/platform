@@ -10,7 +10,7 @@
 
     <h4 class="text-md mb-2 font-semibold">Start a Remote Cloud</h4>
     <p class="mb-2 font-light">
-      You'll need to install Node.js 14+ on the remote machine. Then run these commands:
+      You'll need to install Node.js 16+ on the remote machine. Then run these commands:
       <!-- prettier-ignore -->
       <Prism language="shell">
         npm install -g @ulixee/cloud
@@ -31,42 +31,14 @@
       >
       tab and click to add a Cloud.
     </p>
-    <!--    <h4 class="text-md mb-2 font-semibold">Datastore Archives (dbx)</h4>-->
-    <!--    <p class="font-light">-->
-    <!--      When you started your Datastore in the previous steps, you might have noticed that a folder-->
-    <!--      was created next to your-->
-    <!--      <span class="mx-0.5 bg-gray-200 p-1 font-light">ulixee.org.ts</span> script called-->
-    <!--      <span class="mx-0.5 bg-gray-200 p-1 font-light">ulixee.org.ts.dbx</span>. Building a datastore-->
-    <!--      generates a bundle of files called a <b>Dbx</b>:-->
-    <!--    </p>-->
-    <!--    <ul class="list my-5 ml-2 list-inside list-disc font-light">-->
-    <!--      <li>-->
-    <!--        <span class="mr-2 font-medium text-gray-800">datastore.js</span> all of your code and-->
-    <!--        dependencies are automatically packaged into a single script.-->
-    <!--      </li>-->
-    <!--      <li>-->
-    <!--        <span class="mr-2 font-medium text-gray-800">storage.db</span> a SQLite database with all of-->
-    <!--        your tables pre-seeded with any data you specified.-->
-    <!--      </li>-->
-    <!--      <li>-->
-    <!--        <span class="mr-2 font-medium text-gray-800">docpage.json</span> a configuration file-->
-    <!--        controlling the documentation website for your Datastore.-->
-    <!--      </li>-->
-    <!--      <li>-->
-    <!--        <span class="mr-2 font-medium text-gray-800">datastore-manifest.json</span>-->
-    <!--        a manifest file describing your pricing, which Tables, Extractors and Crawlers are available,-->
-    <!--        and their data structures.-->
-    <!--      </li>-->
-    <!--    </ul>-->
-    <!--    <p class="font-light">-->
-    <!--      These dbx files will be tar-gzipped and sent to one or more servers where your Datastore will-->
-    <!--      be run.-->
-    <!--    </p>-->
     <h4 class="text-md mb-2 mt-5 font-semibold">Admin Access</h4>
     <p class="font-light">
-      Let's make one final change before you upload your dbx. To administer a Datastore, you need to
-      provide an "Admin Identity". Admin Identities are asymmetric keys that permit you to upload
-      new versions, issue credits, and modify internal data of your Datastore.
+      Let's make some final changes before you upload your dbx. When you deploy a Datastore, you
+      need to assign it a unique id and version. We'll add those now.
+      <br /><br />
+      Also, to administer a Datastore, you need to provide an "Admin Identity". Admin Identities are
+      asymmetric keys that permit you to upload new versions, issue credits, and modify internal
+      data of your Datastore.
       <br /><br />
       For this example, we'll re-use the default Admin Identity we generated on startup of Ulixee
       Desktop.
@@ -75,14 +47,19 @@
       <Prism
         language="typescript"
         class='mt-2'
-        data-line='9'
-        style="font-size: 0.9em; max-height:300px; overflow-x: hidden"
+        data-line='9-10, 14'
+        style="font-size: 0.9em; max-height:400px; overflow-x: hidden"
       >
         import Datastore, { Extractor } from '@ulixee/datastore';
         import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
         import { string } from '@ulixee/schema';
 
         const datastore = new Datastore({
+          /**
+          * Assigning an id and version
+          */
+          id: 'docs-demo',
+          version: '1.0.0',
           /**
           * Configuring admin access.
           */
@@ -126,11 +103,10 @@
 
       <br />
       Now you Copy this code into your
-      <span class="mx-0.5 bg-gray-200 p-1 font-light">ulixee.org.ts</span> file.
-      <br/><br/>
+      <span class="mx-0.5 bg-gray-200 p-1 font-light">ulixee.org.ts</span> file. <br /><br />
       Now let's deploy your Datastore:
       <Prism language="shell"
-        >npx @ulixee/datastore deploy ./ulixee.org.ts -h {{yourCloudAddress}}</Prism
+        >npx @ulixee/datastore deploy ./ulixee.org.ts -h {{ yourCloudAddress }}</Prism
       >
     </p>
 
@@ -140,7 +116,7 @@
     >
       <span class="text-lg">Well done!</span>
       <button
-        class="ml-5 inline-flex items-center gap-x-1.5 rounded-md bg-fuchsia-700 py-2.5 px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
+        class="ml-5 inline-flex items-center gap-x-1.5 rounded-md bg-fuchsia-700 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
         @click.prevent="next"
       >
         Next
@@ -176,12 +152,12 @@ export default Vue.defineComponent({
 
     const adminIdentity = computed(() => clouds.value.find(x => x.name === 'local')?.adminIdentity);
     const yourCloudAddress = Vue.ref('[YOUR ADDED CLOUD]');
-    watch(clouds.value, (value) => {
+    watch(clouds.value, value => {
       const privateCloud = value.find(x => x.type === 'private');
       if (privateCloud) {
         yourCloudAddress.value = cloudsStore.getCloudHost(privateCloud.name);
       }
-    })
+    });
 
     return {
       adminIdentity,

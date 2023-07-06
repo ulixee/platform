@@ -48,7 +48,7 @@ export default class DeploymentWatcher extends TypedEventEmitter<{
       for (const record of allRecords) {
         if (
           this.deployments.some(
-            x => x.cloudHost === record.cloudHost && x.versionHash === record.versionHash,
+            x => x.cloudHost === record.cloudHost && x.version === record.version,
           )
         ) {
           continue;

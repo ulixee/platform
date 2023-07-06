@@ -2,6 +2,7 @@ import Datastore, { Extractor } from '@ulixee/datastore';
 import { boolean } from '@ulixee/schema';
 
 export default new Datastore({
+  id: 'upload',
   extractors: {
     upTest: new Extractor({
       run(ctx) {

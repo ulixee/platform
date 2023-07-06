@@ -14,7 +14,7 @@
           npx @ulixee/datastore clone "{{ cloudAddress }}"
         </Prism>
 
-        <p class="text-gray-500 text-center my-2 text-sm">
+        <p class="my-2 text-center text-sm text-gray-500">
           Run this from the command line in a folder you want the clone to be created.
         </p>
         <!--        <button
@@ -35,7 +35,7 @@ import { PropType } from 'vue';
 import Modal from '../../components/Modal.vue';
 import Prism from '@/pages/desktop/components/Prism.vue';
 import { ArrowLeftIcon, ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
-import { IDatastoreList, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
+import { IDatastoreSummary, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 
 export default Vue.defineComponent({
   name: 'CloneModal',
@@ -48,15 +48,16 @@ export default Vue.defineComponent({
   props: {
     selectedCloud: String,
     datastore: {
-      type: Object as PropType<IDatastoreList[0]>,
+      type: Object as PropType<IDatastoreSummary>,
       required: true,
-      default: () => ({} as IDatastoreList[0]),
+      default: () => ({} as IDatastoreSummary),
     },
   },
   setup(props) {
     const datastoresStore = useDatastoreStore();
     const cloudAddress = datastoresStore.getCloudAddress(
-      props.datastore.versionHash,
+      props.datastore.id,
+      props.datastore.version,
       props.selectedCloud,
     );
 

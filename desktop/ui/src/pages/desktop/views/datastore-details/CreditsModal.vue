@@ -26,7 +26,7 @@
           </div>
         </div>
         <button
-          class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md bg-fuchsia-700 py-2.5 px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
+          class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md bg-fuchsia-700 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
           @click="addCredit"
         >
           <ArrowRightCircleIcon class="-ml-0.5 h-5 w-5" aria-hidden="true" />
@@ -70,7 +70,11 @@ import * as Vue from 'vue';
 import { PropType } from 'vue';
 import Modal from '../../components/Modal.vue';
 import { ArrowLeftIcon, ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
-import { IDatastoreList, TCredit, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
+import {
+  IDatastoreSummary,
+  TCredit,
+  useDatastoreStore,
+} from '@/pages/desktop/stores/DatastoresStore';
 
 export default Vue.defineComponent({
   name: 'CreditsModal',
@@ -82,9 +86,9 @@ export default Vue.defineComponent({
   props: {
     selectedCloud: String,
     datastore: {
-      type: Object as PropType<IDatastoreList[0]>,
+      type: Object as PropType<IDatastoreSummary>,
       required: true,
-      default: () => ({} as IDatastoreList[0]),
+      default: () => ({} as IDatastoreSummary),
     },
   },
   emits: ['added-credit'],
@@ -99,14 +103,8 @@ export default Vue.defineComponent({
   },
   methods: {
     creditUrl() {
-      const creditUrl = new URL(this.credit.datastoreUrl.replace('ulx:', 'http:'));
-      const creditId = creditUrl.username;
-      const secret = creditUrl.password;
-      creditUrl.username = '';
-      creditUrl.password = '';
-      creditUrl.search = `?${creditId}:${secret}`;
-      creditUrl.pathname = `/datastore${creditUrl.pathname}/free-credits`;
-      return creditUrl.href;
+      const datastoresStore = useDatastoreStore();
+      return datastoresStore.getDocsUrl(this.credit.datastoreUrl);
     },
     async addCredit() {
       try {

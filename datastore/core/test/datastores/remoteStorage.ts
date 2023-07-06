@@ -2,6 +2,8 @@ import Datastore, { Table } from '@ulixee/datastore';
 import { boolean, string } from '@ulixee/schema';
 
 export default new Datastore({
+  id: 'remote-storage',
+  version: '0.0.1',
   tables: {
     intro: new Table({
       schema: {

@@ -2,9 +2,9 @@ import { CloudNode } from '@ulixee/cloud';
 import { copyDir, existsAsync } from '@ulixee/commons/lib/fileUtils';
 import Packager from '@ulixee/datastore-packager';
 import Dbx from '@ulixee/datastore-packager/lib/Dbx';
+import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import SidechainClient from '@ulixee/sidechain';
-import { mkdirSync, rmSync } from 'fs';
 import * as Hostile from 'hostile';
 import * as Path from 'path';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
@@ -16,35 +16,36 @@ let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 
 beforeAll(async () => {
-  mkdirSync(storageDir, { recursive: true });
-  cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
-    datastoresDir: storageDir,
-    datastoresTmpDir: Path.join(storageDir, 'tmp'),
-  };
-  await cloudNode.listen();
+  cloudNode = await Helpers.createLocalNode(
+    {
+      datastoreConfiguration: {
+        datastoresDir: storageDir,
+        datastoresTmpDir: Path.join(storageDir, 'tmp'),
+      },
+    },
+    true,
+  );
   client = new DatastoreApiClient(await cloudNode.address);
+  Helpers.onClose(() => client.disconnect(), true);
   bootupPackager = new Packager(require.resolve('./datastores/bootup.ts'));
   bootupDbx = await bootupPackager.build();
-  if (process.env.CI !== 'true') Hostile.set('127.0.0.1', 'bootup-datastore.com');
+  if (process.env.CI !== 'true') {
+    Hostile.set('127.0.0.1', 'bootup-datastore.com');
+    Helpers.onClose(() => Hostile.remove('127.0.0.1', 'bootup-datastore.com'), true);
+  }
 }, 60e3);
 
-afterAll(async () => {
-  await cloudNode.close();
-  await client.disconnect();
-  if (process.env.CI !== 'true') Hostile.remove('127.0.0.1', 'bootup-datastore.com');
-  try {
-    rmSync(storageDir, { recursive: true });
-  } catch (err) {}
-});
+afterAll(Helpers.afterAll);
+afterEach(Helpers.afterEach);
 
 test('should install new datastores on startup', async () => {
   await copyDir(bootupDbx.path, `${storageDir}/bootup.dbx`);
   const registry = new DatastoreRegistry(storageDir);
-  await registry.diskStore.installOnDiskUploads([], '127.0.0.1:1818');
+  await registry.diskStore.installOnDiskUploads([]);
   // @ts-expect-error
-  const entry = registry.diskStore.datastoresDb.versions.getByHash(
-    bootupPackager.manifest.versionHash,
+  const entry = registry.diskStore.datastoresDb.versions.get(
+    bootupPackager.manifest.id,
+    bootupPackager.manifest.version,
   );
   expect(entry).toBeTruthy();
 
@@ -52,15 +53,14 @@ test('should install new datastores on startup', async () => {
 }, 45e3);
 
 test('should be able to lookup a datastore domain', async () => {
-  await client.upload(await bootupDbx.tarGzip(), {
-    allowNewLinkedVersionHistory: false,
-  });
+  await client.upload(await bootupDbx.tarGzip()).catch(() => null);
 
   await expect(
     DatastoreApiClient.resolveDatastoreDomain(`bootup-datastore.com:${await cloudNode.port}`),
   ).resolves.toEqual({
     host: await cloudNode.address,
-    datastoreVersionHash: bootupPackager.manifest.versionHash,
+    datastoreId: bootupPackager.manifest.id,
+    datastoreVersion: bootupPackager.manifest.version,
   });
 }, 45e3);
 
@@ -70,12 +70,13 @@ test('can get metadata about an uploaded datastore', async () => {
       settlementFeeMicrogons: 10,
     } as any);
   });
-  await client.upload(await bootupDbx.tarGzip(), {
-    allowNewLinkedVersionHistory: false,
-  });
+  await client.upload(await bootupDbx.tarGzip()).catch(() => null);;
 
-  const meta = await client.getMeta(bootupPackager.manifest.versionHash);
-  expect(meta.versionHash).toBe(bootupPackager.manifest.versionHash);
+  const meta = await client.getMeta(
+    bootupPackager.manifest.id,
+    bootupPackager.manifest.version,
+  );
+  expect(meta.version).toBe(bootupPackager.manifest.version);
   expect(meta.scriptEntrypoint).toBe(bootupPackager.manifest.scriptEntrypoint);
   expect(meta.stats).toBeTruthy();
   expect(meta.extractorsByName.bootup).toBeTruthy();

@@ -15,6 +15,7 @@
     "@ulixee/cloud": "2.0.0-alpha.22",
     "@ulixee/crypto": "2.0.0-alpha.22",
     "@ulixee/datastore-packager": "2.0.0-alpha.22",
+    "@ulixee/datastore-testing": "2.0.0-alpha.22",
     "@ulixee/schema": "2.0.0-alpha.22",
     "@ulixee/specification": "2.0.0-alpha.22",
     "@ulixee/sql-ast": "2.0.0-alpha.22",

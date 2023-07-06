@@ -9,7 +9,10 @@ export default new DatastoreApiHandler('Datastore.admin', {
   async handler(request, context): Promise<IDatastoreApiTypes['Datastore.admin']['result']> {
     const { adminSignature, adminIdentity, adminFunction, functionArgs } = request;
 
-    const datastoreVersion = await context.datastoreRegistry.getByVersionHash(request.versionHash);
+    const datastoreVersion = await context.datastoreRegistry.get(
+      request.id,
+      request.version,
+    );
 
     const approvedAdmins = new Set<string>([
       ...datastoreVersion.adminIdentities,
@@ -24,6 +27,7 @@ export default new DatastoreApiHandler('Datastore.admin', {
     const { ownerType, ownerName, functionName } = adminFunction;
 
     const message = DatastoreApiClient.createAdminFunctionMessage(
+      request.id,
       adminIdentity,
       ownerType,
       ownerName,
@@ -36,8 +40,9 @@ export default new DatastoreApiHandler('Datastore.admin', {
     }
 
     const storage = context.storageEngineRegistry.get(datastoreVersion, {
-      versionHash: request.versionHash,
-      id: context.connectionToClient?.transport.remoteId ?? 'admin',
+      id: request.id,
+      version: request.version,
+      queryId: context.connectionToClient?.transport.remoteId ?? 'admin',
     });
     const datastore = await context.vm.open(
       datastoreVersion.runtimePath,

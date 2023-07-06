@@ -1,18 +1,20 @@
-import * as Path from 'path';
-import { IFetchMetaResponseData } from '@ulixee/datastore-core/interfaces/ILocalDatastoreProcess';
-import { sha256 } from '@ulixee/commons/lib/hashUtils';
-import LocalDatastoreProcess from '@ulixee/datastore-core/lib/LocalDatastoreProcess';
-import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import UlixeeConfig from '@ulixee/commons/config';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
-import schemaFromJson from '@ulixee/schema/lib/schemaFromJson';
-import schemaToInterface, { printNode } from '@ulixee/schema/lib/schemaToInterface';
-import { ISchemaAny, object } from '@ulixee/schema';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { IFetchMetaResponseData } from '@ulixee/datastore-core/interfaces/ILocalDatastoreProcess';
+import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
+import LocalDatastoreProcess from '@ulixee/datastore-core/lib/LocalDatastoreProcess';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreIdValidation';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { semverRegex } from '@ulixee/platform-specification/types/semverValidation';
+import { ISchemaAny, object } from '@ulixee/schema';
+import schemaFromJson from '@ulixee/schema/lib/schemaFromJson';
+import schemaToInterface, { printNode } from '@ulixee/schema/lib/schemaToInterface';
+import * as Path from 'path';
 import Dbx from './lib/Dbx';
 import rollupDatastore from './lib/rollupDatastore';
 
@@ -54,8 +56,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
   public async build(options?: {
     tsconfig?: string;
     compiledSourcePath?: string;
-    createNewVersionHistory?: boolean;
-    createTemporaryVersionHash?: boolean;
+    createTemporaryVersion?: boolean;
     watch?: boolean;
   }): Promise<Dbx> {
     const rollup = await rollupDatastore(options?.compiledSourcePath ?? this.entrypoint, {
@@ -71,23 +72,13 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     if (!this.meta.coreVersion) {
       throw new Error('Datastore must specify a coreVersion');
     }
-    await this.generateDetails(
-      rollup.code,
-      rollup.sourceMap,
-      options?.createNewVersionHistory,
-      options?.createTemporaryVersionHash,
-    );
+    await this.generateDetails(rollup.code, rollup.sourceMap, options?.createTemporaryVersion);
 
     if (options?.watch) {
       rollup.events.on(
         'change',
         async ({ code, sourceMap }) =>
-          await this.generateDetails(
-            code,
-            sourceMap,
-            options?.createNewVersionHistory,
-            options?.createTemporaryVersionHash,
-          ),
+          await this.generateDetails(code, sourceMap, options?.createTemporaryVersion),
       );
     }
     return this.dbx;
@@ -96,8 +87,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
   public async createOrUpdateManifest(
     sourceCode: string,
     sourceMap: string,
-    createNewVersionHistory = false,
-    createTemporaryVersionHash = false,
+    createTemporaryVersion = false,
   ): Promise<DatastoreManifest> {
     this.meta ??= await this.findDatastoreMeta();
     if (!this.meta.coreVersion) {
@@ -213,10 +203,10 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     const interfaceString = printNode(schemaToInterface(schemaInterface));
 
     const hash = sha256(Buffer.from(sourceCode));
-    const scriptVersionHash = encodeBuffer(hash, 'scr');
+    const scriptVersion = encodeBuffer(hash, 'scr');
     await this.manifest.update(
       this.entrypoint,
-      scriptVersionHash,
+      scriptVersion,
       Date.now(),
       interfaceString,
       extractorsByName,
@@ -224,11 +214,9 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
       tablesByName,
       this.meta,
       this.logToConsole ? console.log : undefined,
-      createTemporaryVersionHash,
+      createTemporaryVersion,
     );
-    if (createNewVersionHistory) {
-      await this.manifest.setLinkedVersions(this.entrypoint, []);
-    }
+
     this.script = sourceCode;
     this.sourceMap = sourceMap;
     return this.manifest;
@@ -237,20 +225,12 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
   protected async generateDetails(
     code: string,
     sourceMap: string,
-    createNewVersionHistory: boolean,
-    createTemporaryVersionHash: boolean,
+    createTemporaryVersion: boolean,
   ): Promise<void> {
     this.meta = await this.findDatastoreMeta();
     const dbx = this.dbx;
 
-    this.manifest.addToVersionHistory = createTemporaryVersionHash !== true;
-
-    await this.createOrUpdateManifest(
-      code,
-      sourceMap,
-      createNewVersionHistory,
-      createTemporaryVersionHash,
-    );
+    await this.createOrUpdateManifest(code, sourceMap, createTemporaryVersion);
     await dbx.createOrUpdateDocpage(this.meta, this.manifest, this.entrypoint);
     this.emit('build');
   }
@@ -261,19 +241,20 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['extractorsByName'][0]> {
     const extractorName = extractor.remoteExtractor;
 
-    const { remoteHost, datastoreVersionHash } = this.getRemoteSourceAndVersionHash(
+    const { remoteHost, datastoreId, datastoreVersion } = this.getRemoteSourceAndVersion(
       meta,
       extractor.remoteSource,
     );
 
     const remoteMeta = {
       host: remoteHost,
-      datastoreVersionHash,
+      datastoreId,
+      datastoreVersion,
       extractorName,
     };
 
     try {
-      const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreVersionHash);
+      const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreId, datastoreVersion);
       const remoteExtractorDetails = upstreamMeta.extractorsByName[extractorName];
       remoteExtractorDetails.prices[0].remoteMeta = remoteMeta;
       return remoteExtractorDetails;
@@ -288,17 +269,18 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     crawler: IFetchMetaResponseData['crawlersByName'][0],
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['crawlersByName'][0]> {
     const crawlerName = crawler.remoteCrawler;
-    const { remoteHost, datastoreVersionHash } = this.getRemoteSourceAndVersionHash(
+    const { remoteHost, datastoreId, datastoreVersion } = this.getRemoteSourceAndVersion(
       meta,
       crawler.remoteSource,
     );
     const remoteMeta = {
       host: remoteHost,
-      datastoreVersionHash,
+      datastoreId,
+      datastoreVersion,
       crawlerName,
     };
     try {
-      const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreVersionHash);
+      const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreId, datastoreVersion);
       const remoteExtractorDetails = upstreamMeta.crawlersByName[crawlerName];
       remoteExtractorDetails.prices[0].remoteMeta = remoteMeta;
       return remoteExtractorDetails;
@@ -314,18 +296,19 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['tablesByName'][0]> {
     const tableName = table.remoteTable;
 
-    const { remoteHost, datastoreVersionHash } = this.getRemoteSourceAndVersionHash(
+    const { remoteHost, datastoreId, datastoreVersion } = this.getRemoteSourceAndVersion(
       meta,
       table.remoteSource,
     );
     const remoteMeta = {
       host: remoteHost,
-      datastoreVersionHash,
+      datastoreId,
+      datastoreVersion,
       tableName,
     };
 
     try {
-      const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreVersionHash);
+      const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreId, datastoreVersion);
       const remoteDetails = upstreamMeta.tablesByName[tableName];
       remoteDetails.prices[0].remoteMeta = remoteMeta;
       return remoteDetails;
@@ -337,24 +320,26 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
 
   private async getDatastoreMeta(
     host: string,
-    datastoreVersionHash: string,
+    datastoreId: string,
+    datastoreVersion: string,
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
     const datastoreApiClient = new DatastoreApiClient(host, {
       consoleLogErrors: this.logToConsole,
     });
     try {
-      return await datastoreApiClient.getMeta(datastoreVersionHash);
+      return await datastoreApiClient.getMeta(datastoreId, datastoreVersion);
     } finally {
       await datastoreApiClient.disconnect();
     }
   }
 
-  private getRemoteSourceAndVersionHash(
+  private getRemoteSourceAndVersion(
     meta: IFetchMetaResponseData,
     remoteSource: string,
   ): {
     remoteHost: string;
-    datastoreVersionHash: string;
+    datastoreId: string;
+    datastoreVersion: string;
   } {
     const url = meta.remoteDatastores[remoteSource];
     if (!url)
@@ -369,9 +354,16 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
       throw new Error(`The remoteDatastore url for "${remoteSource}" is not a valid url (${url})`);
     }
 
-    const [datastoreVersionHash] = remoteUrl.pathname.match(/dbx1[ac-hj-np-z02-9]{18}/);
-    DatastoreManifest.validateVersionHash(datastoreVersionHash);
-    return { datastoreVersionHash, remoteHost: remoteUrl.host };
+    const match = remoteUrl.pathname.match(
+      new RegExp(`(${datastoreRegex.source})/(${semverRegex.source})`),
+    );
+    if (!match || match.length < 3) throw new Error(`Invalid remote Datastore source provided (${url})`);
+    const [, datastoreId, datastoreVersion] = match;
+    DatastoreManifest.validateId(datastoreId);
+    if (!semverRegex.test(datastoreVersion))
+      throw new Error(`The remote datastore version is not a semver (${datastoreVersion})`);
+
+    return { datastoreId, datastoreVersion, remoteHost: remoteUrl.host };
   }
 
   private async findDatastoreMeta(): Promise<IFetchMetaResponseData> {

@@ -40,7 +40,7 @@
           import Client from '@ulixee/client';
 
           (async function () {
-            const client = new Client('ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{ config.versionHash }}');
+            const client = new Client('ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{config.datastoreId}}/{{ config.version }}');
             const rows = await client.query('SELECT * FROM {{defaultExample.formatted}}',
               {{JSON.stringify(Object.values(defaultExample.args))}}
             );
@@ -52,7 +52,7 @@
           import Stream from '@ulixee/stream';
 
           (async function () {
-            const stream = new Stream('ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{ config.versionHash }}');
+            const stream = new Stream('ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{config.datastoreId}}/{{ config.version }}');
             stream.addJob({
               {{ defaultExample.type }}Name: '{{defaultExample.name}}',
               fields: '*'
@@ -73,7 +73,7 @@
           import { Client } from 'pg';
 
           (async function () {
-            const client = new Client('ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{ config.versionHash }}');
+            const client = new Client('ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{config.datastoreId}}/{{ config.version }}');
             await client.connect();
             const response = client.query('SELECT * FROM {{defaultExample.formatted}}',
               {{JSON.stringify(Object.values(defaultExample.args))}}

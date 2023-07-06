@@ -17,8 +17,12 @@ export default class KadRecord {
     if (!key.equals(sha256(record.publicKey))) {
       throw new CodeError('Kad key does not match hash of public key', 'ERR_INVALID_KEY');
     }
+    if (record.timestamp > Date.now()) {
+      throw new CodeError('Invalid timestamp received for a record', 'ERR_INVALID_KAD_TIMESTAMP');
+    }
+
+    const message = sha256(concatAsBuffer(key, record.timestamp, record.value));
     const publicKey = Ed25519.createPublicKeyFromBytes(record.publicKey);
-    const message = sha256(concatAsBuffer(record.publicKey, record.value, record.timestamp));
     const isValid = Ed25519.verify(publicKey, message, record.signature);
     if (isValid !== true)
       throw new InvalidSignatureError('The KadRecord signature provided is invalid');
@@ -30,10 +34,12 @@ export default class KadRecord {
     timestamp: number,
   ): { key: Buffer; record: IKadRecord } {
     const publicKey = Ed25519.getPublicKeyBytes(privateKey);
-    const serialized = typeof value === 'string' ? value : TypeSerializer.stringify(value, { sortKeys: true });
-    const message = sha256(concatAsBuffer(publicKey, serialized, timestamp));
+    const key = sha256(publicKey);
+    const serialized =
+      typeof value === 'string' ? value : TypeSerializer.stringify(value, { sortKeys: true });
+    const message = sha256(concatAsBuffer(key, timestamp, serialized));
     return {
-      key: sha256(publicKey),
+      key,
       record: {
         publicKey,
         value: serialized,

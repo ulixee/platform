@@ -10,7 +10,7 @@ Ulixee uses a **monorepo** pattern to manage its sub-projects. To contribute, yo
 
 ### Setting Up the Ulixee Repository
 
-Install [Node.js 14](https://nodejs.org/en/download/) or higher and [Yarn](https://yarnpkg.com/lang/en/docs/install/).
+Install [Node.js 16](https://nodejs.org/en/download/) or higher and [Yarn](https://yarnpkg.com/lang/en/docs/install/).
 
 1. Clone the `https://github.com/ulixee/platform.git` repository.
 

@@ -1,21 +1,22 @@
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
-import PaymentProcessor from '../lib/PaymentProcessor';
 import { validateAuthentication, validateFunctionCoreVersions } from '../lib/datastoreUtils';
+import PaymentProcessor from '../lib/PaymentProcessor';
 
 export default new DatastoreApiHandler('Datastore.query', {
   async handler(request, context) {
     request.boundValues ??= [];
-    const { id: queryId, affiliateId, payment, authentication, versionHash } = request;
+    const { queryId, affiliateId, payment, authentication, version, id } = request;
     const { pluginCoresByName } = context;
 
     const startTime = Date.now();
-    const manifestWithRuntime = await context.datastoreRegistry.getByVersionHash(versionHash);
+    const manifestWithRuntime = await context.datastoreRegistry.get(id, version);
 
     const storage = context.storageEngineRegistry.get(manifestWithRuntime, {
-      id: queryId,
+      queryId,
       payment,
       authentication,
-      versionHash,
+      id,
+      version,
     });
 
     const datastore = await context.vm.open(
@@ -38,8 +39,9 @@ export default new DatastoreApiHandler('Datastore.query', {
         request.sql,
         request.boundValues,
         {
-          versionHash,
-          id: queryId,
+          version,
+          id,
+          queryId,
           payment,
           authentication,
         },
@@ -58,7 +60,7 @@ export default new DatastoreApiHandler('Datastore.query', {
               request.pricingPreferences,
             );
           },
-          async onFunction(id, name, options, run) {
+          async onFunction(callId, name, options, run) {
             const runStart = Date.now();
             validateFunctionCoreVersions(manifestWithRuntime, name, context);
 
@@ -66,7 +68,9 @@ export default new DatastoreApiHandler('Datastore.query', {
               payment,
               authentication,
               affiliateId,
-              versionHash,
+              version,
+              id,
+              queryId,
             });
             options.trackMetadata = (metaName, metaValue) => {
               if (metaName === 'heroSessionId') {
@@ -89,14 +93,15 @@ export default new DatastoreApiHandler('Datastore.query', {
               outputs = await context.workTracker.trackRun(run(options));
               // release the hold
               bytes = PaymentProcessor.getOfficialBytes(outputs);
-              microgons = paymentProcessor.releaseLocalFunctionHold(id, bytes);
+              microgons = paymentProcessor.releaseLocalFunctionHold(callId, bytes);
             } catch (error) {
               runError = error;
             }
 
             const milliseconds = Date.now() - runStart;
             await context.statsTracker.recordEntityStats({
-              versionHash: request.versionHash,
+              version: request.version,
+              datastoreId: id,
               entityName: name,
               bytes,
               microgons,
@@ -114,7 +119,9 @@ export default new DatastoreApiHandler('Datastore.query', {
             Object.assign(options, {
               payment,
               authentication,
-              versionHash,
+              version,
+              id,
+              queryId,
             });
             return await context.workTracker.trackRun(run(options));
           },
@@ -139,12 +146,13 @@ export default new DatastoreApiHandler('Datastore.query', {
     };
 
     await context.statsTracker.recordQuery({
-      id: queryId,
+      queryId,
       query: request.sql,
       startTime,
       input: request.boundValues,
       outputs,
-      versionHash,
+      version,
+      datastoreId: id,
       ...metadata,
       micronoteId: payment?.micronote?.micronoteId,
       creditId: payment?.credits?.id,
@@ -160,7 +168,7 @@ export default new DatastoreApiHandler('Datastore.query', {
 
     return {
       outputs,
-      latestVersionHash: manifestWithRuntime.latestVersionHash,
+      latestVersion: manifestWithRuntime.latestVersion,
       metadata,
     };
   },

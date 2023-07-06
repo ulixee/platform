@@ -1,5 +1,4 @@
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
-import { CodeError } from '@ulixee/commons/lib/errors';
 import Logger from '@ulixee/commons/lib/Logger';
 import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import NodeId from '../interfaces/NodeId';
@@ -142,6 +141,8 @@ export class ContentFetching {
 
       // if node is in top 10 closest nodes found, and they do not have the record - send it
       if (!record && cacheNodes.has(fromNodeId)) shouldSendCorrection = true;
+
+      if (!shouldSendCorrection) continue;
 
       const nodeInfo = this.kad.peerStore.get(fromNodeId);
       const result = await this.network.sendRequest(

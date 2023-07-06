@@ -12,7 +12,7 @@
       <span class="m-0.5 bg-gray-200 p-1">@ulixee/datastore start ./ulixee.org.ts</span>. It can
       also be found for each
       <router-link
-        :to="'/datastore/' + versionHash + '/clouds'"
+        :to="'/datastore/' + datastoreId + '/' + version + '/clouds'"
         class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
         >Datastore</router-link
       >
@@ -78,7 +78,7 @@
     >
       <span class="text-lg">Onward:</span>
       <button
-        class="ml-5 inline-flex items-center gap-x-1.5 rounded-md bg-fuchsia-700 py-2.5 px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
+        class="ml-5 inline-flex items-center gap-x-1.5 rounded-md bg-fuchsia-700 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
         @click.prevent="next"
       >
         Next
@@ -95,7 +95,7 @@ import Prism from '../../components/Prism.vue';
 import { storeToRefs } from 'pinia';
 import { ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
 import { useGettingStartedStore } from '@/pages/desktop/stores/GettingStartedStore';
-import { IDatastoresByVersion, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
+import { IDatastoresById, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 
 export default Vue.defineComponent({
   name: 'GettingStartedQuery',
@@ -110,27 +110,31 @@ export default Vue.defineComponent({
     const { steps } = storeToRefs(gettingStarted);
     const step = computed(() => steps.value.find(x => x.href === 'query'));
     const datastoreStore = useDatastoreStore();
-    const versionHash = Vue.ref('');
-    const { datastoresByVersion } = storeToRefs(datastoreStore);
+    const version = Vue.ref('');
+    const datastoreId = Vue.ref('');
+    const { datastoresById } = storeToRefs(datastoreStore);
 
     const datastoreUrl = Vue.ref('');
-    function setDatastoreUrl(value: IDatastoresByVersion) {
-      for (const [datastoreVersionHash, entry] of Object.entries(value)) {
+    function setDatastoreUrl(value: IDatastoresById) {
+      for (const [id, entry] of Object.entries(value)) {
         if (entry.summary.scriptEntrypoint.includes('ulixee.org.')) {
-          versionHash.value = datastoreVersionHash;
-          const cloudAddress = datastoreStore.getCloudAddress(datastoreVersionHash, 'local');
+          const datastoreVersion = entry.summary.version;
+          datastoreId.value = id;
+          version.value = datastoreVersion;
+          const cloudAddress = datastoreStore.getCloudAddress(id, datastoreVersion, 'local');
           datastoreUrl.value = cloudAddress.href;
         }
       }
     }
-    setDatastoreUrl(datastoresByVersion.value);
-    watch(datastoresByVersion.value, value => {
+    setDatastoreUrl(datastoresById.value);
+    watch(datastoresById.value, value => {
       setDatastoreUrl(value);
     });
 
     return {
-      versionHash,
-      datastoresByVersion,
+      version,
+      datastoreId,
+      datastoresById,
       gotoNextStep: gettingStarted.gotoNextStep,
       datastoreUrl,
       step,

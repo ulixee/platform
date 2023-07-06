@@ -33,7 +33,7 @@
     "nseventmonitor": "1.0.3"
   },
   "devDependencies": {
-    "electron": "24.1.3",
-    "electron-builder": "^24.3.0"
+    "electron": "25.2.0",
+    "electron-builder": "^24.4.0"
   }
 }

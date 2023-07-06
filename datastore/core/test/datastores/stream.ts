@@ -2,6 +2,7 @@ import Datastore, { Extractor, Table } from '@ulixee/datastore';
 import { boolean, string } from '@ulixee/schema';
 
 export default new Datastore({
+  id: 'stream',
   extractors: {
     streamer: new Extractor(async ctx => {
       for (let i = 0; i < 3; i += 1) {

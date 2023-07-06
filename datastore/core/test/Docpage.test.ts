@@ -1,5 +1,4 @@
 import { CloudNode } from '@ulixee/cloud';
-import { registerNamespaceMapping } from '@ulixee/commons/lib/Logger';
 import Identity from '@ulixee/crypto/lib/Identity';
 import DatastorePackager from '@ulixee/datastore-packager';
 import * as Helpers from '@ulixee/datastore-testing/helpers';
@@ -54,18 +53,24 @@ afterAll(async () => {
 
 test('should be able to load datastore documentation', async () => {
   const address = await cloudNode.address;
-  const res = await Axios.get(`http://${address}/${manifest.versionHash}`);
+  const res = await Axios.get(`http://${address}/docs/${manifest.id}/${manifest.version}`);
   expect(res.data.includes('<title>Ulixee</title>')).toBe(true);
 
-  const config = await Axios.get(`http://${address}/${manifest.versionHash}/docpage.json`);
+  const config = await Axios.get(
+    `http://${address}/docs/${manifest.id}/${manifest.version}/docpage.json`,
+  );
   expect(config.data.name).toBe('Docpage');
 });
 
 test('should be able to load datastore documentation with a credit hash', async () => {
   const address = await cloudNode.address;
-  const res = await Axios.get(`http://${address}/${manifest.versionHash}?crd2342342`);
+  const res = await Axios.get(
+    `http://${address}/docs/${manifest.id}/${manifest.version}?crd2342342`,
+  );
   expect(res.data.includes('<title>Ulixee</title>')).toBe(true);
-  const config = await Axios.get(`http://${address}/${manifest.versionHash}/docpage.json`);
+  const config = await Axios.get(
+    `http://${address}/docs/${manifest.id}/${manifest.version}/docpage.json`,
+  );
   expect(config.data.name).toBe('Docpage');
 });
 
@@ -79,7 +84,12 @@ test('should be able to access documentation through a datastore domain', async 
 
 test('should be able to use a domain to get a credit balance', async () => {
   const port = await cloudNode.port;
-  const credits = await client.createCredits(manifest.versionHash, 1002, adminIdentity);
+  const credits = await client.createCredits(
+    manifest.id,
+    manifest.version,
+    1002,
+    adminIdentity,
+  );
   await expect(
     Axios.get(
       `http://docs.datastoresRus.com:${port}/free-credits?${credits.id}:${credits.secret}`,
@@ -96,9 +106,9 @@ test('should be able to use a domain to get a credit balance', async () => {
   // can also use the full address
   await expect(
     Axios.get(
-      `http://${await cloudNode.address}/${manifest.versionHash}/free-credits?${credits.id}:${
-        credits.secret
-      }`,
+      `http://${await cloudNode.address}/docs/${manifest.id}/${manifest.version}/free-credits?${
+        credits.id
+      }:${credits.secret}`,
       { responseType: 'json', headers: { accept: 'application/json' } },
     ).then(x => x.data),
   ).resolves.toEqual({
@@ -111,7 +121,8 @@ test('should be able to parse domain urls', async () => {
   const port = await cloudNode.port;
   const expectedOutput = {
     host: await cloudNode.address,
-    datastoreVersionHash: manifest.versionHash,
+    datastoreId: manifest.id,
+    datastoreVersion: manifest.version,
   };
   await expect(
     DatastoreApiClient.resolveDatastoreDomain(`http://docs.datastoresRus.com:${port}`),
@@ -124,19 +135,24 @@ test('should be able to parse domain urls', async () => {
   ).resolves.toEqual(expectedOutput);
 
   await expect(
-    DatastoreApiClient.resolveDatastoreDomain(`${await cloudNode.address}/${manifest.versionHash}`),
+    DatastoreApiClient.resolveDatastoreDomain(
+      `${await cloudNode.address}/docs/${manifest.id}/${manifest.version}`,
+    ),
   ).resolves.toEqual(expectedOutput);
 
   await expect(
-    DatastoreApiClient.resolveDatastoreDomain(`localhost:52759/dbx1wwqx5h854eq6tq9ggl`),
+    DatastoreApiClient.resolveDatastoreDomain(`localhost:52759/docs/i-am-a-datastore/2.0.0`),
   ).resolves.toEqual({
     host: 'localhost:52759',
-    datastoreVersionHash: 'dbx1wwqx5h854eq6tq9ggl',
+    datastoreId: 'i-am-a-datastore',
+    datastoreVersion: '2.0.0',
   });
 
   await expect(
     DatastoreApiClient.resolveDatastoreDomain(
-      `ulx://${await cloudNode.address}/${manifest.versionHash}/free-credit/?crd2342342:234234333`,
+      `ulx://${await cloudNode.address}/docs/${manifest.id}/${
+        manifest.version
+      }/free-credit/?crd2342342:234234333`,
     ),
   ).resolves.toEqual(expectedOutput);
 });

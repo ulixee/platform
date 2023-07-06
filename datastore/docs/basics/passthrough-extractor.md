@@ -12,6 +12,8 @@ The following is a simple example:
 import Datastore, { Extractor } from '@ulixee/datastore';
 
 export default new Datastore({
+  id: `echo`,
+  version: '0.0.1',
   extractors: {
     extractor1: new Extractor({
       run({ input, Output }) {
@@ -32,7 +34,7 @@ import Datastore, { PassthroughExtractor } from '@ulixee/datastore';
 export default new Datastore({
   // NOTE: this is not a real hosted Datastore
   remoteDatastores: {
-    source: `ulx://153.23.22.255:8080/dbx1tn43ect3qkwg0patvq`,
+    source: `ulx://153.23.22.255:8080/echo/0.0.1`,
   },
   extractors: {
     extractor2: new PassthroughExtractor({

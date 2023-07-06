@@ -18,7 +18,7 @@ NOTE: To ensure a smooth use of credits, you are not able to grant more Credits 
 
 ## Command Line Interface (CLI) {#cli}
 
-To clone a Datastore, you simply run the following command with the url of the "to-be-cloned" Datastore (eg, `ulx://153.23.22.255:8080/dbx1tn43ect3qkwg0patvq` is a theoretical Datastore url).
+To clone a Datastore, you simply run the following command with the url of the "to-be-cloned" Datastore (eg, `ulx://153.23.22.255:8080/ulixee-docs/1.0.0` is a theoretical Datastore url).
 
 ```bash
  npx @ulixee/datastore clone <datastore url> <local path>

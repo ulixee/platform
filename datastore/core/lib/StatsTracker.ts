@@ -13,7 +13,7 @@ export type IDatastoreStats = IStatsTrackerApiTypes['StatsTracker.get']['result'
 
 export default class StatsTracker extends TypedEventEmitter<{
   stats: IDatastoreStatsRecord;
-  query: { versionHash: string };
+  query: { datastoreId: string; version: string };
 }> {
   public diskStore?: StatsTrackerDiskStore;
   public serviceClient?: StatsTrackerServiceClient;
@@ -35,9 +35,21 @@ export default class StatsTracker extends TypedEventEmitter<{
     await this.diskStore?.close();
   }
 
+  public async getForDatastoreVersion(manifest: IDatastoreManifest): Promise<IDatastoreStats> {
+    if (this.serviceClient)
+      return this.serviceClient.getForDatastoreVersion(manifest.id, manifest.version);
+    return this.diskStore.getForDatastoreVersion(manifest);
+  }
+
   public async getForDatastore(manifest: IDatastoreManifest): Promise<IDatastoreStats> {
-    if (this.serviceClient) return this.serviceClient.getForDatastore(manifest.versionHash);
+    if (this.serviceClient) return this.serviceClient.getForDatastore(manifest.id);
     return this.diskStore.getForDatastore(manifest);
+  }
+
+
+  public async getSummary(datastoreId: string): Promise<Pick<IDatastoreStats, 'stats'>> {
+    if (this.serviceClient) return this.serviceClient.getDatastoreSummary(datastoreId);
+    return this.diskStore.getDatastoreSummary(datastoreId);
   }
 
   public async recordEntityStats(
@@ -50,7 +62,7 @@ export default class StatsTracker extends TypedEventEmitter<{
   public async recordQuery(
     details: IStatsTrackerApiTypes['StatsTracker.recordQuery']['args'],
   ): Promise<void> {
-    this.emit('query', { versionHash: details.versionHash });
+    this.emit('query', { datastoreId: details.datastoreId, version: details.version });
     if (this.serviceClient) await this.serviceClient.recordQuery(details);
     else this.diskStore.recordQuery(details);
   }

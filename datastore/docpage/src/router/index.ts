@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import Index from '../pages/Index.vue';
 
-const matches = location.pathname.match(/(\/dbx1[ac-hj-np-z02-9]{18})/);
-const pathPrefix = matches ? matches[1] : '';
+const matches = location.pathname.match(/(\/docs\/[a-z0-9-]{2,50})\/(\d+\.\d+\.\d+)/);
+const pathPrefix = matches ? matches.slice(-2).join('/') : '';
 
 const basicRoutes: Array<RouteRecordRaw> = [
   {
@@ -21,7 +21,6 @@ const basicRoutes: Array<RouteRecordRaw> = [
     component: () => import('../pages/FreeCredits.vue'),
   },
 ];
-
 
 async function tryScrollToAnchor(hash: string, timeout = 1000, delay = 100) {
   while (timeout > 0) {
@@ -53,7 +52,7 @@ const router = createRouter({
     }
   },
   history: createWebHistory(process.env.BASE_URL || '/'),
-  routes: [...basicRoutes ],
+  routes: [...basicRoutes],
 });
 
 export default router;

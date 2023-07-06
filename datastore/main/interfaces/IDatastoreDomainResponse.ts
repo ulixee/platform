@@ -1,4 +1,5 @@
 export default interface IDatastoreDomainResponse {
-  datastoreVersionHash: string;
+  datastoreId: string;
+  datastoreVersion: string;
   host: string;
 }

@@ -27,11 +27,11 @@
     <p class="font-light">
       Let's try it. Navigate to your
       <router-link
-        :to="'/datastore/' + versionHash + '/earnings'"
+        :to="'/datastore/' + datastoreId + '/' + version"
         class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
         >Datastore</router-link
       >
-      and click the button that says "Create a Free Trial Credit".
+      and click the link on the right column that says "Issue a new Store Credit".
     </p>
 
     <div v-if="credit">
@@ -48,7 +48,7 @@
     >
       <span class="text-lg">Onward:</span>
       <button
-        class="ml-5 inline-flex items-center gap-x-1.5 rounded-md bg-fuchsia-700 py-2.5 px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
+        class="ml-5 inline-flex items-center gap-x-1.5 rounded-md bg-fuchsia-700 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
         @click.prevent="next"
       >
         Next
@@ -65,7 +65,11 @@ import Prism from '../../components/Prism.vue';
 import { storeToRefs } from 'pinia';
 import { ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
 import { useGettingStartedStore } from '@/pages/desktop/stores/GettingStartedStore';
-import { IDatastoresByVersion, TCredit, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
+import {
+  IDatastoresById,
+  TCredit,
+  useDatastoreStore,
+} from '@/pages/desktop/stores/DatastoresStore';
 
 export default Vue.defineComponent({
   name: 'GettingStartedCredit',
@@ -84,27 +88,30 @@ export default Vue.defineComponent({
 
     const credit = ref(null as TCredit);
 
-    const { datastoresByVersion } = storeToRefs(datastoreStore);
+    const { datastoresById } = storeToRefs(datastoreStore);
 
-    const versionHash = Vue.ref('');
-    function setVersionHash(value: IDatastoresByVersion) {
-      for (const [datastoreVersionHash, entry] of Object.entries(value)) {
+    const datastoreId = Vue.ref('tmp-ulixee-org');
+    const version = Vue.ref('0.0.1');
+    function setDatastoreVersion(value: IDatastoresById) {
+      for (const [id, entry] of Object.entries(value)) {
         if (entry.summary.scriptEntrypoint.includes('ulixee.org.') && entry.adminIdentity) {
-          versionHash.value = datastoreVersionHash;
+          datastoreId.value = id;
+          version.value = entry.summary.version;
           if (entry.createdCredits.length) {
             credit.value = entry.createdCredits[0].credit;
           }
         }
       }
     }
-    setVersionHash(datastoresByVersion.value);
-    Vue.watch(datastoresByVersion.value, value => {
-      setVersionHash(value);
+    setDatastoreVersion(datastoresById.value);
+    Vue.watch(datastoresById.value, value => {
+      setDatastoreVersion(value);
     });
 
     return {
       credit,
-      versionHash,
+      datastoreId,
+      version,
       gotoNextStep: gettingStarted.gotoNextStep,
       step,
     };

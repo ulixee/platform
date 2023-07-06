@@ -12,6 +12,7 @@
       "packages/hero/plugins/*"
     ],
     "nohoist": [
+      "**/@electron/**",
       "**/electron",
       "**/electron-webpack",
       "**/electron-webpack/**",

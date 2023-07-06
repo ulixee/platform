@@ -42,8 +42,11 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
     bindFunctions(this);
   }
 
-  close(): void {
+  async close(): Promise<void> {
     this.events.off();
+    await Promise.allSettled(
+      this.sessions.map(x => this.heroCore.sessionRegistry.close(x.heroSessionId, false)),
+    );
     this.heroCore = null;
   }
 
@@ -56,7 +59,8 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
       datastore:
         scriptInvocationMeta?.runtime === 'datastore'
           ? {
-              versionHash: scriptInvocationMeta.version,
+              datastoreId: scriptInvocationMeta.productId,
+              version: scriptInvocationMeta.version,
               functionName: scriptInvocationMeta.entryFunction,
               queryId: scriptInvocationMeta.runId,
             }
@@ -125,7 +129,7 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
     sessionId: string,
     customPath?: string,
   ): Promise<IHeroSessionsListResult> {
-    const sessionDb = await this.heroCore.sessionRegistry.get(sessionId, customPath);
+    const sessionDb = await this.heroCore.sessionRegistry.retain(sessionId, customPath);
     const session = sessionDb.session.get();
     // might not be loaded yet
     if (!session) return;
@@ -192,7 +196,8 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
         datastore:
           session.scriptRuntime === 'datastore'
             ? {
-                versionHash: session.scriptVersion,
+                datastoreId: session.scriptProductId,
+                version: session.scriptVersion,
                 functionName: session.scriptEntrypointFunction,
                 queryId: session.scriptRunId,
               }

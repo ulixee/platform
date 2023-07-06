@@ -13,7 +13,6 @@ import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import { IServicesSetupApiTypes } from '@ulixee/platform-specification/services/SetupApis';
-import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreVersionHashValidation';
 import IKad from '@ulixee/platform-specification/types/IKad';
 import { promises as Fs } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
@@ -28,10 +27,12 @@ import DatastoreMeta from './endpoints/Datastore.meta';
 import DatastoreQuery from './endpoints/Datastore.query';
 import DatastoreQueryStorageEngine from './endpoints/Datastore.queryStorageEngine';
 import DatastoreStart from './endpoints/Datastore.start';
+import DatastoreStats from './endpoints/Datastore.stats';
 import DatastoreStream from './endpoints/Datastore.stream';
 import DatastoreUpload from './endpoints/Datastore.upload';
+import DatastoreVersions from './endpoints/Datastore.versions';
 import DatastoresList from './endpoints/Datastores.list';
-import DocpageRoutes from './endpoints/DocpageRoutes';
+import DocpageRoutes, { datastorePathRegex } from './endpoints/DocpageRoutes';
 import HostedServicesEndpoints, {
   TConnectionToServicesClient,
 } from './endpoints/HostedServicesEndpoints';
@@ -57,10 +58,10 @@ export default class DatastoreCore extends TypedEventEmitter<{
     datastore: IDatastoreApiTypes['Datastore.meta']['result'];
     activity: 'started' | 'uploaded';
   };
-  stats: Pick<IDatastoreApiTypes['Datastore.meta']['result'], 'stats' | 'versionHash'>;
-  query: { versionHash: string };
+  stats: Pick<IDatastoreApiTypes['Datastore.meta']['result'], 'stats' | 'version' | 'id'>;
+  query: { id: string; version: string };
   connection: { connection: IDatastoreConnectionToClient };
-  stopped: { versionHash: string };
+  stopped: { id: string; version: string };
 }> {
   public pluginCoresByName: { [name: string]: IExtractorPluginCore } = {};
 
@@ -88,6 +89,8 @@ export default class DatastoreCore extends TypedEventEmitter<{
     DatastoreCreditsBalance,
     DatastoreCreditsIssued,
     DatastoreStart,
+    DatastoreVersions,
+    DatastoreStats,
     DatastoreMeta,
     DatastoreDownload,
     DatastoreUpload,
@@ -198,7 +201,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
     addHttpRoute(/.*\/free-credits\/?\?crd[A-Za-z0-9_]{8}.*/, 'GET', (req, res) =>
       this.docPages.routeCreditsBalanceApi(req, res),
     );
-    addHttpRoute(new RegExp(`/(${datastoreRegex.source})(.*)`), 'GET', (req, res, params) =>
+    addHttpRoute(new RegExp(datastorePathRegex), 'GET', (req, res, params) =>
       this.docPages.routeHttp(req, res, params),
     );
     addHttpRoute(/\/(.*)/, 'GET', (req, res) => this.docPages.routeHttpRoot(req, res));
@@ -307,7 +310,6 @@ export default class DatastoreCore extends TypedEventEmitter<{
         this.options.datastoresDir,
         this.datastoreApiClients,
         createConnectionToServiceHost(this.options.datastoreRegistryHost),
-        options.kad,
         this.options,
         this.onDatastoreInstalled.bind(this),
       );
@@ -316,7 +318,6 @@ export default class DatastoreCore extends TypedEventEmitter<{
       );
       await this.datastoreRegistry.diskStore.installOnDiskUploads(
         this.options.cloudAdminIdentities,
-        this.cloudNodeAddress.host,
       );
 
       for (const plugin of Object.values(this.pluginCoresByName)) {
@@ -404,15 +405,17 @@ export default class DatastoreCore extends TypedEventEmitter<{
       isWatching?: boolean;
     },
   ): Promise<void> {
-    if (source === 'cluster' || source === 'network') return;
+    if (source === 'cluster') return;
     if (this.storageEngineRegistry.isHostingStorageEngine(version.storageEngineHost)) {
       await this.storageEngineRegistry.create(this.vm, version, previous, options);
     } else {
       const versionDbx = await this.datastoreRegistry.diskStore.getCompressedDbx(
-        version.versionHash,
+        version.id,
+        version.version,
       );
       const previousDbx = await this.datastoreRegistry.diskStore.getCompressedDbx(
-        previous?.versionHash,
+        previous?.id,
+        previous?.version,
       );
       await this.storageEngineRegistry.createRemote(version, versionDbx, previousDbx);
     }
@@ -420,19 +423,26 @@ export default class DatastoreCore extends TypedEventEmitter<{
 
   private onNewDatastore(event: DatastoreRegistry['EventTypes']['new']): void {
     void DatastoreMeta.handler(
-      { versionHash: event.datastore.versionHash },
+      { id: event.datastore.id, version: event.datastore.version },
       this.getApiContext(),
     ).then(x => {
       return this.emit('new', { activity: event.activity, datastore: x });
     });
   }
 
-  private onDatastoreStopped(event: DatastoreRegistry['EventTypes']['stopped']): void {
+  private async onDatastoreStopped(
+    event: DatastoreRegistry['EventTypes']['stopped'],
+  ): Promise<void> {
     this.emit('stopped', event);
+    await this.storageEngineRegistry.deleteExisting(event.id, event.version);
   }
 
   private onDatastoreStats(event: StatsTracker['EventTypes']['stats']): void {
-    this.emit('stats', { versionHash: event.versionHash, stats: translateStats(event) });
+    this.emit('stats', {
+      id: event.datastoreId,
+      version: event.version,
+      stats: translateStats(event),
+    });
   }
 
   private getApiContext(remoteId?: string): IDatastoreApiContext {

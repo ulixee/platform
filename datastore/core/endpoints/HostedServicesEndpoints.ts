@@ -26,42 +26,42 @@ export default class HostedServicesEndpoints {
 
   constructor() {
     this.handlersByCommand = {
-      'DatastoreRegistry.downloadDbx': async ({ versionHash }, ctx) => {
+      'DatastoreRegistry.downloadDbx': async ({ id, version }, ctx) => {
         // only get from local if installed
-        const result = await ctx.datastoreRegistry.diskStore.getCompressedDbx(versionHash);
+        const result = await ctx.datastoreRegistry.diskStore.getCompressedDbx(id, version);
         if (!result) {
           throw new DatastoreNotFoundError('Datastore could not be download. Not found locally.', {
-            versionHash,
+            version,
           });
         }
         return result;
       },
-      'DatastoreRegistry.get': async ({ versionHash }, ctx) => {
-        const datastore = await ctx.datastoreRegistry.getByVersionHash(versionHash, false);
+      'DatastoreRegistry.get': async ({ id, version }, ctx) => {
+        const datastore = await ctx.datastoreRegistry.get(id, version, false);
         return { datastore };
       },
-      'DatastoreRegistry.getLatestVersion': async ({ versionHash }, ctx) => {
-        const latestVersionHash = await ctx.datastoreRegistry.getLatestVersion(versionHash);
-        return { latestVersionHash };
+      'DatastoreRegistry.getLatestVersion': async ({ id }, ctx) => {
+        const latestVersion = await ctx.datastoreRegistry.getLatestVersion(id);
+        return { latestVersion };
+      },
+      'DatastoreRegistry.getVersions': async ({ id }, ctx) => {
+        const versions = await ctx.datastoreRegistry.getVersions(id);
+        return { versions };
       },
       'DatastoreRegistry.getLatestVersionForDomain': async ({ domain }, ctx) => {
-        const latestVersionHash = await ctx.datastoreRegistry.getByDomain(domain);
-        return { latestVersionHash };
-      },
-      'DatastoreRegistry.getPreviousInstalledVersion': async ({ versionHash }, ctx) => {
-        const datastore = await ctx.datastoreRegistry.getInstalledPreviousVersion(versionHash);
-        return { previousVersionHash: datastore?.versionHash };
+        const latestVersion = await ctx.datastoreRegistry.getByDomain(domain);
+        return { ...latestVersion };
       },
       'DatastoreRegistry.list': async ({ count, offset }, ctx) => {
         // don't go out to network
-        const datastores = await ctx.datastoreRegistry.diskStore.all(count, offset);
-        return { datastores };
+        return await ctx.datastoreRegistry.diskStore.list(count, offset);
       },
       'DatastoreRegistry.upload': async (request, ctx) => {
         const { datastoreRegistry, workTracker } = ctx;
-        return workTracker.trackUpload(
+        const result = await workTracker.trackUpload(
           datastoreRegistry.saveDbx(request, ctx.connectionToClient?.transport.remoteId),
         );
+        return { success: result?.didInstall ?? false };
       },
       'StatsTracker.recordEntityStats': async (args, ctx) => {
         await ctx.statsTracker.recordEntityStats(args);
@@ -71,9 +71,16 @@ export default class HostedServicesEndpoints {
         await ctx.statsTracker.recordQuery(args);
         return { success: true };
       },
-      'StatsTracker.get': async ({ versionHash }, ctx) => {
-        const manifest = await ctx.datastoreRegistry.getByVersionHash(versionHash);
+      'StatsTracker.get': async ({ datastoreId }, ctx) => {
+        const manifest = await ctx.datastoreRegistry.get(datastoreId);
         return await ctx.statsTracker.getForDatastore(manifest);
+      },
+      'StatsTracker.getSummary': async ({ datastoreId }, ctx) => {
+        return await ctx.statsTracker.getSummary(datastoreId);
+      },
+      'StatsTracker.getByVersion': async ({ datastoreId, version }, ctx) => {
+        const manifest = await ctx.datastoreRegistry.get(datastoreId, version);
+        return await ctx.statsTracker.getForDatastoreVersion(manifest);
       },
     };
 

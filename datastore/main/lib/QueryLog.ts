@@ -1,3 +1,5 @@
+import { debounce } from '@ulixee/commons/lib/asyncUtils';
+import Queue from '@ulixee/commons/lib/Queue';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import * as Fs from 'fs';
 import * as Readline from 'readline';
@@ -18,23 +20,26 @@ export default class QueryLog {
     new: IQueryLogEntry;
   }>();
 
+  private readQueue = new Queue();
+
   constructor() {
     if (!Fs.existsSync(Path.dirname(this.queryLogPath)))
       Fs.mkdirSync(Path.dirname(this.queryLogPath));
     if (!Fs.existsSync(this.queryLogPath)) Fs.writeFileSync(this.queryLogPath, '');
     this.watchFileCallback = this.watchFileCallback.bind(this);
+    this.publishQueries = debounce(this.publishQueries.bind(this), 50);
   }
 
   public monitor(onNewQuery: (query: IQueryLogEntry) => any): { stop: () => void } {
     if (process.platform === 'win32' || process.platform === 'darwin') {
       this.fileWatcher = Fs.watch(this.queryLogPath, { persistent: false }, () => {
-        void this.publishQueries();
+        this.publishQueries();
       });
     } else {
       Fs.watchFile(this.queryLogPath, { persistent: false }, this.watchFileCallback);
     }
     this.events.on('new', onNewQuery);
-    void this.publishQueries();
+    this.publishQueries();
     return {
       stop() {
         this.events.off('new', onNewQuery);
@@ -47,6 +52,7 @@ export default class QueryLog {
 
   public async close(): Promise<void> {
     await Promise.all(this.appendOps);
+    this.readQueue.stop();
     this.stopWatching();
   }
 
@@ -61,15 +67,16 @@ export default class QueryLog {
     cloudNodeIdentity?: string,
     error?: Error,
   ): void {
-    const { id, versionHash, affiliateId, payment } = query;
+    const { queryId, version, id, affiliateId, payment } = query;
     const streamQuery = query as IDatastoreApiTypes['Datastore.stream']['args'];
 
     const input = 'boundValues' in query ? query.boundValues : streamQuery.input;
 
     try {
       const record = <IQueryLogEntry>{
-        id,
-        versionHash,
+        queryId,
+        version,
+        datastoreId: id,
         date: startDate,
         affiliateId,
         creditId: payment?.credits?.id,
@@ -101,21 +108,23 @@ export default class QueryLog {
     }
   }
 
-  private async publishQueries(): Promise<void> {
-    try {
-      const readable = Fs.createReadStream(this.queryLogPath, { start: this.queryLogBytesRead });
-      const reader = Readline.createInterface({ input: readable });
-      for await (const line of reader) {
-        const record = TypeSerializer.parse(line);
-        if (this.queriesById[record.id]) continue;
+  private publishQueries(): void {
+    void this.readQueue.run(async () => {
+      try {
+        const readable = Fs.createReadStream(this.queryLogPath, { start: this.queryLogBytesRead });
+        const reader = Readline.createInterface({ input: readable });
+        for await (const line of reader) {
+          const record: IQueryLogEntry = TypeSerializer.parse(line);
+          if (this.queriesById[record.queryId]) continue;
 
-        this.queriesById[record.id] = record;
-        this.events.emit('new', record);
+          this.queriesById[record.queryId] = record;
+          this.events.emit('new', record);
+        }
+        this.queryLogBytesRead += readable.bytesRead;
+        readable.close();
+      } catch (err) {
+        console.error(err);
       }
-      this.queryLogBytesRead += readable.bytesRead;
-      readable.close();
-    } catch (err) {
-      console.error(err);
-    }
+    });
   }
 }

@@ -26,30 +26,8 @@
   <div class="h-full">
     <div class="relative mt-5 border-b border-gray-200 pb-5 sm:pb-0">
       <div class="border-b border-gray-200 pb-5 sm:pb-0">
-        <div class="md:flex md:items-center md:justify-between">
-          <div
-            class="mb-5 flex flex-row flex-wrap content-end items-center justify-between gap-x-4 divide-x divide-gray-400"
-            v-if="datastore.description"
-          >
-            <div class="whitespace-pre-line text-sm font-light text-gray-900">
-              {{ datastore.description }}
-            </div>
-          </div>
+        <div>
           <div class="absolute bottom-3 right-0 mt-0 mt-3 flex">
-            <button
-              type="button"
-              class="group inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-              @click.prevent="openDocs"
-            >
-              <DocumentTextIcon
-                class="-ml-0.5 h-5 w-5 text-gray-900 group-hover:text-gray-950"
-                aria-hidden="true"
-              />
-              <ArrowTopRightOnSquareIcon
-                class="relative -ml-2 -mt-3 mr-1 inline h-3 w-4 bg-white text-gray-600"
-              />
-              View Docs
-            </button>
             <button
               type="button"
               class="group ml-2 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
@@ -61,26 +39,6 @@
               />
               Clone It!
             </button>
-            <button
-              v-if="!installed && !adminIdentity"
-              type="button"
-              class="group ml-2 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-              @click.prevent="install"
-            >
-              <ArrowDownTrayIcon
-                class="-ml-0.5 mr-2 h-5 w-5 text-gray-900 group-hover:text-gray-950"
-                aria-hidden="true"
-              />
-              Install
-            </button>
-            <button
-              v-if="installed"
-              type="button"
-              class="underline-2 group ml-2 inline-flex items-center rounded-md bg-gray-800 px-3 py-2 text-sm font-bold text-white ring-1 ring-inset ring-gray-100"
-              disabled
-            >
-              Installed!
-            </button>
           </div>
         </div>
 
@@ -89,7 +47,10 @@
             <router-link
               v-for="tab in tabs"
               :key="tab.path"
-              :to="{ name: tab.name, params: { versionHash: datastore.versionHash } }"
+              :to="{
+                name: tab.name,
+                params: { datastoreId: datastore.id, version: datastore.version },
+              }"
               :class="[
                 $route.name === tab.name
                   ? 'border-fuchsia-700 text-fuchsia-800'
@@ -125,29 +86,29 @@
 </template>
 
 <script lang="ts">
-import * as Vue from 'vue';
-import { useRoute } from 'vue-router';
+import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
+import { useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 import {
   ArrowDownTrayIcon,
   BanknotesIcon,
   ChartBarIcon,
   ChevronRightIcon,
-  CloudArrowUpIcon,
   CircleStackIcon,
+  CloudArrowUpIcon,
   CloudIcon,
   CreditCardIcon,
   HeartIcon,
+  HomeIcon,
+  TagIcon,
 } from '@heroicons/vue/20/solid';
 import {
-  DocumentTextIcon,
-  DocumentDuplicateIcon,
   ArrowTopRightOnSquareIcon,
+  DocumentDuplicateIcon,
+  DocumentTextIcon,
 } from '@heroicons/vue/24/outline';
 import { storeToRefs } from 'pinia';
-import { useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
-import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
-import Earnings from './Earnings.vue';
-import Spend from './Spend.vue';
+import * as Vue from 'vue';
+import { useRoute } from 'vue-router';
 import CloneModal from './CloneModal.vue';
 import Queries from './Queries.vue';
 
@@ -156,63 +117,52 @@ export default Vue.defineComponent({
   components: {
     CloudArrowUpIcon,
     ChevronRightIcon,
-    Earnings,
     CloudIcon,
     ChartBarIcon,
+    HomeIcon,
     ArrowTopRightOnSquareIcon,
     CreditCardIcon,
     DocumentDuplicateIcon,
     DocumentTextIcon,
+    TagIcon,
     BanknotesIcon,
     CloneModal,
     ArrowDownTrayIcon,
     Queries,
-    Spend,
   },
   setup() {
     const route = useRoute();
     const datastoresStore = useDatastoreStore();
-    const versionHash = route.params.versionHash as string;
-    const { datastoresByVersion } = storeToRefs(datastoresStore);
-    const { summary, cloud } = datastoresStore.getWithHash(versionHash);
-    const installed = Vue.computed(() => datastoresByVersion.value[versionHash].isInstalled);
+    const datastoreId = route.params.datastoreId as string;
+    const version = route.params.version as string;
+    const { datastoresById } = storeToRefs(datastoresStore);
+    const summary = datastoresStore.get(datastoreId);
+    const cloud = datastoresStore.getCloud(datastoreId, version);
 
     const cloudsStore = useCloudsStore();
     const { clouds } = storeToRefs(cloudsStore);
-    const cloudAddress = datastoresStore.getCloudAddress(versionHash, cloud);
     const { getCloudName } = cloudsStore;
 
     const tabs = [
-      { name: 'Earned', path: 'earnings', icon: BanknotesIcon },
-      { name: 'Spent', path: 'spend', icon: CreditCardIcon },
+      { name: 'Overview', path: 'overview', icon: HomeIcon },
       { name: 'Entities', path: 'entities', icon: CircleStackIcon },
       { name: 'Queries', path: 'queries', icon: ChartBarIcon },
       { name: 'Reliability', path: 'reliability', icon: HeartIcon },
-      { name: 'DatastoreClouds', label: 'Clouds', path: 'clouds', icon: CloudIcon },
+      { name: 'Versions', path: 'versions', icon: TagIcon },
     ];
 
     return {
-      installed,
       clouds,
       tabs,
       datastore: summary,
       selectedCloud: cloud,
       cloneModal: Vue.ref<typeof CloneModal>(null),
       getCloudName,
-      cloudAddress,
       datastoresStore,
-      datastoresByVersion,
+      datastoresById,
     };
   },
   watch: {},
-  methods: {
-    openDocs() {
-      const versionHash = this.datastore.versionHash;
-      this.datastoresStore.openDocs(versionHash, this.selectedCloud);
-    },
-    install() {
-      this.datastoresStore.installDatastore(this.datastore.versionHash, this.selectedCloud);
-    },
-  },
+  methods: {},
 });
 </script>

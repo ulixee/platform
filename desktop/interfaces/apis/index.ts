@@ -43,6 +43,8 @@ export type IDesktopAppApis = {
   'Sessions.list': IHeroSessionsApi['list'];
   'Datastores.list': IDatastoreApis['Datastores.list'];
   'Datastore.meta': IDatastoreApis['Datastore.meta'];
+  'Datastore.stats': IDatastoreApis['Datastore.stats'];
+  'Datastore.versions': IDatastoreApis['Datastore.versions'];
   'Datastore.creditsIssued': IDatastoreApis['Datastore.creditsIssued'];
 };
 
@@ -53,7 +55,10 @@ export type TCredit = { datastoreUrl: string; microgons: number };
 export type IDesktopAppPrivateApis = {
   'Argon.dropFile': (path: string) => Promise<void>;
   'Credit.create': (args: {
-    datastore: Pick<IDatastoreResultItem, 'versionHash' | 'name' | 'domain' | 'scriptEntrypoint'>;
+    datastore: Pick<
+      IDatastoreResultItem,
+      'id' | 'version' | 'name' | 'domain' | 'scriptEntrypoint'
+    >;
     cloud: string;
     argons: number;
   }) => Promise<{
@@ -70,26 +75,26 @@ export type IDesktopAppPrivateApis = {
     };
   }) => Promise<void>;
   'Cloud.findAdminIdentity': (cloudName: string) => Promise<string>;
-  'Datastore.setAdminIdentity': (
-    datastoreVersionHash: string,
-    adminIdentityPath: string,
-  ) => Promise<string>;
-  'Datastore.findAdminIdentity': (datastoreVersionHash: string) => Promise<string>;
+  'Datastore.setAdminIdentity': (datastoreId: string, adminIdentityPath: string) => Promise<string>;
+  'Datastore.findAdminIdentity': (datastoreId: string) => Promise<string>;
   'Datastore.getInstalled': () => ILocalUserProfile['installedDatastores'];
   'Datastore.query': (args: {
-    versionHash: string;
+    id: string;
+    version: string;
     cloudHost: string;
     query: string;
   }) => Promise<IQueryLogEntry>;
   'Datastore.deploy': (args: {
-    versionHash: string;
+    id: string;
+    version: string;
     cloudHost: string;
     cloudName: string;
   }) => Promise<void>;
-  'Datastore.install': (arg: { cloudHost: string; datastoreVersionHash: string }) => Promise<void>;
+  'Datastore.install': (arg: { id: string; cloudHost: string; version: string }) => Promise<void>;
+  'Datastore.uninstall': (arg: { id: string; cloudHost: string; version: string }) => Promise<void>;
   'Desktop.getAdminIdentities': () => {
-    datastoresByVersion: {
-      [versionHash: string]: string;
+    datastoresById: {
+      [id: string]: string;
     };
     cloudsByName: {
       [name: string]: string;

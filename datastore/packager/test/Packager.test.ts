@@ -1,11 +1,8 @@
+import { Helpers } from '@ulixee/datastore-testing';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { existsSync } from 'fs';
 import * as Fs from 'fs/promises';
 import * as Path from 'path';
-import { Helpers } from '@ulixee/datastore-testing';
-import { existsSync } from 'fs';
-import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
-import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
-import { sha256 } from '@ulixee/commons/lib/hashUtils';
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import DatastorePackager from '../index';
 
 beforeEach(async () => {
@@ -29,7 +26,7 @@ afterAll(async () => {
 
 test('it should generate a relative script entrypoint', async () => {
   const packager = new DatastorePackager(`${__dirname}/assets/historyTest.js`);
-  await packager.build();
+  await packager.build({ createTemporaryVersion: true });
   const dbx = packager.dbx;
   path = dbx.path;
 
@@ -39,7 +36,6 @@ test('it should generate a relative script entrypoint', async () => {
   await expect(Fs.readFile(`${dbx.path}/datastore-manifest.json`, 'utf8')).resolves.toBeTruthy();
 
   expect(packager.manifest.toJSON()).toEqual({
-    linkedVersions: [],
     adminIdentities: [],
     crawlersByName: {},
     domain: undefined,
@@ -60,7 +56,8 @@ test('it should generate a relative script entrypoint', async () => {
         },
       },
     }),
-    versionHash: DatastoreManifest.createVersionHash(packager.manifest),
+    id: packager.manifest.id,
+    version: '0.0.1',
     versionTimestamp: expect.any(Number),
     paymentAddress: undefined,
   });
@@ -73,24 +70,20 @@ test('should be able to modify the local built files for uploading', async () =>
   const packager = new DatastorePackager(`${__dirname}/assets/historyTest.js`);
   path = packager.dbxPath;
 
-  const versionHash = encodeBuffer(sha256('dbxExtra'), 'dbx').substring(0, 22);
-  await packager.build();
-  packager.manifest.linkedVersions.push({
-    versionHash,
-    versionTimestamp: Date.now(),
-  });
+  await packager.build({ createTemporaryVersion: true });
+  packager.manifest.version = '0.0.2';
   await packager.manifest.save();
 
   const packager2 = new DatastorePackager(`${__dirname}/assets/historyTest.js`);
   await packager2.build();
-  expect(packager2.manifest.linkedVersions.some(x => x.versionHash === versionHash)).toBeTruthy();
+  expect(packager2.manifest.version).toBe('0.0.2');
 });
 
 test('should be able to read a datastore manifest next to an entrypoint', async () => {
   const packager = new DatastorePackager(`${__dirname}/assets/customManifest.js`);
   path = packager.dbx.path;
 
-  await packager.build();
+  await packager.build({ createTemporaryVersion: true });
   expect(packager.manifest.coreVersion).toBe('1.1.1');
 });
 
@@ -109,59 +102,10 @@ test('should merge custom manifests', async () => {
     }),
   );
 
-  await packager.build();
+  await packager.build({ createTemporaryVersion: true });
   await Fs.unlink(`${projectConfig}/datastores.json`);
   // should take the closest (entrypoint override) over the project config
   expect(packager.manifest.coreVersion).toBe('1.1.1');
-});
-
-test('should build a version history with a new version', async () => {
-  const entrypoint = `${__dirname}/assets/historyTest.js`;
-  const packager = new DatastorePackager(entrypoint);
-  const dbx = await packager.build();
-  if (packager.manifest.linkedVersions.length) {
-    await packager.manifest.setLinkedVersions(entrypoint, []);
-  }
-  path = dbx.path;
-  await Fs.writeFile(
-    `${__dirname}/assets/_historytestManual.js`,
-    `const {Datastore, Extractor, HeroExtractorPlugin }=require("@ulixee/datastore-plugins-hero");
-const heroExtractor = new Extractor(({output}) => {
-   output.text=1;
-},HeroExtractorPlugin);
-module.exports = new Datastore({ extractors: { heroExtractor }});`,
-  );
-  const packager2 = new DatastorePackager(`${__dirname}/assets/historyTest.js`);
-  await packager2.build({
-    compiledSourcePath: Path.resolve(`${__dirname}/assets/_historytestManual.js`),
-  });
-  await Fs.unlink(`${__dirname}/assets/_historytestManual.js`);
-  expect(packager2.manifest.linkedVersions).toHaveLength(1);
-});
-
-test('should be able to "link" the version history', async () => {
-  await Fs.writeFile(
-    `${__dirname}/assets/historyTest2.js`,
-    `const { Datastore, Extractor, HeroExtractorPlugin }=require("@ulixee/datastore-plugins-hero");
-const heroExtractor = new Extractor(({output}) => {
-   output.text=1;
-},HeroExtractorPlugin);
-module.exports = new Datastore({ extractors: { heroExtractor }})`,
-  );
-  const entrypoint = `${__dirname}/assets/historyTest2.js`;
-  const packager = new DatastorePackager(entrypoint);
-  await packager.build();
-  path = packager.dbx.path;
-
-  const [dbx1, dbx2, dbx3] = ['dbx1', 'dbx2', 'dbx3'].map(x =>
-    encodeBuffer(sha256(x), 'dbx').substring(0, 22),
-  );
-  await packager.manifest.setLinkedVersions(entrypoint, [
-    { versionHash: dbx1, versionTimestamp: Date.now() - 25e3 },
-    { versionHash: dbx2, versionTimestamp: Date.now() - 30e3 },
-    { versionHash: dbx3, versionTimestamp: Date.now() - 60e3 },
-  ]);
-  expect(packager.manifest.linkedVersions.map(x => x.versionHash)).toEqual([dbx1, dbx2, dbx3]);
 });
 
 test('should be able to change the output directory', async () => {
@@ -171,17 +115,16 @@ test('should be able to change the output directory', async () => {
   );
   path = packager.dbx.path;
 
-  const dbx = await packager.build();
+  const dbx = await packager.build({ createTemporaryVersion: true });
   expect(dbx.path).toBe(Path.resolve(`${__dirname}/build/historyTest.dbx`));
   expect(existsSync(dbx.path)).toBe(true);
 });
 
 test('should be able to package a multi-function Datastore', async () => {
   const packager = new DatastorePackager(`${__dirname}/assets/multiExtractorTest.js`);
-  await packager.build();
+  await packager.build({ createTemporaryVersion: true });
   path = packager.dbx.path;
   expect(packager.manifest.toJSON()).toEqual(<IDatastoreManifest>{
-    linkedVersions: [],
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `multiExtractorTest.js`),
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
@@ -223,7 +166,8 @@ test('should be able to package a multi-function Datastore', async () => {
         schemaAsJson: { output: { title: { typeName: 'string' }, html: { typeName: 'string' } } },
       },
     }),
-    versionHash: DatastoreManifest.createVersionHash(packager.manifest),
+    id: packager.manifest.id,
+    version: packager.manifest.version,
     versionTimestamp: expect.any(Number),
     paymentAddress: undefined,
   });
@@ -234,12 +178,12 @@ test('should be able to package a multi-function Datastore', async () => {
 
 test('should be able to package an exported Extractor without a Datastore', async () => {
   const packager = new DatastorePackager(`${__dirname}/assets/rawExtractorTest.js`);
-  await packager.build();
+  await packager.build({ createTemporaryVersion: true });
   path = packager.dbx.path;
   expect(packager.manifest.toJSON()).toEqual({
     name: undefined,
     description: undefined,
-    linkedVersions: [],
+
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `rawExtractorTest.js`),
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
@@ -260,7 +204,8 @@ test('should be able to package an exported Extractor without a Datastore', asyn
     tablesByName: {},
     crawlersByName: {},
     domain: undefined,
-    versionHash: DatastoreManifest.createVersionHash(packager.manifest),
+    id: packager.manifest.id,
+    version: packager.manifest.version,
     versionTimestamp: expect.any(Number),
     paymentAddress: undefined,
     adminIdentities: [],
@@ -294,38 +239,9 @@ export default new Datastore({
     isTester: boolean(),
   }`);
   const packager = new DatastorePackager(`${__dirname}/assets/watch.js`);
-  await packager.build({ watch: true });
+  await packager.build({ watch: true, createTemporaryVersion: true });
   Helpers.needsClosing.push(packager);
   path = packager.dbx.path;
-  expect(packager.manifest.toJSON()).toEqual({
-    linkedVersions: [],
-    scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `watch.js`),
-    scriptHash: expect.any(String),
-    coreVersion: require('../package.json').version,
-    schemaInterface: `{
-  tables: {
-    people: {
-      firstName: string;
-      lastName: string;
-      isTester: boolean;
-    }
-  };
-  extractors: {};
-  crawlers: {};
-}`,
-    extractorsByName: {},
-    tablesByName: expect.objectContaining({
-      people: {
-        schemaAsJson: undefined,
-      },
-    }),
-    crawlersByName: {},
-    domain: undefined,
-    versionHash: DatastoreManifest.createVersionHash(packager.manifest),
-    versionTimestamp: expect.any(Number),
-    paymentAddress: undefined,
-    adminIdentities: [],
-  });
   expect((await Fs.stat(`${__dirname}/assets/watch.dbx`)).isDirectory()).toBeTruthy();
   await writeScript(`{
     firstName: string(),

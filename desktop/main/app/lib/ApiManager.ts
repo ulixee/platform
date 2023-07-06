@@ -131,7 +131,6 @@ export default class ApiManager<
 
   public async stopLocalCloud(): Promise<void> {
     await this.localCloud?.close();
-    this.localCloud = null;
   }
 
   public async startLocalCloud(): Promise<void> {

@@ -4,7 +4,8 @@ type TPrices = { perQuery: number; minimum: number };
 type TSchema = IDatastoreManifest['extractorsByName'][0]['schemaAsJson'];
 
 export default interface IDocpageConfig {
-  versionHash: string;
+  datastoreId: string;
+  version: string;
   name: string;
   description: string;
   createdAt: string;

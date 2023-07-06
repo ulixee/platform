@@ -13,6 +13,8 @@ import Datastore, { Schema, Table } from '@ulixee/datastore';
 const { string } = Schema;
 
 export default new Datastore({
+  id: `people`,
+  version: '1.0.0',
   tables: {
     users: new Table({
       schema: {
@@ -38,7 +40,7 @@ import Datastore, { PassthroughTable } from '@ulixee/datastore';
 const datastore = new Datastore({
   // NOTE: this is not a real hosted Datastore
   remoteDatastores: {
-    source: `ulx://153.23.22.255:8080/dbx1tn43ect3qkwg0patvq`,
+    source: `ulx://153.23.22.255:8080/people/1.0.0`,
   },
   tables: {
     table2: new PassthroughTable({

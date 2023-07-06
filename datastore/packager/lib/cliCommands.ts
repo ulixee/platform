@@ -1,20 +1,16 @@
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeConfig from '@ulixee/commons/config';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
-import { findProjectPathSync } from '@ulixee/commons/lib/dirUtils';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
+import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import Identity from '@ulixee/crypto/lib/Identity';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
-import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { execSync } from 'child_process';
 import * as Fs from 'fs';
-import { existsSync } from 'fs';
 import * as Path from 'path';
-import { createInterface } from 'readline';
 import { inspect } from 'util';
 import DatastorePackager from '../index';
 import { version } from '../package.json';
@@ -116,20 +112,12 @@ async function upload(
   });
   try {
     await dbx.upload(cloudHost, {
-      allowNewLinkedVersionHistory: clearVersionHistory,
       identity,
     });
     console.log('Your Datastore has been uploaded!');
   } catch (error) {
-    console.log(error);
-    if (error.code === 'ERR_INVALID_SCRIPT_VERSION_HISTORY' && error.versionHistory) {
-      handleInvalidScriptVersionHistory(manifest, dbx, error.versionHistory, cloudHost);
-    } else if (error.code === 'ERR_MISSING_VERSIONS' && error.previousVersions) {
-      handleMissingLinkedVersions(manifest, dbx, error.previousVersions, cloudHost);
-    } else {
-      console.error(error.message, error.stack);
-      process.exit(1);
-    }
+    console.error(error.message, error.stack);
+    process.exit(1);
   }
 
   try {
@@ -139,7 +127,8 @@ async function upload(
       `${JSON.stringify(<IDatastoreDeployLogEntry>{
         scriptEntrypoint: manifest.scriptEntrypoint,
         cloudHost,
-        versionHash: manifest.versionHash,
+        datastoreId: manifest.id,
+        version: manifest.version,
         adminIdentity: identity?.bech32,
         timestamp: manifest.versionTimestamp,
       })}\n`,
@@ -164,7 +153,7 @@ export async function startDatastore(
     tsconfig: options.tsconfig,
     compiledSourcePath: options.compiledSourcePath,
     watch: options.watch,
-    createTemporaryVersionHash: true,
+    createTemporaryVersion: true,
   });
 
   let host = UlixeeHostsConfig.global.getVersionHost(version);
@@ -181,15 +170,22 @@ export async function startDatastore(
   if (!host.includes('://')) host = `ulx://${host}`;
 
   const client = new DatastoreApiClient(host);
-  await client.startDatastore(dbx.path, options.watch);
+  await client.startDatastore(dbx.manifest.id, dbx.path, options.watch);
   const dbxPath = dbx.path;
   ShutdownHandler.register(() => {
     Fs.rmSync(dbxPath, { recursive: true });
     return client.disconnect();
   });
 
+  if (packager.manifest.id.startsWith('tmp')) {
+    console.log(
+      "Assigning a temporary id & version to your Datastore. You'll want to update your Datastore with a permanent id before deploying",
+      { temporaryId: packager.manifest.id, version: '0.0.1' },
+    );
+  }
+
   console.log('%s Datastore', options.watch ? 'Started + watching' : 'Started', {
-    connectionString: `${host}/${packager.manifest.versionHash}`,
+    connectionString: `${host}/${packager.manifest.id}/${packager.manifest.version}`,
   });
 
   if (options.showDocs) {
@@ -198,111 +194,11 @@ export async function startDatastore(
 }
 
 function openDocsPage(manifest: DatastoreManifest, cloudHost: string): void {
-  let url = `http://${cloudHost}/${manifest.versionHash}/`;
+  let url = `http://${cloudHost}/${manifest.version}/`;
   if (manifest.domain) url = `http://${manifest.domain}/`;
   let openCommand = 'xdg-open';
   if (process.platform === 'darwin') openCommand = 'open';
   if (process.platform === 'win32') openCommand = 'start';
 
   execSync(`${openCommand} ${url}`);
-}
-
-function handleMissingLinkedVersions(
-  manifest: DatastoreManifest,
-  dbxFile: Dbx,
-  versionHistory: IVersionHistoryEntry[],
-  cloudHost: string,
-): void {
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  rl.question(
-    `You uploaded a script without any linked versions, but the entrypoint "${manifest.scriptEntrypoint}" matches an existing Datastore on the Cloud. 
-        
->> To link versions on the Cloud with your local Datastore, please type "link".
->> To create a new version list, please type "new".
-
-`,
-    async answer => {
-      if (answer.toLowerCase().includes('link')) {
-        const projectPath = findProjectPathSync(dbxFile.path);
-        const absoluteScriptPath = Path.join(projectPath, '..', manifest.scriptEntrypoint);
-        await manifest.setLinkedVersions(absoluteScriptPath, versionHistory);
-        await dbxFile.upload(cloudHost);
-        console.log('Your Datastore has been linked to the Cloud version!');
-      }
-      if (answer.toLowerCase().includes('new')) {
-        await dbxFile.upload(cloudHost, { allowNewLinkedVersionHistory: true });
-        console.log('Your updated Datastore has been uploaded with a new history.');
-      }
-      rl.close();
-    },
-  );
-}
-
-function handleInvalidScriptVersionHistory(
-  manifest: DatastoreManifest,
-  dbxFile: Dbx,
-  versionHistory: IVersionHistoryEntry[],
-  cloudHost: string,
-): void {
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  const projectPath = findProjectPathSync(dbxFile.path);
-  const absoluteScriptPath = Path.join(projectPath, '..', manifest.scriptEntrypoint);
-  const customManifestPath = absoluteScriptPath.replace(
-    Path.extname(absoluteScriptPath),
-    '-manifest.json',
-  );
-
-  rl.question(
-    `The uploaded Datastore has a different version history than your local version. 
-        
-You can choose from the options below to link to the existing Cloud versions or create a new Datastore manifest at:
-
-  ${customManifestPath}
-  
->> To link the version history on the Cloud with your local Datastore, please type "link".
->> To add a custom manifest to your project, type "custom".
-
-`,
-    async answer => {
-      if (answer.toLowerCase().includes('link')) {
-        await manifest.setLinkedVersions(absoluteScriptPath, versionHistory);
-        await dbxFile.upload(cloudHost);
-        console.log(
-          'Your updated Datastore has been uploaded and linked to the Cloud version history!',
-        );
-      }
-      if (answer.toLowerCase().includes('custom')) {
-        if (!existsSync(Path.dirname(absoluteScriptPath))) {
-          throw new Error(
-            `Could not locate a path to save a custom manifest file\n\n(tried: "${absoluteScriptPath}")`,
-          );
-        }
-        const newManifest = new DatastoreManifest(customManifestPath);
-        await newManifest.update(
-          absoluteScriptPath,
-          manifest.scriptHash,
-          manifest.versionTimestamp,
-          manifest.schemaInterface,
-          manifest.extractorsByName,
-          manifest.crawlersByName,
-          manifest.tablesByName,
-          manifest,
-          console.log,
-        );
-        await newManifest.save();
-        console.log(
-          'New manifest saved at %s. Please modify the manifest as needed and re-deploy your Datastore.',
-          customManifestPath,
-        );
-      }
-      rl.close();
-    },
-  );
 }

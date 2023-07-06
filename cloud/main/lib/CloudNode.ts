@@ -100,6 +100,7 @@ export default class CloudNode {
   }
 
   private isClosing: Promise<any>;
+  private isStarting: Resolvable<this>;
   private isReady = new Resolvable<void>();
   private didReservePort = false;
 
@@ -148,7 +149,9 @@ export default class CloudNode {
   }
 
   public async listen(): Promise<this> {
+    if (this.isStarting) return this.isStarting;
     const startLogId = log.info('CloudNode.start');
+    this.isStarting = new Resolvable<this>();
 
     try {
       await this.startPublicServer();
@@ -161,6 +164,7 @@ export default class CloudNode {
       // wait until router is registered before accepting traffic
       this.isReady.resolve();
     } finally {
+      this.isStarting.resolve(this);
       log.stats('CloudNode.started', {
         publicHost: await this.publicServer.host,
         hostedServicesHost: await this.hostedServicesServer?.host,

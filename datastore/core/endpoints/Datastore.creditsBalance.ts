@@ -7,12 +7,14 @@ export default new DatastoreApiHandler('Datastore.creditsBalance', {
     request,
     context,
   ): Promise<IDatastoreApiTypes['Datastore.creditsBalance']['result']> {
-    const datastoreVersion = await context.datastoreRegistry.getByVersionHash(
-      request.datastoreVersionHash,
+    const datastoreVersion = await context.datastoreRegistry.get(
+      request.id,
+      request.version,
     );
     const storage = context.storageEngineRegistry.get(datastoreVersion, {
-      versionHash: request.datastoreVersionHash,
-      id: context.connectionToClient?.transport.remoteId ?? 'creditsBalance',
+      id: request.id,
+      version: request.version,
+      queryId: context.connectionToClient?.transport.remoteId ?? 'creditsBalance',
     });
     const datastore = await context.vm.open(
       datastoreVersion.runtimePath,

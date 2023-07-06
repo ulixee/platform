@@ -1,6 +1,7 @@
 export default interface IQueryLogEntry {
-  id: string;
-  versionHash: string;
+  queryId: string;
+  datastoreId: string;
+  version: string;
   date: Date;
   query: string;
   input: any;

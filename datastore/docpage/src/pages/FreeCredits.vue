@@ -26,7 +26,7 @@
           import Client from '@ulixee/client';
 
           (async function run() {
-            const client = new Client(`ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{ config.versionHash }}`);
+            const client = new Client(`ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{config.datastoreId}}/{{ config.version }}`);
             const records = await client.query(`SELECT * FROM {{defaultExample.formatted}}`, {{JSON.stringify(Object.values(defaultExample.args))}});
             console.log(records);
           })().catch(error => console.log(error));
@@ -77,7 +77,8 @@ export default Vue.defineComponent({
       if (json) {
         const { issuedCredits, balance } = json;
         if (Number.isInteger(issuedCredits)) {
-          credits.value.issuedCredits = issuedCredits > 0 ? Math.round((1000 * issuedCredits) / 10_000) / 1000 : 0;
+          credits.value.issuedCredits =
+            issuedCredits > 0 ? Math.round((1000 * issuedCredits) / 10_000) / 1000 : 0;
         }
         if (Number.isInteger(balance)) {
           credits.value.balance = balance > 0 ? Math.round((1000 * balance) / 10_000) / 1000 : 0;
@@ -93,7 +94,7 @@ export default Vue.defineComponent({
       defaultExample: (config as unknown as IDocpageConfig).defaultExample,
       ipAddress,
       port,
-      credits
+      credits,
     };
   },
 

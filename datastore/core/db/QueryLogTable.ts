@@ -9,8 +9,9 @@ export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
       db as any,
       'QueryLog',
       [
-        ['id', 'TEXT', 'NOT NULL PRIMARY KEY'],
-        ['versionHash', 'TEXT', 'NOT NULL'],
+        ['queryId', 'TEXT', 'NOT NULL PRIMARY KEY'],
+        ['datastoreId', 'TEXT', 'NOT NULL'],
+        ['version', 'TEXT', 'NOT NULL'],
         ['query', 'TEXT', 'NOT NULL'],
         ['date', 'DATETIME', 'NOT NULL'],
         ['input', 'TEXT'],
@@ -31,8 +32,9 @@ export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
   }
 
   public record(
-    id: string,
-    versionHash: string,
+    queryId: string,
+    datastoreId: string,
+    version: string,
     query: string,
     startTime: number,
     affiliateId: string,
@@ -51,8 +53,9 @@ export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
     microgons ??= 0;
 
     this.insertNow([
-      id,
-      versionHash,
+      queryId,
+      datastoreId,
+      version,
       query,
       startTime,
       input ? TypeSerializer.stringify(input) : undefined,

@@ -1,24 +1,12 @@
 // eslint-disable-next-line max-classes-per-file
-import { registerSerializableErrorType } from '@ulixee/commons/lib/TypeSerializer';
 import { UlixeeError } from '@ulixee/commons/lib/errors';
-import { IVersionHistoryEntry } from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { registerSerializableErrorType } from '@ulixee/commons/lib/TypeSerializer';
 
 export class DatastoreNotFoundError extends Error {
   public code = 'ERR_DATASTORE_NOT_FOUND';
-  constructor(
-    message: string,
-    readonly data?: { versionHash?: string; latestVersionHash?: string },
-  ) {
+  constructor(message: string, readonly data?: { version?: string; latestVersion?: string }) {
     super(message);
     this.name = 'DatastoreNotFoundError';
-  }
-}
-
-export class InvalidScriptVersionHistoryError extends Error {
-  public code = 'ERR_INVALID_SCRIPT_VERSION_HISTORY';
-  constructor(message: string, readonly versionHistory?: IVersionHistoryEntry[]) {
-    super(message);
-    this.name = 'InvalidScriptVersionHistoryError';
   }
 }
 
@@ -35,14 +23,6 @@ export class InvalidPermissionsError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'InvalidPermissionsError';
-  }
-}
-
-export class MissingLinkedScriptVersionsError extends Error {
-  public code = 'ERR_MISSING_VERSIONS';
-  constructor(message: string, readonly previousVersions?: IVersionHistoryEntry[]) {
-    super(message);
-    this.name = 'MissingLinkedScriptVersionsError';
   }
 }
 
@@ -111,8 +91,6 @@ export class MaxSurgePricePerQueryExceeededError extends UlixeeError {
   }
 }
 
-registerSerializableErrorType(MissingLinkedScriptVersionsError);
-registerSerializableErrorType(InvalidScriptVersionHistoryError);
 registerSerializableErrorType(DatastoreNotFoundError);
 registerSerializableErrorType(MaxSurgePricePerQueryExceeededError);
 registerSerializableErrorType(InsufficientQueryPriceError);

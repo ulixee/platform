@@ -19,32 +19,36 @@ beforeAll(async () => {
     Fs.rmSync(`${__dirname}/datastores/directExtractor.dbx`, { recursive: true });
   }
 
-  cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
-    datastoresDir: storageDir,
-    datastoresTmpDir: Path.join(storageDir, 'tmp'),
-  };
-  await cloudNode.listen();
+  cloudNode = await Helpers.createLocalNode(
+    {
+      datastoreConfiguration: {
+        datastoresDir: storageDir,
+        datastoresTmpDir: Path.join(storageDir, 'tmp'),
+      },
+    },
+    true,
+  );
   client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 });
 
-afterAll(async () => {
-  await cloudNode.close();
-  await Helpers.afterAll();
-  if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
-});
+afterEach(Helpers.afterEach);
+afterAll(Helpers.afterAll);
 
 test('should be able to query a datastore extractor', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/query.js`);
   await packager.build();
   await client.upload(await packager.dbx.tarGzip());
   await expect(
-    client.query(packager.manifest.versionHash, 'SELECT success FROM query()'),
+    client.query(
+      packager.manifest.id,
+      packager.manifest.version,
+      'SELECT success FROM query()',
+    ),
   ).resolves.toEqual({
     outputs: [{ success: true }],
     metadata: expect.any(Object),
-    latestVersionHash: expect.any(String),
+    latestVersion: expect.any(String),
   });
 });
 
@@ -63,25 +67,39 @@ test('should be able to require authentication for a datastore', async () => {
   await client.upload(await packager.dbx.tarGzip());
   const auth = DatastoreApiClient.createExecAuthentication(null, id);
   await expect(
-    client.query(packager.manifest.versionHash, 'select * from authme()'),
+    client.query(
+      packager.manifest.id,
+      packager.manifest.version,
+      'select * from authme()',
+    ),
   ).rejects.toThrow('authentication');
 
   await expect(
-    client.query(packager.manifest.versionHash, 'select * from authme()', { authentication: auth }),
+    client.query(
+      packager.manifest.id,
+      packager.manifest.version,
+      'select * from authme()',
+      { authentication: auth },
+    ),
   ).resolves.toBeTruthy();
 });
 
 test('should be able to query a function packaged without a datastore', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/directExtractor.js`);
-  await packager.build();
+  await packager.build({ createTemporaryVersion: true });
   await client.upload(await packager.dbx.tarGzip());
   await expect(
-    client.query(packager.manifest.versionHash, 'SELECT testerEcho FROM default(tester => $1)', {
-      boundValues: [false],
-    }),
+    client.query(
+      packager.manifest.id,
+      packager.manifest.version,
+      'SELECT testerEcho FROM default(tester => $1)',
+      {
+        boundValues: [false],
+      },
+    ),
   ).resolves.toEqual({
     outputs: [{ testerEcho: false }],
     metadata: expect.any(Object),
-    latestVersionHash: expect.any(String),
+    latestVersion: expect.any(String),
   });
 });

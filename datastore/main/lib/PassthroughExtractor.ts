@@ -12,8 +12,8 @@ export interface IPassthroughExtractorComponents<
   TRemoteSources extends Record<string, string>,
   TExtractorName extends string,
   TSchema extends IExtractorSchema = IExtractorSchema<any, any>,
-  TContext extends IExtractorContext<TSchema> & IDatastoreExecRelayArgs = IExtractorContext<TSchema> &
-    IDatastoreExecRelayArgs,
+  TContext extends IExtractorContext<TSchema> &
+    IDatastoreExecRelayArgs = IExtractorContext<TSchema> & IDatastoreExecRelayArgs,
 > {
   remoteExtractor: `${keyof TRemoteSources & string}.${TExtractorName}`;
   upcharge?: number;
@@ -31,7 +31,8 @@ export default class PassthroughExtractor<
   TPlugin2 extends IExtractorPluginConstructor<TSchema> = IExtractorPluginConstructor<TSchema>,
   TPlugin3 extends IExtractorPluginConstructor<TSchema> = IExtractorPluginConstructor<TSchema>,
   TOutput extends ExtractSchemaType<TSchema['output']> = ExtractSchemaType<TSchema['output']>,
-  TContext extends IExtractorContext<TSchema> & IDatastoreExecRelayArgs = IExtractorContext<TSchema> &
+  TContext extends IExtractorContext<TSchema> &
+    IDatastoreExecRelayArgs = IExtractorContext<TSchema> &
     TPlugin1['contextAddons'] &
     TPlugin2['contextAddons'] &
     TPlugin3['contextAddons'] &
@@ -39,7 +40,8 @@ export default class PassthroughExtractor<
 > extends Extractor<TSchema, TPlugin1, TPlugin2, TPlugin3, TContext> {
   public readonly remoteSource: string;
   public readonly remoteExtractor: string;
-  public datastoreVersionHash: string;
+  public remoteDatastoreId: string;
+  public remoteVersion: string;
 
   protected upstreamClient: DatastoreApiClient;
   protected readonly passThroughComponents: IPassthroughExtractorComponents<
@@ -87,7 +89,8 @@ export default class PassthroughExtractor<
     }
 
     const queryResult = this.upstreamClient.stream<{ output: TOutput; input: any }>(
-      this.datastoreVersionHash,
+      this.remoteDatastoreId,
+      this.remoteVersion,
       this.remoteExtractor,
       context.input,
       {
@@ -125,10 +128,10 @@ export default class PassthroughExtractor<
     const finalResult = await queryResult.resultMetadata;
     if (finalResult instanceof Error) throw finalResult;
 
-    if (finalResult.latestVersionHash !== this.datastoreVersionHash) {
-      console.warn('Newer Datastore VersionHash is available', {
-        newVersionHash: finalResult.latestVersionHash,
-        usingVersionHash: this.datastoreVersionHash,
+    if (finalResult.latestVersion !== this.remoteVersion) {
+      console.warn('Newer Datastore Version is available', {
+        newVersion: finalResult.latestVersion,
+        usingVersion: this.remoteVersion,
         host: this.passThroughComponents.remoteExtractor,
       });
     }
@@ -143,11 +146,13 @@ export default class PassthroughExtractor<
     assert(remoteDatastore, `A remote datastore source could not be found for ${remoteSource}`);
 
     try {
-      this.datastoreVersionHash = remoteDatastore.split('/').pop();
+      const [datastoreId, datastoreVersion] = remoteDatastore.split('/').slice(-2);
+      this.remoteDatastoreId = datastoreId;
+      this.remoteVersion = datastoreVersion;
       this.upstreamClient = this.datastoreInternal.createApiClient(remoteDatastore);
     } catch (error) {
       throw new Error(
-        'A valid url was not supplied for this remote datastore. Format should be ulx://<host>/<datastoreVersionHash>',
+        'A valid url was not supplied for this remote datastore. Format should be ulx://<host>/<datastoreVersion>',
       );
     }
   }

@@ -1,10 +1,10 @@
 import { readFileAsJson } from '@ulixee/commons/lib/fileUtils';
-import Identity from '@ulixee/crypto/lib/Identity';
 import { InvalidSignatureError } from '@ulixee/crypto/lib/errors';
+import Identity from '@ulixee/crypto/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import IDatastoreApiTypes from '@ulixee/platform-specification/datastore/DatastoreApis';
-import { promises as Fs } from 'fs';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { promises as Fs } from 'fs';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import { IDatastoreSourceDetails } from '../lib/DatastoreRegistryDiskStore';
@@ -19,7 +19,6 @@ export default new DatastoreApiHandler('Datastore.createStorageEngine', {
     if (needsValidSignatures) {
       verifySignature(
         version.compressedDbx,
-        version.allowNewLinkedVersionHistory,
         version.adminIdentity,
         version.adminSignature,
         'uploaded "version"',
@@ -27,7 +26,6 @@ export default new DatastoreApiHandler('Datastore.createStorageEngine', {
       if (previousVersion)
         verifySignature(
           previousVersion.compressedDbx,
-          previousVersion.allowNewLinkedVersionHistory,
           previousVersion.adminIdentity,
           previousVersion.adminSignature,
           'uploaded "previousVersion"',
@@ -60,10 +58,9 @@ async function install(
       );
     }
 
-    const { adminIdentity, adminSignature, allowNewLinkedVersionHistory } = version;
+    const { adminIdentity, adminSignature } = version;
     // install will trigger storage engine installation
     const sourceDetails: IDatastoreSourceDetails = {
-      host: context.connectionToClient?.transport.remoteId,
       source: 'upload:create-storage',
       adminIdentity,
       adminSignature,
@@ -72,7 +69,6 @@ async function install(
       tmpVersionDir,
       {
         adminIdentity,
-        allowNewLinkedVersionHistory,
         hasServerAdminIdentity: configuration.cloudAdminIdentities.includes(adminIdentity ?? '-1'),
       },
       sourceDetails,
@@ -88,15 +84,11 @@ async function install(
 
 function verifySignature(
   compressedDbx: Buffer,
-  allowNewLinkedVersion: boolean,
   adminIdentity: string,
   adminSignature: Buffer,
   name: string,
 ): void {
-  const message = DatastoreApiClient.createUploadSignatureMessage(
-    compressedDbx,
-    allowNewLinkedVersion,
-  );
+  const message = DatastoreApiClient.createUploadSignatureMessage(compressedDbx);
   if (!Identity.verify(adminIdentity, message, adminSignature)) {
     throw new InvalidSignatureError(
       `This ${name} Datastore did not have a valid AdminIdentity signature.`,

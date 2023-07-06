@@ -3,6 +3,7 @@ import Log from '@ulixee/commons/lib/Logger';
 import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
 import DatastoreCore from '@ulixee/datastore-core';
+import ExtractorInternal from '@ulixee/datastore/lib/ExtractorInternal';
 import { IChromeAliveSessionApis, IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
 import IAppApi from '@ulixee/desktop-interfaces/apis/IAppApi';
 import IChromeAliveSessionEvents from '@ulixee/desktop-interfaces/events/IChromeAliveSessionEvents';
@@ -84,7 +85,7 @@ export default class DesktopCore {
     transport: ITransport,
     request: IncomingMessage,
   ): Promise<IConnectionToClient<IChromeAliveSessionApis, IChromeAliveSessionEvents>> {
-    const chromeAliveMatch = request.url.match(/\/chromealive\/([0-9a-zA-Z-_]{6,21}).*/);
+    const chromeAliveMatch = request.url.match(/\/chromealive\/([0-9a-zA-Z-_]{6,}).*/);
     if (chromeAliveMatch) {
       const heroSessionId = chromeAliveMatch[1];
       const controller = this.sessionControllersById.get(heroSessionId);
@@ -119,7 +120,9 @@ export default class DesktopCore {
       'Sessions.list': this.heroSessionsSearch.list,
       // NOTE: we proxy through some core apis here just to minimize necessary connections
       'Datastores.list': this.delegateToDatastoreCore.bind(this, 'Datastores.list'),
-      'Datastore.meta': this.delegateToDatastoreCore.bind(this, 'Datastore.meta'),
+      'Datastore.meta': this.getDatastoreMetaWithExamples.bind(this),
+      'Datastore.stats': this.delegateToDatastoreCore.bind(this, 'Datastore.stats'),
+      'Datastore.versions': this.delegateToDatastoreCore.bind(this, 'Datastore.versions'),
       'Datastore.creditsIssued': this.delegateToDatastoreCore.bind(this, 'Datastore.creditsIssued'),
     });
 
@@ -189,7 +192,7 @@ export default class DesktopCore {
   }
 
   public async shutdown(): Promise<void> {
-    log.info('Shutting down ChromeAlive!');
+    log.info('Shutting down Desktop Core!');
 
     for (const connection of this.appConnectionsById.values()) {
       connection.sendEvent({ eventType: 'App.quit', data: null });
@@ -200,6 +203,7 @@ export default class DesktopCore {
       await controller.close();
     }
     this.sessionControllersById.clear();
+    await this.heroSessionsSearch.close();
   }
 
   private async onHeroSessionCreated(event: { session: HeroSession }): Promise<void> {
@@ -309,6 +313,35 @@ export default class DesktopCore {
     });
   }
 
+  private async getDatastoreMetaWithExamples(
+    args: IDatastoreApiTypes['Datastore.meta']['args'],
+  ): Promise<
+    IDatastoreApiTypes['Datastore.meta']['result'] & {
+      examplesByEntityName: { [name: string]: { formatted: string; args: Record<string, any> } };
+    }
+  > {
+    const meta = (await this.delegateToDatastoreCore('Datastore.meta', args)) as Awaited<
+      ReturnType<DesktopCore['getDatastoreMetaWithExamples']>
+    >;
+    meta.examplesByEntityName = {};
+    for (const [name, entry] of [
+      ...Object.entries(meta.crawlersByName),
+      ...Object.entries(meta.extractorsByName),
+    ]) {
+      meta.examplesByEntityName[name] = ExtractorInternal.createExampleCall(
+        name,
+        entry.schemaAsJson,
+      );
+    }
+    for (const name of Object.keys(meta.tablesByName)) {
+      meta.examplesByEntityName[name] = {
+        formatted: name,
+        args: {},
+      };
+    }
+    return meta;
+  }
+
   private delegateToCloudCore<TCommand extends keyof ICloudApiTypes & string>(
     command: TCommand,
     args: ICloudApiTypes[TCommand]['args'],
@@ -327,13 +360,14 @@ export default class DesktopCore {
     const requestUrl = new URL(request.url, 'http://localhost');
     const customDbPath = requestUrl.searchParams.get('path');
 
-    const db = await this.heroCore.sessionRegistry.get(heroSessionId, customDbPath);
+    const db = await this.heroCore.sessionRegistry.retain(heroSessionId, customDbPath);
     const dbSession = db.session.get();
     const options = await Session.restoreOptionsFromSessionRecord({}, heroSessionId, this.heroCore);
 
     options.scriptInvocationMeta = {
       entrypoint: dbSession.scriptEntrypoint,
       runId: dbSession.scriptRunId,
+      productId: dbSession.scriptProductId,
       version: dbSession.scriptVersion,
       runtime: dbSession.scriptRuntime,
       workingDirectory: dbSession.workingDirectory,

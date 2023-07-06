@@ -24,5 +24,5 @@ export default interface IStorageEngine {
 
 export type TQueryCallMeta = Pick<
   IDatastoreApiTypes['Datastore.queryStorageEngine']['args'],
-  'authentication' | 'payment' | 'versionHash' | 'id'
+  'authentication' | 'payment' | 'id' | 'version' | 'queryId'
 >;

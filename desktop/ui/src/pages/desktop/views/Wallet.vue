@@ -58,7 +58,7 @@
               class="flex flex-row items-stretch p-2"
             >
               <div class="basis-1/2 text-base font-light">
-                Credit at {{ getDatastoreName(credit.datastoreVersionHash) }}
+                Credit at {{ getDatastoreName(credit.datastoreId, credit.datastoreVersion) }}
               </div>
               <div class="basis-1/2 text-lg">
                 {{ toArgons(credit.remainingBalance, true) }}
@@ -90,13 +90,13 @@ export default Vue.defineComponent({
     };
   },
   methods: {
-    getDatastoreName(versionHash: string): string {
+    getDatastoreName(datastoreId: string): string {
       const datastoresStore = useDatastoreStore();
-      const datastore = datastoresStore.datastoresByVersion[versionHash]?.summary;
+      const datastore = datastoresStore.datastoresById[datastoreId]?.summary;
       return (
         datastore?.name ??
         datastore?.scriptEntrypoint ??
-        `a not-installed Datastore (${versionHash})`
+        `a not-installed Datastore (${datastoreId})`
       );
     },
   },

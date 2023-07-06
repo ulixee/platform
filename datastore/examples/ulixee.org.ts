@@ -2,14 +2,15 @@ import Datastore, { Extractor } from '@ulixee/datastore';
 import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 import { string } from '@ulixee/schema';
 
-export default new Datastore({
+/**
+ * 1. We wrapped the script in a Datastore.
+ */
+const datastore = new Datastore({
   name: 'Tutorial',
-  description: 'This is the example used in the Getting Started guide',
-  /**
-   * Configuring admin access.
-   */
-  adminIdentities: ['id13dheud78gd9am7azwmwu7rhds4n2xptpepzchlwmm54j5scq8flql4g0ql'],
   extractors: {
+    /**
+     * 1b. We created a Extractor called docsPages.
+     */
     docPages: new Extractor(
       {
         pricePerQuery: 10_000,
@@ -21,6 +22,9 @@ export default new Datastore({
           const links = await hero.querySelectorAll('.LEFTBAR a');
 
           for (const link of await links) {
+            /**
+             * 2. We replaced console.log with Output.
+             */
             Output.emit({
               title: await link.innerText,
               href: await link.href,
@@ -29,6 +33,9 @@ export default new Datastore({
 
           await hero.close();
         },
+        /**
+         * 3. We defined the schema of the Extractor function.
+         */
         schema: {
           input: {
             tool: string({
@@ -45,3 +52,5 @@ export default new Datastore({
     ),
   },
 });
+
+export default datastore;
