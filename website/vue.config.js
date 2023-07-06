@@ -6,7 +6,7 @@ module.exports = {
       entry: './src/main.ts',
       template: './public/index.html',
       filename: 'index.html',
-      title: 'Ulixee, The Open Data Platform'
+      title: 'Ulixee, The Open Data Platform',
     },
   },
   chainWebpack: config => {

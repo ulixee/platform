@@ -3,8 +3,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'ulixee-normal': '#AE33B0',
+        'ulixee-darker': '#8D0094',
+        'ulixee-purple': '#B700C0',
+        'ulixee-lighter': '#D973DF',
         'ulixee-verylight': '#F6EDF7',
+        'ulixee-lightest': '#FCF6FD',
       }
     }
   },

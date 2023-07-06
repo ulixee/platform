@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg preserveAspectRatio="none" viewBox="0 0 1440 215" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg viewBox="0 0 1440 215" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <title>clouds</title>
     <defs>
         <rect id="path-1" x="0" y="0" width="1440" height="214"></rect>
@@ -44,9 +44,9 @@
             <stop stop-color="#F3F8F9" offset="100%"></stop>
         </linearGradient>
     </defs>
-    <g id="Products" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="Homepage-Copy" transform="translate(0.000000, -4422.000000)">
-            <g id="clouds" transform="translate(0.000000, 4422.785543)">
+    <g id="Website" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Datanet" transform="translate(0, -4664)">
+            <g id="clouds" transform="translate(0, 4664.1417)">
                 <mask id="mask-2" fill="white">
                     <use xlink:href="#path-1"></use>
                 </mask>
@@ -55,7 +55,7 @@
                     <use fill="black" fill-opacity="1" filter="url(#filter-5)" xlink:href="#path-4"></use>
                     <use fill="url(#linearGradient-3)" fill-rule="evenodd" xlink:href="#path-4"></use>
                 </g>
-                <g id="Fill-1" mask="url(#mask-2)" transform="translate(96.561165, 148.314159) scale(-1, 1) translate(-96.561165, -148.314159) ">
+                <g id="Fill-1" mask="url(#mask-2)" transform="translate(96.5612, 148.3142) scale(-1, 1) translate(-96.5612, -148.3142)">
                     <use fill="black" fill-opacity="1" filter="url(#filter-8)" xlink:href="#path-7"></use>
                     <use fill="url(#linearGradient-6)" fill-rule="evenodd" xlink:href="#path-7"></use>
                 </g>
@@ -64,7 +64,7 @@
                     <use fill="url(#linearGradient-9)" fill-rule="evenodd" xlink:href="#path-10"></use>
                 </g>
                 <g id="Group-5" mask="url(#mask-2)">
-                    <g transform="translate(733.000000, 107.466529)">
+                    <g transform="translate(733, 107.4665)">
                         <mask id="mask-14" fill="white">
                             <use xlink:href="#path-13"></use>
                         </mask>

@@ -80,7 +80,7 @@
       box-shadow: 1px 1px 10px rgba(44, 4, 50, 0.2);
       transition: background .3s, box-shadow .3s;
       font-size: 14.85px;
-      @apply bg-white border border-ulixee-normal;
+      @apply bg-white border border-ulixee-purple;
 
       &:focus {
         outline: 0;
@@ -91,7 +91,7 @@
     .SEARCH-ICON {
       margin-left: -1.66rem;
       pointer-events: none;
-      @apply relative inline-block text-ulixee-normal;
+      @apply relative inline-block text-ulixee-purple;
     }
 
     @media screen and (max-width: 550px) {
@@ -108,6 +108,14 @@
 
     .algolia-autocomplete {
       width: 100%;
+      a {
+        text-decoration: none;
+      }
+      .ds-dropdown-menu {
+        max-width: none;
+        width: 100%;
+        top: 93% !important;
+      }
     }
   }
 

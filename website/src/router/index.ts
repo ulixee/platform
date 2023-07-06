@@ -1,26 +1,5 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import Index from '../pages/Index.vue';
-import Documentation from '../pages/Documentation.vue';
-
-const _roadmapNames = [
-  'Argon',
-  'Bonds',
-  'ChromeAlive',
-  'Pipeline',
-  'Datastore',
-  'Domain',
-  'DoubleAgent',
-  'Hero',
-  'Manager',
-  'Marketplace',
-  'NFTs',
-  'Stream',
-  'ScraperReport',
-  'Cloud',
-  'Sidechain',
-];
-
-const releasedToolNames = ['Hero', 'ChromeAlive', 'Datastore', 'Cloud', 'Stream'];
 
 const basicRoutes: Array<RouteRecordRaw> = [
   {
@@ -28,33 +7,118 @@ const basicRoutes: Array<RouteRecordRaw> = [
     component: Index,
   },
   {
-    path: '/getting-started',
-    component: () => import('../pages/GettingStarted.vue'),
+    path: '/datanet/overview',
+    redirect: '/datanet',
   },
   {
-    path: '/developer-environment',
-    component: () => import('../pages/DeveloperEnvironment.vue'),
+    path: '/datanet',
+    component: () => import('../pages/datanet/Index.vue'),
   },
   {
-    path: '/unblocked',
-    component: () => import('../pages/Unblocked.vue'),
+    path: '/datanet/getting-started',
+    component: () => import('../pages/datanet/GettingStarted.vue'),
   },
   {
-    path: '/roadmap',
-    component: () => import('../pages/roadmap/Index.vue'),
+    path: '/datanet/developer-environment',
+    component: () => import('../pages/datanet/DeveloperEnvironment.vue'),
   },
   {
-    path: '/code-of-conduct',
-    component: () => import('../pages/contribute/CodeOfConduct.vue'),
+    path: '/datanet/unblocked',
+    component: () => import('../pages/datanet/Unblocked.vue'),
   },
   {
-    path: '/how-to-contribute',
-    component: () => import('../pages/contribute/HowToContribute.vue'),
+    path: '/datanet/code-of-conduct',
+    component: () => import('../pages/datanet/contribute/CodeOfConduct.vue'),
   },
   {
-    path: '/docs/:docsPath(.+)',
-    component: Documentation,
+    path: '/datanet/how-to-contribute',
+    component: () => import('../pages/datanet/contribute/HowToContribute.vue'),
   },
+  {
+    path: '/datanet/documentation/:docsPath(.+)',
+    component: () => import('../pages/datanet/Documentation.vue'),
+  },
+  {
+    path: '/datanet/brokers',
+    component: Index,
+  },
+  {
+    path: '/datanet/tools',
+    component: Index,
+  },
+  {
+    path: '/featured/:websiteName(.+)',
+    component: Index,
+  },
+
+  // MAINCHAIN
+  {
+    path: '/mainchain/overview',
+    redirect: '/mainchain',
+  },
+  {
+    path: '/mainchain',
+    component: () => import('../pages/mainchain/Index.vue'),
+  },
+  {
+    path: '/mainchain/blocks',
+    component: () => import('../pages/mainchain/entities/Blocks.vue'),
+  },
+  {
+    path: '/mainchain/notaries',
+    component: () => import('../pages/mainchain/entities/Notaries.vue'),
+  },
+  {
+    path: '/mainchain/miners',
+    component: () => import('../pages/mainchain/entities/Miners.vue'),
+  },
+  {
+    path: '/mainchain/kademlia',
+    component: () => import('../pages/mainchain/entities/Kademlia.vue'),
+  },
+
+  // ARGON
+  {
+    path: '/argon/overview',
+    redirect: '/argon',
+  },
+  {
+    path: '/argon',
+    component: () => import('../pages/argon/Index.vue'),
+  },
+
+  // ECONOMY
+  {
+    path: '/economy',
+    component: () => import('../pages/economy/Index.vue'),
+  },
+
+  // DOCUMENTATION
+  {
+    path: '/documentation',
+    component: () => import('@/pages/documentation/Index.vue'),
+  },
+  {
+    path: '/documentation/:docsPath(.+)',
+    component: () => import('@/pages/documentation/Template.vue'),
+  },
+
+  // DISPATCHES
+  {
+    path: '/dispatches',
+    component: () => import('../pages/dispatches/Index.vue'),
+  },
+  {
+    path: '/dispatches/hello-world',
+    component: () => import('../pages/dispatches/posts/HelloWorld.vue'),
+  },
+
+  // PULSE
+  {
+    path: '/pulse',
+    component: () => import('@/pages/pulse/Index.vue'),
+  },
+
   // ...roadmapNames.map(x => {
   //   return {
   //     path: `/roadmap/${x.toLowerCase()}`,
@@ -64,19 +128,19 @@ const basicRoutes: Array<RouteRecordRaw> = [
 ];
 
 const productRoutes: Array<RouteRecordRaw> = [];
-releasedToolNames.forEach(x => {
+['Hero', 'Datastore', 'Cloud', 'SQL', 'Client', 'Domains', 'Desktop', 'Stream'].forEach(x => {
   const productKey = x.toLowerCase();
   productRoutes.push({
     path: `/${productKey}`,
-    component: () => import(`../pages/data-tools/${productKey}/Index.vue`),
+    component: () => import(`../pages/datanet/data-tools/${productKey}/Index.vue`),
   });
   productRoutes.push({
     path: `/${productKey}/example`,
-    component: () => import(`../pages/data-tools/${productKey}/Example.vue`),
+    component: () => import(`../pages/datanet/data-tools/${productKey}/Example.vue`),
   });
   productRoutes.push({
     path: `/${productKey}/roadmap`,
-    component: () => import(`../pages/data-tools/${productKey}/Roadmap.vue`),
+    component: () => import(`../pages/datanet/data-tools/${productKey}/Roadmap.vue`),
   });
 });
 

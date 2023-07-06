@@ -35,11 +35,12 @@ export default class Data {
     const toolKey = extractToolKey(path);
     const repoLink = repoLinks[toolKey];
     const response = await Axios.get(`/data/toc/${toolKey}.json`);
-    return generateLinks(response.data, `/docs/${toolKey}`, repoLink);
+    return generateLinks(response.data, `/documentation/${toolKey}`, repoLink);
   }
 
   public static async fetchDocPage(path: string): Promise<IPage> {
     const toolKey = extractToolKey(path);
+    path = path.replace('/documentation', '/docs');
 
     if (!path.startsWith('/docs')) {
       path = '/docs' + path;
@@ -52,12 +53,13 @@ export default class Data {
     }
     path += '.json';
 
+    console.log(`/data${path}`);
     const response = await Axios.get(`/data${path}`);
     return response.data;
   }
 }
 
 export function extractToolKey(path: string) {
-  const matches = path.match(/\/docs\/([^\/]+)/);
+  const matches = path.match(/\/documentation\/([^\/]+)/);
   return matches ? matches[1] : '';
 }

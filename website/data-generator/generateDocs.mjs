@@ -12,38 +12,33 @@ const rootDir = Path.resolve(__dirname, '../../');
   const mdDocsRootPath = `${rootDir}/client/docs`;
   walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'client');
-  });
-  ensureIndexFile(mdDocsRootPath, 'client');
+  }).then(() => ensureIndexFile(mdDocsRootPath, 'client'));
 }
 
 {
   const mdDocsRootPath = `${rootDir}/hero/docs`;
   walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'hero');
-  });
-  ensureIndexFile(mdDocsRootPath, 'hero');
+  }).then(() => ensureIndexFile(mdDocsRootPath, 'hero'));
 }
 
 {
   const mdDocsRootPath = `${rootDir}/datastore/docs`;
   walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'datastore');
-  });
-  ensureIndexFile(mdDocsRootPath, 'datastore');
+  }).then(() => ensureIndexFile(mdDocsRootPath, 'datastore'));
 }
 
 {
   const mdDocsRootPath = `${rootDir}/sql/docs`;
   walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'sql');
-  });
-  ensureIndexFile(mdDocsRootPath, 'sql');
+  }).then(() => ensureIndexFile(mdDocsRootPath, 'sql'));
 }
 
 {
   const mdDocsRootPath = `${rootDir}/cloud/docs`;
   walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'cloud');
-  });
-  ensureIndexFile(mdDocsRootPath, 'cloud');
+  }).then(() => ensureIndexFile(mdDocsRootPath, 'cloud'));
 }

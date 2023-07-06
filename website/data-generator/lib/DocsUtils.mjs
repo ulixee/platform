@@ -33,17 +33,20 @@ export async function saveToWebsite(mdDocsRootPath, absoluteFilePath, toolKey) {
   console.log(`SAVED ${toolKey}/${jsonRelativePath}`);
 }
 
-export function walkDirectory(directory, onFileFn) {
+export async function walkDirectory(directory, onFileFn) {
   const fileNames = Fs.readdirSync(directory);
   for (const fileName of fileNames) {
     const filePath = `${directory}/${fileName}`;
     const isDirectory = Fs.statSync(filePath).isDirectory();
     if (isDirectory) {
-      process.nextTick(() => {
-        walkDirectory(filePath, onFileFn);
+      await new Promise(resolve => {
+        process.nextTick(async () => {
+          await walkDirectory(filePath, onFileFn);
+          resolve();
+        });
       });
     } else if (fileName.match(/\.md$/)) {
-      onFileFn(filePath)
+      await onFileFn(filePath)
     }
   }
 }
