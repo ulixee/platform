@@ -55,10 +55,7 @@ export type TCredit = { datastoreUrl: string; microgons: number };
 export type IDesktopAppPrivateApis = {
   'Argon.dropFile': (path: string) => Promise<void>;
   'Credit.create': (args: {
-    datastore: Pick<
-      IDatastoreResultItem,
-      'id' | 'version' | 'name' | 'domain' | 'scriptEntrypoint'
-    >;
+    datastore: Pick<IDatastoreResultItem, 'id' | 'version' | 'name' | 'scriptEntrypoint'>;
     cloud: string;
     argons: number;
   }) => Promise<{

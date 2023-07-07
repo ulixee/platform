@@ -16,7 +16,6 @@ export default new DatastoreApiHandler('Datastores.list', {
         description: datastore.description,
         isStarted: datastore.isStarted,
         scriptEntrypoint: datastore.scriptEntrypoint,
-        domain: datastore.domain,
         name: datastore.name,
         stats: stats.stats,
       });

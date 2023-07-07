@@ -29,7 +29,6 @@ export default new Extractor(
     },
     // ExtractorSchema definition
     schema: {
-      name: 'TitleAndHtmlPageResolver',
       input: {
         url: string({ format: 'url' }),
       },

@@ -24,12 +24,11 @@ Creates a new Datastore instance.
 
 #### **Arguments**:
 
-- datastoreId `string`. The unique id of this Datastore. Required for deployment.
-- version `string`. A semver string for the Datastore version.
+- id `string`. The unique id of this Datastore. This will be used in your queries, along with the version. It's required for deployment, but a temporary id will be generated if you "start" a Datastore. Ids can contain lowercase letters, numbers and dashes. 
+- version `string`. A semver string for the Datastore version. (eg, 1.0.0).
 - name `string`. Optional name for this Datastore to be used in Documentation websites.
 - description `string`. Optional description for this Datastore to be used in Documentation websites.
 - storageEngineHost `string`. The ip:port where storage engine requests should be sent. NOTE: you MUST set this property when deploying into a cluster of nodes.
-- domain `string`. A dns name (eg, A record) that maps to the Datastore host. This domain will act as a virtual host mapped to the latest deployed version of this Datastore. Documentation sites and credit urls can be distributed to users with this domain. NOTE that this is unique _per_ Datastore. You may only use it for a single Datastore version. If you have a custom port, it should _not_ be added to this variable, but will be appended to any urls you distribute (eg, `mydns.com -> 192.168.1.1`, `npx @ulixee/datastore credits install https://mydns.com:1818/free-credits?crd2234343:234234ssd3234`).
 - extractors: `object`. An object mapping names to [Extractors](./extractor.md).
   - key `string`. A unique name of the function.
   - value `Extractor`. A [Extractor](./extractor.md) instance.
@@ -92,7 +91,7 @@ Object containing [Tables](./table.md) keyed by their name.
 
 ### remoteDatastores `{ [name]: url }` {#remote-datastores}
 
-Object containing an optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughExtractors](./passthrough-extractor.md). Urls take the format `ulx://<CloudAddress>/<datastoreId>@v<DatastoreVersion>`.
+Object containing an optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughExtractors](./passthrough-extractor.md). Urls take the format `ulx://<CloudAddress>/<datastoreId>@v<datastoreVersion>`.
 
 ### authenticateIdentity _(identity, nonce)_ {#authenticateIdentity}
 

@@ -1,15 +1,10 @@
-import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
-import { toUrl } from '@ulixee/commons/lib/utils';
 import DocspageDir from '@ulixee/datastore-docpage';
-import IDatastoreDomainResponse from '@ulixee/datastore/interfaces/IDatastoreDomainResponse';
 import IDatastoreApiTypes from '@ulixee/platform-specification/datastore/DatastoreApis';
 import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreIdValidation';
 import { semverRegex } from '@ulixee/platform-specification/types/semverValidation';
 import { createReadStream } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
-import { isIPv4, isIPv6 } from 'net';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
-import { DatastoreNotFoundError } from '../lib/errors';
 import createStaticFileHandler from '../lib/staticServe';
 
 export const datastorePathRegex = new RegExp(
@@ -39,13 +34,6 @@ export default class DocpageRoutes {
     if (!host.includes('://')) host = `http://${host}`;
     const url = new URL(req.url, host);
 
-    if (!url.host.includes('localhost')) {
-      const domainVersion = await this.datastoreRegistry.getByDomain(url.hostname);
-      if (domainVersion) {
-        datastoreId = domainVersion.id;
-        version = domainVersion.version;
-      }
-    }
     if (!version) {
       const match = url.pathname.match(datastorePathRegex);
       datastoreId = match[1];
@@ -61,44 +49,6 @@ export default class DocpageRoutes {
 
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify(result));
-    return true;
-  }
-
-  public async routeHttpRoot(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
-    const domain = toUrl(req.headers.host).hostname;
-    if (isIPv4(domain) || isIPv6(domain)) return false;
-
-    const domainVersion = await this.datastoreRegistry.getByDomain(domain);
-    if (!domainVersion) return false;
-
-    const params = [domainVersion.id, domainVersion.version];
-    if (req.url.length) params.push(req.url);
-    return await this.routeHttp(req, res, params);
-  }
-
-  public async routeOptionsRoot(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
-    const domain = toUrl(req.headers.host).hostname;
-    if (isIPv4(domain) || isIPv6(domain)) return false;
-
-    const domainVersion = await this.datastoreRegistry.getByDomain(domain);
-    if (!domainVersion) {
-      res.writeHead(404);
-      res.end(
-        TypeSerializer.stringify(
-          new DatastoreNotFoundError(
-            `A datastore mapped to the domain ${domain} could not be located.`,
-          ),
-        ),
-      );
-    } else {
-      res.end(
-        TypeSerializer.stringify(<IDatastoreDomainResponse>{
-          datastoreId: domainVersion.id,
-          datastoreVersion: domainVersion.version,
-          host: this.serverAddress.host,
-        }),
-      );
-    }
     return true;
   }
 

@@ -13,7 +13,6 @@ import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import { IServicesSetupApiTypes } from '@ulixee/platform-specification/services/SetupApis';
-import IKad from '@ulixee/platform-specification/types/IKad';
 import { promises as Fs } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import * as Os from 'os';
@@ -204,8 +203,6 @@ export default class DatastoreCore extends TypedEventEmitter<{
     addHttpRoute(new RegExp(datastorePathRegex), 'GET', (req, res, params) =>
       this.docPages.routeHttp(req, res, params),
     );
-    addHttpRoute(/\/(.*)/, 'GET', (req, res) => this.docPages.routeHttpRoot(req, res));
-    addHttpRoute('/', 'OPTIONS', (req, res) => this.docPages.routeOptionsRoot(req, res));
   }
 
   public async start(options: {
@@ -213,7 +210,6 @@ export default class DatastoreCore extends TypedEventEmitter<{
     hostedServicesAddress?: URL;
     cloudType?: 'public' | 'private';
     defaultServices?: IServicesSetupApiTypes['Services.getSetup']['result'];
-    kad?: IKad;
     networkIdentity: Identity;
     getSystemCore: (name: 'heroCore' | 'datastoreCore' | 'desktopCore') => any;
     createConnectionToServiceHost: (host: string) => ConnectionToCore<any, any>; // create connection to a services host

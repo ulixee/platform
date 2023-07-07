@@ -51,6 +51,7 @@ export default new DatastoreApiHandler('Datastore.query', {
 
             for (const name of sqlParser.tableNames) {
               const table = datastore.tables[name];
+              if (!table) throw new Error(`There is no table named "${name}" in this datastore.`);
               if (!table.isPublic) throw new Error(`Table ${name} is not publicly accessible.`);
             }
 

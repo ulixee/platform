@@ -15,7 +15,6 @@ export default interface IDatastoreRegistryStore {
   ): Promise<{ datastores: IDatastoreListEntry[]; total: number }>;
   get(id: string, version: string): Promise<IDatastoreManifestWithLatest>;
   getLatestVersion(id: string): Promise<string>;
-  getLatestVersionForDomain?(domain: string): Promise<{ id: string; version: string }>;
   downloadDbx?(
     id: string,
     version: string,

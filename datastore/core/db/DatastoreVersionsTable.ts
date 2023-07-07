@@ -6,7 +6,6 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
   private latestByDatastoresQuery: Statement<[limit: number, offset: number]>;
   private countDatastoresQuery: Statement<[]>;
   private findByIdQuery: Statement<string>;
-  private findWithDomainQuery: Statement<string>;
   private updateLatestQuery: Statement<[id: string, latestVersion: string]>;
   private versionsById: Record<string, IVersionHistoryEntry[]> = {};
   private cacheByVersion: { [id_version: string]: IDatastoreVersionRecord } = {};
@@ -21,7 +20,6 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
         ['dbxPath', 'TEXT', 'NOT NULL'],
         ['versionTimestamp', 'DATETIME'],
         ['scriptEntrypoint', 'TEXT'],
-        ['domain', 'TEXT'],
         ['source', 'TEXT'],
         ['adminIdentity', 'TEXT'],
         ['adminSignature', 'BLOB'],
@@ -41,16 +39,9 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       `select count(1) from ${this.tableName} where isLatest=1`,
     );
     this.findByIdQuery = db.prepare(`select * from ${this.tableName} where id = ?`);
-    this.findWithDomainQuery = db.prepare(
-      `select id, version from ${this.tableName} where domain = ? order by versionTimestamp desc limit 1`,
-    );
     this.updateLatestQuery = db.prepare(
       `update ${this.tableName} set isLatest=0 where id = ? and version != ?`,
     );
-  }
-
-  public findLatestByDomain(domain: string): { id: string; version: string } {
-    return this.findWithDomainQuery.get(domain.toLowerCase()) as any;
   }
 
   public list(
@@ -127,14 +118,11 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
     scriptEntrypoint: string,
     versionTimestamp: number,
     dbxPath: string,
-    domain: string,
     source: IDatastoreVersionRecord['source'],
     adminIdentity: string,
     adminSignature: Buffer,
     publishedToNetworkTimestamp?: number,
   ): void {
-    domain = domain?.toLowerCase();
-
     const isStarted = true;
 
     const latestStored = this.getLatestVersion(id);
@@ -151,7 +139,6 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       dbxPath,
       versionTimestamp,
       scriptEntrypoint,
-      domain,
       source,
       adminIdentity,
       adminSignature,
@@ -165,7 +152,6 @@ export default class DatastoreVersionsTable extends SqliteTable<IDatastoreVersio
       dbxPath,
       versionTimestamp,
       scriptEntrypoint,
-      domain,
       isStarted,
       isLatest,
       source,
@@ -247,5 +233,4 @@ export interface IDatastoreVersionRecord {
   adminSignature: Buffer | undefined;
   isStarted: boolean;
   isLatest: boolean;
-  domain: string;
 }

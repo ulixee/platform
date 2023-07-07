@@ -5,7 +5,6 @@ import Dbx from '@ulixee/datastore-packager/lib/Dbx';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import SidechainClient from '@ulixee/sidechain';
-import * as Hostile from 'hostile';
 import * as Path from 'path';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
 
@@ -29,10 +28,6 @@ beforeAll(async () => {
   Helpers.onClose(() => client.disconnect(), true);
   bootupPackager = new Packager(require.resolve('./datastores/bootup.ts'));
   bootupDbx = await bootupPackager.build();
-  if (process.env.CI !== 'true') {
-    Hostile.set('127.0.0.1', 'bootup-datastore.com');
-    Helpers.onClose(() => Hostile.remove('127.0.0.1', 'bootup-datastore.com'), true);
-  }
 }, 60e3);
 
 afterAll(Helpers.afterAll);
@@ -50,18 +45,6 @@ test('should install new datastores on startup', async () => {
   expect(entry).toBeTruthy();
 
   await expect(existsAsync(entry.dbxPath)).resolves.toBeTruthy();
-}, 45e3);
-
-test('should be able to lookup a datastore domain', async () => {
-  await client.upload(await bootupDbx.tarGzip()).catch(() => null);
-
-  await expect(
-    DatastoreApiClient.resolveDatastoreDomain(`bootup-datastore.com:${await cloudNode.port}`),
-  ).resolves.toEqual({
-    host: await cloudNode.address,
-    datastoreId: bootupPackager.manifest.id,
-    datastoreVersion: bootupPackager.manifest.version,
-  });
 }, 45e3);
 
 test('can get metadata about an uploaded datastore', async () => {

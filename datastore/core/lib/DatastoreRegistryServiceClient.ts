@@ -62,15 +62,6 @@ export default class DatastoreRegistryServiceClient implements IDatastoreRegistr
     )?.latestVersion;
   }
 
-  async getLatestVersionForDomain(
-    domain: string,
-  ): Promise<{ id: string; version: string }> {
-    return await this.client.sendRequest({
-      command: 'DatastoreRegistry.getLatestVersionForDomain',
-      args: [{ domain }],
-    });
-  }
-
   async downloadDbx(
     id: string,
     version: string,

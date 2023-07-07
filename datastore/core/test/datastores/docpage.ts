@@ -4,7 +4,6 @@ import { boolean, string } from '@ulixee/schema';
 export default new Datastore({
   id: 'docpage',
   version: '0.0.1',
-  domain: 'docs.datastoresRus.com',
   extractors: {
     test: new Extractor({
       run(ctx) {

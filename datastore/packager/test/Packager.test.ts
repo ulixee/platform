@@ -38,7 +38,6 @@ test('it should generate a relative script entrypoint', async () => {
   expect(packager.manifest.toJSON()).toEqual({
     adminIdentities: [],
     crawlersByName: {},
-    domain: undefined,
     scriptEntrypoint: Path.join(`packager`, `test`, `assets`, `historyTest.js`),
     scriptHash: expect.any(String),
     coreVersion: require('../package.json').version,
@@ -130,7 +129,6 @@ test('should be able to package a multi-function Datastore', async () => {
     coreVersion: require('../package.json').version,
     tablesByName: {},
     crawlersByName: {},
-    domain: undefined,
     adminIdentities: [],
     schemaInterface: `{
   tables: {};
@@ -203,7 +201,6 @@ test('should be able to package an exported Extractor without a Datastore', asyn
     }),
     tablesByName: {},
     crawlersByName: {},
-    domain: undefined,
     id: packager.manifest.id,
     version: packager.manifest.version,
     versionTimestamp: expect.any(Number),

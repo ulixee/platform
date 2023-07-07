@@ -194,11 +194,9 @@ export async function startDatastore(
 }
 
 function openDocsPage(manifest: DatastoreManifest, cloudHost: string): void {
-  let url = `http://${cloudHost}/${manifest.version}/`;
-  if (manifest.domain) url = `http://${manifest.domain}/`;
   let openCommand = 'xdg-open';
   if (process.platform === 'darwin') openCommand = 'open';
   if (process.platform === 'win32') openCommand = 'start';
 
-  execSync(`${openCommand} ${url}`);
+  execSync(`${openCommand} "http://${cloudHost}/${manifest.id}@v${manifest.version}"`);
 }

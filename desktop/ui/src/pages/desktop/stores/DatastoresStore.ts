@@ -300,7 +300,6 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
         id: datastore.id,
         version: datastore.version,
         name: datastore.name,
-        domain: datastore.domain,
         scriptEntrypoint: datastore.scriptEntrypoint,
       },
       cloud,

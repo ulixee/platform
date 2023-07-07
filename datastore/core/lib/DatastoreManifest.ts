@@ -25,7 +25,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
   public version: string;
   public name: string;
   public description: string;
-  public domain: string;
   public versionTimestamp: number;
   public scriptHash: string;
   public scriptEntrypoint: string;
@@ -80,7 +79,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
       | 'coreVersion'
       | 'paymentAddress'
       | 'adminIdentities'
-      | 'domain'
       | 'name'
       | 'description'
       | 'storageEngineHost'
@@ -104,7 +102,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
       coreVersion,
       paymentAddress,
       adminIdentities,
-      domain,
       storageEngineHost,
       version,
       id,
@@ -117,7 +114,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
         schemaInterface,
         paymentAddress,
         adminIdentities,
-        domain,
         description,
         name,
         storageEngineHost,
@@ -231,7 +227,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
       id: this.id,
       name: this.name,
       description: this.description,
-      domain: this.domain,
       version: this.version,
       versionTimestamp: this.versionTimestamp,
       scriptEntrypoint: this.scriptEntrypoint,

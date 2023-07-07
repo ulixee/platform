@@ -30,7 +30,7 @@ To clone a Datastore, you simply run the following command with the url of the "
  ulixee datastore clone <datastore url> <local path>
 ```
 
-You must provide a `datastore url` to the Datastore you wish to clone. A `datastore url` takes the form `ulx://<IP>:<PORT>@v<Datastore Version>`.
+You must provide a `datastore url` to the Datastore you wish to clone. A `datastore url` takes the form `ulx://<ip>:<port>/<datastoreId>@v<datastoreVersion>`.
 
 The second argument (`local path`) is a path where you wish to export the generated Typescript or Javascript file. If your path ends with `.ts`, Typescript will be emitted. Otherwise, commonjs friendly Javascript will be emitted.
 

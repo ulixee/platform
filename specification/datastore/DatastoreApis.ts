@@ -364,7 +364,6 @@ export const DatastoreApiSchemas = {
             .boolean()
             .describe('Only relevant in development mode - is this Datastore started.'),
           scriptEntrypoint: z.string(),
-          domain: DatastoreManifestWithLatest.shape.domain,
           stats: DatastoreStatsSchema,
         })
         .array(),

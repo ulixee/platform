@@ -17,10 +17,6 @@ export const DatastoreManifestSchema = z.object({
       'The storage engine host to use for this Datastore. If empty, will default to a local host.',
     )
     .optional(),
-  domain: z
-    .string()
-    .optional()
-    .describe('A Custom DNS name pointing at the latest version of the Datastore.'),
   versionTimestamp: z.number().int().gt(minDate),
   scriptHash: z
     .string()

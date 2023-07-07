@@ -266,7 +266,6 @@ export default class CloudNode {
       networkIdentity: this.cloudConfiguration.networkIdentity,
       hostedServicesAddress,
       defaultServices: servicesSetup,
-      kad: this.kad,
       cloudType: this.cloudConfiguration.cloudType,
       createConnectionToServiceHost: this.createConnectionToServiceHost,
       getSystemCore: (name: 'heroCore' | 'datastoreCore' | 'desktopCore') => {

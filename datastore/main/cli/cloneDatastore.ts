@@ -17,7 +17,7 @@ export default async function cloneDatastore(
   directoryPath?: string,
   options: { embedCredits?: { id: string; secret: string } } = {},
 ): Promise<{ datastoreFilePath: string }> {
-  const { datastoreId, datastoreVersion, host } = await DatastoreApiClient.resolveDatastoreDomain(url);
+  const { datastoreId, datastoreVersion, host } = await DatastoreApiClient.parseDatastoreUrl(url);
   if (url.includes('/free-credits')) {
     const credit = new URL(url).search.split(':');
     options.embedCredits = { id: credit[0], secret: credit[1] };

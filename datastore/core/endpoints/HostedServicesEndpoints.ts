@@ -48,10 +48,6 @@ export default class HostedServicesEndpoints {
         const versions = await ctx.datastoreRegistry.getVersions(id);
         return { versions };
       },
-      'DatastoreRegistry.getLatestVersionForDomain': async ({ domain }, ctx) => {
-        const latestVersion = await ctx.datastoreRegistry.getByDomain(domain);
-        return { ...latestVersion };
-      },
       'DatastoreRegistry.list': async ({ count, offset }, ctx) => {
         // don't go out to network
         return await ctx.datastoreRegistry.diskStore.list(count, offset);

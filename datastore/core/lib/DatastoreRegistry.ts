@@ -143,16 +143,6 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
     return null;
   }
 
-  public async getByDomain(domain: string): Promise<{
-    id: string;
-    version: string;
-  }> {
-    for (const service of this.stores) {
-      const latestVersion = await service.getLatestVersionForDomain(domain);
-      if (latestVersion) return latestVersion;
-    }
-  }
-
   public async getLatestVersion(id: string): Promise<string> {
     for (const service of this.stores) {
       const latestVersion = await service.getLatestVersion(id);

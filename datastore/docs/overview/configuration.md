@@ -1,27 +1,5 @@
 # Configuration
 
-Datastores are dynamically configurable via a command line, and each Datastore Extractor allows you to define default configurations if none are provided (schemas can define default inputs, Plugins can add default configurations (eg, HeroExtractorPlugin adds `defaultHeroOptions` to a Extractor constructor).
-
-Command line variables are parsed using [yargs-parser](https://github.com/yargs/yargs-parser). Variables containing a '.' will be converted into objects, and dashes are camel-cased.
-
-```shell
-  node ./extractor.js --input.foo=99 --input.bar=9987930 --connectionToCore.host=ws://localhost:1228
-```
-
-Options will be read as:
-
-```js
-const options = {
-  input: {
-    foo: 99,
-    bar: 9987930,
-  },
-  connectionToCore: {
-    host: 'ws://localhost:1228',
-  },
-};
-```
-
 ### Default Connection
 
 If no connectionToCore is provided to a Datastore, a localhost CloudNode connection will attempt to be automatically discovered.
@@ -30,8 +8,10 @@ If no connectionToCore is provided to a Datastore, a localhost CloudNode connect
 
 Datastore Core stores and retrieves [packaged Datastores](./deployment) from a configurable location on a machine. This directory will contain:
 
-1. `dbx*`. Packaged datastores organized into folders by their Bech32m encoded hashes.
-2. `metadata.db`. A sqlite3 file containing version history and stats of all Datastores installed locally. This index will be automatically updated if new compressed .dbx.tgz files are added to the directory.
+1. `dbx*`. Packaged datastores organized into folders by their <datastoreId>@v${version}.
+2. `metadata.db`. A sqlite3 file containing version history of all Datastores installed locally. This index will be automatically updated if new compressed .dbx.tgz files are added to the directory.
+3. `stats.db`. A sqlite3 file containing stats for runs of queries
+4. `storage`. Databases created as storage engines for each Datastore. The path is the same as the dbx path.
 
 During bootup, any Packaged Datastores (`.dbx.tgz`) in this directory will be automatically unpacked and loaded.
 

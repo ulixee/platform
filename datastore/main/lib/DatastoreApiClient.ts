@@ -13,10 +13,7 @@ import DatastoreApiSchemas, {
 import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreIdValidation';
 import { semverRegex } from '@ulixee/platform-specification/types/semverValidation';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
-import * as Http from 'http';
-import * as Https from 'https';
 import { nanoid } from 'nanoid';
-import IDatastoreDomainResponse from '../interfaces/IDatastoreDomainResponse';
 import IDatastoreEvents from '../interfaces/IDatastoreEvents';
 import IItemInputOutput from '../interfaces/IItemInputOutput';
 import ITypes from '../types';
@@ -419,41 +416,17 @@ export default class DatastoreApiClient {
     return await this.connectionToCore.sendRequest({ command, args: [args] as any }, timeoutMs);
   }
 
-  public static resolveDatastoreDomain(domain: string): Promise<IDatastoreDomainResponse> {
+  public static parseDatastoreUrl(
+    url: string,
+  ): Promise<{ datastoreId: string; host: string; datastoreVersion: string }> {
     const datastorePathRegex = new RegExp(
       `(?:.+://)?([^/]+)/(?:docs/)?(${datastoreRegex.source})@v(${semverRegex.source})/?`,
     );
-    const isFullDomain = domain.match(datastorePathRegex);
-    if (isFullDomain) {
-      const [, host, datastoreId, datastoreVersion] = isFullDomain;
+    const match = url.match(datastorePathRegex);
+    if (match) {
+      const [, host, datastoreId, datastoreVersion] = match;
       return Promise.resolve({ host, datastoreId, datastoreVersion });
     }
-
-    if (!domain.includes('://')) domain = `http://${domain}`;
-    const httpModule = domain.startsWith('https') ? Https : Http;
-    return new Promise((resolve, reject) => {
-      const url = new URL(domain);
-      if (url.protocol !== 'https:') url.protocol = 'http:';
-      const request = httpModule.request(url.origin, { method: 'OPTIONS' }, async res => {
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          resolve(this.resolveDatastoreDomain(res.headers.location));
-          return;
-        }
-
-        res.on('error', reject);
-        res.setEncoding('utf8');
-        let result = '';
-        for await (const chunk of res) {
-          result += chunk;
-        }
-
-        const resultObject = TypeSerializer.parse(result);
-        if (resultObject instanceof Error) reject(resultObject);
-        resolve(resultObject);
-      });
-      request.on('error', reject);
-      request.end();
-    });
   }
 
   public static createExecSignatureMessage(payment: IPayment, nonce: string): Buffer {

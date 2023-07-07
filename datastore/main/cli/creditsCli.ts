@@ -40,7 +40,7 @@ export default function creditsCli(): Command {
       const microgons = ArgonUtils.centagonsToMicrogons(parseFloat(argons) * 100);
       const identity = Identity.loadFromFile(identityPath, { keyPassphrase: identityPassphrase });
       const { datastoreId, datastoreVersion, host } =
-        await DatastoreApiClient.resolveDatastoreDomain(url);
+        await DatastoreApiClient.parseDatastoreUrl(url);
       const client = new DatastoreApiClient(host);
       try {
         const result = await client.createCredits(
@@ -52,9 +52,9 @@ export default function creditsCli(): Command {
 
         if (!url.includes('://')) url = `http://${url}`;
         if (url.endsWith('/')) url = url.substring(0, -1);
-        const domainUrl = `${url}/free-credit?${result.id}:${result.secret}`;
+        const creditUrl = `${url}/free-credit?${result.id}:${result.secret}`;
 
-        console.log(`Credit URL:\n\n${domainUrl}\n`);
+        console.log(`Credit URL:\n\n${creditUrl}\n`);
       } finally {
         await client.disconnect();
       }
@@ -66,7 +66,7 @@ export default function creditsCli(): Command {
     .argument('<url>', 'The url of the Credit.')
     .action(async url => {
       const { datastoreId, datastoreVersion, host } =
-        await DatastoreApiClient.resolveDatastoreDomain(url);
+        await DatastoreApiClient.parseDatastoreUrl(url);
       const client = new DatastoreApiClient(host);
       try {
         const creditIdAndSecret = url.split('/free-credit?').pop();
@@ -93,7 +93,7 @@ export default function creditsCli(): Command {
     .argument('<url>', 'The url of the Datastore Credit.')
     .action(async url => {
       const { datastoreId, datastoreVersion, host } =
-        await DatastoreApiClient.resolveDatastoreDomain(url);
+        await DatastoreApiClient.parseDatastoreUrl(url);
       const client = new DatastoreApiClient(host);
       try {
         const creditIdAndSecret = url.split('/free-credit?').pop();

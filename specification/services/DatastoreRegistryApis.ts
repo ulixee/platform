@@ -14,7 +14,6 @@ export const DatastoreListEntry = DatastoreManifestSchema.pick({
   id: true,
   version: true,
   versionTimestamp: true,
-  domain: true,
   description: true,
   name: true,
   scriptEntrypoint: true,
@@ -61,17 +60,6 @@ export const DatastoreRegistryApiSchemas = {
     }),
     result: z.object({
       latestVersion: semverValidation,
-    }),
-  },
-  'DatastoreRegistry.getLatestVersionForDomain': {
-    args: z.object({
-      domain: z
-        .string()
-        .describe('A Datastore Domain name to lookup the latest datastore version for.'),
-    }),
-    result: z.object({
-      id: datastoreIdValidation,
-      version: semverValidation,
     }),
   },
   'DatastoreRegistry.downloadDbx': {

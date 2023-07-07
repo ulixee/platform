@@ -67,7 +67,6 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
         const {
           name,
           scriptEntrypoint,
-          domain,
           id,
           version,
           description,
@@ -80,7 +79,6 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
           version,
           versionTimestamp,
           isStarted,
-          domain,
           scriptEntrypoint,
           name,
         });
@@ -205,11 +203,6 @@ export default class DatastoreRegistryDiskStore implements IDatastoreRegistrySto
   getLatestVersion(id: string): Promise<string> {
     const latestVersion = this.datastoresDb.versions.getLatestVersion(id);
     return Promise.resolve(latestVersion);
-  }
-
-  getLatestVersionForDomain(domain: string): Promise<{ id: string; version: string }> {
-    const latestByDomain = this.datastoresDb.versions.findLatestByDomain(domain);
-    return Promise.resolve(latestByDomain);
   }
 
   async install(
@@ -470,7 +463,6 @@ Please try to re-upload after testing with the version available on this Cloud.`
         manifest.scriptEntrypoint,
         manifest.versionTimestamp,
         dbxPath,
-        manifest.domain,
         source?.source,
         source?.adminIdentity,
         source?.adminSignature,

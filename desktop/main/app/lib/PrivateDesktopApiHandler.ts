@@ -210,7 +210,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   public async createCredit(args: {
     datastore: Pick<
       IDatastoreResultItem,
-      'id' | 'version' | 'name' | 'domain' | 'scriptEntrypoint'
+      'id' | 'version' | 'name' | 'scriptEntrypoint'
     >;
     cloud: string;
     argons: number;
