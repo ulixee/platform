@@ -14,7 +14,9 @@
                   ' bg-white text-gray-700 shadow-md ring-1 ring-black ring-opacity-5 hover:shadow-sm',
                 ]
           "
-          @click.prevent="activeEntity?.name === entity.name ? activeEntity = null : activeEntity = entity"
+          @click.prevent="
+            activeEntity?.name === entity.name ? (activeEntity = null) : (activeEntity = entity)
+          "
         >
           <InlineSvg
             class="mx-auto h-14 w-14"
@@ -32,14 +34,18 @@
     </div>
     <div
       v-if="activeEntity"
-      class="max-h-1/3 mt-10 basis-1/3 overflow-hidden border border-gray-200 px-8 py-7 shadow-inner bg-white/50"
+      class="max-h-1/3 mt-10 basis-1/3 overflow-hidden border border-gray-200 bg-white/50 px-8 py-7 shadow-inner"
     >
+      <div class="mb-2" v-if="activeEntity.example">
+        <span class="text-sm font-bold text-gray-500">Example Query:</span>
+        <Prism language="sql">{{ exampleSql(activeEntity.example) }}</Prism>
+      </div>
       <div class="mb-2">
         <span class="text-sm font-bold text-gray-500">Type</span
-        ><span class='text-sm font-thin ml-2'>{{ activeEntity.type }}</span>
+        ><span class="ml-2 text-sm font-thin">{{ activeEntity.type }}</span>
       </div>
-      <div class="mb-2" v-if='activeEntity.description'>
-        ><span class='text-sm font-thin ml-2'>{{ activeEntity.description }}</span>
+      <div class="mb-2" v-if="activeEntity.description">
+        ><span class="ml-2 text-sm font-thin">{{ activeEntity.description }}</span>
       </div>
       <Json :json="this.getSchema(activeEntity)" />
     </div>
@@ -50,52 +56,58 @@
 import { useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 import { storeToRefs } from 'pinia';
 import * as Vue from 'vue';
+import Prism from '@/pages/desktop/components/Prism.vue';
 import { useRoute } from 'vue-router';
 import { convertJsonToFlat } from '@/utils/flattenJson';
 import Json from '@/components/Json.vue';
 
 export default Vue.defineComponent({
   name: 'Entities',
-  components: { Json },
+  components: { Json, Prism },
   setup() {
     const route = useRoute();
     const datastoresStore = useDatastoreStore();
-    const versionHash = route.params.versionHash as string;
-    const { datastoresByVersion } = storeToRefs(datastoresStore);
-    datastoresStore.refreshMetadata(versionHash);
+    const datastoreId = route.params.datastoreId as string;
+    const version = route.params.version as string;
+    const { datastoresById } = storeToRefs(datastoresStore);
+    datastoresStore.refreshMetadata(datastoreId, version);
 
-    const activeEntity = Vue.ref<{name:string, type:string, description:string, schema: any }>(null);
+    const activeEntity = Vue.ref<{ name: string; type: string; description: string; schema: any }>(
+      null,
+    );
 
     const entities = Vue.computed(() => {
-      const { datastore } = datastoresByVersion.value[versionHash];
-      console.log(datastore)
+      const { details } = datastoresById.value[datastoreId];
       return [
-        ...Object.entries(datastore?.tablesByName ?? {}).map(x => ({
+        ...Object.entries(details?.tablesByName ?? {}).map(x => ({
           name: x[0],
           description: x[1].description,
           schema: x[1].schemaAsJson,
+          example: details.examplesByEntityName?.[x[0]],
           type: 'Table',
         })),
-        ...Object.entries(datastore?.crawlersByName ?? {}).map(x => ({
+        ...Object.entries(details?.crawlersByName ?? {}).map(x => ({
           name: x[0],
           description: x[1].description,
           schema: x[1].schemaAsJson,
+          example: details.examplesByEntityName?.[x[0]],
           type: 'Crawler',
         })),
-        ...Object.entries(datastore?.extractorsByName ?? {}).map(x => ({
+        ...Object.entries(details?.extractorsByName ?? {}).map(x => ({
           name: x[0],
           description: x[1].description,
           schema: x[1].schemaAsJson,
+          example: details.examplesByEntityName?.[x[0]],
           type: 'Extractor',
         })),
       ];
     });
     return {
-      versionHash,
+      version,
       activeEntity,
       entities,
       datastoresStore,
-      datastoresByVersion,
+      datastoresById,
     };
   },
   watch: {},
@@ -104,6 +116,17 @@ export default Vue.defineComponent({
       if (activeEntity.schema) {
         return convertJsonToFlat(activeEntity.schema);
       }
+    },
+    exampleSql(example: { formatted: string; args: Record<string, any> }): string {
+      let replacedFormatted = example.formatted;
+      let key = 1;
+      for (const value of Object.values(example.args)) {
+        let parsed = `${value}`;
+        if (typeof value === 'string') parsed = `'${value}'`;
+        replacedFormatted = replacedFormatted.replaceAll(`$${key}`, parsed);
+        key += 1;
+      }
+      return `SELECT * FROM ${replacedFormatted}`;
     },
   },
 });

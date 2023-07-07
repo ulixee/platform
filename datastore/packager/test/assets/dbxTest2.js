@@ -4,6 +4,8 @@ const { Extractor } = require('@ulixee/datastore');
 const { boolean, string } = require('@ulixee/schema');
 
 exports.default = new Datastore({
+  datastoreId:'dbx1q075ezwjzz9kxxn2vdaeju5t5y3n7krzrqdk4u6g74dhl7un2hescjl5vu',
+  version:'0.0.1',
   extractors: {
     test: new Extractor({
       run(ctx) {

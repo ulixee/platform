@@ -10,7 +10,8 @@ const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.clon
 
 let cloudNode: CloudNode;
 let client: DatastoreApiClient;
-let versionHash: string;
+let version: string;
+let datastoreId: string;
 
 beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/cloneme.dbx`)) {
@@ -21,36 +22,37 @@ beforeAll(async () => {
     Fs.rmSync(`${__dirname}/datastores/cloned.dbx`, { recursive: true });
   }
 
-  cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
-    datastoresDir: storageDir,
-    datastoresTmpDir: Path.join(storageDir, 'tmp'),
-  };
-  await cloudNode.listen();
+  cloudNode = await Helpers.createLocalNode(
+    {
+      datastoreConfiguration: {
+        datastoresDir: storageDir,
+        datastoresTmpDir: Path.join(storageDir, 'tmp'),
+      },
+    },
+    true,
+  );
   client = new DatastoreApiClient(await cloudNode.address, { consoleLogErrors: true });
+  Helpers.onClose(() => client.disconnect(), true);
 
   const packager = new DatastorePackager(`${__dirname}/datastores/cloneme.ts`);
   await packager.build();
   await client.upload(await packager.dbx.tarGzip());
-  versionHash = packager.manifest.versionHash;
+  version = packager.manifest.version;
+  datastoreId = packager.manifest.id;
 }, 45e3);
 
 afterEach(Helpers.afterEach);
-
-afterAll(async () => {
-  await cloudNode.close();
-  if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
-});
+afterAll(Helpers.afterAll);
 
 test('should be able to clone a datastore', async () => {
-  const url = `ulx://${await cloudNode.address}/${versionHash}`;
+  const url = `ulx://${await cloudNode.address}/${datastoreId}@v${version}`;
   await expect(cloneDatastore(url, `${__dirname}/datastores/cloned`)).resolves.toEqual({
     datastoreFilePath: Path.join(__dirname, 'datastores', 'cloned', 'datastore.ts'),
   });
 
   expect(Fs.existsSync(`${__dirname}/datastores/cloned/datastore.ts`)).toBeTruthy();
   const packager = new DatastorePackager(`${__dirname}/datastores/cloned/datastore.ts`);
-  await packager.build();
+  await packager.build({ createTemporaryVersion: true });
   await client.upload(await packager.dbx.tarGzip());
 
   // should not include a private table
@@ -79,11 +81,11 @@ test('should be able to clone a datastore', async () => {
   });
 
   await expect(
-    client.stream(packager.manifest.versionHash, 'cloneUpstream', {}),
+    client.stream(packager.manifest.id, packager.manifest.version, 'cloneUpstream', {}),
   ).rejects.toThrow('input');
 
   await expect(
-    client.stream(packager.manifest.versionHash, 'cloneUpstream', {
+    client.stream(packager.manifest.id, packager.manifest.version, 'cloneUpstream', {
       field: 'str',
       nested: { field2: true },
     }),
@@ -91,10 +93,15 @@ test('should be able to clone a datastore', async () => {
 
   // can query the passthrough table
   await expect(
-    client.query(packager.manifest.versionHash, 'select * from users', {}),
+    client.query(
+      packager.manifest.id,
+      packager.manifest.version,
+      'select * from users',
+      {},
+    ),
   ).resolves.toEqual({
     metadata: expect.any(Object),
     outputs: [{ name: 'me', birthdate: expect.any(Date) }],
-    latestVersionHash: packager.manifest.versionHash,
+    latestVersion: packager.manifest.version,
   });
 }, 45e3);

@@ -1,9 +1,11 @@
+import Identity from '@ulixee/crypto/lib/Identity';
 import DatastorePackager from '@ulixee/datastore-packager';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import SqliteStorageEngine from '@ulixee/datastore/storage-engines/SqliteStorageEngine';
 import * as Fs from 'fs';
 import * as Path from 'path';
+import DatastoreManifest from '../lib/DatastoreManifest';
 
 Helpers.blockGlobalConfigWrites();
 const datastoresDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'StorageEngineRegistry.test');
@@ -19,8 +21,7 @@ beforeEach(async () => {
     .catch(() => null);
 });
 
-afterAll(async () => Helpers.afterAll());
-
+afterAll(Helpers.afterAll);
 afterEach(Helpers.afterEach);
 
 test('should run migrations on start', async () => {
@@ -37,6 +38,8 @@ test('should run migrations on start', async () => {
 const { boolean, string } = require("@ulixee/schema");
 
 module.exports = new Datastore({
+  id: 'storage',
+  version: '0.0.1',
   tables: {
    migrator: new Table({
     schema: {
@@ -64,7 +67,9 @@ module.exports = new Datastore({
   const datastoresDb = cloudNode.datastoreCore.datastoreRegistry.diskStore.datastoresDb;
 
   await expect(
-    client.stream(packager.manifest.versionHash, 'migrator', { success: false }),
+    client.stream('storage', '0.0.1', 'migrator', {
+      success: false,
+    }),
   ).resolves.toEqual([{ title: 'World', success: false }]);
 
   await Fs.promises.writeFile(
@@ -73,6 +78,8 @@ module.exports = new Datastore({
 const { boolean, string } = require("@ulixee/schema");
 
 module.exports = new Datastore({
+  id: 'storage',
+  version: '0.0.2',
   tables: {
    migrator: new Table({
     schema: {
@@ -103,7 +110,9 @@ module.exports = new Datastore({
   expect(datastores2).toHaveLength(2);
 
   await expect(
-    client.stream(packager.manifest.versionHash, 'migrator', { success: false }),
+    client.stream('storage', '0.0.2', 'migrator', {
+      success: false,
+    }),
   ).resolves.toEqual([{ title: 'World', newColumn: 'ought', success: false }]);
 }, 45e3);
 
@@ -166,11 +175,16 @@ test('should be able to use a remote storage engine endpoint', async () => {
   expect(storageNodeInstallStorageSpy).toHaveBeenCalled();
 
   await expect(
-    client.query(packager.manifest.versionHash, 'select * from intro where visible=true', {}),
+    client.query(
+      packager.manifest.id,
+      packager.manifest.version,
+      'select * from intro where visible=true',
+      {},
+    ),
   ).resolves.toEqual({
     outputs: [{ title: 'Hello', visible: true }],
     metadata: expect.any(Object),
-    latestVersionHash: expect.any(String),
+    latestVersion: expect.any(String),
   });
 
   expect(storageNodeRegistrySpy).toHaveBeenCalledTimes(2);
@@ -202,11 +216,16 @@ test('should not create a websocket connection to localhost if on same machine',
   expect(nodeRegistrySpy.mock.results[0].value).toBeInstanceOf(SqliteStorageEngine);
 
   await expect(
-    client.query(packager.manifest.versionHash, 'select * from intro where visible=true', {}),
+    client.query(
+      packager.manifest.id,
+      packager.manifest.version,
+      'select * from intro where visible=true',
+      {},
+    ),
   ).resolves.toEqual({
     outputs: [{ title: 'Hello', visible: true }],
     metadata: expect.any(Object),
-    latestVersionHash: expect.any(String),
+    latestVersion: expect.any(String),
   });
 
   expect(nodeRegistrySpy).toHaveBeenCalledTimes(2);
@@ -276,11 +295,16 @@ test('should not install storage engine when downloading from cluster', async ()
   storageNodeInstallStorageSpy.mockReset();
   storageNodeRegistrySpy.mockReset();
   await expect(
-    client.query(packager.manifest.versionHash, 'select * from intro where visible=true', {}),
+    client.query(
+      packager.manifest.id,
+      packager.manifest.version,
+      'select * from intro where visible=true',
+      {},
+    ),
   ).resolves.toEqual({
     outputs: [{ title: 'Hello', visible: true }],
     metadata: expect.any(Object),
-    latestVersionHash: expect.any(String),
+    latestVersion: expect.any(String),
   });
 
   expect(storageNodeRegistrySpy).toHaveBeenCalledTimes(1);

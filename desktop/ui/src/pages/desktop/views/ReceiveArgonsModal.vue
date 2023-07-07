@@ -25,7 +25,7 @@
               >good at the Datastore called "{{ datastore?.scriptEntrypoint }}".</template
             >
             <template v-else-if="datastore"
-              >good at a Datastore with version "{{ datastore.versionHash }}".</template
+              >good at a Datastore with id "{{ datastore.id }}".</template
             >
             <template v-else>from a Datastore that can't be found.</template>
           </p>
@@ -43,11 +43,11 @@
               <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
                 <a
                   href="#"
-                  @click.prevent="showDatastoreDocs"
+                  @click.prevent="showDatastoreDocs()"
                   class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
                 >
                   View docs
-                  <ArrowTopRightOnSquareIcon class="ml-2 -mt-1 inline h-4 text-gray-500" />
+                  <ArrowTopRightOnSquareIcon class="-mt-1 ml-2 inline h-4 text-gray-500" />
                 </a>
               </dd>
             </div>
@@ -62,7 +62,7 @@
 
         <div class="mt-5 flex w-full flex-row items-center gap-4">
           <button
-            class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md border border-gray-400 bg-white py-2.5 px-3.5 text-sm font-semibold text-gray-700 shadow-sm hover:border-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
+            class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md border border-gray-400 bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:border-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
             @click.prevent="modal.close()"
           >
             <XMarkIcon class="-ml-0.5 h-5 w-5" aria-hidden="true" />
@@ -71,7 +71,7 @@
 
           <button
             v-if="!isAccepted"
-            class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md bg-fuchsia-700 py-2.5 px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
+            class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md bg-fuchsia-700 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
             :class="[!datastore ? 'cursor-not-allowed bg-fuchsia-700/50' : 'hover:bg-fuchsia-600']"
             :disabled="!datastore"
             @click.prevent="acceptDatastore"
@@ -81,7 +81,7 @@
           </button>
           <span
             v-else
-            class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md border-fuchsia-700 py-2.5 px-3.5 text-sm font-semibold"
+            class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md border-fuchsia-700 px-3.5 py-2.5 text-sm font-semibold"
           >
             <DocumentArrowDownIcon
               class="-ml-0.5 h-5 w-5 text-fuchsia-700"
@@ -101,7 +101,7 @@
         </p>
         <div class="mt-5 flex w-full flex-row items-center gap-4">
           <button
-            class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md border border-gray-400 bg-white py-2.5 px-3.5 text-sm font-semibold text-gray-500 shadow-sm hover:border-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
+            class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md border border-gray-400 bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-500 shadow-sm hover:border-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
             @click.prevent="modal.close()"
           >
             <XMarkIcon class="-ml-0.5 h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -109,7 +109,7 @@
           </button>
           <button
             v-if="!isAccepted"
-            class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md bg-fuchsia-700 py-2.5 px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
+            class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md bg-fuchsia-700 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
             @click="addToWallet"
             :class="[
               !isValidToAddress ? 'cursor-not-allowed bg-fuchsia-700/50' : 'hover:bg-fuchsia-600',
@@ -136,7 +136,7 @@ import { DocumentArrowDownIcon, XMarkIcon } from '@heroicons/vue/24/outline';
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
 import { toArgons } from '@/pages/desktop/lib/utils';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/outline';
-import { IDatastoreList, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
+import { IDatastoreSummary, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 import { useWalletStore } from '@/pages/desktop/stores/WalletStore';
 import { storeToRefs } from 'pinia';
 
@@ -158,7 +158,7 @@ export default Vue.defineComponent({
   setup(props) {
     const walletStore = useWalletStore();
     const { userBalance } = storeToRefs(walletStore);
-    const datastore = Vue.ref<IDatastoreList[0]>(null);
+    const datastore = Vue.ref<IDatastoreSummary>(null);
     return {
       toArgons,
       modal: Vue.ref<typeof Modal>(null),
@@ -193,8 +193,10 @@ export default Vue.defineComponent({
   methods: {
     showDatastoreDocs() {
       const argonFile = this.argonFile;
-      const versionHash = this.datastore?.versionHash ?? 'unknown';
-      window.open(argonFile.credit.datastoreUrl, 'Docs' + versionHash);
+      const version = this.datastore?.version ?? 'unknown';
+      const datastoreId = this.datastore?.id ?? 'unknown';
+      const url = useDatastoreStore().getDocsUrl(argonFile.credit.datastoreUrl);
+      window.open(url, 'Docs' + datastoreId + version);
     },
     async acceptDatastore() {
       const argonFile = this.argonFile;

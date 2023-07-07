@@ -2,7 +2,8 @@ import { boolean } from '@ulixee/schema';
 import Datastore, { Extractor } from '@ulixee/datastore';
 
 module.exports = new Datastore({
-  domain: 'bootup-datastore.com',
+  id: 'bootup',
+  version: '0.0.1',
   extractors: {
     bootup: new Extractor({
       run({ Output }) {

@@ -1,5 +1,5 @@
-import { readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
+import { readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import { IPayment } from '@ulixee/platform-specification';
 
 export default class CreditsStore {
@@ -10,8 +10,8 @@ export default class CreditsStore {
   public static async storeFromUrl(url: string, microgons: number): Promise<void> {
     const datastoreURL = new URL(url);
     datastoreURL.protocol = 'ws:';
-    const versionHash = datastoreURL.pathname.slice(1);
-    await this.store(versionHash, datastoreURL.host, {
+    const [datastoreId, version] = datastoreURL.pathname.slice(1).split('@v');
+    await this.store(datastoreId, version, datastoreURL.host, {
       id: datastoreURL.username,
       secret: datastoreURL.password,
       remainingCredits: microgons,
@@ -19,13 +19,15 @@ export default class CreditsStore {
   }
 
   public static async store(
-    datastoreVersionHash: string,
+    datastoreId: string,
+    datastoreVersion: string,
     host: string,
     credits: { id: string; secret: string; remainingCredits: number },
   ): Promise<void> {
     const allCredits = await this.load();
-    allCredits[datastoreVersionHash] ??= {};
-    allCredits[datastoreVersionHash][credits.id] = {
+    const key = `${datastoreId}__${datastoreVersion}`;
+    allCredits[key] ??= {};
+    allCredits[key][credits.id] = {
       ...credits,
       host,
       allocated: credits.remainingCredits,
@@ -34,13 +36,14 @@ export default class CreditsStore {
   }
 
   public static async getPayment(
-    datastoreVersionHash: string,
+    datastoreId: string,
+    datastoreVersion: string,
     microgons: number,
   ): Promise<
     (IPayment & { onFinalized(result: { microgons: number; bytes: number }): void }) | undefined
   > {
     const credits = await this.load();
-    const datastoreCredits = credits[datastoreVersionHash];
+    const datastoreCredits = credits[`${datastoreId}__${datastoreVersion}`];
     if (!datastoreCredits) return;
 
     for (const [creditId, credit] of Object.entries(datastoreCredits)) {
@@ -57,10 +60,12 @@ export default class CreditsStore {
   public static async asList(): Promise<ICredit[]> {
     const allCredits = await this.load();
     const credits: ICredit[] = [];
-    for (const [datastoreVersionHash, credit] of Object.entries(allCredits)) {
+    for (const [key, credit] of Object.entries(allCredits)) {
+      const [datastoreId, datastoreVersion] = key.split('__');
       const [creditsId, entry] = Object.entries(credit)[0];
       credits.push({
-        datastoreVersionHash,
+        datastoreId,
+        datastoreVersion,
         host: entry.host,
         remainingBalance: entry.remainingCredits,
         allocated: entry.allocated,
@@ -93,7 +98,7 @@ export default class CreditsStore {
 }
 
 interface ICreditsStore {
-  [datastoreVersionHash: string]: {
+  [datastoreId_Version: string]: {
     [creditsId: string]: {
       secret: string;
       host: string;
@@ -103,7 +108,8 @@ interface ICreditsStore {
   };
 }
 export type ICredit = {
-  datastoreVersionHash: string;
+  datastoreId: string;
+  datastoreVersion: string;
   remainingBalance: number;
   allocated: number;
   creditsId: string;

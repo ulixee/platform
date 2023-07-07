@@ -15,7 +15,7 @@
       </nav>
     </div>
 
-    <div class="isolate mt-10 mb-5 flex flex-row justify-center border-b border-gray-200 pb-5">
+    <div class="isolate mb-5 mt-10 flex flex-row justify-center border-b border-gray-200 pb-5">
       <div
         class="relative mx-auto flex w-1/2 flex-row items-center justify-center rounded-full shadow"
       >
@@ -69,29 +69,6 @@
           />
         </button>
       </div>
-      <SwitchGroup as="div" class="relative -ml-20 flex flex-shrink justify-end gap-3 pt-2">
-        <SwitchLabel
-          as="span"
-          class="flex-shrink text-sm font-medium leading-6 text-gray-900"
-          passive
-          >Latest Versions Only</SwitchLabel
-        >
-        <Switch
-          v-model="showLatest"
-          :class="[
-            showLatest ? 'bg-fuchsia-800' : 'bg-gray-200',
-            'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-fuchsia-800 focus:ring-offset-2',
-          ]"
-        >
-          <span
-            aria-hidden="true"
-            :class="[
-              showLatest ? 'translate-x-5' : 'translate-x-0',
-              'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-            ]"
-          />
-        </Switch>
-      </SwitchGroup>
     </div>
 
     <div class="mt-5">
@@ -99,9 +76,8 @@
         <li v-if="!datastores.length" class="italic text-slate-700">Nothing found</li>
         <DatastoreCard
           v-for="datastore in datastores"
-          :key="datastore.versionHash"
+          :key="datastore.id"
           :datastore="datastore"
-          :includeVersion="!showLatest"
         />
       </ul>
     </div>
@@ -115,7 +91,7 @@ import { ArrowPathIcon } from '@heroicons/vue/20/solid';
 import { ChartBarIcon, ChevronRightIcon, HeartIcon } from '@heroicons/vue/24/outline';
 import DatastoreCard from '@/pages/desktop/components/DatastoreCard.vue';
 import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
-import { IDatastoreList, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
+import { IDatastoreSummary, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 import { storeToRefs } from 'pinia';
 import { Switch, SwitchDescription, SwitchGroup, SwitchLabel } from '@headlessui/vue';
 
@@ -128,49 +104,29 @@ export default Vue.defineComponent({
     HeartIcon,
     ChartBarIcon,
     ChevronRightIcon,
-    Switch,
-    SwitchDescription,
-    SwitchGroup,
-    SwitchLabel,
   },
   setup() {
     const datastoresStore = useDatastoreStore();
     const cloudsStore = useCloudsStore();
-    const { datastoresByVersion } = storeToRefs(datastoresStore);
+    const { datastoresById } = storeToRefs(datastoresStore);
     const { getCloudName, getAdmin } = cloudsStore;
-    const showLatest = Vue.ref(true);
 
     const active = Vue.ref<'local' | 'admin' | 'installed'>('local');
 
     const datastores = computed(() => {
-      const list: IDatastoreList = [];
-      for (const entry of Object.values(datastoresByVersion.value)) {
-        // don't show older versions
-        if (
-          showLatest.value &&
-          entry.summary.latestVersionHash !== entry.summary.versionHash &&
-          datastoresByVersion.value[entry.summary.latestVersionHash]
-        ) {
-          continue;
-        }
+      const list: IDatastoreSummary[] = [];
+      for (const entry of Object.values(datastoresById.value)) {
+        const clouds = new Set(entry.cloudsByVersion[entry.summary.version]);
         if (active.value === 'local') {
-          const localEntry = entry.deploymentsByCloud.local;
-          if (localEntry) {
-            list.push(localEntry);
+          if (clouds.has('local')) {
+            list.push(entry.summary);
           }
         } else if (active.value === 'installed') {
-          if (entry.isInstalled)
-            list.push(Object.values(entry.deploymentsByCloud)[0] ?? entry.summary);
+          if (entry.isInstalled) list.push(entry.summary);
         } else if (active.value === 'admin') {
-          const adminClouds = Object.keys(entry.deploymentsByCloud).filter(
-            x => x !== 'local' && !!getAdmin(x),
-          );
-          if (entry.adminIdentity || adminClouds.length) {
-            const datastore = adminClouds.length
-              ? entry.deploymentsByCloud[adminClouds[0]]
-              : Object.values(entry.deploymentsByCloud)[0];
-
-            list.push(datastore);
+          const adminClouds = [...clouds].some(x => x !== 'local' && !!getAdmin(x));
+          if (entry.adminIdentity || adminClouds) {
+            list.push(entry.summary);
           }
         }
       }
@@ -183,13 +139,14 @@ export default Vue.defineComponent({
       argonActive: Vue.ref(false),
       refreshing: Vue.ref(false),
       getCloudName,
-      showLatest,
     };
   },
   emits: [],
   methods: {
-    selectDatastore(name: string, selectDatastore: IDatastoreList[0]): void {
-      void this.$router.push(`/datastore/${selectDatastore.versionHash}`);
+    selectDatastore(name: string, selectDatastore: IDatastoreSummary): void {
+      void this.$router.push(
+        `/datastore/${selectDatastore.id}@v${selectDatastore.version}`,
+      );
     },
     async refresh() {
       this.refreshing = true;

@@ -25,9 +25,9 @@
         <div class="flex-shrink-0">
           <button
             class="focus-visible:ring-fuchsia-8 inline-flex items-center rounded-md border border-fuchsia-800/70 bg-white px-3 py-1 text-sm font-semibold text-gray-700 shadow-sm hover:outline hover:outline-fuchsia-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
-            :class="{ 'opacity-80': searching }"
+            :class="{ 'opacity-80': running }"
             @click.prevent="runQuery"
-            :disabled="searching"
+            :disabled="running"
           >
             Run Query
           </button>
@@ -59,14 +59,14 @@
             You don't have any queries for this Datastore
           </td>
         </tr>
-        <template v-for="item of queries" :key="item.id">
+        <template v-for="item of queries" :key="item.queryId">
           <tr
             class="cursor-pointer text-sm leading-loose hover:bg-gray-100/50"
-            :class="[selectedId === item.id ? 'bg-gray-100' : '']"
-            @click="selectedId === item.id ? (selectedId = null) : (selectedId = item.id)"
+            :class="[selectedId === item.queryId ? 'bg-gray-100' : '']"
+            @click="selectedId === item.queryId ? (selectedId = null) : (selectedId = item.queryId)"
           >
             <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500">
-              {{ item.id }}
+              {{ item.queryId }}
             </td>
             <td class="px-3 py-4 text-sm font-medium text-gray-900">
               {{ item.query }}
@@ -87,14 +87,16 @@
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">{{ item.microgons ?? 0 }}₥</td>
           </tr>
-          <tr v-if="selectedId === item.id">
+          <tr v-if="selectedId === item.queryId">
             <td
               colspan="8"
               class="max-w-full overflow-x-auto border-b border-fuchsia-800/80 p-0.5 shadow-inner shadow-fuchsia-800"
             >
+              <Json class='pt-8 pl-10' v-if='getQueryErrorExtras(item.error)' :json='getQueryErrorExtras(item.error)' ></Json>
               <div
                 class="whitespace-pre-wrap py-8 pl-10 text-sm font-light text-gray-800"
                 v-if="item.error"
+
               >
                 {{ item.error.stack }}
               </div>
@@ -133,11 +135,13 @@
 </template>
 
 <script lang="ts">
+import { convertJsonToFlat } from '@/utils/flattenJson';
 import * as Vue from 'vue';
 import { ArrowLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline';
 import { useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import Json from '@/components/Json.vue';
 import {
   FaceFrownIcon,
   FaceSmileIcon,
@@ -153,6 +157,7 @@ export default Vue.defineComponent({
   components: {
     FaceFrownIcon,
     FaceSmileIcon,
+    Json,
     FireIcon,
     HandThumbUpIcon,
     HeartIcon,
@@ -165,10 +170,11 @@ export default Vue.defineComponent({
     const route = useRoute();
     const datastoresStore = useDatastoreStore();
     const { userQueriesByDatastore } = storeToRefs(datastoresStore);
-    const versionHash = route.params.versionHash as string;
+    const version = route.params.version as string;
+    const datastoreId = route.params.datastoreId as string;
 
     const queries = Vue.computed(() =>
-      Object.values(userQueriesByDatastore.value[versionHash]).sort((a, b) => {
+      Object.values(userQueriesByDatastore.value[datastoreId]).sort((a, b) => {
         if (!b.date) return -1;
         if (!a.date) return 1;
         return b.date.getTime() - a.date.getTime();
@@ -177,17 +183,25 @@ export default Vue.defineComponent({
     return {
       selectedId: Vue.ref<string>(),
       queryText: Vue.ref(''),
-      searching: Vue.ref(false),
+      running: Vue.ref(false),
       queries,
       datastoresStore,
-      versionHash,
+      version,
+      datastoreId,
     };
   },
   methods: {
+    getQueryErrorExtras(error: Error) {
+      if (!error) return null;
+      const { stack, name, message, ...extras } = error;
+      if (Object.keys(extras).length) {
+        return convertJsonToFlat(extras);
+      }
+    },
     async runQuery() {
-      this.searching = true;
-      await this.datastoresStore.runQuery(this.versionHash, this.queryText);
-      this.searching = false;
+      this.running = true;
+      await this.datastoresStore.runQuery(this.datastoreId, this.version, this.queryText);
+      this.running = false;
     },
   },
 });

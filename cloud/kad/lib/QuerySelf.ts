@@ -1,5 +1,4 @@
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
-import { debounce } from '@ulixee/commons/lib/asyncUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import Signals from '@ulixee/commons/lib/Signals';
@@ -31,24 +30,21 @@ export class QuerySelf {
   private readonly initialInterval: number;
   private readonly queryTimeout: number;
   private started: boolean;
-  private running: boolean;
   private timeoutId?: NodeJS.Timer;
   private controller?: AbortController;
   private initialQuerySelfHasRun?: Resolvable<void>;
+  private querySelfPromise: Resolvable<void>;
 
   constructor(private readonly kad: Kad, init: IQuerySelfInit) {
     const { count, interval, queryTimeout } = init;
 
-    this.logger = log.createChild(module);
-    this.running = false;
+    this.logger = log.createChild(module, { nodeId: kad.nodeId });
     this.started = false;
     this.count = count ?? K;
     this.interval = interval ?? QUERY_SELF_INTERVAL;
     this.initialInterval = init.initialInterval ?? QUERY_SELF_INITIAL_INTERVAL;
     this.queryTimeout = queryTimeout ?? QUERY_SELF_TIMEOUT;
     this.initialQuerySelfHasRun = init.initialQuerySelfHasRun;
-
-    this.querySelf = debounce(this.querySelf.bind(this), 100);
   }
 
   isStarted(): boolean {
@@ -61,7 +57,7 @@ export class QuerySelf {
     }
 
     this.started = true;
-    this.timeoutId = setTimeout(this.querySelf, this.initialInterval);
+    this.schedule();
   }
 
   async stop(): Promise<void> {
@@ -71,52 +67,44 @@ export class QuerySelf {
       clearTimeout(this.timeoutId);
     }
 
-    if (this.controller !== null) {
-      this.controller.abort();
-    }
+    this.controller?.abort();
   }
 
-  querySelf(): void {
-    if (!this.started || this.running) {
-      return;
+  async querySelf(): Promise<void> {
+    if (!this.started) return;
+
+    if (this.querySelfPromise) {
+      return this.querySelfPromise.promise;
     }
+
+    this.querySelfPromise = new Resolvable();
 
     if (this.kad.routingTable.size === 0) {
-      let nextInterval = this.interval;
-
-      if (!this.initialQuerySelfHasRun.isResolved) {
-        // if we've not yet run the first self query, shorten the interval until we try again
-        nextInterval = this.initialInterval;
-      }
-
-      this.logger.info('querySelf.skip - routingTableEmpty', { nextInterval });
-      clearTimeout(this.timeoutId);
-      this.timeoutId = setTimeout(this.querySelf, nextInterval);
-      return;
+      await new Promise(resolve => this.kad.routingTable.kb.once('peer:add', resolve));
     }
 
-    this.controller = new AbortController();
-    const signal = Signals.any(this.controller.signal, Signals.timeout(this.queryTimeout));
+    if (this.started) {
+      this.controller = new AbortController();
+      const signal = Signals.any(this.controller.signal, Signals.timeout(this.queryTimeout));
 
-    // this controller will get used for lots of dial attempts so make sure we don't cause warnings to be logged
-    setMaxListeners(Infinity, signal);
+      // this controller will get used for lots of dial attempts so make sure we don't cause warnings to be logged
+      setMaxListeners(Infinity, signal);
 
-    const parentLogId = this.logger.info(`querySelf.run(x/${this.count})`, {
-      searchForPeers: this.count,
-      timeout: this.queryTimeout,
-    });
+      const parentLogId = this.logger.info(`querySelf.run(x/${this.count})`, {
+        searchForPeers: this.count,
+        timeout: this.queryTimeout,
+      });
 
-    const limit = this.count;
-    void (async () => {
       try {
-        this.running = true;
         let found = 0;
         const nodeKadId = this.kad.nodeInfo.kadId;
         for await (const _ of this.kad.peerRouting.getClosestPeers(nodeKadId, {
           signal,
           isSelfQuery: true,
         })) {
-          if (++found === limit) {
+          found += 1;
+
+          if (found === this.count) {
             this.controller.abort();
             break;
           }
@@ -132,18 +120,32 @@ export class QuerySelf {
         if (this.started && error.code !== 'ERR_QUERY_ABORTED') {
           this.logger.error('querySelf.error', { error, parentLogId });
         }
-        // eslint-disable-next-line promise/always-return
       } finally {
         signal.clear();
-        this.running = false;
-
-        clearTimeout(this.timeoutId);
-
-        if (this.started) {
-          this.logger.stats('querySelf.nextRun', { millis: this.interval });
-          this.timeoutId = setTimeout(this.querySelf, this.interval);
-        }
       }
-    })();
+    }
+
+    this.controller = null;
+    this.querySelfPromise.resolve();
+    this.querySelfPromise = null;
+
+    if (!this.started) {
+      return;
+    }
+
+    this.schedule();
+  }
+
+  private schedule(): void {
+    clearTimeout(this.timeoutId);
+    this.timeoutId = setTimeout(
+      () =>
+        this.querySelf().catch(error => {
+          if (this.started && error.code !== 'ERR_QUERY_ABORTED') {
+            this.logger.error('QuerySelfError', { error });
+          }
+        }),
+      this.initialInterval,
+    );
   }
 }

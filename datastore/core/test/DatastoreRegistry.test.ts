@@ -3,10 +3,8 @@ import * as HashUtils from '@ulixee/commons/lib/hashUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { Helpers } from '@ulixee/datastore-testing';
-import IDatastoreManifest, {
-  IVersionHistoryEntry,
-} from '@ulixee/platform-specification/types/IDatastoreManifest';
-import { promises as Fs, existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { existsSync, mkdirSync, promises as Fs, readFileSync, rmSync } from 'fs';
 import * as Path from 'path';
 import DatastoreManifest from '../lib/DatastoreManifest';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
@@ -33,7 +31,8 @@ test('should throw an error if the required datastore core version is not instal
   await Fs.writeFile(
     `${datastoreTmpDir}/datastore-manifest.json`,
     JSON.stringify(<IDatastoreManifest>{
-      versionHash: encodeBuffer(sha256('dbx123'), 'dbx').substring(0, 22),
+      id: `id`,
+      version: '0.0.1',
       scriptHash: encodeBuffer(sha256('scr123'), 'scr'),
       coreVersion: '5.0.0',
       versionTimestamp: Date.now(),
@@ -41,7 +40,6 @@ test('should throw an error if the required datastore core version is not instal
       crawlersByName: {},
       tablesByName: {},
       scriptEntrypoint: 'here.js',
-      linkedVersions: [],
       adminIdentities: [],
     }),
   );
@@ -59,225 +57,60 @@ test('should be able to upload and retrieve the datastore', async () => {
   const datastoreTmpDir = `${storageDir}/tmp/dbx2`;
   mkdirSync(datastoreTmpDir, { recursive: true });
   const versionTimestamp = Date.now();
-  const versionHash = DatastoreManifest.createVersionHash({
-    scriptHash,
-    versionTimestamp,
-    scriptEntrypoint: 'here.js',
-    linkedVersions: [],
-    crawlersByName: {},
-    extractorsByName: { default: {} },
-    tablesByName: {},
-    adminIdentities: [],
-  });
   await Fs.writeFile(
     `${datastoreTmpDir}/datastore-manifest.json`,
     JSON.stringify(<IDatastoreManifest>{
       scriptHash,
       versionTimestamp,
-      versionHash,
+      id: `id`,
+      version: '0.0.1',
       coreVersion: '2.0.0-alpha.1',
       scriptEntrypoint: 'here.js',
       extractorsByName: { default: {} },
       crawlersByName: {},
       tablesByName: {},
-      linkedVersions: [],
       adminIdentities: [],
     }),
   );
   await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script);
   await expect(registry.save(datastoreTmpDir)).resolves.toBeTruthy();
 
-  const uploaded = await registry.getByVersionHash(versionHash);
+  const uploaded = await registry.get('id', '0.0.1');
   expect(uploaded).toBeTruthy();
   expect(readFileSync(uploaded.runtimePath, 'utf8')).toBe(script);
 });
 
-test('should allow a user to override updating with no history', async () => {
-  const datastoreTmpDir = `${storageDir}/tmp/test`;
-  Helpers.needsClosing.push({
-    close: () => existsSync(datastoreTmpDir) && rmSync(datastoreTmpDir),
-    onlyCloseOnFinal: false,
-  });
-  const registry = new DatastoreRegistry(storageDir);
-  Helpers.needsClosing.push(registry);
-
-  let originalVersionHash: string;
-  {
-    await Fs.mkdir(datastoreTmpDir, { recursive: true });
-    const script = 'function 1(){}';
-    const manifest = <IDatastoreManifest>{
-      coreVersion: '2.0.0-alpha.1',
-      scriptEntrypoint: 'override.js',
-      versionTimestamp: Date.now(),
-      scriptHash: hashScript(script),
-      versionHash: null,
-      extractorsByName: { default: {} },
-      crawlersByName: {},
-      tablesByName: {},
-      linkedVersions: [],
-      adminIdentities: [],
-    };
-
-    manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
-    originalVersionHash = manifest.versionHash;
-
-    await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
-    await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script);
-    await expect(registry.save(datastoreTmpDir)).resolves.toBeTruthy();
-  }
-  {
-    await Fs.mkdir(datastoreTmpDir, { recursive: true });
-    const script = 'function 2(){}';
-    const manifest = <IDatastoreManifest>{
-      coreVersion: '2.0.0-alpha.1',
-      scriptEntrypoint: 'override.js',
-      scriptHash: hashScript(script),
-      versionTimestamp: Date.now(),
-      extractorsByName: { default: {} },
-      crawlersByName: {},
-      tablesByName: {},
-      versionHash: null,
-      linkedVersions: [],
-      adminIdentities: [],
-    };
-
-    manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
-
-    await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
-    await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script);
-    await expect(registry.save(datastoreTmpDir)).rejects.toThrow(
-      'link to previous version history',
-    );
-    await expect(registry.getLatestVersion(originalVersionHash)).resolves.toBe(originalVersionHash);
-    // force new history
-    await expect(
-      registry.save(datastoreTmpDir, { allowNewLinkedVersionHistory: true }),
-    ).resolves.toBeTruthy();
-    await expect(registry.getLatestVersion(originalVersionHash)).resolves.toBe(originalVersionHash);
-    await expect(registry.getLatestVersion(manifest.versionHash)).resolves.toBe(
-      manifest.versionHash,
-    );
-  }
-});
-
-test('should throw an error with version history if current versions are unmatched', async () => {
-  const registry = new DatastoreRegistry(storageDir);
-  Helpers.needsClosing.push(registry);
-  const script1 = 'function 1(){}';
-  const script1VersionHash = hashScript(script1);
-  const script2 = 'function 2(){}';
-  const script2VersionHash = hashScript(script2);
-
-  const scriptDetails = {
-    coreVersion: '2.0.0-alpha.1',
-    scriptEntrypoint: 'unmatched.js',
-  };
-
-  const script3 = 'function 3(){}';
-  const script3VersionHash = hashScript(script3);
-  const versions: IVersionHistoryEntry[] = [];
-  {
-    const datastoreTmpDir = `${storageDir}/tmp/dbx3`;
-    const scriptHash = script1VersionHash;
-    mkdirSync(datastoreTmpDir, { recursive: true });
-    const manifest = <IDatastoreManifest>{
-      ...scriptDetails,
-      scriptHash,
-      versionTimestamp: Date.now(),
-      versionHash: null,
-      extractorsByName: { default: {} },
-      crawlersByName: {},
-      tablesByName: {},
-      linkedVersions: [],
-      adminIdentities: [],
-    };
-    manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
-    versions.push({ versionHash: manifest.versionHash, versionTimestamp: Date.now() });
-    await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
-    await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script1);
-    await expect(registry.save(datastoreTmpDir)).resolves.toBeTruthy();
-
-    await expect(registry.getByVersionHash(manifest.versionHash)).resolves.toBeTruthy();
-  }
-  {
-    const datastoreTmpDir = `${storageDir}/tmp/dbx4`;
-    const scriptHash = script2VersionHash;
-
-    mkdirSync(datastoreTmpDir, { recursive: true });
-    const manifest = <IDatastoreManifest>{
-      ...scriptDetails,
-      scriptHash,
-      versionTimestamp: Date.now(),
-      versionHash: null,
-      extractorsByName: { default: {} },
-      crawlersByName: {},
-      tablesByName: {},
-      linkedVersions: [...versions],
-      adminIdentities: [],
-    };
-    manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
-    versions.unshift({ versionHash: manifest.versionHash, versionTimestamp: Date.now() });
-
-    await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
-    await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script2);
-    await expect(registry.save(datastoreTmpDir)).resolves.toBeTruthy();
-
-    await expect(registry.getByVersionHash(manifest.versionHash)).resolves.toBeTruthy();
-    await expect(registry.getLatestVersion(versions[1].versionHash)).resolves.toBe(
-      manifest.versionHash,
-    );
-    await expect(registry.getLatestVersion(manifest.versionHash)).resolves.toBe(
-      manifest.versionHash,
-    );
-  }
-
-  {
-    const datastoreTmpDir = `${storageDir}/tmp/dbx5`;
-    const scriptHash = script3VersionHash;
-
-    mkdirSync(datastoreTmpDir, { recursive: true });
-    const manifest = <IDatastoreManifest>{
-      ...scriptDetails,
-      scriptHash,
-      versionTimestamp: Date.now(),
-      versionHash: null,
-      extractorsByName: { default: {} },
-      crawlersByName: {},
-      tablesByName: {},
-      linkedVersions: [versions[1]],
-      adminIdentities: [],
-    };
-    manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
-    await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
-    await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script3);
-    await expect(registry.save(datastoreTmpDir)).rejects.toThrow('different version history');
-  }
-});
-
 test('should provide a newer version hash if old script not available', async () => {
   const registry = new DatastoreRegistry(storageDir);
+
   Helpers.needsClosing.push(registry);
   // @ts-expect-error
   const versions = registry.diskStore.datastoresDb.versions;
   versions.save(
-    'maybe-there',
+    'idx',
+    '0.0.1',
     './new-version.ts',
     Date.now(),
     './new-version.ts',
-    'not-there',
-    null,
     'disk',
-    '',
-    false,
     null,
+    null,
+  );
+  versions.save(
+    'idx',
+    '0.0.2',
+    './new-version.ts',
+    Date.now(),
+    './new-version.ts',
+    'disk',
     null,
     null,
   );
   try {
-    await registry.getByVersionHash('not-there');
+    await registry.get('idx', '0.0.1');
   } catch (e) {
     expect(e).toBeInstanceOf(DatastoreNotFoundError);
-    expect(e.data?.latestVersionHash).toBe('maybe-there');
+    expect(e.data?.latestVersion).toBe('0.0.2');
   }
 });
 
@@ -291,7 +124,7 @@ test('should require a new upload to be signed by a previous admin identity', as
   Helpers.needsClosing.push(registry);
 
   const identity = Identity.createSync();
-  let originalVersionHash: string;
+
   {
     await Fs.mkdir(datastoreTmpDir, { recursive: true });
     const script = 'function 1(){}';
@@ -300,16 +133,13 @@ test('should require a new upload to be signed by a previous admin identity', as
       scriptEntrypoint: 'signed.js',
       versionTimestamp: Date.now(),
       scriptHash: hashScript(script),
-      versionHash: null,
+      id: 'first',
+      version: '0.0.1',
       extractorsByName: { default: {} },
       crawlersByName: {},
       tablesByName: {},
-      linkedVersions: [],
       adminIdentities: [identity.bech32],
     };
-
-    manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
-    originalVersionHash = manifest.versionHash;
 
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
     await Fs.writeFile(`${datastoreTmpDir}/datastore.js`, script);
@@ -328,12 +158,10 @@ test('should require a new upload to be signed by a previous admin identity', as
       extractorsByName: { default: {} },
       crawlersByName: {},
       tablesByName: {},
-      versionHash: null,
-      linkedVersions: [{ versionHash: originalVersionHash, versionTimestamp: Date.now() }],
+      id: 'first',
+      version: '0.0.2',
       adminIdentities: [],
     };
-
-    manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
 
     // TEST 1: don't sign upload
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
@@ -354,7 +182,6 @@ test('should require a new upload to be signed by a previous admin identity', as
 
     // TEST 3: replace admins with a new list
     manifest.adminIdentities = [adminOverwriteAttempt.bech32];
-    manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
     // can't just overwrite the admins without a previous one
     await expect(
@@ -365,7 +192,6 @@ test('should require a new upload to be signed by a previous admin identity', as
 
     // TEST 4: replace list and sign with old identity
     manifest.adminIdentities = [adminOverwriteAttempt.bech32, identity.bech32];
-    manifest.versionHash = DatastoreManifest.createVersionHash(manifest);
     await Fs.writeFile(`${datastoreTmpDir}/datastore-manifest.json`, JSON.stringify(manifest));
     await expect(
       registry.save(datastoreTmpDir, { adminIdentity: identity.bech32 }),

@@ -1,6 +1,9 @@
 import { toUrl } from '@ulixee/commons/lib/utils';
 import { ConnectionToCore } from '@ulixee/net';
-import { IDatastoreRegistryApis } from '@ulixee/platform-specification/services/DatastoreRegistryApis';
+import {
+  IDatastoreListEntry,
+  IDatastoreRegistryApis,
+} from '@ulixee/platform-specification/services/DatastoreRegistryApis';
 import IDatastoreRegistryStore, {
   IDatastoreManifestWithLatest,
 } from '../interfaces/IDatastoreRegistryStore';
@@ -18,53 +21,54 @@ export default class DatastoreRegistryServiceClient implements IDatastoreRegistr
     return Promise.resolve();
   }
 
-  async all(count?: number, offset?: number): Promise<IDatastoreManifestWithLatest[]> {
+  async list(
+    count?: number,
+    offset?: number,
+  ): Promise<{ datastores: IDatastoreListEntry[]; total: number }> {
     const result = await this.client.sendRequest({
       command: 'DatastoreRegistry.list',
       args: [{ count, offset }],
     });
-    return result.datastores;
+    return {
+      datastores: result.datastores,
+      total: result.total,
+    };
   }
 
-  async get(versionHash: string): Promise<IDatastoreManifestWithLatest> {
+  public async getVersions(
+    id: string,
+  ): Promise<{ version: string; timestamp: number }[]> {
+    const result = await this.client.sendRequest({
+      command: 'DatastoreRegistry.getVersions',
+      args: [{ id }],
+    });
+    return result.versions;
+  }
+
+  async get(id: string, version: string): Promise<IDatastoreManifestWithLatest> {
     const result = await this.client.sendRequest({
       command: 'DatastoreRegistry.get',
-      args: [{ versionHash }],
+      args: [{ id, version }],
     });
     return result.datastore;
   }
 
-  async getLatestVersion(versionHash: string): Promise<string> {
+  async getLatestVersion(id: string): Promise<string> {
     return (
       await this.client.sendRequest({
         command: 'DatastoreRegistry.getLatestVersion',
-        args: [{ versionHash }],
+        args: [{ id }],
       })
-    ).latestVersionHash;
+    )?.latestVersion;
   }
 
-  async getPreviousInstalledVersion(versionHash: string): Promise<string> {
-    return (
-      await this.client.sendRequest({
-        command: 'DatastoreRegistry.getPreviousInstalledVersion',
-        args: [{ versionHash }],
-      })
-    ).previousVersionHash;
-  }
-
-  async getLatestVersionForDomain(domain: string): Promise<string> {
-    return (
-      await this.client.sendRequest({
-        command: 'DatastoreRegistry.getLatestVersionForDomain',
-        args: [{ domain }],
-      })
-    ).latestVersionHash;
-  }
-
-  async downloadDbx(versionHash: string): ReturnType<IDatastoreRegistryStore['downloadDbx']> {
+  async downloadDbx(
+    id: string,
+    version: string,
+  ): ReturnType<IDatastoreRegistryStore['downloadDbx']> {
     const { adminIdentity, adminSignature, compressedDbx } = await this.client.sendRequest({
       command: 'DatastoreRegistry.downloadDbx',
-      args: [{ versionHash }],
+      args: [{ id, version }],
     });
     return {
       compressedDbx,

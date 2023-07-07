@@ -9,7 +9,8 @@ export default async function main(
 ): Promise<{
   creditUrl: string;
   cloudAddress: string;
-  datastoreHash: string;
+  datastoreId: string;
+  datastoreVersion: string;
 }> {
   // CREATE IDENTITIES
   const identityPath = Path.resolve(`${__dirname}/identities/DatastoreDev.json`);
@@ -38,24 +39,18 @@ export default async function main(
   needsClosing.push(() => cloudNode.kill());
 
   // For some reason, nodejs is taking CWD, but then going to closest package.json, so have to prefix with ./credits
-  const datastoreResult = execAndLog(
-    `npx @ulixee/datastore deploy -h ${cloudAddress} ./credits/datastore/index.js`,
-    {
-      cwd: __dirname,
-      env: {
-        ...process.env,
-        ULX_IDENTITY_PATH: identityPath,
-      },
+  execAndLog(`npx @ulixee/datastore deploy -h ${cloudAddress} ./credits/datastore/index.js`, {
+    cwd: __dirname,
+    env: {
+      ...process.env,
+      ULX_IDENTITY_PATH: identityPath,
     },
-  );
-
-  console.log('datastoreResult', datastoreResult);
-  const datastoreMatch = datastoreResult.match(/'dbx1(?:[02-9a-z]+)'/g);
-  const datastoreHash = datastoreMatch[0].trim().replace(/'/g, '');
-  console.log('Datastore VersionHash', datastoreHash);
+  });
+  const datastoreId = 'end-to-end';
+  const datastoreVersion = '0.0.1';
 
   const creditResult = execAndLog(
-    `npx @ulixee/datastore credits create --argons=5 ${cloudAddress}/datastore/${datastoreHash}`,
+    `npx @ulixee/datastore credits create --argons=5 ${cloudAddress}/${datastoreId}@v${datastoreVersion}`,
     {
       cwd: __dirname,
       env: {
@@ -70,7 +65,8 @@ export default async function main(
 
   return {
     creditUrl,
-    datastoreHash,
+    datastoreId,
+    datastoreVersion,
     cloudAddress,
   };
 }

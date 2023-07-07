@@ -88,7 +88,7 @@
           You can setup a new Cloud on your own machines.
         </p>
         <p class="mb-2 font-light">
-          You'll need to install Node.js 14+ on the remote machine. Then run these commands:
+          You'll need to install Node.js 16+ on the remote machine. Then run these commands:
           <!-- prettier-ignore -->
           <Prism language="shell">
             yarn add @ulixee/cloud

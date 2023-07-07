@@ -1,10 +1,10 @@
-import { Command } from 'commander';
-import type * as CliCommands from '@ulixee/datastore-packager/lib/cliCommands';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import type * as CliCommands from '@ulixee/datastore-packager/lib/cliCommands';
+import { Command } from 'commander';
 import * as Path from 'path';
 import DatastoreApiClient from '../lib/DatastoreApiClient';
-import creditsCli from './creditsCli';
 import cloneDatastore from './cloneDatastore';
+import creditsCli from './creditsCli';
 
 const { version } = require('../package.json');
 
@@ -35,7 +35,10 @@ export default function datastoreCommands(): Command {
       const { datastoreFilePath } = await cloneDatastore(url, path);
       console.log('Your cloned datastore has been created.', {
         path: Path.dirname(datastoreFilePath),
-        startCommand: `npx @ulixee/datastore start "${Path.relative(process.cwd(), datastoreFilePath)}"`,
+        startCommand: `npx @ulixee/datastore start "${Path.relative(
+          process.cwd(),
+          datastoreFilePath,
+        )}"`,
       });
     });
 
@@ -88,7 +91,11 @@ export default function datastoreCommands(): Command {
       '-t, --tsconfig <path>',
       'A path to a TypeScript config file if needed. Will be auto-located based on the entrypoint if it ends in ".ts"',
     )
-    .option('-d, --skip-docs', "Don't automatically display the deployed documentation website.", false)
+    .option(
+      '-d, --skip-docs',
+      "Don't automatically display the deployed documentation website.",
+      false,
+    )
     .addOption(identityPrivateKeyPathOption)
     .addOption(identityPrivateKeyPassphraseOption)
     .enablePositionalOptions(true)
@@ -149,19 +156,20 @@ export default function datastoreCommands(): Command {
     .description(
       'Install a Datastore and corresponding Schema into your project. Enables type-checking for Datastore.query.',
     )
-    .argument('<versionHash>', 'The version hash of the Datastore.')
+    .argument('<id>', 'The id of the Datastore.')
+    .argument('<version>', 'The version hash of the Datastore.')
     .option('-a, --alias <name>', 'Add a shortcut name to reference this Datastore hash.')
     .option(
       '-h, --host <host>',
       'Connect to the given Cloud node host. Will try to automatically connect if omitted.',
     )
-    .action(async (versionHash, { alias, host }) => {
+    .action(async (id, datastoreVersion, { alias, host }) => {
       host ??= UlixeeHostsConfig.global.getVersionHost(version);
 
       if (!host) throw new Error('Please provide a Cloud host to connect to.');
 
       const client = new DatastoreApiClient(host);
-      await client.install(versionHash, alias);
+      await client.install(id, datastoreVersion, alias);
     });
 
   cli.addCommand(creditsCli());

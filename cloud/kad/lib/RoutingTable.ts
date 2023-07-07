@@ -4,6 +4,7 @@ import { debounce } from '@ulixee/commons/lib/asyncUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import Queue from '@ulixee/commons/lib/Queue';
 import Signals from '@ulixee/commons/lib/Signals';
+import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import KBucket = require('k-bucket');
 import NodeId from '../interfaces/NodeId';
 import { nodeIdToKadId } from './Kad';
@@ -37,7 +38,10 @@ export interface RoutingTableInit {
  * A wrapper around `k-bucket`, to provide easy store and
  * retrieval for peers.
  */
-export class RoutingTable {
+export class RoutingTable extends TypedEventEmitter<{
+  'peer:add': { nodeId: NodeId };
+  'peer:remove': { nodeId: NodeId };
+}> {
   public kBucketSize: number;
   public kb?: KBucketTree = null;
   public pingQueue: Queue;
@@ -54,6 +58,7 @@ export class RoutingTable {
     private readonly kad: Pick<Kad, 'nodeInfo' | 'peerStore' | 'network'>,
     init: RoutingTableInit,
   ) {
+    super();
     const { kBucketSize, pingTimeout, pingConcurrency, tagName, tagValue } = init;
 
     this.logger = Logger(module).log;
@@ -68,6 +73,8 @@ export class RoutingTable {
 
     this.onPing = this.onPing.bind(this);
     this.updatePeerTags = debounce(this.updatePeerTags.bind(this), 0);
+    this.onPeerAdded = this.onPeerAdded.bind(this);
+    this.onPeerRemoved = this.onPeerRemoved.bind(this);
   }
 
   isStarted(): boolean {
@@ -85,16 +92,16 @@ export class RoutingTable {
 
     // test whether to evict peers
     this.kb.on('ping', this.onPing);
-    this.kb.on('added', this.updatePeerTags);
-    this.kb.on('removed', this.updatePeerTags);
+    this.kb.on('added', this.onPeerAdded);
+    this.kb.on('removed', this.onPeerRemoved);
   }
 
   async stop(): Promise<void> {
     if (!this.running) return;
     this.running = false;
     this.kb.off('ping', this.onPing);
-    this.kb.off('added', this.updatePeerTags);
-    this.kb.off('removed', this.updatePeerTags);
+    this.kb.off('added', this.onPeerAdded);
+    this.kb.off('removed', this.onPeerRemoved);
     this.pingQueue.stop();
     this.kb = null;
   }
@@ -174,6 +181,16 @@ export class RoutingTable {
     }
 
     this.closestNodeIds = newClosest;
+  }
+
+  private onPeerAdded(peer: KBucketPeer): void {
+    this.updatePeerTags();
+    this.emit('peer:add', { nodeId: peer.nodeId });
+  }
+
+  private onPeerRemoved(peer: KBucketPeer): void {
+    this.emit('peer:remove', { nodeId: peer.nodeId });
+    this.updatePeerTags();
   }
 
   /**

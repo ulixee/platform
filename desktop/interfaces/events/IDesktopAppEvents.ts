@@ -9,10 +9,15 @@ export default interface IDesktopAppEvents {
   'Sessions.listUpdated': IHeroSessionsListResult[];
   'Datastore.new': {
     activity: string;
-    datastore: IDatastoreApiTypes['Datastore.meta']['result'];
+    datastore: IDatastoreApiTypes['Datastore.meta']['result'] & {
+      examplesByEntityName: { [name: string]: { formatted: string; args: Record<string, any> } };
+    };
   };
-  'Datastore.stats': Pick<IDatastoreApiTypes['Datastore.meta']['result'], 'stats' | 'versionHash'>;
-  'Datastore.stopped': { versionHash: string };
+  'Datastore.stats': Pick<
+    IDatastoreApiTypes['Datastore.meta']['result'],
+    'stats' | 'version' | 'id'
+  >;
+  'Datastore.stopped': { id: string; version: string };
 }
 
 export interface INewHeroSessionEvent {

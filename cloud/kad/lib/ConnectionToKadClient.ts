@@ -9,8 +9,10 @@ import INodeInfo from '@ulixee/platform-specification/types/INodeInfo';
 import KadConnect from '../endpoints/Kad.connect';
 import KadFindNode from '../endpoints/Kad.findNode';
 import KadFindProviders from '../endpoints/Kad.findProviders';
+import KadGet from '../endpoints/Kad.get';
 import KadPing from '../endpoints/Kad.ping';
 import KadProvide from '../endpoints/Kad.provide';
+import KadPut from '../endpoints/Kad.put';
 import KadVerify from '../endpoints/Kad.verify';
 import IKadApiContext from '../interfaces/IKadApiContext';
 import { Kad } from './Kad';
@@ -25,6 +27,8 @@ export default class ConnectionToKadClient extends ConnectionToClient<IKadApis, 
     KadFindProviders,
     KadPing,
     KadVerify,
+    KadPut,
+    KadGet,
   ]).handlersByCommand as IKadApis;
 
   public nodeInfo: INodeInfo;

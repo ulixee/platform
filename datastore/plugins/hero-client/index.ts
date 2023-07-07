@@ -92,7 +92,7 @@ export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
         authentication,
         trackMetadata,
         id,
-        versionHash,
+        version,
         ...heroApplicableOptions
       } = extractorInternal.options as IExtractorRunOptions<ISchema>;
       /* eslint-enable @typescript-eslint/no-unused-vars */

@@ -3,6 +3,8 @@ import { boolean, date, number, string } from '@ulixee/schema';
 
 let runCrawlerTime: Date;
 const datastore = new Datastore({
+  id: 'crawl',
+  version: '0.0.1',
   crawlers: {
     crawl: new Crawler({
       async run(ctx) {

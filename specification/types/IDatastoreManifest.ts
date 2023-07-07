@@ -1,32 +1,23 @@
 import { z } from '@ulixee/specification';
 import { addressValidation, identityValidation } from '@ulixee/specification/common';
+import { datastoreIdValidation } from './datastoreIdValidation';
 import { DatastoreCrawlerPricing, DatastoreExtractorPricing } from './IDatastorePricing';
-import { datastoreVersionHashValidation } from './datastoreVersionHashValidation';
+import { semverValidation } from './semverValidation';
 
-const minDate = new Date('2022-01-01').getTime();
+export const minDate = new Date('2022-01-01').getTime();
 
 export const DatastoreManifestSchema = z.object({
+  id: datastoreIdValidation.describe('A unique id for the Datastore'),
+  version: semverValidation,
   name: z.string().optional(),
   description: z.string().optional(),
-  versionHash: datastoreVersionHashValidation,
   storageEngineHost: z
     .string()
     .url(
       'The storage engine host to use for this Datastore. If empty, will default to a local host.',
     )
     .optional(),
-  domain: z
-    .string()
-    .optional()
-    .describe('A Custom DNS name pointing at the latest version of the Datastore.'),
   versionTimestamp: z.number().int().gt(minDate),
-  linkedVersions: z
-    .object({
-      versionHash: datastoreVersionHashValidation,
-      versionTimestamp: z.number().int().gt(minDate),
-    })
-    .array()
-    .describe('Older versions that should be redirected to this version'),
   scriptHash: z
     .string()
     .length(62)
@@ -112,7 +103,8 @@ export const DatastoreManifestSchema = z.object({
           remoteMeta: z
             .object({
               host: z.string().describe('The remote host'),
-              datastoreVersionHash: datastoreVersionHashValidation,
+              datastoreId: datastoreIdValidation,
+              datastoreVersion: semverValidation,
               tableName: z.string().describe('The remote table name'),
             })
             .optional(),
@@ -129,9 +121,6 @@ export const DatastoreManifestSchema = z.object({
   paymentAddress: addressValidation.optional(),
 });
 
-export type IVersionHistoryEntry = z.infer<
-  typeof DatastoreManifestSchema.shape.linkedVersions.element
->;
 type IDatastoreManifest = z.infer<typeof DatastoreManifestSchema>;
 
 export default IDatastoreManifest;

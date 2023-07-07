@@ -1,5 +1,6 @@
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import { Helpers } from '@ulixee/datastore-testing';
 import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
 import * as Fs from 'fs';
 import * as Path from 'path';
@@ -20,19 +21,21 @@ beforeAll(async () => {
     }
   }
 
-  cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = { datastoresDir: storageDir };
+  cloudNode = await Helpers.createLocalNode(
+    {
+      datastoreConfiguration: { datastoresDir: storageDir },
+    },
+    true,
+  );
   const storage1 = (await directDatastore.bind({})).storageEngine;
   const storage2 = (await directExtractorInternal.bind({})).storageEngine;
   const storage3 = (await directTable.bind({})).storageEngine;
   storages.push(storage1, storage2, storage3);
-  await cloudNode.listen();
 });
 
 afterAll(async () => {
   for (const storage of storages) await storage.close();
-  await cloudNode.close();
-  if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
+  await Helpers.afterAll();
 });
 
 test('query datastore table', async () => {

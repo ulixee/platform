@@ -1,14 +1,14 @@
-import { ExtractSchemaType } from '@ulixee/schema';
-import assert = require('assert');
-import { SqlParser } from '@ulixee/sql-engine';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
-import Table, { IExpandedTableSchema } from './Table';
+import { ExtractSchemaType } from '@ulixee/schema';
+import { SqlParser } from '@ulixee/sql-engine';
+import assert = require('assert');
 import ITableComponents from '../interfaces/ITableComponents';
 import DatastoreApiClient from './DatastoreApiClient';
+import Table, { IExpandedTableSchema } from './Table';
 
 export type IPassthroughQueryRunOptions = Omit<
   IDatastoreApiTypes['Datastore.query']['args'],
-  'sql' | 'boundValues' | 'versionHash'
+  'sql' | 'boundValues' | 'version' | 'id'
 >;
 
 export interface IPassthroughTableComponents<
@@ -32,7 +32,8 @@ export default class PassthroughTable<
 > extends Table<TSchema> {
   public readonly remoteSource: string;
   public readonly remoteTable: string;
-  public datastoreVersionHash: string;
+  public remoteDatastoreId: string;
+  public remoteVersion: string;
 
   protected upstreamClient: DatastoreApiClient;
 
@@ -49,17 +50,22 @@ export default class PassthroughTable<
   public override async queryInternal<T = TSchemaType[]>(
     sql: string,
     boundValues: any[] = [],
-    options: IPassthroughQueryRunOptions = { id: undefined },
+    options: IPassthroughQueryRunOptions = { queryId: undefined },
   ): Promise<T> {
     this.createApiClient();
     if (this.name !== this.remoteTable) {
       const sqlParser = new SqlParser(sql, {}, { [this.name]: this.remoteTable });
       sql = sqlParser.toSql();
     }
-    const result = await this.upstreamClient.query<T>(this.datastoreVersionHash, sql, {
-      boundValues,
-      ...options,
-    });
+    const result = await this.upstreamClient.query<T>(
+      this.remoteDatastoreId,
+      this.remoteVersion,
+      sql,
+      {
+        boundValues,
+        ...options,
+      },
+    );
     return result.outputs as any;
   }
 
@@ -72,11 +78,13 @@ export default class PassthroughTable<
     assert(remoteDatastore, `A remote datastore source could not be found for ${remoteSource}`);
 
     try {
-      this.datastoreVersionHash = remoteDatastore.split('/').pop();
+      const [datastoreId, datastoreVersion] = remoteDatastore.split('/').pop().split('@v');
+      this.remoteDatastoreId = datastoreId;
+      this.remoteVersion = datastoreVersion;
       this.upstreamClient = this.datastoreInternal.createApiClient(remoteDatastore);
     } catch (error) {
       throw new Error(
-        'A valid url was not supplied for this remote datastore. Format should be ulx://<host>/<datastoreVersionHash>',
+        'A valid url was not supplied for this remote datastore. Format should be ulx://<host>/<datastoreId>@v<datastoreVersion>',
       );
     }
   }

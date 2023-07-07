@@ -16,6 +16,9 @@ export default class ClientForRemote {
   public port: number;
   public database: string;
 
+  private datastoreId: string;
+  private version: string;
+
   private get apiClient(): DatastoreApiClient {
     if (!this.#apiClient) {
       const address = `${this.host}:${this.port}`;
@@ -29,7 +32,12 @@ export default class ClientForRemote {
   constructor(uriOrObject: ILocationStringOrObject = {}) {
     const connectionParameters = new ConnectionParameters(uriOrObject);
     this.user = connectionParameters.user;
-    this.database = connectionParameters.database;
+    if (connectionParameters.database) {
+      this.database = connectionParameters.database;
+      const [datastoreId, version] = this.database.split('@v');
+      this.datastoreId = datastoreId;
+      this.version = version;
+    }
     this.port = connectionParameters.port;
     this.host = connectionParameters.host;
     this.password = connectionParameters.password;
@@ -61,7 +69,8 @@ export default class ClientForRemote {
     };
 
     return (await this.apiClient.stream(
-      this.database,
+      this.datastoreId,
+      this.version,
       extractorOrTableName,
       inputFilter,
       options,
@@ -86,7 +95,13 @@ export default class ClientForRemote {
         : undefined,
     };
 
-    const [crawlerOutput] = await this.apiClient.stream(this.database, name, inputFilter, options);
+    const [crawlerOutput] = await this.apiClient.stream(
+      this.datastoreId,
+      this.version,
+      name,
+      inputFilter,
+      options,
+    );
     return crawlerOutput as ICrawlerOutputSchema;
   }
 
@@ -109,7 +124,7 @@ export default class ClientForRemote {
         : undefined,
     };
 
-    const { outputs } = await this.apiClient.query(this.database, sql, options);
+    const { outputs } = await this.apiClient.query(this.datastoreId, this.version, sql, options);
     return outputs;
   }
 

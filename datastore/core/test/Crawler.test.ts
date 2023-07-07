@@ -22,12 +22,15 @@ beforeAll(async () => {
     Fs.rmSync(`${__dirname}/datastores/crawl.dbx`, { recursive: true });
   }
 
-  cloudNode = new CloudNode();
-  cloudNode.datastoreConfiguration = {
-    datastoresDir: storageDir,
-    datastoresTmpDir: Path.join(storageDir, 'tmp'),
-  };
-  await cloudNode.listen();
+  cloudNode = await Helpers.createLocalNode(
+    {
+      datastoreConfiguration: {
+        datastoresDir: storageDir,
+        datastoresTmpDir: Path.join(storageDir, 'tmp'),
+      },
+    },
+    true,
+  );
   registry = cloudNode.datastoreCore.datastoreRegistry;
   statsTracker = cloudNode.datastoreCore.statsTracker;
   client = new DatastoreApiClient(await cloudNode.address);
@@ -39,12 +42,7 @@ beforeEach(() => {
 });
 
 afterEach(Helpers.afterEach);
-
-afterAll(async () => {
-  await cloudNode.close();
-  await Helpers.afterAll();
-  await Fs.promises.rm(storageDir, { recursive: true }).catch(() => null);
-});
+afterAll(Helpers.afterAll);
 
 test('should be able to run a crawler', async () => {
   const crawler = new DatastorePackager(`${__dirname}/datastores/crawl.js`);
@@ -52,7 +50,13 @@ test('should be able to run a crawler', async () => {
   await client.upload(await crawler.dbx.tarGzip());
   const affiliateId = `aff${nanoid(12)}`;
   await expect(
-    client.stream(crawler.manifest.versionHash, 'crawlCall', {}, { affiliateId }),
+    client.stream(
+      crawler.manifest.id,
+      crawler.manifest.version,
+      'crawlCall',
+      {},
+      { affiliateId },
+    ),
   ).resolves.toEqual([{ version: '1', crawler: 'none', runCrawlerTime: expect.any(Date) }]);
   const { queryLogDb, statsDb } = statsTracker.diskStore;
   expect(queryLogDb.logTable.all()).toHaveLength(1);
@@ -67,13 +71,22 @@ test('should be able to run a crawler', async () => {
 test('should be able to query a crawler', async () => {
   const crawler = new DatastorePackager(`${__dirname}/datastores/crawl.js`);
   await crawler.build();
-  await client.upload(await crawler.dbx.tarGzip());
+  try {
+    await client.upload(await crawler.dbx.tarGzip());
+  } catch (error) {
+    if (error.code !== 'ERR_DUPLICATE_VERSION') throw error;
+  }
   const { queryLogDb, statsDb } = statsTracker.diskStore;
   queryLogDb.logTable.db.exec(`delete from ${queryLogDb.logTable.tableName}`);
   statsDb.datastoreEntities.db.exec(`delete from ${statsDb.datastoreEntities.tableName}`);
   const affiliateId = `aff${nanoid(12)}`;
   await expect(
-    client.query(crawler.manifest.versionHash, 'select * from crawlCall()', { affiliateId }),
+    client.query(
+      crawler.manifest.id,
+      crawler.manifest.version,
+      'select * from crawlCall()',
+      { affiliateId },
+    ),
   ).resolves.toEqual(
     expect.objectContaining({
       outputs: [
@@ -94,18 +107,27 @@ test('should be able to query a crawler', async () => {
 test('should be able to ask a crawler for a cached result', async () => {
   const crawler = new DatastorePackager(`${__dirname}/datastores/crawl.js`);
   await crawler.build();
-  await client.upload(await crawler.dbx.tarGzip());
+  try {
+    await client.upload(await crawler.dbx.tarGzip());
+  } catch (error) {
+    if (error.code !== 'ERR_DUPLICATE_VERSION') throw error;
+  }
 
-  const result1 = await client.stream(crawler.manifest.versionHash, 'crawlCall', {
-    sessionId: '1',
-  });
+  const result1 = await client.stream(
+    crawler.manifest.id,
+    crawler.manifest.version,
+    'crawlCall',
+    {
+      sessionId: '1',
+    },
+  );
   expect(result1).toEqual([
     { version: '1', crawler: 'none', sessionId: '1', runCrawlerTime: expect.any(Date) },
   ]);
 
   // crawl is setup to pass in the run time from the first result
   await expect(
-    client.stream(crawler.manifest.versionHash, 'crawlCall', {
+    client.stream(crawler.manifest.id, crawler.manifest.version, 'crawlCall', {
       sessionId: '2',
       maxTimeInCache: Date.now() - result1[0].runCrawlerTime.getTime() / 1e3,
     }),
@@ -116,13 +138,22 @@ test('should be able to ask a crawler for a cached result', async () => {
 test('should get cached result by serialized input if no schema', async () => {
   const crawler = new DatastorePackager(`${__dirname}/datastores/crawl.js`);
   await crawler.build();
-  await client.upload(await crawler.dbx.tarGzip());
+  try {
+    await client.upload(await crawler.dbx.tarGzip());
+  } catch (error) {
+    if (error.code !== 'ERR_DUPLICATE_VERSION') throw error;
+  }
 
-  const result1 = await client.stream(crawler.manifest.versionHash, 'crawlCall', {
-    sessionId: '1',
-    test1: true,
-    test2: 'abc',
-  });
+  const result1 = await client.stream(
+    crawler.manifest.id,
+    crawler.manifest.version,
+    'crawlCall',
+    {
+      sessionId: '1',
+      test1: true,
+      test2: 'abc',
+    },
+  );
   expect(result1).toEqual([
     { version: '1', crawler: 'none', sessionId: '1', runCrawlerTime: expect.any(Date) },
   ]);
@@ -133,7 +164,7 @@ test('should get cached result by serialized input if no schema', async () => {
   // crawl is setup to pass in the run time from the first result
   findCachedSpy.mockClear();
   await expect(
-    client.stream(crawler.manifest.versionHash, 'crawlCall', {
+    client.stream(crawler.manifest.id, crawler.manifest.version, 'crawlCall', {
       sessionId: '2', // should not call the crawler
       maxTimeInCache: Date.now() - result1[0].runCrawlerTime.getTime() / 1e3,
       // change field order to test
@@ -151,7 +182,7 @@ test('should get cached result by serialized input if no schema', async () => {
 
   findCachedSpy.mockClear();
   await expect(
-    client.stream(crawler.manifest.versionHash, 'crawlCall', {
+    client.stream(crawler.manifest.id, crawler.manifest.version, 'crawlCall', {
       sessionId: '3',
       maxTimeInCache: Date.now() - result1[0].runCrawlerTime.getTime() / 1e3,
       test2: 'somethingElse',
@@ -172,13 +203,22 @@ test('should get cached result by serialized input if no schema', async () => {
 test('should get cached result individual input columns', async () => {
   const crawler = new DatastorePackager(`${__dirname}/datastores/crawl.js`);
   await crawler.build();
-  await client.upload(await crawler.dbx.tarGzip());
+  try {
+    await client.upload(await crawler.dbx.tarGzip());
+  } catch (error) {
+    if (error.code !== 'ERR_DUPLICATE_VERSION') throw error;
+  }
 
-  const result1 = await client.stream(crawler.manifest.versionHash, 'crawlWithSchemaCall', {
-    sessionId: '1',
-    colBool: true,
-    colNum: 1,
-  });
+  const result1 = await client.stream(
+    crawler.manifest.id,
+    crawler.manifest.version,
+    'crawlWithSchemaCall',
+    {
+      sessionId: '1',
+      colBool: true,
+      colNum: 1,
+    },
+  );
   expect(result1).toEqual([{ sessionId: '1', runCrawlerTime: expect.any(Date) }]);
 
   expect(findCachedSpy).toHaveBeenCalledTimes(1);
@@ -187,7 +227,7 @@ test('should get cached result individual input columns', async () => {
   // crawl is setup to pass in the run time from the first result
   findCachedSpy.mockClear();
   await expect(
-    client.stream(crawler.manifest.versionHash, 'crawlWithSchemaCall', {
+    client.stream(crawler.manifest.id, crawler.manifest.version, 'crawlWithSchemaCall', {
       sessionId: '2', // should not call the crawler
       maxTimeInCache: Date.now() - result1[0].runCrawlerTime.getTime() / 1e3,
       colBool: true,
@@ -204,7 +244,7 @@ test('should get cached result individual input columns', async () => {
 
   findCachedSpy.mockClear();
   await expect(
-    client.stream(crawler.manifest.versionHash, 'crawlWithSchemaCall', {
+    client.stream(crawler.manifest.id, crawler.manifest.version, 'crawlWithSchemaCall', {
       sessionId: '3',
       maxTimeInCache: Date.now() - result1[0].runCrawlerTime.getTime() / 1e3,
       colBool: false,

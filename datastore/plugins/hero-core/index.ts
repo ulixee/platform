@@ -106,13 +106,14 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
     runtime: { scriptEntrypoint: string; functionName: string },
   ): void {
     options.scriptInvocationMeta = {
-      version: options.versionHash,
-      runId: options.id,
+      version: options.version,
+      productId: options.id,
+      runId: options.queryId,
       entrypoint: runtime.scriptEntrypoint,
       entryFunction: runtime.functionName,
       runtime: 'datastore',
     };
-    options.sessionId = `query-${options.id}-${nanoid(3)}`;
+    options.sessionId = `query-${options.queryId}-${nanoid(3)}`;
     options.connectionToCore = this.connectionToCore;
   }
 

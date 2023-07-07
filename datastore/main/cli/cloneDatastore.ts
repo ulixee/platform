@@ -17,13 +17,13 @@ export default async function cloneDatastore(
   directoryPath?: string,
   options: { embedCredits?: { id: string; secret: string } } = {},
 ): Promise<{ datastoreFilePath: string }> {
-  const { datastoreVersionHash, host } = await DatastoreApiClient.resolveDatastoreDomain(url);
+  const { datastoreId, datastoreVersion, host } = await DatastoreApiClient.parseDatastoreUrl(url);
   if (url.includes('/free-credits')) {
     const credit = new URL(url).search.split(':');
     options.embedCredits = { id: credit[0], secret: credit[1] };
   }
   const datastoreApiClient = new DatastoreApiClient(host);
-  const meta = await datastoreApiClient.getMeta(datastoreVersionHash, true);
+  const meta = await datastoreApiClient.getMeta(datastoreId, datastoreVersion, true);
   await datastoreApiClient.disconnect();
   const schemasByName: Record<string, { isTable: boolean; schemaJson: any }> = {};
   const imports = new Set<string>();
@@ -97,6 +97,8 @@ export default async function cloneDatastore(
   import { ${[...schemaImports].join(', ')} } from '@ulixee/schema';
   
   const datastore = new Datastore({
+    id: ${JSON.stringify(meta.id+2)},
+    version: "0.0.1",
     name: ${JSON.stringify(meta.name)},${description}
     affiliateId: "aff${nanoid(12)}",
     remoteDatastores: {

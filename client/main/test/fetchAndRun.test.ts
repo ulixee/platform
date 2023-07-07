@@ -1,35 +1,33 @@
-import * as Fs from 'fs';
-import * as Path from 'path';
 import { CloudNode } from '@ulixee/cloud';
 import DatastorePackager from '@ulixee/datastore-packager';
+import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import * as Path from 'path';
 import Client from '..';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Client.fetch.test');
 let cloudNode: CloudNode;
 let apiClient: DatastoreApiClient;
+let packager: DatastorePackager;
 
 beforeAll(async () => {
-  cloudNode = new CloudNode();
-  cloudNode.router.datastoreConfiguration = {
-    datastoresDir: storageDir,
-    datastoresTmpDir: Path.join(storageDir, 'tmp'),
-  };
-  await cloudNode.listen();
+  cloudNode = await Helpers.createLocalNode({
+    datastoreConfiguration: {
+      datastoresDir: storageDir,
+    },
+  });
+  packager = new DatastorePackager(`${__dirname}/datastores/fetch.js`);
+  await packager.build({ createTemporaryVersion: true });
   apiClient = new DatastoreApiClient(await cloudNode.address);
+  Helpers.onClose(() => apiClient.disconnect(), true);
+  await apiClient.upload(await packager.dbx.tarGzip());
 });
 
-afterAll(async () => {
-  await cloudNode.close();
-  if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
-});
+afterAll(Helpers.afterAll);
 
 test('should be able to fetch a datastore table', async () => {
-  const packager = new DatastorePackager(`${__dirname}/datastores/fetch.js`);
-  await packager.build();
-  await apiClient.upload(await packager.dbx.tarGzip());
   const cloudNodeAddress = await cloudNode.address;
-  const client = new Client(`ulx://${cloudNodeAddress}/${packager.manifest.versionHash}`);
+  const client = new Client(`ulx://${cloudNodeAddress}/${packager.manifest.id}@v${packager.manifest.version}`);
   const results = await client.fetch('testers');
 
   expect(results).toEqual([
@@ -39,11 +37,8 @@ test('should be able to fetch a datastore table', async () => {
 });
 
 test('should be able to run a datastore extractor', async () => {
-  const packager = new DatastorePackager(`${__dirname}/datastores/fetch.js`);
-  await packager.build();
-  await apiClient.upload(await packager.dbx.tarGzip());
   const cloudNodeAddress = await cloudNode.address;
-  const client = new Client(`ulx://${cloudNodeAddress}/${packager.manifest.versionHash}`);
+  const client = new Client(`ulx://${cloudNodeAddress}/${packager.manifest.id}@v${packager.manifest.version}`);
   const results = await client.run('test', { shouldTest: true });
 
   expect(results).toEqual([{ testerEcho: true, greeting: 'Hello world' }]);

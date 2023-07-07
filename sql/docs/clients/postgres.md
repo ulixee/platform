@@ -8,7 +8,7 @@ Below is an example of a Ulixee SQL query using a Postgres client:
 import { Client } from 'pg';
 
 const new Client('postgres://');
-client.connect(() => {
+client.connect(async () => {
   const { rows } = await client.query(`SELECT * FROM table WHERE lastName='Clark'`);
   console.log('OUTPUT: ', rows);
 });

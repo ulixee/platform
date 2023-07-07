@@ -9,7 +9,8 @@ const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughTab
 
 let cloudNode: CloudNode;
 let client: DatastoreApiClient;
-let remoteVersionHash: string;
+let remoteVersion: string;
+let remoteDatastoreId: string;
 beforeAll(async () => {
   for (const file of [
     'remoteTable.dbx',
@@ -22,18 +23,22 @@ beforeAll(async () => {
     }
   }
 
-  cloudNode = await Helpers.createLocalNode({
-    datastoreConfiguration: {
-      datastoresDir: storageDir,
+  cloudNode = await Helpers.createLocalNode(
+    {
+      datastoreConfiguration: {
+        datastoresDir: storageDir,
+      },
     },
-  }, true);
+    true,
+  );
   client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 
   const packager = new DatastorePackager(`${__dirname}/datastores/remoteTable.js`);
   await packager.build();
   await client.upload(await packager.dbx.tarGzip());
-  remoteVersionHash = packager.manifest.versionHash;
+  remoteVersion = packager.manifest.version;
+  remoteDatastoreId = packager.manifest.id;
 });
 afterEach(Helpers.afterEach);
 
@@ -42,8 +47,10 @@ afterAll(async () => {
 });
 
 test('should be able to have a passthrough table', async () => {
-  await expect(client.query(remoteVersionHash, 'select * from remote')).resolves.toEqual({
-    latestVersionHash: remoteVersionHash,
+  await expect(
+    client.query(remoteDatastoreId, remoteVersion, 'select * from remote'),
+  ).resolves.toEqual({
+    latestVersion: remoteVersion,
     metadata: expect.any(Object),
     outputs: [
       { title: 'Hello', success: true },
@@ -58,7 +65,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await cloudNode.address}/${remoteVersionHash}',
+    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}@v${remoteVersion}',
   },
   tables: {
     pass: new Datastore.PassthroughTable({
@@ -73,13 +80,17 @@ export default new Datastore({
   );
 
   const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughTable.js`);
-  await passthrough.build();
+  await passthrough.build({ createTemporaryVersion: true });
   await client.upload(await passthrough.dbx.tarGzip());
 
   await expect(
-    client.query(passthrough.manifest.versionHash, 'select * from pass'),
+    client.query(
+      passthrough.manifest.id,
+      passthrough.manifest.version,
+      'select * from pass',
+    ),
   ).resolves.toEqual({
-    latestVersionHash: passthrough.manifest.versionHash,
+    latestVersion: passthrough.manifest.version,
     metadata: expect.any(Object),
     outputs: [
       { title: 'Hello', success: true },
@@ -96,7 +107,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await cloudNode.address}/${remoteVersionHash}',
+    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}@v${remoteVersion}',
   },
   tables: {
     pass: new Datastore.PassthroughTable({
@@ -120,17 +131,18 @@ export default new Datastore({
   );
 
   const passthrough = new DatastorePackager(`${__dirname}/datastores/passthroughTable2.js`);
-  await passthrough.build();
+  await passthrough.build({ createTemporaryVersion: true });
   await client.upload(await passthrough.dbx.tarGzip());
 
   await expect(
     client.query(
-      passthrough.manifest.versionHash,
+      passthrough.manifest.id,
+      passthrough.manifest.version,
       'select local.* from pass join local on local.title = pass.title where pass.success = $1',
       { boundValues: [true] },
     ),
   ).resolves.toEqual({
-    latestVersionHash: passthrough.manifest.versionHash,
+    latestVersion: passthrough.manifest.version,
     metadata: expect.any(Object),
     outputs: [{ title: 'Hello', name: 'World' }],
   });

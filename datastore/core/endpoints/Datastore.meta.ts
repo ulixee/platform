@@ -3,8 +3,8 @@ import translateDatastoreMetadata from '../lib/translateDatastoreMetadata';
 
 export default new DatastoreApiHandler('Datastore.meta', {
   async handler(request, context) {
-    const datastore = await context.datastoreRegistry.getByVersionHash(request.versionHash);
-    const stats = await context.statsTracker.getForDatastore(datastore);
+    const datastore = await context.datastoreRegistry.get(request.id, request.version);
+    const stats = await context.statsTracker.getForDatastoreVersion(datastore);
 
     return translateDatastoreMetadata(datastore, stats, context, request.includeSchemasAsJson);
   },

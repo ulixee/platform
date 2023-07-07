@@ -2,7 +2,8 @@ import Datastore, { Table, Extractor } from '@ulixee/datastore';
 import { boolean, string } from '@ulixee/schema';
 
 export default new Datastore({
-  domain: 'docs.datastoresRus.com',
+  id: 'docpage',
+  version: '0.0.1',
   extractors: {
     test: new Extractor({
       run(ctx) {

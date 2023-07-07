@@ -1,7 +1,8 @@
 export default interface IDatastoreDeployLogEntry {
   scriptEntrypoint: string;
   cloudHost: string;
-  versionHash: string;
+  datastoreId: string;
+  version: string;
   timestamp: number;
   adminIdentity?: string;
 }

@@ -13,7 +13,9 @@ import KadDb from '../db/KadDb';
 import IKadOptions from '../interfaces/IKadOptions';
 import NodeId from '../interfaces/NodeId';
 import ConnectionToKadClient from './ConnectionToKadClient';
+import { ContentFetching } from './ContentFetching';
 import { ContentRouting } from './ContentRouting';
+import { IKadRecord } from './KadRecord';
 import { Network } from './Network';
 import { PeerRouting } from './PeerRouting';
 import { PeerStore } from './PeerStore';
@@ -39,6 +41,7 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
   public peerStore: PeerStore;
   public identity: Identity;
   public readonly contentRouting: ContentRouting;
+  public readonly contentFetching: ContentFetching;
   public readonly queryManager: QueryManager;
   public readonly querySelf: QuerySelf;
 
@@ -124,6 +127,7 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
     // DHT components
     this.peerRouting = new PeerRouting(this);
     this.contentRouting = new ContentRouting(this);
+    this.contentFetching = new ContentFetching(this);
     this.routingTableRefresh = new RoutingTableRefresh(this);
     this.querySelf = new QuerySelf(this, {
       interval: querySelfInterval,
@@ -289,6 +293,36 @@ export class Kad extends TypedEventEmitter<IKadEvents> implements IKad {
         yield provider;
       }
     }
+  }
+
+  public async *get(
+    key: Buffer,
+    { timeout = 5000, signal = null as AbortSignal } = {},
+  ): AsyncIterable<IKadRecord> {
+    await this.connectedToNodesPromise;
+    let lastPublished: IKadRecord;
+    for await (const result of this.contentFetching.get(key, { signal, queryTimeout: timeout })) {
+      if (lastPublished?.timestamp >= result.record.timestamp) continue;
+      lastPublished = result.record;
+      yield result.record;
+    }
+  }
+
+  public async *put(
+    key: Buffer,
+    record: IKadRecord,
+    { minPutPeers = 1, timeout = 5000, signal = null as AbortSignal } = {},
+  ): AsyncIterable<{ putToPeer: NodeId }> {
+    await this.connectedToNodesPromise;
+    let counter = 0;
+    for await (const put of this.contentFetching.put(key, record, {
+      signal,
+      queryTimeout: timeout,
+    })) {
+      counter += 1;
+      yield { putToPeer: put.notifiedPeer };
+    }
+    if (counter < minPutPeers) throw new Error('Could not find enough peers to put to');
   }
 
   /**

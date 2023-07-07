@@ -1,22 +1,43 @@
 import { z } from '@ulixee/specification';
 import { micronoteIdValidation } from '@ulixee/specification/common';
 import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
-import { datastoreVersionHashValidation } from '../types/datastoreVersionHashValidation';
+import { EntityStatsSchema } from '../datastore/DatastoreApis';
+import { datastoreIdValidation } from '../types/datastoreIdValidation';
 import { DatastoreStatsSchema } from '../types/IDatastoreStats';
+import { semverValidation } from '../types/semverValidation';
 
 export const StatsTrackerApiSchemas = {
-  'StatsTracker.get': {
+  'StatsTracker.getByVersion': {
     args: z.object({
-      versionHash: datastoreVersionHashValidation,
+      datastoreId: datastoreIdValidation,
+      version: semverValidation,
     }),
     result: z.object({
       stats: DatastoreStatsSchema,
-      statsByEntityName: z.record(z.string().describe('Entity name'), DatastoreStatsSchema),
+      statsByEntityName: z.record(z.string().describe('Entity name'), EntityStatsSchema),
+    }),
+  },
+  'StatsTracker.get': {
+    args: z.object({
+      datastoreId: datastoreIdValidation,
+    }),
+    result: z.object({
+      stats: DatastoreStatsSchema,
+      statsByEntityName: z.record(z.string().describe('Entity name'), EntityStatsSchema),
+    }),
+  },
+  'StatsTracker.getSummary': {
+    args: z.object({
+      datastoreId: datastoreIdValidation,
+    }),
+    result: z.object({
+      stats: DatastoreStatsSchema,
     }),
   },
   'StatsTracker.recordEntityStats': {
     args: z.object({
-      versionHash: datastoreVersionHashValidation,
+      datastoreId: datastoreIdValidation,
+      version: semverValidation,
       cloudNodeHost: z.string().describe('The node hosting this query.'),
       cloudNodeIdentity: z
         .string()
@@ -35,8 +56,9 @@ export const StatsTrackerApiSchemas = {
   },
   'StatsTracker.recordQuery': {
     args: z.object({
-      versionHash: datastoreVersionHashValidation,
-      id: z.string().describe('Query Id'),
+      datastoreId: datastoreIdValidation,
+      version: semverValidation,
+      queryId: z.string().describe('Query Id'),
       cloudNodeHost: z.string().describe('The node hosting this query.'),
       cloudNodeIdentity: z
         .string()

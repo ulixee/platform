@@ -22,7 +22,7 @@
     <h3>Setting Up the Ulixee Repository</h3>
 
     <p>
-      Install <a href="https://nodejs.org/en/download/">Node.js 14</a> or higher and
+      Install <a href="https://nodejs.org/en/download/">Node.js 16</a> or higher and
       <a href="https://yarnpkg.com/lang/en/docs/install/">Yarn</a>.
     </p>
 

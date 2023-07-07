@@ -34,7 +34,7 @@ export class WindowManager {
     this.events.on(this.desktopWindow, 'focus', this.setMenu.bind(this));
     this.events.on(
       apiManager.privateDesktopApiHandler,
-      'open-chromealive',
+      'open-replay',
       this.loadChromeAliveWindow.bind(this),
     );
   }

@@ -1,13 +1,23 @@
 import { z } from '@ulixee/specification';
 import { identityValidation, signatureValidation } from '@ulixee/specification/common';
 import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
+import { datastoreIdValidation } from '../types/datastoreIdValidation';
 import { DatastoreManifestSchema } from '../types/IDatastoreManifest';
-import { datastoreVersionHashValidation } from '../types/datastoreVersionHashValidation';
+import { semverValidation } from '../types/semverValidation';
 
 export const DatastoreManifestWithLatest = DatastoreManifestSchema.extend({
-  latestVersionHash: datastoreVersionHashValidation.describe(
-    'The newest versionHash of this Datastore.',
-  ),
+  latestVersion: semverValidation.describe('The newest version of this Datastore.'),
+  isStarted: z.boolean().describe('Is the Datastore started. Only relevant in development mode.'),
+});
+
+export const DatastoreListEntry = DatastoreManifestSchema.pick({
+  id: true,
+  version: true,
+  versionTimestamp: true,
+  description: true,
+  name: true,
+  scriptEntrypoint: true,
+}).extend({
   isStarted: z.boolean().describe('Is the Datastore started. Only relevant in development mode.'),
 });
 
@@ -18,44 +28,44 @@ export const DatastoreRegistryApiSchemas = {
       offset: z.number().optional().describe('The offset of records to return'),
     }),
     result: z.object({
-      datastores: DatastoreManifestWithLatest.array(),
+      datastores: DatastoreListEntry.array(),
+      total: z.number().positive().int(),
     }),
   },
   'DatastoreRegistry.get': {
     args: z.object({
-      versionHash: datastoreVersionHashValidation,
+      id: datastoreIdValidation,
+      version: semverValidation,
     }),
     result: z.object({
       datastore: DatastoreManifestWithLatest,
     }),
   },
-  'DatastoreRegistry.getPreviousInstalledVersion': {
+  'DatastoreRegistry.getVersions': {
     args: z.object({
-      versionHash: datastoreVersionHashValidation,
+      id: datastoreIdValidation,
     }),
     result: z.object({
-      previousVersionHash: datastoreVersionHashValidation.nullable(),
+      versions: z
+        .object({
+          version: semverValidation,
+          timestamp: z.number().positive().int().describe('Millis since the epoch'),
+        })
+        .array(),
     }),
   },
   'DatastoreRegistry.getLatestVersion': {
     args: z.object({
-      versionHash: datastoreVersionHashValidation,
+      id: datastoreIdValidation,
     }),
     result: z.object({
-      latestVersionHash: datastoreVersionHashValidation,
-    }),
-  },
-  'DatastoreRegistry.getLatestVersionForDomain': {
-    args: z.object({
-      domain: z.string().describe('A Datastore Domain name to lookup the latest version for.'),
-    }),
-    result: z.object({
-      latestVersionHash: datastoreVersionHashValidation,
+      latestVersion: semverValidation,
     }),
   },
   'DatastoreRegistry.downloadDbx': {
     args: z.object({
-      versionHash: datastoreVersionHashValidation,
+      id: datastoreIdValidation,
+      version: semverValidation,
     }),
     result: z.object({
       adminSignature: signatureValidation,
@@ -66,11 +76,6 @@ export const DatastoreRegistryApiSchemas = {
   'DatastoreRegistry.upload': {
     args: z.object({
       compressedDbx: z.instanceof(Buffer).describe('Bytes of a compressed .dbx directory.'),
-      allowNewLinkedVersionHistory: z
-        .boolean()
-        .describe(
-          'Allow this upload to start a new version chain (do not link to previous versions)',
-        ),
       adminIdentity: identityValidation
         .optional()
         .describe(
@@ -92,5 +97,6 @@ export type IDatastoreRegistryApis<TContext = any> = IZodHandlers<
   TContext
 >;
 export type IDatastoreManifestWithLatest = z.infer<typeof DatastoreManifestWithLatest>;
+export type IDatastoreListEntry = z.infer<typeof DatastoreListEntry>;
 
 export default IDatastoreRegistryApiTypes;

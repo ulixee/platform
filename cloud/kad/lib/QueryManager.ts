@@ -218,7 +218,7 @@ export class QueryManager {
               continue;
             }
 
-            const closerPeerKadId = await nodeIdToKadId(closerPeer.nodeId);
+            const closerPeerKadId = nodeIdToKadId(closerPeer.nodeId);
             const closerPeerXor = bufferToBigInt(xor(closerPeerKadId, key));
             // only continue query if closer peer is actually closer
             if (closerPeerXor > peerXor) {

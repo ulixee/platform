@@ -82,9 +82,10 @@ export default class DatastoreVm {
       return this.compiledScriptsByPath.get(path);
     }
 
-    const srcDir = `${Path.dirname(Path.dirname(path))}${Path.sep}`;
+    const dir = Path.dirname(path);
+    const srcDir = `${Path.dirname(dir)}${Path.sep}`;
     SourceMapSupport.clearStackPath(srcDir);
-    SourceMapSupport.retrieveSourceMap(path, Path.dirname(path));
+    SourceMapSupport.retrieveSourceMap(path, dir);
 
     const script = new Promise<VMScript>(async resolve => {
       const file = await Fs.readFile(path, 'utf8');
@@ -136,10 +137,7 @@ export default class DatastoreVm {
           for (const plugin of plugins) {
             if (
               plugin.nodeVmUseSandbox?.(name) === true ||
-              plugin.nodeVmUseSandbox?.(
-                name
-                  .replace(bundledPath, '@ulixee'),
-              ) === true
+              plugin.nodeVmUseSandbox?.(name.replace(bundledPath, '@ulixee')) === true
             ) {
               return 'sandbox';
             }
@@ -159,15 +157,14 @@ export default class DatastoreVm {
           return require.resolve(moduleName);
         },
         builtin: [
+          // NOTE: this list wasn't audited - just reasoned through at a high level.
           'buffer',
-          'console',
           'errors',
           'events',
           'http',
           'https',
           'http2',
           'net',
-          'path',
           'stream',
           'url',
           'util',

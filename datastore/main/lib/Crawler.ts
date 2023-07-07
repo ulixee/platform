@@ -128,7 +128,7 @@ export default class Crawler<
     input: TContext['input'],
     output: ICrawlerOutputSchema,
   ): Promise<void> {
-    if (this.crawlerComponents.disableCache) return null;
+    if (this.crawlerComponents.disableCache || !output.sessionId) return null;
     const serializedInput = this.getSerializedInput(input);
     await this.cache.queryInternal('DELETE FROM self WHERE input=$1', [serializedInput]);
 

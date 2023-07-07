@@ -1,7 +1,7 @@
 <template>
   <div class="h-full">
     <h2 class="mb-5 text-lg font-semibold">Payment</h2>
-    <p class="font-light mb-5">
+    <p class="mb-5 font-light">
       Datastores support payments per-query out of the box. You have full control to set prices per
       query on the entire Datastore, or for each Table, Extractor, etc contained within.
       <br /><br />
@@ -92,7 +92,7 @@
     >
       <span class="text-lg">Click next when you're ready:</span>
       <button
-        class="ml-5 inline-flex items-center gap-x-1.5 rounded-md bg-fuchsia-700 py-2.5 px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
+        class="ml-5 inline-flex items-center gap-x-1.5 rounded-md bg-fuchsia-700 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
         @click.prevent="next"
       >
         Next
@@ -109,7 +109,7 @@ import { storeToRefs } from 'pinia';
 import { ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
 import { useGettingStartedStore } from '@/pages/desktop/stores/GettingStartedStore';
 import Prism from '../../components/Prism.vue';
-import { IDatastoresByVersion, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
+import { IDatastoresById, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 
 export default Vue.defineComponent({
   name: 'GettingStartedPayment',
@@ -123,23 +123,26 @@ export default Vue.defineComponent({
     const { steps } = storeToRefs(gettingStarted);
     const step = computed(() => steps.value.find(x => x.href === 'payment'));
     const datastoreStore = useDatastoreStore();
-    const versionHash = Vue.ref('');
-    const { datastoresByVersion } = storeToRefs(datastoreStore);
+    const datastoreId = Vue.ref('');
+    const version = Vue.ref('');
+    const { datastoresById } = storeToRefs(datastoreStore);
 
-    function setVersionHash(value: IDatastoresByVersion) {
-      for (const [datastoreVersionHash, entry] of Object.entries(value)) {
+    function setDatastoreId(value: IDatastoresById) {
+      for (const [id, entry] of Object.entries(value)) {
         if (entry.summary.scriptEntrypoint.includes('ulixee.org.')) {
-          versionHash.value = datastoreVersionHash;
+          version.value = entry.summary.version;
+          datastoreId.value = id;
         }
       }
     }
-    setVersionHash(datastoresByVersion.value);
-    Vue.watch(datastoresByVersion.value, value => {
-      setVersionHash(value);
+    setDatastoreId(datastoresById.value);
+    Vue.watch(datastoresById.value, value => {
+      setDatastoreId(value);
     });
 
     return {
-      versionHash,
+      version,
+      datastoreId,
       datastoreStore,
       gotoNextStep: gettingStarted.gotoNextStep,
       step,
@@ -150,8 +153,8 @@ export default Vue.defineComponent({
       this.gotoNextStep(this.step.href);
     },
     openDocs() {
-      this.datastoreStore.openDocs(this.versionHash, 'local');
-    }
+      this.datastoreStore.openDocs(this.datastoreId, this.version, 'local');
+    },
   },
 });
 </script>

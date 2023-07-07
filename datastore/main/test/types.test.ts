@@ -20,14 +20,14 @@ it('can install a schema', async () => {
       test2?: string;
     };
   }`;
-  installDatastoreSchema(schema, 'thisIsATest');
+  installDatastoreSchema(schema, 'thisIsATest', '0.0.1');
 
-  expect(Fs.existsSync(`${__dirname}/../types/thisIsATest.d.ts`)).toBe(true);
+  expect(Fs.existsSync(`${__dirname}/../types/thisIsATest@0.0.1.d.ts`)).toBe(true);
   expect(Fs.readFileSync(`${__dirname}/../types/index.d.ts`, 'utf8'))
     .toBe(`import IItemInputOutput from '@ulixee/datastore/interfaces/IItemInputOutput';
-import thisIsATest from './thisIsATest';
+import thisIsATest_0_0_1 from './thisIsATest@0.0.1';
 export default interface ITypes extends Record<string, IItemInputOutput> {
-  "thisIsATest": thisIsATest;
+  "thisIsATest": thisIsATest_0_0_1;
 }`);
 });
 
@@ -48,43 +48,43 @@ it('can install multiple schemas', async () => {
       nothing: boolean;
     };
   }`;
-  const id1 = encodeBuffer(sha256('schema1'), 'dbx').substring(0,22);
-  const id2 = encodeBuffer(sha256('schema2'), 'dbx').substring(0,22);;
-  installDatastoreSchema(schema1, id1);
-  installDatastoreSchema(schema2, id2);
+  const id1 = encodeBuffer(sha256('schema1'), 'dbx');
+  const id2 = encodeBuffer(sha256('schema2'), 'dbx');
+  installDatastoreSchema(schema1, id1, '0.0.1');
+  installDatastoreSchema(schema2, id2, '0.0.1');
 
-  expect(Fs.existsSync(`${__dirname}/../types/${id1}.d.ts`)).toBe(true);
-  expect(Fs.existsSync(`${__dirname}/../types/${id2}.d.ts`)).toBe(true);
+  expect(Fs.existsSync(`${__dirname}/../types/${id1}@0.0.1.d.ts`)).toBe(true);
+  expect(Fs.existsSync(`${__dirname}/../types/${id2}@0.0.1.d.ts`)).toBe(true);
   expect(Fs.readFileSync(`${__dirname}/../types/index.d.ts`, 'utf8'))
     .toBe(`import IItemInputOutput from '@ulixee/datastore/interfaces/IItemInputOutput';
-import ${id1} from './${id1}';
-import ${id2} from './${id2}';
+import ${id1}_0_0_1 from './${id1}@0.0.1';
+import ${id2}_0_0_1 from './${id2}@0.0.1';
 export default interface ITypes extends Record<string, IItemInputOutput> {
-  "${id1}": ${id1};
-  "${id2}": ${id2};
+  "${id1}": ${id1}_0_0_1;
+  "${id2}": ${id2}_0_0_1;
 }`);
 
   // test an alias
-  addDatastoreAlias(id2, 'short2');
+  addDatastoreAlias('short2', id2, '0.0.1');
   expect(Fs.readFileSync(`${__dirname}/../types/index.d.ts`, 'utf8'))
     .toBe(`import IItemInputOutput from '@ulixee/datastore/interfaces/IItemInputOutput';
-import ${id1} from './${id1}';
-import ${id2} from './${id2}';
+import ${id1}_0_0_1 from './${id1}@0.0.1';
+import ${id2}_0_0_1 from './${id2}@0.0.1';
 export default interface ITypes extends Record<string, IItemInputOutput> {
-  "${id1}": ${id1};
-  "${id2}": ${id2};
-  "short2": ${id2};
+  "${id1}": ${id1}_0_0_1;
+  "${id2}": ${id2}_0_0_1;
+  "short2": ${id2}_0_0_1;
 }`);
 
   // test overwriting a value
-  addDatastoreAlias(id1, 'short2');
+  addDatastoreAlias('short2', id1, '0.0.1');
   expect(Fs.readFileSync(`${__dirname}/../types/index.d.ts`, 'utf8'))
     .toBe(`import IItemInputOutput from '@ulixee/datastore/interfaces/IItemInputOutput';
-import ${id1} from './${id1}';
-import ${id2} from './${id2}';
+import ${id1}_0_0_1 from './${id1}@0.0.1';
+import ${id2}_0_0_1 from './${id2}@0.0.1';
 export default interface ITypes extends Record<string, IItemInputOutput> {
-  "${id1}": ${id1};
-  "${id2}": ${id2};
-  "short2": ${id1};
+  "${id1}": ${id1}_0_0_1;
+  "${id2}": ${id2}_0_0_1;
+  "short2": ${id1}_0_0_1;
 }`);
 });

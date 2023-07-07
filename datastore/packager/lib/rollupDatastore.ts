@@ -80,6 +80,7 @@ export default async function rollupDatastore(
             warning.message.includes(`your configuration specifies a "module" other than "esnext"`)
           )
             return;
+          if (warning.message.includes("'#private' is missing in type")) return;
         }
         console.warn(warning.frame, warning.message, warning.code);
       },

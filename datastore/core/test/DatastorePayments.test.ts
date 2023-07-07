@@ -21,6 +21,7 @@ import ISidechainInfoApis from '@ulixee/specification/sidechain/SidechainInfoApi
 import * as Fs from 'fs';
 import * as Path from 'path';
 import moment = require('moment');
+import { Helpers } from '@ulixee/datastore-testing';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastorePayments.test');
 
@@ -67,18 +68,23 @@ beforeAll(async () => {
   });
 
   mock.sidechainClient.sendRequest.mockImplementation(mockSidechainServer);
-
-  cloudNode = new CloudNode();
-  cloudNode.datastoreConfiguration = {
-    datastoresDir: storageDir,
-    datastoresTmpDir: Path.join(storageDir, 'tmp'),
-    identityWithSidechain: Identity.createSync(),
-    defaultSidechainHost: 'http://localhost:1337',
-    defaultSidechainRootIdentity: sidechainIdentity.bech32,
-    approvedSidechains: [{ rootIdentity: sidechainIdentity.bech32, url: 'http://localhost:1337' }],
-  };
-  await cloudNode.listen();
+  cloudNode = await Helpers.createLocalNode(
+    {
+      datastoreConfiguration: {
+        datastoresDir: storageDir,
+        datastoresTmpDir: Path.join(storageDir, 'tmp'),
+        identityWithSidechain: Identity.createSync(),
+        defaultSidechainHost: 'http://localhost:1337',
+        defaultSidechainRootIdentity: sidechainIdentity.bech32,
+        approvedSidechains: [
+          { rootIdentity: sidechainIdentity.bech32, url: 'http://localhost:1337' },
+        ],
+      },
+    },
+    true,
+  );
   client = new DatastoreApiClient(await cloudNode.address, { consoleLogErrors: true });
+  Helpers.onClose(() => client.disconnect(), true);
 });
 
 beforeEach(() => {
@@ -87,10 +93,8 @@ beforeEach(() => {
   mock.sidechainClient.sendRequest.mockClear();
 });
 
-afterAll(async () => {
-  await cloudNode.close();
-  if (Fs.existsSync(storageDir)) Fs.rmSync(storageDir, { recursive: true });
-});
+afterEach(Helpers.afterEach);
+afterAll(Helpers.afterAll);
 
 test('should be able to run a datastore function with payments', async () => {
   apiCalls.mockClear();
@@ -98,6 +102,7 @@ test('should be able to run a datastore function with payments', async () => {
   await Fs.writeFileSync(
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
+      version: '0.0.1',
       paymentAddress: encodeBuffer(sha256('payme123'), 'ar'),
       extractorsByName: {
         putout: {
@@ -116,10 +121,10 @@ test('should be able to run a datastore function with payments', async () => {
   expect(manifest.extractorsByName.putout.prices[0].perQuery).toBe(1250);
   await client.upload(await dbx.tarGzip());
 
-  await expect(client.query(manifest.versionHash, 'SELECT * FROM putout()')).rejects.toThrow(
-    'requires payment',
-  );
-  await expect(client.stream(manifest.versionHash, 'putout', {})).rejects.toThrow(
+  await expect(
+    client.query(manifest.id, manifest.version, 'SELECT * FROM putout()'),
+  ).rejects.toThrow('requires payment');
+  await expect(client.stream(manifest.id, manifest.version, 'putout', {})).rejects.toThrow(
     'requires payment',
   );
   const sidechainClient = new SidechainClient('http://localhost:1337', {
@@ -130,7 +135,7 @@ test('should be able to run a datastore function with payments', async () => {
   expect(settings.settlementFeeMicrogons).toBe(5);
   apiCalls.mockClear();
 
-  const meta = await client.getExtractorPricing(manifest.versionHash, 'putout');
+  const meta = await client.getExtractorPricing(manifest.id, manifest.version, 'putout');
   const payment = await sidechainClient.createMicroPayment({
     microgons: meta.minimumPrice,
     ...meta,
@@ -146,7 +151,9 @@ test('should be able to run a datastore function with payments', async () => {
 
   apiCalls.mockClear();
   await expect(
-    client.query(manifest.versionHash, 'SELECT success FROM putout()', { payment }),
+    client.query(manifest.id, manifest.version, 'SELECT success FROM putout()', {
+      payment,
+    }),
   ).resolves.toEqual({
     outputs: [{ success: true }],
     metadata: {
@@ -154,7 +161,7 @@ test('should be able to run a datastore function with payments', async () => {
       bytes: expect.any(Number),
       milliseconds: expect.any(Number),
     },
-    latestVersionHash: expect.any(String),
+    latestVersion: expect.any(String),
   });
   expect(apiCalls.mock.calls.map(x => x[0].command)).toEqual([
     // from DatastoreCore
@@ -164,21 +171,21 @@ test('should be able to run a datastore function with payments', async () => {
   ]);
   // @ts-ignore
   const statsTracker = cloudNode.datastoreCore.statsTracker;
-  const entry = await statsTracker.getForDatastore(manifest);
+  const entry = await statsTracker.getForDatastoreVersion(manifest);
   expect(entry.stats.queries).toBe(3);
   expect(entry.stats.errors).toBe(2);
   expect(entry.stats.maxPricePerQuery).toBe(1255);
-  expect(entry.statsByEntityName.putout.queries).toBe(1);
-  expect(entry.statsByEntityName.putout.maxPricePerQuery).toBe(1250);
+  expect(entry.statsByEntityName.putout.stats.queries).toBe(1);
+  expect(entry.statsByEntityName.putout.stats.maxPricePerQuery).toBe(1250);
 
-  const streamed = client.stream(manifest.versionHash, 'putout', {}, { payment });
+  const streamed = client.stream(manifest.id, manifest.version, 'putout', {}, { payment });
   await expect(streamed.resultMetadata).resolves.toEqual({
     metadata: {
       microgons: 1255,
       bytes: expect.any(Number),
       milliseconds: expect.any(Number),
     },
-    latestVersionHash: expect.any(String),
+    latestVersion: expect.any(String),
   });
 });
 
@@ -194,6 +201,7 @@ test('should be able run a Datastore with Credits', async () => {
         },
       },
       adminIdentities: [adminIdentity.bech32],
+      version: '0.0.2',
     } as Partial<IDatastoreManifest>),
   );
 
@@ -202,10 +210,15 @@ test('should be able run a Datastore with Credits', async () => {
   await client.upload(await dbx.tarGzip(), { identity: adminIdentity });
 
   await expect(
-    client.query(manifest.versionHash, 'SELECT * FROM putout()', {}),
+    client.query(manifest.id, manifest.version, 'SELECT * FROM putout()', {}),
   ).rejects.toThrow('requires payment');
 
-  const credits = await client.createCredits(manifest.versionHash, 1001, adminIdentity);
+  const credits = await client.createCredits(
+    manifest.id,
+    manifest.version,
+    1001,
+    adminIdentity,
+  );
   expect(credits).toEqual({
     id: expect.any(String),
     remainingCredits: 1001,
@@ -213,7 +226,9 @@ test('should be able run a Datastore with Credits', async () => {
   });
 
   await expect(
-    client.query(manifest.versionHash, 'SELECT * FROM putout()', { payment: { credits } }),
+    client.query(manifest.id, manifest.version, 'SELECT * FROM putout()', {
+      payment: { credits },
+    }),
   ).resolves.toEqual({
     outputs: [{ success: true }],
     metadata: {
@@ -221,16 +236,20 @@ test('should be able run a Datastore with Credits', async () => {
       bytes: expect.any(Number),
       milliseconds: expect.any(Number),
     },
-    latestVersionHash: manifest.versionHash,
+    latestVersion: manifest.version,
   });
 
-  await expect(client.getCreditsBalance(manifest.versionHash, credits.id)).resolves.toEqual({
+  await expect(
+    client.getCreditsBalance(manifest.id, manifest.version, credits.id),
+  ).resolves.toEqual({
     balance: 1,
     issuedCredits: 1001,
   });
 
   await expect(
-    client.query(manifest.versionHash, 'SELECT * FROM putout()', { payment: { credits } }),
+    client.query(manifest.id, manifest.version, 'SELECT * FROM putout()', {
+      payment: { credits },
+    }),
   ).rejects.toThrow('insufficient balance');
 });
 
@@ -246,16 +265,31 @@ test('should remove an empty Credits from the local cache', async () => {
       },
       paymentAddress: encodeBuffer(sha256('payme123'), 'ar'),
       adminIdentities: [adminIdentity.bech32],
+      version: '0.0.3',
     } as Partial<IDatastoreManifest>),
   );
 
   const dbx = await packager.build();
   const manifest = packager.manifest;
   await client.upload(await dbx.tarGzip(), { identity: adminIdentity });
-  const credits = await client.createCredits(manifest.versionHash, 1250, adminIdentity);
-  await CreditsStore.store(manifest.versionHash, client.connectionToCore.transport.host, credits);
-  await expect(CreditsStore.getPayment(manifest.versionHash, 1250)).resolves.toBeTruthy();
-  await expect(CreditsStore.getPayment(manifest.versionHash, 1)).resolves.toBeUndefined();
+  const credits = await client.createCredits(
+    manifest.id,
+    manifest.version,
+    1250,
+    adminIdentity,
+  );
+  await CreditsStore.store(
+    manifest.id,
+    manifest.version,
+    client.connectionToCore.transport.host,
+    credits,
+  );
+  await expect(
+    CreditsStore.getPayment(manifest.id, manifest.version, 1250),
+  ).resolves.toBeTruthy();
+  await expect(
+    CreditsStore.getPayment(manifest.id, manifest.version, 1),
+  ).resolves.toBeUndefined();
 });
 
 test('should be able to embed Credits in a Datastore', async () => {
@@ -270,25 +304,33 @@ test('should be able to embed Credits in a Datastore', async () => {
         },
       },
       adminIdentities: [adminIdentity.bech32],
+      version: '0.0.4',
     } as Partial<IDatastoreManifest>),
   );
 
   const dbx = await packager.build();
   const manifest = packager.manifest;
   await client.upload(await dbx.tarGzip(), { identity: adminIdentity });
-  const credits = await client.createCredits(manifest.versionHash, 2001, adminIdentity);
+  const credits = await client.createCredits(
+    manifest.id,
+    manifest.version,
+    2001,
+    adminIdentity,
+  );
 
   await expect(
-    client.stream(manifest.versionHash, 'putout', {}, { payment: { credits } }),
+    client.stream(manifest.id, manifest.version, 'putout', {}, { payment: { credits } }),
   ).resolves.toEqual([{ success: true }]);
 
-  await expect(client.getCreditsBalance(manifest.versionHash, credits.id)).resolves.toEqual({
+  await expect(
+    client.getCreditsBalance(manifest.id, manifest.version, credits.id),
+  ).resolves.toEqual({
     balance: 1001,
     issuedCredits: 2001,
   });
 
   await cloneDatastore(
-    `ulx://${await cloudNode.address}/${manifest.versionHash}`,
+    `ulx://${await cloudNode.address}/${manifest.id}@v${manifest.version}`,
     `${__dirname}/datastores/clone-output`,
     { embedCredits: credits },
   );
@@ -307,20 +349,35 @@ test('should be able to embed Credits in a Datastore', async () => {
 
   {
     const packager2 = new DatastorePackager(`${__dirname}/datastores/clone-output/datastore.ts`);
-    const dbx2 = await packager2.build();
+    const dbx2 = await packager2.build({ createTemporaryVersion: true });
     const manifest2 = packager2.manifest;
     await client.upload(await dbx2.tarGzip(), { identity: adminIdentity });
-    const credits2 = await client.createCredits(manifest2.versionHash, 1002, adminIdentity);
+    const credits2 = await client.createCredits(
+      manifest2.id,
+      manifest2.version,
+      1002,
+      adminIdentity,
+    );
 
     await expect(
-      client.stream(manifest2.versionHash, 'putout', {}, { payment: { credits: credits2 } }),
+      client.stream(
+        manifest2.id,
+        manifest2.version,
+        'putout',
+        {},
+        { payment: { credits: credits2 } },
+      ),
     ).resolves.toEqual([{ success: true }]);
 
-    await expect(client.getCreditsBalance(manifest.versionHash, credits.id)).resolves.toEqual({
+    await expect(
+      client.getCreditsBalance(manifest.id, manifest.version, credits.id),
+    ).resolves.toEqual({
       balance: 1,
       issuedCredits: 2001,
     });
-    await expect(client.getCreditsBalance(manifest2.versionHash, credits2.id)).resolves.toEqual({
+    await expect(
+      client.getCreditsBalance(manifest2.id, manifest2.version, credits2.id),
+    ).resolves.toEqual({
       balance: 2,
       issuedCredits: 1002,
     });

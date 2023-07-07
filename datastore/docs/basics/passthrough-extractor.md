@@ -6,12 +6,14 @@ A PassthroughExtractor allows you to extend other Datastore Extractors published
 
 The following is a simple example:
 
-##### Extractor 1 Published to a CloudNode at `153.23.22.255:8080`:
+#### Extractor 1 Published to a CloudNode at `153.23.22.255:8080`:
 
 ```js
 import Datastore, { Extractor } from '@ulixee/datastore';
 
 export default new Datastore({
+  id: `echo`,
+  version: '0.0.1',
   extractors: {
     extractor1: new Extractor({
       run({ input, Output }) {
@@ -24,15 +26,17 @@ export default new Datastore({
 });
 ```
 
-##### Extractor 2:
+#### Extractor 2:
 
 ```js
 import Datastore, { PassthroughExtractor } from '@ulixee/datastore';
 
 export default new Datastore({
+  id: 'echo2',
+  version: '0.0.1',
   // NOTE: this is not a real hosted Datastore
   remoteDatastores: {
-    source: `ulx://153.23.22.255:8080/dbx1tn43ect3qkwg0patvq`,
+    source: `ulx://153.23.22.255:8080/echo@v0.0.1`,
   },
   extractors: {
     extractor2: new PassthroughExtractor({
@@ -46,13 +50,24 @@ export default new Datastore({
 });
 ```
 
-##### Running:
+#### Running:
 
-Saving the above code to a file allows you to execute it directly from the command line as a normal node script:
+Start your datastore.
+```bash
+npx @ulixee/datastore start ./example.js
+```
+
+Now you can query your Datastore with [Ulixee Client](https://ulixee.org/docs/client).
 
 ```bash
-node example.js --input.toEcho=hi
+import Client from '@ulixee/client';
+
+const client = new Client('ulx://localhost:1818/echo2@0.0.1');
+client.fetch('extractor2', { toEcho: 'hi' }).then(records => {
+  console.log(records);
+});
 ```
+
 
 The output will be:
 
@@ -74,7 +89,7 @@ Creates a new PassthroughExtractor instance.
 
 extractorComponents `object`:
 
-- remoteExtractor `string`. Required remoteExtractor to run. This string must start with the name of the `remoteDatastores` key as defined in [Datastore.remoteDatastores](./datastore.md#remote-datastores).
+- remoteExtractor `string`. Required remoteExtractor to run. This string must start with the name of the `remoteDatastores` key as defined in [Datastore.remoteDatastores](./datastore.md#remote-datastores). Eg, `source.extractor1`, where `extractor1` is the extractor name, and `source` is a key of `remoteDatastores`. 
 - upcharge `number`. Optional microgons to add to the PassthroughExtractor pricing. Defaults to 0.
 - onRequest `function`(context: [ExtractorContext](./extractor-context.md)): `Promise<any>`. Optional function that contains any logic you wish to perform "before" the `remote` Extractor is called. This allows you to modify input, or enhance information using a Hero browser (if a plugin is used).
 - onResponse `function`(context: [ExtractorContext](./extractor-context.md)): `Promise<any>`. Optional function that contains any logic you wish to perform "after" the `remote` Extractor has been called. The context includes:
@@ -84,27 +99,3 @@ extractorComponents `object`:
 The second argument is a list of zero or more plugins.
 
 - plugins `Array<Plugin>`. Optional. A list of [plugin-compatible classes](../advanced/plugins).
-
-## Methods
-
-### stream _ (options)_ {#stream}
-
-Execute the function. Options can include `input` parameters defined in the schema.
-
-#### Return AsyncIterable | Promise<schema['output']>. Returns a promise of the defined schema values, which can be waited for as one result at a time.
-
-```js
-import DatastoreApiClient  from '@ulixee/datastore/lib/DatastoreApiClient';
-
-const client = new DatastoreApiClient('153.23.22.255:8080');
-
-const stream = client.stream('extractor2', {});
-
-// Async Iterable
-for await (const result of stream) {
-  console.log('Emitted result', result);  
-}
-
-// Or Promise
-const allResults = await stream.results;
-```

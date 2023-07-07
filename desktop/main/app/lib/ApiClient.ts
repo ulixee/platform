@@ -64,7 +64,7 @@ export default class ApiClient<
       this.onEvent('App.quit' as any);
       return;
     }
-    const apiEvent = message as any;
+    const apiEvent = (message as any).event;
     this.onEvent(apiEvent.eventType, apiEvent.data);
   }
 }

@@ -2,6 +2,8 @@ import Datastore, { Extractor, Table } from '@ulixee/datastore';
 import { boolean, date, object, string } from '@ulixee/schema';
 
 export default new Datastore({
+  id: 'cloneme',
+  version: '0.0.1',
   name: 'cloneme',
   extractors: {
     cloneUpstream: new Extractor({

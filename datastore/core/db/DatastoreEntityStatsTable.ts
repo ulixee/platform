@@ -2,23 +2,28 @@ import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 import SqliteTable from '@ulixee/commons/lib/SqliteTable';
 
 export default class DatastoreEntityStatsTable extends SqliteTable<IDatastoreEntityStatsRecord> {
-  private static byVersionHashAndName: { [hash_name: string]: IDatastoreEntityStatsRecord } = {};
+  private static byIdVersionAndName: { [id_version_name: string]: IDatastoreEntityStatsRecord } =
+    {};
+
+  private static byIdAndName: { [id_name: string]: IDatastoreEntityStatsRecord } = {};
 
   private getQuery: Statement<[string, string]>;
+  private getByVersionQuery: Statement<[string, string, string]>;
 
   constructor(db: SqliteDatabase) {
     super(
       db,
       'DatastoreEntityStats',
       [
-        ['versionHash', 'TEXT', 'NOT NULL PRIMARY KEY'],
+        ['datastoreId', 'TEXT', 'NOT NULL PRIMARY KEY'],
+        ['version', 'TEXT', 'NOT NULL PRIMARY KEY'],
         ['name', 'TEXT', 'NOT NULL PRIMARY KEY'],
         ['runs', 'INTEGER'],
         ['errors', 'INTEGER'],
         ['lastRunTimestamp', 'DATETIME'],
         ['averageBytes', 'INTEGER'],
-        ['minBytes', 'INTEGER'],
         ['maxBytes', 'INTEGER'],
+        ['minBytes', 'INTEGER'],
         ['averageMilliseconds', 'INTEGER'],
         ['maxMilliseconds', 'INTEGER'],
         ['minMilliseconds', 'INTEGER'],
@@ -30,13 +35,17 @@ export default class DatastoreEntityStatsTable extends SqliteTable<IDatastoreEnt
       ],
       true,
     );
+    this.getByVersionQuery = db.prepare(
+      `select * from ${this.tableName} where datastoreId = ? and version = ? and name = ? limit 1`,
+    );
     this.getQuery = db.prepare(
-      `select * from ${this.tableName} where versionHash = ? and name = ? limit 1`,
+      `select * from ${this.tableName} where datastoreId = ? and name = ? limit 1`,
     );
   }
 
   public record(
-    versionHash: string,
+    datastoreId: string,
+    version: string,
     name: string,
     price: number,
     bytes: number,
@@ -46,28 +55,14 @@ export default class DatastoreEntityStatsTable extends SqliteTable<IDatastoreEnt
   ): void {
     price ??= 0;
 
-    const stats = this.getByVersionHash(versionHash, name);
-    stats.runs += 1;
-    if (isError) stats.errors += 1;
-    stats.lastRunTimestamp = Date.now();
-    stats.maxPrice = Math.max(stats.maxPrice, price);
-    stats.minPrice = Math.min(stats.minPrice, price);
-    stats.averagePrice = calculateNewAverage(stats.averagePrice, price, stats.runs);
-    stats.maxMilliseconds = Math.max(stats.maxMilliseconds, milliseconds);
-    stats.minMilliseconds = Math.min(stats.minMilliseconds, milliseconds);
-    stats.averageMilliseconds = calculateNewAverage(
-      stats.averageMilliseconds,
-      milliseconds,
-      stats.runs,
-    );
-    stats.maxBytes = Math.max(stats.maxBytes, bytes);
-    stats.minBytes = Math.min(stats.minBytes, bytes);
-    stats.averageBytes = calculateNewAverage(stats.averageBytes, bytes, stats.runs);
-    stats.totalSpend += price;
-    if (creditsUsed) stats.totalCreditSpend += creditsUsed;
+    const stats = this.getByVersion(datastoreId, version, name);
+    this.addToStats(stats, isError, price, milliseconds, bytes, creditsUsed);
+    const datastoreStats = this.getByDatastore(datastoreId, name);
+    this.addToStats(datastoreStats, isError, price, milliseconds, bytes, creditsUsed);
 
     this.insertNow([
-      versionHash,
+      datastoreId,
+      version,
       name,
       stats.runs,
       stats.errors,
@@ -86,12 +81,33 @@ export default class DatastoreEntityStatsTable extends SqliteTable<IDatastoreEnt
     ]);
   }
 
-  public getByVersionHash(versionHash: string, name: string): IDatastoreEntityStatsRecord {
-    DatastoreEntityStatsTable.byVersionHashAndName[`${versionHash}_${name}`] ??= (this.getQuery.get(
-      versionHash,
+  public getByVersion(
+    datastoreId: string,
+    version: string,
+    name: string,
+  ): IDatastoreEntityStatsRecord {
+    DatastoreEntityStatsTable.byIdVersionAndName[`${datastoreId}_${version}_${name}`] ??=
+      (this.getByVersionQuery.get(datastoreId, version, name) as IDatastoreEntityStatsRecord) ??
+      this.emptyStats(name, datastoreId, version);
+    return DatastoreEntityStatsTable.byIdVersionAndName[`${datastoreId}_${version}_${name}`];
+  }
+
+  public getByDatastore(datastoreId: string, name: string): IDatastoreEntityStatsRecord {
+    DatastoreEntityStatsTable.byIdAndName[`${datastoreId}_${name}`] ??=
+      (this.getQuery.get(datastoreId, name) as IDatastoreEntityStatsRecord) ??
+      this.emptyStats(name, datastoreId);
+    return DatastoreEntityStatsTable.byIdAndName[`${datastoreId}_${name}`];
+  }
+
+  private emptyStats(
+    name: string,
+    datastoreId: string,
+    version?: string,
+  ): IDatastoreEntityStatsRecord {
+    return {
       name,
-    ) as IDatastoreEntityStatsRecord) ?? {
-      name,
+      datastoreId,
+      version,
       lastRunTimestamp: Date.now(),
       runs: 0,
       errors: 0,
@@ -104,11 +120,37 @@ export default class DatastoreEntityStatsTable extends SqliteTable<IDatastoreEnt
       averageMilliseconds: 0,
       maxMilliseconds: 0,
       minMilliseconds: 0,
-      versionHash,
       totalSpend: 0,
       totalCreditSpend: 0,
     };
-    return DatastoreEntityStatsTable.byVersionHashAndName[`${versionHash}_${name}`];
+  }
+
+  private addToStats(
+    stats: IDatastoreEntityStatsRecord,
+    isError: boolean,
+    price: number,
+    milliseconds: number,
+    bytes: number,
+    creditsUsed: number,
+  ): void {
+    stats.runs += 1;
+    if (isError) stats.errors += 1;
+    stats.lastRunTimestamp = Date.now();
+    stats.maxPrice = Math.max(stats.maxPrice, price);
+    stats.minPrice = Math.min(stats.minPrice, price);
+    stats.averagePrice = calculateNewAverage(stats.averagePrice, price, stats.runs);
+    stats.maxMilliseconds = Math.max(stats.maxMilliseconds, milliseconds);
+    stats.minMilliseconds = Math.min(stats.minMilliseconds, milliseconds);
+    stats.averageMilliseconds = calculateNewAverage(
+      stats.averageMilliseconds,
+      milliseconds,
+      stats.runs,
+    );
+    stats.maxBytes = Math.max(stats.maxBytes, bytes);
+    stats.minBytes = Math.min(stats.minBytes, bytes);
+    stats.averageBytes = calculateNewAverage(stats.averageBytes, bytes, stats.runs);
+    stats.totalSpend += price;
+    if (creditsUsed) stats.totalCreditSpend += creditsUsed;
   }
 }
 
@@ -118,7 +160,8 @@ function calculateNewAverage(oldAverage: number, value: number, newTotalValues: 
 }
 
 export interface IDatastoreEntityStatsRecord {
-  versionHash: string;
+  datastoreId: string;
+  version: string;
   name: string;
   runs: number;
   errors: number;

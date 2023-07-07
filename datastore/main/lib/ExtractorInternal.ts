@@ -5,6 +5,7 @@ import { DateUtilities, ObjectSchema } from '@ulixee/schema';
 import { IValidationError } from '@ulixee/schema/interfaces/IValidationResult';
 import BaseSchema from '@ulixee/schema/lib/BaseSchema';
 import StringSchema from '@ulixee/schema/lib/StringSchema';
+import moment = require('moment');
 import IExtractorComponents from '../interfaces/IExtractorComponents';
 import IExtractorContext from '../interfaces/IExtractorContext';
 import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
@@ -194,6 +195,41 @@ export default class ExtractorInternal<
         input[key] = value;
       }
     }
+  }
+
+  public static createExampleCall(
+    functionName: string,
+    schema: IExtractorSchema,
+  ): { formatted: string; args: Record<string, any> } {
+    if (schema) {
+      const args: Record<string, any> = {};
+      if (schema.inputExamples?.length) {
+        this.fillInputWithExamples(schema, args);
+      } else {
+        for (const [name, field] of Object.entries(
+          (schema?.input as IExtractorSchema['input']) ?? {},
+        )) {
+          if (field.optional === true) continue;
+          if (field.format === 'time') args[name] = moment().format(StringSchema.TimeFormat);
+          else if (field.format === 'date') args[name] = moment().format(StringSchema.DateFormat);
+          else if (field.format === 'url') args[name] = '<USER SUPPLIED URL>';
+          else if (field.format === 'email') args[name] = '<USER SUPPLIED EMAIL>';
+          else if (field.enum) args[name] = field.enum[0];
+
+          args[name] ??= `<USER SUPPLIED ${field.typeName}>`;
+        }
+      }
+
+      const keys = Object.keys(args).map((key, i) => `${key} => $${i + 1}`);
+      return {
+        formatted: `${functionName}(${keys.join(', ')})`,
+        args,
+      };
+    }
+    return {
+      formatted: `${functionName}()`,
+      args: {},
+    };
   }
 }
 

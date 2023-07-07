@@ -64,16 +64,21 @@ test('should get hero sessions from the registry', async () => {
       storageEngineHost: await storageNode.host,
     }),
   );
-  await packager.build();
+  await packager.build({ createTemporaryVersion: true });
 
   const client = new DatastoreApiClient(await childNode.address);
   Helpers.onClose(() => client.disconnect());
   await client.upload(await packager.dbx.tarGzip());
 
   await expect(
-    client.query(packager.manifest.versionHash, 'select * from getTitle(url => $1)', {
-      boundValues: [server.baseUrl],
-    }),
+    client.query(
+      packager.manifest.id,
+      packager.manifest.version,
+      'select * from getTitle(url => $1)',
+      {
+        boundValues: [server.baseUrl],
+      },
+    ),
   ).resolves.toBeTruthy();
   expect(storageStoreSpy).toHaveBeenCalled(); // crawl + extractor
   expect(storageGetSpy).toHaveBeenCalledTimes(0);
@@ -83,9 +88,14 @@ test('should get hero sessions from the registry', async () => {
   Helpers.onClose(() => client2.disconnect(), true);
 
   await expect(
-    client2.query(packager.manifest.versionHash, 'select * from getTitle(url => $1)', {
-      boundValues: [server.baseUrl],
-    }),
+    client2.query(
+      packager.manifest.id,
+      packager.manifest.version,
+      'select * from getTitle(url => $1)',
+      {
+        boundValues: [server.baseUrl],
+      },
+    ),
   ).resolves.toBeTruthy();
   expect(storageGetSpy).toHaveBeenCalledTimes(1);
 

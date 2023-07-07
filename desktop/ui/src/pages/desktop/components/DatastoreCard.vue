@@ -17,20 +17,10 @@
         >
           {{ datastore.description }}
         </p>
-        <p class="mt-1 truncate text-sm font-light italic text-gray-500" v-if="includeVersion">
-          <span
-            v-if="datastore.versionHash === datastore.latestVersionHash"
-            class="inline-flex items-center rounded-md bg-fuchsia-50 px-2 py-1 text-xs font-medium text-fuchsia-800 ring-1 ring-inset ring-fuchsia-700/20"
-            >Latest</span
-          >
-          <span
-            v-else
-            class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-800 ring-1 ring-inset ring-gray-700/20"
-            >{{ datastore.versionHash }}
-          </span>
-          <span class="ml-2 px-2 py-1 text-xs font-medium text-gray-800"
-            >{{ formatDate(datastore.versionTimestamp) }}
-          </span>
+        <p class=" mt-1 truncate text-xs font-medium text-gray-400">
+          <span class="">{{ datastore.id }}@v{{ datastore.version }} </span>
+          <span class="mx-4 text-sm">•</span>
+          <span class="">Created {{ formatDate(datastore.versionTimestamp) }} </span>
         </p>
       </div>
 
@@ -75,24 +65,23 @@
 </template>
 
 <script lang="ts">
+import { toArgons } from '@/pages/desktop/lib/utils';
+import { IDatastoreSummary } from '@/pages/desktop/stores/DatastoresStore';
+import { useWalletStore } from '@/pages/desktop/stores/WalletStore';
+import { ChartBarIcon, HeartIcon } from '@heroicons/vue/24/outline';
+import { storeToRefs } from 'pinia';
 import * as Vue from 'vue';
 import { PropType } from 'vue';
-import { ChartBarIcon, HeartIcon } from '@heroicons/vue/24/outline';
-import { IDatastoreList } from '@/pages/desktop/stores/DatastoresStore';
-import { toArgons } from '@/pages/desktop/lib/utils';
-import { storeToRefs } from 'pinia';
-import { useWalletStore } from '@/pages/desktop/stores/WalletStore';
 
 export default Vue.defineComponent({
   name: 'DatastoreCard',
   props: {
     datastore: {
-      type: Object as PropType<IDatastoreList[0]>,
+      type: Object as PropType<IDatastoreSummary>,
       required: true,
       // workaround for typing
-      default: () => ({} as IDatastoreList[0]),
+      default: () => ({} as IDatastoreSummary),
     },
-    includeVersion: Boolean,
   },
   components: {
     HeartIcon,
@@ -119,7 +108,9 @@ export default Vue.defineComponent({
   },
   methods: {
     navigate() {
-      return this.$router.push(`/datastore/${this.datastore.versionHash}`);
+      return this.$router.push(
+        `/datastore/${this.datastore.id}@v${this.datastore.version}`,
+      );
     },
     formatDate(date: Date | number): string {
       if (!date) return 'now';
@@ -133,7 +124,9 @@ export default Vue.defineComponent({
     },
     spent() {
       const credits = this.userBalance.credits.filter(
-        x => x.datastoreVersionHash === this.datastore.versionHash,
+        x =>
+          x.datastoreId === this.datastore.id &&
+          x.datastoreVersion === this.datastore.version,
       );
       let spentCredits = 0;
       for (const credit of credits) {

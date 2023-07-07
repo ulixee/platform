@@ -2,8 +2,10 @@ import { z } from '@ulixee/specification';
 import { signatureValidation } from '@ulixee/specification/common';
 import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
 import { NodeInfoSchema } from '../types/INodeInfo';
+import { SecureKadRecordSchema } from '../types/ISecureKadRecord';
 
 const KadKeySchema = z.instanceof(Buffer).refine(x => x.byteLength === 32, 'Key must be 32 bytes');
+
 
 export const KadApiSchemas = {
   'Kad.connect': {
@@ -61,6 +63,27 @@ export const KadApiSchemas = {
     result: z.object({
       closerPeers: NodeInfoSchema.array().describe('Peers closer to a key in a query'),
       providerPeers: NodeInfoSchema.array(),
+    }),
+  },
+  'Kad.put': {
+    args: z.object({
+      key: KadKeySchema,
+      record: SecureKadRecordSchema,
+    }),
+    result: z.object({
+      newerRecord: SecureKadRecordSchema.describe(
+        'If a newer version exists, it should be returned',
+      ).optional(),
+      closerPeers: NodeInfoSchema.array().describe('Peers closer to the provided value'),
+    }),
+  },
+  'Kad.get': {
+    args: z.object({
+      key: KadKeySchema,
+    }),
+    result: z.object({
+      record: SecureKadRecordSchema,
+      closerPeers: NodeInfoSchema.array().describe('Peers closer to the provided value'),
     }),
   },
 };

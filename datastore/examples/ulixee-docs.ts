@@ -3,6 +3,8 @@ import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 import { array, boolean, object, string } from '@ulixee/schema';
 
 const datastore = new Datastore({
+  id: 'ulixee-docs',
+  version: '1.0.0',
   name: 'Ulixee Docs',
   description: `A Datastore to read and explore the Ulixee documentation.`,
   crawlers: {

@@ -9,6 +9,7 @@
     ],
     "nohoist": [
       "**/electron",
+      "**/@electron/**",
       "**/electron-webpack",
       "**/electron-webpack/**",
       "electron-positioner",

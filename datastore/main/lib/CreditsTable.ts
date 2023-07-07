@@ -106,8 +106,8 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
       const url = this.datastoreInternal.metadata.remoteDatastores[source];
       if (!source) continue;
       const client = this.datastoreInternal.createApiClient(url);
-      const datastoreHash = url.split('/').pop();
-      const balance = await client.getCreditsBalance(datastoreHash, credit.id);
+      const [datastoreId, version] = url.split('/').pop().split('@v');
+      const balance = await client.getCreditsBalance(datastoreId, version, credit.id);
       if (Number.isInteger(balance.issuedCredits)) issuedCredits += balance.issuedCredits;
     }
     return issuedCredits;

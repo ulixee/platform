@@ -9,13 +9,14 @@ import { validateAuthentication, validateFunctionCoreVersions } from '../lib/dat
 export default new DatastoreApiHandler('Datastore.stream', {
   async handler(request, context) {
     const startTime = Date.now();
-    const { authentication, payment, id, versionHash } = request;
-    const manifestWithRuntime = await context.datastoreRegistry.getByVersionHash(versionHash);
+    const { authentication, payment, id, version, queryId } = request;
+    const manifestWithRuntime = await context.datastoreRegistry.get(id, version);
     const storage = context.storageEngineRegistry.get(manifestWithRuntime, {
       authentication,
       payment,
+      queryId,
       id,
-      versionHash,
+      version,
     });
     const datastore = await context.vm.open(
       manifestWithRuntime.runtimePath,
@@ -34,8 +35,9 @@ export default new DatastoreApiHandler('Datastore.stream', {
     const didUseCredits = !!payment?.credits;
 
     const requestDetailsForStats = {
-      id,
-      versionHash,
+      datastoreId: id,
+      version,
+      queryId,
       input: request.input,
       micronoteId: payment?.micronote?.micronoteId,
       creditId: payment?.credits?.id,
@@ -124,7 +126,7 @@ export default new DatastoreApiHandler('Datastore.stream', {
     if (runError) throw runError;
 
     return {
-      latestVersionHash: manifestWithRuntime.latestVersionHash,
+      latestVersion: manifestWithRuntime.latestVersion,
       metadata: {
         bytes,
         microgons,
@@ -186,7 +188,8 @@ async function extractFunctionOutputs(
 
           const milliseconds = Date.now() - runStart;
           await context.statsTracker.recordEntityStats({
-            versionHash: request.versionHash,
+            version: request.version,
+            datastoreId: request.id,
             entityName: name,
             bytes,
             microgons,

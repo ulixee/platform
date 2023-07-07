@@ -1,3 +1,4 @@
+import { registerSerializableErrorType } from '@ulixee/commons/lib/TypeSerializer';
 import { IValidationError } from '@ulixee/schema/interfaces/IValidationResult';
 
 export default class DatastoreSchemaError extends Error {
@@ -7,3 +8,5 @@ export default class DatastoreSchemaError extends Error {
     this.stack = message;
   }
 }
+
+registerSerializableErrorType(DatastoreSchemaError);

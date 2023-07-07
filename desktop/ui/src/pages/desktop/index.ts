@@ -10,11 +10,10 @@ import Replays from '@/pages/desktop/views/Replays.vue';
 import Wallet from '@/pages/desktop/views/Wallet.vue';
 import GettingStarted from '@/pages/desktop/views/GettingStarted.vue';
 import Clouds from '@/pages/desktop/views/Clouds.vue';
-import Earnings from '@/pages/desktop/views/datastore-details/Earnings.vue';
-import Spend from '@/pages/desktop/views/datastore-details/Spend.vue';
+import Versions from '@/pages/desktop/views/datastore-details/Versions.vue';
 import Queries from '@/pages/desktop/views/datastore-details/Queries.vue';
 import Reliability from '@/pages/desktop/views/datastore-details/Reliability.vue';
-import DatastoreClouds from '@/pages/desktop/views/datastore-details/DatastoreClouds.vue';
+import Overview from '@/pages/desktop/views/datastore-details/Overview.vue';
 import CloudDetails from '@/pages/desktop/views/cloud-details/CloudDetails.vue';
 import CloudDatastores from '@/pages/desktop/views/cloud-details/Datastores.vue';
 import CloudConfigure from '@/pages/desktop/views/cloud-details/Configure.vue';
@@ -71,19 +70,14 @@ const router = VueRouter.createRouter({
     },
     { path: '/datastores', component: Datastores },
     {
-      path: '/datastore/:versionHash',
+      path: '/datastore/:datastoreId@v:version',
       component: DatastoreDetails,
       children: [
         {
-          path: 'earnings',
+          path: 'overview',
           alias: '',
-          name: 'Earned',
-          component: Earnings,
-        },
-        {
-          path: 'spend',
-          name: 'Spent',
-          component: Spend,
+          name: 'Overview',
+          component: Overview,
         },
         {
           path: 'queries',
@@ -101,9 +95,9 @@ const router = VueRouter.createRouter({
           component: Reliability,
         },
         {
-          path: 'clouds',
-          name: 'DatastoreClouds',
-          component: DatastoreClouds,
+          path: 'versions',
+          name: 'Versions',
+          component: Versions,
         },
       ],
     },

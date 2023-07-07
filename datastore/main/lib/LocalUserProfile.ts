@@ -1,10 +1,10 @@
-import * as Fs from 'fs';
 import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
-import Address from '@ulixee/crypto/lib/Address';
-import * as Path from 'path';
 import { safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import CryptoCli from '@ulixee/crypto/cli';
+import Address from '@ulixee/crypto/lib/Address';
 import Identity from '@ulixee/crypto/lib/Identity';
+import * as Fs from 'fs';
+import * as Path from 'path';
 import ILocalUserProfile from '../interfaces/ILocalUserProfile';
 
 export default class LocalUserProfile {
@@ -47,14 +47,12 @@ export default class LocalUserProfile {
   }
 
   public async setDatastoreAdminIdentity(
-    datastoreVersionHash: string,
+    datastoreId: string,
     adminIdentityPath: string,
   ): Promise<string> {
-    let existing = this.datastoreAdminIdentities.find(
-      x => x.datastoreVersionHash === datastoreVersionHash,
-    );
+    let existing = this.datastoreAdminIdentities.find(x => x.datastoreId === datastoreId);
     if (!existing) {
-      existing = { adminIdentityPath, datastoreVersionHash };
+      existing = { datastoreId, adminIdentityPath };
       this.datastoreAdminIdentities.push(existing);
     }
     existing.adminIdentityPath = adminIdentityPath;
@@ -79,10 +77,8 @@ export default class LocalUserProfile {
     return existing.adminIdentity;
   }
 
-  public getAdminIdentity(datastoreVersionHash: string, cloudName: string): Identity {
-    const datastoreAdmin = this.datastoreAdminIdentities.find(
-      x => x.datastoreVersionHash === datastoreVersionHash,
-    );
+  public getAdminIdentity(datastoreId: string, cloudName: string): Identity {
+    const datastoreAdmin = this.datastoreAdminIdentities.find(x => x.datastoreId === datastoreId);
     if (datastoreAdmin?.adminIdentityPath)
       return Identity.loadFromFile(datastoreAdmin.adminIdentityPath);
 
@@ -118,13 +114,37 @@ export default class LocalUserProfile {
     return identity.bech32;
   }
 
-  public async installDatastore(cloudHost: string, datastoreVersionHash: string): Promise<void> {
+  public async installDatastore(
+    cloudHost: string,
+    datastoreId: string,
+    datastoreVersion: string,
+  ): Promise<void> {
     if (
       !this.installedDatastores.some(
-        x => x.cloudHost === cloudHost && x.datastoreVersionHash === datastoreVersionHash,
+        x =>
+          x.cloudHost === cloudHost &&
+          x.datastoreId === datastoreId &&
+          x.datastoreVersion === datastoreVersion,
       )
     ) {
-      this.installedDatastores.push({ cloudHost, datastoreVersionHash });
+      this.installedDatastores.push({ datastoreId, cloudHost, datastoreVersion });
+      await this.save();
+    }
+  }
+
+  public async uninstallDatastore(
+    cloudHost: string,
+    datastoreId: string,
+    datastoreVersion: string,
+  ): Promise<void> {
+    const index = this.installedDatastores.findIndex(
+      x =>
+        x.cloudHost === cloudHost &&
+        x.datastoreId === datastoreId &&
+        x.datastoreVersion === datastoreVersion,
+    );
+    if (index >= 0) {
+      this.installedDatastores.splice(index, 1);
       await this.save();
     }
   }
@@ -142,7 +162,7 @@ export default class LocalUserProfile {
       gettingStartedCompletedSteps: this.gettingStartedCompletedSteps,
       datastoreAdminIdentities: this.datastoreAdminIdentities.map(x => ({
         adminIdentityPath: x.adminIdentityPath,
-        datastoreVersionHash: x.datastoreVersionHash,
+        datastoreId: x.datastoreId,
       })),
     };
   }

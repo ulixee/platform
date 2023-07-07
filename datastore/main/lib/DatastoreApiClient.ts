@@ -1,20 +1,19 @@
-import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import { toUrl } from '@ulixee/commons/lib/utils';
 import Identity from '@ulixee/crypto/lib/Identity';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
 import ICoreEventPayload from '@ulixee/net/interfaces/ICoreEventPayload';
 import { IPayment } from '@ulixee/platform-specification';
 import DatastoreApiSchemas, {
-  IDatastoreApiTypes,
   IDatastoreApis,
+  IDatastoreApiTypes,
 } from '@ulixee/platform-specification/datastore';
+import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreIdValidation';
+import { semverRegex } from '@ulixee/platform-specification/types/semverValidation';
 import ValidationError from '@ulixee/specification/utils/ValidationError';
-import * as Http from 'http';
-import * as Https from 'https';
 import { nanoid } from 'nanoid';
-import IDatastoreDomainResponse from '../interfaces/IDatastoreDomainResponse';
 import IDatastoreEvents from '../interfaces/IDatastoreEvents';
 import IItemInputOutput from '../interfaces/IItemInputOutput';
 import ITypes from '../types';
@@ -54,28 +53,23 @@ export default class DatastoreApiClient {
   }
 
   public async getMeta(
-    versionHash: string,
+    id: string,
+    version: string,
     includeSchemas = false,
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
     return await this.runApi('Datastore.meta', {
-      versionHash,
+      id,
+      version,
       includeSchemasAsJson: includeSchemas,
     });
   }
 
-  public async getManifest(
-    versionHash: string,
-  ): Promise<IDatastoreApiTypes['Datastore.manifest']['result']> {
-    return await this.runApi('Datastore.manifest', {
-      versionHash,
-    });
-  }
-
   public async getExtractorPricing<
-    IVersionHash extends keyof ITypes & string = any,
-    IExtractorName extends keyof ITypes[IVersionHash]['extractors'] & string = 'default',
+    IVersion extends keyof ITypes & string = any,
+    IExtractorName extends keyof ITypes[IVersion]['extractors'] & string = 'default',
   >(
-    versionHash: IVersionHash,
+    id: string,
+    version: IVersion,
     extractorName: IExtractorName,
   ): Promise<
     Omit<
@@ -84,7 +78,7 @@ export default class DatastoreApiClient {
     > &
       Pick<IDatastoreApiTypes['Datastore.meta']['result'], 'computePricePerQuery'>
   > {
-    const meta = await this.getMeta(versionHash);
+    const meta = await this.getMeta(id, version);
     const stats = meta.extractorsByName[extractorName];
 
     return {
@@ -94,16 +88,17 @@ export default class DatastoreApiClient {
   }
 
   public async install(
-    versionHash: string,
+    id: string,
+    version: string,
     alias?: string,
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
-    const meta = await this.getMeta(versionHash);
+    const meta = await this.getMeta(id, version);
 
     if (meta.extractorsByName && meta.schemaInterface) {
-      installDatastoreSchema(meta.schemaInterface, versionHash);
+      installDatastoreSchema(meta.schemaInterface, id, version);
     }
     if (alias) {
-      addDatastoreAlias(versionHash, alias);
+      addDatastoreAlias(alias, id, version);
     }
 
     return meta;
@@ -114,11 +109,12 @@ export default class DatastoreApiClient {
    */
   public stream<
     IO extends IItemInputOutput,
-    IVersionHash extends keyof ITypes & string = any,
-    IItemName extends keyof ITypes[IVersionHash]['extractors'] & string = string,
-    ISchemaDbx extends ITypes[IVersionHash]['extractors'][IItemName] = IO,
+    IVersion extends keyof ITypes & string = any,
+    IItemName extends keyof ITypes[IVersion]['extractors'] & string = string,
+    ISchemaDbx extends ITypes[IVersion]['extractors'][IItemName] = IO,
   >(
-    versionHash: IVersionHash,
+    id: string,
+    version: IVersion,
     name: IItemName,
     input: ISchemaDbx['input'],
     options?: {
@@ -132,11 +128,12 @@ export default class DatastoreApiClient {
   ): ResultIterable<ISchemaDbx['output'], IDatastoreApiTypes['Datastore.stream']['result']>;
   public stream<
     IO extends IItemInputOutput,
-    IVersionHash extends keyof ITypes & string = any,
-    IItemName extends keyof ITypes[IVersionHash]['tables'] & string = string,
-    ISchemaDbx extends ITypes[IVersionHash]['tables'][IItemName] = IO,
+    IVersion extends keyof ITypes & string = any,
+    IItemName extends keyof ITypes[IVersion]['tables'] & string = string,
+    ISchemaDbx extends ITypes[IVersion]['tables'][IItemName] = IO,
   >(
-    versionHash: IVersionHash,
+    id: string,
+    version: IVersion,
     name: IItemName,
     input: ISchemaDbx['input'],
     options: {
@@ -148,7 +145,7 @@ export default class DatastoreApiClient {
       affiliateId?: string;
     } = {},
   ): ResultIterable<ISchemaDbx['output'], IDatastoreApiTypes['Datastore.stream']['result']> {
-    const id = options?.queryId ?? nanoid(12);
+    const queryId = options?.queryId ?? nanoid(12);
     const startDate = new Date();
     const results = new ResultIterable<
       ISchemaDbx['output'],
@@ -158,8 +155,9 @@ export default class DatastoreApiClient {
 
     const onFinalized = options.payment?.onFinalized;
     const query = {
-      versionHash,
       id,
+      version,
+      queryId,
       name,
       input,
       payment: options.payment,
@@ -189,8 +187,9 @@ export default class DatastoreApiClient {
   /**
    * NOTE: any caller must handle tracking local balances of Credits and removing them if they're depleted!
    */
-  public async query<ISchemaOutput = any, IVersionHash extends keyof ITypes & string = any>(
-    versionHash: IVersionHash,
+  public async query<ISchemaOutput = any, IVersion extends keyof ITypes & string = any>(
+    id: string,
+    version: IVersion,
     sql: string,
     options: {
       boundValues?: any[];
@@ -203,10 +202,11 @@ export default class DatastoreApiClient {
     } = {},
   ): Promise<IDatastoreExecResult & { outputs?: ISchemaOutput[] }> {
     const startDate = new Date();
-    const id = options.queryId ?? nanoid(12);
+    const queryId = options.queryId ?? nanoid(12);
     const query = {
       id,
-      versionHash,
+      queryId,
+      version,
       sql,
       boundValues: options.boundValues ?? [],
       payment: options.payment,
@@ -234,25 +234,20 @@ export default class DatastoreApiClient {
   public async upload(
     compressedDbx: Buffer,
     options: {
-      allowNewLinkedVersionHistory?: boolean;
       timeoutMs?: number;
       identity?: Identity;
       forwardedSignature?: { adminIdentity: string; adminSignature: Buffer };
     } = {},
   ): Promise<{ success: boolean }> {
-    options.allowNewLinkedVersionHistory ??= false;
     options.timeoutMs ??= 120e3;
-    const { allowNewLinkedVersionHistory, timeoutMs } = options;
+    const { timeoutMs } = options;
 
     let adminSignature: Buffer;
     let adminIdentity: string;
     if (options.identity) {
       const identity = options.identity;
       adminIdentity = identity.bech32;
-      const message = DatastoreApiClient.createUploadSignatureMessage(
-        compressedDbx,
-        allowNewLinkedVersionHistory,
-      );
+      const message = DatastoreApiClient.createUploadSignatureMessage(compressedDbx);
       adminSignature = identity.sign(message);
     } else if (options.forwardedSignature) {
       ({ adminIdentity, adminSignature } = options.forwardedSignature);
@@ -262,7 +257,6 @@ export default class DatastoreApiClient {
       'Datastore.upload',
       {
         compressedDbx,
-        allowNewLinkedVersionHistory,
         adminSignature,
         adminIdentity,
       },
@@ -272,44 +266,45 @@ export default class DatastoreApiClient {
   }
 
   public async download(
-    versionHash: string,
+    id: string,
+    version: string,
+    identity: Identity,
     options: {
-      payment?: IPayment;
       timeoutMs?: number;
-      identity?: Identity;
     } = {},
   ): Promise<IDatastoreApiTypes['Datastore.download']['result']> {
     options.timeoutMs ??= 120e3;
     const requestDate = new Date();
-    const { timeoutMs, payment } = options;
+    const { timeoutMs } = options;
 
-    let adminSignature: Buffer;
-    let adminIdentity: string;
-    if (options.identity) {
-      const identity = options.identity;
-      adminIdentity = identity.bech32;
-      const message = DatastoreApiClient.createDownloadSignatureMessage(
-        versionHash,
-        requestDate.getTime(),
-      );
-      adminSignature = identity.sign(message);
-    }
+    const adminIdentity = identity.bech32;
+    const message = DatastoreApiClient.createDownloadSignatureMessage(
+      id,
+      version,
+      requestDate.getTime(),
+    );
+    const adminSignature = identity.sign(message);
 
     return await this.runApi(
       'Datastore.download',
       {
-        versionHash,
+        id,
+        version,
         requestDate,
         adminSignature,
         adminIdentity,
-        payment,
       },
       timeoutMs,
     );
   }
 
-  public async startDatastore(dbxPath: string, watch = false): Promise<{ success: boolean }> {
+  public async startDatastore(
+    id: string,
+    dbxPath: string,
+    watch = false,
+  ): Promise<{ success: boolean }> {
     const { success } = await this.runApi('Datastore.start', {
+      id,
       dbxPath,
       watch,
     });
@@ -317,22 +312,26 @@ export default class DatastoreApiClient {
   }
 
   public async getCreditsBalance(
-    datastoreVersionHash: string,
+    id: string,
+    version: string,
     creditId: string,
   ): Promise<IDatastoreApiTypes['Datastore.creditsBalance']['result']> {
     return await this.runApi('Datastore.creditsBalance', {
-      datastoreVersionHash,
+      id,
+      version,
       creditId,
     });
   }
 
   public async createCredits(
-    datastoreVersionHash: string,
+    id: string,
+    version: string,
     microgons: number,
     adminIdentity: Identity,
   ): Promise<{ id: string; remainingCredits: number; secret: string }> {
     return await this.administer<ReturnType<CreditsTable['create']>>(
-      datastoreVersionHash,
+      id,
+      version,
       adminIdentity,
       {
         ownerType: 'table',
@@ -344,7 +343,8 @@ export default class DatastoreApiClient {
   }
 
   public async administer<T>(
-    datastoreVersionHash: string,
+    id: string,
+    version: string,
     adminIdentity: Identity,
     adminFunction: {
       ownerType: 'datastore' | 'crawler' | 'extractor' | 'table';
@@ -354,6 +354,7 @@ export default class DatastoreApiClient {
     functionArgs: any[],
   ): Promise<T> {
     const message = DatastoreApiClient.createAdminFunctionMessage(
+      id,
       adminIdentity.bech32,
       adminFunction.ownerType,
       adminFunction.ownerName,
@@ -363,7 +364,8 @@ export default class DatastoreApiClient {
     const adminSignature = adminIdentity.sign(message);
 
     return await this.runApi('Datastore.admin', {
-      versionHash: datastoreVersionHash,
+      id,
+      version,
       adminSignature,
       adminFunction,
       adminIdentity: adminIdentity.bech32,
@@ -414,38 +416,17 @@ export default class DatastoreApiClient {
     return await this.connectionToCore.sendRequest({ command, args: [args] as any }, timeoutMs);
   }
 
-  public static resolveDatastoreDomain(domain: string): Promise<IDatastoreDomainResponse> {
-    const isFullDomain = domain.match(/(?:.+:\/\/)?([^/]+)\/(dbx1[ac-hj-np-z02-9]{18})\/?/);
-    if (isFullDomain) {
-      const [, host, datastoreVersionHash] = isFullDomain;
-      return Promise.resolve({ host, datastoreVersionHash });
+  public static parseDatastoreUrl(
+    url: string,
+  ): Promise<{ datastoreId: string; host: string; datastoreVersion: string }> {
+    const datastorePathRegex = new RegExp(
+      `(?:.+://)?([^/]+)/(?:docs/)?(${datastoreRegex.source})@v(${semverRegex.source})/?`,
+    );
+    const match = url.match(datastorePathRegex);
+    if (match) {
+      const [, host, datastoreId, datastoreVersion] = match;
+      return Promise.resolve({ host, datastoreId, datastoreVersion });
     }
-
-    if (!domain.includes('://')) domain = `http://${domain}`;
-    const httpModule = domain.startsWith('https') ? Https : Http;
-    return new Promise((resolve, reject) => {
-      const url = new URL(domain);
-      if (url.protocol !== 'https:') url.protocol = 'http:';
-      const request = httpModule.request(url.origin, { method: 'OPTIONS' }, async res => {
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          resolve(this.resolveDatastoreDomain(res.headers.location));
-          return;
-        }
-
-        res.on('error', reject);
-        res.setEncoding('utf8');
-        let result = '';
-        for await (const chunk of res) {
-          result += chunk;
-        }
-
-        const resultObject = TypeSerializer.parse(result);
-        if (resultObject instanceof Error) reject(resultObject);
-        resolve(resultObject);
-      });
-      request.on('error', reject);
-      request.end();
-    });
   }
 
   public static createExecSignatureMessage(payment: IPayment, nonce: string): Buffer {
@@ -474,6 +455,7 @@ export default class DatastoreApiClient {
   }
 
   public static createAdminFunctionMessage(
+    datastoreId: string,
     adminIdentity: string,
     ownerType: string,
     ownerName: string,
@@ -483,6 +465,7 @@ export default class DatastoreApiClient {
     return sha256(
       concatAsBuffer(
         'Datastore.admin',
+        datastoreId,
         adminIdentity,
         ownerType,
         ownerName,
@@ -492,16 +475,15 @@ export default class DatastoreApiClient {
     );
   }
 
-  public static createUploadSignatureMessage(
-    compressedDbx: Buffer,
-    allowNewLinkedVersionHistory: boolean,
-  ): Buffer {
-    return sha256(
-      concatAsBuffer('Datastore.upload', compressedDbx, String(allowNewLinkedVersionHistory)),
-    );
+  public static createUploadSignatureMessage(compressedDbx: Buffer): Buffer {
+    return sha256(concatAsBuffer('Datastore.upload', compressedDbx));
   }
 
-  public static createDownloadSignatureMessage(versionHash: string, requestDate: number): Buffer {
-    return sha256(concatAsBuffer('Datastore.download', versionHash, requestDate));
+  public static createDownloadSignatureMessage(
+    id: string,
+    version: string,
+    requestDate: number,
+  ): Buffer {
+    return sha256(concatAsBuffer('Datastore.download', id, version, requestDate));
   }
 }

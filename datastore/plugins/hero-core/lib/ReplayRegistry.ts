@@ -55,6 +55,20 @@ export default class ReplayRegistry
     return this.defaultSessionRegistry.create(sessionId, customPath);
   }
 
+  public async retain(sessionId: string, customPath?: string): Promise<SessionDb> {
+    const record = await this.defaultSessionRegistry.retain(sessionId, customPath).catch(() => null);
+    if (record) return record;
+
+    for (const store of [this.replayStorageRegistry, this.serviceClient]) {
+      if (!store) continue;
+      const entry = await store.get(sessionId);
+      if (entry?.db) {
+        await this.defaultSessionRegistry.store(sessionId, entry.db);
+        return this.defaultSessionRegistry.retain(sessionId);
+      }
+    }
+  }
+
   public async get(sessionId: string, customPath?: string): Promise<SessionDb> {
     const record = await this.defaultSessionRegistry.get(sessionId, customPath).catch(() => null);
     if (record) return record;
@@ -79,14 +93,15 @@ export default class ReplayRegistry
     return [...idSet];
   }
 
-  public async onClosed(sessionId: string, isDeleteRequested: boolean): Promise<void> {
+  public async close(sessionId: string, isDeleteRequested: boolean): Promise<void> {
     const timestamp = Date.now();
     const entry = await this.defaultSessionRegistry.get(sessionId);
     const sessionRecord = entry?.session.get();
+    await this.defaultSessionRegistry.close(sessionId, isDeleteRequested);
+
     if (sessionRecord.scriptRuntime === 'datastore') {
       this.enqueue(this.store(sessionId, timestamp, entry.path));
     }
-    await this.defaultSessionRegistry.onClosed(sessionId, isDeleteRequested);
   }
 
   private async store(sessionId: string, timestamp: number, path: string): Promise<void> {

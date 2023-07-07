@@ -1,5 +1,6 @@
 import { z } from '@ulixee/specification';
-import { datastoreVersionHashValidation } from './datastoreVersionHashValidation';
+import { datastoreIdValidation } from './datastoreIdValidation';
+import { semverValidation } from './semverValidation';
 
 const DatastorePricing = z.object({
   minimum: z.number().int().nonnegative().optional().describe('Minimum price for this step.'),
@@ -20,7 +21,8 @@ export const DatastoreExtractorPricing = DatastorePricing.extend({
   remoteMeta: z
     .object({
       host: z.string().describe('The remote host'),
-      datastoreVersionHash: datastoreVersionHashValidation,
+      datastoreId: datastoreIdValidation,
+      datastoreVersion: semverValidation,
       extractorName: z.string().describe('The remote extractor name'),
     })
     .optional(),
@@ -30,7 +32,8 @@ export const DatastoreCrawlerPricing = DatastorePricing.extend({
   remoteMeta: z
     .object({
       host: z.string().describe('The remote host'),
-      datastoreVersionHash: datastoreVersionHashValidation,
+      datastoreId: datastoreIdValidation,
+      datastoreVersion: semverValidation,
       crawlerName: z.string().describe('The remote crawler name'),
     })
     .optional(),
@@ -41,7 +44,8 @@ export const DatastoreTablePricing = z.object({
   remoteMeta: z
     .object({
       host: z.string().describe('The remote host'),
-      datastoreVersionHash: datastoreVersionHashValidation,
+      datastoreId: datastoreIdValidation,
+      datastoreVersion: semverValidation,
       tableName: z.string().describe('The remote table name'),
     })
     .optional(),

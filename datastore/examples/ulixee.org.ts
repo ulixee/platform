@@ -2,17 +2,11 @@ import Datastore, { Extractor } from '@ulixee/datastore';
 import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
 import { string } from '@ulixee/schema';
 
-export default new Datastore({
+const datastore = new Datastore({
   name: 'Tutorial',
-  description: 'This is the example used in the Getting Started guide',
-  /**
-   * Configuring admin access.
-   */
-  adminIdentities: ['id13dheud78gd9am7azwmwu7rhds4n2xptpepzchlwmm54j5scq8flql4g0ql'],
   extractors: {
     docPages: new Extractor(
       {
-        pricePerQuery: 10_000,
         async run({ input, Hero, Output }) {
           const hero = new Hero();
           await hero.goto(`https://ulixee.org/docs/${input.tool}`);
@@ -45,3 +39,5 @@ export default new Datastore({
     ),
   },
 });
+
+export default datastore;

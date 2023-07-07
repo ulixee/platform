@@ -1,33 +1,33 @@
-import CreditsStore from '@ulixee/datastore/lib/CreditsStore';
-import Identity from '@ulixee/crypto/lib/Identity';
-import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
-import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
-import { ICloudConnected, IUserBalance } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
-import { dialog, Menu, WebContents } from 'electron';
-import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
-import * as Path from 'path';
 import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
-import * as Os from 'os';
-import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
+import Identity from '@ulixee/crypto/lib/Identity';
+import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
+import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
+import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
+import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
+import CreditsStore from '@ulixee/datastore/lib/CreditsStore';
+import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import {
   IDatastoreResultItem,
   IDesktopAppPrivateApis,
   TCredit,
 } from '@ulixee/desktop-interfaces/apis';
+import { ICloudConnected, IUserBalance } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppPrivateEvents from '@ulixee/desktop-interfaces/events/IDesktopAppPrivateEvents';
-import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
-import { nanoid } from 'nanoid';
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
-import { IncomingMessage } from 'http';
 import { ConnectionToClient, WsTransportToClient } from '@ulixee/net';
-import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
-import Resolvable from '@ulixee/commons/lib/Resolvable';
+import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
+import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
+import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
+import { dialog, Menu, WebContents } from 'electron';
+import { IncomingMessage } from 'http';
+import { nanoid } from 'nanoid';
+import * as Os from 'os';
+import * as Path from 'path';
 import WebSocket = require('ws');
-import ArgonFile from './ArgonFile';
 import ApiManager from './ApiManager';
+import ArgonFile from './ArgonFile';
 
 const argIconPath = Path.resolve(__dirname, '..', 'assets', 'arg.png');
 
@@ -38,7 +38,7 @@ export interface IOpenReplay {
 }
 
 export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
-  'open-chromealive': IOpenReplay;
+  'open-replay': IOpenReplay;
 }> {
   public Apis: IDesktopAppPrivateApis = {
     'Argon.dropFile': this.onArgonFileDrop.bind(this),
@@ -52,6 +52,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     'Datastore.query': this.queryDatastore.bind(this),
     'Datastore.deploy': this.deployDatastore.bind(this),
     'Datastore.install': this.installDatastore.bind(this),
+    'Datastore.uninstall': this.uninstallDatastore.bind(this),
     'Desktop.getAdminIdentities': this.getAdminIdentities.bind(this),
     'Desktop.getCloudConnections': this.getCloudConnections.bind(this),
     'Desktop.connectToPrivateCloud': this.connectToPrivateCloud.bind(this),
@@ -136,57 +137,68 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   }
 
   public queryDatastore(args: {
-    versionHash: string;
+    id: string;
+    version: string;
     cloudHost: string;
     query: string;
   }): Promise<IQueryLogEntry> {
-    const { versionHash, query, cloudHost } = args;
-    const api = this.apiManager.getDatastoreClient(cloudHost);
-    const id = nanoid(12);
+    const { id, version, query, cloudHost } = args;
+    const client = this.apiManager.getDatastoreClient(cloudHost);
+    const queryId = nanoid(12);
     const date = new Date();
-    void api.query(versionHash, query, { queryId: id });
+    void client.query(id, version, query, { queryId });
     return Promise.resolve({
-      id,
       date,
       query,
       input: [],
-      versionHash,
+      id,
+      version,
+      queryId,
     } as any);
   }
 
   public async deployDatastore(args: {
-    versionHash: string;
+    id: string;
+    version: string;
     cloudHost: string;
     cloudName: string;
   }): Promise<void> {
-    const { versionHash, cloudName, cloudHost } = args;
-    const adminIdentity = this.apiManager.localUserProfile.getAdminIdentity(versionHash, cloudName);
+    const { id, version, cloudName, cloudHost } = args;
+    const adminIdentity = this.apiManager.localUserProfile.getAdminIdentity(id, cloudName);
 
     if (!cloudHost) throw new Error('No cloud host available.');
     const apiClient = new DatastoreApiClient(cloudHost);
-    if (versionHash.includes(DatastoreManifest.TemporaryIdPrefix)) {
+    if (version.includes(DatastoreManifest.TemporaryIdPrefix)) {
       throw new Error('This Datastore has only been started. You need to deploy it.');
     }
-    const download = await apiClient.download(versionHash, {
-      identity: adminIdentity,
-    });
+    const download = await apiClient.download(id, version, adminIdentity);
     await apiClient.upload(download.compressedDbx, { forwardedSignature: download });
   }
 
   public async installDatastore(arg: {
     cloudHost: string;
-    datastoreVersionHash: string;
+    id: string;
+    version: string;
   }): Promise<void> {
-    const { cloudHost, datastoreVersionHash } = arg;
-    await this.apiManager.localUserProfile.installDatastore(cloudHost, datastoreVersionHash);
+    const { cloudHost, id, version } = arg;
+    await this.apiManager.localUserProfile.installDatastore(cloudHost, id, version);
+  }
+
+  public async uninstallDatastore(arg: {
+    cloudHost: string;
+    id: string;
+    version: string;
+  }): Promise<void> {
+    const { cloudHost, id, version } = arg;
+    await this.apiManager.localUserProfile.uninstallDatastore(cloudHost, id, version);
   }
 
   public async setDatastoreAdminIdentity(
-    datastoreVersionHash: string,
+    datastoreId: string,
     adminIdentityPath: string,
   ): Promise<string> {
     return await this.apiManager.localUserProfile.setDatastoreAdminIdentity(
-      datastoreVersionHash,
+      datastoreId,
       adminIdentityPath,
     );
   }
@@ -196,14 +208,17 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   }
 
   public async createCredit(args: {
-    datastore: Pick<IDatastoreResultItem, 'versionHash' | 'name' | 'domain' | 'scriptEntrypoint'>;
+    datastore: Pick<
+      IDatastoreResultItem,
+      'id' | 'version' | 'name' | 'scriptEntrypoint'
+    >;
     cloud: string;
     argons: number;
   }): Promise<{ credit: TCredit; filename: string }> {
     const { argons, datastore } = args;
     const address = new URL(this.apiManager.getCloudAddressByName(args.cloud));
     const adminIdentity = this.apiManager.localUserProfile.getAdminIdentity(
-      datastore.versionHash,
+      datastore.id,
       args.cloud,
     );
     if (!adminIdentity) {
@@ -215,14 +230,15 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     const client = new DatastoreApiClient(address.href);
     try {
       const { id, remainingCredits, secret } = await client.createCredits(
-        datastore.versionHash,
+        datastore.id,
+        datastore.version,
         microgons,
         adminIdentity,
       );
 
       return {
         credit: {
-          datastoreUrl: `ulx://${id}:${secret}@${address.host}/${datastore.versionHash}`,
+          datastoreUrl: `ulx://${id}:${secret}@${address.host}/${datastore.id}@v${datastore.version}`,
           microgons: remainingCredits,
         },
         filename: `₳${argons} at ${
@@ -285,7 +301,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     await this.connectionToClient.sendEvent({ eventType: 'Argon.opened', data: file });
   }
 
-  public async findAdminIdentity(datastoreVersionHash: string): Promise<string> {
+  public async findAdminIdentity(datastoreId: string): Promise<string> {
     const result = await dialog.showOpenDialog({
       properties: ['openFile', 'showHiddenFiles'],
       message: 'Select your Admin Identity for this Datastore to enable administrative features.',
@@ -294,7 +310,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     });
     if (result.filePaths.length) {
       const [filename] = result.filePaths;
-      return await this.setDatastoreAdminIdentity(datastoreVersionHash, filename);
+      return await this.setDatastoreAdminIdentity(datastoreId, filename);
     }
     return null;
   }
@@ -314,15 +330,15 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   }
 
   public getAdminIdentities(): {
-    datastoresByVersion: {
-      [versionHash: string]: string;
+    datastoresById: {
+      [id: string]: string;
     };
     cloudsByName: { [name: string]: string };
   } {
-    const datastoresByVersion: Record<string, string> = {};
-    for (const { datastoreVersionHash, adminIdentity } of this.apiManager.localUserProfile
+    const datastoresById: Record<string, string> = {};
+    for (const { datastoreId, adminIdentity } of this.apiManager.localUserProfile
       .datastoreAdminIdentities) {
-      datastoresByVersion[datastoreVersionHash] = adminIdentity;
+      datastoresById[datastoreId] = adminIdentity;
     }
     const cloudsByName: Record<string, string> = {};
     for (const cloud of this.apiManager.apiByCloudAddress.values()) {
@@ -330,7 +346,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
         cloudsByName[cloud.name] = cloud.adminIdentity;
       }
     }
-    return { datastoresByVersion, cloudsByName };
+    return { datastoresById, cloudsByName };
   }
 
   public async onDeployment(event: IDatastoreDeployLogEntry): Promise<void> {
@@ -346,7 +362,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   }
 
   public openReplay(arg: IOpenReplay): void {
-    this.emit('open-chromealive', arg);
+    this.emit('open-replay', arg);
   }
 
   public getCloudConnections(): ICloudConnected[] {

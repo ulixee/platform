@@ -142,10 +142,8 @@ export class Menubar extends EventEmitter {
     this.#tray?.removeAllListeners();
     this.hideMenu();
     await this.#apiManager?.close();
-    await this.stopCloud();
-    await this.#windowManager.close();
+    this.#windowManager.close();
     if (this.#installUpdateOnExit) {
-      log.debug('Installing update before exit');
       await this.#updateInfoPromise;
       await autoUpdater.quitAndInstall(false, true);
     }
@@ -180,8 +178,6 @@ export class Menubar extends EventEmitter {
           this.#windowManager.desktopWindow.focus();
         }
       });
-
-      app.once('before-quit', this.beforeQuit.bind(this));
 
       this.#tray.on('click', this.clicked.bind(this));
       this.#tray.on('right-click', this.rightClicked.bind(this));

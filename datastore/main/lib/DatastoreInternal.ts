@@ -264,9 +264,10 @@ export default class DatastoreInternal<
 
   private createMetadata(): IDatastoreMetadata {
     const {
+      version,
+      id,
       name,
       description,
-      domain,
       paymentAddress,
       affiliateId,
       remoteDatastores,
@@ -276,9 +277,10 @@ export default class DatastoreInternal<
     } = this.components;
 
     const metadata: IDatastoreMetadata = {
+      version,
+      id,
       name,
       description,
-      domain,
       affiliateId,
       paymentAddress,
       remoteDatastores,
@@ -304,7 +306,8 @@ export default class DatastoreInternal<
         minimumPrice: extractor.minimumPrice,
         remoteSource: passThrough?.remoteSource,
         remoteExtractor: passThrough?.remoteExtractor,
-        remoteDatastoreVersionHash: passThrough?.datastoreVersionHash,
+        remoteDatastoreId: passThrough?.remoteDatastoreId,
+        remoteDatastoreVersion: passThrough?.remoteVersion,
       };
     }
 
@@ -329,7 +332,8 @@ export default class DatastoreInternal<
         schema: table.schema,
         remoteSource: passThrough?.remoteSource,
         remoteTable: passThrough?.remoteTable,
-        remoteDatastoreVersionHash: passThrough?.datastoreVersionHash,
+        remoteDatastoreId: passThrough?.remoteDatastoreId,
+        remoteDatastoreVersion: passThrough?.remoteVersion,
       };
     }
 

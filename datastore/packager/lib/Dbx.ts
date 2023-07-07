@@ -1,14 +1,11 @@
 import Identity from '@ulixee/crypto/lib/Identity';
-import { IExtractorSchema } from '@ulixee/datastore';
 import { IFetchMetaResponseData } from '@ulixee/datastore-core/interfaces/ILocalDatastoreProcess';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import ExtractorInternal from '@ulixee/datastore/lib/ExtractorInternal';
-import StringSchema from '@ulixee/schema/lib/StringSchema';
 import * as Fs from 'fs/promises';
 import * as Path from 'path';
 import * as Tar from 'tar';
-import moment = require('moment');
 import IDocpageConfig from '../interfaces/IDocpageConfig';
 
 export default class Dbx {
@@ -55,38 +52,16 @@ export default class Dbx {
       ];
       const useFunction = functions.find(x => x.schema?.inputExamples?.length) ?? functions[0];
       const type = meta.extractorsByName[useFunction?.name] ? 'extractor' : 'crawler';
-      if (useFunction?.schema) {
-        const args: Record<string, any> = {};
-        if (useFunction.schema.inputExamples?.length) {
-          ExtractorInternal.fillInputWithExamples(useFunction.schema, args);
-        } else {
-          for (const [name, field] of Object.entries(
-            (useFunction.schema?.input as IExtractorSchema['input']) ?? {},
-          )) {
-            if (field.optional === true) continue;
-            if (field.format === 'time') args[name] = moment().format(StringSchema.TimeFormat);
-            else if (field.format === 'date') args[name] = moment().format(StringSchema.DateFormat);
-            else if (field.format === 'url') args[name] = '<USER SUPPLIED URL>';
-            else if (field.format === 'email') args[name] = '<USER SUPPLIED EMAIL>';
-            else if (field.enum) args[name] = field.enum[0];
-
-            args[name] ??= `<USER SUPPLIED ${field.typeName}>`;
-          }
-        }
-
-        const keys = Object.keys(args).map((key, i) => `${key} => $${i + 1}`);
+      if (useFunction) {
+        const { formatted, args } = ExtractorInternal.createExampleCall(
+          useFunction?.name,
+          useFunction?.schema,
+        );
         defaultExample = {
           type,
-          formatted: `${useFunction.name}(${keys.join(', ')})`,
+          name: useFunction.name,
+          formatted,
           args,
-          name: useFunction.name,
-        };
-      } else if (useFunction) {
-        defaultExample = {
-          type,
-          formatted: `${useFunction.name}()`,
-          args: {},
-          name: useFunction.name,
         };
       }
     }
@@ -94,7 +69,8 @@ export default class Dbx {
     defaultExample ??= { type: 'table', formatted: 'default', args: null, name: 'default' };
 
     const config: IDocpageConfig = {
-      versionHash: manifest.versionHash,
+      datastoreId: manifest.id,
+      version: manifest.version,
       name: title.charAt(0).toUpperCase() + title.slice(1),
       description: meta.description,
       defaultExample,
@@ -152,7 +128,6 @@ export default class Dbx {
   public async upload(
     host: string,
     options: {
-      allowNewLinkedVersionHistory?: boolean;
       identity?: Identity;
       timeoutMs?: number;
     } = {},

@@ -6,6 +6,8 @@ import {
 } from '@ulixee/specification/common';
 import { IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
 import { DatastoreManifestWithLatest } from '../services/DatastoreRegistryApis';
+import { datastoreIdValidation } from '../types/datastoreIdValidation';
+import { minDate } from '../types/IDatastoreManifest';
 import {
   DatastoreCrawlerPricing,
   DatastoreExtractorPricing,
@@ -13,7 +15,7 @@ import {
 } from '../types/IDatastorePricing';
 import { DatastoreStatsSchema } from '../types/IDatastoreStats';
 import { PaymentSchema } from '../types/IPayment';
-import { datastoreVersionHashValidation } from '../types/datastoreVersionHashValidation';
+import { semverValidation } from '../types/semverValidation';
 
 const FunctionMetaSchema = z.object({
   description: z.string().optional(),
@@ -25,15 +27,16 @@ const FunctionMetaSchema = z.object({
   schemaAsJson: z.any().optional().describe('The schema JSON if requested'),
 });
 
+export const EntityStatsSchema = z.object({
+  name: z.string().describe('The entity name'),
+  type: z.enum(['Table', 'Extractor', 'Crawler']),
+  stats: DatastoreStatsSchema,
+});
+
 export const DatastoreApiSchemas = {
   'Datastore.upload': {
     args: z.object({
       compressedDbx: z.instanceof(Buffer).describe('Bytes of a compressed .dbx directory.'),
-      allowNewLinkedVersionHistory: z
-        .boolean()
-        .describe(
-          'Allow this upload to start a new version chain (do not link to previous versions)',
-        ),
       adminIdentity: identityValidation
         .optional()
         .describe(
@@ -42,7 +45,6 @@ export const DatastoreApiSchemas = {
       adminSignature: signatureValidation
         .optional()
         .describe('A signature from an approved AdminIdentity'),
-      payment: PaymentSchema.optional(),
     }),
     result: z.object({
       success: z.boolean(),
@@ -50,19 +52,13 @@ export const DatastoreApiSchemas = {
   },
   'Datastore.download': {
     args: z.object({
-      versionHash: datastoreVersionHashValidation.describe(
-        'The hash of a unique datastore version',
-      ),
+      id: datastoreIdValidation.describe('The datastore id'),
+      version: semverValidation,
       requestDate: z.date().describe('Date of this request. Must be in last 10 seconds.'),
-      adminIdentity: identityValidation
-        .optional()
-        .describe(
-          'If this server is in production mode, an AdminIdentity approved on the Server or Datastore.',
-        ),
-      adminSignature: signatureValidation
-        .optional()
-        .describe('A signature from an approved AdminIdentity'),
-      payment: PaymentSchema.optional(),
+      adminIdentity: identityValidation.describe(
+        'If this server is in production mode, an AdminIdentity approved on the Server or Datastore.',
+      ),
+      adminSignature: signatureValidation.describe('A signature from an approved AdminIdentity'),
     }),
     result: z.object({
       adminIdentity: identityValidation.describe(
@@ -76,6 +72,7 @@ export const DatastoreApiSchemas = {
   },
   'Datastore.start': {
     args: z.object({
+      id: datastoreIdValidation.describe('A temporary datastore id'),
       dbxPath: z.string().describe('Path to a local file system Database path.'),
       watch: z.boolean().describe('Whether to watch for updates'),
     }),
@@ -85,9 +82,8 @@ export const DatastoreApiSchemas = {
   },
   'Datastore.creditsBalance': {
     args: z.object({
-      datastoreVersionHash: datastoreVersionHashValidation.describe(
-        'The hash of the Datastore version to look at credits for.',
-      ),
+      id: datastoreIdValidation.describe('The datastore id'),
+      version: semverValidation.describe('The Datastore version to look at credits for.'),
       creditId: z.string().describe('CreditId issued by this datastore.'),
     }),
     result: z.object({
@@ -97,9 +93,8 @@ export const DatastoreApiSchemas = {
   },
   'Datastore.creditsIssued': {
     args: z.object({
-      datastoreVersionHash: datastoreVersionHashValidation.describe(
-        'The hash of the Datastore version to look at credits for.',
-      ),
+      id: datastoreIdValidation.describe('The datastore id'),
+      version: semverValidation.describe('The Datastore version to look at credits for.'),
     }),
     result: z.object({
       issuedCredits: micronoteTokenValidation.describe(
@@ -110,9 +105,8 @@ export const DatastoreApiSchemas = {
   },
   'Datastore.admin': {
     args: z.object({
-      versionHash: datastoreVersionHashValidation.describe(
-        'The hash of a unique datastore version',
-      ),
+      id: datastoreIdValidation.describe('The datastore id'),
+      version: semverValidation.describe('The datastore version'),
       adminIdentity: identityValidation
         .optional()
         .describe('An admin Identity for this Datastore.'),
@@ -133,19 +127,10 @@ export const DatastoreApiSchemas = {
     }),
     result: z.any().describe('A flexible result based on the type of api.'),
   },
-  'Datastore.manifest': {
-    args: z.object({
-      versionHash: datastoreVersionHashValidation.describe(
-        'The hash of a unique datastore version',
-      ),
-    }),
-    result: DatastoreManifestWithLatest,
-  },
   'Datastore.meta': {
     args: z.object({
-      versionHash: datastoreVersionHashValidation.describe(
-        'The hash of a unique datastore version',
-      ),
+      id: datastoreIdValidation.describe('The datastore id'),
+      version: semverValidation.describe('The datastore version'),
       includeSchemasAsJson: z
         .boolean()
         .optional()
@@ -188,12 +173,11 @@ export const DatastoreApiSchemas = {
   },
   'Datastore.stream': {
     args: z.object({
-      id: z.string().describe('The id of this query.'),
+      id: datastoreIdValidation.describe('The datastore id'),
+      version: semverValidation.describe('The datastore version'),
+      queryId: z.string().describe('The id of this query.'),
       name: z.string().describe('The name of the table or function'),
       input: z.any().optional().describe('Optional input or where parameters'),
-      versionHash: datastoreVersionHashValidation.describe(
-        'The hash of this unique datastore version',
-      ),
       payment: PaymentSchema.optional().describe('Payment for this request.'),
       affiliateId: z
         .string()
@@ -216,7 +200,7 @@ export const DatastoreApiSchemas = {
         .optional(),
     }),
     result: z.object({
-      latestVersionHash: datastoreVersionHashValidation,
+      latestVersion: semverValidation,
       metadata: z
         .object({
           microgons: micronoteTokenValidation,
@@ -228,15 +212,14 @@ export const DatastoreApiSchemas = {
   },
   'Datastore.query': {
     args: z.object({
-      id: z.string().describe('The unique id of this query.'),
+      id: datastoreIdValidation.describe('The datastore id'),
+      version: semverValidation,
+      queryId: z.string().describe('The unique id of this query.'),
       sql: z.string().describe('The SQL command(s) you want to run'),
       boundValues: z
         .array(z.any())
         .optional()
         .describe('An array of values you want to use as bound parameters'),
-      versionHash: datastoreVersionHashValidation.describe(
-        'The hash of this unique datastore version',
-      ),
       affiliateId: z
         .string()
         .regex(/aff[a-zA-Z_0-9-]{10}/)
@@ -261,7 +244,7 @@ export const DatastoreApiSchemas = {
         .optional(),
     }),
     result: z.object({
-      latestVersionHash: datastoreVersionHashValidation,
+      latestVersion: semverValidation,
       outputs: z.any().array(),
       metadata: z
         .object({
@@ -276,11 +259,6 @@ export const DatastoreApiSchemas = {
     args: z.object({
       version: z.object({
         compressedDbx: z.instanceof(Buffer).describe('Bytes of a compressed .dbx directory.'),
-        allowNewLinkedVersionHistory: z
-          .boolean()
-          .describe(
-            'Did this upload create a new version history (necessary for signature message)',
-          ),
         adminIdentity: identityValidation
           .optional()
           .describe(
@@ -293,11 +271,6 @@ export const DatastoreApiSchemas = {
       previousVersion: z
         .object({
           compressedDbx: z.instanceof(Buffer).describe('Bytes of a compressed .dbx directory.'),
-          allowNewLinkedVersionHistory: z
-            .boolean()
-            .describe(
-              'Did this upload create a new version history (necessary for signature message)',
-            ),
           adminIdentity: identityValidation
             .optional()
             .describe(
@@ -309,7 +282,6 @@ export const DatastoreApiSchemas = {
         })
         .nullable()
         .optional(),
-      payment: PaymentSchema.optional(),
     }),
     result: z.object({
       success: z.boolean(),
@@ -317,8 +289,9 @@ export const DatastoreApiSchemas = {
   },
   'Datastore.queryStorageEngine': {
     args: z.object({
-      id: z.string().describe('The unique id of this query.'),
-      versionHash: datastoreVersionHashValidation.describe('The Datastore version to be queried.'),
+      id: datastoreIdValidation,
+      version: semverValidation.describe('The Datastore version to be queried.'),
+      queryId: z.string().describe('The unique id of this query.'),
       sql: z.string().describe('The SQL command you want to run.'),
       boundValues: z
         .array(z.any())
@@ -382,28 +355,52 @@ export const DatastoreApiSchemas = {
     result: z.object({
       datastores: z
         .object({
+          id: datastoreIdValidation,
+          version: semverValidation.describe('The latest version'),
+          versionTimestamp: z.number().int().positive().describe('Millis since epoch'),
           name: z.string().optional(),
           description: z.string().optional(),
           isStarted: z
             .boolean()
             .describe('Only relevant in development mode - is this Datastore started.'),
           scriptEntrypoint: z.string(),
-          versionHash: datastoreVersionHashValidation,
-          versionTimestamp: z.number().int().positive().describe('Millis since epoch'),
-          linkedVersions: DatastoreManifestWithLatest.shape.linkedVersions,
-          domain: DatastoreManifestWithLatest.shape.domain,
-          latestVersionHash: datastoreVersionHashValidation.describe(
-            'The latest version hash of this datastore',
-          ),
           stats: DatastoreStatsSchema,
         })
         .array(),
-      count: z.number().describe('Total datastores.'),
+      total: z.number().describe('Total datastores.'),
       offset: z.number().describe('Offset index of result (inclusive).'),
+    }),
+  },
+  'Datastore.versions': {
+    args: z.object({
+      id: datastoreIdValidation.describe('The datastore id'),
+    }),
+    result: z.object({
+      versions: z
+        .object({
+          version: semverValidation,
+          timestamp: z
+            .number()
+            .int()
+            .gt(minDate)
+            .refine(x => x <= Date.now())
+            .describe('Millis since the epoch'),
+        })
+        .array(),
+    }),
+  },
+  'Datastore.stats': {
+    args: z.object({
+      id: datastoreIdValidation.describe('The datastore id'),
+    }),
+    result: z.object({
+      byVersion: EntityStatsSchema.array(),
+      overall: EntityStatsSchema.array(),
     }),
   },
 };
 
 type IDatastoreApiTypes = IZodSchemaToApiTypes<typeof DatastoreApiSchemas>;
+export type IDatastoreEntityStats = z.infer<typeof EntityStatsSchema>;
 
 export default IDatastoreApiTypes;
