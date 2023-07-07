@@ -26,7 +26,7 @@
           import Client from '@ulixee/client';
 
           (async function run() {
-            const client = new Client(`ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{config.datastoreId}}/{{ config.version }}`);
+            const client = new Client(`ulx://{{ authString ? `${authString}@` : ''}}{{ipAddress}}:{{port}}/{{config.datastoreId}}@v{{ config.version }}`);
             const records = await client.query(`SELECT * FROM {{defaultExample.formatted}}`, {{JSON.stringify(Object.values(defaultExample.args))}});
             console.log(records);
           })().catch(error => console.log(error));

@@ -13,7 +13,7 @@ import { DatastoreNotFoundError } from '../lib/errors';
 import createStaticFileHandler from '../lib/staticServe';
 
 export const datastorePathRegex = new RegExp(
-  `/docs/(${datastoreRegex.source})/(${semverRegex.source})(/(.+)?)?`,
+  `/docs/(${datastoreRegex.source})@v(${semverRegex.source})(/(.+)?)?`,
 );
 
 export default class DocpageRoutes {

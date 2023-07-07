@@ -2,9 +2,9 @@
   <div
     class="flex flex-col items-center divide-y divide-gray-200 overflow-hidden overflow-hidden rounded-lg bg-white shadow ring-1 ring-black ring-opacity-5"
   >
-    <p v-if="errorMessage" class="px-1 py-2 text-sm font-semibold text-red-500">
+    <div v-if="errorMessage" class="px-1 py-2 text-sm font-semibold  bg-red-500/20 w-full text-center shadow-inner">
       {{ errorMessage }}
-    </p>
+    </div>
     <table class="min-w-full divide-y divide-gray-300">
       <thead class="bg-gray-50">
         <tr class="top-12 mb-1 bg-fuchsia-800/90 pb-1 text-left font-thin shadow-md">

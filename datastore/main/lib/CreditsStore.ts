@@ -10,7 +10,7 @@ export default class CreditsStore {
   public static async storeFromUrl(url: string, microgons: number): Promise<void> {
     const datastoreURL = new URL(url);
     datastoreURL.protocol = 'ws:';
-    const [datastoreId, version] = datastoreURL.pathname.slice(1).split('/');
+    const [datastoreId, version] = datastoreURL.pathname.slice(1).split('@v');
     await this.store(datastoreId, version, datastoreURL.host, {
       id: datastoreURL.username,
       secret: datastoreURL.password,

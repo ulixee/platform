@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import Index from '../pages/Index.vue';
 
-const matches = location.pathname.match(/(\/docs\/[a-z0-9-]{2,50})\/(\d+\.\d+\.\d+)/);
-const pathPrefix = matches ? matches.slice(-2).join('/') : '';
+const matches = location.pathname.match(/(\/docs\/[a-z0-9-]+@v[\d.]+)/);
+const pathPrefix = matches ? matches[1] : '';
 
 const basicRoutes: Array<RouteRecordRaw> = [
   {

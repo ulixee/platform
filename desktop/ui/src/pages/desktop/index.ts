@@ -70,7 +70,7 @@ const router = VueRouter.createRouter({
     },
     { path: '/datastores', component: Datastores },
     {
-      path: '/datastore/:datastoreId/:version',
+      path: '/datastore/:datastoreId@v:version',
       component: DatastoreDetails,
       children: [
         {

@@ -145,7 +145,7 @@ export default Vue.defineComponent({
   methods: {
     selectDatastore(name: string, selectDatastore: IDatastoreSummary): void {
       void this.$router.push(
-        `/datastore/${selectDatastore.id}/${selectDatastore.version}`,
+        `/datastore/${selectDatastore.id}@v${selectDatastore.version}`,
       );
     },
     async refresh() {

@@ -12,7 +12,7 @@
       </p>
 
       <Prism language="bash">
-        npx @ulixee/datastore clone 'ulx://{{ ipAddress }}:{{ port }}/{{config.datastoreId}}/{{ config.version }}'
+        npx @ulixee/datastore clone 'ulx://{{ ipAddress }}:{{ port }}/{{config.datastoreId}}@v{{ config.version }}'
       </Prism>
 
       <p class="mt-5">That's It. Now you can run it...</p>

@@ -119,7 +119,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}/${remoteVersion}',
+    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}@v${remoteVersion}',
   },
   extractors: {
     pass: new Datastore.PassthroughExtractor({
@@ -167,7 +167,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}/${remoteVersion}',
+    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}@v${remoteVersion}',
   },
   extractors: {
     pass: new Datastore.PassthroughExtractor({
@@ -208,7 +208,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}/${remoteVersion}',
+    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}@v${remoteVersion}',
   },
   extractors: {
     pass: new Datastore.PassthroughExtractor({
@@ -286,7 +286,7 @@ const { boolean, string } = require('@ulixee/schema');
 export default new Datastore({
   paymentAddress: '${address1.bech32}',
   remoteDatastores: {
-    hop0: 'ulx://${await cloudNode.address}/${datastoreId}/${version}',
+    hop0: 'ulx://${await cloudNode.address}/${datastoreId}@v${version}',
   },
   extractors: {
     source2: new Datastore.PassthroughExtractor({
@@ -322,7 +322,7 @@ const { boolean, string } = require('@ulixee/schema');
 export default new Datastore({
   paymentAddress: '${address1.bech32}',
   remoteDatastores: {
-    hop1: 'ulx://${await cloudNode.address}/${datastoreId}/${version}',
+    hop1: 'ulx://${await cloudNode.address}/${datastoreId}@v${version}',
   },
   extractors: {
     last: new Datastore.PassthroughExtractor({

@@ -34,7 +34,7 @@ export default class ClientForRemote {
     this.user = connectionParameters.user;
     if (connectionParameters.database) {
       this.database = connectionParameters.database;
-      const [datastoreId, version] = this.database.split('/');
+      const [datastoreId, version] = this.database.split('@v');
       this.datastoreId = datastoreId;
       this.version = version;
     }

@@ -330,7 +330,7 @@ test('should be able to embed Credits in a Datastore', async () => {
   });
 
   await cloneDatastore(
-    `ulx://${await cloudNode.address}/${manifest.id}/${manifest.version}`,
+    `ulx://${await cloudNode.address}/${manifest.id}@v${manifest.version}`,
     `${__dirname}/datastores/clone-output`,
     { embedCredits: credits },
   );

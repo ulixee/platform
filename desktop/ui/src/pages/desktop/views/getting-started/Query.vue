@@ -12,7 +12,7 @@
       <span class="m-0.5 bg-gray-200 p-1">@ulixee/datastore start ./ulixee.org.ts</span>. It can
       also be found for each
       <router-link
-        :to="'/datastore/' + datastoreId + '/' + version + '/clouds'"
+        :to="'/datastore/' + datastoreId + '@v' + version + '/clouds'"
         class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
         >Datastore</router-link
       >

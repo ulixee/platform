@@ -92,7 +92,7 @@ Object containing [Tables](./table.md) keyed by their name.
 
 ### remoteDatastores `{ [name]: url }` {#remote-datastores}
 
-Object containing an optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughExtractors](./passthrough-extractor.md). Urls take the format `ulx://<CloudAddress>/<DatastoreVersion>`.
+Object containing an optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughExtractors](./passthrough-extractor.md). Urls take the format `ulx://<CloudAddress>/<datastoreId>@v<DatastoreVersion>`.
 
 ### authenticateIdentity _(identity, nonce)_ {#authenticateIdentity}
 

@@ -50,7 +50,7 @@ export default async function main(
   const datastoreVersion = '0.0.1';
 
   const creditResult = execAndLog(
-    `npx @ulixee/datastore credits create --argons=5 ${cloudAddress}/datastore/${datastoreId}/${datastoreVersion}`,
+    `npx @ulixee/datastore credits create --argons=5 ${cloudAddress}/${datastoreId}@v${datastoreVersion}`,
     {
       cwd: __dirname,
       env: {

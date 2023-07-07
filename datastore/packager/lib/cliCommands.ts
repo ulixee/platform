@@ -185,7 +185,7 @@ export async function startDatastore(
   }
 
   console.log('%s Datastore', options.watch ? 'Started + watching' : 'Started', {
-    connectionString: `${host}/${packager.manifest.id}/${packager.manifest.version}`,
+    connectionString: `${host}/${packager.manifest.id}@v${packager.manifest.version}`,
   });
 
   if (options.showDocs) {

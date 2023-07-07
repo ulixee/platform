@@ -238,7 +238,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
 
       return {
         credit: {
-          datastoreUrl: `ulx://${id}:${secret}@${address.host}/${datastore.id}/${datastore.version}`,
+          datastoreUrl: `ulx://${id}:${secret}@${address.host}/${datastore.id}@v${datastore.version}`,
           microgons: remainingCredits,
         },
         filename: `₳${argons} at ${

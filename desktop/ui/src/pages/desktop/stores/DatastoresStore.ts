@@ -118,7 +118,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
 
   function getCloudAddress(id: string, version: string, cloudName: string): URL {
     const cloudHost = cloudsStore.getCloudHost(cloudName);
-    const cloudAddress = new URL(`/${id}/${version}`, cloudHost);
+    const cloudAddress = new URL(`/${id}@v${version}`, cloudHost);
     cloudAddress.protocol = 'ulx:';
     return cloudAddress;
   }
@@ -140,7 +140,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
 
   function openDocs(id: string, version: string, cloudName: string) {
     const cloudHost = cloudsStore.getCloudHost(cloudName);
-    const docsUrl = new URL(`/docs/${id}/${version}/`, cloudHost);
+    const docsUrl = new URL(`/docs/${id}@v${version}/`, cloudHost);
     docsUrl.protocol = 'http:';
 
     const credits = useWalletStore().userBalance.credits.filter(
@@ -229,12 +229,13 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     if (!url.includes('://')) url = `ws://${url}`;
     const datastoreUrl = new URL(url);
     datastoreUrl.protocol = 'ws:';
-    const [datastoreId] = datastoreUrl.pathname.slice(1).split('/');
+    const [datastoreId] = datastoreUrl.pathname.slice(1).split('@v');
 
     if (datastoresById.value[datastoreId]?.summary)
       return datastoresById.value[datastoreId].summary;
 
     await cloudsStore.connectToCloud(datastoreUrl.host, `${datastoreUrl.host}`);
+    console.log(datastoreUrl.pathname, datastoreId);
 
     const endDate = Date.now() + 5e3;
     while (Date.now() < endDate) {

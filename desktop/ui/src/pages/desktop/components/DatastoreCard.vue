@@ -18,7 +18,7 @@
           {{ datastore.description }}
         </p>
         <p class=" mt-1 truncate text-xs font-medium text-gray-400">
-          <span class="">{{ datastore.version }} </span>
+          <span class="">{{ datastore.id }}@v{{ datastore.version }} </span>
           <span class="mx-4 text-sm">•</span>
           <span class="">Created {{ formatDate(datastore.versionTimestamp) }} </span>
         </p>
@@ -109,7 +109,7 @@ export default Vue.defineComponent({
   methods: {
     navigate() {
       return this.$router.push(
-        `/datastore/${this.datastore.id}/${this.datastore.version}`,
+        `/datastore/${this.datastore.id}@v${this.datastore.version}`,
       );
     },
     formatDate(date: Date | number): string {

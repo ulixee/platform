@@ -18,7 +18,7 @@ NOTE: To ensure a smooth use of credits, you are not able to grant more Credits 
 
 ## Command Line Interface (CLI) {#cli}
 
-To clone a Datastore, you simply run the following command with the url of the "to-be-cloned" Datastore (eg, `ulx://153.23.22.255:8080/ulixee-docs/1.0.0` is a theoretical Datastore url).
+To clone a Datastore, you simply run the following command with the url of the "to-be-cloned" Datastore (eg, `ulx://153.23.22.255:8080/ulixee-docs@v1.0.0` is a theoretical Datastore url).
 
 ```bash
  npx @ulixee/datastore clone <datastore url> <local path>
@@ -30,7 +30,7 @@ To clone a Datastore, you simply run the following command with the url of the "
  ulixee datastore clone <datastore url> <local path>
 ```
 
-You must provide a `datastore url` to the Datastore you wish to clone. A `datastore url` takes the form `ulx://<IP>:<PORT>/<Datastore Version>`.
+You must provide a `datastore url` to the Datastore you wish to clone. A `datastore url` takes the form `ulx://<IP>:<PORT>@v<Datastore Version>`.
 
 The second argument (`local path`) is a path where you wish to export the generated Typescript or Javascript file. If your path ends with `.ts`, Typescript will be emitted. Otherwise, commonjs friendly Javascript will be emitted.
 

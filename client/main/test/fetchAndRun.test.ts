@@ -27,7 +27,7 @@ afterAll(Helpers.afterAll);
 
 test('should be able to fetch a datastore table', async () => {
   const cloudNodeAddress = await cloudNode.address;
-  const client = new Client(`ulx://${cloudNodeAddress}/${packager.manifest.id}/${packager.manifest.version}`);
+  const client = new Client(`ulx://${cloudNodeAddress}/${packager.manifest.id}@v${packager.manifest.version}`);
   const results = await client.fetch('testers');
 
   expect(results).toEqual([
@@ -38,7 +38,7 @@ test('should be able to fetch a datastore table', async () => {
 
 test('should be able to run a datastore extractor', async () => {
   const cloudNodeAddress = await cloudNode.address;
-  const client = new Client(`ulx://${cloudNodeAddress}/${packager.manifest.id}/${packager.manifest.version}`);
+  const client = new Client(`ulx://${cloudNodeAddress}/${packager.manifest.id}@v${packager.manifest.version}`);
   const results = await client.run('test', { shouldTest: true });
 
   expect(results).toEqual([{ testerEcho: true, greeting: 'Hello world' }]);

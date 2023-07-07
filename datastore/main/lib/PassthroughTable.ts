@@ -78,13 +78,13 @@ export default class PassthroughTable<
     assert(remoteDatastore, `A remote datastore source could not be found for ${remoteSource}`);
 
     try {
-      const [datastoreId, datastoreVersion] = remoteDatastore.split('/').slice(-2);
+      const [datastoreId, datastoreVersion] = remoteDatastore.split('/').pop().split('@v');
       this.remoteDatastoreId = datastoreId;
       this.remoteVersion = datastoreVersion;
       this.upstreamClient = this.datastoreInternal.createApiClient(remoteDatastore);
     } catch (error) {
       throw new Error(
-        'A valid url was not supplied for this remote datastore. Format should be ulx://<host>/<datastoreVersion>',
+        'A valid url was not supplied for this remote datastore. Format should be ulx://<host>/<datastoreId>@v<datastoreVersion>',
       );
     }
   }

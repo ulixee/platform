@@ -45,7 +45,7 @@ afterEach(Helpers.afterEach);
 afterAll(Helpers.afterAll);
 
 test('should be able to clone a datastore', async () => {
-  const url = `ulx://${await cloudNode.address}/${datastoreId}/${version}`;
+  const url = `ulx://${await cloudNode.address}/${datastoreId}@v${version}`;
   await expect(cloneDatastore(url, `${__dirname}/datastores/cloned`)).resolves.toEqual({
     datastoreFilePath: Path.join(__dirname, 'datastores', 'cloned', 'datastore.ts'),
   });

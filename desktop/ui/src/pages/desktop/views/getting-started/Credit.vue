@@ -27,7 +27,7 @@
     <p class="font-light">
       Let's try it. Navigate to your
       <router-link
-        :to="'/datastore/' + datastoreId + '/' + version"
+        :to="'/datastore/' + datastoreId + '@v' + version"
         class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
         >Datastore</router-link
       >

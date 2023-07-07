@@ -34,7 +34,7 @@ import Datastore, { PassthroughExtractor } from '@ulixee/datastore';
 export default new Datastore({
   // NOTE: this is not a real hosted Datastore
   remoteDatastores: {
-    source: `ulx://153.23.22.255:8080/echo/0.0.1`,
+    source: `ulx://153.23.22.255:8080/echo@v0.0.1`,
   },
   extractors: {
     extractor2: new PassthroughExtractor({

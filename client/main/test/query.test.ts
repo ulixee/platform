@@ -28,7 +28,7 @@ test('should be able to query a datastore using sql', async () => {
   await expect(apiClient.upload(await packager.dbx.tarGzip())).resolves.toBeTruthy();
   const cloudNodeAddress = await cloudNode.address;
   const client = new Client(
-    `ulx://${cloudNodeAddress}/${packager.manifest.id}/${packager.manifest.version}`,
+    `ulx://${cloudNodeAddress}/${packager.manifest.id}@v${packager.manifest.version}`,
   );
   Helpers.onClose(() => client.disconnect());
   const results = await client.query(

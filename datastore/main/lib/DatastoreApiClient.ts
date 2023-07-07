@@ -421,7 +421,7 @@ export default class DatastoreApiClient {
 
   public static resolveDatastoreDomain(domain: string): Promise<IDatastoreDomainResponse> {
     const datastorePathRegex = new RegExp(
-      `(?:.+://)?([^/]+)/(?:docs/)?(${datastoreRegex.source})/(${semverRegex.source})/?`,
+      `(?:.+://)?([^/]+)/(?:docs/)?(${datastoreRegex.source})@v(${semverRegex.source})/?`,
     );
     const isFullDomain = domain.match(datastorePathRegex);
     if (isFullDomain) {

@@ -65,7 +65,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}/${remoteVersion}',
+    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}@v${remoteVersion}',
   },
   tables: {
     pass: new Datastore.PassthroughTable({
@@ -107,7 +107,7 @@ const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
   remoteDatastores: {
-    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}/${remoteVersion}',
+    source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}@v${remoteVersion}',
   },
   tables: {
     pass: new Datastore.PassthroughTable({

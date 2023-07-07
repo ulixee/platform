@@ -27,7 +27,10 @@ export class Client<Type extends 'session' | 'desktop' | 'internal' = 'session'>
 
   private connectedPromise: Promise<void>;
   private connection: WebSocket;
-  private pendingMessagesById = new Map<string, { resolve: (args: any) => any }>();
+  private pendingMessagesById = new Map<
+    string,
+    { resolve: (args: any) => any; reject: (err: Error) => any }
+  >();
 
   private messageCounter = 0;
   private eventHandlersByEventType: {
@@ -170,8 +173,8 @@ export class Client<Type extends 'session' | 'desktop' | 'internal' = 'session'>
         detail: { command, messageId, args, clientId: this.id },
       }),
     );
-    return new Promise(resolve => {
-      this.pendingMessagesById.set(messageId, { resolve });
+    return new Promise((resolve, reject) => {
+      this.pendingMessagesById.set(messageId, { resolve, reject });
       this.connection.send(message);
     });
   }
@@ -196,8 +199,14 @@ export class Client<Type extends 'session' | 'desktop' | 'internal' = 'session'>
       );
     } else {
       const { responseId, data } = event;
-      this.pendingMessagesById.get(responseId)?.resolve(data);
+      const pending = this.pendingMessagesById.get(responseId);
       this.pendingMessagesById.delete(responseId);
+      if (pending) {
+        if ((data as any) instanceof Error) {
+          pending.reject(data);
+        }
+        else pending.resolve(data);
+      }
       document.dispatchEvent(
         new CustomEvent('chromealive:api:response', {
           detail: { responseId, data, clientId: this.id },

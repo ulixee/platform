@@ -9,7 +9,7 @@
       Let's clone and improve it! Run the following command from your test project:
     </p>
     <Prism language="typescript" class="my-2" style="font-size: 0.9em">
-      npx @ulixee/datastore clone "ulx://localhost:1818/ulixee-docs/1.0.0" ./clone
+      npx @ulixee/datastore clone "ulx://localhost:1818/ulixee-docs@v1.0.0" ./clone
     </Prism>
     <p class="mt-5 font-light">
       Check out your newly created Datastore in the
@@ -33,7 +33,7 @@
       the user to load docs by page.
 
       <!-- prettier-ignore -->
-      <Prism language="typescript" class="mt-2" data-line='9-13,24,30-34,64-65 '  style="font-size: 0.9em">
+      <Prism language="typescript" class="mt-2" data-line='11-13,27,31-35,66 '  style="font-size: 0.9em">
       import { Datastore, PassthroughExtractor } from '@ulixee/datastore';
       import schemaFromJson from '@ulixee/schema/lib/schemaFromJson';
       import { string, array, object, boolean } from '@ulixee/schema';
@@ -42,24 +42,25 @@
     /**
      * 1. Tweak the name, id, version and description.
     **/
-        name: 'Ulixee Docs v2',
-        id: 'ulixee-docs-v2',
-        version: '1.0.0',
+        id: "ulixee-docs2",
+        version: "0.0.1",
+        name: "Ulixee Docs v2",
         description:
           'Clone of Ulixee Docs that enables search docs by tool and category instead of just by url.',
         affiliateId: 'affKapydC_q_xfh',
         remoteDatastores: {
-          source: 'ulx://localhost:1818/ulixee-docs/1.0.0',
+          source: 'ulx://localhost:1818/ulixee-docs@v1.0.0',
         },
         extractors: {
           allPages: new PassthroughExtractor({
-            remoteExtractor: 'source.allPages',
+            remoteExtractor: "source.allPages",
             schema: allPages(),
+            description: "Get all documentation pages for a given tool in the Ulixee suite.",
           }),
           getDocumentation: new PassthroughExtractor({
-            description: 'Get the methods, properties and events of each Category of the Ulixee documentation using Page and Tool names.',
-            remoteExtractor: 'source.documentation',
+            remoteExtractor: "source.getDocumentation",
             schema: getDocumentation(),
+            description: "Get all documented methods, properties and the associated descriptions for a page of the Ulixee documentation.",
     /**
      * 2. Intercept the inbound requests and look up the URL for the given page.
     **/
@@ -70,8 +71,9 @@
             },
           }),
           search: new PassthroughExtractor({
-            remoteExtractor: 'source.search',
+            remoteExtractor: "source.search",
             schema: search(),
+            description: "Search the Ulixee documentation",
           }),
         },
         tables: {},
@@ -149,7 +151,7 @@
         import Client from '@ulixee/client';
 
         async function query() {
-          const client = new Client(`ulx://localhost:1818/ulixee-docs-v2/1.0.0`);
+          const client = new Client(`ulx://localhost:1818/ulixee-docs-v2@v1.0.0`);
           const results = await client.query(
             `SELECT * from docPages(tool => $1, feature => $2)`,
             ['hero', 'Tab'],

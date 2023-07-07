@@ -239,7 +239,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     meta: IFetchMetaResponseData,
     extractor: IFetchMetaResponseData['extractorsByName'][0],
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['extractorsByName'][0]> {
-    const extractorName = extractor.remoteExtractor;
+    const extractorName = extractor.remoteExtractor.split('.').pop();
 
     const { remoteHost, datastoreId, datastoreVersion } = this.getRemoteSourceAndVersion(
       meta,
@@ -255,6 +255,13 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
 
     try {
       const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreId, datastoreVersion);
+      if (!upstreamMeta.extractorsByName[extractorName]) {
+        throw new Error(
+          `${extractorName} is not a valid extractor for ${datastoreId}@v${datastoreVersion}. Valid names are: ${Object.keys(
+            upstreamMeta.extractorsByName,
+          ).join(', ')}.`,
+        );
+      }
       const remoteExtractorDetails = upstreamMeta.extractorsByName[extractorName];
       remoteExtractorDetails.prices[0].remoteMeta = remoteMeta;
       return remoteExtractorDetails;
@@ -268,7 +275,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     meta: IFetchMetaResponseData,
     crawler: IFetchMetaResponseData['crawlersByName'][0],
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['crawlersByName'][0]> {
-    const crawlerName = crawler.remoteCrawler;
+    const crawlerName = crawler.remoteCrawler.split('.').pop();
     const { remoteHost, datastoreId, datastoreVersion } = this.getRemoteSourceAndVersion(
       meta,
       crawler.remoteSource,
@@ -281,6 +288,13 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     };
     try {
       const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreId, datastoreVersion);
+      if (!upstreamMeta.crawlersByName[crawlerName]) {
+        throw new Error(
+          `${crawlerName} is not a valid crawler for ${datastoreId}@v${datastoreVersion} Valid names are: ${Object.keys(
+            upstreamMeta.crawlersByName,
+          ).join(', ')}.`,
+        );
+      }
       const remoteExtractorDetails = upstreamMeta.crawlersByName[crawlerName];
       remoteExtractorDetails.prices[0].remoteMeta = remoteMeta;
       return remoteExtractorDetails;
@@ -294,7 +308,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     meta: IFetchMetaResponseData,
     table: IFetchMetaResponseData['tablesByName'][0],
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['tablesByName'][0]> {
-    const tableName = table.remoteTable;
+    const tableName = table.remoteTable.split('.').pop();
 
     const { remoteHost, datastoreId, datastoreVersion } = this.getRemoteSourceAndVersion(
       meta,
@@ -309,6 +323,13 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
 
     try {
       const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreId, datastoreVersion);
+      if (!upstreamMeta.tablesByName[tableName]) {
+        throw new Error(
+          `${tableName} is not a valid table for ${datastoreId}@v${datastoreVersion}.  Valid names are: ${Object.keys(
+            upstreamMeta.tablesByName,
+          ).join(', ')}.`,
+        );
+      }
       const remoteDetails = upstreamMeta.tablesByName[tableName];
       remoteDetails.prices[0].remoteMeta = remoteMeta;
       return remoteDetails;
@@ -355,9 +376,10 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     }
 
     const match = remoteUrl.pathname.match(
-      new RegExp(`(${datastoreRegex.source})/(${semverRegex.source})`),
+      new RegExp(`(${datastoreRegex.source})@v(${semverRegex.source})`),
     );
-    if (!match || match.length < 3) throw new Error(`Invalid remote Datastore source provided (${url})`);
+    if (!match || match.length < 3)
+      throw new Error(`Invalid remote Datastore source provided (${url})`);
     const [, datastoreId, datastoreVersion] = match;
     DatastoreManifest.validateId(datastoreId);
     if (!semverRegex.test(datastoreVersion))

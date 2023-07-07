@@ -53,11 +53,11 @@ afterAll(async () => {
 
 test('should be able to load datastore documentation', async () => {
   const address = await cloudNode.address;
-  const res = await Axios.get(`http://${address}/docs/${manifest.id}/${manifest.version}`);
+  const res = await Axios.get(`http://${address}/docs/${manifest.id}@v${manifest.version}`);
   expect(res.data.includes('<title>Ulixee</title>')).toBe(true);
 
   const config = await Axios.get(
-    `http://${address}/docs/${manifest.id}/${manifest.version}/docpage.json`,
+    `http://${address}/docs/${manifest.id}@v${manifest.version}/docpage.json`,
   );
   expect(config.data.name).toBe('Docpage');
 });
@@ -65,11 +65,11 @@ test('should be able to load datastore documentation', async () => {
 test('should be able to load datastore documentation with a credit hash', async () => {
   const address = await cloudNode.address;
   const res = await Axios.get(
-    `http://${address}/docs/${manifest.id}/${manifest.version}?crd2342342`,
+    `http://${address}/docs/${manifest.id}@v${manifest.version}?crd2342342`,
   );
   expect(res.data.includes('<title>Ulixee</title>')).toBe(true);
   const config = await Axios.get(
-    `http://${address}/docs/${manifest.id}/${manifest.version}/docpage.json`,
+    `http://${address}/docs/${manifest.id}@v${manifest.version}/docpage.json`,
   );
   expect(config.data.name).toBe('Docpage');
 });
@@ -106,7 +106,7 @@ test('should be able to use a domain to get a credit balance', async () => {
   // can also use the full address
   await expect(
     Axios.get(
-      `http://${await cloudNode.address}/docs/${manifest.id}/${manifest.version}/free-credits?${
+      `http://${await cloudNode.address}/docs/${manifest.id}@v${manifest.version}/free-credits?${
         credits.id
       }:${credits.secret}`,
       { responseType: 'json', headers: { accept: 'application/json' } },
@@ -136,12 +136,12 @@ test('should be able to parse domain urls', async () => {
 
   await expect(
     DatastoreApiClient.resolveDatastoreDomain(
-      `${await cloudNode.address}/docs/${manifest.id}/${manifest.version}`,
+      `${await cloudNode.address}/docs/${manifest.id}@v${manifest.version}`,
     ),
   ).resolves.toEqual(expectedOutput);
 
   await expect(
-    DatastoreApiClient.resolveDatastoreDomain(`localhost:52759/docs/i-am-a-datastore/2.0.0`),
+    DatastoreApiClient.resolveDatastoreDomain(`localhost:52759/docs/i-am-a-datastore@v2.0.0`),
   ).resolves.toEqual({
     host: 'localhost:52759',
     datastoreId: 'i-am-a-datastore',
@@ -150,7 +150,7 @@ test('should be able to parse domain urls', async () => {
 
   await expect(
     DatastoreApiClient.resolveDatastoreDomain(
-      `ulx://${await cloudNode.address}/docs/${manifest.id}/${
+      `ulx://${await cloudNode.address}/docs/${manifest.id}@v${
         manifest.version
       }/free-credit/?crd2342342:234234333`,
     ),
