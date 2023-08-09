@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/datastore-plugins-puppeteer",
-  "version": "2.0.0-alpha.23",
+  "version": "2.0.0-alpha.24",
   "description": "The Datastore Puppeteer Plugin.",
   "exports": {
     ".": {
@@ -10,12 +10,12 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.23",
-    "@ulixee/datastore": "2.0.0-alpha.23",
-    "@ulixee/schema": "2.0.0-alpha.23",
+    "@ulixee/commons": "2.0.0-alpha.24",
+    "@ulixee/datastore": "2.0.0-alpha.24",
+    "@ulixee/schema": "2.0.0-alpha.24",
     "puppeteer": "^20.1.2"
   },
   "devDependencies": {
-    "@ulixee/datastore-testing": "2.0.0-alpha.23"
+    "@ulixee/datastore-testing": "2.0.0-alpha.24"
   }
 }
