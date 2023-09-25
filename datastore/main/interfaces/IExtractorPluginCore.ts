@@ -7,7 +7,6 @@ export default interface IExtractorPluginCore<ISchema extends IExtractorSchema =
   name: string;
   version: string;
   nodeVmRequireWhitelist?: string[];
-  nodeVmUseSandbox?(moduleName: string): boolean;
   registerHostedServices?(connectionToClient: ConnectionToClient<any, any>): void;
   onCoreStart?(
     coreConfiguration: IDatastoreCoreConfigureOptions,

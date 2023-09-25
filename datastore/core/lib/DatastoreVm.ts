@@ -5,20 +5,20 @@ import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPl
 import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
 import Extractor from '@ulixee/datastore/lib/Extractor';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import { promises as Fs } from 'fs';
+import { promises as Fs, readFileSync } from 'fs';
 import * as Path from 'path';
-import { NodeVM, VMScript } from 'vm2';
+import { Script } from 'node:vm';
+import { Context, createContext, runInNewContext } from 'vm';
 import DatastoreApiClients from './DatastoreApiClients';
 
 const { version } = require('../package.json');
 
-const bundledPath = Path.join('build', 'desktop', 'main', 'app', 'packages');
-
 export default class DatastoreVm {
   public static doNotCacheList = new Set<string>();
-  private compiledScriptsByPath = new Map<string, Promise<VMScript>>();
+  private compiledScriptsByPath = new Map<string, Promise<Script>>();
   private readonly connectionToDatastoreCore: ConnectionToDatastoreCore;
   private readonly apiClientCache: DatastoreApiClients;
+  private readonly whitelist: Set<string>;
 
   constructor(
     connectionToDatastoreCore: ConnectionToDatastoreCore,
@@ -27,12 +27,33 @@ export default class DatastoreVm {
   ) {
     this.apiClientCache = apiClientCache;
     this.connectionToDatastoreCore = connectionToDatastoreCore;
+
+    this.whitelist = new Set([
+      ...this.plugins.map(x => x.nodeVmRequireWhitelist || []).flat(),
+      '@ulixee/datastore',
+      '@ulixee/*-plugin',
+      '@ulixee/net',
+      '@ulixee/commons',
+      '@ulixee/schema',
+      '@ulixee/specification',
+      '@ulixee/platform-specification',
+    ]);
   }
 
   public async getDatastore(path: string): Promise<Datastore> {
     const script = await this.getVMScript(path);
-    const vm = this.getVm();
-    let datastore = vm.run(script) as Datastore;
+    const customRequire = this.buildCustomRequire(path);
+    const moduleExports = {};
+    const ctx = createContext(
+      {
+        ...this.getDefaultContext(),
+        require: customRequire,
+        module: { exports: moduleExports },
+        exports: moduleExports,
+      },
+      { name: path },
+    );
+    let datastore = script.runInContext(ctx) as Datastore;
     if (datastore instanceof Extractor) {
       const extractor = datastore;
       datastore = new Datastore({
@@ -76,7 +97,32 @@ export default class DatastoreVm {
     return datastore;
   }
 
-  private getVMScript(path: string): Promise<VMScript> {
+  private getDefaultContext(): any {
+    return {
+      ...global,
+      Date,
+      RegExp,
+      Error,
+      Number,
+      String,
+      Boolean,
+      BigInt,
+      URL,
+      Map,
+      Set,
+      Array,
+      Buffer,
+      Symbol,
+      process: {
+        ...process,
+        env: undefined,
+        exit: undefined,
+      },
+      console,
+    };
+  }
+
+  private getVMScript(path: string): Promise<Script> {
     path = Path.resolve(path);
     if (this.compiledScriptsByPath.has(path) && !DatastoreVm.doNotCacheList.has(path)) {
       return this.compiledScriptsByPath.get(path);
@@ -87,13 +133,12 @@ export default class DatastoreVm {
     SourceMapSupport.clearStackPath(srcDir);
     SourceMapSupport.retrieveSourceMap(path, dir);
 
-    const script = new Promise<VMScript>(async resolve => {
+    const script = new Promise<Script>(async resolve => {
       const file = await Fs.readFile(path, 'utf8');
 
-      const vmScript = new VMScript(file, {
+      const vmScript = new Script(file, {
         filename: path,
-        compiler: 'javascript',
-      }).compile();
+      });
       resolve(vmScript);
     });
 
@@ -103,74 +148,37 @@ export default class DatastoreVm {
     return script;
   }
 
-  private getVm(): NodeVM {
-    const plugins = this.plugins;
-    const whitelist: Set<string> = new Set([
-      ...plugins.map(x => x.nodeVmRequireWhitelist || []).flat(),
-      '@ulixee/datastore',
-      '@ulixee/*-plugin',
-      '@ulixee/net',
-      '@ulixee/commons',
-      '@ulixee/schema',
-      '@ulixee/specification',
-      '@ulixee/platform-specification',
-    ]);
+  private buildCustomRequire(appPath: string): (mod: string) => {} {
+    // Cache for modules loaded in the custom require
+    const moduleCache: { [key: string]: any } = {};
+    const moduleCode = readFileSync(appPath, 'utf8');
 
-    return new NodeVM({
-      console: 'inherit',
-      sandbox: {
-        URL: Object.freeze(URL),
-        vmStack: {},
-      },
-      wasm: false,
-      eval: false,
-      wrapper: 'commonjs',
-      strict: true,
-      require: {
-        external: {
-          modules: Array.from(whitelist),
-          transitive: true,
-        },
-        // This is needed because the underlying node vm/Script can't see the origin line numbers
-        // from the "host", so we need Hero to be loaded into the Sandbox
-        context(name: string) {
-          for (const plugin of plugins) {
-            if (
-              plugin.nodeVmUseSandbox?.(name) === true ||
-              plugin.nodeVmUseSandbox?.(name.replace(bundledPath, '@ulixee')) === true
-            ) {
-              return 'sandbox';
-            }
+    const boundRequire = require;
+    const whitelist = this.whitelist;
+    const defaultContext = this.getDefaultContext();
+
+    return function requirer(mod: string) {
+      if (!mod.includes("TypeSerializer")) {
+        for (const builtin of whitelist) {
+          if (mod.startsWith(builtin) || mod.match(builtin)) {
+            return boundRequire(mod);
           }
-          return 'host';
-        },
-        resolve: moduleName => {
-          let isAllowed = false;
-          for (const entry of whitelist) {
-            if (moduleName.match(entry) || moduleName.includes('node_modules/@ulixee/')) {
-              isAllowed = true;
-              break;
-            }
-          }
-          if (!isAllowed) return;
-          // eslint-disable-next-line import/no-dynamic-require
-          return require.resolve(moduleName);
-        },
-        builtin: [
-          // NOTE: this list wasn't audited - just reasoned through at a high level.
-          'buffer',
-          'errors',
-          'events',
-          'http',
-          'https',
-          'http2',
-          'net',
-          'stream',
-          'url',
-          'util',
-          'zlib',
-        ],
-      },
-    } as any);
+        }
+      }
+
+      const moduleExports: any = {};
+      const moduleContext: Context = {
+        require: (name: string) => requirer(name),
+        module: { exports: moduleExports },
+        exports: moduleExports,
+        ...defaultContext,
+      };
+
+      const script = new Script(moduleCode);
+      script.runInNewContext(moduleContext);
+
+      moduleCache[mod] = moduleExports;
+      return moduleExports;
+    };
   }
 }
