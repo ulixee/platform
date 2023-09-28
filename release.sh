@@ -6,16 +6,17 @@ trap "exit" INT;
 declare -a dirs=("shared" "unblocked" "payments" "platform/hero" "platform");
 
 # loop through dirs
-#for dir in "${dirs[@]}"; do
-#  cd "$CURRENT_DIR/$dir";
-#  echo "Building $dir... $(pwd)";
-#  yarn version:check;
-#  yarn version:bump prerelease;
-#  yarn build && yarn build:dist;
-#done
-#
-#cd "$CURRENT_DIR/platform";
-#yarn version:check;
+for dir in "${dirs[@]}"; do
+  cd "$CURRENT_DIR/$dir";
+  echo "Building $dir... $(pwd)";
+  yarn version:check;
+  yarn version:bump prerelease;
+  yarn version:check;
+  yarn build && yarn build:dist;
+done
+
+cd "$CURRENT_DIR/platform";
+yarn version:check;
 
 
 read -p "Hit enter to start publishing...";
@@ -58,4 +59,6 @@ for dir in "${dirs[@]}"; do
 done
 
 
+cd "$CURRENT_DIR/platform/website";
+yarn build && yarn deploy;
 
