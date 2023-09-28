@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/cloud",
-  "version": "2.0.0-alpha.24",
+  "version": "2.0.0-alpha.25",
   "description": "The Ulixee Cloud is an out-of-the box tool to host and deploy Ulixee Datastores and Hero scripts. It allows you to easily create a paid API service.",
   "exports": {
     ".": {
@@ -16,7 +16,7 @@
     "preversion": "node ../../build/cloud/main/scripts/gatherEnvSettings.js"
   },
   "peerDependencies": {
-    "@ulixee/desktop-core": "2.0.0-alpha.24"
+    "@ulixee/desktop-core": "2.0.0-alpha.25"
   },
   "peerDependenciesMeta": {
     "@ulixee/desktop-core": {
@@ -24,20 +24,20 @@
     }
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.24",
-    "@ulixee/crypto": "2.0.0-alpha.24",
-    "@ulixee/datastore-core": "2.0.0-alpha.24",
-    "@ulixee/datastore-plugins-hero-core": "2.0.0-alpha.24",
-    "@ulixee/hero-core": "2.0.0-alpha.24",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.24",
-    "@ulixee/kad": "2.0.0-alpha.24",
-    "@ulixee/net": "2.0.0-alpha.24",
-    "@ulixee/platform-specification": "2.0.0-alpha.24",
-    "@ulixee/specification": "2.0.0-alpha.24",
+    "@ulixee/commons": "2.0.0-alpha.25",
+    "@ulixee/crypto": "2.0.0-alpha.25",
+    "@ulixee/datastore-core": "2.0.0-alpha.25",
+    "@ulixee/datastore-plugins-hero-core": "2.0.0-alpha.25",
+    "@ulixee/hero-core": "2.0.0-alpha.25",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.25",
+    "@ulixee/kad": "2.0.0-alpha.25",
+    "@ulixee/net": "2.0.0-alpha.25",
+    "@ulixee/platform-specification": "2.0.0-alpha.25",
+    "@ulixee/specification": "2.0.0-alpha.25",
     "commander": "^9.3.0",
     "ws": "^7.4.6"
   },
   "devDependencies": {
-    "@ulixee/datastore-testing": "2.0.0-alpha.24"
+    "@ulixee/datastore-testing": "2.0.0-alpha.25"
   }
 }

@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.25](https://github.com/ulixee/platform/compare/v2.0.0-alpha.24...v2.0.0-alpha.25) (2023-09-28)
+
+
+### Features
+
+* **datastore:** remove vm2 dependency ([fdf923c](https://github.com/ulixee/platform/commit/fdf923c183f9eb87f6367e7973210f9fb2ca09cc))
+
+
+
+
+
 # [2.0.0-alpha.24](https://github.com/ulixee/platform/compare/v2.0.0-alpha.23...v2.0.0-alpha.24) (2023-08-09)
 
 **Note:** Version bump only for package @ulixee/datastore
