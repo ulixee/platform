@@ -38,7 +38,7 @@ jobs:
           echo "Building Docker image: ${VERSION}"
 
           docker build \
-            --progress tty \
+            --progress auto \
             --cache-from ghcr.io/${IMAGE}:latest \
             --build-arg BUILDKIT_INLINE_CACHE=1 \
             \
