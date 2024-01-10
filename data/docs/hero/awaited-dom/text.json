@@ -1,0 +1,181 @@
+{
+  "content": "<h1 id=\"awaiteddom--text\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--text\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> Text</h1>\n<div class='overview'><span class=\"seoSummary\">The <strong><code>Text</code></strong> interface represents the textual content of <code>Element</code> or <code>Attr</code>. </span></div>\n<div class='overview'>If an element has no markup within its content, it has a single child implementing <code>Text</code> that contains the element's text. However, if the element contains markup, it is parsed into information items and <code>Text</code> nodes that form its children.</div>\n<div class='overview'>New documents have a single <code>Text</code> node for each block of text. Over time, more <code>Text</code> nodes may be created as the document's content changes. The <code>Node.normalize()</code> method merges adjacent <code>Text</code> objects back into a single node for each block of text.</div>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"wholeText\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#wholeText\">#</a>node.wholeText <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>string</code> containing the text of all <code>Text</code> nodes logically adjacent to this <code>Node</code>, concatenated in document order.</p>\n<h4 id=\"type-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"data\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#data\">#</a>node.data <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Is a <code>string</code> representing the textual data contained in this object.</p>\n<h4 id=\"type-promisestring-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-1\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"length\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#length\">#</a>node.length <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns an <code>unsigned long</code> representing the size of the string contained in <code>CharacterData.data</code>.</p>\n<h4 id=\"type-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"baseURI\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#baseURI\">#</a>node.baseURI <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>string</code> representing the base URL of the document containing the <code>Node</code>.</p>\n<h4 id=\"type-promisestring-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-2\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"childNodes\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#childNodes\">#</a>node.childNodes <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a live <code>NodeList</code> containing all the children of this node. <code>NodeList</code> being live means that if the children of the <code>Node</code> change, the <code>NodeList</code> object is automatically updated.</p>\n<h4 id=\"type-supernodelist\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-supernodelist\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/super-node-list\"><code>SuperNodeList</code></a></h4>\n<h3 id=\"firstChild\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#firstChild\">#</a>node.firstChild <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>Node</code> representing the first direct child node of the node, or <code>null</code> if the node has no child.</p>\n<h4 id=\"type-supernode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-supernode\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/super-node\"><code>SuperNode</code></a></h4>\n<h3 id=\"isConnected\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#isConnected\">#</a>node.isConnected <div class=\"specs\"><i>W3C</i></div></h3>\n<p>A boolean indicating whether or not the Node is connected (directly or indirectly) to the context object, e.g. the <code>Document</code> object in the case of the normal DOM, or the <code>ShadowRoot</code> in the case of a shadow DOM.</p>\n<h4 id=\"type-promiseboolean\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promiseboolean\">#</a><strong>Type</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"lastChild\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#lastChild\">#</a>node.lastChild <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>Node</code> representing the last direct child node of the node, or <code>null</code> if the node has no child.</p>\n<h4 id=\"type-supernode-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-supernode-1\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/super-node\"><code>SuperNode</code></a></h4>\n<h3 id=\"nextSibling\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#nextSibling\">#</a>node.nextSibling <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>Node</code> representing the next node in the tree, or <code>null</code> if there isn't such node.</p>\n<h4 id=\"type-supernode-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-supernode-2\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/super-node\"><code>SuperNode</code></a></h4>\n<h3 id=\"nodeName\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#nodeName\">#</a>node.nodeName <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>string</code> containing the name of the <code>Node</code>. The structure of the name will differ with the node type. E.g. An <code>HTMLElement</code> will contain the name of the corresponding tag, like <code>'audio'</code> for an <code>HTMLAudioElement</code>, a <code>Text</code> node will have the <code>'#text'</code> string, or a <code>Document</code> node will have the <code>'#document'</code> string.</p>\n<h4 id=\"type-promisestring-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-3\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"nodeType\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#nodeType\">#</a>node.nodeType <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns an <code>unsigned short</code> representing the type of the node. Possible values are:</p>\n<code class=\"language-html\">\n    <table class=\"standard-table\">\n\t\t<thead>\n\t\t\t<tr>\n\t\t\t\t<th scope=\"col\">Name</th>\n\t\t\t\t<th scope=\"col\">Value</th>\n\t\t\t</tr>\n\t\t</thead>\n\t\t<tbody>\n\t\t\t<tr>\n\t\t\t\t<td><code>ELEMENT_NODE</code></td>\n\t\t\t\t<td><code>1</code></td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td><code>ATTRIBUTE_NODE</code>&nbsp;<span class=\"icon-only-inline\" title=\"This deprecated API should no longer be used, but will probably still work.\"><i class=\"icon-thumbs-down-alt\"> </i></span></td>\n\t\t\t\t<td><code>2</code></td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td><code>TEXT_NODE</code></td>\n\t\t\t\t<td><code>3</code></td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td><code>CDATA_SECTION_NODE</code></td>\n\t\t\t\t<td><code>4</code></td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td><code>ENTITY_REFERENCE_NODE</code>&nbsp;<span class=\"icon-only-inline\" title=\"This deprecated API should no longer be used, but will probably still work.\"><i class=\"icon-thumbs-down-alt\"> </i></span></td>\n\t\t\t\t<td><code>5</code></td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td><code>ENTITY_NODE</code>&nbsp;<span class=\"icon-only-inline\" title=\"This deprecated API should no longer be used, but will probably still work.\"><i class=\"icon-thumbs-down-alt\"> </i></span></td>\n\t\t\t\t<td><code>6</code></td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td><code>PROCESSING_INSTRUCTION_NODE</code></td>\n\t\t\t\t<td><code>7</code></td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td><code>COMMENT_NODE</code></td>\n\t\t\t\t<td><code>8</code></td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td><code>DOCUMENT_NODE</code></td>\n\t\t\t\t<td><code>9</code></td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td><code>DOCUMENT_TYPE_NODE</code></td>\n\t\t\t\t<td><code>10</code></td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td><code>DOCUMENT_FRAGMENT_NODE</code></td>\n\t\t\t\t<td><code>11</code></td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td><code>NOTATION_NODE</code>&nbsp;<span class=\"icon-only-inline\" title=\"This deprecated API should no longer be used, but will probably still work.\"><i class=\"icon-thumbs-down-alt\"> </i></span></td>\n\t\t\t\t<td><code>12</code></td>\n\t\t\t</tr>\n\t\t</tbody>\n\t</table>\n</code>\n<h4 id=\"type-promisenumber-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber-1\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"nodeValue\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#nodeValue\">#</a>node.nodeValue <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the value of the current node.</p>\n<h4 id=\"type-promisestring-4\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-4\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"ownerDocument\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#ownerDocument\">#</a>node.ownerDocument <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the <code>Document</code> that this node belongs to. If the node is itself a document, returns <code>null</code>.</p>\n<h4 id=\"type-superdocument\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-superdocument\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/super-document\"><code>SuperDocument</code></a></h4>\n<h3 id=\"parentElement\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#parentElement\">#</a>node.parentElement <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns an <code>Element</code> that is the parent of this node. If the node has no parent, or if that parent is not an <code>Element</code>, this property returns <code>null</code>.</p>\n<h4 id=\"type-superelement\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-superelement\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/super-element\"><code>SuperElement</code></a></h4>\n<h3 id=\"parentNode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#parentNode\">#</a>node.parentNode <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>Node</code> that is the parent of this node. If there is no such node, like if this node is the top of the tree or if doesn't participate in a tree, this property returns <code>null</code>.</p>\n<h4 id=\"type-supernode-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-supernode-3\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/super-node\"><code>SuperNode</code></a></h4>\n<h3 id=\"previousSibling\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#previousSibling\">#</a>node.previousSibling <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>Node</code> representing the previous node in the tree, or <code>null</code> if there isn't such node.</p>\n<h4 id=\"type-supernode-4\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-supernode-4\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/super-node\"><code>SuperNode</code></a></h4>\n<h3 id=\"textContent\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#textContent\">#</a>node.textContent <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the textual content of an element and all its descendants.</p>\n<h4 id=\"type-promisestring-5\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-5\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"assignedSlot\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#assignedSlot\">#</a>node.assignedSlot <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the <code>&#x3C;slot></code> the node is inserted in.</p>\n<h4 id=\"type-htmlslotelement\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-htmlslotelement\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/html-slot-element\"><code>HTMLSlotElement</code></a></h4>\n<h3 id=\"nextElementSibling\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#nextElementSibling\">#</a>node.nextElementSibling <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the <code>Element</code> immediately following this node in its parent's children list, or <code>null</code> if there is no <code>Element</code> in the list following this node.</p>\n<h4 id=\"type-superelement-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-superelement-1\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/super-element\"><code>SuperElement</code></a></h4>\n<h3 id=\"previousElementSibling\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#previousElementSibling\">#</a>node.previousElementSibling <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the <code>Element</code> immediately prior to this node in its parent's children list, or <code>null</code> if there is no <code>Element</code> in the list prior to this node.</p>\n<h4 id=\"type-superelement-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-superelement-2\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/super-element\"><code>SuperElement</code></a></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"splitText\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#splitText\">#</a>node.splitText <em>(offset)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Breaks the node into two nodes at a specified offset.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>offset <code>number</code>. The index immediately before which to break the text node.</li>\n</ul>\n<h4 id=\"returns-promisesupertext\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisesupertext\">#</a><strong>Returns</strong>: <code>Promise&#x3C;SuperText></code></h4>\n<h3 id=\"substringData\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#substringData\">#</a>node.substringData <em>(offset, count)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>string</code> containing the part of <code>CharacterData.data</code> of the specified length and starting at the specified offset.</p>\n<h4 id=\"arguments-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-1\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>offset <code>number</code>. Needs content.</li>\n<li>count <code>number</code>. Needs content.</li>\n</ul>\n<h4 id=\"returns-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisestring\">#</a><strong>Returns</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"compareDocumentPosition\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#compareDocumentPosition\">#</a>node.compareDocumentPosition <em>(other)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Compares the position of the current node against another node in any other document.</p>\n<h4 id=\"arguments-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-2\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>other <a href=\"/docs/hero/awaited-dom/node\"><code>Node</code></a>. The other <code>Node</code> with which to compare the first <em><code>node</code></em>’s document position.</li>\n</ul>\n<h4 id=\"returns-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisenumber\">#</a><strong>Returns</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"contains\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#contains\">#</a>node.contains <em>(other)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>boolean</code> value indicating whether or not a node is a descendant of the calling node.</p>\n<h4 id=\"arguments-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-3\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>other <a href=\"/docs/hero/awaited-dom/node\"><code>Node</code></a>. Needs content.</li>\n</ul>\n<h4 id=\"returns-promiseboolean\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"getRootNode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#getRootNode\">#</a>node.getRootNode <em>(options?)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the context object's root which optionally includes the shadow root if it is available. </p>\n<h4 id=\"arguments-4\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-4\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>options <code>GetRootNodeOptions</code>. An object that sets options for getting the root node. The available options are:\n  <ul>\n   <li><code>composed</code>: A `boolean` that indicates whether the shadow root should be returned (<code>false</code>, the default), or a root node beyond shadow root (<code>true</code>).</li>\n  </ul>\n</li>\n</ul>\n<h4 id=\"returns-supernode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-supernode\">#</a><strong>Returns</strong>: <a href=\"/docs/hero/awaited-dom/super-node\"><code>SuperNode</code></a></h4>\n<h3 id=\"hasChildNodes\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hasChildNodes\">#</a>node.hasChildNodes <em>()</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>boolean</code> indicating whether or not the element has any child nodes.</p>\n<h4 id=\"returns-promiseboolean-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean-1\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"isDefaultNamespace\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#isDefaultNamespace\">#</a>node.isDefaultNamespace <em>(namespace)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Accepts a namespace URI as an argument and returns a <code>boolean</code> with a value of <code>true</code> if the namespace is the default namespace on the given node or <code>false</code> if not.</p>\n<h4 id=\"arguments-5\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-5\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>namespace <code>string</code>. <code>namespaceURI</code> is a string representing the namespace against which the element will be checked.</li>\n</ul>\n<h4 id=\"returns-promiseboolean-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean-2\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"isEqualNode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#isEqualNode\">#</a>node.isEqualNode <em>(otherNode)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>boolean</code> which indicates whether or not two nodes are of the same type and all their defining data points match.</p>\n<h4 id=\"arguments-6\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-6\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>otherNode <a href=\"/docs/hero/awaited-dom/node\"><code>Node</code></a>. <code>otherNode</code>: The <code>Node</code> to compare equality with.</li>\n</ul>\n<h4 id=\"returns-promiseboolean-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean-3\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"isSameNode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#isSameNode\">#</a>node.isSameNode <em>(otherNode)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>boolean</code> value indicating whether or not the two nodes are the same (that is, they reference the same object).</p>\n<h4 id=\"arguments-7\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-7\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>otherNode <a href=\"/docs/hero/awaited-dom/node\"><code>Node</code></a>. <code><var>otherNode</var></code> The <code>Node</code> to test against.</li>\n</ul>\n<h4 id=\"returns-promiseboolean-4\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean-4\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"lookupNamespaceURI\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#lookupNamespaceURI\">#</a>node.lookupNamespaceURI <em>(prefix)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Accepts a prefix and returns the namespace URI associated with it on the given node if found (and <code>null</code> if not). Supplying <code>null</code> for the prefix will return the default namespace.</p>\n<h4 id=\"arguments-8\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-8\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>prefix <code>string</code>. The prefix to look for. If this parameter is <code>null</code>, the method will return the default namespace URI, if any.</li>\n</ul>\n<h4 id=\"returns-promisestring-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisestring-1\">#</a><strong>Returns</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"lookupPrefix\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#lookupPrefix\">#</a>node.lookupPrefix <em>(namespace)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>string</code> containing the prefix for a given namespace URI, if present, and <code>null</code> if not. When multiple prefixes are possible, the result is implementation-dependent.</p>\n<h4 id=\"arguments-9\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-9\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>namespace <code>string</code>. Needs content.</li>\n</ul>\n<h4 id=\"returns-promisestring-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisestring-2\">#</a><strong>Returns</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"normalize\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#normalize\">#</a>node.normalize <em>()</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Clean up all the text nodes under this element (merge adjacent, remove empty).</p>\n<h4 id=\"returns-promisevoid\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisevoid\">#</a><strong>Returns</strong>: <code>Promise&#x3C;void></code></h4>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"methods-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods-1\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>appendData()</code></td>\n<td><code>deleteData()</code></td>\n</tr>\n<tr>\n<td><code>insertData()</code></td>\n<td><code>replaceData()</code></td>\n</tr>\n<tr>\n<td><code>appendChild()</code></td>\n<td><code>cloneNode()</code></td>\n</tr>\n<tr>\n<td><code>insertBefore()</code></td>\n<td><code>removeChild()</code></td>\n</tr>\n<tr>\n<td><code>replaceChild()</code></td>\n<td><code>addEventListener()</code></td>\n</tr>\n<tr>\n<td><code>dispatchEvent()</code></td>\n<td><code>removeEventListener()</code></td>\n</tr>\n<tr>\n<td><code>after()</code></td>\n<td><code>before()</code></td>\n</tr>\n<tr>\n<td><code>remove()</code></td>\n<td><code>replaceWith()</code></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> Text",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": "node.wholeText <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#wholeText"
+    },
+    {
+      "depth": 3,
+      "value": "node.data <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#data"
+    },
+    {
+      "depth": 3,
+      "value": "node.length <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#length"
+    },
+    {
+      "depth": 3,
+      "value": "node.baseURI <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#baseURI"
+    },
+    {
+      "depth": 3,
+      "value": "node.childNodes <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#childNodes"
+    },
+    {
+      "depth": 3,
+      "value": "node.firstChild <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#firstChild"
+    },
+    {
+      "depth": 3,
+      "value": "node.isConnected <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#isConnected"
+    },
+    {
+      "depth": 3,
+      "value": "node.lastChild <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#lastChild"
+    },
+    {
+      "depth": 3,
+      "value": "node.nextSibling <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#nextSibling"
+    },
+    {
+      "depth": 3,
+      "value": "node.nodeName <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#nodeName"
+    },
+    {
+      "depth": 3,
+      "value": "node.nodeType <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#nodeType"
+    },
+    {
+      "depth": 3,
+      "value": "node.nodeValue <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#nodeValue"
+    },
+    {
+      "depth": 3,
+      "value": "node.ownerDocument <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#ownerDocument"
+    },
+    {
+      "depth": 3,
+      "value": "node.parentElement <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#parentElement"
+    },
+    {
+      "depth": 3,
+      "value": "node.parentNode <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#parentNode"
+    },
+    {
+      "depth": 3,
+      "value": "node.previousSibling <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#previousSibling"
+    },
+    {
+      "depth": 3,
+      "value": "node.textContent <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#textContent"
+    },
+    {
+      "depth": 3,
+      "value": "node.assignedSlot <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#assignedSlot"
+    },
+    {
+      "depth": 3,
+      "value": "node.nextElementSibling <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#nextElementSibling"
+    },
+    {
+      "depth": 3,
+      "value": "node.previousElementSibling <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#previousElementSibling"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": "node.splitText <em>(offset)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#splitText"
+    },
+    {
+      "depth": 3,
+      "value": "node.substringData <em>(offset, count)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#substringData"
+    },
+    {
+      "depth": 3,
+      "value": "node.compareDocumentPosition <em>(other)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#compareDocumentPosition"
+    },
+    {
+      "depth": 3,
+      "value": "node.contains <em>(other)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#contains"
+    },
+    {
+      "depth": 3,
+      "value": "node.getRootNode <em>(options?)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#getRootNode"
+    },
+    {
+      "depth": 3,
+      "value": "node.hasChildNodes <em>()</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#hasChildNodes"
+    },
+    {
+      "depth": 3,
+      "value": "node.isDefaultNamespace <em>(namespace)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#isDefaultNamespace"
+    },
+    {
+      "depth": 3,
+      "value": "node.isEqualNode <em>(otherNode)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#isEqualNode"
+    },
+    {
+      "depth": 3,
+      "value": "node.isSameNode <em>(otherNode)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#isSameNode"
+    },
+    {
+      "depth": 3,
+      "value": "node.lookupNamespaceURI <em>(prefix)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#lookupNamespaceURI"
+    },
+    {
+      "depth": 3,
+      "value": "node.lookupPrefix <em>(namespace)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#lookupPrefix"
+    },
+    {
+      "depth": 3,
+      "value": "node.normalize <em>()</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#normalize"
+    },
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

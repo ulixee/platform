@@ -1,0 +1,31 @@
+{
+  "content": "<h1 id=\"detachedresources\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#detachedresources\">#</a>DetachedResources</h1>\n<blockquote>\n<p>DetachedResources is a class to retrieve Hero Resources saved for extraction. They include all network assets loaded to render a page, including CSS, Javascript, Fonts, Web Sockets, XHR/Fetch Requests, and more.</p>\n</blockquote>\n<p>Hero <a href=\"/docs/hero/advanced-client/resource\">Resources</a> represent resources used to render a Page, including the HTTP Requests to retrieve them.</p>\n<p>Examples of this include JSON files, HTML Documents, PDFs, etc.</p>\n<p>Saving them for extraction can be desirable because you can reload them into a <a href=\"/docs/hero/basic-client/hero-replay\">HeroReplay</a> instance repeatedly without having to restart a Headless browser (which can be significantly slower). Once they're saved, you can rapidly iterate on your extraction logic (eg, to transform a JSON payload) until it produces the desired output.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import Hero from '@ulixee/hero-playground';\n\nasync function run() {\n  const hero = new Hero();\n  await hero.activeTab.on('resource', async resource => {\n    if (resource.type === 'XHR') {\n      await resource.$extractLater('xhr');\n    }\n  });\n  await hero.goto('https://ulixee.org');\n  await hero.waitForPaintingStable();\n}\n\nasync function replay(sessionId) {\n  const heroReplay = new HeroReplay(sessionId);\n  const xhrs = await heroReplay.detachedResources.getAll('xhr');\n  const gridsomeData = [];\n  for (const xhr of xhrs) {\n    // NOTE: synchronous APIs.\n    const jsonObject = xhr.json;\n    if (xhr.json?.data) {\n      gridsomeData.push(xhr.json.data);\n    }\n  }\n}\n</code></pre>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"names\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#names\">#</a>names</h3>\n<p>Retrieves all names that DetachedResources have been stored with.</p>\n<h4 id=\"returns-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisestring\">#</a><strong>Returns</strong> <code>Promise&#x3C;string[]></code></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"get\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#get\">#</a>detachedResources.get <em>(name)</em></h3>\n<p>Get a single <a href=\"/docs/hero/advanced-client/resource\">Resource</a> extracted with the given name. All <a href=\"/docs/hero/advanced-client/resource-response\">Response</a> data is pre-fetched and decompressed (if necessary).</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>name <code>string</code>. The name of the <a href=\"/docs/hero/advanced-client/resource\">Resource</a> to retrieve (assigned during extraction).</li>\n</ul>\n<h4 id=\"returns-promiseresource-the-resource\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseresource-the-resource\">#</a><strong>Returns</strong>: <a href=\"/docs/hero/advanced-client/resource\"><code>Promise&#x3C;Resource></code></a> The <a href=\"/docs/hero/advanced-client/resource\">Resource</a>.</h4>\n<h3 id=\"get-all\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#get-all\">#</a>detachedResources.getAll <em>(name)</em></h3>\n<p>Get a list of <a href=\"/docs/hero/advanced-client/resource\">Resources</a> extracted with the given name. All <a href=\"/docs/hero/advanced-client/resource-response\">Response</a> data is pre-fetched and decompressed (if necessary).</p>\n<h4 id=\"arguments-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-1\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>name <code>string</code>. The name of the <a href=\"/docs/hero/advanced-client/resource\">Resources</a> to retrieve (assigned during extraction).</li>\n</ul>\n<h4 id=\"returns-promiseresource-the-resources\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseresource-the-resources\">#</a><strong>Returns</strong>: <a href=\"/docs/hero/advanced-client/resource\"><code>Promise&#x3C;Resource[]></code></a> The <a href=\"/docs/hero/advanced-client/resource\">Resources</a>.</h4>",
+  "title": "DetachedResources",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": "names",
+      "anchor": "#names"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": "detachedResources.get <em>(name)</em>",
+      "anchor": "#get"
+    },
+    {
+      "depth": 3,
+      "value": "detachedResources.getAll <em>(name)</em>",
+      "anchor": "#get-all"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "content": "<h1 id=\"cookiestorage\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cookiestorage\">#</a>CookieStorage</h1>\n<p>The CookieStorage class allows you to get set and remove cookies from the main frame of the current tab. It mimics the W3C Storage api, but has slightly different parameters to deal with cookie settings.</p>\n<h2 id=\"constructor\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#constructor\">#</a>Constructor</h2>\n<p>CookieStorage cannot be instantiated. You must retrieve a cookieStorage instance from a <a href=\"/docs/hero/advanced-client/tab\">Tab</a>:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">const cookieStorage = hero.activeTab.cookieStorage;\n</code></pre>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"length\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#length\">#</a>cookieStorage.length</h3>\n<p>Returns the number of cookies for the current tab origin;</p>\n<h4 id=\"type-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"cookiestoragegetitems-\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cookiestoragegetitems-\">#</a>cookieStorage.getItems <em>()</em></h3>\n<p>Gets all cookies for the current tab origin as <code>Cookie</code> objects.</p>\n<h4 id=\"cookie\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cookie\">#</a><code>Cookie</code> properties:</h4>\n<ul>\n<li>name <code>string</code>. The cookie name.</li>\n<li>value <code>string</code>. The cookie value.</li>\n<li>domain <code>string</code>. The cookie domain.</li>\n<li>path <code>string</code>. The path for the cookie.</li>\n<li>expires <code>string</code>. An optional expiration date string.</li>\n<li>httpOnly <code>boolean</code>. Whether only accessible via http requests.</li>\n<li>session <code>boolean</code>. Whether the cookie should expire after the active session is over.</li>\n<li>secure <code>boolean</code>. Whether the cookie should only apply to https secured urls.</li>\n<li>sameSite <code>Strict | Lax | None</code>. The same site setting for the cookie.</li>\n</ul>\n<h4 id=\"returns-promisecookie\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisecookie\">#</a><strong>Returns</strong>: <a href=\"#cookie\"><code>Promise&#x3C;Cookie[]></code></a></h4>\n<h3 id=\"cookiestoragegetitem-keyname\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cookiestoragegetitem-keyname\">#</a>cookieStorage.getItem <em>(keyName)</em></h3>\n<p>Gets the cookie with the given <code>name</code> equal to <code>keyName</code>.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>keyName <code>string</code>. The cookie name to retrieve.</li>\n</ul>\n<h4 id=\"returns-promisecookie-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisecookie-1\">#</a><strong>Returns</strong>: <a href=\"#cookie\"><code>Promise&#x3C;Cookie[]></code></a></h4>\n<h3 id=\"cookiestoragekey-index\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cookiestoragekey-index\">#</a>cookieStorage.key <em>(index)</em></h3>\n<p>Gets the <code>name</code> of the cookie with the given <code>index</code>. This is a zero-based index. NOTE: key is equivalent to the <code>name</code> of a cookie.</p>\n<h4 id=\"arguments-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-1\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>index <code>number</code>. The key index.</li>\n</ul>\n<h4 id=\"returns-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisestring\">#</a><strong>Returns</strong>: <code>Promise&#x3C;string></code></h4>\n<p>The function below calls a callback for each cookie key (or name).</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">function forEachKey(callback) {\n  for (var i = 0; i &#x3C; cookieStorage.length; i++) {\n    callback(cookieStorage.key(i));\n  }\n}\n</code></pre>\n<h3 id=\"cookiestorageremoveitem-keyname\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cookiestorageremoveitem-keyname\">#</a>cookieStorage.removeItem <em>(keyName)</em></h3>\n<p>Removes a cookie with the given <code>keyName</code>.</p>\n<h4 id=\"arguments-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-2\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>keyName <code>string</code>. The cookie name.</li>\n</ul>\n<h4 id=\"returns-promiseboolean\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"cookiestoragesetitem-keyname-value-options\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cookiestoragesetitem-keyname-value-options\">#</a>cookieStorage.setItem <em>(keyName, value, options)</em></h3>\n<p>Sets a cookie for the currently loaded origin.</p>\n<h4 id=\"arguments-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-3\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>keyName <code>string</code>. The cookie name.</li>\n<li>value <code>string</code>. The cookie value.</li>\n<li>expires <code>Data</code>. An optional expiration date for the cookie.</li>\n<li>options:\n<ul>\n<li>httpOnly <code>boolean</code>. Whether to set the cookie to be only accessible via http requests.</li>\n<li>secure <code>boolean</code>. If the cookie should only apply to https secured urls.</li>\n<li>sameSite <code>Strict | Lax | None</code>. The same site setting for the cookie.</li>\n</ul>\n</li>\n</ul>\n<h4 id=\"returns-promiseboolean-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean-1\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>",
+  "title": "CookieStorage",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Constructor",
+      "anchor": "#constructor"
+    },
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": "cookieStorage.length",
+      "anchor": "#length"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": "cookieStorage.getItems <em>()</em>",
+      "anchor": "#cookiestoragegetitems-"
+    },
+    {
+      "depth": 3,
+      "value": "cookieStorage.getItem <em>(keyName)</em>",
+      "anchor": "#cookiestoragegetitem-keyname"
+    },
+    {
+      "depth": 3,
+      "value": "cookieStorage.key <em>(index)</em>",
+      "anchor": "#cookiestoragekey-index"
+    },
+    {
+      "depth": 3,
+      "value": "cookieStorage.removeItem <em>(keyName)</em>",
+      "anchor": "#cookiestorageremoveitem-keyname"
+    },
+    {
+      "depth": 3,
+      "value": "cookieStorage.setItem <em>(keyName, value, options)</em>",
+      "anchor": "#cookiestoragesetitem-keyname-value-options"
+    }
+  ]
+}

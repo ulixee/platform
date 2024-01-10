@@ -1,0 +1,21 @@
+{
+  "content": "<h1 id=\"basic-concepts\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#basic-concepts\">#</a>Basic Concepts</h1>\n<h2 id=\"zero-configuration-required\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#zero-configuration-required\">#</a>Zero Configuration Required</h2>\n<p>Out of the box, Ulixee Cloud doesn't need any configuration. It will find a local port to run on and will register all the Ulixee tools you have installed. Each tool defines it's own mechanism for interaction, so you just use the tools you expect.</p>\n<h2 id=\"each-tool-provides-the-details\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#each-tool-provides-the-details\">#</a>Each Tool Provides the Details</h2>\n<p>Ulixee tools like Datastore, Hero and Desktop/ChromeAlive! are all built with a similar structure that allows them to plug-in to Ulixee Cloud.</p>\n<ul>\n<li><code>/main</code>: Each project has a Main or Client module with details on how to encode/decode Payloads and handle Websocket connection details.</li>\n<li><code>/core</code>: Each project also has a Core module with details on how to route specific commands to the tool in question, but details of handling new WebSockets and encoding/decoding messages is handled by the Cloud <a href=\"https://github.com/ulixee/platform/tree/main/cloud/main/lib/CoreRouter.ts\">CoreRouter</a>.</li>\n</ul>\n<h2 id=\"hosted-services\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hosted-services\">#</a>Hosted Services</h2>\n<p>CloudNodes can share private services among your cluster of nodes (eg, Node tracking, Hero Session Replay storage, Statistics/Analytics, Datastore storage, etc). Ulixee clustering works by centralizing storage to a central node (as opposed to replicating across nodes). Some of these services will likely be external services at some point as well.</p>\n<p>You can configure a CloudNode to activate HostedServices by providing a <code>hostedServicesServerOptions</code> object with listen options to the CloudNode constructor.</p>\n<p>Other nodes will simply point at this internal <code>servicesSetupHost</code> (NOTE: it's separate from the default ip:port) to get the hostnames for all of the provided services.</p>",
+  "title": "Basic Concepts",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Zero Configuration Required",
+      "anchor": "#zero-configuration-required"
+    },
+    {
+      "depth": 2,
+      "value": "Each Tool Provides the Details",
+      "anchor": "#each-tool-provides-the-details"
+    },
+    {
+      "depth": 2,
+      "value": "Hosted Services",
+      "anchor": "#hosted-services"
+    }
+  ]
+}

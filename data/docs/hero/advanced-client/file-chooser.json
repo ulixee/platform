@@ -1,0 +1,31 @@
+{
+  "content": "<h1 id=\"filechooser\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#filechooser\">#</a>FileChooser</h1>\n<blockquote>\n<p>FileChoosers represent a prompt to input one or more file.</p>\n</blockquote>\n<p>The FileChooser class is initiated by clicking on a file input. This class will be return by calling <a href=\"/docs/hero/advanced-client/tab#wait-for-file-chooser\"><code>tab.waitForFileChooser</code></a>.</p>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"inputelement\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#inputelement\">#</a>inputElement</h3>\n<p>The element that was clicked on to initiate this prompt.</p>\n<h4 id=\"returns-htmlinputelement\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-htmlinputelement\">#</a><strong>Returns</strong> <code>HTMLInputElement</code></h4>\n<h3 id=\"acceptsmultiplefiles\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#acceptsmultiplefiles\">#</a>acceptsMultipleFiles</h3>\n<p>If multiple files are supported.</p>\n<h4 id=\"returns-boolean\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-boolean\">#</a><strong>Returns</strong> <code>boolean</code></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"choosefilesfile-files\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#choosefilesfile-files\">#</a>chooseFiles<em>(file[, ...files])</em></h3>\n<p>Supply one or more files to set on this input. Mimetype will be inferred from the provided files.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<p>One or more <code>File</code> arguments.</p>\n<ul>\n<li>file <code>Object</code>. An object with the following properties:\n<ul>\n<li>data <code>Buffer</code>. File contents as a Node.js Buffer.</li>\n<li>name <code>string</code>. The filename to use for this file.</li>\n</ul>\n</li>\n</ul>\n<h4 id=\"returns-promisevoid\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisevoid\">#</a><strong>Returns</strong> <code>Promise&#x3C;void></code></h4>",
+  "title": "FileChooser",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": "inputElement",
+      "anchor": "#inputelement"
+    },
+    {
+      "depth": 3,
+      "value": "acceptsMultipleFiles",
+      "anchor": "#acceptsmultiplefiles"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": "chooseFiles<em>(file[, ...files])</em>",
+      "anchor": "#choosefilesfile-files"
+    }
+  ]
+}

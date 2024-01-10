@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--supertext\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--supertext\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> SuperText</h1>\n<div class='overview'><span class=\"seoSummary\">The <strong><code>Text</code></strong> interface represents the textual content of <code>Element</code> or <code>Attr</code>. </span></div>\n<div class='overview'>If an element has no markup within its content, it has a single child implementing <code>Text</code> that contains the element's text. However, if the element contains markup, it is parsed into information items and <code>Text</code> nodes that form its children.</div>\n<div class='overview'>New documents have a single <code>Text</code> node for each block of text. Over time, more <code>Text</code> nodes may be created as the document's content changes. The <code>Node.normalize()</code> method merges adjacent <code>Text</code> objects back into a single node for each block of text.</div>\n<h2 id=\"dependencies\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#dependencies\">#</a>Dependencies</h2>\n<p>SuperText implements all the properties and methods of the following classes:</p>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><a href=\"/docs/hero/awaited-dom/cdata-section\">CDATASection</a></td>\n<td><a href=\"/docs/hero/awaited-dom/character-data\">CharacterData</a></td>\n</tr>\n<tr>\n<td><a href=\"/docs/hero/awaited-dom/event-target\">EventTarget</a></td>\n<td><a href=\"/docs/hero/awaited-dom/node\">Node</a></td>\n</tr>\n<tr>\n<td><a href=\"/docs/hero/awaited-dom/text\">Text</a></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> SuperText",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Dependencies",
+      "anchor": "#dependencies"
+    }
+  ]
+}

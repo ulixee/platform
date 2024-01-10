@@ -1,0 +1,41 @@
+{
+  "content": "<h1 id=\"awaiteddom--namednodemap\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--namednodemap\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> NamedNodeMap</h1>\n<div class='overview'>The <code><strong>NamedNodeMap</strong></code> interface represents a collection of <code>Attr</code> objects. Objects inside a <code>NamedNodeMap</code> are not in any particular order, unlike <code>NodeList</code>, although they may be accessed by an index as in an array.</div>\n<div class='overview'>A <code>NamedNodeMap</code> object is <em>live</em> and will thus be auto-updated if changes are made to its contents internally or elsewhere.</div>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"length\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#length\">#</a>.length <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the amount of objects in the map.</p>\n<h4 id=\"type-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"getNamedItem\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#getNamedItem\">#</a>.getNamedItem <em>(qualifiedName)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>Attr</code>, corresponding to the given name.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>qualifiedName <code>string</code>. <code>name</code> is the name of the desired attribute</li>\n</ul>\n<h4 id=\"returns-promiseattr\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseattr\">#</a><strong>Returns</strong>: <code>Promise&#x3C;Attr></code></h4>\n<h3 id=\"getNamedItemNS\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#getNamedItemNS\">#</a>.getNamedItemNS <em>(namespace, localName)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>Attr</code> identified by a namespace and related local name.</p>\n<h4 id=\"arguments-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-1\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>namespace <code>string</code>. Needs content.</li>\n<li>localName <code>string</code>. Needs content.</li>\n</ul>\n<h4 id=\"returns-promiseattr-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseattr-1\">#</a><strong>Returns</strong>: <code>Promise&#x3C;Attr></code></h4>\n<h3 id=\"item\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#item\">#</a>.item <em>(index)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the <code>Attr</code> at the given index, or <code>null</code> if the index is higher or equal to the number of nodes.</p>\n<h4 id=\"arguments-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-2\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>index <code>number</code>. Needs content.</li>\n</ul>\n<h4 id=\"returns-promiseattr-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseattr-2\">#</a><strong>Returns</strong>: <code>Promise&#x3C;Attr></code></h4>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"methods-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods-1\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>removeNamedItem()</code></td>\n<td><code>removeNamedItemNS()</code></td>\n</tr>\n<tr>\n<td><code>setNamedItem()</code></td>\n<td><code>setNamedItemNS()</code></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> NamedNodeMap",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": ".length <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#length"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": ".getNamedItem <em>(qualifiedName)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#getNamedItem"
+    },
+    {
+      "depth": 3,
+      "value": ".getNamedItemNS <em>(namespace, localName)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#getNamedItemNS"
+    },
+    {
+      "depth": 3,
+      "value": ".item <em>(index)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#item"
+    },
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

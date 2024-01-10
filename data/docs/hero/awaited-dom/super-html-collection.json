@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--superhtmlcollection\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--superhtmlcollection\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> SuperHTMLCollection</h1>\n<div class='overview'>The <strong><code>HTMLCollection</code></strong> interface represents a generic collection (array-like object similar to <code>arguments</code>) of elements (in document order) and offers methods and properties for selecting from the list.</div>\n<h2 id=\"dependencies\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#dependencies\">#</a>Dependencies</h2>\n<p>SuperHTMLCollection implements all the properties and methods of the following classes:</p>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><a href=\"/docs/hero/awaited-dom/html-collection\">HTMLCollection</a></td>\n<td><a href=\"/docs/hero/awaited-dom/html-options-collection\">HTMLOptionsCollection</a></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> SuperHTMLCollection",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Dependencies",
+      "anchor": "#dependencies"
+    }
+  ]
+}

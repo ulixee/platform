@@ -1,0 +1,16 @@
+{
+  "content": "<h1 id=\"awaiteddom--domparser\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--domparser\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> DOMParser</h1>\n<div class='overview'><span class=\"seoSummary\">The <strong><code>DOMParser</code></strong> interface provides the ability to parse XML or HTML source code from a string into a DOM <code>Document</code>.</span></div>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"parseFromString\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#parseFromString\">#</a>.parseFromString <em>(str, type)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Parse XML from a string</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>str <code>string</code>. Needs content.</li>\n<li>type <code>SupportedType</code>. Needs content.</li>\n</ul>\n<h4 id=\"returns-superdocument\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-superdocument\">#</a><strong>Returns</strong>: <a href=\"/docs/hero/awaited-dom/super-document\"><code>SuperDocument</code></a></h4>",
+  "title": " <span>/</span> DOMParser",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": ".parseFromString <em>(str, type)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#parseFromString"
+    }
+  ]
+}

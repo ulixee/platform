@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--fontfaceset\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--fontfaceset\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> FontFaceSet</h1>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>onloading</code></td>\n<td><code>onloadingdone</code></td>\n</tr>\n<tr>\n<td><code>onloadingerror</code></td>\n<td><code>ready</code></td>\n</tr>\n<tr>\n<td><code>status</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>add()</code></td>\n<td><code>check()</code></td>\n</tr>\n<tr>\n<td><code>clear()</code></td>\n<td><code>delete()</code></td>\n</tr>\n<tr>\n<td><code>forEach()</code></td>\n<td><code>load()</code></td>\n</tr>\n<tr>\n<td><code>addEventListener()</code></td>\n<td><code>dispatchEvent()</code></td>\n</tr>\n<tr>\n<td><code>removeEventListener()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> FontFaceSet",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

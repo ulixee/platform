@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--texttrack\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--texttrack\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> TextTrack</h1>\n<div class='overview'>The <code>TextTrack</code> interface—part of the API for handling WebVTT (text tracks on media presentations)—describes and controls the text track associated with a particular <code>&lt;track&gt;</code> element.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>activeCues</code></td>\n<td><code>cues</code></td>\n</tr>\n<tr>\n<td><code>id</code></td>\n<td><code>inBandMetadataTrackDispatchType</code></td>\n</tr>\n<tr>\n<td><code>kind</code></td>\n<td><code>label</code></td>\n</tr>\n<tr>\n<td><code>language</code></td>\n<td><code>mode</code></td>\n</tr>\n<tr>\n<td><code>oncuechange</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>addCue()</code></td>\n<td><code>removeCue()</code></td>\n</tr>\n<tr>\n<td><code>addEventListener()</code></td>\n<td><code>dispatchEvent()</code></td>\n</tr>\n<tr>\n<td><code>removeEventListener()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> TextTrack",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

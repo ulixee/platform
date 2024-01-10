@@ -1,0 +1,65 @@
+[
+  {
+    "title": "Overview",
+    "items": [
+      "Introduction",
+      "Basic concepts",
+      "Configuration"
+    ]
+  },
+  {
+    "title": "Basic Client",
+    "items": [
+      "Hero",
+      "HeroReplay",
+      "AwaitedDOM",
+      "DetachedElement",
+      "Interactions",
+      "Flow Handling"
+    ]
+  },
+  {
+    "title": "Advanced Client",
+    "items": [
+      "Tab",
+      "FrameEnvironment",
+      "UserProfile",
+      "CookieStorage",
+      "Dialog",
+      "FileChooser",
+      "Resource",
+      "ResourceRequest",
+      "ResourceResponse",
+      "WebsocketResource",
+      "UserAgents",
+      "ConnectionToCore",
+      "DetachedElements",
+      "DetachedResources"
+    ]
+  },
+  {
+    "title": "Advanced Concepts",
+    "items": [
+      "Client vs Core",
+      "Deployment",
+      "Sessions",
+      "TimeTravel"
+    ]
+  },
+  {
+    "title": "Plugins",
+    "items": [
+      "Client Plugins",
+      "Core Plugins"
+    ]
+  },
+  {
+    "title": "Help",
+    "items": [
+      "Prerequisites",
+      "How to upgrade",
+      "Troubleshooting",
+      "Migration Guide"
+    ]
+  }
+]

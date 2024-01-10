@@ -1,0 +1,36 @@
+{
+  "content": "<h1 id=\"contributor-covenant-code-of-conduct\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#contributor-covenant-code-of-conduct\">#</a>Contributor Covenant Code of Conduct</h1>\n<h2 id=\"our-pledge\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#our-pledge\">#</a>Our Pledge</h2>\n<p>In the interest of fostering an open and welcoming environment, we as\ncontributors and maintainers pledge to making participation in our project and\nour community a harassment-free experience for everyone, regardless of age, body\nsize, disability, ethnicity, sex characteristics, gender identity and expression,\nlevel of experience, education, socio-economic status, nationality, personal\nappearance, race, religion, or sexual identity and orientation.</p>\n<h2 id=\"our-standards\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#our-standards\">#</a>Our Standards</h2>\n<p>Examples of behavior that contributes to creating a positive environment\ninclude:</p>\n<ul>\n<li>Using welcoming and inclusive language</li>\n<li>Being respectful of differing viewpoints and experiences</li>\n<li>Gracefully accepting constructive criticism</li>\n<li>Focusing on what is best for the community</li>\n<li>Showing empathy towards other community members</li>\n</ul>\n<p>Examples of unacceptable behavior by participants include:</p>\n<ul>\n<li>The use of sexualized language or imagery and unwelcome sexual attention or advances</li>\n<li>Trolling, insulting/derogatory comments, and personal or political attacks</li>\n<li>Public or private harassment</li>\n<li>Publishing others' private information, such as a physical or electronic\naddress, without explicit permission</li>\n<li>Other conduct which could reasonably be considered inappropriate in a\nprofessional setting</li>\n</ul>\n<h2 id=\"our-responsibilities\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#our-responsibilities\">#</a>Our Responsibilities</h2>\n<p>Project maintainers are responsible for clarifying the standards of acceptable behavior and are expected to take appropriate and fair corrective action in response to any instances of unacceptable behavior.</p>\n<p>Project maintainers have the right and responsibility to remove, edit, or\nreject comments, commits, code, wiki edits, issues, and other contributions that are not aligned to this Code of Conduct, or to ban temporarily or permanently any contributor for other behaviors that they deem inappropriate, threatening, offensive, or harmful.</p>\n<h2 id=\"scope\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#scope\">#</a>Scope</h2>\n<p>This Code of Conduct applies both within project spaces and in public spaces when an individual is representing the project or its community. Examples of representing a project or community include using an official project e-mail address, posting via an official social media account, or acting as an appointed representative at an online or offline event. Representation of a project may be further defined and clarified by project maintainers.</p>\n<h2 id=\"enforcement\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#enforcement\">#</a>Enforcement</h2>\n<p>Instances of abusive, harassing, or otherwise unacceptable behavior may be\nreported by contacting the project team at <a href=\"mailto:post@gridsome.com\">post@gridsome.com</a>. All\ncomplaints will be reviewed and investigated and will result in a response that is deemed necessary and appropriate to the circumstances. The project team is obligated to maintain confidentiality with regard to the reporter of an incident. Further details of specific enforcement policies may be posted separately.</p>\n<p>Project maintainers who do not follow or enforce the Code of Conduct in good faith may face temporary or permanent repercussions as determined by other members of the project's leadership.</p>\n<h2 id=\"attribution\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#attribution\">#</a>Attribution</h2>\n<p>This Code of Conduct is adapted from the <a href=\"https://www.contributor-covenant.org\">Contributor Covenant</a>, version 1.4,\navailable at <a href=\"https://www.contributor-covenant.org/version/1/4/code-of-conduct.html\">https://www.contributor-covenant.org/version/1/4/code-of-conduct.html</a></p>\n<p>For answers to common questions about this code of conduct, see\n<a href=\"https://www.contributor-covenant.org/faq\">https://www.contributor-covenant.org/faq</a></p>",
+  "title": "Contributor Covenant Code of Conduct",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Our Pledge",
+      "anchor": "#our-pledge"
+    },
+    {
+      "depth": 2,
+      "value": "Our Standards",
+      "anchor": "#our-standards"
+    },
+    {
+      "depth": 2,
+      "value": "Our Responsibilities",
+      "anchor": "#our-responsibilities"
+    },
+    {
+      "depth": 2,
+      "value": "Scope",
+      "anchor": "#scope"
+    },
+    {
+      "depth": 2,
+      "value": "Enforcement",
+      "anchor": "#enforcement"
+    },
+    {
+      "depth": 2,
+      "value": "Attribution",
+      "anchor": "#attribution"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "content": "<h1 id=\"output\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#output\">#</a>Output</h1>\n<p>Output is an object used to create a \"result\" for your Datastore Extractor.</p>\n<p>It's a specialized object because it allows Datastore to observe an object that you attach to the output. All changes will be recorded as you modify the object. You can optionally <code>emit()</code> an Output instance, which will stream the individual record to any callers.</p>\n<p>If you do not manually call <code>emit()</code>, all created Output instances will be emitted when the <code>Extractor.run</code> callback completes.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import { Extractor, HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';\n\nconst extractor = new Extractor(async ctx => {\n  const { Output, Hero } = ctx;\n  \n  const links = [\n    { name: 'Google', href: 'https://www.google.com' },\n    { name: 'Hacker News', href: 'https://news.ycombinator.com' },\n  ];\n  \n  const hero = new Hero();\n  \n  for (const page of links) {\n    await hero.goto(page.href);\n    \n    for (const link of await hero.querySelectorAll('a')) {\n      const output = new Output({\n        // will be added to the output array\n        id: (await link.name).replace(/[^a-z]+/g, '-'),\n        href: await link.href,\n      });\n      output.emit();\n    }\n  }\n}, HeroExtractorPlugin);\n\n(async () => {\n  // Records can be consumed as they are emitted\n  for await (const output of extractor.runInternal()) {\n    console.log(output, new Date());\n  }\n})();\n</code></pre>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"emit\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#emit\">#</a>emit <em>()</em></h3>\n<p>Instance method to freeze the output and immediately emit the record to any callers.</p>\n<h3 id=\"outputemit\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#outputemit\">#</a>Output.emit*()*</h3>\n<p>Static method to emit contents without constructing a new Output record.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import { Extractor } from '@ulixee/datastore';\n\nnew Extractor(async context => {\n  const { input, Output, Hero } = context;\n  const hero = new Hero();\n  await hero.goto('https://example.org');\n  Output.emit({ text: `I went to example.org. Your input was: ${input.name}` });\n}, HeroExtractorPlugin);\n</code></pre>\n<h2 id=\"gotchas\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#gotchas\">#</a>Gotchas</h2>\n<h3 id=\"assigning-variables-in-bulk\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#assigning-variables-in-bulk\">#</a>Assigning Variables in Bulk</h3>\n<p>You cannot \"re-assign\" the output variable and have it be observed. You should instead use <code>Object.assign(output, yourVariables)</code> to assign them onto the output object, or set properties individually.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import { Extractor } from '@ulixee/datastore';\n\nexport default new Extractor(async ctx => {\n  let { Output } = ctx;\n  \n  let output = new Output();\n  \n  // Setting a variable is ok\n  output.whoop = 'This will work!';\n  \n  // Datastore will not record this change\n  output = { whoops: 'This will not work!' };\n});\n</code></pre>\n<h3 id=\"observable\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#observable\">#</a>Observable</h3>\n<p>Any object you assign into Output is \"copied\" into the Output object. To create an object that will be tracked through the process of attaching it to output, you can use the <code>Observable</code> class.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import { Observable, Extractor } from '@ulixee/datastore';\n\nexport default new Extractor(async ctx => {\n  const { Output } = ctx;\n  \n  let result = Observable({});\n  const output = new Output({ results: [] });\n  output.results.push(result);\n  \n  result.text = 'Got it!';\n});\n</code></pre>\n<p>If you do not use <code>Observable</code> or re-retrieve your object, you should NOT expect further changes to the source object to be saved.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import { Extractor } from '@ulixee/datastore';\n\nexport default new Extractor(async ctx => {\n  const { Output } = datastore;\n  \n  let result = {};\n  const output = new Output({ result });\n  \n  result.text = 'Not going to be there!'; // WILL NOT TRACK!\n});\n</code></pre>",
+  "title": "Output",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": "emit <em>()</em>",
+      "anchor": "#emit"
+    },
+    {
+      "depth": 3,
+      "value": "Output.emit*()*",
+      "anchor": "#outputemit"
+    },
+    {
+      "depth": 2,
+      "value": "Gotchas",
+      "anchor": "#gotchas"
+    },
+    {
+      "depth": 3,
+      "value": "Assigning Variables in Bulk",
+      "anchor": "#assigning-variables-in-bulk"
+    },
+    {
+      "depth": 3,
+      "value": "Observable",
+      "anchor": "#observable"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "content": "<h1 id=\"awaiteddom--videotrack\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--videotrack\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> VideoTrack</h1>\n<div class='overview'><span class=\"seoSummary\">The <code>VideoTrack</code> interface represents a single video track from a <code>&lt;video&gt;</code> element.</span> The most common use for accessing a <code>VideoTrack</code> object is to toggle its <code>selected</code> property in order to make it the active video track for its <code>&lt;video&gt;</code> element.</div>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"id\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#id\">#</a>.id <div class=\"specs\"><i>W3C</i></div></h3>\n<p>A <code>string</code> which uniquely identifies the track within the media. This ID can be used to locate a specific track within a video track list by calling <code>VideoTrackList.getTrackById()</code>. The ID can also be used as the fragment part of the URL if the media supports seeking by media fragment per the <a class=\"external\" href=\"https://www.w3.org/TR/media-frags/\" rel=\"noopener\">Media Fragments URI specification</a>.</p>\n<h4 id=\"type-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"kind\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#kind\">#</a>.kind <div class=\"specs\"><i>W3C</i></div></h3>\n<p>A <code>string</code> specifying the category into which the track falls. For example, the main video track would have a <code>kind</code> of <code>\"main\"</code>.</p>\n<h4 id=\"type-promisestring-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-1\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"label\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#label\">#</a>.label <div class=\"specs\"><i>W3C</i></div></h3>\n<p>A <code>string</code> providing a human-readable label for the track. For example, a track whose <code>kind</code> is <code>\"sign\"</code> might have a <code>label</code> of <code>\"A sign-language interpretation\"</code>. This string is empty if no label is provided.</p>\n<h4 id=\"type-promisestring-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-2\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"language\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#language\">#</a>.language <div class=\"specs\"><i>W3C</i></div></h3>\n<p>A <code>string</code> specifying the video track's primary language, or an empty string if unknown. The language is specified as a BCP 47 (<a class=\"external\" href=\"https://tools.ietf.org/html/rfc5646\" rel=\"noopener\">RFC 5646</a>) language code, such as <code>\"en-US\"</code> or <code>\"pt-BR\"</code>.</p>\n<h4 id=\"type-promisestring-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-3\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"selected\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#selected\">#</a>.selected <div class=\"specs\"><i>W3C</i></div></h3>\n<p>A Boolean value which controls whether or not the video track is active. Only a single video track can be active at any given time, so setting this property to <code>true</code> for one track while another track is active will make that other track inactive.</p>\n<h4 id=\"type-promiseboolean\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promiseboolean\">#</a><strong>Type</strong>: <code>Promise&#x3C;boolean></code></h4>",
+  "title": " <span>/</span> VideoTrack",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": ".id <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#id"
+    },
+    {
+      "depth": 3,
+      "value": ".kind <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#kind"
+    },
+    {
+      "depth": 3,
+      "value": ".label <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#label"
+    },
+    {
+      "depth": 3,
+      "value": ".language <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#language"
+    },
+    {
+      "depth": 3,
+      "value": ".selected <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#selected"
+    }
+  ]
+}

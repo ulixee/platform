@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--eventtarget\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--eventtarget\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> EventTarget</h1>\n<div class='overview'><strong><code>EventTarget</code></strong> is a DOM interface implemented by objects that can receive events and may have listeners for them.</div>\n<div class='overview'><code>Element</code>, <code>Document</code>, and <code>Window</code> are the most common event targets, but other objects can be event targets too, for example <code>XMLHttpRequest</code>, <code>AudioNode</code>, <code>AudioContext</code>, and others.</div>\n<div class='overview'>Many event targets (including elements, documents, and windows) also support setting event handlers via <code>on<em>event</em></code> properties and attributes.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>addEventListener()</code></td>\n<td><code>dispatchEvent()</code></td>\n</tr>\n<tr>\n<td><code>removeEventListener()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> EventTarget",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "content": "<h1 id=\"awaiteddom-extensions\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom-extensions\">#</a>AwaitedDOM Extensions</h1>\n<blockquote>\n<p>AwaitedDOM Extensions add extra functionality to the DOM specification in order to make using Hero easier. All extensions are prefixed with a \"$\" character.</p>\n</blockquote>\n<p>These extensions are automatically added to all AwaitedDOM elements (<a href=\"/docs/hero/awaited-dom/super-node\"><code>Nodes</code></a>, <a href=\"/docs/hero/awaited-dom/super-element\"><code>Elements</code></a>, <a href=\"/docs/hero/awaited-dom/super-html-element\"><code>HTMLElements</code></a>) and collections (<a href=\"/docs/hero/awaited-dom/super-node-list\"><code>NodeList</code></a> and <a href=\"/docs/hero/awaited-dom/super-html-collection\"><code>HTMLCollections</code></a>).</p>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"content-document\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#content-document\">#</a>element.$contentDocument</h3>\n<p>Accesses a child frames ContentDocument <strong>bypassing</strong> cross-origin restrictions. This can be really nice when you are accessing frame querySelectors on different domains. The native javascript sandboxes do not have this privilege.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">await hero.querySelector('frame').$contentDocument.querySelector('button').$click();\n</code></pre>\n<h4 id=\"returns-superdocument\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-superdocument\">#</a><strong>Returns</strong>: <code>SuperDocument</code></h4>\n<h3 id=\"exists\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#exists\">#</a>element.$exists</h3>\n<p>Checks if a given node is valid and retrievable in the DOM. This API is used mostly to determine if a querySelector can be resolved.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">await hero.querySelector('.not-in-dom').$exists; // false if not in dom!\n</code></pre>\n<h4 id=\"returns-promiseboolean\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"has-focus\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#has-focus\">#</a>element.$hasFocus</h3>\n<p>Checks if a given node has focus in the DOM. Useful for form interactions.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">const hasFocus = await hero.querySelector('.field').$hasFocus;\nif (!hasFocus) await hero.querySelector('.field').focus();\n</code></pre>\n<h4 id=\"returns-promiseboolean-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean-1\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"is-clickable\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#is-clickable\">#</a>element.$isClickable</h3>\n<p>Checks if a given node is visible in the DOM, scrolled into view, and not masked by any other node. Follows the specification of <code>isClickable</code> from <a href=\"/docs/hero/advanced-client/tab#get-computed-visibility\">tab.getComputedVisibility()</a>.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">await hero.querySelector('.element').$isClickable;\n</code></pre>\n<h4 id=\"returns-promiseboolean-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean-2\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"is-visible\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#is-visible\">#</a>element.$isVisible</h3>\n<p>Checks if a given node is visible in the DOM. Follows the specification of <code>isVisible</code> from <a href=\"/docs/hero/advanced-client/tab#get-computed-visibility\">tab.getComputedVisibility()</a>.</p>\n<p>NOTE: this does not mean the node is scrolled into view.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">await hero.querySelector('.element').$isVisible;\n</code></pre>\n<h4 id=\"returns-promiseboolean-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean-3\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h2 id=\"element-methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#element-methods\">#</a>Element Methods</h2>\n<p>The following methods are added to (<a href=\"/docs/hero/awaited-dom/super-node\"><code>Nodes</code></a>, <a href=\"/docs/hero/awaited-dom/super-element\"><code>Elements</code></a>, and <a href=\"/docs/hero/awaited-dom/super-html-element\"><code>HTMLElements</code></a>).</p>\n<h3 id=\"addToDetachedElements\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#addToDetachedElements\">#</a>element.$addToDetachedElements <em>(name)</em></h3>\n<p>Converts the element to a <a href=\"/docs/hero/basic-client/detached-element\">DetachedElement</a> and adds it to the <a href=\"/docs/hero/basic-client/hero#detached-elements\">hero.detachedElements</a> object. The advantage of hero.detachedElements is you can use and reuse them from within <a href=\"/docs/hero/basic-client/hero-replay\">HeroReplay</a> long after your Hero session has closed. This allows you to write extraction logic that can be easily iterated on without needing to reload the webpage(s).</p>\n<p>For example, below is a simple hero script that collects the <code>h1</code> element:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">const hero = new Hero();\nawait hero.goto('https://ulixee.org');\nawait hero.querySelector('h1').$addToDetachedElements('title');\nconsole.log('Session ID: ', await hero.sessionId);\n</code></pre>\n<p>You can create a second script that uses <a href=\"/docs/hero/basic-client/hero-replay\">HeroReplay</a> to find the data you need without loading the website again:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">const hero = new HeroReplay({\n  /* previousSessionId */\n});\nconst h1 = await hero.detachedElements.get('title');\nconst h1Children = [...h1.querySelectorAll('div')].map(x => x.textContent);\n</code></pre>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>name <code>string</code>. The name used to retrieve this element from <a href=\"/docs/hero/basic-client/hero#detached-elements\">hero.detachedElements</a>.</li>\n</ul>\n<h4 id=\"returns-promisedetachedelement\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisedetachedelement\">#</a><strong>Returns</strong>: <code>Promise&#x3C;DetachedElement></code></h4>\n<h3 id=\"clear-value\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#clear-value\">#</a>element.$clearInputText <em>()</em></h3>\n<p>Clears out the value of an input field by performing a Focus, Select All, and Backspace.</p>\n<h4 id=\"returns-promisevoid\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisevoid\">#</a><strong>Returns</strong>: <code>Promise&#x3C;void></code></h4>\n<h3 id=\"click\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#click\">#</a>element.$click <em>(verification)</em></h3>\n<p>A normal DOM node has a <code>click()</code> API on it, but it does not trigger human-like behavior or mouse events resembling the actions of a normal user. For that reason, it can be detected if a given website is looking for it.</p>\n<p>The <code>$click()</code> API triggers clicking on the given node using the <a href=\"/docs/hero/basic-client/interactions\">Interactions</a> functionality.</p>\n<h4 id=\"arguments-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-1\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>verification <code>elementAtPath</code> | <code>exactElement</code> | <code>none</code>. Default <code>elementAtPath</code>. Determines what <a href=\"/docs/hero/basic-client/interactions#click-verification\">verification</a> should be used in this operation. A verification determines how to recover from the node disappearing from the DOM during execution.</li>\n</ul>\n<h4 id=\"returns-promisevoid-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisevoid-1\">#</a><strong>Returns</strong>: <code>Promise&#x3C;void></code></h4>\n<h3 id=\"detach\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#detach\">#</a>element.$detach <em>()</em></h3>\n<p>Detaches element and returns it as a <a href=\"/docs/hero/basic-client/detached-element\">DetachedElement</a> for local usage (i.e, without any need for promises or awaits).</p>\n<p>For example, below is a simple hero script that detaches the <code>h1</code> element and uses getAttribute:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">const hero = new Hero();\nawait hero.goto('https://ulixee.org');\nconst h1Elem = await hero.querySelector('h1').$detach();\nconsole.log('Session ID: ', h1Elem.getAttribute('title'));\n</code></pre>\n<p>You'll notice the h1Elem above has full access to properties and methods without needing the <code>await</code> keyword.</p>\n<h4 id=\"returns-promisedetachedelementelement\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisedetachedelementelement\">#</a><strong>Returns</strong>: <code>Promise&#x3C;DetachedElement.Element></code></h4>\n<h3 id=\"type\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type\">#</a>element.$type <em>(...typeInteractions)</em></h3>\n<p>Perform a typing interaction on the given node. This is a shortcut for <code>focusing</code> on an input and then performing <code>keyboard</code> operations using the <a href=\"/docs/hero/basic-client/interactions\">Interactions</a> functionality.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">await hero.querySelector('.field').$type('fill-in', KeyboardKey.Enter);\n</code></pre>\n<h4 id=\"arguments-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-2\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>typeInteractions <code>ITypeInteraction[]</code>. One or more interactions to trigger using the keyboard. TypeInteractions can be strings or <code>KeyboardKey</code> values (exported from the Hero client).</li>\n</ul>\n<h4 id=\"returns-promisevoid-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisevoid-2\">#</a><strong>Returns</strong>: <code>Promise&#x3C;void></code></h4>\n<h3 id=\"wait-for-exists\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#wait-for-exists\">#</a>element.$waitForExists <em>(options?)</em></h3>\n<p>Wait for the given Node \"Path\" to exist in the DOM. Returns the resolved SuperElement.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">await hero.querySelector('.not.here.yet').$waitForExists(); // waits until this querySelector resolves.\n</code></pre>\n<h4 id=\"arguments-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-3\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>options <code>object</code>. Optional options.\n<ul>\n<li>timeoutMs <code>number</code>. The default timeout.</li>\n</ul>\n</li>\n</ul>\n<h4 id=\"returns-promiseisuperelement\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseisuperelement\">#</a><strong>Returns</strong>: <code>Promise&#x3C;ISuperElement></code></h4>\n<h3 id=\"wait-for-clickable\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#wait-for-clickable\">#</a>element.$waitForClickable <em>(options?)</em></h3>\n<p>Wait for the given Node \"Path\" to be clickable in the DOM (visible, scrolled into the viewport and unobstructed).</p>\n<p>NOTE: this API will <em>not</em> scroll a node into view that is offscreen.</p>\n<h4 id=\"arguments-4\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-4\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>options <code>object</code>. Optional options.\n<ul>\n<li>timeoutMs <code>number</code>. The default timeout.</li>\n</ul>\n</li>\n</ul>\n<h4 id=\"returns-promiseisuperelement-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseisuperelement-1\">#</a><strong>Returns</strong>: <code>Promise&#x3C;ISuperElement></code></h4>\n<h3 id=\"wait-for-hidden\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#wait-for-hidden\">#</a>element.$waitForHidden <em>(options?)</em></h3>\n<p>Wait for the given Node \"Path\" to be unavailable in the DOM (not visible in the DOM or does not exist).</p>\n<p>This API can be useful to wait for a modal/popup window to disppear after you click close on it.</p>\n<h4 id=\"arguments-5\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-5\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>options <code>object</code>. Optional options.\n<ul>\n<li>timeoutMs <code>number</code>. The default timeout.</li>\n</ul>\n</li>\n</ul>\n<h4 id=\"returns-promiseisuperelement-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseisuperelement-2\">#</a><strong>Returns</strong>: <code>Promise&#x3C;ISuperElement></code></h4>\n<h3 id=\"wait-for-visible\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#wait-for-visible\">#</a>element.$waitForVisible <em>(options?)</em></h3>\n<p>Wait for the given Node \"Path\" to be visible in the DOM.</p>\n<p>Visible follows the API defined at: <a href=\"/docs/hero/advanced-client/tab#get-computed-visibility\"><code>tab.getComputedVisibility</code></a></p>\n<h4 id=\"arguments-6\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-6\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>options <code>object</code>. Optional options.\n<ul>\n<li>timeoutMs <code>number</code>. The default timeout.</li>\n</ul>\n</li>\n</ul>\n<h4 id=\"returns-promiseisuperelement-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseisuperelement-3\">#</a><strong>Returns</strong>: <code>Promise&#x3C;ISuperElement></code></h4>\n<h3 id=\"xpathSelector\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#xpathSelector\">#</a>element.$xpathSelector <em>(selector)</em></h3>\n<p>Perform an XPath query with this node provided as the \"ContextScope\". NOTE: you still need to start your XPath with a '.' to indicate you wish to find nested XPaths.</p>\n<p>This is often useful to mix and match with querySelectors when you want to select on Text values of nodes.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">await hero.querySelector('ul').$xpathSelector('.//[.,\"LAX\"]');\n</code></pre>\n<h4 id=\"arguments-7\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-7\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>selector <code>string</code>. A valid XPath selector</li>\n</ul>\n<h4 id=\"returns-promiseisuperelement-4\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseisuperelement-4\">#</a><strong>Returns</strong>: <code>Promise&#x3C;ISuperElement></code></h4>\n<h2 id=\"collection-methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#collection-methods\">#</a>Collection Methods</h2>\n<p>The following methods are added to (<a href=\"/docs/hero/awaited-dom/super-node-list\"><code>NodeList</code></a> and <a href=\"/docs/hero/awaited-dom/super-html-collection\"><code>HTMLCollections</code></a>).</p>\n<h3 id=\"map\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#map\">#</a>collection.$map <em>(iteratorFn)</em></h3>\n<p>Adds syntactic sugar to run an <code>Array.map</code> on the results and await all results. This can be useful to transform results.</p>\n<h4 id=\"returns-promiset\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiset\">#</a><strong>Returns</strong>: <code>Promise&#x3C;T[]></code></h4>\n<h3 id=\"reduce\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#reduce\">#</a>collection.$reduce <em>(iteratorFn, initialValue)</em></h3>\n<p>Adds syntactic sugar to run an <code>Array.reduce</code> on the results and await a reduced result. This can be useful to transform results.</p>\n<h4 id=\"returns-promiset-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiset-1\">#</a><strong>Returns</strong>: <code>Promise&#x3C;T></code></h4>\n<h3 id=\"detach\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#detach\">#</a>collection.$detach <em>(name?)</em></h3>\n<p>Detaches all elements of a NodeList or HTMLElementCollection and converts them to <a href=\"/docs/hero/basic-client/detached-element\">DetachedElement</a>. Supplying a string as the first argument adds your elements to <a href=\"/docs/hero/basic-client/hero#detachedElements\">hero.detachedElements</a>.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">await hero.goto('https://ulixee.org');\nawait hero.querySelectorAll('h1 div').$addToDetachedElements('h1 divs');\nconst h1 = await hero.detachedElements.getAll('h1 divs'); // will have 2 entries\nconst h1Divs = h1.map(x => x.textContent);\n</code></pre>\n<h4 id=\"arguments-8\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-8\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>name <code>string</code>. The name given to all extracted HTML Elements. This name will be used to retrieve the elements from <a href=\"/docs/hero/basic-client/hero#detached-elements\">hero.detachedElements</a>.</li>\n</ul>\n<h4 id=\"returns-promisevoid-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisevoid-3\">#</a><strong>Returns</strong>: <code>Promise&#x3C;void></code></h4>\n<h2 id=\"resource-methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#resource-methods\">#</a>Resource Methods</h2>",
+  "title": "AwaitedDOM Extensions",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": "element.$contentDocument",
+      "anchor": "#content-document"
+    },
+    {
+      "depth": 3,
+      "value": "element.$exists",
+      "anchor": "#exists"
+    },
+    {
+      "depth": 3,
+      "value": "element.$hasFocus",
+      "anchor": "#has-focus"
+    },
+    {
+      "depth": 3,
+      "value": "element.$isClickable",
+      "anchor": "#is-clickable"
+    },
+    {
+      "depth": 3,
+      "value": "element.$isVisible",
+      "anchor": "#is-visible"
+    },
+    {
+      "depth": 2,
+      "value": "Element Methods",
+      "anchor": "#element-methods"
+    },
+    {
+      "depth": 3,
+      "value": "element.$addToDetachedElements <em>(name)</em>",
+      "anchor": "#addToDetachedElements"
+    },
+    {
+      "depth": 3,
+      "value": "element.$clearInputText <em>()</em>",
+      "anchor": "#clear-value"
+    },
+    {
+      "depth": 3,
+      "value": "element.$click <em>(verification)</em>",
+      "anchor": "#click"
+    },
+    {
+      "depth": 3,
+      "value": "element.$detach <em>()</em>",
+      "anchor": "#detach"
+    },
+    {
+      "depth": 3,
+      "value": "element.$type <em>(...typeInteractions)</em>",
+      "anchor": "#type"
+    },
+    {
+      "depth": 3,
+      "value": "element.$waitForExists <em>(options?)</em>",
+      "anchor": "#wait-for-exists"
+    },
+    {
+      "depth": 3,
+      "value": "element.$waitForClickable <em>(options?)</em>",
+      "anchor": "#wait-for-clickable"
+    },
+    {
+      "depth": 3,
+      "value": "element.$waitForHidden <em>(options?)</em>",
+      "anchor": "#wait-for-hidden"
+    },
+    {
+      "depth": 3,
+      "value": "element.$waitForVisible <em>(options?)</em>",
+      "anchor": "#wait-for-visible"
+    },
+    {
+      "depth": 3,
+      "value": "element.$xpathSelector <em>(selector)</em>",
+      "anchor": "#xpathSelector"
+    },
+    {
+      "depth": 2,
+      "value": "Collection Methods",
+      "anchor": "#collection-methods"
+    },
+    {
+      "depth": 3,
+      "value": "collection.$map <em>(iteratorFn)</em>",
+      "anchor": "#map"
+    },
+    {
+      "depth": 3,
+      "value": "collection.$reduce <em>(iteratorFn, initialValue)</em>",
+      "anchor": "#reduce"
+    },
+    {
+      "depth": 3,
+      "value": "collection.$detach <em>(name?)</em>",
+      "anchor": "#detach"
+    },
+    {
+      "depth": 2,
+      "value": "Resource Methods",
+      "anchor": "#resource-methods"
+    }
+  ]
+}

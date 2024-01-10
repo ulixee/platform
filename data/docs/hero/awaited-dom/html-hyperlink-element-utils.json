@@ -1,0 +1,76 @@
+{
+  "content": "<h1 id=\"awaiteddom--htmlhyperlinkelementutils\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--htmlhyperlinkelementutils\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> HTMLHyperlinkElementUtils</h1>\n<div class='overview'><strong>This is an experimental technology</strong><br>Check the <a href=\"#Browser_compatibility\">Browser compatibility table</a> carefully before using this in production.</div>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"hash\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hash\">#</a>.hash <div class=\"specs\"><i>W3C</i></div></h3>\n<p>This is a <code>string</code> containing a <code>'#'</code> followed by the fragment identifier of the URL.</p>\n<h4 id=\"type-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"host\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#host\">#</a>.host <div class=\"specs\"><i>W3C</i></div></h3>\n<p>This is a <code>string</code> containing the host, that is the <em>hostname</em>, and then, if the <em>port</em> of the URL is not empty (which can happen because it was not specified or because it was specified to be the default port of the URL's scheme), a <code>':'</code>, and the <em>port</em> of the URL.</p>\n<h4 id=\"type-promisestring-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-1\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"hostname\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hostname\">#</a>.hostname <div class=\"specs\"><i>W3C</i></div></h3>\n<p>This is a <code>string</code> containing the domain of the URL.</p>\n<h4 id=\"type-promisestring-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-2\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"href\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#href\">#</a>.href <div class=\"specs\"><i>W3C</i></div></h3>\n<p>This a stringifier property that returns a <code>string</code> containing the whole URL, and allows the href to be updated.</p>\n<h4 id=\"type-promisestring-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-3\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"origin\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#origin\">#</a>.origin <div class=\"specs\"><i>W3C</i></div></h3>\n<p>This returns a <code>string</code> containing the origin of the URL (that is its scheme, its domain and its port).</p>\n<h4 id=\"type-promisestring-4\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-4\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"password\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#password\">#</a>.password <div class=\"specs\"><i>W3C</i></div></h3>\n<p>This is a <code>string</code> containing the password specified before the domain name.</p>\n<h4 id=\"type-promisestring-5\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-5\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"pathname\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#pathname\">#</a>.pathname <div class=\"specs\"><i>W3C</i></div></h3>\n<p>This is a <code>string</code> containing an initial <code>'/'</code> followed by the path of the URL.</p>\n<h4 id=\"type-promisestring-6\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-6\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"port\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#port\">#</a>.port <div class=\"specs\"><i>W3C</i></div></h3>\n<p>This is a <code>string</code> containing the port number of the URL.</p>\n<h4 id=\"type-promisestring-7\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-7\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"protocol\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#protocol\">#</a>.protocol <div class=\"specs\"><i>W3C</i></div></h3>\n<p>This is a <code>string</code> containing the protocol scheme of the URL, including the final <code>':'</code>.</p>\n<h4 id=\"type-promisestring-8\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-8\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"search\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#search\">#</a>.search <div class=\"specs\"><i>W3C</i></div></h3>\n<p>This is a <code>string</code> containing a <code>'?'</code> followed by the parameters of the URL.</p>\n<h4 id=\"type-promisestring-9\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-9\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"username\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#username\">#</a>.username <div class=\"specs\"><i>W3C</i></div></h3>\n<p>This is a <code>string</code> containing the username specified before the domain name.</p>\n<h4 id=\"type-promisestring-10\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring-10\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"toString\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#toString\">#</a>.toString <em>()</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>This returns a <code>string</code> containing the whole URL. It is a synonym for <code>HTMLHyperlinkElementUtils.href</code>, though it can't be used to modify the value.</p>\n<h4 id=\"returns-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisestring\">#</a><strong>Returns</strong>: <code>Promise&#x3C;string></code></h4>",
+  "title": " <span>/</span> HTMLHyperlinkElementUtils",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": ".hash <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#hash"
+    },
+    {
+      "depth": 3,
+      "value": ".host <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#host"
+    },
+    {
+      "depth": 3,
+      "value": ".hostname <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#hostname"
+    },
+    {
+      "depth": 3,
+      "value": ".href <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#href"
+    },
+    {
+      "depth": 3,
+      "value": ".origin <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#origin"
+    },
+    {
+      "depth": 3,
+      "value": ".password <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#password"
+    },
+    {
+      "depth": 3,
+      "value": ".pathname <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#pathname"
+    },
+    {
+      "depth": 3,
+      "value": ".port <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#port"
+    },
+    {
+      "depth": 3,
+      "value": ".protocol <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#protocol"
+    },
+    {
+      "depth": 3,
+      "value": ".search <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#search"
+    },
+    {
+      "depth": 3,
+      "value": ".username <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#username"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": ".toString <em>()</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#toString"
+    }
+  ]
+}

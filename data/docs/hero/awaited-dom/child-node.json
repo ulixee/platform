@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--childnode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--childnode\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> ChildNode</h1>\n<div class='overview'><span class=\"seoSummary\">The&nbsp;<code><strong>ChildNode</strong></code>&nbsp;mixin contains methods and properties that are common to all types of <code>Node</code> objects that can have a parent.</span>&nbsp;It's implemented by <code>Element</code>, <code>DocumentType</code>, and <code>CharacterData</code> objects.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>after()</code></td>\n<td><code>before()</code></td>\n</tr>\n<tr>\n<td><code>remove()</code></td>\n<td><code>replaceWith()</code></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> ChildNode",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

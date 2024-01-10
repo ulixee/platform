@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--fontfacesetloadevent\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--fontfacesetloadevent\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> FontFaceSetLoadEvent</h1>\n<div class='overview'></div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>fontfaces</code></td>\n<td><code>bubbles</code></td>\n</tr>\n<tr>\n<td><code>cancelable</code></td>\n<td><code>cancelBubble</code></td>\n</tr>\n<tr>\n<td><code>composed</code></td>\n<td><code>currentTarget</code></td>\n</tr>\n<tr>\n<td><code>defaultPrevented</code></td>\n<td><code>eventPhase</code></td>\n</tr>\n<tr>\n<td><code>isTrusted</code></td>\n<td><code>target</code></td>\n</tr>\n<tr>\n<td><code>timeStamp</code></td>\n<td><code>type</code></td>\n</tr>\n</tbody>\n</table>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>composedPath()</code></td>\n<td><code>initEvent()</code></td>\n</tr>\n<tr>\n<td><code>preventDefault()</code></td>\n<td><code>stopImmediatePropagation()</code></td>\n</tr>\n<tr>\n<td><code>stopPropagation()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> FontFaceSetLoadEvent",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

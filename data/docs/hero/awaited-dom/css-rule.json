@@ -1,0 +1,31 @@
+{
+  "content": "<h1 id=\"awaiteddom--cssrule\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--cssrule\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> CSSRule</h1>\n<div class='overview'>The <strong><code>CSSRule</code></strong> interface represents a single CSS rule. There are several types of rules, listed in the <a href=\"#Type_constants\">Type constants</a> section below.</div>\n<div class='overview'>The <code>CSSRule</code> interface specifies the properties common to all rules, while properties unique to specific rule types are specified in the more specialized interfaces for those rules' respective types.</div>\n<div class='overview'>References to a <code>CSSRule</code> may be obtained by looking at a <code>CSSStyleSheet</code>'s <code>cssRules</code> list.</div>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"cssText\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cssText\">#</a>.cssText <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Represents the textual representation of the rule, e.g. \"<code>h1,h2 { font-size: 16pt }</code>\" or \"<code>@import 'url'</code>\". To access or modify parts of the rule (e.g. the value of \"font-size\" in the example) use the properties on the <a href=\"#Type_constants\">specialized interface for the rule's type</a>.</p>\n<h4 id=\"type-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"parentRule\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#parentRule\">#</a>.parentRule <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the containing rule, otherwise <code>null</code>. E.g. if this rule is a style rule inside an <code>@media</code> block, the parent rule would be that <code>CSSMediaRule</code>.</p>\n<h4 id=\"type-cssrule\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-cssrule\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/css-rule\"><code>CSSRule</code></a></h4>\n<h3 id=\"parentStyleSheet\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#parentStyleSheet\">#</a>.parentStyleSheet <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the <code>CSSStyleSheet</code> object for the style sheet that contains this rule</p>\n<h4 id=\"type-cssstylesheet\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-cssstylesheet\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/css-style-sheet\"><code>CSSStyleSheet</code></a></h4>\n<h3 id=\"type\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type\">#</a>.type <div class=\"specs\"><i>W3C</i></div></h3>\n<p>One of the <a href=\"#Type_constants\">Type constants</a> indicating the type of CSS rule.</p>\n<h4 id=\"type-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>",
+  "title": " <span>/</span> CSSRule",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": ".cssText <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#cssText"
+    },
+    {
+      "depth": 3,
+      "value": ".parentRule <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#parentRule"
+    },
+    {
+      "depth": 3,
+      "value": ".parentStyleSheet <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#parentStyleSheet"
+    },
+    {
+      "depth": 3,
+      "value": ".type <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#type"
+    }
+  ]
+}

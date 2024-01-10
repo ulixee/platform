@@ -1,0 +1,36 @@
+{
+  "content": "<h1 id=\"detachedelements\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#detachedelements\">#</a>DetachedElements</h1>\n<blockquote>\n<p>DetachedElements is a class to retrieve DOM Elements that were saved from a Hero session using <a href=\"/docs/hero/basic-client/hero#detach\"><code>hero.detach</code></a> or <a href=\"/docs/hero/basic-client/awaited-dom-extensions#detach\">element.$detach</a>.</p>\n</blockquote>\n<p>DetachedElements cannot be constructed. You access it through <a href=\"/docs/hero/basic-client/hero#detachedElements\">hero.detachedElements</a> or <a href=\"/docs/hero/basic-client/hero-replay#detachedElements\">heroReplay.detachedElements</a>.</p>\n<p>Retrieved elements are decendants of the DetachedElement not AwaitedDOM, which means they have no need for promises or awaits.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">await hero.goto('https://ulixee.org');\nconst h1 = await hero.querySelector('h1').$waitForVisible();\n// Extract the DOM Element at this moment in time.\nawait h1.$extract('title');\n// ... do other things\nconst h1 = await hero.detachedElements.get('title');\n// NOTE: synchronous APIs. No longer running in browser.\nconst text = h1.textContent;\nconst dataset = h1.dataset;\n</code></pre>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"detachedelementsnames\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#detachedelementsnames\">#</a>detachedElements.names</h3>\n<p>Retrieves all names that DetachedElements have been stored with.</p>\n<h4 id=\"returns-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisestring\">#</a><strong>Returns</strong> <code>Promise&#x3C;string[]></code></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"get\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#get\">#</a>detachedElements.get <em>(name)</em></h3>\n<p>Get a single DOM Element extracted with the given name.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>name <code>string</code>. The name of the DOM Element to retrieve (assigned during extraction).</li>\n</ul>\n<h4 id=\"returns-promiseelement-the-reconstituted-dom-element\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseelement-the-reconstituted-dom-element\">#</a><strong>Returns</strong>: <code>Promise&#x3C;Element></code> The (reconstituted) DOM Element.</h4>\n<h3 id=\"get-all\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#get-all\">#</a>detachedElements.getAll <em>(name)</em></h3>\n<p>Get a list of DOM Elements extracted with the given name. If you extract a <code>querySelectorAll</code>, all returned results will be in this list. Items will maintain the order they're collected in.</p>\n<h4 id=\"arguments-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-1\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>name <code>string</code>. The name of the DOM Element list to retrieve (assigned during extraction).</li>\n</ul>\n<h4 id=\"returns-promiseelement-the-reconstituted-dom-elements\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseelement-the-reconstituted-dom-elements\">#</a><strong>Returns</strong>: <code>Promise&#x3C;Element[]></code> The (reconstituted) DOM Elements.</h4>\n<h3 id=\"get-raw\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#get-raw\">#</a>detachedElements.getRawDetails <em>(name)</em></h3>\n<p>Get a list of extracted Elements with all the underlying details. This allows you to access the raw HTML as well as details about when and where a Node was extracted.</p>\n<p>Details per <code>IDetachedElement</code> record are:</p>\n<ul>\n<li>id <code>number</code>. An assigned id.</li>\n<li>name <code>string</code>. The provided name for the DetachedElement.</li>\n<li>frameId <code>number</code>. The <a href=\"/docs/hero/advanced-client/frame-environment\">FrameEnvironment</a> id where the Element was extracted.</li>\n<li>frameNavigationId <code>number</code>. The id of the Navigation for the <a href=\"/docs/hero/advanced-client/frame-environment\">Frame</a> at time of extraction.</li>\n<li>tabId <code>number</code>. The <a href=\"/docs/hero/advanced-client/tab\">Tab</a> id where the Element was extracted.</li>\n<li>commandId <code>number</code>. The <a href=\"/docs/hero/advanced-client/tab#lastCommandId\">Command</a> id at time of extraction.</li>\n<li>domChangesTimestamp <code>number</code>. The unix timestamp of the DOM at time of extraction.</li>\n<li>nodePointerId <code>number</code>. The internal tracking id assigned to the node.</li>\n<li>nodeType <code>string</code>. The type of node (eg, 'HTMLDivElement', 'HTMLLIElement')</li>\n<li>nodePreview <code>string</code>. A string preview created in the DOM at time of retrieval.</li>\n<li>outerHTML? <code>string</code>. The full outerHTML of the Node, recreated at the exact moment in the DOM.</li>\n</ul>\n<h4 id=\"arguments-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-2\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>name <code>string</code>. The name given to the DOM Element during extraction.</li>\n</ul>\n<h4 id=\"returns-promiseidetachedelement-the-raw-data-for-the-detachedelements\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseidetachedelement-the-raw-data-for-the-detachedelements\">#</a><strong>Returns</strong>: <code>Promise&#x3C;IDetachedElement[]></code> The raw data for the DetachedElements.</h4>",
+  "title": "DetachedElements",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": "detachedElements.names",
+      "anchor": "#detachedelementsnames"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": "detachedElements.get <em>(name)</em>",
+      "anchor": "#get"
+    },
+    {
+      "depth": 3,
+      "value": "detachedElements.getAll <em>(name)</em>",
+      "anchor": "#get-all"
+    },
+    {
+      "depth": 3,
+      "value": "detachedElements.getRawDetails <em>(name)</em>",
+      "anchor": "#get-raw"
+    }
+  ]
+}

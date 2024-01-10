@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--svgstringlist\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--svgstringlist\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> SVGStringList</h1>\n<div class='overview'>The <code>SVGStringList</code> defines a list of `string` objects.</div>\n<div class='overview'>An <code>SVGStringList</code> object can be designated as read only, which means that attempts to modify the object will result in an exception being thrown.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>length</code></td>\n<td><code>numberOfItems</code></td>\n</tr>\n</tbody>\n</table>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>appendItem()</code></td>\n<td><code>clear()</code></td>\n</tr>\n<tr>\n<td><code>getItem()</code></td>\n<td><code>initialize()</code></td>\n</tr>\n<tr>\n<td><code>insertItemBefore()</code></td>\n<td><code>removeItem()</code></td>\n</tr>\n<tr>\n<td><code>replaceItem()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> SVGStringList",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

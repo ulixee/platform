@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--svglength\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--svglength\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> SVGLength</h1>\n<div class='overview'>The <code>SVGLength</code> interface correspond to the &lt;length&gt; basic data type.</div>\n<div class='overview'>An <code>SVGLength</code> object can be designated as read only, which means that attempts to modify the object will result in an exception being thrown.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>unitType</code></td>\n<td><code>value</code></td>\n</tr>\n<tr>\n<td><code>valueAsString</code></td>\n<td><code>valueInSpecifiedUnits</code></td>\n</tr>\n</tbody>\n</table>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>convertToSpecifiedUnits()</code></td>\n<td><code>newValueSpecifiedUnits()</code></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> SVGLength",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

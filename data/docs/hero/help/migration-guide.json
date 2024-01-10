@@ -1,0 +1,46 @@
+{
+  "content": "<h1 id=\"migrating-from-secretagent\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#migrating-from-secretagent\">#</a>Migrating from SecretAgent</h1>\n<p>If you're migrating a script from SecretAgent, you can expect to find:</p>\n<ul>\n<li>a more developer-friendly set of APIs (like our <a href=\"/docs/hero/basic-client/awaited-dom-extensions\">AwaitedDOM Extenders</a>)</li>\n<li>a much better experience running in \"headed\" mode during development, while still supporting headless for production.</li>\n<li>features that let you react to the changing state/flow of a web page (<a href=\"/docs/hero/basic-client/flow-handling\">FlowHandlers</a>)</li>\n<li>a much slimmer version of SecretAgent. Non-core functions have been exported: Remote is moved out to @ulixee/cloud; Replay is in a new tool called ChromeAlive!; the internal \"Puppet\" engine is now in the <a href=\"https://github.com/ulixee/unblocked\">Unblocked</a> project.</li>\n</ul>\n<p>Otherwise, Hero is an evolution of SecretAgent (and started from a git fork). You'll mostly just need to copy/replace of <code>const { Agent } = require('secret-agent')</code> with <code>const Hero = require('@ulixee/hero-playground')</code>.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import { Agent } from 'secret-agent';\n\nasync function run() {\n  const agent = new Agent();\n  await agent.goto('https://example.org/');\n  await agent.waitForPaintingStable();\n\n  const html = await agent.document.documentElement.outerHTML;\n  const title = await agent.document.title;\n  const intro = await agent.document.querySelector('p').textContent;\n  await agent.close();\n}\n\nrun().catch(error => console.log(error));\n</code></pre>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import Hero from '@ulixee/hero-playground';\n\nasync function run() {\n  const hero = new Hero();\n  await hero.goto('https://example.org/');\n  await hero.waitForPaintingStable();\n\n  const html = await hero.document.documentElement.outerHTML;\n  const title = await hero.document.title;\n  const intro = await hero.querySelector('p').textContent;\n  await hero.close();\n}\n\nrun().catch(error => console.log(error));\n</code></pre>\n<h2 id=\"no-more-default-agent\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#no-more-default-agent\">#</a>No more Default Agent</h2>\n<p>If you were using the default \"Agent\" from <code>const agent = require('secret-agent')</code>, you'll need to move to a mode of constructing a Hero object for each session.</p>\n<h2 id=\"client-library\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#client-library\">#</a>Client Library</h2>\n<h2 id=\"server-setup\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#server-setup\">#</a>Server Setup</h2>\n<p>If you use a Client/Server Setup, you'll find that we moved the <code>Server</code> module out of SecretAgent, and into <a href=\"https://ulixee.org/docs/cloud\">@ulixee/cloud</a>. You get the same functionality out of the box - a Server you can install on a machine and your DOM, interactions and other commands all serialize seamlessly.</p>\n<p>To avoid installing the whole Chrome infrastructure on your client side, you can use the light client - <code>npm i @ulixee/hero</code>. It's the equivalent of <code>@secret-agent/client</code>.</p>\n<h2 id=\"handlers\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#handlers\">#</a>Handlers</h2>\n<p>Hero doesn't have a Handler or Server directly in the project. <a href=\"https://ulixee.org/docs/cloud\">@ulixee/cloud</a> is the new approach for setting up a remote server, and we've decided to go a new direction for our preferred deployment strategy. The new strategy is called [Datastores][datastore], and greatly improves efficiency and has a much simpler remote deployment (well, it will soon :).</p>\n<p>Datastores focus on creating a remotely callable \"function\" that wraps a Hero script in a composable \"unit\". You can vary inputs and collect outputs, or retry a script from a new IP address without having to think much about how to do that yourself.</p>\n<p>If you want to keep a model where you are using \"driving\" a script by queuing up a local \"Client\" that executes remotely (ie, like a SecretAgent Handler). To achieve client-size load-balancing, we recommend migrating to a tool like <a href=\"https://github.com/sindresorhus/p-queue\"><code>p-queue</code></a>. We've included an example in the Hero repo (<a href=\"https://github.com/ulixee/hero/blob/27e1966c636f47519ed5d1ccc22273c1215855c1/examples/ulixee.org.ts\">here</a>).</p>\n<h2 id=\"browseremulators-and-humanemulators\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#browseremulators-and-humanemulators\">#</a>BrowserEmulators and HumanEmulators</h2>\n<p>If you created a custom BrowserEmulator or HumanEmulator, those \"concepts\" have been merged into a single type of Plugin called an <a href=\"https://github.com/ulixee/unblocked/tree/main/specification\">Unblocked Plugin</a>. You can see our plugins ported to the new format <a href=\"https://github.com/ulixee/unblocked/tree/main/plugins\">here</a>. We're planning to break up the BrowserEmulator into a series of smaller plugins with the end vision of making it far simpler to add workarounds as you find the need to add bot-blocker evasions.</p>\n<h2 id=\"puppet\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#puppet\">#</a>Puppet</h2>\n<p>To that end, the library that was formally passed into \"Plugins\" and \"Human/Browser\" Emulators has been merged with some parts of SecretAgent Core to form the <a href=\"https://github.com/ulixee/unblocked/tree/main/agent\">Unblocked Agent</a>. The Unblocked Agent is now under it's own development lifecycle and has been put into a much tighter loop with DoubleAgent (aka, detection) development. We envision Hero as the home of scraper productivity tooling, and Unblocked as the home of the bot cat and mouse game.</p>\n<h2 id=\"plugins\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#plugins\">#</a>Plugins</h2>\n<p>If you wrote a Core Plugin, you'll notice that the API callbacks have changed slightly. Callbacks and variables no longer have \"puppet\" in the name, since they're now part of <a href=\"https://github.com/ulixee/unblocked/tree/main/agent\">Unblocked Agent</a>.</p>\n<h2 id=\"replay\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#replay\">#</a>Replay</h2>\n<p>If you were using Replay with SecretAgent (sorry Windows users...), it's now part of the new Ulixee Desktop tooling. You can download the <a href=\"https://github.com/ulixee/platform/releases/latest.md\">Ulixee.app</a> install.</p>",
+  "title": "Migrating from SecretAgent",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "No more Default Agent",
+      "anchor": "#no-more-default-agent"
+    },
+    {
+      "depth": 2,
+      "value": "Client Library",
+      "anchor": "#client-library"
+    },
+    {
+      "depth": 2,
+      "value": "Server Setup",
+      "anchor": "#server-setup"
+    },
+    {
+      "depth": 2,
+      "value": "Handlers",
+      "anchor": "#handlers"
+    },
+    {
+      "depth": 2,
+      "value": "BrowserEmulators and HumanEmulators",
+      "anchor": "#browseremulators-and-humanemulators"
+    },
+    {
+      "depth": 2,
+      "value": "Puppet",
+      "anchor": "#puppet"
+    },
+    {
+      "depth": 2,
+      "value": "Plugins",
+      "anchor": "#plugins"
+    },
+    {
+      "depth": 2,
+      "value": "Replay",
+      "anchor": "#replay"
+    }
+  ]
+}

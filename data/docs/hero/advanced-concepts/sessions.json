@@ -1,0 +1,16 @@
+{
+  "content": "<h1 id=\"sessions\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#sessions\">#</a>Sessions</h1>\n<blockquote>\n<p>A Session tracks and coordinates a single \"scraping\" session. It manages the fingerprints, browser settings, and plugins that <a href=\"/docs/hero/basic-client/hero\">Hero</a> uses.</p>\n</blockquote>\n<p>Hero's session logic is managed in the <a href=\"/docs/hero/advanced-concepts/client-vs-core\">Core</a>, with only a minimal amount of session data exposed in the Client. All session data is stored in a Sqlite database using a module called SessionState. This database tracks all the information needed for many of Hero's advanced features, such as <a href=\"/docs/hero/advanced-concepts/time-travel\">TimeTravel</a>.</p>\n<h3 id=\"default-database-location\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#default-database-location\">#</a>Default Database Location</h3>\n<p>By default, session databases are located in <code>os.tmpdir()\\.ulixee</code>. Tmpdir refers to the NodeJs function in the <a href=\"https://nodejs.org/api/os.html#os_os_tmpdir\">OS module</a>.</p>\n<p>You can control the location sessions are stored using the <a href=\"/docs/hero/overview/configuration#data-dir\"><code>dataDir</code></a> configuration when starting a Core.</p>\n<p>To output your tmpdir, you can run:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">node -e \"console.log(require('os').tmpdir())\"\n</code></pre>\n<h3 id=\"managing-sessions\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#managing-sessions\">#</a>Managing Sessions</h3>\n<p>Session databases can grow rather large, since they store all DOM changes, Devtools messages and Http resources for all loaded tabs and frames in a \"scraping session\".</p>\n<p>You should clean up any unwanted or unneeded session databases manually. You can safely discard any databases you do not want to inspect at any future point, or you can archive them to another location. Either approach will not impact future scripts. An archived or relocated Session database can still be replayed at a later date.</p>\n<p>You can subscribe to closed Session databases for automated cleanup (this will run wherever your Core is running).</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import { Session } from '@ulixee/hero-core';\nimport * as Fs from 'fs'\n\nSession.events.on('closed', ({ id, databasePath }) => {\n  // NOTE: determine if database should be kept (track session ids vs errors on your own)\n  if (!didHaveErrors(id)) {\n    Fs.unlink(databasePath);\n  }\n});\n</code></pre>",
+  "title": "Sessions",
+  "subtitles": [
+    {
+      "depth": 3,
+      "value": "Default Database Location",
+      "anchor": "#default-database-location"
+    },
+    {
+      "depth": 3,
+      "value": "Managing Sessions",
+      "anchor": "#managing-sessions"
+    }
+  ]
+}

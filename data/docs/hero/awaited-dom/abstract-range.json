@@ -1,0 +1,36 @@
+{
+  "content": "<h1 id=\"awaiteddom--abstractrange\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--abstractrange\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> AbstractRange</h1>\n<div class='overview'><span class=\"seoSummary\">The <strong><code>AbstractRange</code></strong>&nbsp;abstract interface is the base class upon which all DOM range types are defined. A&nbsp;<strong>range</strong>&nbsp;is an object that indicates the start and end points of a section of content&nbsp;within the document.</span></div>\n<div class='overview'>As an abstract interface, you will not directly instantiate an object of type&nbsp;<code>AbstractRange</code>. Instead, you will use the <code>Range</code> or <code>StaticRange</code> interfaces. To understand the difference between those two interfaces, and how to choose which is appropriate for your needs.</div>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"collapsed\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#collapsed\">#</a>.collapsed <div class=\"specs\"><i>W3C</i></div></h3>\n<p>A Boolean value which is <code>true</code> if the range is <strong>collapsed</strong>. A collapsed range is one whose start position and end position are the same, resulting in a zero-character-long range.</p>\n<h4 id=\"type-promiseboolean\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promiseboolean\">#</a><strong>Type</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"endContainer\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#endContainer\">#</a>.endContainer <div class=\"specs\"><i>W3C</i></div></h3>\n<p>The DOM <code>Node</code> in which the end of the range, as specified by the <code>endOffset</code> property, is located.</p>\n<h4 id=\"type-supernode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-supernode\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/super-node\"><code>SuperNode</code></a></h4>\n<h3 id=\"endOffset\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#endOffset\">#</a>.endOffset <div class=\"specs\"><i>W3C</i></div></h3>\n<p>An integer value indicating the offset, in characters, from the beginning of the node's contents to the beginning of the range represented by the range object. This value must be less than the length of the <code>endContainer</code> node.</p>\n<h4 id=\"type-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"startContainer\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#startContainer\">#</a>.startContainer <div class=\"specs\"><i>W3C</i></div></h3>\n<p>The DOM <code>Node</code> in which the beginning of the range, as specified by the <code>startOffset</code> property, is located.</p>\n<h4 id=\"type-supernode-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-supernode-1\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/super-node\"><code>SuperNode</code></a></h4>\n<h3 id=\"startOffset\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#startOffset\">#</a>.startOffset <div class=\"specs\"><i>W3C</i></div></h3>\n<p>An integer value indicating the offset, in characters, from the beginning of the node's contents to the last character of the contents referred to  by the range object. This value must be less than the length of the node indicated in <code>startContainer</code>.</p>\n<h4 id=\"type-promisenumber-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber-1\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>",
+  "title": " <span>/</span> AbstractRange",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": ".collapsed <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#collapsed"
+    },
+    {
+      "depth": 3,
+      "value": ".endContainer <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#endContainer"
+    },
+    {
+      "depth": 3,
+      "value": ".endOffset <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#endOffset"
+    },
+    {
+      "depth": 3,
+      "value": ".startContainer <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#startContainer"
+    },
+    {
+      "depth": 3,
+      "value": ".startOffset <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#startOffset"
+    }
+  ]
+}

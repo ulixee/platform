@@ -1,0 +1,45 @@
+[
+  {
+    "title": "Overview",
+    "items": [
+      "Introduction",
+      "Configuration",
+      "Concepts",
+      "Deployment"
+    ]
+  },
+  {
+    "title": "Basics",
+    "items": [
+      "Datastore",
+      "Table",
+      "Extractor",
+      "Crawler",
+      "Passthrough Extractor",
+      "Cloning",
+      "Extractor Context",
+      "Input",
+      "Output"
+    ]
+  },
+  {
+    "title": "Advanced",
+    "items": [
+      "Extractor Schemas",
+      "Schema",
+      "Credits",
+      "Plugins",
+      "Storage Engines",
+      "Hero Plugin",
+      "Puppeteer Plugin"
+    ]
+  },
+  {
+    "title": "Help",
+    "items": [
+      "Prerequisites",
+      "How to upgrade",
+      "Troubleshooting"
+    ]
+  }
+]

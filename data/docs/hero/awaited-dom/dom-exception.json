@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--domexception\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--domexception\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> DOMException</h1>\n<div class='overview'><span class=\"seoSummary\">The <code><strong>DOMException</strong></code> interface represents an abnormal event (called an <strong>exception</strong>) which occurs as a result of calling a method or accessing a property of a web API.</span> This is basically how error conditions are described in web APIs.</div>\n<div class='overview'>Each exception has a <strong>name</strong>, which is a short \"CamelCase\" style string identifying the error or abnormal condition.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>code</code></td>\n<td><code>message</code></td>\n</tr>\n<tr>\n<td><code>name</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> DOMException",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

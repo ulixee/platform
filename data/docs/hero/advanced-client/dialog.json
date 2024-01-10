@@ -1,0 +1,41 @@
+{
+  "content": "<h1 id=\"dialog\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#dialog\">#</a>Dialog</h1>\n<blockquote>\n<p>Dialogs represent javascript alert, confirm and prompt informational messages.</p>\n</blockquote>\n<p>The Dialog class is initiated from <code>window.alert</code>, <code>window.confirm</code>, and other dialog prompt calls in a webpage. Dialogs will block ALL execution of a webpage, so it is important to handle them by dismissing or taking appropriate action. To listen for dialogs, register a listener on each tab using <code>tab.on('dialog', (dialog: Dialog) => ...&#x3C;callback>)</code>.</p>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"url\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#url\">#</a>url</h3>\n<p>The url of the frame where this dialog was initiated.</p>\n<h4 id=\"returns-string\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-string\">#</a><strong>Returns</strong> <code>string</code></h4>\n<h3 id=\"message\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#message\">#</a>message</h3>\n<p>The dialog message.</p>\n<h4 id=\"returns-string-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-string-1\">#</a><strong>Returns</strong> <code>string</code></h4>\n<h3 id=\"type\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type\">#</a>type</h3>\n<p>The type of dialog. Possible values are: 'alert', 'confirm', 'prompt' and 'beforeunload'.</p>\n<h4 id=\"returns-string-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-string-2\">#</a><strong>Returns</strong> <code>string</code></h4>\n<h3 id=\"defaultprompt\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#defaultprompt\">#</a>defaultPrompt</h3>\n<p>Optional: The default dialog prompt</p>\n<h4 id=\"returns-string-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-string-3\">#</a><strong>Returns</strong> <code>string</code></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"dismissaccept-prompttext\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#dismissaccept-prompttext\">#</a>dismiss<em>(accept[, promptText])</em></h3>\n<p>Dismiss the dialog with the given values.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>accept <code>boolean</code>. Whether to hit the accept button or cancel/reject (if applicable).</li>\n<li>promptText <code>string</code>. Optional text to enter into a prompt field if present.</li>\n</ul>\n<h4 id=\"returns-promisevoid\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisevoid\">#</a><strong>Returns</strong> <code>Promise&#x3C;void></code></h4>",
+  "title": "Dialog",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": "url",
+      "anchor": "#url"
+    },
+    {
+      "depth": 3,
+      "value": "message",
+      "anchor": "#message"
+    },
+    {
+      "depth": 3,
+      "value": "type",
+      "anchor": "#type"
+    },
+    {
+      "depth": 3,
+      "value": "defaultPrompt",
+      "anchor": "#defaultprompt"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": "dismiss<em>(accept[, promptText])</em>",
+      "anchor": "#dismissaccept-prompttext"
+    }
+  ]
+}

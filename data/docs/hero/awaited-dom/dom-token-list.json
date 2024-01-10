@@ -1,0 +1,81 @@
+{
+  "content": "<h1 id=\"awaiteddom--domtokenlist\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--domtokenlist\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> DOMTokenList</h1>\n<div class='overview'><span class=\"seoSummary\">The <code><strong>DOMTokenList</strong></code> interface represents a set of space-separated tokens. Such a set is returned by <code>Element.classList</code>, <code>HTMLLinkElement.relList</code>, <code>HTMLAnchorElement.relList</code>, <code>HTMLAreaElement.relList</code>, <code>HTMLIframeElement.sandbox</code>, or <code>HTMLOutputElement.htmlFor</code>. It is indexed beginning with <code>0</code> as with JavaScript <code>Array</code> objects. <code>DOMTokenList</code> is always case-sensitive.</span></div>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"length\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#length\">#</a>.length <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Is an <code>integer</code> representing the number of objects stored in the object.</p>\n<h4 id=\"type-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"value\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#value\">#</a>.value <div class=\"specs\"><i>W3C</i></div></h3>\n<p>A stringifier property that returns the value of the list as a <code>string</code>.</p>\n<h4 id=\"type-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"add\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#add\">#</a>.add <em>(...tokens)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Adds the specified <code><var>token</var></code>(s) to the list.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>tokens <code>string</code>. A <code>string</code> representing the token (or tokens) to add to the <code><var>tokenList</var></code>.</li>\n</ul>\n<h4 id=\"returns-promisevoid\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisevoid\">#</a><strong>Returns</strong>: <code>Promise&#x3C;void></code></h4>\n<h3 id=\"contains\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#contains\">#</a>.contains <em>(token)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns <code>true</code> if the list contains the given <code><var>token</var></code>, otherwise <code>false</code>.</p>\n<h4 id=\"arguments-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-1\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>token <code>string</code>. A <code>string</code> representing the token you want to check for the existance of in the list.</li>\n</ul>\n<h4 id=\"returns-promiseboolean\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"entries\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#entries\">#</a>.entries <em>()</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns an <code>iterator</code>, allowing you to go through all key/value pairs contained in this object.</p>\n<h4 id=\"returns-promise\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise\">#</a><strong>Returns</strong>: <code>Promise&#x3C;></code></h4>\n<h3 id=\"forEach\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#forEach\">#</a>.forEach <em>()</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Executes a provided <code><var>callback</var></code> function once per <code>DOMTokenList</code> element.</p>\n<h4 id=\"returns-promise-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise-1\">#</a><strong>Returns</strong>: <code>Promise&#x3C;></code></h4>\n<h3 id=\"item\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#item\">#</a>.item <em>(index)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the item in the list by its <code><var>index</var></code>, or <code>undefined</code> if <code><var>index</var></code> is greater than or equal to the list's <code>length</code>.</p>\n<h4 id=\"arguments-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-2\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>index <code>number</code>. A <code>string</code> representing the index of the item you want to return.</li>\n</ul>\n<h4 id=\"returns-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisestring\">#</a><strong>Returns</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"keys\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#keys\">#</a>.keys <em>()</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns an <code>iterator</code>, allowing you to go through all keys of the key/value pairs contained in this object.</p>\n<h4 id=\"returns-promise-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise-2\">#</a><strong>Returns</strong>: <code>Promise&#x3C;></code></h4>\n<h3 id=\"remove\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#remove\">#</a>.remove <em>(...tokens)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Removes the specified <code><var>token</var></code>(s) from the list.</p>\n<h4 id=\"arguments-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-3\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>tokens <code>string</code>. A <code>string</code> representing the token you want to remove from the list. If the string is not in the list, no error is thrown, and nothing happens.</li>\n</ul>\n<h4 id=\"returns-promisevoid-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisevoid-1\">#</a><strong>Returns</strong>: <code>Promise&#x3C;void></code></h4>\n<h3 id=\"replace\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#replace\">#</a>.replace <em>(token, newToken)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Replaces <code><var>token</var></code> with <code><var>newToken</var></code>.</p>\n<h4 id=\"arguments-4\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-4\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>token <code>string</code>. A <code>string</code> representing the token you want to replace.</li>\n<li>newToken <code>string</code>. A <code>string</code> representing the token you want to replace <code><var>oldToken</var></code> with.</li>\n</ul>\n<h4 id=\"returns-promiseboolean-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean-1\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"supports\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#supports\">#</a>.supports <em>(token)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns <code>true</code> if a given <code><var>token</var></code> is in the associated attribute's supported tokens.</p>\n<h4 id=\"arguments-5\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-5\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>token <code>string</code>. A <code>string</code> containing the token to query for.</li>\n</ul>\n<h4 id=\"returns-promiseboolean-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean-2\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"toggle\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#toggle\">#</a>.toggle <em>(token, force?)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Removes <code><var>token</var></code> from the list if it exists, or adds <code><var>token</var></code> to the list if it doesn't. Returns a boolean indicating whether <code><var>token</var></code> is in the list after the operation.</p>\n<h4 id=\"arguments-6\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-6\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>token <code>string</code>. A <code>string</code> representing the token you want to toggle.</li>\n<li>force <code>boolean</code>. A <code>boolean</code> that, if included, turns the toggle into a one way-only operation. If set to <code>false</code>, then <code><var>token</var></code> will <em>only</em> be removed, but not added. If set to <code>true</code>, then <code><var>token</var></code> will <em>only</em> be added, but not removed.</li>\n</ul>\n<h4 id=\"returns-promiseboolean-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean-3\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h3 id=\"values\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#values\">#</a>.values <em>()</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns an <code>iterator</code>, allowing you to go through all values of the key/value pairs contained in this object.</p>\n<h4 id=\"returns-promise-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise-3\">#</a><strong>Returns</strong>: <code>Promise&#x3C;></code></h4>",
+  "title": " <span>/</span> DOMTokenList",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": ".length <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#length"
+    },
+    {
+      "depth": 3,
+      "value": ".value <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#value"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": ".add <em>(...tokens)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#add"
+    },
+    {
+      "depth": 3,
+      "value": ".contains <em>(token)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#contains"
+    },
+    {
+      "depth": 3,
+      "value": ".entries <em>()</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#entries"
+    },
+    {
+      "depth": 3,
+      "value": ".forEach <em>()</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#forEach"
+    },
+    {
+      "depth": 3,
+      "value": ".item <em>(index)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#item"
+    },
+    {
+      "depth": 3,
+      "value": ".keys <em>()</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#keys"
+    },
+    {
+      "depth": 3,
+      "value": ".remove <em>(...tokens)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#remove"
+    },
+    {
+      "depth": 3,
+      "value": ".replace <em>(token, newToken)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#replace"
+    },
+    {
+      "depth": 3,
+      "value": ".supports <em>(token)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#supports"
+    },
+    {
+      "depth": 3,
+      "value": ".toggle <em>(token, force?)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#toggle"
+    },
+    {
+      "depth": 3,
+      "value": ".values <em>()</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#values"
+    }
+  ]
+}

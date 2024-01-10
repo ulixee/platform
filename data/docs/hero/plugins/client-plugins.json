@@ -1,0 +1,61 @@
+{
+  "content": "<h1 id=\"client-plugins\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#client-plugins\">#</a>Client Plugins</h1>\n<blockquote>\n<p>Client plugins extend Hero's frontend functionality at the Client interface level. YOu can use them to add extra properties and methods to the hero and/or tab instances.</p>\n</blockquote>\n<h2 id=\"creating-your-own-client-plugin\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#creating-your-own-client-plugin\">#</a>Creating Your Own Client Plugin</h2>\n<p>Adding a new plugin is as simple as creating a javascript class with the correct properties and methods, then registering it with <code>hero.use()</code>.</p>\n<p>We recommend using the ClientPlugin base class in @ulixee/hero-plugin-utils, which handles setting most of the required properties and methods, everything except the static <code>id</code> property. Here's a simple plugin that adds a single hello() method to hero:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-javascript\">import { ClientPlugin } from '@ulixee/hero-plugin-utils';\n\nexport default class ClientHelloPlugin extends ClientPlugin {\n  static readonly id = 'client-hello-plugin';\n  // static type handled by ClientPlugin base\n\n  onHero(hero) {\n    hero.hello = (name) => console.log(`Hello ${name}`));\n  } \n}\n</code></pre>\n<p>To register this ClientHelloPlugin in Hero, just pass it to <code>hero.use()</code>:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-javascript\">import hero from '@ulixee/hero';\nimport ClientHelloPlugin from './ClientHelloPlugin';\n\nhero.use(ClientHelloPlugin);\n</code></pre>\n<p>Your hero instance now supports the hello() method:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-javascript\">hero.hello('World');\n</code></pre>\n<p>The rest of this page documents the various functionalities you can add to your class.</p>\n<h2 id=\"constructor\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#constructor\">#</a>Constructor</h2>\n<h3 id=\"new-clientplugin\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#new-clientplugin\">#</a>new ClientPlugin<em>()</em></h3>\n<p>A new instance of ClientPlugin is created for every hero instance. Use a constructor if you want to hook into the plugin's initialization. The constructor receives no arguments.</p>\n<h2 id=\"class-properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#class-properties\">#</a>Class Properties</h2>\n<h3 id=\"clientpluginid-required\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#clientpluginid-required\">#</a>ClientPlugin.id <em>required</em></h3>\n<p>This must be unique across all your Hero client plugins. We recommend using your plugin's npm package name.</p>\n<h4 id=\"type-string\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-string\">#</a><strong>Type</strong>: <code>string</code></h4>\n<pre class=\"ulixeeTheme\"><code class=\"language-javascript\">import pkg from './package.json';\n\nexport default ClientHelloPlugin extends ClientPlugin {\n  static readonly id = pkg.name;\n  // static type handled by ClientPlugin base\n}\n</code></pre>\n<h3 id=\"clientplugintype-required\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#clientplugintype-required\">#</a>ClientPlugin.type <em>required</em></h3>\n<p>This must always be set to <code>'ClientPlugin'</code>. It's how Hero differentiates between different plugin types. If your class extended the ClientPlugin base in @ulixee/utils then this is already set.</p>\n<h4 id=\"type-string-this-must-always-be-set-to-clientplugin\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-string-this-must-always-be-set-to-clientplugin\">#</a><strong>Type</strong>: <code>string</code> This must always be set to <code>'ClientPlugin'</code>.</h4>\n<h3 id=\"clientplugincoredependencyids-optional\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#clientplugincoredependencyids-optional\">#</a>ClientPlugin.coreDependencyIds <em>optional</em></h3>\n<p>Use this property to specify a list of core pluginIds that your ClientPlugin needs to operate. You should keep this list to the absolute minimum required.</p>\n<h4 id=\"type-string-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-string-1\">#</a><strong>Type</strong>: <code>string[]</code></h4>\n<h2 id=\"instance-method-hooks\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#instance-method-hooks\">#</a>Instance Method Hooks</h2>\n<p>The following methods are all optional. Use them when you want to hook into a specific Hero flow:</p>\n<h3 id=\"onherohero-sendtocore-optional\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#onherohero-sendtocore-optional\">#</a>onHero<em>(hero, sendToCore)</em> <em>optional</em></h3>\n<p>This method is called every time a new Hero is initialized.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>hero <code>Hero</code></li>\n<li>sendToCore: <code>(toPluginId: string, ...args: any[]) => Promise&#x3C;any></code></li>\n</ul>\n<h4 id=\"returns-void\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-void\">#</a><strong>Returns</strong> <code>void</code></h4>\n<h3 id=\"ontabhero-tab-sendtocore-optional\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#ontabhero-tab-sendtocore-optional\">#</a>onTab<em>(hero, tab, sendToCore)</em> <em>optional</em></h3>\n<p>This method is called every time a new Tab is initialized.</p>\n<h4 id=\"arguments-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-1\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>hero <code>Hero</code></li>\n<li>tab <code>Tab</code></li>\n<li>sendToCore: <code>(toPluginId: string, ...args: any[]) => Promise&#x3C;any></code></li>\n</ul>\n<h4 id=\"returns-void-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-void-1\">#</a><strong>Returns</strong> <code>void</code></h4>\n<h3 id=\"onframeenvironmenthero-frameenvironment-sendtocore-optional\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#onframeenvironmenthero-frameenvironment-sendtocore-optional\">#</a>onFrameEnvironment<em>(hero, frameEnvironment, sendToCore)</em> <em>optional</em></h3>\n<p>This method is called every time a new FrameEnvironment is initialized.</p>\n<h4 id=\"arguments-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-2\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>hero <code>Hero</code></li>\n<li>tab <code>FrameEnvironment</code></li>\n<li>sendToCore: <code>(toPluginId: string, ...args: any[]) => Promise&#x3C;any></code></li>\n</ul>\n<h4 id=\"returns-void-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-void-2\">#</a><strong>Returns</strong> <code>void</code></h4>",
+  "title": "Client Plugins",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Creating Your Own Client Plugin",
+      "anchor": "#creating-your-own-client-plugin"
+    },
+    {
+      "depth": 2,
+      "value": "Constructor",
+      "anchor": "#constructor"
+    },
+    {
+      "depth": 3,
+      "value": "new ClientPlugin<em>()</em>",
+      "anchor": "#new-clientplugin"
+    },
+    {
+      "depth": 2,
+      "value": "Class Properties",
+      "anchor": "#class-properties"
+    },
+    {
+      "depth": 3,
+      "value": "ClientPlugin.id <em>required</em>",
+      "anchor": "#clientpluginid-required"
+    },
+    {
+      "depth": 3,
+      "value": "ClientPlugin.type <em>required</em>",
+      "anchor": "#clientplugintype-required"
+    },
+    {
+      "depth": 3,
+      "value": "ClientPlugin.coreDependencyIds <em>optional</em>",
+      "anchor": "#clientplugincoredependencyids-optional"
+    },
+    {
+      "depth": 2,
+      "value": "Instance Method Hooks",
+      "anchor": "#instance-method-hooks"
+    },
+    {
+      "depth": 3,
+      "value": "onHero<em>(hero, sendToCore)</em> <em>optional</em>",
+      "anchor": "#onherohero-sendtocore-optional"
+    },
+    {
+      "depth": 3,
+      "value": "onTab<em>(hero, tab, sendToCore)</em> <em>optional</em>",
+      "anchor": "#ontabhero-tab-sendtocore-optional"
+    },
+    {
+      "depth": 3,
+      "value": "onFrameEnvironment<em>(hero, frameEnvironment, sendToCore)</em> <em>optional</em>",
+      "anchor": "#onframeenvironmenthero-frameenvironment-sendtocore-optional"
+    }
+  ]
+}

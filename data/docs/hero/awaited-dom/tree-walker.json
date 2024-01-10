@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--treewalker\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--treewalker\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> TreeWalker</h1>\n<div class='overview'>The <strong><code>TreeWalker</code></strong> object represents the nodes of a document subtree and a position within them.</div>\n<div class='overview'>A <code>TreeWalker</code> can be created using the <code>Document.createTreeWalker()</code> method.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>currentNode</code></td>\n<td><code>filter</code></td>\n</tr>\n<tr>\n<td><code>root</code></td>\n<td><code>whatToShow</code></td>\n</tr>\n</tbody>\n</table>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>firstChild()</code></td>\n<td><code>lastChild()</code></td>\n</tr>\n<tr>\n<td><code>nextNode()</code></td>\n<td><code>nextSibling()</code></td>\n</tr>\n<tr>\n<td><code>parentNode()</code></td>\n<td><code>previousNode()</code></td>\n</tr>\n<tr>\n<td><code>previousSibling()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> TreeWalker",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

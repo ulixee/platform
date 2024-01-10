@@ -1,0 +1,16 @@
+{
+  "content": "<h1 id=\"hosted-services\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hosted-services\">#</a>Hosted Services</h1>\n<blockquote>\n<p>Hosted Services centralize the storage of Datastores, Statistics and Hero Replays for a cluster of DatastoreCores.</p>\n</blockquote>\n<h2 id=\"statsregistry\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#statsregistry\">#</a>StatsRegistry</h2>\n<p>This service centralizes the logging and tracking of statistics for Datastore Queries and individual Entities (crawlers, extractors and tables).</p>\n<h2 id=\"datastoreregistry\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#datastoreregistry\">#</a>DatastoreRegistry</h2>\n<p>This service centralizes the storage of Datastores so they can be used across a cluster of servers. A single server will serve as the cluster repository, and the other nodes will cache Datastores, but use this as the end location.</p>",
+  "title": "Hosted Services",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "StatsRegistry",
+      "anchor": "#statsregistry"
+    },
+    {
+      "depth": 2,
+      "value": "DatastoreRegistry",
+      "anchor": "#datastoreregistry"
+    }
+  ]
+}

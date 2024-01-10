@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--superdocument\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--superdocument\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> SuperDocument</h1>\n<div class='overview'><span class=\"seoSummary\">The <strong><code>Document</code></strong> interface represents any web page loaded in the browser and serves as an entry point into the web page's content, which is the DOM tree.</span> The DOM tree includes elements such as <code>&lt;body&gt;</code> and <code>&lt;table&gt;</code>, among many others. It provides functionality globally to the document, like how to obtain the page's URL and create new elements in the document.</div>\n<h2 id=\"dependencies\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#dependencies\">#</a>Dependencies</h2>\n<p>SuperDocument implements all the properties and methods of the following classes:</p>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><a href=\"/docs/hero/awaited-dom/document\">Document</a></td>\n<td><a href=\"/docs/hero/awaited-dom/event-target\">EventTarget</a></td>\n</tr>\n<tr>\n<td><a href=\"/docs/hero/awaited-dom/html-document\">HTMLDocument</a></td>\n<td><a href=\"/docs/hero/awaited-dom/node\">Node</a></td>\n</tr>\n<tr>\n<td><a href=\"/docs/hero/awaited-dom/xml-document\">XMLDocument</a></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> SuperDocument",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Dependencies",
+      "anchor": "#dependencies"
+    }
+  ]
+}

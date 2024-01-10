@@ -1,0 +1,41 @@
+{
+  "content": "<h1 id=\"awaiteddom--offscreencanvas\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--offscreencanvas\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> OffscreenCanvas</h1>\n<div class='overview'><strong>This is an experimental technology</strong><br>Check the <a href=\"#Browser_compatibility\">Browser compatibility table</a> carefully before using this in production.</div>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"height\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#height\">#</a>.height <div class=\"specs\"><i>W3C</i></div></h3>\n<p>The height of the offscreen canvas.</p>\n<h4 id=\"type-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"width\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#width\">#</a>.width <div class=\"specs\"><i>W3C</i></div></h3>\n<p>The width of the offscreen canvas.</p>\n<h4 id=\"type-promisenumber-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber-1\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"convertToBlob\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#convertToBlob\">#</a>.convertToBlob <em>(options?)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Creates a <code>Blob</code> object representing the image contained in the canvas.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>options <code>ImageEncodeOptions</code>. <p>You can specify several options when converting your <code>OffscreenCanvas</code> object into a <code>Blob</code> object, for example:</p>\n  <pre class=\"notranslate\">const blob = offscreenCanvas.convertToBlob({\n   type: \"image/jpeg\",\n   quality: 0.95\n });</pre>\n  <p>options:</p>\n  <ul>\n   <li>**<code>type</code>**: A `string` indicating the image format. The default type is&nbsp;<code>image/png</code>.</li>\n   <li><code>**quality**</code>: A `number`&nbsp;between&nbsp;<code>0</code>&nbsp;and&nbsp;<code>1</code>&nbsp;indicating image quality if the&nbsp;<code>type</code>&nbsp;option is&nbsp;<code>image/jpeg</code>&nbsp;or&nbsp;<code>image/webp</code>. If this argument is anything else, the default value for image quality is used. Other arguments are ignored.</li>\n  </ul>\n</li>\n</ul>\n<h4 id=\"returns-promiseblob\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseblob\">#</a><strong>Returns</strong>: <code>Promise&#x3C;Blob></code></h4>\n<h3 id=\"transferToImageBitmap\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#transferToImageBitmap\">#</a>.transferToImageBitmap <em>()</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Creates an <code>ImageBitmap</code> object from the most recently rendered image of the <code>OffscreenCanvas</code>.</p>\n<h4 id=\"returns-imagebitmap\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-imagebitmap\">#</a><strong>Returns</strong>: <a href=\"/docs/hero/awaited-dom/image-bitmap\"><code>ImageBitmap</code></a></h4>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"methods-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods-1\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>getContext()</code></td>\n<td><code>addEventListener()</code></td>\n</tr>\n<tr>\n<td><code>dispatchEvent()</code></td>\n<td><code>removeEventListener()</code></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> OffscreenCanvas",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": ".height <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#height"
+    },
+    {
+      "depth": 3,
+      "value": ".width <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#width"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": ".convertToBlob <em>(options?)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#convertToBlob"
+    },
+    {
+      "depth": 3,
+      "value": ".transferToImageBitmap <em>()</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#transferToImageBitmap"
+    },
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

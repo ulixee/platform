@@ -1,0 +1,21 @@
+{
+  "content": "<h1 id=\"passthrough-table\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#passthrough-table\">#</a>Passthrough Table</h1>\n<p>A PassthroughTable allows you to extend other Datastore Tables published across the web. Passthrough Tables cannot manipulate the underlying schema. They're a simple construct to preserve functionality available in the <code>upstream</code> Datastore.</p>\n<h3 id=\"an-example\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#an-example\">#</a>An Example</h3>\n<p>The following is a simple example:</p>\n<h5 id=\"table-1-published-to-a-cloudnode-at-15323222558080\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#table-1-published-to-a-cloudnode-at-15323222558080\">#</a>Table 1 Published to a CloudNode at <code>153.23.22.255:8080</code>:</h5>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import Datastore, { Schema, Table } from '@ulixee/datastore';\nconst { string } = Schema;\n\nexport default new Datastore({\n  id: `people`,\n  version: '1.0.0',\n  tables: {\n    users: new Table({\n      schema: {\n        firstName: string(),\n        lastName: string(),\n      },\n      seedlings: [\n        {\n          firstName: 'John',\n          lastName: 'Doe',\n        },\n      ],\n    }),\n  },\n});\n</code></pre>\n<h5 id=\"table-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#table-2\">#</a>Table 2:</h5>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import Datastore, { PassthroughTable } from '@ulixee/datastore';\n\nconst datastore = new Datastore({\n  // NOTE: this is not a real hosted Datastore\n  remoteDatastores: {\n    source: `ulx://153.23.22.255:8080/people@v1.0.0`,\n  },\n  tables: {\n    table2: new PassthroughTable({\n      remoteTable: `source.users`,\n    }),\n  },\n});\n\n// will print records from `users` table `[{ firstName: 'John', lastName: 'Doe' }]`\ndatastore.tables.table2.queryInternal(`select * from self`).then(console.log);\n</code></pre>\n<h2 id=\"constructor\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#constructor\">#</a>Constructor</h2>\n<h3 id=\"constructor\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#constructor\">#</a>new PassthroughTable <em>(components)</em></h3>\n<p>Creates a new PassthroughTable instance.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<p>Components contains all of the parameters from a <a href=\"/docs/datastore/basics/table#constructor\">Table</a> constructor, with one addition:</p>\n<ul>\n<li>remoteTable <code>string</code>. Required remoteTable name to source. This string must start with the name of the <code>remoteDatastores</code> key as defined in <a href=\"/docs/datastore/basics/datastore#remote-datastores\">Datastore.remoteDatastores</a>.</li>\n</ul>",
+  "title": "Passthrough Table",
+  "subtitles": [
+    {
+      "depth": 3,
+      "value": "An Example",
+      "anchor": "#an-example"
+    },
+    {
+      "depth": 2,
+      "value": "Constructor",
+      "anchor": "#constructor"
+    },
+    {
+      "depth": 3,
+      "value": "new PassthroughTable <em>(components)</em>",
+      "anchor": "#constructor"
+    }
+  ]
+}

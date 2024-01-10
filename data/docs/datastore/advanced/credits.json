@@ -1,0 +1,41 @@
+{
+  "content": "<h1 id=\"credits\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#credits\">#</a>Credits</h1>\n<blockquote>\n<p>Credits allow you to grant free trial credits to your users on a metered access level. They can be seamlessly replaced with real payments when they're exhausted.</p>\n</blockquote>\n<p>Datastores automatically build-in a table (<code>ulx_credits</code>) to grant metered access Credits to your users.</p>\n<h3 id=\"embedding\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#embedding\">#</a>Embedding</h3>\n<p>When you clone a Datastore, you can embed Credits you've been issued by an upstream Datastore. This enables you to issue Credits to your own users.</p>\n<p>To embed credits, you can configure the <a href=\"/docs/datastore/basics/datastore#constructor\">remoteDatastoreEmbeddedCredits</a> parameter on your Datastore.</p>\n<h2 id=\"denominations\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#denominations\">#</a>Denominations</h2>\n<p>Ulixee Payments (in this case, Credits) come in the following denominations:</p>\n<ul>\n<li><em>Argon</em>: ~1 USD adjusted for inflation.</li>\n<li><em>Centagon</em>: ~1 hundredth of a USD adjusted for inflation. Usually the denomination used when creating a Credit.</li>\n<li><em>Microgon</em>: ~1 millionth of a USD adjusted for inflation. This is the denomination used by a query (eg, <a href=\"/docs/datastore/basics/extractor\">Extractor.pricePerQuery</a>.</li>\n</ul>\n<h3 id=\"payment-flows-and-internal-structure\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#payment-flows-and-internal-structure\">#</a>Payment Flows and Internal Structure</h3>\n<p>Table <code>ulx_credits</code></p>\n<ul>\n<li>id <code>string</code>. An id starting with <code>cred</code> and 8 digits.</li>\n<li>salt <code>string</code>. A unique salt value used to add entropy to the <code>secretHash</code></li>\n<li>secretHash <code>string</code>. A sha3 hash of the <code>id</code>, <code>salt</code> and <code>secret</code>.</li>\n<li>issuedCredits <code>number</code>. Initial credits granted (in <a href=\"#denominations\">Microgon</a> denomination).</li>\n<li>remainingCredits <code>number</code>. The credits remaining without accounting for credits on hold (in <a href=\"#denominations\">Microgon</a> denomination).</li>\n<li>holdCredits <code>number</code>. Credits placed on hold during Query/Stream processing (in <a href=\"#denominations\">Microgon</a> denomination).</li>\n</ul>\n<p>The <code>ulx_credits</code> table tracks every credit id to the balance of credits \"on hold\" and \"remaining\". During processing, <code>holdCredits</code> will reserve the minimum number of Microgons needed to fulfill the query. After completion of the query, the <code>holdCredits</code> field will be updated with the held amount removed, and the remainingCredits decremented by the final total.</p>\n<h3 id=\"admin\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#admin\">#</a>Admin Identity Access</h3>\n<p>To use Credits, you need to have a valid <code>admin</code> Identity installed on either the Datastore or your <a href=\"/docs/datastore/overview/configuration\">CloudNode</a>.</p>\n<p>An identity is an Ed25519 key with a recognized encoding for the Ulixee Platform. To create a new Identity, you can run: <code>npx @ulixee/crypto identity</code>. Run with <code>-h</code> to get options on how to store the resulting PEM file.</p>\n<h2 id=\"cli\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cli\">#</a>Command Line Interface (CLI)</h2>\n<h3 id=\"create\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#create\">#</a>Create</h3>\n<p>To create a Credit, you must first <a href=\"/docs/datastore/overview/deployment\">deploy</a> your Datastore.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\"> npx @ulixee/datastore credits create &#x3C;datastore url>\n</code></pre>\n<p>... or via Ulixee CLI:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\"> ulixee datastore credits create &#x3C;datastore url>\n</code></pre>\n<p>You must provide a <code>datastore url</code> to your deployed Datastore. You must also provide a path to a valid <a href=\"#admin\">Admin Identity</a>, and an <code>amount</code>.</p>\n<p>The output value will include a <code>secret</code> that you should provide to the recipient. The <code>secret</code> is intended to make it challenging for a Credit to be used by another user. However, it should not be considered a secure password.</p>\n<h4 id=\"cli-options\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cli-options\">#</a>CLI Options</h4>\n<p>Options below show a short and long form.</p>\n<ul>\n<li><code>-m, --amount &#x3C;value></code> The value of this Credit. Amount can postfix \"c\" for centagons (eg, 50c) or \"m\" for microgons (5000000m).</li>\n<li><code>-i, --identity-path &#x3C;path></code> A path to an Admin Identity. Necessary for actions restricting access to Admins of a Datastore. (env: ULX_IDENTITY_PATH)</li>\n<li><code>-p, --identity-passphrase &#x3C;path></code> A decryption passphrase to the Ulixee Admin Identity (only necessary if specified during key creation). (env: ULX_IDENTITY_PASSPHRASE)</li>\n</ul>\n<h3 id=\"get-balance\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#get-balance\">#</a>Get Balance</h3>\n<p>To create a Credit, you must first <a href=\"/docs/datastore/overview/deployment\">deploy</a> your Datastore.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\"> npx @ulixee/datastore credits get &#x3C;datastore url> &#x3C;credit id>\n</code></pre>\n<p>... or via Ulixee CLI:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\"> ulixee datastore credits get &#x3C;datastore url> &#x3C;credit id>\n</code></pre>\n<p>You must provide a <code>datastore url</code> to your deployed Datastore and the <credit id>. This cli command can be called without authentication.</p>",
+  "title": "Credits",
+  "subtitles": [
+    {
+      "depth": 3,
+      "value": "Embedding",
+      "anchor": "#embedding"
+    },
+    {
+      "depth": 2,
+      "value": "Denominations",
+      "anchor": "#denominations"
+    },
+    {
+      "depth": 3,
+      "value": "Payment Flows and Internal Structure",
+      "anchor": "#payment-flows-and-internal-structure"
+    },
+    {
+      "depth": 3,
+      "value": "Admin Identity Access",
+      "anchor": "#admin"
+    },
+    {
+      "depth": 2,
+      "value": "Command Line Interface (CLI)",
+      "anchor": "#cli"
+    },
+    {
+      "depth": 3,
+      "value": "Create",
+      "anchor": "#create"
+    },
+    {
+      "depth": 3,
+      "value": "Get Balance",
+      "anchor": "#get-balance"
+    }
+  ]
+}

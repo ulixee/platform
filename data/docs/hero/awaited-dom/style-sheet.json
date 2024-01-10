@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--stylesheet\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--stylesheet\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> StyleSheet</h1>\n<div class='overview'>An object implementing the <code>StyleSheet</code> interface represents a single style sheet. CSS style sheets will further implement the more specialized <code>CSSStyleSheet</code> interface.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>disabled</code></td>\n<td><code>href</code></td>\n</tr>\n<tr>\n<td><code>media</code></td>\n<td><code>ownerNode</code></td>\n</tr>\n<tr>\n<td><code>parentStyleSheet</code></td>\n<td><code>title</code></td>\n</tr>\n<tr>\n<td><code>type</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> StyleSheet",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

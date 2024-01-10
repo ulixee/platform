@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"client-vs-core\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#client-vs-core\">#</a>Client vs. Core</h1>\n<p>Hero's architecture is split into two processes: a Client and a Core. The Client is what your script interacts with; Core is what does most of the heavy lifting. WebSockets is the default mechanism for communicating between these two processes. Most users have no need to know anything about Core since Hero simpliy works out of the box.</p>\n<p>However, this division of process allows for some interesting advanced configurations. For example, you can run a single lightweight Client on one lightweight machine with multiple Cores running on separate heavier-duty machines.</p>\n<h2 id=\"setting-up-a-server-process-for-core\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#setting-up-a-server-process-for-core\">#</a>Setting Up a Server Process for Core</h2>\n<p>The <code>@ulixee/hero-core</code> package contains all the logic for running Core, but it has no network connectivity. The easiest solution is to use the <code>@ulixee/cloud</code> package. See details of the Ulixee Cloud <a href=\"https://ulixee.org/docs/cloud\">here</a>.</p>\n<p>Various other strategies are listed <a href=\"/docs/hero/advanced-concepts/deployment\">here</a>.</p>",
+  "title": "Client vs. Core",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Setting Up a Server Process for Core",
+      "anchor": "#setting-up-a-server-process-for-core"
+    }
+  ]
+}

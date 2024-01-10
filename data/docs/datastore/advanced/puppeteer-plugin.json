@@ -1,0 +1,21 @@
+{
+  "content": "<h1 id=\"using-the-puppeteerextractorplugin\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#using-the-puppeteerextractorplugin\">#</a>Using the PuppeteerExtractorPlugin</h1>\n<blockquote>\n<p>PuppeteerExtractorPlugin supercharges your datastore Extractor with a ready-to-use <a href=\"https://pptr.dev/api\"><code>Puppeteer</code></a> instance.</p>\n</blockquote>\n<p>To use PuppeteerExtractorPlugin, import the plugin and include it in the <code>plugins</code> array of your Extractor constructor:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import Datastore from '@ulixee/datastore';\nimport { Extractor, PuppeteerExtractorPlugin } from '@ulixee/datastore-plugins-puppeteer';\n\nexport default new Datastore({\n  extractors: {\n    pupp: new Extractor(async ctx => {\n      const { input, Output, launchBrowser } = ctx;\n      \n      const browser = await launchBrowser();\n      const page = await browser.newPage();\n      await page.goto(`https://en.wikipedia.org/wiki/${input.pageSlug || 'Web_scraping'}`);\n      Output.emit({\n        title: await page.evaluate(() => {\n          return document.querySelector('#firstHeading').textContent;\n        }),\n      });\n    }, PuppeteerExtractorPlugin),\n  },\n});\n</code></pre>\n<h2 id=\"changes-to-extractorcontext\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#changes-to-extractorcontext\">#</a>Changes to ExtractorContext</h2>\n<p>The PuppeteerExtractorPlugin adds a single property to the <a href=\"/docs/datastore/basics/extractor-context\">ExtractorContext</a>.</p>\n<h3 id=\"run-hero\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#run-hero\">#</a>run <em>(extractorContext)</em></h3>\n<ul>\n<li>extractorContext.launchBrowser: () => Promise&#x3C;<code>Puppeteer</code>>. Extractor to launch a new <a href=\"https://pptr.dev/api\">Puppeteer</a> Browser instance.</li>\n</ul>\n<h3 id=\"extractorstream-puppeteerlaunchargs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#extractorstream-puppeteerlaunchargs\">#</a>Extractor.stream(... puppeteerLaunchArgs)</h3>\n<p>Configure the <a href=\"https://pptr.dev/api\">Puppeteer</a> instance with <a href=\"https://pptr.dev/api/puppeteer.launchoptions\">LaunchOptions</a>.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import Datastore from '@ulixee/datastore';\nimport { Extractor, PuppeteerExtractorPlugin } from '@ulixee/datastore-plugins-puppeteer';\n\nconst datastore = new Datastore({\n  extractors: {\n    pupp: new Extractor(async ctx => {\n      const page = await ctx.browser.newPage();\n      output.title = await page.evaluate(() => {\n        return document.querySelector('title').textContent;\n      });\n    }, PuppeteerExtractorPlugin),\n  },\n});\nawait datastore.extractors.pupp.runInternal({ waitForInitialPage: false });\n</code></pre>",
+  "title": "Using the PuppeteerExtractorPlugin",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Changes to ExtractorContext",
+      "anchor": "#changes-to-extractorcontext"
+    },
+    {
+      "depth": 3,
+      "value": "run <em>(extractorContext)</em>",
+      "anchor": "#run-hero"
+    },
+    {
+      "depth": 3,
+      "value": "Extractor.stream(... puppeteerLaunchArgs)",
+      "anchor": "#extractorstream-puppeteerlaunchargs"
+    }
+  ]
+}

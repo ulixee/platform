@@ -1,0 +1,32 @@
+[
+  {
+    "title": "Overview",
+    "items": [
+      "Introduction"
+    ]
+  },
+  {
+    "title": "SQL Commands",
+    "items": [
+      "Insert",
+      "Select",
+      "Update",
+      "Delete"
+    ]
+  },
+  {
+    "title": "Clients",
+    "items": [
+      "Ulixee",
+      "Postgres"
+    ]
+  },
+  {
+    "title": "Help",
+    "items": [
+      "Prerequisites",
+      "How to upgrade",
+      "Troubleshooting"
+    ]
+  }
+]

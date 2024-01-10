@@ -1,0 +1,5 @@
+{
+  "content": "<h1 id=\"input\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#input\">#</a>Input</h1>\n<p>Every Extractor accepts input, which is attached to the <a href=\"/docs/datastore/basics/extractor-context\">ExtractorContext</a>.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import { Extractor, HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';\n\nexport default new Extractor(context => {\n  const { input, Hero } = context;\n  const foo = input.foo; //99\n  const bar = input.bar; //9987930\n}, HeroExtractorPlugin);\n</code></pre>",
+  "title": "Input",
+  "subtitles": []
+}

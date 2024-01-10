@@ -1,0 +1,36 @@
+{
+  "content": "<h1 id=\"introduction\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#introduction\">#</a>Introduction</h1>\n<blockquote>\n<p>Ulixee Platform is a Scraping Data Collection Network ready to run out of the box. Server is a Websocket server-side protocol to allow communication from multiple machines.</p>\n</blockquote>\n<h2 id=\"how-it-works\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#how-it-works\">#</a>How It Works</h2>\n<p>Each Ulixee tool creates connection details to handle its internal connections.</p>\n<p>Ulixee Cloud currently uses Websockets and allows each tool's Core to handle details of what is transported. Connections can optionally be shared by many operations. For instance, Hero allows a single connection to host multiple <a href=\"https://ulixee.org/docs/hero/advanced/session\">Sessions</a> if the <a href=\"https://ulixee.org/docs/hero/advanced/connection-to-core\"><code>ConnectionToCore</code></a> is reused by many Hero instances.</p>\n<h2 id=\"installation\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#installation\">#</a>Installation</h2>\n<p>To use Ulixee Cloud in your project, install it with npm or yarn:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">npm i --save @ulixee/cloud\n</code></pre>\n<p>or</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">yarn add @ulixee/cloud\n</code></pre>\n<p>When you install Cloud, it requires PeerDependencies of <a href=\"https://ulixee.org/docs/hero\"><code>Hero</code></a> and <a href=\"https://ulixee.org/docs/datastore\"><code>Datastore</code></a>.</p>\n<p>It will also optionally use a PeerDependency <code>Desktop</code> Core (<code>@ulixee/desktop-core</code>). This tool enhances the Hero Development process.</p>\n<h2 id=\"command-line-interface-cli\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#command-line-interface-cli\">#</a>Command Line Interface (CLI)</h2>\n<p>You can launch a Cloud instance from an npm script or the command line using the CLI. The following command is added to your local bin if you have <code>@ulixee/cloud</code> as a dependency:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-json\">{\n  \"scripts\": {\n    \"ulixee-start\": \"@ulixee/cloud start\"\n  }\n}\n</code></pre>\n<p>You can run the start command from the command line as <code>npx @ulixee/cloud start</code>.</p>\n<h3 id=\"command-options\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#command-options\">#</a>Command Options:</h3>\n<ul>\n<li><code>-p, --port &#x3C;number></code> The port to use. Defaults to any 1818, or any available port. (env: PORT)</li>\n<li><code>-h, --hostname &#x3C;hostname></code> The hostname the Cloud node should listen on. (default: localhost) (env: ULX_HOSTNAME)</li>\n<li><code>--hosted-services-port &#x3C;number></code> Activate hosted services on this node at this port (datastore registry, node registry). Defaults to any 18181, or any available port\n(0). (env: ULX_HOSTED_SERVICES_PORT)</li>\n<li><code>--hosted-services-hostname &#x3C;hostname></code> The ip or host that Cluster Services should listed on. You should make this a private-to-your-cloud ip if possible. (default:\nlocalhost) (env: ULX_HOSTED_SERVICES_HOSTNAME)</li>\n<li><code>--setup-host &#x3C;host></code> Setup services for this node with another node in your cluster. NOTE: this should be the hosted services address of your cluster\nnode. (env: ULX_SERVICES_SETUP_HOST)</li>\n<li><code>--env &#x3C;path></code> Load environment settings from a .env file.</li>\n<li><code>--network-identity-path &#x3C;path></code> Filesystem path to your network identity keypair (env: ULX_NETWORK_IDENTITY_PATH)</li>\n<li><code>--admin-identities &#x3C;ids...></code> Comma separated list of admin identity public ids (starting with id1) (env: ULX_CLOUD_ADMIN_IDENTITIES)</li>\n<li><code>--disable-chrome-alive</code> Do not enable ChromeAlive! even if installed locally.</li>\n<li><code>--max-concurrent-heroes &#x3C;count></code> Max number of concurrent Datastores/Heroes to run at a time. (default: 10)</li>\n<li><code>--max-datastore-runtime-ms &#x3C;millis></code> Max runtime allowed for a Datastore to complete. (default: 10 mins)</li>\n<li><code>-u, --unblocked-plugins &#x3C;plugins...></code> Register default Unblocked Plugin npm module names for all Hero instances to load.</li>\n<li><code>-d, --hero-data-dir &#x3C;dir></code> Override the default data directory for Hero sessions and dbs.</li>\n<li><code>-s, --datastore-storage-dir &#x3C;dir></code> Override the default storage directory where Datastores are located.</li>\n<li><code>-t, --datastore-tmp-dir &#x3C;dir></code> Override the default temp directory where uploaded Datastores are processed.</li>\n<li><code>-w, --datastore-wait-for-completion</code> Wait for all in-process Datastores to complete before shutting down a Cloud node. (default: false)</li>\n</ul>\n<h3 id=\"global-cli\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#global-cli\">#</a>Global CLI</h3>\n<p>The Ulixee CLI allows you to start a Ulixee Cloud-node. To use it, first install the cli globally.\n<code>npm -i -g @ulixee/cli</code></p>\n<p>Now you can run the following command from your project directory with any of the options described above:\n<code>ulixee cloud start</code></p>\n<h2 id=\"usage-example\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#usage-example\">#</a>Usage Example</h2>\n<p>Starting a Ulixee Cloud is very similar to starting a NodeJs Http Server, except it is promise-based.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import { CloudNode } from '@ulixee/cloud';\n\n(async () => {\n  const cloudNode = new CloudNode();\n  await cloudNode.listen();\n})();\n</code></pre>\n<p>To refer to this Cloud in a Hero client, you can supply the host string to the constructor.</p>\n<p>NOTE: connection details on a local machine are optional. If you don't supply any connection detail, Hero and Datastore will connect to the local host.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import Hero from '@ulixee/hero';\n\n(async () => {\n  const hero = new Hero({ connectionToCore: 'ws://localhost:1818' });\n  await hero.goto('https://example.org');\n  await hero.close();\n})();\n</code></pre>",
+  "title": "Introduction",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "How It Works",
+      "anchor": "#how-it-works"
+    },
+    {
+      "depth": 2,
+      "value": "Installation",
+      "anchor": "#installation"
+    },
+    {
+      "depth": 2,
+      "value": "Command Line Interface (CLI)",
+      "anchor": "#command-line-interface-cli"
+    },
+    {
+      "depth": 3,
+      "value": "Command Options:",
+      "anchor": "#command-options"
+    },
+    {
+      "depth": 3,
+      "value": "Global CLI",
+      "anchor": "#global-cli"
+    },
+    {
+      "depth": 2,
+      "value": "Usage Example",
+      "anchor": "#usage-example"
+    }
+  ]
+}

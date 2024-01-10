@@ -1,0 +1,76 @@
+{
+  "content": "<h1 id=\"ulixee-cloudnode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#ulixee-cloudnode\">#</a>Ulixee CloudNode</h1>\n<p>Ulixee CloudNode is an out-of-the-box way to publish and deploy Ulixee Hero scripts and Datastores. Websockets are used as the underlying protocol on port 1818 (if available).</p>\n<p>You should start <code>Ulixee CloudNode</code> in a node process that you intend to keep alive. This process will automatically integrate <code>@ulixee/hero-core</code> and <code>ChromeAlive!</code> if it's installed.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import { CloudNode } from '@ulixee/cloud';\n\n(async () => {\n  const cloudNode = new CloudNode({\n    port: 1818,\n  });\n  await cloudNode.listen();\n\n  console.log(`CloudNode started on port ${await cloudNode.port}`);\n})().catch(error => {\n  console.log('ERROR starting Ulixee CloudNode', error);\n  process.exit(1);\n});\n</code></pre>\n<p>CloudNodes can be networked together into a \"cloud\". A cloud provides services to delegate storage and discovery tasks to certain nodes. These services are called the HostedServices of the cluster.</p>\n<p>To network nodes, you can simply tell one node to activate hosted services, and the other to use the first node for service discovery.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import { CloudNode } from '@ulixee/cloud';\n\n(async () => {\n  const servicesNode = new CloudNode({\n    port: 1818,\n    hostedServicesServerOptions: { port: 18181 }, // default services port\n  });\n  await servicesNode.listen();\n\n  const childNode = new CloudNode({\n    // resolves to localhost:18181\n    servicesSetupHost: await servicesNode.hostedServicesServer.host,\n  });\n  await childNode.listen();\n})().catch(error => {\n  console.log('ERROR starting Ulixee CloudNode', error);\n  process.exit(1);\n});\n</code></pre>\n<h2 id=\"constructor\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#constructor\">#</a>Constructor</h2>\n<h3 id=\"constructor\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#constructor\">#</a>new CloudNode <em>(cloudConfiguration?)</em></h3>\n<p>Creates a new CloudNode instance.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>\n<p>cloudConfiguration <code>ICloudConfiguration</code>. Optional configuration object.</p>\n<ul>\n<li>\n<p>port <code>number</code>. A port to listen on. Default <code>1818</code>. <code>0</code> will find any open port.</p>\n</li>\n<li>\n<p>host <code>string</code>. An ip or domain name (if applicable) to bind the server to.</p>\n</li>\n<li>\n<p>servicesSetupHost <code>string</code>. An ip:port to dial to discover hosted services to use.</p>\n</li>\n<li>\n<p>nodeRegistryHost <code>string</code> | <code>self</code>. A service used to track CloudNode health. If <code>self</code>, will be set to this server's <code>hostedServicesServer.host</code> after it starts.</p>\n</li>\n<li>\n<p>cloudType <code>private | 'public</code>. If public, this node will dial into the public network and (implicitly) expose datastores for download.</p>\n</li>\n<li>\n<p>kadBootstrapPeers <code>string[]</code>. The Kademlia Distributed Hash Table (DHT) peers to connect to for network discovery and sharing. List should be <code>host:nodeId</code> to ensure only the expected nodeId (<code>Identity</code>) is connected to.</p>\n</li>\n<li>\n<p>kadEnabled <code>boolean</code>. Whether to enable the Kademlia DHT.</p>\n</li>\n<li>\n<p>kadDbPath <code>string</code>. A path to store node information.</p>\n</li>\n<li>\n<p>networkIdentity <code>Identity</code>. An Identity (Ed25519 keypair) used for network (both kad and services) signatures.</p>\n</li>\n<li>\n<p>hostedServicesServerOptions: <code>object</code>. Options for the HostedServices server:</p>\n<ul>\n<li>port <code>number</code>. A port to expose hosted service apis on. Defaults to <code>18181</code>. Setting this value will activate hosted services. <code>0</code> will find any open port.</li>\n<li>host. <code>string</code>. An ip or domain to bind the hosted services to. You might want this to be an ip <code>private</code> to your servers to keep them internal.</li>\n</ul>\n</li>\n<li>\n<p>shouldShutdownOnSignals <code>boolean</code>. Default <code>true</code>. Set to false to disable automatically shutting down the CloudNode and all dependent services on process signals (eg, 'exit', <code>SIGINT</code>, <code>SIGTERM</code>, <code>SIGQUIT</code>). If you disable this process, you should calls <a href=\"#close\">cloudNode.close()</a> in your own process handling.</p>\n</li>\n<li>\n<p>datastoreConfiguration <code>object</code>. Any configuration you wish to apply to <a href=\"https://ulixee.org/docs/datastore\">Datastore Core</a></p>\n</li>\n<li>\n<p>heroConfiguration <code>object</code>. Any configuration you wish to apply to <a href=\"https://ulixee.org/docs/hero\">Hero Core</a></p>\n</li>\n</ul>\n</li>\n</ul>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"datastore\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#datastore\">#</a>cloudNode.datastoreCore</h3>\n<p>The DatastoreCore created by this node.</p>\n<h4 id=\"type-datastorecore\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-datastorecore\">#</a><strong>Type</strong>: <a href=\"https://ulixee.org/docs/datastore\"><code>DatastoreCore</code></a></h4>\n<h3 id=\"hero\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hero\">#</a>cloudNode.heroCore</h3>\n<p>The HeroCore created by this node.</p>\n<h4 id=\"type-herocore\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-herocore\">#</a><strong>Type</strong>: <a href=\"https://ulixee.org/docs/hero\"><code>HeroCore</code></a></h4>\n<h3 id=\"hosted-services-server\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hosted-services-server\">#</a>cloudNode.hostedServicesServer</h3>\n<p>Returns the HostedServices Server, if configured.</p>\n<h4 id=\"type-routableserver\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-routableserver\">#</a><strong>Type</strong>: <code>RoutableServer</code></h4>\n<h3 id=\"hosted-services-url\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hosted-services-url\">#</a>cloudNode.hostedServicesHostURL</h3>\n<p>Returns the URL to the hosted Services <em>used</em> by this node if acting as a client.</p>\n<h4 id=\"type-url\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-url\">#</a><strong>Type</strong>: <code>URL</code></h4>\n<h3 id=\"kad\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#kad\">#</a>cloudNode.kad</h3>\n<p>Returns the <a href=\"/docs/cloud/modules/kad\">Kad</a> object (if activated).</p>\n<h4 id=\"type-kad\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-kad\">#</a><strong>Type</strong>: <a href=\"/docs/cloud/modules/kad\"><code>Kad</code></a></h4>\n<h3 id=\"address\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#address\">#</a>cloudNode.host</h3>\n<p>Returns the host the cloudNode, ie <code>localhost:1778</code>.</p>\n<p>NOTE: will not return until <code>listen</code> is called.</p>\n<h4 id=\"type-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisestring\">#</a><strong>Type</strong>: <code>Promise&#x3C;string></code></h4>\n<h3 id=\"port\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#port\">#</a>cloudNode.port</h3>\n<p>Returns the public api port the cloudNode, ie <code>1818</code>.</p>\n<p>NOTE: will not return until <code>listen</code> is called.</p>\n<h4 id=\"type-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"public-server\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#public-server\">#</a>cloudNode.publicServer</h3>\n<p>Returns the Public Api Server.</p>\n<h4 id=\"type-routableserver-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-routableserver-1\">#</a><strong>Type</strong>: <code>RoutableServer</code></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"listen\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#listen\">#</a>cloudNode.listen <em>()</em></h3>\n<p>Start the cloudNode and any installed modules (eg, Hero, ChromeAlive)</p>\n<h4 id=\"returns-promisecloudnode---returns-the-started-cloudnode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisecloudnode---returns-the-started-cloudnode\">#</a><strong>Returns</strong>: <code>Promise&#x3C;CloudNode></code> - returns the started CloudNode.</h4>\n<h3 id=\"close\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#close\">#</a>cloudNode.close <em>()</em></h3>\n<p>Closes the cloudNode and all dependencies.</p>\n<h4 id=\"arguments-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-1\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>closeDependencies <code>boolean</code>. Should the cloudNode close sub-dependencies (eg, Hero Core)</li>\n</ul>\n<h4 id=\"returns-promise\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise\">#</a><strong>Returns</strong>: <code>Promise</code></h4>",
+  "title": "Ulixee CloudNode",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Constructor",
+      "anchor": "#constructor"
+    },
+    {
+      "depth": 3,
+      "value": "new CloudNode <em>(cloudConfiguration?)</em>",
+      "anchor": "#constructor"
+    },
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": "cloudNode.datastoreCore",
+      "anchor": "#datastore"
+    },
+    {
+      "depth": 3,
+      "value": "cloudNode.heroCore",
+      "anchor": "#hero"
+    },
+    {
+      "depth": 3,
+      "value": "cloudNode.hostedServicesServer",
+      "anchor": "#hosted-services-server"
+    },
+    {
+      "depth": 3,
+      "value": "cloudNode.hostedServicesHostURL",
+      "anchor": "#hosted-services-url"
+    },
+    {
+      "depth": 3,
+      "value": "cloudNode.kad",
+      "anchor": "#kad"
+    },
+    {
+      "depth": 3,
+      "value": "cloudNode.host",
+      "anchor": "#address"
+    },
+    {
+      "depth": 3,
+      "value": "cloudNode.port",
+      "anchor": "#port"
+    },
+    {
+      "depth": 3,
+      "value": "cloudNode.publicServer",
+      "anchor": "#public-server"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": "cloudNode.listen <em>()</em>",
+      "anchor": "#listen"
+    },
+    {
+      "depth": 3,
+      "value": "cloudNode.close <em>()</em>",
+      "anchor": "#close"
+    }
+  ]
+}

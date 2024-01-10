@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Overview",
+    "items": [
+      "Introduction",
+      "Basic Concepts",
+      "Configuration"
+    ]
+  },
+  {
+    "title": "Modules",
+    "items": [
+      "CloudNode",
+      "Kad",
+      "NodeRegistry"
+    ]
+  },
+  {
+    "title": "Help",
+    "items": [
+      "Prerequisites",
+      "How to upgrade",
+      "Troubleshooting"
+    ]
+  }
+]

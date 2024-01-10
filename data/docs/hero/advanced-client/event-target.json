@@ -1,0 +1,5 @@
+{
+  "content": "<h1 id=\"eventtarget\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#eventtarget\">#</a>EventTarget</h1>\n<blockquote>\n<p>An EventTarget is a listener similar in design to EventListener in nodejs.</p>\n</blockquote>\n<p>EventTarget adds <code>on</code> and <code>off</code> functions to a normal document EventTarget.</p>",
+  "title": "EventTarget",
+  "subtitles": []
+}

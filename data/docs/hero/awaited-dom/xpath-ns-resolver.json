@@ -1,0 +1,16 @@
+{
+  "content": "<h1 id=\"awaiteddom--xpathnsresolver\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--xpathnsresolver\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> XPathNSResolver</h1>\n<div class='overview'>The&nbsp;<code>XPathNSResolver</code> interface permits prefix strings in an XPath expression to be properly bound to namespace URI strings.</div>\n<div class='overview'>The <code>XPathEvaluator</code> interface can construct an implementation of <code>XPathNSResolver</code> from a node, or the interface may be implemented by any application.</div>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"lookupNamespaceURI\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#lookupNamespaceURI\">#</a>.lookupNamespaceURI <em>(prefix)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Looks up the namespace URI associated to the given namespace prefix.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>prefix <code>string</code>. A <code>string</code> representing the prefix to look for.</li>\n</ul>\n<h4 id=\"returns-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisestring\">#</a><strong>Returns</strong>: <code>Promise&#x3C;string></code></h4>",
+  "title": " <span>/</span> XPathNSResolver",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": ".lookupNamespaceURI <em>(prefix)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#lookupNamespaceURI"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--animation\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--animation\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> Animation</h1>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>currentTime</code></td>\n<td><code>effect</code></td>\n</tr>\n<tr>\n<td><code>finished</code></td>\n<td><code>id</code></td>\n</tr>\n<tr>\n<td><code>oncancel</code></td>\n<td><code>onfinish</code></td>\n</tr>\n<tr>\n<td><code>onremove</code></td>\n<td><code>pending</code></td>\n</tr>\n<tr>\n<td><code>playbackRate</code></td>\n<td><code>playState</code></td>\n</tr>\n<tr>\n<td><code>ready</code></td>\n<td><code>replaceState</code></td>\n</tr>\n<tr>\n<td><code>startTime</code></td>\n<td><code>timeline</code></td>\n</tr>\n</tbody>\n</table>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>cancel()</code></td>\n<td><code>commitStyles()</code></td>\n</tr>\n<tr>\n<td><code>finish()</code></td>\n<td><code>pause()</code></td>\n</tr>\n<tr>\n<td><code>persist()</code></td>\n<td><code>play()</code></td>\n</tr>\n<tr>\n<td><code>reverse()</code></td>\n<td><code>updatePlaybackRate()</code></td>\n</tr>\n<tr>\n<td><code>addEventListener()</code></td>\n<td><code>dispatchEvent()</code></td>\n</tr>\n<tr>\n<td><code>removeEventListener()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> Animation",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

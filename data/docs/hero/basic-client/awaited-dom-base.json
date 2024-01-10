@@ -1,0 +1,46 @@
+{
+  "content": "<h1 id=\"awaiteddom\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom\">#</a>AwaitedDOM</h1>\n<blockquote>\n<p>AwaitedDOM is a NodeJs implementation of W3C's DOM specification that makes it easy to call properties and methods located in a remote browser engine as if they were local to your scraper script context.</p>\n</blockquote>\n<p>AwaitedDOM currently implements a subset of the full DOM specification. Most of the readonly properties and methods have been implemented, however we haven't added DOM manipulation APIs because we believe they are too easy to detect by website bot blockers.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">const link = await hero.document.querySelector('a').href;\n</code></pre>\n<p>Explore the DOM classes listed on this page to see what has been implemented. You'll find a list of the unimplemented methods and properties located at the bottom of each page.</p>\n<h2 id=\"hero-dom-extensions\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hero-dom-extensions\">#</a>Hero DOM Extensions</h2>\n<p>AwaitedDOM adds several DOM extensions to make Hero easier to use. These extensions are prefixed with the \"$\" character to keep \"non-standard\" methods/properties separate from the standard implementation. You can find the <a href=\"/docs/hero/basic-client/awaited-dom-extensions\">full list here</a>.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">await hero.querySelector('.element').$click();\n</code></pre>\n<h2 id=\"document-interfaces\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#document-interfaces\">#</a>Document Interfaces</h2>\n<p>[INTERFACES:Document]</p>\n<h2 id=\"node-interfaces\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#node-interfaces\">#</a>Node Interfaces</h2>\n<p>[INTERFACES:Node]</p>\n<h2 id=\"html-elements\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#html-elements\">#</a>HTML Elements</h2>\n<p>[INTERFACES:HTMLElement]</p>\n<h2 id=\"svg-elements\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#svg-elements\">#</a>SVG Elements</h2>\n<p>[INTERFACES:SVGElement]</p>\n<h2 id=\"array-like-interfaces\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#array-like-interfaces\">#</a>Array-like Interfaces</h2>\n<p>[INTERFACES:ArrayLike]</p>\n<h2 id=\"xpath-interfaces\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#xpath-interfaces\">#</a>XPath Interfaces</h2>\n<p>[INTERFACES:XPath]</p>\n<h2 id=\"miscellaneous-interfaces\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#miscellaneous-interfaces\">#</a>Miscellaneous Interfaces</h2>\n<p>[INTERFACES:Miscellaneous]</p>",
+  "title": "AwaitedDOM",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Hero DOM Extensions",
+      "anchor": "#hero-dom-extensions"
+    },
+    {
+      "depth": 2,
+      "value": "Document Interfaces",
+      "anchor": "#document-interfaces"
+    },
+    {
+      "depth": 2,
+      "value": "Node Interfaces",
+      "anchor": "#node-interfaces"
+    },
+    {
+      "depth": 2,
+      "value": "HTML Elements",
+      "anchor": "#html-elements"
+    },
+    {
+      "depth": 2,
+      "value": "SVG Elements",
+      "anchor": "#svg-elements"
+    },
+    {
+      "depth": 2,
+      "value": "Array-like Interfaces",
+      "anchor": "#array-like-interfaces"
+    },
+    {
+      "depth": 2,
+      "value": "XPath Interfaces",
+      "anchor": "#xpath-interfaces"
+    },
+    {
+      "depth": 2,
+      "value": "Miscellaneous Interfaces",
+      "anchor": "#miscellaneous-interfaces"
+    }
+  ]
+}

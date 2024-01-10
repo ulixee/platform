@@ -1,0 +1,111 @@
+{
+  "content": "<h1 id=\"core-plugins\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#core-plugins\">#</a>Core Plugins</h1>\n<blockquote>\n<p>Core plugins extend Hero's backend functionality at the Core level. These plugins have full control over TCP fingerprinting, header order, HTML rendering, audio codecs and thousands of other variables that allow undetectable emulation of any browser you desire.</p>\n</blockquote>\n<h2 id=\"creating-your-own-core-plugin\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#creating-your-own-core-plugin\">#</a>Creating Your Own Core Plugin</h2>\n<p>Adding a new plugin is as simple as creating a javascript class with the correct properties and methods, then registering it with <code>hero.use()</code>.</p>\n<p>We recommend using the CorePlugin base class provided by <code>@ulixee/hero-plugin-utils</code>, which handles setting most of the required properties and methods, everything except the static <code>id</code> property. Here's a simple plugin that adds a single hello() method to hero, which outputs to the browser's console.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-javascript\">import { ClientPlugin, CorePlugin } from '@ulixee/hero-plugin-utils';\n\nexport class ClientHelloPlugin extends ClientPlugin {\n  static readonly id = 'hello-plugin';\n\n  onHero(hero, sendToCore) {\n    hero.hello = async (name) => await sendToCore('hello-plugin', name);  \n  } \n}\n\nexport class CoreHelloPlugin extends CorePlugin {\n  static readonly id = 'hello-plugin';\n\n  onClientCommand({ page }, name) {\n    `Hello ${name}`);\n  }\n}\n</code></pre>\n<p>As shown above, you can export multiple plugins from the same file. Also a client/core plugin combination can share the same <code>id</code> (unlike two core plugins, which must each have unique ids).</p>\n<p>To register this plugin in Hero, just pass it to <code>hero.use()</code>. In the following example we pass through a path to the plugin file instead of the plugin class itself -- we're doing this because by default Core runs in a separate process from Client.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-javascript\">import hero from '@ulixee/hero';\n\nhero.use(require.resolve('./HelloPlugin'));\n\nawait hero.hello('World');\n</code></pre>\n<p>NOTE: you can also register a plugin \"directly\" in Hero-Core. You do need to understand the <a href=\"/docs/hero/advanced-concepts/client-vs-core\">Client vs Core</a> separation. Wherever your <code>Core</code> process is going to be initialized, you can add code to tap into <code>@ulixee/hero-core</code>.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-javascript\">import HeroCore from '@ulixee/hero-core';\nimport CorePlugin from './HelloPlugin'\n\n// run before main code (or during initialization)\nHeroCore.use(CorePlugin);\n\n(function main() { // your code here\n</code></pre>\n<p>The rest of this page documents the various functionalities you can add to your class.</p>\n<h2 id=\"constructor\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#constructor\">#</a>Constructor</h2>\n<h3 id=\"new-coreplugincreateoptions\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#new-coreplugincreateoptions\">#</a>new CorePlugin<em>(createOptions)</em></h3>\n<p>New instance of CorePlugin is created for every hero instance. The createOptions object has three properties.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>createOptions <code>object</code> Receives the following:\n<ul>\n<li>userAgentOption <code>UserAgentOption</code>. An object containing various attributes of the chosen userAgent (name, version, etc).</li>\n<li>browserEngine <code>BrowserEngine</code>. An instance containing the current BrowserEngine.</li>\n<li>plugins <code>Plugins</code>. An instance containing the current instance of Plugins attached to this session.</li>\n<li>logger <code>BoundLog</code>. An instance of logger you can use to log output.</li>\n</ul>\n</li>\n</ul>\n<h2 id=\"class-properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#class-properties\">#</a>Class Properties</h2>\n<h3 id=\"corepluginid-required\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#corepluginid-required\">#</a>CorePlugin.id <em>required</em></h3>\n<p>This should usually be set to the plugin's npm package name.</p>\n<h4 id=\"type-string\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-string\">#</a><strong>Type</strong>: <code>string</code></h4>\n<h3 id=\"coreplugintype-required\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#coreplugintype-required\">#</a>CorePlugin.type <em>required</em></h3>\n<p>This tells Hero that the plugin is a CorePlugin. It must always be set.</p>\n<h4 id=\"type-string-this-must-always-be-set-to-coreplugin\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-string-this-must-always-be-set-to-coreplugin\">#</a><strong>Type</strong>: <code>string</code>. This must always be set to <code>'CorePlugin'</code>.</h4>\n<h2 id=\"instance-method-hooks\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#instance-method-hooks\">#</a>Instance Method Hooks</h2>\n<p>The following methods are optional. Add them to your plugin as needed.</p>\n<p>NOTE: Many of these API calls allow you to tap into the underlying <a href=\"https://github.com/ulixee/unblocked/tree/main/plugins\">Unblocked Plugin</a> Specification (<a href=\"https://github.com/ulixee/unblocked/tree/main/specification\">spec</a>). You can find detailed documentation in the two projects listed above.</p>\n<h3 id=\"configureconfig\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#configureconfig\">#</a>configure<em>(config)</em></h3>\n<p>This hook is called during the initialization of a session/browserEmulator.</p>\n<h4 id=\"arguments-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-1\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>config <code>object</code> Receives any (or none) of the following:\n<ul>\n<li>viewport <code>Viewport</code>. This is an object containing browser width and height as well as screenWidth and screenHeight, among other properties.</li>\n<li>geolocation <code>Geolocation</code>. This is an object containing longtitude and latitude, among other properties.</li>\n<li>timezoneId <code>string</code>. The configured unicode TimezoneId or host default (eg, America/New_York).</li>\n<li>locale <code>string</code>. The configured locale in use (eg, en-US).</li>\n<li>upstreamProxyUrl <code>string</code>. A socks5 or http proxy url (and optional auth) to use for all HTTP requests in this session. See Hero constructor for details.</li>\n<li>upstreamProxyUseSystemDns <code>boolean</code>. A variable to indicate DNS should be resolved on the host machine. By default, if a proxy is used, hosts will be resolved by the remote proxy.</li>\n<li>upstreamProxyIpMask <code>object</code>. Optional settings to mask the Public IP Address of a host machine when using a proxy. See Hero constructor for details.</li>\n<li>dnsOverTlsProvider <code>object</code>. Configure the host and port to use for DNS over TLS. See Hero constructor for details.</li>\n</ul>\n</li>\n</ul>\n<p>Modify any value in the object to change it session-wide.</p>\n<h4 id=\"returns-void\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-void\">#</a><strong>Returns</strong> <code>void</code></h4>\n<h3 id=\"onnewbrowserbrowser-launchargs-optional\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#onnewbrowserbrowser-launchargs-optional\">#</a>onNewBrowser<em>(browser, launchArgs)</em> <em>optional</em></h3>\n<p>This is called every time a new browser engine is started, which may not be every session. A Core Plugin can add to the launch arguments that will sent to the process creation of the browser:</p>\n<ul>\n<li>For Chrome, a list can be found <a href=\"https://peter.sh/experiments/chromium-command-line-switches/\">here</a></li>\n</ul>\n<h4 id=\"arguments-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-2\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>browser <code>IBrowser</code>. The Agent browser. Arguments can be manipulated on the <code>engine.launchArguments</code> property.</li>\n<li>userConfig <code>IBrowserUserConfig</code>. Additional options provided to launch this instance.\n<ul>\n<li>showChrome: <code>boolean</code> - has the user requested to show the browser</li>\n<li>disableGpu: <code>boolean</code> - has the user requested to disable the gpu</li>\n<li>showDevtools: <code>boolean</code> - has the user requested to automatically show devtools</li>\n</ul>\n</li>\n</ul>\n<h4 id=\"returns-promise--void\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise--void\">#</a><strong>Returns</strong> <code>Promise</code> | <code>void</code></h4>\n<h3 id=\"onclientcommandmeta-args-optional\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#onclientcommandmeta-args-optional\">#</a>onClientCommand<em>(meta, ...args)</em> <em>optional</em></h3>\n<p>This method is called every time a ClientPlugin calls sendToCore to this plugin's ID.</p>\n<h4 id=\"arguments-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-3\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>meta <code>OnClientCommandMeta</code>.\n<ul>\n<li>page <code>IPage</code>. The given Unblocked Agent <code>Page</code>.</li>\n<li>frame <code>IFrame</code>. The given Unblocked Agent <code>Frame</code> if applicable.</li>\n</ul>\n</li>\n<li>args: <code>any[]</code>. Whatever args the ClientPlugin passed through sendToCore.</li>\n</ul>\n<h4 id=\"returns-promise--void-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise--void-1\">#</a><strong>Returns</strong> <code>Promise</code> | <code>void</code></h4>\n<h3 id=\"ondnsconfigurationsettings-idnssettings\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#ondnsconfigurationsettings-idnssettings\">#</a>onDnsConfiguration<em>(settings: IDnsSettings)</em></h3>\n<p>Configures the DNS over TLS connection that Chrome defaults to using if your DNS provider supports it.</p>\n<h4 id=\"returns-promise--void-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise--void-2\">#</a><strong>Returns</strong> <code>Promise</code> | <code>void</code></h4>\n<h3 id=\"ontcpconfigurationsettings-itcpsettings\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#ontcpconfigurationsettings-itcpsettings\">#</a>onTcpConfiguration<em>(settings: ITcpSettings)</em></h3>\n<p>Some Tcp settings vary based on the Operating System making http requests.\nCurrent supports:</p>\n<ul>\n<li><code>windowSize</code></li>\n<li><code>ttl</code></li>\n</ul>\n<p>Alter the object's values to change session-wide.</p>\n<h4 id=\"returns-promise--void-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise--void-3\">#</a><strong>Returns</strong> <code>Promise</code> | <code>void</code></h4>\n<h3 id=\"ontlsconfigurationsettings-itlssettings\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#ontlsconfigurationsettings-itlssettings\">#</a>onTlsConfiguration<em>(settings: ITlsSettings)</em></h3>\n<p>Emulate the ClientHello signature, which can vary between browser versions</p>\n<h4 id=\"returns-promise--void-4\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise--void-4\">#</a><strong>Returns</strong> <code>Promise</code> | <code>void</code></h4>\n<h3 id=\"onhttp2sessionconnectrequest-ihttpresourceloaddetails-settings-ihttp2connectsettings\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#onhttp2sessionconnectrequest-ihttpresourceloaddetails-settings-ihttp2connectsettings\">#</a>onHttp2SessionConnect<em>(request: IHttpResourceLoadDetails, settings: IHttp2ConnectSettings)</em></h3>\n<p>A callback is provided for each HTTP2 Session that is created allowing you to customize the initial SETTINGS and WINDOW_UPDATE frames.</p>\n<p>Current Supports</p>\n<ul>\n<li><code>settings</code>. Http2RequestSettings using keys from Node.js settings (<a href=\"https://nodejs.org/api/http2.html#http2_settings_object\">https://nodejs.org/api/http2.html#http2_settings_object</a>)</li>\n<li><code>localWindowSize</code>. A value to trigger a WINDOW_UPDATE frame with the initial connect.</li>\n</ul>\n<p>Alter the object's values per Http2 Session.</p>\n<h4 id=\"returns-promise--void-5\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise--void-5\">#</a><strong>Returns</strong> <code>Promise</code> | <code>void</code></h4>\n<h3 id=\"beforehttprequestrequest-ihttpresourceloaddetails\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#beforehttprequestrequest-ihttpresourceloaddetails\">#</a>beforeHttpRequest<em>(request: IHttpResourceLoadDetails)</em></h3>\n<p>A callback is provided for each HTTP request where you are given the opportunity to re-order, re-case, and add or remove headers so that they resemble real browser requests. Headless Chrome is known to provide headers in different order on occasion from headed. See <a href=\"https://github.com/ulixee/double-agent\">https://github.com/ulixee/double-agent</a> for details.</p>\n<h4 id=\"returns-promise--void-6\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise--void-6\">#</a><strong>Returns</strong> <code>Promise</code> | <code>void</code></h4>\n<h3 id=\"beforehttpresponseresource-ihttpresourceloaddetails\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#beforehttpresponseresource-ihttpresourceloaddetails\">#</a>beforeHttpResponse<em>(resource: IHttpResourceLoadDetails)</em></h3>\n<p>Callbacks on each cookie set, and to return the valid list of cookies. This callback can be used to simulate cookie behavior that varies from the underlying browser - for instance Safari 13.</p>\n<h4 id=\"returns-promise--void-7\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise--void-7\">#</a><strong>Returns</strong> <code>Promise</code> | <code>void</code></h4>\n<h3 id=\"onnewpagepage-ipage\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#onnewpagepage-ipage\">#</a>onNewPage<em>(page: IPage)</em></h3>\n<p>This is called every time a new page/iframe is loaded. Use this hook to modify the DOM environment (i.e., to emulate various browser features) before a website loads.</p>\n<h4 id=\"returns-promise\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise\">#</a><strong>Returns</strong> <code>Promise</code></h4>\n<h3 id=\"onnewworkerworker-iworker\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#onnewworkerworker-iworker\">#</a>onNewWorker<em>(worker: IWorker)</em></h3>\n<p>This is called every time a new worker is loaded within a page. Use this hook to modify the DOM environment (i.e., to emulate various browser features) before a website loads.</p>\n<h4 id=\"returns-promise-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise-1\">#</a><strong>Returns</strong> <code>Promise</code></h4>\n<h3 id=\"websitehasfirstpartyinteractionurl-url\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#websitehasfirstpartyinteractionurl-url\">#</a>websiteHasFirstPartyInteraction<em>(url: URL)</em></h3>\n<p>Callback to indicate a domain has \"first-party\" interaction. Some browsers, like Safari 13.1, started granting cookie storage to websites only after a user has directly interacted with them.</p>\n<h4 id=\"returns-promise--void-8\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise--void-8\">#</a><strong>Returns</strong> <code>Promise</code> | <code>void</code></h4>\n<h3 id=\"playinteractionsinteractions-runfn-helper\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#playinteractionsinteractions-runfn-helper\">#</a>playInteractions<em>(interactions, runFn, helper)</em></h3>\n<p>Use this method if you want to change the speed or randomness of user Interactions (mouse movements, typing, etc).</p>\n<h4 id=\"returns-promise-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise-2\">#</a><strong>Returns</strong> <code>Promise</code></h4>\n<h3 id=\"adjuststartingmousepointpoint-helper\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#adjuststartingmousepointpoint-helper\">#</a>adjustStartingMousePoint<em>(point, helper)</em></h3>\n<p>This is used within Core to start the mouse Interactions correctly.</p>\n<h4 id=\"returns-promise-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise-3\">#</a><strong>Returns</strong> <code>Promise</code></h4>",
+  "title": "Core Plugins",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Creating Your Own Core Plugin",
+      "anchor": "#creating-your-own-core-plugin"
+    },
+    {
+      "depth": 2,
+      "value": "Constructor",
+      "anchor": "#constructor"
+    },
+    {
+      "depth": 3,
+      "value": "new CorePlugin<em>(createOptions)</em>",
+      "anchor": "#new-coreplugincreateoptions"
+    },
+    {
+      "depth": 2,
+      "value": "Class Properties",
+      "anchor": "#class-properties"
+    },
+    {
+      "depth": 3,
+      "value": "CorePlugin.id <em>required</em>",
+      "anchor": "#corepluginid-required"
+    },
+    {
+      "depth": 3,
+      "value": "CorePlugin.type <em>required</em>",
+      "anchor": "#coreplugintype-required"
+    },
+    {
+      "depth": 2,
+      "value": "Instance Method Hooks",
+      "anchor": "#instance-method-hooks"
+    },
+    {
+      "depth": 3,
+      "value": "configure<em>(config)</em>",
+      "anchor": "#configureconfig"
+    },
+    {
+      "depth": 3,
+      "value": "onNewBrowser<em>(browser, launchArgs)</em> <em>optional</em>",
+      "anchor": "#onnewbrowserbrowser-launchargs-optional"
+    },
+    {
+      "depth": 3,
+      "value": "onClientCommand<em>(meta, ...args)</em> <em>optional</em>",
+      "anchor": "#onclientcommandmeta-args-optional"
+    },
+    {
+      "depth": 3,
+      "value": "onDnsConfiguration<em>(settings: IDnsSettings)</em>",
+      "anchor": "#ondnsconfigurationsettings-idnssettings"
+    },
+    {
+      "depth": 3,
+      "value": "onTcpConfiguration<em>(settings: ITcpSettings)</em>",
+      "anchor": "#ontcpconfigurationsettings-itcpsettings"
+    },
+    {
+      "depth": 3,
+      "value": "onTlsConfiguration<em>(settings: ITlsSettings)</em>",
+      "anchor": "#ontlsconfigurationsettings-itlssettings"
+    },
+    {
+      "depth": 3,
+      "value": "onHttp2SessionConnect<em>(request: IHttpResourceLoadDetails, settings: IHttp2ConnectSettings)</em>",
+      "anchor": "#onhttp2sessionconnectrequest-ihttpresourceloaddetails-settings-ihttp2connectsettings"
+    },
+    {
+      "depth": 3,
+      "value": "beforeHttpRequest<em>(request: IHttpResourceLoadDetails)</em>",
+      "anchor": "#beforehttprequestrequest-ihttpresourceloaddetails"
+    },
+    {
+      "depth": 3,
+      "value": "beforeHttpResponse<em>(resource: IHttpResourceLoadDetails)</em>",
+      "anchor": "#beforehttpresponseresource-ihttpresourceloaddetails"
+    },
+    {
+      "depth": 3,
+      "value": "onNewPage<em>(page: IPage)</em>",
+      "anchor": "#onnewpagepage-ipage"
+    },
+    {
+      "depth": 3,
+      "value": "onNewWorker<em>(worker: IWorker)</em>",
+      "anchor": "#onnewworkerworker-iworker"
+    },
+    {
+      "depth": 3,
+      "value": "websiteHasFirstPartyInteraction<em>(url: URL)</em>",
+      "anchor": "#websitehasfirstpartyinteractionurl-url"
+    },
+    {
+      "depth": 3,
+      "value": "playInteractions<em>(interactions, runFn, helper)</em>",
+      "anchor": "#playinteractionsinteractions-runfn-helper"
+    },
+    {
+      "depth": 3,
+      "value": "adjustStartingMousePoint<em>(point, helper)</em>",
+      "anchor": "#adjuststartingmousepointpoint-helper"
+    }
+  ]
+}

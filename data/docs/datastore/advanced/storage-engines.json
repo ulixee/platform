@@ -1,0 +1,21 @@
+{
+  "content": "<h1 id=\"storage-engines\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#storage-engines\">#</a>Storage Engines</h1>\n<blockquote>\n<p>Storage Engines centralize the underlying sql storage and querying for a Datastore. A Datastore uploaded to a cloud must use a storageEngineHost to ensure data is available across all nodes.</p>\n</blockquote>\n<h2 id=\"configuring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#configuring\">#</a>Configuring</h2>\n<p>When you upload a Datastore to a cloud, it will require you to set the <code>storageEngineHost</code> in the Datastore before uploading. You can also change out this ip:port locally to test out migrations or simply run tests against the production database.</p>\n<h2 id=\"payment\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#payment\">#</a>Payment</h2>\n<p>Storage Engines operate very similarly to Datastores. They can set their price per kb of data returned.</p>\n<h2 id=\"underlying-engine\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#underlying-engine\">#</a>Underlying Engine</h2>\n<p>The current underlying engine for Storage Engines is Sqlite3. However, it's expected that we will add Postgres and other engines in the future.</p>",
+  "title": "Storage Engines",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Configuring",
+      "anchor": "#configuring"
+    },
+    {
+      "depth": 2,
+      "value": "Payment",
+      "anchor": "#payment"
+    },
+    {
+      "depth": 2,
+      "value": "Underlying Engine",
+      "anchor": "#underlying-engine"
+    }
+  ]
+}

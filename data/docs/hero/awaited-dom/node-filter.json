@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--nodefilter\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--nodefilter\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> NodeFilter</h1>\n<div class='overview'>A <strong><code>NodeFilter</code></strong> interface represents an object used to filter the nodes in a <code>NodeIterator</code> or <code>TreeWalker</code>. They don't know anything about the DOM or how to traverse nodes; they just know how to evaluate a single node against the provided filter.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>acceptNode()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> NodeFilter",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

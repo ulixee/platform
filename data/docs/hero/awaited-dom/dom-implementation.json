@@ -1,0 +1,21 @@
+{
+  "content": "<h1 id=\"awaiteddom--domimplementation\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--domimplementation\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> DOMImplementation</h1>\n<div class='overview'>The <code><strong>DOMImplementation</strong></code> interface represents an object providing methods which are not dependent on any particular document. Such an object is returned by the <code>Document.implementation</code> property.</div>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"hasFeature\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hasFeature\">#</a>.hasFeature <em>()</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>boolean</code> indicating if a given feature is supported or not. This function is unreliable and kept for compatibility purpose alone: except for SVG-related queries, it always returns <code>true</code>. Old browsers are very inconsistent in their behavior.</p>\n<h4 id=\"returns-promiseboolean\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseboolean\">#</a><strong>Returns</strong>: <code>Promise&#x3C;boolean></code></h4>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"methods-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods-1\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>createDocument()</code></td>\n<td><code>createDocumentType()</code></td>\n</tr>\n<tr>\n<td><code>createHTMLDocument()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> DOMImplementation",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": ".hasFeature <em>()</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#hasFeature"
+    },
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

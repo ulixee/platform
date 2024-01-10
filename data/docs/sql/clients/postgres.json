@@ -1,0 +1,5 @@
+{
+  "content": "<h1 id=\"postgres-client\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#postgres-client\">#</a>Postgres Client</h1>\n<p>Postgres is an emmensly popular SQL database. You can use any Postgres client from any language to query Ulixee. Of course, only the Ulixee SQL subset is supported within the queries.</p>\n<p>Below is an example of a Ulixee SQL query using a Postgres client:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import { Client } from 'pg';\n\nconst new Client('postgres://');\nclient.connect(async () => {\n  const { rows } = await client.query(`SELECT * FROM table WHERE lastName='Clark'`);\n  console.log('OUTPUT: ', rows);\n});\n</code></pre>\n<p>You'll need to start the Ulixee Server before running the above code:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-shell\">% npx @ulixee/server-playground start\n</code></pre>",
+  "title": "Postgres Client",
+  "subtitles": []
+}

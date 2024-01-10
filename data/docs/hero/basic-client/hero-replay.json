@@ -1,0 +1,41 @@
+{
+  "content": "<h1 id=\"heroreplay\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#heroreplay\">#</a>HeroReplay</h1>\n<blockquote>\n<p>HeroReplay is a specialized version of Hero that allows you to load and interact with previous Hero sessions without reloading the website and rerunning http traffic.</p>\n</blockquote>\n<p>This class is barebones for the moment -- it contains a small list of properties such as retrieving DetachedElements and DetachedResources. Our long-term plans are to make this a full-fledged tool for reloading and interacting with the DOM and resources from previous Hero sessions.</p>\n<h2 id=\"constructor\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#constructor\">#</a>Constructor</h2>\n<p>HeroReplay accepts either a subset of Hero configuration settings, including a <code>replaySessionId</code>, or a Hero instance.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li><em>OPTION 1</em> config <code>object</code> Accepts any of the following:\n<ul>\n<li>replaySessionId <code>string</code>. The sessionId of a previous session to replay.</li>\n<li>connectionToCore <code>object</code>. OPTIONAL object containing <code>IConnectionToCoreOptions</code> used to connect, or an already created <code>ConnectionToCore</code> instance. Defaults to automatically booting up and connecting to a local <code>Core</code>.</li>\n</ul>\n</li>\n<li>OR <em>OPTION 2</em> config <code>object</code>.\n<ul>\n<li>hero <code>Hero</code>. An existing Hero object.</li>\n</ul>\n</li>\n</ul>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"heroreplaydetachedelements\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#heroreplaydetachedelements\">#</a>heroReplay.detachedElements</h3>\n<p>DetachedElements object providing access to all elements with <code>$detach</code> called from this script.</p>\n<h4 id=\"returns-detachedelements\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-detachedelements\">#</a><strong>Returns</strong> <a href=\"/docs/hero/advanced-client/detached-elements\"><code>DetachedElements</code></a></h4>\n<h3 id=\"heroreplaydetachedresources\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#heroreplaydetachedresources\">#</a>heroReplay.detachedResources</h3>\n<p>DetachedResources object providing access to all resources collected from this script.</p>\n<h4 id=\"returns-detachedresources\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-detachedresources\">#</a><strong>Returns</strong> <a href=\"/docs/hero/advanced-client/detached-resources\"><code>DetachedResources</code></a></h4>\n<h3 id=\"heroreplaysessionid\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#heroreplaysessionid\">#</a>heroReplay.sessionId</h3>\n<p>Readonly unique sessionId for this Session.</p>\n<h4 id=\"returns-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisestring\">#</a><strong>Returns</strong> <code>Promise&#x3C;string></code></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"getSnippet\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#getSnippet\">#</a>heroReplay.getSnippet <em>(key)</em></h3>\n<p>Retrieves a value you previously stored with <a href=\"/docs/hero/basic-client/hero#setSnippet\">hero.setSnippet</a>.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">const heroReplay = new HeroReplay({/* sessionId */});\nconst when = await heroReplay.getSnippet('time');\n</code></pre>\n<h4 id=\"arguments-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-1\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>key <code>string</code>. The key you previously used to store the value.</li>\n</ul>\n<h4 id=\"returns-promiseany\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promiseany\">#</a><strong>Returns</strong>: <code>Promise&#x3C;any></code></h4>",
+  "title": "HeroReplay",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Constructor",
+      "anchor": "#constructor"
+    },
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": "heroReplay.detachedElements",
+      "anchor": "#heroreplaydetachedelements"
+    },
+    {
+      "depth": 3,
+      "value": "heroReplay.detachedResources",
+      "anchor": "#heroreplaydetachedresources"
+    },
+    {
+      "depth": 3,
+      "value": "heroReplay.sessionId",
+      "anchor": "#heroreplaysessionid"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": "heroReplay.getSnippet <em>(key)</em>",
+      "anchor": "#getSnippet"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "content": "<h1 id=\"awaiteddom--timeranges\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--timeranges\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> TimeRanges</h1>\n<div class='overview'>The <code>TimeRanges</code> interface is used to represent a set of time ranges, primarily for the purpose of tracking which portions of media have been buffered when loading it for use by the <code>&lt;audio&gt;</code> and <code>&lt;video&gt;</code>&nbsp;elements.</div>\n<div class='overview'>A <code>TimeRanges</code> object includes one or more ranges of time, each specified by a starting and ending time offset. You reference each time range by using the <code>start()</code> and <code>end()</code> methods, passing the index number of the time range you want to retrieve.</div>\n<div class='overview'>The term \"<a class=\"external\" href=\"https://www.w3.org/TR/html52/semantics-embedded-content.html#normalized-timeranges-object\" rel=\"noopener\">normalized TimeRanges object</a>\" indicates that ranges in such an object are ordered, don't overlap, aren't empty, and don't touch (adjacent ranges are folded into one bigger range).</div>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"length\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#length\">#</a>.length <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns an <code>unsigned long</code> representing the number of time ranges represented by the time range object.</p>\n<h4 id=\"type-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"end\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#end\">#</a>.end <em>(index)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the time for the end of the specified range.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>index <code>number</code>. <code>index</code> is the range number to return the ending time for.</li>\n</ul>\n<h4 id=\"returns-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisenumber\">#</a><strong>Returns</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"start\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#start\">#</a>.start <em>(index)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the time for the start of the range with the specified index.</p>\n<h4 id=\"arguments-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments-1\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>index <code>number</code>. <code>index</code> is the range number to return the starting time for.</li>\n</ul>\n<h4 id=\"returns-promisenumber-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisenumber-1\">#</a><strong>Returns</strong>: <code>Promise&#x3C;number></code></h4>",
+  "title": " <span>/</span> TimeRanges",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": ".length <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#length"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": ".end <em>(index)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#end"
+    },
+    {
+      "depth": 3,
+      "value": ".start <em>(index)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#start"
+    }
+  ]
+}

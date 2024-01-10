@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--supernodelist\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--supernodelist\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> SuperNodeList</h1>\n<div class='overview'><span class=\"seoSummary\"><strong><code>NodeList</code></strong> objects are collections of nodes, usually returned by properties such as <code>Node.childNodes</code> and methods such as <code>document.querySelectorAll()</code>.</span></div>\n<h2 id=\"dependencies\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#dependencies\">#</a>Dependencies</h2>\n<p>SuperNodeList implements all the properties and methods of the following classes:</p>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><a href=\"/docs/hero/awaited-dom/node-list\">NodeList</a></td>\n<td><a href=\"/docs/hero/awaited-dom/radio-node-list\">RadioNodeList</a></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> SuperNodeList",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Dependencies",
+      "anchor": "#dependencies"
+    }
+  ]
+}

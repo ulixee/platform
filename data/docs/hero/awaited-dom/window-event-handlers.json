@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--windoweventhandlers\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--windoweventhandlers\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> WindowEventHandlers</h1>\n<div class='overview'>The <strong><code>WindowEventHandlers</code></strong> mixin describes the event handlers common to several interfaces like <code>Window</code>, or <code>HTMLBodyElement</code> and <code>HTMLFrameSetElement</code>. Each of these interfaces can implement additional specific event handlers.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>onafterprint</code></td>\n<td><code>onbeforeprint</code></td>\n</tr>\n<tr>\n<td><code>onbeforeunload</code></td>\n<td><code>onhashchange</code></td>\n</tr>\n<tr>\n<td><code>onlanguagechange</code></td>\n<td><code>onmessage</code></td>\n</tr>\n<tr>\n<td><code>onmessageerror</code></td>\n<td><code>onpopstate</code></td>\n</tr>\n<tr>\n<td><code>onrejectionhandled</code></td>\n<td><code>onstorage</code></td>\n</tr>\n<tr>\n<td><code>onunhandledrejection</code></td>\n<td><code>onunload</code></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> WindowEventHandlers",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

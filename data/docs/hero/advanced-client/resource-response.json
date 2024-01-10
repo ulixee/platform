@@ -1,0 +1,71 @@
+{
+  "content": "<h1 id=\"resourceresponse\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#resourceresponse\">#</a>ResourceResponse</h1>\n<blockquote>\n<p>Resource requests are the raw underlying http request details made to access a resource.</p>\n</blockquote>\n<p>Instances of this class are associated with a resource returned from <a href=\"/docs/hero/advanced-client/tab##wait-for-resource\"><code>tab.waitForResource</code></a>, listening for resources <a href=\"/docs/hero/advanced-client/tab#resource-event\"><code>tab.on('resource')</code></a> or from the initial window document load.</p>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"browserservedfromcache\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#browserservedfromcache\">#</a>browserServedFromCache</h3>\n<p>Will have a value if http response was served from a browser cache.</p>\n<h4 id=\"returns-null--service-worker--disk--prefetch--memory\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-null--service-worker--disk--prefetch--memory\">#</a><strong>Returns</strong> <code>null | 'service-worker' | 'disk' | 'prefetch' | 'memory'</code></h4>\n<h3 id=\"browserloadfailure\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#browserloadfailure\">#</a>browserLoadFailure</h3>\n<p>Will have a value if an http error occurred loading this request.</p>\n<h4 id=\"returns-string--null\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-string--null\">#</a><strong>Returns</strong> <code>string | null</code></h4>\n<h3 id=\"headers\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#headers\">#</a>headers</h3>\n<p>Retrieve the actual headers returned to the client (order and casing is preserved)</p>\n<h4 id=\"returns--name-string-string-\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns--name-string-string-\">#</a><strong>Returns</strong> <code>{ [name: string]: string }</code></h4>\n<h3 id=\"url\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#url\">#</a>url</h3>\n<p>The response url (if redirected).</p>\n<h4 id=\"returns-string\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-string\">#</a><strong>Returns</strong> <code>string</code></h4>\n<h3 id=\"timestamp\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#timestamp\">#</a>timestamp</h3>\n<p>ISO formatted date string.</p>\n<h4 id=\"returns-string-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-string-1\">#</a><strong>Returns</strong> <code>string</code></h4>\n<h3 id=\"remoteaddress\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#remoteaddress\">#</a>remoteAddress</h3>\n<p>IPv4/6 and port of remote socket. <code>192.168.172.2:5001</code></p>\n<h4 id=\"returns-string-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-string-2\">#</a><strong>Returns</strong> <code>string</code></h4>\n<h3 id=\"statuscode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#statuscode\">#</a>statusCode</h3>\n<p>Http response status code.</p>\n<p>NOTE: this value might be null if no HTTP response occurred, or an error occurred.</p>\n<h4 id=\"returns-number\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-number\">#</a><strong>Returns</strong> <code>number</code></h4>\n<h3 id=\"statustext\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#statustext\">#</a>statusText</h3>\n<p>Http response status message.</p>\n<h4 id=\"returns-string-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-string-3\">#</a><strong>Returns</strong> <code>string</code></h4>\n<h3 id=\"bodybytes\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#bodybytes\">#</a>bodyBytes</h3>\n<p>A <code>number</code> indicating bytes returned in the response body.</p>\n<h4 id=\"type-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"buffer\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#buffer\">#</a>buffer</h3>\n<p>Load the underlying buffer returned by this network response.</p>\n<h4 id=\"returns-promisebuffer\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisebuffer\">#</a><strong>Returns</strong> <code>Promise&#x3C;Buffer></code></h4>\n<h3 id=\"text\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#text\">#</a>text<em>()</em></h3>\n<p>Convert the returned resource body to a string.</p>\n<h4 id=\"returns-promisestring\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisestring\">#</a><strong>Returns</strong> <code>Promise&#x3C;string></code></h4>\n<h3 id=\"json\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#json\">#</a>json<em>()</em></h3>\n<p>Convert the returned resource body into json.</p>\n<h4 id=\"returns-promisejson\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisejson\">#</a><strong>Returns</strong> <code>Promise&#x3C;json></code></h4>",
+  "title": "ResourceResponse",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": "browserServedFromCache",
+      "anchor": "#browserservedfromcache"
+    },
+    {
+      "depth": 3,
+      "value": "browserLoadFailure",
+      "anchor": "#browserloadfailure"
+    },
+    {
+      "depth": 3,
+      "value": "headers",
+      "anchor": "#headers"
+    },
+    {
+      "depth": 3,
+      "value": "url",
+      "anchor": "#url"
+    },
+    {
+      "depth": 3,
+      "value": "timestamp",
+      "anchor": "#timestamp"
+    },
+    {
+      "depth": 3,
+      "value": "remoteAddress",
+      "anchor": "#remoteaddress"
+    },
+    {
+      "depth": 3,
+      "value": "statusCode",
+      "anchor": "#statuscode"
+    },
+    {
+      "depth": 3,
+      "value": "statusText",
+      "anchor": "#statustext"
+    },
+    {
+      "depth": 3,
+      "value": "bodyBytes",
+      "anchor": "#bodybytes"
+    },
+    {
+      "depth": 3,
+      "value": "buffer",
+      "anchor": "#buffer"
+    },
+    {
+      "depth": 3,
+      "value": "text<em>()</em>",
+      "anchor": "#text"
+    },
+    {
+      "depth": 3,
+      "value": "json<em>()</em>",
+      "anchor": "#json"
+    }
+  ]
+}

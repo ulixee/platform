@@ -1,0 +1,46 @@
+{
+  "content": "<h1 id=\"delete\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#delete\">#</a>Delete</h1>\n<blockquote>\n<p>DELETE deletes rows of a table</p>\n</blockquote>\n<pre class=\"ulixeeTheme\"><code>DELETE FROM table_name [ [ AS ] alias ]\n    [ WHERE condition ]\n    [ RETURNING * | output_expression [ [ AS ] output_name ] [, ...] ]\n</code></pre>\n<h2 id=\"description\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#description\">#</a>Description</h2>\n<p>DELETE deletes rows that satisfy the WHERE clause from the specified table. If the WHERE clause is absent, the effect is to delete all rows in the table. The result is a valid, but empty table.\nTip</p>\n<p>There are two ways to delete rows in a table using information contained in other tables in the database: using sub-selects, or specifying additional tables in the USING clause. Which technique is more appropriate depends on the specific circumstances.</p>\n<p>The optional RETURNING clause causes DELETE to compute and return value(s) based on each row actually deleted. Any expression using the table's columns can be computed. The syntax of the RETURNING list is identical to that of the output list of SELECT.</p>\n<p>You must have the DELETE privilege on the table to delete from it, as well as the SELECT privilege for any table in the USING clause or whose values are read in the condition.</p>\n<h2 id=\"parameters\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#parameters\">#</a>Parameters</h2>\n<h3 id=\"table_name\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#table_name\">#</a>table_name</h3>\n<pre class=\"ulixeeTheme\"><code>The name of the table to delete rows from.\n</code></pre>\n<h4 id=\"alias\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#alias\">#</a>alias</h4>\n<pre class=\"ulixeeTheme\"><code>A substitute name for the target table. When an alias is provided, it completely hides the actual name of the table. For example, given DELETE FROM foo AS f, the remainder of the DELETE statement must refer to this table as f not foo.\n</code></pre>\n<h3 id=\"condition\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#condition\">#</a>condition</h3>\n<pre class=\"ulixeeTheme\"><code>An expression that returns a value of type boolean. Only rows for which this expression returns true will be deleted.\n</code></pre>\n<h3 id=\"output_expression\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#output_expression\">#</a>output_expression</h3>\n<pre class=\"ulixeeTheme\"><code>An expression to be computed and returned by the DELETE command after each row is deleted. The expression can use any column names of the table named by table_name. Write * to return all columns.\n</code></pre>\n<h3 id=\"output_name\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#output_name\">#</a>output_name</h3>\n<pre class=\"ulixeeTheme\"><code>A name to use for a returned column.\n</code></pre>\n<h2 id=\"outputs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#outputs\">#</a>Outputs</h2>\n<p>On successful completion, a DELETE command returns a command tag of the form</p>\n<pre class=\"ulixeeTheme\"><code>DELETE count\n</code></pre>\n<p>The count is the number of rows deleted. If count is 0, no rows were deleted by the query (this is not considered an error).</p>\n<p>If the DELETE command contains a RETURNING clause, the result will be similar to that of a SELECT statement containing the columns and values defined in the RETURNING list, computed over the row(s) deleted by the command.</p>\n<h2 id=\"examples\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#examples\">#</a>Examples</h2>\n<p>Delete all films but musicals:</p>\n<pre class=\"ulixeeTheme\"><code>DELETE FROM films WHERE kind &#x3C;> 'Musical';\n</code></pre>\n<p>Clear the table films:</p>\n<pre class=\"ulixeeTheme\"><code>DELETE FROM films;\n</code></pre>\n<p>Delete completed tasks, returning full details of the deleted rows:</p>\n<pre class=\"ulixeeTheme\"><code>DELETE FROM tasks WHERE status = 'DONE' RETURNING *;\n</code></pre>\n<p>Delete the row of tasks on which the cursor c_tasks is currently positioned:</p>\n<pre class=\"ulixeeTheme\"><code>DELETE FROM tasks WHERE CURRENT OF c_tasks;\n</code></pre>",
+  "title": "Delete",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Description",
+      "anchor": "#description"
+    },
+    {
+      "depth": 2,
+      "value": "Parameters",
+      "anchor": "#parameters"
+    },
+    {
+      "depth": 3,
+      "value": "table_name",
+      "anchor": "#table_name"
+    },
+    {
+      "depth": 3,
+      "value": "condition",
+      "anchor": "#condition"
+    },
+    {
+      "depth": 3,
+      "value": "output_expression",
+      "anchor": "#output_expression"
+    },
+    {
+      "depth": 3,
+      "value": "output_name",
+      "anchor": "#output_name"
+    },
+    {
+      "depth": 2,
+      "value": "Outputs",
+      "anchor": "#outputs"
+    },
+    {
+      "depth": 2,
+      "value": "Examples",
+      "anchor": "#examples"
+    }
+  ]
+}

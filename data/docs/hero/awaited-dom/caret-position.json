@@ -1,0 +1,31 @@
+{
+  "content": "<h1 id=\"awaiteddom--caretposition\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--caretposition\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> CaretPosition</h1>\n<div class='overview'><strong>This is an experimental technology</strong><br>Check the <a href=\"#Browser_compatibility\">Browser compatibility table</a> carefully before using this in production.</div>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"offset\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#offset\">#</a>.offset <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>long</code> representing the character offset in the caret position node.</p>\n<h4 id=\"type-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"offsetNode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#offsetNode\">#</a>.offsetNode <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns a <code>Node</code> containing the found node at the caret's position.</p>\n<h4 id=\"type-supernode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-supernode\">#</a><strong>Type</strong>: <a href=\"/docs/hero/awaited-dom/super-node\"><code>SuperNode</code></a></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"getClientRect\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#getClientRect\">#</a>.getClientRect <em>()</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Needs content.</p>\n<h4 id=\"returns-domrect\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-domrect\">#</a><strong>Returns</strong>: <a href=\"/docs/hero/awaited-dom/dom-rect\"><code>DOMRect</code></a></h4>",
+  "title": " <span>/</span> CaretPosition",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": ".offset <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#offset"
+    },
+    {
+      "depth": 3,
+      "value": ".offsetNode <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#offsetNode"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": ".getClientRect <em>()</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#getClientRect"
+    }
+  ]
+}

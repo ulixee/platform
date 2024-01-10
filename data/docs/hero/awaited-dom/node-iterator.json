@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--nodeiterator\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--nodeiterator\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> NodeIterator</h1>\n<div class='overview'><span class=\"seoSummary\">The <strong><code>NodeIterator</code></strong> interface represents an iterator over the members of a list of the nodes in a subtree of the DOM. The nodes will be returned in document order.</span></div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>filter</code></td>\n<td><code>pointerBeforeReferenceNode</code></td>\n</tr>\n<tr>\n<td><code>referenceNode</code></td>\n<td><code>root</code></td>\n</tr>\n<tr>\n<td><code>whatToShow</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>detach()</code></td>\n<td><code>nextNode()</code></td>\n</tr>\n<tr>\n<td><code>previousNode()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> NodeIterator",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

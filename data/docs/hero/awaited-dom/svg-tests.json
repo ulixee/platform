@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--svgtests\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--svgtests\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> SVGTests</h1>\n<div class='overview'>The <strong><code>SVGTests</code></strong> interface is used to reflect conditional processing attributes and is mixed into other interfaces for elements that support these attributes.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>requiredExtensions</code></td>\n<td><code>systemLanguage</code></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> SVGTests",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "content": "<h1 id=\"awaiteddom--domrectreadonly\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--domrectreadonly\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> DOMRectReadOnly</h1>\n<div class='overview'>The <strong><code>DOMRectReadOnly</code></strong> interface specifies the standard properties used by <code>DOMRect</code> to define a rectangle whose properties are immutable.</div>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"bottom\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#bottom\">#</a>.bottom <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the bottom coordinate value of the <code>DOMRect</code> (usually the same as y + height).</p>\n<h4 id=\"type-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"height\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#height\">#</a>.height <div class=\"specs\"><i>W3C</i></div></h3>\n<p>The height of the <code>DOMRect</code>.</p>\n<h4 id=\"type-promisenumber-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber-1\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"left\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#left\">#</a>.left <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the left coordinate value of the <code>DOMRect</code> (usually the same as <code>x</code>).</p>\n<h4 id=\"type-promisenumber-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber-2\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"right\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#right\">#</a>.right <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the right coordinate value of the <code>DOMRect</code> (usually the same as <code>x + width</code>).</p>\n<h4 id=\"type-promisenumber-3\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber-3\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"top\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#top\">#</a>.top <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the top coordinate value of the <code>DOMRect</code> (usually the same as <code>y</code>.)</p>\n<h4 id=\"type-promisenumber-4\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber-4\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"width\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#width\">#</a>.width <div class=\"specs\"><i>W3C</i></div></h3>\n<p>The width of the <code>DOMRect</code>.</p>\n<h4 id=\"type-promisenumber-5\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber-5\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"x\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#x\">#</a>.x <div class=\"specs\"><i>W3C</i></div></h3>\n<p>The x coordinate of the <code>DOMRect</code>'s origin.</p>\n<h4 id=\"type-promisenumber-6\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber-6\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"y\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#y\">#</a>.y <div class=\"specs\"><i>W3C</i></div></h3>\n<p>The y coordinate of the <code>DOMRect</code>'s origin.</p>\n<h4 id=\"type-promisenumber-7\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber-7\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>fromRect()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> DOMRectReadOnly",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": ".bottom <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#bottom"
+    },
+    {
+      "depth": 3,
+      "value": ".height <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#height"
+    },
+    {
+      "depth": 3,
+      "value": ".left <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#left"
+    },
+    {
+      "depth": 3,
+      "value": ".right <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#right"
+    },
+    {
+      "depth": 3,
+      "value": ".top <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#top"
+    },
+    {
+      "depth": 3,
+      "value": ".width <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#width"
+    },
+    {
+      "depth": 3,
+      "value": ".x <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#x"
+    },
+    {
+      "depth": 3,
+      "value": ".y <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#y"
+    },
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

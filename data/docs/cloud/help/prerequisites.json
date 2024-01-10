@@ -1,0 +1,16 @@
+{
+  "content": "<h1 id=\"prerequisites\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#prerequisites\">#</a>Prerequisites</h1>\n<p>To get started with Ulixee Cloud, you’ll need to have the following software tools installed:</p>\n<h3 id=\"nodejs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#nodejs\">#</a>Node.js</h3>\n<p>Visit the <a href=\"https://nodejs.org/\">Node.js site</a> and follow the instructions to download and install the recommended version for your operating system. Once you have followed the installation steps, make sure everything was installed properly:</p>\n<p>Open up your terminal.</p>\n<ul>\n<li>Run <code>node --version</code>. (If you’re new to the command-line, “run command” means “type node --version in the command prompt, and hit the Enter key”. From here on, this is what we mean by “run command”).</li>\n<li>Run <code>npm --version</code>.</li>\n<li><strong>The output of each of those commands should be a version number</strong>. If entering those commands doesn’t show you a version number, go back and make sure you have installed <strong>Node.js</strong>.</li>\n</ul>\n<h3 id=\"yarn-optional\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#yarn-optional\">#</a>Yarn (Optional)</h3>\n<p>Yarn is a fast alternative to Npm. It's optional to install, but recommended since we use it in many code examples.\n<strong>Follow instruction here to install</strong>: <a href=\"https://yarnpkg.com/en/docs/install\">https://yarnpkg.com/en/docs/install</a></p>",
+  "title": "Prerequisites",
+  "subtitles": [
+    {
+      "depth": 3,
+      "value": "Node.js",
+      "anchor": "#nodejs"
+    },
+    {
+      "depth": 3,
+      "value": "Yarn (Optional)",
+      "anchor": "#yarn-optional"
+    }
+  ]
+}

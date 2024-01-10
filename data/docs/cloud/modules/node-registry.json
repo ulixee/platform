@@ -1,0 +1,21 @@
+{
+  "content": "<h1 id=\"node-registry\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#node-registry\">#</a>Node Registry</h1>\n<p>A Node Registry tracks nodes in a \"cluster\" and keeps a pulse of their workload. It's a hosted service that should have a single instance inside your cluster of nodes.</p>\n<h2 id=\"usage\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#usage\">#</a>Usage</h2>\n<p>You don't need to interact with the NodeRegistry beyond telling a node to connect to one or host one. Here are some options to provide to a CloudNode constructor to initialize a NodeRegistry:</p>\n<h3 id=\"as-a-provider\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#as-a-provider\">#</a>As a Provider</h3>\n<ul>\n<li>nodeRegistryHost <code>self</code>. Optionally tell the node to point at self for node registry services.</li>\n<li>hostedServicesServerOptions <code>object</code>. Setting a port (or 0 to use 18181 or an open port) or host will activate the hosted services.</li>\n</ul>\n<h3 id=\"as-a-client\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#as-a-client\">#</a>As a Client</h3>\n<ul>\n<li>nodeRegistryHost <code>string</code>. IP:port of the HostedServices server to connect to.</li>\n<li>servicesSetupHost <code>string</code>. IP:port of the HostedServices server to connect to for all service hosts.</li>\n</ul>",
+  "title": "Node Registry",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Usage",
+      "anchor": "#usage"
+    },
+    {
+      "depth": 3,
+      "value": "As a Provider",
+      "anchor": "#as-a-provider"
+    },
+    {
+      "depth": 3,
+      "value": "As a Client",
+      "anchor": "#as-a-client"
+    }
+  ]
+}

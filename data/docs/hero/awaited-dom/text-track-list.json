@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--texttracklist\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--texttracklist\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> TextTrackList</h1>\n<div class='overview'><span class=\"seoSummary\">The <strong><code>TextTrackList</code></strong> interface is used to represent a list of the text tracks defined by the <code>&lt;track&gt;</code> element, with each track represented by a separate <code>textTrack</code> object in the list.</span></div>\n<div class='overview'>Retrieve an instance of this object with <code>HTMLMediaElement.textTracks</code>. The individual tracks can be accessed using array syntax or functions such as <code>forEach()</code> for example.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>length</code></td>\n<td><code>onaddtrack</code></td>\n</tr>\n<tr>\n<td><code>onchange</code></td>\n<td><code>onremovetrack</code></td>\n</tr>\n</tbody>\n</table>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>getTrackById()</code></td>\n<td><code>addEventListener()</code></td>\n</tr>\n<tr>\n<td><code>dispatchEvent()</code></td>\n<td><code>removeEventListener()</code></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> TextTrackList",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

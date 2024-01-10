@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--svgnumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--svgnumber\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> SVGNumber</h1>\n<div class='overview'>The <strong><code>SVGNumber</code></strong> interface corresponds to the <code>&lt;number&gt;</code> basic data type.</div>\n<div class='overview'>An <code>SVGNumber</code> object can be designated as read only, which means that attempts to modify the object will result in an exception being thrown.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>value</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> SVGNumber",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

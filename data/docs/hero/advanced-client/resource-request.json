@@ -1,0 +1,36 @@
+{
+  "content": "<h1 id=\"resourcerequest\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#resourcerequest\">#</a>ResourceRequest</h1>\n<blockquote>\n<p>Resource requests are the raw underlying http request details made to access a resource.</p>\n</blockquote>\n<p>Instances of this class are associated with a resource returned from <a href=\"/docs/hero/advanced-client/tab##wait-for-resource\"><code>tab.waitForResource</code></a>, listening for resources <a href=\"/docs/hero/advanced-client/tab#resource-event\"><code>tab.on('resource')</code></a> or from the initial window document load.</p>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"headers\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#headers\">#</a>headers</h3>\n<p>Retrieve the actual headers sent to the server (order and casing is preserved)</p>\n<h4 id=\"returns--name-string-string-\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns--name-string-string-\">#</a><strong>Returns</strong> <code>{ [name: string]: string }</code></h4>\n<h3 id=\"url\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#url\">#</a>url</h3>\n<p>The requested url.</p>\n<h4 id=\"returns-string\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-string\">#</a><strong>Returns</strong> <code>string</code></h4>\n<h3 id=\"timestamp\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#timestamp\">#</a>timestamp</h3>\n<p>ISO formatted date string.</p>\n<h4 id=\"returns-string-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-string-1\">#</a><strong>Returns</strong> <code>string</code></h4>\n<h3 id=\"method\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#method\">#</a>method</h3>\n<p>Http method. Possible values: <code>GET, POST, PUT, DELETE</code>.</p>\n<h4 id=\"returns-string-2\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-string-2\">#</a><strong>Returns</strong> <code>string</code></h4>\n<h3 id=\"postdata\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#postdata\">#</a>postData</h3>\n<p>Data sent to perform this request (if http post)</p>\n<h4 id=\"returns-promisebuffer\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promisebuffer\">#</a><strong>Returns</strong> <code>Promise&#x3C;Buffer></code></h4>",
+  "title": "ResourceRequest",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": "headers",
+      "anchor": "#headers"
+    },
+    {
+      "depth": 3,
+      "value": "url",
+      "anchor": "#url"
+    },
+    {
+      "depth": 3,
+      "value": "timestamp",
+      "anchor": "#timestamp"
+    },
+    {
+      "depth": 3,
+      "value": "method",
+      "anchor": "#method"
+    },
+    {
+      "depth": 3,
+      "value": "postData",
+      "anchor": "#postdata"
+    }
+  ]
+}

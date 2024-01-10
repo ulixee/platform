@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--eventlistener\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--eventlistener\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> EventListener</h1>\n<div class='overview'>The <strong><code>EventListener</code></strong> interface represents an object that can handle an event dispatched by an <code>EventTarget</code> object.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>handleEvent()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> EventListener",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

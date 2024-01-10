@@ -1,0 +1,41 @@
+{
+  "content": "<h1 id=\"configuration\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#configuration\">#</a>Configuration</h1>\n<p>Environmental configurations are available in the default <a href=\"https://github.com/ulixee/platform/tree/main/cloud/main/.env.defaults\"><code>.env.defaults file</code></a>. You can specify your own .env file using this template and pointing to this file in the cli using <code>npx @ulixee/cloud start --env ./.env</code>.</p>\n<h3 id=\"cloud-host\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cloud-host\">#</a>Cloud Host</h3>\n<p>A CloudNode host can be specified on creation. This would allow you to create a custom domain for your connections, or to provide an externally addressable ip to reach your Servers.</p>\n<h3 id=\"cloud-port\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cloud-port\">#</a>Cloud Port</h3>\n<p>A CloudNode will listen on port 1818 by default, but can be overridden on creation.</p>\n<h3 id=\"disable-chromealive\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#disable-chromealive\">#</a>Disable ChromeAlive!</h3>\n<p>ChromeAlive! will be automatically enabled for Hero and DatastoreForHero sessions if <code>@ulixee/desktop-core</code> is installed locally.</p>\n<p>To disable launching ChromeAlive!, you can include <code>process.env.ULX_DISABLE_CHROMEALIVE='true'</code> at the top of your script, or set the corresponding variable in your shell environment.</p>\n<h3 id=\"hosted-services\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hosted-services\">#</a>Hosted Services</h3>\n<p>You can configure what IP/port to listen for Hosted Services using the <code>hostedServicesServerOptions</code> on the <a href=\"/docs/cloud/modules/cloud-node#constructor\">CloudNode constructor</a>. You should make this IP private to your cluster to avoid exposing internals to nodes outside your cluster.</p>\n<p>Other nodes in your cluster can use these services by simply specifying this hosted services server host (<code>setupHost: localhost: 18181</code>)</p>\n<h3 id=\"cloudnode-type\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cloudnode-type\">#</a>CloudNode Type</h3>\n<p>A CloudNode is private by default. If you set the <code>cloudType</code> to <code>public</code> in the <a href=\"/docs/cloud/modules/cloud-node#constructor\">CloudNode constructor</a>, your Datastores will be publicly available for download with attached payment.</p>\n<h3 id=\"configure-hero-core\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#configure-hero-core\">#</a>Configure Hero Core</h3>\n<p>You can configure Hero with any desired options using the <code>heroCoreConfiguration</code> property on the <a href=\"/docs/cloud/modules/cloud-node#constructor\">CloudNode constructor</a>.</p>\n<h3 id=\"configure-datastore-core\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#configure-datastore-core\">#</a>Configure Datastore Core</h3>\n<p>You can configure Datastore Core with any desired options using the <code>datastoreCoreConfiguration</code> property on the <a href=\"/docs/cloud/modules/cloud-node#constructor\">CloudNode constructor</a>.</p>",
+  "title": "Configuration",
+  "subtitles": [
+    {
+      "depth": 3,
+      "value": "Cloud Host",
+      "anchor": "#cloud-host"
+    },
+    {
+      "depth": 3,
+      "value": "Cloud Port",
+      "anchor": "#cloud-port"
+    },
+    {
+      "depth": 3,
+      "value": "Disable ChromeAlive!",
+      "anchor": "#disable-chromealive"
+    },
+    {
+      "depth": 3,
+      "value": "Hosted Services",
+      "anchor": "#hosted-services"
+    },
+    {
+      "depth": 3,
+      "value": "CloudNode Type",
+      "anchor": "#cloudnode-type"
+    },
+    {
+      "depth": 3,
+      "value": "Configure Hero Core",
+      "anchor": "#configure-hero-core"
+    },
+    {
+      "depth": 3,
+      "value": "Configure Datastore Core",
+      "anchor": "#configure-datastore-core"
+    }
+  ]
+}

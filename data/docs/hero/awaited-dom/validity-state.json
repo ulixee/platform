@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--validitystate\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--validitystate\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> ValidityState</h1>\n<div class='overview'>The <strong><code>ValidityState</code></strong> interface represents the <em>validity states</em> that an element can be in, with respect to constraint validation. Together, they help explain why an element's value fails to validate, if it's not valid.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>badInput</code></td>\n<td><code>customError</code></td>\n</tr>\n<tr>\n<td><code>patternMismatch</code></td>\n<td><code>rangeOverflow</code></td>\n</tr>\n<tr>\n<td><code>rangeUnderflow</code></td>\n<td><code>stepMismatch</code></td>\n</tr>\n<tr>\n<td><code>tooLong</code></td>\n<td><code>tooShort</code></td>\n</tr>\n<tr>\n<td><code>typeMismatch</code></td>\n<td><code>valid</code></td>\n</tr>\n<tr>\n<td><code>valueMissing</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> ValidityState",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "content": "<h1 id=\"connectiontoherocore\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#connectiontoherocore\">#</a>ConnectionToHeroCore</h1>\n<blockquote>\n<p>ConnectionToHeroCore is a built-in mechanism to stream commands to local and remote instances of Hero using the same simple interface.</p>\n</blockquote>\n<p>When you install Hero, it comes ready to run locally with a Chrome engine and client all in your local codebase. However, as you begin to scale the number of concurrent scrapes, you will end up needing to manage a fleet of \"engines\" running on a number of computers.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-javascript\">const { Hero: BaseHero } = require('@ulixee/hero');\nconst { Hero: PlaygroundHero } = require('@ulixee/hero-playground');\n\n(async () => {\n  // starts a Hero Core and automatically connects\n  const local = new PlaygroundHero();\n  // dials a Remote Core\n  const remote = new BaseHero({\n    ConnectionToHeroCore: ConnectionToHeroCore.remote('192.168.1.1:3444'),\n  });\n})().catch(console.log);\n</code></pre>\n<p>Connections take \"transports\" that allow it to run over different types of connections and protocols. Hero uses WebSockets as the default transport (<code>WsTransportToCore</code>). Find more details <a href=\"/docs/hero/advanced-concepts/client-vs-core\">here</a>.</p>\n<h3 id=\"configuration\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#configuration\">#</a>Configuration</h3>\n<p>When you provide a ConnectionToHeroCore to a <a href=\"/docs/hero/basic-client/hero\">Hero</a> instance, Hero will accept either an <code>options</code> object or a <code>ConnectionToHeroCore</code> instance.</p>\n<h3 id=\"options\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#options\">#</a>Options</h3>\n<p>The provided settings configure the connection to <code>Core</code>. Note: some configurations will apply to all connected Heroes ( <code>dataDir</code>).</p>\n<ul>\n<li>options <code>IConnectionToCoreOptions</code>. A set of settings that controls the creation of a \"connection\" to a <code>Hero Core</code>.\n<ul>\n<li>host <code>string</code>. An optional <code>hostname:port</code> url that will be used to establish a WebSocket Transport to a Hero Core running on another machine. If no host is provided, a connection to a \"locally\" running <code>Core</code> will be attempted.</li>\n<li>maxConcurrency <code>number</code>. The max number of Heroes to allow to be created at the same time. Heroes are \"active\" until the created Hero is closed. If not provided, this number will match the max allowed by a <code>Core</code>.</li>\n<li>instanceTimeoutMillis <code>number</code>. The number of milliseconds to give each Hero in this connection to complete a session. A TimeoutError will be thrown if this time is exceeded. NOTE: the timer begins the moment a Hero instance is created, not when the session is actually instantiated. The backlog of local Heroes, along with the backlog on the Hero Core can impact when a session is actually created.</li>\n<li>dataDir <code>string</code> defaults to <code>os.tmpdir()/.ulixee</code>. Directory to store session files and mitm certificates.</li>\n</ul>\n</li>\n<li>connection <code>ConnectionToHeroCore</code>. A pre-initialized connection to a <code>Hero Core</code>. You can use this option to pre-check your connection to a remote connection, or to provide customization to the connection.</li>\n</ul>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"connect\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#connect\">#</a>connection.connect <em>()</em></h3>\n<p>Initializes the connection to the specified core. You can use this function if you would like to pre-connect to your remote host and ensure connections are properly established before continuing.</p>\n<p>NOTE: this will be automatically called when you pass in a connection to Hero.</p>\n<h4 id=\"returns-promise\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise\">#</a><strong>Returns</strong>: <code>Promise</code></h4>\n<h3 id=\"disconnect\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#disconnect\">#</a>connection.disconnect <em>()</em></h3>\n<p>Closes the connection and stops all pending requests.</p>\n<h4 id=\"returns-promise-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise-1\">#</a><strong>Returns</strong>: <code>Promise</code></h4>",
+  "title": "ConnectionToHeroCore",
+  "subtitles": [
+    {
+      "depth": 3,
+      "value": "Configuration",
+      "anchor": "#configuration"
+    },
+    {
+      "depth": 3,
+      "value": "Options",
+      "anchor": "#options"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": "connection.connect <em>()</em>",
+      "anchor": "#connect"
+    },
+    {
+      "depth": 3,
+      "value": "connection.disconnect <em>()</em>",
+      "anchor": "#disconnect"
+    }
+  ]
+}

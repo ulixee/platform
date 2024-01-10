@@ -1,0 +1,36 @@
+{
+  "content": "<h1 id=\"awaiteddom--videotracklist\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--videotracklist\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> VideoTrackList</h1>\n<div class='overview'><span class=\"seoSummary\">The <strong><code>VideoTrackList</code></strong> interface is used to represent a list of the video tracks contained within a <code>&lt;video&gt;</code> element, with each track represented by a separate <code>VideoTrack</code> object in the list.</span></div>\n<div class='overview'>Retrieve an instance of this object with <code>HTMLMediaElement.videoTracks</code>. The individual tracks can be accessed using array syntax or functions such as <code>forEach()</code> for example.</div>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"length\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#length\">#</a>.length <div class=\"specs\"><i>W3C</i></div></h3>\n<p>The number of tracks in the list.</p>\n<h4 id=\"type-promisenumber\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h3 id=\"selectedIndex\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#selectedIndex\">#</a>.selectedIndex <div class=\"specs\"><i>W3C</i></div></h3>\n<p>The index of the currently selected track, if any, or <code>−1</code> otherwise.</p>\n<h4 id=\"type-promisenumber-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#type-promisenumber-1\">#</a><strong>Type</strong>: <code>Promise&#x3C;number></code></h4>\n<h2 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h2>\n<h3 id=\"getTrackById\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#getTrackById\">#</a>.getTrackById <em>(id)</em> <div class=\"specs\"><i>W3C</i></div></h3>\n<p>Returns the <code>VideoTrack</code> found within the <code>VideoTrackList</code> whose <code>id</code> matches the specified string. If no match is found, <code>null</code> is returned.</p>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<ul>\n<li>id <code>string</code>. A <code>string</code> indicating the ID of the track to locate within the track list.</li>\n</ul>\n<h4 id=\"returns-videotrack\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-videotrack\">#</a><strong>Returns</strong>: <a href=\"/docs/hero/awaited-dom/video-track\"><code>VideoTrack</code></a></h4>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties-1\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>onaddtrack</code></td>\n<td><code>onchange</code></td>\n</tr>\n<tr>\n<td><code>onremovetrack</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>\n<h4 id=\"methods-1\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods-1\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>addEventListener()</code></td>\n<td><code>dispatchEvent()</code></td>\n</tr>\n<tr>\n<td><code>removeEventListener()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> VideoTrackList",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": ".length <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#length"
+    },
+    {
+      "depth": 3,
+      "value": ".selectedIndex <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#selectedIndex"
+    },
+    {
+      "depth": 2,
+      "value": "Methods",
+      "anchor": "#methods"
+    },
+    {
+      "depth": 3,
+      "value": ".getTrackById <em>(id)</em> <div class=\"specs\"><i>W3C</i></div>",
+      "anchor": "#getTrackById"
+    },
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

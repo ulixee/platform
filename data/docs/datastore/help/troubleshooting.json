@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"troubleshooting\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#troubleshooting\">#</a>Troubleshooting</h1>\n<h3 id=\"problems-after-an-upgrade\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#problems-after-an-upgrade\">#</a>Problems after an upgrade</h3>\n<p>If you have problems after upgrading, <a href=\"https://github.com/ulixee/platform/issues\">let us know</a>.</p>",
+  "title": "Troubleshooting",
+  "subtitles": [
+    {
+      "depth": 3,
+      "value": "Problems after an upgrade",
+      "anchor": "#problems-after-an-upgrade"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--animationeffect\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--animationeffect\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> AnimationEffect</h1>\n<div class='overview'></div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"methods\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#methods\">#</a>Methods</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>getComputedTiming()</code></td>\n<td><code>getTiming()</code></td>\n</tr>\n<tr>\n<td><code>updateTiming()</code></td>\n<td></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> AnimationEffect",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

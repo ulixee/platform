@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--svganimatedlength\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--svganimatedlength\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> SVGAnimatedLength</h1>\n<div class='overview'>The <code>SVGAnimatedLength</code> interface is used for attributes of basic type &lt;length&gt; which can be animated.</div>\n<h2 id=\"unimplemented-specs\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#unimplemented-specs\">#</a>Unimplemented Specs</h2>\n<h4 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h4>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>animVal</code></td>\n<td><code>baseVal</code></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> SVGAnimatedLength",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Unimplemented Specs",
+      "anchor": "#unimplemented-specs"
+    }
+  ]
+}

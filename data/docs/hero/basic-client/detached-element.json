@@ -1,0 +1,5 @@
+{
+  "content": "<h1 id=\"detachedelement\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#detachedelement\">#</a>DetachedElement</h1>\n<blockquote>\n<p>DetachedElement is designed for parsing and traversing local HTML fragments without needing a browser engine. It's similar to Cheerio or JSDOM except that it's lighter weight and more W3C compliant.</p>\n</blockquote>\n<p>This library is currently a thin wrapper for <a href=\"https://github.com/WebReflection/linkedom\">linkedom</a>, which Hero uses under the hood when you call <a href=\"/docs/hero/basic-client/hero#detach\">hero.detach(element)</a> or <a href=\"/docs/hero/basic-client/awaited-dom-extensions#detach\">element.$detach()</a>.</p>",
+  "title": "DetachedElement",
+  "subtitles": []
+}

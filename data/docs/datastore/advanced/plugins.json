@@ -1,0 +1,41 @@
+{
+  "content": "<h1 id=\"plugins\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#plugins\">#</a>Plugins</h1>\n<p>Datastore Extractors can easily be extended to include custom functionality. Examples of plugins are included in this repository for <a href=\"/docs/datastore/advanced/puppeteer-plugin\">Puppeteer</a> and <a href=\"/docs/datastore/advanced/hero-plugin\">Hero</a>.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import { HeroExtractorPlugin, Extractor } from '@ulixee/datastore-plugins-hero';\n\nexport default new Extractor(\n  {\n    run(ctx) {\n      // add functionality\n      const { Hero } = ctx;\n    },\n  },\n  HeroExtractorPlugin,\n);\n</code></pre>\n<h2 id=\"creating-a-plugin\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#creating-a-plugin\">#</a>Creating a Plugin</h2>\n<p>To create a plugin, you simply need to create a class implementing the run callback. You can use it by passing it to the <a href=\"/docs/datastore/basics/extractor#constructor\">Extractor constructor</a> <code>plugins</code> argument.</p>\n<h2 id=\"properties\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#properties\">#</a>Properties</h2>\n<h3 id=\"name-string\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#name-string\">#</a>name <code>string</code></h3>\n<p>The name of the plugin.</p>\n<h3 id=\"version-string\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#version-string\">#</a>version <code>string</code></h3>\n<p>A semver version of this plugin.</p>\n<h2 id=\"callback-method\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#callback-method\">#</a>Callback Method</h2>\n<p>The following method is called during Datastore Extractor setup:</p>\n<h3 id=\"run-extractorinternal-lifecycle-next\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#run-extractorinternal-lifecycle-next\">#</a>run <em>(extractorInternal, lifecycle, next)</em></h3>\n<p>Called when a Datastore Extractor instance starts execution. This function gives you access to the Extractor lifecycle.</p>\n<p>A plugin can enhance the <a href=\"/docs/datastore/basics/extractor-context\">ExtractorContext</a> pass to a Extractor's <code>run</code> callback. For instance, the <a href=\"/docs/datastore/advanced/hero-plugin\">Hero plugin</a> adds a <a href=\"https://ulixee.org/docs/hero/basic-client/hero\">Hero</a> and a <a href=\"https://ulixee.org/docs/hero/basic-client/hero-replay\">HeroReplay</a> constructor that automatically connect to the local Core.</p>\n<p>A plugin <em>MUST</em> call the <code>next()</code> callback provided. This callback will allow all other plugins to run to their <code>next()</code> callbacks. At that point, the Extractor will execute all phases. The output will then be returned to the waiting <code>next()</code> promise. At that point, each plugin will be allowed to complete the rest of its <code>run()</code> callback before the Datastore Extractor will be closed. The flow is shown below:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">// 1. for each plugin, call run\nfor (const plugin of plugins) {\n  plugin.run(extractorInternal, context, next);\n}\n\n// 2. wait for every plugin \"next\" to be called\nawait waitForAllNextsCalled();\n\n// 3. run Extractor `run`\nextractor.run();\n\n// 4. resolve nexts\nresolveNexts(extractorInternal.output);\n\n// 5. allow plugins to cleanup/complete\nawait waitForPluginRunsComplete();\n</code></pre>\n<p>A plugin lifecycle will look like this:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">class Plugin {\n  name = pkg.name;\n  version = pkg.version;\n\n  async run(extractorInternal, context, next) {\n    try {\n      context.Hero = createBoundHeroConstructor();\n      //  wait for next to complete\n      const output = await next();\n    } finally {\n      // cleanup\n      await this.hero?.close();\n      await this.heroReplay?.close();\n    }\n  }\n}\n</code></pre>\n<h4 id=\"arguments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#arguments\">#</a><strong>Arguments</strong>:</h4>\n<p>Arguments provided to the callback are as follows:</p>\n<ul>\n<li><code>extractorInternal</code>: An object providing the internal holder of the configuration of the Datastore instance.</li>\n<li><code>context</code>: The Extractor Context object containing the state of the Extractor and Parameters.</li>\n<li><code>next</code>: A callback that allows a plugin to wait for a Extractor to complete. It will resolve with the output of the Extractor.</li>\n</ul>\n<h4 id=\"returns-promise-the-function-may-return-any-promise\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#returns-promise-the-function-may-return-any-promise\">#</a>Returns Promise<any>. The function may return any promise.</h4>\n<h2 id=\"typescript-support\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#typescript-support\">#</a>Typescript Support</h2>\n<p>Your plugin can be configured so that a Typescript developer using your plugin will receive typing support for:</p>\n<ul>\n<li>Variables added onto the <code>run</code> callback.</li>\n<li>Additional configuration enabled in <code>Extractor.stream</code>.</li>\n</ul>\n<p>If you implement the <a href=\"https://github.com/ulixee/platform/tree/main/datastore/main/interfaces/IExtractorPluginStatics.ts\">ExtractorPluginStatics</a>, this typing will be activated by simply adding your plugin to a new Extractor <code>new Extractor(..., YourPlugin)</code>. The typing for these extractors is somewhat complex. It's recommended to copy an existing plugin (<code>https://github.com/ulixee/platform/tree/main/datastore/plugins</code>).</p>",
+  "title": "Plugins",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Creating a Plugin",
+      "anchor": "#creating-a-plugin"
+    },
+    {
+      "depth": 2,
+      "value": "Properties",
+      "anchor": "#properties"
+    },
+    {
+      "depth": 3,
+      "value": "name <code>string</code>",
+      "anchor": "#name-string"
+    },
+    {
+      "depth": 3,
+      "value": "version <code>string</code>",
+      "anchor": "#version-string"
+    },
+    {
+      "depth": 2,
+      "value": "Callback Method",
+      "anchor": "#callback-method"
+    },
+    {
+      "depth": 3,
+      "value": "run <em>(extractorInternal, lifecycle, next)</em>",
+      "anchor": "#run-extractorinternal-lifecycle-next"
+    },
+    {
+      "depth": 2,
+      "value": "Typescript Support",
+      "anchor": "#typescript-support"
+    }
+  ]
+}

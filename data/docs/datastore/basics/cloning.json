@@ -1,0 +1,21 @@
+{
+  "content": "<h1 id=\"cloning\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cloning\">#</a>Cloning</h1>\n<blockquote>\n<p>Every Datastore can be cloned and extended with additional functionality.</p>\n</blockquote>\n<p>Cloning is a command-line driven process to create a \"copy\" of a Datastore. All functionality that is cloned will continue to run on the remote server using <a href=\"/docs/datastore/basics/passthrough-extractor\">Passthrough Extractors</a> and <a href=\"/docs/datastore/basics/passthrough-table\">Passthrough Tables</a>. You can mix-and-match local <a href=\"/docs/datastore/basics/extractor\">Extractors</a>, <a href=\"/docs/datastore/basics/crawler\">Crawlers</a> and <a href=\"/docs/datastore/basics/table\">Tables</a> as you see fit.</p>\n<h3 id=\"upstream\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#upstream\">#</a>Upstream</h3>\n<p>When you clone a Datastore, the source Datastore is considered to be the \"upstream\" Datastore.</p>\n<h3 id=\"payment\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#payment\">#</a>Payment</h3>\n<p>If an upstream requires payment, your Datastore will need to provide payment. This can either come in the form of \"embedded\" <a href=\"/docs/datastore/advanced/credits\">Credits</a>, or allowing a user's payments to pass through.</p>\n<p>To embed credits, you can manipulate your Datastore directly to include <a href=\"/docs/datastore/basics/datastore#constructor\">remoteDatastoreEmbeddedCredits</a>, or provide the Credit details to the CLI.</p>\n<p>NOTE: To ensure a smooth use of credits, you are not able to grant more Credits to your users than the amount issued to the embedded Credits.</p>\n<h2 id=\"cli\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cli\">#</a>Command Line Interface (CLI)</h2>\n<p>To clone a Datastore, you simply run the following command with the url of the \"to-be-cloned\" Datastore (eg, <code>ulx://153.23.22.255:8080/ulixee-docs@v1.0.0</code> is a theoretical Datastore url).</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\"> npx @ulixee/datastore clone &#x3C;datastore url> &#x3C;local path>\n</code></pre>\n<p>... or via Ulixee CLI:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\"> ulixee datastore clone &#x3C;datastore url> &#x3C;local path>\n</code></pre>\n<p>You must provide a <code>datastore url</code> to the Datastore you wish to clone. A <code>datastore url</code> takes the form <code>ulx://&#x3C;ip>:&#x3C;port>/&#x3C;datastoreId>@v&#x3C;datastoreVersion></code>.</p>\n<p>The second argument (<code>local path</code>) is a path where you wish to export the generated Typescript or Javascript file. If your path ends with <code>.ts</code>, Typescript will be emitted. Otherwise, commonjs friendly Javascript will be emitted.</p>\n<h4 id=\"cli-options\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#cli-options\">#</a>CLI Options</h4>\n<p>Options below show a short and long form.</p>\n<ul>\n<li><code>-c, --credits &#x3C;credit json></code>. Include <a href=\"/docs/datastore/advanced/credits\">credits</a> from the upstream Datastore. These credits will be used by your Datastore to grant upstream access your own users.</li>\n</ul>",
+  "title": "Cloning",
+  "subtitles": [
+    {
+      "depth": 3,
+      "value": "Upstream",
+      "anchor": "#upstream"
+    },
+    {
+      "depth": 3,
+      "value": "Payment",
+      "anchor": "#payment"
+    },
+    {
+      "depth": 2,
+      "value": "Command Line Interface (CLI)",
+      "anchor": "#cli"
+    }
+  ]
+}

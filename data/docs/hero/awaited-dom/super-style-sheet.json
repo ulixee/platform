@@ -1,0 +1,11 @@
+{
+  "content": "<h1 id=\"awaiteddom--superstylesheet\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#awaiteddom--superstylesheet\">#</a><a href=\"/docs/hero/basic-client/awaited-dom\">AwaitedDOM</a> <span>/</span> SuperStyleSheet</h1>\n<div class='overview'>An object implementing the <code>StyleSheet</code> interface represents a single style sheet. CSS style sheets will further implement the more specialized <code>CSSStyleSheet</code> interface.</div>\n<h2 id=\"dependencies\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#dependencies\">#</a>Dependencies</h2>\n<p>SuperStyleSheet implements all the properties and methods of the following classes:</p>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><a href=\"/docs/hero/awaited-dom/css-style-sheet\">CSSStyleSheet</a></td>\n<td><a href=\"/docs/hero/awaited-dom/style-sheet\">StyleSheet</a></td>\n</tr>\n</tbody>\n</table>",
+  "title": " <span>/</span> SuperStyleSheet",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Dependencies",
+      "anchor": "#dependencies"
+    }
+  ]
+}
