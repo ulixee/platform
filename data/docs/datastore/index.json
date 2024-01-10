@@ -1,0 +1,36 @@
+{
+  "content": "<h1 id=\"introduction\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#introduction\">#</a>Introduction</h1>\n<blockquote>\n<p>Datastores are deployable \"databases\" that have extractors and tables, support native payment, and can be cloned and expanded as you see fit. Datastore Extractors contain data retrieval functions, like Hero scraper scripts, with structured input and output. Deploying a Datastore provides you with a structured Data API that can be privately consumed, or sold \"out of the box\".</p>\n</blockquote>\n<h2 id=\"what-is-a-datastore\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#what-is-a-datastore\">#</a>What is a Datastore?</h2>\n<p>Datastores create databases of specialized data structures - for instance, a Travel database, or a Jobs database. They're a combination of static metadata tables, dynamically retrieved web data and cached aggregated data that make up a data category. They support payment out of the box, so a client can pay per query without any setup or contracts. Datastores also support PostgreSQL natively (including payment), so can be tested out and integrated across programming languages.</p>\n<h2 id=\"datastore-extractors\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#datastore-extractors\">#</a>Datastore Extractors</h2>\n<p>Datastore Extractors create structure -- boundaries -- around a single \"scrape\", which make your scripts are far easier to test, re-try, scale and compose. It allows us to do things like:</p>\n<ul>\n<li>Restart a script during development as you change it.</li>\n<li>Rotate inputs to try out a variety of IPs, parameters, and more to make sure you can handle edge cases.</li>\n<li>Test the extraction of 100s of different potential results pages and ensure your Output follows the same structure.</li>\n<li>Spawn new Extractors from the current one if you need to parallelize following links.</li>\n</ul>\n<h2 id=\"datastore-crawlers\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#datastore-crawlers\">#</a>Datastore Crawlers</h2>\n<p>Datastore Crawlers allow you to write specialized Extractors that only output a \"cached\" scrape. It comes with built-in caching, so you can automatically re-use results that have been recently recorded.</p>\n<h2 id=\"datastore-tables\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#datastore-tables\">#</a>Datastore Tables</h2>\n<p>Datastore Tables allow you to manage and deploy database tables as part of your \"api\". This can be useful to enhance your functions with metadata or cached data.</p>\n<h2 id=\"installation\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#installation\">#</a>Installation</h2>\n<p>To get started using Datastore in your project, use the following commands:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">npm i --save @ulixee/datastore\n</code></pre>\n<p>or</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">yarn add @ulixee/datastore\n</code></pre>\n<p>It's your responsibility to ensure your Ulixee development environment is setup, such as installing and running <a href=\"https://ulixee.org/docs/cloud\"><code>@ulixee/cloud</code></a>.</p>\n<h2 id=\"usage-example\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#usage-example\">#</a>Usage Example</h2>\n<p>The simplest Datastore is initialized with a single Extractor:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">export default new Datastore({\n  extractors: {\n    default: new Extractor(ctx => {\n      ctx.Output.emit({ message: `Hello ${ctx.input.firstName}` });\n    }),\n  },\n});\n</code></pre>\n<p>Save that script to your filesystem (i.e., simple.js), and start your datastore:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">npx @ulixee/datastore start &#x3C;path to datastore>\n\n# or watching changes\nnpx @ulixee/datastore start --watch &#x3C;path to datastore>\n</code></pre>\n<p>You can query it using Ulixee Desktop or the @ulixee/client library.</p>",
+  "title": "Introduction",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "What is a Datastore?",
+      "anchor": "#what-is-a-datastore"
+    },
+    {
+      "depth": 2,
+      "value": "Datastore Extractors",
+      "anchor": "#datastore-extractors"
+    },
+    {
+      "depth": 2,
+      "value": "Datastore Crawlers",
+      "anchor": "#datastore-crawlers"
+    },
+    {
+      "depth": 2,
+      "value": "Datastore Tables",
+      "anchor": "#datastore-tables"
+    },
+    {
+      "depth": 2,
+      "value": "Installation",
+      "anchor": "#installation"
+    },
+    {
+      "depth": 2,
+      "value": "Usage Example",
+      "anchor": "#usage-example"
+    }
+  ]
+}
