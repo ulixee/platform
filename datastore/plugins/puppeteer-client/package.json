@@ -1,0 +1,36 @@
+{
+  "name": "@ulixee/datastore-plugins-puppeteer",
+  "version": "2.0.0-alpha.25",
+  "description": "The Datastore Puppeteer Plugin.",
+  "homepage": "https://ulixee.org",
+  "repository": "git@github.com:ulixee/platform.git",
+  "bugs": {
+    "url": "https://github.com/ulixee/platform/issues"
+  },
+  "license": "MIT",
+  "author": "Data Liberation Foundation",
+  "contributors": [
+    "Caleb Clark",
+    "Blake Byrnes"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@ulixee/commons": "2.0.0-alpha.25",
+    "@ulixee/datastore": "2.0.0-alpha.25",
+    "@ulixee/schema": "2.0.0-alpha.25",
+    "puppeteer": "^21.3.4"
+  },
+  "main": "index.js"
+}

@@ -1,0 +1,13 @@
+export declare const minute = 60000;
+export declare const hour: number;
+export declare const PROVIDERS_LRU_CACHE_SIZE = 256;
+export declare const PROVIDERS_VALIDITY: number;
+export declare const PROVIDERS_CLEANUP_INTERVAL: number;
+export declare const K = 20;
+export declare const ALPHA = 3;
+export declare const QUERY_SELF_INTERVAL: number;
+export declare const QUERY_SELF_INITIAL_INTERVAL: number;
+export declare const QUERY_SELF_TIMEOUT: number;
+export declare const TABLE_REFRESH_INTERVAL: number;
+export declare const TABLE_REFRESH_QUERY_TIMEOUT: number;
+export declare const DEFAULT_QUERY_TIMEOUT: number;

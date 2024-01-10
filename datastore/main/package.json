@@ -1,0 +1,54 @@
+{
+  "name": "@ulixee/datastore",
+  "version": "2.0.0-alpha.25",
+  "homepage": "https://ulixee.org",
+  "repository": "git@github.com:ulixee/platform.git",
+  "bugs": {
+    "url": "https://github.com/ulixee/platform/issues"
+  },
+  "license": "MIT",
+  "author": "Data Liberation Foundation",
+  "contributors": [
+    "Caleb Clark",
+    "Blake Byrnes"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "index.js",
+  "bin": "./bin/cli.js",
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.cjs"
+    },
+    "./package.json": "./package.json",
+    "./lib/*": "./lib/*.js",
+    "./cli/*": "./cli/*.js",
+    "./storage-engines/*": "./storage-engines/*.js",
+    "./connections/*": "./connections/*.js",
+    "./types/*": "./types/*",
+    "./interfaces/*": "./interfaces/*"
+  },
+  "dependencies": {
+    "@ulixee/commons": "2.0.0-alpha.25",
+    "@ulixee/crypto": "2.0.0-alpha.25",
+    "@ulixee/net": "2.0.0-alpha.25",
+    "@ulixee/platform-specification": "2.0.0-alpha.25",
+    "@ulixee/schema": "2.0.0-alpha.25",
+    "@ulixee/sidechain": "2.0.0-alpha.25",
+    "@ulixee/specification": "2.0.0-alpha.25",
+    "@ulixee/sql-ast": "2.0.0-alpha.25",
+    "@ulixee/sql-engine": "2.0.0-alpha.25",
+    "better-sqlite3": "^8.6.0",
+    "commander": "^9.3.0",
+    "nanoid": "^3.3.6"
+  },
+  "devDependencies": {
+    "@ulixee/datastore-packager": "2.0.0-alpha.25"
+  },
+  "types": "index.d.ts"
+}

@@ -1,0 +1,35 @@
+{
+  "name": "@ulixee/datastore-plugins-hero-core",
+  "version": "2.0.0-alpha.25",
+  "homepage": "https://ulixee.org",
+  "repository": "git@github.com:ulixee/ulixee.git",
+  "bugs": {
+    "url": "https://github.com/ulixee/platform/issues"
+  },
+  "license": "MIT",
+  "author": "Data Liberation Foundation",
+  "contributors": [
+    "Caleb Clark",
+    "Blake Byrnes"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@ulixee/commons": "2.0.0-alpha.25",
+    "@ulixee/datastore": "2.0.0-alpha.25",
+    "@ulixee/datastore-core": "2.0.0-alpha.25",
+    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.25",
+    "@ulixee/execute-js-plugin": "2.0.0-alpha.25",
+    "@ulixee/hero": "2.0.0-alpha.25",
+    "@ulixee/hero-core": "2.0.0-alpha.25",
+    "@ulixee/net": "2.0.0-alpha.25",
+    "@ulixee/platform-specification": "2.0.0-alpha.25",
+    "nanoid": "^3.3.6"
+  },
+  "types": "index.d.ts"
+}

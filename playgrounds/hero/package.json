@@ -1,0 +1,36 @@
+{
+  "name": "@ulixee/hero-playground",
+  "version": "2.0.0-alpha.25",
+  "description": "A Hero playground that creates a Client/Core connection out of the box",
+  "homepage": "https://ulixee.org",
+  "repository": "git@github.com:ulixee/platform.git",
+  "bugs": {
+    "url": "https://github.com/ulixee/platform/issues"
+  },
+  "license": "MIT",
+  "author": "Data Liberation Foundation",
+  "contributors": [
+    "Caleb Clark",
+    "Blake Byrnes"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@ulixee/cloud": "2.0.0-alpha.25",
+    "@ulixee/commons": "2.0.0-alpha.25",
+    "@ulixee/hero": "2.0.0-alpha.25",
+    "@ulixee/hero-core": "2.0.0-alpha.25"
+  },
+  "main": "index.js"
+}

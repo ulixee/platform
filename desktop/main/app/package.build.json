@@ -1,0 +1,27 @@
+{
+  "private": true,
+  "scripts": {
+    "copy:build": "node builder/copySources.js ./packages",
+    "start": "npx electron ."
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "packages/*/*",
+      "packages/datastore/plugins/hero-*",
+      "packages/hero/plugins/*"
+    ],
+    "nohoist": [
+      "**/@electron/**",
+      "**/electron",
+      "**/electron-webpack",
+      "**/electron-webpack/**",
+      "electron-positioner",
+      "global-mouse-events",
+      "nseventmonitor",
+      "electron-updater",
+      "better-sqlite3",
+      "electron-clipboard-ex"
+    ]
+  }
+}

@@ -1,0 +1,530 @@
+import { z } from '@ulixee/specification';
+import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
+export declare const StatsTrackerApiSchemas: {
+    'StatsTracker.getByVersion': {
+        args: z.ZodObject<{
+            datastoreId: z.ZodString;
+            version: z.ZodString;
+        }, "strip", z.ZodTypeAny, {
+            version: string;
+            datastoreId: string;
+        }, {
+            version: string;
+            datastoreId: string;
+        }>;
+        result: z.ZodObject<{
+            stats: z.ZodObject<{
+                queries: z.ZodNumber;
+                errors: z.ZodNumber;
+                totalSpend: z.ZodNumber;
+                totalCreditSpend: z.ZodNumber;
+                averageBytesPerQuery: z.ZodNumber;
+                maxBytesPerQuery: z.ZodNumber;
+                averageMilliseconds: z.ZodNumber;
+                maxMilliseconds: z.ZodNumber;
+                averageTotalPricePerQuery: z.ZodNumber;
+                maxPricePerQuery: z.ZodNumber;
+            }, "strip", z.ZodTypeAny, {
+                queries: number;
+                errors: number;
+                totalSpend: number;
+                totalCreditSpend: number;
+                averageBytesPerQuery: number;
+                maxBytesPerQuery: number;
+                averageMilliseconds: number;
+                maxMilliseconds: number;
+                averageTotalPricePerQuery: number;
+                maxPricePerQuery: number;
+            }, {
+                queries: number;
+                errors: number;
+                totalSpend: number;
+                totalCreditSpend: number;
+                averageBytesPerQuery: number;
+                maxBytesPerQuery: number;
+                averageMilliseconds: number;
+                maxMilliseconds: number;
+                averageTotalPricePerQuery: number;
+                maxPricePerQuery: number;
+            }>;
+            statsByEntityName: z.ZodRecord<z.ZodString, z.ZodObject<{
+                name: z.ZodString;
+                type: z.ZodEnum<["Table", "Extractor", "Crawler"]>;
+                stats: z.ZodObject<{
+                    queries: z.ZodNumber;
+                    errors: z.ZodNumber;
+                    totalSpend: z.ZodNumber;
+                    totalCreditSpend: z.ZodNumber;
+                    averageBytesPerQuery: z.ZodNumber;
+                    maxBytesPerQuery: z.ZodNumber;
+                    averageMilliseconds: z.ZodNumber;
+                    maxMilliseconds: z.ZodNumber;
+                    averageTotalPricePerQuery: z.ZodNumber;
+                    maxPricePerQuery: z.ZodNumber;
+                }, "strip", z.ZodTypeAny, {
+                    queries: number;
+                    errors: number;
+                    totalSpend: number;
+                    totalCreditSpend: number;
+                    averageBytesPerQuery: number;
+                    maxBytesPerQuery: number;
+                    averageMilliseconds: number;
+                    maxMilliseconds: number;
+                    averageTotalPricePerQuery: number;
+                    maxPricePerQuery: number;
+                }, {
+                    queries: number;
+                    errors: number;
+                    totalSpend: number;
+                    totalCreditSpend: number;
+                    averageBytesPerQuery: number;
+                    maxBytesPerQuery: number;
+                    averageMilliseconds: number;
+                    maxMilliseconds: number;
+                    averageTotalPricePerQuery: number;
+                    maxPricePerQuery: number;
+                }>;
+            }, "strip", z.ZodTypeAny, {
+                type: "Table" | "Extractor" | "Crawler";
+                name: string;
+                stats: {
+                    queries: number;
+                    errors: number;
+                    totalSpend: number;
+                    totalCreditSpend: number;
+                    averageBytesPerQuery: number;
+                    maxBytesPerQuery: number;
+                    averageMilliseconds: number;
+                    maxMilliseconds: number;
+                    averageTotalPricePerQuery: number;
+                    maxPricePerQuery: number;
+                };
+            }, {
+                type: "Table" | "Extractor" | "Crawler";
+                name: string;
+                stats: {
+                    queries: number;
+                    errors: number;
+                    totalSpend: number;
+                    totalCreditSpend: number;
+                    averageBytesPerQuery: number;
+                    maxBytesPerQuery: number;
+                    averageMilliseconds: number;
+                    maxMilliseconds: number;
+                    averageTotalPricePerQuery: number;
+                    maxPricePerQuery: number;
+                };
+            }>>;
+        }, "strip", z.ZodTypeAny, {
+            stats: {
+                queries: number;
+                errors: number;
+                totalSpend: number;
+                totalCreditSpend: number;
+                averageBytesPerQuery: number;
+                maxBytesPerQuery: number;
+                averageMilliseconds: number;
+                maxMilliseconds: number;
+                averageTotalPricePerQuery: number;
+                maxPricePerQuery: number;
+            };
+            statsByEntityName: Record<string, {
+                type: "Table" | "Extractor" | "Crawler";
+                name: string;
+                stats: {
+                    queries: number;
+                    errors: number;
+                    totalSpend: number;
+                    totalCreditSpend: number;
+                    averageBytesPerQuery: number;
+                    maxBytesPerQuery: number;
+                    averageMilliseconds: number;
+                    maxMilliseconds: number;
+                    averageTotalPricePerQuery: number;
+                    maxPricePerQuery: number;
+                };
+            }>;
+        }, {
+            stats: {
+                queries: number;
+                errors: number;
+                totalSpend: number;
+                totalCreditSpend: number;
+                averageBytesPerQuery: number;
+                maxBytesPerQuery: number;
+                averageMilliseconds: number;
+                maxMilliseconds: number;
+                averageTotalPricePerQuery: number;
+                maxPricePerQuery: number;
+            };
+            statsByEntityName: Record<string, {
+                type: "Table" | "Extractor" | "Crawler";
+                name: string;
+                stats: {
+                    queries: number;
+                    errors: number;
+                    totalSpend: number;
+                    totalCreditSpend: number;
+                    averageBytesPerQuery: number;
+                    maxBytesPerQuery: number;
+                    averageMilliseconds: number;
+                    maxMilliseconds: number;
+                    averageTotalPricePerQuery: number;
+                    maxPricePerQuery: number;
+                };
+            }>;
+        }>;
+    };
+    'StatsTracker.get': {
+        args: z.ZodObject<{
+            datastoreId: z.ZodString;
+        }, "strip", z.ZodTypeAny, {
+            datastoreId: string;
+        }, {
+            datastoreId: string;
+        }>;
+        result: z.ZodObject<{
+            stats: z.ZodObject<{
+                queries: z.ZodNumber;
+                errors: z.ZodNumber;
+                totalSpend: z.ZodNumber;
+                totalCreditSpend: z.ZodNumber;
+                averageBytesPerQuery: z.ZodNumber;
+                maxBytesPerQuery: z.ZodNumber;
+                averageMilliseconds: z.ZodNumber;
+                maxMilliseconds: z.ZodNumber;
+                averageTotalPricePerQuery: z.ZodNumber;
+                maxPricePerQuery: z.ZodNumber;
+            }, "strip", z.ZodTypeAny, {
+                queries: number;
+                errors: number;
+                totalSpend: number;
+                totalCreditSpend: number;
+                averageBytesPerQuery: number;
+                maxBytesPerQuery: number;
+                averageMilliseconds: number;
+                maxMilliseconds: number;
+                averageTotalPricePerQuery: number;
+                maxPricePerQuery: number;
+            }, {
+                queries: number;
+                errors: number;
+                totalSpend: number;
+                totalCreditSpend: number;
+                averageBytesPerQuery: number;
+                maxBytesPerQuery: number;
+                averageMilliseconds: number;
+                maxMilliseconds: number;
+                averageTotalPricePerQuery: number;
+                maxPricePerQuery: number;
+            }>;
+            statsByEntityName: z.ZodRecord<z.ZodString, z.ZodObject<{
+                name: z.ZodString;
+                type: z.ZodEnum<["Table", "Extractor", "Crawler"]>;
+                stats: z.ZodObject<{
+                    queries: z.ZodNumber;
+                    errors: z.ZodNumber;
+                    totalSpend: z.ZodNumber;
+                    totalCreditSpend: z.ZodNumber;
+                    averageBytesPerQuery: z.ZodNumber;
+                    maxBytesPerQuery: z.ZodNumber;
+                    averageMilliseconds: z.ZodNumber;
+                    maxMilliseconds: z.ZodNumber;
+                    averageTotalPricePerQuery: z.ZodNumber;
+                    maxPricePerQuery: z.ZodNumber;
+                }, "strip", z.ZodTypeAny, {
+                    queries: number;
+                    errors: number;
+                    totalSpend: number;
+                    totalCreditSpend: number;
+                    averageBytesPerQuery: number;
+                    maxBytesPerQuery: number;
+                    averageMilliseconds: number;
+                    maxMilliseconds: number;
+                    averageTotalPricePerQuery: number;
+                    maxPricePerQuery: number;
+                }, {
+                    queries: number;
+                    errors: number;
+                    totalSpend: number;
+                    totalCreditSpend: number;
+                    averageBytesPerQuery: number;
+                    maxBytesPerQuery: number;
+                    averageMilliseconds: number;
+                    maxMilliseconds: number;
+                    averageTotalPricePerQuery: number;
+                    maxPricePerQuery: number;
+                }>;
+            }, "strip", z.ZodTypeAny, {
+                type: "Table" | "Extractor" | "Crawler";
+                name: string;
+                stats: {
+                    queries: number;
+                    errors: number;
+                    totalSpend: number;
+                    totalCreditSpend: number;
+                    averageBytesPerQuery: number;
+                    maxBytesPerQuery: number;
+                    averageMilliseconds: number;
+                    maxMilliseconds: number;
+                    averageTotalPricePerQuery: number;
+                    maxPricePerQuery: number;
+                };
+            }, {
+                type: "Table" | "Extractor" | "Crawler";
+                name: string;
+                stats: {
+                    queries: number;
+                    errors: number;
+                    totalSpend: number;
+                    totalCreditSpend: number;
+                    averageBytesPerQuery: number;
+                    maxBytesPerQuery: number;
+                    averageMilliseconds: number;
+                    maxMilliseconds: number;
+                    averageTotalPricePerQuery: number;
+                    maxPricePerQuery: number;
+                };
+            }>>;
+        }, "strip", z.ZodTypeAny, {
+            stats: {
+                queries: number;
+                errors: number;
+                totalSpend: number;
+                totalCreditSpend: number;
+                averageBytesPerQuery: number;
+                maxBytesPerQuery: number;
+                averageMilliseconds: number;
+                maxMilliseconds: number;
+                averageTotalPricePerQuery: number;
+                maxPricePerQuery: number;
+            };
+            statsByEntityName: Record<string, {
+                type: "Table" | "Extractor" | "Crawler";
+                name: string;
+                stats: {
+                    queries: number;
+                    errors: number;
+                    totalSpend: number;
+                    totalCreditSpend: number;
+                    averageBytesPerQuery: number;
+                    maxBytesPerQuery: number;
+                    averageMilliseconds: number;
+                    maxMilliseconds: number;
+                    averageTotalPricePerQuery: number;
+                    maxPricePerQuery: number;
+                };
+            }>;
+        }, {
+            stats: {
+                queries: number;
+                errors: number;
+                totalSpend: number;
+                totalCreditSpend: number;
+                averageBytesPerQuery: number;
+                maxBytesPerQuery: number;
+                averageMilliseconds: number;
+                maxMilliseconds: number;
+                averageTotalPricePerQuery: number;
+                maxPricePerQuery: number;
+            };
+            statsByEntityName: Record<string, {
+                type: "Table" | "Extractor" | "Crawler";
+                name: string;
+                stats: {
+                    queries: number;
+                    errors: number;
+                    totalSpend: number;
+                    totalCreditSpend: number;
+                    averageBytesPerQuery: number;
+                    maxBytesPerQuery: number;
+                    averageMilliseconds: number;
+                    maxMilliseconds: number;
+                    averageTotalPricePerQuery: number;
+                    maxPricePerQuery: number;
+                };
+            }>;
+        }>;
+    };
+    'StatsTracker.getSummary': {
+        args: z.ZodObject<{
+            datastoreId: z.ZodString;
+        }, "strip", z.ZodTypeAny, {
+            datastoreId: string;
+        }, {
+            datastoreId: string;
+        }>;
+        result: z.ZodObject<{
+            stats: z.ZodObject<{
+                queries: z.ZodNumber;
+                errors: z.ZodNumber;
+                totalSpend: z.ZodNumber;
+                totalCreditSpend: z.ZodNumber;
+                averageBytesPerQuery: z.ZodNumber;
+                maxBytesPerQuery: z.ZodNumber;
+                averageMilliseconds: z.ZodNumber;
+                maxMilliseconds: z.ZodNumber;
+                averageTotalPricePerQuery: z.ZodNumber;
+                maxPricePerQuery: z.ZodNumber;
+            }, "strip", z.ZodTypeAny, {
+                queries: number;
+                errors: number;
+                totalSpend: number;
+                totalCreditSpend: number;
+                averageBytesPerQuery: number;
+                maxBytesPerQuery: number;
+                averageMilliseconds: number;
+                maxMilliseconds: number;
+                averageTotalPricePerQuery: number;
+                maxPricePerQuery: number;
+            }, {
+                queries: number;
+                errors: number;
+                totalSpend: number;
+                totalCreditSpend: number;
+                averageBytesPerQuery: number;
+                maxBytesPerQuery: number;
+                averageMilliseconds: number;
+                maxMilliseconds: number;
+                averageTotalPricePerQuery: number;
+                maxPricePerQuery: number;
+            }>;
+        }, "strip", z.ZodTypeAny, {
+            stats: {
+                queries: number;
+                errors: number;
+                totalSpend: number;
+                totalCreditSpend: number;
+                averageBytesPerQuery: number;
+                maxBytesPerQuery: number;
+                averageMilliseconds: number;
+                maxMilliseconds: number;
+                averageTotalPricePerQuery: number;
+                maxPricePerQuery: number;
+            };
+        }, {
+            stats: {
+                queries: number;
+                errors: number;
+                totalSpend: number;
+                totalCreditSpend: number;
+                averageBytesPerQuery: number;
+                maxBytesPerQuery: number;
+                averageMilliseconds: number;
+                maxMilliseconds: number;
+                averageTotalPricePerQuery: number;
+                maxPricePerQuery: number;
+            };
+        }>;
+    };
+    'StatsTracker.recordEntityStats': {
+        args: z.ZodObject<{
+            datastoreId: z.ZodString;
+            version: z.ZodString;
+            cloudNodeHost: z.ZodString;
+            cloudNodeIdentity: z.ZodOptional<z.ZodString>;
+            entityName: z.ZodOptional<z.ZodString>;
+            error: z.ZodOptional<z.ZodType<Error, z.ZodTypeDef, Error>>;
+            bytes: z.ZodNumber;
+            microgons: z.ZodNumber;
+            milliseconds: z.ZodNumber;
+            didUseCredits: z.ZodBoolean;
+        }, "strip", z.ZodTypeAny, {
+            microgons: number;
+            version: string;
+            datastoreId: string;
+            bytes: number;
+            milliseconds: number;
+            cloudNodeHost: string;
+            didUseCredits: boolean;
+            cloudNodeIdentity?: string | undefined;
+            entityName?: string | undefined;
+            error?: Error | undefined;
+        }, {
+            microgons: number;
+            version: string;
+            datastoreId: string;
+            bytes: number;
+            milliseconds: number;
+            cloudNodeHost: string;
+            didUseCredits: boolean;
+            cloudNodeIdentity?: string | undefined;
+            entityName?: string | undefined;
+            error?: Error | undefined;
+        }>;
+        result: z.ZodObject<{
+            success: z.ZodBoolean;
+        }, "strip", z.ZodTypeAny, {
+            success: boolean;
+        }, {
+            success: boolean;
+        }>;
+    };
+    'StatsTracker.recordQuery': {
+        args: z.ZodObject<{
+            datastoreId: z.ZodString;
+            version: z.ZodString;
+            queryId: z.ZodString;
+            cloudNodeHost: z.ZodString;
+            cloudNodeIdentity: z.ZodOptional<z.ZodString>;
+            query: z.ZodString;
+            startTime: z.ZodNumber;
+            input: z.ZodAny;
+            outputs: z.ZodOptional<z.ZodArray<z.ZodAny, "many">>;
+            error: z.ZodOptional<z.ZodType<Error, z.ZodTypeDef, Error>>;
+            micronoteId: z.ZodOptional<z.ZodString>;
+            creditId: z.ZodOptional<z.ZodString>;
+            affiliateId: z.ZodOptional<z.ZodString>;
+            heroSessionIds: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+            bytes: z.ZodNumber;
+            microgons: z.ZodNumber;
+            milliseconds: z.ZodNumber;
+        }, "strip", z.ZodTypeAny, {
+            microgons: number;
+            version: string;
+            datastoreId: string;
+            queryId: string;
+            bytes: number;
+            milliseconds: number;
+            cloudNodeHost: string;
+            query: string;
+            startTime: number;
+            cloudNodeIdentity?: string | undefined;
+            input?: any;
+            outputs?: any[] | undefined;
+            error?: Error | undefined;
+            micronoteId?: string | undefined;
+            creditId?: string | undefined;
+            affiliateId?: string | undefined;
+            heroSessionIds?: string[] | undefined;
+        }, {
+            microgons: number;
+            version: string;
+            datastoreId: string;
+            queryId: string;
+            bytes: number;
+            milliseconds: number;
+            cloudNodeHost: string;
+            query: string;
+            startTime: number;
+            cloudNodeIdentity?: string | undefined;
+            input?: any;
+            outputs?: any[] | undefined;
+            error?: Error | undefined;
+            micronoteId?: string | undefined;
+            creditId?: string | undefined;
+            affiliateId?: string | undefined;
+            heroSessionIds?: string[] | undefined;
+        }>;
+        result: z.ZodObject<{
+            success: z.ZodBoolean;
+        }, "strip", z.ZodTypeAny, {
+            success: boolean;
+        }, {
+            success: boolean;
+        }>;
+    };
+};
+export declare type IStatsTrackerApiTypes = IZodSchemaToApiTypes<typeof StatsTrackerApiSchemas>;
+export declare type IStatsTrackerApis<TContext = any> = IZodHandlers<typeof StatsTrackerApiSchemas, TContext>;
+export default IStatsTrackerApiTypes;

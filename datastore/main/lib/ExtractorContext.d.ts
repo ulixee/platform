@@ -1,0 +1,34 @@
+import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
+import { ExtractSchemaType } from '@ulixee/schema';
+import IExtractorSchema from '../interfaces/IExtractorSchema';
+import ExtractorInternal from './ExtractorInternal';
+import IExtractorContext from '../interfaces/IExtractorContext';
+import DatastoreInternal, { IQueryInternalCallbacks } from './DatastoreInternal';
+import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
+import ResultIterable from './ResultIterable';
+import Table from './Table';
+import Extractor from './Extractor';
+import Crawler from './Crawler';
+import ICrawlerOutputSchema from '../interfaces/ICrawlerOutputSchema';
+import { TQueryCallMeta } from '../interfaces/IStorageEngine';
+export default class ExtractorContext<ISchema extends IExtractorSchema, TExtractorInternal extends ExtractorInternal<ISchema> = ExtractorInternal<ISchema>> implements IExtractorContext<ISchema> {
+    #private;
+    datastoreMetadata: IDatastoreMetadata;
+    datastoreAffiliateId: string;
+    callerAffiliateId: string;
+    extraOptions: Record<string, any>;
+    get authentication(): IDatastoreApiTypes['Datastore.query']['args']['authentication'];
+    get payment(): IDatastoreApiTypes['Datastore.query']['args']['payment'];
+    get input(): TExtractorInternal['input'];
+    get outputs(): TExtractorInternal['outputs'];
+    get Output(): TExtractorInternal['Output'];
+    get schema(): ISchema;
+    constructor(extractorInternal: ExtractorInternal<ISchema>, datastoreInternal: DatastoreInternal, callbacks?: IQueryInternalCallbacks);
+    fetch<T extends Extractor>(extractor: T, options: T['runArgsType']): ResultIterable<ExtractSchemaType<T['schema']['output']>>;
+    fetch<T extends Table>(table: T, options: any): ResultIterable<ExtractSchemaType<T['schema']>>;
+    run<T extends Extractor>(extractor: T, options: T['runArgsType']): ResultIterable<ExtractSchemaType<T['schema']['output']>>;
+    run<T extends Table>(table: T, options: any): ResultIterable<ExtractSchemaType<T['schema']>>;
+    crawl<T extends Crawler>(crawler: T, options?: T['runArgsType']): Promise<ICrawlerOutputSchema>;
+    query<TResult>(sql: string, boundValues: any[], options: TQueryCallMeta): Promise<TResult>;
+    private getMergedOptions;
+}

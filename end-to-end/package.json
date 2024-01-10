@@ -1,0 +1,29 @@
+{
+  "name": "@ulixee/end-to-end",
+  "version": "2.0.0-alpha.25",
+  "homepage": "https://ulixee.org",
+  "repository": "git@github.com:ulixee/platform.git",
+  "bugs": {
+    "url": "https://github.com/ulixee/platform/issues"
+  },
+  "license": "MIT",
+  "author": "Data Liberation Foundation",
+  "contributors": [
+    "Caleb Clark",
+    "Blake Byrnes"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "private": true,
+  "dependencies": {
+    "@ulixee/cloud": "2.0.0-alpha.25",
+    "@ulixee/commons": "2.0.0-alpha.25",
+    "@ulixee/crypto": "2.0.0-alpha.25",
+    "@ulixee/datastore": "2.0.0-alpha.25",
+    "@ulixee/datastore-packager": "2.0.0-alpha.25",
+    "@ulixee/net": "2.0.0-alpha.25",
+    "@ulixee/sidechain": "2.0.0-alpha.25",
+    "@ulixee/specification": "2.0.0-alpha.25"
+  }
+}

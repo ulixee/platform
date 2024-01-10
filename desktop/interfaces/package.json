@@ -1,0 +1,28 @@
+{
+  "name": "@ulixee/desktop-interfaces",
+  "version": "2.0.0-alpha.25",
+  "homepage": "https://ulixee.org",
+  "repository": "git@github.com:ulixee/platform.git",
+  "bugs": {
+    "url": "https://github.com/ulixee/platform/issues"
+  },
+  "license": "MIT",
+  "author": "Data Liberation Foundation",
+  "contributors": [
+    "Caleb Clark",
+    "Blake Byrnes"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {},
+  "dependencies": {
+    "@ulixee/hero-interfaces": "2.0.0-alpha.25",
+    "@ulixee/platform-specification": "2.0.0-alpha.25",
+    "@ulixee/specification": "2.0.0-alpha.25",
+    "@ulixee/unblocked-specification": "2.0.0-alpha.25"
+  }
+}

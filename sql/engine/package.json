@@ -1,0 +1,31 @@
+{
+  "name": "@ulixee/sql-engine",
+  "version": "2.0.0-alpha.25",
+  "homepage": "https://ulixee.org",
+  "repository": "git@github.com:ulixee/platform.git",
+  "bugs": {
+    "url": "https://github.com/ulixee/platform/issues"
+  },
+  "license": "MIT",
+  "author": "Data Liberation Foundation",
+  "contributors": [
+    "Caleb Clark",
+    "Blake Byrnes"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "index.js",
+  "scripts": {},
+  "dependencies": {
+    "@ulixee/commons": "2.0.0-alpha.25",
+    "@ulixee/datastore": "2.0.0-alpha.25",
+    "@ulixee/schema": "2.0.0-alpha.25",
+    "@ulixee/sql-ast": "2.0.0-alpha.25",
+    "@ulixee/sql-engine": "2.0.0-alpha.25"
+  },
+  "types": "index.d.ts"
+}
