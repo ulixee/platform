@@ -88,7 +88,15 @@ export default function cliCommands(): Command {
         )
         .argParser(parseInt)
         .default(10),
-    )
+    ).addOption(
+    program
+      .createOption(
+        '--max-concurrent-heroes-per-browser <count>',
+        'Max number of concurrent Heroes to run per Chrome instance.',
+      )
+      .argParser(parseInt)
+      .default(10),
+  )
     .addOption(
       program
         .createOption(
@@ -150,7 +158,7 @@ export default function cliCommands(): Command {
       }
       if (disableChromeAlive) CloudNodeEnv.disableChromeAlive = disableChromeAlive;
 
-      const { unblockedPlugins, heroDataDir, maxConcurrentHeroes } = opts;
+      const { unblockedPlugins, heroDataDir, maxConcurrentHeroes, maxConcurrentHeroesPerBrowser } = opts;
 
       const cloudNode = new CloudNode(
         filterUndefined({
@@ -163,6 +171,7 @@ export default function cliCommands(): Command {
           servicesSetupHost: setupHost,
           heroConfiguration: filterUndefined({
             maxConcurrentClientCount: maxConcurrentHeroes,
+            maxConcurrentClientsPerBrowser: maxConcurrentHeroesPerBrowser,
             dataDir: heroDataDir,
             defaultUnblockedPlugins: unblockedPlugins?.map(x => {
               // eslint-disable-next-line import/no-dynamic-require
