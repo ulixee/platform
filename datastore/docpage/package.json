@@ -12,18 +12,17 @@
     "@heroicons/vue": "^2.0.16",
     "@tailwindcss/forms": "^0.5.0",
     "@types/lodash.kebabcase": "^4.1.7",
-    "@types/node": "^16.18.31",
+    "@types/node": "^18.19.10",
     "@vue/cli-plugin-babel": "~5.0.8",
     "@vue/cli-plugin-router": "~5.0.8",
     "@vue/cli-plugin-typescript": "~5.0.8",
     "@vue/cli-service": "~5.0.8",
     "@vue/compiler-sfc": "^3.2.21",
     "autoprefixer": "^10.4.2",
-    "axios": "^0.26.1",
+    "axios": "^1.6.7",
     "babel-plugin-prismjs": "^2.1.0",
     "concurrently": "^6.2.2",
     "core-js": "^3.21.1",
-    "docsearch.js": "^2.6.3",
     "eslint": "^8.17.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
@@ -61,7 +60,7 @@
   },
   "devDependencies": {
     "@ulixee/datastore-packager": "2.0.0-alpha.25",
-    "typescript": "^5.0.4"
+    "typescript": "^5.3.3"
   },
   "nohoist": [
     "**/@typescript-eslint",

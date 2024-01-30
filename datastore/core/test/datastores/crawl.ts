@@ -12,7 +12,7 @@ const datastore = new Datastore({
         return {
           toCrawlerOutput() {
             return Promise.resolve({
-              sessionId: ctx.input.sessionId,
+              sessionId: ctx.input.sessionId as string,
               crawler: 'none',
               version: '1',
             });

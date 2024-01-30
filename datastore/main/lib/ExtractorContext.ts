@@ -132,7 +132,7 @@ export default class ExtractorContext<
   private getMergedOptions<T extends IExtractorRunOptions<any>>(options: T): T {
     const finalOptions = { ...this.#extractorInternal.options, ...options };
     finalOptions.trackMetadata = options.trackMetadata;
-    if (options.input) {
+    if (options.input && typeof options.input === 'object') {
       // merge input
       finalOptions.input = { ...this.#extractorInternal.input, ...options.input };
     }

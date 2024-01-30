@@ -14,6 +14,6 @@
   "devDependencies": {
     "@types/moo": "^0.5.3",
     "@types/nearley": "^2.11.1",
-    "@types/node": "^16.18.31"
+    "@types/node": "^18.19.10"
   }
 }

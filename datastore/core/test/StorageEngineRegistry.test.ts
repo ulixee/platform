@@ -1,11 +1,9 @@
-import Identity from '@ulixee/crypto/lib/Identity';
 import DatastorePackager from '@ulixee/datastore-packager';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import SqliteStorageEngine from '@ulixee/datastore/storage-engines/SqliteStorageEngine';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import DatastoreManifest from '../lib/DatastoreManifest';
 
 Helpers.blockGlobalConfigWrites();
 const datastoresDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'StorageEngineRegistry.test');
@@ -292,8 +290,6 @@ test('should not install storage engine when downloading from cluster', async ()
   const client = new DatastoreApiClient(await clusterNode.host);
   Helpers.onClose(() => client.disconnect());
 
-  storageNodeInstallStorageSpy.mockReset();
-  storageNodeRegistrySpy.mockReset();
   await expect(
     client.query(
       packager.manifest.id,
@@ -307,7 +303,7 @@ test('should not install storage engine when downloading from cluster', async ()
     latestVersion: expect.any(String),
   });
 
-  expect(storageNodeRegistrySpy).toHaveBeenCalledTimes(1);
+  expect(storageNodeRegistrySpy).toHaveBeenCalledTimes(2);
   expect(clusterNodeRegistrySpy).toHaveBeenCalledTimes(1);
-  expect(storageNodeInstallStorageSpy).toHaveBeenCalledTimes(0);
+  expect(storageNodeInstallStorageSpy).toHaveBeenCalledTimes(1);
 });

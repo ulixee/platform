@@ -9,13 +9,13 @@
     "credits:create": "@ulixee/datastore credits create"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "dependencies": {
     "@ulixee/datastore": "2.0.0-alpha.18"
   },
   "devDependencies": {
     "@ulixee/datastore-packager": "2.0.0-alpha.18",
-    "typescript": "~5.0.4"
+    "typescript": "~5.3.3"
   }
 }

@@ -105,8 +105,8 @@ export const useCloudsStore = defineStore('cloudsStore', () => {
     client.address = address;
     cloud.clientsByAddress.set(address, client);
     await client.connect();
-    await useReplaysStore().onClient(cloud, client);
-    await useDatastoreStore().onClient(cloud, client);
+    await useReplaysStore().onClient(cloud as ICloudConnection, client);
+    await useDatastoreStore().onClient(cloud as ICloudConnection, client);
   }
   void load();
 

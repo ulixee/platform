@@ -9,43 +9,49 @@
     "serve": "vue-cli-service serve"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "dependencies": {
     "@babel/core": "^7.0.0",
     "@babel/runtime-corejs3": "^7.13.10",
-    "@headlessui/vue": "^1.7.12",
-    "@heroicons/vue": "^2.0.16",
+    "@headlessui/vue": "^1.7.17",
+    "@heroicons/vue": "^2.1.1",
     "@ulixee/commons": "2.0.0-alpha.25",
     "@ulixee/desktop-interfaces": "2.0.0-alpha.25",
     "@ulixee/hero-interfaces": "2.0.0-alpha.25",
     "@ulixee/platform-specification": "2.0.0-alpha.25",
     "@ulixee/sidechain": "2.0.0-alpha.25",
     "@ulixee/unblocked-specification": "2.0.0-alpha.25",
-    "@webcomponents/custom-elements": "^1.5.0",
+    "@webcomponents/custom-elements": "^1.6.0",
+    "axios": "1.6.7",
     "core-js": "^3.21.1",
-    "json5": "^2.2.0",
-    "mitt": "^3.0.0",
+    "json5": "^2.2.3",
     "moment": "^2.29.4",
-    "pinia": "^2.0.33",
-    "postcss": "^8.4.7",
+    "pinia": "^2.1.7",
+    "postcss": "^8.4.33",
     "prismjs": "^1.29.0",
-    "vue": "^3.2.31",
+    "vue": "^3.4.15",
     "vue-inline-svg": "^3.1.2",
-    "vue-json-pretty": "^1.7.1",
-    "vue-router": "4.2.0"
+    "vue-json-pretty": "^2.3.0",
+    "vue-router": "4.2.5",
+    "sass": "^1.49.9",
+    "sass-loader": "^10.2.0",
+    "tailwindcss": "^3.4.1",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "@tailwindcss/forms": "^0.5.7"
   },
   "devDependencies": {
-    "@tailwindcss/forms": "^0.5.0",
+    "@types/node": "^18.19.10",
     "@typescript-eslint/eslint-plugin": "^5.10.1",
     "@typescript-eslint/parser": "^5.1.0",
     "@vue/cli-plugin-babel": "~5.0.8",
     "@vue/cli-plugin-typescript": "~5.0.1",
-    "@vue/cli-service": "~5.0.8",
-    "@vue/compiler-sfc": "^3.2.31",
+    "@vue/cli-service": "^5.0.8",
+    "@vue/compiler-sfc": "^3.4.15",
     "@vue/eslint-config-prettier": "^7.0.0",
     "@vue/eslint-config-typescript": "^10.0.0 ",
-    "autoprefixer": "^10.4.2",
+    "autoprefixer": "^10.4.17",
     "babel-loader": "^9.1.0",
     "babel-plugin-prismjs": "^2.1.0",
     "copy-webpack-plugin": "^9.0.1",
@@ -54,13 +60,7 @@
     "eslint-plugin-vue": "^8.5.0",
     "glob": "^7.1.6",
     "prettier": "^2.2.1",
-    "prettier-plugin-tailwindcss": "^0.1.11",
-    "sass": "^1.49.9",
-    "sass-loader": "^10.2.0",
-    "tailwindcss": "^3.2.7",
-    "ts-loader": "^9.2.6",
-    "typescript": "^5.0.4",
-    "vue-inline-svg": "^3.1.2"
+    "prettier-plugin-tailwindcss": "^0.1.11"
   },
   "nohoist": [
     "**/@typescript-eslint",
@@ -73,8 +73,5 @@
     "**/vue-template-compiler",
     "**/vue-class-component",
     "**/postcss"
-  ],
-  "resolutions": {
-    "**/@achrinza/node-ipc": "10.1.6"
-  }
+  ]
 }

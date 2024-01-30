@@ -32,7 +32,7 @@ export class RoutingTableRefresh {
   private readonly refreshInterval: number;
   private readonly refreshQueryTimeout: number;
   private readonly commonPrefixLengthRefreshedAt: Date[];
-  private refreshTimeoutId?: NodeJS.Timer;
+  private refreshTimeoutId?: NodeJS.Timeout;
 
   constructor(kad: Kad) {
     this.logger = Logger(module).log;

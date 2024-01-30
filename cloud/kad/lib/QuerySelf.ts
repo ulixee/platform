@@ -30,12 +30,15 @@ export class QuerySelf {
   private readonly initialInterval: number;
   private readonly queryTimeout: number;
   private started: boolean;
-  private timeoutId?: NodeJS.Timer;
+  private timeoutId?: NodeJS.Timeout;
   private controller?: AbortController;
   private initialQuerySelfHasRun?: Resolvable<void>;
   private querySelfPromise: Resolvable<void>;
 
-  constructor(private readonly kad: Kad, init: IQuerySelfInit) {
+  constructor(
+    private readonly kad: Kad,
+    init: IQuerySelfInit,
+  ) {
     const { count, interval, queryTimeout } = init;
 
     this.logger = log.createChild(module, { nodeId: kad.nodeId });

@@ -353,11 +353,11 @@ export interface IQueryInternalCallbacks {
     sqlParser: SqlParser;
     functionCallsById: { name: string; id: number }[];
   }): Promise<void>;
-  onFunction?<TOutput = any[]>(
+  onFunction?<TOutput = any[], TSchema = any>(
     id: number,
     name: string,
-    options: IExtractorRunOptions<any>,
-    run: (options: IExtractorRunOptions<any>) => Promise<TOutput>,
+    options: IExtractorRunOptions<TSchema>,
+    run: (options: IExtractorRunOptions<TSchema>) => Promise<TOutput>,
   ): Promise<TOutput>;
   onPassthroughTable?<TOutput = any[]>(
     name: string,

@@ -44,7 +44,6 @@ export async function createLocalNode(
   const datastoreConfig = config.datastoreConfiguration;
   if (datastoreConfig.datastoresDir) {
     datastoreConfig.datastoresTmpDir ??= Path.join(datastoreConfig.datastoresDir, 'tmp');
-    config.kadDbPath ??= Path.join(datastoreConfig.datastoresDir, 'kad.db');
 
     try {
       await Fs.rm(datastoreConfig.datastoresDir, { recursive: true });

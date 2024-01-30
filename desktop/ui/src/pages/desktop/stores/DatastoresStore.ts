@@ -81,7 +81,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     const client = cloud.clientsByAddress.values().next().value;
     return client
       .send('Datastore.meta', { id, version, includeSchemasAsJson: true })
-      .then(x => onDatastoreMeta(x, cloud));
+      .then(x => onDatastoreMeta(x, cloud as ICloudConnection));
   }
 
   function getStats(
@@ -392,7 +392,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     async refresh() {
       for (const cloud of clouds.value) {
         const client = cloud.clientsByAddress.values().next().value;
-        if (client) await onClient(cloud, client);
+        if (client) await onClient(cloud as ICloudConnection, client);
       }
     },
   };

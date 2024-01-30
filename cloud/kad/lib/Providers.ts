@@ -31,10 +31,13 @@ export class Providers {
   private readonly provideValidity: number;
   private readonly syncQueue: Queue;
   private started: boolean;
-  private cleaner?: NodeJS.Timer;
+  private cleaner?: NodeJS.Timeout;
   private onExpiredFns: ((event: { key: Buffer; providerNodeId: string }) => Promise<any>)[] = [];
 
-  constructor(private kad: Pick<Kad, 'db'>, init: IKadOptions['providers'] = {}) {
+  constructor(
+    private kad: Pick<Kad, 'db'>,
+    init: IKadOptions['providers'] = {},
+  ) {
     const { cacheSize, cleanupInterval, provideValidity } = init;
 
     this.cleanupInterval = cleanupInterval ?? PROVIDERS_CLEANUP_INTERVAL;
