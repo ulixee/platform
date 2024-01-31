@@ -91,8 +91,8 @@
       You'll need to install Datastores into your project.
       <!-- prettier-ignore -->
       <Prism language="shell">
-        yarn add @ulixee/datastore-plugins-hero
-        yarn add --dev @ulixee/datastore-packager
+        npm i --save @ulixee/datastore-plugins-hero
+        npm i --save-dev @ulixee/datastore-packager
       </Prism>
       <br />
       Now start your script

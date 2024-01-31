@@ -10,7 +10,7 @@
 
     <h4 class="text-md mb-2 font-semibold">Start a Remote Cloud</h4>
     <p class="mb-2 font-light">
-      You'll need to install Node.js 16+ on the remote machine. Then run these commands:
+      You'll need to install Node.js 18+ on the remote machine. Then run these commands:
       <!-- prettier-ignore -->
       <Prism language="shell">
         npm install -g @ulixee/cloud

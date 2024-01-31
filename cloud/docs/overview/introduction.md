@@ -10,16 +10,10 @@ Ulixee Cloud currently uses Websockets and allows each tool's Core to handle det
 
 ## Installation
 
-To use Ulixee Cloud in your project, install it with npm or yarn:
+To use Ulixee Cloud in your project, install it with npm (or your package manager of choice):
 
 ```bash
 npm i --save @ulixee/cloud
-```
-
-or
-
-```bash
-yarn add @ulixee/cloud
 ```
 
 When you install Cloud, it requires PeerDependencies of [`Hero`](https://ulixee.org/docs/hero) and [`Datastore`](https://ulixee.org/docs/datastore).

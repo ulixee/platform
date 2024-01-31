@@ -31,12 +31,6 @@ To get started using Datastore in your project, use the following commands:
 npm i --save @ulixee/datastore
 ```
 
-or
-
-```bash
-yarn add @ulixee/datastore
-```
-
 It's your responsibility to ensure your Ulixee development environment is setup, such as installing and running [`@ulixee/cloud`](https://ulixee.org/docs/cloud).
 
 ## Usage Example

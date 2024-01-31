@@ -1,9 +1,6 @@
 # How to upgrade
 
-Follow **one** of these steps to upgrade Hero to latest version.
-
-- With **yarn** run `yarn upgrade @ulixee/cloud --latest`
-- With **npm** run `npm install @ulixee/cloud@latest`
+Run `npm install @ulixee/cloud@latest` to upgrade Hero to latest version.
 
 ### Problems after upgrading
 

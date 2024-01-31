@@ -1,9 +1,8 @@
 # How to upgrade
 
-Follow **one** of these steps to upgrade Hero to latest version.
+Run this to upgrade Ulixee Cli to latest version.
 
-- With **yarn** run `yarn upgrade @ulixee/cli --latest`
-- With **npm** run `npm install @ulixee/cli@latest`
+- `npm install @ulixee/cli@latest`
 
 ### Problems after upgrading
 

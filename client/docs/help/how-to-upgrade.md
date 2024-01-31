@@ -1,9 +1,8 @@
 # How to upgrade
 
-Follow **one** of these steps to upgrade Client to latest version.
+Run this to upgrade Ulixee Client to latest version.
 
-- With **yarn** run `yarn upgrade @ulixee/client --latest`
-- With **npm** run `npm install @ulixee/client@latest`
+- `npm install @ulixee/client@latest`
 
 ### Problems after upgrading
 

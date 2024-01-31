@@ -52,7 +52,7 @@
       >
       <!-- prettier-ignore -->
       <Prism language="shell">
-        yarn add @ulixee/client
+        npm i --save @ulixee/client
         # build typescript again
         npx tsc -b
       </Prism>

@@ -43,10 +43,8 @@
       You'll need to install Hero into your project (and Typescript for this example):
       <!-- prettier-ignore -->
       <Prism language="shell">
-        npm -g install yarn # if you don't already have yarn
-        yarn init
-        yarn add typescript --dev
-        yarn add @ulixee/hero
+        npm i --save-dev typescript
+        npm i --save @ulixee/hero
         npx tsc init && npx tsc -b
       </Prism>
       <br />
