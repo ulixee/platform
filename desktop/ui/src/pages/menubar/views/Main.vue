@@ -144,7 +144,6 @@ export default Vue.defineComponent({
 </script>
 
 <style lang="scss">
-
 #menu {
   border-radius: 5px;
   padding: 2px;

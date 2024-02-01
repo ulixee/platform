@@ -2,35 +2,22 @@
   <div class="Menu">
     <ul>
       <li class="info">
-        Chrome is bound to <strong>{{ scriptEntrypoint }}</strong>, a <strong>Hero</strong> script wrapped as a <strong>Datastore</strong>.
+        Chrome is bound to <strong>{{ scriptEntrypoint }}</strong
+        >, a <strong>Hero</strong> script wrapped as a <strong>Datastore</strong>.
       </li>
       <li class="separator" />
-      <li class="item" @click.prevent="continueScript">
-        Continue Script Execution
-      </li>
-      <li class="item" @click.prevent="restartScript">
-        Replay from Beginning of Script
-      </li>
+      <li class="item" @click.prevent="continueScript">Continue Script Execution</li>
+      <li class="item" @click.prevent="restartScript">Replay from Beginning of Script</li>
       <li class="separator" />
       <li class="item-wrapper flex flex-row">
-        <div class="flex-1">
-          Open In {{ fileOsTool() }}
-        </div>
-        <div class="item" @click.prevent="openScript(scriptEntrypointRaw)">
-          Executed JS
-        </div>
-        <div
-          v-if="scriptEntrypointTs"
-          class="item"
-          @click.prevent="openScript(scriptEntrypointTs)"
-        >
+        <div class="flex-1">Open In {{ fileOsTool() }}</div>
+        <div class="item" @click.prevent="openScript(scriptEntrypointRaw)">Executed JS</div>
+        <div v-if="scriptEntrypointTs" class="item" @click.prevent="openScript(scriptEntrypointTs)">
           Source TS
         </div>
       </li>
       <li class="separator" />
-      <li class="item" @click.prevent="openAbout">
-        About Ulixee
-      </li>
+      <li class="item" @click.prevent="openAbout">About Ulixee</li>
     </ul>
   </div>
 </template>

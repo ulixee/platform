@@ -10,7 +10,7 @@ import Main from './views/Main.vue';
 export default Vue.defineComponent({
   name: 'App',
   components: {
-    Main
+    Main,
   },
   setup() {
     return {};
@@ -25,7 +25,11 @@ export default Vue.defineComponent({
 html {
   padding: 0;
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont;
   font-size: 13px;
   overflow: hidden;
   user-select: none;
@@ -39,5 +43,4 @@ body {
   margin: 0;
   cursor: default;
 }
-
 </style>

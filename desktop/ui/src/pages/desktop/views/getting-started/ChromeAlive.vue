@@ -3,7 +3,8 @@
     <h2 class="mb-5 text-lg font-semibold">Replay in ChromeAlive</h2>
     <p class="font-light">
       Hero has a secret superpower. It can record every step of your interactions, along with the
-      DOM, HTTP resources, variables used in your commands and more. Ulixee Desktop comes with a tool called
+      DOM, HTTP resources, variables used in your commands and more. Ulixee Desktop comes with a
+      tool called
       <b>ChromeAlive</b> that can replay these "sessions" in a browser. <br /><br />
       This is tremendously valuable during development when you encounter unexpected page states,
       and even more so when a script breaks on a remote server.
@@ -55,10 +56,11 @@
       <router-link
         to="/replays"
         class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
-        >Hero Replays</router-link
       >
-      in the sidebar. Your local ChromeAlive replays will always show up on this tab. You can also view
-      replays from remote servers (Clouds) once you've connected to them.
+        Hero Replays
+      </router-link>
+      in the sidebar. Your local ChromeAlive replays will always show up on this tab. You can also
+      view replays from remote servers (Clouds) once you've connected to them.
 
       <br /><br />
       Go take a look at your test script and poke around ChromeAlive. You can drag the timeline in
@@ -87,10 +89,10 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import { computed } from 'vue';
-import Prism from '../../components/Prism.vue';
 import { storeToRefs } from 'pinia';
 import { ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
 import { useGettingStartedStore } from '@/pages/desktop/stores/GettingStartedStore';
+import Prism from '../../components/Prism.vue';
 
 export default Vue.defineComponent({
   name: 'GettingStartedChromeAlive',

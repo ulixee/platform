@@ -110,10 +110,20 @@
       "**/global-mouse-events",
       "**/electron-clipboard-ex",
       "**/@ulixee/repo-tools",
+      "@ulixee/repo-tools",
+      "**/vite",
+      "**/vite-plugin-prismjs",
+      "**/vite/**",
+      "**/vite-svg-loader",
+      "**/vite-plugin-prismjs",
+      "**/vite-*",
+      "**/@vitejs/**",
       "**/@vue/**",
       "**/@vue/**/**",
       "**/vue",
       "**/vue-loader",
+      "**/vue-class-component",
+      "**/vue-router",
       "**/vue-template-compiler",
       "**/vue-class-component",
       "**/@types/web",
@@ -121,8 +131,7 @@
       "**/postcss",
       "**/tailwindcss",
       "**/@nodelib",
-      "**/@nodelib/**",
-      "@ulixee/repo-tools"
+      "**/@nodelib/**"
     ]
   },
   "lint-staged": {

@@ -160,7 +160,11 @@ export default class DomNodeState {
     return children;
   }
 
-  constructor(readonly frameId: number, private nodesById: Record<number, DomNodeState>, readonly nodeId: number) {
+  constructor(
+    readonly frameId: number,
+    private nodesById: Record<number, DomNodeState>,
+    readonly nodeId: number,
+  ) {
     this.frameNodeId = `${frameId}_${nodeId}`;
   }
 

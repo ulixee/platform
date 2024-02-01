@@ -35,22 +35,21 @@
           <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
             <a
               href="#"
-              @click.prevent="openDocs"
               class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
+              @click.prevent="openDocs"
             >
               View docs<ArrowTopRightOnSquareIcon class="-mt-1 ml-2 inline h-4 text-gray-500" />
             </a>
           </dd>
         </div>
-        <div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6" v-if="!adminIdentity">
+        <div v-if="!adminIdentity" class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
           <dt class="text-sm font-medium text-gray-500">Install</dt>
           <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
             <a
               href="#"
-              @click.prevent="install"
               class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
-            >
-            </a>
+              @click.prevent="install"
+            />
 
             <a
               v-if="!installed"
@@ -76,8 +75,8 @@
         </div>
       </dl>
       <div
-        class="text-md mt-5 whitespace-pre-line rounded-md bg-white p-4 font-light text-gray-900 shadow-inner ring-1 ring-gray-300 ring-opacity-20 ring-opacity-80"
         v-if="datastore.description"
+        class="text-md mt-5 whitespace-pre-line rounded-md bg-white p-4 font-light text-gray-900 shadow-inner ring-1 ring-gray-300 ring-opacity-20 ring-opacity-80"
       >
         {{ datastore.description }}
       </div>
@@ -118,10 +117,7 @@
             class="font-medium text-fuchsia-900 hover:text-fuchsia-600"
             @click.prevent="createCredit"
           >
-            <InlineSvg
-              class="text-top -mt-1 inline-block h-4 w-4 rounded-full"
-              :src="require('@/assets/icons/argon.svg')"
-            />
+            <ArgonIcon class="text-top -mt-1 inline-block h-4 w-4 rounded-full" />
             Store Credit
           </a>
         </p>
@@ -180,6 +176,7 @@
 </template>
 
 <script lang="ts">
+import ArgonIcon from '@/assets/icons/argon.svg';
 import Prism from '@/pages/desktop/components/Prism.vue';
 import { toArgons } from '@/pages/desktop/lib/utils';
 import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
@@ -205,6 +202,7 @@ import CreditsModal from './CreditsModal.vue';
 export default Vue.defineComponent({
   name: 'Datastores',
   components: {
+    ArgonIcon,
     ArrowDownTrayIcon,
     Prism,
     CheckIcon,

@@ -82,7 +82,7 @@
       </div>
     </div>
   </div>
-  <CloneModal :datastore="datastore" :selected-cloud="selectedCloud" ref="cloneModal" />
+  <CloneModal ref="cloneModal" :datastore="datastore" :selected-cloud="selectedCloud" />
 </template>
 
 <script lang="ts">

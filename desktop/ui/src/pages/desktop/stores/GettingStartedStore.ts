@@ -198,7 +198,7 @@ export const useGettingStartedStore = defineStore('gettingStartedStore', () => {
     for (const step of userCompletedSteps) completedSteps.value.add(step);
     for (const [key, callback] of Object.entries(stepCompletion)) {
       if (!completedSteps.value.has(key)) {
-        callback(markStepComplete.bind(this, key));
+        callback(() => markStepComplete(key));
       }
     }
     gotoNextIncompleteStep();

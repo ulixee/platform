@@ -29,7 +29,7 @@ export default class WindowsController {
     this.lastPrimaryFrameName = `MenuPrimary${Date.now()}`;
     const left = rect.x + window.screenLeft - 10;
     const top = rect.y + rect.height + window.screenTop - 5;
-    const features = `top=${top},left=${left},width=${380},height=${228}`;
+    const features = `top=${top},left=${left},width=${380},height=${245}`;
     const primaryMenu = window.open('/menu-primary.html', this.lastPrimaryFrameName, features);
 
     const onClose = this.hideMenu.bind(this, this.lastPrimaryFrameName, this._isShowingPrimaryRef);

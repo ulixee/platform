@@ -19,11 +19,13 @@
 import * as Vue from 'vue';
 import { RouterView } from 'vue-router';
 import Sidebar from './views/Sidebar.vue';
+import Datastores from "./views/Datastores.vue";
 
 export default Vue.defineComponent({
   name: 'App',
   components: {
     Sidebar,
+    Datastores,
     RouterView,
   },
   setup() {

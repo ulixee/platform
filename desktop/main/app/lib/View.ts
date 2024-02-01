@@ -16,8 +16,6 @@ export default class View {
   protected isAttached = false;
   protected readonly window: BrowserWindow;
 
-  #browserView: BrowserView;
-
   constructor(window: BrowserWindow, webPreferences: Electron.WebPreferences = {}) {
     this.window = window;
     this.browserView = new BrowserView({
@@ -42,18 +40,24 @@ export default class View {
     }
   }
 
+  public bringToFront(): void {
+    this.attach();
+    this.window.setTopBrowserView(this.browserView);
+  }
+
   public detach(): void {
-    if (this.#browserView) this.window.removeBrowserView(this.#browserView);
+    if (this.browserView) this.window.removeBrowserView(this.browserView);
     this.isAttached = false;
   }
 
   public destroy(): void {
     this.detach();
-    this.#browserView = null;
+    this.browserView = null;
   }
 
   public hide(): void {
-    this.setBounds({ x: 0, y: 0, width: 0, height: 0 });
+    const { x, y } = this.bounds ?? { x: 0, y: 0 };
+    this.setBounds({ x, y, width: 0, height: 0 });
   }
 
   public async getContentsHeight(): Promise<number> {

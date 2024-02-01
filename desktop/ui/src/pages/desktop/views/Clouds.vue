@@ -3,27 +3,27 @@
     <h1 class="mb-8 mt-3 text-2xl font-semibold text-gray-900">Clouds</h1>
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <div
-        class="flex flex-col ol-span-1 mb-10 divide-y divide-gray-200 rounded-lg"
         v-for="cloud of clouds"
+        :key="cloud.name"
+        class="flex flex-col ol-span-1 mb-10 divide-y divide-gray-200 rounded-lg"
         :class="[
           cloud.type !== 'public'
             ? 'cursor-pointer bg-white shadow-md hover:shadow-sm '
             : 'cursor-not-allowed bg-white/50 shadow-sm',
         ]"
-        :key="cloud.name"
-        @click.prevent="cloud.type !== 'public' ? $router.push(`/cloud/${cloud.name}`) : void(0)"
+        @click.prevent="cloud.type !== 'public' ? $router.push(`/cloud/${cloud.name}`) : void 0"
       >
-        <div class="flex-grow  relative flex w-full  justify-between space-x-6 p-6">
+        <div class="flex-grow relative flex w-full justify-between space-x-6 p-6">
           <div class="mt-2 mb-1 pb-1 text-base font-semibold leading-6 text-gray-600">
             <h3 class="">
               {{ getCloudName(cloud.name) }}
             </h3>
-            <p class="mt-1 text-sm font-light text-gray-500" v-if="cloud.type === 'public'">
+            <p v-if="cloud.type === 'public'" class="mt-1 text-sm font-light text-gray-500">
               The Ulixee Public cloud allows you to instantly host and monetize your Datastores with
               no server setup.
             </p>
 
-            <p class="mt-1 text-sm font-light text-gray-500" v-else-if="cloud.type === 'local'">
+            <p v-else-if="cloud.type === 'local'" class="mt-1 text-sm font-light text-gray-500">
               Ulixee Desktop starts an internal Cloud so you can test Datastores on your local
               machine.
             </p>
@@ -80,8 +80,8 @@ import {
   ServerStackIcon,
 } from '@heroicons/vue/24/outline';
 import CloudAddModal from '@/pages/desktop/views/CloudAddModal.vue';
-import { useCloudsStore } from '../stores/CloudsStore';
 import { storeToRefs } from 'pinia';
+import { useCloudsStore } from '../stores/CloudsStore';
 
 export default Vue.defineComponent({
   name: 'Clouds',

@@ -6,8 +6,8 @@
         <p class="max-w-2xl text-sm text-gray-500">
           <template v-if="adminIdentity">
             As the the administrator of this cloud, you have permission to deploy Datastores, issue
-            Credits and see Hero Sessions.</template
-          >
+            Credits and see Hero Sessions.
+          </template>
           <template v-else>
             If you're the administrator of this cloud, you can attach your Admin Identity to deploy
             Datastores, issue Credits and see Hero Sessions.

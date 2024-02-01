@@ -74,11 +74,7 @@
     <div class="mt-5">
       <ul class="grid grid-rows-3 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <li v-if="!datastores.length" class="italic text-slate-700">Nothing found</li>
-        <DatastoreCard
-          v-for="datastore in datastores"
-          :key="datastore.id"
-          :datastore="datastore"
-        />
+        <DatastoreCard v-for="datastore in datastores" :key="datastore.id" :datastore="datastore" />
       </ul>
     </div>
   </div>
@@ -144,9 +140,7 @@ export default Vue.defineComponent({
   emits: [],
   methods: {
     selectDatastore(name: string, selectDatastore: IDatastoreSummary): void {
-      void this.$router.push(
-        `/datastore/${selectDatastore.id}@v${selectDatastore.version}`,
-      );
+      void this.$router.push(`/datastore/${selectDatastore.id}@v${selectDatastore.version}`);
     },
     async refresh() {
       this.refreshing = true;

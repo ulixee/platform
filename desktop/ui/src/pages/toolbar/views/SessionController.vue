@@ -10,7 +10,7 @@
       @select="select('Input')"
     />
     <Player
-      ref='playerRef'
+      ref="playerRef"
       :mode="mode"
       :is-selected="isPlayerSelected"
       :is-focused="isPlayerSelected"
@@ -20,7 +20,7 @@
       :timetravel="timetravel"
       class="z-10 flex-1"
       @select="selectPlayerMode"
-      @finderActivated="onFinderActivated"
+      @finder-activated="onFinderActivated"
     />
     <OutputButton
       :is-selected="mode === 'Output'"

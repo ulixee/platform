@@ -1,15 +1,18 @@
 <template>
-  <TransitionRoot :show="isOpen"
-      enter="ease-out duration-300"
-      enter-from="opacity-0"
-      enter-to="opacity-100"
-      leave="ease-in duration-200"
-      leave-from="opacity-100"
-      leave-to="opacity-0"
+  <TransitionRoot
+    :show="isOpen"
+    enter="ease-out duration-300"
+    enter-from="opacity-0"
+    enter-to="opacity-100"
+    leave="ease-in duration-200"
+    leave-from="opacity-100"
+    leave-to="opacity-0"
+  >
+    <div
+      class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity flex items-center justify-center w-full"
     >
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity flex items-center justify-center w-full" >
-        <PlusCircleIcon class='text-white h-12'/>
-      </div>
+      <PlusCircleIcon class="text-white h-12" />
+    </div>
   </TransitionRoot>
 </template>
 
@@ -30,7 +33,7 @@ export default Vue.defineComponent({
     closeHandler: {
       type: Function as PropType<(reason: string) => boolean>,
     },
-    isOpen: Boolean
+    isOpen: Boolean,
   },
 });
 </script>

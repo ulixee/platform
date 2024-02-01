@@ -187,7 +187,7 @@ export default class DevtoolsBackdoorModule {
   }
 
   private async send(tabId: number, command: string, args: any[] = []): Promise<any> {
-    for (const devtoolsSession of this.devtoolsSessionByTabId.get(tabId)) {
+    for (const devtoolsSession of this.devtoolsSessionByTabId.get(tabId) ?? []) {
       try {
         const response = await devtoolsSession.send('Runtime.evaluate', {
           expression: `(function devtoolsBackdoorCommand() {

@@ -27,8 +27,9 @@
       <router-link
         to="/clouds"
         class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
-        >Clouds</router-link
       >
+        Clouds
+      </router-link>
       tab and click to add a Cloud.
     </p>
     <h4 class="text-md mb-2 mt-5 font-semibold">Admin Access</h4>
@@ -129,11 +130,11 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import { computed, watch } from 'vue';
-import Prism from '../../components/Prism.vue';
 import { storeToRefs } from 'pinia';
 import { ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
 import { useGettingStartedStore } from '@/pages/desktop/stores/GettingStartedStore';
 import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
+import Prism from '../../components/Prism.vue';
 
 export default Vue.defineComponent({
   name: 'GettingStartedDeploy',

@@ -2,7 +2,10 @@
   <div
     class="flex flex-col items-center divide-y divide-gray-200 overflow-hidden overflow-hidden rounded-lg bg-white shadow ring-1 ring-black ring-opacity-5"
   >
-    <div v-if="errorMessage" class="px-1 py-2 text-sm font-semibold  bg-red-500/20 w-full text-center shadow-inner">
+    <div
+      v-if="errorMessage"
+      class="px-1 py-2 text-sm font-semibold bg-red-500/20 w-full text-center shadow-inner"
+    >
       {{ errorMessage }}
     </div>
     <table class="min-w-full divide-y divide-gray-300">
@@ -33,20 +36,20 @@
           </td>
           <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
             <ul v-for="cloud in clouds" class="list ml-2 list-inside list-disc">
-              <li >
+              <li>
                 <span class="whitespace-nowrap">
                   {{ getCloudName(cloud.name) }}
                 </span>
                 <a
                   v-if="!entry.clouds.has(cloud.name)"
-                  @click.prevent="deploy(version, cloud.name)"
                   :disabled="!isCloudAdmin(cloud.name)"
                   class="ml-2 font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
                   :class="[!isCloudAdmin(cloud.name) ? 'cursor-not-allowed' : 'cursor-pointer']"
+                  @click.prevent="deploy(version, cloud.name)"
                 >
                   Deploy
                 </a>
-                <CheckIcon v-else class=" align-text-top inline-block w-4 text-gray-800" />
+                <CheckIcon v-else class="align-text-top inline-block w-4 text-gray-800" />
               </li>
             </ul>
           </td>

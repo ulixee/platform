@@ -1,17 +1,11 @@
 <template>
   <div class="Menu bg-white">
     <ul>
-      <li class="info">
-        You are currently in TimeTravel, at 1.2s from start of script.
-      </li>
+      <li class="info">You are currently in TimeTravel, at 1.2s from start of script.</li>
       <li class="separator" />
-      <li class="item">
-        Jump Forward to Live Mode
-      </li>
+      <li class="item">Jump Forward to Live Mode</li>
       <li class="separator" />
-      <li class="item">
-        About Ulixee's TimeTravel
-      </li>
+      <li class="item">About Ulixee's TimeTravel</li>
     </ul>
   </div>
 </template>

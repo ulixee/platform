@@ -58,7 +58,7 @@
       </Prism>
       <br />
       Now run your file.
-      <Prism language="shell">node ./query.js</Prism>
+      <Prism language="shell"> node ./query.js </Prism>
     </p>
 
     <p v-if="step.isComplete" class="my-10 border-t-2 border-fuchsia-800 pt-5">
@@ -91,11 +91,11 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import { computed, watch } from 'vue';
-import Prism from '../../components/Prism.vue';
 import { storeToRefs } from 'pinia';
 import { ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
 import { useGettingStartedStore } from '@/pages/desktop/stores/GettingStartedStore';
 import { IDatastoresById, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
+import Prism from '../../components/Prism.vue';
 
 export default Vue.defineComponent({
   name: 'GettingStartedQuery',

@@ -4,8 +4,8 @@ $borderColorSelected: rgba(198, 99, 255, 1);
 $borderColorSelectedLight: rgba(198, 99, 255, 0.5);
 $borderRadius: 17px;
 
-$bgColor: #F1F3F4;
-$bgColorHover: #F0E4F5;
+$bgColor: #f1f3f4;
+$bgColorHover: #f0e4f5;
 $bgColorSelected: white;
 
 $shadowColor: rgba(51, 0, 73, 0.2);
@@ -18,7 +18,8 @@ $textColorHover: #777777;
 $textColorSelected: #7c4693;
 
 // https://codepen.io/sosuke/pen/Pjoqqp
-$iconFilterSelected: invert(36%) sepia(14%) saturate(2146%) hue-rotate(238deg) brightness(90%) contrast(95%);
+$iconFilterSelected: invert(36%) sepia(14%) saturate(2146%) hue-rotate(238deg) brightness(90%)
+  contrast(95%);
 $iconOpacity: 0.4;
 $iconOpacityHover: 0.4;
 $iconOpacitySelected: 1;

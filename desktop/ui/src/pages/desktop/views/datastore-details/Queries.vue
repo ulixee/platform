@@ -7,10 +7,10 @@
         <label for="query" class="sr-only">Run a query</label>
 
         <textarea
+          id="query"
+          v-model="queryText"
           rows="3"
           name="query"
-          v-model="queryText"
-          id="query"
           class="block w-full resize-none border-0 bg-transparent py-2.5 text-gray-900 placeholder:font-light placeholder:text-gray-500 focus:ring-0 sm:leading-6"
           placeholder="Enter a query to run against this Datastore. View docs for details."
         />
@@ -26,8 +26,8 @@
           <button
             class="focus-visible:ring-fuchsia-8 inline-flex items-center rounded-md border border-fuchsia-800/70 bg-white px-3 py-1 text-sm font-semibold text-gray-700 shadow-sm hover:outline hover:outline-fuchsia-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
             :class="{ 'opacity-80': running }"
-            @click.prevent="runQuery"
             :disabled="running"
+            @click.prevent="runQuery"
           >
             Run Query
           </button>
@@ -75,9 +75,13 @@
               {{ item.input }}
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">
-              <template v-if="item.error">{{ item.error }}</template>
-              <template v-else-if="item.outputs"> {{ item.outputs?.length ?? 0 }} Records</template>
-              <template v-else>Running...</template>
+              <template v-if="item.error">
+                {{ item.error }}
+              </template>
+              <template v-else-if="item.outputs">
+                {{ item.outputs?.length ?? 0 }} Records
+              </template>
+              <template v-else> Running... </template>
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">
               {{ item.bytes }}
@@ -92,24 +96,27 @@
               colspan="8"
               class="max-w-full overflow-x-auto border-b border-fuchsia-800/80 p-0.5 shadow-inner shadow-fuchsia-800"
             >
-              <Json class='pt-8 pl-10' v-if='getQueryErrorExtras(item.error)' :json='getQueryErrorExtras(item.error)' ></Json>
+              <Json
+                v-if="getQueryErrorExtras(item.error)"
+                class="pt-8 pl-10"
+                :json="getQueryErrorExtras(item.error)"
+              />
               <div
-                class="whitespace-pre-wrap py-8 pl-10 text-sm font-light text-gray-800"
                 v-if="item.error"
-
+                class="whitespace-pre-wrap py-8 pl-10 text-sm font-light text-gray-800"
               >
                 {{ item.error.stack }}
               </div>
               <table
-                class="min-w-full max-w-full divide-y divide-gray-300 overflow-x-auto pl-10"
                 v-else
+                class="min-w-full max-w-full divide-y divide-gray-300 overflow-x-auto pl-10"
               >
                 <thead class="bg-gray-50">
-                  <tr class="mb-1 pb-1" v-if="item.outputs?.length">
+                  <tr v-if="item.outputs?.length" class="mb-1 pb-1">
                     <th
+                      v-for="key of Object.keys(item.outputs[0])"
                       scope="col"
                       class="px-3 py-3.5 text-left text-sm font-medium"
-                      v-for="key of Object.keys(item.outputs[0])"
                     >
                       {{ key }}
                     </th>
@@ -118,8 +125,8 @@
                 <tbody class="divide-y divide-gray-200 bg-white">
                   <tr v-for="result of item.outputs ?? []">
                     <td
-                      class="px-3 py-4 text-sm text-gray-500"
                       v-for="key of Object.keys(item.outputs[0])"
+                      class="px-3 py-4 text-sm text-gray-500"
                     >
                       {{ result[key] }}
                     </td>

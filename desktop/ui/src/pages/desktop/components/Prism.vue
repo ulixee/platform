@@ -9,7 +9,11 @@
     }"
   >
 
-    <code :class="'language-'+language" v-html="code"  ref='codeRef'></code>
+    <code
+ref="codeRef"
+:class="'language-'+language"
+v-html="code"
+/>
   </pre>
 </template>
 

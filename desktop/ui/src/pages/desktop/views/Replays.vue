@@ -2,13 +2,13 @@
   <h1 class="mb-8 mt-3 text-2xl font-semibold text-gray-900">Hero Replays</h1>
 
   <Listbox
-    as="div"
     v-model="selectedCloud"
+    as="div"
     class="space-between mx-auto my-3 flex flex-row justify-center text-center"
   >
-    <ListboxLabel class="mr-2 py-2 text-sm font-medium text-gray-900"
-      >Show Sessions from:</ListboxLabel
-    >
+    <ListboxLabel class="mr-2 py-2 text-sm font-medium text-gray-900">
+      Show Sessions from:
+    </ListboxLabel>
     <div class="relative basis-1/3">
       <ListboxButton
         class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-fuchsia-800 sm:text-sm sm:leading-6"
@@ -28,11 +28,11 @@
           class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
         >
           <ListboxOption
-            as="template"
             v-for="cloud in adminClouds"
             :key="cloud.id"
-            :value="cloud.name"
             v-slot="{ active, selected }"
+            as="template"
+            :value="cloud.name"
           >
             <li
               :class="[
@@ -71,12 +71,12 @@
           <input
             ref="inputElem"
             v-model="inputText"
-            @search="runSearch"
-            @keyup.delete="searchChanged"
             class="block w-full rounded-md border-0 bg-white/20 py-1.5 pl-10 pr-3 text-white placeholder:text-white focus:bg-white focus:text-gray-900 focus:ring-0 focus:placeholder:text-gray-500"
             placeholder="Search"
             type="search"
             name="search"
+            @search="runSearch"
+            @keyup.delete="searchChanged"
           />
         </div>
       </div>
@@ -106,8 +106,8 @@
             <div>
               {{ session.scriptEntrypoint }}
               <div
-                class="mt-0.5 text-sm font-light text-gray-500"
                 v-if="session.datastore?.functionName"
+                class="mt-0.5 text-sm font-light text-gray-500"
               >
                 {{ session.datastore.functionName }} {{ session.datastore.queryId }}
               </div>
@@ -126,8 +126,8 @@
               </div>
             </div>
             <span
-              class="mx-4 my-5 rounded-md bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-800"
               v-else-if="session.state !== 'complete'"
+              class="mx-4 my-5 rounded-md bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-800"
               >{{ session.state }}</span
             >
           </td>

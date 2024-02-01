@@ -7,8 +7,8 @@
       class="collapse-group"
       @click.prevent="openCollapseGroup"
       >----------- show
-      {{ hiddenNodeGroups.frameNodeIdsByGroupId.get(createdCollapseGroupId).length }} hidden DOM elements
-      ------------</a
+      {{ hiddenNodeGroups.frameNodeIdsByGroupId.get(createdCollapseGroupId).length }} hidden DOM
+      elements ------------</a
     >
     <DomNode
       v-for="node of children"
@@ -61,12 +61,12 @@
         >
         <span class="open-tag">{{ openTag }}</span>
 
-        <span class="attr" v-if="nodeState.classAttr">
+        <span v-if="nodeState.classAttr" class="attr">
           <span class="attr-name">class</span>
           <span class="attr-eq">="</span>
           <span
-            class="attr-value attr-classname observable"
             v-for="clazz of classes"
+            class="attr-value attr-classname observable"
             :class="{
               added: nodeState.changes.classes?.added.has(clazz),
               removed: nodeState.changes.classes?.removed.has(clazz),
@@ -74,12 +74,12 @@
             >{{ clazz }}</span
           >{{ '"' }}
         </span>
-        <span class="attr" v-if="nodeState.styleAttr">
+        <span v-if="nodeState.styleAttr" class="attr">
           <span class="attr-name">style</span>
           <span class="attr-eq">="</span>
           <span
-            class="attr-value attr-style observable"
             v-for="style of styles"
+            class="attr-value attr-style observable"
             :class="{
               added: nodeState.changes.styles?.added.has(style.name),
               changed: nodeState.changes.styles?.changed.has(style.name),
@@ -89,8 +89,8 @@
           >{{ '"' }}
         </span>
         <span
-          class="attr observable"
           v-for="attr of attributes"
+          class="attr observable"
           :class="{
             added: nodeState.changes.attrs?.added.has(attr.name),
             changed: nodeState.changes.attrs?.changed.has(attr.name),
@@ -98,12 +98,12 @@
           }"
         >
           <span class="attr-name">{{ attr.name }}</span>
-          <span class="attr-eq" v-if="attr.value !== undefined">=</span>
-          <span class="attr-value" v-if="attr.value !== undefined">"{{ attr.value }}"</span>
+          <span v-if="attr.value !== undefined" class="attr-eq">=</span>
+          <span v-if="attr.value !== undefined" class="attr-value">"{{ attr.value }}"</span>
         </span>
         <span
-          class="prop observable"
           v-for="prop of properties"
+          class="prop observable"
           :class="{
             added: nodeState.changes.props?.added.has(prop.name),
             changed: nodeState.changes.props?.changed.has(prop.name),
@@ -111,8 +111,8 @@
           }"
         >
           <span class="prop-name">[{{ prop.name }}]</span>
-          <span class="prop-eq" v-if="prop.value !== undefined">=</span>
-          <span class="prop-value" v-if="prop.value !== undefined">{{
+          <span v-if="prop.value !== undefined" class="prop-eq">=</span>
+          <span v-if="prop.value !== undefined" class="prop-value">{{
             JSON.stringify(prop.value).substring(0, 25)
           }}</span>
         </span>
@@ -130,8 +130,8 @@
         />
       </slot>
       <div
-        class="element-end observable"
         v-if="!nodeState.isVoidElement"
+        class="element-end observable"
         :style="{ paddingLeft: isInlineTag ? 0 : indentPx }"
       >
         {{ closeTag }}
@@ -160,6 +160,7 @@ const DomNode = defineComponent({
     },
   },
   emits: [],
+  setup(props) {},
   computed: {
     openTag() {
       return `<${this.nodeState.tagName}`;
@@ -248,13 +249,12 @@ const DomNode = defineComponent({
       return this.hiddenNodeGroups.createdGroupIdByFrameNodeId.get(this.nodeState.frameNodeId);
     },
   },
-  setup(props) {},
+  beforeUnmount() {},
   methods: {
     openCollapseGroup() {
       this.hiddenNodeGroups.isExpandedByGroupId.set(this.collapseGroupId, true);
     },
   },
-  beforeUnmount() {},
 });
 export default DomNode;
 </script>

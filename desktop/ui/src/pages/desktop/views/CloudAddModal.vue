@@ -1,5 +1,5 @@
 <template>
-  <Modal ref="modal" title="Add a Cloud" dialog-class="w-1/2" :closeHandler="onClose">
+  <Modal ref="modal" title="Add a Cloud" dialog-class="w-1/2" :close-handler="onClose">
     <div class="divider-y divider-slate-100 items-left flex flex-col">
       <nav class="mt-2 mb-5 flex space-x-8 px-2">
         <a
@@ -44,8 +44,8 @@
             >
             <div class="mt-2">
               <input
-                v-model="inputIpAddress"
                 id="ip"
+                v-model="inputIpAddress"
                 type="text"
                 placeholder="address"
                 class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-fuchsia-700 sm:text-sm sm:leading-6"
@@ -60,8 +60,8 @@
             >
             <div class="mt-2">
               <input
-                v-model="inputCloudName"
                 id="name"
+                v-model="inputCloudName"
                 type="text"
                 placeholder="name"
                 class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-fuchsia-700 sm:text-sm sm:leading-6"
@@ -83,7 +83,7 @@
         </div>
       </div>
 
-      <div class="px-3 text-sm font-light text-gray-700" v-else>
+      <div v-else class="px-3 text-sm font-light text-gray-700">
         <p class="mb-5 border-b border-gray-200 pb-3 text-sm text-base text-gray-500">
           You can setup a new Cloud on your own machines.
         </p>
@@ -105,8 +105,8 @@
           Now
           <a
             href="#"
-            @click.prevent="activeTab = 'Connect'"
             class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
+            @click.prevent="activeTab = 'Connect'"
             >Connect</a
           >
           to your Cloud and then navigate to it to attach the Admin Identity emitted in your
@@ -129,8 +129,6 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
-import Modal from '../components/Modal.vue';
-import Prism from '../components/Prism.vue';
 import {
   ArrowLeftIcon,
   ArrowRightCircleIcon,
@@ -138,6 +136,8 @@ import {
   PhoneArrowUpRightIcon,
 } from '@heroicons/vue/24/outline';
 import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
+import Modal from '../components/Modal.vue';
+import Prism from '../components/Prism.vue';
 
 const isIpRegex = /^(?!0)(?!.*\.$)((1?\d?\d|25[0-5]|2[0-4]\d)(\.|$)){4}$/;
 

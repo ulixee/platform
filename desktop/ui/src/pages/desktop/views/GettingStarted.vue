@@ -91,7 +91,7 @@ import { defineComponent } from 'vue';
 import { CheckIcon } from '@heroicons/vue/24/solid';
 import { useGettingStartedStore } from '@/pages/desktop/stores/GettingStartedStore';
 import { storeToRefs } from 'pinia';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 
 export default defineComponent({
   name: 'GettingStarted',
@@ -105,11 +105,11 @@ export default defineComponent({
 
     // redirect to first incomplete step if this is default url
     if ((route.path === '/' || route.path === '/getting-started') && steps.value[0].isComplete) {
-      gettingStartedStore.gotoNextIncompleteStep()
+      gettingStartedStore.gotoNextIncompleteStep();
     }
     return {
       steps,
-    }
+    };
   },
   methods: {
     isCurrent(step,stepIdx) {

@@ -49,7 +49,7 @@
       </Prism>
       <br />
       Now run your script:
-      <Prism language="shell">node ./ulixee.org.js</Prism>
+      <Prism language="shell"> node ./ulixee.org.js </Prism>
     </p>
 
     <p
@@ -71,10 +71,10 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import { computed } from 'vue';
-import Prism from '../../components/Prism.vue';
 import { storeToRefs } from 'pinia';
 import { ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
 import { useGettingStartedStore } from '@/pages/desktop/stores/GettingStartedStore';
+import Prism from '../../components/Prism.vue';
 
 export default Vue.defineComponent({
   name: 'GettingStartedHero',

@@ -61,7 +61,6 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import { computed, ref } from 'vue';
-import Prism from '../../components/Prism.vue';
 import { storeToRefs } from 'pinia';
 import { ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
 import { useGettingStartedStore } from '@/pages/desktop/stores/GettingStartedStore';
@@ -70,6 +69,7 @@ import {
   TCredit,
   useDatastoreStore,
 } from '@/pages/desktop/stores/DatastoresStore';
+import Prism from '../../components/Prism.vue';
 
 export default Vue.defineComponent({
   name: 'GettingStartedCredit',

@@ -7,12 +7,8 @@
       <h1>INPUT CONFIGURATION</h1>
     </div>
     <ul class="flex flex-row border-b border-gray-200 pb-5">
-      <li class="flex-1">
-        Started {{ startTime }}
-      </li>
-      <li class="flex-1">
-        Finished on {{ endTime }}
-      </li>
+      <li class="flex-1">Started {{ startTime }}</li>
+      <li class="flex-1">Finished on {{ endTime }}</li>
     </ul>
 
     <h2>Datastore Input:</h2>
@@ -23,92 +19,65 @@
     <h2>Hero Settings:</h2>
     <ul class="hero-settings">
       <li>
-        <div class="label">
-          User Agent String
-        </div>
+        <div class="label">User Agent String</div>
         <div class="value">
           {{ meta.userAgentString }}
         </div>
       </li>
       <li>
-        <div class="label">
-          User Agent OS
-        </div>
-        <div class="value">
-          {{ meta.operatingSystemName }} {{ meta.operatingSystemVersion }}
-        </div>
+        <div class="label">User Agent OS</div>
+        <div class="value">{{ meta.operatingSystemName }} {{ meta.operatingSystemVersion }}</div>
       </li>
       <li>
-        <div class="label">
-          User Agent Browser
-        </div>
-        <div class="value">
-          {{ meta.browserName }} {{ meta.browserFullVersion }}
-        </div>
+        <div class="label">User Agent Browser</div>
+        <div class="value">{{ meta.browserName }} {{ meta.browserFullVersion }}</div>
       </li>
       <li>
-        <div class="label">
-          Rendering Engine
-        </div>
-        <div class="value">
-          {{ meta.renderingEngine }} {{ meta.renderingEngineVersion }}
-        </div>
+        <div class="label">Rendering Engine</div>
+        <div class="value">{{ meta.renderingEngine }} {{ meta.renderingEngineVersion }}</div>
       </li>
       <li v-if="meta.upstreamProxyIpMask">
-        <div class="label">
-          Hero Core IP Address
-        </div>
+        <div class="label">Hero Core IP Address</div>
         <div class="value">
           {{ meta.upstreamProxyIpMask.publicIp }}
         </div>
       </li>
       <li>
-        <div class="label">
-          Proxy IP Address
-        </div>
+        <div class="label">Proxy IP Address</div>
         <div class="value">
           {{ meta.upstreamProxyIpMask?.proxyIp ?? 'No Proxy Used' }}
         </div>
       </li>
       <li v-if="meta.viewport">
-        <div class="label">
-          Viewport
-        </div>
+        <div class="label">Viewport</div>
         <div class="value">
           Screen: {{ meta.viewport.screenWidth }}x{{ meta.viewport.screenHeight }}, Viewport:
           {{ meta.viewport.width }}x{{ meta.viewport.height }}, Scale
-          {{ meta.viewport.deviceScaleFactor || '(default)' }}, Browser Position: [{{ meta.viewport.positionX }},
-          {{ meta.viewport.positionY }}]
+          {{ meta.viewport.deviceScaleFactor || '(default)' }}, Browser Position: [{{
+            meta.viewport.positionX
+          }}, {{ meta.viewport.positionY }}]
         </div>
       </li>
       <li>
-        <div class="label">
-          Timezone
-        </div>
+        <div class="label">Timezone</div>
         <div class="value">
           {{ meta.timezoneId }}
         </div>
       </li>
       <li>
-        <div class="label">
-          Geolocation
-        </div>
+        <div class="label">Geolocation</div>
         <div class="value">
           {{ meta.geolocation ?? '-' }}
         </div>
       </li>
       <li>
-        <div class="label">
-          Locale
-        </div>
+        <div class="label">Locale</div>
         <div class="value">
           {{ meta.locale }}
         </div>
       </li>
       <li>
-        <div class="label">
-          Session ID
-        </div>
+        <div class="label">Session ID</div>
         <div class="value">
           {{ meta.sessionId }}
         </div>

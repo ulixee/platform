@@ -42,7 +42,7 @@ export default Vue.defineComponent({
   methods: {},
   mounted() {
     this.mode = location.pathname.split('/').pop();
-  }
+  },
 });
 </script>
 
@@ -54,7 +54,7 @@ h1 {
   @apply font-bold py-3;
 }
 p {
-  @apply py-2
+  @apply py-2;
 }
 li {
   @apply list-disc px-1 mx-5;

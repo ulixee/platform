@@ -5,18 +5,19 @@
     @click="menuToggle"
   >
     <div class="menu-icon">
-      <img src="@/assets/icons/logo.svg">
+      <LogoIcon />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import * as Vue from 'vue';
+import LogoIcon from '@/assets/icons/logo.svg';
 import WindowsController from '@/pages/toolbar/lib/WindowsController';
+import * as Vue from 'vue';
 
 export default Vue.defineComponent({
   name: 'MenuButton',
-  components: {},
+  components: { LogoIcon },
   setup() {
     return {
       isShowingMenu: WindowsController._isShowingPrimaryRef,
@@ -64,7 +65,7 @@ export default Vue.defineComponent({
   }
   &.hasMenu {
     background: color.scale(#dcdee0, $lightness: -5%);
-    .menu-icon img {
+    .menu-icon svg {
       filter: $iconFilterSelected;
       opacity: $iconOpacitySelected;
     }
@@ -83,7 +84,7 @@ export default Vue.defineComponent({
   position: relative;
   z-index: 1;
 
-  img {
+  svg {
     height: 15px;
     display: inline-block;
     position: relative;

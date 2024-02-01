@@ -8,6 +8,11 @@ module.exports = {
     parser: '@typescript-eslint/parser',
     project: Path.join(__dirname, 'tsconfig.json'),
     sourceType: 'module',
+    ecmaVersion: 2021,
+  },
+  env: {
+    node: true,
+    es2022: true,
   },
   ignorePatterns: ['public/*.js'],
   rules: {

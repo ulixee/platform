@@ -31,6 +31,7 @@ export default class StaticServer {
   }
 
   public getPath(path: string): string {
+    if (path.startsWith('/')) path = path.slice(1);
     return `http://localhost:${this.#serverPort}/${path}`;
   }
 }
