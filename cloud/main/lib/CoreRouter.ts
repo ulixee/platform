@@ -40,7 +40,6 @@ export default class CoreRouter {
   private wsConnectionByType = {
     hero: transport => this.cloudNode.heroCore.addConnection(transport),
     datastore: transport => this.cloudNode.datastoreCore.addConnection(transport) as any,
-    kad: transport => this.cloudNode.kad.addConnection(transport) as any,
     services: transport => this.addHostedServicesConnection(transport),
     cloud: transport => this.cloudApiRegistry.createConnection(transport, this.getApiContext()),
   } as const;
@@ -66,7 +65,6 @@ export default class CoreRouter {
     );
 
     /// PUBLIC APIS /////////////
-    this.cloudNode.publicServer.addWsRoute('/kad', this.handleSocketRequest.bind(this, 'kad'));
     this.cloudNode.publicServer.addWsRoute('/hero', this.handleSocketRequest.bind(this, 'hero'));
     this.cloudNode.publicServer.addWsRoute(
       '/datastore',
@@ -93,14 +91,6 @@ export default class CoreRouter {
       this.cloudNode.desktopCore.registerWsRoutes(this.addWsRoute.bind(this));
     }
 
-    if (this.cloudNode.kad) {
-      this.cloudNode.kad.on('duplex-created', ({ connectionToClient }) => {
-        if (!this.connections.has(connectionToClient)) {
-          this.connections.add(connectionToClient);
-          connectionToClient.once('disconnected', () => this.connections.delete(connectionToClient));
-        }
-      });
-    }
 
     // last option
     this.cloudNode.publicServer.addHttpRoute('/', 'GET', this.handleHome.bind(this));

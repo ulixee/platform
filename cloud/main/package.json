@@ -30,12 +30,11 @@
     "@ulixee/datastore-plugins-hero-core": "2.0.0-alpha.25",
     "@ulixee/hero-core": "2.0.0-alpha.25",
     "@ulixee/hero-interfaces": "2.0.0-alpha.25",
-    "@ulixee/kad": "2.0.0-alpha.25",
     "@ulixee/net": "2.0.0-alpha.25",
     "@ulixee/platform-specification": "2.0.0-alpha.25",
     "@ulixee/specification": "2.0.0-alpha.25",
     "commander": "^9.3.0",
-    "ws": "^7.4.6"
+    "ws": "^7.5.9"
   },
   "devDependencies": {
     "@ulixee/datastore-testing": "2.0.0-alpha.25"

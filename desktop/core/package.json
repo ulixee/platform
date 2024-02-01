@@ -20,7 +20,7 @@
     "@ulixee/unblocked-specification": "2.0.0-alpha.25",
     "fuse.js": "^6.5.3",
     "nanoid": "^3.3.6",
-    "ws": "^7.4.6"
+    "ws": "^7.5.9"
   },
   "peerDependencies": {
     "@ulixee/datastore-core": "2.0.0-alpha.25",

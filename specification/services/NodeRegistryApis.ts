@@ -6,7 +6,6 @@ import { NodeInfoSchema } from '../types/INodeInfo';
 const CloudNodeMetaSchema = NodeInfoSchema.extend({
   isClusterNode: z.boolean(),
   lastSeenDate: z.date(),
-  kadHost: NodeInfoSchema.shape.kadHost.optional(),
 });
 
 export const NodeRegistryApiSchemas = {
@@ -40,9 +39,6 @@ export const NodeRegistryApiSchemas = {
         periodStartTime: z.date().describe('The start date of these metrics.'),
       }),
       clientConnections: z.number().describe('Clients currently connected to the public api.'),
-      peerConnections: z
-        .number()
-        .describe('Peer network nodes that are currently known of and connected.'),
     }),
     result: z.object({
       success: z.boolean(),

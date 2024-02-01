@@ -19,7 +19,6 @@ beforeAll(async () => {
         datastoresDir: Path.join(storageDir, 'with-services'),
       },
       hostedServicesServerOptions: { port: 0 },
-      kadEnabled: true,
     },
     true,
   );

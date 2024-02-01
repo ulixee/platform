@@ -137,7 +137,6 @@ export default class DatastoreCore extends TypedEventEmitter<{
       statsTrackerHost: env.statsTrackerHost,
       queryHeroSessionsDir: env.queryHeroSessionsDir,
       replayRegistryHost: env.replayRegistryHost,
-      cloudType: 'private',
       ...(options ?? {}),
     };
     if (plugins)
@@ -208,7 +207,6 @@ export default class DatastoreCore extends TypedEventEmitter<{
   public async start(options: {
     nodeAddress: URL;
     hostedServicesAddress?: URL;
-    cloudType?: 'public' | 'private';
     defaultServices?: IServicesSetupApiTypes['Services.getSetup']['result'];
     networkIdentity: Identity;
     getSystemCore: (name: 'heroCore' | 'datastoreCore' | 'desktopCore') => any;
@@ -219,7 +217,6 @@ export default class DatastoreCore extends TypedEventEmitter<{
     const {
       nodeAddress,
       networkIdentity,
-      cloudType,
       defaultServices,
       hostedServicesAddress,
       createConnectionToServiceHost,
@@ -258,7 +255,6 @@ export default class DatastoreCore extends TypedEventEmitter<{
 
     this.cloudNodeAddress = nodeAddress;
     this.cloudNodeIdentity = networkIdentity;
-    if (cloudType) this.options.cloudType = cloudType;
     try {
       this.close = this.close.bind(this);
 

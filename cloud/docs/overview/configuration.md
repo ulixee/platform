@@ -22,10 +22,6 @@ You can configure what IP/port to listen for Hosted Services using the `hostedSe
 
 Other nodes in your cluster can use these services by simply specifying this hosted services server host (`setupHost: localhost: 18181`)
 
-### CloudNode Type
-
-A CloudNode is private by default. If you set the `cloudType` to `public` in the [CloudNode constructor](../modules/cloud-node.md#constructor), your Datastores will be publicly available for download with attached payment.
-
 ### Configure Hero Core
 
 You can configure Hero with any desired options using the `heroCoreConfiguration` property on the [CloudNode constructor](../modules/cloud-node.md#constructor).

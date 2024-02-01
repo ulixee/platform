@@ -26,7 +26,7 @@ export default class NodeRegistryServiceClient {
     connectionToCore: ConnectionToCore<INodeRegistryApis, {}>,
     datastoreCore: DatastoreCore,
     private heroCore: HeroCore,
-    private getConnections: () => { clients: number; peers: number },
+    private getConnections: () => { clients: number; },
   ) {
     this.client = connectionToCore;
     this.heartbeatInternal = setInterval(this.heartbeat.bind(this), 5 * MINUTE) as any;
@@ -83,7 +83,6 @@ export default class NodeRegistryServiceClient {
     await this.sendHealth({
       nodeId: this.nodeId,
       clientConnections: connections.clients,
-      peerConnections: connections.peers,
       coreMetrics: {
         periodStartTime: stats.startDate,
         heroPoolSize: this.heroCore.pool.maxConcurrentAgents,

@@ -59,11 +59,7 @@ Creates a new CloudNode instance.
   - host `string`. An ip or domain name (if applicable) to bind the server to.
   - servicesSetupHost `string`. An ip:port to dial to discover hosted services to use.
   - nodeRegistryHost `string` | `self`. A service used to track CloudNode health. If `self`, will be set to this server's `hostedServicesServer.host` after it starts.
-  - cloudType `private | 'public`. If public, this node will dial into the public network and (implicitly) expose datastores for download.
-  - kadBootstrapPeers `string[]`. The Kademlia Distributed Hash Table (DHT) peers to connect to for network discovery and sharing. List should be `host:nodeId` to ensure only the expected nodeId (`Identity`) is connected to.
-  - kadEnabled `boolean`. Whether to enable the Kademlia DHT.
-  - kadDbPath `string`. A path to store node information.
-  - networkIdentity `Identity`. An Identity (Ed25519 keypair) used for network (both kad and services) signatures.
+  - networkIdentity `Identity`. An Identity (Ed25519 keypair) used to secure network services.
   - hostedServicesServerOptions: `object`. Options for the HostedServices server:
 
     - port `number`. A port to expose hosted service apis on. Defaults to `18181`. Setting this value will activate hosted services. `0` will find any open port.
@@ -98,12 +94,6 @@ Returns the HostedServices Server, if configured.
 Returns the URL to the hosted Services _used_ by this node if acting as a client.
 
 #### **Type**: `URL`
-
-### cloudNode.kad {#kad}
-
-Returns the [Kad](./kad.md) object (if activated).
-
-#### **Type**: [`Kad`](./kad.md)
 
 ### cloudNode.host {#address}
 
