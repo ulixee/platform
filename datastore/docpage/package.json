@@ -2,10 +2,11 @@
   "name": "@ulixee/datastore-docpage",
   "version": "2.0.0-alpha.25",
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build --mode production",
-    "build:dist": "cross-env BUILD_DIR=\"build-dist\" vue-cli-service build --mode production",
-    "lint": "vue-cli-service lint"
+    "serve": "vite",
+    "watch": "vite build -w",
+    "build": "vite build",
+    "build:dist": "cross-env BUILD_DIR=\"build-dist\" vite build",
+    "lint": "eslint --ext .ts,.vue --ignore-path .gitignore --fix src"
   },
   "dependencies": {
     "@headlessui/vue": "^1.5.0",
@@ -13,16 +14,9 @@
     "@tailwindcss/forms": "^0.5.0",
     "@types/lodash.kebabcase": "^4.1.7",
     "@types/node": "^18.19.10",
-    "@vue/cli-plugin-babel": "~5.0.8",
-    "@vue/cli-plugin-router": "~5.0.8",
-    "@vue/cli-plugin-typescript": "~5.0.8",
-    "@vue/cli-service": "~5.0.8",
-    "@vue/compiler-sfc": "^3.2.21",
     "autoprefixer": "^10.4.2",
     "axios": "^1.6.7",
-    "babel-plugin-prismjs": "^2.1.0",
     "concurrently": "^6.2.2",
-    "core-js": "^3.21.1",
     "eslint": "^8.17.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
@@ -55,12 +49,15 @@
     "unist-util-visit": "^4.1.0",
     "vfile": "^5.3.2",
     "vue": "^3.2.45",
-    "vue-inline-svg": "^3.1.0",
     "vue-router": "^4.0.0-0"
   },
   "devDependencies": {
     "@ulixee/datastore-packager": "2.0.0-alpha.25",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vite": "^2.5.4",
+    "vite-plugin-prismjs": "^0.0.11",
+    "vite-svg-loader": "^5.1.0",
+    "@vitejs/plugin-vue": "^1.6.1"
   },
   "nohoist": [
     "**/@typescript-eslint",
@@ -71,9 +68,5 @@
     "**/vue-loader",
     "**/vue-template-compiler",
     "**/postcss"
-  ],
-  "resolutions": {
-    "**/@achrinza/node-ipc": "10.1.6",
-    "**/@achrinza/event-pubsub": ""
-  }
+  ]
 }

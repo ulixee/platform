@@ -1,5 +1,4 @@
 import { createApp } from 'vue';
-import InlineSvg from 'vue-inline-svg';
 import IDocpageConfig from '@ulixee/datastore-packager/interfaces/IDocpageConfig';
 import App from './App.vue';
 import router from './router';
@@ -15,5 +14,4 @@ export const docpageConfigPromise = fetch('docpage.json')
 
 export const app = createApp(App);
 app.use(router);
-app.component('InlineSvg', InlineSvg);
 app.mount('#app');

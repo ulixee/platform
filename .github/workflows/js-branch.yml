@@ -49,8 +49,11 @@ jobs:
         run: yarn build
         working-directory: ./hero
 
+      - name: Set timeout
+        run: yarn config set network-timeout 1000000 -g
+
       - name: Build modules
-        run: yarn && yarn build:dist --network-timeout 1000000
+        run: yarn && yarn build:dist
 
       - name: Publish branch
         run: |
