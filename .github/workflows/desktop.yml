@@ -34,7 +34,7 @@ jobs:
 
       - name: Add msbuild to PATH
         if: matrix.os == 'windows-latest'
-        uses: microsoft/setup-msbuild@v1.3
+        uses: microsoft/setup-msbuild@v2
 
       - name: Yarn build
         run: yarn && yarn build && yarn build:dist && cd build-dist && yarn

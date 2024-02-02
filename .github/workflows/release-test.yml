@@ -35,7 +35,7 @@ jobs:
           args: install python2 visualcpp-build-tools -y
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.3
+        uses: microsoft/setup-msbuild@v2
         if: ${{ matrix.os == 'windows-latest' }}
 
       - name: Install Hero
