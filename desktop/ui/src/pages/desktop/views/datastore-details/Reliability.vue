@@ -1,13 +1,13 @@
 <template>
   <div class="min-h-[400px]">
     <Listbox
-      as="div"
       v-model="selectedVersion"
+      as="div"
       class="space-between mx-auto mb-3 flex flex-row justify-center text-center"
     >
-      <ListboxLabel class="mr-2 py-2 text-sm font-medium text-gray-900"
-        >Show Reliability for Version(s):</ListboxLabel
-      >
+      <ListboxLabel class="mr-2 py-2 text-sm font-medium text-gray-900">
+        Show Reliability for Version(s):
+      </ListboxLabel>
       <div class="relative basis-1/3">
         <ListboxButton
           class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-fuchsia-800 sm:text-sm sm:leading-6"
@@ -27,11 +27,11 @@
             class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
           >
             <ListboxOption
-              as="template"
               v-for="version in versions"
               :key="version.version"
-              :value="version.version"
               v-slot="{ active, selected }"
+              as="template"
+              :value="version.version"
             >
               <li
                 :class="[
@@ -73,8 +73,8 @@
                   class="ml-2 flex-none rounded group-hover:visible group-hover:outline-white/50 group-focus:visible"
                   :class="[sortColumn !== 'type' ? 'invisible text-white group-hover:outline' : '']"
                 >
-                  <ChevronUpIcon class="h-5 w-5" aria-hidden="true" v-if="isAscending" />
-                  <ChevronDownIcon class="h-5 w-5" aria-hidden="true" v-else />
+                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
+                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
                 </span>
               </a>
             </th>
@@ -85,8 +85,8 @@
                   class="ml-2 flex-none rounded group-hover:visible group-hover:outline-white/50 group-focus:visible"
                   :class="[sortColumn !== 'name' ? 'invisible text-white group-hover:outline' : '']"
                 >
-                  <ChevronUpIcon class="h-5 w-5" aria-hidden="true" v-if="isAscending" />
-                  <ChevronDownIcon class="h-5 w-5" aria-hidden="true" v-else />
+                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
+                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
                 </span>
               </a>
             </th>
@@ -99,8 +99,8 @@
                     sortColumn !== 'queries' ? 'invisible text-white group-hover:outline' : '',
                   ]"
                 >
-                  <ChevronUpIcon class="h-5 w-5" aria-hidden="true" v-if="isAscending" />
-                  <ChevronDownIcon class="h-5 w-5" aria-hidden="true" v-else />
+                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
+                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
                 </span>
               </a>
             </th>
@@ -113,8 +113,8 @@
                     sortColumn !== 'errors' ? 'invisible text-white group-hover:outline' : '',
                   ]"
                 >
-                  <ChevronUpIcon class="h-5 w-5" aria-hidden="true" v-if="isAscending" />
-                  <ChevronDownIcon class="h-5 w-5" aria-hidden="true" v-else />
+                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
+                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
                 </span>
               </a>
             </th>
@@ -125,8 +125,8 @@
                   class="ml-2 flex-none rounded group-hover:visible group-hover:outline-white/50 group-focus:visible"
                   :class="[sortColumn !== 'size' ? 'invisible text-white group-hover:outline' : '']"
                 >
-                  <ChevronUpIcon class="h-5 w-5" aria-hidden="true" v-if="isAscending" />
-                  <ChevronDownIcon class="h-5 w-5" aria-hidden="true" v-else />
+                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
+                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
                 </span>
               </a>
             </th>
@@ -139,8 +139,8 @@
                     sortColumn !== 'millis' ? 'invisible text-white group-hover:outline' : '',
                   ]"
                 >
-                  <ChevronUpIcon class="h-5 w-5" aria-hidden="true" v-if="isAscending" />
-                  <ChevronDownIcon class="h-5 w-5" aria-hidden="true" v-else />
+                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
+                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
                 </span>
               </a>
             </th>
@@ -153,8 +153,8 @@
                     sortColumn !== 'price' ? 'invisible text-white group-hover:outline' : '',
                   ]"
                 >
-                  <ChevronUpIcon class="h-5 w-5" aria-hidden="true" v-if="isAscending" />
-                  <ChevronDownIcon class="h-5 w-5" aria-hidden="true" v-else />
+                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
+                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
                 </span>
               </a>
             </th>
@@ -270,7 +270,7 @@ export default Vue.defineComponent({
 
     const selectedVersion = Vue.ref('Overall');
     const isAscending = Vue.ref<boolean>(false);
-    let stats = Vue.ref<IDatastoreApiTypes['Datastore.stats']['result']>({
+    const stats = Vue.ref<IDatastoreApiTypes['Datastore.stats']['result']>({
       byVersion: [],
       overall: [],
     });
@@ -300,7 +300,7 @@ export default Vue.defineComponent({
       }
     },
     updateList() {
-      let multiplier = this.isAscending ? -1 : 1;
+      const multiplier = this.isAscending ? -1 : 1;
       const statsToUse =
         this.selectedVersion === 'Overall' ? this.stats.overall : this.stats.byVersion;
       const sortColumn = this.sortColumn;

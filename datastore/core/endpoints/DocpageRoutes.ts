@@ -77,9 +77,7 @@ export default class DocpageRoutes {
     }
 
     if (
-      params[2].startsWith('/js/') ||
-      params[2].startsWith('/css/') ||
-      params[2].startsWith('/img/') ||
+      params[2].startsWith('/assets/') ||
       params[2] === '/favicon.ico'
     ) {
       req.url = params[2];

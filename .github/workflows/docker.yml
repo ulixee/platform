@@ -11,11 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_URL: https://github.com/${{ github.repository }}
-      ADD_CHROME_VERSION: 113
+      ADD_CHROME_VERSION: 120
       IMAGE: ulixee/ulixee-cloud
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Read version
         shell: bash

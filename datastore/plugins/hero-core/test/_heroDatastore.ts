@@ -7,7 +7,7 @@ const datastore = new Datastore({
       {
         async run({ Hero, input }) {
           const hero = new Hero();
-          await hero.goto(input.url);
+          await hero.goto(input.url as string);
           await hero.waitForPaintingStable();
           await hero.setSnippet('title', await hero.document.title);
           return hero;

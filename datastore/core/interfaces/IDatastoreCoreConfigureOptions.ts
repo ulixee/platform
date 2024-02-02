@@ -3,7 +3,6 @@ import Identity from '@ulixee/crypto/lib/Identity';
 
 export default interface IDatastoreCoreConfigureOptions {
   serverEnvironment: 'development' | 'production';
-  cloudType: 'public' | 'private';
   maxRuntimeMs: number;
   datastoresDir: string;
   queryHeroSessionsDir: string;

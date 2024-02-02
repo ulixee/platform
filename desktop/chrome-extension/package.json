@@ -7,19 +7,16 @@
   "main": "index.js",
   "author": "Data Liberation Foundation",
   "scripts": {
-    "build": "webpack --config webpack.config.js",
-    "build:dist": "cross-env BUILD_DIR=\"build-dist\" yarn build",
-    "watch": "webpack --watch --config webpack.config.js"
+    "build": "vite build",
+    "build:dist": "cross-env BUILD_DIR=\"build-dist\" npm run build",
+    "watch": "vite build -w"
   },
   "dependencies": {
-    "@babel/core": "^7.0.0",
-    "@babel/runtime-corejs3": "^7.13.10",
     "@ulixee/commons": "2.0.0-alpha.25",
     "@ulixee/desktop-core": "2.0.0-alpha.25",
     "@ulixee/desktop-interfaces": "2.0.0-alpha.25",
     "@ulixee/hero-interfaces": "2.0.0-alpha.25",
     "@webcomponents/custom-elements": "^1.5.0",
-    "core-js": "^3.21.1",
     "nanoid": "^3.3.6"
   },
   "devDependencies": {
@@ -31,14 +28,7 @@
     "jest-chrome": "^0.7.2",
     "prettier": "^2.2.1",
     "ts-loader": "^9.2.6",
-    "typescript": "^5.0.4",
-    "webpack": "^5.70.0",
-    "webpack-cli": "^4.9.0"
-  },
-  "nohoist": [
-    "babel-loader",
-    "**/@typescript-eslint",
-    "**/@typescript-eslint/**",
-    "**/eslint/**"
-  ]
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12"
+  }
 }

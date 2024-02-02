@@ -74,12 +74,12 @@ export class Client<Type extends 'session' | 'desktop' | 'internal' = 'session'>
     TEvents extends Type extends 'session'
       ? IChromeAliveSessionEvents
       : Type extends 'desktop'
-      ? IDesktopAppEvents
-      : IDesktopAppPrivateEvents = Type extends 'session'
+        ? IDesktopAppEvents
+        : IDesktopAppPrivateEvents = Type extends 'session'
       ? IChromeAliveSessionEvents
       : Type extends 'desktop'
-      ? IDesktopAppEvents
-      : IDesktopAppPrivateEvents,
+        ? IDesktopAppEvents
+        : IDesktopAppPrivateEvents,
   >(event: T, handler: (message: TEvents[T]) => any): void {
     this.eventHandlersByEventType[event] ??= [];
     this.eventHandlersByEventType[event].push(handler);
@@ -92,12 +92,12 @@ export class Client<Type extends 'session' | 'desktop' | 'internal' = 'session'>
     TEvents extends Type extends 'session'
       ? IChromeAliveSessionEvents
       : Type extends 'desktop'
-      ? IDesktopAppEvents
-      : IDesktopAppPrivateEvents = Type extends 'session'
+        ? IDesktopAppEvents
+        : IDesktopAppPrivateEvents = Type extends 'session'
       ? IChromeAliveSessionEvents
       : Type extends 'desktop'
-      ? IDesktopAppEvents
-      : IDesktopAppPrivateEvents,
+        ? IDesktopAppEvents
+        : IDesktopAppPrivateEvents,
   >(event: T, handler: (message: TEvents[T]) => any): void {
     const handlers = this.eventHandlersByEventType[event];
     if (!handlers) return;
@@ -110,12 +110,12 @@ export class Client<Type extends 'session' | 'desktop' | 'internal' = 'session'>
     TEvents extends Type extends 'session'
       ? IChromeAliveSessionEvents
       : Type extends 'desktop'
-      ? IDesktopAppEvents
-      : IDesktopAppPrivateEvents = Type extends 'session'
+        ? IDesktopAppEvents
+        : IDesktopAppPrivateEvents = Type extends 'session'
       ? IChromeAliveSessionEvents
       : Type extends 'desktop'
-      ? IDesktopAppEvents
-      : IDesktopAppPrivateEvents,
+        ? IDesktopAppEvents
+        : IDesktopAppPrivateEvents,
   >(event: T): void {
     delete this.eventHandlersByEventType[event];
   }
@@ -144,12 +144,12 @@ export class Client<Type extends 'session' | 'desktop' | 'internal' = 'session'>
     TApis extends Type extends 'session'
       ? IChromeAliveSessionApis
       : Type extends 'desktop'
-      ? IDesktopAppApis
-      : IDesktopAppPrivateApis = Type extends 'session'
+        ? IDesktopAppApis
+        : IDesktopAppPrivateApis = Type extends 'session'
       ? IChromeAliveSessionApis
       : Type extends 'desktop'
-      ? IDesktopAppApis
-      : IDesktopAppPrivateApis,
+        ? IDesktopAppApis
+        : IDesktopAppPrivateApis,
   >(
     command: T,
     ...args: ICoreRequestPayload<TApis, T>['args']
@@ -204,8 +204,7 @@ export class Client<Type extends 'session' | 'desktop' | 'internal' = 'session'>
       if (pending) {
         if ((data as any) instanceof Error) {
           pending.reject(data);
-        }
-        else pending.resolve(data);
+        } else pending.resolve(data);
       }
       document.dispatchEvent(
         new CustomEvent('chromealive:api:response', {

@@ -18,7 +18,7 @@ export default class NodeTracker extends TypedEventEmitter<{ new: { node: ICloud
   private readonly nodesByIdentity: { [nodeId: string]: ICloudNodeMeta } = {};
   private nodesInSeenOrder: ICloudNodeMeta[] = [];
 
-  constructor(readonly lastSeenCutoffMinutes: number = 120) {
+  constructor(readonly lastSeenCutoffMinutes = 120) {
     super();
   }
 

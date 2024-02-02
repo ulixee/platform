@@ -1,6 +1,9 @@
 <template>
   <div class="relative">
-    <span class="mt-2 l-0 r-0 w-full absolute mx-auto text-center font-semibold text-md text-slate-600">{{ title }}</span>
+    <span
+      class="mt-2 l-0 r-0 w-full absolute mx-auto text-center font-semibold text-md text-slate-600"
+      >{{ title }}</span
+    >
     <div id="ChromeAliveToolbar" :class="{ loading: isLoading, restarting: isRestarting }">
       <SessionController />
     </div>
@@ -49,7 +52,11 @@ export default Vue.defineComponent({
 html {
   padding: 0;
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont;
   font-size: 13px;
   overflow: hidden;
   &::-webkit-scrollbar {
@@ -77,7 +84,9 @@ body {
   box-sizing: border-box;
   padding: 35px 10px 15px;
   min-height: 36px;
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.16);
+  box-shadow:
+    0 0 1px rgba(0, 0, 0, 0.12),
+    0 1px 1px rgba(0, 0, 0, 0.16);
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   background: white;
 

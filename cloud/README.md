@@ -12,16 +12,10 @@ Cloud currently uses Websockets and allows each tool's Core to handle details of
 
 ## Installation
 
-To use Cloud in your project, install it with npm or yarn:
+To use Cloud in your project, install it with npm (or your package manager of choice):
 
 ```bash
 npm i --save @ulixee/cloud
-```
-
-or
-
-```bash
-yarn add @ulixee/cloud
 ```
 
 When you install Cloud, it installs [`Hero`](//ulixee.org/docs/hero) and [`Datastore`](//ulixee.org/docs/datastore).

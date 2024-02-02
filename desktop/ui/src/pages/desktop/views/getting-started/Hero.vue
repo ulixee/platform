@@ -43,15 +43,13 @@
       You'll need to install Hero into your project (and Typescript for this example):
       <!-- prettier-ignore -->
       <Prism language="shell">
-        npm -g install yarn # if you don't already have yarn
-        yarn init
-        yarn add typescript --dev
-        yarn add @ulixee/hero
+        npm i --save-dev typescript
+        npm i --save @ulixee/hero
         npx tsc init && npx tsc -b
       </Prism>
       <br />
       Now run your script:
-      <Prism language="shell">node ./ulixee.org.js</Prism>
+      <Prism language="shell"> node ./ulixee.org.js </Prism>
     </p>
 
     <p
@@ -73,10 +71,10 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import { computed } from 'vue';
-import Prism from '../../components/Prism.vue';
 import { storeToRefs } from 'pinia';
 import { ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
 import { useGettingStartedStore } from '@/pages/desktop/stores/GettingStartedStore';
+import Prism from '../../components/Prism.vue';
 
 export default Vue.defineComponent({
   name: 'GettingStartedHero',

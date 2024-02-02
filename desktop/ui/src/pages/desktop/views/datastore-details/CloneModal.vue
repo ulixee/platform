@@ -32,10 +32,10 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import { PropType } from 'vue';
-import Modal from '../../components/Modal.vue';
 import Prism from '@/pages/desktop/components/Prism.vue';
 import { ArrowLeftIcon, ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
 import { IDatastoreSummary, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
+import Modal from '../../components/Modal.vue';
 
 export default Vue.defineComponent({
   name: 'CloneModal',
@@ -50,7 +50,7 @@ export default Vue.defineComponent({
     datastore: {
       type: Object as PropType<IDatastoreSummary>,
       required: true,
-      default: () => ({} as IDatastoreSummary),
+      default: () => ({}) as IDatastoreSummary,
     },
   },
   setup(props) {

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import { IUserBalance } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
+import type { IUserBalance } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
 
 export { IUserBalance };

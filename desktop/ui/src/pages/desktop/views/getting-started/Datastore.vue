@@ -91,8 +91,8 @@
       You'll need to install Datastores into your project.
       <!-- prettier-ignore -->
       <Prism language="shell">
-        yarn add @ulixee/datastore-plugins-hero
-        yarn add --dev @ulixee/datastore-packager
+        npm i --save @ulixee/datastore-plugins-hero
+        npm i --save-dev @ulixee/datastore-packager
       </Prism>
       <br />
       Now start your script
@@ -130,10 +130,10 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import { computed } from 'vue';
-import Prism from '../../components/Prism.vue';
 import { storeToRefs } from 'pinia';
 import { ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
 import { useGettingStartedStore } from '@/pages/desktop/stores/GettingStartedStore';
+import Prism from '../../components/Prism.vue';
 
 export default Vue.defineComponent({
   name: 'GettingStartedDatastore',

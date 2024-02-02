@@ -18,17 +18,12 @@
             activeEntity?.name === entity.name ? (activeEntity = null) : (activeEntity = entity)
           "
         >
-          <InlineSvg
-            class="mx-auto h-14 w-14"
-            :src="
-              {
-                Crawler: require('@/assets/icons/spider.svg'),
-                Extractor: require('@/assets/icons/extractor.svg'),
-                Table: require('@/assets/icons/table.svg'),
-              }[entity.type]
-            "
-          />
-          <div class="text-md mt-4 font-thin">{{ entity.name }}</div>
+          <CrawlerIcon v-if="entity.type === 'Crawler'" class="mx-auto h-14 w-14"/>
+          <ExtractorIcon v-else-if="entity.type === 'Extractor'" class="mx-auto h-14 w-14"/>
+          <TableIcon v-else-if="entity.type === 'Table'" class="mx-auto h-14 w-14"/>
+          <div class="text-md mt-4 font-thin">
+            {{ entity.name }}
+          </div>
         </li>
       </ul>
     </div>
@@ -36,18 +31,20 @@
       v-if="activeEntity"
       class="max-h-1/3 mt-10 basis-1/3 overflow-hidden border border-gray-200 bg-white/50 px-8 py-7 shadow-inner"
     >
-      <div class="mb-2" v-if="activeEntity.example">
+      <div v-if="activeEntity.example" class="mb-2">
         <span class="text-sm font-bold text-gray-500">Example Query:</span>
-        <Prism language="sql">{{ exampleSql(activeEntity.example) }}</Prism>
+        <Prism language="sql">
+          {{ exampleSql(activeEntity.example) }}
+        </Prism>
       </div>
       <div class="mb-2">
         <span class="text-sm font-bold text-gray-500">Type</span
         ><span class="ml-2 text-sm font-thin">{{ activeEntity.type }}</span>
       </div>
-      <div class="mb-2" v-if="activeEntity.description">
+      <div v-if="activeEntity.description" class="mb-2">
         ><span class="ml-2 text-sm font-thin">{{ activeEntity.description }}</span>
       </div>
-      <Json :json="this.getSchema(activeEntity)" />
+      <Json :json="getSchema(activeEntity)" />
     </div>
   </div>
 </template>
@@ -56,6 +53,9 @@
 import { useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 import { storeToRefs } from 'pinia';
 import * as Vue from 'vue';
+import CrawlerIcon from '@/assets/icons/spider.svg';
+import ExtractorIcon from '@/assets/icons/extractor.svg';
+import TableIcon from '@/assets/icons/table.svg';
 import Prism from '@/pages/desktop/components/Prism.vue';
 import { useRoute } from 'vue-router';
 import { convertJsonToFlat } from '@/utils/flattenJson';
@@ -63,7 +63,7 @@ import Json from '@/components/Json.vue';
 
 export default Vue.defineComponent({
   name: 'Entities',
-  components: { Json, Prism },
+  components: { Json, Prism, CrawlerIcon, ExtractorIcon, TableIcon },
   setup() {
     const route = useRoute();
     const datastoresStore = useDatastoreStore();

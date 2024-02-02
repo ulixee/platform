@@ -37,10 +37,9 @@
           <router-link to="/wallet" class="block w-full flex-shrink-0">
             <div class="flex items-center">
               <div>
-                <InlineSvg
+                <ArgonIcon
                   class="inline-block h-10 w-10 text-gray-200"
                   :class="{ 'group-hover:text-gray-300': !walletActive }"
-                  :src="require('@/assets/icons/argon.svg')"
                 />
               </div>
               <div class="ml-3 overflow-hidden">
@@ -63,12 +62,13 @@
       </div>
     </div>
     <ReceiveArgonsModal :argon-file="argonFile" />
-    <DropModal :isOpen="isDragging" />
+    <DropModal :is-open="isDragging" />
   </div>
 </template>
 
 <script lang="ts">
 import * as Vue from 'vue';
+import ArgonIcon from '@/assets/icons/argon.svg';
 import {
   BellIcon,
   BuildingStorefrontIcon,
@@ -84,14 +84,6 @@ import {
   VideoCameraIcon,
   XMarkIcon,
 } from '@heroicons/vue/24/outline';
-import Replays from './Replays.vue';
-import Clouds from './Clouds.vue';
-import InlineSvg from 'vue-inline-svg';
-import Datastores from './Datastores.vue';
-import Overview from './Overview.vue';
-import Wallet from './Wallet.vue';
-import DropModal from './DropModal.vue';
-import ReceiveArgonsModal from './ReceiveArgonsModal.vue';
 import {
   Dialog,
   DialogPanel,
@@ -108,11 +100,18 @@ import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
 import { useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 import { useWalletStore } from '@/pages/desktop/stores/WalletStore';
 import { storeToRefs } from 'pinia';
+import Replays from './Replays.vue';
+import Clouds from './Clouds.vue';
+import Datastores from './Datastores.vue';
+import Overview from './Overview.vue';
+import Wallet from './Wallet.vue';
+import DropModal from './DropModal.vue';
+import ReceiveArgonsModal from './ReceiveArgonsModal.vue';
 
 export default Vue.defineComponent({
   name: 'DesktopHome',
   components: {
-    InlineSvg,
+    ArgonIcon,
     RocketLaunchIcon,
     MagnifyingGlassIcon,
     Replays,
@@ -169,7 +168,7 @@ export default Vue.defineComponent({
     };
   },
   watch: {
-    '$route.path'(value) {
+    '$route.path': function (value) {
       this.walletActive = value === '/wallet';
     },
   },

@@ -8,16 +8,13 @@
     </div>
 
     <ul class="flex flex-row border-b border-gray-200 pb-5">
-      <li class="flex-1">
-        Started {{ startTime }}
-      </li>
-      <li class="flex-1">
-        Finished on {{ endTime }}
-      </li>
+      <li class="flex-1">Started {{ startTime }}</li>
+      <li class="flex-1">Finished on {{ endTime }}</li>
     </ul>
 
     <h2>
-      Datastore Output <span>{{ dataSize }}</span>:
+      Datastore Output <span>{{ dataSize }}</span
+      >:
     </h2>
     <div class="box max-h-[500px] min-h-[200px] overflow-auto border border-gray-200 bg-gray-50">
       <Json
@@ -30,11 +27,9 @@
     {{ detachedResourcesString }}, {{ detachedElementsString }}, {{ snippetsString }}
 
     <div class="my-10 text-center">
-      <a
-        class="text-purple-700 underline"
-        href="/rerun-extractor"
-        @click.prevent="rerunExtractor"
-      >Re-run Extractor</a>
+      <a class="text-purple-700 underline" href="/rerun-extractor" @click.prevent="rerunExtractor"
+        >Re-run Extractor</a
+      >
     </div>
     <slot v-if="collectedAssets.detachedResources.length">
       <h2>Collected Resources</h2>
@@ -70,13 +65,15 @@
             :href="resourceDataUrlsById[resource.resource.id]"
             target="_blank"
             :download="resourceFilename(resource)"
-          >Download Response ({{ byteSize(resource.resource.response.buffer) }})</a>
+            >Download Response ({{ byteSize(resource.resource.response.buffer) }})</a
+          >
 
           <a
             class="ml-20 text-purple-700 underline"
             href="javascript:void(0)"
             @click.prevent="inspectResource(resource)"
-          >Inspect Resource</a>
+            >Inspect Resource</a
+          >
         </div>
       </div>
     </slot>
@@ -89,9 +86,7 @@
         class="box mb-20 border border-gray-100 p-10"
       >
         <h4>Name "{{ snippet.name }}"</h4>
-        <div class="font-thin">
-          Collected at {{ formatTimestamp(snippet.timestamp) }}
-        </div>
+        <div class="font-thin">Collected at {{ formatTimestamp(snippet.timestamp) }}</div>
         <div class="grid">
           <div
             class="bg-gray-10 overflow-auto whitespace-pre border border-gray-200 p-10 text-sm font-thin"
@@ -140,19 +135,22 @@
             :href="`data:text/html,${encodeURIComponent(element.outerHTML)}`"
             target="_blank"
             :download="element.name + '.html'"
-          >Download HTML</a>
+            >Download HTML</a
+          >
 
           <a
             class="ml-20 text-purple-700 underline"
             href="javascript:void(0)"
             @click.prevent="inspectElement(element)"
-          >Inspect Element</a>
+            >Inspect Element</a
+          >
 
           <a
             class="ml-20 text-purple-700 underline"
             href="javascript:void(0)"
             @click.prevent="timetravelToElement(element)"
-          >Show Element in Timetravel</a>
+            >Show Element in Timetravel</a
+          >
         </div>
       </div>
     </slot>

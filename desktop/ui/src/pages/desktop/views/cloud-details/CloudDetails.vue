@@ -7,8 +7,9 @@
             <router-link
               class="text-2xl font-semibold text-gray-900 underline hover:text-gray-700"
               to="/clouds"
-              >Clouds</router-link
             >
+              Clouds
+            </router-link>
           </div>
         </li>
         <li>
@@ -47,8 +48,8 @@
               ]"
               aria-hidden="true"
             />
-            <span>{{ tab.label ?? tab.name }}</span></router-link
-          >
+            <span>{{ tab.label ?? tab.name }}</span>
+          </router-link>
         </nav>
       </div>
     </div>
@@ -56,7 +57,7 @@
   <div class="mt-8 flow-root">
     <div class="-my-2 -mx-4 -mx-8 overflow-x-auto">
       <div class="inline-block min-w-full py-2 px-8 align-middle">
-        <router-view></router-view>
+        <router-view />
       </div>
     </div>
   </div>

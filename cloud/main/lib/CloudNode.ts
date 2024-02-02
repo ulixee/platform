@@ -12,7 +12,6 @@ import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPl
 import type DesktopCore from '@ulixee/desktop-core';
 import HeroCore from '@ulixee/hero-core';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
-import Kad from '@ulixee/kad';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
 import IServicesSetup from '@ulixee/platform-specification/types/IServicesSetup';
 import * as Http from 'http';
@@ -41,7 +40,6 @@ export default class CloudNode {
   public publicServer: RoutableServer;
   public hostedServicesServer?: RoutableServer;
   public hostedServicesHostURL?: URL;
-  public kad?: Kad;
 
   public datastoreCore: DatastoreCore;
   public heroCore: HeroCore;
@@ -57,10 +55,6 @@ export default class CloudNode {
 
   public cloudConfiguration: ICloudConfiguration = {
     nodeRegistryHost: env.nodeRegistryHost,
-    cloudType: env.cloudType as any,
-    kadEnabled: env.kadEnabled,
-    kadDbPath: env.kadDbPath,
-    kadBootstrapPeers: env.kadBootstrapPeers,
     servicesSetupHost: env.servicesSetupHost,
     networkIdentity: env.networkIdentity,
     port: env.publicPort ? Number(env.publicPort) : undefined,
@@ -109,8 +103,7 @@ export default class CloudNode {
   constructor(
     config: Partial<ICloudConfiguration> & {
       shouldShutdownOnSignals?: boolean;
-      // remove cloud type since it's also on cloud configuration
-      datastoreConfiguration?: Partial<Omit<IDatastoreCoreConfigureOptions, 'cloudType'>>;
+      datastoreConfiguration?: Partial<IDatastoreCoreConfigureOptions>;
       heroConfiguration?: Partial<ICoreConfigureOptions>;
     } = { shouldShutdownOnSignals: true },
   ) {
@@ -156,7 +149,6 @@ export default class CloudNode {
     try {
       await this.startPublicServer();
       await this.startHostedServices();
-      await this.startPeerServices();
 
       await this.startCores();
       // NOTE: must wait for cores to be available
@@ -168,7 +160,6 @@ export default class CloudNode {
       log.stats('CloudNode.started', {
         publicHost: await this.publicServer.host,
         hostedServicesHost: await this.hostedServicesServer?.host,
-        kadHost: this.kad?.nodeInfo?.kadHost,
         cloudConfiguration: this.cloudConfiguration,
         parentLogId: startLogId,
         sessionId: null,
@@ -205,7 +196,6 @@ export default class CloudNode {
         ...Object.values(this.connectionsToServicesByHost).map(x => x.disconnect()),
         this.publicServer.close(),
         this.hostedServicesServer?.close(),
-        this.kad?.close(),
       ]);
       resolvable.resolve();
     } catch (error) {
@@ -246,7 +236,6 @@ export default class CloudNode {
       heroCore: this.heroCore,
       publicServer: this.publicServer,
       serviceClient: this.createConnectionToServiceHost(this.cloudConfiguration.nodeRegistryHost),
-      kad: this.kad,
       nodeTracker: this.nodeTracker,
     });
 
@@ -266,7 +255,6 @@ export default class CloudNode {
       networkIdentity: this.cloudConfiguration.networkIdentity,
       hostedServicesAddress,
       defaultServices: servicesSetup,
-      cloudType: this.cloudConfiguration.cloudType,
       createConnectionToServiceHost: this.createConnectionToServiceHost,
       getSystemCore: (name: 'heroCore' | 'datastoreCore' | 'desktopCore') => {
         if (name === 'heroCore') return this.heroCore;
@@ -331,39 +319,6 @@ export default class CloudNode {
     }
     await this.hostedServicesServer.listen(listenOptions);
     this.hostedServicesHostURL = toUrl(await this.hostedServicesServer.host);
-  }
-
-  private async startPeerServices(): Promise<void> {
-    if (
-      this.cloudConfiguration.cloudType === 'public' ||
-      (this.cloudConfiguration.kadBootstrapPeers?.length &&
-        this.cloudConfiguration.kadEnabled !== false)
-    ) {
-      this.cloudConfiguration.kadEnabled = true;
-    }
-
-    if (!this.cloudConfiguration.kadEnabled) return;
-    if (!this.cloudConfiguration.networkIdentity) {
-      await this.createTemporaryNetworkIdentity();
-    }
-    if (
-      this.cloudConfiguration.cloudType === 'public' &&
-      !this.cloudConfiguration.kadBootstrapPeers?.length
-    ) {
-      console.warn(
-        "You're running a public cloud node without any kad bootstrap peers, which means you will not get any data from the network." +
-          '\n\nConfigure bootstrap peers to connect to using env.ULX_BOOTSTRAP_PEERS.',
-      );
-    }
-
-    this.kad = await new Kad({
-      apiHost: await this.publicServer.host,
-      dbPath: this.cloudConfiguration.kadDbPath,
-      port: await this.publicServer.port,
-      ipOrDomain: this.publicServer.hostname,
-      identity: this.cloudConfiguration.networkIdentity,
-      boostrapList: this.cloudConfiguration.kadBootstrapPeers,
-    }).start();
   }
 
   private getInstalledDatastorePlugins(): IExtractorPluginCore[] {

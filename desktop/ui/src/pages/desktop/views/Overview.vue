@@ -35,8 +35,7 @@ export default Vue.defineComponent({
   },
   methods: {},
 
-  mounted() {
-  },
+  mounted() {},
 });
 </script>
 

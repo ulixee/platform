@@ -293,7 +293,7 @@ const { lexerAny } = require('../../lib/helpers/lexer');
 
 
  const kwSensitivity = { sensitivity: 'accent' };
- const eqInsensitive = (a: string, b: string) => a.localeCompare(b, undefined, kwSensitivity) === 0;
+ const eqInsensitive = (a, b) => a.localeCompare(b, undefined, kwSensitivity) === 0;
  const notReservedKw = (kw: string) => (x: any[], _: any, rej: any) => {
      const val = asStr(x[0]);
      if (eqInsensitive(val, kw)) {
@@ -759,11 +759,11 @@ const grammar: Grammar = {
     {"name": "stb_call", "symbols": ["expr_function_call", "stb_call$ebnf$1", "stb_call$ebnf$2"], "postprocess":  x => {
             const withOrdinality = x[1];
             const alias = x[2];
-        
+
             if (!withOrdinality && !alias) {
                 return x[0];
             }
-        
+
             return track(x, {
                 ...x[0],
                 ... withOrdinality && { withOrdinality: true },
@@ -1286,7 +1286,7 @@ const grammar: Grammar = {
             operand: unwrap(x[2]),
             to: x[4],
         }) },
-    {"name": "expr_member", "symbols": ["data_type", "string"], "postprocess":  x => { 
+    {"name": "expr_member", "symbols": ["data_type", "string"], "postprocess":  x => {
         console.log('string', x);
         return track(x, {
             type: 'cast',
@@ -1680,9 +1680,9 @@ const grammar: Grammar = {
     {"name": "main$ebnf$3", "symbols": ["main$ebnf$3", "statement_separator"], "postprocess": (d) => d[0].concat([d[1]])},
     {"name": "main", "symbols": ["main$ebnf$1", "statement", "main$ebnf$2", "main$ebnf$3"], "postprocess":  ([_, head, _tail]) => {
             const tail = _tail;
-        
+
             const ret = [unwrap(head), ...tail.map((x: any) => unwrap(x[1]))];
-        
+
             return ret.length === 1
                 ? ret[0]
                 : ret;

@@ -3,7 +3,7 @@
     <div class="flex w-full flex-row">
       <ul class="flex w-full flex-row gap-x-3 divide-x">
         <li>
-          <inline-svg :src="require('@/assets/icons/datastore.svg')" class="inline" :height="20" />
+          <DatastoreIcon class="inline" :height="20" />
           <router-link :to="{ name: 'home' }" active-class="font-medium">Documentation</router-link>
         </li>
         <li class="pl-3">
@@ -27,10 +27,12 @@
 </template>
 
 <script lang="ts">
-import * as Vue from 'vue';
+import DatastoreIcon from '@/assets/icons/datastore.svg';
 import { getCredit } from '@/lib/Utils';
+import * as Vue from 'vue';
 
 export default Vue.defineComponent({
+  components: { DatastoreIcon },
   setup() {
     const hasCredit = !!getCredit();
     return { freeCredits: Vue.ref(hasCredit) };

@@ -7,10 +7,7 @@
           <div class="-ml-4 -mt-2 flex flex-wrap content-end items-center justify-between">
             <div class="mt-2 px-5">
               <h3 class="text-middle font-semibold leading-6 text-gray-900">
-                <InlineSvg
-                  class="relative mr-2 inline-block inline-block h-6 w-6"
-                  :src="require('@/assets/icons/argon.svg')"
-                />
+                <ArgonIcon class="relative mr-2 inline-block inline-block h-6 w-6" />
                 Your Address
               </h3>
               <p class="mt-1 text-sm text-gray-500">
@@ -72,16 +69,17 @@
 </template>
 
 <script lang="ts">
-import * as Vue from 'vue';
-import { WalletIcon } from '@heroicons/vue/24/outline';
+import ArgonIcon from '@/assets/icons/argon.svg';
 import { toArgons } from '@/pages/desktop/lib/utils';
 import { useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
-import { storeToRefs } from 'pinia';
 import { useWalletStore } from '@/pages/desktop/stores/WalletStore';
+import { WalletIcon } from '@heroicons/vue/24/outline';
+import { storeToRefs } from 'pinia';
+import * as Vue from 'vue';
 
 export default Vue.defineComponent({
   name: 'Wallet',
-  components: { WalletIcon },
+  components: { WalletIcon, ArgonIcon },
   setup() {
     const walletStore = useWalletStore();
     return {

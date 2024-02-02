@@ -12,12 +12,12 @@
           </h3>
         </div>
         <p
-          class="whitespace-wrap mt-1 text-sm font-light italic text-gray-800"
           v-if="datastore.description"
+          class="whitespace-wrap mt-1 text-sm font-light italic text-gray-800"
         >
           {{ datastore.description }}
         </p>
-        <p class=" mt-1 truncate text-xs font-medium text-gray-400">
+        <p class="mt-1 truncate text-xs font-medium text-gray-400">
           <span class="">{{ datastore.id }}@v{{ datastore.version }} </span>
           <span class="mx-4 text-sm">•</span>
           <span class="">Created {{ formatDate(datastore.versionTimestamp) }} </span>
@@ -80,7 +80,7 @@ export default Vue.defineComponent({
       type: Object as PropType<IDatastoreSummary>,
       required: true,
       // workaround for typing
-      default: () => ({} as IDatastoreSummary),
+      default: () => ({}) as IDatastoreSummary,
     },
   },
   components: {
@@ -108,9 +108,7 @@ export default Vue.defineComponent({
   },
   methods: {
     navigate() {
-      return this.$router.push(
-        `/datastore/${this.datastore.id}@v${this.datastore.version}`,
-      );
+      return this.$router.push(`/datastore/${this.datastore.id}@v${this.datastore.version}`);
     },
     formatDate(date: Date | number): string {
       if (!date) return 'now';
@@ -124,9 +122,7 @@ export default Vue.defineComponent({
     },
     spent() {
       const credits = this.userBalance.credits.filter(
-        x =>
-          x.datastoreId === this.datastore.id &&
-          x.datastoreVersion === this.datastore.version,
+        x => x.datastoreId === this.datastore.id && x.datastoreVersion === this.datastore.version,
       );
       let spentCredits = 0;
       for (const credit of credits) {

@@ -36,7 +36,7 @@ export default class ChromeAliveWindow {
   api: ApiClient<IChromeAliveSessionApis, IChromeAliveSessionEvents>;
   enableDevtoolsOnDevtools = process.env.DEVTOOLS ?? false;
 
-  private get activeTab(): IReplayTab {
+  private get activeReplayTab(): IReplayTab {
     return this.#replayTabs[this.#activeTabIdx];
   }
 
@@ -62,9 +62,11 @@ export default class ChromeAliveWindow {
   ) {
     bindFunctions(this);
     this.createApi(cloudAddress);
+    const currentWindow = BrowserWindow.getFocusedWindow(); // Get the currently focused window
+    const windowBounds = currentWindow.getBounds();
+    const display = screen.getDisplayNearestPoint({ x: windowBounds.x, y: windowBounds.y });
+    const workarea = display.bounds;
 
-    const mainScreen = screen.getPrimaryDisplay();
-    const workarea = mainScreen.workArea;
     this.window = new BrowserWindow({
       show: false,
       acceptFirstMouse: true,
@@ -273,13 +275,14 @@ export default class ChromeAliveWindow {
               cloudAddress: '${this.api.address}' 
             }, event.origin);
           }, false);
-        UI.inspectorView.tabbedPane.closeTabs(['timeline', 'heap_profiler', 'lighthouse', 'security', 'resources', 'network', 'sources']);
-        
+        const tabbedPane = UI.panels.elements.parentWidgetInternal.parentWidgetInternal;
+        tabbedPane.closeTabs(['timeline', 'heap_profiler', 'lighthouse', 'chrome_recorder', 'security', 'resources', 'network', 'sources']);
+
         for (let i =0; i < 50; i+=1) {
-           const tab = UI.inspectorView.tabbedPane.tabs.find(x => x.titleInternal === 'Hero Script');
+           const tab = tabbedPane.tabs.find(x => x.titleInternal === 'Hero Script');
            if (tab) {    
-             UI.inspectorView.tabbedPane.insertBefore(tab, 0);
-             UI.inspectorView.tabbedPane.selectTab(tab.id);
+             tabbedPane.insertBefore(tab, 0);
+             tabbedPane.selectTab(tab.id);
              break;
            }
            await new Promise(requestAnimationFrame);
@@ -363,37 +366,43 @@ export default class ChromeAliveWindow {
   private async activateView(mode: ISessionAppModeEvent['mode']): Promise<void> {
     let needsLayout: boolean;
     if (mode === 'Live' || mode === 'Timetravel' || mode === 'Finder') {
-      if (this.activeTab) {
-        needsLayout = this.activeTab.view.isHidden;
-        this.activeTab.view.isHidden = false;
+      if (this.activeReplayTab) {
+        needsLayout = this.activeReplayTab.view.isHidden;
+        this.activeReplayTab.view.isHidden = false;
+        this.activeReplayTab.view.bringToFront();
       }
       this.#mainView.hide();
     } else {
       needsLayout = this.#mainView.isHidden;
-      this.activeTab?.view.hide();
+      this.activeReplayTab?.view.hide();
+      this.#mainView.bringToFront();
       this.#mainView.isHidden = false;
       const page = ChromeAliveWindow.pages[mode];
       if (page) {
         const url = this.staticServer.getPath(page);
         if (this.#mainView.webContents.getURL() !== url) {
           await this.#mainView.webContents.loadURL(url);
+
           await this.injectCloudAddress(this.#mainView.browserView);
+
           if (mode === 'Output') {
-            await this.#mainView.webContents.openDevTools({ mode: 'bottom' });
+            this.#mainView.webContents.openDevTools({ mode: 'bottom' });
             const view = this.#mainView;
             this.#eventSubscriber.on(view.webContents, 'devtools-opened', () => {
               const devtoolsWc = view.webContents.devToolsWebContents;
-              void devtoolsWc?.executeJavaScript(
-                `(() => {
-        UI.inspectorView.tabbedPane.closeTabs(['timeline', 'heap_profiler', 'lighthouse', 'security', 'resources', 'network', 'sources', 'elements']);
+              void devtoolsWc
+                ?.executeJavaScript(
+                  `(async () => {
+                  while (!UI.panels.elements.parentWidgetInternal) await new Promise(requestAnimationFrame);
+         UI.panels.elements.parentWidgetInternal.parentWidgetInternal.closeTabs(['timeline', 'heap_profiler', 'chrome_recorder', 'lighthouse', 'security', 'resources', 'network', 'sources', 'elements']);
       })()`,
-              );
+                )
+                .catch(() => null);
             });
           }
         }
       }
     }
-
     if (needsLayout) await this.relayout();
   }
 
@@ -410,8 +419,8 @@ export default class ChromeAliveWindow {
       width,
       height: height - heightoffset,
     };
-    if (!this.#mainView.isHidden) await this.#mainView.setBounds(remainingBounds);
-    if (!this.activeTab?.view?.isHidden) await this.activeTab.view.setBounds(remainingBounds);
+    if (!this.#mainView.isHidden) this.#mainView.setBounds(remainingBounds);
+    if (!this.activeReplayTab?.view?.isHidden) this.activeReplayTab.view.setBounds(remainingBounds);
   }
 
   private closeOpenPopup(): void {
@@ -446,7 +455,7 @@ export default class ChromeAliveWindow {
     }
 
     if (eventType === 'DevtoolsBackdoor.toggleInspectElementMode') {
-      this.activeTab.view.webContents.focus();
+      this.activeReplayTab.view.webContents.focus();
     }
 
     if (eventType === 'Session.tabCreated') {

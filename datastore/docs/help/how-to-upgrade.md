@@ -1,9 +1,6 @@
 # How to upgrade
 
-Follow **one** of these steps to upgrade Datastore to latest version.
-
-- With **yarn** run `yarn upgrade @ulixee/datastore --latest`
-- With **npm** run `npm install @ulixee/datastore@latest`
+Run `npm install @ulixee/datastore@latest` to upgrade Datastore to latest version.
 
 ### Problems after upgrading
 

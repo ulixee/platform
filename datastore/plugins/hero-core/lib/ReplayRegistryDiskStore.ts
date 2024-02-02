@@ -42,7 +42,7 @@ export default class ReplayRegistryDiskStore {
     if (!(await existsAsync(this.storageDir))) return { sessionIds };
     for (const dbName of await Fs.promises.readdir(this.storageDir)) {
       if (!dbName.endsWith('.db.gz')) continue;
-      const sessionId = dbName.slice(0, -3);
+      const sessionId = dbName.slice(0, -6);
       sessionIds.push(sessionId);
     }
     return { sessionIds };

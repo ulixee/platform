@@ -1,7 +1,12 @@
 <template>
-  <Modal ref="modal" title="Create a Datastore Credit" dialog-class="w-1/2" :closeHandler="onClose">
+  <Modal
+    ref="modal"
+    title="Create a Datastore Credit"
+    dialog-class="w-1/2"
+    :close-handler="onClose"
+  >
     <div class="divider-y divider-slate-100 my-5">
-      <div class="items-left my-5 flex flex-col px-3" v-if="!credit">
+      <div v-if="!credit" class="items-left my-5 flex flex-col px-3">
         <p class="font-regular">
           Create a Credit that can be used (only) on this Datastore. This allows you to give your
           consumers a trial while they integrate into their apps and service.
@@ -43,13 +48,14 @@
           draggable="true"
           @dragstart.prevent="dragCredit()"
         >
-          <InlineSvg
+          <ArgfileIcon
             class="coin-shadow inline-block h-16 w-16 text-fuchsia-700"
             alt="Argon"
             @contextmenu.prevent="showCreditContextMenu($event)"
-            :src="require('@/assets/icons/argfile.svg')"
           />
-          <div class="my-2 text-center text-xs font-light">{{ creditFilename }}</div>
+          <div class="my-2 text-center text-xs font-light">
+            {{ creditFilename }}
+          </div>
         </div>
 
         <div class="font-regular my-5 border-t border-gray-100 pt-5 text-gray-800">
@@ -66,15 +72,16 @@
 </template>
 
 <script lang="ts">
+import ArgfileIcon from '@/assets/icons/argfile.svg';
 import * as Vue from 'vue';
 import { PropType } from 'vue';
-import Modal from '../../components/Modal.vue';
 import { ArrowLeftIcon, ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
 import {
   IDatastoreSummary,
   TCredit,
   useDatastoreStore,
 } from '@/pages/desktop/stores/DatastoresStore';
+import Modal from '../../components/Modal.vue';
 
 export default Vue.defineComponent({
   name: 'CreditsModal',
@@ -82,13 +89,14 @@ export default Vue.defineComponent({
     Modal,
     ArrowLeftIcon,
     ArrowRightCircleIcon,
+    ArgfileIcon,
   },
   props: {
     selectedCloud: String,
     datastore: {
       type: Object as PropType<IDatastoreSummary>,
       required: true,
-      default: () => ({} as IDatastoreSummary),
+      default: () => ({}) as IDatastoreSummary,
     },
   },
   emits: ['added-credit'],

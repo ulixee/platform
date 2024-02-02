@@ -23,11 +23,7 @@
       </div>
     </div>
 
-    <div
-      v-if="isSelected || isUsingFinder"
-      class="ghost"
-      :class="ghostClass"
-    />
+    <div v-if="isSelected || isUsingFinder" class="ghost" :class="ghostClass" />
     <div
       v-if="isSelected || isUsingFinder"
       ref="markerElem"
@@ -48,7 +44,7 @@
       <div class="play-icon" />
       <div class="pause-icon" />
       <div class="restart-icon">
-        <img src="@/assets/icons/refresh.svg" alt="restart">
+        <RefreshIcon alt="restart" />
       </div>
 
       <div
@@ -70,14 +66,15 @@
 </template>
 
 <script lang="ts">
-import * as Vue from 'vue';
-import { PropType } from 'vue';
 import Client from '@/api/Client';
-import ISessionTimetravelEvent from '@ulixee/desktop-interfaces/events/ISessionTimetravelEvent';
+import RefreshIcon from '@/assets/icons/refresh.svg';
 import { ITimelineTick } from '@/pages/toolbar/views/SessionController.vue';
+import { IChromeAliveSessionApiResponse } from '@ulixee/desktop-interfaces/apis';
 import IHeroSessionUpdatedEvent from '@ulixee/desktop-interfaces/events/IHeroSessionUpdatedEvent';
 import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';
-import { IChromeAliveSessionApiResponse } from '@ulixee/desktop-interfaces/apis';
+import ISessionTimetravelEvent from '@ulixee/desktop-interfaces/events/ISessionTimetravelEvent';
+import * as Vue from 'vue';
+import { PropType } from 'vue';
 import ArrowRight from './ArrowRight.vue';
 
 const startMarkerPosition = 0;
@@ -105,6 +102,7 @@ export default Vue.defineComponent({
   name: 'PlayerBar',
   components: {
     ArrowRight,
+    RefreshIcon
   },
   props: {
     isSelected: { type: Boolean },
@@ -745,7 +743,7 @@ export default Vue.defineComponent({
   left: calc(50% - 12px);
   width: 24px;
   height: 24px;
-  img {
+  svg {
     width: 100%;
     height: auto;
     filter: invert(54%) sepia(19%) saturate(699%) hue-rotate(238deg) brightness(91%) contrast(85%);

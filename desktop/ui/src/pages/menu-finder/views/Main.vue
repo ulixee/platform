@@ -12,8 +12,7 @@
             @click="hideMenu"
             >X</a
           >
-          <img
-            src="@/assets/icons/node_search_icon.svg"
+          <NodeSearchIcon
             class="icon ml-3 mr-2 mt-1 h-6 flex-none self-end no-drag cursor-pointer"
             @click="enableSelectMode"
           />
@@ -25,7 +24,7 @@
             @mouseenter="highlightNode(selectedElement)"
             @mouseleave="hideHighlight"
           >
-            <img src="@/assets/icons/element.svg" class="icon ml-3 mr-2 h-6 w-10 flex-none" />
+            <ElementIcon class="icon ml-3 mr-2 h-6 w-10 flex-none" />
 
             <div class="flex-initial flex-1">
               {{ generateNodePreview(selectedElement) }}
@@ -62,8 +61,7 @@
             @mouseleave="hideHighlight"
           >
             <label class="mr-5 flex-none text-slate-600">Selected Element</label>
-            <img
-              src="@/assets/icons/element.svg"
+            <ElementIcon
               class="icon mr-2 mt-1 h-4 flex-none align-middle"
             />
 
@@ -79,6 +77,8 @@
 
 <script lang="ts">
 import Client from '@/api/Client';
+import NodeSearchIcon from '@/assets/icons/node_search_icon.svg';
+import ElementIcon from '@/assets/icons/element.svg';
 import { CheckIcon, ChevronLeftIcon } from '@heroicons/vue/24/solid';
 import IElementSummary from '@ulixee/desktop-interfaces/IElementSummary';
 import { ISelectorMap } from '@ulixee/desktop-interfaces/ISelectorMap';
@@ -92,6 +92,8 @@ export default Vue.defineComponent({
   components: {
     ChevronLeftIcon,
     CheckIcon,
+    ElementIcon,
+    NodeSearchIcon,
   },
   setup() {
     const querySelector = Vue.reactive<ISelectorMap>({
@@ -174,12 +176,10 @@ export default Vue.defineComponent({
       if (this.isSelectMode || !this.selectedElement) {
         this.isSelectMode = false;
         void this.selectElement(element);
+      } else if (element.backendNodeId === this.selectedElement?.backendNodeId) {
+        this.devtoolsElement = null;
       } else {
-        if (element.backendNodeId === this.selectedElement?.backendNodeId) {
-          this.devtoolsElement = null;
-        } else {
-          this.devtoolsElement = element;
-        }
+        this.devtoolsElement = element;
       }
     },
 

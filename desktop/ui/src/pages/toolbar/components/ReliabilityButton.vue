@@ -1,129 +1,137 @@
 <template>
   <div
-    @click="handleClick"
-    :class="{ isSelected: isSelected, notSelected: !isSelected, isFocused: isFocused, notFocused: !isFocused }"
+    :class="{
+      isSelected: isSelected,
+      notSelected: !isSelected,
+      isFocused: isFocused,
+      notFocused: !isFocused,
+    }"
     class="ReliabilityButton flex flex-row items-center"
+    @click="handleClick"
   >
     <div class="backgrounds">
-      <div class="left-notch"></div>
+      <div class="left-notch" />
     </div>
-    <Borders :isSelected="isSelected" :isFocused="isFocused" :hasRightCircle="true" />
+    <Borders :is-selected="isSelected" :is-focused="isFocused" :has-right-circle="true" />
 
-    <img src="@/assets/icons/heart.svg" class="icon" />
-    <span class="label" v-if="!isMinimal">Reliability</span>
+    <HeartIcon class="icon" />
+    <span v-if="!isMinimal" class="label">Reliability</span>
   </div>
 </template>
 
 <script lang="ts">
-  import * as Vue from 'vue';
-  import Borders from './Borders.vue';
+import * as Vue from 'vue';
+import Borders from './Borders.vue';
+import HeartIcon from '@/assets/icons/heart.svg';
 
-  export default Vue.defineComponent({
-    name: 'ReliabilityButton',
-    components: {
-      Borders,
+export default Vue.defineComponent({
+  name: 'ReliabilityButton',
+  components: {
+    Borders,
+    HeartIcon
+  },
+  props: {
+    isSelected: {
+      type: Boolean,
     },
-    props: {
-      isSelected: {
-        type: Boolean,
-      },
-      isFocused: {
-        type: Boolean,
-      },
-      isMinimal: {
-        type: Boolean,
-      },
+    isFocused: {
+      type: Boolean,
     },
-    emits: ['select'],
-    setup() {
-      return {}
+    isMinimal: {
+      type: Boolean,
     },
-    methods: {
-      handleClick() {
-        if (!this.isSelected) {
-          this.$emit('select');
-        }
+  },
+  emits: ['select'],
+  setup() {
+    return {};
+  },
+  methods: {
+    handleClick() {
+      if (!this.isSelected) {
+        this.$emit('select');
       }
-    }
-  });
+    },
+  },
+});
 </script>
 
 <style lang="scss" scoped="scoped">
-  @use "sass:color";
-  @import "../variables";
+@use 'sass:color';
+@import '../variables';
 
-  .ReliabilityButton {
-    margin-top: 4px;
-    height: 28px;
-    position: relative;
-    border-radius: 0 $borderRadius $borderRadius 0;
-    padding: 0 10px 0 17px;
-    color: $textColor;
-    font-size: $fontSize;
-    text-shadow: 1px 1px 0 white;
+.ReliabilityButton {
+  margin-top: 4px;
+  height: 28px;
+  position: relative;
+  border-radius: 0 $borderRadius $borderRadius 0;
+  padding: 0 10px 0 17px;
+  color: $textColor;
+  font-size: $fontSize;
+  text-shadow: 1px 1px 0 white;
 
-    &.isSelected {
-      color: $textColorSelected;
-      .backgrounds {
-        background: $bgColorSelected;
-      }
-      .icon {
-        filter: $iconFilterSelected;
-        opacity: $iconOpacitySelected;
-      }
+  &.isSelected {
+    color: $textColorSelected;
+    .backgrounds {
+      background: $bgColorSelected;
     }
-
-    &.notSelected {
-      .backgrounds {
-        .left-notch {
-          display: block;
-        }
-      }
+    .icon {
+      filter: $iconFilterSelected;
+      opacity: $iconOpacitySelected;
     }
+  }
 
-    &.notSelected:hover {
-      color: $textColorHover;
-      .backgrounds {
-        background: $bgColorHover;
-        .right-arrow {
-          border-left-color: $bgColorHover;
-        }
-      }
-      .icon {
-        opacity: $iconOpacityHover;
+  &.notSelected {
+    .backgrounds {
+      .left-notch {
+        display: block;
       }
     }
   }
 
-  .backgrounds {
+  &.notSelected:hover {
+    color: $textColorHover;
+    .backgrounds {
+      background: $bgColorHover;
+      .right-arrow {
+        border-left-color: $bgColorHover;
+      }
+    }
+    .icon {
+      opacity: $iconOpacityHover;
+    }
+  }
+}
+
+.backgrounds {
+  position: absolute;
+  left: -4px;
+  top: 0;
+  width: calc(100% + 4px);
+  height: 100%;
+  background: $bgColor;
+  border-radius: 0 $borderRadius $borderRadius 0;
+
+  .left-notch {
     position: absolute;
-    left: -4px;
+    display: none;
     top: 0;
-    width: calc(100% + 4px);
-    height: 100%;
-    background: $bgColor;
-    border-radius: 0 $borderRadius $borderRadius 0;
-
-    .left-notch {
-      position: absolute;
-      display: none;
-      top: 0;
-      left: 0;
-      width: 0;
-      height: 0;
-      border-top: 14px solid transparent;
-      border-bottom: 14px solid transparent;
-      border-left: 13px solid white;
-    }
+    left: 0;
+    width: 0;
+    height: 0;
+    border-top: 14px solid transparent;
+    border-bottom: 14px solid transparent;
+    border-left: 13px solid white;
   }
-  .icon {
-    height: 15px;
-    opacity: $iconOpacity;
-  }
-  .label {
-    padding-left: 3px;
-    padding-right: 16px;
-    display: block;
-    position: relative;
-  }
+}
+.icon {
+  height: 15px;
+  opacity: $iconOpacity;
+  object-fit: contain;
+}
+.label {
+  padding-left: 3px;
+  padding-right: 16px;
+  display: block;
+  position: relative;
+}
 </style>

@@ -22,15 +22,11 @@
 
       <div class="address-bar relative flex h-full flex-row">
         <div v-if="isLiveMode" class="live-icon">
-          <div v-if="session.playbackState !== 'finished'" class="text">
-            LIVE
-          </div>
-          <div v-else class="text">
-            REPLAY
-          </div>
+          <div v-if="session.playbackState !== 'finished'" class="text">LIVE</div>
+          <div v-else class="text">REPLAY</div>
         </div>
         <div v-else class="timetravel-icon">
-          <img src="@/assets/icons/timetravel.svg" class="h-5 w-5">
+          <TimetravelIcon class="h-5 w-5" />
         </div>
 
         <div class="address" @click="toggleUrlMenu">
@@ -39,12 +35,12 @@
           </div>
         </div>
         <div
+          ref="finderButtonRef"
           :class="{ hasFinder: isFinderMode }"
           class="search-icon"
           @click="toggleFinder"
-          ref='finderButtonRef'
         >
-          <img src="@/assets/icons/search.svg" class="h-5 w-5">
+          <SearchIcon class="h-5 w-5" />
         </div>
       </div>
 
@@ -70,12 +66,16 @@ import WindowsController from '@/pages/toolbar/lib/WindowsController';
 import ArrowRight from './ArrowRight.vue';
 import PlayerBar from './PlayerBar.vue';
 import Borders from './Borders.vue';
+import TimetravelIcon from "@/assets/icons/timetravel.svg";
+import SearchIcon from "@/assets/icons/search.svg";
 
 export default Vue.defineComponent({
   name: 'Player',
   components: {
     ArrowRight,
     PlayerBar,
+    SearchIcon,
+    TimetravelIcon,
     Borders,
   },
   props: ['isSelected', 'isFocused', 'ticks', 'session', 'mode', 'timetravel'],
@@ -164,7 +164,7 @@ export default Vue.defineComponent({
       background: $bgColorSelected;
     }
     .search-icon {
-      img {
+      svg {
         opacity: 0.4;
         pointer-events: none;
       }
@@ -173,7 +173,7 @@ export default Vue.defineComponent({
       }
     }
     .timetravel-icon {
-      img {
+      svg {
         opacity: 0.7;
         pointer-events: none;
       }
@@ -209,12 +209,12 @@ export default Vue.defineComponent({
     }
     .search-icon {
       display: none;
-      img {
+      svg {
         opacity: 0.2;
       }
     }
     .timetravel-icon {
-      img {
+      svg {
         opacity: 0.2;
       }
     }
@@ -324,7 +324,7 @@ export default Vue.defineComponent({
     z-index: 2;
   }
 
-  img {
+  svg {
     position: relative;
     z-index: 2;
     opacity: 0.2;
@@ -335,13 +335,13 @@ export default Vue.defineComponent({
       background: rgba($bgColorHover, 0.5);
       border-left: none;
     }
-    img {
+    svg {
       filter: $iconFilterSelected;
       opacity: 1 !important;
     }
   }
 
-  &.hasFinder img {
+  &.hasFinder svg {
     filter: $iconFilterSelected;
     opacity: 1 !important;
   }
@@ -364,20 +364,20 @@ export default Vue.defineComponent({
   padding: 6.2px 3px 5px 3px;
   z-index: 10;
 
-  img {
+  svg {
     position: relative;
     z-index: 2;
     opacity: 0.2;
   }
 
   &:hover {
-    img {
+    svg {
       filter: $iconFilterSelected;
       opacity: 1 !important;
     }
   }
 
-  &.hasFinder img {
+  &.hasFinder svg {
     filter: $iconFilterSelected;
     opacity: 1 !important;
   }

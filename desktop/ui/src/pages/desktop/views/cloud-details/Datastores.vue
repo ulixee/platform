@@ -1,11 +1,7 @@
 <template>
   <ul class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
     <li v-if="!datastores.length" class="italic text-slate-700">Nothing found</li>
-    <DatastoreCard
-      v-for="datastore in datastores"
-      :key="datastore.id"
-      :datastore="datastore"
-    />
+    <DatastoreCard v-for="datastore in datastores" :key="datastore.id" :datastore="datastore" />
   </ul>
 </template>
 

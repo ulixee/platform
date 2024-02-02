@@ -75,7 +75,7 @@ import ICommandUpdatedEvent from '@ulixee/desktop-interfaces/events/ICommandUpda
 import ISessionAppModeEvent from '@ulixee/desktop-interfaces/events/ISessionAppModeEvent';
 import ISessionTimetravelEvent from '@ulixee/desktop-interfaces/events/ISessionTimetravelEvent';
 import ISourceCodeUpdatedEvent from '@ulixee/desktop-interfaces/events/ISourceCodeUpdatedEvent';
-import ICommandWithResult from '@ulixee/hero-core/interfaces/ICommandWithResult';
+import type ICommandWithResult from '@ulixee/hero-core/interfaces/ICommandWithResult';
 import json5 from 'json5';
 import * as Vue from 'vue';
 import Client from '../../../api/Client';
@@ -295,7 +295,9 @@ h5 {
   margin: 10px;
 }
 .controls {
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.16);
+  box-shadow:
+    0 0 1px rgba(0, 0, 0, 0.12),
+    0 1px 1px rgba(0, 0, 0, 0.16);
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
 }
 .line {

@@ -8,7 +8,7 @@ import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreM
 import { promises as Fs, readFileSync } from 'fs';
 import * as Path from 'path';
 import { Script } from 'node:vm';
-import { Context, createContext, runInNewContext } from 'vm';
+import { Context, createContext } from 'vm';
 import DatastoreApiClients from './DatastoreApiClients';
 
 const { version } = require('../package.json');
@@ -158,7 +158,7 @@ export default class DatastoreVm {
     const defaultContext = this.getDefaultContext();
 
     return function requirer(mod: string) {
-      if (!mod.includes("TypeSerializer")) {
+      if (!mod.includes('TypeSerializer')) {
         for (const builtin of whitelist) {
           if (mod.startsWith(builtin) || mod.match(builtin)) {
             return boundRequire(mod);

@@ -65,13 +65,14 @@ export function typeChecking(): void {
   void crawler.runInternal({ showChrome: true, input: { colNum: 1, sessionId: '123' } });
   const crawlerWithoutSchema = new Crawler({
     async run(ctx) {
-      // Can't get typescript to check this field when no schema  // @ts-expect-error
+      // Can't get typescript to check this field when no schema
+      // @ts-expect-error
       const num: boolean = ctx.input.maxTimeInCache;
 
       return {
         toCrawlerOutput() {
           return Promise.resolve({
-            sessionId: ctx.input.sessionId,
+            sessionId: ctx.input.sessionId as string,
             crawler: 'none',
             version: '1',
           });

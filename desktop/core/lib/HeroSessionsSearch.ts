@@ -86,7 +86,9 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
     const sessionIds = await this.heroCore.sessionRegistry.ids();
     for (const id of sessionIds) {
       const session = await this.processSession(id);
-      this.sessions.push(session);
+      if (session) {
+        this.sessions.push(session);
+      }
     }
     this.hasLoaded = true;
     return this.sessions;
@@ -130,7 +132,7 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
     customPath?: string,
   ): Promise<IHeroSessionsListResult> {
     const sessionDb = await this.heroCore.sessionRegistry.retain(sessionId, customPath);
-    const session = sessionDb.session.get();
+    const session = sessionDb?.session?.get();
     // might not be loaded yet
     if (!session) return;
     try {

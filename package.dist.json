@@ -3,17 +3,17 @@
     "dist": "lerna publish from-package"
   },
   "devDependencies": {
-    "lerna": "^4.0.0"
+    "lerna": "^8.0.2"
   },
   "workspaces": {
     "packages": [
-      "desktop/main",
-      "desktop/core",
-      "desktop/interfaces",
+      "desktop/*",
+      "desktop/main/app",
       "datastore/*",
       "datastore/plugins/*",
       "cloud/*",
       "sql/*",
+      "client/*",
       "cli",
       "playgrounds/*",
       "specification"
@@ -25,6 +25,7 @@
       "**/@electron/**",
       "**/electron",
       "**/electron-*",
+      "**/electron-log",
       "**/electron-builder",
       "**/electron-webpack/**",
       "**/@ulixee/repo-tools",

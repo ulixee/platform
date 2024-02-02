@@ -16,6 +16,7 @@
       "**/electron",
       "**/electron-webpack",
       "**/electron-webpack/**",
+      "electron-log",
       "electron-positioner",
       "global-mouse-events",
       "nseventmonitor",

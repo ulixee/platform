@@ -10,6 +10,6 @@
     "@ulixee/datastore-plugins-puppeteer": "2.0.0-alpha.25"
   },
   "devDependencies": {
-    "@types/node": "14.14.31"
+    "@types/node": "^18.19.10"
   }
 }
