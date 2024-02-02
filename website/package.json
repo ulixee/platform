@@ -61,7 +61,6 @@
     "@vue/eslint-config-standard": "^5.1.2",
     "@vue/eslint-config-typescript": "^7.0.0",
     "autoprefixer": "^10.4.2",
-    "firebase-tools": "^11.20.0",
     "eslint": "^7.32.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
@@ -69,6 +68,7 @@
     "eslint-plugin-promise": "^6.1.1",
     "eslint-plugin-standard": "^5.0.0",
     "eslint-plugin-vue": "^8.5.0",
+    "firebase-tools": "^11.20.0",
     "lint-staged": "^13.2.2",
     "onchange": "^7.1.0",
     "postcss": "^8.4.7",
@@ -87,7 +87,7 @@
     "**/postcss"
   ],
   "resolutions": {
-    "**/@achrinza/node-ipc": "10.1.6",
-    "**/@achrinza/event-pubsub": ""
+    "**/@achrinza/node-ipc": "10.1.10",
+    "**/@achrinza/event-pubsub": "5.0.10"
   }
 }

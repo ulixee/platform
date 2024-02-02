@@ -99,6 +99,7 @@
       "**/@electron",
       "**/@electron/**",
       "**/electron",
+      "**electron**",
       "**/desktop/**/@ulixee/datastore-docpage",
       "**/desktop/**/better-sqlite3",
       "**/electron-*",

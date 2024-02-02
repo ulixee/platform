@@ -20,15 +20,10 @@
     "nanoid": "^3.3.6"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.154",
-    "@types/webpack-env": "^1.18.0",
-    "babel-loader": "^8.2.3",
+    "@types/chrome": "^0.0.260",
     "chrome-api-mock": "^0.0.2",
-    "copy-webpack-plugin": "^9.0.1",
-    "jest-chrome": "^0.7.2",
-    "prettier": "^2.2.1",
-    "ts-loader": "^9.2.6",
     "typescript": "^5.3.3",
-    "vite": "^5.0.12"
+    "vite": "^5.0.12",
+    "vite-plugin-static-copy": "^1.0.1"
   }
 }
