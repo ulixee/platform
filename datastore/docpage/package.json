@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/datastore-docpage",
-  "version": "2.0.0-alpha.25",
+  "version": "2.0.0-alpha.26",
   "scripts": {
     "serve": "vite",
     "watch": "vite build -w",
@@ -52,12 +52,12 @@
     "vue-router": "^4.0.0-0"
   },
   "devDependencies": {
-    "@ulixee/datastore-packager": "2.0.0-alpha.25",
+    "@ulixee/datastore-packager": "2.0.0-alpha.26",
+    "@vitejs/plugin-vue": "^1.6.1",
     "typescript": "^5.3.3",
     "vite": "^2.5.4",
     "vite-plugin-prismjs": "^0.0.11",
-    "vite-svg-loader": "^5.1.0",
-    "@vitejs/plugin-vue": "^1.6.1"
+    "vite-svg-loader": "^5.1.0"
   },
   "nohoist": [
     "**/@typescript-eslint",

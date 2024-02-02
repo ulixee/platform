@@ -33,3 +33,4 @@ connect
 /.rollup.cache/
 /website/firebase-debug.log
 .vs
+.*.sh
