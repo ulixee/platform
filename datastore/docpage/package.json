@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/datastore-docpage",
-  "version": "2.0.0-alpha.25",
+  "version": "2.0.0-alpha.26",
   "scripts": {
     "serve": "vite",
     "watch": "vite build -w",
@@ -26,12 +26,10 @@
     "eslint-plugin-vue": "^8.5.0",
     "hastscript": "^7.0.2",
     "js-yaml": "^4.1.0",
-    "lint-staged": "^13.2.2",
     "lodash.kebabcase": "^4.1.1",
     "moment": "^2.29.4",
     "onchange": "^7.1.0",
     "param-case": "^3.0.4",
-    "postcss": "^8.4.7",
     "prismjs": "^1.28.0",
     "rehype-autolink-headings": "^6.1.1",
     "rehype-slug": "^5.0.1",
@@ -42,7 +40,6 @@
     "remark-parse": "^10.0.1",
     "remark-rehype": "^10.1.0",
     "sass": "^1.56.1",
-    "sass-loader": "^10.2.1",
     "tailwindcss": "^3.0.24",
     "unified": "^10.1.2",
     "unified-stream": "^2.0.0",
@@ -52,12 +49,12 @@
     "vue-router": "^4.0.0-0"
   },
   "devDependencies": {
-    "@ulixee/datastore-packager": "2.0.0-alpha.25",
+    "@ulixee/datastore-packager": "2.0.0-alpha.26",
+    "@vitejs/plugin-vue": "^1.6.1",
     "typescript": "^5.3.3",
     "vite": "^2.5.4",
     "vite-plugin-prismjs": "^0.0.11",
-    "vite-svg-loader": "^5.1.0",
-    "@vitejs/plugin-vue": "^1.6.1"
+    "vite-svg-loader": "^5.1.0"
   },
   "nohoist": [
     "**/@typescript-eslint",

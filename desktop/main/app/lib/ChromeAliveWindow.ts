@@ -62,7 +62,7 @@ export default class ChromeAliveWindow {
   ) {
     bindFunctions(this);
     this.createApi(cloudAddress);
-    const currentWindow = BrowserWindow.getFocusedWindow(); // Get the currently focused window
+    const currentWindow = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]; // Get the currently focused window
     const windowBounds = currentWindow.getBounds();
     const display = screen.getDisplayNearestPoint({ x: windowBounds.x, y: windowBounds.y });
     const workarea = display.bounds;

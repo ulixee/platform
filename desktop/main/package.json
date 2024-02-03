@@ -1,18 +1,18 @@
 {
   "name": "@ulixee/desktop",
-  "version": "2.0.0-alpha.25",
+  "version": "2.0.0-alpha.26",
   "description": "This is a builder project that uses the dual package.json approach (./app contains the app package.json).",
   "private": true,
   "scripts": {
     "build": "yarn build:ui && yarn build:basic && yarn build:bundled-datastore",
     "build:bundled-datastore": "cd ../../build && npx @ulixee/datastore build ./datastore/examples/ulixee-docs.js -o ./desktop/main/app/assets",
-    "build:deps": "cd ../../build/desktop/main/app && yarn install && electron-builder install-app-deps",
+    "build:deps": "cd ../../build/desktop/main && yarn install && npx electron-builder install-app-deps",
     "build:monorepo-ts": "cd ../.. && yarn run tsc",
     "build:basic": "yarn build:monorepo-ts && yarn build:bundled-datastore && yarn copy:build && yarn build:deps",
     "build:ui": "yarn workspace @ulixee/desktop-ui build && yarn workspace @ulixee/desktop-chrome-extension build",
     "watch": "yarn copy:build --watch",
     "copy:build": "cd ../../build/desktop/main && node builder/copySources.js ./app/packages/",
-    "copy:dist-ui": "shx cp -r ../../build/desktop/main/app/ui/ ../../build-dist/desktop/main/app/ui",
+    "copy:dist-ui": "shx cp -r ../../build/desktop/main/app/ui ../../build-dist/desktop/main/app/",
     "copy:dist-dbx": "shx cp -r ../../build/desktop/main/app/assets/ulixee-docs.dbx.tgz ../../build-dist/desktop/main/app/assets",
     "copy:dist": "yarn copy:dist-ui && yarn copy:dist-dbx && cd ../../build-dist/desktop/main && cross-env SOURCE_DIR=\"build-dist\" NODE_ENV=\"production\" node builder/copySources.js ./app/packages",
     "dist:rm-workspace": "pwd && shx mv ../../build-dist/node_modules/@ulixee ../../build-dist/node_modules/@ulixee_tmp && shx mv ../../node_modules/@ulixee ../../node_modules/@ulixee_tmp",
@@ -30,10 +30,10 @@
   },
   "devDependencies": {
     "@electron/notarize": "^1.2.3",
-    "@ulixee/datastore": "2.0.0-alpha.25",
-    "@ulixee/datastore-packager": "2.0.0-alpha.25",
+    "@ulixee/datastore": "2.0.0-alpha.26",
+    "@ulixee/datastore-packager": "2.0.0-alpha.26",
     "cross-env": "^7.0.3",
-    "electron": "^28.2.0",
+    "electron": "28.2.1",
     "electron-builder": "^24.9.1",
     "tslib": "^2.6.2"
   },
@@ -101,8 +101,5 @@
         "rank": "Owner"
       }
     ]
-  },
-  "dependencies": {
-    "vite-svg-loader": "^5.1.0"
   }
 }
