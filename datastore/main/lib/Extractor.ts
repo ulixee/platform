@@ -45,11 +45,7 @@ export default class Extractor<
   public pluginClasses: IExtractorPluginConstructor<TSchema>[] = [];
   public successCount = 0;
   public errorCount = 0;
-  public pricePerQuery = 0;
-  public minimumPrice?: number;
-  public addOnPricing?: {
-    perKb?: number;
-  };
+  public basePrice = 0;
 
   public get schema(): TSchema {
     return this.components.schema;
@@ -97,9 +93,7 @@ export default class Extractor<
       const plugin = new Plugin(this.components);
       this.corePlugins[plugin.name] = plugin.version;
     }
-    this.pricePerQuery = this.components.pricePerQuery ?? 0;
-    this.addOnPricing = this.components.addOnPricing;
-    this.minimumPrice = this.components.minimumPrice;
+    this.basePrice = this.components.basePrice ?? 0;
   }
 
   public runInternal(
@@ -111,37 +105,45 @@ export default class Extractor<
     }
     const resultsIterable = new ResultIterable<TOutput>();
 
-    (async () => {
-      const extractorInternal = new ExtractorInternal<TSchema>(options, this.components);
-      const plugins = new ExtractorPlugins<TSchema, TContext>(this.components, this.pluginClasses);
-      let context: TContext;
-      try {
-        this.#isRunning = true;
-        extractorInternal.validateInput();
-        context = await plugins.initialize(extractorInternal, this.datastoreInternal, callbacks);
+    callbacks ??= {};
+    callbacks.onFunction ??= async (_name, opts, run) => run(opts);
 
-        const extractorResults = extractorInternal.run(context);
+    callbacks
+      .onFunction(this.name, options, async finalOptions => {
+        const extractorInternal = new ExtractorInternal<TSchema>(finalOptions, this.components);
+        const plugins = new ExtractorPlugins<TSchema, TContext>(
+          this.components,
+          this.pluginClasses,
+        );
+        let context: TContext;
+        try {
+          this.#isRunning = true;
+          extractorInternal.validateInput();
+          context = await plugins.initialize(extractorInternal, this.datastoreInternal, callbacks);
 
-        let counter = 0;
-        for await (const output of extractorResults) {
-          extractorInternal.validateOutput(output, counter++);
-          resultsIterable.push(output as TOutput);
+          const extractorResults = extractorInternal.run(context);
+
+          let counter = 0;
+          for await (const output of extractorResults) {
+            extractorInternal.validateOutput(output, counter++);
+            resultsIterable.push(output as TOutput);
+          }
+
+          await plugins.setResolution(extractorInternal.outputs);
+          this.successCount++;
+        } catch (error) {
+          this.errorCount++;
+          error.stack = error.stack.split('at Extractor.runInternal').shift().trim();
+
+          await plugins.setResolution(null, error).catch(() => null);
+          resultsIterable.reject(error);
+        } finally {
+          await extractorInternal.close();
+          this.#isRunning = false;
+          resultsIterable.done();
         }
-
-        await plugins.setResolution(extractorInternal.outputs);
-        this.successCount++;
-      } catch (error) {
-        this.errorCount++;
-        error.stack = error.stack.split('at Extractor.runInternal').shift().trim();
-
-        await plugins.setResolution(null, error).catch(() => null);
-        resultsIterable.reject(error);
-      } finally {
-        await extractorInternal.close();
-        this.#isRunning = false;
-        resultsIterable.done();
-      }
-    })().catch(err => console.error('Error streaming Extractor results', err));
+      })
+      .catch(resultsIterable.reject);
     return resultsIterable;
   }
 
@@ -157,10 +159,7 @@ export default class Extractor<
       throw new Error('Invalid SQL command');
     }
 
-    const inputsByFunction = sqlParser.extractFunctionCallInputs<TSchema['input']>(
-      { [name]: this.schema.input },
-      boundValues,
-    );
+    const inputsByFunction = sqlParser.extractFunctionCallInputs(boundValues);
     const input = inputsByFunction[name];
     const records = await this.runInternal({ input } as TRunArgs);
     const engine = this.datastoreInternal.storageEngine;

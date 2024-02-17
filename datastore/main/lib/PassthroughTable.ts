@@ -1,15 +1,11 @@
-import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import { ExtractSchemaType } from '@ulixee/schema';
 import { SqlParser } from '@ulixee/sql-engine';
 import assert = require('assert');
+import IQueryOptions from '../interfaces/IQueryOptions';
 import ITableComponents from '../interfaces/ITableComponents';
 import DatastoreApiClient from './DatastoreApiClient';
+import { IQueryInternalCallbacks } from './DatastoreInternal';
 import Table, { IExpandedTableSchema } from './Table';
-
-export type IPassthroughQueryRunOptions = Omit<
-  IDatastoreApiTypes['Datastore.query']['args'],
-  'sql' | 'boundValues' | 'version' | 'id'
->;
 
 export interface IPassthroughTableComponents<
   TRemoteSources extends Record<string, string>,
@@ -34,6 +30,7 @@ export default class PassthroughTable<
   public readonly remoteTable: string;
   public remoteDatastoreId: string;
   public remoteVersion: string;
+  public remoteDomain: string;
 
   protected upstreamClient: DatastoreApiClient;
 
@@ -50,42 +47,43 @@ export default class PassthroughTable<
   public override async queryInternal<T = TSchemaType[]>(
     sql: string,
     boundValues: any[] = [],
-    options: IPassthroughQueryRunOptions = { queryId: undefined },
+    options?: IQueryOptions,
+    callbacks?: IQueryInternalCallbacks,
   ): Promise<T> {
-    this.createApiClient();
-    if (this.name !== this.remoteTable) {
-      const sqlParser = new SqlParser(sql, {}, { [this.name]: this.remoteTable });
-      sql = sqlParser.toSql();
-    }
-    const result = await this.upstreamClient.query<T>(
-      this.remoteDatastoreId,
-      this.remoteVersion,
-      sql,
-      {
-        boundValues,
-        ...options,
-      },
-    );
-    return result.outputs as any;
+    callbacks.onPassthroughTable ??= (_name, opts, run) => run(opts);
+    return callbacks.onPassthroughTable(this.name, options, async modifiedOptions => {
+      await this.injectRemoteClient();
+      // if we queried our own table, replace that now with an external table
+      if (this.name !== this.remoteTable) {
+        const sqlParser = new SqlParser(sql, {}, { [this.name]: this.remoteTable });
+        sql = sqlParser.toSql();
+      }
+      const result = await this.upstreamClient.query<T>(
+        this.remoteDatastoreId,
+        this.remoteVersion,
+        sql,
+        {
+          boundValues,
+          ...modifiedOptions,
+          paymentService: this.datastoreInternal.remotePaymentService,
+          domain: this.remoteDomain,
+        },
+      );
+
+      if (result.runError) throw result.runError;
+      return result.outputs as any;
+    });
   }
 
-  protected createApiClient(): void {
+  protected async injectRemoteClient(): Promise<void> {
     if (this.upstreamClient) return;
-    const remoteSource = this.remoteSource;
-    // need lookup
-    const remoteDatastore = this.datastoreInternal.metadata.remoteDatastores[remoteSource];
+    const { datastoreHost, client } = await this.datastoreInternal.getRemoteApiClient(
+      this.remoteSource,
+    );
 
-    assert(remoteDatastore, `A remote datastore source could not be found for ${remoteSource}`);
-
-    try {
-      const [datastoreId, datastoreVersion] = remoteDatastore.split('/').pop().split('@v');
-      this.remoteDatastoreId = datastoreId;
-      this.remoteVersion = datastoreVersion;
-      this.upstreamClient = this.datastoreInternal.createApiClient(remoteDatastore);
-    } catch (error) {
-      throw new Error(
-        'A valid url was not supplied for this remote datastore. Format should be ulx://<host>/<datastoreId>@v<datastoreVersion>',
-      );
-    }
+    this.remoteDatastoreId = datastoreHost.datastoreId;
+    this.remoteVersion = datastoreHost.version;
+    this.remoteDomain = datastoreHost.domain;
+    this.upstreamClient = client;
   }
 }

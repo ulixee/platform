@@ -9,15 +9,15 @@
     "@ulixee/commons": "2.0.0-alpha.28",
     "@ulixee/datastore": "2.0.0-alpha.28",
     "@ulixee/net": "2.0.0-alpha.28",
-    "@ulixee/schema": "2.0.0-alpha.28"
+    "@ulixee/schema": "2.0.0-alpha.28",
+    "@ulixee/localchain": "2.0.0-alpha.27"
   },
   "devDependencies": {
     "@ulixee/cloud": "2.0.0-alpha.28",
-    "@ulixee/crypto": "2.0.0-alpha.28",
+    "@ulixee/platform-utils": "2.0.0-alpha.28",
     "@ulixee/datastore-packager": "2.0.0-alpha.28",
     "@ulixee/datastore-testing": "2.0.0-alpha.28",
     "@ulixee/schema": "2.0.0-alpha.28",
-    "@ulixee/specification": "2.0.0-alpha.28",
     "@ulixee/sql-ast": "2.0.0-alpha.28",
     "@ulixee/sql-engine": "2.0.0-alpha.28"
   }

@@ -2,24 +2,25 @@ import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
-import Identity from '@ulixee/crypto/lib/Identity';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
+import { IUserBalance } from '@ulixee/datastore/interfaces/IPaymentService';
 import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
-import CreditsStore from '@ulixee/datastore/lib/CreditsStore';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import CreditPaymentService from '@ulixee/datastore/payments/CreditPaymentService';
 import {
   IDatastoreResultItem,
   IDesktopAppPrivateApis,
   TCredit,
 } from '@ulixee/desktop-interfaces/apis';
-import { ICloudConnected, IUserBalance } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
+import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppPrivateEvents from '@ulixee/desktop-interfaces/events/IDesktopAppPrivateEvents';
 import { ConnectionToClient, WsTransportToClient } from '@ulixee/net';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
-import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
+import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import { dialog, Menu, WebContents } from 'electron';
 import { IncomingMessage } from 'http';
 import { nanoid } from 'nanoid';
@@ -98,18 +99,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   }
 
   public async getUserBalance(): Promise<IUserBalance> {
-    const credits = await CreditsStore.asList();
-    const centagonsBalance = 0 * Number(ArgonUtils.CentagonsPerArgon);
-    const microgons = ArgonUtils.centagonsToMicrogons(centagonsBalance);
-    const creditsBalance = credits.reduce((total, x) => x.remainingBalance + total, 0);
-
-    const walletBalance = ArgonUtils.format(creditsBalance + microgons, 'microgons', 'argons');
-    return {
-      credits,
-      centagonsBalance,
-      address: this.apiManager.localUserProfile.defaultAddress.bech32,
-      walletBalance,
-    };
+    return this.apiManager.paymentService.getBalance();
   }
 
   public async completeGettingStartedStep(step: string): Promise<void> {
@@ -204,14 +194,16 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   }
 
   public async saveCredit(arg: { credit: TCredit }): Promise<void> {
-    await CreditsStore.storeFromUrl(arg.credit.datastoreUrl, arg.credit.microgons);
+    const credit = await CreditPaymentService.storeCreditFromUrl(
+      arg.credit.datastoreUrl,
+      arg.credit.microgons,
+      await this.apiManager.paymentService.getDatastoreHostLookup(),
+    );
+    this.apiManager.paymentService.addCredit(credit);
   }
 
   public async createCredit(args: {
-    datastore: Pick<
-      IDatastoreResultItem,
-      'id' | 'version' | 'name' | 'scriptEntrypoint'
-    >;
+    datastore: Pick<IDatastoreResultItem, 'id' | 'version' | 'name' | 'scriptEntrypoint'>;
     cloud: string;
     argons: number;
   }): Promise<{ credit: TCredit; filename: string }> {
@@ -224,9 +216,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     if (!adminIdentity) {
       throw new Error("Sorry, we couldn't find the AdminIdentity for this cloud.");
     }
-    const microgons = ArgonUtils.centagonsToMicrogons(
-      argons * Number(ArgonUtils.CentagonsPerArgon),
-    );
+    const microgons = argons * Number(ArgonUtils.MicrogonsPerArgon);
     const client = new DatastoreApiClient(address.href);
     try {
       const { id, remainingCredits, secret } = await client.createCredits(

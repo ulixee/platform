@@ -35,7 +35,10 @@ export default class ExtractorInternal<
   public onOutputChanges: (index: number, changes: IObservableChange[]) => any;
   public onOutputRecord: (index: number, output: TOutput) => void;
 
-  constructor(options: TOptions, private components: IExtractorComponents<TSchema, any>) {
+  constructor(
+    options: TOptions,
+    private components: IExtractorComponents<TSchema, any>,
+  ) {
     super();
     options ??= {} as TOptions;
     this.options = options;

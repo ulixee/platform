@@ -40,12 +40,11 @@
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.28",
-    "@ulixee/crypto": "2.0.0-alpha.28",
+    "@ulixee/platform-utils": "2.0.0-alpha.28",
     "@ulixee/net": "2.0.0-alpha.28",
     "@ulixee/platform-specification": "2.0.0-alpha.28",
     "@ulixee/schema": "2.0.0-alpha.28",
-    "@ulixee/sidechain": "2.0.0-alpha.28",
-    "@ulixee/specification": "2.0.0-alpha.28",
+    "@ulixee/localchain": "2.0.0-alpha.28",
     "@ulixee/sql-ast": "2.0.0-alpha.28",
     "@ulixee/sql-engine": "2.0.0-alpha.28",
     "better-sqlite3": "^9.4.3",
@@ -54,6 +53,8 @@
   },
   "devDependencies": {
     "@ulixee/datastore-packager": "2.0.0-alpha.28",
+    "@ulixee/datastore-testing": "2.0.0-alpha.28",
+    "@polkadot/keyring": "^12.6.2",
     "moment": "^2.29.4"
   }
 }

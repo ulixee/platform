@@ -9,8 +9,8 @@ import {
   IServicesSetupApis,
   ServicesSetupApiSchemas,
 } from '@ulixee/platform-specification/services/SetupApis';
-import { IZodApiTypes } from '@ulixee/specification/utils/IZodApi';
-import ValidationError from '@ulixee/specification/utils/ValidationError';
+import { IZodApiTypes } from '@ulixee/platform-specification/utils/IZodApi';
+import ValidationError from '@ulixee/platform-specification/utils/ValidationError';
 import ICloudApiContext from '../interfaces/ICloudApiContext';
 
 export type TServicesApis = IServicesSetupApis<ICloudApiContext> &

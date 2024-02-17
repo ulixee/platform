@@ -1,4 +1,4 @@
-import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
+import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 
 export function toArgons(amount: number, isMicrogons = false): string {
   let centagons = amount;

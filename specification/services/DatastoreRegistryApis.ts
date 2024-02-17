@@ -1,9 +1,12 @@
-import { z } from '@ulixee/specification';
-import { identityValidation, signatureValidation } from '@ulixee/specification/common';
-import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
+import {
+  identitySignatureValidation,
+  identityValidation,
+} from '@ulixee/platform-specification/types';
+import { z } from 'zod';
 import { datastoreIdValidation } from '../types/datastoreIdValidation';
 import { DatastoreManifestSchema } from '../types/IDatastoreManifest';
 import { semverValidation } from '../types/semverValidation';
+import { IZodHandlers, IZodSchemaToApiTypes } from '../utils/IZodApi';
 
 export const DatastoreManifestWithLatest = DatastoreManifestSchema.extend({
   latestVersion: semverValidation.describe('The newest version of this Datastore.'),
@@ -68,7 +71,7 @@ export const DatastoreRegistryApiSchemas = {
       version: semverValidation,
     }),
     result: z.object({
-      adminSignature: signatureValidation,
+      adminSignature: identitySignatureValidation,
       adminIdentity: identityValidation,
       compressedDbx: z.instanceof(Buffer),
     }),
@@ -81,7 +84,7 @@ export const DatastoreRegistryApiSchemas = {
         .describe(
           'If this server is in production mode, an AdminIdentity approved on the Server or Datastore.',
         ),
-      adminSignature: signatureValidation
+      adminSignature: identitySignatureValidation
         .optional()
         .describe('A signature from an approved AdminIdentity'),
     }),

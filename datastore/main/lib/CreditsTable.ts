@@ -1,6 +1,6 @@
-import { buffer, ExtractSchemaType, number, string } from '@ulixee/schema';
-import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
+import { sha256 } from '@ulixee/commons/lib/hashUtils';
+import { buffer, ExtractSchemaType, number, string } from '@ulixee/schema';
 import { customAlphabet, nanoid } from 'nanoid';
 import Table from './Table';
 
@@ -9,7 +9,7 @@ const postgresFriendlyNanoid = customAlphabet(
 );
 
 export default class CreditsTable extends Table<typeof CreditsSchema> {
-  public static tableName = 'ulx_credits';
+  public static tableName = 'ulx_credits' as const;
 
   constructor() {
     super({
@@ -17,7 +17,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
       isPublic: false,
       description: 'Private table tracking Credits issued for the containing Datastore.',
       schema: CreditsSchema,
-      pricePerQuery: 0,
+      basePrice: 0,
       async onVersionMigrated(previousVersion: Table<typeof CreditsSchema>): Promise<void> {
         const previousCredits = await previousVersion.fetchInternal();
         await this.insertInternal(...previousCredits);
@@ -45,7 +45,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     secret ??= postgresFriendlyNanoid(12);
     const secretHash = sha256(concatAsBuffer(id, salt, secret));
     await this.queryInternal(
-      'INSERT INTO self (id, salt, secretHash, issuedCredits, holdCredits, remainingCredits) VALUES ($1, $2, $3, $4, 0, $4)',
+      'INSERT INTO self (id, salt, secretHash, issuedCredits, remainingCredits) VALUES ($1, $2, $3, $4, $4)',
       [id, salt, secretHash, microgons],
     );
     return { id, secret, remainingCredits: microgons };
@@ -53,7 +53,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
 
   async get(id: string): Promise<Omit<ICredit, 'salt' | 'secretHash'>> {
     const [credit] = await this.queryInternal(
-      'SELECT id, issuedCredits, remainingCredits, holdCredits FROM self WHERE id = $1',
+      'SELECT id, issuedCredits, remainingCredits FROM self WHERE id = $1',
       [id],
     );
     return credit;
@@ -66,36 +66,32 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     return result;
   }
 
-  async hold(id: string, secret: string, holdAmount: number): Promise<number> {
+  async debit(id: string, secret: string, amount: number): Promise<number> {
     const [credit] = await this.queryInternal('SELECT * FROM self WHERE id=$1', [id]);
     if (!credit) throw new Error('This is an invalid Credit.');
 
     const hash = sha256(concatAsBuffer(credit.id, credit.salt, secret));
     if (!hash.equals(credit.secretHash)) throw new Error('This is an invalid Credit secret.');
 
-    if (credit.remainingCredits < holdAmount)
+    if (credit.remainingCredits < amount)
       throw new Error('This Credit has insufficient balance remaining to create a payment.');
 
     const result = (await this.queryInternal(
-      'UPDATE self SET holdCredits = holdCredits + $2 ' +
-        'WHERE id = $1 AND (remainingCredits - holdCredits - $2) >= 0 ' +
-        'RETURNING (remainingCredits - holdCredits) as balance',
-      [id, holdAmount],
+      'UPDATE self SET remainingCredits = remainingCredits - $2 ' +
+        'WHERE id = $1 AND (remainingCredits - $2) >= 0 ' +
+        'RETURNING remainingCredits',
+      [id, amount],
     )) as any;
 
     if (result === undefined) throw new Error('Could not create a payment from the given Credits.');
-    return result.balance;
+    return result.remainingCredits;
   }
 
-  async finalize(id: string, holdAmount: number, finalAmount: number): Promise<number> {
-    const result = (await this.queryInternal(
-      'UPDATE self SET holdCredits = holdCredits - $2, remainingCredits = remainingCredits - $3 ' +
-        'WHERE id = $1 ' +
-        'RETURNING (remainingCredits - holdCredits) as balance',
-      [id, holdAmount, finalAmount],
-    )) as any;
-    if (result === undefined) throw new Error('Could not finalize payment for the given Credits.');
-    return result.balance;
+  async finalize(id: string, refund: number): Promise<void> {
+    await this.queryInternal(
+      'UPDATE self SET remainingCredits = remainingCredits + $2 WHERE id = $1',
+      [id, refund],
+    );
   }
 
   private async getUpstreamCreditLimit(): Promise<number | undefined> {
@@ -103,12 +99,15 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     if (!Object.keys(embeddedCredits).length) return undefined;
     let issuedCredits = 0;
     for (const [source, credit] of Object.entries(embeddedCredits)) {
-      const url = this.datastoreInternal.metadata.remoteDatastores[source];
-      if (!source) continue;
-      const client = this.datastoreInternal.createApiClient(url);
-      const [datastoreId, version] = url.split('/').pop().split('@v');
-      const balance = await client.getCreditsBalance(datastoreId, version, credit.id);
-      if (Number.isInteger(balance.issuedCredits)) issuedCredits += balance.issuedCredits;
+      try {
+        const { client, datastoreHost } = await this.datastoreInternal.getRemoteApiClient(source);
+        const balance = await client.getCreditsBalance(
+          datastoreHost.datastoreId,
+          datastoreHost.version,
+          credit.id,
+        );
+        if (Number.isInteger(balance.issuedCredits)) issuedCredits += balance.issuedCredits;
+      } catch (err) {}
     }
     return issuedCredits;
   }
@@ -119,7 +118,6 @@ export const CreditsSchema = {
   salt: string({ length: 16 }),
   secretHash: buffer(),
   issuedCredits: number(),
-  holdCredits: number(),
   remainingCredits: number(),
 };
 type ICredit = ExtractSchemaType<typeof CreditsSchema>;

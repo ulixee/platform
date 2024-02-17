@@ -7,8 +7,9 @@ import IDatastoreMetadata from '@ulixee/datastore/interfaces/IDatastoreMetadata'
 import { datastoreIdValidation } from '@ulixee/platform-specification/types/datastoreIdValidation';
 import IDatastoreManifest, {
   DatastoreManifestSchema,
+  IDatastorePaymentRecipient,
 } from '@ulixee/platform-specification/types/IDatastoreManifest';
-import ValidationError from '@ulixee/specification/utils/ValidationError';
+import ValidationError from '@ulixee/platform-specification/utils/ValidationError';
 import { promises as Fs } from 'fs';
 import * as Path from 'path';
 import env from '../env';
@@ -38,7 +39,9 @@ export default class DatastoreManifest implements IDatastoreManifest {
 
   public adminIdentities: string[];
   // Payment details
-  public paymentAddress?: string;
+  public payment?: IDatastorePaymentRecipient;
+
+  public domain?: string;
 
   public explicitSettings: Partial<IDatastoreManifest>;
   public source: 'dbx' | 'entrypoint' | 'project' | 'global';
@@ -77,7 +80,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
       | 'id'
       | 'version'
       | 'coreVersion'
-      | 'paymentAddress'
+      | 'payment'
+      | 'domain'
       | 'adminIdentities'
       | 'name'
       | 'description'
@@ -100,7 +104,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
       name,
       description,
       coreVersion,
-      paymentAddress,
+      payment,
+      domain,
       adminIdentities,
       storageEngineHost,
       version,
@@ -112,8 +117,9 @@ export default class DatastoreManifest implements IDatastoreManifest {
       filterUndefined({
         coreVersion,
         schemaInterface,
-        paymentAddress,
+        payment,
         adminIdentities,
+        domain,
         description,
         name,
         storageEngineHost,
@@ -127,7 +133,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       this.extractorsByName[funcName] = {
         description: funcMeta.description,
         corePlugins: funcMeta.corePlugins ?? {},
-        prices: funcMeta.prices ?? [{ perQuery: 0, minimum: 0 }],
+        prices: funcMeta.prices ?? [{ basePrice: 0 }],
         schemaAsJson: funcMeta.schemaAsJson,
       };
     }
@@ -135,14 +141,14 @@ export default class DatastoreManifest implements IDatastoreManifest {
       this.crawlersByName[funcName] = {
         description: funcMeta.description,
         corePlugins: funcMeta.corePlugins ?? {},
-        prices: funcMeta.prices ?? [{ perQuery: 0, minimum: 0 }],
+        prices: funcMeta.prices ?? [{ basePrice: 0 }],
         schemaAsJson: funcMeta.schemaAsJson,
       };
     }
     for (const [tableName, tableMeta] of Object.entries(tablesByName)) {
       this.tablesByName[tableName] = {
         description: tableMeta.description,
-        prices: tableMeta.prices ?? [{ perQuery: 0 }],
+        prices: tableMeta.prices ?? [{ basePrice: 0 }],
         schemaAsJson: tableMeta.schemaAsJson,
       };
     }
@@ -237,7 +243,8 @@ export default class DatastoreManifest implements IDatastoreManifest {
       crawlersByName: this.crawlersByName,
       storageEngineHost: this.storageEngineHost,
       tablesByName: this.tablesByName,
-      paymentAddress: this.paymentAddress,
+      payment: this.payment,
+      domain: this.domain,
       adminIdentities: this.adminIdentities,
     };
   }
@@ -289,8 +296,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
             }
             this.extractorsByName[name].prices ??= [];
             for (const price of this.extractorsByName[name].prices) {
-              price.perQuery ??= 0;
-              price.minimum ??= price.perQuery;
+              price.basePrice ??= 0;
             }
           }
         }
@@ -303,8 +309,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
             }
             this.crawlersByName[name].prices ??= [];
             for (const price of this.crawlersByName[name].prices) {
-              price.perQuery ??= 0;
-              price.minimum ??= price.perQuery;
+              price.basePrice ??= 0;
             }
           }
         }
@@ -317,7 +322,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
             }
             this.tablesByName[name].prices ??= [];
             for (const price of this.tablesByName[name].prices) {
-              price.perQuery ??= 0;
+              price.basePrice ??= 0;
             }
           }
         }

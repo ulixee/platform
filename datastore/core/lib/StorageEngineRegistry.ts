@@ -1,10 +1,12 @@
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import { toUrl } from '@ulixee/commons/lib/utils';
 import Datastore, { ConnectionToDatastoreCore } from '@ulixee/datastore';
-import IStorageEngine, { TQueryCallMeta } from '@ulixee/datastore/interfaces/IStorageEngine';
+import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
 import RemoteStorageEngine from '@ulixee/datastore/storage-engines/RemoteStorageEngine';
 import SqliteStorageEngine from '@ulixee/datastore/storage-engines/SqliteStorageEngine';
-import IDatastoreApiTypes from '@ulixee/platform-specification/datastore/DatastoreApis';
+import IDatastoreApiTypes, {
+  IDatastoreQueryMetadata,
+} from '@ulixee/platform-specification/datastore/DatastoreApis';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import * as Fs from 'fs';
 import * as Path from 'path';
@@ -41,7 +43,7 @@ export default class StorageEngineRegistry {
 
   public get(
     manifest: Pick<IDatastoreManifest, 'id' | 'version' | 'storageEngineHost'>,
-    queryMetadata: TQueryCallMeta,
+    queryMetadata: IDatastoreQueryMetadata,
   ): IStorageEngine {
     const { storageEngineHost, id, version } = manifest;
 

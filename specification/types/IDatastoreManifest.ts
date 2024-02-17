@@ -1,10 +1,16 @@
-import { z } from '@ulixee/specification';
-import { addressValidation, identityValidation } from '@ulixee/specification/common';
+import { addressValidation, identityValidation } from '@ulixee/platform-specification/types';
+import { z } from 'zod';
 import { datastoreIdValidation } from './datastoreIdValidation';
-import { DatastoreCrawlerPricing, DatastoreExtractorPricing } from './IDatastorePricing';
+import { DatastorePricing } from './IDatastorePricing';
 import { semverValidation } from './semverValidation';
 
 export const minDate = new Date('2022-01-01').getTime();
+export const DatastorePaymentRecipientSchema = z.object({
+  address: addressValidation
+    .optional()
+    .describe('A payment address that indicates payments are required.'),
+  notaryId: z.number(),
+});
 
 export const DatastoreManifestSchema = z.object({
   id: datastoreIdValidation.describe('A unique id for the Datastore'),
@@ -20,10 +26,11 @@ export const DatastoreManifestSchema = z.object({
   versionTimestamp: z.number().int().gt(minDate),
   scriptHash: z
     .string()
+    .describe('A sha256 of the script contents.')
     .length(62)
     .regex(
       /^scr1[ac-hj-np-z02-9]{58}/,
-      'This is not a Datastore scriptHash (Bech32 encoded hash starting with "scr").',
+      'This is not a Datastore scriptHash (Bech32m encoded hash starting with "scr").',
     ),
   adminIdentities: identityValidation
     .array()
@@ -52,7 +59,7 @@ export const DatastoreManifestSchema = z.object({
         })
         .optional()
         .describe('The schema as json.'),
-      prices: DatastoreExtractorPricing.array()
+      prices: DatastorePricing.array()
         .min(1)
         .optional()
         .describe(
@@ -80,7 +87,7 @@ export const DatastoreManifestSchema = z.object({
         })
         .optional()
         .describe('The schema as json.'),
-      prices: DatastoreCrawlerPricing.array()
+      prices: DatastorePricing.array()
         .min(1)
         .optional()
         .describe(
@@ -97,19 +104,7 @@ export const DatastoreManifestSchema = z.object({
     z.object({
       description: z.string().optional(),
       schemaAsJson: z.record(z.string(), z.any()).optional().describe('The schema as json.'),
-      prices: z
-        .object({
-          perQuery: z.number().int().nonnegative().describe('Base price per query.'),
-          remoteMeta: z
-            .object({
-              host: z.string().describe('The remote host'),
-              datastoreId: datastoreIdValidation,
-              datastoreVersion: semverValidation,
-              tableName: z.string().describe('The remote table name'),
-            })
-            .optional(),
-        })
-        .array()
+      prices: DatastorePricing.array()
         .min(1)
         .optional()
         .describe(
@@ -118,9 +113,18 @@ export const DatastoreManifestSchema = z.object({
         ),
     }),
   ),
-  paymentAddress: addressValidation.optional(),
+  payment: DatastorePaymentRecipientSchema.optional(),
+  domain: z
+    .string()
+    .optional()
+    .describe(
+      'A data domain for this manifest. It can be looked up in the mainchain as a dns lookup for the version hosting.\n' +
+        'DATASTORE DEVELOPER NOTE: this property is used to indicate to tooling and CloudNode hosting that a domain is in effect and Escrows must match this setting, but it does not register anything in and of itself.',
+    ),
 });
 
 type IDatastoreManifest = z.infer<typeof DatastoreManifestSchema>;
+type IDatastorePaymentRecipient = z.infer<typeof DatastorePaymentRecipientSchema>;
+export { IDatastorePaymentRecipient };
 
 export default IDatastoreManifest;

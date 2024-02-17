@@ -17,18 +17,20 @@
       "sql/*",
       "client/*",
       "cli",
+      "schema",
       "specification",
+      "utils",
       "end-to-end",
       "playgrounds/*",
       "hero/build/*",
       "hero/build/plugins/*",
       "../shared/build/*",
-      "../payments/build/sidechain/client",
       "../unblocked/build/agent/*",
       "../unblocked/build/plugins/*",
       "../unblocked/build/specification",
       "../unblocked/build/js-path",
-      "../unblocked/build/real-user-agents"
+      "../unblocked/build/real-user-agents",
+      "../mainchain/localchain"
     ],
     "nohoist": [
       "**/babel-loader",

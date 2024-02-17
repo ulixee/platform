@@ -1,13 +1,27 @@
-import { Parser, Grammar } from 'nearley';
-import { IStatement, IExpr, IQName, IGeometricLiteral, IPoint, ILine, ISegment, IBox, IPath, IPolygon, ICircle, IInterval, ISqlComment } from '../interfaces/ISqlNode';
-import { buildInterval } from './helpers/IntervalUtils';
-import { tracking, trackingComments } from './helpers/lexer';
-import sqlGrammar from '../syntax/compiled/main';
+import { Grammar, Parser } from 'nearley';
+import IParseOptions from '../interfaces/IParseOptions';
+import {
+  IBox,
+  ICircle,
+  IExpr,
+  IGeometricLiteral,
+  IInterval,
+  ILine,
+  IPath,
+  IPoint,
+  IPolygon,
+  IQName,
+  ISegment,
+  ISqlComment,
+  IStatement,
+} from '../interfaces/ISqlNode';
 import arrayGrammar from '../syntax/compiled/literals/array';
 import geometricGrammar from '../syntax/compiled/literals/geometric';
 import intervalTextGrammar from '../syntax/compiled/literals/interval';
 import intervalIsoGrammar from '../syntax/compiled/literals/interval-iso';
-import IParseOptions from '../interfaces/IParseOptions';
+import sqlGrammar from '../syntax/compiled/main';
+import { buildInterval } from './helpers/IntervalUtils';
+import { tracking, trackingComments } from './helpers/lexer';
 
 let sqlCompiled: Grammar;
 let arrayCompiled: Grammar;

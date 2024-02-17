@@ -1,6 +1,6 @@
-import { z } from '@ulixee/specification';
-import { identityValidation } from '@ulixee/specification/common';
-import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
+import { z } from 'zod';
+import { identityValidation } from '@ulixee/platform-specification/types';
+import { IZodHandlers, IZodSchemaToApiTypes } from '../utils/IZodApi';
 import { NodeInfoSchema } from '../types/INodeInfo';
 
 const CloudNodeMetaSchema = NodeInfoSchema.extend({

@@ -1,5 +1,5 @@
-import { z } from '@ulixee/specification';
-import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
+import { z } from 'zod';
+import { IZodHandlers, IZodSchemaToApiTypes } from '../utils/IZodApi';
 import { ServicesSetupSchema } from '../types/IServicesSetup';
 
 export const ServicesSetupApiSchemas = {

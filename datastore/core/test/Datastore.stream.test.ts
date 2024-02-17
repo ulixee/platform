@@ -1,5 +1,5 @@
 import { CloudNode } from '@ulixee/cloud';
-import Identity from '@ulixee/crypto/lib/Identity';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import DatastorePackager from '@ulixee/datastore-packager';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { Helpers } from '@ulixee/datastore-testing';
@@ -51,14 +51,15 @@ test('should be able to stream a datastore extractor', async () => {
     'streamer',
     {},
   );
-  await expect(result.resultMetadata).resolves.toEqual({
+  await expect(result.resultMetadata).resolves.toEqual(expect.objectContaining({
     metadata: {
       milliseconds: expect.any(Number),
       bytes: expect.any(Number),
       microgons: 0,
     },
     latestVersion: expect.any(String),
-  });
+    queryId: expect.any(String),
+  }));
   for await (const record of result) {
     counter += 1;
     outputs.push(record);
@@ -92,6 +93,7 @@ test('should be able to stream a datastore table', async () => {
       microgons: 0,
     },
     latestVersion: expect.any(String),
+    queryId: expect.any(String),
   });
   for await (const record of result) {
     counter += 1;

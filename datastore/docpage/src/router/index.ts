@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import Index from '../pages/Index.vue';
 
-const matches = location.pathname.match(/(\/docs\/[a-z0-9-]+@v[\d.]+)/);
+const matches = location.pathname.match(/(\/[a-z0-9-]+@v[\d.]+)/);
 const pathPrefix = matches ? matches[1] : '';
 
 const basicRoutes: Array<RouteRecordRaw> = [
@@ -17,7 +17,7 @@ const basicRoutes: Array<RouteRecordRaw> = [
   },
   {
     name: 'freeCredits',
-    path: `${pathPrefix}/free-credits`,
+    path: `${pathPrefix}/free-credit`,
     component: () => import('../pages/FreeCredits.vue'),
   },
 ];

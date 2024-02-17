@@ -1,5 +1,4 @@
-import { IBlockSettings } from '@ulixee/specification';
-import Identity from '@ulixee/crypto/lib/Identity';
+import { ILocalchainConfig } from '../lib/LocalchainWithSync';
 
 export default interface IDatastoreCoreConfigureOptions {
   serverEnvironment: 'development' | 'production';
@@ -8,21 +7,17 @@ export default interface IDatastoreCoreConfigureOptions {
   queryHeroSessionsDir: string;
   datastoresTmpDir: string;
   waitForDatastoreCompletionOnShutdown: boolean;
-  paymentAddress: string;
   enableDatastoreWatchMode: boolean;
   cloudAdminIdentities: string[];
   datastoresMustHaveOwnAdminIdentity: boolean;
-  defaultBytesForPaymentEstimates: number;
-  computePricePerQuery: number;
-  approvedSidechains: IBlockSettings['sidechains'];
-  approvedSidechainsRefreshInterval: number;
-  defaultSidechainHost: string;
-  defaultSidechainRootIdentity: string;
-  identityWithSidechain: Identity;
 
+  localchainConfig?: ILocalchainConfig;
   // services settings
   datastoreRegistryHost: string | 'self';
   storageEngineHost: string | 'self';
   statsTrackerHost: string | 'self';
   replayRegistryHost: string | 'self';
+  escrowSpendTrackingHost: string | 'self';
+  paymentServiceHost: string | 'self';
+  datastoreLookupHost: string | 'self';
 }

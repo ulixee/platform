@@ -1,5 +1,5 @@
-import { z } from '@ulixee/specification';
-import { addressValidation } from '@ulixee/specification/common';
+import { z } from 'zod';
+import { NotarizationSchema } from './INotarization';
 
 export const ArgonFileSchema = z.object({
   credit: z
@@ -8,14 +8,7 @@ export const ArgonFileSchema = z.object({
       microgons: z.number().int().positive().describe('The granted number of microgons.'),
     })
     .optional(),
-  cash: z
-    .object({
-      centagons: z.bigint().describe('The number of centagons'),
-      toAddress: addressValidation
-        .optional()
-        .describe('An optional exclusive recipient of this cash.'),
-    })
-    .optional(),
+  notarization: NotarizationSchema,
 });
 
 type IArgonFile = z.infer<typeof ArgonFileSchema>;

@@ -17,7 +17,6 @@
     "@ulixee/hero-interfaces": "2.0.0-alpha.28",
     "@ulixee/js-path": "2.0.0-alpha.28",
     "@ulixee/net": "2.0.0-alpha.28",
-    "@ulixee/specification": "2.0.0-alpha.28",
     "@ulixee/unblocked-agent-mitm-socket": "2.0.0-alpha.28",
     "@ulixee/unblocked-specification": "2.0.0-alpha.28",
     "http-proxy-agent": "^4.0.1",

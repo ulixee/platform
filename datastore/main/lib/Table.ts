@@ -1,15 +1,16 @@
+import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
 import { ExtractSchemaType, ISchemaAny } from '@ulixee/schema';
 import { SqlGenerator, SqlParser } from '@ulixee/sql-engine';
-import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
+import IQueryOptions from '../interfaces/IQueryOptions';
 import ITableComponents from '../interfaces/ITableComponents';
-import DatastoreInternal, { IDatastoreBinding } from './DatastoreInternal';
-import { TQueryCallMeta } from '../interfaces/IStorageEngine';
+import DatastoreInternal, { IDatastoreBinding, IQueryInternalCallbacks } from './DatastoreInternal';
 
-export type IExpandedTableSchema<T> = T extends Record<string, ISchemaAny>
-  ? {
-      [K in keyof T]: T[K];
-    }
-  : never;
+export type IExpandedTableSchema<T> =
+  T extends Record<string, ISchemaAny>
+    ? {
+        [K in keyof T]: T[K];
+      }
+    : never;
 
 export default class Table<
   TSchema extends IExpandedTableSchema<any> = IExpandedTableSchema<any>,
@@ -21,6 +22,10 @@ export default class Table<
   #datastoreInternal: DatastoreInternal;
 
   protected readonly components: ITableComponents<TSchema>;
+
+  public get basePrice(): number {
+    return this.components.basePrice ?? 0;
+  }
 
   public get isPublic(): boolean {
     return this.components.isPublic !== false;
@@ -58,13 +63,13 @@ export default class Table<
   }
 
   public async fetchInternal(
-    options?: TQueryCallMeta & { input: TSchemaType },
+    options?: IQueryOptions & { input: TSchemaType },
+    callbacks?: IQueryInternalCallbacks,
   ): Promise<TSchemaType[]> {
     const name = this.name;
 
-    const engine = this.datastoreInternal.storageEngine;
     const { sql, boundValues } = SqlGenerator.createWhereClause(name, options?.input, ['*'], 1000);
-    return await engine.query(sql, boundValues, options);
+    return this.queryInternal(sql, boundValues, options, callbacks);
   }
 
   public async insertInternal(...records: TSchemaType[]): Promise<void> {
@@ -78,7 +83,8 @@ export default class Table<
   public async queryInternal<T = TSchemaType[]>(
     sql: string,
     boundValues: any[] = [],
-    options?: TQueryCallMeta,
+    options?: IQueryOptions,
+    _callbacks?: IQueryInternalCallbacks,
   ): Promise<T> {
     const name = this.name;
     const engine = this.datastoreInternal.storageEngine;

@@ -1,4 +1,4 @@
-import { z } from '@ulixee/specification';
+import { z } from 'zod';
 
 export const datastoreRegex = /[a-z0-9-]{2,50}/;
 

@@ -36,10 +36,7 @@ The first argument can be a single callback function matching the `run` callback
   - NOTE: Crawlers do not specify `Output`, but must return an object implementing `toCrawlerOutput(): Promise<ICrawlerOutputSchema>`. This is an object containing `version`, `sessionId` and `crawler`.
 - schema `IExtractorSchema`. Optional [schema](../advanced/extractor-schemas.md) defining the type-checked _input_ (only) parameters for the function. Output is not supported for Crawlers.
 - disableCache `boolean`. Optional parameter to disable automatic caching of results.
-- minimumPrice `number`. Optional minimum price that must be allocated in a Micronote for a caller.
-- pricePerQuery `number`. Optional charge price per query.
-- addOnPricing `object`. Optional pricing add-ons if your output varies widely in the amount of data that can be sent. This currently accepts a single property:
-  - perKb `number`. A price per Kilobyte of data output.
+- basePrice `number`. Optional price that this query costs.
 - name `string`. Optional name for this Crawler, primarily used only if defining a Crawler outside a Datastore.
 
 The second argument is a list of zero or more plugins.

@@ -121,7 +121,7 @@ export default class StatsTrackerDiskStore extends TypedEventEmitter<{
       details.input,
       details.outputs,
       details.error,
-      details.micronoteId,
+      details.escrowId,
       details.creditId,
       details.microgons,
       details.bytes,

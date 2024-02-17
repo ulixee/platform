@@ -53,12 +53,12 @@ export default class DatastoreEntityStatsTable extends SqliteTable<IDatastoreEnt
     creditsUsed: number,
     isError: boolean,
   ): void {
-    price ??= 0;
+    const microgons = Number(price) ?? 0;
 
     const stats = this.getByVersion(datastoreId, version, name);
-    this.addToStats(stats, isError, price, milliseconds, bytes, creditsUsed);
+    this.addToStats(stats, isError, microgons, milliseconds, bytes, creditsUsed);
     const datastoreStats = this.getByDatastore(datastoreId, name);
-    this.addToStats(datastoreStats, isError, price, milliseconds, bytes, creditsUsed);
+    this.addToStats(datastoreStats, isError, microgons, milliseconds, bytes, creditsUsed);
 
     this.insertNow([
       datastoreId,

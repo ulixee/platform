@@ -16,7 +16,9 @@
       "client/*",
       "cli",
       "playgrounds/*",
-      "specification"
+      "schema",
+      "specification",
+      "utils"
     ],
     "nohoist": [
       "**/babel-loader",

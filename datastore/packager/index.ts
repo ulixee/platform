@@ -36,7 +36,11 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
   private readonly filename: string;
   private onClose: (() => Promise<void>)[] = [];
 
-  constructor(entrypoint: string, private readonly outDir?: string, private logToConsole = false) {
+  constructor(
+    entrypoint: string,
+    private readonly outDir?: string,
+    private logToConsole = false,
+  ) {
     super();
     this.entrypoint = Path.resolve(entrypoint);
     this.outDir ??=
@@ -105,7 +109,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
 
     if (this.meta.extractorsByName) {
       for (const [name, extractorMeta] of Object.entries(this.meta.extractorsByName)) {
-        const { schema, pricePerQuery, minimumPrice, corePlugins, description } = extractorMeta;
+        const { schema, basePrice, corePlugins, description } = extractorMeta;
         if (schema) {
           const fields = filterUndefined({
             input: schemaFromJson(schema?.input),
@@ -121,9 +125,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
           corePlugins,
           prices: [
             {
-              perQuery: pricePerQuery ?? 0,
-              minimum: minimumPrice ?? pricePerQuery ?? 0,
-              addOns: extractorMeta.addOnPricing,
+              basePrice: basePrice ?? 0,
             },
           ],
           schemaAsJson: schema,
@@ -135,14 +137,14 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
             this.meta,
             extractorMeta,
           );
-          extractorsByName[name].prices.push(...extractorDetails.prices);
+          extractorsByName[name].prices.push(...extractorDetails.priceBreakdown);
         }
       }
     }
 
     if (this.meta.crawlersByName) {
       for (const [name, crawler] of Object.entries(this.meta.crawlersByName)) {
-        const { schema, pricePerQuery, minimumPrice, corePlugins, description } = crawler;
+        const { schema, basePrice, corePlugins, description } = crawler;
         if (schema) {
           const fields = filterUndefined({
             input: schemaFromJson(schema?.input),
@@ -158,9 +160,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
           corePlugins,
           prices: [
             {
-              perQuery: pricePerQuery ?? 0,
-              minimum: minimumPrice ?? pricePerQuery ?? 0,
-              addOns: crawler.addOnPricing,
+              basePrice: basePrice ?? 0,
             },
           ],
           schemaAsJson: schema,
@@ -172,7 +172,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
             this.meta,
             crawler,
           );
-          crawlersByName[name].prices.push(...extractorDetails.prices);
+          crawlersByName[name].prices.push(...extractorDetails.priceBreakdown);
         }
       }
     }
@@ -189,13 +189,13 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
         tablesByName[name] = {
           description,
           schemaAsJson: schema,
-          prices: [{ perQuery: tableMeta.pricePerQuery ?? 0 }],
+          prices: [{ basePrice: tableMeta.basePrice ?? 0 }],
         };
 
         // lookup upstream pricing
         if (tableMeta.remoteTable) {
           const paymentDetails = await this.lookupRemoteDatastoreTablePricing(this.meta, tableMeta);
-          tablesByName[name].prices.push(...paymentDetails.prices);
+          tablesByName[name].prices.push(...paymentDetails.priceBreakdown);
         }
       }
     }
@@ -216,6 +216,20 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
       this.logToConsole ? console.log : undefined,
       createTemporaryVersion,
     );
+
+    const entitiesNeedingPayment = [];
+    for (const [name, entity] of [
+      ...Object.entries(this.manifest.tablesByName),
+      ...Object.entries(this.manifest.extractorsByName),
+      ...Object.entries(this.manifest.crawlersByName),
+    ]) {
+      if (entity.prices?.some(x => x.basePrice > 0)) entitiesNeedingPayment.push(name);
+    }
+    if (!this.manifest.payment && entitiesNeedingPayment.length) {
+      throw new Error(
+        `Datastore ${this.manifest.id} requires payment for entities (${entitiesNeedingPayment.join(', ')}), but no payment details are in the manifest.`,
+      );
+    }
 
     this.script = sourceCode;
     this.sourceMap = sourceMap;
@@ -239,7 +253,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     meta: IFetchMetaResponseData,
     extractor: IFetchMetaResponseData['extractorsByName'][0],
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['extractorsByName'][0]> {
-    const extractorName = extractor.remoteExtractor.split('.').pop();
+    const name = extractor.remoteExtractor.split('.').pop();
 
     const { remoteHost, datastoreId, datastoreVersion } = this.getRemoteSourceAndVersion(
       meta,
@@ -250,20 +264,20 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
       host: remoteHost,
       datastoreId,
       datastoreVersion,
-      extractorName,
+      name,
     };
 
     try {
       const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreId, datastoreVersion);
-      if (!upstreamMeta.extractorsByName[extractorName]) {
+      if (!upstreamMeta.extractorsByName[name]) {
         throw new Error(
-          `${extractorName} is not a valid extractor for ${datastoreId}@v${datastoreVersion}. Valid names are: ${Object.keys(
+          `${name} is not a valid extractor for ${datastoreId}@v${datastoreVersion}. Valid names are: ${Object.keys(
             upstreamMeta.extractorsByName,
           ).join(', ')}.`,
         );
       }
-      const remoteExtractorDetails = upstreamMeta.extractorsByName[extractorName];
-      remoteExtractorDetails.prices[0].remoteMeta = remoteMeta;
+      const remoteExtractorDetails = upstreamMeta.extractorsByName[name];
+      remoteExtractorDetails.priceBreakdown[0].remoteMeta = remoteMeta;
       return remoteExtractorDetails;
     } catch (error) {
       console.error('ERROR loading remote datastore pricing', remoteMeta, error);
@@ -275,7 +289,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     meta: IFetchMetaResponseData,
     crawler: IFetchMetaResponseData['crawlersByName'][0],
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['crawlersByName'][0]> {
-    const crawlerName = crawler.remoteCrawler.split('.').pop();
+    const name = crawler.remoteCrawler.split('.').pop();
     const { remoteHost, datastoreId, datastoreVersion } = this.getRemoteSourceAndVersion(
       meta,
       crawler.remoteSource,
@@ -284,19 +298,19 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
       host: remoteHost,
       datastoreId,
       datastoreVersion,
-      crawlerName,
+      name,
     };
     try {
       const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreId, datastoreVersion);
-      if (!upstreamMeta.crawlersByName[crawlerName]) {
+      if (!upstreamMeta.crawlersByName[name]) {
         throw new Error(
-          `${crawlerName} is not a valid crawler for ${datastoreId}@v${datastoreVersion} Valid names are: ${Object.keys(
+          `${name} is not a valid crawler for ${datastoreId}@v${datastoreVersion} Valid names are: ${Object.keys(
             upstreamMeta.crawlersByName,
           ).join(', ')}.`,
         );
       }
-      const remoteExtractorDetails = upstreamMeta.crawlersByName[crawlerName];
-      remoteExtractorDetails.prices[0].remoteMeta = remoteMeta;
+      const remoteExtractorDetails = upstreamMeta.crawlersByName[name];
+      remoteExtractorDetails.priceBreakdown[0].remoteMeta = remoteMeta;
       return remoteExtractorDetails;
     } catch (error) {
       console.error('ERROR loading remote datastore pricing', remoteMeta, error);
@@ -308,7 +322,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     meta: IFetchMetaResponseData,
     table: IFetchMetaResponseData['tablesByName'][0],
   ): Promise<IDatastoreApiTypes['Datastore.meta']['result']['tablesByName'][0]> {
-    const tableName = table.remoteTable.split('.').pop();
+    const name = table.remoteTable.split('.').pop();
 
     const { remoteHost, datastoreId, datastoreVersion } = this.getRemoteSourceAndVersion(
       meta,
@@ -318,20 +332,20 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
       host: remoteHost,
       datastoreId,
       datastoreVersion,
-      tableName,
+      name,
     };
 
     try {
       const upstreamMeta = await this.getDatastoreMeta(remoteHost, datastoreId, datastoreVersion);
-      if (!upstreamMeta.tablesByName[tableName]) {
+      if (!upstreamMeta.tablesByName[name]) {
         throw new Error(
-          `${tableName} is not a valid table for ${datastoreId}@v${datastoreVersion}.  Valid names are: ${Object.keys(
+          `${name} is not a valid table for ${datastoreId}@v${datastoreVersion}.  Valid names are: ${Object.keys(
             upstreamMeta.tablesByName,
           ).join(', ')}.`,
         );
       }
-      const remoteDetails = upstreamMeta.tablesByName[tableName];
-      remoteDetails.prices[0].remoteMeta = remoteMeta;
+      const remoteDetails = upstreamMeta.tablesByName[name];
+      remoteDetails.priceBreakdown[0].remoteMeta = remoteMeta;
       return remoteDetails;
     } catch (error) {
       console.error('ERROR loading remote datastore pricing', remoteMeta, error);

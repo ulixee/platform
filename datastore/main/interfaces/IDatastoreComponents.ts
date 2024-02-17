@@ -1,8 +1,9 @@
+import { IDatastorePaymentRecipient } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import Crawler from '../lib/Crawler';
-import Extractor from '../lib/Extractor';
-import Table from '../lib/Table';
 import CreditsTable from '../lib/CreditsTable';
 import Datastore from '../lib/Datastore';
+import Extractor from '../lib/Extractor';
+import Table from '../lib/Table';
 
 export default interface IDatastoreComponents<
   TTable extends TTables,
@@ -20,10 +21,13 @@ export default interface IDatastoreComponents<
   remoteDatastoreEmbeddedCredits?: {
     [source: string]: { id: string; secret: string };
   };
-  tables?: TTable & { credits?: CreditsTable };
+  tables?: TTable & {
+    [CreditsTable.tableName]?: CreditsTable;
+  };
   extractors?: TExtractor;
   crawlers?: TCrawler;
-  paymentAddress?: string;
+  payment?: IDatastorePaymentRecipient;
+  domain?: string;
   affiliateId?: string;
   adminIdentities?: string[];
   onCreated?(this: Datastore<TTable, TExtractor, TCrawler, this>): Promise<void>;
@@ -34,26 +38,23 @@ export default interface IDatastoreComponents<
   authenticateIdentity?(identity: string, nonce: string): Promise<boolean> | boolean;
 }
 
-export type TExtractors<T = any, TFunc extends Extractor = Extractor> = T extends Record<
-  string,
-  TFunc
->
-  ? {
-      [K in keyof T]: T[K];
-    }
-  : never;
+export type TExtractors<T = any, TFunc extends Extractor = Extractor> =
+  T extends Record<string, TFunc>
+    ? {
+        [K in keyof T]: T[K];
+      }
+    : never;
 
-export type TTables<T = any, TTable extends Table = Table> = T extends Record<string, TTable>
-  ? {
-      [K in keyof T]: T[K];
-    }
-  : never;
+export type TTables<T = any, TTable extends Table = Table> =
+  T extends Record<string, TTable>
+    ? {
+        [K in keyof T]: T[K];
+      }
+    : never;
 
-export type TCrawlers<T = any, TCrawler extends Crawler = Crawler> = T extends Record<
-  string,
-  TCrawler
->
-  ? {
-      [K in keyof T]: T[K];
-    }
-  : never;
+export type TCrawlers<T = any, TCrawler extends Crawler = Crawler> =
+  T extends Record<string, TCrawler>
+    ? {
+        [K in keyof T]: T[K];
+      }
+    : never;

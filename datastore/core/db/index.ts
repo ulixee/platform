@@ -15,6 +15,7 @@ export default class DatastoresDb {
     if (env.enableSqliteWalMode) {
       this.db.unsafeMode(false);
       this.db.pragma('journal_mode = WAL');
+      this.db.pragma('synchronous = NORMAL');
     }
 
     this.versions = new DatastoreVersionsTable(this.db);

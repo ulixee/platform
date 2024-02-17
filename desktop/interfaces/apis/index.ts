@@ -3,12 +3,13 @@ import { IDatastoreApis, IDatastoreApiTypes } from '@ulixee/platform-specificati
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
 import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
+import type { IUserBalance } from '@ulixee/datastore/interfaces/IPaymentService';
 import IChromeAliveSessionApi from './IChromeAliveSessionApi';
 import IDevtoolsBackdoorApi from './IDevtoolsBackdoorApi';
 import IDatastoreApi from './IDatastoreApi';
 import IAppApi from './IAppApi';
 import IHeroSessionsApi from './IHeroSessionsApi';
-import { ICloudConnected, IUserBalance } from './IDesktopApis';
+import { ICloudConnected } from './IDesktopApis';
 
 export type IChromeAliveSessionApis = {
   'Session.load': IChromeAliveSessionApi['load'];

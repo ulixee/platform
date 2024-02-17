@@ -20,7 +20,7 @@
     "@ulixee/desktop-interfaces": "2.0.0-alpha.28",
     "@ulixee/hero-interfaces": "2.0.0-alpha.28",
     "@ulixee/platform-specification": "2.0.0-alpha.28",
-    "@ulixee/sidechain": "2.0.0-alpha.28",
+    "@ulixee/platform-utils": "2.0.0-alpha.28",
     "@ulixee/unblocked-specification": "2.0.0-alpha.28",
     "@webcomponents/custom-elements": "^1.6.0",
     "moment": "^2.29.4",

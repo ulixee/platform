@@ -1,6 +1,12 @@
-import PaymentProcessor from '../lib/PaymentProcessor';
-import { validateAuthentication } from '../lib/datastoreUtils';
+import PricingManager from '@ulixee/datastore/lib/PricingManager';
+import { SqlParser } from '@ulixee/sql-engine';
+import {
+  IDatastoreMetadataResult,
+  IDatastoreQueryResult,
+} from '@ulixee/platform-specification/datastore/DatastoreApis';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
+import { validateAuthentication } from '../lib/datastoreUtils';
+import PaymentsQueryHandler from '../lib/PaymentsProcessor';
 
 export default new DatastoreApiHandler('Datastore.queryStorageEngine', {
   async handler(request, context) {
@@ -25,33 +31,58 @@ export default new DatastoreApiHandler('Datastore.queryStorageEngine', {
 
     await validateAuthentication(datastore, payment, authentication);
 
-    const paymentProcessor = new PaymentProcessor(payment, datastore, context);
+    const sqlParser = new SqlParser(request.sql);
+    const paymentHandler = new PaymentsQueryHandler(payment, id, datastore, context);
+    const tableCalls = sqlParser
+      .extractTableCalls()
+      .filter(x => !request.virtualEntitiesByName?.[x]);
+    await paymentHandler.debit(queryId, manifestWithEntrypoint, tableCalls);
 
-    let outputs: any[];
-    let runError: Error;
+    const finalResult: IDatastoreQueryResult = {
+      outputs: null,
+      latestVersion: manifestWithEntrypoint.latestVersion,
+      metadata: {
+        bytes: 0,
+        microgons: 0,
+        milliseconds: 0,
+      },
+      runError: null,
+    };
+
     try {
-      outputs = await storage.query(
-        request.sql,
+      let upstreamMeta: IDatastoreMetadataResult;
+      finalResult.outputs = await storage.query(
+        sqlParser,
         request.boundValues,
-        { id, version, payment, authentication, queryId },
+        {
+          id,
+          version,
+          payment,
+          authentication,
+          queryId,
+          onQueryResult: result => {
+            upstreamMeta = result.metadata;
+          },
+        },
         request.virtualEntitiesByName,
       );
+
+      let basePrice = 0;
+      for (const call of tableCalls) {
+        const price = manifestWithEntrypoint.tablesByName[call]?.prices?.[0]?.basePrice ?? 0;
+        basePrice += price;
+      }
+
+      paymentHandler.trackCallResult('query', basePrice, upstreamMeta);
+      const bytes = PricingManager.getOfficialBytes(finalResult.outputs);
+      finalResult.metadata.microgons = await paymentHandler.finalize(bytes);
+      finalResult.metadata.bytes = bytes;
     } catch (error) {
-      runError = error;
+      finalResult.runError = error;
     }
-    const resultBytes = outputs ? PaymentProcessor.getOfficialBytes(outputs) : 0;
-    const microgons = await paymentProcessor.settle(resultBytes);
 
-    const metadata = {
-      bytes: resultBytes,
-      microgons,
-      milliseconds: Date.now() - startTime,
-    };
-    if (runError) throw runError;
+    finalResult.metadata.milliseconds = Date.now() - startTime;
 
-    return {
-      outputs,
-      metadata,
-    };
+    return finalResult;
   },
 });
