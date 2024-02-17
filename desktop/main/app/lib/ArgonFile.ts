@@ -1,6 +1,6 @@
 import { existsAsync, readFileAsJson } from '@ulixee/commons/lib/fileUtils';
 import IArgonFile, { ArgonFileSchema } from '@ulixee/platform-specification/types/IArgonFile';
-import ValidationError from '@ulixee/specification/utils/ValidationError';
+import ValidationError from '@ulixee/platform-specification/utils/ValidationError';
 import * as Fs from 'fs';
 
 export { IArgonFile };

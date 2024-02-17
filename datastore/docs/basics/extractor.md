@@ -49,10 +49,7 @@ The first argument can be a single callback function matching the `run` callback
 
 - run `function`(context: [ExtractorContext](./extractor-context.md)): `Promise<schema['output]>`. A function that contains your script to run. The parameter is a [ExtractorContext](./extractor-context.md) that provides access to [Input](./input.md) and [Output](./output.md)
 - schema `IExtractorSchema`. Optional [schema](../advanced/extractor-schemas.md) defining the type-checked input and output parameters for the function.
-- minimumPrice `number`. Optional minimum price that must be allocated in a Micronote for a caller.
-- pricePerQuery `number`. Optional charge price per query.
-- addOnPricing `object`. Optional pricing add-ons if your output varies widely in the amount of data that can be sent. This currently accepts a single property:
-  - perKb `number`. A price per Kilobyte of data output.
+- basePrice `number`. Optional price that this query costs.
 - name `string`. Optional name for this function, primarily used only if defining a Extractor outside a Datastore.
 
 The second argument is a list of zero or more plugins.

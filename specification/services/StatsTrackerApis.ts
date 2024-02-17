@@ -1,10 +1,10 @@
-import { z } from '@ulixee/specification';
-import { micronoteIdValidation } from '@ulixee/specification/common';
-import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
+import { z } from 'zod';
 import { EntityStatsSchema } from '../datastore/DatastoreApis';
 import { datastoreIdValidation } from '../types/datastoreIdValidation';
 import { DatastoreStatsSchema } from '../types/IDatastoreStats';
+import { escrowIdValidation } from '../types/IPayment';
 import { semverValidation } from '../types/semverValidation';
+import { IZodHandlers, IZodSchemaToApiTypes } from '../utils/IZodApi';
 
 export const StatsTrackerApiSchemas = {
   'StatsTracker.getByVersion': {
@@ -69,7 +69,7 @@ export const StatsTrackerApiSchemas = {
       input: z.any(),
       outputs: z.any().array().optional(),
       error: z.instanceof(Error).optional(),
-      micronoteId: micronoteIdValidation.optional(),
+      escrowId: escrowIdValidation.optional(),
       creditId: z.string().optional().describe('Any credit spent on this item'),
       affiliateId: z.string().optional().describe('An affiliate id used for this query'),
       heroSessionIds: z

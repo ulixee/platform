@@ -8,7 +8,7 @@ import DatastoreRegistry from '../lib/DatastoreRegistry';
 import createStaticFileHandler from '../lib/staticServe';
 
 export const datastorePathRegex = new RegExp(
-  `/docs/(${datastoreRegex.source})@v(${semverRegex.source})(/(.+)?)?`,
+  `/(${datastoreRegex.source})@v(${semverRegex.source})(/(.+)?)?`,
 );
 
 export default class DocpageRoutes {

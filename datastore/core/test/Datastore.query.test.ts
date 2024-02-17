@@ -3,7 +3,7 @@ import * as Path from 'path';
 import DatastorePackager from '@ulixee/datastore-packager';
 import { CloudNode } from '@ulixee/cloud';
 import { Helpers } from '@ulixee/datastore-testing';
-import Identity from '@ulixee/crypto/lib/Identity';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.query.test');
@@ -47,6 +47,7 @@ test('should be able to query a datastore extractor', async () => {
     ),
   ).resolves.toEqual({
     outputs: [{ success: true }],
+    queryId: expect.any(String),
     metadata: expect.any(Object),
     latestVersion: expect.any(String),
   });
@@ -99,6 +100,7 @@ test('should be able to query a function packaged without a datastore', async ()
     ),
   ).resolves.toEqual({
     outputs: [{ testerEcho: false }],
+    queryId: expect.any(String),
     metadata: expect.any(Object),
     latestVersion: expect.any(String),
   });

@@ -1,5 +1,5 @@
-import { z } from '@ulixee/specification';
-import { IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
+import { z } from 'zod';
+import { IZodSchemaToApiTypes } from '../utils/IZodApi';
 
 export const CloudApiSchemas = {
   'Cloud.status': {

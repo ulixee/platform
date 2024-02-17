@@ -4,7 +4,10 @@ import { registerSerializableErrorType } from '@ulixee/commons/lib/TypeSerialize
 
 export class DatastoreNotFoundError extends Error {
   public code = 'ERR_DATASTORE_NOT_FOUND';
-  constructor(message: string, readonly data?: { version?: string; latestVersion?: string }) {
+  constructor(
+    message: string,
+    readonly data?: { version?: string; latestVersion?: string },
+  ) {
     super(message);
     this.name = 'DatastoreNotFoundError';
   }
@@ -26,36 +29,16 @@ export class InvalidPermissionsError extends Error {
   }
 }
 
-export class InsufficientMicronoteFundsError extends UlixeeError {
-  static get code(): string {
-    return 'ERR_NSF_MICRONOTE';
-  }
-
-  constructor(microgonsProvided: number, microgonsNeeded: number) {
-    super('The micronote will not cover this data query', InsufficientMicronoteFundsError.code);
-    this.data = { microgonsProvided, microgonsNeeded };
-  }
-}
-
-export class MicronotePaymentRequiredError extends UlixeeError {
+export class PaymentRequiredError extends UlixeeError {
   static get code(): string {
     return 'ERR_NEEDS_PAYMENT';
   }
 
   constructor(message: string, readonly minimumMicrogonsRequired: number) {
-    super(message, MicronotePaymentRequiredError.code);
+    super(message, PaymentRequiredError.code);
   }
 }
 
-export class InvalidMicronoteError extends UlixeeError {
-  static get code(): string {
-    return 'ERR_MICRONOTE_INVALID';
-  }
-
-  constructor(message: string) {
-    super(message, InvalidMicronoteError.code);
-  }
-}
 
 export class InsufficientQueryPriceError extends UlixeeError {
   static get code(): string {
@@ -64,7 +47,7 @@ export class InsufficientQueryPriceError extends UlixeeError {
 
   constructor(microgonsAllocated: number, minimumMicrogonsAccepted: number) {
     super(
-      'This Micronote has insufficient funding allocated for this Data query.',
+      'This escrow has insufficient funding allocated for this Data query.',
       InsufficientQueryPriceError.code,
     );
     this.data = {

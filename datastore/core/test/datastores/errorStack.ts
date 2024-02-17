@@ -1,5 +1,5 @@
 import { Extractor } from '@ulixee/datastore';
-import { InvalidSignatureError } from '@ulixee/crypto/lib/errors';
+import { InvalidSignatureError } from '@ulixee/platform-utils/lib/errors';
 
 export default new Extractor({
   async run(ctx) {

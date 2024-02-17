@@ -1,5 +1,5 @@
-import { InvalidSignatureError } from '@ulixee/crypto/lib/errors';
-import Identity from '@ulixee/crypto/lib/Identity';
+import { InvalidSignatureError } from '@ulixee/platform-utils/lib/errors';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';

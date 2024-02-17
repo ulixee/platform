@@ -1,4 +1,4 @@
-import { z } from '@ulixee/specification';
+import { z } from 'zod';
 
 const positiveInt = z.number().int().positive();
 export const DatastoreStatsSchema = z.object({

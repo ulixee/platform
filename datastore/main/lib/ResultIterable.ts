@@ -7,7 +7,7 @@ export default class ResultIterable<T, TMeta = any> implements AsyncIterable<T>,
   public results: T[] = [];
 
   public get resultMetadata(): Promise<TMeta> {
-    return this.resolvable.promise.then(() => this._resultMetadata);
+    return this.resolvable.promise.then(() => this._resultMetadata).catch(() => this._resultMetadata);
   }
 
   private resolvable = new Resolvable<T[]>();
@@ -47,8 +47,8 @@ export default class ResultIterable<T, TMeta = any> implements AsyncIterable<T>,
   }
 
   public done(resultMetadata?: TMeta): void {
+    if (resultMetadata) this._resultMetadata ??= resultMetadata;
     if (this.resolvable.isResolved) return;
-    this._resultMetadata = resultMetadata;
     this.resolvable.resolve(this.results);
     this.onComplete?.();
 
@@ -59,7 +59,8 @@ export default class ResultIterable<T, TMeta = any> implements AsyncIterable<T>,
     this.pullQueue.length = 0;
   }
 
-  public reject(error: Error): void {
+  public reject(error: Error, resultMetadata?: TMeta): void {
+    if (resultMetadata) this._resultMetadata = resultMetadata;
     if (this.resolvable.isResolved) return;
     this.resolvable.reject(error);
     this.error = error;

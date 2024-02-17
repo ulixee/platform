@@ -5,6 +5,7 @@ import * as Path from 'path';
 import DatastoreApiClient from '../lib/DatastoreApiClient';
 import cloneDatastore from './cloneDatastore';
 import creditsCli from './creditsCli';
+import adminIdentityCli from './adminIdentityCli';
 
 const { version } = require('../package.json');
 
@@ -173,6 +174,7 @@ export default function datastoreCommands(): Command {
     });
 
   cli.addCommand(creditsCli());
+  cli.addCommand(adminIdentityCli());
   return cli;
 }
 

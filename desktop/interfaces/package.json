@@ -7,7 +7,6 @@
   "dependencies": {
     "@ulixee/hero-interfaces": "2.0.0-alpha.28",
     "@ulixee/platform-specification": "2.0.0-alpha.28",
-    "@ulixee/specification": "2.0.0-alpha.28",
     "@ulixee/unblocked-specification": "2.0.0-alpha.28"
   }
 }

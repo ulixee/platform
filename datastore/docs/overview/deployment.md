@@ -87,7 +87,9 @@ When you package a Datastore, a Manifest is created with the following propertie
   - prices `array`. Array of prices for each "step" in a function. The first entry is _this_ function's pricing.
     - minimum `number`. Optional minimum microgons that must be held in a Micronote for the given function step.
     - remoteMeta `object`. Optional information about the remote Datastore Extractor being invoked (if applicable).
-- paymentAddress `string`. Optional address to use with the Ulixee Sidechain for payments.
+- payment `object`. Optional payment information
+  - address `string`. Address to use for payments (ss58 encoded).
+  - notaryId `number`. The Notary that must be used for payments.
 
 ### Setting values:
 

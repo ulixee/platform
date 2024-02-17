@@ -1,3 +1,4 @@
+import { assert, toUrl } from '@ulixee/commons/lib/utils';
 import { IApiSpec } from '@ulixee/net/interfaces/IApiHandlers';
 import ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
 import IUnixTime from '@ulixee/net/interfaces/IUnixTime';
@@ -12,16 +13,20 @@ import IDatastoreComponents, {
   TExtractors,
   TTables,
 } from '../interfaces/IDatastoreComponents';
+import IDatastoreHostLookup, { IDatastoreHost } from '../interfaces/IDatastoreHostLookup';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
 import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
-import IStorageEngine, { TQueryCallMeta } from '../interfaces/IStorageEngine';
+import IPaymentService from '../interfaces/IPaymentService';
+import IQueryOptions from '../interfaces/IQueryOptions';
+import IStorageEngine from '../interfaces/IStorageEngine';
 import SqliteStorageEngine from '../storage-engines/SqliteStorageEngine';
 import type Crawler from './Crawler';
 import CreditsTable from './CreditsTable';
 import DatastoreApiClient from './DatastoreApiClient';
+import DatastoreLookup from './DatastoreLookup';
 import Extractor from './Extractor';
 import type PassthroughExtractor from './PassthroughExtractor';
-import PassthroughTable, { IPassthroughQueryRunOptions } from './PassthroughTable';
+import PassthroughTable from './PassthroughTable';
 import Table from './Table';
 
 const pkg = require('../package.json');
@@ -43,9 +48,9 @@ export default class DatastoreInternal<
 
   public storageEngine: IStorageEngine;
   public manifest: IDatastoreManifest;
+  public remotePaymentService: IPaymentService;
   public readonly metadata: IDatastoreMetadata;
   public instanceId: string;
-  public loadingPromises: PromiseLike<void>[] = [];
   public components: TComponents;
   public readonly extractors: TExtractor = {} as any;
   public readonly tables: TTable = {} as any;
@@ -114,7 +119,8 @@ export default class DatastoreInternal<
   }
 
   public async bind(config: IDatastoreBinding): Promise<DatastoreInternal> {
-    const { manifest, storageEngine, connectionToCore, apiClientLoader } = config ?? {};
+    const { manifest, storageEngine, connectionToCore, apiClientLoader, datastoreHostLookup } =
+      config ?? {};
     this.manifest = manifest;
     this.storageEngine = storageEngine;
     if (!this.storageEngine) {
@@ -123,7 +129,10 @@ export default class DatastoreInternal<
     }
     this.storageEngine.bind(this);
     this.connectionToCore = connectionToCore;
-    if (apiClientLoader) this.createApiClient = apiClientLoader;
+    if (apiClientLoader) this.apiClientLoader = apiClientLoader;
+    if (datastoreHostLookup)
+      this.getHostInfo = datastoreHostLookup.getHostInfo.bind(datastoreHostLookup);
+    this.remotePaymentService = config.remotePaymentService;
     return this;
   }
 
@@ -142,7 +151,7 @@ export default class DatastoreInternal<
   public async queryInternal<TResultType = any[]>(
     sql: string,
     boundValues?: any[],
-    options?: TQueryCallMeta,
+    options?: IQueryOptions,
     callbacks: IQueryInternalCallbacks = {},
   ): Promise<TResultType> {
     boundValues ??= [];
@@ -154,32 +163,27 @@ export default class DatastoreInternal<
     for (const [key, crawler] of Object.entries(this.crawlers)) {
       if (crawler.schema) inputSchemas[key] = crawler.schema.input;
     }
-    const inputByFunctionName = sqlParser.extractFunctionCallInputs(inputSchemas, boundValues);
+    const inputByFunctionName = sqlParser.extractFunctionCallInputs(boundValues);
+    const entityCalls = sqlParser.extractCalls();
+
+    const functionCalls = Object.keys(inputByFunctionName);
+
+    if (callbacks.beforeQuery) {
+      await callbacks.beforeQuery({ sqlParser, entityCalls });
+    }
+
     const virtualEntitiesByName: {
       [name: string]: { records: Record<string, any>[]; parameters?: Record<string, any> };
     } = {};
 
-    const functionCallsById = Object.keys(inputByFunctionName).map((x, i) => {
-      return {
-        name: x,
-        id: i,
-      };
-    });
-
-    if (callbacks.beforeAll) {
-      await callbacks.beforeAll({ sqlParser, functionCallsById });
-    }
-
-    for (const { name, id } of functionCallsById) {
+    for (const name of functionCalls) {
       const parameters = inputByFunctionName[name];
       virtualEntitiesByName[name] = { parameters, records: [] };
       const func = this.extractors[name] ?? this.crawlers[name];
-      callbacks.onFunction ??= (_id, _name, opts, run) => run(opts);
-      virtualEntitiesByName[name].records = await callbacks.onFunction(
-        id,
-        name,
+
+      virtualEntitiesByName[name].records = await func.runInternal(
         { ...options, input: parameters },
-        opts => func.runInternal(opts, callbacks),
+        callbacks,
       );
     }
 
@@ -189,30 +193,48 @@ export default class DatastoreInternal<
       virtualEntitiesByName[tableName] = { records: [] };
 
       const sqlInputs = sqlParser.extractTableQuery(tableName, boundValues);
-      callbacks.onPassthroughTable ??= (_, opts, run) => run(opts);
-      virtualEntitiesByName[tableName].records = await callbacks.onPassthroughTable(
-        tableName,
+      virtualEntitiesByName[tableName].records = await this.tables[tableName].queryInternal(
+        sqlInputs.sql,
+        sqlInputs.args,
         options,
-        opts => this.tables[tableName].queryInternal(sqlInputs.sql, sqlInputs.args, opts),
+        callbacks,
       );
     }
 
-    return await this.storageEngine.query(sqlParser, boundValues, options, virtualEntitiesByName);
+    return await this.storageEngine.query(
+      sqlParser,
+      boundValues,
+      options,
+      virtualEntitiesByName,
+      callbacks,
+    );
   }
 
-  public createApiClient(host: string): DatastoreApiClient {
-    return new DatastoreApiClient(host);
+  public async getRemoteApiClient(
+    remoteSource: string,
+  ): Promise<{ client: DatastoreApiClient; datastoreHost: IDatastoreHost }> {
+    // need lookup
+    const remoteDatastore = this.remoteDatastores[remoteSource];
+
+    assert(remoteDatastore, `A remote datastore source could not be found for ${remoteSource}`);
+
+    try {
+      const datastoreHost =
+        DatastoreLookup.parseDatastoreIpHost(toUrl(remoteDatastore)) ??
+        (await this.getHostInfo(remoteDatastore));
+
+      const client = this.apiClientLoader(datastoreHost.host);
+      return { client, datastoreHost };
+    } catch (error) {
+      throw new Error(
+        'A valid url was not supplied for this remote datastore. Format should be ulx://<host>/<datastoreID>@v<datastoreVersion>',
+      );
+    }
   }
 
   public close(): Promise<void> {
-    return (this.#isClosingPromise ??= new Promise(async (resolve, reject) => {
-      try {
-        const connectionToCore = await this.#connectionToCore;
-        await connectionToCore?.disconnect();
-      } catch (error) {
-        return reject(error);
-      }
-      resolve();
+    return (this.#isClosingPromise ??= new Promise((resolve, reject) => {
+      this.#connectionToCore?.disconnect().then(resolve, reject);
     }));
   }
 
@@ -262,13 +284,22 @@ export default class DatastoreInternal<
     (this.tables as any)[name] = table;
   }
 
+  protected getHostInfo(_datastoreUrl: string): Promise<IDatastoreHost> {
+    throw new Error('No zone record host lookup has been injected');
+  }
+
+  protected apiClientLoader(host: string): DatastoreApiClient {
+    return new DatastoreApiClient(host);
+  }
+
   private createMetadata(): IDatastoreMetadata {
     const {
       version,
       id,
       name,
       description,
-      paymentAddress,
+      payment,
+      domain,
       affiliateId,
       remoteDatastores,
       remoteDatastoreEmbeddedCredits,
@@ -282,7 +313,8 @@ export default class DatastoreInternal<
       name,
       description,
       affiliateId,
-      paymentAddress,
+      payment,
+      domain,
       remoteDatastores,
       remoteDatastoreEmbeddedCredits,
       adminIdentities,
@@ -301,9 +333,7 @@ export default class DatastoreInternal<
         description: extractor.description,
         corePlugins: extractor.corePlugins ?? {},
         schema: extractor.schema,
-        pricePerQuery: extractor.pricePerQuery,
-        addOnPricing: extractor.addOnPricing,
-        minimumPrice: extractor.minimumPrice,
+        basePrice: extractor.basePrice,
         remoteSource: passThrough?.remoteSource,
         remoteExtractor: passThrough?.remoteExtractor,
         remoteDatastoreId: passThrough?.remoteDatastoreId,
@@ -317,9 +347,7 @@ export default class DatastoreInternal<
         description: crawler.description,
         corePlugins: crawler.corePlugins ?? {},
         schema: crawler.schema,
-        pricePerQuery: crawler.pricePerQuery,
-        addOnPricing: crawler.addOnPricing,
-        minimumPrice: crawler.minimumPrice,
+        basePrice: crawler.basePrice,
       };
     }
 
@@ -330,6 +358,7 @@ export default class DatastoreInternal<
         description: table.description,
         isPublic: table.isPublic !== false,
         schema: table.schema,
+        basePrice: table.basePrice,
         remoteSource: passThrough?.remoteSource,
         remoteTable: passThrough?.remoteTable,
         remoteDatastoreId: passThrough?.remoteDatastoreId,
@@ -345,23 +374,22 @@ export interface IDatastoreBinding {
   connectionToCore?: ConnectionToDatastoreCore;
   storageEngine?: IStorageEngine;
   manifest?: IDatastoreManifest;
-  apiClientLoader?: (url: string) => DatastoreApiClient;
+  datastoreHostLookup?: IDatastoreHostLookup;
+  apiClientLoader?: (host: string) => DatastoreApiClient;
+  remotePaymentService?: IPaymentService;
 }
 
 export interface IQueryInternalCallbacks {
-  beforeAll?(args: {
-    sqlParser: SqlParser;
-    functionCallsById: { name: string; id: number }[];
-  }): Promise<void>;
+  beforeQuery?(args: { sqlParser: SqlParser; entityCalls: string[] }): Promise<void>;
   onFunction?<TOutput = any[], TSchema = any>(
-    id: number,
     name: string,
     options: IExtractorRunOptions<TSchema>,
     run: (options: IExtractorRunOptions<TSchema>) => Promise<TOutput>,
   ): Promise<TOutput>;
   onPassthroughTable?<TOutput = any[]>(
     name: string,
-    options: IPassthroughQueryRunOptions,
-    run: (options: IPassthroughQueryRunOptions) => Promise<TOutput>,
+    options: IQueryOptions,
+    run: (options: IQueryOptions) => Promise<TOutput>,
   ): Promise<TOutput>;
+  beforeStorageEngine?(options: IQueryOptions): IQueryOptions;
 }

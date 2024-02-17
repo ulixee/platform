@@ -1,11 +1,11 @@
 import assert = require('assert');
 import { ExtractSchemaType } from '@ulixee/schema';
-import Extractor from './Extractor';
-import IExtractorSchema from '../interfaces/IExtractorSchema';
 import IExtractorComponents from '../interfaces/IExtractorComponents';
 import IExtractorContext from '../interfaces/IExtractorContext';
-import DatastoreApiClient, { IDatastoreExecRelayArgs } from './DatastoreApiClient';
 import { IExtractorPluginConstructor } from '../interfaces/IExtractorPluginStatics';
+import IExtractorSchema from '../interfaces/IExtractorSchema';
+import DatastoreApiClient, { IDatastoreExecRelayArgs } from './DatastoreApiClient';
+import Extractor from './Extractor';
 import ResultIterable from './ResultIterable';
 
 export interface IPassthroughExtractorComponents<
@@ -42,6 +42,7 @@ export default class PassthroughExtractor<
   public readonly remoteExtractor: string;
   public remoteDatastoreId: string;
   public remoteVersion: string;
+  public remoteDomain: string;
 
   protected upstreamClient: DatastoreApiClient;
   protected readonly passThroughComponents: IPassthroughExtractorComponents<
@@ -61,8 +62,7 @@ export default class PassthroughExtractor<
   ) {
     super({ ...components } as any, ...plugins);
     this.components.run = this.run.bind(this);
-    this.pricePerQuery = components.upcharge ?? 0;
-    this.minimumPrice = components.upcharge ?? 0;
+    this.basePrice = components.upcharge ?? 0;
     assert(components.remoteExtractor, 'A remote extractor name is required');
     assert(components.remoteExtractor.includes('.'), 'A remote function source is required');
     this.passThroughComponents = components;
@@ -72,20 +72,10 @@ export default class PassthroughExtractor<
   }
 
   protected async run(context: TContext): Promise<void> {
-    this.createApiClient(context);
+    await this.injectRemoteClient();
 
     if (this.passThroughComponents.onRequest) {
       await this.passThroughComponents.onRequest(context);
-    }
-
-    const payment = { ...(context.payment ?? {}) };
-    const embeddedCredit =
-      context.datastoreMetadata.remoteDatastoreEmbeddedCredits[this.remoteSource];
-    if (embeddedCredit && payment.credits) {
-      payment.credits = embeddedCredit;
-    } else {
-      // don't want to pass through credit secrets
-      delete payment.credits;
     }
 
     const queryResult = this.upstreamClient.stream<{ output: TOutput; input: any }>(
@@ -94,12 +84,14 @@ export default class PassthroughExtractor<
       this.remoteExtractor,
       context.input,
       {
-        payment,
+        paymentService: this.datastoreInternal.remotePaymentService,
         authentication: context.authentication,
         affiliateId: context.datastoreAffiliateId,
+        domain: this.remoteDomain,
+        queryId: context.queryId,
+        onQueryResult: context.onQueryResult,
       },
     );
-
     if (this.passThroughComponents.onResponse) {
       const secondPassResults = new ResultIterable<TOutput>();
       const responseContext: TContext & { stream: AsyncIterable<TOutput> } = context as any;
@@ -126,7 +118,6 @@ export default class PassthroughExtractor<
     }
 
     const finalResult = await queryResult.resultMetadata;
-    if (finalResult instanceof Error) throw finalResult;
 
     if (finalResult.latestVersion !== this.remoteVersion) {
       console.warn('Newer Datastore Version is available', {
@@ -137,23 +128,15 @@ export default class PassthroughExtractor<
     }
   }
 
-  protected createApiClient(context: TContext): void {
+  protected async injectRemoteClient(): Promise<void> {
     if (this.upstreamClient) return;
-    const remoteSource = this.remoteSource;
-    // need lookup
-    const remoteDatastore = context.datastoreMetadata.remoteDatastores[remoteSource];
+    const { datastoreHost, client } = await this.datastoreInternal.getRemoteApiClient(
+      this.remoteSource,
+    );
 
-    assert(remoteDatastore, `A remote datastore source could not be found for ${remoteSource}`);
-
-    try {
-      const [datastoreId, datastoreVersion] = remoteDatastore.split('/').pop().split('@v');
-      this.remoteDatastoreId = datastoreId;
-      this.remoteVersion = datastoreVersion;
-      this.upstreamClient = this.datastoreInternal.createApiClient(remoteDatastore);
-    } catch (error) {
-      throw new Error(
-        'A valid url was not supplied for this remote datastore. Format should be ulx://<host>/<datastoreID>@v<datastoreVersion>',
-      );
-    }
+    this.remoteDatastoreId = datastoreHost.datastoreId;
+    this.remoteVersion = datastoreHost.version;
+    this.remoteDomain = datastoreHost.domain;
+    this.upstreamClient = client;
   }
 }

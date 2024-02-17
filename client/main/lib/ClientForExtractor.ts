@@ -18,9 +18,7 @@ export default class ClientForExtractor<TExtractor extends Extractor> {
     return this.extractor.runInternal(
       { input: inputFilter },
       {
-        beforeAll() {
-          return this.readyPromise;
-        },
+        beforeQuery: () => this.readyPromise,
       },
     );
   }

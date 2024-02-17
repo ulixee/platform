@@ -3,7 +3,7 @@ import UlixeeConfig from '@ulixee/commons/config';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
-import Identity from '@ulixee/crypto/lib/Identity';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';

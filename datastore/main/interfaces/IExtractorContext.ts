@@ -1,13 +1,15 @@
+import { IPayment } from '@ulixee/platform-specification';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
-import IExtractorSchema, { ExtractSchemaType } from './IExtractorSchema';
-import { IOutputClass } from '../lib/Output';
-import IDatastoreMetadata from './IDatastoreMetadata';
+import { IDatastoreQueryResult } from '@ulixee/platform-specification/datastore/DatastoreApis';
 import Crawler from '../lib/Crawler';
 import Extractor from '../lib/Extractor';
-import Table from '../lib/Table';
+import { IOutputClass } from '../lib/Output';
 import ResultIterable from '../lib/ResultIterable';
+import Table from '../lib/Table';
 import ICrawlerOutputSchema from './ICrawlerOutputSchema';
-import { TQueryCallMeta } from './IStorageEngine';
+import IDatastoreMetadata from './IDatastoreMetadata';
+import IExtractorSchema, { ExtractSchemaType } from './IExtractorSchema';
+import IQueryOptions from './IQueryOptions';
 
 export default interface IExtractorContext<TSchema extends IExtractorSchema> {
   input?: ExtractSchemaType<TSchema['input']>;
@@ -17,8 +19,12 @@ export default interface IExtractorContext<TSchema extends IExtractorSchema> {
   datastoreMetadata: IDatastoreMetadata;
   datastoreAffiliateId?: string;
   callerAffiliateId?: string;
+
+  readonly onQueryResult?: (result: IDatastoreQueryResult) => Promise<any> | void;
+  readonly queryId: string;
   readonly authentication: IDatastoreApiTypes['Datastore.query']['args']['authentication'];
-  readonly payment: IDatastoreApiTypes['Datastore.query']['args']['payment'];
+
+  readonly payment: IPayment;
   crawl<T extends Crawler>(crawler: T, options?: T['runArgsType']): Promise<ICrawlerOutputSchema>;
   run<T extends Extractor>(
     extractor: T,
@@ -29,6 +35,9 @@ export default interface IExtractorContext<TSchema extends IExtractorSchema> {
     options?: T['runArgsType'],
   ): ResultIterable<ExtractSchemaType<T['schema']['output']>>;
   // TODO: add table options typing
-  fetch<T extends Table>(table: T, options?: TQueryCallMeta): ResultIterable<ExtractSchemaType<T['schema']>>;
-  query<TResult>(sql: string, boundValues: any[], options: TQueryCallMeta): Promise<TResult>;
+  fetch<T extends Table>(
+    table: T,
+    options?: IQueryOptions,
+  ): ResultIterable<ExtractSchemaType<T['schema']>>;
+  query<TResult>(sql: string, boundValues: any[], options: IQueryOptions): Promise<TResult>;
 }

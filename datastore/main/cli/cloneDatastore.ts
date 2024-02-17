@@ -15,15 +15,19 @@ clonedPackageJson.devDependencies['@ulixee/datastore-packager'] = version;
 export default async function cloneDatastore(
   url: string,
   directoryPath?: string,
-  options: { embedCredits?: { id: string; secret: string } } = {},
+  options: { embedCredits?: { id: string; secret: string }; mainchainUrl?: string } = {},
 ): Promise<{ datastoreFilePath: string }> {
-  const { datastoreId, datastoreVersion, host } = await DatastoreApiClient.parseDatastoreUrl(url);
-  if (url.includes('/free-credits')) {
+  const {
+    datastoreId,
+    version: datastoreVersion,
+    host,
+  } = await DatastoreApiClient.lookupDatastoreHost(url, options.mainchainUrl);
+  if (url.includes('/free-credit')) {
     const credit = new URL(url).search.split(':');
     options.embedCredits = { id: credit[0], secret: credit[1] };
   }
   const datastoreApiClient = new DatastoreApiClient(host);
-  const meta = await datastoreApiClient.getMeta(datastoreId, datastoreVersion, true);
+  const meta = await datastoreApiClient.getMetaAndSchema(datastoreId, datastoreVersion);
   await datastoreApiClient.disconnect();
   const schemasByName: Record<string, { isTable: boolean; schemaJson: any }> = {};
   const imports = new Set<string>();
@@ -97,7 +101,7 @@ export default async function cloneDatastore(
   import { ${[...schemaImports].join(', ')} } from '@ulixee/schema';
   
   const datastore = new Datastore({
-    id: ${JSON.stringify(meta.id+2)},
+    id: ${JSON.stringify(meta.id + 2)},
     version: "0.0.1",
     name: ${JSON.stringify(meta.name)},${description}
     affiliateId: "aff${nanoid(12)}",

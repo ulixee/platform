@@ -140,7 +140,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
 
   function openDocs(id: string, version: string, cloudName: string) {
     const cloudHost = cloudsStore.getCloudHost(cloudName);
-    const docsUrl = new URL(`/docs/${id}@v${version}/`, cloudHost);
+    const docsUrl = new URL(`/${id}@v${version}/`, cloudHost);
     docsUrl.protocol = 'http:';
 
     const credits = useWalletStore().userBalance.credits.filter(
@@ -161,7 +161,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     creditUrl.username = '';
     creditUrl.password = '';
     creditUrl.search = `?${creditId}:${secret}`;
-    creditUrl.pathname = `/docs${creditUrl.pathname}/free-credits`;
+    creditUrl.pathname = `${creditUrl.pathname}/free-credit`;
     return creditUrl.href;
   }
 

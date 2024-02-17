@@ -4,7 +4,6 @@ import Packager from '@ulixee/datastore-packager';
 import Dbx from '@ulixee/datastore-packager/lib/Dbx';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import SidechainClient from '@ulixee/sidechain';
 import * as Path from 'path';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
 
@@ -48,17 +47,9 @@ test('should install new datastores on startup', async () => {
 }, 45e3);
 
 test('can get metadata about an uploaded datastore', async () => {
-  jest.spyOn(SidechainClient.prototype, 'getSettings').mockImplementationOnce(() => {
-    return Promise.resolve({
-      settlementFeeMicrogons: 10,
-    } as any);
-  });
-  await client.upload(await bootupDbx.tarGzip()).catch(() => null);;
+  await client.upload(await bootupDbx.tarGzip()).catch(() => null);
 
-  const meta = await client.getMeta(
-    bootupPackager.manifest.id,
-    bootupPackager.manifest.version,
-  );
+  const meta = await client.getMeta(bootupPackager.manifest.id, bootupPackager.manifest.version);
   expect(meta.version).toBe(bootupPackager.manifest.version);
   expect(meta.scriptEntrypoint).toBe(bootupPackager.manifest.scriptEntrypoint);
   expect(meta.stats).toBeTruthy();

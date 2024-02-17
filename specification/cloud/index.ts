@@ -1,4 +1,4 @@
-import { IZodHandlers, IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
+import { IZodHandlers, IZodSchemaToApiTypes } from '../utils/IZodApi';
 import { CloudApiSchemas } from './CloudApis';
 
 export type ICloudApiTypes = IZodSchemaToApiTypes<typeof CloudApiSchemas>;

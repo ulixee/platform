@@ -14,19 +14,9 @@ export default function cliCommands(): Command {
       module: '@ulixee/datastore/cli',
     },
     {
-      name: 'crypto',
-      description: 'create anonymous Identities and Payment Addresses',
-      module: '@ulixee/crypto/cli',
-    },
-    {
       name: 'cloud',
       description: 'launch a Ulixee Cloud',
       module: '@ulixee/cloud/cli',
-    },
-    {
-      name: 'sidechain',
-      description: 'create and manage Payments',
-      module: '@ulixee/sidechain/cli',
     },
   ];
 

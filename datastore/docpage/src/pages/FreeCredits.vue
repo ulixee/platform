@@ -78,10 +78,10 @@ export default Vue.defineComponent({
         const { issuedCredits, balance } = json;
         if (Number.isInteger(issuedCredits)) {
           credits.value.issuedCredits =
-            issuedCredits > 0 ? Math.round((1000 * issuedCredits) / 10_000) / 1000 : 0;
+            issuedCredits > 0 ? Math.round((1000 * issuedCredits) / 1_000_000) / 1000 : 0;
         }
         if (Number.isInteger(balance)) {
-          credits.value.balance = balance > 0 ? Math.round((1000 * balance) / 10_000) / 1000 : 0;
+          credits.value.balance = balance > 0 ? Math.round((1000 * balance) / 1_000_000) / 1000 : 0;
         }
       }
     } catch (error) {

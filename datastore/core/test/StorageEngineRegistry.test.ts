@@ -183,6 +183,7 @@ test('should be able to use a remote storage engine endpoint', async () => {
     outputs: [{ title: 'Hello', visible: true }],
     metadata: expect.any(Object),
     latestVersion: expect.any(String),
+    queryId: expect.any(String),
   });
 
   expect(storageNodeRegistrySpy).toHaveBeenCalledTimes(2);
@@ -224,6 +225,7 @@ test('should not create a websocket connection to localhost if on same machine',
     outputs: [{ title: 'Hello', visible: true }],
     metadata: expect.any(Object),
     latestVersion: expect.any(String),
+    queryId: expect.any(String),
   });
 
   expect(nodeRegistrySpy).toHaveBeenCalledTimes(2);
@@ -301,6 +303,7 @@ test('should not install storage engine when downloading from cluster', async ()
     outputs: [{ title: 'Hello', visible: true }],
     metadata: expect.any(Object),
     latestVersion: expect.any(String),
+    queryId: expect.any(String),
   });
 
   expect(storageNodeRegistrySpy).toHaveBeenCalledTimes(2);

@@ -1,23 +1,29 @@
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
+import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { toUrl } from '@ulixee/commons/lib/utils';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
 import QueryLog from '@ulixee/datastore/lib/QueryLog';
+import LocalchainPaymentService from '@ulixee/datastore/payments/LocalchainPaymentService';
 import { IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
 import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
+import { AccountType, CryptoScheme, Localchain, Signer } from '@ulixee/localchain';
 import { screen } from 'electron';
 import * as http from 'http';
 import { AddressInfo } from 'net';
 import * as Path from 'path';
 import { ClientOptions } from 'ws';
 import WebSocket = require('ws');
+import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
+import LocalPaymentService from '@ulixee/datastore/payments/LocalPaymentService';
+import DatastoreEnv from '@ulixee/datastore/env';
 import ApiClient from './ApiClient';
 import ArgonFile, { IArgonFile } from './ArgonFile';
 import DeploymentWatcher from './DeploymentWatcher';
@@ -58,12 +64,15 @@ export default class ApiManager<
   debuggerUrl: string;
   localUserProfile: LocalUserProfile;
   deploymentWatcher: DeploymentWatcher;
+  paymentService: LocalPaymentService;
+  localchain: Localchain;
+  signer: Signer;
   queryLogWatcher: QueryLog;
   privateDesktopApiHandler: PrivateDesktopApiHandler;
   privateDesktopWsServer: WebSocket.Server;
   privateDesktopWsServerAddress: string;
 
-  datastoreApiClientsByAddress: { [address: string]: DatastoreApiClient } = {};
+  datastoreApiClients = new DatastoreApiClients();
   private reconnectsByAddress: { [address: string]: NodeJS.Timeout } = {};
 
   constructor() {
@@ -88,10 +97,32 @@ export default class ApiManager<
         resolve(`ws://127.0.0.1:${address.port}`);
       });
     });
-    if (!this.localUserProfile.defaultAddress) {
-      // TODO: move this to a welcome screen!!
-      await this.localUserProfile.createDefaultArgonAddress();
+    const dataDir = Path.join(getDataDirectory(), 'ulixee', 'localchain');
+    this.localchain = await Localchain.loadWithoutMainchain(Path.join(dataDir, 'localchain.db'), {
+      ...DatastoreEnv,
+    });
+    this.signer = new Signer();
+    await this.signer.attachKeystore(dataDir, {});
+    const localchainPaymentService = new LocalchainPaymentService(
+      this.localchain,
+      this.signer,
+      {
+        taxAddress: null,
+        datastoreFundingAddress: null,
+        escrowMilligonsStrategy: {
+          type: 'default',
+          milligons: 1000n,
+        },
+      },
+      this.datastoreApiClients,
+    );
+    if (!(await this.localchain.accounts.list()).length) {
+      const firstAccount = this.signer.createAccountId(CryptoScheme.Sr25519);
+      await this.localchain.accounts.insert(firstAccount, AccountType.Deposit, 1);
+      await this.localchain.accounts.insert(firstAccount, AccountType.Tax, 1);
     }
+    this.paymentService = new LocalPaymentService(localchainPaymentService);
+    await this.paymentService.loadCredits();
     if (!this.localUserProfile.defaultAdminIdentityPath) {
       await this.localUserProfile.createDefaultAdminIdentity();
     }
@@ -121,9 +152,7 @@ export default class ApiManager<
     for (const connection of this.apiByCloudAddress.values()) {
       await this.closeApiGroup(connection.resolvable);
     }
-    for (const client of Object.values(this.datastoreApiClientsByAddress)) {
-      await client.disconnect();
-    }
+    await this.datastoreApiClients.close();
     this.apiByCloudAddress.clear();
     this.deploymentWatcher.stop();
     await this.queryLogWatcher.close();
@@ -159,8 +188,8 @@ export default class ApiManager<
 
   public getDatastoreClient(cloudHost: string): DatastoreApiClient {
     const hostUrl = toUrl(cloudHost);
-    this.datastoreApiClientsByAddress[cloudHost] ??= new DatastoreApiClient(hostUrl.origin);
-    return this.datastoreApiClientsByAddress[cloudHost];
+    this.datastoreApiClients[cloudHost] ??= new DatastoreApiClient(hostUrl.origin);
+    return this.datastoreApiClients[cloudHost];
   }
 
   public getCloudAddressByName(name: string): string {

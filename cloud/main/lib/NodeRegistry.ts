@@ -1,4 +1,4 @@
-import Identity from '@ulixee/crypto/lib/Identity';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import DatastoreCore from '@ulixee/datastore-core';
 import HeroCore from '@ulixee/hero-core';
 import { ConnectionToCore } from '@ulixee/net';

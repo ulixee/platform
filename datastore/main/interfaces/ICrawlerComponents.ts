@@ -7,11 +7,7 @@ export default interface ICrawlerComponents<
 > {
   name?: string;
   description?: string;
-  pricePerQuery?: number;
-  addOnPricing?: {
-    perKb?: never;
-  };
-  minimumPrice?: number;
+  basePrice?: number;
   schema?: TSchema;
   disableCache?: TDisableCache;
   backwardsCompatible?: boolean;

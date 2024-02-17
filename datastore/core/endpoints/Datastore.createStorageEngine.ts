@@ -1,6 +1,6 @@
 import { readFileAsJson } from '@ulixee/commons/lib/fileUtils';
-import { InvalidSignatureError } from '@ulixee/crypto/lib/errors';
-import Identity from '@ulixee/crypto/lib/Identity';
+import { InvalidSignatureError } from '@ulixee/platform-utils/lib/errors';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import IDatastoreApiTypes from '@ulixee/platform-specification/datastore/DatastoreApis';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';

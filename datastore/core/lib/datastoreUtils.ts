@@ -2,7 +2,7 @@ import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import Datastore from '@ulixee/datastore';
 import { IPayment } from '@ulixee/platform-specification';
-import Identity from '@ulixee/crypto/lib/Identity';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';

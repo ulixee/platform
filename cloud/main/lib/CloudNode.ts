@@ -4,8 +4,8 @@ import Log from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import { bindFunctions, isPortInUse, toUrl } from '@ulixee/commons/lib/utils';
-import Ed25519 from '@ulixee/crypto/lib/Ed25519';
-import Identity from '@ulixee/crypto/lib/Identity';
+import Ed25519 from '@ulixee/platform-utils/lib/Ed25519';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import DatastoreCore from '@ulixee/datastore-core';
 import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
@@ -379,7 +379,7 @@ export default class CloudNode {
        To create a long-term network identity, you should save and use this Identity 
                           from your local system:
 
- npx @ulixee/crypto save-identity --privateKey=${key.toString('base64')} --filename="${path}"
+ npx @ulixee/platform-utils save-identity --privateKey=${key.toString('base64')} --filename="${path}"
 
 --------------------------------------------------------------------------------------------
        

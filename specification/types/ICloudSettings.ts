@@ -1,4 +1,4 @@
-import { z } from '@ulixee/specification';
+import { z } from 'zod';
 
 export const CloudSettingsSchema = z.object({
   datastoreRegistryEndpoint: z.string().url().optional(),

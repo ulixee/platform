@@ -1,14 +1,12 @@
+import PricingManager from '@ulixee/datastore/lib/PricingManager';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
-import PaymentProcessor from './PaymentProcessor';
-import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 import { IDatastoreStatsRecord } from '../db/DatastoreStatsTable';
-import { IDatastoreStats } from './StatsTracker';
 import { IDatastoreManifestWithLatest } from '../interfaces/IDatastoreRegistryStore';
+import { IDatastoreStats } from './StatsTracker';
 
 export default async function translateDatastoreMetadata(
   datastore: IDatastoreManifestWithLatest,
   datastoreStats: IDatastoreStats,
-  context: IDatastoreApiContext,
   includeSchemaAsJson: boolean,
 ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
   const result: IDatastoreApiTypes['Datastore.meta']['result'] = {
@@ -17,48 +15,45 @@ export default async function translateDatastoreMetadata(
     crawlersByName: {},
     extractorsByName: {},
     tablesByName: {},
-    computePricePerQuery: context.configuration.computePricePerQuery,
   };
 
   for (const [name, extractor] of Object.entries(datastore.extractorsByName)) {
     const { prices, schemaAsJson } = extractor;
     const { stats } = datastoreStats.statsByEntityName[name];
-    const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
+    const netBasePrice = PricingManager.getNetBasePrice(prices);
 
     result.extractorsByName[name] = {
       description: extractor.description,
       stats,
-      pricePerQuery,
-      minimumPrice: pricePerQuery + settlementFee,
-      prices,
+      netBasePrice,
+      priceBreakdown: prices,
       schemaAsJson: includeSchemaAsJson ? schemaAsJson : undefined,
     };
   }
   for (const [name, crawler] of Object.entries(datastore.crawlersByName)) {
     const { prices, schemaAsJson } = crawler;
     const { stats } = datastoreStats.statsByEntityName[name];
-    const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
+    const netBasePrice = PricingManager.getNetBasePrice(prices);
 
     result.crawlersByName[name] = {
       description: crawler.description,
       stats,
-      pricePerQuery,
-      minimumPrice: pricePerQuery + settlementFee,
-      prices,
+      netBasePrice,
+      priceBreakdown: prices,
       schemaAsJson: includeSchemaAsJson ? schemaAsJson : undefined,
     };
   }
 
   for (const [name, meta] of Object.entries(datastore.tablesByName)) {
     const { prices } = meta;
-    const { pricePerQuery, settlementFee } = await PaymentProcessor.getPrice(prices, context);
     const { stats } = datastoreStats.statsByEntityName[name];
+    const netBasePrice = PricingManager.getNetBasePrice(prices);
 
     result.tablesByName[name] = {
       description: meta.description,
       stats,
-      pricePerQuery: pricePerQuery + settlementFee,
-      prices,
+      netBasePrice,
+      priceBreakdown: prices,
       schemaAsJson: includeSchemaAsJson ? meta.schemaAsJson : undefined,
     };
   }

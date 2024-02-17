@@ -1,8 +1,6 @@
 import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import { safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
-import CryptoCli from '@ulixee/crypto/cli';
-import Address from '@ulixee/crypto/lib/Address';
-import Identity from '@ulixee/crypto/lib/Identity';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import * as Fs from 'fs';
 import * as Path from 'path';
 import ILocalUserProfile from '../interfaces/ILocalUserProfile';
@@ -18,19 +16,6 @@ export default class LocalUserProfile {
   public gettingStartedCompletedSteps: string[] = [];
   public defaultAdminIdentityPath: string;
 
-  public get defaultAddressPath(): string {
-    return this.#defaultAddressPath;
-  }
-
-  public set defaultAddressPath(value: string) {
-    this.#defaultAddressPath = value;
-    if (value) this.#defaultAddress = Address.readFromPath(value);
-  }
-
-  public get defaultAddress(): Address {
-    return this.#defaultAddress;
-  }
-
   public get defaultAdminIdentity(): Identity {
     if (this.defaultAdminIdentityPath) {
       this.#defaultAdminIdentity ??= Identity.loadFromFile(this.defaultAdminIdentityPath);
@@ -39,8 +24,6 @@ export default class LocalUserProfile {
   }
 
   #defaultAdminIdentity: Identity;
-  #defaultAddress: Address;
-  #defaultAddressPath: string;
 
   constructor() {
     this.loadProfile();
@@ -86,18 +69,6 @@ export default class LocalUserProfile {
 
     const cloud = this.clouds.find(x => x.name === cloudName);
     if (cloud?.adminIdentityPath) return Identity.loadFromFile(cloud.adminIdentityPath);
-  }
-
-  public async createDefaultArgonAddress(): Promise<void> {
-    const addressPath = Path.join(getDataDirectory(), 'ulixee', 'addresses', 'UlixeeAddress.json');
-    // eslint-disable-next-line no-console
-    console.log(
-      'Creating a Default Ulixee Argon Address. `@ulixee/crypto address UU "%s"`',
-      addressPath,
-    );
-    await CryptoCli().parseAsync(['address', '-q', 'UU', addressPath], { from: 'user' });
-    this.defaultAddressPath = addressPath;
-    await this.save();
   }
 
   public async createDefaultAdminIdentity(): Promise<string> {
@@ -157,7 +128,6 @@ export default class LocalUserProfile {
     return {
       clouds: this.clouds,
       installedDatastores: this.installedDatastores,
-      defaultAddressPath: this.defaultAddressPath,
       defaultAdminIdentityPath: this.defaultAdminIdentityPath,
       gettingStartedCompletedSteps: this.gettingStartedCompletedSteps,
       datastoreAdminIdentities: this.datastoreAdminIdentities.map(x => ({
@@ -181,7 +151,6 @@ export default class LocalUserProfile {
       this.datastoreAdminIdentities ??= [];
       this.gettingStartedCompletedSteps ??= [];
       this.installedDatastores ??= [];
-      this.defaultAddressPath = data.defaultAddressPath;
     } catch {}
   }
 }

@@ -4,9 +4,9 @@ import IDatastoreComponents, {
   TExtractors,
   TTables,
 } from '../interfaces/IDatastoreComponents';
-import DatastoreInternal, { IDatastoreBinding, IQueryInternalCallbacks } from './DatastoreInternal';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
-import { TQueryCallMeta } from '../interfaces/IStorageEngine';
+import IQueryOptions from '../interfaces/IQueryOptions';
+import DatastoreInternal, { IDatastoreBinding, IQueryInternalCallbacks } from './DatastoreInternal';
 
 export default class Datastore<
   TTable extends TTables = TTables,
@@ -59,12 +59,12 @@ export default class Datastore<
     this.#datastoreInternal = datastoreInternal ?? new DatastoreInternal(components);
   }
 
-  public queryInternal<TResultType = any[]>(
+  public queryInternal<T>(
     sql: string,
     boundValues?: any[],
-    options?: TQueryCallMeta,
+    options?: IQueryOptions,
     callbacks: IQueryInternalCallbacks = {},
-  ): Promise<TResultType> {
+  ): Promise<T> {
     return this.#datastoreInternal.queryInternal(sql, boundValues, options, callbacks);
   }
 

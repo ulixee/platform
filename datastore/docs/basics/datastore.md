@@ -95,17 +95,17 @@ Object containing an optional key/value of remoteDatastore "names" to urls of th
 
 ### authenticateIdentity _(identity, nonce)_ {#authenticateIdentity}
 
-An optional callback that can be used to secure a Datastore. This method can allow you to issue private Identities to remote Datastore consumers and only allow those users to access your Datastore. An Identity can be created using the `@ulixee/crypto` cli:
+An optional callback that can be used to secure a Datastore. This method can allow you to issue private Identities to remote Datastore consumers and only allow those users to access your Datastore. An Identity can be created using the `@ulixee/platform-utils` cli:
 
 ```bash
- npx @ulixee/crypto identity create
+ npx @ulixee/platform-utils identity create
 ```
 
 A caller would use the generated Identity to create an authentication message:
 
 ```js
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import Identity from '@ulixee/crypto/lib/Identity';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 
 const identity = Identity.loadFromFile('~/datastoreAuth.pem');
 let payment = null; // fill in with payment if needed

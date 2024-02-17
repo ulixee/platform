@@ -58,13 +58,12 @@ if (buildDir !== 'build') {
 copyDir(`${baseBuild}/${buildDir}`);
 if (buildDir === 'build') {
   copyDir(`${baseBuild}/hero/${buildDir}`);
+  copyDir(`${baseBuild}/../mainchain/localchain`);
   copyDir(`${baseBuild}/../unblocked/${buildDir}/agent`);
   copyDir(`${baseBuild}/../unblocked/${buildDir}/specification`);
   copyDir(`${baseBuild}/../shared/${buildDir}/net`);
   copyDir(`${baseBuild}/../shared/${buildDir}/crypto`);
   copyDir(`${baseBuild}/../shared/${buildDir}/commons`);
-  copyDir(`${baseBuild}/../shared/${buildDir}/specification`);
-  copyDir(`${baseBuild}/../shared/${buildDir}/schema`);
   copyDir(`${baseBuild}/../unblocked/${buildDir}/plugins`);
   copyDir(
     `${baseBuild}/../unblocked/browser-emulator-builder/data`,

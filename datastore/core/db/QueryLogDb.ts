@@ -15,6 +15,7 @@ export default class QueryLogDb {
     if (env.enableSqliteWalMode) {
       this.db.unsafeMode(false);
       this.db.pragma('journal_mode = WAL');
+      this.db.pragma('synchronous = NORMAL');
     }
 
     this.logTable = new QueryLogTable(this.db);
