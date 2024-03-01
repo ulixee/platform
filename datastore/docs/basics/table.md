@@ -34,7 +34,7 @@ Components contains the following properties.
 
 - schema `ISchema`. A [schema](../advanced/schema.md) defining the column definitions for the table.
 - isPublic `boolean`. Optional parameter to make a table private. This means it can only be accessed by other [Extractors](./extractor.md) and [Crawlers](./crawler.md) in the same [Datastore](./datastore.md).
-- pricePerQuery `number`. Optional charge price per query.
+- basePrice `number`. Optional charge price per query.
 - onCreated `function`. A function run when the Table is installed onto a StorageEngine. This is where you can seed any records in the engine. More details are [here](#on-created).
 - onVersionMigrated `function`. A function run when a Table is installed onto a StorageEngine and there is a previous version of the Table. This is a function to perform "migrations" and copy any data from the previous version that you want. More details are [here](#on-version-migrated)
 - name `string`. Optional name for this Table, primarily used only if defining a Table outside a Datastore.

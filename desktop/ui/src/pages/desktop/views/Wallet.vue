@@ -1,6 +1,8 @@
 <template>
   <div class="h-full">
-    <h1 class="mb-8 mt-3 text-2xl font-semibold text-gray-900">Your Wallet</h1>
+    <h1 class="mb-8 mt-3 text-2xl font-semibold text-gray-900">
+      Your Wallet
+    </h1>
     <div class="mx-auto max-w-none">
       <div class="mt-8 overflow-hidden rounded-lg bg-white shadow">
         <div class="border-b border-gray-200 bg-white px-4 py-5">
@@ -19,7 +21,7 @@
             <div
               class="align-text-center m-5 flex select-all rounded-sm px-5 align-middle text-sm font-light leading-10 text-gray-700 ring-1 ring-fuchsia-700 ring-opacity-50 selection:bg-fuchsia-700/20 selection:text-gray-600"
             >
-              {{ userBalance.address }}
+              {{ userBalance.primaryAddress }}
             </div>
           </div>
         </div>
@@ -44,21 +46,35 @@
             class="align-text-center mt-2 divide-y divide-gray-100 align-middle text-sm font-light leading-10 text-gray-700"
           >
             <li class="flex flex-row items-stretch p-2">
-              <div class="basis-1/2 text-base font-light">Cash</div>
+              <div class="basis-1/2 text-base font-light">
+                Deposit <span class="text-gray-800">{{ userBalance.primaryAddress }}</span>
+              </div>
               <div class="basis-1/2 text-lg">
-                {{ toArgons(userBalance.centagonsBalance, false) }}
+                {{ toArgons(userBalance.depositBalance, false) }}
+              </div>
+            </li>
+            <li v-for="[address, details] of Object.entries(userBalance.depositAddresses)" class="flex flex-row items-stretch p-2">
+              <div class="basis-1/2 text-base font-light">
+                Deposit
+              </div>
+              <div class="basis-1/2 text-lg">
+                {{ toArgons(userBalance.statusByAddress[address].balance, false) }}
+                <span
+                  v-if="details.pendingTransactionAddresses"
+                  class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md border border-gray-400 bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:border-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
+                >({details.pendingTransactionAddresses.length} pending)</span>
               </div>
             </li>
             <li
               v-for="credit in userBalance?.credits"
-              :key="credit.id"
+              :key="credit.creditsId"
               class="flex flex-row items-stretch p-2"
             >
               <div class="basis-1/2 text-base font-light">
-                Credit at {{ getDatastoreName(credit.datastoreId, credit.datastoreVersion) }}
+                Credit at {{ getDatastoreName(credit.datastoreId) }}
               </div>
               <div class="basis-1/2 text-lg">
-                {{ toArgons(credit.remainingBalance, true) }}
+                {{ toArgons(credit.remaining, true) }}
               </div>
             </li>
           </ul>

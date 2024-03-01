@@ -1,4 +1,4 @@
-import assert = require('assert');
+import { strict as assert } from 'node:assert';
 import { ExtractSchemaType } from '../index';
 import BaseSchema, { IBaseConfig } from './BaseSchema';
 

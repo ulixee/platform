@@ -15,19 +15,20 @@
           {{ errorMessage }}
         </p>
         <div class="my-5">
-          <div class="mb-1 whitespace-nowrap text-sm font-light">Credits</div>
+          <div class="mb-1 whitespace-nowrap text-sm font-light">
+            Credits
+          </div>
           <div class="relative">
             <span
               class="absolute left-3 whitespace-nowrap border border-transparent py-2 font-light text-gray-500"
-              >₳</span
-            >
+            >₳</span>
             <input
               v-model="argons"
               type="number"
               min="0"
               placeholder="Argons"
               class="rounded-md border border-gray-300 py-2 pl-8 pr-3 placeholder-gray-400"
-            />
+            >
           </div>
         </div>
         <button
@@ -59,7 +60,9 @@
         </div>
 
         <div class="font-regular my-5 border-t border-gray-100 pt-5 text-gray-800">
-          <p class="text-sm text-gray-800">The Credit-enabled URL to your Documentation is:</p>
+          <p class="text-sm text-gray-800">
+            The Credit-enabled URL to your Documentation is:
+          </p>
           <p
             class="mt-2 select-all break-words rounded-md border border-gray-300 bg-gray-100 p-2 text-sm text-slate-800"
           >
@@ -134,15 +137,15 @@ export default Vue.defineComponent({
     },
     async dragCredit() {
       const credit = { ...this.credit };
-      await window.appBridge.send('Credit.dragAsFile', { filename: this.creditFilename, credit });
+      await window.appBridge.send('Argon.dragAsFile', { filename: this.creditFilename, file: { credit } });
     },
     async showCreditContextMenu($event) {
       const args = {
-        credit: { ...this.credit },
-        filename: this.creditFilename,
+        file: { credit: {...this.credit } },
+        name: this.creditFilename,
         position: { x: $event.x, y: $event.y },
       };
-      await window.desktopApi.send('Credit.showContextMenu', args);
+      await window.desktopApi.send('Argon.showFileContextMenu', args);
     },
     onClose(isFromBackdrop: boolean) {
       if (!isFromBackdrop || !this.credit) {

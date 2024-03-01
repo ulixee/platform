@@ -1,14 +1,18 @@
 <template>
   <div class="h-full">
-    <h2 class="mb-5 text-lg font-semibold">Deploying</h2>
+    <h2 class="mb-5 text-lg font-semibold">
+      Deploying
+    </h2>
     <p class="font-light">
       So far, you've been using the Local Development Cloud that comes with Ulixee Desktop to run
       your Hero and Datastore scripts. Now let's look at how you can deploy them so they can be used
       by clients on other computers.
-      <br /><br />
+      <br><br>
     </p>
 
-    <h4 class="text-md mb-2 font-semibold">Start a Remote Cloud</h4>
+    <h4 class="text-md mb-2 font-semibold">
+      Start a Remote Cloud
+    </h4>
     <p class="mb-2 font-light">
       You'll need to install Node.js 18+ on the remote machine. Then run these commands:
       <!-- prettier-ignore -->
@@ -32,23 +36,25 @@
       </router-link>
       tab and click to add a Cloud.
     </p>
-    <h4 class="text-md mb-2 mt-5 font-semibold">Admin Access</h4>
+    <h4 class="text-md mb-2 mt-5 font-semibold">
+      Admin Access
+    </h4>
     <p class="font-light">
       Let's make some final changes before you upload your dbx. When you deploy a Datastore, you
       need to assign it a unique id and version. We'll add those now.
-      <br /><br />
+      <br><br>
       Also, to administer a Datastore, you need to provide an "Admin Identity". Admin Identities are
       asymmetric keys that permit you to upload new versions, issue credits, and modify internal
       data of your Datastore.
-      <br /><br />
+      <br><br>
       For this example, we'll re-use the default Admin Identity we generated on startup of Ulixee
       Desktop.
 
       <!-- prettier-ignore -->
       <Prism
         language="typescript"
-        class='mt-2'
-        data-line='9-10, 14'
+        class="mt-2"
+        data-line="9-10, 14"
         style="font-size: 0.9em; max-height:400px; overflow-x: hidden"
       >
         import Datastore, { Extractor } from '@ulixee/datastore';
@@ -56,59 +62,59 @@
         import { string } from '@ulixee/schema';
 
         const datastore = new Datastore({
-          /**
-          * Assigning an id and version
-          */
-          id: 'docs-demo',
-          version: '1.0.0',
-          /**
-          * Configuring admin access.
-          */
-          adminIdentities: ['{{ adminIdentity }}'],
-          extractors: {
-            docPages: new Extractor({
-              pricePerQuery: 10_000,
-              async run({ input, Hero, Output }) {
-                const hero = new Hero();
-                await hero.goto(`https://ulixee.org/docs/${input.tool}`);
+        /**
+        * Assigning an id and version
+        */
+        id: 'docs-demo',
+        version: '1.0.0',
+        /**
+        * Configuring admin access.
+        */
+        adminIdentities: ['{{ adminIdentity }}'],
+        extractors: {
+        docPages: new Extractor({
+        basePrice: 10_000,
+        async run({ input, Hero, Output }) {
+        const hero = new Hero();
+        await hero.goto(`https://ulixee.org/docs/${input.tool}`);
 
-                await hero.querySelector('.LEFTBAR').$waitForVisible();
-                const links = await hero.querySelectorAll('.LEFTBAR a');
+        await hero.querySelector('.LEFTBAR').$waitForVisible();
+        const links = await hero.querySelectorAll('.LEFTBAR a');
 
-                for (const link of await links) {
-                  Output.emit({
-                    title: await link.innerText,
-                    href: await link.href
-                  });
-                }
+        for (const link of await links) {
+        Output.emit({
+        title: await link.innerText,
+        href: await link.href
+        });
+        }
 
-                await hero.close();
-              },
-              schema: {
-                input: {
-                  tool: string({
-                    enum: ['hero', 'datastore', 'cloud', 'client']
-                  }),
-                },
-                output: {
-                  title: string(),
-                  href: string({ format: 'url' })
-                }
-              }
-            }, HeroExtractorPlugin)
-          }
+        await hero.close();
+        },
+        schema: {
+        input: {
+        tool: string({
+        enum: ['hero', 'datastore', 'cloud', 'client']
+        }),
+        },
+        output: {
+        title: string(),
+        href: string({ format: 'url' })
+        }
+        }
+        }, HeroExtractorPlugin)
+        }
         });
 
         export default datastore;
       </Prism>
 
-      <br />
+      <br>
       Now you Copy this code into your
-      <span class="mx-0.5 bg-gray-200 p-1 font-light">ulixee.org.ts</span> file. <br /><br />
+      <span class="mx-0.5 bg-gray-200 p-1 font-light">ulixee.org.ts</span> file. <br><br>
       Now let's deploy your Datastore:
-      <Prism language="shell"
-        >npx @ulixee/datastore deploy ./ulixee.org.ts -h {{ yourCloudAddress }}</Prism
-      >
+      <Prism language="shell">
+        npx @ulixee/datastore deploy ./ulixee.org.ts -h {{ yourCloudAddress }}
+      </Prism>
     </p>
 
     <p

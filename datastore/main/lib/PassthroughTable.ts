@@ -1,6 +1,6 @@
 import { ExtractSchemaType } from '@ulixee/schema';
 import { SqlParser } from '@ulixee/sql-engine';
-import assert = require('assert');
+import { strict as assert } from 'node:assert';
 import IQueryOptions from '../interfaces/IQueryOptions';
 import ITableComponents from '../interfaces/ITableComponents';
 import DatastoreApiClient from './DatastoreApiClient';

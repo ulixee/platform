@@ -1,25 +1,27 @@
 <template>
   <div class="h-full">
-    <h2 class="mb-5 text-lg font-semibold">Payment</h2>
+    <h2 class="mb-5 text-lg font-semibold">
+      Payment
+    </h2>
     <p class="mb-5 font-light">
       Datastores support payments per-query out of the box. You have full control to set prices per
       query on the entire Datastore, or for each Table, Extractor, etc contained within.
-      <br /><br />
+      <br><br>
       Ulixee uses a currency called the Argon. The Argon has several unique properties, including an
       ability to transact Peer-to-Peer for units as small as one-millionth of an Argon (1 microgon)
       with extremely low fees. Argons are worth approximately 1 US Dollar.
-      <br /><br />
+      <br><br>
       We're currently finishing up the legal framework around allowing you to earn and sell Argons.
       In the interim, we'll show you how to use the fully operational credits system.
-      <br /><br />
+      <br><br>
       Let's modify our Datastore to add a per-query price of ~1 US cent:
     </p>
 
     <!-- prettier-ignore -->
     <Prism
       language="typescript"
-      class='mt-2'
-      data-line='13'
+      class="mt-2"
+      data-line="13"
       style="font-size: 0.9em"
     >
       import Datastore, { Extractor } from '@ulixee/datastore';
@@ -27,52 +29,54 @@
       import { string } from '@ulixee/schema';
 
       const datastore = new Datastore({
-        extractors: {
-          docPages: new Extractor({
-            /**
-            * Here's all we do to enable payments of ~1 US cent per use of `docPages`.
-            *
-            * The pricing is in microgons (one-millionth of an Argon):
-            */
-            pricePerQuery: 10_000,
-            async run({ input, Hero, Output }) {
-              const hero = new Hero();
-              await hero.goto(`https://ulixee.org/docs/${input.tool}`);
+      extractors: {
+      docPages: new Extractor({
+      /**
+      * Here's all we do to enable payments of ~1 US cent per use of `docPages`.
+      *
+      * The pricing is in microgons (one-millionth of an Argon):
+      */
+      basePrice: 10_000,
+      async run({ input, Hero, Output }) {
+      const hero = new Hero();
+      await hero.goto(`https://ulixee.org/docs/${input.tool}`);
 
-              await hero.querySelector('.LEFTBAR').$waitForVisible();
-              const links = await hero.querySelectorAll('.LEFTBAR a');
+      await hero.querySelector('.LEFTBAR').$waitForVisible();
+      const links = await hero.querySelectorAll('.LEFTBAR a');
 
-              for (const link of await links) {
-                Output.emit({
-                  title: await link.innerText,
-                  href: await link.href
-                });
-              }
+      for (const link of await links) {
+      Output.emit({
+      title: await link.innerText,
+      href: await link.href
+      });
+      }
 
-              await hero.close();
-            },
-            schema: {
-              input: {
-                tool: string({
-                  enum: ['hero', 'datastore', 'cloud', 'client']
-                }),
-              },
-              output: {
-                title: string(),
-                href: string({ format: 'url' })
-              }
-            }
-          }, HeroExtractorPlugin)
-        }
+      await hero.close();
+      },
+      schema: {
+      input: {
+      tool: string({
+      enum: ['hero', 'datastore', 'cloud', 'client']
+      }),
+      },
+      output: {
+      title: string(),
+      href: string({ format: 'url' })
+      }
+      }
+      }, HeroExtractorPlugin)
+      }
       });
 
       export default datastore;
     </Prism>
 
     <p class="my-5">
-      <br />
+      <br>
       Now re-start your script:
-      <Prism language="shell"> npx @ulixee/datastore start ./ulixee.org.ts </Prism>
+      <Prism language="shell">
+        npx @ulixee/datastore start ./ulixee.org.ts
+      </Prism>
     </p>
 
     <p v-if="step.isComplete" class="my-10 border-t-2 border-fuchsia-800 pt-5 font-light">
@@ -81,9 +85,8 @@
         href="#"
         class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
         @click.prevent="openDocs()"
-        >Documentation</a
-      >, you'll see that your price is set.
-      <br />
+      >Documentation</a>, you'll see that your price is set.
+      <br>
       If you retry your query now, you should see an error requiring payment!
     </p>
     <p

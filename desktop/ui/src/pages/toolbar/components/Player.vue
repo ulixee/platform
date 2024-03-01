@@ -22,8 +22,12 @@
 
       <div class="address-bar relative flex h-full flex-row">
         <div v-if="isLiveMode" class="live-icon">
-          <div v-if="session.playbackState !== 'finished'" class="text">LIVE</div>
-          <div v-else class="text">REPLAY</div>
+          <div v-if="session.playbackState !== 'finished'" class="text">
+            LIVE
+          </div>
+          <div v-else class="text">
+            REPLAY
+          </div>
         </div>
         <div v-else class="timetravel-icon">
           <TimetravelIcon class="h-5 w-5" />
@@ -63,11 +67,11 @@
 <script lang="ts">
 import * as Vue from 'vue';
 import WindowsController from '@/pages/toolbar/lib/WindowsController';
+import TimetravelIcon from "@/assets/icons/timetravel.svg";
+import SearchIcon from "@/assets/icons/search.svg";
 import ArrowRight from './ArrowRight.vue';
 import PlayerBar from './PlayerBar.vue';
 import Borders from './Borders.vue';
-import TimetravelIcon from "@/assets/icons/timetravel.svg";
-import SearchIcon from "@/assets/icons/search.svg";
 
 export default Vue.defineComponent({
   name: 'Player',

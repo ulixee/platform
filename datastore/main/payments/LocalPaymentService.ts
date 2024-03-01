@@ -79,6 +79,9 @@ export default class LocalPaymentService
     );
 
     return {
+      primaryAddress: await this.localchainPaymentService.localchain.address,
+      otherAddresses: [],
+      statusByAddress: {},
       credits,
       depositBalance: localchainBalance.depositBalance,
       taxBalance: localchainBalance.taxBalance,
@@ -95,6 +98,9 @@ export default class LocalPaymentService
   }
 
   public async loadCredits(path?: string): Promise<void> {
+    if (this.creditsAutoLoaded) {
+      if (!path || path === this.creditsPath) return this.creditsAutoLoaded;
+    }
     path ??= this.creditsPath;
     const credits = await CreditPaymentService.loadAll(path);
     for (const credit of credits) {

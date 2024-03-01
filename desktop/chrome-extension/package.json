@@ -4,26 +4,18 @@
   "private": true,
   "license": "MIT",
   "description": "Chrome extension helps ChromeAlive Sessions work",
-  "main": "index.js",
-  "author": "Data Liberation Foundation",
   "scripts": {
     "build": "vite build",
     "build:dist": "cross-env BUILD_DIR=\"build-dist\" npm run build",
     "watch": "vite build -w"
   },
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.28",
-    "@ulixee/desktop-core": "2.0.0-alpha.28",
     "@ulixee/desktop-interfaces": "2.0.0-alpha.28",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.28",
     "@webcomponents/custom-elements": "^1.5.0",
     "nanoid": "^3.3.6"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.260",
-    "chrome-api-mock": "^0.0.2",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.12",
-    "vite-plugin-static-copy": "^1.0.1"
+    "vite": "^4.5.2"
   }
 }

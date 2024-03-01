@@ -7,6 +7,9 @@
   "references": [
     {
       "path": "specification/tsconfig.json"
+    },
+    {
+      "path": "desktop/chrome-extension/tsconfig.json"
     }
   ],
   "include": [

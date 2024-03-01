@@ -1,6 +1,6 @@
 import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import { readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
+import { existsAsync, readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import Queue from '@ulixee/commons/lib/Queue';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
@@ -24,6 +24,7 @@ import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange'
 import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
 import { nanoid } from 'nanoid';
+import { mkdir } from 'node:fs/promises';
 import * as Path from 'node:path';
 import env from '../env';
 import IDatastoreHostLookup from '../interfaces/IDatastoreHostLookup';
@@ -81,7 +82,7 @@ export default class LocalchainPaymentService
 
   constructor(
     public localchain: Localchain,
-    private signer: Signer,
+    public signer: Signer,
     private config: IPaymentConfig,
     public apiClients: DatastoreApiClients | null,
   ) {
@@ -117,6 +118,7 @@ export default class LocalchainPaymentService
     const accounts = await this.localchain.accounts.list();
     for (const account of accounts) {
       const balance = await this.localchain.balanceChanges.getLatestForAccount(account.id);
+      if (!balance) continue;
       if (account.accountType === AccountType.Deposit) {
         depositBalance += BigInt(balance.balance);
       } else {
@@ -399,9 +401,11 @@ export default class LocalchainPaymentService
   public static async load(
     config?: Partial<IPaymentConfig> & {
       localchainPath?: string;
+      createIfMissing?: boolean;
       mainchainUrl?: string;
       keystorePath?: string;
       keystorePassword?: KeystorePasswordOption;
+      apiClients?: DatastoreApiClients;
     },
   ): Promise<LocalchainPaymentService> {
     const { mainchainUrl: configMainchainUrl, localchainPath } = config ?? {};
@@ -409,7 +413,14 @@ export default class LocalchainPaymentService
     if (!defaultPath.endsWith('.db')) {
       defaultPath = Path.join(defaultPath, 'localchain.db');
     }
+    if (config?.createIfMissing && !(await existsAsync(defaultPath))) {
+      await mkdir(Path.dirname(defaultPath), { recursive: true });
+    }
     const mainchainUrl = configMainchainUrl ?? env.mainchainUrl;
+    log.info("Loading LocalchainPaymentService's localchain", {
+      localchainPath: defaultPath,
+      mainchainUrl: configMainchainUrl,
+    } as any);
     const localchain = mainchainUrl
       ? await Localchain.load({ mainchainUrl, dbPath: defaultPath })
       : await Localchain.loadWithoutMainchain(defaultPath, {
@@ -433,7 +444,7 @@ export default class LocalchainPaymentService
         taxAddress: config?.taxAddress ?? null,
         datastoreFundingAddress: config?.datastoreFundingAddress ?? null,
       },
-      null,
+      config?.apiClients,
     );
   }
 }

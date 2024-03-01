@@ -8,7 +8,6 @@ import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEve
 import { createPromise } from '@ulixee/commons/lib/utils';
 import IResolvablePromise from '@ulixee/commons/interfaces/IResolvablePromise';
 import Log from '@ulixee/commons/lib/Logger';
-import { extensionId } from '../ExtensionUtils';
 import {
   ___receiveFromCore,
   ___sendToCore,
@@ -16,7 +15,8 @@ import {
   extractStringifiedComponentsFromMessage,
   isResponseMessage,
   messageExpectsResponse,
-} from '../BridgeHelpers';
+} from '@ulixee/desktop-interfaces/BridgeHelpers';
+import { extensionId } from '../ExtensionUtils';
 
 const { log } = Log(module);
 

@@ -5,7 +5,7 @@ import {
   MessageLocation,
   packMessage,
   ResponseCode
-} from '@ulixee/desktop-core/lib/BridgeHelpers';
+} from '@ulixee/desktop-interfaces/BridgeHelpers';
 import ElementsBucket from './ElementsBucket';
 
 export default class ElementOptionsOverlay extends HTMLElement {

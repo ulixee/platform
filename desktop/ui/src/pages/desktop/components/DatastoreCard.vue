@@ -27,8 +27,7 @@
       <span
         v-if="!datastore.isStarted"
         class="absolute right-0 top-0 inline-flex items-center rounded-bl bg-gray-900 px-2.5 py-0.5 text-xs font-medium text-white"
-        >Stopped</span
-      >
+      >Stopped</span>
     </div>
     <div class="-mt-px flex divide-x divide-gray-200">
       <div class="grid-row grid basis-1/2 py-2 text-center text-xl">
@@ -49,13 +48,17 @@
     </div>
     <div class="-mt-px flex divide-x divide-gray-200">
       <div class="grid-col grid basis-1/2 place-content-center py-2 text-center text-xl">
-        <div class="text-base font-normal text-gray-900">Total Earned</div>
+        <div class="text-base font-normal text-gray-900">
+          Total Earned
+        </div>
         <div class="text-2xl font-semibold text-fuchsia-700">
           {{ earned }}
         </div>
       </div>
       <div class="grid-col grid basis-1/2 place-content-center py-2 text-center text-xl">
-        <div class="text-base font-normal text-gray-900">Total Spent</div>
+        <div class="text-base font-normal text-gray-900">
+          Total Spent
+        </div>
         <div class="text-2xl font-semibold text-fuchsia-700">
           {{ spent() }}
         </div>
@@ -126,7 +129,7 @@ export default Vue.defineComponent({
       );
       let spentCredits = 0;
       for (const credit of credits) {
-        spentCredits += credit.allocated - credit.remainingBalance;
+        spentCredits += credit.allocated - credit.remaining;
       }
       return toArgons(spentCredits, true);
     },

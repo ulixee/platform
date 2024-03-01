@@ -8,19 +8,19 @@
           :class="
             activeEntity?.name === entity.name
               ? [
-                  'bg-gray-600 text-white shadow-inner ring-1 ring-fuchsia-800 ring-opacity-20 ring-opacity-80',
-                ]
+                'bg-gray-600 text-white shadow-inner ring-1 ring-fuchsia-800 ring-opacity-20 ring-opacity-80',
+              ]
               : [
-                  ' bg-white text-gray-700 shadow-md ring-1 ring-black ring-opacity-5 hover:shadow-sm',
-                ]
+                ' bg-white text-gray-700 shadow-md ring-1 ring-black ring-opacity-5 hover:shadow-sm',
+              ]
           "
           @click.prevent="
             activeEntity?.name === entity.name ? (activeEntity = null) : (activeEntity = entity)
           "
         >
-          <CrawlerIcon v-if="entity.type === 'Crawler'" class="mx-auto h-14 w-14"/>
-          <ExtractorIcon v-else-if="entity.type === 'Extractor'" class="mx-auto h-14 w-14"/>
-          <TableIcon v-else-if="entity.type === 'Table'" class="mx-auto h-14 w-14"/>
+          <CrawlerIcon v-if="entity.type === 'Crawler'" class="mx-auto h-14 w-14" />
+          <ExtractorIcon v-else-if="entity.type === 'Extractor'" class="mx-auto h-14 w-14" />
+          <TableIcon v-else-if="entity.type === 'Table'" class="mx-auto h-14 w-14" />
           <div class="text-md mt-4 font-thin">
             {{ entity.name }}
           </div>
@@ -38,8 +38,7 @@
         </Prism>
       </div>
       <div class="mb-2">
-        <span class="text-sm font-bold text-gray-500">Type</span
-        ><span class="ml-2 text-sm font-thin">{{ activeEntity.type }}</span>
+        <span class="text-sm font-bold text-gray-500">Type</span><span class="ml-2 text-sm font-thin">{{ activeEntity.type }}</span>
       </div>
       <div v-if="activeEntity.description" class="mb-2">
         ><span class="ml-2 text-sm font-thin">{{ activeEntity.description }}</span>
@@ -50,7 +49,7 @@
 </template>
 
 <script lang="ts">
-import { useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
+import { IDatastoreMeta, useDatastoreStore } from '@/pages/desktop/stores/DatastoresStore';
 import { storeToRefs } from 'pinia';
 import * as Vue from 'vue';
 import CrawlerIcon from '@/assets/icons/spider.svg';
@@ -72,7 +71,7 @@ export default Vue.defineComponent({
     const { datastoresById } = storeToRefs(datastoresStore);
     datastoresStore.refreshMetadata(datastoreId, version);
 
-    const activeEntity = Vue.ref<{ name: string; type: string; description: string; schema: any }>(
+    const activeEntity = Vue.ref<{ name: string; type: string; description: string; schema: any, example: IDatastoreMeta['examplesByEntityName'][0] }>(
       null,
     );
 

@@ -1,6 +1,5 @@
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
-import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
@@ -8,9 +7,11 @@ import { toUrl } from '@ulixee/commons/lib/utils';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
 import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
 import QueryLog from '@ulixee/datastore/lib/QueryLog';
 import LocalchainPaymentService from '@ulixee/datastore/payments/LocalchainPaymentService';
+import LocalPaymentService from '@ulixee/datastore/payments/LocalPaymentService';
 import { IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
 import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
@@ -21,9 +22,6 @@ import { AddressInfo } from 'net';
 import * as Path from 'path';
 import { ClientOptions } from 'ws';
 import WebSocket = require('ws');
-import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
-import LocalPaymentService from '@ulixee/datastore/payments/LocalPaymentService';
-import DatastoreEnv from '@ulixee/datastore/env';
 import ApiClient from './ApiClient';
 import ArgonFile, { IArgonFile } from './ArgonFile';
 import DeploymentWatcher from './DeploymentWatcher';
@@ -97,32 +95,19 @@ export default class ApiManager<
         resolve(`ws://127.0.0.1:${address.port}`);
       });
     });
-    const dataDir = Path.join(getDataDirectory(), 'ulixee', 'localchain');
-    this.localchain = await Localchain.loadWithoutMainchain(Path.join(dataDir, 'localchain.db'), {
-      ...DatastoreEnv,
+
+    const localchainPaymentService = await LocalchainPaymentService.load({
+      apiClients: this.datastoreApiClients,
+      createIfMissing: true,
     });
-    this.signer = new Signer();
-    await this.signer.attachKeystore(dataDir, {});
-    const localchainPaymentService = new LocalchainPaymentService(
-      this.localchain,
-      this.signer,
-      {
-        taxAddress: null,
-        datastoreFundingAddress: null,
-        escrowMilligonsStrategy: {
-          type: 'default',
-          milligons: 1000n,
-        },
-      },
-      this.datastoreApiClients,
-    );
+    this.paymentService = new LocalPaymentService(localchainPaymentService);
+    this.localchain = localchainPaymentService.localchain;
+    this.signer = localchainPaymentService.signer;
     if (!(await this.localchain.accounts.list()).length) {
       const firstAccount = this.signer.createAccountId(CryptoScheme.Sr25519);
       await this.localchain.accounts.insert(firstAccount, AccountType.Deposit, 1);
       await this.localchain.accounts.insert(firstAccount, AccountType.Tax, 1);
     }
-    this.paymentService = new LocalPaymentService(localchainPaymentService);
-    await this.paymentService.loadCredits();
     if (!this.localUserProfile.defaultAdminIdentityPath) {
       await this.localUserProfile.createDefaultAdminIdentity();
     }

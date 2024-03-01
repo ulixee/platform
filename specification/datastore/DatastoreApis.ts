@@ -280,6 +280,7 @@ export const DatastoreApiSchemas = {
           versionTimestamp: z.number().int().positive().describe('Millis since epoch'),
           name: z.string().optional(),
           description: z.string().optional(),
+          domain: z.string().optional(),
           isStarted: z
             .boolean()
             .describe('Only relevant in development mode - is this Datastore started.'),

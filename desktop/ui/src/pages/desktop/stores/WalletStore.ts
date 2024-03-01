@@ -1,7 +1,7 @@
-import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
-import type { IUserBalance } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
+import type { IUserBalance } from '@ulixee/datastore/interfaces/IPaymentService';
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
 
 export { IUserBalance };
 
@@ -13,25 +13,26 @@ export const useWalletStore = defineStore('walletStore', () => {
   }
   void load();
 
-  const address = computed(() => userBalance.value.address);
-
   async function saveCredits(credit: IArgonFile['credit']) {
     await window.desktopApi.send('Credit.save', { credit });
     await load();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function saveCash(_cash: IArgonFile['cash']) {
-    throw new Error('Not implemented');
-    // await window.desktopApi.send('Argon.saveCash', { cash });
-    // await load();
+  async function saveSentArgons(argonFile: IArgonFile) {
+    await window.desktopApi.send('Argon.importSend', { argonFile });
+    await load();
+  }
+
+  async function approveRequestedArgons(argonFile: IArgonFile) {
+    await window.desktopApi.send('Argon.acceptRequest', { argonFile });
+    await load();
   }
 
   return {
     load,
     saveCredits,
-    saveCash,
+    approveRequestedArgons,
+    saveSentArgons,
     userBalance,
-    address,
   };
 });

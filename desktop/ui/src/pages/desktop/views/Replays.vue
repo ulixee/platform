@@ -1,5 +1,7 @@
 <template>
-  <h1 class="mb-8 mt-3 text-2xl font-semibold text-gray-900">Hero Replays</h1>
+  <h1 class="mb-8 mt-3 text-2xl font-semibold text-gray-900">
+    Hero Replays
+  </h1>
 
   <Listbox
     v-model="selectedCloud"
@@ -29,7 +31,7 @@
         >
           <ListboxOption
             v-for="cloud in adminClouds"
-            :key="cloud.id"
+            :key="cloud.name"
             v-slot="{ active, selected }"
             as="template"
             :value="cloud.name"
@@ -42,8 +44,7 @@
             >
               <span
                 :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate text-left']"
-                >{{ getCloudName(cloud.name) }}</span
-              >
+              >{{ getCloudName(cloud.name) }}</span>
               <span
                 v-if="selected"
                 :class="[
@@ -77,7 +78,7 @@
             name="search"
             @search="runSearch"
             @keyup.delete="searchChanged"
-          />
+          >
         </div>
       </div>
     </div>
@@ -85,10 +86,18 @@
     <table class="w-full table-fixed">
       <thead class="invisible h-0">
         <tr class="collapse">
-          <th style="width: 150px" class="h-0">&nbsp;</th>
-          <th style="width: 45%" class="h-0">&nbsp;</th>
-          <th style="width: 40%" class="h-0">&nbsp;</th>
-          <th style="width: 45px" class="h-0">&nbsp;</th>
+          <th style="width: 150px" class="h-0">
+&nbsp;
+          </th>
+          <th style="width: 45%" class="h-0">
+&nbsp;
+          </th>
+          <th style="width: 40%" class="h-0">
+&nbsp;
+          </th>
+          <th style="width: 45px" class="h-0">
+&nbsp;
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -117,8 +126,7 @@
             <div v-if="session.state === 'error'" class="flex flex-row items-start">
               <ExclamationTriangleIcon class="relative mr-2 inline w-4 text-amber-800/60" />
               <div class="-mt-2">
-                <span class="font-reg mr-1 italic text-slate-600">error at:</span
-                ><span class="font-light text-slate-600">{{ session.errorCommand }}</span>
+                <span class="font-reg mr-1 italic text-slate-600">error at:</span><span class="font-light text-slate-600">{{ session.errorCommand }}</span>
 
                 <div class="mt-1 -mb-1.5 whitespace-pre text-xs">
                   {{ session.error }}
@@ -128,8 +136,7 @@
             <span
               v-else-if="session.state !== 'complete'"
               class="mx-4 my-5 rounded-md bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-800"
-              >{{ session.state }}</span
-            >
+            >{{ session.state }}</span>
           </td>
           <td class="">
             <a

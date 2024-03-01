@@ -5,7 +5,7 @@ import { DateUtilities, ObjectSchema } from '@ulixee/schema';
 import { IValidationError } from '@ulixee/schema/interfaces/IValidationResult';
 import BaseSchema from '@ulixee/schema/lib/BaseSchema';
 import StringSchema from '@ulixee/schema/lib/StringSchema';
-import moment = require('moment');
+import * as moment from 'moment';
 import IExtractorComponents from '../interfaces/IExtractorComponents';
 import IExtractorContext from '../interfaces/IExtractorContext';
 import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';

@@ -1,8 +1,9 @@
 import { defineStore, storeToRefs } from 'pinia';
 import { computed, Ref, ref } from 'vue';
-import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import type IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
+import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
+import type IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
 import { Client } from '@/api/Client';
 import ICloudConnection from '@/api/ICloudConnection';
 import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
@@ -13,7 +14,7 @@ export type IDatastoreMeta = IDatastoreApiTypes['Datastore.meta']['result'] & {
   examplesByEntityName: { [name: string]: { formatted: string; args: Record<string, any> } };
 };
 export type IDatastoreVersions = IDatastoreApiTypes['Datastore.versions']['result']['versions'];
-export type TCredit = { datastoreUrl: string; microgons: number };
+export type TCredit = IArgonFile['credit'];
 
 export type IDatastoresById = {
   [datastoreId: string]: {
@@ -146,7 +147,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     const credits = useWalletStore().userBalance.credits.filter(
       x => x.datastoreId === id && x.datastoreVersion === version,
     );
-    const credit = credits.find(x => x.remainingBalance > 0) ?? credits[0];
+    const credit = credits.find(x => x.remaining > 0) ?? credits[0];
     if (credit) {
       docsUrl.search = `?${credit.creditsId}`;
     }
@@ -304,7 +305,10 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
       },
       cloud,
     };
-    const { filename, credit } = await window.desktopApi.send('Credit.create', data);
+    const {
+      file: { credit },
+      name: filename,
+    } = await window.desktopApi.send('Credit.create', data);
     datastoresById.value[datastore.id].createdCredits.push({
       credit,
       filename,

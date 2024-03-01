@@ -3,21 +3,20 @@
     <div class="section">
       <a @click.prevent="openDesktop()">Open Ulixee Desktop</a>
 
-      <a v-if="downloadProgress > 0 && downloadProgress < 100"
-        >Downloading new Version <span class="progress">{{ downloadProgress }}%</span></a
-      >
-      <a v-else-if="isInstalling" @click.prevent="void 0"
-        >Installing <span class="installing-version">{{ newVersion }}</span></a
-      >
-      <a v-else-if="newVersion" @click.prevent="installUpdate"
-        >Update Available
-        <span class="new-version"
-          >{{ downloadProgress < 100 ? '' : 'Install ' }}{{ newVersion }}</span
-        ></a
-      >
-      <a v-else @click.prevent="checkForUpdate"
-        >Check for Updates <span v-if="onLatestVersion" class="latest-version">On Latest</span></a
-      >
+      <a v-if="downloadProgress > 0 && downloadProgress < 100">Downloading new Version <span class="progress">{{ downloadProgress }}%</span></a>
+      <a
+        v-else-if="isInstalling"
+        @click.prevent="void 0"
+      >Installing <span class="installing-version">{{ newVersion }}</span></a>
+      <a
+        v-else-if="newVersion"
+        @click.prevent="installUpdate"
+      >Update Available
+        <span class="new-version">{{ downloadProgress < 100 ? '' : 'Install ' }}{{ newVersion }}</span></a>
+      <a
+        v-else
+        @click.prevent="checkForUpdate"
+      >Check for Updates <span v-if="onLatestVersion" class="latest-version">On Latest</span></a>
     </div>
     <div class="section">
       <a @click.prevent="openLogsDirectory()">Open App Logs</a>
@@ -47,9 +46,13 @@
           />
         </Switch>
       </SwitchGroup>
-      <div class="px-2.5 pt-0.5 pb-1.5 text-xs text-gray-500" >
-        <template v-if="cloudStarted">ulx://{{ address }}</template>
-        <template v-else>Not Started</template>
+      <div class="px-2.5 pt-0.5 pb-1.5 text-xs text-gray-500">
+        <template v-if="cloudStarted">
+          ulx://{{ address }}
+        </template>
+        <template v-else>
+          Not Started
+        </template>
       </div>
     </div>
     <div class="section">

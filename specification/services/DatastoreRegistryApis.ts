@@ -19,6 +19,7 @@ export const DatastoreListEntry = DatastoreManifestSchema.pick({
   versionTimestamp: true,
   description: true,
   name: true,
+  domain: true,
   scriptEntrypoint: true,
 }).extend({
   isStarted: z.boolean().describe('Is the Datastore started. Only relevant in development mode.'),

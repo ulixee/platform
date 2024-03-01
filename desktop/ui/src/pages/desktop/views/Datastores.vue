@@ -6,9 +6,7 @@
         <ol role="list" class="flex items-center space-x-4">
           <li>
             <div>
-              <span class="text-2xl font-semibold text-gray-900 hover:text-gray-700"
-                >Datastores</span
-              >
+              <span class="text-2xl font-semibold text-gray-900 hover:text-gray-700">Datastores</span>
             </div>
           </li>
         </ol>
@@ -73,8 +71,14 @@
 
     <div class="mt-5">
       <ul class="grid grid-rows-3 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <li v-if="!datastores.length" class="italic text-slate-700">Nothing found</li>
-        <DatastoreCard v-for="datastore in datastores" :key="datastore.id" :datastore="datastore" />
+        <li v-if="!datastores.length" class="italic text-slate-700">
+          Nothing found
+        </li>
+        <DatastoreCard
+          v-for="datastore in datastores"
+          :key="datastore.id"
+          :datastore="datastore"
+        />
       </ul>
     </div>
   </div>

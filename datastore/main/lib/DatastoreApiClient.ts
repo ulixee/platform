@@ -85,10 +85,11 @@ export default class DatastoreApiClient {
     datastoreId: string,
     balanceChange: IBalanceChange,
   ): Promise<{ accepted: boolean }> {
-    return await this.runApi('Escrow.register', {
+    const result = await this.runApi('Escrow.register', {
       escrow: balanceChange as any,
       datastoreId,
     });
+    return { accepted: result.accepted };
   }
 
   public async getMeta(id: string, version: string): Promise<IDatastoreMeta> {

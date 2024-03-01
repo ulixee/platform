@@ -40,11 +40,13 @@ export default class QueryLog {
     }
     this.events.on('new', onNewQuery);
     this.publishQueries();
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
     return {
       stop() {
-        this.events.off('new', onNewQuery);
-        if (!this.events.listenerCount('new')) {
-          this.stopWatching();
+        self.events.off('new', onNewQuery);
+        if (!self.events.listenerCount('new')) {
+          self.stopWatching();
         }
       },
     };

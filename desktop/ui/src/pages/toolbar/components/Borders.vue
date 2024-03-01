@@ -8,7 +8,11 @@
 
     <div v-if="hasLeftCircle" class="left-circle" />
 
-    <ArrowRight v-if="!hasRightCircle" :is-selected="isSelected" :is-focused="isSelected" />
+    <ArrowRight
+      v-if="!hasRightCircle"
+      :is-selected="isSelected"
+      :is-focused="isSelected"
+    />
     <div v-else-if="hasRightCircle" class="right-circle" />
   </div>
 </template>

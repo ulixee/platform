@@ -60,6 +60,8 @@ export const BalanceChangeSchema = z.object({
   signature: multiSignatureValidation.describe("The account's signature of the balance change hash"),
 });
 
+export const BalanceChangesSchema = BalanceChangeSchema.array();
+
 type IBalanceChange = z.infer<typeof BalanceChangeSchema>;
 
 export default IBalanceChange;

@@ -121,7 +121,7 @@ export default class LocalUserProfile {
   }
 
   public async save(): Promise<void> {
-    await safeOverwriteFile(LocalUserProfile.path, JSON.stringify(this.toJSON()));
+    await safeOverwriteFile(LocalUserProfile.path, TypeSerializer.stringify(this.toJSON()));
   }
 
   public toJSON(): ILocalUserProfile {
@@ -140,7 +140,7 @@ export default class LocalUserProfile {
   private loadProfile(): void {
     if (!Fs.existsSync(LocalUserProfile.path)) return;
     try {
-      const data: ILocalUserProfile = JSON.parse(Fs.readFileSync(LocalUserProfile.path, 'utf8'));
+      const data: ILocalUserProfile = TypeSerializer.parse(Fs.readFileSync(LocalUserProfile.path, 'utf8'));
       Object.assign(this, data);
       this.clouds ??= [];
       for (const cloud of this.clouds) {

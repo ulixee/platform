@@ -6,13 +6,12 @@
       :groupId="createdCollapseGroupId"
       class="collapse-group"
       @click.prevent="openCollapseGroup"
-      >----------- show
+    >----------- show
       {{ hiddenNodeGroups.frameNodeIdsByGroupId.get(createdCollapseGroupId).length }} hidden DOM
-      elements ------------</a
-    >
+      elements ------------</a>
     <DomNode
       v-for="node of children"
-      :key="node.id"
+      :key="node.nodeId"
       :node-state="node"
       :indent="indent + 1"
       :hidden-node-groups="hiddenNodeGroups"
@@ -46,7 +45,7 @@
     <slot v-else-if="nodeState.isDocument || nodeState.isShadowRoot">
       <DomNode
         v-for="node of children"
-        :key="node.id"
+        :key="node.nodeId"
         :node-state="node"
         :indent="indent + 1"
         :hidden-node-groups="hiddenNodeGroups"
@@ -57,8 +56,7 @@
         <a
           class="expander"
           @click.prevent="nodeState.isManuallyExpanded = !nodeState.isManuallyExpanded"
-          >{{ !isCollapsible ? '' : isCollapsed ? '+' : '-' }}</a
-        >
+        >{{ !isCollapsible ? '' : isCollapsed ? '+' : '-' }}</a>
         <span class="open-tag">{{ openTag }}</span>
 
         <span v-if="nodeState.classAttr" class="attr">
@@ -71,8 +69,7 @@
               added: nodeState.changes.classes?.added.has(clazz),
               removed: nodeState.changes.classes?.removed.has(clazz),
             }"
-            >{{ clazz }}</span
-          >{{ '"' }}
+          >{{ clazz }}</span>{{ '"' }}
         </span>
         <span v-if="nodeState.styleAttr" class="attr">
           <span class="attr-name">style</span>
@@ -85,8 +82,7 @@
               changed: nodeState.changes.styles?.changed.has(style.name),
               removed: nodeState.changes.styles?.removed.has(style.name),
             }"
-            >{{ style.name }}: {{ style.value }};</span
-          >{{ '"' }}
+          >{{ style.name }}: {{ style.value }};</span>{{ '"' }}
         </span>
         <span
           v-for="attr of attributes"
@@ -123,7 +119,7 @@
       <slot v-else>
         <DomNode
           v-for="node of children"
-          :key="node.id"
+          :key="node.nodeId"
           :node-state="node"
           :indent="indent + 1"
           :hidden-node-groups="hiddenNodeGroups"

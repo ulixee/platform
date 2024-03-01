@@ -64,8 +64,8 @@ export default class DesktopWindow extends TypedEventEmitter<{
     this.#window.setTitle('Ulixee Desktop');
 
     this.#window.webContents.ipc.handle('desktop:api', async (e, { api, args }) => {
-      if (api === 'Credit.dragAsFile') {
-        return await this.apiManager.privateDesktopApiHandler.dragCreditAsFile(args, e.sender);
+      if (api === 'Argon.dragAsFile') {
+        return await this.apiManager.privateDesktopApiHandler.dragArgonsAsFile(args, e.sender);
       }
     });
     this.#window.webContents.ipc.on('getPrivateApiHost', e => {

@@ -41,8 +41,7 @@
               >
                 <span
                   :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate text-left']"
-                  >{{ version.version }}</span
-                >
+                >{{ version.version }}</span>
                 <span
                   v-if="selected"
                   :class="[
@@ -67,31 +66,59 @@
               scope="col"
               class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-white sm:pl-6"
             >
-              <a href="#" class="group inline-flex" @click.prevent="clickedHeader('type')">
+              <a
+                href="#"
+                class="group inline-flex"
+                @click.prevent="clickedHeader('type')"
+              >
                 Type
                 <span
                   class="ml-2 flex-none rounded group-hover:visible group-hover:outline-white/50 group-focus:visible"
                   :class="[sortColumn !== 'type' ? 'invisible text-white group-hover:outline' : '']"
                 >
-                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
-                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
+                  <ChevronUpIcon
+                    v-if="isAscending"
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
+                  <ChevronDownIcon
+                    v-else
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
                 </span>
               </a>
             </th>
             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
-              <a href="#" class="group inline-flex" @click.prevent="clickedHeader('name')">
+              <a
+                href="#"
+                class="group inline-flex"
+                @click.prevent="clickedHeader('name')"
+              >
                 Name
                 <span
                   class="ml-2 flex-none rounded group-hover:visible group-hover:outline-white/50 group-focus:visible"
                   :class="[sortColumn !== 'name' ? 'invisible text-white group-hover:outline' : '']"
                 >
-                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
-                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
+                  <ChevronUpIcon
+                    v-if="isAscending"
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
+                  <ChevronDownIcon
+                    v-else
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
                 </span>
               </a>
             </th>
             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
-              <a href="#" class="group inline-flex" @click.prevent="clickedHeader('queries')">
+              <a
+                href="#"
+                class="group inline-flex"
+                @click.prevent="clickedHeader('queries')"
+              >
                 Queries
                 <span
                   class="ml-2 flex-none rounded group-hover:visible group-hover:outline-white/50 group-focus:visible"
@@ -99,13 +126,25 @@
                     sortColumn !== 'queries' ? 'invisible text-white group-hover:outline' : '',
                   ]"
                 >
-                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
-                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
+                  <ChevronUpIcon
+                    v-if="isAscending"
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
+                  <ChevronDownIcon
+                    v-else
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
                 </span>
               </a>
             </th>
             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
-              <a href="#" class="group inline-flex" @click.prevent="clickedHeader('errors')">
+              <a
+                href="#"
+                class="group inline-flex"
+                @click.prevent="clickedHeader('errors')"
+              >
                 Errors
                 <span
                   class="ml-2 flex-none rounded group-hover:visible group-hover:outline-white/50 group-focus:visible"
@@ -113,25 +152,49 @@
                     sortColumn !== 'errors' ? 'invisible text-white group-hover:outline' : '',
                   ]"
                 >
-                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
-                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
+                  <ChevronUpIcon
+                    v-if="isAscending"
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
+                  <ChevronDownIcon
+                    v-else
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
                 </span>
               </a>
             </th>
             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
-              <a href="#" class="group inline-flex" @click.prevent="clickedHeader('size')">
+              <a
+                href="#"
+                class="group inline-flex"
+                @click.prevent="clickedHeader('size')"
+              >
                 Average Bytes
                 <span
                   class="ml-2 flex-none rounded group-hover:visible group-hover:outline-white/50 group-focus:visible"
                   :class="[sortColumn !== 'size' ? 'invisible text-white group-hover:outline' : '']"
                 >
-                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
-                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
+                  <ChevronUpIcon
+                    v-if="isAscending"
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
+                  <ChevronDownIcon
+                    v-else
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
                 </span>
               </a>
             </th>
             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
-              <a href="#" class="group inline-flex" @click.prevent="clickedHeader('millis')">
+              <a
+                href="#"
+                class="group inline-flex"
+                @click.prevent="clickedHeader('millis')"
+              >
                 Average Millis
                 <span
                   class="ml-2 flex-none rounded group-hover:visible group-hover:outline-white/50 group-focus:visible"
@@ -139,13 +202,25 @@
                     sortColumn !== 'millis' ? 'invisible text-white group-hover:outline' : '',
                   ]"
                 >
-                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
-                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
+                  <ChevronUpIcon
+                    v-if="isAscending"
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
+                  <ChevronDownIcon
+                    v-else
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
                 </span>
               </a>
             </th>
             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
-              <a href="#" class="group inline-flex" @click.prevent="clickedHeader('price')">
+              <a
+                href="#"
+                class="group inline-flex"
+                @click.prevent="clickedHeader('price')"
+              >
                 Average Price
                 <span
                   class="ml-2 flex-none rounded group-hover:visible group-hover:outline-white/50 group-focus:visible"
@@ -153,8 +228,16 @@
                     sortColumn !== 'price' ? 'invisible text-white group-hover:outline' : '',
                   ]"
                 >
-                  <ChevronUpIcon v-if="isAscending" class="h-5 w-5" aria-hidden="true" />
-                  <ChevronDownIcon v-else class="h-5 w-5" aria-hidden="true" />
+                  <ChevronUpIcon
+                    v-if="isAscending"
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
+                  <ChevronDownIcon
+                    v-else
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                  />
                 </span>
               </a>
             </th>
@@ -263,7 +346,7 @@ export default Vue.defineComponent({
 
     datastoresStore.getVersions(datastoreId, selectedCloud, true);
 
-    const sortColumn = Vue.ref<'type' | 'queries' | 'price' | 'size' | 'millis' | 'name'>('name');
+    const sortColumn = Vue.ref<'type' | 'queries' | 'price' | 'size' | 'millis' | 'name' | 'errors'>('name');
     const versions = Vue.computed(() => {
       return [{ version: 'Overall' }, ...(datastoresById.value[datastoreId]?.versions ?? [])];
     });
@@ -291,7 +374,7 @@ export default Vue.defineComponent({
     };
   },
   methods: {
-    clickedHeader(name: 'type' | 'queries' | 'price' | 'size' | 'millis' | 'name'): void {
+    clickedHeader(name: 'type' | 'queries' | 'price' | 'size' | 'millis' | 'name' | 'errors'): void {
       if (this.sortColumn === name) {
         this.isAscending = !this.isAscending;
       } else {

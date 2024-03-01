@@ -1,4 +1,4 @@
-import assert = require('assert');
+import { strict as assert } from 'node:assert';
 import BaseSchema, { IBaseConfig, isDefined } from './BaseSchema';
 
 const IBufferEncodingTypes = [

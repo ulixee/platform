@@ -1,5 +1,5 @@
-import assert = require('assert');
-import moment = require('moment');
+import { strict as assert } from 'node:assert';
+import * as moment from 'moment';
 
 const Units = ['seconds', 'minutes', 'hours', 'days', 'months', 'years'] as const;
 export type IUnits = 'seconds' | 'minutes' | 'hours' | 'days' | 'months' | 'years';

@@ -10,7 +10,11 @@
       <div class="right-arrow" />
     </div>
 
-    <Borders :is-selected="isSelected" :is-focused="isSelected" :has-left-circle="true" />
+    <Borders
+      :is-selected="isSelected"
+      :is-focused="isSelected"
+      :has-left-circle="true"
+    />
 
     <InputIcon class="icon" />
     <span v-if="!isMinimal" class="label">{{ inputSize }} Input</span>

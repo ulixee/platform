@@ -1,10 +1,5 @@
 import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 
-export function toArgons(amount: number, isMicrogons = false): string {
-  let centagons = amount;
-  if (isMicrogons) {
-    centagons = Number(ArgonUtils.microgonsToCentagons(amount));
-  }
-  centagons = Number(centagons) / 100;
-  return `₳${centagons.toFixed(2)}`;
+export function toArgons(amount: number | bigint, isMicrogons = false): string {
+  return ArgonUtils.format(amount, isMicrogons ? 'microgons' : 'milligons', 'argons');
 }
