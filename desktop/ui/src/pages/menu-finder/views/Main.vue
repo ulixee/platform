@@ -1,17 +1,24 @@
 <template>
   <div class="Finder absolute">
-    <div v-if="isSelectMode" ref="selectionRef" class="waiting-for-selection">
+    <div
+      v-if="isSelectMode"
+      ref="selectionRef"
+      class="waiting-for-selection"
+    >
       WAITING FOR ELEMENT
     </div>
-    <div v-else ref="overlayBoxRef" class="overlay-box">
+    <div
+      v-else
+      ref="overlayBoxRef"
+      class="overlay-box"
+    >
       <div class="element-view flex h-full flex-col overflow-hidden">
         <div class="header-bar flex flex-none flex-row content-between justify-between p-3">
           <a
             href="javascript:void(0)"
             class="icon ml-2 mt-2 mr-3 mt-1 inline-block h-6 justify-center align-middle no-drag"
             @click="hideMenu"
-            >X</a
-          >
+          >X</a>
           <NodeSearchIcon
             class="icon ml-3 mr-2 mt-1 h-6 flex-none self-end no-drag cursor-pointer"
             @click="enableSelectMode"
@@ -31,7 +38,9 @@
             </div>
           </div>
           <div v-if="selectedElement" class="flex-stretch mt-5 flex flex-1 flex-col p-3">
-            <h5 class="text-base font-bold">Shortest possible query selectors:</h5>
+            <h5 class="text-base font-bold">
+              Shortest possible query selectors:
+            </h5>
             <div
               v-if="isGeneratingQuerySelector"
               class="mt-2 rounded-md border-t border-gray-300 p-2 text-sm italic text-slate-600"
@@ -49,8 +58,7 @@
               class="mt-4 text-sm font-bold text-slate-600"
               href="javascript:void(0)"
               @click="moreResults"
-              >View more</a
-            >
+            >View more</a>
           </div>
         </div>
         <div v-if="devtoolsElement" class="footer-bar flex-none p-3">

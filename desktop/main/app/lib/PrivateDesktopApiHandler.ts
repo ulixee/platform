@@ -1,6 +1,7 @@
 import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
@@ -10,17 +11,21 @@ import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import CreditPaymentService from '@ulixee/datastore/payments/CreditPaymentService';
 import {
+  IArgonFileMeta,
   IDatastoreResultItem,
   IDesktopAppPrivateApis,
   TCredit,
 } from '@ulixee/desktop-interfaces/apis';
 import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppPrivateEvents from '@ulixee/desktop-interfaces/events/IDesktopAppPrivateEvents';
+import { AccountType, ArgonFileType, CryptoScheme, LocalAccount } from '@ulixee/localchain';
 import { ConnectionToClient, WsTransportToClient } from '@ulixee/net';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
-import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
+import IArgonFile, { ArgonFileSchema } from '@ulixee/platform-specification/types/IArgonFile';
 import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import Identity from '@ulixee/platform-utils/lib/Identity';
+import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
+import serdeJson from '@ulixee/platform-utils/lib/serdeJson';
 import { dialog, Menu, WebContents } from 'electron';
 import { IncomingMessage } from 'http';
 import { nanoid } from 'nanoid';
@@ -29,6 +34,10 @@ import * as Path from 'path';
 import WebSocket = require('ws');
 import ApiManager from './ApiManager';
 import ArgonFile from './ArgonFile';
+
+const { version: packageVersion } = require('../package.json');
+
+const { log } = Logger(module);
 
 const argIconPath = Path.resolve(__dirname, '..', 'assets', 'arg.png');
 
@@ -42,10 +51,14 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   'open-replay': IOpenReplay;
 }> {
   public Apis: IDesktopAppPrivateApis = {
+    'Argon.importSend': this.importArgons.bind(this),
+    'Argon.acceptRequest': this.acceptArgonRequest.bind(this),
+    'Argon.send': this.createArgonsToSendFile.bind(this),
+    'Argon.request': this.createArgonsToRequestFile.bind(this),
     'Argon.dropFile': this.onArgonFileDrop.bind(this),
+    'Argon.showFileContextMenu': this.showContextMenu.bind(this),
     'Credit.create': this.createCredit.bind(this),
     'Credit.save': this.saveCredit.bind(this),
-    'Credit.showContextMenu': this.showContextMenu.bind(this),
     'Cloud.findAdminIdentity': this.findCloudAdminIdentity.bind(this),
     'Datastore.setAdminIdentity': this.setDatastoreAdminIdentity.bind(this),
     'Datastore.findAdminIdentity': this.findAdminIdentity.bind(this),
@@ -116,6 +129,168 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   public async onArgonFileDrop(path: string): Promise<void> {
     const argonFile = await ArgonFile.readFromPath(path);
     await this.onArgonFileOpened(argonFile);
+  }
+
+  public async createArgonsToSendFile(request: {
+    milligons: bigint;
+    toAddress?: string;
+    fromAddress?: string;
+    notaryId?: number;
+  }): Promise<IArgonFileMeta> {
+    const localchain = this.apiManager.localchain;
+    let change = this.apiManager.localchain.beginChange();
+    change.notaryId = request.notaryId ?? 1;
+    const notaryId = await change.notaryId;
+
+    const isSendingWholeBalance =
+      request.fromAddress && (await change.isWholeBalance(request.fromAddress, request.milligons));
+
+    const isSendingToSelf = localchain.accounts.hasAccount(
+      request.toAddress,
+      AccountType.Deposit,
+      notaryId,
+    );
+
+    const shouldUseJumpAccount = !isSendingWholeBalance || !request.toAddress || !isSendingToSelf;
+
+    let sendFromAccount: LocalAccount;
+    if (shouldUseJumpAccount) {
+      sendFromAccount = await change.fundAndNotarizeJumpAccount(
+        request.milligons,
+        this.apiManager.signer,
+        request.fromAddress,
+      );
+      change = this.apiManager.localchain.beginChange();
+      change.notaryId = sendFromAccount.notaryId;
+    } else {
+      sendFromAccount = await change.addAccount(request.fromAddress, AccountType.Deposit, notaryId);
+    }
+
+    const sendAccountBalance = await change.getBalanceChange(sendFromAccount);
+    await sendAccountBalance.send(request.milligons, request.toAddress ? [request.toAddress] : []);
+    await change.sign(this.apiManager.signer);
+    const file = await change.exportAsFile(ArgonFileType.Send);
+
+    const recipient = request.toAddress ? `for ${request.toAddress}` : 'cash';
+    return {
+      file: ArgonFileSchema.parse(file),
+      name: `${ArgonUtils.format(request.milligons, 'milligons', 'argons')} ${recipient}.arg`,
+    };
+  }
+
+  public async createArgonsToRequestFile(request: {
+    milligons: bigint;
+    sendToAddress?: string;
+    isPostTax?: boolean;
+    notaryId?: number;
+  }): Promise<IArgonFileMeta> {
+    const change = this.apiManager.localchain.beginChange();
+    let sendToAccount: LocalAccount;
+    if (request.sendToAddress) {
+      const accounts = await this.apiManager.localchain.accounts.list();
+      sendToAccount = accounts.find(x => {
+        if (x.address === request.sendToAddress && x.accountType === AccountType.Deposit) {
+          if (!request.notaryId) return true;
+          if (x.notaryId === request.notaryId) return true;
+        }
+        return false;
+      });
+    }
+    if (!sendToAccount) {
+      sendToAccount = await this.apiManager.localchain.accounts.findFreeAccount(
+        AccountType.Deposit,
+        request.notaryId ?? 1,
+      );
+      if (!sendToAccount) {
+        const address = this.apiManager.signer.createAccountId(CryptoScheme.Sr25519);
+        sendToAccount = await change.addAccount(
+          address,
+          AccountType.Deposit,
+          request.notaryId ?? 1,
+        );
+      }
+    }
+    change.notaryId = sendToAccount?.notaryId ?? 1;
+    const amount = request.isPostTax
+      ? request.milligons
+      : change.getTotalForAfterTaxBalance(request.milligons);
+    await change.claimAndPayTax(amount, sendToAccount.address);
+    await change.sign(this.apiManager.signer);
+    const file = await change.exportAsFile(ArgonFileType.Request);
+    return {
+      file: ArgonFileSchema.parse(file),
+      name: `Argon Request ${new Date().toLocaleString()}`,
+    };
+  }
+
+  public async acceptArgonRequest(request: {
+    argonFile: IArgonFile;
+    fundWithAddress?: string;
+  }): Promise<void> {
+    const argonFile = ArgonFileSchema.parse(request.argonFile);
+    if (argonFile.credit) {
+      await this.saveCredit({ credit: argonFile.credit });
+      return;
+    }
+    if (!argonFile.request) {
+      throw new Error('This Argon file is not a request');
+    }
+    const argonFileJson = serdeJson(argonFile);
+    const importChange = this.apiManager.localchain.beginChange();
+    await importChange.acceptRequestedBalanceChanges(argonFileJson, request.fundWithAddress);
+    const result = await importChange.notarize();
+    log.info('Argon request notarized', { argonFile: gettersToObject(result) } as any);
+  }
+
+  public async importArgons(claim: {
+    argonFile: IArgonFile;
+    claimAddress?: string;
+    taxAddress?: string;
+  }): Promise<void> {
+    const allowedClaimAddresses = [];
+    let notaryId = 1;
+    const argonFile = ArgonFileSchema.parse(claim.argonFile);
+    if (argonFile.credit) {
+      await this.saveCredit({ credit: argonFile.credit });
+      return;
+    }
+    if (!argonFile.send) {
+      throw new Error('This Argon file does not contain any sent argons');
+    }
+
+    for (const balanceChange of argonFile.send) {
+      for (const note of balanceChange.notes) {
+        if (note.noteType.action === 'send') {
+          allowedClaimAddresses.push(...(note.noteType.to ?? []));
+          break;
+        }
+      }
+      if (balanceChange.previousBalanceProof?.notaryId) {
+        notaryId = balanceChange.previousBalanceProof.notaryId;
+      }
+    }
+    if (claim.claimAddress && !allowedClaimAddresses.includes(claim.claimAddress)) {
+      throw new Error('The provided claim address is not allowed to claim these funds');
+    }
+    const accounts = await this.apiManager.localchain.accounts.list();
+    let claimAddress = claim.claimAddress;
+    if (allowedClaimAddresses.length) {
+      claimAddress = allowedClaimAddresses.find(x => accounts.find(a => a.address === x));
+      if (!claimAddress) {
+        throw new Error('No account found for the provided claim address');
+      }
+    }
+
+    claimAddress ??=
+      accounts.find(x => x.accountType === AccountType.Deposit && x.notaryId === notaryId)
+        ?.address ?? accounts.find(x => x.accountType === AccountType.Deposit).address;
+    const taxAddress = claim.taxAddress ?? claimAddress;
+
+    const argonFileJson = serdeJson(argonFile);
+    const importChange = this.apiManager.localchain.beginChange();
+    await importChange.claimReceivedBalance(argonFileJson, claimAddress, taxAddress);
+    const result = await importChange.notarize();
+    log.info('Argon import notarized', { argonFile: gettersToObject(result) } as any);
   }
 
   public getInstalledDatastores(): ILocalUserProfile['installedDatastores'] {
@@ -206,7 +381,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     datastore: Pick<IDatastoreResultItem, 'id' | 'version' | 'name' | 'scriptEntrypoint'>;
     cloud: string;
     argons: number;
-  }): Promise<{ credit: TCredit; filename: string }> {
+  }): Promise<IArgonFileMeta> {
     const { argons, datastore } = args;
     const address = new URL(this.apiManager.getCloudAddressByName(args.cloud));
     const adminIdentity = this.apiManager.localUserProfile.getAdminIdentity(
@@ -227,11 +402,14 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
       );
 
       return {
-        credit: {
-          datastoreUrl: `ulx://${id}:${secret}@${address.host}/${datastore.id}@v${datastore.version}`,
-          microgons: remainingCredits,
+        file: {
+          version: packageVersion,
+          credit: {
+            datastoreUrl: `ulx://${id}:${secret}@${address.host}/${datastore.id}@v${datastore.version}`,
+            microgons: remainingCredits,
+          },
         },
-        filename: `₳${argons} at ${
+        name: `₳${argons} at ${
           (datastore.name ?? datastore.scriptEntrypoint)?.replace(/[.\\/]/g, '-') ??
           'a Ulixee Datastore'
         }.arg`,
@@ -241,25 +419,22 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     }
   }
 
-  public async dragCreditAsFile(
-    args: { credit: IArgonFile['credit']; filename: string },
-    context: WebContents,
-  ): Promise<void> {
-    const file = Path.join(Os.tmpdir(), '.ulixee', args.filename);
-    await ArgonFile.createCredit(args.credit, file);
-    await context.startDrag({
+  public async dragArgonsAsFile(args: IArgonFileMeta, context: WebContents): Promise<void> {
+    const file = Path.join(Os.tmpdir(), '.ulixee', args.name);
+    await ArgonFile.create(args.file, file);
+    context.startDrag({
       file,
       icon: argIconPath,
     });
   }
 
   public async showContextMenu(args: {
-    credit: TCredit;
-    filename: string;
+    file: IArgonFile;
+    name: string;
     position: { x: number; y: number };
   }): Promise<void> {
-    const file = Path.join(Os.tmpdir(), '.ulixee', args.filename);
-    await ArgonFile.createCredit(args.credit, file);
+    const file = Path.join(Os.tmpdir(), '.ulixee', args.name);
+    await ArgonFile.create(args.file, file);
 
     const menu = Menu.buildFromTemplate([
       {

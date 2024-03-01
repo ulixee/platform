@@ -11,18 +11,6 @@
       "packages/datastore/plugins/hero-*",
       "packages/hero/plugins/*"
     ],
-    "nohoist": [
-      "**/@electron/**",
-      "**/electron",
-      "**/electron-webpack",
-      "**/electron-webpack/**",
-      "electron-log",
-      "electron-positioner",
-      "global-mouse-events",
-      "nseventmonitor",
-      "electron-updater",
-      "better-sqlite3",
-      "electron-clipboard-ex"
-    ]
+    "nohoist": ["**/electron-**", "**/fs-extra", "@ulixee/**", "**/better-sqlite3"]
   }
 }

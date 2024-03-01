@@ -57,7 +57,7 @@ export default class Ed25519 {
     try {
       return verify(null, hashedMessage, publicKey, signature);
     } catch (e) {
-      return e;
+      return e as Error;
     }
   }
 

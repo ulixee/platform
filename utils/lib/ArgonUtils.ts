@@ -113,7 +113,7 @@ export default class ArgonUtils {
   }
 
   private static microgonsToRoundedArgons(microgons: number | bigint): number {
-    return Math.round(Number(this.microgonsToArgons(BigInt(microgons) * 100n))) / 100;
+    return Math.round(Number(this.microgonsToArgons(BigInt(microgons) * 1000n))) / 1000;
   }
 
   private static milligonsToArgons(milligons: bigint): bigint {
@@ -124,6 +124,6 @@ export default class ArgonUtils {
     if (typeof milligons === 'number') {
       milligons = BigInt(milligons);
     }
-    return Math.round(100 * Number(this.milligonsToArgons(milligons))) / 100;
+    return Math.round(1000 * Number(this.milligonsToArgons(milligons))) / 1000;
   }
 }

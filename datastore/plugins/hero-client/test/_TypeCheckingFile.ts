@@ -1,5 +1,5 @@
 import Datastore, { Crawler, Extractor } from '@ulixee/datastore';
-import assert = require('assert');
+import { strict as assert } from 'node:assert';
 import { boolean, number, string } from '@ulixee/schema';
 import { HeroExtractorPlugin } from '../index';
 

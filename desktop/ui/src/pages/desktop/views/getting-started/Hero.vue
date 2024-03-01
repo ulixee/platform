@@ -1,36 +1,43 @@
 <template>
   <div class="h-full">
-    <h2 class="mb-5 text-lg font-semibold">Create a Hero Script</h2>
+    <h2 class="mb-5 text-lg font-semibold">
+      Create a Hero Script
+    </h2>
     <p class="font-light">
       Hero is an automated browser engine like Puppeteer and Playwright, but it's purpose-built for
       scraping. It can emulate real desktop versions of Chrome with built-in randomized
       fingerprints. Hero uses the browser's native DOM apis, with a few syntactic shortcuts added on
       to make your life easier.
-      <br /><br />
+      <br><br>
       Let's get started by creating a simple script that can read all the pages of the Hero
       documentation.
     </p>
     <!-- prettier-ignore -->
-    <Prism ref='code' language="typescript" data-prism-copy='Copy this code' style='font-size: 0.9em'>
+    <Prism
+      ref="code"
+      language="typescript"
+      data-prism-copy="Copy this code"
+      style="font-size: 0.9em"
+    >
       import Hero from '@ulixee/hero';
 
       async function run() {
-        const hero = new Hero();
-        await hero.goto('https://ulixee.org/docs/hero');
+      const hero = new Hero();
+      await hero.goto('https://ulixee.org/docs/hero');
 
-        await hero.querySelector('.LEFTBAR').$waitForVisible();
-        const links = await hero.querySelectorAll('.LEFTBAR a');
+      await hero.querySelector('.LEFTBAR').$waitForVisible();
+      const links = await hero.querySelectorAll('.LEFTBAR a');
 
-        const pageNavigation = [];
-        for (const link of await links) {
-          pageNavigation.push({
-            title: await link.innerText,
-            href: await link.href
-          });
-        }
-        console.log(pageNavigation)
+      const pageNavigation = [];
+      for (const link of await links) {
+      pageNavigation.push({
+      title: await link.innerText,
+      href: await link.href
+      });
+      }
+      console.log(pageNavigation)
 
-        await hero.close();
+      await hero.close();
       }
 
       run().catch(error => console.log(error));
@@ -39,7 +46,7 @@
     <p class="my-5">
       Copy this code to a file called
       <span class="mx-0.5 bg-gray-200 px-2 py-1 font-light">ulixee.org.ts</span> (or .js if you
-      prefer javascript). <br /><br />
+      prefer javascript). <br><br>
       You'll need to install Hero into your project (and Typescript for this example):
       <!-- prettier-ignore -->
       <Prism language="shell">
@@ -47,9 +54,11 @@
         npm i --save @ulixee/hero
         npx tsc init && npx tsc -b
       </Prism>
-      <br />
+      <br>
       Now run your script:
-      <Prism language="shell"> node ./ulixee.org.js </Prism>
+      <Prism language="shell">
+        node ./ulixee.org.js
+      </Prism>
     </p>
 
     <p

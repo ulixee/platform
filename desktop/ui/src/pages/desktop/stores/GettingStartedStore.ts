@@ -138,7 +138,7 @@ export const useGettingStartedStore = defineStore('gettingStartedStore', () => {
           if (
             entry.summary.scriptEntrypoint.includes('ulixee.org.') &&
             entry.details &&
-            Object.values(entry.details.extractorsByName).some(x => x.basePrice > 0)
+            Object.values(entry.details.extractorsByName).some(x => x.netBasePrice > 0)
           ) {
             stopWatch();
             done();

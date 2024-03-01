@@ -3,6 +3,7 @@ import { DataDomainStore, Escrow, OpenEscrow } from '@ulixee/localchain';
 import IEscrowServiceApiTypes from '@ulixee/platform-specification/services/EscrowServiceApis';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import serdeJson from '@ulixee/platform-utils/lib/serdeJson';
 import DatastoreEscrowsDb from '../db/DatastoreEscrowsDb';
 import IEscrowSpendTracker from '../interfaces/IEscrowSpendTracker';
 import LocalchainWithSync from './LocalchainWithSync';
@@ -121,27 +122,7 @@ export default class EscrowSpendTracker implements IEscrowSpendTracker {
     balanceChange: IBalanceChange,
   ): Promise<Escrow> {
     log.stats('Importing escrow to localchain', { datastoreId, balanceChange } as any);
-    const escrowJson = JSON.stringify(balanceChange, (name: string, value: unknown) => {
-      if (Buffer.isBuffer(value)) {
-        return `0x${value.toString('hex')}`;
-      }
-      if (
-        value &&
-        typeof value === 'object' &&
-        'type' in value &&
-        'data' in value &&
-        value.type === 'Buffer'
-      ) {
-        return `0x${Buffer.from(value.data as any).toString('hex')}`;
-      }
-      if (typeof value === 'bigint') {
-        if (value > Number.MAX_SAFE_INTEGER) {
-          return value.toString();
-        }
-        return Number(value);
-      }
-      return value;
-    });
+    const escrowJson = serdeJson(balanceChange);
 
     const openEscrow = await this.localchain.openEscrows.importEscrow(escrowJson);
     const escrow = await openEscrow.escrow;

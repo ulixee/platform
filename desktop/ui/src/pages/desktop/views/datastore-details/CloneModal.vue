@@ -1,5 +1,9 @@
 <template>
-  <Modal ref="modal" title="Clone this Datastore" dialog-class="w-1/2">
+  <Modal
+    ref="modal"
+    title="Clone this Datastore"
+    dialog-class="w-1/2"
+  >
     <div class="divider-y divider-slate-100 my-5">
       <div class="items-left my-5 flex flex-col px-3">
         <p class="mb-5 text-base font-light">

@@ -10,8 +10,8 @@
               :to="item.href"
               :class="[
                 item.href === $route.path ||
-                $route.path.startsWith(item.href.slice(0, -1)) ||
-                item.alias === $route.path
+                  $route.path.startsWith(item.href.slice(0, -1)) ||
+                  item.alias === $route.path
                   ? 'bg-gray-900 text-white'
                   : 'text-gray-300 hover:bg-gray-700 hover:text-white',
                 'group flex items-center rounded-md px-2 py-2 text-sm font-medium',
@@ -20,7 +20,7 @@
               <component
                 :is="item.icon"
                 :class="[
-                  item.current ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300',
+                  'text-gray-400 group-hover:text-gray-300',
                   'mr-3 h-6 w-6 flex-shrink-0',
                 ]"
                 aria-hidden="true"
@@ -53,7 +53,7 @@
                   class="overflow-hidden text-ellipsis text-xs font-medium text-gray-200"
                   :class="{ 'group-hover:text-gray-300': !walletActive }"
                 >
-                  {{ userBalance.address }}
+                  {{ userBalance.primaryAddress }}
                 </p>
               </div>
             </div>

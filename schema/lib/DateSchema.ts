@@ -1,5 +1,5 @@
-import moment = require('moment');
-import assert = require('assert');
+import *  as moment from 'moment';
+import { strict as assert } from 'node:assert';
 import BaseSchema, { IBaseConfig, isDefined } from './BaseSchema';
 
 export interface IDateSchemaConfig<TOptional extends boolean = boolean>

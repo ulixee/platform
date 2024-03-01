@@ -1,4 +1,4 @@
-import assert = require('assert');
+import { strict as assert } from 'node:assert';
 import IValidationResult, { IValidationError } from '../interfaces/IValidationResult';
 
 export interface IBaseConfig<TOptional extends boolean = boolean> {

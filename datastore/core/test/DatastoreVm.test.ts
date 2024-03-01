@@ -3,7 +3,7 @@ import Packager from '@ulixee/datastore-packager';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { mkdirSync, rmSync } from 'fs';
 import * as Path from 'path';
-import moment = require('moment');
+import *  as moment from 'moment';
 import { Helpers } from '@ulixee/datastore-testing';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreVm.test');

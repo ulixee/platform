@@ -11,7 +11,7 @@ import {
   MessageLocation,
   packMessage,
   ResponseCode,
-} from '@ulixee/desktop-core/lib/BridgeHelpers';
+} from '@ulixee/desktop-interfaces/BridgeHelpers';
 
 type IResponseFn = (response: any) => void;
 

@@ -25,6 +25,7 @@ export default async function cloneDatastore(
   if (url.includes('/free-credit')) {
     const credit = new URL(url).search.split(':');
     options.embedCredits = { id: credit[0], secret: credit[1] };
+    url = url.split('/free-credit')[0];
   }
   const datastoreApiClient = new DatastoreApiClient(host);
   const meta = await datastoreApiClient.getMetaAndSchema(datastoreId, datastoreVersion);

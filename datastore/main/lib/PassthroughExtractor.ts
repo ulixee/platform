@@ -1,4 +1,4 @@
-import assert = require('assert');
+import { strict as assert } from 'node:assert';
 import { ExtractSchemaType } from '@ulixee/schema';
 import IExtractorComponents from '../interfaces/IExtractorComponents';
 import IExtractorContext from '../interfaces/IExtractorContext';
@@ -65,7 +65,7 @@ export default class PassthroughExtractor<
     this.basePrice = components.upcharge ?? 0;
     assert(components.remoteExtractor, 'A remote extractor name is required');
     assert(components.remoteExtractor.includes('.'), 'A remote function source is required');
-    this.passThroughComponents = components;
+    this.passThroughComponents = components as any;
     const [source, remoteExtractor] = components.remoteExtractor.split('.');
     this.remoteExtractor = remoteExtractor;
     this.remoteSource = source;

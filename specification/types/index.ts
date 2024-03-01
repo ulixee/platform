@@ -18,12 +18,12 @@ export const identitySignatureValidation = z.instanceof(Buffer).refine(x => x.le
 });
 
 export const hashValidation = z.preprocess(
-  bufferPreprocess,
+  x => bufferPreprocess(x as string | Uint8Array | Buffer),
   z.instanceof(Buffer).refine(x => x.length === 32, { message: 'Hashes must be 32 bytes' }),
 );
 
 export const multiSignatureValidation = z.preprocess(
-  bufferPreprocess,
+  x => bufferPreprocess(x as string | Uint8Array | Buffer),
   z.instanceof(Buffer).refine(x => x.length === 65 || x.length === 66, {
     message:
       'Signatures must be 64 or 65 bytes, and must have a byte for the encoded type of signature',

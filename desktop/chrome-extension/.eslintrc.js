@@ -11,5 +11,5 @@ module.exports = {
     'import/extensions': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
   },
-  ignorePatterns: [".eslintrc.js", "webpack.config.js"]
+  ignorePatterns: [".eslintrc.js", "vite.config.js"]
 };

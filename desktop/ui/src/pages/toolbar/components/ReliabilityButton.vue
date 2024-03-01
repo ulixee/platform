@@ -12,7 +12,11 @@
     <div class="backgrounds">
       <div class="left-notch" />
     </div>
-    <Borders :is-selected="isSelected" :is-focused="isFocused" :has-right-circle="true" />
+    <Borders
+      :is-selected="isSelected"
+      :is-focused="isFocused"
+      :has-right-circle="true"
+    />
 
     <HeartIcon class="icon" />
     <span v-if="!isMinimal" class="label">Reliability</span>
@@ -21,8 +25,8 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
-import Borders from './Borders.vue';
 import HeartIcon from '@/assets/icons/heart.svg';
+import Borders from './Borders.vue';
 
 export default Vue.defineComponent({
   name: 'ReliabilityButton',

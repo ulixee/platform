@@ -3,7 +3,7 @@ import StringSchema from '@ulixee/schema/lib/StringSchema';
 import DateSchema from '@ulixee/schema/lib/DateSchema';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import addGlobalInstance from '@ulixee/commons/lib/addGlobalInstance';
-import moment = require('moment');
+import * as moment from 'moment';
 import Extractor from './Extractor';
 import IExtractorSchema, { ISchemaRecordType } from '../interfaces/IExtractorSchema';
 import { IExtractorPluginConstructor } from '../interfaces/IExtractorPluginStatics';
@@ -19,8 +19,8 @@ export default class Crawler<
   TFinalInput extends ISchemaRecordType<any> = TDisableCache extends true
     ? TProvidedSchema['input']
     : TProvidedSchema extends { input: Record<string, ISchemaAny> }
-    ? typeof CrawlerInputSchema & TProvidedSchema['input']
-    : typeof CrawlerInputSchema & Record<string, ISchemaAny>,
+      ? typeof CrawlerInputSchema & TProvidedSchema['input']
+      : typeof CrawlerInputSchema & Record<string, ISchemaAny>,
   TSchema extends IExtractorSchema<TFinalInput, typeof CrawlerOutputSchema> = IExtractorSchema<
     TFinalInput,
     typeof CrawlerOutputSchema

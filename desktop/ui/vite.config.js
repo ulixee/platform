@@ -3,6 +3,7 @@ import prismjs from 'vite-plugin-prismjs';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath } from 'node:url';
 import svgLoader from 'vite-svg-loader';
+import checker from 'vite-plugin-checker';
 
 export default defineConfig({
   build: {
@@ -48,6 +49,10 @@ export default defineConfig({
     }),
     prismjs({
       languages: ['javascript', 'typescript', 'shell'],
+    }),
+    checker({
+      vueTsc: true,
+      typescript: true
     }),
   ],
   resolve: {

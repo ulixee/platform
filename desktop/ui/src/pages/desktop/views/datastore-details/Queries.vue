@@ -36,7 +36,9 @@
     </form>
   </div>
 
-  <h2 class="mb-5 text-lg font-semibold">Your Queries</h2>
+  <h2 class="mb-5 text-lg font-semibold">
+    Your Queries
+  </h2>
 
   <div class="overflow-hidden rounded-lg shadow ring-1 ring-black ring-opacity-5">
     <table class="min-w-full max-w-full divide-y divide-gray-300 overflow-hidden">
@@ -45,12 +47,24 @@
           <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-white">
             ID
           </th>
-          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">Query</th>
-          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">Input</th>
-          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">Output</th>
-          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">Bytes</th>
-          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">Millis</th>
-          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">Price</th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
+            Query
+          </th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
+            Input
+          </th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
+            Output
+          </th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
+            Bytes
+          </th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
+            Millis
+          </th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
+            Price
+          </th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-200 bg-white">
@@ -81,7 +95,9 @@
               <template v-else-if="item.outputs">
                 {{ item.outputs?.length ?? 0 }} Records
               </template>
-              <template v-else> Running... </template>
+              <template v-else>
+                Running...
+              </template>
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">
               {{ item.bytes }}
@@ -89,7 +105,9 @@
             <td class="px-3 py-4 text-sm text-gray-500">
               {{ item.milliseconds }}
             </td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ item.microgons ?? 0 }}₥</td>
+            <td class="px-3 py-4 text-sm text-gray-500">
+              {{ item.microgons ?? 0 }}₥
+            </td>
           </tr>
           <tr v-if="selectedId === item.queryId">
             <td

@@ -6,58 +6,5 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "cross-env": "^7.0.3"
-  },
-  "workspaces": {
-    "packages": [
-      "desktop/*",
-      "desktop/main/app",
-      "datastore/*",
-      "datastore/plugins/*",
-      "cloud/*",
-      "sql/*",
-      "client/*",
-      "cli",
-      "schema",
-      "specification",
-      "utils",
-      "end-to-end",
-      "playgrounds/*",
-      "hero/build/*",
-      "hero/build/plugins/*",
-      "../shared/build/*",
-      "../unblocked/build/agent/*",
-      "../unblocked/build/plugins/*",
-      "../unblocked/build/specification",
-      "../unblocked/build/js-path",
-      "../unblocked/build/real-user-agents",
-      "../mainchain/localchain"
-    ],
-    "nohoist": [
-      "**/babel-loader",
-      "**/electron-webpack",
-      "**/@electron",
-      "**/@electron/**",
-      "**/electron",
-      "**/electron-*",
-      "**/electron-builder",
-      "**/electron-webpack/**",
-      "**/electron-log",
-      "**/nseventmonitor",
-      "**/global-mouse-events",
-      "**/electron-clipboard-ex",
-      "**/@ulixee/repo-tools",
-      "**/@vue/**",
-      "**/@vue/**/**",
-      "**/vue",
-      "**/vue-loader",
-      "**/vue-template-compiler",
-      "**/vue-class-component",
-      "**/@types/web",
-      "**/autoprefixer",
-      "**/postcss",
-      "**/tailwindcss",
-      "**/@nodelib",
-      "**/@nodelib/**"
-    ]
   }
 }

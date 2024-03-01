@@ -2,7 +2,9 @@
   <div class="rounded-lg bg-white p-3 px-5 shadow ring-1 ring-black ring-opacity-5">
     <div class="mt-3 divide-y divide-gray-200">
       <div class="space-y-1">
-        <h3 class="text-lg font-medium leading-6 text-gray-900">Administer this Cloud</h3>
+        <h3 class="text-lg font-medium leading-6 text-gray-900">
+          Administer this Cloud
+        </h3>
         <p class="max-w-2xl text-sm text-gray-500">
           <template v-if="adminIdentity">
             As the the administrator of this cloud, you have permission to deploy Datastores, issue
@@ -17,7 +19,9 @@
       <div class="mt-6">
         <dl class="divide-y divide-gray-200">
           <div class="grid grid-cols-3 gap-4 py-4">
-            <dt class="text-sm font-medium text-gray-500">Admin Identity</dt>
+            <dt class="text-sm font-medium text-gray-500">
+              Admin Identity
+            </dt>
             <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
               <span class="flex-grow overflow-hidden text-ellipsis">{{
                 adminIdentity ?? '-'
@@ -27,7 +31,7 @@
                   v-if="cloud.type !== 'public'"
                   type="button"
                   class="rounded-md bg-white font-medium text-fuchsia-800 hover:text-fuchsia-700 focus:outline-none focus:ring-2 focus:ring-fuchsia-800 focus:ring-offset-2"
-                  @click.prevent="attachIdentity(cloud)"
+                  @click.prevent="attachIdentity(cloud as ICloudConnection)"
                 >
                   {{ adminIdentity ? 'Update' : 'Attach Identity' }}
                 </button>
@@ -41,6 +45,7 @@
 </template>
 
 <script lang="ts">
+import ICloudConnection from '@/api/ICloudConnection';
 import * as Vue from 'vue';
 import { computed } from 'vue';
 import { ArrowPathIcon } from '@heroicons/vue/20/solid';

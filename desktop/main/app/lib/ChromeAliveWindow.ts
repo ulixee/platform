@@ -8,7 +8,7 @@ import HeroCore from '@ulixee/hero-core';
 import { app, BrowserWindow, MenuItem, screen, shell } from 'electron';
 import { nanoid } from 'nanoid';
 import * as Path from 'path';
-import moment = require('moment');
+import * as moment from 'moment';
 import generateContextMenu from '../menus/generateContextMenu';
 import ApiClient from './ApiClient';
 import StaticServer from './StaticServer';

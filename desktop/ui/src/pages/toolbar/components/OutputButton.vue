@@ -22,8 +22,9 @@
 
 <script lang="ts">
 import * as Vue from 'vue';
-import Borders from './Borders.vue';
 import DatabaseIcon from "@/assets/icons/database.svg";
+import Borders from './Borders.vue';
+
 export default Vue.defineComponent({
   name: 'OutputButton',
   components: {

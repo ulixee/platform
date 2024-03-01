@@ -1,6 +1,6 @@
 import { array, boolean, dateAdd, number, object, string, ExtractSchemaType } from '@ulixee/schema';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
-import moment = require('moment');
+import *  as moment from 'moment';
 import { Extractor, ExtractorSchema } from '../index';
 
 describe('Schemas', () => {

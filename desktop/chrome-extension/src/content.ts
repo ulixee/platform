@@ -1,6 +1,6 @@
 /// <reference types="chrome"/>
 import '@webcomponents/custom-elements';
-import { MessageEventType } from '@ulixee/desktop-core/lib/BridgeHelpers';
+import { MessageEventType } from '@ulixee/desktop-interfaces/BridgeHelpers';
 import ElementOptionsOverlay from './lib/ElementOptionsOverlay';
 import { onMessagePayload, sendToDevtoolsScript } from './lib/content/ContentMessenger';
 import ElementsBucket from './lib/ElementsBucket';

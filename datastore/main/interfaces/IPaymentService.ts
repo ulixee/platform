@@ -1,3 +1,4 @@
+import { BalanceChangeStatus } from '@ulixee/localchain';
 import { IPayment } from '@ulixee/platform-specification';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import { IPaymentMethod } from '@ulixee/platform-specification/types/IPayment';
@@ -22,7 +23,16 @@ export default interface IPaymentService {
   ): Promise<void>;
 }
 
+export interface IAddressStatus {
+  status: BalanceChangeStatus;
+  pendingBalance?: bigint;
+  balance: bigint;
+}
+
 export interface IUserBalance {
+  primaryAddress: string;
+  otherAddresses: string[];
+  statusByAddress: { [address: string]: IAddressStatus };
   walletBalance: string; // deposit + credits
   taxBalance: bigint;
   depositBalance: bigint;

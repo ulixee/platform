@@ -1,4 +1,4 @@
-import { MessageEventType } from '@ulixee/desktop-core/lib/BridgeHelpers';
+import { MessageEventType } from '@ulixee/desktop-interfaces/BridgeHelpers';
 import { sendToCore, sendToDevtoolsPrivate, sendToDevtoolsScript } from './content/ContentMessenger';
 
 interface IResolvable<T = any> {

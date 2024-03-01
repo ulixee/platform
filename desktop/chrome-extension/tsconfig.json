@@ -8,8 +8,8 @@
     "noImplicitAny": false,
     "sourceMap": false,
     "allowJs": true,
-    "types": ["node", "webpack-env"]
+    "types": ["node", "chrome"]
   },
-  "include": ["./**/*.ts", "./**/*.vue", "*.js", "manifest.json"],
+  "include": ["./src/**/*.ts", "manifest.json"],
   "exclude": ["**/tsconfig*.json", "**/node_modules", "**/build"]
 }

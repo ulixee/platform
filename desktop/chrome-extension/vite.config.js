@@ -17,7 +17,6 @@ export default defineConfig({
     emptyOutDir: false,
     sourcemap: 'inline',
   },
-  plugins: [],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

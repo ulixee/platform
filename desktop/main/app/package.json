@@ -22,6 +22,8 @@
     "@ulixee/platform-specification": "2.0.0-alpha.28",
     "electron-log": "^5.1.0",
     "electron-updater": "^6.1.7",
+    "better-sqlite3": "^9.4.3",
+    "moment": "^2.29.4",
     "nanoid": "^3.3.6",
     "tslib": "^2.6.2",
     "ws": "^7.5.9"

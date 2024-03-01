@@ -1,45 +1,54 @@
 <template>
   <div class="h-full">
-    <h2 class="mb-5 text-lg font-semibold">Shareable Credits</h2>
+    <h2 class="mb-5 text-lg font-semibold">
+      Shareable Credits
+    </h2>
     <p class="font-light">
       You published a Datastore waiting for the world to use it... but people would love to try it
       before they buy it! Ulixee has a simple Credits system that allow you to create and send
       Argons to your potential users.
-      <br /><br />
+      <br><br>
     </p>
 
-    <h4 class="text-md mb-2 mt-5 font-semibold">Argon</h4>
+    <h4 class="text-md mb-2 mt-5 font-semibold">
+      Argon
+    </h4>
     <p class="font-light">
       Argons are the currency for Ulixee Datastores. When you create a Shareable Credit, we'll
       generate an Argon Credits "file" that you can send to your user. You can send it via Email,
       Discord, Twitter, anything.. it's up to you.
     </p>
-    <h4 class="text-md mb-2 mt-5 font-semibold">Using Credits</h4>
+    <h4 class="text-md mb-2 mt-5 font-semibold">
+      Using Credits
+    </h4>
     <p class="font-light">
       Your credit recipient just needs to download Ulixee Desktop and double-click the file. Or if
       that doesn't work for them, you can also send a link to your Datastore documentation with the
       credit embedded.
-      <br /><br />
+      <br><br>
       Credits can be specified in their connection string to Ulixee Client, or they can install them
       into Ulixee Desktop and have the Credits automatically applied.
     </p>
-    <hr class="my-5" />
+    <hr class="my-5">
     <p class="font-light">
       Let's try it. Navigate to your
       <router-link
         :to="'/datastore/' + datastoreId + '@v' + version"
         class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
-        >Datastore</router-link
       >
+        Datastore
+      </router-link>
       and click the link on the right column that says "Issue a new Store Credit".
     </p>
 
     <div v-if="credit">
-      <hr class="my-5" />
+      <hr class="my-5">
       <p class="font-light">
         Great, you created a credit. Drag it to your Desktop and then open the file. Once you accept
         it, run your query:
-        <Prism language="shell">node ./query.js</Prism>
+        <Prism language="shell">
+          node ./query.js
+        </Prism>
       </p>
     </div>
     <p

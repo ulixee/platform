@@ -1,42 +1,45 @@
 <template>
   <div class="h-full">
-    <h2 class="mb-5 text-lg font-semibold">Query</h2>
+    <h2 class="mb-5 text-lg font-semibold">
+      Query
+    </h2>
     <p class="font-light">
       Datastores can be queried using standard SQL. You can even use a native postgres client in
       your language of choice.
-      <br /><br />
+      <br><br>
       This means you can deploy your scraping technology in Node.js/Typescript, and continue to use
       Golang, Python, etc on your server.
-      <br /><br />
-      The "connection" string for your Datastore was emitted in the console when you ran<br />
+      <br><br>
+      The "connection" string for your Datastore was emitted in the console when you ran<br>
       <span class="m-0.5 bg-gray-200 p-1">@ulixee/datastore start ./ulixee.org.ts</span>. It can
       also be found for each
       <router-link
         :to="'/datastore/' + datastoreId + '@v' + version + '/clouds'"
         class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
-        >Datastore</router-link
       >
+        Datastore
+      </router-link>
       in this app.
 
-      <br /><br />
+      <br><br>
       Let's see how easy it is to query our Datastore with the Client library.
     </p>
 
     <!-- prettier-ignore -->
-    <Prism language="typescript" style='font-size: 0.9em' >
+    <Prism language="typescript" style="font-size: 0.9em">
       import Client from '@ulixee/client';
 
       async function query() {
-        const client = new Client(`{{ datastoreUrl }}`);
-        const results = await client.query(
-          `SELECT title, href from docPages(tool => $1)
-          order by title desc`,
-          ['hero'],
-        );
+      const client = new Client(`{{ datastoreUrl }}`);
+      const results = await client.query(
+      `SELECT title, href from docPages(tool => $1)
+      order by title desc`,
+      ['hero'],
+      );
 
-        console.log(results);
+      console.log(results);
 
-        await client.disconnect();
+      await client.disconnect();
       }
 
       query().catch(console.error);
@@ -44,31 +47,29 @@
 
     <p class="my-5">
       Copy this code into a new file called
-      <span class="mx-0.5 bg-gray-200 p-1 font-light">query.ts</span>. <br /><br />
+      <span class="mx-0.5 bg-gray-200 p-1 font-light">query.ts</span>. <br><br>
       You'll need to install the Ulixee Client into your project.
-      <span class="font-light"
-        >NOTE: We're accumulating a number of dependencies, but this is the only Ulixee library you
-        will install in your "application" tier.</span
-      >
+      <span class="font-light">NOTE: We're accumulating a number of dependencies, but this is the only Ulixee library you
+        will install in your "application" tier.</span>
       <!-- prettier-ignore -->
       <Prism language="shell">
         npm i --save @ulixee/client
         # build typescript again
         npx tsc -b
       </Prism>
-      <br />
+      <br>
       Now run your file.
-      <Prism language="shell"> node ./query.js </Prism>
+      <Prism language="shell">
+        node ./query.js
+      </Prism>
     </p>
 
     <p v-if="step.isComplete" class="my-10 border-t-2 border-fuchsia-800 pt-5">
-      <span class="font-light"
-        >Your Datastore recorded stats about this query! Check the
+      <span class="font-light">Your Datastore recorded stats about this query! Check the
         <router-link
           to="/datastores"
           class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
-          >Datastores</router-link
-        >
+        >Datastores</router-link>
         tab in the sidebar.
       </span>
     </p>
