@@ -19,7 +19,7 @@
     "@ulixee/schema": "2.0.0-alpha.26",
     "@ulixee/specification": "2.0.0-alpha.26",
     "@ulixee/sql-engine": "2.0.0-alpha.26",
-    "better-sqlite3": "^9.3.0",
+    "better-sqlite3": "^9.4.3",
     "rollup": "^3.20.2",
     "tar": "^6.2.0",
     "ws": "^7.5.9"
