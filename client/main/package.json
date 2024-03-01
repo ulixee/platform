@@ -1,24 +1,24 @@
 {
   "name": "@ulixee/client",
-  "version": "2.0.0-alpha.26",
+  "version": "2.0.0-alpha.27",
   "main": "index.js",
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "scripts": {},
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.26",
-    "@ulixee/datastore": "2.0.0-alpha.26",
-    "@ulixee/net": "2.0.0-alpha.26",
-    "@ulixee/schema": "2.0.0-alpha.26"
+    "@ulixee/commons": "2.0.0-alpha.27",
+    "@ulixee/datastore": "2.0.0-alpha.27",
+    "@ulixee/net": "2.0.0-alpha.27",
+    "@ulixee/schema": "2.0.0-alpha.27"
   },
   "devDependencies": {
-    "@ulixee/cloud": "2.0.0-alpha.26",
-    "@ulixee/crypto": "2.0.0-alpha.26",
-    "@ulixee/datastore-packager": "2.0.0-alpha.26",
-    "@ulixee/datastore-testing": "2.0.0-alpha.26",
-    "@ulixee/schema": "2.0.0-alpha.26",
-    "@ulixee/specification": "2.0.0-alpha.26",
-    "@ulixee/sql-ast": "2.0.0-alpha.26",
-    "@ulixee/sql-engine": "2.0.0-alpha.26"
+    "@ulixee/cloud": "2.0.0-alpha.27",
+    "@ulixee/crypto": "2.0.0-alpha.27",
+    "@ulixee/datastore-packager": "2.0.0-alpha.27",
+    "@ulixee/datastore-testing": "2.0.0-alpha.27",
+    "@ulixee/schema": "2.0.0-alpha.27",
+    "@ulixee/specification": "2.0.0-alpha.27",
+    "@ulixee/sql-ast": "2.0.0-alpha.27",
+    "@ulixee/sql-engine": "2.0.0-alpha.27"
   }
 }

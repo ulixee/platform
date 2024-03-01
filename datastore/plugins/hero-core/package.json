@@ -1,25 +1,25 @@
 {
   "name": "@ulixee/datastore-plugins-hero-core",
-  "version": "2.0.0-alpha.26",
+  "version": "2.0.0-alpha.27",
   "main": "index.js",
   "repository": "git@github.com:ulixee/ulixee.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.26",
-    "@ulixee/datastore": "2.0.0-alpha.26",
-    "@ulixee/datastore-core": "2.0.0-alpha.26",
-    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.26",
-    "@ulixee/execute-js-plugin": "2.0.0-alpha.26",
-    "@ulixee/hero": "2.0.0-alpha.26",
-    "@ulixee/hero-core": "2.0.0-alpha.26",
-    "@ulixee/net": "2.0.0-alpha.26",
-    "@ulixee/platform-specification": "2.0.0-alpha.26",
+    "@ulixee/commons": "2.0.0-alpha.27",
+    "@ulixee/datastore": "2.0.0-alpha.27",
+    "@ulixee/datastore-core": "2.0.0-alpha.27",
+    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.27",
+    "@ulixee/execute-js-plugin": "2.0.0-alpha.27",
+    "@ulixee/hero": "2.0.0-alpha.27",
+    "@ulixee/hero-core": "2.0.0-alpha.27",
+    "@ulixee/net": "2.0.0-alpha.27",
+    "@ulixee/platform-specification": "2.0.0-alpha.27",
     "nanoid": "^3.3.6"
   },
   "devDependencies": {
     "@types/node": "^18.19.10",
-    "@ulixee/cloud": "2.0.0-alpha.26",
-    "@ulixee/datastore-packager": "2.0.0-alpha.26",
-    "@ulixee/datastore-testing": "2.0.0-alpha.26"
+    "@ulixee/cloud": "2.0.0-alpha.27",
+    "@ulixee/datastore-packager": "2.0.0-alpha.27",
+    "@ulixee/datastore-testing": "2.0.0-alpha.27"
   }
 }
