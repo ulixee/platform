@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/desktop",
-  "version": "2.0.0-alpha.26",
+  "version": "2.0.0-alpha.27",
   "description": "This is a builder project that uses the dual package.json approach (./app contains the app package.json).",
   "private": true,
   "scripts": {
@@ -30,8 +30,8 @@
   },
   "devDependencies": {
     "@electron/notarize": "^1.2.3",
-    "@ulixee/datastore": "2.0.0-alpha.26",
-    "@ulixee/datastore-packager": "2.0.0-alpha.26",
+    "@ulixee/datastore": "2.0.0-alpha.27",
+    "@ulixee/datastore-packager": "2.0.0-alpha.27",
     "cross-env": "^7.0.3",
     "electron": "28.2.1",
     "electron-builder": "^24.9.1",
