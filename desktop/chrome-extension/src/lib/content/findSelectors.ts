@@ -79,7 +79,9 @@ function fetchSelectorsToCheck(
       const selectorOptions = layer.selectorOptions.filter(x => x.length === depth + 1);
       baseSelectors = appendToSelectors(baseSelectors, selectorOptions, isDirectSibling);
     }
-    selectors.push(...baseSelectors);
+    for (const selector of baseSelectors) {
+      selectors.push(selector);
+    }
     if (selectors.length >= maxSelectorCount) break;
   }
   return selectors;
