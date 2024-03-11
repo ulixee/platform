@@ -217,7 +217,9 @@ export class HeroExtractorPlugin<ISchema extends IExtractorSchema> {
       timestamp: Date.now(),
     }));
 
-    this.pendingOutputs.push(...changesToRecord);
+    for (const change of changesToRecord) {
+      this.pendingOutputs.push(change);
+    }
 
     this.uploadOutputs();
   }

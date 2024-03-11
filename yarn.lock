@@ -2912,10 +2912,10 @@
     progress "^2.0.3"
     tar "^6.1.11"
 
-"@ulixee/commons@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/commons/-/commons-2.0.0-alpha.26.tgz#175a2d45263aff01bf8ce0a3d37c0c39b85096cf"
-  integrity sha512-YM+f/ADGlqYiU0jnAbTvtcW82UZ7IIM/nUkNZnAzk0Pvef/W6T5WH7IrU9q34M2VNF2h+pOs1+fzXhWSewu/aQ==
+"@ulixee/commons@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/commons/-/commons-2.0.0-alpha.27.tgz#bebcd60e2037bd1f755a24f945d2391e7b130ae6"
+  integrity sha512-uajrx4JD7n6N+/ot2hFWWu3Q1kxHWTFaEsIqzlLgt3XYl1CqEAVyq3VKdOK0tqhQQ3hBQgLfggrrpt+7oFKEWg==
   dependencies:
     "@jridgewell/trace-mapping" "^0.3.18"
     bech32 "^2.0.0"
@@ -2923,126 +2923,126 @@
     https-proxy-agent "^5.0.0"
     semver "^7.3.7"
 
-"@ulixee/default-browser-emulator@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/default-browser-emulator/-/default-browser-emulator-2.0.0-alpha.26.tgz#1cc0bcf17b570f10ebf3065d397696f6bcc84313"
-  integrity sha512-+k7xQokMT2MMsQWCdMK4ciKDk6glUchzj4i2iJEHvgML9Cey/FuSEjbKmEdrtOb/1fswDoXPxU4++3rM20UGGw==
+"@ulixee/default-browser-emulator@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/default-browser-emulator/-/default-browser-emulator-2.0.0-alpha.27.tgz#1f05a821e50fd8218203cf32165b96143536ba70"
+  integrity sha512-tTrUtUTma+faV70Q1gwVa7C3ah4mPivgNHPYxabbHv4UCpVyY1/CqZyKnnsZD7777yidX5LeqKqf96phJuyQjA==
   dependencies:
     "@ulixee/chrome-app" "^1.0.3"
-    "@ulixee/commons" "2.0.0-alpha.26"
-    "@ulixee/real-user-agents" "2.0.0-alpha.26"
-    "@ulixee/unblocked-agent-mitm-socket" "2.0.0-alpha.26"
-    "@ulixee/unblocked-specification" "2.0.0-alpha.26"
+    "@ulixee/commons" "2.0.0-alpha.27"
+    "@ulixee/real-user-agents" "2.0.0-alpha.27"
+    "@ulixee/unblocked-agent-mitm-socket" "2.0.0-alpha.27"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.27"
     compare-versions "^6.1.0"
     nanoid "^3.3.6"
     tough-cookie "^4.1.3"
     ua-parser-js "^1.0.37"
 
-"@ulixee/default-human-emulator@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/default-human-emulator/-/default-human-emulator-2.0.0-alpha.26.tgz#b2e48dee2fa82ea526ee36b543a21f97b24f2b2c"
-  integrity sha512-AxfTRr91qzqD2cw6U2KrplopSi7XjgYnjEuIJIILg7oi/41RAOIEb1VDyJiIWKHShra9UpvIZOhGiSTmM7dMAA==
+"@ulixee/default-human-emulator@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/default-human-emulator/-/default-human-emulator-2.0.0-alpha.27.tgz#8cbc05636d6cb2752666343b830d47fa4f23d7cd"
+  integrity sha512-OciGb1ianWHRirEMHk0EEr8engIaOht3TfXczy604HnHqLn0pLmxHwg9siQYaMBHWL76juyjD/etVod4qUdgvg==
   dependencies:
-    "@ulixee/commons" "2.0.0-alpha.26"
-    "@ulixee/unblocked-specification" "2.0.0-alpha.26"
+    "@ulixee/commons" "2.0.0-alpha.27"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.27"
 
-"@ulixee/execute-js-plugin@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/execute-js-plugin/-/execute-js-plugin-2.0.0-alpha.26.tgz#0e867536e933d425f25baa28c257a0cf8dec7345"
-  integrity sha512-v22y59A9eznf3BdfJRBOwbcCleIkLobhUkZB+BbZxgpdLIkdtWR6iDd8Nwl23UF39LG+p4d8nGy/KRsWHXG8SA==
+"@ulixee/execute-js-plugin@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/execute-js-plugin/-/execute-js-plugin-2.0.0-alpha.27.tgz#ab9b06a1265385eb0b453f38302dc1722cd23820"
+  integrity sha512-MHNZes00J9v0G+Fd8VFpYCSpEq+49AfNgyKztRcz3nKP2IDEojzjB1gU8rKMvxSPn3SYGHRjbxd06y+8yafCPw==
   dependencies:
-    "@ulixee/hero-interfaces" "2.0.0-alpha.26"
-    "@ulixee/hero-plugin-utils" "2.0.0-alpha.26"
+    "@ulixee/hero-interfaces" "2.0.0-alpha.27"
+    "@ulixee/hero-plugin-utils" "2.0.0-alpha.27"
 
-"@ulixee/hero-core@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/hero-core/-/hero-core-2.0.0-alpha.26.tgz#cb074b6c7a1726021488399681f749f69d28906b"
-  integrity sha512-fLgvfd9uSPvinoRUIGHT8Xe5OVQVyXTGTemJ8UFmk9zEvS0XPw+qU0TELnT/3AFe+zr9SoRHrZSCkXv5EJpung==
+"@ulixee/hero-core@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/hero-core/-/hero-core-2.0.0-alpha.27.tgz#b75d0475e05db790e19984127465b56a993718c7"
+  integrity sha512-vUxacTjk/13mxyayOw7bxL/RRWKtxdyZaJmn/lMSTiuxxl1cSEVVLg3v+Jhy+69QtA5ljUaD02axpTNMcPFvBw==
   dependencies:
     "@ulixee/awaited-dom" "1.4.2"
-    "@ulixee/commons" "2.0.0-alpha.26"
-    "@ulixee/default-browser-emulator" "2.0.0-alpha.26"
-    "@ulixee/default-human-emulator" "2.0.0-alpha.26"
-    "@ulixee/hero-interfaces" "2.0.0-alpha.26"
-    "@ulixee/hero-plugin-utils" "2.0.0-alpha.26"
-    "@ulixee/hero-timetravel" "2.0.0-alpha.26"
-    "@ulixee/js-path" "2.0.0-alpha.26"
-    "@ulixee/net" "2.0.0-alpha.26"
-    "@ulixee/unblocked-agent" "2.0.0-alpha.26"
-    "@ulixee/unblocked-agent-mitm" "2.0.0-alpha.26"
-    "@ulixee/unblocked-specification" "2.0.0-alpha.26"
-    better-sqlite3 "^9.3.0"
+    "@ulixee/commons" "2.0.0-alpha.27"
+    "@ulixee/default-browser-emulator" "2.0.0-alpha.27"
+    "@ulixee/default-human-emulator" "2.0.0-alpha.27"
+    "@ulixee/hero-interfaces" "2.0.0-alpha.27"
+    "@ulixee/hero-plugin-utils" "2.0.0-alpha.27"
+    "@ulixee/hero-timetravel" "2.0.0-alpha.27"
+    "@ulixee/js-path" "2.0.0-alpha.27"
+    "@ulixee/net" "2.0.0-alpha.27"
+    "@ulixee/unblocked-agent" "2.0.0-alpha.27"
+    "@ulixee/unblocked-agent-mitm" "2.0.0-alpha.27"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.27"
+    better-sqlite3 "^9.4.3"
     moment "^2.29.4"
     nanoid "^3.3.6"
     ws "^7.5.9"
 
-"@ulixee/hero-interfaces@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/hero-interfaces/-/hero-interfaces-2.0.0-alpha.26.tgz#a848f49ed9fde777aae9c74a870e094b4521ef4e"
-  integrity sha512-GsPvnIdQ9Qr9VuER8ZAHJeTzyuyiUeQzkfspL8uyrAhupL0XDC0SSQvsnmqjaqictVTnuKxIRnxXRMbLiAZHYA==
+"@ulixee/hero-interfaces@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/hero-interfaces/-/hero-interfaces-2.0.0-alpha.27.tgz#b72eb7e34a9c257f985db77cc0e8f4165c8d504a"
+  integrity sha512-Rnlv2PXFyn937Kwuw/KHphvLlocsUFG7qLhQt2tUH2S+Vo1SQAPrt3OWsZ9ZDN7wcCh3pNhmbrTpCcvCeHXvyQ==
   dependencies:
     "@ulixee/awaited-dom" "1.4.2"
-    "@ulixee/commons" "2.0.0-alpha.26"
-    "@ulixee/js-path" "2.0.0-alpha.26"
-    "@ulixee/unblocked-specification" "2.0.0-alpha.26"
+    "@ulixee/commons" "2.0.0-alpha.27"
+    "@ulixee/js-path" "2.0.0-alpha.27"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.27"
     devtools-protocol "^0.0.1137505"
 
-"@ulixee/hero-plugin-utils@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/hero-plugin-utils/-/hero-plugin-utils-2.0.0-alpha.26.tgz#4630c65b226ff8b391607a752d1e6406784f06e9"
-  integrity sha512-rzeJBeGkDUKrzxeEdQH8EEGpnkzkWqfrHinxrOyRQNOGRC1SmP51yV+3sU6nUM6SlLMfzVKznCy/hus6k2w8kg==
+"@ulixee/hero-plugin-utils@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/hero-plugin-utils/-/hero-plugin-utils-2.0.0-alpha.27.tgz#f4d686573d865cfab611bd2a45511855831d77c2"
+  integrity sha512-+6H2vqk9hAoSGRUTgiB5+GlJYMajoJXBFcu0KsbWGzCTdmPAWVuECegGMFI/EqLz3UTchhyISJPe0yXkj6zBnA==
   dependencies:
-    "@ulixee/commons" "2.0.0-alpha.26"
-    "@ulixee/hero-interfaces" "2.0.0-alpha.26"
-    "@ulixee/unblocked-specification" "2.0.0-alpha.26"
+    "@ulixee/commons" "2.0.0-alpha.27"
+    "@ulixee/hero-interfaces" "2.0.0-alpha.27"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.27"
 
-"@ulixee/hero-timetravel@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/hero-timetravel/-/hero-timetravel-2.0.0-alpha.26.tgz#b0505a600a4addfe2b5860cc324c4a3ca61392f8"
-  integrity sha512-dyxmRiiXtnvsqNVNO7IQwiZmQJGzZ2H3aM24EkdkQQ6SJyQaEwZTXTcdI6I7SNDumdzJV8WpItgoAQvK2cmXEQ==
+"@ulixee/hero-timetravel@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/hero-timetravel/-/hero-timetravel-2.0.0-alpha.27.tgz#92a5ec7b633d4ea713efd37465fc8e298db79dd5"
+  integrity sha512-/WgGouzReKAZQT3hXuoUvMpYiVmDXJTkv8kKY9d8dXw0Av+c47dCFoJCnnSZzW5Lc9ZK1fHaNlNdSI5pW5p9ew==
   dependencies:
-    "@ulixee/commons" "2.0.0-alpha.26"
-    "@ulixee/hero-core" "2.0.0-alpha.26"
-    "@ulixee/hero-interfaces" "2.0.0-alpha.26"
-    "@ulixee/unblocked-agent" "2.0.0-alpha.26"
-    "@ulixee/unblocked-specification" "2.0.0-alpha.26"
+    "@ulixee/commons" "2.0.0-alpha.27"
+    "@ulixee/hero-core" "2.0.0-alpha.27"
+    "@ulixee/hero-interfaces" "2.0.0-alpha.27"
+    "@ulixee/unblocked-agent" "2.0.0-alpha.27"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.27"
     nanoid "^3.3.6"
 
-"@ulixee/hero@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/hero/-/hero-2.0.0-alpha.26.tgz#342b2bbcfa7db4168d06b370e418ba1682e9f21e"
-  integrity sha512-2gFemX4XKSGgR9V8Mdt58q3T5MwyvNgAEEqqgZmFlPNDt++drkU9eXf44FEIyCzrT69nRFSXxNbE+1A2JsR9Xg==
+"@ulixee/hero@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/hero/-/hero-2.0.0-alpha.27.tgz#15ead57f6f6e361cb6195291c4efada1f28a1418"
+  integrity sha512-3q9oKuFQg0sT1XaZjsaNq0w33FQ+MWdgwXaUhty1m7K3ziMPrrvznn+835wlsNckeDWIs3etVNDTJbwfRxWZXw==
   dependencies:
     "@ulixee/awaited-dom" "1.4.2"
-    "@ulixee/commons" "2.0.0-alpha.26"
-    "@ulixee/hero-interfaces" "2.0.0-alpha.26"
-    "@ulixee/hero-plugin-utils" "2.0.0-alpha.26"
-    "@ulixee/js-path" "2.0.0-alpha.26"
-    "@ulixee/net" "2.0.0-alpha.26"
-    "@ulixee/unblocked-specification" "2.0.0-alpha.26"
+    "@ulixee/commons" "2.0.0-alpha.27"
+    "@ulixee/hero-interfaces" "2.0.0-alpha.27"
+    "@ulixee/hero-plugin-utils" "2.0.0-alpha.27"
+    "@ulixee/js-path" "2.0.0-alpha.27"
+    "@ulixee/net" "2.0.0-alpha.27"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.27"
     linkedom "^0.14.11"
 
-"@ulixee/js-path@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/js-path/-/js-path-2.0.0-alpha.26.tgz#1046733ee8f387f1d247ebe6aa3e11c11d165cf8"
-  integrity sha512-769vO4zlTEzFCDrg85QdHgDrHCcmnUUoPHd8E54S4bUPgg6ll2Cn48gtbGIprjON2pzjoXb6yZ0piLdz06Bh+w==
+"@ulixee/js-path@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/js-path/-/js-path-2.0.0-alpha.27.tgz#3cabcf68d6cde20b261f7298a81a24d151949447"
+  integrity sha512-0fMQxzdoc3kMAtESAgaeGnEsWxcjBJlMztFpLFiTTp/6//sdJeXz7lSt++aHo6V+j1ckp4twsUsEN/9NMePI3g==
 
-"@ulixee/net@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/net/-/net-2.0.0-alpha.26.tgz#74ffef7fa2308fffa345ddf9d3491b160e3f6c5b"
-  integrity sha512-dCKUAQ4/bb7e8zfP7tpgtIT8zXfZ1kLDE+YYkCL0ugoMJ9l3L7l5XUS7bvvWut7iBQpjpz7oOgXV9viGeQ5Vhw==
+"@ulixee/net@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/net/-/net-2.0.0-alpha.27.tgz#635b8799e1f00657dfdfa52319444a1d1ded222b"
+  integrity sha512-KOYVvz9Y9qi1X43JsJJnIhgspb547MeYQ07R85i6UtnhTNKRTwUeu5cZXoVuOKkCzdmcXHKHzecGESOckVpSDA==
   dependencies:
-    "@ulixee/commons" "2.0.0-alpha.26"
+    "@ulixee/commons" "2.0.0-alpha.27"
     ws "^7.5.9"
 
-"@ulixee/real-user-agents@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/real-user-agents/-/real-user-agents-2.0.0-alpha.26.tgz#c87ddd43ffaf3f3ce72b57d70279fea9a1d21d4c"
-  integrity sha512-mLEZHZttlMhFoAbeN+eZZq4LOXskZjWQH8aqO7YrmdXVk8tDFRAFxeOCQHW3ccvAVvYA1rpYrAifStK2EUsq1g==
+"@ulixee/real-user-agents@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/real-user-agents/-/real-user-agents-2.0.0-alpha.27.tgz#8f373a7f9db6ea8dc2069232efc0092ea28ac3b0"
+  integrity sha512-Uj49EWAe2qboZ9cXiw0Qb4kYmZuE4i/DMT0F7yBk6t1yf7+FnLF8qBmX69CXqv4iVG7UfKV530A1Uj4HEliJzA==
   dependencies:
-    "@ulixee/commons" "2.0.0-alpha.26"
-    "@ulixee/unblocked-specification" "2.0.0-alpha.26"
-    compare-versions "^3.6.0"
+    "@ulixee/commons" "2.0.0-alpha.27"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.27"
+    compare-versions "^6.1.0"
     ua-parser-js "^1.0.37"
 
 "@ulixee/repo-tools@^1.0.29":
@@ -3069,47 +3069,47 @@
     pretty-quick "^4.0.0"
     typescript "^5.3.3"
 
-"@ulixee/unblocked-agent-mitm-socket@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/unblocked-agent-mitm-socket/-/unblocked-agent-mitm-socket-2.0.0-alpha.26.tgz#4c5a589fdad212db2955f6729f76a223bbde19e7"
-  integrity sha512-8juNSnHf15mNxRehmsYueV+dgB74RODc4BnXtYYKQvAxb1hHNjyOo5Mt/QHsJHOtv89bYU6PSTVb9xFNV9682Q==
+"@ulixee/unblocked-agent-mitm-socket@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/unblocked-agent-mitm-socket/-/unblocked-agent-mitm-socket-2.0.0-alpha.27.tgz#f44a2bbfe48c0de89726f201aba60a726d873468"
+  integrity sha512-RS4ASe+gDCqZO7iZTPUHRm0g8UWbG+ciyPjUcXNoJwRcvwMDaau/3MysuueZcIeGcoq7hp2zGAPOnS1qol5qQw==
   dependencies:
-    "@ulixee/commons" "2.0.0-alpha.26"
-    "@ulixee/unblocked-specification" "2.0.0-alpha.26"
+    "@ulixee/commons" "2.0.0-alpha.27"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.27"
     nanoid "^3.3.6"
 
-"@ulixee/unblocked-agent-mitm@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/unblocked-agent-mitm/-/unblocked-agent-mitm-2.0.0-alpha.26.tgz#f01186cf2405782d6b17a08c4c9af8108a0716b5"
-  integrity sha512-yV3TSkO+c1Zh9Cvimgnv4qGsx8SJa7nZ3iz+GE0IGPJ/Biaj4/r2D48x2GoLlZzEtvjyBPQLt3AeKNvvo5bLcg==
+"@ulixee/unblocked-agent-mitm@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/unblocked-agent-mitm/-/unblocked-agent-mitm-2.0.0-alpha.27.tgz#4d681906262adc692292f983784d90663add10c2"
+  integrity sha512-OHO0ACfupwL46vWtXSlW34TgM4fXyn+DY5kDl+Qm2RqDn3T3QjO0vuZ/IpEpLVPrBWzFEd2koijF78BHAo3cpw==
   dependencies:
-    "@ulixee/commons" "2.0.0-alpha.26"
-    "@ulixee/unblocked-agent-mitm-socket" "2.0.0-alpha.26"
-    "@ulixee/unblocked-specification" "2.0.0-alpha.26"
+    "@ulixee/commons" "2.0.0-alpha.27"
+    "@ulixee/unblocked-agent-mitm-socket" "2.0.0-alpha.27"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.27"
     dns-packet "^5.2.4"
     moment "^2.29.4"
 
-"@ulixee/unblocked-agent@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/unblocked-agent/-/unblocked-agent-2.0.0-alpha.26.tgz#1098dae10a9b104adc9ea774388b90b3b603a13e"
-  integrity sha512-xrETLrDHCSOFewLaVrhOfl8f8FwLikMe85Bhnv8sJdRyAa9MaavpmxXt+9CSYgb9RSiy43I/cMQS1NBbNhPD8A==
+"@ulixee/unblocked-agent@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/unblocked-agent/-/unblocked-agent-2.0.0-alpha.27.tgz#2d22233b358998ef4f4568428156a717592c5176"
+  integrity sha512-GfqRtYrO53t0rVStRtn1buH/AlJObtBdmks5b1rhHkkAUePv3UksGJsWLXXxipZOw9HPMwRDb22yaVDxSLmO6w==
   dependencies:
     "@ulixee/chrome-121-0" "^6167.86.8"
     "@ulixee/chrome-app" "^1.0.3"
-    "@ulixee/commons" "2.0.0-alpha.26"
-    "@ulixee/js-path" "2.0.0-alpha.26"
-    "@ulixee/unblocked-agent-mitm" "2.0.0-alpha.26"
-    "@ulixee/unblocked-specification" "2.0.0-alpha.26"
+    "@ulixee/commons" "2.0.0-alpha.27"
+    "@ulixee/js-path" "2.0.0-alpha.27"
+    "@ulixee/unblocked-agent-mitm" "2.0.0-alpha.27"
+    "@ulixee/unblocked-specification" "2.0.0-alpha.27"
     devtools-protocol "^0.0.1137505"
     nanoid "^3.3.6"
     tough-cookie "^4.1.3"
 
-"@ulixee/unblocked-specification@2.0.0-alpha.26":
-  version "2.0.0-alpha.26"
-  resolved "https://registry.yarnpkg.com/@ulixee/unblocked-specification/-/unblocked-specification-2.0.0-alpha.26.tgz#048433b41eba71a58bc29de1a8a77008f64d3f2d"
-  integrity sha512-0dN5cAiT2VTC3NR71Bc8cqTKeVLgYRm2kMmQWy4rWdC5H805Zkh8mQ9zWBL+CuIUEN7s7qHXbJZbWpwxMVkY9g==
+"@ulixee/unblocked-specification@2.0.0-alpha.27":
+  version "2.0.0-alpha.27"
+  resolved "https://registry.yarnpkg.com/@ulixee/unblocked-specification/-/unblocked-specification-2.0.0-alpha.27.tgz#4ca81e1b190b2f750a764cdf718a9c95c85d92d1"
+  integrity sha512-zLbB8BvupSra69J8MiN8JdyPlAvf1JGKvgPll2Rvkj6Y1tGZzXgXIFHG25+dvtQt8Hh38BiHDgVfNlgoDstV0Q==
   dependencies:
-    "@ulixee/js-path" "2.0.0-alpha.26"
+    "@ulixee/js-path" "2.0.0-alpha.27"
     devtools-protocol "^0.0.1137505"
 
 "@ungap/structured-clone@^1.2.0":
@@ -3846,7 +3846,7 @@ before-after-hook@^2.2.0:
   resolved "https://registry.yarnpkg.com/before-after-hook/-/before-after-hook-2.2.3.tgz#c51e809c81a4e354084422b9b26bad88249c517c"
   integrity sha512-NzUnlZexiaH/46WDhANlyR2bXRopNg4F/zuSA3OpZnllCUgRaOF2znDioDWrmbNVsuZk6l9pMquQB38cfBZwkQ==
 
-better-sqlite3@^9.3.0, better-sqlite3@^9.4.3:
+better-sqlite3@^9.4.3:
   version "9.4.3"
   resolved "https://registry.yarnpkg.com/better-sqlite3/-/better-sqlite3-9.4.3.tgz#7df39ba3273fbb7c0561cf913572547142868cc4"
   integrity sha512-ud0bTmD9O3uWJGuXDltyj3R47Nz0OHX8iqPOT5PMspGqlu/qQFn+5S2eFBUCrySpavTjFXbi4EgrfVvPAHlImw==
@@ -4490,11 +4490,6 @@ compare-version@^0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/compare-version/-/compare-version-0.1.2.tgz#0162ec2d9351f5ddd59a9202cba935366a725080"
   integrity sha512-pJDh5/4wrEnXX/VWRZvruAGHkzKdr46z11OlTPN+VrATlWWhSKewNCJ1futCO5C7eJB3nPMFZA1LeYtcFboZ2A==
-
-compare-versions@^3.6.0:
-  version "3.6.0"
-  resolved "https://registry.yarnpkg.com/compare-versions/-/compare-versions-3.6.0.tgz#1a5689913685e5a87637b8d3ffca75514ec41d62"
-  integrity sha512-W6Af2Iw1z4CB7q4uU4hv646dW9GQuBM+YpC0UvUCWSD8w90SJjp+ujJuXaEMtAXBtSqGfMPuFOVn4/+FlaqfBA==
 
 compare-versions@^6.1.0:
   version "6.1.0"

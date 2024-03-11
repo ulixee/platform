@@ -55,7 +55,9 @@ export default function flattenJson(
         flattenJsonOptions.key = objKey as string;
       }
       const childRecords = flattenJson(data[objKey], childPath, level + 1, flattenJsonOptions);
-      results.push(...childRecords);
+      for (const record of childRecords) {
+        results.push(record);
+      }
     }
 
     results.push({
