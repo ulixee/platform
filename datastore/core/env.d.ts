@@ -1,0 +1,22 @@
+import Identity from '@ulixee/crypto/lib/Identity';
+declare const _default: {
+    serverEnvironment: string;
+    datastoresDir: string;
+    queryHeroSessionsDir: string;
+    replayRegistryHost: string;
+    enableSqliteWalMode: string;
+    cloudAdminIdentities: string[];
+    datastoresMustHaveOwnAdminIdentity: boolean;
+    paymentAddress: string;
+    computePricePerQuery: number;
+    approvedSidechains: any[];
+    defaultSidechainHost: string;
+    defaultSidechainRootIdentity: string;
+    identityWithSidechain: Identity;
+    enableGlobalConfigs: boolean;
+    statsTrackerHost: string;
+    datastoreRegistryHost: string;
+    storageEngineHost: string;
+};
+export default _default;
+export declare function parseIdentities(identities: string, type: string): string[];
