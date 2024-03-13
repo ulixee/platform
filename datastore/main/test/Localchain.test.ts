@@ -1,6 +1,7 @@
 import { Keyring } from '@polkadot/keyring';
 import { Helpers } from '@ulixee/datastore-testing';
-import { Localchain, Signer } from '@ulixee/localchain';
+import { CryptoScheme, Localchain } from '@ulixee/localchain';
+import { AccountType } from '@ulixee/platform-specification/types/IBalanceChange';
 import INotarization, {
   NotarizationSchema,
 } from '@ulixee/platform-specification/types/INotarization';
@@ -8,7 +9,6 @@ import ValidationError from '@ulixee/platform-specification/utils/ValidationErro
 import { mkdir } from 'node:fs/promises';
 import * as Path from 'path';
 import { inspect } from 'util';
-import { AccountType } from '@ulixee/platform-specification/types/IBalanceChange';
 import env from '../env';
 
 inspect.defaultOptions.depth = 11;
@@ -26,8 +26,9 @@ test('it can serialize and deserialize a notarization', async () => {
     env,
   );
   Helpers.onClose(() => localchain.close());
-  const keyring = new Keyring({ type: 'ecdsa' });
+  const keyring = new Keyring({ type: 'ed25519' });
   const address = keyring.addFromUri('//Alice').address;
+  await localchain.keystore.importSuri('//Alice', CryptoScheme.Ed25519);
   const balanceBuilder = localchain.beginChange();
   await balanceBuilder.claimFromMainchain({
     accountNonce: 1,
@@ -36,12 +37,8 @@ test('it can serialize and deserialize a notarization', async () => {
     expirationBlock: 100,
     notaryId: 1,
   });
-  await balanceBuilder.leaseDataDomain(address, address, 'example.flights', address);
-  await balanceBuilder.sign(
-    new Signer(async (addr, signatureMessage) => {
-      return keyring.getPair(addr).sign(signatureMessage, { withType: true });
-    }),
-  );
+  await balanceBuilder.leaseDataDomain('example.flights', address);
+  await balanceBuilder.sign();
 
   const json: INotarization = JSON.parse(await balanceBuilder.toJson());
   expect(json.balanceChanges.find(x => x.accountType === AccountType.Deposit).balance).toBe(

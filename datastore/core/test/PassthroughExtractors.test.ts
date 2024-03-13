@@ -177,6 +177,10 @@ export default new Datastore({
   remoteDatastores: {
     source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}@v${remoteVersion}',
   },
+  payment: {
+    notaryId: 1,
+    address: "${new Keyring().createFromUri('upstream').address}",
+  },
   extractors: {
     pass: new Datastore.PassthroughExtractor({
       upcharge: 400,

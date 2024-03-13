@@ -139,6 +139,7 @@ export default class CreditPaymentService
     if (!(await existsAsync(this.baseDir))) {
       await mkdir(this.baseDir, { recursive: true });
     }
+
     if (canDelete && this.paymentDetails.remaining <= CreditPaymentService.MIN_BALANCE) {
       return await unlink(this.storePath);
     }
@@ -155,6 +156,7 @@ export default class CreditPaymentService
     const creditFiles = await readdir(fromDir, {
       withFileTypes: true,
     });
+
     const credits = await Promise.all(
       creditFiles.map(async file => {
         if (!file.isFile() || !file.name.endsWith('.json')) return null;

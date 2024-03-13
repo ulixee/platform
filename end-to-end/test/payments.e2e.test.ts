@@ -4,13 +4,10 @@ import { Helpers } from '@ulixee/datastore-testing';
 import LocalchainPaymentService from '@ulixee/datastore/payments/LocalchainPaymentService';
 import LocalPaymentService from '@ulixee/datastore/payments/LocalPaymentService';
 import {
-  AccountType,
   BalanceChangeBuilder,
-  CryptoScheme,
   DataDomainStore,
   Localchain,
   NotarizationBuilder,
-  Signer,
 } from '@ulixee/localchain';
 import {
   checkForExtrinsicSuccess,
@@ -22,8 +19,10 @@ import {
 } from '@ulixee/mainchain';
 import { IDatastoreMetadataResult } from '@ulixee/platform-specification/datastore/DatastoreApis';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import * as Path from 'node:path';
+import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
+import { inspect } from 'util';
 import TestCloudNode from '../lib/TestCloudNode';
 import TestMainchain from '../lib/TestMainchain';
 import TestNotary, { ipToInt32 } from '../lib/TestNotary';
@@ -35,40 +34,29 @@ const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'e2e.payments.t
 
 let mainchainUrl: string;
 const identityPath = Path.join(storageDir, 'DatastoreDev.pem');
-const bobchainBasePath = Path.join(storageDir, 'bobchain');
-const ferdieBasePath = Path.join(storageDir, 'ferdiechain');
-const ferdieKeystore = new Signer();
-let bobEscrowFunding: KeyringPair;
-let bobTaxAddress: KeyringPair;
+
 let bob: KeyringPair;
+let ferdie: KeyringPair;
 
 beforeAll(async () => {
-  await mkdir(ferdieBasePath, { recursive: true });
-  await mkdir(bobchainBasePath, { recursive: true });
-
   const mainchain = new TestMainchain();
   mainchainUrl = await mainchain.launch();
   const notary = new TestNotary();
   await notary.start(mainchainUrl);
 
+  bob = new Keyring({ type: 'sr25519' }).createFromUri('//Bob');
+  ferdie = new Keyring({ type: 'sr25519' }).createFromUri('//Ferdie');
   const sudo = new Keyring({ type: 'sr25519' }).createFromUri('//Alice');
   const mainchainClient = await getClient(mainchainUrl);
 
   await activateNotary(sudo, mainchainClient, notary);
   await mainchainClient.disconnect();
-  await ferdieKeystore.attachKeystore(ferdieBasePath, {});
 
   execAndLog(`npx @ulixee/datastore admin-identity create --filename="${identityPath}"`);
 
   execAndLog(
-    `npx @ulixee/localchain keystore insert --suri="//Bob//escrows//1" --keystore-path="${bobchainBasePath}"`,
+    `npx @ulixee/localchain accounts create bobchain --suri="//Bob" --scheme=sr25519 --base-dir="${storageDir}"`,
   );
-  execAndLog(
-    `npx @ulixee/localchain keystore insert --suri="//Bob//tax//1" --keystore-path="${bobchainBasePath}"`,
-  );
-  bobEscrowFunding = new Keyring({ type: 'sr25519' }).createFromUri('//Bob//escrows//1');
-  bobTaxAddress = new Keyring({ type: 'sr25519' }).createFromUri('//Bob//tax//1');
-  bob = new Keyring({ type: 'sr25519' }).createFromUri('//Bob');
 });
 
 test('it can do end to end payments flow for a domain datastore', async () => {
@@ -78,25 +66,23 @@ test('it can do end to end payments flow for a domain datastore', async () => {
   Helpers.needsClosing.push({ close: () => mainchainClient.disconnect(), onlyCloseOnFinal: false });
 
   const bobchain = await LocalchainPaymentService.load({
-    localchainPath: bobchainBasePath,
+    localchainPath: Path.join(storageDir, 'bobchain.db'),
     mainchainUrl,
-    datastoreFundingAddress: bobEscrowFunding.address,
-    taxAddress: bobTaxAddress.address,
     escrowMilligonsStrategy: {
       type: 'multiplier',
       queries: 2,
     },
   });
 
-  const ferdie = new Keyring({ type: 'sr25519' }).createFromUri('//Ferdie');
+  execAndLog(
+    `npx @ulixee/localchain accounts create ferdiechain --suri="//Ferdie" --scheme=sr25519 --base-dir="${storageDir}"`,
+  );
   const ferdiechain = await Localchain.load({
     mainchainUrl,
-    dbPath: Path.join(ferdieBasePath, 'localchain.db'),
+    path: Path.join(storageDir, 'ferdiechain.db'),
   });
 
-  const ferdieVotesAddress = ferdieKeystore.createAccountId(CryptoScheme.Sr25519);
-  const ferdieDomainProfitsAddress = ferdieKeystore.createAccountId(CryptoScheme.Sr25519);
-  const ferdieDomainAddress = ferdieKeystore.createAccountId(CryptoScheme.Sr25519);
+  const ferdieVotesAddress = ferdie.derive('//votes').address;
 
   const domain = 'e2e.communication';
   const isDomainRegistered = execAndLog(
@@ -109,39 +95,12 @@ test('it can do end to end payments flow for a domain datastore', async () => {
       transferMainchainToLocalchain(mainchainClient, ferdiechain, ferdie, 1000, 1),
       transferMainchainToLocalchain(mainchainClient, bobchain.localchain, bob, 5000, 1),
     ]);
-    await ferdieChange.notarization.leaseDataDomain(
-      ferdie.address,
-      ferdie.address,
-      domain,
-      ferdie.address,
-    );
-    // need to send enough to create an escrow after tax
-    await bobChange.notarization.moveToSubAddress(
-      bob.address,
-      bobEscrowFunding.address,
-      AccountType.Deposit,
-      5000n,
-      bobTaxAddress.address,
-    );
+    await ferdieChange.notarization.leaseDataDomain(domain, ferdie.address);
 
     // for these, we'll act like this happened outside of a client (eg, using desktop)
     const [, ferdieTracker] = await Promise.all([
-      bobChange.notarization.notarizeAndWaitForNotebook(
-        new Signer(async (address, signatureMessage) => {
-          if (bob.address === address) return bob.sign(signatureMessage, { withType: true });
-          if (bobTaxAddress.address === address)
-            return bobTaxAddress.sign(signatureMessage, { withType: true });
-          if (bobEscrowFunding.address === address)
-            return bobEscrowFunding.sign(signatureMessage, { withType: true });
-          throw new Error('Invalid address');
-        }),
-      ),
-      ferdieChange.notarization.notarizeAndWaitForNotebook(
-        new Signer(async (address, signatureMessage) => {
-          if (ferdie.address === address) return ferdie.sign(signatureMessage, { withType: true });
-          throw new Error('Invalid address');
-        }),
-      ),
+      bobChange.notarization.notarizeAndWaitForNotebook(),
+      ferdieChange.notarization.notarizeAndWaitForNotebook(),
     ]);
 
     const ferdieMainchainClient = await ferdiechain.mainchainClient;
@@ -157,8 +116,7 @@ test('it can do end to end payments flow for a domain datastore', async () => {
     ULX_CLOUD_ADMIN_IDENTITIES: identityBech32.trim(),
     ULX_IDENTITY_PATH: identityPath,
     ULX_MAINCHAIN_URL: mainchainUrl,
-    ULX_LOCALCHAIN_BASE_PATH: ferdieBasePath,
-    ULX_TAX_ADDRESS: ferdieDomainProfitsAddress,
+    ULX_LOCALCHAIN_PATH: ferdiechain.path,
     ULX_VOTES_ADDRESS: ferdieVotesAddress,
     ULX_NOTARY_ID: '1',
   });
@@ -171,7 +129,7 @@ test('it can do end to end payments flow for a domain datastore', async () => {
     domain,
     payment: {
       notaryId: 1,
-      address: ferdieDomainProfitsAddress,
+      address: ferdie.address,
     },
   });
 
@@ -179,7 +137,7 @@ test('it can do end to end payments flow for a domain datastore', async () => {
     mainchainClient,
     dataDomainHash,
     ferdie,
-    decodeAddress(ferdieDomainAddress, false, 42),
+    decodeAddress(ferdie.address, false, 42),
     1,
     {
       [datastoreVersion]: mainchainClient.createType('UlxPrimitivesDataDomainVersionHost', {
@@ -208,6 +166,7 @@ test('it can do end to end payments flow for a domain datastore', async () => {
     },
   });
 
+
   const result = await client.query('SELECT * FROM default(test => $1)', [1]);
 
   expect(result).toEqual([{ success: true, input: { test: 1 } }]);
@@ -228,6 +187,11 @@ test('it can do end to end payments flow for a domain datastore', async () => {
   expect(payments[0].payment.escrow.settledMilligons).toBe(500n);
   expect(payments[0].remainingBalance).toBe(500_000);
 
+  const balance = await bobchain.getBalance();
+  inspect.defaultOptions.depth = 10;
+  console.log('Balance:', gettersToObject(balance.accountOverview));
+  expect(balance.accountOverview.balance).toBe(5000n);
+  expect(balance.accountOverview.heldBalance).toBe(1000n);
 }, 300e3);
 
 test('it can do end to end payments with no domain', async () => {
@@ -237,7 +201,6 @@ test('it can do end to end payments with no domain', async () => {
     `npx @ulixee/datastore admin-identity read --filename="${identityPath}"`,
   );
   expect(identityBech32).toContain('id1');
-  const ferdieDomainProfitsAddress = ferdieKeystore.createAccountId(CryptoScheme.Sr25519);
 
   const cloudNode = new TestCloudNode(buildDir);
   Helpers.needsClosing.push({ close: () => cloudNode.close(), onlyCloseOnFinal: false });
@@ -245,34 +208,31 @@ test('it can do end to end payments with no domain', async () => {
     ULX_CLOUD_ADMIN_IDENTITIES: identityBech32.trim(),
     ULX_IDENTITY_PATH: identityPath,
     ULX_MAINCHAIN_URL: mainchainUrl,
-    ULX_LOCALCHAIN_BASE_PATH: ferdieBasePath,
-    ULX_TAX_ADDRESS: ferdieDomainProfitsAddress,
+    ULX_LOCALCHAIN_PATH: Path.join(storageDir, 'ferdiechain.db'),
     ULX_NOTARY_ID: '1',
   });
   expect(cloudAddress).toBeTruthy();
   Helpers.needsClosing.push({ close: () => cloudNode.close(), onlyCloseOnFinal: false });
 
   await uploadDatastore('no-domain', buildDir, cloudAddress, {
+    version: "0.0.2",
     payment: {
       notaryId: 1,
-      address: ferdieDomainProfitsAddress,
+      address: ferdie.address,
     },
   });
 
   const bobchain = await LocalchainPaymentService.load({
-    localchainPath: bobchainBasePath,
+    localchainPath: Path.join(storageDir, 'bobchain.db'),
     mainchainUrl,
-    datastoreFundingAddress: bobEscrowFunding.address,
-    taxAddress: bobTaxAddress.address,
     escrowMilligonsStrategy: {
       type: 'multiplier',
       queries: 2,
     },
   });
-  const account = await bobchain.localchain.accounts.get(bobEscrowFunding.address, AccountType.Deposit, 1);
-  expect(account).toBeTruthy();
-  const balance = await bobchain.localchain.balanceChanges.getLatestForAccount(account.id);
-  expect(balance.balance).toBe('3600');
+  const userBalance = await bobchain.getBalance();
+  // nothing moved yet?
+  expect(userBalance.accountOverview.balance).toBe(5000n);
 
   const paymentService = new LocalPaymentService(bobchain, storageDir);
   const payments: LocalPaymentService['EventTypes']['reserved'][] = [];
@@ -280,7 +240,7 @@ test('it can do end to end payments with no domain', async () => {
   paymentService.on('reserved', payment => payments.push(payment));
   paymentService.on('createdEscrow', e => escrows.push(e));
   let metadata: IDatastoreMetadataResult;
-  const client = new Client(`ulx://${cloudAddress}/no-domain@v0.0.1`, {
+  const client = new Client(`ulx://${cloudAddress}/no-domain@v0.0.2`, {
     paymentService,
     mainchainUrl,
     onQueryResult(result) {
@@ -300,12 +260,18 @@ test('it can do end to end payments with no domain', async () => {
   );
   expect(escrows).toHaveLength(1);
   expect(escrows[0].allocatedMilligons).toBe(5n);
-  expect(escrows[0].datastoreId).toBe("no-domain");
+  expect(escrows[0].datastoreId).toBe('no-domain');
   expect(payments).toHaveLength(1);
   expect(payments[0].payment.microgons).toBe(1000);
   expect(payments[0].payment.escrow).toBeTruthy();
   expect(payments[0].payment.escrow.settledMilligons).toBe(5n);
   expect(payments[0].remainingBalance).toBe(5_000 - 1_000);
+
+  const balance = await bobchain.getBalance();
+  inspect.defaultOptions.depth = 10;
+  console.log('Balance:', gettersToObject(balance.accountOverview));
+  expect(balance.accountOverview.balance).toBe(5000n);
+  expect(balance.accountOverview.heldBalance).toBe(1005n);
 });
 
 async function uploadDatastore(

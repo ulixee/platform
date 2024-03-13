@@ -3,8 +3,8 @@ import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import IPaymentService from '@ulixee/datastore/interfaces/IPaymentService';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { AccountType } from '@ulixee/localchain';
 import { IPayment } from '@ulixee/platform-specification';
+import { AccountType} from '@ulixee/platform-specification/types/IBalanceChange';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import { nanoid } from 'nanoid';
 

@@ -29,14 +29,6 @@ jobs:
         run: yarn && yarn build
         working-directory: ../shared
 
-      - name: Clone ulixee/payments
-        run: git clone https://github.com/ulixee/payments.git
-        working-directory: ..
-
-      - name: Install ulixee/payments
-        run: yarn && yarn build
-        working-directory: ../payments
-
       - name: Clone unblocked
         run: git clone --recurse-submodules -j8 https://github.com/ulixee/unblocked.git
         working-directory: ..

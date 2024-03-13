@@ -21,6 +21,18 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
 
       - name: /etc/hosts
@@ -69,14 +81,6 @@ jobs:
         run: yarn && yarn build
         working-directory: ../shared
 
-      - name: Clone ulixee/payments
-        run: git clone --recurse-submodules -j8 https://github.com/ulixee/payments.git
-        working-directory: ..
-
-      - name: Install ulixee/payments
-        run: yarn && yarn build
-        working-directory: ../payments
-
       - name: Clone unblocked
         run: git clone --recurse-submodules -j8 https://github.com/ulixee/unblocked.git
         working-directory: ..
@@ -110,6 +114,7 @@ jobs:
       - name: Run tests
         run: yarn test --testTimeout=60000 --maxWorkers=2
         env:
+          NOTARY_DB_URL: postgres://postgres:postgres@postgres
           CI: true
 
       - name: 'Tar files'
