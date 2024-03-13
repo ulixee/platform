@@ -31,27 +31,21 @@ export default {
 };
 
 function getLocalchainConfig(): ILocalchainConfig | undefined {
-  if (!env.ULX_LOCALCHAIN_BASE_PATH && !env.ULX_MAINCHAIN_URL) return;
+  if (!env.ULX_LOCALCHAIN_PATH && !env.ULX_MAINCHAIN_URL) return;
   let keystorePassword: Buffer | undefined;
-  if (env.ULX_KEYSTORE_PASSWORD) {
-    keystorePassword = Buffer.from(env.ULX_KEYSTORE_PASSWORD, 'utf8');
-    delete process.env.ULX_KEYSTORE_PASSWORD;
+  if (env.ULX_LOCALCHAIN_PASSWORD) {
+    keystorePassword = Buffer.from(env.ULX_LOCALCHAIN_PASSWORD, 'utf8');
+    delete process.env.ULX_LOCALCHAIN_PASSWORD;
   }
   return <ILocalchainConfig>{
-    localchainPath: parseEnvPath(env.ULX_LOCALCHAIN_BASE_PATH),
+    localchainPath: parseEnvPath(env.ULX_LOCALCHAIN_PATH),
     mainchainUrl: env.ULX_MAINCHAIN_URL,
-    taxAddress: parseAddress(env.ULX_TAX_ADDRESS, 'Tax Address'),
-    upstreamEscrowFundingAccount: parseAddress(
-      env.ULX_UPSTREAM_ESCROWS_ACCOUNT,
-      'Upstream Escrow Funding Account',
-    ),
     votesAddress: parseAddress(env.ULX_VOTES_ADDRESS, 'Votes Address'),
     notaryId: parseEnvInt(env.NOTARY_ID),
-    keystorePath: parseEnvPath(env.ULX_KEYSTORE_PATH || env.ULX_LOCALCHAIN_BASE_PATH),
-    keystorePasswordOption: {
-      interactiveCli: parseEnvBool(env.ULX_KEYSTORE_INTERACTIVE_CLI),
+    keystorePassword: {
+      interactiveCli: parseEnvBool(env.ULX_LOCALCHAIN_PASSWORD_INTERACTIVE_CLI),
       password: keystorePassword,
-      passwordFile: parseEnvPath(env.ULX_KEYSTORE_PASSWORD_FILE),
+      passwordFile: parseEnvPath(env.ULX_LOCALCHAIN_PASSWORD_FILE),
     },
   };
 }

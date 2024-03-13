@@ -9,15 +9,12 @@ import {
   KeystorePasswordOption,
   Localchain,
   OpenEscrowsStore,
-  Signer,
 } from '@ulixee/localchain';
 import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
-import * as Path from 'node:path';
 
 const { log } = Logger(module);
 
 export default class LocalchainWithSync {
-  public signer = new Signer();
   public get dataDomains(): DataDomainStore {
     return this.#localchain.dataDomains;
   }
@@ -28,27 +25,24 @@ export default class LocalchainWithSync {
 
   #localchain: Localchain;
   public datastoreLookup: DatastoreLookup;
+  public address: Promise<string>;
 
   private nextTick: NodeJS.Timeout;
 
-  constructor(readonly localchainConfig?: ILocalchainConfig) {
-    this.localchainConfig.votesAddress ??= this.localchainConfig.taxAddress;
-  }
+  constructor(readonly localchainConfig?: ILocalchainConfig) {}
 
   public async load(): Promise<void> {
-    const { mainchainUrl, localchainPath, keystorePath, keystorePasswordOption } =
-      this.localchainConfig;
-    const baseDir = localchainPath ?? Localchain.getDefaultPath();
+    const { mainchainUrl, localchainPath, keystorePassword } = this.localchainConfig;
     this.#localchain = await Localchain.load({
-      dbPath: Path.join(baseDir, 'localchain.db'),
+      path: localchainPath,
       mainchainUrl,
+      keystorePassword,
     });
-    if (!keystorePath) throw new Error('The Datastore-native Localchain requires a keystore path');
-    await this.signer.attachKeystore(keystorePath, keystorePasswordOption ?? {});
+    this.address = this.#localchain.address.catch(() => null);
     // remove password from memory
-    if (Buffer.isBuffer(keystorePasswordOption?.password)) {
-      keystorePasswordOption.password.fill(0);
-      delete keystorePasswordOption.password;
+    if (Buffer.isBuffer(keystorePassword?.password)) {
+      keystorePassword.password.fill(0);
+      delete keystorePassword.password;
     }
     this.datastoreLookup = new DatastoreLookup(await this.#localchain.mainchainClient);
     this.scheduleNextTick();
@@ -61,14 +55,11 @@ export default class LocalchainWithSync {
   public createPaymentService(datastoreClients: DatastoreApiClients): LocalchainPaymentService {
     return new LocalchainPaymentService(
       this.#localchain,
-      this.signer,
       {
         escrowMilligonsStrategy: this.localchainConfig.upstreamEscrowMilligonsStrategy ?? {
           type: 'multiplier',
           queries: 100,
         },
-        datastoreFundingAddress: this.localchainConfig.upstreamEscrowFundingAccount,
-        taxAddress: this.localchainConfig.taxAddress,
       },
       datastoreClients,
     );
@@ -78,14 +69,9 @@ export default class LocalchainWithSync {
     clearTimeout(this.nextTick);
     this.nextTick = setTimeout(async () => {
       try {
-        const result = await this.#localchain.balanceSync.sync(
-          {
-            escrowClaimsSendToAddress: this.localchainConfig.upstreamEscrowFundingAccount,
-            escrowTaxAddress: this.localchainConfig.taxAddress,
-            votesAddress: this.localchainConfig.votesAddress,
-          },
-          this.signer,
-        );
+        const result = await this.#localchain.balanceSync.sync({
+          votesAddress: this.localchainConfig.votesAddress,
+        });
         log.info('Escrow Manager Sync result', {
           // have to weirdly jsonify
           balanceChanges: result.balanceChanges.map(gettersToObject),
@@ -102,19 +88,16 @@ export interface ILocalchainConfig {
   mainchainUrl: string;
   notaryId: number;
   localchainPath: string;
-  taxAddress?: string;
-  /**
-   * If this setup uses cloned datastores, this account will fund the escrows
-   */
-  upstreamEscrowFundingAccount?: string;
   /**
    * Strategy to use to create upstream escrows. Defaults to a 100 query multiplier
    */
   upstreamEscrowMilligonsStrategy?: IPaymentConfig['escrowMilligonsStrategy'];
   /**
-   * Defaults to the same as taxAddress
+   * Must be set to enable vote creation
    */
   votesAddress?: string;
-  keystorePath: string;
-  keystorePasswordOption: KeystorePasswordOption;
+  /**
+   * A password, if applicable, to the localchain
+   */
+  keystorePassword: KeystorePasswordOption;
 }

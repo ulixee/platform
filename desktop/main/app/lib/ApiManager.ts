@@ -15,7 +15,7 @@ import LocalPaymentService from '@ulixee/datastore/payments/LocalPaymentService'
 import { IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
 import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
-import { AccountType, CryptoScheme, Localchain, Signer } from '@ulixee/localchain';
+import { Localchain } from '@ulixee/localchain';
 import { screen } from 'electron';
 import * as http from 'http';
 import { AddressInfo } from 'net';
@@ -64,7 +64,6 @@ export default class ApiManager<
   deploymentWatcher: DeploymentWatcher;
   paymentService: LocalPaymentService;
   localchain: Localchain;
-  signer: Signer;
   queryLogWatcher: QueryLog;
   privateDesktopApiHandler: PrivateDesktopApiHandler;
   privateDesktopWsServer: WebSocket.Server;
@@ -98,15 +97,11 @@ export default class ApiManager<
 
     const localchainPaymentService = await LocalchainPaymentService.load({
       apiClients: this.datastoreApiClients,
-      createIfMissing: true,
     });
     this.paymentService = new LocalPaymentService(localchainPaymentService);
     this.localchain = localchainPaymentService.localchain;
-    this.signer = localchainPaymentService.signer;
     if (!(await this.localchain.accounts.list()).length) {
-      const firstAccount = this.signer.createAccountId(CryptoScheme.Sr25519);
-      await this.localchain.accounts.insert(firstAccount, AccountType.Deposit, 1);
-      await this.localchain.accounts.insert(firstAccount, AccountType.Tax, 1);
+      await this.localchain.keystore.bootstrap();
     }
     if (!this.localUserProfile.defaultAdminIdentityPath) {
       await this.localUserProfile.createDefaultAdminIdentity();

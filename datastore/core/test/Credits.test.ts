@@ -20,9 +20,7 @@ const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Credits.test')
 let cloudNode: CloudNode;
 let client: DatastoreApiClient;
 const adminIdentity = Identity.createSync();
-jest
-  .spyOn<any, any>(LocalchainPaymentService.prototype, 'writeToDisk')
-  .mockImplementation(() => null);
+
 jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
 let storageCounter = 0;
 const keyring = new Keyring({ ss58Format: 18 });
@@ -38,6 +36,7 @@ beforeAll(async () => {
     Fs.rmSync(`${__dirname}/datastores/output.dbx`, { recursive: true });
   }
 
+  CreditPaymentService.defaultBasePath = Path.join(storageDir, `credits.json`);
   cloudNode = await Helpers.createLocalNode(
     {
       datastoreConfiguration: {

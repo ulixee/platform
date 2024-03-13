@@ -173,7 +173,7 @@ test('should be able to run a datastore function with payments', async () => {
   expect(dbs.get(manifest.id).paymentIdByEscrowId.size).toBe(1);
   expect(dbs.get(manifest.id).list()).toEqual([
     expect.objectContaining({
-      expirationDate: expect.any(Number),
+      expirationDate: expect.any(Date),
       id: paymentService.paymentsByDatastoreId[manifest.id].escrowId,
       allocated: 5000,
       remaining: 5000 - 1250 - 1250,
@@ -270,7 +270,7 @@ test('records a changed payment correctly', async () => {
   expect(dbs.get(manifest.id).paymentIdByEscrowId.size).toBe(3);
   expect(dbs.get(manifest.id).list()[2]).toEqual(
     expect.objectContaining({
-      expirationDate: expect.any(Number),
+      expirationDate: expect.any(Date),
       id: paymentService.paymentsByDatastoreId[manifest.id].escrowId,
       allocated: 5000,
       remaining: 5000,

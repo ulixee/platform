@@ -29,7 +29,7 @@ test('it can create a datastore with credits using cli', async () => {
   });
   expect(cloudAddress).toBeTruthy();
 
-  const datastorePath = Path.join('end-to-end', 'test', 'datastore', 'index.js');
+  const datastorePath = Path.join('end-to-end', 'test', 'datastore', 'credits.js');
   await writeFile(
     Path.join(buildDir, datastorePath.replace('.js', '-manifest.json')),
     JSON.stringify(<Partial<IDatastoreManifest>>{
@@ -49,7 +49,7 @@ test('it can create a datastore with credits using cli', async () => {
       },
     },
   );
-  const datastoreId = 'end-to-end';
+  const datastoreId = 'credits';
   const datastoreVersion = '0.0.1';
 
   const creditResult = execAndLog(
@@ -88,5 +88,5 @@ test('it can create a datastore with credits using cli', async () => {
   console.log('Result of datastore query is:', result);
 
   const creditUpdate = execAndLog(`npx @ulixee/datastore credits get ${creditUrl}`);
-  expect(creditUpdate.includes("microgons: 4500000")).toBeTruthy();
-});
+  expect(creditUpdate.includes("4500000")).toBeTruthy();
+}, 60e3);

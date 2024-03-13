@@ -49,7 +49,7 @@ export default class LocalPaymentService
     this.localchainPaymentService = localchainPaymentService;
     if (loadCreditFromPath) {
       this.creditsPath =
-        loadCreditFromPath === 'default' ? LocalchainPaymentService.storePath : loadCreditFromPath;
+        loadCreditFromPath === 'default' ? CreditPaymentService.defaultBasePath : loadCreditFromPath;
       this.creditsAutoLoaded = this.loadCredits().catch(() => null);
     }
 
@@ -64,28 +64,25 @@ export default class LocalPaymentService
   public async getBalance(): Promise<IUserBalance> {
     const localchainBalance = (await this.localchainPaymentService?.getBalance()) ?? {
       credits: [],
-      depositBalance: 0n,
-      taxBalance: 0n,
+      formattedBalance: '0',
       walletBalance: `0`,
+      accountOverview: null,
     };
     const credits = await this.credits();
     const creditBalance = credits.reduce((sum, x) => sum + x.remaining, 0);
     const creditMilligons = ArgonUtils.microgonsToMilligons(creditBalance);
 
-    const walletBalance = ArgonUtils.format(
-      localchainBalance.depositBalance + creditMilligons,
+    const formattedBalance = ArgonUtils.format(
+      (localchainBalance.accountOverview?.balance ?? 0n) + creditMilligons,
       'milligons',
       'argons',
     );
 
     return {
-      primaryAddress: await this.localchainPaymentService.localchain.address,
-      otherAddresses: [],
-      statusByAddress: {},
+      address: await this.localchainPaymentService.localchain.address,
       credits,
-      depositBalance: localchainBalance.depositBalance,
-      taxBalance: localchainBalance.taxBalance,
-      walletBalance,
+      accountOverview: localchainBalance.accountOverview,
+      formattedBalance,
     };
   }
 

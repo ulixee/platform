@@ -73,15 +73,15 @@ export default class EscrowSpendTracker implements IEscrowSpendTracker {
 
       if (datastoreManifest.payment.address !== recipient) {
         throw new Error(
-          `The escrow account (${data.escrow.accountId}) does not match the required account (${recipient})`,
+          `The datastore payment address (${data.escrow.accountId}) does not match the escrow hold recipient (${recipient})`,
         );
       }
-      if (!this.canSign(recipient)) {
-        log.warn('Escrow recipient is not in the keystore of this node', {
+      if (!(await this.canSign(recipient))) {
+        log.warn('This escrow is made out to a different address than your attached localchain', {
           recipient,
           escrow: data.escrow,
         } as any);
-        throw new Error('Escrow recipient is not in the keystore of this node');
+        throw new Error('Escrow recipient not localchain address');
       }
     } else {
       throw new Error('Invalid escrow note');
@@ -131,8 +131,8 @@ export default class EscrowSpendTracker implements IEscrowSpendTracker {
     return escrow;
   }
 
-  private canSign(address: string): boolean {
-    return this.localchain.signer.canSign(address);
+  private async canSign(address: string): Promise<boolean> {
+    return (await this.localchain.address) === address;
   }
 
   private getDb(datastoreId: string): DatastoreEscrowsDb {

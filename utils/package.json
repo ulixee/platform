@@ -1,10 +1,10 @@
 {
   "name": "@ulixee/platform-utils",
-  "version": "2.0.0-alpha.27",
+  "version": "2.0.0-alpha.28",
   "description": "Common utilities for for Ulixee",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.27",
+    "@ulixee/commons": "2.0.0-alpha.28",
     "commander": "^9.3.0"
   }
 }

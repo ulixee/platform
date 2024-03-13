@@ -1,14 +1,12 @@
 import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import { existsAsync, readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
+import { readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import Queue from '@ulixee/commons/lib/Queue';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import { toUrl } from '@ulixee/commons/lib/utils';
 import {
-  AccountType,
   BalanceChange,
-  CryptoScheme,
   DataTLD,
   ESCROW_MINIMUM_SETTLEMENT,
   KeystorePasswordOption,
@@ -16,7 +14,6 @@ import {
   Localchain,
   MainchainClient,
   OpenEscrow,
-  Signer,
 } from '@ulixee/localchain';
 import { IPayment } from '@ulixee/platform-specification';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
@@ -24,7 +21,6 @@ import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange'
 import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
 import { nanoid } from 'nanoid';
-import { mkdir } from 'node:fs/promises';
 import * as Path from 'node:path';
 import env from '../env';
 import IDatastoreHostLookup from '../interfaces/IDatastoreHostLookup';
@@ -38,8 +34,6 @@ export { DataTLD };
 const { log } = Logger(module);
 
 export interface IPaymentConfig {
-  datastoreFundingAddress: string;
-  taxAddress: string;
   escrowMilligonsStrategy:
     | { type: 'default'; milligons: bigint }
     | { type: 'multiplier'; queries: number };
@@ -82,7 +76,6 @@ export default class LocalchainPaymentService
 
   constructor(
     public localchain: Localchain,
-    public signer: Signer,
     private config: IPaymentConfig,
     public apiClients: DatastoreApiClients | null,
   ) {
@@ -102,35 +95,15 @@ export default class LocalchainPaymentService
     }
   }
 
-  public async getAccounts(): Promise<ILocalchainAccount[]> {
-    const accounts = await this.localchain.accounts.list();
-    const localAccounts: ILocalchainAccount[] = [];
-    for (const account of accounts) {
-      const balance = await this.localchain.balanceChanges.getLatestForAccount(account.id);
-      localAccounts.push({ ...gettersToObject(account), balance: gettersToObject(balance) });
-    }
-    return localAccounts;
-  }
-
   public async getBalance(): Promise<IUserBalance> {
-    let taxBalance = 0n;
-    let depositBalance = 0n;
-    const accounts = await this.localchain.accounts.list();
-    for (const account of accounts) {
-      const balance = await this.localchain.balanceChanges.getLatestForAccount(account.id);
-      if (!balance) continue;
-      if (account.accountType === AccountType.Deposit) {
-        depositBalance += BigInt(balance.balance);
-      } else {
-        taxBalance += BigInt(balance.balance);
-      }
-    }
-    const walletBalance = ArgonUtils.format(depositBalance, 'milligons', 'argons');
+    const accountOverview = await this.localchain.accountOverview();
+
+    const formattedBalance = ArgonUtils.format(accountOverview.balance, 'milligons', 'argons');
     return {
       credits: [],
-      depositBalance,
-      taxBalance,
-      walletBalance,
+      accountOverview,
+      address: await this.localchain.address,
+      formattedBalance,
     };
   }
 
@@ -226,63 +199,23 @@ export default class LocalchainPaymentService
     )
       throw new Error('Cannot create an escrow for a non-whitelisted datastore.');
 
-    if (
-      !this.config.datastoreFundingAddress ||
-      !this.signer.canSign(this.config.datastoreFundingAddress)
-    ) {
-      throw new Error('Your localchain is not configured to create a new funding escrow.');
-    }
-
     return await this.escrowQueue.run(async () => {
-      const localchain = this.localchain;
-      const subaccountAddress = this.signer.createAccountId(CryptoScheme.Sr25519);
-      const notarization = localchain.beginChange();
-      notarization.notaryId = paymentInfo.recipient.notaryId;
+      const openEscrow = await this.localchain.transactions.createEscrow(
+        milligons,
+        paymentInfo.recipient.address,
+        domain,
+        paymentInfo.recipient.notaryId,
+      );
       if (milligons < ESCROW_MINIMUM_SETTLEMENT) {
         milligons = ESCROW_MINIMUM_SETTLEMENT;
       }
-      const balanceNeeded = notarization.getTotalForAfterTaxBalance(milligons);
-      log.info('Escrow.create', {
-        datastoreId: id,
-        version,
-        domain,
-        host,
-        milligons,
-        tax: balanceNeeded - milligons,
-        taxAddress: this.config.taxAddress,
-        fundingAddress: this.config.datastoreFundingAddress,
-      } as any);
-      await notarization.moveToSubAddress(
-        this.config.datastoreFundingAddress,
-        subaccountAddress,
-        AccountType.Deposit,
-        balanceNeeded,
-        this.config.taxAddress,
-      );
-      const subaccountBalance = (await notarization.balanceChangeBuilders).find(
-        x => x.address === subaccountAddress && x.accountType === AccountType.Deposit,
-      );
-      const paymentAddress = paymentInfo.recipient.address;
-      if (domain) {
-        await subaccountBalance.createEscrowHold(milligons, domain, paymentAddress);
-      } else {
-        await subaccountBalance.createPrivateServerEscrowHold(milligons, paymentAddress);
-      }
-      await notarization.sign(this.signer);
-      await notarization.notarize();
 
-      const subaccount = (await notarization.accounts).find(
-        x => x.address === subaccountAddress && x.accountType === AccountType.Deposit,
-      );
-
-      const openEscrow = await localchain.openEscrows.openClientEscrow(subaccount.id);
-      await openEscrow.sign(ESCROW_MINIMUM_SETTLEMENT, this.signer);
       const escrowJson: IBalanceChange = JSON.parse((await openEscrow.exportForSend()).toString());
 
       const apiClient = this.apiClients.get(host);
       await apiClient.registerEscrow(id, escrowJson);
       const escrow = await openEscrow.escrow;
-      const expirationMillis = localchain.ticker.timeForTick(escrow.expirationTick);
+      const expirationMillis = this.localchain.ticker.timeForTick(escrow.expirationTick);
       const escrowId = escrow.id;
       const allocated = Number(escrow.holdAmount) * 1000;
       const entry: IPaymentDetails = {
@@ -378,7 +311,7 @@ export default class LocalchainPaymentService
     if (toRelease > escrow.settledMilligons) {
       this.openEscrowsById[escrow.id] ??= await this.localchain.openEscrows.get(escrow.id);
       const openEscrow = this.openEscrowsById[escrow.id];
-      const result = await openEscrow.sign(BigInt(toRelease), this.signer);
+      const result = await openEscrow.sign(BigInt(toRelease));
       escrow.settledMilligons = result.milligons;
       escrow.settledSignature = Buffer.from(result.signature);
       this.needsSave = true;
@@ -401,20 +334,15 @@ export default class LocalchainPaymentService
   public static async load(
     config?: Partial<IPaymentConfig> & {
       localchainPath?: string;
-      createIfMissing?: boolean;
       mainchainUrl?: string;
-      keystorePath?: string;
       keystorePassword?: KeystorePasswordOption;
       apiClients?: DatastoreApiClients;
     },
   ): Promise<LocalchainPaymentService> {
-    const { mainchainUrl: configMainchainUrl, localchainPath } = config ?? {};
+    const { mainchainUrl: configMainchainUrl, localchainPath, keystorePassword } = config ?? {};
     let defaultPath = localchainPath ?? Localchain.getDefaultPath();
     if (!defaultPath.endsWith('.db')) {
-      defaultPath = Path.join(defaultPath, 'localchain.db');
-    }
-    if (config?.createIfMissing && !(await existsAsync(defaultPath))) {
-      await mkdir(Path.dirname(defaultPath), { recursive: true });
+      defaultPath = Path.join(defaultPath, 'primary.db');
     }
     const mainchainUrl = configMainchainUrl ?? env.mainchainUrl;
     log.info("Loading LocalchainPaymentService's localchain", {
@@ -422,27 +350,24 @@ export default class LocalchainPaymentService
       mainchainUrl: configMainchainUrl,
     } as any);
     const localchain = mainchainUrl
-      ? await Localchain.load({ mainchainUrl, dbPath: defaultPath })
-      : await Localchain.loadWithoutMainchain(defaultPath, {
-          genesisUtcTime: env.genesisUtcTime,
-          tickDurationMillis: env.tickDurationMillis,
-          ntpPoolUrl: env.ntpPoolUrl,
-        });
-
-    const signer = new Signer();
-    const keystorePath = config.keystorePath ?? Path.dirname(defaultPath);
-    await signer.attachKeystore(keystorePath, config.keystorePassword ?? {});
+      ? await Localchain.load({ mainchainUrl, path: defaultPath, keystorePassword })
+      : await Localchain.loadWithoutMainchain(
+          defaultPath,
+          {
+            genesisUtcTime: env.genesisUtcTime,
+            tickDurationMillis: env.tickDurationMillis,
+            ntpPoolUrl: env.ntpPoolUrl,
+          },
+          keystorePassword,
+        );
 
     return new LocalchainPaymentService(
       localchain,
-      signer,
       {
         escrowMilligonsStrategy: config?.escrowMilligonsStrategy ?? {
           type: 'multiplier',
           queries: 100,
         },
-        taxAddress: config?.taxAddress ?? null,
-        datastoreFundingAddress: config?.datastoreFundingAddress ?? null,
       },
       config?.apiClients,
     );

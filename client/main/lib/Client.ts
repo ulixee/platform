@@ -54,7 +54,7 @@ export default class ClientForRemote {
       this.database = connectionParameters.database;
       const [datastoreId, version] = this.database.split('@');
       this.datastoreId = datastoreId;
-      this.version = version.replace('v', '');
+      if (version) this.version = version.replace('v', '');
     }
 
     const isDnsOrDomain = !isIP(this.host) && this.host !== 'localhost';

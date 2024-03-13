@@ -21,7 +21,7 @@ export default class MockEscrowSpendTracker {
       escrow: IBalanceChange,
     ) => Pick<Escrow, 'id' | 'expirationTick' | 'holdAmount'>,
   ) {
-    this.canSign.mockReturnValue(true);
+    this.canSign.mockReturnValue(Promise.resolve(true));
     this.updateSettlement.mockResolvedValue(undefined);
     this.importToLocalchain.mockImplementation((datastoreId: string, escrow: IBalanceChange) => {
       return onImport(datastoreId, escrow);
