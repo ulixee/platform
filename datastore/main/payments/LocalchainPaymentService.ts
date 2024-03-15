@@ -6,11 +6,9 @@ import Queue from '@ulixee/commons/lib/Queue';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import { toUrl } from '@ulixee/commons/lib/utils';
 import {
-  BalanceChange,
   DataTLD,
   ESCROW_MINIMUM_SETTLEMENT,
   KeystorePasswordOption,
-  LocalAccount,
   Localchain,
   MainchainClient,
   OpenEscrow,
@@ -19,13 +17,12 @@ import { IPayment } from '@ulixee/platform-specification';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
 import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
-import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
 import { nanoid } from 'nanoid';
 import * as Path from 'node:path';
 import env from '../env';
 import IDatastoreHostLookup from '../interfaces/IDatastoreHostLookup';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
-import IPaymentService, { IPaymentDetails, IUserBalance } from '../interfaces/IPaymentService';
+import IPaymentService, { IPaymentDetails, IWallet } from '../interfaces/IPaymentService';
 import DatastoreApiClients from '../lib/DatastoreApiClients';
 import { IPaymentEvents } from './LocalPaymentService';
 
@@ -39,9 +36,6 @@ export interface IPaymentConfig {
     | { type: 'multiplier'; queries: number };
 }
 
-export interface ILocalchainAccount extends LocalAccount {
-  balance: BalanceChange;
-}
 type IPaymentDetailsByDatastoreId = { [datastoreId: string]: IPaymentDetails[] };
 
 /**
@@ -95,14 +89,14 @@ export default class LocalchainPaymentService
     }
   }
 
-  public async getBalance(): Promise<IUserBalance> {
+  public async getWallet(): Promise<IWallet> {
     const accountOverview = await this.localchain.accountOverview();
 
     const formattedBalance = ArgonUtils.format(accountOverview.balance, 'milligons', 'argons');
     return {
       credits: [],
-      accountOverview,
-      address: await this.localchain.address,
+      accounts: [accountOverview],
+      primaryAddress: await this.localchain.address,
       formattedBalance,
     };
   }
@@ -331,15 +325,12 @@ export default class LocalchainPaymentService
     );
   }
 
-  public static async load(
-    config?: Partial<IPaymentConfig> & {
-      localchainPath?: string;
-      mainchainUrl?: string;
-      keystorePassword?: KeystorePasswordOption;
-      apiClients?: DatastoreApiClients;
-    },
-  ): Promise<LocalchainPaymentService> {
-    const { mainchainUrl: configMainchainUrl, localchainPath, keystorePassword } = config ?? {};
+  public static async loadLocalchain(config?: {
+    localchainPath?: string;
+    mainchainUrl?: string;
+    keystorePassword?: KeystorePasswordOption;
+  }): Promise<Localchain> {
+    const { mainchainUrl: configMainchainUrl, localchainPath } = config ?? {};
     let defaultPath = localchainPath ?? Localchain.getDefaultPath();
     if (!defaultPath.endsWith('.db')) {
       defaultPath = Path.join(defaultPath, 'primary.db');
@@ -349,7 +340,16 @@ export default class LocalchainPaymentService
       localchainPath: defaultPath,
       mainchainUrl: configMainchainUrl,
     } as any);
-    const localchain = mainchainUrl
+    let keystorePassword = config?.keystorePassword;
+    if (
+      keystorePassword &&
+      !keystorePassword.password &&
+      !keystorePassword.passwordFile &&
+      !keystorePassword.interactiveCli
+    ) {
+      keystorePassword = undefined;
+    }
+    return mainchainUrl
       ? await Localchain.load({ mainchainUrl, path: defaultPath, keystorePassword })
       : await Localchain.loadWithoutMainchain(
           defaultPath,
@@ -360,6 +360,17 @@ export default class LocalchainPaymentService
           },
           keystorePassword,
         );
+  }
+
+  public static async load(
+    config?: Partial<IPaymentConfig> & {
+      localchainPath?: string;
+      mainchainUrl?: string;
+      keystorePassword?: KeystorePasswordOption;
+      apiClients?: DatastoreApiClients;
+    },
+  ): Promise<LocalchainPaymentService> {
+    const localchain = await this.loadLocalchain(config);
 
     return new LocalchainPaymentService(
       localchain,

@@ -308,7 +308,7 @@ h5 {
   display: flex;
   flex: 1;
   flex-direction: row;
-  justify-content: end;
+  justify-content: flex-end;
   align-items: baseline;
   line-height: 16px;
   margin: 0;

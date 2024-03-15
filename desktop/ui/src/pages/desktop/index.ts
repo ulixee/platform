@@ -3,31 +3,34 @@ import { createPinia } from 'pinia';
 import { createApp } from 'vue';
 import * as VueRouter from 'vue-router';
 import { Client } from '@/api/Client';
-import CloudDetails from "./views/cloud-details/CloudDetails.vue";
-import CloudConfigure from "./views/cloud-details/Configure.vue";
-import CloudConnections from "./views/cloud-details/Connections.vue";
-import CloudDatastores from "./views/cloud-details/Datastores.vue";
-import Clouds from "./views/Clouds.vue";
-import DatastoreDetails from "./views/datastore-details/DatastoreDetails.vue";
-import Entities from "./views/datastore-details/Entities.vue";
-import Overview from "./views/datastore-details/Overview.vue";
-import Queries from "./views/datastore-details/Queries.vue";
-import Reliability from "./views/datastore-details/Reliability.vue";
-import Versions from "./views/datastore-details/Versions.vue";
-import Datastores from "./views/Datastores.vue";
-import GettingStartedChromeAlive from "./views/getting-started/ChromeAlive.vue";
-import GettingStartedClone from "./views/getting-started/Clone.vue";
-import GettingStartedCredit from "./views/getting-started/Credit.vue";
-import GettingStartedDatastore from "./views/getting-started/Datastore.vue";
-import GettingStartedDeploy from "./views/getting-started/Deploy.vue";
-import GettingStartedHero from "./views/getting-started/Hero.vue";
-import GettingStartedPayment from "./views/getting-started/Payment.vue";
-import GettingStartedQuery from "./views/getting-started/Query.vue";
-import GettingStarted from "./views/GettingStarted.vue";
-import Replays from "./views/Replays.vue";
-import Wallet from "./views/Wallet.vue";
-import './index.css';
+import AccountDetails from '@/pages/desktop/views/accounts/AccountDetails.vue';
+import AccountTransactions from '@/pages/desktop/views/accounts/Transactions.vue';
+import AccountOverview from '@/pages/desktop/views/accounts/Overview.vue';
 import App from './index.vue';
+import CloudDetails from './views/cloud-details/CloudDetails.vue';
+import CloudConfigure from './views/cloud-details/Configure.vue';
+import CloudConnections from './views/cloud-details/Connections.vue';
+import CloudDatastores from './views/cloud-details/Datastores.vue';
+import Clouds from './views/Clouds.vue';
+import DatastoreDetails from './views/datastore-details/DatastoreDetails.vue';
+import Entities from './views/datastore-details/Entities.vue';
+import Overview from './views/datastore-details/Overview.vue';
+import Queries from './views/datastore-details/Queries.vue';
+import Reliability from './views/datastore-details/Reliability.vue';
+import Versions from './views/datastore-details/Versions.vue';
+import Datastores from './views/Datastores.vue';
+import GettingStartedChromeAlive from './views/getting-started/ChromeAlive.vue';
+import GettingStartedClone from './views/getting-started/Clone.vue';
+import GettingStartedCredit from './views/getting-started/Credit.vue';
+import GettingStartedDatastore from './views/getting-started/Datastore.vue';
+import GettingStartedDeploy from './views/getting-started/Deploy.vue';
+import GettingStartedHero from './views/getting-started/Hero.vue';
+import GettingStartedPayment from './views/getting-started/Payment.vue';
+import GettingStartedQuery from './views/getting-started/Query.vue';
+import GettingStarted from './views/GettingStarted.vue';
+import Replays from './views/Replays.vue';
+import Wallet from './views/Wallet.vue';
+import './index.css';
 
 declare global {
   interface Window {
@@ -127,6 +130,23 @@ window.load = function load(host: string) {
         ],
       },
       { path: '/wallet', component: Wallet },
+      {
+        path: '/wallet/:address',
+        component: AccountDetails,
+        children: [
+          {
+            path: 'overview',
+            alias: '',
+            name: 'Account Overview',
+            component: AccountOverview,
+          },
+          {
+            path: 'transactions',
+            name: 'Transactions',
+            component: AccountTransactions,
+          },
+        ],
+      },
     ],
   });
   app.use(pinia);

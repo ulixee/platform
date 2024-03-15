@@ -3,7 +3,7 @@
 CURRENT_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")/.." ; pwd -P );
 trap "exit" INT;
 
-declare -a dirs=("shared" "unblocked" "payments" "platform/hero" "platform");
+declare -a dirs=("shared" "unblocked" "platform/hero" "platform");
 
 # loop through dirs
 for dir in "${dirs[@]}"; do

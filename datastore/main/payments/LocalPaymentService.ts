@@ -5,7 +5,7 @@ import { IPaymentMethod } from '@ulixee/platform-specification/types/IPayment';
 import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import IDatastoreHostLookup from '../interfaces/IDatastoreHostLookup';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
-import IPaymentService, { ICredit, IUserBalance } from '../interfaces/IPaymentService';
+import IPaymentService, { ICredit, IWallet } from '../interfaces/IPaymentService';
 import DatastoreLookup from '../lib/DatastoreLookup';
 import CreditPaymentService from './CreditPaymentService';
 import LocalchainPaymentService from './LocalchainPaymentService';
@@ -49,7 +49,9 @@ export default class LocalPaymentService
     this.localchainPaymentService = localchainPaymentService;
     if (loadCreditFromPath) {
       this.creditsPath =
-        loadCreditFromPath === 'default' ? CreditPaymentService.defaultBasePath : loadCreditFromPath;
+        loadCreditFromPath === 'default'
+          ? CreditPaymentService.defaultBasePath
+          : loadCreditFromPath;
       this.creditsAutoLoaded = this.loadCredits().catch(() => null);
     }
 
@@ -61,27 +63,27 @@ export default class LocalPaymentService
     ]);
   }
 
-  public async getBalance(): Promise<IUserBalance> {
-    const localchainBalance = (await this.localchainPaymentService?.getBalance()) ?? {
+  public async getWallet(): Promise<IWallet> {
+    const localchainBalance = (await this.localchainPaymentService?.getWallet()) ?? {
       credits: [],
       formattedBalance: '0',
-      walletBalance: `0`,
-      accountOverview: null,
+      primaryAddress: '',
+      accounts: [],
     };
     const credits = await this.credits();
     const creditBalance = credits.reduce((sum, x) => sum + x.remaining, 0);
     const creditMilligons = ArgonUtils.microgonsToMilligons(creditBalance);
 
     const formattedBalance = ArgonUtils.format(
-      (localchainBalance.accountOverview?.balance ?? 0n) + creditMilligons,
+      (localchainBalance.accounts[0]?.balance ?? 0n) + creditMilligons,
       'milligons',
       'argons',
     );
 
     return {
-      address: await this.localchainPaymentService.localchain.address,
+      primaryAddress: await this.localchainPaymentService.localchain.address,
       credits,
-      accountOverview: localchainBalance.accountOverview,
+      accounts: localchainBalance.accounts,
       formattedBalance,
     };
   }

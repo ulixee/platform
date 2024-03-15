@@ -2,34 +2,37 @@ import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { toUrl } from '@ulixee/commons/lib/utils';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
+import { IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
 import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
 import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
 import QueryLog from '@ulixee/datastore/lib/QueryLog';
-import LocalchainPaymentService from '@ulixee/datastore/payments/LocalchainPaymentService';
 import LocalPaymentService from '@ulixee/datastore/payments/LocalPaymentService';
 import { IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
 import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
-import { Localchain } from '@ulixee/localchain';
 import { screen } from 'electron';
 import * as http from 'http';
 import { AddressInfo } from 'net';
 import * as Path from 'path';
 import { ClientOptions } from 'ws';
 import WebSocket = require('ws');
+import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import ApiClient from './ApiClient';
 import ArgonFile, { IArgonFile } from './ArgonFile';
 import DeploymentWatcher from './DeploymentWatcher';
+import AccountManager from './AccountManager';
 import PrivateDesktopApiHandler from './PrivateDesktopApiHandler';
 
 const { version } = require('../package.json');
 
 const bundledDatastoreExample = Path.join(__dirname, '../assets/ulixee-docs.dbx.tgz');
+const { log } = Logger(module);
 
 export default class ApiManager<
   TEventType extends keyof IDesktopAppEvents & string = keyof IDesktopAppEvents,
@@ -63,7 +66,7 @@ export default class ApiManager<
   localUserProfile: LocalUserProfile;
   deploymentWatcher: DeploymentWatcher;
   paymentService: LocalPaymentService;
-  localchain: Localchain;
+  localchainManager: AccountManager;
   queryLogWatcher: QueryLog;
   privateDesktopApiHandler: PrivateDesktopApiHandler;
   privateDesktopWsServer: WebSocket.Server;
@@ -78,6 +81,7 @@ export default class ApiManager<
     this.deploymentWatcher = new DeploymentWatcher();
     this.queryLogWatcher = new QueryLog();
     this.privateDesktopApiHandler = new PrivateDesktopApiHandler(this);
+    this.localchainManager = new AccountManager(this.localUserProfile);
   }
 
   public async start(): Promise<void> {
@@ -95,14 +99,9 @@ export default class ApiManager<
       });
     });
 
-    const localchainPaymentService = await LocalchainPaymentService.load({
-      apiClients: this.datastoreApiClients,
-    });
-    this.paymentService = new LocalPaymentService(localchainPaymentService);
-    this.localchain = localchainPaymentService.localchain;
-    if (!(await this.localchain.accounts.list()).length) {
-      await this.localchain.keystore.bootstrap();
-    }
+    this.paymentService = new LocalPaymentService();
+    await this.localchainManager.start();
+
     if (!this.localUserProfile.defaultAdminIdentityPath) {
       await this.localUserProfile.createDefaultAdminIdentity();
     }
@@ -118,6 +117,28 @@ export default class ApiManager<
         type: 'private',
       });
     }
+  }
+
+  public async getWallet(): Promise<IWallet> {
+    const localchainWallet = await this.localchainManager.getWallet();
+    const credits = await this.paymentService.credits();
+    const creditBalance = credits.reduce((sum, x) => sum + x.remaining, 0);
+    const creditMilligons = ArgonUtils.microgonsToMilligons(creditBalance);
+
+    const localchainBalance = localchainWallet.accounts.reduce((sum, x) => sum + x.balance, 0n);
+
+    const formattedBalance = ArgonUtils.format(
+      localchainBalance + creditMilligons,
+      'milligons',
+      'argons',
+    );
+
+    return {
+      primaryAddress: localchainWallet.primaryAddress,
+      credits,
+      accounts: localchainWallet.accounts,
+      formattedBalance,
+    };
   }
 
   public async close(): Promise<void> {

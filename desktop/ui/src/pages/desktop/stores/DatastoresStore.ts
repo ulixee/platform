@@ -144,7 +144,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     const docsUrl = new URL(`/${id}@v${version}/`, cloudHost);
     docsUrl.protocol = 'http:';
 
-    const credits = useWalletStore().userBalance.credits.filter(
+    const credits = useWalletStore().wallet.credits.filter(
       x => x.datastoreId === id && x.datastoreVersion === version,
     );
     const credit = credits.find(x => x.remaining > 0) ?? credits[0];

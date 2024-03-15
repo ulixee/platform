@@ -1,12 +1,11 @@
 import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
-import { IUserBalance } from '@ulixee/datastore/interfaces/IPaymentService';
+import { IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
 import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import CreditPaymentService from '@ulixee/datastore/payments/CreditPaymentService';
@@ -18,13 +17,12 @@ import {
 } from '@ulixee/desktop-interfaces/apis';
 import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppPrivateEvents from '@ulixee/desktop-interfaces/events/IDesktopAppPrivateEvents';
+import { LocalchainOverview } from '@ulixee/localchain';
 import { ConnectionToClient, WsTransportToClient } from '@ulixee/net';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import IArgonFile, { ArgonFileSchema } from '@ulixee/platform-specification/types/IArgonFile';
 import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import Identity from '@ulixee/platform-utils/lib/Identity';
-import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
-import serdeJson from '@ulixee/platform-utils/lib/serdeJson';
 import { dialog, Menu, WebContents } from 'electron';
 import { IncomingMessage } from 'http';
 import { nanoid } from 'nanoid';
@@ -35,8 +33,6 @@ import ApiManager from './ApiManager';
 import ArgonFile from './ArgonFile';
 
 const { version: packageVersion } = require('../package.json');
-
-const { log } = Logger(module);
 
 const argIconPath = Path.resolve(__dirname, '..', 'assets', 'arg.png');
 
@@ -56,6 +52,8 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     'Argon.request': this.createArgonsToRequestFile.bind(this),
     'Argon.dropFile': this.onArgonFileDrop.bind(this),
     'Argon.showFileContextMenu': this.showContextMenu.bind(this),
+    'Argon.transferFromMainchain': this.transferArgonsFromMainchain.bind(this),
+    'Argon.transferToMainchain': this.transferArgonsToMainchain.bind(this),
     'Credit.create': this.createCredit.bind(this),
     'Credit.save': this.saveCredit.bind(this),
     'Cloud.findAdminIdentity': this.findCloudAdminIdentity.bind(this),
@@ -73,7 +71,8 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     'GettingStarted.completeStep': this.completeGettingStartedStep.bind(this),
     'Session.openReplay': this.openReplay.bind(this),
     'User.getQueries': this.getQueries.bind(this),
-    'User.getBalance': this.getUserBalance.bind(this),
+    'User.getWallet': this.getWallet.bind(this),
+    'User.createAccount': this.createAccount.bind(this),
   } as const;
 
   public Events: IDesktopAppPrivateEvents;
@@ -110,8 +109,8 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     this.events.close();
   }
 
-  public async getUserBalance(): Promise<IUserBalance> {
-    return this.apiManager.paymentService.getBalance();
+  public async getWallet(): Promise<IWallet> {
+    return this.apiManager.getWallet();
   }
 
   public async completeGettingStartedStep(step: string): Promise<void> {
@@ -130,45 +129,63 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     await this.onArgonFileOpened(argonFile);
   }
 
+  public async createAccount(request: {
+    name: string;
+    suri?: string;
+    password?: string;
+  }): Promise<LocalchainOverview> {
+    return await this.apiManager.localchainManager.createAccount(
+      request.name,
+      request.suri,
+      request.password,
+    );
+  }
+
   public async createArgonsToSendFile(request: {
     milligons: bigint;
+    fromAddress?: string;
     toAddress?: string;
   }): Promise<IArgonFileMeta> {
-    const file = await this.apiManager.localchain.transactions.send(
+    return this.apiManager.localchainManager.createArgonsToSendFile(request);
+  }
+
+  public async transferArgonsFromMainchain(request: {
+    milligons: bigint;
+    address?: string;
+  }): Promise<void> {
+    await this.apiManager.localchainManager.transferMainchainToLocal(
+      request.address,
       request.milligons,
-      request.toAddress ? [request.toAddress] : null,
     );
-
-    const recipient = request.toAddress ? `for ${request.toAddress}` : 'cash';
-    return {
-      file: ArgonFileSchema.parse(file),
-      name: `${ArgonUtils.format(request.milligons, 'milligons', 'argons')} ${recipient}.arg`,
-    };
   }
 
-  public async createArgonsToRequestFile(request: { milligons: bigint }): Promise<IArgonFileMeta> {
-    const file = await this.apiManager.localchain.transactions.request(request.milligons);
-
-    return {
-      file: ArgonFileSchema.parse(file),
-      name: `Argon Request ${new Date().toLocaleString()}`,
-    };
+  public async transferArgonsToMainchain(request: {
+    milligons: bigint;
+    address?: string;
+  }): Promise<void> {
+    return this.apiManager.localchainManager.transferLocalToMainchain(
+      request.address,
+      request.milligons,
+    );
   }
 
-  public async acceptArgonRequest(request: { argonFile: IArgonFile }): Promise<void> {
+  public async createArgonsToRequestFile(request: {
+    milligons: bigint;
+    sendToMyAddress?: string;
+  }): Promise<IArgonFileMeta> {
+    return this.apiManager.localchainManager.createArgonsToRequestFile(request);
+  }
+
+  public async acceptArgonRequest(request: {
+    argonFile: IArgonFile;
+    fundWithAddress?: string;
+  }): Promise<void> {
     const argonFile = ArgonFileSchema.parse(request.argonFile);
     if (argonFile.credit) {
       await this.saveCredit({ credit: argonFile.credit });
       return;
     }
-    if (!argonFile.request) {
-      throw new Error('This Argon file is not a request');
-    }
-    const argonFileJson = serdeJson(argonFile);
-    const importChange = this.apiManager.localchain.beginChange();
-    await importChange.acceptArgonFileRequest(argonFileJson);
-    const result = await importChange.notarize();
-    log.info('Argon request notarized', { argonFile: gettersToObject(result) } as any);
+    return this.apiManager.localchainManager.acceptArgonRequest(argonFile, request.fundWithAddress);
   }
 
   public async importArgons(claim: { argonFile: IArgonFile }): Promise<void> {
@@ -177,15 +194,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
       await this.saveCredit({ credit: argonFile.credit });
       return;
     }
-    if (!argonFile.send) {
-      throw new Error('This Argon file does not contain any sent argons');
-    }
-
-    const argonFileJson = serdeJson(argonFile);
-    const importChange = this.apiManager.localchain.beginChange();
-    await importChange.importArgonFile(argonFileJson);
-    const result = await importChange.notarize();
-    log.info('Argon import notarized', { argonFile: gettersToObject(result) } as any);
+    return this.apiManager.localchainManager.importArgons(argonFile);
   }
 
   public getInstalledDatastores(): ILocalUserProfile['installedDatastores'] {
@@ -267,7 +276,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     const credit = await CreditPaymentService.storeCreditFromUrl(
       arg.credit.datastoreUrl,
       arg.credit.microgons,
-      await this.apiManager.paymentService.getDatastoreHostLookup(),
+      await this.apiManager.localchainManager.getDatastoreHostLookup(),
     );
     this.apiManager.paymentService.addCredit(credit);
   }
