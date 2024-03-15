@@ -21,7 +21,7 @@
         </a>
       </nav>
       <div v-if="activeTab === 'Connect'">
-        <p class="border-b border-gray-200 px-3 pb-3 text-sm text-base font-light text-gray-500">
+        <p class="border-b border-gray-200 px-3 pb-3 text-base font-light text-gray-500">
           If you've deployed Ulixee Cloud to your own servers, you can connect to it here to view
           statistics, earnings and troubleshoot remote Hero sessions. You can also connect to any
           publicly accessible Ulixee Cloud you'd like to use.

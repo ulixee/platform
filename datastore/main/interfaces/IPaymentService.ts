@@ -23,9 +23,9 @@ export default interface IPaymentService {
   ): Promise<void>;
 }
 
-export interface IUserBalance {
-  address: string;
-  accountOverview: LocalchainOverview;
+export interface IWallet {
+  primaryAddress: string;
+  accounts: LocalchainOverview[];
   formattedBalance: string;
   credits: ICredit[];
 }

@@ -95,14 +95,14 @@ export default Vue.defineComponent({
     const runs = props.datastore.stats.queries;
     const microgons = props.datastore.stats.totalSpend;
     const walletStore = useWalletStore();
-    const { userBalance } = storeToRefs(walletStore);
+    const { wallet } = storeToRefs(walletStore);
 
     let reliability = 100;
     if (runs > 0) {
       reliability = Math.round(1000 * ((runs - errors) / runs)) / 10;
     }
     return {
-      userBalance,
+      wallet,
       runs,
       errors,
       reliability,
@@ -124,7 +124,7 @@ export default Vue.defineComponent({
       });
     },
     spent() {
-      const credits = this.userBalance.credits.filter(
+      const credits = this.wallet.credits.filter(
         x => x.datastoreId === this.datastore.id && x.datastoreVersion === this.datastore.version,
       );
       let spentCredits = 0;

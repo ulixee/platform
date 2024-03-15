@@ -1,6 +1,7 @@
 import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
-import type { IUserBalance } from '@ulixee/datastore/interfaces/IPaymentService';
+import type { IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
 import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
+import type { LocalchainOverview } from '@ulixee/localchain';
 import type ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
 import { IDatastoreApis, IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
@@ -65,15 +66,13 @@ export type IDesktopAppPrivateApis = {
     milligons: bigint;
     sendToMyAddress?: string;
   }) => Promise<IArgonFileMeta>;
-  'Argon.importSend': (arg: {
-    argonFile: IArgonFile;
-    claimWithAddress?: string;
-    taxAddress?: string;
-  }) => Promise<void>;
+  'Argon.importSend': (arg: { argonFile: IArgonFile; claimWithAddress?: string }) => Promise<void>;
   'Argon.acceptRequest': (arg: {
     argonFile: IArgonFile;
     fundWithAddress?: string;
   }) => Promise<void>;
+  'Argon.transferFromMainchain': (arg: { address?: string; milligons: bigint }) => Promise<void>;
+  'Argon.transferToMainchain': (arg: { address?: string; milligons: bigint }) => Promise<void>;
   'Argon.dropFile': (path: string) => Promise<void>;
   'Argon.showFileContextMenu': (
     args: IArgonFileMeta & {
@@ -125,7 +124,12 @@ export type IDesktopAppPrivateApis = {
   'GettingStarted.completeStep': (step: string) => Promise<void>;
   'Session.openReplay': (arg: IOpenReplay) => void;
   'User.getQueries': () => IQueryLogEntry[];
-  'User.getBalance': () => Promise<IUserBalance>;
+  'User.getWallet': () => Promise<IWallet>;
+  'User.createAccount': (args: {
+    name: string;
+    suri?: string;
+    password?: string;
+  }) => Promise<LocalchainOverview>;
 };
 
 export interface IOpenReplay {

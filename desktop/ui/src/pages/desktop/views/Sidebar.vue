@@ -38,22 +38,22 @@
             <div class="flex items-center">
               <div>
                 <ArgonIcon
-                  class="inline-block h-10 w-10 text-gray-200"
+                  class="inline-block h-8 w-8 text-gray-200"
                   :class="{ 'group-hover:text-gray-300': !walletActive }"
                 />
               </div>
               <div class="ml-3 overflow-hidden">
                 <p
-                  class="w-full overflow-hidden text-ellipsis text-lg font-medium text-white"
+                  class="text-lg text-gray-200 w-full overflow-hidden text-ellipsis "
                   :class="{ 'group-hover:text-gray-300': !walletActive }"
                 >
-                  {{ userBalance.walletBalance }}
-                </p>
-                <p
-                  class="overflow-hidden text-ellipsis text-xs font-medium text-gray-200"
-                  :class="{ 'group-hover:text-gray-300': !walletActive }"
-                >
-                  {{ userBalance.primaryAddress }}
+                  Wallet
+                  <span
+                    class="ml-1 font-bold text-xl text-white"
+                    :class="{ 'group-hover:text-gray-300': !walletActive }"
+                  >
+                    {{ wallet.formattedBalance }}
+                  </span>
                 </p>
               </div>
             </div>
@@ -155,7 +155,7 @@ export default Vue.defineComponent({
 
     const datastoreStore = useDatastoreStore();
     const walletStore = useWalletStore();
-    const { userBalance } = storeToRefs(walletStore);
+    const { wallet } = storeToRefs(walletStore);
 
     return {
       datastoreStore,
@@ -163,7 +163,7 @@ export default Vue.defineComponent({
       datastoresRef: Vue.ref<typeof Datastores>(null),
       walletActive: Vue.ref(false),
       isDragging: Vue.ref(false),
-      userBalance,
+      wallet,
       argonFile: Vue.ref<IArgonFile>(null),
     };
   },

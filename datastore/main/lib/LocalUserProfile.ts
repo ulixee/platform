@@ -1,6 +1,8 @@
 import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import { safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
 import Identity from '@ulixee/platform-utils/lib/Identity';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
+import { existsSync } from 'fs';
 import * as Fs from 'fs';
 import * as Path from 'path';
 import ILocalUserProfile from '../interfaces/ILocalUserProfile';
@@ -8,6 +10,7 @@ import ILocalUserProfile from '../interfaces/ILocalUserProfile';
 export default class LocalUserProfile {
   public static path = Path.join(getDataDirectory(), 'ulixee', 'user-profile.json');
   public clouds: (ILocalUserProfile['clouds'][0] & { adminIdentity?: string })[] = [];
+  public localchainPaths: string[] = [];
   public installedDatastores: ILocalUserProfile['installedDatastores'] = [];
   public datastoreAdminIdentities: (ILocalUserProfile['datastoreAdminIdentities'][0] & {
     adminIdentity?: string;
@@ -72,7 +75,6 @@ export default class LocalUserProfile {
   }
 
   public async createDefaultAdminIdentity(): Promise<string> {
-    const identity = await Identity.create();
     this.defaultAdminIdentityPath = Path.join(
       getDataDirectory(),
       'ulixee',
@@ -80,8 +82,13 @@ export default class LocalUserProfile {
       'adminIdentity.pem',
     );
 
+    if (existsSync(this.defaultAdminIdentityPath)) {
+      const identity = Identity.loadFromFile(this.defaultAdminIdentityPath);
+      await this.save();
+      return identity.bech32;
+    }
+    const identity = await Identity.create();
     await identity.save(this.defaultAdminIdentityPath);
-    await this.save();
     return identity.bech32;
   }
 
@@ -134,6 +141,7 @@ export default class LocalUserProfile {
         adminIdentityPath: x.adminIdentityPath,
         datastoreId: x.datastoreId,
       })),
+      localchainPaths: this.localchainPaths,
     };
   }
 
@@ -151,6 +159,7 @@ export default class LocalUserProfile {
       this.datastoreAdminIdentities ??= [];
       this.gettingStartedCompletedSteps ??= [];
       this.installedDatastores ??= [];
+      this.localchainPaths ??= [];
     } catch {}
   }
 }

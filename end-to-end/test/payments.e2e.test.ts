@@ -37,6 +37,7 @@ const identityPath = Path.join(storageDir, 'DatastoreDev.pem');
 
 let bob: KeyringPair;
 let ferdie: KeyringPair;
+inspect.defaultOptions.depth = 10;
 
 beforeAll(async () => {
   const mainchain = new TestMainchain();
@@ -166,7 +167,6 @@ test('it can do end to end payments flow for a domain datastore', async () => {
     },
   });
 
-
   const result = await client.query('SELECT * FROM default(test => $1)', [1]);
 
   expect(result).toEqual([{ success: true, input: { test: 1 } }]);
@@ -187,11 +187,10 @@ test('it can do end to end payments flow for a domain datastore', async () => {
   expect(payments[0].payment.escrow.settledMilligons).toBe(500n);
   expect(payments[0].remainingBalance).toBe(500_000);
 
-  const balance = await bobchain.getBalance();
-  inspect.defaultOptions.depth = 10;
-  console.log('Balance:', gettersToObject(balance.accountOverview));
-  expect(balance.accountOverview.balance).toBe(5000n);
-  expect(balance.accountOverview.heldBalance).toBe(1000n);
+  const balance = await bobchain.getWallet();
+  console.log('Balance:', gettersToObject(balance.accounts));
+  expect(balance.accounts[0].balance).toBe(5000n);
+  expect(balance.accounts[0].heldBalance).toBe(1000n);
 }, 300e3);
 
 test('it can do end to end payments with no domain', async () => {
@@ -215,7 +214,7 @@ test('it can do end to end payments with no domain', async () => {
   Helpers.needsClosing.push({ close: () => cloudNode.close(), onlyCloseOnFinal: false });
 
   await uploadDatastore('no-domain', buildDir, cloudAddress, {
-    version: "0.0.2",
+    version: '0.0.2',
     payment: {
       notaryId: 1,
       address: ferdie.address,
@@ -230,9 +229,9 @@ test('it can do end to end payments with no domain', async () => {
       queries: 2,
     },
   });
-  const userBalance = await bobchain.getBalance();
-  // nothing moved yet?
-  expect(userBalance.accountOverview.balance).toBe(5000n);
+  const wallet = await bobchain.getWallet();
+  // ensure wallet is loaded
+  expect(wallet.accounts[0].balance).toBe(5000n);
 
   const paymentService = new LocalPaymentService(bobchain, storageDir);
   const payments: LocalPaymentService['EventTypes']['reserved'][] = [];
@@ -267,11 +266,10 @@ test('it can do end to end payments with no domain', async () => {
   expect(payments[0].payment.escrow.settledMilligons).toBe(5n);
   expect(payments[0].remainingBalance).toBe(5_000 - 1_000);
 
-  const balance = await bobchain.getBalance();
-  inspect.defaultOptions.depth = 10;
-  console.log('Balance:', gettersToObject(balance.accountOverview));
-  expect(balance.accountOverview.balance).toBe(5000n);
-  expect(balance.accountOverview.heldBalance).toBe(1005n);
+  const balance = await bobchain.getWallet();
+  console.log('Balance:', gettersToObject(balance.accounts));
+  expect(balance.accounts[0].balance).toBe(5000n);
+  expect(balance.accounts[0].heldBalance).toBe(1005n);
 });
 
 async function uploadDatastore(

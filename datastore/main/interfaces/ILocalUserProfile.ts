@@ -4,4 +4,5 @@ export default interface ILocalUserProfile {
   gettingStartedCompletedSteps: string[];
   datastoreAdminIdentities: { datastoreId: string; adminIdentityPath?: string }[];
   defaultAdminIdentityPath: string;
+  localchainPaths: string[];
 }

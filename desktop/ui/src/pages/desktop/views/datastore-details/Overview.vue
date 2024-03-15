@@ -230,7 +230,7 @@ export default Vue.defineComponent({
     const walletStore = useWalletStore();
     const cloudsStore = useCloudsStore();
     const { getCloudName } = cloudsStore;
-    const { userBalance } = storeToRefs(walletStore);
+    const { wallet } = storeToRefs(walletStore);
     const { datastoresById } = storeToRefs(datastoresStore);
     const datastoreId = route.params.datastoreId as string;
     const version = route.params.version as string;
@@ -245,7 +245,7 @@ export default Vue.defineComponent({
     const credits = summary.stats.totalCreditSpend;
     const adminIdentity = datastoresStore.getAdminDetails(datastoreId, selectedCloud);
 
-    const userCredits = userBalance.value.credits.filter(
+    const userCredits = wallet.value.credits.filter(
       x => x.datastoreId === datastoreId && x.datastoreVersion === version,
     );
 
