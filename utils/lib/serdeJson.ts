@@ -1,5 +1,8 @@
 export default function serdeJson(toSerialize: any): string {
   return JSON.stringify(toSerialize, (_name: string, value: unknown) => {
+    if (value instanceof Uint8Array) {
+      return `0x${Buffer.from(value).toString('hex')}`;
+    }
     if (Buffer.isBuffer(value)) {
       return `0x${value.toString('hex')}`;
     }

@@ -2,6 +2,7 @@ import type { IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { deepUnref } from '@/pages/desktop/lib/utils';
 
 export { IWallet };
 
@@ -12,6 +13,10 @@ export const useWalletStore = defineStore('walletStore', () => {
     credits: [],
     formattedBalance: '0',
   } as IWallet);
+
+  window.desktopApi.on('Wallet.updated', data => {
+    wallet.value = data.wallet;
+  });
 
   async function load() {
     wallet.value = await window.desktopApi.send('User.getWallet');
@@ -40,12 +45,15 @@ export const useWalletStore = defineStore('walletStore', () => {
   }
 
   async function saveSentArgons(argonFile: IArgonFile) {
-    await window.desktopApi.send('Argon.importSend', { argonFile });
+    await window.desktopApi.send('Argon.importSend', { argonFile: deepUnref(argonFile) });
     await load();
   }
 
   async function approveRequestedArgons(argonFile: IArgonFile, fundWithAddress: string) {
-    await window.desktopApi.send('Argon.acceptRequest', { argonFile, fundWithAddress });
+    await window.desktopApi.send('Argon.acceptRequest', {
+      argonFile: deepUnref(argonFile),
+      fundWithAddress,
+    });
     await load();
   }
 

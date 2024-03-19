@@ -40,7 +40,7 @@ test('it can serialize and deserialize a notarization', async () => {
   await balanceBuilder.leaseDataDomain('example.flights', address);
   await balanceBuilder.sign();
 
-  const json: INotarization = JSON.parse(await balanceBuilder.toJson());
+  const json: INotarization = JSON.parse(await balanceBuilder.toJSON());
   expect(json.balanceChanges.find(x => x.accountType === AccountType.Deposit).balance).toBe(
     (2n ** 120n - 1000n).toString(),
   );

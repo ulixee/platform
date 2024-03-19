@@ -20,7 +20,7 @@ export type IDatastoresById = {
   [datastoreId: string]: {
     summary: IDatastoreSummary & { cloudName: string }; // aggregated stats
     details: IDatastoreMeta;
-    createdCredits: { credit: TCredit; filename: string; cloud: string }[];
+    createdCredits: { credit: TCredit; name: string; cloud: string }[];
     adminIdentity: string;
     versions?: IDatastoreVersions;
     cloudsByVersion: {
@@ -307,15 +307,15 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     };
     const {
       file: { credit },
-      name: filename,
+      name,
     } = await window.desktopApi.send('Credit.create', data);
     datastoresById.value[datastore.id].createdCredits.push({
       credit,
-      filename,
+      name,
       cloud,
     });
     void refreshMetadata(datastore.id, datastore.version, cloud);
-    return { filename, credit };
+    return { name, credit };
   }
 
   function getDatastoreAdminIdentity(datastoreId: string, cloudName: string) {

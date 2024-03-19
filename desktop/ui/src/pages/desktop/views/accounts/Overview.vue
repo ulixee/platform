@@ -72,8 +72,11 @@
                 type="number"
                 min="0"
                 step="0.001"
+                @focus="($event.target as any).select()"
                 placeholder="Argons"
                 class="rounded-md border border-gray-300 py-2 pl-8 pr-3 placeholder-gray-400"
+                @dragover.prevent="preventDrop"
+                @drop.prevent="preventDrop"
               />
             </div>
           </div>
@@ -95,6 +98,8 @@
                 type="text"
                 placeholder="Recipient Account (extra security)"
                 class="rounded-md border border-gray-300 py-2 pl-8 pr-3 placeholder-gray-400 w-2/3"
+                @dragover.prevent="preventDrop"
+                @drop.prevent="preventDrop"
               />
             </div>
           </div>
@@ -117,11 +122,14 @@
               class="flex cursor-grab flex-col items-center"
               draggable="true"
               @dragstart.prevent="drag()"
+              @dragover.prevent="preventDrop"
+              @drop.prevent="preventDrop"
             >
               <ArgfileIcon
                 class="coin-shadow inline-block h-16 w-16 text-fuchsia-700"
                 alt="Argon"
                 @contextmenu.prevent="showContextMenu($event)"
+
               />
               <div class="my-2 text-center text-xs font-light">
                 {{ argonFile.name }}
@@ -144,6 +152,18 @@
         <div class="grid min-w-fit grid-flow-row grid-cols-2 gap-1 bg-white py-3.5 text-gray-700">
           <span class="mr-3 whitespace-nowrap text-right font-light">Balance:</span>
           <span class="text-fuchsia-700"> {{ toArgons(account.mainchainBalance) }}</span>
+
+          <span class="mr-3 whitespace-nowrap text-right font-light">Pending:</span>
+          <span class="text-fuchsia-700">
+            {{ toArgons(account.pendingMainchainBalanceChange) }}</span
+          >
+
+          <span class="col-span-2 h-1 border-t border-gray-300">&nbsp;</span>
+          <span class="mr-3 whitespace-nowrap text-right font-light">Net Balance:</span>
+
+          <span class="text-fuchsia-700">{{
+            toArgons(account.mainchainBalance + account.pendingMainchainBalanceChange)
+          }}</span>
         </div>
       </div>
 
@@ -225,13 +245,13 @@
       </div>
     </div>
   </div>
-  <ChainTransferModal ref="transferModal" :to-mainchain="openToMainchainModal" />
+  <ChainTransferModal ref="transferModal" :to-mainchain="openToMainchainModal" :account="account" />
 </template>
 
 <script lang="ts">
 import ArgfileIcon from '@/assets/icons/argfile.svg';
 import ArgonIcon from '@/assets/icons/argon.svg';
-import { titleCase, toArgons } from '@/pages/desktop/lib/utils';
+import { deepUnref, titleCase, toArgons } from '@/pages/desktop/lib/utils';
 import { IWallet, useWalletStore } from '@/pages/desktop/stores/WalletStore';
 import ChainTransferModal from './ChainTransferModal.vue';
 import {
@@ -247,7 +267,7 @@ import {
   ArrowTopRightOnSquareIcon,
   ChevronRightIcon,
 } from '@heroicons/vue/24/outline';
-import { IArgonFileMeta } from '@ulixee/desktop-interfaces/apis';
+import type { IArgonFileMeta } from '@ulixee/desktop-interfaces/apis';
 import { storeToRefs } from 'pinia';
 import * as Vue from 'vue';
 import { useRoute } from 'vue-router';
@@ -278,13 +298,14 @@ export default Vue.defineComponent({
 
     const account = Vue.computed(
       () =>
-        wallet.value.accounts.find(x => x.address === address) ?? {
+        wallet.value.accounts.find(x => x.address === address) ??
+        ({
           balance: 0n,
           pendingBalanceChange: 0n,
           heldBalance: 0n,
           tax: 0n,
           pendingTaxChange: 0n,
-        } as IWallet['accounts'][0],
+        } as IWallet['accounts'][0]),
     );
 
     return {
@@ -334,8 +355,11 @@ export default Vue.defineComponent({
       }
     },
     async drag() {
-      const argonFile = { ...this.argonFile };
+      const argonFile = deepUnref(this.argonFile);
       await window.appBridge.send('Argon.dragAsFile', argonFile);
+    },
+    preventDrop($event){
+      $event.preventDefault();
     },
     async showContextMenu($event) {
       const args = {

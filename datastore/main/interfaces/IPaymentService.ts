@@ -1,9 +1,10 @@
-import { LocalchainOverview } from '@ulixee/localchain';
+import { LocalchainOverview , BalanceChangeStatus } from '@ulixee/localchain';
 import { IPayment } from '@ulixee/platform-specification';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import { IPaymentMethod } from '@ulixee/platform-specification/types/IPayment';
 import IDatastoreHostLookup from './IDatastoreHostLookup';
 import IDatastoreMetadata from './IDatastoreMetadata';
+
 
 export default interface IPaymentService {
   /**
@@ -22,6 +23,7 @@ export default interface IPaymentService {
     datastoreLookup?: IDatastoreHostLookup,
   ): Promise<void>;
 }
+export { BalanceChangeStatus };
 
 export interface IWallet {
   primaryAddress: string;

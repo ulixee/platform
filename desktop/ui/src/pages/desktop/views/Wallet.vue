@@ -23,7 +23,7 @@
             <div class="text-sm font-normal text-gray-900">
               <WalletIcon class="relative mr-1 inline h-4 align-text-bottom text-fuchsia-600" />
               Balance
-              <span class="font-semibold">{{ toArgons(account.balance, false) }}</span>
+              <span class="font-semibold">{{ toArgons(account.balance + account.mainchainBalance, false) }}</span>
             </div>
           </div>
 
@@ -61,7 +61,7 @@
           >
             <div class="mt-2 px-5">
               <h3 class="text-middle font-semibold leading-6 text-gray-900">
-                <CakeIcon class="relative -top-0.5 mr-2 inline-block inline-block h-6 w-6" />
+                <CakeIcon class="relative -top-0.5 mr-2 inline-block h-6 w-6" />
                 Datastore Credits
               </h3>
               <p class="mt-1 text-sm text-gray-500">
@@ -91,8 +91,7 @@
       </div>
     </div>
   </div>
-  <NewAccountModal
-    ref="newAccountModal" @added="refreshWallet()" />
+  <NewAccountModal ref="newAccountModal" @added="refreshWallet()" />
 </template>
 
 <script lang="ts">

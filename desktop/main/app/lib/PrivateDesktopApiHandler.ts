@@ -17,7 +17,7 @@ import {
 } from '@ulixee/desktop-interfaces/apis';
 import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppPrivateEvents from '@ulixee/desktop-interfaces/events/IDesktopAppPrivateEvents';
-import { LocalchainOverview } from '@ulixee/localchain';
+import { ARGON_FILE_VERSION, LocalchainOverview } from '@ulixee/localchain';
 import { ConnectionToClient, WsTransportToClient } from '@ulixee/net';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import IArgonFile, { ArgonFileSchema } from '@ulixee/platform-specification/types/IArgonFile';
@@ -31,8 +31,6 @@ import * as Path from 'path';
 import WebSocket = require('ws');
 import ApiManager from './ApiManager';
 import ArgonFile from './ArgonFile';
-
-const { version: packageVersion } = require('../package.json');
 
 const argIconPath = Path.resolve(__dirname, '..', 'assets', 'arg.png');
 
@@ -87,6 +85,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     this.events.on(apiManager, 'new-cloud-address', this.onNewCloudAddress.bind(this));
     this.events.on(apiManager, 'deployment', this.onDeployment.bind(this));
     this.events.on(apiManager, 'query', this.onQuery.bind(this));
+    this.events.on(apiManager, 'wallet-updated', this.onWalletUpdated.bind(this));
   }
 
   public onConnection(ws: WebSocket, req: IncomingMessage): void {
@@ -134,7 +133,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     suri?: string;
     password?: string;
   }): Promise<LocalchainOverview> {
-    return await this.apiManager.localchainManager.createAccount(
+    return await this.apiManager.accountManager.createAccount(
       request.name,
       request.suri,
       request.password,
@@ -146,14 +145,14 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     fromAddress?: string;
     toAddress?: string;
   }): Promise<IArgonFileMeta> {
-    return this.apiManager.localchainManager.createArgonsToSendFile(request);
+    return this.apiManager.accountManager.createArgonsToSendFile(request);
   }
 
   public async transferArgonsFromMainchain(request: {
     milligons: bigint;
     address?: string;
   }): Promise<void> {
-    await this.apiManager.localchainManager.transferMainchainToLocal(
+    await this.apiManager.accountManager.transferMainchainToLocal(
       request.address,
       request.milligons,
     );
@@ -163,7 +162,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     milligons: bigint;
     address?: string;
   }): Promise<void> {
-    return this.apiManager.localchainManager.transferLocalToMainchain(
+    return this.apiManager.accountManager.transferLocalToMainchain(
       request.address,
       request.milligons,
     );
@@ -173,7 +172,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     milligons: bigint;
     sendToMyAddress?: string;
   }): Promise<IArgonFileMeta> {
-    return this.apiManager.localchainManager.createArgonsToRequestFile(request);
+    return this.apiManager.accountManager.createArgonsToRequestFile(request);
   }
 
   public async acceptArgonRequest(request: {
@@ -185,7 +184,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
       await this.saveCredit({ credit: argonFile.credit });
       return;
     }
-    return this.apiManager.localchainManager.acceptArgonRequest(argonFile, request.fundWithAddress);
+    return this.apiManager.accountManager.acceptArgonRequest(argonFile, request.fundWithAddress);
   }
 
   public async importArgons(claim: { argonFile: IArgonFile }): Promise<void> {
@@ -194,7 +193,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
       await this.saveCredit({ credit: argonFile.credit });
       return;
     }
-    return this.apiManager.localchainManager.importArgons(argonFile);
+    return this.apiManager.accountManager.importArgons(argonFile);
   }
 
   public getInstalledDatastores(): ILocalUserProfile['installedDatastores'] {
@@ -240,8 +239,14 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     if (version.includes(DatastoreManifest.TemporaryIdPrefix)) {
       throw new Error('This Datastore has only been started. You need to deploy it.');
     }
-    const download = await apiClient.download(id, version, adminIdentity);
-    await apiClient.upload(download.compressedDbx, { forwardedSignature: download });
+    const {
+      compressedDbx,
+      adminSignature,
+      adminIdentity: identityResult,
+    } = await apiClient.download(id, version, adminIdentity);
+    await apiClient.upload(compressedDbx, {
+      forwardedSignature: { adminIdentity: identityResult, adminSignature },
+    });
   }
 
   public async installDatastore(arg: {
@@ -276,7 +281,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     const credit = await CreditPaymentService.storeCreditFromUrl(
       arg.credit.datastoreUrl,
       arg.credit.microgons,
-      await this.apiManager.localchainManager.getDatastoreHostLookup(),
+      await this.apiManager.accountManager.getDatastoreHostLookup(),
     );
     this.apiManager.paymentService.addCredit(credit);
   }
@@ -307,7 +312,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
 
       return {
         file: {
-          version: packageVersion,
+          version: ARGON_FILE_VERSION,
           credit: {
             datastoreUrl: `ulx://${id}:${secret}@${address.host}/${datastore.id}@v${datastore.version}`,
             microgons: remainingCredits,
@@ -428,6 +433,10 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
 
   public async onNewCloudAddress(event: ICloudConnected): Promise<void> {
     await this.connectionToClient?.sendEvent({ eventType: 'Cloud.onConnected', data: event });
+  }
+
+  public async onWalletUpdated(event: { wallet: IWallet }): Promise<void> {
+    await this.connectionToClient?.sendEvent({ eventType: 'Wallet.updated', data: event });
   }
 
   public openReplay(arg: IOpenReplay): void {

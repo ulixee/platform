@@ -1,17 +1,17 @@
 import { z } from 'zod';
 import { BalanceChangeSchema } from './IBalanceChange';
-import { semverValidation } from './semverValidation';
 
 export const ArgonFileSchema = z.object({
-  version: semverValidation,
+  version: z.string(),
   credit: z
     .object({
       datastoreUrl: z.string().url('The connection string to the datastore'),
       microgons: z.number().int().positive().describe('The granted number of microgons.'),
     })
-    .optional(),
-  send: BalanceChangeSchema.array().optional(),
-  request: BalanceChangeSchema.array().optional(),
+    .optional()
+    .nullish(),
+  send: BalanceChangeSchema.array().optional().nullish(),
+  request: BalanceChangeSchema.array().optional().nullish(),
 });
 
 type IArgonFile = z.infer<typeof ArgonFileSchema>;

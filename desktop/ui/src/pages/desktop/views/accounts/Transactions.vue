@@ -1,5 +1,4 @@
 <template>
-
   <div class="overflow-hidden rounded-lg shadow ring-1 ring-black ring-opacity-5">
     <table class="min-w-full max-w-full divide-y divide-gray-300 overflow-hidden">
       <thead class="bg-gray-50">
@@ -7,7 +6,9 @@
           <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
             Balance Change
           </th>
-          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">Tax Change</th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
+            Tax Change
+          </th>
           <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
             Notebook
           </th>
@@ -30,10 +31,10 @@
             :class="[selectedRow === i ? 'bg-gray-100' : '']"
             @click="selectedRow === i ? (selectedRow = null) : (selectedRow = i)"
           >
-            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500">
+            <td class="whitespace-nowrap py-4 pl-4 pr-3 font-medium text-sm text-gray-500">
               {{ toArgons(item.netBalanceChange) }}
             </td>
-            <td class="px-3 py-4 text-sm font-medium text-gray-900">
+            <td class="px-3 py-4 text-sm font-medium text-gray-500">
               {{ toArgons(item.netTax) }}
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">
@@ -90,6 +91,7 @@ import { formatDate, toArgons } from '@/pages/desktop/lib/utils';
 import { useWalletStore } from '@/pages/desktop/stores/WalletStore';
 import { XMarkIcon } from '@heroicons/vue/20/solid';
 import { ArrowLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline';
+import { BalanceChangeStatus } from '@ulixee/localchain';
 import { storeToRefs } from 'pinia';
 import * as Vue from 'vue';
 import { useRoute } from 'vue-router';
@@ -116,6 +118,7 @@ export default Vue.defineComponent({
       formatDate,
     };
   },
-  methods: {},
+  methods: {
+  },
 });
 </script>

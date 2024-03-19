@@ -1,3 +1,4 @@
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
 import DatastoreLookup from '@ulixee/datastore/lib/DatastoreLookup';
@@ -5,6 +6,7 @@ import LocalchainPaymentService, {
   IPaymentConfig,
 } from '@ulixee/datastore/payments/LocalchainPaymentService';
 import {
+  BalanceSyncResult,
   DataDomainStore,
   KeystorePasswordOption,
   Localchain,
@@ -14,7 +16,7 @@ import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
 
 const { log } = Logger(module);
 
-export default class LocalchainWithSync {
+export default class LocalchainWithSync extends TypedEventEmitter<{ sync: BalanceSyncResult }> {
   public get dataDomains(): DataDomainStore {
     return this.#localchain.dataDomains;
   }
@@ -26,13 +28,16 @@ export default class LocalchainWithSync {
   #localchain: Localchain;
   public datastoreLookup: DatastoreLookup;
   public address: Promise<string>;
+  public enableLogging = true;
 
   private nextTick: NodeJS.Timeout;
 
-  constructor(readonly localchainConfig?: ILocalchainConfig) {}
+  constructor(readonly localchainConfig?: ILocalchainConfig) {
+    super();
+  }
 
   public async load(): Promise<void> {
-    const { mainchainUrl, localchainPath, keystorePassword } = this.localchainConfig;
+    const { mainchainUrl, localchainPath, keystorePassword } = this.localchainConfig ?? {};
     this.#localchain = await Localchain.load({
       path: localchainPath,
       mainchainUrl,
@@ -72,11 +77,14 @@ export default class LocalchainWithSync {
         const result = await this.#localchain.balanceSync.sync({
           votesAddress: this.localchainConfig.votesAddress,
         });
-        log.info('Escrow Manager Sync result', {
-          // have to weirdly jsonify
-          balanceChanges: result.balanceChanges.map(gettersToObject),
-          notarizations: result.escrowNotarizations.map(gettersToObject),
-        } as any);
+        this.emit('sync', result);
+        if (this.enableLogging) {
+          log.info('Escrow Manager Sync result', {
+            // have to weirdly jsonify
+            balanceChanges: await Promise.all(result.balanceChanges.map(gettersToObject)),
+            notarizations: await Promise.all(result.escrowNotarizations.map(gettersToObject)),
+          } as any);
+        }
       } catch (error) {
         log.error('Error synching escrow balance changes', { error });
       }

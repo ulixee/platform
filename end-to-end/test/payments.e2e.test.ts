@@ -110,11 +110,11 @@ test('it can do end to end payments flow for a domain datastore', async () => {
 
   const identityBech32 = execAndLog(
     `npx @ulixee/datastore admin-identity read --filename="${identityPath}"`,
-  );
+  ).split(/\r?\n/).shift().trim();
   expect(identityBech32).toContain('id1');
   const cloudNode = new TestCloudNode(buildDir);
   const cloudAddress = await cloudNode.start({
-    ULX_CLOUD_ADMIN_IDENTITIES: identityBech32.trim(),
+    ULX_CLOUD_ADMIN_IDENTITIES: identityBech32,
     ULX_IDENTITY_PATH: identityPath,
     ULX_MAINCHAIN_URL: mainchainUrl,
     ULX_LOCALCHAIN_PATH: ferdiechain.path,
@@ -188,7 +188,7 @@ test('it can do end to end payments flow for a domain datastore', async () => {
   expect(payments[0].remainingBalance).toBe(500_000);
 
   const balance = await bobchain.getWallet();
-  console.log('Balance:', gettersToObject(balance.accounts));
+  console.log('Balance:', await gettersToObject(balance.accounts));
   expect(balance.accounts[0].balance).toBe(5000n);
   expect(balance.accounts[0].heldBalance).toBe(1000n);
 }, 300e3);
@@ -198,7 +198,7 @@ test('it can do end to end payments with no domain', async () => {
 
   const identityBech32 = execAndLog(
     `npx @ulixee/datastore admin-identity read --filename="${identityPath}"`,
-  );
+  ).split(/\r?\n/).shift().trim();
   expect(identityBech32).toContain('id1');
 
   const cloudNode = new TestCloudNode(buildDir);
@@ -267,7 +267,7 @@ test('it can do end to end payments with no domain', async () => {
   expect(payments[0].remainingBalance).toBe(5_000 - 1_000);
 
   const balance = await bobchain.getWallet();
-  console.log('Balance:', gettersToObject(balance.accounts));
+  console.log('Balance:', await gettersToObject(balance.accounts));
   expect(balance.accounts[0].balance).toBe(5000n);
   expect(balance.accounts[0].heldBalance).toBe(1005n);
 });
