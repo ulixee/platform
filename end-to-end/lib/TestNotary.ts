@@ -25,7 +25,7 @@ export default class TestNotary {
       'postgres://postgres:postgres@localhost:5432';
     Helpers.needsClosing.push({ close: () => this.teardown(), onlyCloseOnFinal: true });
     this.operator = new Keyring({ type: 'sr25519' }).createFromUri('//Bob');
-    this.registeredPublicKey = new Keyring({ type: 'ed25519' }).createFromUri('//Notary').publicKey;
+    this.registeredPublicKey = new Keyring({ type: 'ed25519' }).createFromUri('//Ferdie//notary').publicKey;
   }
 
   public async start(mainchainUrl: string, pathToNotaryBin?: string): Promise<string> {
@@ -49,7 +49,7 @@ export default class TestNotary {
       await client.end();
     }
 
-    const notaryPath = pathToNotaryBin ?? `${rootDir}/../../mainchain/target/release/ulx-notary`;
+    const notaryPath = pathToNotaryBin ?? `${rootDir}/../../mainchain/target/debug/ulx-notary`;
     if (!fs.existsSync(notaryPath)) {
       throw new Error(`Notary binary not found at ${notaryPath}`);
     }

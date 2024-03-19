@@ -1,10 +1,5 @@
 <template>
-  <Modal
-    ref="modal"
-    title="Create a new Account"
-    dialog-class="w-1/2"
-    :close-handler="onClose"
-  >
+  <Modal ref="modal" title="Create a new Account" dialog-class="w-1/2" :close-handler="onClose">
     <div class="divider-y divider-slate-100 my-5">
       <div class="items-left my-5 flex flex-col px-3">
         <p v-if="errorMessage" class="px-1 py-2 text-sm font-semibold text-red-500">
@@ -114,15 +109,13 @@ export default Vue.defineComponent({
     open() {
       this.modal.open();
     },
-    onClose(isFromBackdrop: boolean) {
-      if (!isFromBackdrop) {
-        this.modal.close();
-        requestAnimationFrame(() => {
-          this.displayName = null;
-          this.password = null;
-          this.suri = null;
-        });
-      }
+    onClose() {
+      this.modal.close();
+      requestAnimationFrame(() => {
+        this.displayName = '';
+        this.password = '';
+        this.suri = '';
+      });
     },
     learnAboutSuri() {
       window.open('https://polkadot.js.org/docs/keyring/start/suri/');

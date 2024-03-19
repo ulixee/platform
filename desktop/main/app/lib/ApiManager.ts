@@ -45,6 +45,7 @@ export default class ApiManager<
   'new-cloud-address': ICloudConnected;
   'argon-file-opened': IArgonFile;
   deployment: IDatastoreDeployLogEntry;
+  'wallet-updated': { wallet: IWallet };
   query: IQueryLogEntry;
 }> {
   apiByCloudAddress = new Map<
@@ -66,7 +67,7 @@ export default class ApiManager<
   localUserProfile: LocalUserProfile;
   deploymentWatcher: DeploymentWatcher;
   paymentService: LocalPaymentService;
-  localchainManager: AccountManager;
+  accountManager: AccountManager;
   queryLogWatcher: QueryLog;
   privateDesktopApiHandler: PrivateDesktopApiHandler;
   privateDesktopWsServer: WebSocket.Server;
@@ -81,7 +82,7 @@ export default class ApiManager<
     this.deploymentWatcher = new DeploymentWatcher();
     this.queryLogWatcher = new QueryLog();
     this.privateDesktopApiHandler = new PrivateDesktopApiHandler(this);
-    this.localchainManager = new AccountManager(this.localUserProfile);
+    this.accountManager = new AccountManager(this.localUserProfile);
   }
 
   public async start(): Promise<void> {
@@ -100,7 +101,10 @@ export default class ApiManager<
     });
 
     this.paymentService = new LocalPaymentService();
-    await this.localchainManager.start();
+    await this.accountManager.start();
+    this.events.on(this.accountManager, 'update', ev =>
+      this.emit('wallet-updated', { wallet: ev.wallet }),
+    );
 
     if (!this.localUserProfile.defaultAdminIdentityPath) {
       await this.localUserProfile.createDefaultAdminIdentity();
@@ -120,12 +124,15 @@ export default class ApiManager<
   }
 
   public async getWallet(): Promise<IWallet> {
-    const localchainWallet = await this.localchainManager.getWallet();
+    const localchainWallet = await this.accountManager.getWallet();
     const credits = await this.paymentService.credits();
     const creditBalance = credits.reduce((sum, x) => sum + x.remaining, 0);
     const creditMilligons = ArgonUtils.microgonsToMilligons(creditBalance);
 
-    const localchainBalance = localchainWallet.accounts.reduce((sum, x) => sum + x.balance, 0n);
+    const localchainBalance = localchainWallet.accounts.reduce(
+      (sum, x) => sum + x.balance + x.mainchainBalance,
+      0n,
+    );
 
     const formattedBalance = ArgonUtils.format(
       localchainBalance + creditMilligons,

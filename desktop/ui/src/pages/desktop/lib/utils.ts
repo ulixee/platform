@@ -1,4 +1,5 @@
 import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
+import { isRef, unref } from 'vue';
 
 export function toArgons(amount: number | bigint, isMicrogons = false): string {
   if (amount === null || amount === undefined) return `${ArgonUtils.ArgonSymbol}0`;
@@ -19,4 +20,24 @@ export function formatDate(date: Date | number): string {
     hour: 'numeric',
     minute: 'numeric',
   });
+}
+
+export function deepUnref<T = any>(obj: T): T {
+  if (isRef(obj)) {
+    return deepUnref(unref(obj)) as T;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(deepUnref) as T;
+  }
+  if (obj instanceof Uint8Array) {
+    return Uint8Array.from(obj) as T;
+  }
+  if (obj && typeof obj === 'object') {
+    const result = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = deepUnref(value);
+    }
+    return result as T;
+  }
+  return obj;
 }

@@ -308,7 +308,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
         this.remoteDatastorePaymentService = localPaymentService;
       }
 
-      if (this.options.localchainConfig) {
+      if (this.options.localchainConfig?.localchainPath) {
         this.localchain = new LocalchainWithSync(this.options.localchainConfig);
         await this.localchain.load();
 

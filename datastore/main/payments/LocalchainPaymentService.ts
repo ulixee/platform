@@ -325,20 +325,17 @@ export default class LocalchainPaymentService
     );
   }
 
-  public static async loadLocalchain(config?: {
+  public static async loadOfflineLocalchain(config?: {
     localchainPath?: string;
-    mainchainUrl?: string;
     keystorePassword?: KeystorePasswordOption;
   }): Promise<Localchain> {
-    const { mainchainUrl: configMainchainUrl, localchainPath } = config ?? {};
+    const { localchainPath } = config ?? {};
     let defaultPath = localchainPath ?? Localchain.getDefaultPath();
     if (!defaultPath.endsWith('.db')) {
       defaultPath = Path.join(defaultPath, 'primary.db');
     }
-    const mainchainUrl = configMainchainUrl ?? env.mainchainUrl;
     log.info("Loading LocalchainPaymentService's localchain", {
       localchainPath: defaultPath,
-      mainchainUrl: configMainchainUrl,
     } as any);
     let keystorePassword = config?.keystorePassword;
     if (
@@ -349,17 +346,15 @@ export default class LocalchainPaymentService
     ) {
       keystorePassword = undefined;
     }
-    return mainchainUrl
-      ? await Localchain.load({ mainchainUrl, path: defaultPath, keystorePassword })
-      : await Localchain.loadWithoutMainchain(
-          defaultPath,
-          {
-            genesisUtcTime: env.genesisUtcTime,
-            tickDurationMillis: env.tickDurationMillis,
-            ntpPoolUrl: env.ntpPoolUrl,
-          },
-          keystorePassword,
-        );
+    return await Localchain.loadWithoutMainchain(
+      defaultPath,
+      {
+        genesisUtcTime: env.genesisUtcTime,
+        tickDurationMillis: env.tickDurationMillis,
+        ntpPoolUrl: env.ntpPoolUrl,
+      },
+      keystorePassword,
+    );
   }
 
   public static async load(
@@ -370,7 +365,19 @@ export default class LocalchainPaymentService
       apiClients?: DatastoreApiClients;
     },
   ): Promise<LocalchainPaymentService> {
-    const localchain = await this.loadLocalchain(config);
+    const localchain = await this.loadOfflineLocalchain(config);
+
+    const mainchainUrl = config?.mainchainUrl ?? env.mainchainUrl;
+    if (mainchainUrl) {
+      try {
+        const mainchainClient = await MainchainClient.connect(mainchainUrl, 10e3);
+        await localchain.attachMainchain(mainchainClient);
+        await localchain.updateTicker();
+      } catch (error) {
+        log.error('Could not attach localchain to mainchain', { error });
+        throw error;
+      }
+    }
 
     return new LocalchainPaymentService(
       localchain,

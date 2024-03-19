@@ -42,6 +42,15 @@ export default class ArgonUtils {
     return value;
   }
 
+  static printArgons(argons: number): string {
+    let argonsb = argons;
+    const prefix = argonsb < 0 ? '-' : '';
+    if (argonsb < 0) {
+      argonsb *= -1;
+    }
+    return `${prefix}${this.ArgonSymbol}${argonsb}`;
+  }
+
   static format(
     value: number | bigint,
     fromUnits: 'milligons' | 'microgons' | 'argons',
@@ -56,7 +65,8 @@ export default class ArgonUtils {
         toUnits === 'argons' ||
         value % (this.MicrogonsPerMilligon * this.MilligonsPerArgon) === 0n
       ) {
-        return `${this.ArgonSymbol}${this.microgonsToRoundedArgons(value)}`;
+        const argons = this.microgonsToRoundedArgons(value);
+        return this.printArgons(argons);
       }
       if (toUnits === 'milligons' || value % this.MicrogonsPerMilligon === 0n) {
         return `${this.microgonsToMilligons(value).toString()}${this.MilligonsSymbol}`;
@@ -66,7 +76,8 @@ export default class ArgonUtils {
 
     if (fromUnits === 'milligons') {
       if (toUnits === 'argons' || value % this.MilligonsPerArgon === 0n) {
-        return `${this.ArgonSymbol}${this.milligonsToRoundedArgons(value)}`;
+        const argons = this.milligonsToRoundedArgons(value);
+        return this.printArgons(argons);
       }
       if (toUnits === 'microgons') {
         return `${this.milligonsToMicrogons(value)}${this.MicrogonsSymbol}`;
@@ -77,12 +88,13 @@ export default class ArgonUtils {
     // from argons
 
     if (toUnits === 'milligons') {
-      return `${this.ArgonSymbol}${value * this.MilligonsPerArgon}`;
+      const milligons = value * this.MilligonsPerArgon;
+      return `${milligons}${this.MilligonsSymbol}`;
     }
     if (toUnits === 'microgons') {
       return `${value * this.MilligonsPerArgon * this.MicrogonsPerMilligon}${this.MicrogonsSymbol}`;
     }
-    return `${this.ArgonSymbol}${value}`;
+    return this.printArgons(Number(value));
   }
 
   public static microgonsToMilligons(microgons: number | bigint, floor = true): bigint {
@@ -124,6 +136,6 @@ export default class ArgonUtils {
     if (typeof milligons === 'number') {
       milligons = BigInt(milligons);
     }
-    return Math.round(1000 * Number(this.milligonsToArgons(milligons))) / 1000;
+    return Math.round(Number(this.milligonsToArgons(1000n * milligons))) / 1000;
   }
 }

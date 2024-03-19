@@ -151,6 +151,12 @@ window.load = function load(host: string) {
   });
   app.use(pinia);
   app.use(router);
+  app.directive('focus', {
+    mounted(el) {
+      el.focus();
+    },
+  });
+
   app.mount('#app');
 };
 

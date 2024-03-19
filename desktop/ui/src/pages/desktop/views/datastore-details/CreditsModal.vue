@@ -15,20 +15,19 @@
           {{ errorMessage }}
         </p>
         <div class="my-5">
-          <div class="mb-1 whitespace-nowrap text-sm font-light">
-            Credits
-          </div>
+          <div class="mb-1 whitespace-nowrap text-sm font-light">Credits</div>
           <div class="relative">
             <span
               class="absolute left-3 whitespace-nowrap border border-transparent py-2 font-light text-gray-500"
-            >₳</span>
+              >₳</span
+            >
             <input
               v-model="argons"
               type="number"
               min="0"
               placeholder="Argons"
               class="rounded-md border border-gray-300 py-2 pl-8 pr-3 placeholder-gray-400"
-            >
+            />
           </div>
         </div>
         <button
@@ -60,9 +59,7 @@
         </div>
 
         <div class="font-regular my-5 border-t border-gray-100 pt-5 text-gray-800">
-          <p class="text-sm text-gray-800">
-            The Credit-enabled URL to your Documentation is:
-          </p>
+          <p class="text-sm text-gray-800">The Credit-enabled URL to your Documentation is:</p>
           <p
             class="mt-2 select-all break-words rounded-md border border-gray-300 bg-gray-100 p-2 text-sm text-slate-800"
           >
@@ -76,6 +73,7 @@
 
 <script lang="ts">
 import ArgfileIcon from '@/assets/icons/argfile.svg';
+import { deepUnref } from '@/pages/desktop/lib/utils';
 import * as Vue from 'vue';
 import { PropType } from 'vue';
 import { ArrowLeftIcon, ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
@@ -84,6 +82,7 @@ import {
   TCredit,
   useDatastoreStore,
 } from '@/pages/desktop/stores/DatastoresStore';
+import type { IArgonFileMeta } from '@ulixee/desktop-interfaces/apis';
 import Modal from '../../components/Modal.vue';
 
 export default Vue.defineComponent({
@@ -119,13 +118,13 @@ export default Vue.defineComponent({
     },
     async addCredit() {
       try {
-        const { filename, credit } = await useDatastoreStore().createCredit(
+        const { name, credit } = await useDatastoreStore().createCredit(
           this.datastore,
           this.argons,
           this.selectedCloud,
         );
         this.credit = credit;
-        this.creditFilename = filename;
+        this.creditFilename = name;
         this.$emit('added-credit');
       } catch (error: any) {
         this.errorMessage = error.message.split('Error: ').pop();
@@ -136,12 +135,15 @@ export default Vue.defineComponent({
       this.modal.open();
     },
     async dragCredit() {
-      const credit = { ...this.credit };
-      await window.appBridge.send('Argon.dragAsFile', { filename: this.creditFilename, file: { credit } });
+      const credit = deepUnref(this.credit);
+      await window.appBridge.send('Argon.dragAsFile', {
+        name: this.creditFilename,
+        file: { credit },
+      } as IArgonFileMeta);
     },
     async showCreditContextMenu($event) {
       const args = {
-        file: { credit: {...this.credit } },
+        file: { credit: { ...this.credit } },
         name: this.creditFilename,
         position: { x: $event.x, y: $event.y },
       };

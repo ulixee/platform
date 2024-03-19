@@ -3,7 +3,7 @@ import { addressValidation, hashValidation, milligonsValidation } from './index'
 
 export const SendNote = z.object({
   action: z.literal('send'),
-  to: z.array(addressValidation).max(10).optional(),
+  to: z.array(addressValidation).max(10).optional().nullish(),
 });
 
 export const ClaimFromMainchainNote = z.object({

@@ -12,7 +12,7 @@ export default class TestMainchain {
   #interfaces: readline.Interface[] = [];
 
   constructor(binPath?: string) {
-    this.#binPath = binPath ?? `${rootDir}/../../mainchain/target/release/ulx-node`;
+    this.#binPath = binPath ?? `${rootDir}/../../mainchain/target/debug/ulx-node`;
     if (!fs.existsSync(this.#binPath)) {
       throw new Error(`Mainchain binary not found at ${this.#binPath}`);
     }

@@ -15,6 +15,8 @@
           <div class="relative">
             <input
               v-model="transferAmount"
+              v-focus
+              @focus="($event.target as any).select()"
               type="number"
               step="0.001"
               placeholder="Argons to transfer"
@@ -25,8 +27,31 @@
         <button
           class="mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md bg-fuchsia-700 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800"
           @click="transfer"
+          :class="[submitting ? 'cursor-not-allowed opacity-50' : '']"
+          :disabled="submitting"
         >
-          <ArrowRightCircleIcon class="-ml-0.5 h-5 w-5" aria-hidden="true" />
+          <svg
+            v-if="submitting"
+            class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <ArrowRightCircleIcon class="-ml-0.5 h-5 w-5" aria-hidden="true" v-else />
           Transfer
         </button>
       </div>
@@ -36,14 +61,12 @@
 
 <script lang="ts">
 import ArgfileIcon from '@/assets/icons/argfile.svg';
-import { useWalletStore } from '@/pages/desktop/stores/WalletStore';
+import { toArgons } from '@/pages/desktop/lib/utils';
+import { IWallet, useWalletStore } from '@/pages/desktop/stores/WalletStore';
 import { ArrowLeftIcon, ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
-import { storeToRefs } from 'pinia';
-import { onUpdated, PropType } from 'vue';
 import * as Vue from 'vue';
-import { useRoute } from 'vue-router';
+import { onUpdated, PropType } from 'vue';
 import Modal from '../../components/Modal.vue';
-import { titleCase, toArgons } from '@/pages/desktop/lib/utils';
 
 export default Vue.defineComponent({
   name: 'NewAccountModal',
@@ -59,22 +82,20 @@ export default Vue.defineComponent({
       required: true,
       default: false,
     },
+    account: {
+      type: Object as PropType<IWallet['accounts'][0]>,
+      required: true,
+    },
   },
   setup(props) {
-    const route = useRoute();
-    const walletStore = useWalletStore();
-    const address = route.params.address as string;
-    const { wallet } = storeToRefs(walletStore);
-
-    const account = wallet.value.accounts.find(x => x.address === address);
     const title = Vue.ref(
       props.toMainchain ? 'Transfer Argons to Mainchain' : 'Transfer Argons to Localchain',
     );
     const balance = Vue.computed(() => {
       if (props.toMainchain) {
-        return account?.balance || 0n;
+        return props.account?.balance || 0n;
       } else {
-        return account?.mainchainBalance || 0n;
+        return props.account?.mainchainBalance || 0n;
       }
     });
     onUpdated(() => {
@@ -89,8 +110,8 @@ export default Vue.defineComponent({
       transferAmount: Vue.ref<number>(0),
       balance,
       title,
-      account,
       toArgons,
+      submitting: Vue.ref<boolean>(false),
       modal: Vue.ref<typeof Modal>(null),
       errorMessage: Vue.ref<string>(),
     };
@@ -101,7 +122,7 @@ export default Vue.defineComponent({
         this.errorMessage = "You didn't enter an amount to transfer";
         return;
       }
-      const transferAmount = BigInt(this.transferAmount);
+      const transferAmount = BigInt(this.transferAmount * 1000);
       if (transferAmount <= 0n) {
         this.errorMessage = 'You must transfer a positive amount';
         return;
@@ -119,14 +140,18 @@ export default Vue.defineComponent({
       }
 
       try {
+        this.submitting = true;
         if (this.toMainchain) {
           await useWalletStore().transferToMainchain(transferAmount, this.account.address);
         } else {
           await useWalletStore().transferFromMainchain(transferAmount, this.account.address);
         }
       } catch (e) {
+        console.log('error', e);
         this.errorMessage = e.message;
         return;
+      } finally {
+        this.submitting = false;
       }
       this.modal.close();
     },
@@ -134,13 +159,11 @@ export default Vue.defineComponent({
       this.modal.open();
     },
     onClose(isFromBackdrop: boolean) {
-      if (!isFromBackdrop) {
-        this.modal.close();
-        requestAnimationFrame(() => {
-          this.transferAmount = 0;
-          this.errorMessage = '';
-        });
-      }
+      this.modal.close();
+      requestAnimationFrame(() => {
+        this.transferAmount = 0;
+        this.errorMessage = '';
+      });
     },
   },
 });

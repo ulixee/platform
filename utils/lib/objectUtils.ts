@@ -1,16 +1,32 @@
-export function gettersToObject<T>(obj: T): T {
-  if (typeof obj !== 'object') return obj;
+export async function gettersToObject<T>(obj: T): Promise<T> {
+  if (obj === null || obj === undefined || typeof obj !== 'object') return obj;
 
-  if (Array.isArray(obj)) {
-    return obj.map(gettersToObject) as T;
+  const keys = [];
+  // eslint-disable-next-line guard-for-in
+  for (const key in obj) {
+    keys.push(key);
   }
-  const result = {} as any;
-  for (const key of Object.keys(obj)) {
-    if (typeof result[key] === 'object') {
-      result[key] = gettersToObject(obj[key]);
-    } else {
-      result[key] = obj[key];
+
+  if (obj[Symbol.iterator]) {
+    const iterableToArray = [];
+    // @ts-ignore
+    for (const item of obj) {
+      iterableToArray.push(await gettersToObject(item));
     }
+    return iterableToArray as any;
+  }
+
+  const result = {} as any;
+  for (const key of keys) {
+    const descriptor = Object.getOwnPropertyDescriptor(obj, key);
+    // Skip functions
+    if (descriptor && typeof descriptor.value === 'function') {
+      continue;
+    }
+    const value = descriptor && descriptor.get ? descriptor.get.call(obj) : obj[key as keyof T];
+    if (typeof value === 'function') continue;
+
+    result[key] = await gettersToObject(value);
   }
   return result;
 }

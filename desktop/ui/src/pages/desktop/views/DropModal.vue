@@ -9,7 +9,7 @@
     leave-to="opacity-0"
   >
     <div
-      class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity flex items-center justify-center w-full"
+      class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity flex items-center justify-center w-full z-10"
     >
       <PlusCircleIcon class="text-white h-12" />
     </div>
