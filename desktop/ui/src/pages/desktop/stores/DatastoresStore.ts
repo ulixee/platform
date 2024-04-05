@@ -306,6 +306,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
       cloud,
     };
     const {
+      rawJson,
       file: { credit },
       name,
     } = await window.desktopApi.send('Credit.create', data);
@@ -315,7 +316,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
       cloud,
     });
     void refreshMetadata(datastore.id, datastore.version, cloud);
-    return { name, credit };
+    return { name, credit, rawJson };
   }
 
   function getDatastoreAdminIdentity(datastoreId: string, cloudName: string) {

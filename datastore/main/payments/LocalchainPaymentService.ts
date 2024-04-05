@@ -19,6 +19,7 @@ import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange'
 import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import { nanoid } from 'nanoid';
 import * as Path from 'node:path';
+import Env from '../env';
 import env from '../env';
 import IDatastoreHostLookup from '../interfaces/IDatastoreHostLookup';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
@@ -38,6 +39,9 @@ export interface IPaymentConfig {
 
 type IPaymentDetailsByDatastoreId = { [datastoreId: string]: IPaymentDetails[] };
 
+if (Env.defaultDataDir) {
+  Localchain.setDefaultDir(Path.join(Env.defaultDataDir, 'ulixee', 'localchain'));
+}
 /**
  * Singleton that will track payments for each escrow for a datastore
  */

@@ -23,6 +23,7 @@
     "@ulixee/platform-utils": "2.0.0-alpha.28",
     "@ulixee/unblocked-specification": "2.0.0-alpha.28",
     "@webcomponents/custom-elements": "^1.6.0",
+    "qrcode": "^1.5.3",
     "moment": "^2.29.4",
     "pinia": "^2.1.7",
     "prismjs": "^1.29.0",

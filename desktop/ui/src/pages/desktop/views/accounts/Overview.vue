@@ -115,24 +115,27 @@
           </div>
           <div class="my-5 w-full items-center px-2" v-if="argonFile">
             <p class="font-light mb-10 text-gray-800">
-              Copy/drag this ₳{{ argons }} Argon File to send to your recipient.
+              Have them scan this QR code, or drag the ₳{{ argons }} Argon File to mail, messages, etc to send to your recipient.
             </p>
 
-            <div
-              class="flex cursor-grab flex-col items-center"
-              draggable="true"
-              @dragstart.prevent="drag()"
-              @dragover.prevent="preventDrop"
-              @drop.prevent="preventDrop"
-            >
-              <ArgfileIcon
-                class="coin-shadow inline-block h-16 w-16 text-fuchsia-700"
-                alt="Argon"
-                @contextmenu.prevent="showContextMenu($event)"
+            <div class="grid grid-cols-2 items-center">
+              <img class='mx-auto' :src="argonFileQrDataUrl" width='200px' alt="Argon File QR Code" />
 
-              />
-              <div class="my-2 text-center text-xs font-light">
-                {{ argonFile.name }}
+              <div
+                class="flex cursor-grab flex-col items-center"
+                draggable="true"
+                @dragstart.prevent="drag()"
+                @dragover.prevent="preventDrop"
+                @drop.prevent="preventDrop"
+              >
+                <ArgfileIcon
+                  class="coin-shadow inline-block h-16 w-16 text-fuchsia-700"
+                  alt="Argon"
+                  @contextmenu.prevent="showContextMenu($event)"
+                />
+                <div class="my-2 text-center text-xs font-light">
+                  {{ argonFile.name }}
+                </div>
               </div>
             </div>
           </div>
@@ -271,6 +274,7 @@ import type { IArgonFileMeta } from '@ulixee/desktop-interfaces/apis';
 import { storeToRefs } from 'pinia';
 import * as Vue from 'vue';
 import { useRoute } from 'vue-router';
+import * as QRCode from 'qrcode';
 
 export default Vue.defineComponent({
   name: 'AccountOverview',
@@ -316,6 +320,7 @@ export default Vue.defineComponent({
       requestType: Vue.ref<'send' | 'request'>('send'),
       transferModal: Vue.ref<typeof ChainTransferModal>(null),
       openToMainchainModal: Vue.ref<boolean>(false),
+      argonFileQrDataUrl: Vue.ref<string>(null),
       account,
       wallet,
       walletStore,
@@ -348,6 +353,8 @@ export default Vue.defineComponent({
             this.account.address,
           );
         }
+        this.argonFileQrDataUrl = await QRCode.toDataURL(this.argonFile.rawJson, { width: 200 });
+
         this.walletStore.load();
       } catch (error: any) {
         this.errorMessage = error.message.split('Error: ').pop();
@@ -358,7 +365,7 @@ export default Vue.defineComponent({
       const argonFile = deepUnref(this.argonFile);
       await window.appBridge.send('Argon.dragAsFile', argonFile);
     },
-    preventDrop($event){
+    preventDrop($event) {
       $event.preventDefault();
     },
     async showContextMenu($event) {

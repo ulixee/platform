@@ -54,7 +54,7 @@ export type IDatastoreResultItem = IDatastoreApiTypes['Datastores.list']['result
 
 export type TCredit = IArgonFile['credit'];
 
-export type IArgonFileMeta = { file: IArgonFile; name: string };
+export type IArgonFileMeta = { file: IArgonFile; name: string, rawJson: string };
 
 export type IDesktopAppPrivateApis = {
   'Argon.send': (arg: {

@@ -38,6 +38,9 @@ export default class AccountManager extends TypedEventEmitter<{
 
   constructor(readonly localUserProfile: LocalUserProfile) {
     super();
+    if (Env.defaultDataDir) {
+      Localchain.setDefaultDir(Path.join(Env.defaultDataDir, 'ulixee', 'localchain'));
+    }
   }
 
   public async loadMainchainClient(url?: string, timeoutMillis?: number): Promise<void> {
@@ -45,6 +48,10 @@ export default class AccountManager extends TypedEventEmitter<{
     if (url) {
       try {
         this.mainchainClient = await MainchainClient.connect(url, timeoutMillis ?? 10e3);
+        console.log(
+          'loaded mainchain client',
+          await gettersToObject(await this.mainchainClient.getTicker()),
+        );
         for (const localchain of this.localchains) {
           await localchain.attachMainchain(this.mainchainClient);
           await localchain.updateTicker();
@@ -82,12 +89,25 @@ export default class AccountManager extends TypedEventEmitter<{
     config: { path?: string; password?: string; cryptoScheme?: CryptoScheme; suri?: string } = {},
   ): Promise<Localchain> {
     config ??= {};
-    const localchain = await LocalchainPaymentService.loadOfflineLocalchain({
-      localchainPath: config.path,
-      keystorePassword: {
-        password: config.password ? Buffer.from(config.password) : undefined,
+    let defaultPath = config.path ?? Localchain.getDefaultPath();
+    if (!defaultPath.endsWith('.db')) {
+      defaultPath = Path.join(defaultPath, 'primary.db');
+    }
+    log.info('Adding localchain', {
+      localchainPath: defaultPath,
+    } as any);
+    const password = config.password
+      ? {
+          password: Buffer.from(config.password),
+        }
+      : undefined;
+    const localchain = await Localchain.loadWithoutMainchain(
+      defaultPath,
+      {
+        ...Env,
       },
-    });
+      password,
+    );
     this.localchains.push(localchain);
 
     if (!this.localUserProfile.localchainPaths.includes(localchain.path)) {
@@ -188,6 +208,7 @@ export default class AccountManager extends TypedEventEmitter<{
 
     const recipient = request.toAddress ? `for ${request.toAddress}` : 'cash';
     return {
+      rawJson: file,
       file: ArgonFileSchema.parse(argonFile),
       name: `${ArgonUtils.format(request.milligons, 'milligons', 'argons')} ${recipient}.arg`,
     };
@@ -202,6 +223,7 @@ export default class AccountManager extends TypedEventEmitter<{
     const argonFile = JSON.parse(file);
 
     return {
+      rawJson: file,
       file: ArgonFileSchema.parse(argonFile),
       name: `Argon Request ${new Date().toLocaleString()}`,
     };

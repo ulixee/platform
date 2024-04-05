@@ -9,4 +9,5 @@ export default {
   genesisUtcTime: parseEnvInt(env.ULX_GENESIS_UTC_TIME),
   tickDurationMillis: parseEnvInt(env.ULX_TICK_DURATION_MILLIS),
   ntpPoolUrl: env.ULX_NTP_SERVER,
+  defaultDataDir: env.ULX_DATA_DIR,
 };

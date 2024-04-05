@@ -310,14 +310,17 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
         adminIdentity,
       );
 
-      return {
-        file: {
-          version: ARGON_FILE_VERSION,
-          credit: {
-            datastoreUrl: `ulx://${id}:${secret}@${address.host}/${datastore.id}@v${datastore.version}`,
-            microgons: remainingCredits,
-          },
+      const file: IArgonFile = {
+        version: ARGON_FILE_VERSION,
+        credit: {
+          datastoreUrl: `ulx://${id}:${secret}@${address.host}/${datastore.id}@v${datastore.version}`,
+          microgons: remainingCredits,
         },
+      };
+
+      return {
+        rawJson: JSON.stringify(file),
+        file,
         name: `₳${argons} at ${
           (datastore.name ?? datastore.scriptEntrypoint)?.replace(/[.\\/]/g, '-') ??
           'a Ulixee Datastore'
@@ -330,20 +333,20 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
 
   public async dragArgonsAsFile(args: IArgonFileMeta, context: WebContents): Promise<void> {
     const file = Path.join(Os.tmpdir(), '.ulixee', args.name);
-    await ArgonFile.create(args.file, file);
+    await ArgonFile.create(args.rawJson, file);
     context.startDrag({
       file,
       icon: argIconPath,
     });
   }
 
-  public async showContextMenu(args: {
-    file: IArgonFile;
-    name: string;
-    position: { x: number; y: number };
-  }): Promise<void> {
+  public async showContextMenu(
+    args: IArgonFileMeta & {
+      position: { x: number; y: number };
+    },
+  ): Promise<void> {
     const file = Path.join(Os.tmpdir(), '.ulixee', args.name);
-    await ArgonFile.create(args.file, file);
+    await ArgonFile.create(args.rawJson, file);
 
     const menu = Menu.buildFromTemplate([
       {

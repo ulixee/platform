@@ -106,6 +106,7 @@ export default Vue.defineComponent({
     return {
       credit: Vue.ref<TCredit>(null),
       creditFilename: Vue.ref<string>(),
+      creditJson: Vue.ref<string>(),
       argons: Vue.ref<number>(5),
       modal: Vue.ref<typeof Modal>(null),
       errorMessage: Vue.ref<string>(),
@@ -118,13 +119,14 @@ export default Vue.defineComponent({
     },
     async addCredit() {
       try {
-        const { name, credit } = await useDatastoreStore().createCredit(
+        const { name, credit, rawJson } = await useDatastoreStore().createCredit(
           this.datastore,
           this.argons,
           this.selectedCloud,
         );
         this.credit = credit;
         this.creditFilename = name;
+        this.creditJson = rawJson;
         this.$emit('added-credit');
       } catch (error: any) {
         this.errorMessage = error.message.split('Error: ').pop();
@@ -143,6 +145,7 @@ export default Vue.defineComponent({
     },
     async showCreditContextMenu($event) {
       const args = {
+        rawJson: this.creditJson,
         file: { credit: { ...this.credit } },
         name: this.creditFilename,
         position: { x: $event.x, y: $event.y },
