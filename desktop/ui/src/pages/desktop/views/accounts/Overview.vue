@@ -156,16 +156,16 @@
           <span class="mr-3 whitespace-nowrap text-right font-light">Balance:</span>
           <span class="text-fuchsia-700"> {{ toArgons(account.mainchainBalance) }}</span>
 
-          <span class="mr-3 whitespace-nowrap text-right font-light">Pending:</span>
+          <span class="mr-3 whitespace-nowrap text-right font-light">Processing:</span>
           <span class="text-fuchsia-700">
-            {{ toArgons(account.pendingMainchainBalanceChange) }}</span
+            {{ toArgons(account.processingMainchainBalanceChange) }}</span
           >
 
           <span class="col-span-2 h-1 border-t border-gray-300">&nbsp;</span>
           <span class="mr-3 whitespace-nowrap text-right font-light">Net Balance:</span>
 
           <span class="text-fuchsia-700">{{
-            toArgons(account.mainchainBalance + account.pendingMainchainBalanceChange)
+            toArgons(account.mainchainBalance + account.processingMainchainBalanceChange)
           }}</span>
         </div>
       </div>
