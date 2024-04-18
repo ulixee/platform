@@ -34,10 +34,9 @@ RUN echo "deb http://deb.debian.org/debian/ buster main contrib non-free" >> /et
 #  && find /tmp/goog-fonts/ -type f -name "*.ttf" -exec cp {} "/usr/local/share/fonts/" \; \
 #  && rm -rf /tmp/goog-fonts
 
-RUN mkdir -p /opt/bin && chmod +x /dev/shm && mkdir -p /ulixee/browsers
+RUN mkdir -p /opt/bin && chmod +x /dev/shm
 
 WORKDIR /app/ulixee
-ENV BROWSERS_DIR /ulixee/browsers
 
 RUN cd /app/ulixee && yarn init -yp \
     && yarn add @ulixee/cloud@$VERSION \
@@ -45,12 +44,11 @@ RUN cd /app/ulixee && yarn init -yp \
     && $(npx install-browser-deps) \
     && groupadd -r ulixee && useradd -r -g ulixee -G audio,video ulixee \
     && mkdir -p /home/ulixee/Downloads \
-    && mkdir -p /home/ulixee/.cache/ulixee \
+    && mkdir -p /home/ulixee/.cache \
+    && mv $HOME/.cache/ulixee /home/ulixee/.cache/ulixee \
     && chown -R ulixee:ulixee /home/ulixee \
-    && chown -R ulixee:ulixee /ulixee \
     && chown -R ulixee:ulixee /app/ulixee \
     && chmod 777 /tmp \
-    && chmod 777 /ulixee/browsers \
     && chmod -R 777 /home/ulixee/.cache/ulixee
 
 # Add below to run as unprivileged user. It's not included by default, but you can use docker run `--user ulixee`.

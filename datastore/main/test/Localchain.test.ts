@@ -31,7 +31,7 @@ test('it can serialize and deserialize a notarization', async () => {
   await localchain.keystore.importSuri('//Alice', CryptoScheme.Ed25519);
   const balanceBuilder = localchain.beginChange();
   await balanceBuilder.claimFromMainchain({
-    accountNonce: 1,
+    transferId: 1,
     address,
     amount: 2n ** 120n,
     expirationBlock: 100,

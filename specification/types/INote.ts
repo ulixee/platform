@@ -8,11 +8,11 @@ export const SendNote = z.object({
 
 export const ClaimFromMainchainNote = z.object({
   action: z.literal('claimFromMainchain'),
-  accountNonce: z
+  transferId: z
     .number()
     .int()
     .nonnegative()
-    .describe('The system account nonce of this transfer'),
+    .describe('The id of this transfer to localchain'),
 });
 export const EscrowHoldNote = z.object({
   action: z.literal('escrowHold'),

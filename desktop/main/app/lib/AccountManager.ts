@@ -7,7 +7,6 @@ import IDatastoreHostLookup from '@ulixee/datastore/interfaces/IDatastoreHostLoo
 import { IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
 import DatastoreLookup from '@ulixee/datastore/lib/DatastoreLookup';
 import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
-import LocalchainPaymentService from '@ulixee/datastore/payments/LocalchainPaymentService';
 import { IArgonFileMeta } from '@ulixee/desktop-interfaces/apis';
 import {
   BalanceSyncResult,
@@ -48,10 +47,6 @@ export default class AccountManager extends TypedEventEmitter<{
     if (url) {
       try {
         this.mainchainClient = await MainchainClient.connect(url, timeoutMillis ?? 10e3);
-        console.log(
-          'loaded mainchain client',
-          await gettersToObject(await this.mainchainClient.getTicker()),
-        );
         for (const localchain of this.localchains) {
           await localchain.attachMainchain(this.mainchainClient);
           await localchain.updateTicker();

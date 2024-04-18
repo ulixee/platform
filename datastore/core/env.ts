@@ -1,17 +1,21 @@
 import { loadEnv, parseEnvBool, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
 import { addressValidation, identityValidation } from '@ulixee/platform-specification/types';
+import * as Os from 'os';
+import * as Path from 'path';
 import { ILocalchainConfig } from './lib/LocalchainWithSync';
 
 loadEnv(process.cwd());
 loadEnv(__dirname);
 const env = process.env;
 if (env.ULX_DATASTORE_DIR) env.ULX_DATASTORE_DIR = parseEnvPath(env.ULX_DATASTORE_DIR);
+if (env.ULX_DATASTORE_TMP_DIR) env.ULX_DATASTORE_TMP_DIR = parseEnvPath(env.ULX_DATASTORE_TMP_DIR);
 if (env.ULX_QUERY_HERO_SESSIONS_DIR)
   env.ULX_QUERY_HERO_SESSIONS_DIR = parseEnvPath(env.ULX_QUERY_HERO_SESSIONS_DIR);
 
 export default {
   serverEnvironment: env.ULX_SERVER_ENVIRONMENT,
   datastoresDir: env.ULX_DATASTORE_DIR,
+  datastoresTmpDir: env.ULX_DATASTORE_TMP_DIR ?? Path.join(Os.tmpdir(), '.ulixee', 'datastore'),
   queryHeroSessionsDir: env.ULX_QUERY_HERO_SESSIONS_DIR,
   replayRegistryHost: env.ULX_REPLAY_REGISTRY_HOST,
   escrowSpendTrackingHost: env.ULX_ESCROW_SPEND_TRACKING_HOST,

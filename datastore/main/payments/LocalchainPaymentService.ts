@@ -20,7 +20,6 @@ import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import { nanoid } from 'nanoid';
 import * as Path from 'node:path';
 import Env from '../env';
-import env from '../env';
 import IDatastoreHostLookup from '../interfaces/IDatastoreHostLookup';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
 import IPaymentService, { IPaymentDetails, IWallet } from '../interfaces/IPaymentService';
@@ -71,6 +70,7 @@ export default class LocalchainPaymentService
   private needsApiClientsClose = false;
   private loadPromise: Promise<any>;
   private saveInterval: NodeJS.Timeout;
+  private syncTimeout: NodeJS.Timeout;
 
   constructor(
     public localchain: Localchain,
@@ -83,14 +83,27 @@ export default class LocalchainPaymentService
       this.needsApiClientsClose = true;
     }
     this.saveInterval = setInterval(() => this.save(), 5e3).unref();
+    this.sync();
   }
 
   public async close(): Promise<void> {
     clearInterval(this.saveInterval);
+    clearTimeout(this.syncTimeout);
     await this.save();
     if (this.needsApiClientsClose) {
       await this.apiClients.close();
     }
+  }
+
+  public sync(): void {
+    clearInterval(this.syncTimeout);
+    void (async () => {
+      await this.localchain.balanceSync.sync();
+      this.syncTimeout = setTimeout(
+        () => this.sync(),
+        Number(this.localchain.ticker.millisToNextTick()),
+      ).unref();
+    });
   }
 
   public async getWallet(): Promise<IWallet> {
@@ -353,9 +366,9 @@ export default class LocalchainPaymentService
     return await Localchain.loadWithoutMainchain(
       defaultPath,
       {
-        genesisUtcTime: env.genesisUtcTime,
-        tickDurationMillis: env.tickDurationMillis,
-        ntpPoolUrl: env.ntpPoolUrl,
+        genesisUtcTime: Env.genesisUtcTime,
+        tickDurationMillis: Env.tickDurationMillis,
+        ntpPoolUrl: Env.ntpPoolUrl,
       },
       keystorePassword,
     );
@@ -371,7 +384,7 @@ export default class LocalchainPaymentService
   ): Promise<LocalchainPaymentService> {
     const localchain = await this.loadOfflineLocalchain(config);
 
-    const mainchainUrl = config?.mainchainUrl ?? env.mainchainUrl;
+    const mainchainUrl = config?.mainchainUrl ?? Env.mainchainUrl;
     if (mainchainUrl) {
       try {
         const mainchainClient = await MainchainClient.connect(mainchainUrl, 10e3);

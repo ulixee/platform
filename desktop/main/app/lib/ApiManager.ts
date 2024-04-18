@@ -2,7 +2,6 @@ import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { toUrl } from '@ulixee/commons/lib/utils';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
@@ -16,23 +15,22 @@ import LocalPaymentService from '@ulixee/datastore/payments/LocalPaymentService'
 import { IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
 import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
+import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import { screen } from 'electron';
 import * as http from 'http';
 import { AddressInfo } from 'net';
 import * as Path from 'path';
 import { ClientOptions } from 'ws';
 import WebSocket = require('ws');
-import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
+import AccountManager from './AccountManager';
 import ApiClient from './ApiClient';
 import ArgonFile, { IArgonFile } from './ArgonFile';
 import DeploymentWatcher from './DeploymentWatcher';
-import AccountManager from './AccountManager';
 import PrivateDesktopApiHandler from './PrivateDesktopApiHandler';
 
 const { version } = require('../package.json');
 
 const bundledDatastoreExample = Path.join(__dirname, '../assets/ulixee-docs.dbx.tgz');
-const { log } = Logger(module);
 
 export default class ApiManager<
   TEventType extends keyof IDesktopAppEvents & string = keyof IDesktopAppEvents,

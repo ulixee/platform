@@ -130,7 +130,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
     this.options = {
       serverEnvironment: env.serverEnvironment as any,
       datastoresDir: env.datastoresDir,
-      datastoresTmpDir: Path.join(Os.tmpdir(), '.ulixee', 'datastore'),
+      datastoresTmpDir: env.datastoresTmpDir,
       maxRuntimeMs: 10 * 60e3,
       waitForDatastoreCompletionOnShutdown: true,
       enableDatastoreWatchMode: env.serverEnvironment === 'development',

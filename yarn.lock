@@ -1838,17 +1838,17 @@
     semver "^7.3.5"
     tar "^6.1.11"
 
-"@napi-rs/cli@^3.0.0-alpha.44":
-  version "3.0.0-alpha.44"
-  resolved "https://registry.yarnpkg.com/@napi-rs/cli/-/cli-3.0.0-alpha.44.tgz#8bcd50dcf39f2dfb6d11e5c89d9e4b8d2cf3ea51"
-  integrity sha512-ED2hRtQfrCTi0jmWAziDMV2tb2+KdK0j90VdU9EYaBDYHD1X5FJOw0lxftwS2ifFql/Lb6QnM1SCgRGMbcDH4Q==
+"@napi-rs/cli@^3.0.0-alpha.46":
+  version "3.0.0-alpha.48"
+  resolved "https://registry.yarnpkg.com/@napi-rs/cli/-/cli-3.0.0-alpha.48.tgz#e049a04de3ca4e88299d3572d290796088aed2cd"
+  integrity sha512-rv0wBr9utjgkCchpVjuUJxL2IVCP0vN0e7AQRHcrT0cwNZEAA4jXZd8L3RPmIYR1YYHMcTeHJ3o0Ju/5SuMo8A==
   dependencies:
     "@napi-rs/cross-toolchain" "^0.0.14"
     "@octokit/rest" "^20.0.2"
     clipanion "^3.2.1"
     colorette "^2.0.20"
     debug "^4.3.4"
-    emnapi "1.1.0"
+    emnapi "1.1.1"
     inquirer "^9.2.13"
     js-yaml "^4.1.0"
     lodash-es "^4.17.21"
@@ -3167,6 +3167,13 @@
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/@types/http-errors/-/http-errors-2.0.4.tgz#7eb47726c391b7345a6ec35ad7f4de469cf5ba4f"
   integrity sha512-D0CFMMtydbJAegzOyHjtiKPLlvnm3iTZyZRSZoLq2mRhDdmLfIWOCYPfQJ4cu2erKghU++QvjcUjp/5h7hESpA==
+
+"@types/http-proxy@^1.17.14":
+  version "1.17.14"
+  resolved "https://registry.yarnpkg.com/@types/http-proxy/-/http-proxy-1.17.14.tgz#57f8ccaa1c1c3780644f8a94f9c6b5000b5e2eec"
+  integrity sha512-SSrD0c1OQzlFX7pGu1eXxSEjemej64aaNPRhhVYUGqXh0BtldAAx37MG8btcumvpgKyZp1F5Gn3JkktdxiFv6w==
+  dependencies:
+    "@types/node" "*"
 
 "@types/istanbul-lib-coverage@*", "@types/istanbul-lib-coverage@^2.0.0", "@types/istanbul-lib-coverage@^2.0.1":
   version "2.0.6"
@@ -5187,7 +5194,7 @@ commander@^8.0.0:
   resolved "https://registry.yarnpkg.com/commander/-/commander-8.3.0.tgz#4837ea1b2da67b9c616a67afbb0fafee567bca66"
   integrity sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==
 
-commander@^9.3.0, commander@^9.5.0:
+commander@^9.5.0:
   version "9.5.0"
   resolved "https://registry.yarnpkg.com/commander/-/commander-9.5.0.tgz#bc08d1eb5cedf7ccb797a96199d41c7bc3e60d30"
   integrity sha512-KRs7WVDKg86PWiuAqhDrAQnTXZKraVcCc6vFdL14qrZ/DcWwuRo7VoiYXalXO7S5GKpqYiVEwCbgFDfxNHKJBQ==
@@ -6115,10 +6122,10 @@ emittery@^0.13.1:
   resolved "https://registry.yarnpkg.com/emittery/-/emittery-0.13.1.tgz#c04b8c3457490e0847ae51fced3af52d338e3dad"
   integrity sha512-DeWwawk6r5yR9jFgnDKYt4sLS0LmHJJi3ZOnb5/JdbYwj3nW+FxQnHIjhBKz8YLC7oRNPVM9NQ47I3CVx34eqQ==
 
-emnapi@1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/emnapi/-/emnapi-1.1.0.tgz#8ce9b9ce9b145da867f0550439b53dbd5e71b248"
-  integrity sha512-q4S4JY5Td/CeMXiTT78jejjfKlFNEO4/ID/y33K+8wFj4VQlz511xQC/dGNPMxaHkMcQJCsI/CGHzmJHZ5RFRw==
+emnapi@1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/emnapi/-/emnapi-1.1.1.tgz#29e61e20272a7758ffbba662cc33642da36d90c4"
+  integrity sha512-md0YDBLCX+378+zzibHvOLsj28YKFy8vl7BiSzVocCY7HujOkYt+N5LCOYqLeYi5C5/5NlnkNweVdUjrvKpGNg==
 
 emoji-regex@^8.0.0:
   version "8.0.0"
@@ -6846,7 +6853,7 @@ event-stream@=3.3.4:
     stream-combiner "~0.0.4"
     through "~2.3.1"
 
-eventemitter3@^4.0.4:
+eventemitter3@^4.0.0, eventemitter3@^4.0.4:
   version "4.0.7"
   resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-4.0.7.tgz#2de9b68f6528d5644ef5c59526a1b4a07306169f"
   integrity sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==
@@ -7105,6 +7112,11 @@ flatted@^3.2.9:
   version "3.2.9"
   resolved "https://registry.yarnpkg.com/flatted/-/flatted-3.2.9.tgz#7eb4c67ca1ba34232ca9d2d93e9886e611ad7daf"
   integrity sha512-36yxDn5H7OFZQla0/jFJmbIKTdZAQHngCedGxiMmpNfEZM0sdEeT+WczLQrjK6D7o2aiyLYDnkw0R3JK0Qv1RQ==
+
+follow-redirects@^1.0.0:
+  version "1.15.6"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.6.tgz#7f815c0cda4249c74ff09e95ef97c23b5fd0399b"
+  integrity sha512-wWN62YITEaOpSK584EZXJafH1AGpO8RVgElfkuXbTOrPX4fIfOyEpW/CsiNd8JdYrAoOvafRTOEnvsO++qCqFA==
 
 follow-redirects@^1.15.4:
   version "1.15.5"
@@ -7911,6 +7923,15 @@ http-proxy-agent@^7.0.0:
   dependencies:
     agent-base "^7.1.0"
     debug "^4.3.4"
+
+http-proxy@^1.18.1:
+  version "1.18.1"
+  resolved "https://registry.yarnpkg.com/http-proxy/-/http-proxy-1.18.1.tgz#401541f0534884bbf95260334e72f88ee3976549"
+  integrity sha512-7mz/721AbnJwIVbnaSv1Cz3Am0ZLT/UBwkC92VlxhXv/k/BBQfM2fXElQNC27BVGr0uwUpplYPQM9LnaBMR5NQ==
+  dependencies:
+    eventemitter3 "^4.0.0"
+    follow-redirects "^1.0.0"
+    requires-port "^1.0.0"
 
 http-signature@~1.2.0:
   version "1.2.0"

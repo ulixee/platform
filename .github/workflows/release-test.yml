@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Test Node.js ${{ matrix.node-version }} on ${{ matrix.os }}
@@ -17,18 +21,6 @@ jobs:
         node-version: [18, 20]
 
     runs-on: ${{ matrix.os }}
-
-    services:
-      postgres:
-        image: postgres
-        env:
-          POSTGRES_PASSWORD: postgres
-        # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
@@ -67,6 +59,7 @@ jobs:
       - name: /etc/hosts
         if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest' }}
         run: |
+          sudo echo "127.0.0.1 host.docker.internal" | sudo tee -a /etc/hosts
           sudo echo "127.0.0.1 docs.datastoresrus.com" | sudo tee -a /etc/hosts
           sudo echo "127.0.0.1 bootup-datastore.com" | sudo tee -a /etc/hosts
         shell: bash
@@ -81,8 +74,9 @@ jobs:
       - name: Run tests
         run: yarn test --testTimeout=60000 --maxWorkers=2
         env:
-          NOTARY_DB_URL: postgres://postgres:postgres@postgres
+          SKIP_E2E: true
           CI: true
+          ULX_DATASTORE_TMP_DIR: ${{ github.workspace }}/build/.data-test-tmp
 
       - name: 'Tar files'
         if: ${{ failure() }}
