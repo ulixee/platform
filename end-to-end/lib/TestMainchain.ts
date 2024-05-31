@@ -14,6 +14,7 @@ export default class TestMainchain {
   public port: string;
   public loglevel = 'warn';
   #binPath: string;
+  #bitcoind: ChildProcess;
   #process: ChildProcess;
   #interfaces: readline.Interface[] = [];
   containerName?: string;
@@ -38,25 +39,23 @@ export default class TestMainchain {
   }
 
   public async launch(miningThreads = 4): Promise<string> {
-    let execArgs = [
-      '--dev',
-      '--alice',
-      `--miners=${miningThreads}`,
-      '--port=0',
-      '--rpc-port=0',
-      '--rpc-external',
-    ];
+    let port = 0;
+    let rpcPort = 0;
+    let execArgs: string[] = [];
+
     let containerName: string;
     if (process.env.ULX_USE_DOCKER_BINS) {
       containerName = `miner_${nanoid()}`;
       this.containerName = containerName;
       this.#binPath = 'docker';
+      port = 9944;
+      rpcPort = 33344;
       execArgs = [
         'run',
         '--rm',
         `--name=${containerName}`,
-        `-p=0:9944`,
-        '-p=0:33344',
+        `-p=0:${port}`,
+        `-p=0:${rpcPort}`,
         '-e',
         `RUST_LOG=${this.loglevel},sc_rpc_server=info`,
         'ghcr.io/ulixee/ulixee-miner:dev',
@@ -64,13 +63,16 @@ export default class TestMainchain {
       if (process.env.ADD_DOCKER_HOST) {
         execArgs.splice(2, 0, `--add-host=host.docker.internal:host-gateway`);
       }
+
+      const bitcoinRpcUrl = await this.startBitcoin();
       execArgs.push(
         '--dev',
         '--alice',
         `--miners=${miningThreads}`,
-        '--port=33344',
-        '--rpc-port=9944',
+        `--port=${port}`,
+        `--rpc-port=${rpcPort}`,
         '--rpc-external',
+        `--bitcoin-rpc-url=${bitcoinRpcUrl}`,
       );
     }
     this.#process = spawn(this.#binPath, execArgs, {
@@ -119,9 +121,36 @@ export default class TestMainchain {
         execSync(`docker rm -f ${this.containerName}`);
       } catch {}
     }
+    this.#bitcoind?.kill();
     this.#process?.kill();
     for (const i of this.#interfaces) {
       i.close();
     }
+  }
+
+  private async startBitcoin(): Promise<string> {
+    // const rpcPort = await PortFinder.getPortPromise();
+    //
+    // const tmpDir = fs.mkdtempSync('/tmp/ulx-bitcoin-');
+    //
+    // this.#bitcoind = spawn(
+    //   process.env.BITCOIND_PATH,
+    //   [
+    //     '-regtest',
+    //     '-fallbackfee=0.0001',
+    //     '-listen=0',
+    //     `-datadir=${tmpDir}`,
+    //     '-blockfilterindex',
+    //     '-txindex',
+    //     `-rpcport=${rpcPort}`,
+    //     '-rpcuser=bitcoin',
+    //     '-rpcpassword=bitcoin',
+    //   ],
+    //   {
+    //     stdio: ['ignore', 'inherit', 'inherit', 'ignore'],
+    //   },
+    // );
+
+    return cleanHostForDocker(`http://bitcoin:bitcoin@localhost:${14388}`);
   }
 }
