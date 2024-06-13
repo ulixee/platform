@@ -1,6 +1,7 @@
 import { rollup, RollupBuild, RollupOptions, watch } from 'rollup';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
+import json from  "@rollup/plugin-json";
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import sourcemaps from './sourcemaps';
@@ -30,6 +31,7 @@ export default async function rollupDatastore(
       },
     }),
     commonjs({ transformMixedEsModules: true, extensions: ['.js', '.ts'] }), // the ".ts" extension is required }),
+    json(),
   ];
 
   if (scriptPath.endsWith('.ts')) {
