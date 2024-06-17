@@ -26,6 +26,10 @@
       "default": "./storage-engines/*.js",
       "types": "./storage-engines/*.d.ts"
     },
+    "./payments/*": {
+      "default": "./payments/*.js",
+      "types": "./payments/*.d.ts"
+    },
     "./connections/*": {
       "default": "./connections/*.js",
       "types": "./connections/*.d.ts"
