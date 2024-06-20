@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "scripts": {
+    "copy:build": "node builder/copySources.js ./packages",
+    "start": "npx electron ."
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "packages/*/*",
+      "packages/datastore/plugins/hero-*",
+      "packages/hero/plugins/*"
+    ],
+    "nohoist": ["**/electron-**", "**/fs-extra", "@ulixee/**", "**/better-sqlite3"]
+  }
+}

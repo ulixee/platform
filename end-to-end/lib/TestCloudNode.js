@@ -1,0 +1,78 @@
+"use strict";
+var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _TestCloudNode_childProcess;
+Object.defineProperty(exports, "__esModule", { value: true });
+const helpers_1 = require("@ulixee/datastore-testing/helpers");
+const node_child_process_1 = require("node:child_process");
+const utils_1 = require("./utils");
+class TestCloudNode {
+    constructor(rootDir = (0, utils_1.getPlatformBuild)()) {
+        this.rootDir = rootDir;
+        _TestCloudNode_childProcess.set(this, void 0);
+        helpers_1.needsClosing.push({ close: () => this.close(), onlyCloseOnFinal: true });
+    }
+    async start(envArgs) {
+        // BOOT UP A CLOUD WITH GIFT CARD RESTRICTIONS
+        __classPrivateFieldSet(this, _TestCloudNode_childProcess, (0, node_child_process_1.spawn)(`npx @ulixee/cloud start`, {
+            stdio: ['ignore', 'pipe', 'pipe'],
+            cwd: this.rootDir,
+            shell: true,
+            env: {
+                ...process.env,
+                ULX_DISABLE_CHROMEALIVE: 'true',
+                DEBUG: 'ulx*',
+                ...envArgs,
+            },
+        }), "f");
+        __classPrivateFieldGet(this, _TestCloudNode_childProcess, "f").stdout.setEncoding('utf8');
+        __classPrivateFieldGet(this, _TestCloudNode_childProcess, "f").stderr.setEncoding('utf8');
+        this.address = await new Promise((resolve, reject) => {
+            let isResolved = false;
+            const onProcessError = (err) => {
+                console.warn('[DATASTORE CORE] Error running cloud node', err);
+                reject(err);
+                isResolved = true;
+            };
+            __classPrivateFieldGet(this, _TestCloudNode_childProcess, "f").once('error', onProcessError);
+            __classPrivateFieldGet(this, _TestCloudNode_childProcess, "f").stderr.on('data', data => {
+                console.warn('[DATASTORE CORE] >> %s', data);
+                __classPrivateFieldGet(this, _TestCloudNode_childProcess, "f").off('error', onProcessError);
+                reject(data);
+                isResolved = true;
+            });
+            __classPrivateFieldGet(this, _TestCloudNode_childProcess, "f").stdout.on('data', data => {
+                console.log('[DATASTORE CORE]', data.trim());
+                if (isResolved)
+                    return;
+                const match = data.match(/Ulixee Cloud listening at (.+)/);
+                if (match?.length) {
+                    resolve(match[1]);
+                    isResolved = true;
+                }
+            });
+        });
+        __classPrivateFieldGet(this, _TestCloudNode_childProcess, "f").on('error', err => {
+            throw err;
+        });
+        __classPrivateFieldGet(this, _TestCloudNode_childProcess, "f").on('exit', code => {
+            console.warn('[DATASTORE CORE] Cloud node exited with code', code);
+        });
+        return this.address;
+    }
+    async close() {
+        __classPrivateFieldGet(this, _TestCloudNode_childProcess, "f")?.kill();
+    }
+}
+_TestCloudNode_childProcess = new WeakMap();
+exports.default = TestCloudNode;
+//# sourceMappingURL=TestCloudNode.js.map
