@@ -8,15 +8,35 @@
   "exports": {
     ".": {
       "import": "./index.mjs",
-      "require": "./index.cjs"
+      "require": "./index.cjs",
+      "types": "./index.d.ts"
+    },
+    "./*": {
+      "default": "./*.js",
+      "types": "./*.d.ts"
     },
     "./package.json": "./package.json",
-    "./lib/*": "./lib/*.js",
+    "./lib/*": {
+      "default": "./lib/*.js",
+      "types": "./lib/*.d.ts"
+    },
     "./cli/*": "./cli/*.js",
-    "./storage-engines/*": "./storage-engines/*.js",
-    "./connections/*": "./connections/*.js",
-    "./types/*": "./types/*",
-    "./interfaces/*": "./interfaces/*"
+    "./storage-engines/*": {
+      "default": "./storage-engines/*.js",
+      "types": "./storage-engines/*.d.ts"
+    },
+    "./connections/*": {
+      "default": "./connections/*.js",
+      "types": "./connections/*.d.ts"
+    },
+    "./types/*": {
+      "default": "./types/*.js",
+      "types": "./types/*.d.ts"
+    },
+    "./interfaces/*": {
+      "default": "./interfaces/*.js",
+      "types": "./interfaces/*.d.ts"
+    }
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.28",

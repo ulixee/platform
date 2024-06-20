@@ -5,9 +5,13 @@
   "exports": {
     ".": {
       "import": "./index.mjs",
-      "require": "./index.cjs"
+      "require": "./index.cjs",
+      "types": "./index.d.ts"
     },
-    "./cli": "./cli.js"
+    "./cli": {
+      "default": "./cli.cjs",
+      "types": "./cli.d.ts"
+    }
   },
   "bin": "./bin/cli.js",
   "scripts": {
