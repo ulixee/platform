@@ -9,8 +9,8 @@ export { IWallet };
 export const useWalletStore = defineStore('walletStore', () => {
   const wallet = ref<IWallet>({
     accounts: [],
-    primaryAddress: '',
     credits: [],
+    brokerAccounts: [],
     formattedBalance: '0',
   } as IWallet);
 
@@ -26,6 +26,16 @@ export const useWalletStore = defineStore('walletStore', () => {
   async function createAccount(name: string, suri?: string, password?: string) {
     const account = await window.desktopApi.send('User.createAccount', { name, suri, password });
     wallet.value.accounts.push(account);
+    return account;
+  }
+
+  async function addBrokerAccount(host: string, userIdentity: string, name?: string) {
+    const account = await window.desktopApi.send('User.addBrokerAccount', {
+      name,
+      host,
+      userIdentity,
+    });
+    wallet.value.brokerAccounts.push(account);
     return account;
   }
 
@@ -84,6 +94,7 @@ export const useWalletStore = defineStore('walletStore', () => {
     createSendArgonsFile,
     createRequestArgonsFile,
     createAccount,
+    addBrokerAccount,
     transferFromMainchain,
     transferToMainchain,
     wallet,

@@ -1,5 +1,5 @@
 import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
-import type { IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
+import type { IDatabrokerAccount, IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
 import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import type { LocalchainOverview } from '@ulixee/localchain';
 import type ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
@@ -54,7 +54,7 @@ export type IDatastoreResultItem = IDatastoreApiTypes['Datastores.list']['result
 
 export type TCredit = IArgonFile['credit'];
 
-export type IArgonFileMeta = { file: IArgonFile; name: string, rawJson: string };
+export type IArgonFileMeta = { file: IArgonFile; name: string; rawJson: string };
 
 export type IDesktopAppPrivateApis = {
   'Argon.send': (arg: {
@@ -130,6 +130,9 @@ export type IDesktopAppPrivateApis = {
     suri?: string;
     password?: string;
   }) => Promise<LocalchainOverview>;
+  'User.addBrokerAccount': (
+    args: Omit<IDatabrokerAccount, 'balance'>,
+  ) => Promise<IDatabrokerAccount>;
 };
 
 export interface IOpenReplay {

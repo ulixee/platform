@@ -102,10 +102,10 @@ export default class HostedServicesEndpoints {
         throw new Error('Not implemented');
       },
       'PaymentService.reserve': async (data, ctx) => {
-        return await ctx.remoteDatastorePaymentService.reserve(data);
+        return await ctx.upstreamDatastorePaymentService.reserve(data);
       },
       'PaymentService.finalize': async (data, ctx) => {
-        return await ctx.remoteDatastorePaymentService.finalize(data);
+        return await ctx.upstreamDatastorePaymentService.finalize(data);
       },
       'DomainLookup.query': async (args, ctx) => {
         return await ctx.datastoreLookup.getHostInfo(args.datastoreUrl);

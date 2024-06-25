@@ -1,4 +1,4 @@
-import { ILocalchainConfig } from '../lib/LocalchainWithSync';
+import ILocalchainConfig from '@ulixee/datastore/interfaces/ILocalchainConfig';
 
 export default interface IDatastoreCoreConfigureOptions {
   serverEnvironment: 'development' | 'production';

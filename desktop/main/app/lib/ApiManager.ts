@@ -11,7 +11,7 @@ import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
 import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
 import QueryLog from '@ulixee/datastore/lib/QueryLog';
-import LocalPaymentService from '@ulixee/datastore/payments/LocalPaymentService';
+import DefaultPaymentService from '@ulixee/datastore/payments/DefaultPaymentService';
 import { IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
 import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
@@ -64,7 +64,7 @@ export default class ApiManager<
   debuggerUrl: string;
   localUserProfile: LocalUserProfile;
   deploymentWatcher: DeploymentWatcher;
-  paymentService: LocalPaymentService;
+  paymentService: DefaultPaymentService;
   accountManager: AccountManager;
   queryLogWatcher: QueryLog;
   privateDesktopApiHandler: PrivateDesktopApiHandler;
@@ -98,7 +98,7 @@ export default class ApiManager<
       });
     });
 
-    this.paymentService = new LocalPaymentService();
+    this.paymentService = new DefaultPaymentService();
     await this.accountManager.start();
     this.events.on(this.accountManager, 'update', ev =>
       this.emit('wallet-updated', { wallet: ev.wallet }),
@@ -132,16 +132,18 @@ export default class ApiManager<
       0n,
     );
 
+    const brokerBalance = localchainWallet.brokerAccounts.reduce((sum, x) => sum + x.balance, 0n);
+
     const formattedBalance = ArgonUtils.format(
-      localchainBalance + creditMilligons,
+      localchainBalance + creditMilligons + brokerBalance,
       'milligons',
       'argons',
     );
 
     return {
-      primaryAddress: localchainWallet.primaryAddress,
       credits,
       accounts: localchainWallet.accounts,
+      brokerAccounts: localchainWallet.brokerAccounts,
       formattedBalance,
     };
   }

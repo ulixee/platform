@@ -479,10 +479,11 @@ export default class DatastoreApiClient {
     mainchainUrl: string,
   ): Promise<IDatastoreHost> {
     const mainchainClient = mainchainUrl ? await MainchainClient.connect(mainchainUrl, 10e3) : null;
-    const lookup = await new DatastoreLookup(mainchainClient).getHostInfo(datastoreUrl);
-
-    await mainchainClient?.close();
-    return lookup;
+    try {
+      return await new DatastoreLookup(mainchainClient).getHostInfo(datastoreUrl);
+    } finally {
+      await mainchainClient?.close();
+    }
   }
 
   public static createExecSignatureMessage(payment: IPayment, nonce: string): Buffer {

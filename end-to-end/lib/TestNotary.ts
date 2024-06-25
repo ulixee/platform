@@ -175,7 +175,14 @@ export default class TestNotary {
   }
 
   public async teardown(): Promise<void> {
-    this.#childProcess?.kill();
+    const launchedProcess = this.#childProcess;
+    if (launchedProcess) {
+      launchedProcess?.kill();
+      try {
+        launchedProcess.stdio.forEach(io => io?.destroy());
+      } catch {}
+      launchedProcess.unref();
+    }
     this.#stdioInterface?.close();
     const client = await this.connect();
     try {

@@ -4,7 +4,8 @@ import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import DatastorePackager from '@ulixee/datastore-packager';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import LocalchainPaymentService from '@ulixee/datastore/payments/LocalchainPaymentService';
+import ArgonReserver from '@ulixee/datastore/payments/ArgonReserver';
+import CreditReserver from '@ulixee/datastore/payments/CreditReserver';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import * as Fs from 'fs';
 import * as Path from 'path';
@@ -16,9 +17,7 @@ const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastorePayme
 
 let cloudNode: CloudNode;
 let client: DatastoreApiClient;
-jest
-  .spyOn<any, any>(LocalchainPaymentService.prototype, 'writeToDisk')
-  .mockImplementation(() => null);
+
 jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => null);
 let storageCounter = 0;
 const keyring = new Keyring({ ss58Format: 18 });
@@ -92,7 +91,9 @@ beforeAll(async () => {
 
 beforeEach(() => {
   storageCounter += 1;
-  LocalchainPaymentService.storePath = Path.join(storageDir, `payments-${storageCounter}.json`);
+  ArgonReserver.baseStorePath = Path.join(storageDir, `payments-${storageCounter}`);
+  CreditReserver.defaultBasePath = Path.join(storageDir, `credits-${storageCounter}`);
+
   escrowSpendTrackerMock.clear();
 });
 

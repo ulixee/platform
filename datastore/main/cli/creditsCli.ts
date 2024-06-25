@@ -2,7 +2,7 @@ import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import { Command, Option } from 'commander';
 import DatastoreApiClient from '../lib/DatastoreApiClient';
-import CreditPaymentService from '../payments/CreditPaymentService';
+import CreditPaymentManager from '../payments/CreditReserver';
 
 export default function creditsCli(): Command {
   const cli = new Command('credits');
@@ -65,7 +65,7 @@ export default function creditsCli(): Command {
     .description('Save to a local wallet.')
     .argument('<url>', 'The url of the Credit.')
     .option('-m, --mainchain-url [url]', 'The mainchain url to use.')
-    .option('-d, --credit-dir [path]', 'The directory to store credits in.', CreditPaymentService.defaultBasePath)
+    .option('-d, --credit-dir [path]', 'The directory to store credits in.', CreditPaymentManager.defaultBasePath)
     .action(async (url, { creditDir, mainchainUrl }) => {
       const { datastoreId, version, host } = await DatastoreApiClient.lookupDatastoreHost(
         url,
@@ -77,7 +77,7 @@ export default function creditsCli(): Command {
         const [id, secret] = creditIdAndSecret.split(':');
         const { balance } = await client.getCreditsBalance(datastoreId, version, id);
 
-        const service = await CreditPaymentService.storeCredit(
+        const service = await CreditPaymentManager.storeCredit(
           datastoreId,
           version,
           client.connectionToCore.transport.host,

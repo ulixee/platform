@@ -10,6 +10,7 @@ import ILocalUserProfile from '../interfaces/ILocalUserProfile';
 export default class LocalUserProfile {
   public static path = Path.join(getDataDirectory(), 'ulixee', 'user-profile.json');
   public clouds: (ILocalUserProfile['clouds'][0] & { adminIdentity?: string })[] = [];
+  public databrokers:ILocalUserProfile['databrokers'] = [];
   public localchainPaths: string[] = [];
   public installedDatastores: ILocalUserProfile['installedDatastores'] = [];
   public datastoreAdminIdentities: (ILocalUserProfile['datastoreAdminIdentities'][0] & {
@@ -142,13 +143,16 @@ export default class LocalUserProfile {
         datastoreId: x.datastoreId,
       })),
       localchainPaths: this.localchainPaths,
+      databrokers: this.databrokers,
     };
   }
 
   private loadProfile(): void {
     if (!Fs.existsSync(LocalUserProfile.path)) return;
     try {
-      const data: ILocalUserProfile = TypeSerializer.parse(Fs.readFileSync(LocalUserProfile.path, 'utf8'));
+      const data: ILocalUserProfile = TypeSerializer.parse(
+        Fs.readFileSync(LocalUserProfile.path, 'utf8'),
+      );
       Object.assign(this, data);
       this.clouds ??= [];
       for (const cloud of this.clouds) {
@@ -160,6 +164,7 @@ export default class LocalUserProfile {
       this.gettingStartedCompletedSteps ??= [];
       this.installedDatastores ??= [];
       this.localchainPaths ??= [];
+      this.databrokers ??= [];
     } catch {}
   }
 }

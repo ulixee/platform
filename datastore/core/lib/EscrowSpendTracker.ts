@@ -4,9 +4,9 @@ import IEscrowServiceApiTypes from '@ulixee/platform-specification/services/Escr
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import serdeJson from '@ulixee/platform-utils/lib/serdeJson';
+import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
 import DatastoreEscrowsDb from '../db/DatastoreEscrowsDb';
 import IEscrowSpendTracker from '../interfaces/IEscrowSpendTracker';
-import LocalchainWithSync from './LocalchainWithSync';
 
 const { log } = Logger(module);
 

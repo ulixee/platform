@@ -4,8 +4,8 @@ import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreId
 import { semverRegex } from '@ulixee/platform-specification/types/semverValidation';
 import { createReadStream } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
+import createStaticFileHandler from '@ulixee/platform-utils/lib/staticServe';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
-import createStaticFileHandler from '../lib/staticServe';
 
 export const datastorePathRegex = new RegExp(
   `/(${datastoreRegex.source})@v(${semverRegex.source})(/(.+)?)?`,
@@ -76,10 +76,7 @@ export default class DocpageRoutes {
       return true;
     }
 
-    if (
-      params[2].startsWith('/assets/') ||
-      params[2] === '/favicon.ico'
-    ) {
+    if (params[2].startsWith('/assets/') || params[2] === '/favicon.ico') {
       req.url = params[2];
     } else {
       req.url = '/';

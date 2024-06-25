@@ -18,6 +18,7 @@ export const EscrowHoldNote = z.object({
   action: z.literal('escrowHold'),
   recipient: addressValidation,
   dataDomainHash: hashValidation.optional().nullish(),
+  delegatedSigner: addressValidation.optional().nullish(),
 });
 
 function createActionLiteral<T extends string>(

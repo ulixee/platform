@@ -43,7 +43,6 @@ export async function deploy(
   options: {
     tsconfig?: string;
     compiledSourcePath?: string;
-    clearVersionHistory?: boolean;
     cloudHost?: string;
     identityPath?: string;
     identityPassphrase?: string;
@@ -62,7 +61,6 @@ export async function deploy(
     dbx,
     packager.manifest,
     options.cloudHost,
-    options.clearVersionHistory,
     options.identityPath,
     options.identityPassphrase,
   );
@@ -80,7 +78,6 @@ async function upload(
   dbx: Dbx,
   manifest: DatastoreManifest,
   cloudHost: string,
-  clearVersionHistory: boolean,
   identityPath: string | undefined,
   identityPassphrase: string | undefined,
 ): Promise<{ cloudHost: string }> {
