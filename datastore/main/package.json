@@ -55,11 +55,12 @@
     "better-sqlite3": "^9.4.3",
     "commander": "^9.5.0",
     "nanoid": "^3.3.6",
-    "moment": "^2.29.4"
+    "moment": "^2.29.4",
+    "@polkadot/keyring": "^12.6.2",
+    "@polkadot/util-crypto": "^12.6.2"
   },
   "devDependencies": {
     "@ulixee/datastore-packager": "2.0.0-alpha.28",
-    "@ulixee/datastore-testing": "2.0.0-alpha.28",
-    "@polkadot/keyring": "^12.6.2"
+    "@ulixee/datastore-testing": "2.0.0-alpha.28"
   }
 }

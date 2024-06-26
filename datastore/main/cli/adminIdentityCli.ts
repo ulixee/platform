@@ -24,8 +24,8 @@ export default function cliCommands(): Command {
     )
     .enablePositionalOptions(true)
     .action(async ({ filename, passphraseCipher, passphrase }) => {
-      console.log('Creating Identity...', filename); // eslint-disable-line no-console
       const identity = await Identity.create();
+      console.log('Created Identity...', { filename, identity: identity.bech32 }); // eslint-disable-line no-console
 
       if (filename) {
         await identity.save(filename, { passphrase, cipher: passphraseCipher });

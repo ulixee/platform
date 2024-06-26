@@ -3,9 +3,10 @@ import { CloudNode } from '@ulixee/cloud';
 import DatastorePackager from '@ulixee/datastore-packager';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import LocalchainPaymentService from '@ulixee/datastore/payments/LocalchainPaymentService';
+import ArgonReserver from '@ulixee/datastore/payments/ArgonReserver';
 import * as Fs from 'fs';
 import * as Path from 'path';
+import CreditReserver from '@ulixee/datastore/payments/CreditReserver';
 import EscrowSpendTracker from '../lib/EscrowSpendTracker';
 import MockEscrowSpendTracker from './_MockEscrowSpendTracker';
 import MockPaymentService from './_MockPaymentService';
@@ -65,7 +66,8 @@ let storageCounter = 0;
 
 beforeEach(() => {
   storageCounter += 1;
-  LocalchainPaymentService.storePath = Path.join(storageDir, `payments-${storageCounter}.json`);
+  ArgonReserver.baseStorePath = Path.join(storageDir, `payments-${storageCounter}`);
+  CreditReserver.defaultBasePath = Path.join(storageDir, `credits-${storageCounter}`);
 });
 
 afterEach(Helpers.afterEach);
@@ -367,10 +369,10 @@ export default new Datastore({
     };
   });
 
-  cloudNode.datastoreCore.remoteDatastorePaymentService = corePaymentService;
+  cloudNode.datastoreCore.upstreamDatastorePaymentService = corePaymentService;
   // @ts-expect-error
   cloudNode.datastoreCore.vm.remotePaymentService =
-    cloudNode.datastoreCore.remoteDatastorePaymentService;
+    cloudNode.datastoreCore.upstreamDatastorePaymentService;
   const result = await client.query(
     lastHop.manifest.id,
     lastHop.manifest.version,

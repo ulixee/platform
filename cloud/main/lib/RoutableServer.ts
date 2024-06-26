@@ -55,7 +55,11 @@ export default class RoutableServer {
   private readonly httpRoutes: [url: RegExp | string, method: string, handler: IHttpHandleFn][];
   private readonly wsRoutes: [RegExp | string, IWsHandleFn][] = [];
 
-  constructor(private isReadyToServe: Promise<void>, hostname?: string, addRouters?: boolean) {
+  constructor(
+    private isReadyToServe: Promise<void>,
+    hostname?: string,
+    addRouters?: boolean,
+  ) {
     this.httpServer = new Http.Server();
     bindFunctions(this);
     this.httpServer.on('error', this.onHttpError);

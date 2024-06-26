@@ -17,7 +17,7 @@ export default interface IDatastoreApiContext {
   logger: IBoundLog;
   datastoreRegistry: DatastoreRegistry;
   escrowSpendTracker: IEscrowSpendTracker;
-  remoteDatastorePaymentService: IPaymentService;
+  upstreamDatastorePaymentService: IPaymentService;
   datastoreLookup: IDatastoreHostLookup;
   storageEngineRegistry?: StorageEngineRegistry;
   workTracker: WorkTracker;

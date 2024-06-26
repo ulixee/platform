@@ -5,9 +5,9 @@ import DatastorePackager from '@ulixee/datastore-packager';
 import { Helpers } from '@ulixee/datastore-testing';
 import cloneDatastore from '@ulixee/datastore/cli/cloneDatastore';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import CreditPaymentService from '@ulixee/datastore/payments/CreditPaymentService';
-import LocalchainPaymentService from '@ulixee/datastore/payments/LocalchainPaymentService';
-import LocalPaymentService from '@ulixee/datastore/payments/LocalPaymentService';
+import ArgonReserver from '@ulixee/datastore/payments/ArgonReserver';
+import CreditReserver from '@ulixee/datastore/payments/CreditReserver';
+import DefaultPaymentService from '@ulixee/datastore/payments/DefaultPaymentService';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import * as Fs from 'fs';
@@ -36,7 +36,7 @@ beforeAll(async () => {
     Fs.rmSync(`${__dirname}/datastores/output.dbx`, { recursive: true });
   }
 
-  CreditPaymentService.defaultBasePath = Path.join(storageDir, `credits.json`);
+  CreditReserver.defaultBasePath = Path.join(storageDir, `credits.json`);
   cloudNode = await Helpers.createLocalNode(
     {
       datastoreConfiguration: {
@@ -53,8 +53,8 @@ beforeAll(async () => {
 
 beforeEach(() => {
   storageCounter += 1;
-  LocalchainPaymentService.storePath = Path.join(storageDir, `payments-${storageCounter}.json`);
-  CreditPaymentService.defaultBasePath = Path.join(storageDir, `credits-${storageCounter}`);
+  ArgonReserver.baseStorePath = Path.join(storageDir, `payments-${storageCounter}`);
+  CreditReserver.defaultBasePath = Path.join(storageDir, `credits-${storageCounter}`);
   escrowSpendTrackerMock.clear();
 });
 
@@ -95,13 +95,13 @@ test('should be able run a Datastore with Credits', async () => {
     secret: expect.any(String),
   });
 
-  await CreditPaymentService.storeCredit(
+  await CreditReserver.storeCredit(
     manifest.id,
     manifest.version,
     client.connectionToCore.transport.host,
     credits,
   );
-  const paymentService = new LocalPaymentService();
+  const paymentService = new DefaultPaymentService();
   await paymentService.loadCredits();
   await expect(paymentService.credits()).resolves.toHaveLength(1);
 
@@ -137,7 +137,7 @@ test('should be able run a Datastore with Credits', async () => {
 test('should remove an empty Credits from the local cache', async () => {
   const manifest = { id: '1', version: '1.1.1' };
   const credits = { id: 'crd1', secret: 'hash', remainingCredits: 1250 };
-  const paymentService = await CreditPaymentService.storeCredit(
+  const paymentService = await CreditReserver.storeCredit(
     manifest.id,
     manifest.version,
     client.connectionToCore.transport.host,
@@ -196,13 +196,13 @@ test('should be able to embed Credits in a Datastore', async () => {
   await client.upload(await dbx.tarGzip(), { identity: adminIdentity });
   const credits = await client.createCredits(manifest.id, manifest.version, 2001, adminIdentity);
 
-  await CreditPaymentService.storeCredit(
+  await CreditReserver.storeCredit(
     manifest.id,
     manifest.version,
     client.connectionToCore.transport.host,
     credits,
   );
-  const paymentService = new LocalPaymentService();
+  const paymentService = new DefaultPaymentService();
   await paymentService.loadCredits();
 
   await expect(
@@ -256,7 +256,7 @@ test('should be able to embed Credits in a Datastore', async () => {
       1002,
       adminIdentity,
     );
-    const credit2Service = await CreditPaymentService.storeCredit(
+    const credit2Service = await CreditReserver.storeCredit(
       manifest2.id,
       manifest2.version,
       client.connectionToCore.transport.host,
@@ -295,4 +295,3 @@ test('should be able to embed Credits in a Datastore', async () => {
     [`ulx://${await cloudNode.address}`]: expect.any(DatastoreApiClient),
   });
 }, 60e3);
-

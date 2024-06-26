@@ -1,3 +1,5 @@
+import { IDatabrokerAccount } from './IPaymentService';
+
 export default interface ILocalUserProfile {
   clouds: { address: string; adminIdentityPath?: string; name: string }[];
   installedDatastores: { cloudHost: string; datastoreId: string; datastoreVersion: string }[];
@@ -5,4 +7,5 @@ export default interface ILocalUserProfile {
   datastoreAdminIdentities: { datastoreId: string; adminIdentityPath?: string }[];
   defaultAdminIdentityPath: string;
   localchainPaths: string[];
+  databrokers: Omit<IDatabrokerAccount, 'balance'>[];
 }

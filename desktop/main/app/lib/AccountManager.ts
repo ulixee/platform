@@ -4,7 +4,8 @@ import Logger from '@ulixee/commons/lib/Logger';
 import Queue from '@ulixee/commons/lib/Queue';
 import Env from '@ulixee/datastore/env';
 import IDatastoreHostLookup from '@ulixee/datastore/interfaces/IDatastoreHostLookup';
-import { IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
+import ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
+import { IDatabrokerAccount, IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
 import DatastoreLookup from '@ulixee/datastore/lib/DatastoreLookup';
 import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
 import { IArgonFileMeta } from '@ulixee/desktop-interfaces/apis';
@@ -20,6 +21,7 @@ import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
 import serdeJson from '@ulixee/platform-utils/lib/serdeJson';
 import * as Path from 'path';
+import BrokerEscrowSource from '@ulixee/datastore/payments/BrokerEscrowSource';
 import { IArgonFile } from './ArgonFile';
 
 const { log } = Logger(module);
@@ -78,6 +80,39 @@ export default class AccountManager extends TypedEventEmitter<{
   public async close(): Promise<void> {
     if (this.exited) return;
     this.exited = true;
+  }
+
+  public async addBrokerAccount(
+    config: ILocalUserProfile['databrokers'][0],
+  ): Promise<IDatabrokerAccount> {
+    // check first and throw error if invalid
+    const balance = await this.getBrokerBalance(config.host, config.userIdentity);
+    const entry = this.localUserProfile.databrokers.find(x => x.host === config.host);
+    if (entry) {
+      entry.userIdentity = config.userIdentity;
+      entry.name = config.name;
+    } else {
+      this.localUserProfile.databrokers.push(config);
+    }
+    await this.localUserProfile.save();
+    return {
+      ...config,
+      balance,
+    };
+  }
+
+  public async getBrokerBalance(host: string, identity: string): Promise<bigint> {
+    return await BrokerEscrowSource.getBalance(host, identity);
+  }
+
+  public async getBrokerAccounts(): Promise<IDatabrokerAccount[]> {
+    const brokers = this.localUserProfile.databrokers.map(x => ({ ...x, balance: 0n }));
+    for (const broker of brokers) {
+      broker.balance = await this.getBrokerBalance(broker.host, broker.userIdentity).catch(
+        () => 0n,
+      );
+    }
+    return brokers;
   }
 
   public async addAccount(
@@ -149,12 +184,20 @@ export default class AccountManager extends TypedEventEmitter<{
 
   public async getWallet(): Promise<IWallet> {
     const accounts = await Promise.all(this.localchains.map(x => x.accountOverview()));
-    const balance = accounts.reduce((sum, x) => sum + x.balance + x.mainchainBalance, 0n);
+    const brokerAccounts = await this.getBrokerAccounts();
+    let balance = 0n;
+    for (const account of accounts) {
+      balance += account.balance + account.mainchainBalance;
+    }
+    for (const account of brokerAccounts) {
+      balance += account.balance;
+    }
+
     const formattedBalance = ArgonUtils.format(balance, 'milligons', 'argons');
 
     return {
-      primaryAddress: (accounts.find(x => x.name === 'primary') ?? accounts[0])?.address,
       credits: [],
+      brokerAccounts,
       accounts,
       formattedBalance,
     };

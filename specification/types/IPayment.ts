@@ -43,9 +43,6 @@ export const PaymentSchema = PaymentMethodSchema.extend({
     .regex(/[A-Za-z0-9_-]{21}/)
     .describe('A one time payment id.'),
   microgons: microgonsValidation,
-  // paymentSignature: mulitSignatureValidation
-  //   .optional()
-  //   .describe('A signature by the escrow account that this is a valid payment id and amount.'),
 });
 
 type IPayment = z.infer<typeof PaymentSchema>;

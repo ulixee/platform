@@ -1,0 +1,38 @@
+{
+  "name": "@ulixee/databroker",
+  "version": "2.0.0-alpha.28",
+  "main": "index.js",
+  "repository": "git@github.com:ulixee/platform.git",
+  "license": "MIT",
+  "bin": "./bin/cli.js",
+  "scripts": {
+    "start": "cd ../../build && yarn workspace @ulixee/databroker start",
+    "build": "yarn workspace @ulixee/databroker-admin build"
+  },
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.cjs",
+      "types": "./index.d.ts"
+    }
+  },
+  "dependencies": {
+    "@ulixee/cloud": "2.0.0-alpha.28",
+    "@ulixee/commons": "2.0.0-alpha.28",
+    "@ulixee/localchain": "2.0.0-alpha.28",
+    "@ulixee/datastore": "2.0.0-alpha.28",
+    "@ulixee/platform-utils": "2.0.0-alpha.28",
+    "@ulixee/net": "2.0.0-alpha.28",
+    "@ulixee/platform-specification": "2.0.0-alpha.28",
+    "better-sqlite3": "^9.4.3",
+    "commander": "^9.5.0",
+    "nanoid": "^3.3.6",
+    "moment": "^2.29.4"
+  },
+  "devDependencies": {
+    "@ulixee/datastore-packager": "2.0.0-alpha.28",
+    "@ulixee/datastore-testing": "2.0.0-alpha.28",
+    "@polkadot/keyring": "^12.6.2",
+    "@types/better-sqlite3": "^7.6.10"
+  }
+}

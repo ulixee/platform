@@ -2,15 +2,15 @@
   "extends": "./node_modules/@ulixee/repo-tools/tsconfig.json",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "./build"
+    "outDir": "./build",
   },
   "references": [
     {
-      "path": "specification/tsconfig.json"
+      "path": "specification/tsconfig.json",
     },
     {
-      "path": "desktop/chrome-extension/tsconfig.json"
-    }
+      "path": "desktop/chrome-extension/tsconfig.json",
+    },
   ],
   "include": [
     "cloud",
@@ -28,7 +28,7 @@
     "cloud/**/*.json",
     "./*.js",
     "./*.json",
-    ".eslintrc.js"
+    ".eslintrc.js",
   ],
   "exclude": [
     "**/tsconfig*.json",
@@ -42,12 +42,13 @@
     "specification",
     "hero",
     "datastore/docpage/src",
+    "datastore/broker-admin",
     "datastore/packager/test/assets/*",
     "assets",
     "test/datastores",
     "**/website",
     "**/docs",
     "**/*.d.ts",
-    "**/*.mjs"
-  ]
+    "**/*.mjs",
+  ],
 }

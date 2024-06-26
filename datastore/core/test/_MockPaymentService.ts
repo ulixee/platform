@@ -1,14 +1,18 @@
 import { KeyringPair } from '@polkadot/keyring/types';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
-import IPaymentService from '@ulixee/datastore/interfaces/IPaymentService';
+import IPaymentService, { IPaymentEvents } from '@ulixee/datastore/interfaces/IPaymentService';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { IPayment } from '@ulixee/platform-specification';
-import { AccountType} from '@ulixee/platform-specification/types/IBalanceChange';
+import { AccountType } from '@ulixee/platform-specification/types/IBalanceChange';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import { nanoid } from 'nanoid';
 
-export default class MockPaymentService implements IPaymentService {
+export default class MockPaymentService
+  extends TypedEventEmitter<IPaymentEvents>
+  implements IPaymentService
+{
   public paymentsByDatastoreId: {
     [datastoreId: string]: {
       escrowId: string;
@@ -27,7 +31,13 @@ export default class MockPaymentService implements IPaymentService {
   constructor(
     public clientAddress: KeyringPair,
     public client: DatastoreApiClient,
-  ) {}
+  ) {
+    super();
+  }
+
+  async close(): Promise<void> {
+    return null;
+  }
 
   async reserve(
     info: IPaymentServiceApiTypes['PaymentService.reserve']['args'],

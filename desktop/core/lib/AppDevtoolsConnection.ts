@@ -24,7 +24,7 @@ export default class AppDevtoolsConnection implements IConnectionTransport {
   constructor(readonly webSocket: WebSocket) {
     this.browser = new Browser(
       {
-        isHeaded: false,
+        isHeaded: true,
         launchArguments: [],
         executablePath: 'electron',
         fullVersion: '',

@@ -2,7 +2,7 @@ import * as Http from 'http';
 import { AddressInfo } from 'net';
 import { app } from 'electron';
 import * as Fs from 'fs';
-import staticServe from '@ulixee/datastore-core/lib/staticServe';
+import staticServe from '@ulixee/platform-utils/lib/staticServe';
 
 export default class StaticServer {
   #httpServer: Http.Server;

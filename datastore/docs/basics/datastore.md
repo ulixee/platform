@@ -98,7 +98,7 @@ Object containing an optional key/value of remoteDatastore "names" to urls of th
 An optional callback that can be used to secure a Datastore. This method can allow you to issue private Identities to remote Datastore consumers and only allow those users to access your Datastore. An Identity can be created using the `@ulixee/platform-utils` cli:
 
 ```bash
- npx @ulixee/platform-utils identity create
+ npx @ulixee/datastore admin-identity create
 ```
 
 A caller would use the generated Identity to create an authentication message:

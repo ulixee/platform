@@ -4,8 +4,15 @@ import { ChildProcess, execSync, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as readline from 'node:readline';
+import {
+  checkForExtrinsicSuccess,
+  KeyringPair,
+  UlxClient,
+  UlxPrimitivesDataDomainVersionHost,
+} from '@ulixee/mainchain';
 import { rootDir } from '../paths';
 import { cleanHostForDocker, getDockerPortMapping, getProxy } from './testHelpers';
+import TestNotary from './TestNotary';
 
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 4);
 
@@ -63,18 +70,18 @@ export default class TestMainchain {
       if (process.env.ADD_DOCKER_HOST) {
         execArgs.splice(2, 0, `--add-host=host.docker.internal:host-gateway`);
       }
-
-      const bitcoinRpcUrl = await this.startBitcoin();
-      execArgs.push(
-        '--dev',
-        '--alice',
-        `--miners=${miningThreads}`,
-        `--port=${port}`,
-        `--rpc-port=${rpcPort}`,
-        '--rpc-external',
-        `--bitcoin-rpc-url=${bitcoinRpcUrl}`,
-      );
     }
+
+    const bitcoinRpcUrl = await this.startBitcoin();
+    execArgs.push(
+      '--dev',
+      '--alice',
+      `--miners=${miningThreads}`,
+      `--port=${port}`,
+      `--rpc-port=${rpcPort}`,
+      '--rpc-external',
+      `--bitcoin-rpc-url=${bitcoinRpcUrl}`,
+    );
     this.#process = spawn(this.#binPath, execArgs, {
       stdio: ['ignore', 'pipe', 'pipe', 'ignore'],
       env: { ...process.env, RUST_LOG: `${this.loglevel},sc_rpc_server=info` },
@@ -122,7 +129,14 @@ export default class TestMainchain {
       } catch {}
     }
     this.#bitcoind?.kill();
-    this.#process?.kill();
+    const launchedProcess = this.#process;
+    if (launchedProcess) {
+      launchedProcess?.kill();
+      try {
+        launchedProcess.stdio.forEach(io => io?.destroy());
+      } catch {}
+      launchedProcess.unref();
+    }
     for (const i of this.#interfaces) {
       i.close();
     }
@@ -153,4 +167,64 @@ export default class TestMainchain {
 
     return cleanHostForDocker(`http://bitcoin:bitcoin@localhost:${14388}`);
   }
+}
+
+export async function registerZoneRecord(
+  client: UlxClient,
+  dataDomainHash: Uint8Array,
+  owner: KeyringPair,
+  paymentAccount: Uint8Array,
+  notaryId: number,
+  versions: Record<string, UlxPrimitivesDataDomainVersionHost>,
+): Promise<void> {
+  const codecVersions = new Map();
+  for (const [version, host] of Object.entries(versions)) {
+    const [major, minor, patch] = version.split('.');
+    const versionCodec = client.createType('UlxPrimitivesDataDomainSemver', {
+      major,
+      minor,
+      patch,
+    });
+    codecVersions.set(versionCodec, client.createType('UlxPrimitivesDataDomainVersionHost', host));
+  }
+
+  await new Promise((resolve, reject) => {
+    return client.tx.dataDomain
+      .setZoneRecord(dataDomainHash, {
+        paymentAccount,
+        notaryId,
+        versions: codecVersions,
+      })
+      .signAndSend(owner, ({ events, status }) => {
+        if (status.isFinalized) {
+          checkForExtrinsicSuccess(events, client).then(resolve).catch(reject);
+        }
+        if (status.isInBlock) {
+          checkForExtrinsicSuccess(events, client).catch(reject);
+        }
+      })
+      .catch(reject);
+  });
+}
+
+export async function activateNotary(
+  sudo: KeyringPair,
+  client: UlxClient,
+  notary: TestNotary,
+): Promise<void> {
+  await notary.register(client);
+  await new Promise<void>((resolve, reject) => {
+    void client.tx.sudo
+      .sudo(client.tx.notaries.activate(notary.operator.publicKey))
+      .signAndSend(sudo, ({ events, status }) => {
+        if (status.isInBlock) {
+          // eslint-disable-next-line promise/always-return
+          return checkForExtrinsicSuccess(events, client).then(() => {
+            console.log(`Successful activation of notary in block ${status.asInBlock.toHex()}`);
+            resolve();
+          }, reject);
+        }
+        console.log(`Status of notary activation: ${status.type}`);
+      });
+  });
 }

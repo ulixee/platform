@@ -5,10 +5,9 @@ import Resolvable from '@ulixee/commons/lib/Resolvable';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
-import { IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
+import { IDatabrokerAccount, IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
 import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import CreditPaymentService from '@ulixee/datastore/payments/CreditPaymentService';
 import {
   IArgonFileMeta,
   IDatastoreResultItem,
@@ -29,6 +28,7 @@ import { nanoid } from 'nanoid';
 import * as Os from 'os';
 import * as Path from 'path';
 import WebSocket = require('ws');
+import CreditReserver from '@ulixee/datastore/payments/CreditReserver';
 import ApiManager from './ApiManager';
 import ArgonFile from './ArgonFile';
 
@@ -71,6 +71,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     'User.getQueries': this.getQueries.bind(this),
     'User.getWallet': this.getWallet.bind(this),
     'User.createAccount': this.createAccount.bind(this),
+    'User.addBrokerAccount': this.addBrokerAccount.bind(this),
   } as const;
 
   public Events: IDesktopAppPrivateEvents;
@@ -126,6 +127,12 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   public async onArgonFileDrop(path: string): Promise<void> {
     const argonFile = await ArgonFile.readFromPath(path);
     await this.onArgonFileOpened(argonFile);
+  }
+
+  public async addBrokerAccount(
+    request: Omit<IDatabrokerAccount, 'balance'>,
+  ): Promise<IDatabrokerAccount> {
+    return await this.apiManager.accountManager.addBrokerAccount(request);
   }
 
   public async createAccount(request: {
@@ -278,7 +285,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   }
 
   public async saveCredit(arg: { credit: TCredit }): Promise<void> {
-    const credit = await CreditPaymentService.storeCreditFromUrl(
+    const credit = await CreditReserver.storeCreditFromUrl(
       arg.credit.datastoreUrl,
       arg.credit.microgons,
       await this.apiManager.accountManager.getDatastoreHostLookup(),

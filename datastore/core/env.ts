@@ -2,7 +2,7 @@ import { loadEnv, parseEnvBool, parseEnvInt, parseEnvPath } from '@ulixee/common
 import { addressValidation, identityValidation } from '@ulixee/platform-specification/types';
 import * as Os from 'os';
 import * as Path from 'path';
-import { ILocalchainConfig } from './lib/LocalchainWithSync';
+import ILocalchainConfig from '@ulixee/datastore/interfaces/ILocalchainConfig';
 
 loadEnv(process.cwd());
 loadEnv(__dirname);
@@ -41,15 +41,19 @@ function getLocalchainConfig(): ILocalchainConfig | undefined {
     keystorePassword = Buffer.from(env.ULX_LOCALCHAIN_PASSWORD, 'utf8');
     delete process.env.ULX_LOCALCHAIN_PASSWORD;
   }
+  if (env.ULX_LOCALCHAIN_PASSWORD_FILE)
+    env.ULX_LOCALCHAIN_PASSWORD_FILE = parseEnvPath(env.ULX_LOCALCHAIN_PASSWORD_FILE);
+  if (env.ULX_LOCALCHAIN_PATH) env.ULX_LOCALCHAIN_PATH = parseEnvPath(env.ULX_LOCALCHAIN_PATH);
+
   return <ILocalchainConfig>{
-    localchainPath: parseEnvPath(env.ULX_LOCALCHAIN_PATH),
+    localchainPath: env.ULX_LOCALCHAIN_PATH,
     mainchainUrl: env.ULX_MAINCHAIN_URL,
     votesAddress: parseAddress(env.ULX_VOTES_ADDRESS, 'Votes Address'),
     notaryId: parseEnvInt(env.NOTARY_ID),
     keystorePassword: {
       interactiveCli: parseEnvBool(env.ULX_LOCALCHAIN_PASSWORD_INTERACTIVE_CLI),
       password: keystorePassword,
-      passwordFile: parseEnvPath(env.ULX_LOCALCHAIN_PASSWORD_FILE),
+      passwordFile: env.ULX_LOCALCHAIN_PASSWORD_FILE,
     },
   };
 }

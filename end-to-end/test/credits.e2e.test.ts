@@ -1,10 +1,10 @@
 import { Keyring } from '@polkadot/keyring';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import LocalPaymentService from '@ulixee/datastore/payments/LocalPaymentService';
+import DefaultPaymentService from '@ulixee/datastore/payments/DefaultPaymentService';
+import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { writeFile } from 'node:fs/promises';
 import * as Path from 'node:path';
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import TestCloudNode from '../lib/TestCloudNode';
 import { execAndLog, getPlatformBuild } from '../lib/utils';
 
@@ -25,6 +25,7 @@ test('it can create a datastore with credits using cli', async () => {
   const cloudNode = new TestCloudNode(buildDir);
   const cloudAddress = await cloudNode.start({
     ULX_CLOUD_ADMIN_IDENTITIES: identityBech32.trim(),
+    ULX_DATASTORE_DIR: storageDir,
     ULX_IDENTITY_PATH: identityPath,
   });
   expect(cloudAddress).toBeTruthy();
@@ -73,7 +74,7 @@ test('it can create a datastore with credits using cli', async () => {
   const datastoreClient = new DatastoreApiClient(cloudAddress);
   Helpers.onClose(() => datastoreClient.disconnect());
 
-  const paymentService = new LocalPaymentService(null, storageDir);
+  const paymentService = new DefaultPaymentService(null, storageDir);
 
   const result = await datastoreClient.query(
     datastoreId,
@@ -88,5 +89,5 @@ test('it can create a datastore with credits using cli', async () => {
   console.log('Result of datastore query is:', result);
 
   const creditUpdate = execAndLog(`npx @ulixee/datastore credits get ${creditUrl}`);
-  expect(creditUpdate.includes("4500000")).toBeTruthy();
+  expect(creditUpdate.includes('4500000')).toBeTruthy();
 }, 60e3);

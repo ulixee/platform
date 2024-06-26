@@ -13,16 +13,20 @@ import { nanoid } from 'nanoid';
 import { mkdir, readdir, unlink } from 'node:fs/promises';
 import * as Path from 'node:path';
 import IDatastoreHostLookup from '../interfaces/IDatastoreHostLookup';
-import IPaymentService, { ICredit, IPaymentDetails } from '../interfaces/IPaymentService';
+import {
+  ICredit,
+  IPaymentDetails,
+  IPaymentEvents,
+  IPaymentReserver,
+} from '../interfaces/IPaymentService';
 import DatastoreApiClient from '../lib/DatastoreApiClient';
 import DatastoreLookup from '../lib/DatastoreLookup';
-import { IPaymentEvents } from './LocalPaymentService';
 
 const { log } = Logger(module);
 
-export default class CreditPaymentService
-  extends TypedEventEmitter<Pick<IPaymentEvents, 'reserved' | 'finalized'>>
-  implements IPaymentService
+export default class CreditReserver
+  extends TypedEventEmitter<IPaymentEvents>
+  implements IPaymentReserver
 {
   public static MIN_BALANCE = 1;
   static defaultBasePath = Path.join(getDataDirectory(), 'ulixee', 'credits');
@@ -59,7 +63,7 @@ export default class CreditPaymentService
   ) {
     super();
     if (!credit.paymentMethod.credits)
-      throw new Error('CreditPaymentService requires a credit payment method');
+      throw new Error('CreditReserver requires a credit payment method');
     this.storePath = Path.join(baseDir, `${credit.id}-${credit.paymentMethod.credits.id}.json`);
     this.paymentDetails = credit;
     this.saveDebounce = debounce(this.save.bind(this), 1_000, 5_000);
@@ -140,7 +144,7 @@ export default class CreditPaymentService
       await mkdir(this.baseDir, { recursive: true });
     }
 
-    if (canDelete && this.paymentDetails.remaining <= CreditPaymentService.MIN_BALANCE) {
+    if (canDelete && this.paymentDetails.remaining <= CreditReserver.MIN_BALANCE) {
       return await unlink(this.storePath);
     }
     await safeOverwriteFile(
@@ -150,8 +154,8 @@ export default class CreditPaymentService
   }
 
   public static async loadAll(
-    fromDir: string = CreditPaymentService.defaultBasePath,
-  ): Promise<CreditPaymentService[]> {
+    fromDir: string = CreditReserver.defaultBasePath,
+  ): Promise<CreditReserver[]> {
     if (!(await existsAsync(fromDir))) return [];
     const creditFiles = await readdir(fromDir, {
       withFileTypes: true,
@@ -163,7 +167,7 @@ export default class CreditPaymentService
         const path = Path.join(fromDir, file.name);
         const credit = await readFileAsJson<IPaymentDetails>(path);
         if (!credit.paymentMethod.credits) return null;
-        return new CreditPaymentService(credit, fromDir);
+        return new CreditReserver(credit, fromDir);
       }),
     );
     return credits.filter(x => x !== null);
@@ -172,11 +176,11 @@ export default class CreditPaymentService
   public static async load(
     datastoreId: string,
     creditId: string,
-    fromDir = CreditPaymentService.defaultBasePath,
-  ): Promise<CreditPaymentService> {
+    fromDir = CreditReserver.defaultBasePath,
+  ): Promise<CreditReserver> {
     const storePath = Path.join(fromDir, `${datastoreId}-${creditId}.json`);
     const credit = await readFileAsJson<IPaymentDetails>(storePath);
-    return new CreditPaymentService(credit, fromDir);
+    return new CreditReserver(credit, fromDir);
   }
 
   public static async storeCredit(
@@ -184,9 +188,9 @@ export default class CreditPaymentService
     datastoreVersion: string,
     host: string,
     credits: { id: string; secret: string; remainingCredits: number },
-    creditsDir = CreditPaymentService.defaultBasePath,
-  ): Promise<CreditPaymentService> {
-    const service = new CreditPaymentService(
+    creditsDir = CreditReserver.defaultBasePath,
+  ): Promise<CreditReserver> {
+    const service = new CreditReserver(
       {
         id: datastoreId,
         version: datastoreVersion,
@@ -210,8 +214,8 @@ export default class CreditPaymentService
     datastoreUrl: string,
     credit: IPaymentMethod['credits'],
     datastoreLookup?: IDatastoreHostLookup,
-    creditsDir = CreditPaymentService.defaultBasePath,
-  ): Promise<CreditPaymentService> {
+    creditsDir = CreditReserver.defaultBasePath,
+  ): Promise<CreditReserver> {
     const datastoreURL = toUrl(datastoreUrl);
     const datastoreHost =
       (await datastoreLookup?.getHostInfo(datastoreUrl)) ??
@@ -222,7 +226,7 @@ export default class CreditPaymentService
     const client = new DatastoreApiClient(host);
     try {
       const balance = await client.getCreditsBalance(datastoreId, version, credit.id);
-      const service = new CreditPaymentService(
+      const service = new CreditReserver(
         {
           id: datastoreId,
           version,
@@ -248,7 +252,7 @@ export default class CreditPaymentService
     url: string,
     microgons: number,
     datastoreLookup?: IDatastoreHostLookup,
-  ): Promise<CreditPaymentService> {
+  ): Promise<CreditReserver> {
     const datastoreURL = toUrl(url);
     const datastoreHost =
       (await datastoreLookup?.getHostInfo(url)) ??
@@ -257,7 +261,7 @@ export default class CreditPaymentService
     if (!datastoreHost) throw new Error('This datastoreUrl could not be parsed');
 
     const { datastoreId, version, host } = datastoreHost;
-    return await CreditPaymentService.storeCredit(datastoreId, version, host, {
+    return await CreditReserver.storeCredit(datastoreId, version, host, {
       id: datastoreURL.username,
       secret: datastoreURL.password,
       remainingCredits: microgons,

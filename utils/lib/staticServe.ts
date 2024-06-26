@@ -1,7 +1,7 @@
-import * as Crypto from 'crypto';
-import * as Fs from 'fs/promises';
-import * as Http from 'http';
-import * as Path from 'path';
+import * as Crypto from 'node:crypto';
+import * as Fs from 'node:fs/promises';
+import * as Http from 'node:http';
+import * as Path from 'node:path';
 
 export default function staticServe(
   staticDir: string,

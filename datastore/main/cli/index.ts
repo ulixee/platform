@@ -80,11 +80,6 @@ export default function datastoreCommands(): Command {
       'Upload this Datastore to the given host Cloud node. Will try to auto-connect if none specified.',
     )
     .option(
-      '-c, --clear-version-history',
-      'Clear out any version history for this script entrypoint',
-      false,
-    )
-    .option(
       '-s, --compiled-source-path <path>',
       'Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).',
     )
@@ -105,7 +100,6 @@ export default function datastoreCommands(): Command {
         tsconfig,
         compiledSourcePath,
         cloudHost,
-        clearVersionHistory,
         identityPath,
         identityPassphrase,
         skipDocs,
@@ -114,7 +108,6 @@ export default function datastoreCommands(): Command {
         tsconfig,
         compiledSourcePath,
         cloudHost,
-        clearVersionHistory,
         identityPath,
         identityPassphrase,
         dontAutoshowDocs: skipDocs,

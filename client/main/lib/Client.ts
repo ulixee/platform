@@ -35,7 +35,7 @@ export default class ClientForRemote {
   private datastoreId: string;
   private version: string;
   private domain?: string;
-  private creditAttachPromise: Promise<void>;
+  private loadPaymentsPromise: Promise<void>;
   private domainLookupPromise: Promise<void>;
 
   #apiClient: DatastoreApiClient;
@@ -87,7 +87,7 @@ export default class ClientForRemote {
     if (!this.database) {
       throw new Error('You Client connection must specific a datastore to fetch');
     }
-    await this.attachCredit();
+    await this.loadPayments();
 
     const apiClient = await this.getApiClient();
 
@@ -107,7 +107,7 @@ export default class ClientForRemote {
     if (!this.database) {
       throw new Error('You Client connection must specific a datastore to crawl');
     }
-    await this.attachCredit();
+    await this.loadPayments();
     const apiClient = await this.getApiClient();
     const [crawlerOutput] = await apiClient.stream(
       this.datastoreId,
@@ -167,11 +167,11 @@ export default class ClientForRemote {
     this.port = parsed.port;
   }
 
-  private attachCredit(): Promise<void> {
-    if (this.creditAttachPromise) return this.creditAttachPromise;
+  private loadPayments(): Promise<void> {
+    if (this.loadPaymentsPromise) return this.loadPaymentsPromise;
 
     if (this.user && this.config?.paymentService) {
-      this.creditAttachPromise = this.config.paymentService.attachCredit(
+      this.loadPaymentsPromise = this.config.paymentService.attachCredit(
         `ulx://${this.host}:${this.port}/${this.datastoreId}@v${this.version}`,
         {
           secret: this.password,
@@ -179,9 +179,9 @@ export default class ClientForRemote {
         },
       );
     } else {
-      this.creditAttachPromise = Promise.resolve();
+      this.loadPaymentsPromise = Promise.resolve();
     }
-    return this.creditAttachPromise;
+    return this.loadPaymentsPromise;
   }
 
   public static forDatastore<T extends Datastore>(

@@ -30,6 +30,7 @@
       "**/@ulixee/mainchain",
       "**/desktop/main/app/**",
       "**/desktop/**/@ulixee/datastore-docpage",
+      "**/desktop/**/@ulixee/databroker-admin",
       "**/desktop/**/better-sqlite3",
       "**/electron-*",
       "**/electron-log",
