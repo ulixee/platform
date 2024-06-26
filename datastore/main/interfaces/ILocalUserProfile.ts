@@ -3,6 +3,6 @@ export default interface ILocalUserProfile {
   installedDatastores: { cloudHost: string; datastoreId: string; datastoreVersion: string }[];
   gettingStartedCompletedSteps: string[];
   datastoreAdminIdentities: { datastoreId: string; adminIdentityPath?: string }[];
-  defaultAddressPath: string;
   defaultAdminIdentityPath: string;
+  localchainPaths: string[];
 }

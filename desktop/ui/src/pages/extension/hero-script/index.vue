@@ -20,7 +20,7 @@
         :key="i"
         :ref="
           el => {
-            lineElemsByIdx[i + 1] = el;
+            lineElemsByIdx[i + 1] = el as any;
           }
         "
         class="line"
@@ -46,20 +46,24 @@
       </div>
     </div>
     <div class="basis-2/6 overflow-auto p-3">
-      <h5 class="text-base font-bold">Raw Command</h5>
+      <h5 class="text-base font-bold">
+        Raw Command
+      </h5>
       <ul v-if="focusedCommand" class="list-inside list-decimal p-2">
         {{
           focusedCommand.label
         }}
       </ul>
-      <h5 class="mt-2 text-base font-bold">Result</h5>
-      <hr />
+      <h5 class="mt-2 text-base font-bold">
+        Result
+      </h5>
+      <hr>
       <div v-if="focusedCommand" class="p-2">
         <img
           v-if="focusedCommand.resultType === 'image'"
           :src="focusedCommand.result"
           class="object-contain"
-        />
+        >
         <div v-else class="whitespace-pre">
           {{ focusedCommand.result }}
         </div>
@@ -304,7 +308,7 @@ h5 {
   display: flex;
   flex: 1;
   flex-direction: row;
-  justify-content: end;
+  justify-content: flex-end;
   align-items: baseline;
   line-height: 16px;
   margin: 0;

@@ -10,8 +10,8 @@
               :to="item.href"
               :class="[
                 item.href === $route.path ||
-                $route.path.startsWith(item.href.slice(0, -1)) ||
-                item.alias === $route.path
+                  $route.path.startsWith(item.href.slice(0, -1)) ||
+                  item.alias === $route.path
                   ? 'bg-gray-900 text-white'
                   : 'text-gray-300 hover:bg-gray-700 hover:text-white',
                 'group flex items-center rounded-md px-2 py-2 text-sm font-medium',
@@ -20,7 +20,7 @@
               <component
                 :is="item.icon"
                 :class="[
-                  item.current ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300',
+                  'text-gray-400 group-hover:text-gray-300',
                   'mr-3 h-6 w-6 flex-shrink-0',
                 ]"
                 aria-hidden="true"
@@ -38,22 +38,22 @@
             <div class="flex items-center">
               <div>
                 <ArgonIcon
-                  class="inline-block h-10 w-10 text-gray-200"
+                  class="inline-block h-8 w-8 text-gray-200"
                   :class="{ 'group-hover:text-gray-300': !walletActive }"
                 />
               </div>
               <div class="ml-3 overflow-hidden">
                 <p
-                  class="w-full overflow-hidden text-ellipsis text-lg font-medium text-white"
+                  class="text-lg text-gray-200 w-full overflow-hidden text-ellipsis "
                   :class="{ 'group-hover:text-gray-300': !walletActive }"
                 >
-                  {{ userBalance.walletBalance }}
-                </p>
-                <p
-                  class="overflow-hidden text-ellipsis text-xs font-medium text-gray-200"
-                  :class="{ 'group-hover:text-gray-300': !walletActive }"
-                >
-                  {{ userBalance.address }}
+                  Wallet
+                  <span
+                    class="ml-1 font-bold text-xl text-white"
+                    :class="{ 'group-hover:text-gray-300': !walletActive }"
+                  >
+                    {{ wallet.formattedBalance }}
+                  </span>
                 </p>
               </div>
             </div>
@@ -155,7 +155,7 @@ export default Vue.defineComponent({
 
     const datastoreStore = useDatastoreStore();
     const walletStore = useWalletStore();
-    const { userBalance } = storeToRefs(walletStore);
+    const { wallet } = storeToRefs(walletStore);
 
     return {
       datastoreStore,
@@ -163,7 +163,7 @@ export default Vue.defineComponent({
       datastoresRef: Vue.ref<typeof Datastores>(null),
       walletActive: Vue.ref(false),
       isDragging: Vue.ref(false),
-      userBalance,
+      wallet,
       argonFile: Vue.ref<IArgonFile>(null),
     };
   },

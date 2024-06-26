@@ -1,8 +1,8 @@
-import Identity from '@ulixee/crypto/lib/Identity';
-import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
+import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import { Command, Option } from 'commander';
-import CreditsStore from '../lib/CreditsStore';
 import DatastoreApiClient from '../lib/DatastoreApiClient';
+import CreditPaymentService from '../payments/CreditPaymentService';
 
 export default function creditsCli(): Command {
   const cli = new Command('credits');
@@ -35,20 +35,20 @@ export default function creditsCli(): Command {
         'ULX_IDENTITY_PATH',
       ),
     )
+    .option('-m, --mainchain-url <url>', 'The mainchain url to use.')
     .addOption(identityPrivateKeyPassphraseOption)
-    .action(async (url, { identityPath, identityPassphrase, argons }) => {
-      const microgons = ArgonUtils.centagonsToMicrogons(parseFloat(argons) * 100);
+    .action(async (url, { identityPath, identityPassphrase, argons, mainchainUrl }) => {
+      const microgons = ArgonUtils.milligonsToMicrogons(
+        parseFloat(argons) * Number(ArgonUtils.MilligonsPerArgon),
+      );
       const identity = Identity.loadFromFile(identityPath, { keyPassphrase: identityPassphrase });
-      const { datastoreId, datastoreVersion, host } =
-        await DatastoreApiClient.parseDatastoreUrl(url);
+      const { datastoreId, version, host } = await DatastoreApiClient.lookupDatastoreHost(
+        url,
+        mainchainUrl,
+      );
       const client = new DatastoreApiClient(host);
       try {
-        const result = await client.createCredits(
-          datastoreId,
-          datastoreVersion,
-          microgons,
-          identity,
-        );
+        const result = await client.createCredits(datastoreId, version, microgons, identity);
 
         if (!url.includes('://')) url = `http://${url}`;
         if (url.endsWith('/')) url = url.substring(0, -1);
@@ -64,23 +64,34 @@ export default function creditsCli(): Command {
     .command('install')
     .description('Save to a local wallet.')
     .argument('<url>', 'The url of the Credit.')
-    .action(async url => {
-      const { datastoreId, datastoreVersion, host } =
-        await DatastoreApiClient.parseDatastoreUrl(url);
+    .option('-m, --mainchain-url [url]', 'The mainchain url to use.')
+    .option('-d, --credit-dir [path]', 'The directory to store credits in.', CreditPaymentService.defaultBasePath)
+    .action(async (url, { creditDir, mainchainUrl }) => {
+      const { datastoreId, version, host } = await DatastoreApiClient.lookupDatastoreHost(
+        url,
+        mainchainUrl,
+      );
       const client = new DatastoreApiClient(host);
       try {
         const creditIdAndSecret = url.split('/free-credit?').pop();
         const [id, secret] = creditIdAndSecret.split(':');
-        const { balance } = await client.getCreditsBalance(datastoreId, datastoreVersion, id);
-        await CreditsStore.store(
+        const { balance } = await client.getCreditsBalance(datastoreId, version, id);
+
+        const service = await CreditPaymentService.storeCredit(
           datastoreId,
-          datastoreVersion,
+          version,
           client.connectionToCore.transport.host,
           {
             id,
             secret,
             remainingCredits: balance,
           },
+          creditDir,
+        );
+        console.log(
+          'Saved %s credit to local payment service at "%s".',
+          ArgonUtils.format(balance, 'microgons', 'argons'),
+          service.storePath,
         );
       } finally {
         await client.disconnect();
@@ -91,14 +102,17 @@ export default function creditsCli(): Command {
     .command('get')
     .description('Get the current balance.')
     .argument('<url>', 'The url of the Datastore Credit.')
-    .action(async url => {
-      const { datastoreId, datastoreVersion, host } =
-        await DatastoreApiClient.parseDatastoreUrl(url);
+    .option('-m, --mainchain-url <url>', 'The mainchain url to use.')
+    .action(async (url, { mainchainUrl }) => {
+      const { datastoreId, version, host } = await DatastoreApiClient.lookupDatastoreHost(
+        url,
+        mainchainUrl,
+      );
       const client = new DatastoreApiClient(host);
       try {
         const creditIdAndSecret = url.split('/free-credit?').pop();
         const [id] = creditIdAndSecret.split(':');
-        const { balance } = await client.getCreditsBalance(datastoreId, datastoreVersion, id);
+        const { balance } = await client.getCreditsBalance(datastoreId, version, id);
 
         console.log(
           `Your current balance is ~${ArgonUtils.format(balance, 'microgons', 'argons')} (argons).`,

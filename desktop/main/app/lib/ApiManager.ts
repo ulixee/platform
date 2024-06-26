@@ -1,23 +1,28 @@
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { toUrl } from '@ulixee/commons/lib/utils';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
+import { IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
 import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
 import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
 import QueryLog from '@ulixee/datastore/lib/QueryLog';
+import LocalPaymentService from '@ulixee/datastore/payments/LocalPaymentService';
 import { IDesktopAppApis } from '@ulixee/desktop-interfaces/apis';
 import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppEvents from '@ulixee/desktop-interfaces/events/IDesktopAppEvents';
+import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import { screen } from 'electron';
 import * as http from 'http';
 import { AddressInfo } from 'net';
 import * as Path from 'path';
 import { ClientOptions } from 'ws';
 import WebSocket = require('ws');
+import AccountManager from './AccountManager';
 import ApiClient from './ApiClient';
 import ArgonFile, { IArgonFile } from './ArgonFile';
 import DeploymentWatcher from './DeploymentWatcher';
@@ -38,6 +43,7 @@ export default class ApiManager<
   'new-cloud-address': ICloudConnected;
   'argon-file-opened': IArgonFile;
   deployment: IDatastoreDeployLogEntry;
+  'wallet-updated': { wallet: IWallet };
   query: IQueryLogEntry;
 }> {
   apiByCloudAddress = new Map<
@@ -58,12 +64,14 @@ export default class ApiManager<
   debuggerUrl: string;
   localUserProfile: LocalUserProfile;
   deploymentWatcher: DeploymentWatcher;
+  paymentService: LocalPaymentService;
+  accountManager: AccountManager;
   queryLogWatcher: QueryLog;
   privateDesktopApiHandler: PrivateDesktopApiHandler;
   privateDesktopWsServer: WebSocket.Server;
   privateDesktopWsServerAddress: string;
 
-  datastoreApiClientsByAddress: { [address: string]: DatastoreApiClient } = {};
+  datastoreApiClients = new DatastoreApiClients();
   private reconnectsByAddress: { [address: string]: NodeJS.Timeout } = {};
 
   constructor() {
@@ -72,6 +80,7 @@ export default class ApiManager<
     this.deploymentWatcher = new DeploymentWatcher();
     this.queryLogWatcher = new QueryLog();
     this.privateDesktopApiHandler = new PrivateDesktopApiHandler(this);
+    this.accountManager = new AccountManager(this.localUserProfile);
   }
 
   public async start(): Promise<void> {
@@ -88,10 +97,13 @@ export default class ApiManager<
         resolve(`ws://127.0.0.1:${address.port}`);
       });
     });
-    if (!this.localUserProfile.defaultAddress) {
-      // TODO: move this to a welcome screen!!
-      await this.localUserProfile.createDefaultArgonAddress();
-    }
+
+    this.paymentService = new LocalPaymentService();
+    await this.accountManager.start();
+    this.events.on(this.accountManager, 'update', ev =>
+      this.emit('wallet-updated', { wallet: ev.wallet }),
+    );
+
     if (!this.localUserProfile.defaultAdminIdentityPath) {
       await this.localUserProfile.createDefaultAdminIdentity();
     }
@@ -109,6 +121,31 @@ export default class ApiManager<
     }
   }
 
+  public async getWallet(): Promise<IWallet> {
+    const localchainWallet = await this.accountManager.getWallet();
+    const credits = await this.paymentService.credits();
+    const creditBalance = credits.reduce((sum, x) => sum + x.remaining, 0);
+    const creditMilligons = ArgonUtils.microgonsToMilligons(creditBalance);
+
+    const localchainBalance = localchainWallet.accounts.reduce(
+      (sum, x) => sum + x.balance + x.mainchainBalance,
+      0n,
+    );
+
+    const formattedBalance = ArgonUtils.format(
+      localchainBalance + creditMilligons,
+      'milligons',
+      'argons',
+    );
+
+    return {
+      primaryAddress: localchainWallet.primaryAddress,
+      credits,
+      accounts: localchainWallet.accounts,
+      formattedBalance,
+    };
+  }
+
   public async close(): Promise<void> {
     if (this.exited) return;
     this.exited = true;
@@ -121,9 +158,7 @@ export default class ApiManager<
     for (const connection of this.apiByCloudAddress.values()) {
       await this.closeApiGroup(connection.resolvable);
     }
-    for (const client of Object.values(this.datastoreApiClientsByAddress)) {
-      await client.disconnect();
-    }
+    await this.datastoreApiClients.close();
     this.apiByCloudAddress.clear();
     this.deploymentWatcher.stop();
     await this.queryLogWatcher.close();
@@ -159,8 +194,8 @@ export default class ApiManager<
 
   public getDatastoreClient(cloudHost: string): DatastoreApiClient {
     const hostUrl = toUrl(cloudHost);
-    this.datastoreApiClientsByAddress[cloudHost] ??= new DatastoreApiClient(hostUrl.origin);
-    return this.datastoreApiClientsByAddress[cloudHost];
+    this.datastoreApiClients[cloudHost] ??= new DatastoreApiClient(hostUrl.origin);
+    return this.datastoreApiClients[cloudHost];
   }
 
   public getCloudAddressByName(name: string): string {

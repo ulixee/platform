@@ -1,6 +1,7 @@
 import ResultIterable from '@ulixee/datastore/lib/ResultIterable';
 import Datastore, { ConnectionToDatastoreCore } from '@ulixee/datastore';
 import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
+import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSchema';
 import { IOutputSchema } from '../interfaces/IInputOutput';
 
 export default class ClientForDatastore<TDatastore extends Datastore> {
@@ -29,9 +30,7 @@ export default class ClientForDatastore<TDatastore extends Datastore> {
     return instance.runInternal(
       { input: inputFilter },
       {
-        beforeAll() {
-          return this.readyPromise;
-        },
+        beforeQuery: () => this.readyPromise,
       },
     );
   }
@@ -48,24 +47,20 @@ export default class ClientForDatastore<TDatastore extends Datastore> {
     return this.fetch(name, inputFilter);
   }
 
-  public crawl<T extends keyof TDatastore['crawlers']>(
+  public async crawl<T extends keyof TDatastore['crawlers']>(
     name: T,
     inputFilter: TDatastore['crawlers'][T]['schemaType']['input'],
-  ): any {
-    return this.datastore.crawlers[name].runInternal(
-      { input: inputFilter },
-      {
-        beforeAll() {
-          return this.readyPromise;
-        },
-      },
-    );
+  ): Promise<ICrawlerOutputSchema> {
+    await this.readyPromise;
+    const result = await this.datastore.crawlers[name].runInternal({ input: inputFilter });
+    return result[0];
   }
 
-  public query<TResult extends IOutputSchema = IOutputSchema>(
+  public async query<TResult extends IOutputSchema = IOutputSchema>(
     sql: string,
     boundValues: any[],
   ): Promise<TResult> {
-    return this.datastore.queryInternal(sql, boundValues);
+    await this.readyPromise;
+    return this.datastore.queryInternal<TResult>(sql, boundValues);
   }
 }

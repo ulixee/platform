@@ -1,24 +1,28 @@
 import { IBoundLog } from '@ulixee/commons/interfaces/ILog';
-import Identity from '@ulixee/crypto/lib/Identity';
+import IDatastoreHostLookup from '@ulixee/datastore/interfaces/IDatastoreHostLookup';
 import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
-import IDatastoreCoreConfigureOptions from './IDatastoreCoreConfigureOptions';
+import IPaymentService from '@ulixee/datastore/interfaces/IPaymentService';
+import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
-import WorkTracker from '../lib/WorkTracker';
-import SidechainClientManager from '../lib/SidechainClientManager';
-import IDatastoreConnectionToClient from './IDatastoreConnectionToClient';
-import StorageEngineRegistry from '../lib/StorageEngineRegistry';
 import DatastoreVm from '../lib/DatastoreVm';
-import DatastoreApiClients from '../lib/DatastoreApiClients';
 import StatsTracker from '../lib/StatsTracker';
+import StorageEngineRegistry from '../lib/StorageEngineRegistry';
+import WorkTracker from '../lib/WorkTracker';
+import IDatastoreConnectionToClient from './IDatastoreConnectionToClient';
+import IDatastoreCoreConfigureOptions from './IDatastoreCoreConfigureOptions';
+import IEscrowSpendTracker from './IEscrowSpendTracker';
 
 export default interface IDatastoreApiContext {
   logger: IBoundLog;
   datastoreRegistry: DatastoreRegistry;
+  escrowSpendTracker: IEscrowSpendTracker;
+  remoteDatastorePaymentService: IPaymentService;
+  datastoreLookup: IDatastoreHostLookup;
   storageEngineRegistry?: StorageEngineRegistry;
   workTracker: WorkTracker;
   configuration: IDatastoreCoreConfigureOptions;
   pluginCoresByName: { [name: string]: IExtractorPluginCore<unknown> };
-  sidechainClientManager: SidechainClientManager;
   connectionToClient?: IDatastoreConnectionToClient;
   cloudNodeAddress: URL;
   cloudNodeIdentity?: Identity;

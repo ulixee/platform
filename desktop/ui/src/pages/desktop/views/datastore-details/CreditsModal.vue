@@ -73,6 +73,7 @@
 
 <script lang="ts">
 import ArgfileIcon from '@/assets/icons/argfile.svg';
+import { deepUnref } from '@/pages/desktop/lib/utils';
 import * as Vue from 'vue';
 import { PropType } from 'vue';
 import { ArrowLeftIcon, ArrowRightCircleIcon } from '@heroicons/vue/24/outline';
@@ -81,6 +82,7 @@ import {
   TCredit,
   useDatastoreStore,
 } from '@/pages/desktop/stores/DatastoresStore';
+import type { IArgonFileMeta } from '@ulixee/desktop-interfaces/apis';
 import Modal from '../../components/Modal.vue';
 
 export default Vue.defineComponent({
@@ -104,6 +106,7 @@ export default Vue.defineComponent({
     return {
       credit: Vue.ref<TCredit>(null),
       creditFilename: Vue.ref<string>(),
+      creditJson: Vue.ref<string>(),
       argons: Vue.ref<number>(5),
       modal: Vue.ref<typeof Modal>(null),
       errorMessage: Vue.ref<string>(),
@@ -116,13 +119,14 @@ export default Vue.defineComponent({
     },
     async addCredit() {
       try {
-        const { filename, credit } = await useDatastoreStore().createCredit(
+        const { name, credit, rawJson } = await useDatastoreStore().createCredit(
           this.datastore,
           this.argons,
           this.selectedCloud,
         );
         this.credit = credit;
-        this.creditFilename = filename;
+        this.creditFilename = name;
+        this.creditJson = rawJson;
         this.$emit('added-credit');
       } catch (error: any) {
         this.errorMessage = error.message.split('Error: ').pop();
@@ -133,16 +137,20 @@ export default Vue.defineComponent({
       this.modal.open();
     },
     async dragCredit() {
-      const credit = { ...this.credit };
-      await window.appBridge.send('Credit.dragAsFile', { filename: this.creditFilename, credit });
+      const credit = deepUnref(this.credit);
+      await window.appBridge.send('Argon.dragAsFile', {
+        name: this.creditFilename,
+        file: { credit },
+      } as IArgonFileMeta);
     },
     async showCreditContextMenu($event) {
       const args = {
-        credit: { ...this.credit },
-        filename: this.creditFilename,
+        rawJson: this.creditJson,
+        file: { credit: { ...this.credit } },
+        name: this.creditFilename,
         position: { x: $event.x, y: $event.y },
       };
-      await window.desktopApi.send('Credit.showContextMenu', args);
+      await window.desktopApi.send('Argon.showFileContextMenu', args);
     },
     onClose(isFromBackdrop: boolean) {
       if (!isFromBackdrop || !this.credit) {

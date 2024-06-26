@@ -1,8 +1,8 @@
 import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import { safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
-import CryptoCli from '@ulixee/crypto/cli';
-import Address from '@ulixee/crypto/lib/Address';
-import Identity from '@ulixee/crypto/lib/Identity';
+import Identity from '@ulixee/platform-utils/lib/Identity';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
+import { existsSync } from 'fs';
 import * as Fs from 'fs';
 import * as Path from 'path';
 import ILocalUserProfile from '../interfaces/ILocalUserProfile';
@@ -10,6 +10,7 @@ import ILocalUserProfile from '../interfaces/ILocalUserProfile';
 export default class LocalUserProfile {
   public static path = Path.join(getDataDirectory(), 'ulixee', 'user-profile.json');
   public clouds: (ILocalUserProfile['clouds'][0] & { adminIdentity?: string })[] = [];
+  public localchainPaths: string[] = [];
   public installedDatastores: ILocalUserProfile['installedDatastores'] = [];
   public datastoreAdminIdentities: (ILocalUserProfile['datastoreAdminIdentities'][0] & {
     adminIdentity?: string;
@@ -17,19 +18,6 @@ export default class LocalUserProfile {
 
   public gettingStartedCompletedSteps: string[] = [];
   public defaultAdminIdentityPath: string;
-
-  public get defaultAddressPath(): string {
-    return this.#defaultAddressPath;
-  }
-
-  public set defaultAddressPath(value: string) {
-    this.#defaultAddressPath = value;
-    if (value) this.#defaultAddress = Address.readFromPath(value);
-  }
-
-  public get defaultAddress(): Address {
-    return this.#defaultAddress;
-  }
 
   public get defaultAdminIdentity(): Identity {
     if (this.defaultAdminIdentityPath) {
@@ -39,8 +27,6 @@ export default class LocalUserProfile {
   }
 
   #defaultAdminIdentity: Identity;
-  #defaultAddress: Address;
-  #defaultAddressPath: string;
 
   constructor() {
     this.loadProfile();
@@ -88,20 +74,7 @@ export default class LocalUserProfile {
     if (cloud?.adminIdentityPath) return Identity.loadFromFile(cloud.adminIdentityPath);
   }
 
-  public async createDefaultArgonAddress(): Promise<void> {
-    const addressPath = Path.join(getDataDirectory(), 'ulixee', 'addresses', 'UlixeeAddress.json');
-    // eslint-disable-next-line no-console
-    console.log(
-      'Creating a Default Ulixee Argon Address. `@ulixee/crypto address UU "%s"`',
-      addressPath,
-    );
-    await CryptoCli().parseAsync(['address', '-q', 'UU', addressPath], { from: 'user' });
-    this.defaultAddressPath = addressPath;
-    await this.save();
-  }
-
   public async createDefaultAdminIdentity(): Promise<string> {
-    const identity = await Identity.create();
     this.defaultAdminIdentityPath = Path.join(
       getDataDirectory(),
       'ulixee',
@@ -109,8 +82,13 @@ export default class LocalUserProfile {
       'adminIdentity.pem',
     );
 
+    if (existsSync(this.defaultAdminIdentityPath)) {
+      const identity = Identity.loadFromFile(this.defaultAdminIdentityPath);
+      await this.save();
+      return identity.bech32;
+    }
+    const identity = await Identity.create();
     await identity.save(this.defaultAdminIdentityPath);
-    await this.save();
     return identity.bech32;
   }
 
@@ -150,27 +128,27 @@ export default class LocalUserProfile {
   }
 
   public async save(): Promise<void> {
-    await safeOverwriteFile(LocalUserProfile.path, JSON.stringify(this.toJSON()));
+    await safeOverwriteFile(LocalUserProfile.path, TypeSerializer.stringify(this.toJSON()));
   }
 
   public toJSON(): ILocalUserProfile {
     return {
       clouds: this.clouds,
       installedDatastores: this.installedDatastores,
-      defaultAddressPath: this.defaultAddressPath,
       defaultAdminIdentityPath: this.defaultAdminIdentityPath,
       gettingStartedCompletedSteps: this.gettingStartedCompletedSteps,
       datastoreAdminIdentities: this.datastoreAdminIdentities.map(x => ({
         adminIdentityPath: x.adminIdentityPath,
         datastoreId: x.datastoreId,
       })),
+      localchainPaths: this.localchainPaths,
     };
   }
 
   private loadProfile(): void {
     if (!Fs.existsSync(LocalUserProfile.path)) return;
     try {
-      const data: ILocalUserProfile = JSON.parse(Fs.readFileSync(LocalUserProfile.path, 'utf8'));
+      const data: ILocalUserProfile = TypeSerializer.parse(Fs.readFileSync(LocalUserProfile.path, 'utf8'));
       Object.assign(this, data);
       this.clouds ??= [];
       for (const cloud of this.clouds) {
@@ -181,7 +159,7 @@ export default class LocalUserProfile {
       this.datastoreAdminIdentities ??= [];
       this.gettingStartedCompletedSteps ??= [];
       this.installedDatastores ??= [];
-      this.defaultAddressPath = data.defaultAddressPath;
+      this.localchainPaths ??= [];
     } catch {}
   }
 }

@@ -53,7 +53,6 @@ export default class AppDevtoolsConnection implements IConnectionTransport {
     await this.browser.connectToPage(targetId, {
       enableDomStorageTracker: false,
       runPageScripts: false,
-      groupName: 'devtools',
     });
   }
 

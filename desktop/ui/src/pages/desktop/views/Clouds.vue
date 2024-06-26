@@ -1,6 +1,8 @@
 <template>
   <div class="h-full">
-    <h1 class="mb-8 mt-3 text-2xl font-semibold text-gray-900">Clouds</h1>
+    <h1 class="mb-8 mt-3 text-2xl font-semibold text-gray-900">
+      Clouds
+    </h1>
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <div
         v-for="cloud of clouds"

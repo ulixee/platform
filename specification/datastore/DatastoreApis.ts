@@ -1,36 +1,66 @@
-import { z } from '@ulixee/specification';
 import {
   identityValidation,
-  micronoteTokenValidation,
-  signatureValidation,
-} from '@ulixee/specification/common';
-import { IZodSchemaToApiTypes } from '@ulixee/specification/utils/IZodApi';
+  microgonsValidation,
+  identitySignatureValidation,
+} from '@ulixee/platform-specification/types';
+import { z } from 'zod';
 import { DatastoreManifestWithLatest } from '../services/DatastoreRegistryApis';
 import { datastoreIdValidation } from '../types/datastoreIdValidation';
 import { minDate } from '../types/IDatastoreManifest';
-import {
-  DatastoreCrawlerPricing,
-  DatastoreExtractorPricing,
-  DatastoreTablePricing,
-} from '../types/IDatastorePricing';
+import { DatastorePricing } from '../types/IDatastorePricing';
 import { DatastoreStatsSchema } from '../types/IDatastoreStats';
 import { PaymentSchema } from '../types/IPayment';
 import { semverValidation } from '../types/semverValidation';
+import { IZodSchemaToApiTypes } from '../utils/IZodApi';
 
-const FunctionMetaSchema = z.object({
+const EntityMetaSchema = z.object({
   description: z.string().optional(),
   stats: DatastoreStatsSchema,
-  pricePerQuery: micronoteTokenValidation.describe('The base price per query.'),
-  minimumPrice: micronoteTokenValidation.describe(
-    'Minimum microgons that must be allocated for a query to be accepted.',
-  ),
+  netBasePrice: microgonsValidation.describe('The aggregate base price per query.'),
   schemaAsJson: z.any().optional().describe('The schema JSON if requested'),
+  priceBreakdown: DatastorePricing.array(),
 });
 
 export const EntityStatsSchema = z.object({
   name: z.string().describe('The entity name'),
   type: z.enum(['Table', 'Extractor', 'Crawler']),
   stats: DatastoreStatsSchema,
+});
+
+const DatastoreMetadataResult = z.object({
+  microgons: microgonsValidation,
+  bytes: z.number().int().nonnegative(),
+  milliseconds: z.number().int().nonnegative(),
+});
+
+const DatastoreQueryResultSchema = z.object({
+  latestVersion: semverValidation,
+  runError: z.instanceof(Error).optional().describe('An error that occurred during the query.'),
+  outputs: z
+    .any()
+    .optional()
+    .array()
+    .describe('The outputs of the query (omitted if error or streamed).'),
+  metadata: DatastoreMetadataResult,
+});
+
+const DatastoreQueryMetadataSchema = z.object({
+  id: datastoreIdValidation.describe('The datastore id'),
+  version: semverValidation,
+  queryId: z.string().describe('The unique id of this query.'),
+  authentication: z
+    .object({
+      identity: identityValidation,
+      signature: identitySignatureValidation,
+      nonce: z.string().length(10).describe('A random nonce adding signature noise.'),
+    })
+    .optional(),
+  affiliateId: z
+    .string()
+    .regex(/aff[a-zA-Z_0-9-]{10}/)
+    .optional()
+    .describe('A tracking id to attribute payments to source affiliates.'),
+  payment: PaymentSchema.optional().describe('Payment for this request.'),
 });
 
 export const DatastoreApiSchemas = {
@@ -42,7 +72,7 @@ export const DatastoreApiSchemas = {
         .describe(
           'If this server is in production mode, an AdminIdentity approved on the Server or Datastore.',
         ),
-      adminSignature: signatureValidation
+      adminSignature: identitySignatureValidation
         .optional()
         .describe('A signature from an approved AdminIdentity'),
     }),
@@ -58,14 +88,12 @@ export const DatastoreApiSchemas = {
       adminIdentity: identityValidation.describe(
         'If this server is in production mode, an AdminIdentity approved on the Server or Datastore.',
       ),
-      adminSignature: signatureValidation.describe('A signature from an approved AdminIdentity'),
+      adminSignature: identitySignatureValidation.describe('A signature from an approved AdminIdentity'),
     }),
     result: z.object({
-      adminIdentity: identityValidation.describe(
-        'The admin identity who uploaded this Datastore (used for proof in public network).',
-      ),
-      adminSignature: signatureValidation.describe(
-        'The signature of the uploader of this Datastore (used for proof in public network).',
+      adminIdentity: identityValidation.describe('The admin identity who uploaded this Datastore.'),
+      adminSignature: identitySignatureValidation.describe(
+        'The signature of the uploader of this Datastore.',
       ),
       compressedDbx: z.instanceof(Buffer).describe('Bytes of the compressed .dbx directory.'),
     }),
@@ -87,8 +115,8 @@ export const DatastoreApiSchemas = {
       creditId: z.string().describe('CreditId issued by this datastore.'),
     }),
     result: z.object({
-      issuedCredits: micronoteTokenValidation.describe('Issued credits balance in microgons.'),
-      balance: micronoteTokenValidation.describe('Remaining credits balance in microgons.'),
+      issuedCredits: microgonsValidation.describe('Issued credits balance in microgons.'),
+      balance: microgonsValidation.describe('Remaining credits balance in microgons.'),
     }),
   },
   'Datastore.creditsIssued': {
@@ -97,10 +125,8 @@ export const DatastoreApiSchemas = {
       version: semverValidation.describe('The Datastore version to look at credits for.'),
     }),
     result: z.object({
-      issuedCredits: micronoteTokenValidation.describe(
-        'Total credit microgons issued in microgons.',
-      ),
-      count: micronoteTokenValidation.describe('Total credits issued in microgons.'),
+      issuedCredits: microgonsValidation.describe('Total credit microgons issued in microgons.'),
+      count: microgonsValidation.describe('Total credits issued in microgons.'),
     }),
   },
   'Datastore.admin': {
@@ -110,7 +136,7 @@ export const DatastoreApiSchemas = {
       adminIdentity: identityValidation
         .optional()
         .describe('An admin Identity for this Datastore.'),
-      adminSignature: signatureValidation
+      adminSignature: identitySignatureValidation
         .optional()
         .describe('A signature from the admin Identity'),
       adminFunction: z.object({
@@ -140,120 +166,34 @@ export const DatastoreApiSchemas = {
       stats: DatastoreStatsSchema,
       extractorsByName: z.record(
         z.string().describe('The name of the extractor'),
-        FunctionMetaSchema.extend({
-          prices: DatastoreExtractorPricing.array(),
-        }),
+        EntityMetaSchema,
       ),
-      crawlersByName: z.record(
-        z.string().describe('The name of the crawler'),
-        FunctionMetaSchema.extend({
-          prices: DatastoreCrawlerPricing.array(),
-        }),
-      ),
-      tablesByName: z.record(
-        z.string().describe('The name of a table'),
-        z.object({
-          description: z.string().optional(),
-          stats: DatastoreStatsSchema,
-          pricePerQuery: micronoteTokenValidation.describe('The table base price per query.'),
-          prices: DatastoreTablePricing.array(),
-          schemaAsJson: z.any().optional().describe('The schema JSON if requested'),
-        }),
-      ),
+      crawlersByName: z.record(z.string().describe('The name of the crawler'), EntityMetaSchema),
+      tablesByName: z.record(z.string().describe('The name of a table'), EntityMetaSchema),
       schemaInterface: z
         .string()
         .optional()
         .describe(
           'A Typescript interface describing input and outputs of Datastore Extractors, and schemas of Datastore Tables',
         ),
-      computePricePerQuery: micronoteTokenValidation.describe(
-        'The current server price per query. NOTE: if a server is implementing surge pricing, this amount could vary.',
-      ),
     }),
   },
   'Datastore.stream': {
-    args: z.object({
-      id: datastoreIdValidation.describe('The datastore id'),
-      version: semverValidation.describe('The datastore version'),
-      queryId: z.string().describe('The id of this query.'),
+    args: DatastoreQueryMetadataSchema.extend({
       name: z.string().describe('The name of the table or function'),
       input: z.any().optional().describe('Optional input or where parameters'),
-      payment: PaymentSchema.optional().describe('Payment for this request.'),
-      affiliateId: z
-        .string()
-        .regex(/aff[a-zA-Z_0-9-]{10}/)
-        .optional()
-        .describe('A tracking id to attribute payments to source affiliates.'),
-      authentication: z
-        .object({
-          identity: identityValidation,
-          signature: signatureValidation,
-          nonce: z.string().length(10).describe('A random nonce adding signature noise.'),
-        })
-        .optional(),
-      pricingPreferences: z
-        .object({
-          maxComputePricePerQuery: micronoteTokenValidation.describe(
-            'Maximum price to pay for compute costs per query (NOTE: This only applies to Servers implementing surge pricing).',
-          ),
-        })
-        .optional(),
     }),
-    result: z.object({
-      latestVersion: semverValidation,
-      metadata: z
-        .object({
-          microgons: micronoteTokenValidation,
-          bytes: z.number().int().nonnegative(),
-          milliseconds: z.number().int().nonnegative(),
-        })
-        .optional(),
-    }),
+    result: DatastoreQueryResultSchema,
   },
   'Datastore.query': {
-    args: z.object({
-      id: datastoreIdValidation.describe('The datastore id'),
-      version: semverValidation,
-      queryId: z.string().describe('The unique id of this query.'),
+    args: DatastoreQueryMetadataSchema.extend({
       sql: z.string().describe('The SQL command(s) you want to run'),
       boundValues: z
         .array(z.any())
         .optional()
         .describe('An array of values you want to use as bound parameters'),
-      affiliateId: z
-        .string()
-        .regex(/aff[a-zA-Z_0-9-]{10}/)
-        .optional()
-        .describe('A tracking id to attribute payments to source affiliates.'),
-      payment: PaymentSchema.optional().describe(
-        'Payment for this request created with an approved Ulixee Sidechain.',
-      ),
-      authentication: z
-        .object({
-          identity: identityValidation,
-          signature: signatureValidation,
-          nonce: z.string().length(10).describe('A random nonce adding signature noise.'),
-        })
-        .optional(),
-      pricingPreferences: z
-        .object({
-          maxComputePricePerQuery: micronoteTokenValidation.describe(
-            'Maximum price to pay for compute costs per query (NOTE: This only applies to Servers implementing surge pricing).',
-          ),
-        })
-        .optional(),
     }),
-    result: z.object({
-      latestVersion: semverValidation,
-      outputs: z.any().array(),
-      metadata: z
-        .object({
-          microgons: micronoteTokenValidation,
-          bytes: z.number().int().nonnegative(),
-          milliseconds: z.number().int().nonnegative(),
-        })
-        .optional(),
-    }),
+    result: DatastoreQueryResultSchema,
   },
   'Datastore.createStorageEngine': {
     args: z.object({
@@ -264,7 +204,7 @@ export const DatastoreApiSchemas = {
           .describe(
             'If this server is in production mode, an AdminIdentity approved on the Server or Datastore.',
           ),
-        adminSignature: signatureValidation
+        adminSignature: identitySignatureValidation
           .optional()
           .describe('A signature from an approved AdminIdentity'),
       }),
@@ -276,7 +216,7 @@ export const DatastoreApiSchemas = {
             .describe(
               'If this server is in production mode, an AdminIdentity approved on the Server or Datastore.',
             ),
-          adminSignature: signatureValidation
+          adminSignature: identitySignatureValidation
             .optional()
             .describe('A signature from an approved AdminIdentity'),
         })
@@ -288,10 +228,7 @@ export const DatastoreApiSchemas = {
     }),
   },
   'Datastore.queryStorageEngine': {
-    args: z.object({
-      id: datastoreIdValidation,
-      version: semverValidation.describe('The Datastore version to be queried.'),
-      queryId: z.string().describe('The unique id of this query.'),
+    args: DatastoreQueryMetadataSchema.extend({
       sql: z.string().describe('The SQL command you want to run.'),
       boundValues: z
         .array(z.any())
@@ -324,25 +261,8 @@ export const DatastoreApiSchemas = {
         .describe(
           'Virtual passthrough tables, extractors or crawlers being simulated in the sql query.',
         ),
-      payment: PaymentSchema.optional().describe('Payment for this request.'),
-      authentication: z
-        .object({
-          identity: identityValidation,
-          signature: signatureValidation,
-          nonce: z.string().length(10).describe('A random nonce adding signature noise.'),
-        })
-        .optional(),
     }),
-    result: z.object({
-      outputs: z.any().array(),
-      metadata: z
-        .object({
-          microgons: micronoteTokenValidation,
-          bytes: z.number().int().nonnegative(),
-          milliseconds: z.number().int().nonnegative(),
-        })
-        .optional(),
-    }),
+    result: DatastoreQueryResultSchema,
   },
   'Datastores.list': {
     args: z.object({
@@ -360,6 +280,7 @@ export const DatastoreApiSchemas = {
           versionTimestamp: z.number().int().positive().describe('Millis since epoch'),
           name: z.string().optional(),
           description: z.string().optional(),
+          domain: z.string().optional(),
           isStarted: z
             .boolean()
             .describe('Only relevant in development mode - is this Datastore started.'),
@@ -402,5 +323,8 @@ export const DatastoreApiSchemas = {
 
 type IDatastoreApiTypes = IZodSchemaToApiTypes<typeof DatastoreApiSchemas>;
 export type IDatastoreEntityStats = z.infer<typeof EntityStatsSchema>;
+export type IDatastoreQueryMetadata = z.infer<typeof DatastoreQueryMetadataSchema>;
+export type IDatastoreMetadataResult = z.infer<typeof DatastoreMetadataResult>;
+export type IDatastoreQueryResult = z.infer<typeof DatastoreQueryResultSchema>;
 
 export default IDatastoreApiTypes;

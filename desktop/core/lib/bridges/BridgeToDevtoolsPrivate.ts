@@ -2,14 +2,14 @@ import { EventEmitter } from 'events';
 import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEvent';
 import IDevtoolsSession, { Protocol } from '@ulixee/unblocked-specification/agent/browser/IDevtoolsSession';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
-import { extensionId } from '../ExtensionUtils';
 import {
   ___sendToCore,
   ___receiveFromCore,
   MessageEventType,
   extractStringifiedComponentsFromMessage,
   IMessageObject,
-} from '../BridgeHelpers';
+} from '@ulixee/desktop-interfaces/BridgeHelpers';
+import { extensionId } from '../ExtensionUtils';
 
 export default class BridgeToDevtoolsPrivate extends EventEmitter {
   private devtoolsSessionMap = new Map<

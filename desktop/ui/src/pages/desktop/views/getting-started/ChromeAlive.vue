@@ -1,47 +1,61 @@
 <template>
   <div class="h-full">
-    <h2 class="mb-5 text-lg font-semibold">Replay in ChromeAlive</h2>
+    <h2 class="mb-5 text-lg font-semibold">
+      Replay in ChromeAlive
+    </h2>
     <p class="font-light">
       Hero has a secret superpower. It can record every step of your interactions, along with the
       DOM, HTTP resources, variables used in your commands and more. Ulixee Desktop comes with a
       tool called
-      <b>ChromeAlive</b> that can replay these "sessions" in a browser. <br /><br />
+      <b>ChromeAlive</b> that can replay these "sessions" in a browser. <br><br>
       This is tremendously valuable during development when you encounter unexpected page states,
       and even more so when a script breaks on a remote server.
-      <br /><br />
+      <br><br>
       Here's some of what ChromeAlive can do:
     </p>
 
     <div class="mt-2 border-t border-gray-200 shadow">
       <dl>
         <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-4 sm:gap-4 sm:px-3">
-          <dt class="text-sm font-medium text-gray-500">Timeline</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            Timeline
+          </dt>
           <dd class="mt-1 text-sm text-gray-900 sm:col-span-3 sm:mt-0">
             View every "tick" of your script timeline (paint event, mouse movement, typing, page
             load, etc).
           </dd>
-          <dt class="text-sm font-medium text-gray-500">True DOM</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            True DOM
+          </dt>
           <dd class="mt-1 text-sm text-gray-900 sm:col-span-3 sm:mt-0">
             As your script replays, the DOM is reproduced exactly as it was during your script. If a
             selector doesn't work, you can use the Console tab to run querySelectors and see what
             went wrong.
           </dd>
-          <dt class="text-sm font-medium text-gray-500">Selector Generator</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            Selector Generator
+          </dt>
           <dd class="mt-1 text-sm text-gray-900 sm:col-span-3 sm:mt-0">
             Automatically generate DOM selectors for elements. Internally creates 10k possible
             selectors. COMING SOON: suggests fixes when a selector breaks.
           </dd>
-          <dt class="text-sm font-medium text-gray-500">Hero Script</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            Hero Script
+          </dt>
           <dd class="mt-1 text-sm text-gray-900 sm:col-span-3 sm:mt-0">
             Step through your Hero code as the browser updates. Each step includes the internal
             arguments and results.
           </dd>
-          <dt class="text-sm font-medium text-gray-500">Resources</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            Resources
+          </dt>
           <dd class="mt-1 text-sm text-gray-900 sm:col-span-3 sm:mt-0">
             See all Hero resources, and show how Hero's man-in-the-middle corrects invalid headers.
             Includes an ability to "Search" resource bodies to locate data files.
           </dd>
-          <dt class="text-sm font-medium text-gray-500">State Generator</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            State Generator
+          </dt>
           <dd class="mt-1 text-sm text-gray-900 sm:col-span-3 sm:mt-0">
             Compare DOM changes at each step of the timeline. This can be used to figure out what
             DOM changes to wait for in your code.
@@ -50,7 +64,9 @@
       </dl>
     </div>
 
-    <h3 class="text-md mt-10 mb-2 font-semibold">Hero Replays</h3>
+    <h3 class="text-md mt-10 mb-2 font-semibold">
+      Hero Replays
+    </h3>
     <p class="font-light">
       You should see a tab called
       <router-link
@@ -62,10 +78,10 @@
       in the sidebar. Your local ChromeAlive replays will always show up on this tab. You can also
       view replays from remote servers (Clouds) once you've connected to them.
 
-      <br /><br />
+      <br><br>
       Go take a look at your test script and poke around ChromeAlive. You can drag the timeline in
       the address-bar, or play through your script in the <i>Hero Script</i> section of the Devtools
-      toolbar.<br /><br />
+      toolbar.<br><br>
 
       After you've played around, come back here.
     </p>

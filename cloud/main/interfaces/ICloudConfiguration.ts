@@ -1,4 +1,4 @@
-import Identity from '@ulixee/crypto/lib/Identity';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import { ServerOptions } from 'https';
 import { ListenOptions } from 'node:net';
 

@@ -1,5 +1,4 @@
 import { astMapper, astVisitor, IStatement, parseFirst, toSql } from '@ulixee/sql-ast';
-import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
 
 export enum SupportedCommandType {
   insert = 'insert',
@@ -10,10 +9,6 @@ export enum SupportedCommandType {
 
 type ISupportedCommandType = keyof typeof SupportedCommandType;
 type ILimitedTo = { table?: string; function?: string };
-
-interface IInputSchemasByName<T = Record<string, IAnySchemaJson>> {
-  [name: string]: T;
-}
 
 export default class SqlParser {
   public ast: IStatement;
@@ -117,10 +112,26 @@ export default class SqlParser {
     return { sql: `SELECT * FROM ${tableName}`, args: [] };
   }
 
-  public extractFunctionCallInputs<T>(
-    schemasByName: IInputSchemasByName<T>,
-    boundValues: any[],
-  ): { [functionName: string]: any } {
+  public extractCalls(): string[] {
+    const names: string[] = [];
+    const visitor = astVisitor(() => ({
+      tableRef: t => names.push(t.name),
+      call: t => names.push(t.function.name),
+    }));
+    visitor.statement(this.ast);
+    return names;
+  }
+
+  public extractTableCalls(): string[] {
+    const names: string[] = [];
+    const visitor = astVisitor(() => ({
+      tableRef: t => names.push(t.name),
+    }));
+    visitor.statement(this.ast);
+    return names;
+  }
+
+  public extractFunctionCallInputs(boundValues: any[]): { [functionName: string]: any } {
     const inputByFunction: { [name: string]: any } = {};
     const limitedToFunction = this.limitedTo?.function;
     const visitor = astVisitor(() => ({

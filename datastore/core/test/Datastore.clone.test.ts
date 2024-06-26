@@ -84,6 +84,7 @@ test('should be able to clone a datastore', async () => {
     client.stream(packager.manifest.id, packager.manifest.version, 'cloneUpstream', {}),
   ).rejects.toThrow('input');
 
+
   await expect(
     client.stream(packager.manifest.id, packager.manifest.version, 'cloneUpstream', {
       field: 'str',
@@ -97,11 +98,14 @@ test('should be able to clone a datastore', async () => {
       packager.manifest.id,
       packager.manifest.version,
       'select * from users',
-      {},
+      {
+        queryId: 'queryTest'
+      },
     ),
   ).resolves.toEqual({
     metadata: expect.any(Object),
     outputs: [{ name: 'me', birthdate: expect.any(Date) }],
     latestVersion: packager.manifest.version,
+    queryId: "queryTest"
   });
 }, 45e3);

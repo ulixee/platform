@@ -1,5 +1,5 @@
-import { z } from '@ulixee/specification';
-import { identityValidation } from '@ulixee/specification/common';
+import { z } from 'zod';
+import { identityValidation } from '@ulixee/platform-specification/types';
 
 export const NodeInfoSchema = z.object({
   nodeId: identityValidation.describe('Network identity of the node.'),

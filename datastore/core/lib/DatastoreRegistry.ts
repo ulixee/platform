@@ -9,20 +9,14 @@ import {
 } from '@ulixee/platform-specification/services/DatastoreRegistryApis';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { promises as Fs } from 'fs';
-import { IDatastoreEntityStatsRecord } from '../db/DatastoreEntityStatsTable';
 import IDatastoreCoreConfigureOptions from '../interfaces/IDatastoreCoreConfigureOptions';
 import IDatastoreRegistryStore, {
   IDatastoreManifestWithLatest,
 } from '../interfaces/IDatastoreRegistryStore';
-import DatastoreApiClients from './DatastoreApiClients';
 import DatastoreRegistryDiskStore, { IDatastoreSourceDetails } from './DatastoreRegistryDiskStore';
 import DatastoreRegistryServiceClient from './DatastoreRegistryServiceClient';
 import { unpackDbx } from './dbxUtils';
 import { DatastoreNotFoundError } from './errors';
-
-export interface IStatsByName {
-  [name: string]: IDatastoreEntityStatsRecord;
-}
 
 export type IDatastoreManifestWithRuntime = IDatastoreManifestWithLatest & {
   runtimePath: string;
@@ -50,7 +44,6 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
 }> {
   public diskStore: DatastoreRegistryDiskStore;
   public clusterStore: DatastoreRegistryServiceClient;
-  public networkCacheTimeMins = 48 * 60; // 48 hours
 
   public get sourceOfTruthAddress(): URL {
     return this.clusterStore?.hostAddress;
@@ -61,7 +54,6 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
 
   constructor(
     datastoreDir: string,
-    apiClients?: DatastoreApiClients,
     connectionToHostedServiceCore?: ConnectionToCore<IDatastoreRegistryApis, {}>,
     private config?: IDatastoreCoreConfigureOptions,
     private installCallbackFn?: TOnDatastoreInstalledCallbackFn,

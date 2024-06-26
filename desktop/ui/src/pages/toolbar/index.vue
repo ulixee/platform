@@ -2,8 +2,7 @@
   <div class="relative">
     <span
       class="mt-2 l-0 r-0 w-full absolute mx-auto text-center font-semibold text-md text-slate-600"
-      >{{ title }}</span
-    >
+    >{{ title }}</span>
     <div id="ChromeAliveToolbar" :class="{ loading: isLoading, restarting: isRestarting }">
       <SessionController />
     </div>

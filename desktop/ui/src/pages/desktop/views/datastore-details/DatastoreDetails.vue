@@ -68,7 +68,7 @@
                 ]"
                 aria-hidden="true"
               />
-              <span>{{ tab.label ?? tab.name }}</span>
+              <span>{{ tab.name }}</span>
             </router-link>
           </nav>
         </div>
@@ -82,7 +82,11 @@
       </div>
     </div>
   </div>
-  <CloneModal ref="cloneModal" :datastore="datastore" :selected-cloud="selectedCloud" />
+  <CloneModal
+    ref="cloneModal"
+    :datastore="datastore"
+    :selected-cloud="selectedCloud"
+  />
 </template>
 
 <script lang="ts">

@@ -1,17 +1,21 @@
-import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
+import { IPayment } from '@ulixee/platform-specification';
+import {
+  IDatastoreQueryMetadata,
+  IDatastoreQueryResult,
+} from '@ulixee/platform-specification/datastore/DatastoreApis';
 import { ExtractSchemaType } from '@ulixee/schema';
-import IExtractorSchema from '../interfaces/IExtractorSchema';
-import ExtractorInternal from './ExtractorInternal';
-import IExtractorContext from '../interfaces/IExtractorContext';
-import DatastoreInternal, { IQueryInternalCallbacks } from './DatastoreInternal';
+import ICrawlerOutputSchema from '../interfaces/ICrawlerOutputSchema';
 import IDatastoreMetadata from '../interfaces/IDatastoreMetadata';
+import IExtractorContext from '../interfaces/IExtractorContext';
+import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
+import IExtractorSchema from '../interfaces/IExtractorSchema';
+import IQueryOptions from '../interfaces/IQueryOptions';
+import Crawler from './Crawler';
+import DatastoreInternal, { IQueryInternalCallbacks } from './DatastoreInternal';
+import Extractor from './Extractor';
+import ExtractorInternal from './ExtractorInternal';
 import ResultIterable from './ResultIterable';
 import Table from './Table';
-import Extractor from './Extractor';
-import Crawler from './Crawler';
-import ICrawlerOutputSchema from '../interfaces/ICrawlerOutputSchema';
-import IExtractorRunOptions from '../interfaces/IExtractorRunOptions';
-import { TQueryCallMeta } from '../interfaces/IStorageEngine';
 
 export default class ExtractorContext<
   ISchema extends IExtractorSchema,
@@ -23,11 +27,15 @@ export default class ExtractorContext<
   public callerAffiliateId: string;
   public extraOptions: Record<string, any>;
 
-  public get authentication(): IDatastoreApiTypes['Datastore.query']['args']['authentication'] {
+  public get authentication(): IDatastoreQueryMetadata['authentication'] {
     return this.#extractorInternal.options.authentication;
   }
 
-  public get payment(): IDatastoreApiTypes['Datastore.query']['args']['payment'] {
+  public get queryId(): string {
+    return this.#extractorInternal.options.queryId;
+  }
+
+  public get payment(): IPayment {
     return this.#extractorInternal.options.payment;
   }
 
@@ -47,6 +55,10 @@ export default class ExtractorContext<
     return this.#extractorInternal.schema;
   }
 
+  public get onQueryResult(): (result: IDatastoreQueryResult) => Promise<any> | void {
+    return this.#extractorInternal.options.onQueryResult;
+  }
+
   #extractorInternal: ExtractorInternal<ISchema>;
   #datastoreInternal: DatastoreInternal;
   #callbacks: IQueryInternalCallbacks;
@@ -58,7 +70,6 @@ export default class ExtractorContext<
   ) {
     this.#extractorInternal = extractorInternal;
     this.#callbacks = callbacks ?? {};
-    this.#callbacks.onFunction ??= (_id, _name, options, run) => run(options);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { affiliateId, payment, input, authentication, ...otherOptions } =
@@ -92,19 +103,9 @@ export default class ExtractorContext<
   public run(extractorOrTable, options): any {
     const finalOptions = this.getMergedOptions(options);
     if (extractorOrTable instanceof Extractor) {
-      return this.#callbacks.onFunction(-1, extractorOrTable.name, finalOptions, modifiedOptions =>
-        extractorOrTable.runInternal(modifiedOptions, this.#callbacks),
-      );
+      return extractorOrTable.runInternal(finalOptions, this.#callbacks) as any;
     }
-    if ('remoteSource' in extractorOrTable) {
-      return this.#callbacks.onPassthroughTable(
-        extractorOrTable.name,
-        finalOptions,
-        modifiedOptions => extractorOrTable.fetchInternal(modifiedOptions, this.#callbacks),
-      );
-    }
-
-    return extractorOrTable.runInternal(finalOptions) as any;
+    return extractorOrTable.fetchInternal(options, this.#callbacks);
   }
 
   public async crawl<T extends Crawler>(
@@ -112,20 +113,10 @@ export default class ExtractorContext<
     options: T['runArgsType'] = {},
   ): Promise<ICrawlerOutputSchema> {
     const finalOptions = this.getMergedOptions(options);
-    const [crawl] = await this.#callbacks.onFunction(
-      -1,
-      crawler.name,
-      finalOptions,
-      modifiedOptions => crawler.runInternal(modifiedOptions, this.#callbacks),
-    );
-    return crawl;
+    return (await crawler.runInternal(finalOptions, this.#callbacks)).shift();
   }
 
-  public query<TResult>(
-    sql: string,
-    boundValues: any[],
-    options: TQueryCallMeta,
-  ): Promise<TResult> {
+  public query<TResult>(sql: string, boundValues: any[], options: IQueryOptions): Promise<TResult> {
     return this.#datastoreInternal.queryInternal(sql, boundValues, options, this.#callbacks);
   }
 

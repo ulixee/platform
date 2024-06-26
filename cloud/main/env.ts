@@ -1,5 +1,5 @@
 import { loadEnv, parseEnvBool, parseEnvPath } from '@ulixee/commons/lib/envUtils';
-import Identity from '@ulixee/crypto/lib/Identity';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 
 loadEnv(process.cwd());
 loadEnv(__dirname);

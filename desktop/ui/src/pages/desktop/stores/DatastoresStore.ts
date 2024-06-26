@@ -1,8 +1,9 @@
 import { defineStore, storeToRefs } from 'pinia';
 import { computed, Ref, ref } from 'vue';
-import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import type IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
+import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
+import type IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
 import { Client } from '@/api/Client';
 import ICloudConnection from '@/api/ICloudConnection';
 import { useCloudsStore } from '@/pages/desktop/stores/CloudsStore';
@@ -13,13 +14,13 @@ export type IDatastoreMeta = IDatastoreApiTypes['Datastore.meta']['result'] & {
   examplesByEntityName: { [name: string]: { formatted: string; args: Record<string, any> } };
 };
 export type IDatastoreVersions = IDatastoreApiTypes['Datastore.versions']['result']['versions'];
-export type TCredit = { datastoreUrl: string; microgons: number };
+export type TCredit = IArgonFile['credit'];
 
 export type IDatastoresById = {
   [datastoreId: string]: {
     summary: IDatastoreSummary & { cloudName: string }; // aggregated stats
     details: IDatastoreMeta;
-    createdCredits: { credit: TCredit; filename: string; cloud: string }[];
+    createdCredits: { credit: TCredit; name: string; cloud: string }[];
     adminIdentity: string;
     versions?: IDatastoreVersions;
     cloudsByVersion: {
@@ -140,13 +141,13 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
 
   function openDocs(id: string, version: string, cloudName: string) {
     const cloudHost = cloudsStore.getCloudHost(cloudName);
-    const docsUrl = new URL(`/docs/${id}@v${version}/`, cloudHost);
+    const docsUrl = new URL(`/${id}@v${version}/`, cloudHost);
     docsUrl.protocol = 'http:';
 
-    const credits = useWalletStore().userBalance.credits.filter(
+    const credits = useWalletStore().wallet.credits.filter(
       x => x.datastoreId === id && x.datastoreVersion === version,
     );
-    const credit = credits.find(x => x.remainingBalance > 0) ?? credits[0];
+    const credit = credits.find(x => x.remaining > 0) ?? credits[0];
     if (credit) {
       docsUrl.search = `?${credit.creditsId}`;
     }
@@ -161,7 +162,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     creditUrl.username = '';
     creditUrl.password = '';
     creditUrl.search = `?${creditId}:${secret}`;
-    creditUrl.pathname = `/docs${creditUrl.pathname}/free-credits`;
+    creditUrl.pathname = `${creditUrl.pathname}/free-credit`;
     return creditUrl.href;
   }
 
@@ -304,14 +305,18 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
       },
       cloud,
     };
-    const { filename, credit } = await window.desktopApi.send('Credit.create', data);
+    const {
+      rawJson,
+      file: { credit },
+      name,
+    } = await window.desktopApi.send('Credit.create', data);
     datastoresById.value[datastore.id].createdCredits.push({
       credit,
-      filename,
+      name,
       cloud,
     });
     void refreshMetadata(datastore.id, datastore.version, cloud);
-    return { filename, credit };
+    return { name, credit, rawJson };
   }
 
   function getDatastoreAdminIdentity(datastoreId: string, cloudName: string) {

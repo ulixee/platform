@@ -29,14 +29,13 @@
   },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.28",
-    "@ulixee/crypto": "2.0.0-alpha.28",
+    "@ulixee/platform-utils": "2.0.0-alpha.28",
     "@ulixee/datastore-core": "2.0.0-alpha.28",
     "@ulixee/datastore-plugins-hero-core": "2.0.0-alpha.28",
     "@ulixee/hero-core": "2.0.0-alpha.28",
     "@ulixee/hero-interfaces": "2.0.0-alpha.28",
     "@ulixee/net": "2.0.0-alpha.28",
     "@ulixee/platform-specification": "2.0.0-alpha.28",
-    "@ulixee/specification": "2.0.0-alpha.28",
     "commander": "^9.5.0",
     "ws": "^7.5.9"
   },

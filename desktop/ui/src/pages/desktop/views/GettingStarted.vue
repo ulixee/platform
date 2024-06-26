@@ -5,9 +5,7 @@
         <ol role="list" class="flex items-center space-x-4">
           <li>
             <div>
-              <span class="text-2xl font-semibold text-gray-900 hover:text-gray-700"
-                >Getting Started with Ulixee</span
-              >
+              <span class="text-2xl font-semibold text-gray-900 hover:text-gray-700">Getting Started with Ulixee</span>
             </div>
           </li>
         </ol>
@@ -37,8 +35,8 @@
                       step.isComplete
                         ? 'bg-fuchsia-800 group-hover:bg-fuchsia-700'
                         : isCurrent(step, stepIdx)
-                        ? 'border-2 border-fuchsia-800 bg-white'
-                        : 'border-2 border-gray-300 bg-white group-hover:border-gray-400',
+                          ? 'border-2 border-fuchsia-800 bg-white'
+                          : 'border-2 border-gray-300 bg-white group-hover:border-gray-400',
                     ]"
                   >
                     <CheckIcon
@@ -63,11 +61,10 @@
                       isCurrent(step, stepIdx)
                         ? 'text-fuchsia-800'
                         : step.isComplete
-                        ? ''
-                        : 'text-gray-500',
+                          ? ''
+                          : 'text-gray-500',
                     ]"
-                    >{{ step.name }}</span
-                  >
+                  >{{ step.name }}</span>
                   <span class="text-sm text-gray-500">{{ step.description }}</span>
                 </span>
               </router-link>
@@ -78,7 +75,7 @@
           class="max-w-2/3 basis-2/3 overflow-hidden border border-gray-200 px-8 py-7 shadow-inner"
         >
           <div class="transition-opacity duration-150 ease-linear">
-            <router-view></router-view>
+            <router-view />
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import DatastorePackager from '@ulixee/datastore-packager';
 import { CloudNode } from '@ulixee/cloud';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { Helpers } from '@ulixee/datastore-testing';
+import { string } from 'zod';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughTable.test');
 
@@ -48,10 +49,11 @@ afterAll(async () => {
 
 test('should be able to have a passthrough table', async () => {
   await expect(
-    client.query(remoteDatastoreId, remoteVersion, 'select * from remote'),
+    client.query(remoteDatastoreId, remoteVersion, 'select * from remote', { queryId: '1' }),
   ).resolves.toEqual({
     latestVersion: remoteVersion,
     metadata: expect.any(Object),
+    queryId: '1',
     outputs: [
       { title: 'Hello', success: true },
       { title: 'World', success: false },
@@ -84,11 +86,7 @@ export default new Datastore({
   await client.upload(await passthrough.dbx.tarGzip());
 
   await expect(
-    client.query(
-      passthrough.manifest.id,
-      passthrough.manifest.version,
-      'select * from pass',
-    ),
+    client.query(passthrough.manifest.id, passthrough.manifest.version, 'select * from pass'),
   ).resolves.toEqual({
     latestVersion: passthrough.manifest.version,
     metadata: expect.any(Object),
@@ -96,6 +94,7 @@ export default new Datastore({
       { title: 'Hello', success: true },
       { title: 'World', success: false },
     ],
+    queryId: expect.any(String),
   });
 });
 
@@ -145,5 +144,6 @@ export default new Datastore({
     latestVersion: passthrough.manifest.version,
     metadata: expect.any(Object),
     outputs: [{ title: 'Hello', name: 'World' }],
+    queryId: expect.any(String),
   });
 });

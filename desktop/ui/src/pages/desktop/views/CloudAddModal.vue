@@ -1,5 +1,10 @@
 <template>
-  <Modal ref="modal" title="Add a Cloud" dialog-class="w-1/2" :close-handler="onClose">
+  <Modal
+    ref="modal"
+    title="Add a Cloud"
+    dialog-class="w-1/2"
+    :close-handler="onClose"
+  >
     <div class="divider-y divider-slate-100 items-left flex flex-col">
       <nav class="mt-2 mb-5 flex space-x-8 px-2">
         <a
@@ -12,21 +17,11 @@
           ]"
           @click.prevent="activeTab = tab.name"
         >
-          <component
-            :is="tab.icon"
-            :class="[
-              activeTab === tab.name
-                ? 'text-fuchsia-800/80'
-                : 'text-gray-500 group-hover:text-gray-700',
-              '-ml-0.5 mr-2 h-5 w-5',
-            ]"
-            aria-hidden="true"
-          />
           <span>{{ tab.name }}</span>
         </a>
       </nav>
       <div v-if="activeTab === 'Connect'">
-        <p class="border-b border-gray-200 px-3 pb-3 text-sm text-base font-light text-gray-500">
+        <p class="border-b border-gray-200 px-3 pb-3 text-base font-light text-gray-500">
           If you've deployed Ulixee Cloud to your own servers, you can connect to it here to view
           statistics, earnings and troubleshoot remote Hero sessions. You can also connect to any
           publicly accessible Ulixee Cloud you'd like to use.
@@ -39,9 +34,10 @@
           </p>
 
           <div class="col-span-6">
-            <label for="ip" class="block text-sm font-medium leading-6 text-gray-900"
-              >Enter the Cloud IP Address and Port</label
-            >
+            <label
+              for="ip"
+              class="block text-sm font-medium leading-6 text-gray-900"
+            >Enter the Cloud IP Address and Port</label>
             <div class="mt-2">
               <input
                 id="ip"
@@ -50,14 +46,15 @@
                 placeholder="address"
                 class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-fuchsia-700 sm:text-sm sm:leading-6"
                 @keyup="onAddCloudType"
-              />
+              >
             </div>
           </div>
 
           <div class="col-span-6">
-            <label for="name" class="block text-sm font-medium leading-6 text-gray-900"
-              >Give this Cloud a Name <span class="font-light">- only used in this app</span></label
-            >
+            <label
+              for="name"
+              class="block text-sm font-medium leading-6 text-gray-900"
+            >Give this Cloud a Name <span class="font-light">- only used in this app</span></label>
             <div class="mt-2">
               <input
                 id="name"
@@ -65,7 +62,7 @@
                 type="text"
                 placeholder="name"
                 class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-fuchsia-700 sm:text-sm sm:leading-6"
-              />
+              >
             </div>
           </div>
 
@@ -101,14 +98,13 @@
           </Prism>
         </p>
         <p class="font-light">
-          <br />
+          <br>
           Now
           <a
             href="#"
             class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
             @click.prevent="activeTab = 'Connect'"
-            >Connect</a
-          >
+          >Connect</a>
           to your Cloud and then navigate to it to attach the Admin Identity emitted in your
           server's console.
         </p>
@@ -118,8 +114,7 @@
             href="https://github.com/ulixee/platform#docker"
             target="_blank"
             class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
-            >Docker</a
-          >
+          >Docker</a>
           with Ulixee Cloud if you prefer that for your server setup.
         </div>
       </div>

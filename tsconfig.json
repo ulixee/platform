@@ -7,17 +7,23 @@
   "references": [
     {
       "path": "specification/tsconfig.json"
+    },
+    {
+      "path": "desktop/chrome-extension/tsconfig.json"
     }
   ],
   "include": [
     "cloud",
     "end-to-end",
+    "end-to-end/*.json",
     "desktop",
     "playgrounds",
     "datastore",
     "datastore/packager/*.json",
     "sql",
     "client",
+    "utils",
+    "schema",
     "cli",
     "cloud/**/*.json",
     "./*.js",

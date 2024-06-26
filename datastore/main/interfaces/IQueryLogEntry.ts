@@ -12,7 +12,7 @@ export default interface IQueryLogEntry {
   bytes: number;
   microgons: number;
   creditId?: string;
-  micronoteId?: string;
+  escrowId?: string;
   cloudNodeHost: string;
   cloudNodeIdentity?: string;
 }

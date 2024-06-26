@@ -4,6 +4,10 @@ on:
   push:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build Javascript
@@ -21,24 +25,55 @@ jobs:
           node-version: 18
           cache: yarn
 
+      - name: Setup SSH for Git Operations
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            SSH_PATH="$HOME/.ssh"
+            mkdir "$SSH_PATH"
+            echo "$SSH_PRIVATE_KEY" > "$SSH_PATH/id_rsa"
+            chmod 600 "$SSH_PATH/id_rsa"
+            ssh-keyscan github.com >> "$SSH_PATH/known_hosts"
+          else
+            SSH_PATH=~/.ssh
+            mkdir -p "$SSH_PATH"
+            echo "$SSH_PRIVATE_KEY" > "$SSH_PATH/id_rsa"
+            chmod 600 "$SSH_PATH/id_rsa"
+            ssh-keyscan github.com >> "$SSH_PATH/known_hosts"
+          fi
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.MAINCHAIN_SSH_KEY }}
+
+      - name: Clone Mainchain
+        run: |
+          export GIT_SSH_COMMAND="ssh -i $SSH_PATH/id_rsa -o UserKnownHostsFile=$SSH_PATH/known_hosts"
+          git clone -b napi-bindings git@github.com:ulixee/mainchain.git
+        working-directory: ..
+
+      - name: Install Mainchain
+        run: yarn
+        working-directory: ../mainchain
+
+      - name: Install Mainchain client
+        run: yarn tsc
+        working-directory: ../mainchain/client/nodejs
+
       - name: Clone ulixee/shared
-        run: git clone https://github.com/ulixee/shared.git
+        run: |
+          git clone -n https://github.com/ulixee/shared.git
+          cd shared
+          (git fetch --depth 1 origin $GITHUB_REF_NAME && git checkout $GITHUB_REF_NAME) || (git fetch --depth 1 origin main && git checkout main)
         working-directory: ..
 
       - name: Install ulixee/shared
         run: yarn && yarn build
         working-directory: ../shared
 
-      - name: Clone ulixee/payments
-        run: git clone https://github.com/ulixee/payments.git
-        working-directory: ..
-
-      - name: Install ulixee/payments
-        run: yarn && yarn build
-        working-directory: ../payments
-
       - name: Clone unblocked
-        run: git clone --recurse-submodules -j8 https://github.com/ulixee/unblocked.git
+        run: |
+          git clone -n --recurse-submodules https://github.com/ulixee/unblocked.git
+          cd unblocked
+          (git fetch --depth 1 origin $GITHUB_REF_NAME && git checkout $GITHUB_REF_NAME) || (git fetch --depth 1 origin main && git checkout main)
+          git submodule update --init --recursive --depth 1
         working-directory: ..
 
       - name: Install unblocked

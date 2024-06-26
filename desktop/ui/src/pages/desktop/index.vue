@@ -1,5 +1,7 @@
 <template>
-  <div class="y-0 l-0 r-0 drag-bar absolute h-8 w-full">&nbsp;</div>
+  <div class="y-0 l-0 r-0 drag-bar absolute h-8 w-full">
+&nbsp;
+  </div>
   <Sidebar />
 
   <div class="flex flex-col pl-64">

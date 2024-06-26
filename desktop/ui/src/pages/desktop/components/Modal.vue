@@ -1,6 +1,10 @@
 <template>
   <TransitionRoot as="template" :show="isOpen">
-    <Dialog as="div" class="relative z-10" @close="handleClose($event, true)">
+    <Dialog
+      as="div"
+      class="relative z-10"
+      @close="handleClose($event, true)"
+    >
       <TransitionChild
         as="template"
         enter="ease-out duration-300"
@@ -73,7 +77,7 @@ export default Vue.defineComponent({
     title: String,
     dialogClass: String,
     closeHandler: {
-      type: Function as PropType<(didClickBackdrop: boolean) => boolean>,
+      type: Function as PropType<(didClickBackdrop: boolean) => void>,
     },
   },
   setup() {

@@ -1,4 +1,4 @@
-import Identity from '@ulixee/crypto/lib/Identity';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import { IFetchMetaResponseData } from '@ulixee/datastore-core/interfaces/ILocalDatastoreProcess';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';

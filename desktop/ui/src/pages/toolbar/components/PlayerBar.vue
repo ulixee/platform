@@ -17,13 +17,16 @@
         class="tick"
         :class="{ [tick.class]: true }"
         :style="{ left: tick.offsetPercent + '%' }"
-        @click.prevent="clickTick($event, tick)"
       >
-        <div v-if="i !== tick.length - 1" class="tick-overlay" />
+        <div v-if="i !== ticks.length - 1" class="tick-overlay" />
       </div>
     </div>
 
-    <div v-if="isSelected || isUsingFinder" class="ghost" :class="ghostClass" />
+    <div
+      v-if="isSelected || isUsingFinder"
+      class="ghost"
+      :class="ghostClass"
+    />
     <div
       v-if="isSelected || isUsingFinder"
       ref="markerElem"
@@ -216,18 +219,18 @@ export default Vue.defineComponent({
       return this.markerRect;
     },
 
-    handleMouseDown(event: MouseEvent, item?: MouseDownItem) {
+    handleMouseDown(event: MouseEvent, item?: keyof typeof MouseDownItem) {
       if (event.button !== 0) return;
       if (!this.isSelected || this.isRestartingSession) return;
 
       event.preventDefault();
       event.stopPropagation();
 
-      if (item === MouseDownItem.marker) {
+      if (item === 'marker') {
         this.isMaybeClickingPlay = this.markerClass.isLive;
         item = MouseDownItem.nibLeft;
       }
-      this.mouseDownItem = item;
+      this.mouseDownItem = MouseDownItem[item];
       this.trackRect = null;
       this.ghostClass.show = false;
       this.mousedownX = event.pageX;

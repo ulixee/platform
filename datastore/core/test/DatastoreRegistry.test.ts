@@ -1,7 +1,7 @@
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import * as HashUtils from '@ulixee/commons/lib/hashUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
-import Identity from '@ulixee/crypto/lib/Identity';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import { Helpers } from '@ulixee/datastore-testing';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { existsSync, mkdirSync, promises as Fs, readFileSync, rmSync } from 'fs';

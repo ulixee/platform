@@ -2,24 +2,27 @@ import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
-import Identity from '@ulixee/crypto/lib/Identity';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
+import { IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
 import IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
-import CreditsStore from '@ulixee/datastore/lib/CreditsStore';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import CreditPaymentService from '@ulixee/datastore/payments/CreditPaymentService';
 import {
+  IArgonFileMeta,
   IDatastoreResultItem,
   IDesktopAppPrivateApis,
   TCredit,
 } from '@ulixee/desktop-interfaces/apis';
-import { ICloudConnected, IUserBalance } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
+import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppPrivateEvents from '@ulixee/desktop-interfaces/events/IDesktopAppPrivateEvents';
+import { ARGON_FILE_VERSION, LocalchainOverview } from '@ulixee/localchain';
 import { ConnectionToClient, WsTransportToClient } from '@ulixee/net';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
-import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
-import ArgonUtils from '@ulixee/sidechain/lib/ArgonUtils';
+import IArgonFile, { ArgonFileSchema } from '@ulixee/platform-specification/types/IArgonFile';
+import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import { dialog, Menu, WebContents } from 'electron';
 import { IncomingMessage } from 'http';
 import { nanoid } from 'nanoid';
@@ -41,10 +44,16 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   'open-replay': IOpenReplay;
 }> {
   public Apis: IDesktopAppPrivateApis = {
+    'Argon.importSend': this.importArgons.bind(this),
+    'Argon.acceptRequest': this.acceptArgonRequest.bind(this),
+    'Argon.send': this.createArgonsToSendFile.bind(this),
+    'Argon.request': this.createArgonsToRequestFile.bind(this),
     'Argon.dropFile': this.onArgonFileDrop.bind(this),
+    'Argon.showFileContextMenu': this.showContextMenu.bind(this),
+    'Argon.transferFromMainchain': this.transferArgonsFromMainchain.bind(this),
+    'Argon.transferToMainchain': this.transferArgonsToMainchain.bind(this),
     'Credit.create': this.createCredit.bind(this),
     'Credit.save': this.saveCredit.bind(this),
-    'Credit.showContextMenu': this.showContextMenu.bind(this),
     'Cloud.findAdminIdentity': this.findCloudAdminIdentity.bind(this),
     'Datastore.setAdminIdentity': this.setDatastoreAdminIdentity.bind(this),
     'Datastore.findAdminIdentity': this.findAdminIdentity.bind(this),
@@ -60,7 +69,8 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     'GettingStarted.completeStep': this.completeGettingStartedStep.bind(this),
     'Session.openReplay': this.openReplay.bind(this),
     'User.getQueries': this.getQueries.bind(this),
-    'User.getBalance': this.getUserBalance.bind(this),
+    'User.getWallet': this.getWallet.bind(this),
+    'User.createAccount': this.createAccount.bind(this),
   } as const;
 
   public Events: IDesktopAppPrivateEvents;
@@ -75,6 +85,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     this.events.on(apiManager, 'new-cloud-address', this.onNewCloudAddress.bind(this));
     this.events.on(apiManager, 'deployment', this.onDeployment.bind(this));
     this.events.on(apiManager, 'query', this.onQuery.bind(this));
+    this.events.on(apiManager, 'wallet-updated', this.onWalletUpdated.bind(this));
   }
 
   public onConnection(ws: WebSocket, req: IncomingMessage): void {
@@ -97,19 +108,8 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     this.events.close();
   }
 
-  public async getUserBalance(): Promise<IUserBalance> {
-    const credits = await CreditsStore.asList();
-    const centagonsBalance = 0 * Number(ArgonUtils.CentagonsPerArgon);
-    const microgons = ArgonUtils.centagonsToMicrogons(centagonsBalance);
-    const creditsBalance = credits.reduce((total, x) => x.remainingBalance + total, 0);
-
-    const walletBalance = ArgonUtils.format(creditsBalance + microgons, 'microgons', 'argons');
-    return {
-      credits,
-      centagonsBalance,
-      address: this.apiManager.localUserProfile.defaultAddress.bech32,
-      walletBalance,
-    };
+  public async getWallet(): Promise<IWallet> {
+    return this.apiManager.getWallet();
   }
 
   public async completeGettingStartedStep(step: string): Promise<void> {
@@ -126,6 +126,74 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   public async onArgonFileDrop(path: string): Promise<void> {
     const argonFile = await ArgonFile.readFromPath(path);
     await this.onArgonFileOpened(argonFile);
+  }
+
+  public async createAccount(request: {
+    name: string;
+    suri?: string;
+    password?: string;
+  }): Promise<LocalchainOverview> {
+    return await this.apiManager.accountManager.createAccount(
+      request.name,
+      request.suri,
+      request.password,
+    );
+  }
+
+  public async createArgonsToSendFile(request: {
+    milligons: bigint;
+    fromAddress?: string;
+    toAddress?: string;
+  }): Promise<IArgonFileMeta> {
+    return this.apiManager.accountManager.createArgonsToSendFile(request);
+  }
+
+  public async transferArgonsFromMainchain(request: {
+    milligons: bigint;
+    address?: string;
+  }): Promise<void> {
+    await this.apiManager.accountManager.transferMainchainToLocal(
+      request.address,
+      request.milligons,
+    );
+  }
+
+  public async transferArgonsToMainchain(request: {
+    milligons: bigint;
+    address?: string;
+  }): Promise<void> {
+    return this.apiManager.accountManager.transferLocalToMainchain(
+      request.address,
+      request.milligons,
+    );
+  }
+
+  public async createArgonsToRequestFile(request: {
+    milligons: bigint;
+    sendToMyAddress?: string;
+  }): Promise<IArgonFileMeta> {
+    return this.apiManager.accountManager.createArgonsToRequestFile(request);
+  }
+
+  public async acceptArgonRequest(request: {
+    argonFile: IArgonFile;
+    fundWithAddress?: string;
+  }): Promise<void> {
+    const argonFile = ArgonFileSchema.parse(request.argonFile);
+    if (argonFile.credit) {
+      await this.saveCredit({ credit: argonFile.credit });
+      return;
+    }
+    return this.apiManager.accountManager.acceptArgonRequest(argonFile, request.fundWithAddress);
+  }
+
+  public async importArgons(claim: { argonFile: IArgonFile }): Promise<void> {
+    const argonFile = ArgonFileSchema.parse(claim.argonFile);
+    if (argonFile.credit) {
+      await this.saveCredit({ credit: argonFile.credit });
+      return;
+    }
+    return this.apiManager.accountManager.importArgons(argonFile);
   }
 
   public getInstalledDatastores(): ILocalUserProfile['installedDatastores'] {
@@ -171,8 +239,14 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     if (version.includes(DatastoreManifest.TemporaryIdPrefix)) {
       throw new Error('This Datastore has only been started. You need to deploy it.');
     }
-    const download = await apiClient.download(id, version, adminIdentity);
-    await apiClient.upload(download.compressedDbx, { forwardedSignature: download });
+    const {
+      compressedDbx,
+      adminSignature,
+      adminIdentity: identityResult,
+    } = await apiClient.download(id, version, adminIdentity);
+    await apiClient.upload(compressedDbx, {
+      forwardedSignature: { adminIdentity: identityResult, adminSignature },
+    });
   }
 
   public async installDatastore(arg: {
@@ -204,17 +278,19 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
   }
 
   public async saveCredit(arg: { credit: TCredit }): Promise<void> {
-    await CreditsStore.storeFromUrl(arg.credit.datastoreUrl, arg.credit.microgons);
+    const credit = await CreditPaymentService.storeCreditFromUrl(
+      arg.credit.datastoreUrl,
+      arg.credit.microgons,
+      await this.apiManager.accountManager.getDatastoreHostLookup(),
+    );
+    this.apiManager.paymentService.addCredit(credit);
   }
 
   public async createCredit(args: {
-    datastore: Pick<
-      IDatastoreResultItem,
-      'id' | 'version' | 'name' | 'scriptEntrypoint'
-    >;
+    datastore: Pick<IDatastoreResultItem, 'id' | 'version' | 'name' | 'scriptEntrypoint'>;
     cloud: string;
     argons: number;
-  }): Promise<{ credit: TCredit; filename: string }> {
+  }): Promise<IArgonFileMeta> {
     const { argons, datastore } = args;
     const address = new URL(this.apiManager.getCloudAddressByName(args.cloud));
     const adminIdentity = this.apiManager.localUserProfile.getAdminIdentity(
@@ -224,9 +300,7 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     if (!adminIdentity) {
       throw new Error("Sorry, we couldn't find the AdminIdentity for this cloud.");
     }
-    const microgons = ArgonUtils.centagonsToMicrogons(
-      argons * Number(ArgonUtils.CentagonsPerArgon),
-    );
+    const microgons = argons * Number(ArgonUtils.MicrogonsPerArgon);
     const client = new DatastoreApiClient(address.href);
     try {
       const { id, remainingCredits, secret } = await client.createCredits(
@@ -236,12 +310,18 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
         adminIdentity,
       );
 
-      return {
+      const file: IArgonFile = {
+        version: ARGON_FILE_VERSION,
         credit: {
           datastoreUrl: `ulx://${id}:${secret}@${address.host}/${datastore.id}@v${datastore.version}`,
           microgons: remainingCredits,
         },
-        filename: `₳${argons} at ${
+      };
+
+      return {
+        rawJson: JSON.stringify(file),
+        file,
+        name: `₳${argons} at ${
           (datastore.name ?? datastore.scriptEntrypoint)?.replace(/[.\\/]/g, '-') ??
           'a Ulixee Datastore'
         }.arg`,
@@ -251,25 +331,22 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
     }
   }
 
-  public async dragCreditAsFile(
-    args: { credit: IArgonFile['credit']; filename: string },
-    context: WebContents,
-  ): Promise<void> {
-    const file = Path.join(Os.tmpdir(), '.ulixee', args.filename);
-    await ArgonFile.createCredit(args.credit, file);
-    await context.startDrag({
+  public async dragArgonsAsFile(args: IArgonFileMeta, context: WebContents): Promise<void> {
+    const file = Path.join(Os.tmpdir(), '.ulixee', args.name);
+    await ArgonFile.create(args.rawJson, file);
+    context.startDrag({
       file,
       icon: argIconPath,
     });
   }
 
-  public async showContextMenu(args: {
-    credit: TCredit;
-    filename: string;
-    position: { x: number; y: number };
-  }): Promise<void> {
-    const file = Path.join(Os.tmpdir(), '.ulixee', args.filename);
-    await ArgonFile.createCredit(args.credit, file);
+  public async showContextMenu(
+    args: IArgonFileMeta & {
+      position: { x: number; y: number };
+    },
+  ): Promise<void> {
+    const file = Path.join(Os.tmpdir(), '.ulixee', args.name);
+    await ArgonFile.create(args.rawJson, file);
 
     const menu = Menu.buildFromTemplate([
       {
@@ -359,6 +436,10 @@ export default class PrivateDesktopApiHandler extends TypedEventEmitter<{
 
   public async onNewCloudAddress(event: ICloudConnected): Promise<void> {
     await this.connectionToClient?.sendEvent({ eventType: 'Cloud.onConnected', data: event });
+  }
+
+  public async onWalletUpdated(event: { wallet: IWallet }): Promise<void> {
+    await this.connectionToClient?.sendEvent({ eventType: 'Wallet.updated', data: event });
   }
 
   public openReplay(arg: IOpenReplay): void {

@@ -3,20 +3,25 @@ import Logger from '@ulixee/commons/lib/Logger';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
-import Ed25519 from '@ulixee/crypto/lib/Ed25519';
-import Identity from '@ulixee/crypto/lib/Identity';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
 import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
+import IPaymentService from '@ulixee/datastore/interfaces/IPaymentService';
+import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
+import RemotePaymentService from '@ulixee/datastore/payments/RemotePaymentService';
 import { ConnectionToCore } from '@ulixee/net';
 import ITransport from '@ulixee/net/interfaces/ITransport';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
 import TransportBridge from '@ulixee/net/lib/TransportBridge';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import { IServicesSetupApiTypes } from '@ulixee/platform-specification/services/SetupApis';
+import Ed25519 from '@ulixee/platform-utils/lib/Ed25519';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import { promises as Fs } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import * as Os from 'os';
 import * as Path from 'path';
+import IDatastoreHostLookup from '@ulixee/datastore/interfaces/IDatastoreHostLookup';
+import LocalPaymentService from '@ulixee/datastore/payments/LocalPaymentService';
 import DatastoreAdmin from './endpoints/Datastore.admin';
 import DatastoreCreateStorageEngine from './endpoints/Datastore.createStorageEngine';
 import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
@@ -32,6 +37,7 @@ import DatastoreUpload from './endpoints/Datastore.upload';
 import DatastoreVersions from './endpoints/Datastore.versions';
 import DatastoresList from './endpoints/Datastores.list';
 import DocpageRoutes, { datastorePathRegex } from './endpoints/DocpageRoutes';
+import EscrowRegister from './endpoints/Escrow.register';
 import HostedServicesEndpoints, {
   TConnectionToServicesClient,
 } from './endpoints/HostedServicesEndpoints';
@@ -39,12 +45,15 @@ import env from './env';
 import IDatastoreApiContext from './interfaces/IDatastoreApiContext';
 import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
 import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
-import DatastoreApiClients from './lib/DatastoreApiClients';
+import IEscrowSpendTracker from './interfaces/IEscrowSpendTracker';
 import DatastoreRegistry, { IDatastoreManifestWithRuntime } from './lib/DatastoreRegistry';
 import { IDatastoreSourceDetails } from './lib/DatastoreRegistryDiskStore';
 import DatastoreVm from './lib/DatastoreVm';
 import { MissingRequiredSettingError } from './lib/errors';
-import SidechainClientManager from './lib/SidechainClientManager';
+import EscrowSpendTracker from './lib/EscrowSpendTracker';
+import EscrowSpendTrackerClient from './lib/EscrowSpendTrackerClient';
+import LocalchainWithSync from './lib/LocalchainWithSync';
+import DatastoreHostLookupClient from './lib/DatastoreHostLookupClient';
 import StatsTracker from './lib/StatsTracker';
 import StorageEngineRegistry from './lib/StorageEngineRegistry';
 import { translateStats } from './lib/translateDatastoreMetadata';
@@ -95,12 +104,16 @@ export default class DatastoreCore extends TypedEventEmitter<{
     DatastoreUpload,
     DatastoreQueryStorageEngine,
     DatastoreCreateStorageEngine,
+    EscrowRegister,
   ]);
 
   public datastoreRegistry: DatastoreRegistry;
   public statsTracker: StatsTracker;
   public storageEngineRegistry: StorageEngineRegistry;
-  public sidechainClientManager: SidechainClientManager;
+  public escrowSpendTracker: IEscrowSpendTracker;
+  public localchain?: LocalchainWithSync;
+  public remoteDatastorePaymentService?: IPaymentService;
+  public datastoreHostLookup?: IDatastoreHostLookup;
   public datastoreApiClients: DatastoreApiClients;
   public vm: DatastoreVm;
 
@@ -117,26 +130,21 @@ export default class DatastoreCore extends TypedEventEmitter<{
     this.options = {
       serverEnvironment: env.serverEnvironment as any,
       datastoresDir: env.datastoresDir,
-      datastoresTmpDir: Path.join(Os.tmpdir(), '.ulixee', 'datastore'),
+      datastoresTmpDir: env.datastoresTmpDir,
       maxRuntimeMs: 10 * 60e3,
       waitForDatastoreCompletionOnShutdown: true,
       enableDatastoreWatchMode: env.serverEnvironment === 'development',
-      paymentAddress: env.paymentAddress,
       datastoresMustHaveOwnAdminIdentity: env.datastoresMustHaveOwnAdminIdentity,
       cloudAdminIdentities: env.cloudAdminIdentities,
-      computePricePerQuery: env.computePricePerQuery,
-      defaultBytesForPaymentEstimates: 256,
-      approvedSidechains: env.approvedSidechains,
-      defaultSidechainHost: env.defaultSidechainHost,
-      defaultSidechainRootIdentity: env.defaultSidechainRootIdentity,
-      identityWithSidechain: env.identityWithSidechain,
-      approvedSidechainsRefreshInterval: 60e3 * 60, // 1 hour
-
       datastoreRegistryHost: env.datastoreRegistryHost,
       storageEngineHost: env.storageEngineHost,
       statsTrackerHost: env.statsTrackerHost,
       queryHeroSessionsDir: env.queryHeroSessionsDir,
       replayRegistryHost: env.replayRegistryHost,
+      escrowSpendTrackingHost: env.escrowSpendTrackingHost,
+      paymentServiceHost: env.paymentServiceHost,
+      datastoreLookupHost: env.datastoreLookupHost,
+      localchainConfig: env.localchainConfig,
       ...(options ?? {}),
     };
     if (plugins)
@@ -196,7 +204,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
       callbackFn: IHttpHandleFn,
     ) => any,
   ): void {
-    addHttpRoute(/.*\/free-credits\/?\?crd[A-Za-z0-9_]{8}.*/, 'GET', (req, res) =>
+    addHttpRoute(/.*\/free-credit\/?\?crd[A-Za-z0-9_]{8}.*/, 'GET', (req, res) =>
       this.docPages.routeCreditsBalanceApi(req, res),
     );
     addHttpRoute(new RegExp(datastorePathRegex), 'GET', (req, res, params) =>
@@ -242,6 +250,15 @@ export default class DatastoreCore extends TypedEventEmitter<{
       if (this.options.replayRegistryHost === 'self')
         this.options.replayRegistryHost = servicesHost;
 
+      if (this.options.paymentServiceHost === 'self')
+        this.options.paymentServiceHost = servicesHost;
+
+      if (this.options.datastoreLookupHost === 'self')
+        this.options.datastoreLookupHost = servicesHost;
+
+      if (this.options.escrowSpendTrackingHost === 'self')
+        this.options.escrowSpendTrackingHost = servicesHost;
+
       this.options.statsTrackerHost ??= servicesHost;
       this.options.datastoreRegistryHost ??= servicesHost;
       // start a services services provider
@@ -283,10 +300,47 @@ export default class DatastoreCore extends TypedEventEmitter<{
       this.connectionToThisCore = new ConnectionToDatastoreCore(bridge.transportToCore);
       this.datastoreApiClients = new DatastoreApiClients();
 
+      const localPaymentService = new LocalPaymentService();
+      const paymentServiceConnection = createConnectionToServiceHost(this.options.paymentServiceHost);
+      if (paymentServiceConnection) {
+        this.remoteDatastorePaymentService = new RemotePaymentService(paymentServiceConnection);
+      } else {
+        this.remoteDatastorePaymentService = localPaymentService;
+      }
+
+      if (this.options.localchainConfig?.localchainPath) {
+        this.localchain = new LocalchainWithSync(this.options.localchainConfig);
+        await this.localchain.load();
+
+        localPaymentService.localchainPaymentService = this.localchain.createPaymentService(
+          this.datastoreApiClients,
+        );
+        this.remoteDatastorePaymentService = localPaymentService;
+        this.datastoreHostLookup = this.localchain.datastoreLookup;
+
+        this.escrowSpendTracker = new EscrowSpendTracker(
+          this.options.datastoresDir,
+          this.localchain,
+        );
+      } else {
+        const lookupConnection = createConnectionToServiceHost(this.options.datastoreLookupHost);
+        if (lookupConnection)
+          this.datastoreHostLookup = new DatastoreHostLookupClient(lookupConnection);
+
+        const escrowConnection = createConnectionToServiceHost(
+          this.options.escrowSpendTrackingHost,
+        );
+        if (escrowConnection) {
+          this.escrowSpendTracker = new EscrowSpendTrackerClient(escrowConnection);
+        }
+      }
+
       this.vm = new DatastoreVm(
         this.connectionToThisCore,
         this.datastoreApiClients,
         Object.values(this.pluginCoresByName),
+        this.datastoreHostLookup,
+        this.remoteDatastorePaymentService,
       );
 
       this.storageEngineRegistry = new StorageEngineRegistry(
@@ -300,7 +354,6 @@ export default class DatastoreCore extends TypedEventEmitter<{
       );
       this.datastoreRegistry = new DatastoreRegistry(
         this.options.datastoresDir,
-        this.datastoreApiClients,
         createConnectionToServiceHost(this.options.datastoreRegistryHost),
         this.options,
         this.onDatastoreInstalled.bind(this),
@@ -321,7 +374,6 @@ export default class DatastoreCore extends TypedEventEmitter<{
 
       this.workTracker = new WorkTracker(this.options.maxRuntimeMs);
 
-      this.sidechainClientManager = new SidechainClientManager(this.options);
       log.stats('DatastoreCore.started', {
         parentLogId: startLogId,
         sessionId: null,
@@ -447,13 +499,15 @@ export default class DatastoreCore extends TypedEventEmitter<{
       workTracker: this.workTracker,
       configuration: this.options,
       pluginCoresByName: this.pluginCoresByName,
-      sidechainClientManager: this.sidechainClientManager,
       storageEngineRegistry: this.storageEngineRegistry,
       cloudNodeAddress: this.cloudNodeAddress,
       cloudNodeIdentity: this.cloudNodeIdentity,
       vm: this.vm,
       datastoreApiClients: this.datastoreApiClients,
       statsTracker: this.statsTracker,
+      escrowSpendTracker: this.escrowSpendTracker,
+      remoteDatastorePaymentService: this.remoteDatastorePaymentService,
+      datastoreLookup: this.datastoreHostLookup,
     };
   }
 
@@ -473,7 +527,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
        To perform admin activities (like issuing Credits for a Datastore), you should 
                  save and use this Identity from your local system:
 
- npx @ulixee/crypto save-identity --privateKey=${key.toString('base64')}
+ npx @ulixee/platform-utils save-identity --privateKey=${key.toString('base64')}
 
 --------------------------------------------------------------------------------------------
        

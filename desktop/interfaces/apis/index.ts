@@ -1,14 +1,16 @@
+import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
+import type { IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
+import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
+import type { LocalchainOverview } from '@ulixee/localchain';
 import type ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
 import { IDatastoreApis, IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
-import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
-import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
-import IChromeAliveSessionApi from './IChromeAliveSessionApi';
-import IDevtoolsBackdoorApi from './IDevtoolsBackdoorApi';
-import IDatastoreApi from './IDatastoreApi';
 import IAppApi from './IAppApi';
+import IChromeAliveSessionApi from './IChromeAliveSessionApi';
+import IDatastoreApi from './IDatastoreApi';
+import { ICloudConnected } from './IDesktopApis';
+import IDevtoolsBackdoorApi from './IDevtoolsBackdoorApi';
 import IHeroSessionsApi from './IHeroSessionsApi';
-import { ICloudConnected, IUserBalance } from './IDesktopApis';
 
 export type IChromeAliveSessionApis = {
   'Session.load': IChromeAliveSessionApi['load'];
@@ -50,27 +52,42 @@ export type IDesktopAppApis = {
 
 export type IDatastoreResultItem = IDatastoreApiTypes['Datastores.list']['result']['datastores'][0];
 
-export type TCredit = { datastoreUrl: string; microgons: number };
+export type TCredit = IArgonFile['credit'];
+
+export type IArgonFileMeta = { file: IArgonFile; name: string, rawJson: string };
 
 export type IDesktopAppPrivateApis = {
+  'Argon.send': (arg: {
+    milligons: bigint;
+    toAddress?: string;
+    fromAddress?: string;
+  }) => Promise<IArgonFileMeta>;
+  'Argon.request': (arg: {
+    milligons: bigint;
+    sendToMyAddress?: string;
+  }) => Promise<IArgonFileMeta>;
+  'Argon.importSend': (arg: { argonFile: IArgonFile; claimWithAddress?: string }) => Promise<void>;
+  'Argon.acceptRequest': (arg: {
+    argonFile: IArgonFile;
+    fundWithAddress?: string;
+  }) => Promise<void>;
+  'Argon.transferFromMainchain': (arg: { address?: string; milligons: bigint }) => Promise<void>;
+  'Argon.transferToMainchain': (arg: { address?: string; milligons: bigint }) => Promise<void>;
   'Argon.dropFile': (path: string) => Promise<void>;
+  'Argon.showFileContextMenu': (
+    args: IArgonFileMeta & {
+      position: {
+        x: number;
+        y: number;
+      };
+    },
+  ) => Promise<void>;
   'Credit.create': (args: {
     datastore: Pick<IDatastoreResultItem, 'id' | 'version' | 'name' | 'scriptEntrypoint'>;
     cloud: string;
     argons: number;
-  }) => Promise<{
-    credit: TCredit;
-    filename: string;
-  }>;
+  }) => Promise<IArgonFileMeta>;
   'Credit.save': (arg: { credit: IArgonFile['credit'] }) => Promise<void>;
-  'Credit.showContextMenu': (args: {
-    credit: TCredit;
-    filename: string;
-    position: {
-      x: number;
-      y: number;
-    };
-  }) => Promise<void>;
   'Cloud.findAdminIdentity': (cloudName: string) => Promise<string>;
   'Datastore.setAdminIdentity': (datastoreId: string, adminIdentityPath: string) => Promise<string>;
   'Datastore.findAdminIdentity': (datastoreId: string) => Promise<string>;
@@ -107,7 +124,12 @@ export type IDesktopAppPrivateApis = {
   'GettingStarted.completeStep': (step: string) => Promise<void>;
   'Session.openReplay': (arg: IOpenReplay) => void;
   'User.getQueries': () => IQueryLogEntry[];
-  'User.getBalance': () => Promise<IUserBalance>;
+  'User.getWallet': () => Promise<IWallet>;
+  'User.createAccount': (args: {
+    name: string;
+    suri?: string;
+    password?: string;
+  }) => Promise<LocalchainOverview>;
 };
 
 export interface IOpenReplay {

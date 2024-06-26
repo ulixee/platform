@@ -49,7 +49,7 @@ test('it should generate a relative script entrypoint', async () => {
     tablesByName: {},
     extractorsByName: expect.objectContaining({
       default: {
-        prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
+        prices: [{ basePrice: 0 }],
         corePlugins: {
           '@ulixee/datastore-plugins-hero': require('../package.json').version,
         },
@@ -58,7 +58,7 @@ test('it should generate a relative script entrypoint', async () => {
     id: packager.manifest.id,
     version: '0.0.1',
     versionTimestamp: expect.any(Number),
-    paymentAddress: undefined,
+    payment: undefined,
   });
   expect((await Fs.stat(`${__dirname}/assets/historyTest.dbx`)).isDirectory()).toBeTruthy();
 
@@ -152,14 +152,14 @@ test('should be able to package a multi-function Datastore', async () => {
 }`,
     extractorsByName: expect.objectContaining({
       extractorWithInput: {
-        prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
+        prices: [{ basePrice: 0 }],
         corePlugins: {
           '@ulixee/datastore-plugins-hero': require('../package.json').version,
         },
         schemaAsJson: { input: { url: { format: 'url', typeName: 'string' } } },
       },
       extractorWithOutput: {
-        prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
+        prices: [{ basePrice: 0 }],
         corePlugins: {},
         schemaAsJson: { output: { title: { typeName: 'string' }, html: { typeName: 'string' } } },
       },
@@ -167,7 +167,7 @@ test('should be able to package a multi-function Datastore', async () => {
     id: packager.manifest.id,
     version: packager.manifest.version,
     versionTimestamp: expect.any(Number),
-    paymentAddress: undefined,
+    payment: undefined,
   });
   expect((await Fs.stat(`${__dirname}/assets/multiExtractorTest.dbx`)).isDirectory()).toBeTruthy();
 
@@ -192,7 +192,7 @@ test('should be able to package an exported Extractor without a Datastore', asyn
 }`,
     extractorsByName: expect.objectContaining({
       default: {
-        prices: [{ perQuery: 0, minimum: 0, addOns: undefined }],
+        prices: [{ basePrice: 0 }],
         corePlugins: {
           '@ulixee/datastore-plugins-hero': require('../package.json').version,
         },
@@ -204,7 +204,7 @@ test('should be able to package an exported Extractor without a Datastore', asyn
     id: packager.manifest.id,
     version: packager.manifest.version,
     versionTimestamp: expect.any(Number),
-    paymentAddress: undefined,
+    payment: undefined,
     adminIdentities: [],
   });
   expect((await Fs.stat(`${__dirname}/assets/rawExtractorTest.dbx`)).isDirectory()).toBeTruthy();

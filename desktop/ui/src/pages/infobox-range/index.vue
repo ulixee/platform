@@ -1,10 +1,10 @@
 <template>
   <div
     class="select-overview"
-    :class="{ active: activeItem === 'selectOverview' }"
-    @mousedown="handleMouseDown($event, 'selectOverview')"
   >
-    <div class="text">3.4s SELECTED</div>
+    <div class="text">
+      3.4s SELECTED
+    </div>
   </div>
 </template>
 

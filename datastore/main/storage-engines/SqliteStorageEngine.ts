@@ -1,10 +1,10 @@
-import { SqlParser } from '@ulixee/sql-engine';
 import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
-import { IDbJsTypes, IDbTypeNames } from '@ulixee/sql-engine/interfaces/IDbTypes';
+import { SqlParser } from '@ulixee/sql-engine';
 import SqliteAdapter from '@ulixee/sql-engine/adapters/SqliteAdapter';
-import Database = require('better-sqlite3');
+import { IDbJsTypes, IDbTypeNames } from '@ulixee/sql-engine/interfaces/IDbTypes';
 import { Database as SqliteDatabase } from 'better-sqlite3';
-import { TQueryCallMeta } from '../interfaces/IStorageEngine';
+import * as Database from 'better-sqlite3';
+import IQueryOptions from '../interfaces/IQueryOptions';
 import AbstractStorageEngine from './AbstractStorageEngine';
 
 type ISchema = Record<string, IAnySchemaJson>;
@@ -23,13 +23,17 @@ export default class SqliteStorageEngine extends AbstractStorageEngine {
   }
 
   public override async close(): Promise<void> {
-    await this.#db.close();
+    this.#db.close();
+  }
+
+  public override filterLocalTableCalls(entityCalls: string[]): string[] {
+    return entityCalls.filter(x => this.sqlTableNames.has(x));
   }
 
   public override query<TResult>(
     sql: string | SqlParser,
     boundValues: IDbJsTypes[],
-    metadata?: TQueryCallMeta,
+    _metadata?: IQueryOptions,
     virtualEntitiesByName?: {
       [name: string]: { parameters?: Record<string, any>; records: Record<string, any>[] };
     },

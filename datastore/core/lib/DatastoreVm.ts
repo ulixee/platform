@@ -1,15 +1,17 @@
 import { SourceMapSupport } from '@ulixee/commons/lib/SourceMapSupport';
 import { isSemverSatisfied } from '@ulixee/commons/lib/VersionUtils';
 import Datastore, { ConnectionToDatastoreCore, Crawler } from '@ulixee/datastore';
+import IDatastoreHostLookup from '@ulixee/datastore/interfaces/IDatastoreHostLookup';
 import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
+import IPaymentService from '@ulixee/datastore/interfaces/IPaymentService';
 import IStorageEngine from '@ulixee/datastore/interfaces/IStorageEngine';
+import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
 import Extractor from '@ulixee/datastore/lib/Extractor';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { promises as Fs, readFileSync } from 'fs';
-import * as Path from 'path';
 import { Script } from 'node:vm';
+import * as Path from 'path';
 import { Context, createContext } from 'vm';
-import DatastoreApiClients from './DatastoreApiClients';
 
 const { version } = require('../package.json');
 
@@ -24,6 +26,8 @@ export default class DatastoreVm {
     connectionToDatastoreCore: ConnectionToDatastoreCore,
     apiClientCache: DatastoreApiClients,
     readonly plugins: IExtractorPluginCore[],
+    readonly datastoreLookup: IDatastoreHostLookup,
+    private remotePaymentService?: IPaymentService,
   ) {
     this.apiClientCache = apiClientCache;
     this.connectionToDatastoreCore = connectionToDatastoreCore;
@@ -35,7 +39,6 @@ export default class DatastoreVm {
       '@ulixee/net',
       '@ulixee/commons',
       '@ulixee/schema',
-      '@ulixee/specification',
       '@ulixee/platform-specification',
     ]);
   }
@@ -86,12 +89,15 @@ export default class DatastoreVm {
         'The default export from this script needs to inherit from "@ulixee/datastore"',
       );
     }
+    await this.remotePaymentService?.whitelistRemotes?.(datastore.metadata, this.datastoreLookup);
 
     await datastore.bind({
       connectionToCore: this.connectionToDatastoreCore,
       storageEngine: storage,
       manifest,
       apiClientLoader: this.apiClientCache.get.bind(this.apiClientCache),
+      datastoreHostLookup: this.datastoreLookup,
+      remotePaymentService: this.remotePaymentService,
     });
 
     return datastore;

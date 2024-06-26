@@ -1,14 +1,16 @@
 <template>
   <div class="h-full">
-    <h2 class="mb-5 text-lg font-semibold">Datastore</h2>
+    <h2 class="mb-5 text-lg font-semibold">
+      Datastore
+    </h2>
     <p class="font-light">
       Datastores are deployable "databases" that have functions and tables that can contain any kind
       of logic you want. In many cases, a function will contain an automated browser like Hero which
       can be used to refresh the internal data tables or simply perform a function.
-      <br /><br />
+      <br><br>
       Each function defines inputs and output types. This allows Ulixee to detect and notify you
       when a script returns invalid data (aka, a Hero script has broken).
-      <br /><br />
+      <br><br>
       Let's convert your Hero script into a Datastore using the Hero plugin. We'll make 3 main
       changes:
     </p>
@@ -28,58 +30,63 @@
     </ol>
 
     <!-- prettier-ignore -->
-    <Prism ref='code' language="typescript" data-line="8,15,28-31,39-49" style='font-size: 0.9em'>
+    <Prism
+      ref="code"
+      language="typescript"
+      data-line="8,15,28-31,39-49"
+      style="font-size: 0.9em"
+    >
       import Datastore, { Extractor } from '@ulixee/datastore';
       import { HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
       import { string } from '@ulixee/schema';
 
       /**
-       * 1. We wrapped the script in a Datastore.
-       */
+      * 1. We wrapped the script in a Datastore.
+      */
       const datastore = new Datastore({
-        name: 'Tutorial',
-        extractors: {
+      name: 'Tutorial',
+      extractors: {
 
       /**
-       * 1b. We created a Extractor called docsPages.
-       */
-          docPages: new Extractor({
-            async run({ input, Hero, Output }) {
-              const hero = new Hero();
-              await hero.goto(`https://ulixee.org/docs/${input.tool}`);
+      * 1b. We created a Extractor called docsPages.
+      */
+      docPages: new Extractor({
+      async run({ input, Hero, Output }) {
+      const hero = new Hero();
+      await hero.goto(`https://ulixee.org/docs/${input.tool}`);
 
-              await hero.querySelector('.LEFTBAR').$waitForVisible();
-              const links = await hero.querySelectorAll('.LEFTBAR a');
+      await hero.querySelector('.LEFTBAR').$waitForVisible();
+      const links = await hero.querySelectorAll('.LEFTBAR a');
 
-              for (const link of await links) {
+      for (const link of await links) {
 
       /**
-       * 2. We replaced console.log with Output.
-       */
-                Output.emit({
-                  title: await link.innerText,
-                  href: await link.href
-                });
-              }
+      * 2. We replaced console.log with Output.
+      */
+      Output.emit({
+      title: await link.innerText,
+      href: await link.href
+      });
+      }
 
-              await hero.close();
-            },
+      await hero.close();
+      },
       /**
       * 3. We defined the schema of the Extractor function.
       */
-            schema: {
-              input: {
-                tool: string({
-                  enum: ['hero', 'datastore', 'cloud', 'client']
-                }),
-              },
-              output: {
-                title: string(),
-                href: string({ format: 'url' })
-              }
-            }
-          }, HeroExtractorPlugin)
-        }
+      schema: {
+      input: {
+      tool: string({
+      enum: ['hero', 'datastore', 'cloud', 'client']
+      }),
+      },
+      output: {
+      title: string(),
+      href: string({ format: 'url' })
+      }
+      }
+      }, HeroExtractorPlugin)
+      }
       });
 
       export default datastore;
@@ -87,27 +94,27 @@
 
     <p class="my-5">
       Copy this code into your
-      <span class="mx-0.5 bg-gray-200 p-1 font-light">ulixee.org.ts</span> file. <br /><br />
+      <span class="mx-0.5 bg-gray-200 p-1 font-light">ulixee.org.ts</span> file. <br><br>
       You'll need to install Datastores into your project.
       <!-- prettier-ignore -->
       <Prism language="shell">
         npm i --save @ulixee/datastore-plugins-hero
         npm i --save-dev @ulixee/datastore-packager
       </Prism>
-      <br />
+      <br>
       Now start your script
       <span class="font-light text-gray-700">(NOTE: you can point at your .ts file)</span>:
-      <Prism language="shell">npx @ulixee/datastore start ./ulixee.org.ts</Prism>
+      <Prism language="shell">
+        npx @ulixee/datastore start ./ulixee.org.ts
+      </Prism>
     </p>
 
     <p v-if="step.isComplete" class="my-10 border-t-2 border-fuchsia-800 pt-5">
-      <span class="font-light"
-        >Your Datastore is started! You can find it on the
+      <span class="font-light">Your Datastore is started! You can find it on the
         <router-link
           to="/datastores"
           class="font-semibold text-fuchsia-800 underline hover:text-fuchsia-800/70"
-          >Datastores</router-link
-        >
+        >Datastores</router-link>
         tab in the sidebar.
       </span>
     </p>

@@ -1,4 +1,4 @@
-import { z } from '@ulixee/specification';
+import { z } from 'zod';
 
 export const ServicesSetupSchema = z.object({
   datastoreRegistryHost: z.string().url().optional(),

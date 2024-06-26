@@ -1,5 +1,5 @@
-import { SqlParser } from '@ulixee/sql-engine';
 import { IAnySchemaJson } from '@ulixee/schema/interfaces/ISchemaJson';
+import { SqlParser } from '@ulixee/sql-engine';
 import { IDbJsTypes, IDbTypeNames } from '@ulixee/sql-engine/interfaces/IDbTypes';
 import ISqlAdapter from '@ulixee/sql-engine/interfaces/ISqlAdapter';
 import IDatastoreComponents, {
@@ -7,8 +7,10 @@ import IDatastoreComponents, {
   TExtractors,
   TTables,
 } from '../interfaces/IDatastoreComponents';
+import IQueryOptions from '../interfaces/IQueryOptions';
+import IStorageEngine from '../interfaces/IStorageEngine';
 import Datastore from '../lib/Datastore';
-import IStorageEngine, { TQueryCallMeta } from '../interfaces/IStorageEngine';
+import { IQueryInternalCallbacks } from '../lib/DatastoreInternal';
 
 export type ISchema = Record<string, IAnySchemaJson>;
 
@@ -16,6 +18,7 @@ export default abstract class AbstractStorageEngine implements IStorageEngine {
   public readonly inputsByName: { [name: string]: ISchema } = {};
   public readonly schemasByName: { [name: string]: ISchema } = {};
   public readonly virtualTableNames = new Set<string>();
+  public readonly sqlTableNames = new Set<string>();
 
   public abstract close(): Promise<void>;
 
@@ -26,11 +29,14 @@ export default abstract class AbstractStorageEngine implements IStorageEngine {
   public abstract query<TResult>(
     sql: string | SqlParser,
     boundValues: IDbJsTypes[],
-    metadata?: TQueryCallMeta,
+    metadata?: IQueryOptions,
     virtualEntitiesByName?: {
       [name: string]: { parameters?: Record<string, any>; records: Record<string, any>[] };
     },
+    callbacks?: IQueryInternalCallbacks,
   ): Promise<TResult>;
+
+  public abstract filterLocalTableCalls(entityCalls: string[]): string[];
 
   public bind(datastore: IDatastoreComponents<TTables, TExtractors, TCrawlers>): void {
     if (this.isBound) return;
@@ -45,6 +51,7 @@ export default abstract class AbstractStorageEngine implements IStorageEngine {
     for (const [name, table] of Object.entries(datastore.tables)) {
       this.schemasByName[name] = table.schema;
       if ('remoteSource' in table) this.virtualTableNames.add(name);
+      else this.sqlTableNames.add(name);
     }
     Object.freeze(this.schemasByName);
     Object.freeze(this.inputsByName);

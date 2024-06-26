@@ -3,7 +3,7 @@ import Table from '../lib/Table';
 export default interface ITableComponents<TSchema> {
   name?: string;
   description?: string;
-  pricePerQuery?: number;
+  basePrice?: number;
   schema: TSchema;
   isPublic?: boolean;
   onCreated?(this: Table<TSchema>): Promise<void>;

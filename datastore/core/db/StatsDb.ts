@@ -17,6 +17,7 @@ export default class StatsDb {
     if (env.enableSqliteWalMode) {
       this.db.unsafeMode(false);
       this.db.pragma('journal_mode = WAL');
+      this.db.pragma('synchronous = NORMAL');
     }
 
     this.datastores = new DatastoreStatsTable(this.db);

@@ -6,13 +6,17 @@
       :key="node.id"
       :ref="
         el => {
-          jsonNodes[node.id] = el;
+          jsonNodes[node.id] = el as any;
         }
       "
       class="JsonNode"
       :class="{ highlighted: node.highlighted }"
     >
-      <div v-for="i in node.level" :key="i" class="indent">
+      <div
+        v-for="i in node.level"
+        :key="i"
+        class="indent"
+      >
         {{ ' ' }}
       </div>
       <span v-if="node.key" class="key">{{ node.key }}: </span>

@@ -4,6 +4,10 @@ on:
   push:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   links:
     runs-on: ubuntu-latest
@@ -25,4 +29,3 @@ jobs:
         uses: becheran/mlc@v0.15.4
         with:
           args: ./cloud/docs
-

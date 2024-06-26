@@ -27,8 +27,7 @@
       <span
         v-if="!datastore.isStarted"
         class="absolute right-0 top-0 inline-flex items-center rounded-bl bg-gray-900 px-2.5 py-0.5 text-xs font-medium text-white"
-        >Stopped</span
-      >
+      >Stopped</span>
     </div>
     <div class="-mt-px flex divide-x divide-gray-200">
       <div class="grid-row grid basis-1/2 py-2 text-center text-xl">
@@ -49,13 +48,17 @@
     </div>
     <div class="-mt-px flex divide-x divide-gray-200">
       <div class="grid-col grid basis-1/2 place-content-center py-2 text-center text-xl">
-        <div class="text-base font-normal text-gray-900">Total Earned</div>
+        <div class="text-base font-normal text-gray-900">
+          Total Earned
+        </div>
         <div class="text-2xl font-semibold text-fuchsia-700">
           {{ earned }}
         </div>
       </div>
       <div class="grid-col grid basis-1/2 place-content-center py-2 text-center text-xl">
-        <div class="text-base font-normal text-gray-900">Total Spent</div>
+        <div class="text-base font-normal text-gray-900">
+          Total Spent
+        </div>
         <div class="text-2xl font-semibold text-fuchsia-700">
           {{ spent() }}
         </div>
@@ -92,14 +95,14 @@ export default Vue.defineComponent({
     const runs = props.datastore.stats.queries;
     const microgons = props.datastore.stats.totalSpend;
     const walletStore = useWalletStore();
-    const { userBalance } = storeToRefs(walletStore);
+    const { wallet } = storeToRefs(walletStore);
 
     let reliability = 100;
     if (runs > 0) {
       reliability = Math.round(1000 * ((runs - errors) / runs)) / 10;
     }
     return {
-      userBalance,
+      wallet,
       runs,
       errors,
       reliability,
@@ -121,12 +124,12 @@ export default Vue.defineComponent({
       });
     },
     spent() {
-      const credits = this.userBalance.credits.filter(
+      const credits = this.wallet.credits.filter(
         x => x.datastoreId === this.datastore.id && x.datastoreVersion === this.datastore.version,
       );
       let spentCredits = 0;
       for (const credit of credits) {
-        spentCredits += credit.allocated - credit.remainingBalance;
+        spentCredits += credit.allocated - credit.remaining;
       }
       return toArgons(spentCredits, true);
     },

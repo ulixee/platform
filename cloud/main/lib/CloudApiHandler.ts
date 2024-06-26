@@ -1,4 +1,4 @@
-import ValidatingApiHandler from '@ulixee/specification/utils/ValidatingApiHandler';
+import ValidatingApiHandler from '@ulixee/platform-specification/utils/ValidatingApiHandler';
 import ICloudApis, { CloudApiSchemas } from '@ulixee/platform-specification/cloud/CloudApis';
 import ICloudApiContext from '../interfaces/ICloudApiContext';
 

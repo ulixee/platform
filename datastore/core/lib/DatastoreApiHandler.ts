@@ -1,4 +1,4 @@
-import ValidatingApiHandler from '@ulixee/specification/utils/ValidatingApiHandler';
+import ValidatingApiHandler from '@ulixee/platform-specification/utils/ValidatingApiHandler';
 import IDatastoreApis, { DatastoreApiSchemas } from '@ulixee/platform-specification/datastore/DatastoreApis';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 

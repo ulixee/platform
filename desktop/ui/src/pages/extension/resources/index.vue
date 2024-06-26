@@ -11,7 +11,7 @@
           placeholder="Search resources..."
           class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 focus:outline-none"
           @keyup.enter="runSearch"
-        />
+        >
         <MagnifyingGlassIcon
           class="icon m-1 box-border h-4 text-slate-700 hover:text-slate-800"
           @click="runSearch"
@@ -20,10 +20,18 @@
       <table class="w-full table-fixed">
         <thead class="h-4">
           <tr class="header-lip sticky top-8 bg-chrome text-left font-thin">
-            <th class="w-1/2 pl-2 font-normal">Name</th>
-            <th class="font-normal">Status</th>
-            <th class="font-normal">Type</th>
-            <th class="font-normal">Size (up/down)</th>
+            <th class="w-1/2 pl-2 font-normal">
+              Name
+            </th>
+            <th class="font-normal">
+              Status
+            </th>
+            <th class="font-normal">
+              Type
+            </th>
+            <th class="font-normal">
+              Size (up/down)
+            </th>
             <!--            <th class="font-normal">-->
             <!--              Patched by Mitm-->
             <!--            </th>-->
@@ -35,7 +43,7 @@
             :key="resource.id"
             :ref="
               el => {
-                resourcesElemsById[resource.id] = el;
+                resourcesElemsById[resource.id] = el as any;
               }
             "
             class="border-l-2 px-2 hover:bg-purple-200"
@@ -53,9 +61,7 @@
             <td>{{ resource.statusCode }}</td>
             <td>{{ resource.type }}</td>
             <td>
-              <span v-if="resource.postDataBytes"
-                >{{ Math.round((10 * (resource.postDataBytes ?? 0)) / 1000) / 10 }}KB</span
-              ><span v-else>0</span> /
+              <span v-if="resource.postDataBytes">{{ Math.round((10 * (resource.postDataBytes ?? 0)) / 1000) / 10 }}KB</span><span v-else>0</span> /
               {{ Math.round((10 * resource.responseBodyBytes) / 1000) / 10 }}KB
             </td>
             <!--            <td class="pr-2">-->
@@ -71,7 +77,9 @@
           <span class="mr-1 text-sm font-semibold">{{ selectedResource.method }}</span>
           <span class="text-thin text-sm">{{ selectedResource.url }}</span>
         </h5>
-        <h5 class="text-md mt-2 font-semibold">Request Headers</h5>
+        <h5 class="text-md mt-2 font-semibold">
+          Request Headers
+        </h5>
         <ul class="p-2">
           <li
             v-for="[name, value] in Object.entries(selectedResource.requestHeaders ?? {})"
@@ -87,7 +95,9 @@
             <span v-else>{{ value }}</span>
           </li>
         </ul>
-        <h5 class="mt-2 text-sm font-semibold">Response Headers</h5>
+        <h5 class="mt-2 text-sm font-semibold">
+          Response Headers
+        </h5>
         <ul class="p-2">
           <li
             v-for="[name, value] in Object.entries(selectedResource.responseHeaders ?? {})"
@@ -103,7 +113,9 @@
             <span v-else>{{ value }}</span>
           </li>
         </ul>
-        <h5 class="mt-2 text-sm font-semibold">Response Body</h5>
+        <h5 class="mt-2 text-sm font-semibold">
+          Response Body
+        </h5>
         <div
           v-if="selectedResourceDetails"
           class="m-2 select-all overflow-auto rounded border border-slate-300 p-2 text-xs"
@@ -111,10 +123,10 @@
           <img
             v-if="
               selectedResource.type === 'Image' &&
-              selectedResourceDetails.responseBody.startsWith('data:')
+                selectedResourceDetails.responseBody.startsWith('data:')
             "
             :src="selectedResourceDetails.responseBody"
-          />
+          >
           <div
             v-else-if="highlightedBody"
             class="whitespace-pre-wrap break-all"

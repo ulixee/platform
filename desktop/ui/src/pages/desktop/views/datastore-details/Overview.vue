@@ -5,13 +5,17 @@
         class="divide-y-gray-300 divide-y rounded-md bg-white shadow-inner ring-1 ring-gray-300 ring-opacity-20 ring-opacity-80"
       >
         <div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-gray-500">Entrypoint</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            Entrypoint
+          </dt>
           <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
             {{ datastore.scriptEntrypoint }}
           </dd>
         </div>
         <div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-gray-500">Datastore Id</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            Datastore Id
+          </dt>
           <dd
             class="mt-1 overflow-hidden text-ellipsis text-sm text-gray-900 sm:col-span-2 sm:mt-0"
           >
@@ -19,19 +23,25 @@
           </dd>
         </div>
         <div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="whitespace-nowrap text-sm font-medium text-gray-500">Latest Version</dt>
+          <dt class="whitespace-nowrap text-sm font-medium text-gray-500">
+            Latest Version
+          </dt>
           <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
             {{ datastore.version }}
           </dd>
         </div>
         <div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-gray-500">Created</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            Created
+          </dt>
           <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
             {{ formatDate(datastore.versionTimestamp) }}
           </dd>
         </div>
         <div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-gray-500">Documentation</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            Documentation
+          </dt>
           <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
             <a
               href="#"
@@ -43,7 +53,9 @@
           </dd>
         </div>
         <div v-if="!adminIdentity" class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-gray-500">Install</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            Install
+          </dt>
           <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
             <a
               href="#"
@@ -127,8 +139,7 @@
             href="#"
             class="font-medium text-fuchsia-900 hover:text-fuchsia-600"
             @click.prevent="attachIdentity"
-            >Admin Identity</a
-          >
+          >Admin Identity</a>
           to create new Credits.
         </p>
       </div>
@@ -150,9 +161,7 @@
           <span class="mr-3 whitespace-nowrap text-right font-light">-Store Credits:</span>
           <div>
             <span class="whitespace-nowrap text-fuchsia-700">{{ userSpending.credits }}</span>
-            <span class="mx-1 font-thin text-gray-600"
-              >/ {{ userSpending.creditsAllocated }} allocated</span
-            >
+            <span class="mx-1 font-thin text-gray-600">/ {{ userSpending.creditsAllocated }} allocated</span>
           </div>
 
           <span class="col-span-2 h-1 border-t border-gray-300">&nbsp;</span>
@@ -162,7 +171,7 @@
         </div>
       </div>
       <p class="mt-2 text-center text-xs text-gray-500">
-        *Showing revenue from {{ getCloudName(datastore.cloudName) }}.
+        *Showing revenue from {{ getCloudName(selectedCloud) }}.
       </p>
     </div>
   </div>
@@ -221,7 +230,7 @@ export default Vue.defineComponent({
     const walletStore = useWalletStore();
     const cloudsStore = useCloudsStore();
     const { getCloudName } = cloudsStore;
-    const { userBalance } = storeToRefs(walletStore);
+    const { wallet } = storeToRefs(walletStore);
     const { datastoresById } = storeToRefs(datastoresStore);
     const datastoreId = route.params.datastoreId as string;
     const version = route.params.version as string;
@@ -236,7 +245,7 @@ export default Vue.defineComponent({
     const credits = summary.stats.totalCreditSpend;
     const adminIdentity = datastoresStore.getAdminDetails(datastoreId, selectedCloud);
 
-    const userCredits = userBalance.value.credits.filter(
+    const userCredits = wallet.value.credits.filter(
       x => x.datastoreId === datastoreId && x.datastoreVersion === version,
     );
 
@@ -244,7 +253,7 @@ export default Vue.defineComponent({
     let allocatedCreditMicrogons = 0;
 
     for (const credit of userCredits) {
-      remainingCreditMicrogons += credit.remainingBalance;
+      remainingCreditMicrogons += credit.remaining;
       allocatedCreditMicrogons += credit.allocated;
     }
     const creditsSpent = allocatedCreditMicrogons - remainingCreditMicrogons;
