@@ -33,6 +33,6 @@
     "@ulixee/datastore-packager": "2.0.0-alpha.28",
     "@ulixee/datastore-testing": "2.0.0-alpha.28",
     "@polkadot/keyring": "^12.6.2",
-    "@types/better-sqlite3": "^7.6.10"
+    "@types/better-sqlite3": "^7.6.11"
   }
 }

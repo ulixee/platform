@@ -83,27 +83,36 @@ export default class TestDatabroker {
     const adminTransport = new WsTransportToCore(this.adminAddress);
     const adminConnection = new ConnectionToCore<IDatabrokerAdminApis, any>(adminTransport);
     Helpers.onClose(() => adminConnection.disconnect());
+    await adminConnection.connect();
     await adminConnection.sendRequest({
       command: 'WhitelistedDomains.add',
       args: [{ domain }],
     });
+    console.log('[DATABROKER] Whitelisted domain', domain);
     await adminConnection.disconnect();
   }
 
   public async registerUser(identityPath: string, amount: bigint): Promise<void> {
+    console.log('[DATABROKER] Registering user with balance', amount, this.adminAddress);
     const adminTransport = new WsTransportToCore(this.adminAddress);
     const adminConnection = new ConnectionToCore<IDatabrokerAdminApis, any>(adminTransport);
     Helpers.onClose(() => adminConnection.disconnect());
+    await adminConnection.connect();
+    await new Promise(setImmediate);
+    console.log('connected');
     const { id } = await adminConnection.sendRequest({
       command: 'Organization.create',
       args: [
         {
+          name: 'Test Organization',
           balance: amount,
         },
       ],
-    });
+    }, 10e3);
 
     const identity = Identity.loadFromFile(identityPath).bech32;
+
+    console.log('[DATABROKER] Registering user', identity);
     await adminConnection.sendRequest({
       command: 'User.create',
       args: [
@@ -112,8 +121,8 @@ export default class TestDatabroker {
           organizationId: id,
         },
       ],
-    });
-
+    }, 10e3);
+    console.log('[DATABROKER] Registered user', identity);
     await adminConnection.disconnect();
   }
 

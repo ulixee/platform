@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   lint-and-test:
-    name: Test Node.js ${{ matrix.node-version }} on linux
+    name: Test Node.js ${{ matrix.node-version }} on ubuntu-latest
     timeout-minutes: 30
 
     strategy:
@@ -44,8 +44,6 @@ jobs:
       - name: /etc/hosts
         run: |
           sudo echo "127.0.0.1 host.docker.internal" | sudo tee -a /etc/hosts
-          sudo echo "127.0.0.1 docs.datastoresrus.com" | sudo tee -a /etc/hosts
-          sudo echo "127.0.0.1 bootup-datastore.com" | sudo tee -a /etc/hosts
         shell: bash
 
       - uses: actions/checkout@v4
@@ -56,6 +54,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'yarn'
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.20'
 
       - name: Install pcap
         run: sudo apt-get install -y libpcap-dev
@@ -107,7 +109,6 @@ jobs:
       - name: Install Mainchain client
         run: yarn tsc
         working-directory: ../mainchain/client/nodejs
-
 
       - name: Install Hero
         run: yarn build
@@ -165,22 +166,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: /etc/hosts
-        if: ${{ matrix.os == 'macos-latest' }}
-        run: |
-          sudo echo "127.0.0.1 host.docker.internal" | sudo tee -a /etc/hosts
-          sudo echo "127.0.0.1 docs.datastoresrus.com" | sudo tee -a /etc/hosts
-          sudo echo "127.0.0.1 bootup-datastore.com" | sudo tee -a /etc/hosts
-        shell: bash
-
-      - name: C:/Windows/System32/drivers/etc/hosts
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          echo "127.0.0.1 host.docker.internal" | tee -a C:/Windows/System32/drivers/etc/hosts
-          echo "127.0.0.1 docs.datastoresrus.com" | tee -a C:/Windows/System32/drivers/etc/hosts
-          echo "127.0.0.1 bootup-datastore.com" | tee -a C:/Windows/System32/drivers/etc/hosts
-        shell: bash
-
       - uses: actions/checkout@v4
         with:
           submodules: 'true'
@@ -189,6 +174,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'yarn'
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.20'
 
       - name: Chocolatey Install Action
         if: ${{ matrix.os == 'windows-latest' }}
@@ -227,7 +216,6 @@ jobs:
           git clone -b napi-bindings git@github.com:ulixee/mainchain.git
           cp mainchain/localchain/npm/**/*.node mainchain/localchain
         working-directory: ..
-
 
       - name: Clone ulixee/shared
         shell: bash

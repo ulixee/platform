@@ -45,7 +45,6 @@ test('it can serialize and deserialize a notarization', async () => {
     (2n ** 120n - 1000n).toString(),
   );
   await NotarizationSchema.parseAsync(json).catch(err => {
-    console.error(err);
     throw ValidationError.fromZodValidation(`The balance change had some errors`, err);
   });
 });

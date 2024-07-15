@@ -37,7 +37,7 @@
     "@ulixee/net": "2.0.0-alpha.28",
     "@ulixee/platform-specification": "2.0.0-alpha.28",
     "commander": "^9.5.0",
-    "ws": "^7.5.9"
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@ulixee/datastore-testing": "2.0.0-alpha.28"

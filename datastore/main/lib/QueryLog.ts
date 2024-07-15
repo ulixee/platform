@@ -125,7 +125,7 @@ export default class QueryLog {
         this.queryLogBytesRead += readable.bytesRead;
         readable.close();
       } catch (err) {
-        console.error(err);
+        console.error('Error emitting new queries from log', err);
       }
     });
   }
