@@ -1,15 +1,16 @@
 import { Helpers } from '@ulixee/datastore-testing';
-import { customAlphabet } from 'nanoid';
-import { ChildProcess, execSync, spawn } from 'node:child_process';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import * as readline from 'node:readline';
 import {
   checkForExtrinsicSuccess,
   KeyringPair,
   UlxClient,
   UlxPrimitivesDataDomainVersionHost,
 } from '@ulixee/mainchain';
+import { customAlphabet } from 'nanoid';
+import { ChildProcess, execSync, spawn } from 'node:child_process';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
+import * as readline from 'node:readline';
 import { rootDir } from '../paths';
 import { cleanHostForDocker, getDockerPortMapping, getProxy } from './testHelpers';
 import TestNotary from './TestNotary';
@@ -21,8 +22,8 @@ export default class TestMainchain {
   public port: string;
   public loglevel = 'warn';
   #binPath: string;
-  #bitcoind: ChildProcess;
   #process: ChildProcess;
+  #bitcoind: ChildProcess;
   #interfaces: readline.Interface[] = [];
   containerName?: string;
   proxy?: string;
@@ -45,28 +46,34 @@ export default class TestMainchain {
     Helpers.needsClosing.push({ close: () => this.teardown(), onlyCloseOnFinal: true });
   }
 
-  public async launch(miningThreads = 4): Promise<string> {
+  /**
+   * Launch and return the localhost url. NOTE: this url will not work cross-docker. You need to use the containerAddress property
+   * @param miningThreads
+   */
+  public async launch(miningThreads = os.cpus().length - 1): Promise<string> {
     let port = 0;
     let rpcPort = 0;
+    if (miningThreads === 0) miningThreads = 1;
     let execArgs: string[] = [];
-
     let containerName: string;
     if (process.env.ULX_USE_DOCKER_BINS) {
       containerName = `miner_${nanoid()}`;
       this.containerName = containerName;
       this.#binPath = 'docker';
-      port = 9944;
-      rpcPort = 33344;
+      port = 33344;
+      rpcPort = 9944;
       execArgs = [
         'run',
         '--rm',
         `--name=${containerName}`,
+        `--platform=linux/amd64`,
         `-p=0:${port}`,
         `-p=0:${rpcPort}`,
         '-e',
         `RUST_LOG=${this.loglevel},sc_rpc_server=info`,
         'ghcr.io/ulixee/ulixee-miner:dev',
       ];
+
       if (process.env.ADD_DOCKER_HOST) {
         execArgs.splice(2, 0, `--add-host=host.docker.internal:host-gateway`);
       }
@@ -114,7 +121,7 @@ export default class TestMainchain {
       this.#interfaces.push(int2);
     });
     if (this.containerName) {
-      this.port = await getDockerPortMapping(this.containerName, 9944);
+      this.port = await getDockerPortMapping(this.containerName, rpcPort);
       this.proxy = cleanHostForDocker(await getProxy());
     }
 
@@ -128,7 +135,6 @@ export default class TestMainchain {
         execSync(`docker rm -f ${this.containerName}`);
       } catch {}
     }
-    this.#bitcoind?.kill();
     const launchedProcess = this.#process;
     if (launchedProcess) {
       launchedProcess?.kill();
@@ -143,29 +149,19 @@ export default class TestMainchain {
   }
 
   private async startBitcoin(): Promise<string> {
+    const rpcPort = 14338;
     // const rpcPort = await PortFinder.getPortPromise();
+    //
+    // const path = child_process.execSync(`${__dirname}/../../target/debug/ulx-testing-bitcoin`, {encoding: 'utf8'}).trim();
     //
     // const tmpDir = fs.mkdtempSync('/tmp/ulx-bitcoin-');
     //
-    // this.#bitcoind = spawn(
-    //   process.env.BITCOIND_PATH,
-    //   [
-    //     '-regtest',
-    //     '-fallbackfee=0.0001',
-    //     '-listen=0',
-    //     `-datadir=${tmpDir}`,
-    //     '-blockfilterindex',
-    //     '-txindex',
-    //     `-rpcport=${rpcPort}`,
-    //     '-rpcuser=bitcoin',
-    //     '-rpcpassword=bitcoin',
-    //   ],
-    //   {
-    //     stdio: ['ignore', 'inherit', 'inherit', 'ignore'],
-    //   },
-    // );
+    // this.#bitcoind = spawn(path, ['-regtest', '-fallbackfee=0.0001', '-listen=0', `-datadir=${tmpDir}`, '-blockfilterindex', '-txindex', `-rpcport=${rpcPort}`, '-rpcuser=bitcoin', '-rpcpassword=bitcoin'], {
+    //     stdio: ['ignore', 'inherit', 'inherit', "ignore"],
+    // });
 
-    return cleanHostForDocker(`http://bitcoin:bitcoin@localhost:${14388}`);
+    // return a fake url - not part of testing localchain
+    return cleanHostForDocker(`http://bitcoin:bitcoin@localhost:${rpcPort}`);
   }
 }
 

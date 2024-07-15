@@ -34,7 +34,7 @@ test('it can serialize and deserialize a notarization', async () => {
     transferId: 1,
     address,
     amount: 2n ** 120n,
-    expirationBlock: 100,
+    expirationTick: 100,
     notaryId: 1,
   });
   await balanceBuilder.leaseDataDomain('example.flights', address);

@@ -51,9 +51,11 @@ export default class TestNotary {
     let notaryPath = pathToNotaryBin ?? `${rootDir}/../../mainchain/target/debug/ulx-notary`;
     if (process.env.ULX_USE_DOCKER_BINS) {
       this.containerName = `notary_${nanoid()}`;
-      const addHost = process.env.ADD_DOCKER_HOST ? ` --add-host=host.docker.internal:host-gateway` : '';
+      const addHost = process.env.ADD_DOCKER_HOST
+        ? ` --add-host=host.docker.internal:host-gateway`
+        : '';
 
-      notaryPath = `docker run --rm -p=0:9925${addHost} --name=${this.containerName} -e RUST_LOG=${this.logLevel} ghcr.io/ulixee/ulixee-notary:dev`;
+      notaryPath = `docker run --rm -p=0:9925${addHost} --platform=linux/amd64 --name=${this.containerName} -e RUST_LOG=${this.logLevel} ghcr.io/ulixee/ulixee-notary:dev`;
 
       this.#dbConnectionString = cleanHostForDocker(this.#dbConnectionString);
     } else if (!fs.existsSync(notaryPath)) {
@@ -123,7 +125,7 @@ export default class TestNotary {
       this.#childProcess.once('error', onProcessError);
       this.#childProcess.stderr.on('data', data => {
         console.warn('Notary >> %s', data);
-        if (data.startsWith("WARNING")) return;
+        if (data.startsWith('WARNING')) return;
         this.#childProcess.off('error', onProcessError);
         reject(data);
       });

@@ -10,7 +10,7 @@
     "@ulixee/datastore": "2.0.0-alpha.28",
     "@ulixee/net": "2.0.0-alpha.28",
     "@ulixee/schema": "2.0.0-alpha.28",
-    "@ulixee/localchain": "2.0.0-alpha.28"
+    "@ulixee/localchain": "2.0.0-alpha.29"
   },
   "devDependencies": {
     "@ulixee/cloud": "2.0.0-alpha.28",
