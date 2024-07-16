@@ -1,0 +1,39 @@
+{
+  "name": "@ulixee/desktop-ui",
+  "version": "2.0.0-alpha.29",
+  "homepage": "https://ulixee.org",
+  "repository": "git@github.com:ulixee/platform.git",
+  "bugs": {
+    "url": "https://github.com/ulixee/platform/issues"
+  },
+  "license": "MIT",
+  "author": "Data Liberation Foundation",
+  "contributors": [
+    "Caleb Clark",
+    "Blake Byrnes"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "private": true,
+  "scripts": {},
+  "nohoist": [
+    "**/@typescript-eslint",
+    "**/@typescript-eslint/**",
+    "**/@vue/**",
+    "**/vite-svg-loader",
+    "**/vite-plugin-prismjs",
+    "**/vite/**",
+    "**/vite-*/**",
+    "**/@vitejs/**",
+    "**/@vue/**/**",
+    "**/eslint/**",
+    "**/vue",
+    "**/vue-class-component",
+    "**/vue-router",
+    "**/vue-*",
+    "**/postcss"
+  ]
+}
