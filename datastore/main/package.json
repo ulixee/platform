@@ -1,0 +1,77 @@
+{
+  "name": "@ulixee/datastore",
+  "version": "2.0.0-alpha.29",
+  "homepage": "https://ulixee.org",
+  "repository": "git@github.com:ulixee/platform.git",
+  "bugs": {
+    "url": "https://github.com/ulixee/platform/issues"
+  },
+  "license": "MIT",
+  "author": "Data Liberation Foundation",
+  "contributors": [
+    "Caleb Clark",
+    "Blake Byrnes"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.cjs",
+      "types": "./index.d.ts"
+    },
+    "./*": "./*.js",
+    "./package.json": "./package.json",
+    "./lib/*": {
+      "default": "./lib/*.js",
+      "types": "./lib/*.d.ts"
+    },
+    "./cli/*": "./cli/*.js",
+    "./storage-engines/*": {
+      "default": "./storage-engines/*.js",
+      "types": "./storage-engines/*.d.ts"
+    },
+    "./payments/*": {
+      "default": "./payments/*.js",
+      "types": "./payments/*.d.ts"
+    },
+    "./connections/*": {
+      "default": "./connections/*.js",
+      "types": "./connections/*.d.ts"
+    },
+    "./types/*": {
+      "default": "./types/*.js",
+      "types": "./types/*.d.ts"
+    },
+    "./interfaces/*": {
+      "default": "./interfaces/*.js",
+      "types": "./interfaces/*.d.ts"
+    }
+  },
+  "dependencies": {
+    "@polkadot/keyring": "^12.6.2",
+    "@polkadot/util-crypto": "^12.6.2",
+    "@ulixee/commons": "2.0.0-alpha.29",
+    "@ulixee/localchain": "2.0.0-alpha.29",
+    "@ulixee/net": "2.0.0-alpha.29",
+    "@ulixee/platform-specification": "2.0.0-alpha.29",
+    "@ulixee/platform-utils": "2.0.0-alpha.29",
+    "@ulixee/schema": "2.0.0-alpha.29",
+    "@ulixee/sql-ast": "2.0.0-alpha.29",
+    "@ulixee/sql-engine": "2.0.0-alpha.29",
+    "better-sqlite3": "^11.1.2",
+    "commander": "^9.5.0",
+    "moment": "^2.29.4",
+    "nanoid": "^3.3.6"
+  },
+  "devDependencies": {
+    "@ulixee/datastore-packager": "2.0.0-alpha.29"
+  },
+  "bin": "./bin/cli.js"
+}

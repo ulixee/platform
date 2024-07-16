@@ -1,0 +1,22 @@
+import { Database as SqliteDatabase } from 'better-sqlite3';
+export default class EscrowsTable {
+    private db;
+    private readonly insertQuery;
+    private readonly updateSettlementQuery;
+    constructor(db: SqliteDatabase);
+    create(escrow: IEscrowRecord): void;
+    updateSettlementReturningChange(escrowId: string, settledMilligons: bigint, settlementDate: number): [organizationId: string, holdAmount: bigint, change: bigint];
+    count(): number;
+    countOpen(): number;
+    pendingBalance(): bigint;
+}
+export interface IEscrowRecord {
+    escrowId: string;
+    organizationId: string;
+    createdByIdentity: string;
+    dataDomain?: string;
+    heldMilligons: bigint;
+    settledMilligons?: bigint;
+    settlementDate?: number;
+    created: number;
+}

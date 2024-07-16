@@ -1,0 +1,111 @@
+{
+  "name": "@ulixee/platform",
+  "description": "The internal developer environment that we use for building and running the Ulixee platform",
+  "homepage": "https://ulixee.org",
+  "repository": "git@github.com:ulixee/platform.git",
+  "bugs": {
+    "url": "https://github.com/ulixee/platform/issues"
+  },
+  "license": "MIT",
+  "author": "Data Liberation Foundation",
+  "contributors": [
+    "Caleb Clark",
+    "Blake Byrnes"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "lerna": "^4.0.0"
+  },
+  "private": true,
+  "scripts": {
+    "dist": "lerna publish from-package"
+  },
+  "#linkMainchain": {
+    "packages": [
+      "../mainchain/localchain",
+      "../mainchain/client/nodejs"
+    ]
+  },
+  "workspaces": {
+    "packages": [
+      "desktop/*",
+      "desktop/main/app",
+      "datastore/*",
+      "datastore/plugins/*",
+      "cloud/*",
+      "sql/*",
+      "client/*",
+      "cli",
+      "playgrounds/*",
+      "schema",
+      "specification",
+      "utils"
+    ],
+    "nohoist": [
+      "**/babel-loader",
+      "**/electron-webpack",
+      "**/@electron",
+      "**/@electron/**",
+      "**/electron",
+      "**electron**",
+      "**/@ulixee/mainchain",
+      "**/desktop/**/@ulixee/localchain-*",
+      "**/desktop/main/app/**",
+      "**/desktop/**/@ulixee/datastore-docpage",
+      "**/desktop/**/@ulixee/databroker-admin",
+      "**/desktop/**/better-sqlite3",
+      "**/electron-*",
+      "**/electron-log",
+      "**/electron-builder",
+      "**/electron-webpack/**",
+      "**/electron-updater",
+      "**/nseventmonitor",
+      "**/global-mouse-events",
+      "**/electron-clipboard-ex",
+      "**/@ulixee/repo-tools",
+      "@ulixee/repo-tools",
+      "**/vite",
+      "**/vite-plugin-prismjs",
+      "**/vite/**",
+      "**/vite-svg-loader",
+      "**/vite-plugin-prismjs",
+      "**/vite-*",
+      "**/@vitejs/**",
+      "**/@vue/**",
+      "**/@polkadot/api",
+      "**/@polkadot/wasm-*",
+      "**/@polkadot/*",
+      "**/@polkadot/util",
+      "**/@polkadot/util-crypto",
+      "**/@vue/**/**",
+      "**/vue",
+      "**/vue-loader",
+      "**/vue-class-component",
+      "**/vue-router",
+      "**/vue-template-compiler",
+      "**/vue-class-component",
+      "**/@types/web",
+      "**/autoprefixer",
+      "**/postcss",
+      "**/tailwindcss",
+      "**/@nodelib",
+      "**/@nodelib/**"
+    ]
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix"
+    ],
+    "*.json": [
+      "prettier --write"
+    ]
+  },
+  "resolutions": {
+    "tough-cookie": "^4.1.3",
+    "@polkadot/util": "12.6.2",
+    "@polkadot/util-crypto": "12.6.2"
+  },
+  "packageManager": "yarn@1.22.21+sha256.dbed5b7e10c552ba0e1a545c948d5473bc6c5a28ce22a8fd27e493e3e5eb6370"
+}

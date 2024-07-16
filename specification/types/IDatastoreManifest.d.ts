@@ -1,0 +1,482 @@
+import { z } from 'zod';
+export declare const minDate: number;
+export declare const DatastorePaymentRecipientSchema: z.ZodObject<{
+    address: z.ZodOptional<z.ZodString>;
+    notaryId: z.ZodNumber;
+}, "strip", z.ZodTypeAny, {
+    notaryId: number;
+    address?: string | undefined;
+}, {
+    notaryId: number;
+    address?: string | undefined;
+}>;
+export declare const DatastoreManifestSchema: z.ZodObject<{
+    id: z.ZodString;
+    version: z.ZodString;
+    name: z.ZodOptional<z.ZodString>;
+    description: z.ZodOptional<z.ZodString>;
+    storageEngineHost: z.ZodOptional<z.ZodString>;
+    versionTimestamp: z.ZodNumber;
+    scriptHash: z.ZodString;
+    adminIdentities: z.ZodArray<z.ZodString, "many">;
+    scriptEntrypoint: z.ZodString;
+    coreVersion: z.ZodString;
+    schemaInterface: z.ZodOptional<z.ZodString>;
+    extractorsByName: z.ZodRecord<z.ZodString, z.ZodObject<{
+        description: z.ZodOptional<z.ZodString>;
+        corePlugins: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+        schemaAsJson: z.ZodOptional<z.ZodObject<{
+            input: z.ZodOptional<z.ZodAny>;
+            output: z.ZodOptional<z.ZodAny>;
+            inputExamples: z.ZodOptional<z.ZodAny>;
+        }, "strip", z.ZodTypeAny, {
+            input?: any;
+            output?: any;
+            inputExamples?: any;
+        }, {
+            input?: any;
+            output?: any;
+            inputExamples?: any;
+        }>>;
+        prices: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            basePrice: z.ZodNumber;
+            addOns: z.ZodOptional<z.ZodObject<{
+                perKb: z.ZodOptional<z.ZodNumber>;
+            }, "strip", z.ZodTypeAny, {
+                perKb?: number | undefined;
+            }, {
+                perKb?: number | undefined;
+            }>>;
+            remoteMeta: z.ZodOptional<z.ZodObject<{
+                host: z.ZodString;
+                datastoreId: z.ZodString;
+                datastoreVersion: z.ZodString;
+                name: z.ZodString;
+            }, "strip", z.ZodTypeAny, {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            }, {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            }>>;
+        }, "strip", z.ZodTypeAny, {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }, {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }>, "many">>;
+    }, "strip", z.ZodTypeAny, {
+        description?: string | undefined;
+        corePlugins?: Record<string, string> | undefined;
+        schemaAsJson?: {
+            input?: any;
+            output?: any;
+            inputExamples?: any;
+        } | undefined;
+        prices?: {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }[] | undefined;
+    }, {
+        description?: string | undefined;
+        corePlugins?: Record<string, string> | undefined;
+        schemaAsJson?: {
+            input?: any;
+            output?: any;
+            inputExamples?: any;
+        } | undefined;
+        prices?: {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }[] | undefined;
+    }>>;
+    crawlersByName: z.ZodRecord<z.ZodString, z.ZodObject<{
+        description: z.ZodOptional<z.ZodString>;
+        corePlugins: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+        schemaAsJson: z.ZodOptional<z.ZodObject<{
+            input: z.ZodOptional<z.ZodAny>;
+            output: z.ZodOptional<z.ZodAny>;
+            inputExamples: z.ZodOptional<z.ZodAny>;
+        }, "strip", z.ZodTypeAny, {
+            input?: any;
+            output?: any;
+            inputExamples?: any;
+        }, {
+            input?: any;
+            output?: any;
+            inputExamples?: any;
+        }>>;
+        prices: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            basePrice: z.ZodNumber;
+            addOns: z.ZodOptional<z.ZodObject<{
+                perKb: z.ZodOptional<z.ZodNumber>;
+            }, "strip", z.ZodTypeAny, {
+                perKb?: number | undefined;
+            }, {
+                perKb?: number | undefined;
+            }>>;
+            remoteMeta: z.ZodOptional<z.ZodObject<{
+                host: z.ZodString;
+                datastoreId: z.ZodString;
+                datastoreVersion: z.ZodString;
+                name: z.ZodString;
+            }, "strip", z.ZodTypeAny, {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            }, {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            }>>;
+        }, "strip", z.ZodTypeAny, {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }, {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }>, "many">>;
+    }, "strip", z.ZodTypeAny, {
+        description?: string | undefined;
+        corePlugins?: Record<string, string> | undefined;
+        schemaAsJson?: {
+            input?: any;
+            output?: any;
+            inputExamples?: any;
+        } | undefined;
+        prices?: {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }[] | undefined;
+    }, {
+        description?: string | undefined;
+        corePlugins?: Record<string, string> | undefined;
+        schemaAsJson?: {
+            input?: any;
+            output?: any;
+            inputExamples?: any;
+        } | undefined;
+        prices?: {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }[] | undefined;
+    }>>;
+    tablesByName: z.ZodRecord<z.ZodString, z.ZodObject<{
+        description: z.ZodOptional<z.ZodString>;
+        schemaAsJson: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
+        prices: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            basePrice: z.ZodNumber;
+            addOns: z.ZodOptional<z.ZodObject<{
+                perKb: z.ZodOptional<z.ZodNumber>;
+            }, "strip", z.ZodTypeAny, {
+                perKb?: number | undefined;
+            }, {
+                perKb?: number | undefined;
+            }>>;
+            remoteMeta: z.ZodOptional<z.ZodObject<{
+                host: z.ZodString;
+                datastoreId: z.ZodString;
+                datastoreVersion: z.ZodString;
+                name: z.ZodString;
+            }, "strip", z.ZodTypeAny, {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            }, {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            }>>;
+        }, "strip", z.ZodTypeAny, {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }, {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }>, "many">>;
+    }, "strip", z.ZodTypeAny, {
+        description?: string | undefined;
+        schemaAsJson?: Record<string, any> | undefined;
+        prices?: {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }[] | undefined;
+    }, {
+        description?: string | undefined;
+        schemaAsJson?: Record<string, any> | undefined;
+        prices?: {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }[] | undefined;
+    }>>;
+    payment: z.ZodOptional<z.ZodObject<{
+        address: z.ZodOptional<z.ZodString>;
+        notaryId: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        notaryId: number;
+        address?: string | undefined;
+    }, {
+        notaryId: number;
+        address?: string | undefined;
+    }>>;
+    domain: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    id: string;
+    version: string;
+    versionTimestamp: number;
+    scriptHash: string;
+    adminIdentities: string[];
+    scriptEntrypoint: string;
+    coreVersion: string;
+    extractorsByName: Record<string, {
+        description?: string | undefined;
+        corePlugins?: Record<string, string> | undefined;
+        schemaAsJson?: {
+            input?: any;
+            output?: any;
+            inputExamples?: any;
+        } | undefined;
+        prices?: {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }[] | undefined;
+    }>;
+    crawlersByName: Record<string, {
+        description?: string | undefined;
+        corePlugins?: Record<string, string> | undefined;
+        schemaAsJson?: {
+            input?: any;
+            output?: any;
+            inputExamples?: any;
+        } | undefined;
+        prices?: {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }[] | undefined;
+    }>;
+    tablesByName: Record<string, {
+        description?: string | undefined;
+        schemaAsJson?: Record<string, any> | undefined;
+        prices?: {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }[] | undefined;
+    }>;
+    name?: string | undefined;
+    description?: string | undefined;
+    storageEngineHost?: string | undefined;
+    schemaInterface?: string | undefined;
+    payment?: {
+        notaryId: number;
+        address?: string | undefined;
+    } | undefined;
+    domain?: string | undefined;
+}, {
+    id: string;
+    version: string;
+    versionTimestamp: number;
+    scriptHash: string;
+    adminIdentities: string[];
+    scriptEntrypoint: string;
+    coreVersion: string;
+    extractorsByName: Record<string, {
+        description?: string | undefined;
+        corePlugins?: Record<string, string> | undefined;
+        schemaAsJson?: {
+            input?: any;
+            output?: any;
+            inputExamples?: any;
+        } | undefined;
+        prices?: {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }[] | undefined;
+    }>;
+    crawlersByName: Record<string, {
+        description?: string | undefined;
+        corePlugins?: Record<string, string> | undefined;
+        schemaAsJson?: {
+            input?: any;
+            output?: any;
+            inputExamples?: any;
+        } | undefined;
+        prices?: {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }[] | undefined;
+    }>;
+    tablesByName: Record<string, {
+        description?: string | undefined;
+        schemaAsJson?: Record<string, any> | undefined;
+        prices?: {
+            basePrice: number;
+            addOns?: {
+                perKb?: number | undefined;
+            } | undefined;
+            remoteMeta?: {
+                name: string;
+                host: string;
+                datastoreId: string;
+                datastoreVersion: string;
+            } | undefined;
+        }[] | undefined;
+    }>;
+    name?: string | undefined;
+    description?: string | undefined;
+    storageEngineHost?: string | undefined;
+    schemaInterface?: string | undefined;
+    payment?: {
+        notaryId: number;
+        address?: string | undefined;
+    } | undefined;
+    domain?: string | undefined;
+}>;
+type IDatastoreManifest = z.infer<typeof DatastoreManifestSchema>;
+type IDatastorePaymentRecipient = z.infer<typeof DatastorePaymentRecipientSchema>;
+export { IDatastorePaymentRecipient };
+export default IDatastoreManifest;
