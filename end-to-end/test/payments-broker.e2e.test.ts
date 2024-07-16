@@ -21,6 +21,9 @@ afterAll(Helpers.afterAll);
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'e2e.payments-broker.test');
 
 let mainchainUrl: string;
+let brokerAddress: string;
+let broker: TestDatabroker;
+const clientUserPath = Path.join(storageDir, 'DatastoreClient.pem');
 const identityPath = Path.join(storageDir, 'DatastoreDev.pem');
 
 let ferdie: KeyringPair;
@@ -45,13 +48,23 @@ describeIntegration('Payments with Broker E2E', () => {
     execAndLog(
       `npx @ulixee/localchain accounts create brokerchain --suri="//Bob" --scheme=sr25519 --base-dir="${storageDir}"`,
     );
+
+    broker = new TestDatabroker();
+    brokerAddress = await broker.start({
+      ULX_DATABROKER_DIR: storageDir,
+      ULX_MAINCHAIN_URL: mainchainUrl,
+      ULX_LOCALCHAIN_PATH: Path.join(storageDir, 'brokerchain.db'),
+    });
+    console.log('booted up', brokerAddress, broker.adminAddress);
   }, 60e3);
+
 
   test('it can use a databroker for a domain datastore', async () => {
     const brokerchain = await Localchain.load({
       path: Path.join(storageDir, 'brokerchain.db'),
       mainchainUrl,
     });
+    Helpers.onClose(() => brokerchain.close());
 
     execAndLog(
       `npx @ulixee/localchain accounts create ferdiechain --suri="//Ferdie" --scheme=sr25519 --base-dir="${storageDir}"`,
@@ -64,7 +77,6 @@ describeIntegration('Payments with Broker E2E', () => {
 
     const ferdieVotesAddress = ferdie.derive('//votes').address;
 
-    const domain = 'broker.communication';
     await Promise.all([
       ferdiechain.mainchainTransfers.sendToLocalchain(1000n, 1),
       brokerchain.mainchainTransfers.sendToLocalchain(5000n, 1),
@@ -75,6 +87,7 @@ describeIntegration('Payments with Broker E2E', () => {
       waitForSynchedBalance(brokerchain, 5000n),
     ]);
 
+    const domain = 'broker.communication';
     const datastoreId = 'broker';
     const datastoreVersion = '0.0.1';
     await setupDatastore(
@@ -86,19 +99,9 @@ describeIntegration('Payments with Broker E2E', () => {
       ferdieVotesAddress,
     );
 
-    const broker = new TestDatabroker();
-    Helpers.needsClosing.push(broker);
-    const brokerAddress = await broker.start({
-      ULX_DATABROKER_DIR: storageDir,
-      ULX_MAINCHAIN_URL: mainchainUrl,
-      ULX_LOCALCHAIN_PATH: brokerchain.path,
-    });
-    const clientUserPath = Path.join(storageDir, 'DatastoreClient.pem');
     execAndLog(`npx @ulixee/datastore admin-identity create --filename="${clientUserPath}"`);
-
     await broker.registerUser(clientUserPath, 1000n);
     await broker.whitelistDomain(domain);
-
     const paymentService = await DefaultPaymentService.fromBroker(
       brokerAddress,
       {

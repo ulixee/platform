@@ -138,6 +138,7 @@ export default class DataBroker {
       if (!(await isPortInUse(1814))) port = 1814;
     }
     await this.#server.listen({ port, host: hostname });
+    await this.#isStarted.promise;
   }
 
   public async listenAdmin(port: number): Promise<void> {

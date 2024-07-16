@@ -14,6 +14,7 @@ afterAll(Helpers.afterAll);
 
 it('can store organization data', async () => {
   const db = new DatabrokerDb(storageDir);
+  Helpers.needsClosing.push(db);
   expect(db.organizations.totalGranted()).toBe(0n);
   const org1 = db.organizations.create('test', 10n);
   expect(db.organizations.totalGranted()).toBe(10n);
@@ -41,6 +42,7 @@ it('can store organization data', async () => {
 
 it('can store user data', async () => {
   const db = new DatabrokerDb(storageDir);
+  Helpers.needsClosing.push(db);
   const org1 = db.organizations.create('org1', 10n);
   const org2 = db.organizations.create('org2', 20n);
 
@@ -63,6 +65,7 @@ it('can store user data', async () => {
 
 it('can store escrow data', async () => {
   const db = new DatabrokerDb(storageDir);
+  Helpers.needsClosing.push(db);
   const org1 = db.organizations.create('org1', 10n);
   db.users.create('user1', 'name1', org1);
   db.users.create('user2', 'name2', org1);

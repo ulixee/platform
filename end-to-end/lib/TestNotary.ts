@@ -55,7 +55,7 @@ export default class TestNotary {
         ? ` --add-host=host.docker.internal:host-gateway`
         : '';
 
-      notaryPath = `docker run --rm -p=0:9925${addHost} --platform=linux/amd64 --name=${this.containerName} -e RUST_LOG=${this.logLevel} ghcr.io/ulixee/ulixee-notary:dev`;
+      notaryPath = `docker run --rm -p=0:9925${addHost} --name=${this.containerName} --platform=linux/amd64 -e RUST_LOG=${this.logLevel} ghcr.io/ulixee/ulixee-notary:dev`;
 
       this.#dbConnectionString = cleanHostForDocker(this.#dbConnectionString);
     } else if (!fs.existsSync(notaryPath)) {
@@ -82,6 +82,7 @@ export default class TestNotary {
       await client.end();
     }
 
+    console.log(`${notaryPath} migrate --db-url ${this.#dbConnectionString}/${this.#dbName}`);
     const result = child_process.execSync(
       `${notaryPath} migrate --db-url ${this.#dbConnectionString}/${this.#dbName}`,
       {
@@ -110,6 +111,7 @@ export default class TestNotary {
       notaryPath = 'docker';
     }
 
+    console.log(notaryPath, execArgs.join(' '));
     this.#childProcess = child_process.spawn(notaryPath, execArgs, {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, RUST_LOG: this.logLevel },
