@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/desktop",
-  "version": "2.0.0-alpha.28",
+  "version": "2.0.0-alpha.29",
   "description": "This is a builder project that uses the dual package.json approach (./app contains the app package.json).",
   "private": true,
   "scripts": {
@@ -24,11 +24,11 @@
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "devDependencies": {
-    "@electron/notarize": "^1.2.3",
-    "@ulixee/datastore": "2.0.0-alpha.28",
-    "@ulixee/datastore-packager": "2.0.0-alpha.28",
+    "@electron/notarize": "^2.3.2",
+    "@ulixee/datastore": "2.0.0-alpha.29",
+    "@ulixee/datastore-packager": "2.0.0-alpha.29",
     "cross-env": "^7.0.3",
-    "electron": "28.2.1",
+    "electron": "31.2.1",
     "electron-builder": "^24.13.3",
     "tslib": "^2.6.2"
   },
@@ -51,7 +51,8 @@
       "node_modules/better-sqlite3",
       "node_modules/electron-clipboard-ex",
       "node_modules/global-mouse-events",
-      "node_modules/nseventmonitor"
+      "node_modules/nseventmonitor",
+      "node_modules/@ulixee/localchain-*"
     ],
     "mac": {
       "files": [

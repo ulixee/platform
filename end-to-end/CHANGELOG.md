@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.29](https://github.com/ulixee/platform/compare/v2.0.0-alpha.28...v2.0.0-alpha.29) (2024-07-16)
+
+
+### Bug Fixes
+
+* **end-to-end:** use docker for e2e tests ([3f243de](https://github.com/ulixee/platform/commit/3f243deb40d2b1cc86048d171d574b3690a29395))
+* **github:** databroker tests broken ([801f62c](https://github.com/ulixee/platform/commit/801f62cad9e16e441cbea7fe3660098ade31ef34))
+
+
+### Features
+
+* **databroker:** new feature to delegate payment ([47900e3](https://github.com/ulixee/platform/commit/47900e314b8d9f59f88598b1d914e211e1ae5bdf))
+* **datastore:** integrate escrow payments ([b00fdd5](https://github.com/ulixee/platform/commit/b00fdd52e36bc9480297639a5584a6f71d6890dd))
+* **desktop:** accounts vs localchains ([2c63e7e](https://github.com/ulixee/platform/commit/2c63e7eb1d0d7261dc00a74b80fa9a30a48ebb42))
+* **desktop:** update wallet ux ([3b9fbfb](https://github.com/ulixee/platform/commit/3b9fbfba9c91bec72b3dbc4b88b83eb39992d617))
+
+
+
+
+
 # [2.0.0-alpha.28](https://github.com/ulixee/platform/compare/v2.0.0-alpha.27...v2.0.0-alpha.28) (2024-03-11)
 
 **Note:** Version bump only for package @ulixee/end-to-end

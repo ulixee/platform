@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/platform-specification",
-  "version": "2.0.0-alpha.28",
+  "version": "2.0.0-alpha.29",
   "description": "",
   "main": "./index.js",
   "license": "MIT",
@@ -8,6 +8,6 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@ulixee/net": "2.0.0-alpha.28"
+    "@ulixee/net": "2.0.0-alpha.29"
   }
 }
