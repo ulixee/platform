@@ -1,0 +1,21 @@
+import ILocalchainConfig from '@ulixee/datastore/interfaces/ILocalchainConfig';
+declare const _default: {
+    serverEnvironment: string;
+    datastoresDir: string;
+    datastoresTmpDir: string;
+    queryHeroSessionsDir: string;
+    replayRegistryHost: string;
+    escrowSpendTrackingHost: string;
+    paymentServiceHost: string;
+    datastoreLookupHost: string;
+    enableSqliteWalMode: string;
+    cloudAdminIdentities: string[];
+    datastoresMustHaveOwnAdminIdentity: boolean;
+    localchainConfig: ILocalchainConfig;
+    enableGlobalConfigs: boolean;
+    statsTrackerHost: string;
+    datastoreRegistryHost: string;
+    storageEngineHost: string;
+};
+export default _default;
+export declare function parseIdentities(identities: string, type: string): string[];

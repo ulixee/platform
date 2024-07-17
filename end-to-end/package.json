@@ -1,0 +1,40 @@
+{
+  "name": "@ulixee/end-to-end",
+  "version": "2.0.0-alpha.29",
+  "homepage": "https://ulixee.org",
+  "repository": "git@github.com:ulixee/platform.git",
+  "bugs": {
+    "url": "https://github.com/ulixee/platform/issues"
+  },
+  "license": "MIT",
+  "author": "Data Liberation Foundation",
+  "contributors": [
+    "Caleb Clark",
+    "Blake Byrnes"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@polkadot/keyring": "^12.6.2",
+    "@polkadot/util-crypto": "^12.6.2",
+    "@substrate/ss58-registry": "^1.46.0",
+    "@types/http-proxy": "^1.17.14",
+    "@ulixee/client": "2.0.0-alpha.29",
+    "@ulixee/cloud": "2.0.0-alpha.29",
+    "@ulixee/commons": "2.0.0-alpha.29",
+    "@ulixee/datastore": "2.0.0-alpha.29",
+    "@ulixee/datastore-packager": "2.0.0-alpha.29",
+    "@ulixee/datastore-testing": "2.0.0-alpha.29",
+    "@ulixee/localchain": "2.0.0-alpha.29",
+    "@ulixee/mainchain": "2.0.0-alpha.29",
+    "@ulixee/net": "2.0.0-alpha.29",
+    "@ulixee/platform-specification": "2.0.0-alpha.29",
+    "@ulixee/platform-utils": "2.0.0-alpha.29",
+    "http-proxy": "^1.18.1",
+    "jest": "^29.7.0",
+    "nanoid": "^3.3.6",
+    "pg": "^8.6.0"
+  },
+  "private": true
+}

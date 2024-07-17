@@ -1,0 +1,45 @@
+{
+  "name": "@ulixee/datastore-core",
+  "version": "2.0.0-alpha.29",
+  "homepage": "https://ulixee.org",
+  "repository": "git@github.com:ulixee/platform.git",
+  "bugs": {
+    "url": "https://github.com/ulixee/platform/issues"
+  },
+  "license": "MIT",
+  "author": "Data Liberation Foundation",
+  "contributors": [
+    "Caleb Clark",
+    "Blake Byrnes"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "index.js",
+  "types": "index.d.ts",
+  "dependencies": {
+    "@ulixee/commons": "2.0.0-alpha.29",
+    "@ulixee/datastore": "2.0.0-alpha.29",
+    "@ulixee/datastore-docpage": "2.0.0-alpha.29",
+    "@ulixee/localchain": "2.0.0-alpha.29",
+    "@ulixee/net": "2.0.0-alpha.29",
+    "@ulixee/platform-specification": "2.0.0-alpha.29",
+    "@ulixee/platform-utils": "2.0.0-alpha.29",
+    "@ulixee/schema": "2.0.0-alpha.29",
+    "@ulixee/sql-ast": "2.0.0-alpha.29",
+    "@ulixee/sql-engine": "2.0.0-alpha.29",
+    "better-sqlite3": "^11.1.2",
+    "nanoid": "^3.3.6",
+    "tar": "^6.2.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.8.1"
+  },
+  "peerDependencies": {
+    "@polkadot/api": "^10.11.2",
+    "@polkadot/util-crypto": "^12.6.2"
+  }
+}
