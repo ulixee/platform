@@ -28,6 +28,7 @@
       "**/electron",
       "**electron**",
       "**/@ulixee/mainchain",
+      "**/desktop/**/@ulixee/localchain-*",
       "**/desktop/main/app/**",
       "**/desktop/**/@ulixee/datastore-docpage",
       "**/desktop/**/@ulixee/databroker-admin",

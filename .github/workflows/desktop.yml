@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
+        if: ${{ matrix.os != 'windows-latest' }}
         with:
           python-version: '3.10'
 
@@ -25,21 +26,22 @@ jobs:
         with:
           node-version: 20
 
-      - name: Chocolatey Install Action
-        if: ${{ matrix.os == 'windows-latest' }}
-        uses: crazy-max/ghaction-chocolatey@v3
-        with:
-          args: install python2 visualcpp-build-tools -y
-
       - name: Add msbuild to PATH
-        if: matrix.os == 'windows-latest'
+        if: ${{ matrix.os == 'windows-latest' }}
         uses: microsoft/setup-msbuild@v2
+
+      - name: Add PIP Setuptools
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: pip.exe install setuptools
 
       - name: Set timeout
         run: yarn config set network-timeout 1000000 -g
 
       - name: Yarn build
-        run: yarn && yarn build && yarn build:dist && cd build-dist && yarn
+        run: yarn && yarn build && yarn build:dist
+
+      - run: yarn
+        working-directory: build-dist
 
       - run: mkdir ~/.private_keys && echo "$APPLE_NOTARIZE_KEY" > ~/.private_keys/AuthKey_5VH6PQ3585.p8
         if: ${{ matrix.os == 'macos-latest' }}

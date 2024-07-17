@@ -193,6 +193,9 @@ export default class DatastoreManifest implements IDatastoreManifest {
         return true;
       }
     } else if (this.source === 'global') {
+      if (!(await existsAsync(Path.dirname(this.path)))) {
+        await Fs.mkdir(Path.dirname(this.path), { recursive: true });
+      }
       await safeOverwriteFile(this.path, '{}');
     }
     return false;

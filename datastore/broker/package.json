@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/databroker",
-  "version": "2.0.0-alpha.28",
+  "version": "2.0.0-alpha.29",
   "main": "index.js",
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
@@ -17,22 +17,22 @@
     }
   },
   "dependencies": {
-    "@ulixee/cloud": "2.0.0-alpha.28",
-    "@ulixee/commons": "2.0.0-alpha.28",
+    "@ulixee/cloud": "2.0.0-alpha.29",
+    "@ulixee/commons": "2.0.0-alpha.29",
+    "@ulixee/datastore": "2.0.0-alpha.29",
     "@ulixee/localchain": "2.0.0-alpha.29",
-    "@ulixee/datastore": "2.0.0-alpha.28",
-    "@ulixee/platform-utils": "2.0.0-alpha.28",
-    "@ulixee/net": "2.0.0-alpha.28",
-    "@ulixee/platform-specification": "2.0.0-alpha.28",
+    "@ulixee/net": "2.0.0-alpha.29",
+    "@ulixee/platform-specification": "2.0.0-alpha.29",
+    "@ulixee/platform-utils": "2.0.0-alpha.29",
     "better-sqlite3": "^11.1.2",
     "commander": "^9.5.0",
-    "nanoid": "^3.3.6",
-    "moment": "^2.29.4"
+    "moment": "^2.29.4",
+    "nanoid": "^3.3.6"
   },
   "devDependencies": {
-    "@ulixee/datastore-packager": "2.0.0-alpha.28",
-    "@ulixee/datastore-testing": "2.0.0-alpha.28",
     "@polkadot/keyring": "^12.6.2",
-    "@types/better-sqlite3": "^7.6.11"
+    "@types/better-sqlite3": "^7.6.11",
+    "@ulixee/datastore-packager": "2.0.0-alpha.29",
+    "@ulixee/datastore-testing": "2.0.0-alpha.29"
   }
 }
