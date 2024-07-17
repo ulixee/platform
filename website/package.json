@@ -88,6 +88,7 @@
   ],
   "resolutions": {
     "**/@achrinza/node-ipc": "10.1.10",
-    "**/@achrinza/event-pubsub": "5.0.10"
+    "**/@achrinza/event-pubsub": "5.0.10",
+    "fork-ts-checker-webpack-plugin": "^6.5.3"
   }
 }
