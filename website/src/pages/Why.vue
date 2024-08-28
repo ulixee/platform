@@ -8,7 +8,7 @@ MainLayout.Why
       .mission
         p.
           The goal of Ulixee is to move the world toward data openness.
-          <a href="https://dataliberationfoundation.org">We</a> believe data openness is essential for the
+          <a href="https://ulixee.org">We</a> believe data openness is essential for the
           startup ecosystem and innovation in general.
 
         p.

@@ -7,7 +7,7 @@ import { isPortInUse } from '@ulixee/commons/lib/utils';
 import staticServe from '@ulixee/platform-utils/lib/staticServe';
 import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
 import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
-import { BalanceSyncResult } from '@ulixee/localchain';
+import { BalanceSyncResult } from '@argonprotocol/localchain';
 import { WsTransportToClient } from '@ulixee/net';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';

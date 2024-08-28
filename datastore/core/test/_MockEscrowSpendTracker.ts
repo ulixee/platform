@@ -1,4 +1,4 @@
-import { Escrow } from '@ulixee/localchain';
+import { Escrow } from '@argonprotocol/localchain';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
 import EscrowSpendTracker from '../lib/EscrowSpendTracker';
 

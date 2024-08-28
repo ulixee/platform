@@ -15,7 +15,7 @@ import {
   Localchain,
   LocalchainOverview,
   MainchainClient,
-} from '@ulixee/localchain';
+} from '@argonprotocol/localchain';
 import { ArgonFileSchema } from '@ulixee/platform-specification/types/IArgonFile';
 import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
@@ -70,6 +70,7 @@ export default class AccountManager extends TypedEventEmitter<{
           genesisUtcTime: Env.genesisUtcTime,
           tickDurationMillis: Env.tickDurationMillis,
           ntpPoolUrl: Env.ntpPoolUrl,
+          escrowExpirationTicks: Env.escrowExpirationTicks,
         }),
       ),
     );

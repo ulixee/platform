@@ -11,7 +11,7 @@ import {
   MainchainTransferStore,
   OpenEscrowsStore,
   Transactions,
-} from '@ulixee/localchain';
+} from '@argonprotocol/localchain';
 import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
 import * as Path from 'node:path';
 import Env from '../env';
@@ -89,6 +89,7 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
           genesisUtcTime: Env.genesisUtcTime,
           tickDurationMillis: Env.tickDurationMillis,
           ntpPoolUrl: Env.ntpPoolUrl,
+          escrowExpirationTicks: Env.escrowExpirationTicks,
         },
         keystorePassword,
       );

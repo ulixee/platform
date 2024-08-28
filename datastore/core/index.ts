@@ -12,7 +12,7 @@ import DatastoreLookup from '@ulixee/datastore/lib/DatastoreLookup';
 import EmbeddedPaymentService from '@ulixee/datastore/payments/EmbeddedPaymentService';
 import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
 import RemoteReserver from '@ulixee/datastore/payments/RemoteReserver';
-import { MainchainClient } from '@ulixee/localchain';
+import { MainchainClient } from '@argonprotocol/localchain';
 import { ConnectionToCore } from '@ulixee/net';
 import ITransport from '@ulixee/net/interfaces/ITransport';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';

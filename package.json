@@ -108,8 +108,8 @@
       "**/@electron/**",
       "**/electron",
       "**electron**",
-      "**/@ulixee/mainchain",
-      "**/desktop/**/@ulixee/localchain-*",
+      "**/@argonprotocol/mainchain",
+      "**/desktop/**/@argonprotocol/localchain-*",
       "**/desktop/main/app/**",
       "**/desktop/**/@ulixee/datastore-docpage",
       "**/desktop/**/@ulixee/databroker-admin",
@@ -162,8 +162,8 @@
   },
   "resolutions": {
     "tough-cookie": "^4.1.3",
-    "@polkadot/util": "12.6.2",
-    "@polkadot/util-crypto": "12.6.2"
+    "@polkadot/util": "13.0.2",
+    "@polkadot/util-crypto": "13.0.2"
   },
   "packageManager": "yarn@1.22.21+sha256.dbed5b7e10c552ba0e1a545c948d5473bc6c5a28ce22a8fd27e493e3e5eb6370"
 }

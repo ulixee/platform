@@ -1,5 +1,5 @@
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import { MainchainClient } from '@ulixee/localchain';
+import { MainchainClient } from '@argonprotocol/localchain';
 import { IPayment } from '@ulixee/platform-specification';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import { IPaymentMethod } from '@ulixee/platform-specification/types/IPayment';

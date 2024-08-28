@@ -4,8 +4,8 @@ import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
 import DefaultPaymentService from '@ulixee/datastore/payments/DefaultPaymentService';
 import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
-import { DataDomainStore, Localchain } from '@ulixee/localchain';
-import { getClient, Keyring, KeyringPair } from '@ulixee/mainchain';
+import { DataDomainStore, Localchain } from '@argonprotocol/localchain';
+import { getClient, Keyring, KeyringPair } from '@argonprotocol/mainchain';
 import { IDatastoreMetadataResult } from '@ulixee/platform-specification/datastore/DatastoreApis';
 import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
 import * as Path from 'node:path';
@@ -43,7 +43,7 @@ describeIntegration('Payments E2E', () => {
     execAndLog(`npx @ulixee/datastore admin-identity create --filename="${identityPath}"`);
 
     execAndLog(
-      `npx @ulixee/localchain accounts create bobchain --suri="//Bob" --scheme=sr25519 --base-dir="${storageDir}"`,
+      `npx @argonprotocol/localchain accounts create --name=bobchain --suri="//Bob" --scheme=sr25519 --base-dir="${storageDir}"`,
     );
   }, 60e3);
 
@@ -64,7 +64,7 @@ describeIntegration('Payments E2E', () => {
     });
 
     execAndLog(
-      `npx @ulixee/localchain accounts create ferdiechain --suri="//Ferdie" --scheme=sr25519 --base-dir="${storageDir}"`,
+      `npx @argonprotocol/localchain accounts create --name=ferdiechain --suri="//Ferdie" --scheme=sr25519 --base-dir="${storageDir}"`,
     );
     const ferdiechain = await Localchain.load({
       mainchainUrl,
@@ -78,7 +78,7 @@ describeIntegration('Payments E2E', () => {
     // Hangs with the proxy url. Not sure why
     if (!process.env.ULX_USE_DOCKER_BINS) {
       const isDomainRegistered = execAndLog(
-        `npx @ulixee/localchain data-domains check ${domain} -m "${mainchainUrl}"`,
+        `npx @argonprotocol/localchain data-domains check ${domain} -m "${mainchainUrl}"`,
       );
       expect(isDomainRegistered).toContain(' No ');
       console.log('Domain registered?', isDomainRegistered);
@@ -149,7 +149,7 @@ describeIntegration('Payments E2E', () => {
       decodeAddress(ferdie.address, false, 42),
       1,
       {
-        [datastoreVersion]: mainchainClient.createType('UlxPrimitivesDataDomainVersionHost', {
+        [datastoreVersion]: mainchainClient.createType('ArgonPrimitivesDataDomainVersionHost', {
           datastoreId: mainchainClient.createType('Bytes', datastoreId),
           host: mainchainClient.createType('Bytes', `ws://127.0.0.1:${cloudAddress.split(':')[1]}`),
         }),

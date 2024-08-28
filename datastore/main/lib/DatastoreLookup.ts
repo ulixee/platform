@@ -1,6 +1,6 @@
 import TimedCache from '@ulixee/commons/lib/TimedCache';
 import { bindFunctions, toUrl } from '@ulixee/commons/lib/utils';
-import { DataDomain, DataTLD, ZoneRecord } from '@ulixee/localchain';
+import { DataDomain, DataTLD, ZoneRecord } from '@argonprotocol/localchain';
 import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreIdValidation';
 import { semverRegex } from '@ulixee/platform-specification/types/semverValidation';
 import * as net from 'node:net';

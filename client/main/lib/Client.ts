@@ -3,7 +3,7 @@ import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSch
 import IPaymentService from '@ulixee/datastore/interfaces/IPaymentService';
 import IQueryOptions from '@ulixee/datastore/interfaces/IQueryOptions';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { DataDomainStore } from '@ulixee/localchain';
+import { DataDomainStore } from '@argonprotocol/localchain';
 import { isIP } from 'node:net';
 import { IInputFilter, IOutputSchema } from '../interfaces/IInputOutput';
 import ILocationStringOrObject from '../interfaces/ILocationStringOrObject';

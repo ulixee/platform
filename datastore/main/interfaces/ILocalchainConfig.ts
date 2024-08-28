@@ -1,4 +1,4 @@
-import { KeystorePasswordOption } from '@ulixee/localchain';
+import { KeystorePasswordOption } from '@argonprotocol/localchain';
 import { IEscrowAllocationStrategy } from '../payments/ArgonReserver';
 
 export default interface ILocalchainConfig {

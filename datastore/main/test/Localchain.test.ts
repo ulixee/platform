@@ -1,6 +1,6 @@
 import { Keyring } from '@polkadot/keyring';
 import { Helpers } from '@ulixee/datastore-testing';
-import { CryptoScheme, Localchain } from '@ulixee/localchain';
+import { CryptoScheme, Localchain } from '@argonprotocol/localchain';
 import { AccountType } from '@ulixee/platform-specification/types/IBalanceChange';
 import INotarization, {
   NotarizationSchema,

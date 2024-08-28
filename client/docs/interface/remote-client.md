@@ -92,7 +92,7 @@ Send a NoSQL query to the specified table:
 
 ```js
 const client = new Client();
-const records = await client.fetch('developers' { lastname: 'Clark' });
+const records = await client.fetch('developers', { lastname: 'Clark' });
 ```
 
 #### **Arguments**:
@@ -108,7 +108,7 @@ Run one of the Datastore's extractors (what we call them Extractors):
 
 ```js
 const client = new Client();
-const records = await client.fetch('daysUntilWorldDomination' { probability: 5 });
+const records = await client.fetch('daysUntilWorldDomination', { probability: 5 });
 ```
 
 #### **Arguments**:
@@ -125,7 +125,7 @@ Trigger one of the Datastore's crawlers:
 
 ```js
 const client = new Client();
-const records = await client.fetch('ulixee' { page: 'Home' });
+const records = await client.fetch('ulixee', { page: 'Home' });
 ```
 
 #### **Arguments**:

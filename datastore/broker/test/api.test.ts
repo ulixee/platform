@@ -4,7 +4,7 @@ import { toUrl } from '@ulixee/commons/lib/utils';
 import { Helpers } from '@ulixee/datastore-testing';
 import BrokerEscrowSource from '@ulixee/datastore/payments/BrokerEscrowSource';
 import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
-import { ADDRESS_PREFIX } from '@ulixee/localchain';
+import { ADDRESS_PREFIX } from '@argonprotocol/localchain';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
 import { IDatabrokerAdminApis } from '@ulixee/platform-specification/datastore';
 import Identity from '@ulixee/platform-utils/lib/Identity';

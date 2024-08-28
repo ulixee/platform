@@ -37,7 +37,7 @@ export default class ElementsModule {
     const chromeObjectId =
       id.objectId ?? (await frame.resolveDevtoolsNodeId(id.backendNodeId, false));
     if (!frame[installSymbol]) {
-      await frame.evaluate(injectedScript, false);
+      await frame.evaluate(injectedScript, { isolateFromWebPageEnvironment: false });
       frame[installSymbol] = true;
     }
     return await frame.evaluateOnNode<ISelectorMap>(

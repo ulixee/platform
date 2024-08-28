@@ -1,5 +1,5 @@
 import Logger from '@ulixee/commons/lib/Logger';
-import { DataDomainStore, Escrow, OpenEscrow } from '@ulixee/localchain';
+import { DataDomainStore, Escrow, OpenEscrow } from '@argonprotocol/localchain';
 import IEscrowServiceApiTypes from '@ulixee/platform-specification/services/EscrowServiceApis';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';

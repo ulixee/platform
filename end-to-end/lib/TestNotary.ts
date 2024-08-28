@@ -1,7 +1,7 @@
 import { customAlphabet } from 'nanoid';
 import { Client } from 'pg';
 import * as child_process from 'node:child_process';
-import { checkForExtrinsicSuccess, Keyring, KeyringPair, UlxClient } from '@ulixee/mainchain';
+import { checkForExtrinsicSuccess, Keyring, KeyringPair, ArgonClient } from '@argonprotocol/mainchain';
 import * as fs from 'node:fs';
 import * as readline from 'node:readline';
 import * as process from 'node:process';
@@ -48,14 +48,14 @@ export default class TestNotary {
       '//Ferdie//notary',
     ).publicKey;
 
-    let notaryPath = pathToNotaryBin ?? `${rootDir}/../../mainchain/target/debug/ulx-notary`;
+    let notaryPath = pathToNotaryBin ?? `${rootDir}/../../mainchain/target/debug/argon-notary`;
     if (process.env.ULX_USE_DOCKER_BINS) {
       this.containerName = `notary_${nanoid()}`;
       const addHost = process.env.ADD_DOCKER_HOST
         ? ` --add-host=host.docker.internal:host-gateway`
         : '';
 
-      notaryPath = `docker run --rm -p=0:9925${addHost} --name=${this.containerName} --platform=linux/amd64 -e RUST_LOG=${this.logLevel} ghcr.io/ulixee/ulixee-notary:dev`;
+      notaryPath = `docker run --rm -p=0:9925${addHost} --name=${this.containerName} -e RUST_LOG=${this.logLevel} ghcr.io/argonprotocol/argon-notary:dev`;
 
       this.#dbConnectionString = cleanHostForDocker(this.#dbConnectionString);
     } else if (!fs.existsSync(notaryPath)) {
@@ -152,7 +152,7 @@ export default class TestNotary {
     return this.address;
   }
 
-  public async register(client: UlxClient): Promise<void> {
+  public async register(client: ArgonClient): Promise<void> {
     const address = new URL(this.address);
 
     await new Promise<void>(async (resolve, reject) => {

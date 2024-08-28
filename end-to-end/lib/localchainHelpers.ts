@@ -1,4 +1,4 @@
-import { Localchain } from '@ulixee/localchain';
+import { Localchain } from '@argonprotocol/localchain';
 
 export async function waitForSynchedBalance(
   localchain: Localchain,

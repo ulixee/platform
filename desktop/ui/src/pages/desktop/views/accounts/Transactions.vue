@@ -91,7 +91,7 @@ import { formatDate, toArgons } from '@/pages/desktop/lib/utils';
 import { useWalletStore } from '@/pages/desktop/stores/WalletStore';
 import { XMarkIcon } from '@heroicons/vue/20/solid';
 import { ArrowLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline';
-import { BalanceChangeStatus } from '@ulixee/localchain';
+import { BalanceChangeStatus } from '@argonprotocol/localchain';
 import { storeToRefs } from 'pinia';
 import * as Vue from 'vue';
 import { useRoute } from 'vue-router';

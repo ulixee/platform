@@ -8,6 +8,7 @@ export default {
   mainchainUrl: env.ULX_MAINCHAIN_URL,
   genesisUtcTime: parseEnvInt(env.ULX_GENESIS_UTC_TIME),
   tickDurationMillis: parseEnvInt(env.ULX_TICK_DURATION_MILLIS),
+  escrowExpirationTicks: parseEnvInt(env.ULX_ESCROW_EXPIRATION_TICKS),
   ntpPoolUrl: env.ULX_NTP_SERVER,
   defaultDataDir: env.ULX_DATA_DIR,
 };

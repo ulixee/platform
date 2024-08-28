@@ -1,4 +1,4 @@
-import { LocalchainOverview, OpenEscrow } from '@ulixee/localchain';
+import { LocalchainOverview, OpenEscrow } from '@argonprotocol/localchain';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import IBalanceChange, {
   BalanceChangeSchema,

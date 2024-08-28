@@ -46,7 +46,7 @@ jobs:
       - name: Clone Mainchain
         run: |
           export GIT_SSH_COMMAND="ssh -i $SSH_PATH/id_rsa -o UserKnownHostsFile=$SSH_PATH/known_hosts"
-          git clone -b napi-bindings git@github.com:ulixee/mainchain.git
+          git clone -b napi-bindings git@github.com:argonprotocol/mainchain.git
         working-directory: ..
 
       - name: Install Mainchain

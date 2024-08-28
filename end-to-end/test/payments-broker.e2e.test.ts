@@ -2,8 +2,8 @@ import { decodeAddress } from '@polkadot/util-crypto';
 import Client from '@ulixee/client';
 import { Helpers } from '@ulixee/datastore-testing';
 import DefaultPaymentService from '@ulixee/datastore/payments/DefaultPaymentService';
-import { DataDomainStore, Localchain } from '@ulixee/localchain';
-import { getClient, Keyring, KeyringPair } from '@ulixee/mainchain';
+import { DataDomainStore, Localchain } from '@argonprotocol/localchain';
+import { getClient, Keyring, KeyringPair } from '@argonprotocol/mainchain';
 import { IDatastoreMetadataResult } from '@ulixee/platform-specification/datastore/DatastoreApis';
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import * as Path from 'node:path';
@@ -46,7 +46,7 @@ describeIntegration('Payments with Broker E2E', () => {
     execAndLog(`npx @ulixee/datastore admin-identity create --filename="${identityPath}"`);
 
     execAndLog(
-      `npx @ulixee/localchain accounts create brokerchain --suri="//Bob" --scheme=sr25519 --base-dir="${storageDir}"`,
+      `npx @argonprotocol/localchain accounts create --name=brokerchain --suri="//Bob" --scheme=sr25519 --base-dir="${storageDir}"`,
     );
 
     broker = new TestDatabroker();
@@ -67,7 +67,7 @@ describeIntegration('Payments with Broker E2E', () => {
     Helpers.onClose(() => brokerchain.close());
 
     execAndLog(
-      `npx @ulixee/localchain accounts create ferdiechain --suri="//Ferdie" --scheme=sr25519 --base-dir="${storageDir}"`,
+      `npx @argonprotocol/localchain accounts create --name=ferdiechain --suri="//Ferdie" --scheme=sr25519 --base-dir="${storageDir}"`,
     );
     const ferdiechain = await Localchain.load({
       mainchainUrl,
@@ -211,7 +211,7 @@ async function setupDatastore(
     decodeAddress(domainOwner.address, false, 42),
     1,
     {
-      [version]: mainchainClient.createType('UlxPrimitivesDataDomainVersionHost', {
+      [version]: mainchainClient.createType('ArgonPrimitivesDataDomainVersionHost', {
         datastoreId: mainchainClient.createType('Bytes', datastoreId),
         host: mainchainClient.createType('Bytes', `ws://127.0.0.1:${cloudAddress.split(':')[1]}`),
       }),

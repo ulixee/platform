@@ -16,7 +16,7 @@ import {
 } from '@ulixee/desktop-interfaces/apis';
 import { ICloudConnected } from '@ulixee/desktop-interfaces/apis/IDesktopApis';
 import IDesktopAppPrivateEvents from '@ulixee/desktop-interfaces/events/IDesktopAppPrivateEvents';
-import { ARGON_FILE_VERSION, LocalchainOverview } from '@ulixee/localchain';
+import { ARGON_FILE_VERSION, LocalchainOverview } from '@argonprotocol/localchain';
 import { ConnectionToClient, WsTransportToClient } from '@ulixee/net';
 import IConnectionToClient from '@ulixee/net/interfaces/IConnectionToClient';
 import IArgonFile, { ArgonFileSchema } from '@ulixee/platform-specification/types/IArgonFile';

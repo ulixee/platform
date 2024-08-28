@@ -1,5 +1,5 @@
 import ITypedEventEmitter from '@ulixee/commons/interfaces/ITypedEventEmitter';
-import { LocalchainOverview, BalanceChangeStatus } from '@ulixee/localchain';
+import { LocalchainOverview, BalanceChangeStatus } from '@argonprotocol/localchain';
 import { IPayment } from '@ulixee/platform-specification';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import { IPaymentMethod } from '@ulixee/platform-specification/types/IPayment';

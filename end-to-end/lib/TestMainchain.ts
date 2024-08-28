@@ -2,9 +2,9 @@ import { Helpers } from '@ulixee/datastore-testing';
 import {
   checkForExtrinsicSuccess,
   KeyringPair,
-  UlxClient,
-  UlxPrimitivesDataDomainVersionHost,
-} from '@ulixee/mainchain';
+  ArgonClient,
+  ArgonPrimitivesDataDomainVersionHost,
+} from '@argonprotocol/mainchain';
 import { customAlphabet } from 'nanoid';
 import { ChildProcess, execSync, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -23,7 +23,6 @@ export default class TestMainchain {
   public loglevel = 'warn';
   #binPath: string;
   #process: ChildProcess;
-  #bitcoind: ChildProcess;
   #interfaces: readline.Interface[] = [];
   containerName?: string;
   proxy?: string;
@@ -38,7 +37,7 @@ export default class TestMainchain {
   }
 
   constructor(binPath?: string) {
-    this.#binPath = binPath ?? `${rootDir}/../../mainchain/target/debug/ulx-node`;
+    this.#binPath = binPath ?? `${rootDir}/../../mainchain/target/debug/argon-node`;
     this.#binPath = path.resolve(this.#binPath);
     if (!process.env.ULX_USE_DOCKER_BINS && !fs.existsSync(this.#binPath)) {
       throw new Error(`Mainchain binary not found at ${this.#binPath}`);
@@ -66,12 +65,11 @@ export default class TestMainchain {
         'run',
         '--rm',
         `--name=${containerName}`,
-        `--platform=linux/amd64`,
         `-p=0:${port}`,
         `-p=0:${rpcPort}`,
         '-e',
         `RUST_LOG=${this.loglevel},sc_rpc_server=info`,
-        'ghcr.io/ulixee/ulixee-miner:dev',
+        'ghcr.io/argonprotocol/argon-miner:dev',
       ];
 
       if (process.env.ADD_DOCKER_HOST) {
@@ -83,7 +81,7 @@ export default class TestMainchain {
     execArgs.push(
       '--dev',
       '--alice',
-      `--miners=${miningThreads}`,
+      `--compute-miners=${miningThreads}`,
       `--port=${port}`,
       `--rpc-port=${rpcPort}`,
       '--rpc-external',
@@ -166,22 +164,22 @@ export default class TestMainchain {
 }
 
 export async function registerZoneRecord(
-  client: UlxClient,
+  client: ArgonClient,
   dataDomainHash: Uint8Array,
   owner: KeyringPair,
   paymentAccount: Uint8Array,
   notaryId: number,
-  versions: Record<string, UlxPrimitivesDataDomainVersionHost>,
+  versions: Record<string, ArgonPrimitivesDataDomainVersionHost>,
 ): Promise<void> {
   const codecVersions = new Map();
   for (const [version, host] of Object.entries(versions)) {
     const [major, minor, patch] = version.split('.');
-    const versionCodec = client.createType('UlxPrimitivesDataDomainSemver', {
+    const versionCodec = client.createType('ArgonPrimitivesDataDomainSemver', {
       major,
       minor,
       patch,
     });
-    codecVersions.set(versionCodec, client.createType('UlxPrimitivesDataDomainVersionHost', host));
+    codecVersions.set(versionCodec, client.createType('ArgonPrimitivesDataDomainVersionHost', host));
   }
 
   await new Promise((resolve, reject) => {
@@ -205,7 +203,7 @@ export async function registerZoneRecord(
 
 export async function activateNotary(
   sudo: KeyringPair,
-  client: UlxClient,
+  client: ArgonClient,
   notary: TestNotary,
 ): Promise<void> {
   await notary.register(client);

@@ -52,7 +52,7 @@
       "node_modules/electron-clipboard-ex",
       "node_modules/global-mouse-events",
       "node_modules/nseventmonitor",
-      "node_modules/@ulixee/localchain-*"
+      "node_modules/@argonprotocol/localchain-*"
     ],
     "mac": {
       "files": [
@@ -90,9 +90,9 @@
     },
     "fileAssociations": [
       {
-        "ext": "arg",
-        "name": "ARG",
-        "description": "Ulixee Argons",
+        "ext": "argon",
+        "name": "ARGON",
+        "description": "Argon Cash",
         "icon": "arg",
         "rank": "Owner"
       }

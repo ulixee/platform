@@ -1,5 +1,5 @@
 import DatastoreLookup from '@ulixee/datastore/lib/DatastoreLookup';
-import { DataDomainStore, DataTLD } from '@ulixee/localchain';
+import { DataDomainStore, DataTLD } from '@argonprotocol/localchain';
 
 test('can properly encode a data domain', async () => {
   expect(DataDomainStore.parse('Somewhere.analytics')).toEqual({

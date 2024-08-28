@@ -54,7 +54,7 @@ const datastore = new Datastore({
   extractors: {
     ulixee: new Extractor(async context => {
       const { input, Output, HeroReplay } = context;
-      const maxTimeInCache = input.maxTimeInCache || 5 * 60;
+      const maxTimeInCache = input.maxTimeInCache ?? 5 * 60;
       const crawler = datastore.crawlers.ulixee;
       const heroReplay = await HeroReplay.fromCrawler(crawler, { input: { maxTimeInCache } });
       const h1 = await heroReplay.detachedElements.get('h1');

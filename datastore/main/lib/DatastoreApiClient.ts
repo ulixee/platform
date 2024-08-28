@@ -3,7 +3,7 @@ import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import TimedCache from '@ulixee/commons/lib/TimedCache';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import { toUrl } from '@ulixee/commons/lib/utils';
-import { MainchainClient } from '@ulixee/localchain';
+import { MainchainClient } from '@argonprotocol/localchain';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
 import ICoreEventPayload from '@ulixee/net/interfaces/ICoreEventPayload';
 import { IPayment } from '@ulixee/platform-specification';
