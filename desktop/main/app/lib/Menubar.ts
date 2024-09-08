@@ -22,8 +22,6 @@ export class Menubar extends EventEmitter {
   #tray?: Tray;
   #menuWindow?: BrowserWindow;
   #blurTimeout: NodeJS.Timeout | null = null; // track blur events with timeout
-  #nsEventMonitor: unknown;
-  #winMouseEvents: unknown;
   #windowManager: WindowManager;
   #isClosing = false;
   #updateInfoPromise: Promise<UpdateInfo>;
@@ -33,6 +31,7 @@ export class Menubar extends EventEmitter {
 
   #argonFileOpen: string;
   #options: IMenubarOptions;
+  #trayMouseover: boolean;
 
   constructor(options: IMenubarOptions) {
     super();
@@ -87,9 +86,6 @@ export class Menubar extends EventEmitter {
     } catch (error) {
       if (!String(error).includes('Object has been destroyed')) throw error;
     }
-
-    (this.#nsEventMonitor as any)?.stop();
-    (this.#winMouseEvents as any)?.pauseMouseEvents();
   }
 
   private onSecondInstance(_, argv: string[]): void {
@@ -132,7 +128,7 @@ export class Menubar extends EventEmitter {
 
     trayPositioner.alignTrayMenu(this.#menuWindow, trayPos);
     this.#menuWindow.show();
-    this.listenForMouseDown();
+    this.#menuWindow.on('blur', this.checkHideMenu.bind(this));
   }
 
   private async beforeQuit(): Promise<void> {
@@ -180,6 +176,8 @@ export class Menubar extends EventEmitter {
       });
 
       this.#tray.on('click', this.clicked.bind(this));
+      this.#tray.on('mouse-leave', this.enterTray.bind(this));
+      this.#tray.on('mouse-enter', this.leaveTray.bind(this));
       this.#tray.on('right-click', this.rightClicked.bind(this));
       this.#tray.on('drop-files', this.onDropFiles.bind(this));
       this.#tray.setToolTip(this.#options.tooltip || '');
@@ -195,32 +193,20 @@ export class Menubar extends EventEmitter {
     }
   }
 
-  private listenForMouseDown(): void {
-    if (process.platform === 'darwin') {
-      // eslint-disable-next-line import/no-unresolved,global-require
-      const { NSEventMonitor, NSEventMask } = require('nseventmonitor') as any;
+  private checkHideMenu(): void {
+    if (!this.#trayMouseover) {
+      this.hideMenu();
+    }
+  }
 
-      this.#nsEventMonitor ??= new NSEventMonitor();
-      (this.#nsEventMonitor as any).start(
-        NSEventMask.leftMouseDown | NSEventMask.rightMouseDown,
-        this.hideMenu.bind(this),
-      );
-    } else if (process.platform === 'win32') {
-      if (this.#winMouseEvents) {
-        (this.#winMouseEvents as any).resumeMouseEvents();
-        return;
-      }
-      // eslint-disable-next-line import/no-unresolved,global-require
-      const mouseEvents = require('global-mouse-events') as any;
-      this.#winMouseEvents = mouseEvents;
-      mouseEvents.on('mousedown', event => {
-        const { x, y } = event;
-        const bounds = this.#menuWindow.getBounds();
-        const isOutsideX = x < bounds.x || x > bounds.x + bounds.width;
-        const isOutsideY = y < bounds.y || y > bounds.y + bounds.height;
-        if (!isOutsideX && !isOutsideY) return;
-        if (event.button === 1 || event.button === 2) this.hideMenu();
-      });
+  private enterTray(): void {
+    this.#trayMouseover = true;
+  }
+
+  private leaveTray(): void {
+    this.#trayMouseover = false;
+    if (!this.#menuWindow?.isFocused()) {
+      this.hideMenu();
     }
   }
 

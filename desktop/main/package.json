@@ -25,12 +25,10 @@
   "license": "MIT",
   "devDependencies": {
     "@electron/notarize": "^2.3.2",
-    "@ulixee/datastore": "2.0.0-alpha.29",
-    "@ulixee/datastore-packager": "2.0.0-alpha.29",
     "cross-env": "^7.0.3",
-    "electron": "31.2.1",
-    "electron-builder": "^24.13.3",
-    "tslib": "^2.6.2"
+    "electron": "32.0.1",
+    "electron-builder": "^25.0.5",
+    "tslib": "^2.7.0"
   },
   "build": {
     "appId": "dev.ulixee.desktop",
@@ -47,12 +45,7 @@
       "!dist"
     ],
     "asarUnpack": [
-      "ui",
-      "node_modules/better-sqlite3",
-      "node_modules/electron-clipboard-ex",
-      "node_modules/global-mouse-events",
-      "node_modules/nseventmonitor",
-      "node_modules/@argonprotocol/localchain-*"
+      "ui"
     ],
     "mac": {
       "files": [
