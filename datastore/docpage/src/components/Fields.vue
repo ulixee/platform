@@ -32,7 +32,9 @@ export default Vue.defineComponent({
 
   ul.fields {
     @include reset-ul();
-    border-left: 1px dashed rgba(0, 0, 0, 0.2);
+    & {
+      border-left: 1px dashed rgba(0, 0, 0, 0.2);
+    }
     & > li {
       padding-left: 20px;
       position: relative;

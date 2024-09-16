@@ -35,7 +35,7 @@ export default Vue.defineComponent({
     },
     field: {
       type: Object as PropType<IAnySchemaJson>,
-      default: () => ({} as IAnySchemaJson),
+      default: () => ({}) as IAnySchemaJson,
     },
   },
   setup(props) {
@@ -129,7 +129,9 @@ export default Vue.defineComponent({
   }
   ul.children {
     @include reset-ul();
-    border-left: 1px dashed rgba(0, 0, 0, 0.2);
+    & {
+      border-left: 1px dashed rgba(0, 0, 0, 0.2);
+    }
     & > li {
       padding-left: 20px;
       position: relative;

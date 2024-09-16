@@ -293,7 +293,7 @@ const { lexerAny } = require('../../lib/helpers/lexer');
 
 
  const kwSensitivity = { sensitivity: 'accent' };
- const eqInsensitive = (a, b) => a.localeCompare(b, undefined, kwSensitivity) === 0;
+ const eqInsensitive = (a: string, b: string) => (a.localeCompare as any)(b, undefined, kwSensitivity) === 0;
  const notReservedKw = (kw: string) => (x: any[], _: any, rej: any) => {
      const val = asStr(x[0]);
      if (eqInsensitive(val, kw)) {

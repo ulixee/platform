@@ -80,9 +80,11 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
   function refreshMetadata(id: string, version: string, cloudName = 'local'): Promise<void> {
     const cloud = clouds.value.find(x => x.name === cloudName);
     const client = cloud.clientsByAddress.values().next().value;
-    return client
-      .send('Datastore.meta', { id, version, includeSchemasAsJson: true })
-      .then(x => onDatastoreMeta(x, cloud as ICloudConnection));
+    return client.send('Datastore.meta', { id, version, includeSchemasAsJson: true }).then(x => {
+      const value = x as IDatastoreMeta;
+      value.examplesByEntityName ??= {};
+      return onDatastoreMeta(value, cloud as ICloudConnection);
+    });
   }
 
   function getStats(
@@ -92,7 +94,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
   ): Promise<IDatastoreApiTypes['Datastore.stats']['result']> {
     const cloud = clouds.value.find(x => x.name === cloudName);
     const client = cloud.clientsByAddress.values().next().value;
-    return client.send('Datastore.stats', { id, version });
+    return client.send('Datastore.stats', { id });
   }
 
   async function getVersions(
@@ -396,7 +398,7 @@ export const useDatastoreStore = defineStore('datastoreStore', () => {
     openDocs,
     async refresh() {
       for (const cloud of clouds.value) {
-        const client = cloud.clientsByAddress.values().next().value;
+        const client = cloud.clientsByAddress.values().next().value as any;
         if (client) await onClient(cloud as ICloudConnection, client);
       }
     },

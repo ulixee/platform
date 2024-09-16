@@ -87,7 +87,7 @@ const maxMarkerPosition = 103;
 const defaultMarkerWidth = 4;
 const minPixelForMultiple = 4;
 
-enum MouseDownItem {
+export enum MouseDownItem {
   draggerLeft = 'draggerLeft',
   draggerRight = 'draggerRight',
   nibLeft = 'nibLeft',
@@ -95,7 +95,7 @@ enum MouseDownItem {
   marker = 'marker',
 }
 
-enum ActiveItem {
+export enum ActiveItem {
   nibLeft = 'nibLeft',
   nibRight = 'nibRight',
   marker = 'marker',

@@ -202,14 +202,15 @@ export default Vue.defineComponent({
   }
 
   .section {
+    padding-top: 7px;
+    padding-bottom: 7px;
+    margin: 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
     &:last-child {
       border-bottom: none;
       box-shadow: none;
     }
-    padding: 7px 0;
-    margin: 0;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
   }
 }
 </style>

@@ -1,8 +1,10 @@
 {
-  "extends": "./node_modules/@ulixee/repo-tools/tsconfig.json",
+  "extends": "@ulixee/repo-tools/tsconfig.json",
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "./build",
+    "moduleResolution": "node",
+    "module": "CommonJS",
   },
   "references": [
     {
@@ -17,7 +19,6 @@
     "end-to-end",
     "end-to-end/*.json",
     "desktop",
-    "playgrounds",
     "datastore",
     "datastore/packager/*.json",
     "sql",
@@ -40,7 +41,7 @@
     "desktop/ui",
     "desktop/chrome-extension",
     "specification",
-    "hero",
+    "hero/**",
     "datastore/docpage/src",
     "datastore/broker-admin",
     "datastore/packager/test/assets/*",

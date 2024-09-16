@@ -15,7 +15,6 @@
       "sql/*",
       "client/*",
       "cli",
-      "playgrounds/*",
       "schema",
       "specification",
       "utils"

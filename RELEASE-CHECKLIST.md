@@ -13,10 +13,7 @@ We should eventually automate this to test using the "published" versions of pac
 - from @ulixee/ulixee: `npx ulx-repo-version-check fix` (update dependencies)
 
 ## Bump versions in this order
-1. @ulixee/shared
-5. @ulixee/unblocked
-6. @ulixee/payments
-7. @ulixee/hero
-8. @ulixee/ulixee
+1. @ulixee/hero
+2. @ulixee/ulixee
    - Release Assets: Requires a draft release pre-created (ChromeAlive!, Desktop)
    - Publish website updates

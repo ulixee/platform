@@ -79,29 +79,6 @@ jobs:
           cp mainchain/localchain/npm/**/*.node mainchain/localchain
         working-directory: ..
 
-      - name: Clone ulixee/shared
-        run: |
-          git clone -n https://github.com/ulixee/shared.git
-          cd shared
-          (git fetch --depth 1 origin $GITHUB_REF_NAME && git checkout $GITHUB_REF_NAME) || (git fetch --depth 1 origin main && git checkout main)
-        working-directory: ..
-
-      - name: Install ulixee/shared
-        run: yarn && yarn build
-        working-directory: ../shared
-
-      - name: Clone unblocked
-        run: |
-          git clone -n --recurse-submodules https://github.com/ulixee/unblocked.git
-          cd unblocked
-          (git fetch --depth 1 origin $GITHUB_REF_NAME && git checkout $GITHUB_REF_NAME) || (git fetch --depth 1 origin main && git checkout main)
-          git submodule update --init --recursive --depth 1
-        working-directory: ..
-
-      - name: Install unblocked
-        run: yarn build
-        working-directory: ../unblocked
-
       - name: Install mainchain
         run: yarn
         working-directory: ../mainchain
@@ -111,12 +88,8 @@ jobs:
         working-directory: ../mainchain/client/nodejs
 
       - name: Install Hero
-        run: yarn build
+        run: yarn build:simple
         working-directory: ./hero
-
-      - name: Relink Shared
-        run: yarn build
-        working-directory: ../shared
 
       - name: Yarn build
         run: yarn --ignore-engines && yarn build --ignore-engines
@@ -217,31 +190,6 @@ jobs:
           cp mainchain/localchain/npm/**/*.node mainchain/localchain
         working-directory: ..
 
-      - name: Clone ulixee/shared
-        shell: bash
-        run: |
-          git clone -n https://github.com/ulixee/shared.git
-          cd shared
-          (git fetch --depth 1 origin $GITHUB_REF_NAME && git checkout $GITHUB_REF_NAME) || (git fetch --depth 1 origin main && git checkout main)
-        working-directory: ..
-
-      - name: Install ulixee/shared
-        run: yarn && yarn build
-        working-directory: ../shared
-
-      - name: Clone unblocked
-        shell: bash
-        run: |
-          git clone -n --recurse-submodules https://github.com/ulixee/unblocked.git
-          cd unblocked
-          (git fetch --depth 1 origin $GITHUB_REF_NAME && git checkout $GITHUB_REF_NAME) || (git fetch --depth 1 origin main && git checkout main)
-          git submodule update --init --recursive --depth 1
-        working-directory: ..
-
-      - name: Install unblocked
-        run: yarn build
-        working-directory: ../unblocked
-
       - name: Install mainchain
         run: yarn
         working-directory: ../mainchain
@@ -251,12 +199,8 @@ jobs:
         working-directory: ../mainchain/client/nodejs
 
       - name: Install Hero
-        run: yarn build
+        run: yarn build:simple
         working-directory: ./hero
-
-      - name: Relink Shared
-        run: yarn build
-        working-directory: ../shared
 
       - name: Yarn build
         run: yarn --ignore-engines && yarn build --ignore-engines

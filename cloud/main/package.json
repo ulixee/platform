@@ -8,6 +8,10 @@
       "require": "./index.cjs",
       "types": "./index.d.ts"
     },
+    "./paths": {
+      "require": "./paths.js",
+      "types": "./paths.d.ts"
+    },
     "./cli": {
       "default": "./cli.cjs",
       "types": "./cli.d.ts"

@@ -7,14 +7,11 @@ export default function serdeJson(toSerialize: any): string {
       return `0x${value.toString('hex')}`;
     }
     // translate the pre-parsed Buffer to a hex string
-    if (
-      value &&
-      typeof value === 'object' &&
-      'type' in value &&
-      'data' in value &&
-      value.type === 'Buffer'
-    ) {
-      return `0x${Buffer.from(value.data as any).toString('hex')}`;
+    if (value && typeof value === 'object' && 'type' in value && 'data' in value) {
+      const bufferLike = value as { type: string; data: unknown };
+      if (bufferLike.type === 'Buffer') {
+        return `0x${Buffer.from(bufferLike.data as any).toString('hex')}`;
+      }
     }
     if (typeof value === 'bigint') {
       if (value > Number.MAX_SAFE_INTEGER) {

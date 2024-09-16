@@ -57,7 +57,7 @@ export class InsufficientQueryPriceError extends UlixeeError {
   }
 }
 
-export class MaxSurgePricePerQueryExceeededError extends UlixeeError {
+export class MaxSurgePricePerQueryExceededError extends UlixeeError {
   static get code(): string {
     return 'ERR_MAX_PRICE_EXCEEDED';
   }
@@ -65,7 +65,7 @@ export class MaxSurgePricePerQueryExceeededError extends UlixeeError {
   constructor(clientMaxPricePerQuery: number, cloudPricePerQuery: number) {
     super(
       'The maximum surge price per query requested was not accepted by this Cloud.',
-      MaxSurgePricePerQueryExceeededError.code,
+      MaxSurgePricePerQueryExceededError.code,
     );
     this.data = {
       clientMaxPricePerQuery,
@@ -75,5 +75,5 @@ export class MaxSurgePricePerQueryExceeededError extends UlixeeError {
 }
 
 registerSerializableErrorType(DatastoreNotFoundError);
-registerSerializableErrorType(MaxSurgePricePerQueryExceeededError);
+registerSerializableErrorType(MaxSurgePricePerQueryExceededError);
 registerSerializableErrorType(InsufficientQueryPriceError);

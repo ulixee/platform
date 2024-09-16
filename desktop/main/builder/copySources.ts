@@ -8,14 +8,19 @@ const baseBuild = `${__dirname}/../../../..`;
 const dirsNotToInclude = new Set([
   'node_modules',
   'packages',
-  'playgrounds',
+  'playground',
   'end-to-end',
   'website',
   'chrome-extension',
+  'databroker-admin',
   'docs',
   'desktop/main',
   'localchain/npm',
   'desktop/ui',
+  'double-agent',
+  "browser-emulator-builder",
+  "browser-profiler",
+  'double-agent-stacks',
   'testing',
   'desktop/chrome-extension',
   'examples',
@@ -85,14 +90,8 @@ copyDir(`${baseBuild}/${buildDir}`);
 if (buildDir === 'build') {
   copyDir(`${baseBuild}/hero/${buildDir}`);
   copyDir(`${baseBuild}/../mainchain/localchain`);
-  copyDir(`${baseBuild}/../unblocked/${buildDir}/agent`);
-  copyDir(`${baseBuild}/../unblocked/${buildDir}/specification`);
-  copyDir(`${baseBuild}/../shared/${buildDir}/net`);
-  copyDir(`${baseBuild}/../shared/${buildDir}/crypto`);
-  copyDir(`${baseBuild}/../shared/${buildDir}/commons`);
-  copyDir(`${baseBuild}/../unblocked/${buildDir}/plugins`);
   copyDir(
-    `${baseBuild}/../unblocked/browser-emulator-builder/data`,
+    `${baseBuild}/hero/browser-emulator-builder/data`,
     `${dest}/default-browser-emulator/data`,
   );
   if (Fs.existsSync(`${dest}/default-browser-emulator`)) {
