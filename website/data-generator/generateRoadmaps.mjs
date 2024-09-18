@@ -16,13 +16,10 @@ const milestones = JSON.parse(rawMilestones);
 const roadmapPaths = [
   'cloud/ROADMAP-Cloud.md',
   'stream/ROADMAP-Stream.md',
-  'hero/ROADMAP-Hero.md',
+  '../hero/ROADMAP-Hero.md',
   'datastore/ROADMAP-Datastore.md',
-  '../payments/ROADMAP-Argon.md',
-  '../payments/mainchain/ROADMAP-Mainchain.md',
-  '../payments/sidechain/ROADMAP-Sidechain.md',
-  '../unblocked/ROADMAP-DoubleAgent.md',
-  '../unblocked/ROADMAP-ScraperReport.md',
+  '../hero/ROADMAP-DoubleAgent.md',
+  '../hero/ROADMAP-ScraperReport.md',
   'coming-soon/ROADMAP-NFTs.md',
   'desktop/ROADMAP-Desktop.md',
 ];

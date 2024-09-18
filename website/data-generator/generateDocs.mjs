@@ -17,7 +17,7 @@ const rootDir = Path.resolve(__dirname, '../../');
 }
 
 {
-  const mdDocsRootPath = `${rootDir}/hero/docs`;
+  const mdDocsRootPath = `${rootDir}/../hero/docs`;
   walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'hero');
   });

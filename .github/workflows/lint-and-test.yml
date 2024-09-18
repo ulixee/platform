@@ -57,25 +57,14 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.20'
+          go-version: '1.23'
 
       - name: Install pcap
         run: sudo apt-get install -y libpcap-dev
 
-      - name: Setup SSH for Git Operations
-        shell: bash
-        run: |
-          mkdir -p "$SSH_PATH"
-          echo "$SSH_PRIVATE_KEY" > "$SSH_PATH/id_rsa"
-          chmod 600 "$SSH_PATH/id_rsa"
-          ssh-keyscan github.com >> "$SSH_PATH/known_hosts"
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.MAINCHAIN_SSH_KEY }}
-
       - name: Clone Mainchain
         run: |
-          export GIT_SSH_COMMAND="ssh -i $SSH_PATH/id_rsa -o UserKnownHostsFile=$SSH_PATH/known_hosts"
-          git clone --depth 1 -b napi-bindings git@github.com:argonprotocol/mainchain.git
+          git clone --depth 1 -b napi-bindings https://github.com/argonprotocol/mainchain.git
           cp mainchain/localchain/npm/**/*.node mainchain/localchain
         working-directory: ..
 
@@ -87,12 +76,23 @@ jobs:
         run: yarn tsc
         working-directory: ../mainchain/client/nodejs
 
+      - name: Clone Hero
+        run: |
+          git clone -n --recurse-submodules https://github.com/ulixee/hero.git
+          cd hero
+          (git fetch --depth 1 origin $GITHUB_REF_NAME && git checkout $GITHUB_REF_NAME) || (git fetch --depth 1 origin main && git checkout main)
+          git submodule update --init --recursive --depth 1
+        working-directory: ..
+
       - name: Install Hero
-        run: yarn build:simple
-        working-directory: ./hero
+        run: yarn build
+        working-directory: ../hero
+
+      - name: Set yarn config
+        run: yarn config set ignore-engines true && yarn config set frozen-lockfile true
 
       - name: Yarn build
-        run: yarn --ignore-engines && yarn build --ignore-engines
+        run: yarn build
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 
@@ -150,7 +150,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.20'
+          go-version: '1.23'
 
       - name: Chocolatey Install Action
         if: ${{ matrix.os == 'windows-latest' }}
@@ -162,31 +162,10 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         uses: microsoft/setup-msbuild@v2
 
-      - name: Setup SSH for Git Operations
-        shell: bash
-        run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            SSH_PATH="$HOME/.ssh"
-            mkdir "$SSH_PATH"
-            echo "$SSH_PRIVATE_KEY" > "$SSH_PATH/id_rsa"
-            chmod 600 "$SSH_PATH/id_rsa"
-            ssh-keyscan github.com >> "$SSH_PATH/known_hosts"
-            echo "GIT_SSH_COMMAND=ssh -i $SSH_PATH/id_rsa -o UserKnownHostsFile=$SSH_PATH/known_hosts" >> $GITHUB_ENV
-          else
-            SSH_PATH=~/.ssh
-            mkdir -p "$SSH_PATH"
-            echo "$SSH_PRIVATE_KEY" > "$SSH_PATH/id_rsa"
-            chmod 600 "$SSH_PATH/id_rsa"
-            ssh-keyscan github.com >> "$SSH_PATH/known_hosts"
-            echo "GIT_SSH_COMMAND=ssh -i $SSH_PATH/id_rsa -o UserKnownHostsFile=$SSH_PATH/known_hosts" >> $GITHUB_ENV
-          fi
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.MAINCHAIN_SSH_KEY }}
-
       - name: Clone Mainchain
         shell: bash
         run: |
-          git clone -b napi-bindings git@github.com:argonprotocol/mainchain.git
+          git clone -b napi-bindings https://github.com/argonprotocol/mainchain.git
           cp mainchain/localchain/npm/**/*.node mainchain/localchain
         working-directory: ..
 
@@ -198,12 +177,23 @@ jobs:
         run: yarn tsc
         working-directory: ../mainchain/client/nodejs
 
+      - name: Clone Hero
+        run: |
+          git clone -n --recurse-submodules https://github.com/ulixee/hero.git
+          cd hero
+          (git fetch --depth 1 origin $GITHUB_REF_NAME && git checkout $GITHUB_REF_NAME) || (git fetch --depth 1 origin main && git checkout main)
+          git submodule update --init --recursive --depth 1
+        working-directory: ..
+
       - name: Install Hero
-        run: yarn build:simple
-        working-directory: ./hero
+        run: yarn build
+        working-directory: ../hero
+
+      - name: Set yarn config
+        run: yarn config set ignore-engines true && yarn config set frozen-lockfile true
 
       - name: Yarn build
-        run: yarn --ignore-engines && yarn build --ignore-engines
+        run: yarn build
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 
