@@ -476,9 +476,9 @@ export default class DatastoreApiClient {
 
   public static async lookupDatastoreHost(
     datastoreUrl: string,
-    mainchainUrl: string,
+    argonMainchainUrl: string,
   ): Promise<IDatastoreHost> {
-    const mainchainClient = mainchainUrl ? await MainchainClient.connect(mainchainUrl, 10e3) : null;
+    const mainchainClient = argonMainchainUrl ? await MainchainClient.connect(argonMainchainUrl, 10e3) : null;
     try {
       return await new DatastoreLookup(mainchainClient).getHostInfo(datastoreUrl);
     } finally {

@@ -20,7 +20,7 @@ afterEach(Helpers.afterEach);
 afterAll(Helpers.afterAll);
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'e2e.payments.test');
 
-let mainchainUrl: string;
+let argonMainchainUrl: string;
 const identityPath = Path.join(storageDir, 'DatastoreDev.pem');
 
 let ferdie: KeyringPair;
@@ -29,13 +29,13 @@ inspect.defaultOptions.depth = 10;
 describeIntegration('Payments E2E', () => {
   beforeAll(async () => {
     const mainchain = new TestMainchain();
-    mainchainUrl = await mainchain.launch();
+    argonMainchainUrl = await mainchain.launch();
     const notary = new TestNotary();
-    await notary.start(mainchainUrl);
+    await notary.start(argonMainchainUrl);
 
     ferdie = new Keyring({ type: 'sr25519' }).createFromUri('//Ferdie');
     const sudo = new Keyring({ type: 'sr25519' }).createFromUri('//Alice');
-    const mainchainClient = await getClient(mainchainUrl);
+    const mainchainClient = await getClient(argonMainchainUrl);
 
     await activateNotary(sudo, mainchainClient, notary);
     await mainchainClient.disconnect();
@@ -50,12 +50,12 @@ describeIntegration('Payments E2E', () => {
   test('it can do end to end payments flow for a domain datastore', async () => {
     const buildDir = getPlatformBuild();
 
-    const mainchainClient = await getClient(mainchainUrl);
+    const mainchainClient = await getClient(argonMainchainUrl);
     Helpers.onClose(() => mainchainClient.disconnect());
 
     const bobchain = await LocalchainWithSync.load({
       localchainPath: Path.join(storageDir, 'bobchain.db'),
-      mainchainUrl,
+      argonMainchainUrl,
       automaticallyRunSync: false,
       escrowAllocationStrategy: {
         type: 'multiplier',
@@ -67,7 +67,7 @@ describeIntegration('Payments E2E', () => {
       `npx @argonprotocol/localchain accounts create --name=ferdiechain --suri="//Ferdie" --scheme=sr25519 --base-dir="${storageDir}"`,
     );
     const ferdiechain = await Localchain.load({
-      mainchainUrl,
+      mainchainUrl: argonMainchainUrl,
       path: Path.join(storageDir, 'ferdiechain.db'),
     });
     Helpers.onClose(() => ferdiechain.close());
@@ -78,7 +78,7 @@ describeIntegration('Payments E2E', () => {
     // Hangs with the proxy url. Not sure why
     if (!process.env.ULX_USE_DOCKER_BINS) {
       const isDomainRegistered = execAndLog(
-        `npx @argonprotocol/localchain data-domains check ${domain} -m "${mainchainUrl}"`,
+        `npx @argonprotocol/localchain data-domains check ${domain} -m "${argonMainchainUrl}"`,
       );
       expect(isDomainRegistered).toContain(' No ');
       console.log('Domain registered?', isDomainRegistered);
@@ -118,10 +118,10 @@ describeIntegration('Payments E2E', () => {
     const cloudAddress = await cloudNode.start({
       ULX_CLOUD_ADMIN_IDENTITIES: identityBech32,
       ULX_IDENTITY_PATH: identityPath,
-      ULX_MAINCHAIN_URL: mainchainUrl,
-      ULX_LOCALCHAIN_PATH: ferdiechain.path,
-      ULX_VOTES_ADDRESS: ferdieVotesAddress,
-      ULX_NOTARY_ID: '1',
+      ARGON_MAINCHAIN_URL: argonMainchainUrl,
+      ARGON_LOCALCHAIN_PATH: ferdiechain.path,
+      ARGON_VOTES_ADDRESS: ferdieVotesAddress,
+      ARGON_NOTARY_ID: '1',
     });
     expect(cloudAddress).toBeTruthy();
     Helpers.onClose(() => cloudNode.close());
@@ -168,7 +168,7 @@ describeIntegration('Payments E2E', () => {
     let metadata: IDatastoreMetadataResult;
     const client = new Client(`ulx://${domain}/@v${datastoreVersion}`, {
       paymentService,
-      mainchainUrl,
+      argonMainchainUrl,
       onQueryResult(result) {
         metadata = result.metadata;
       },
@@ -217,9 +217,9 @@ describeIntegration('Payments E2E', () => {
     const cloudAddress = await cloudNode.start({
       ULX_CLOUD_ADMIN_IDENTITIES: identityBech32.trim(),
       ULX_IDENTITY_PATH: identityPath,
-      ULX_MAINCHAIN_URL: mainchainUrl,
-      ULX_LOCALCHAIN_PATH: Path.join(storageDir, 'ferdiechain.db'),
-      ULX_NOTARY_ID: '1',
+      ARGON_MAINCHAIN_URL: argonMainchainUrl,
+      ARGON_LOCALCHAIN_PATH: Path.join(storageDir, 'ferdiechain.db'),
+      ARGON_NOTARY_ID: '1',
     });
     expect(cloudAddress).toBeTruthy();
 
@@ -239,7 +239,7 @@ describeIntegration('Payments E2E', () => {
 
     const bobchain = await LocalchainWithSync.load({
       localchainPath: Path.join(storageDir, 'bobchain.db'),
-      mainchainUrl,
+      argonMainchainUrl,
       escrowAllocationStrategy: {
         type: 'multiplier',
         queries: 2,
@@ -258,7 +258,7 @@ describeIntegration('Payments E2E', () => {
     let metadata: IDatastoreMetadataResult;
     const client = new Client(`ulx://${cloudAddress}/no-domain@v0.0.2`, {
       paymentService,
-      mainchainUrl,
+      argonMainchainUrl,
       onQueryResult(result) {
         metadata = result.metadata;
       },

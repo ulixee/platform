@@ -19,8 +19,8 @@ export default class TestDatabroker {
   public async start(envArgs: {
     ULX_DATABROKER_DIR?: string;
     ULX_DATABROKER_PORT?: string;
-    ULX_MAINCHAIN_URL?: string;
-    ULX_LOCALCHAIN_PATH?: string;
+    ARGON_MAINCHAIN_URL?: string;
+    ARGON_LOCALCHAIN_PATH?: string;
   }): Promise<string> {
     this.#childProcess = spawn(`npx @ulixee/databroker start`, {
       stdio: ['ignore', 'pipe', 'pipe'],
