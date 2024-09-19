@@ -152,6 +152,11 @@ jobs:
         with:
           go-version: '1.23'
 
+      - uses: actions/setup-python@v5
+        if: ${{ matrix.os != 'windows-latest' }}
+        with:
+          python-version: '3.10'
+
       - name: Chocolatey Install Action
         if: ${{ matrix.os == 'windows-latest' }}
         uses: crazy-max/ghaction-chocolatey@v3
@@ -161,6 +166,16 @@ jobs:
       - name: Add msbuild to PATH
         if: ${{ matrix.os == 'windows-latest' }}
         uses: microsoft/setup-msbuild@v2
+
+      - name: Clear space
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          sudo rm -rf /Users/runner/Library/Android/sdk
+          sudo rm -rf /Users/runner/hostedtoolcache/CodeQL
+          sudo rm -rf /Users/runner/Library/Developer/CoreSimulator
+          sudo rm -rf /Users/runner/Library/Developer/Xcode/DerivedData
+          sudo rm -rf /Users/runner/Library/Developer/Xcode/iOS DeviceSupport
+          sudo rm -rf /Users/runner/Library/Developer/Xcode/watchOS DeviceSupport
 
       - name: Clone Mainchain
         shell: bash
@@ -189,13 +204,15 @@ jobs:
         run: yarn build
         working-directory: ../hero
 
-      - name: Set yarn config
-        run: yarn config set ignore-engines true && yarn config set frozen-lockfile true
+      - name: Install Deps
+        run: yarn config set ignore-engines true
 
       - name: Yarn build
         run: yarn build
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+          ULX_MITM_REBUILD_SOCKET: 0
+          NODE_OPTIONS: --max_old_space_size=4096
 
       - name: Redo mainchain deps
         run: yarn

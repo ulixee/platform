@@ -14,7 +14,7 @@ This repository is the development home to several of the tools that make it eas
 
 ## Tooling
 
-Try out Ulixee Desktop! The Alpha release is available for download under [Assets](https://github.com/ulixee/platform/releases/latest).
+Try out [Ulixee Desktop!](https://github.com/ulixee/desktop). It's a helpful tool for developing and managing your Ulixee scripts.
 
 ### Docker
 
@@ -26,10 +26,9 @@ To use the image, we have a [run.sh](./cloud/tools/docker/run.sh) script that wi
 
 ## Developer Environment
 
-This project serves as a Monorepo for developing the Ulixee Datastore, Desktop, Hero and Cloud. To install this project, you'll need to:
+This project serves as a Monorepo for developing the Ulixee Datastore and Cloud. If you are developing, you might wish to have [hero][hero] as a project adjacent to this one.
 
-1. Clone with `--recursive` so that submodules are initialized.
-2. Run `yarn build:all` from the main repository.
+1Run `yarn build:all` from the this repository to build all the projects.
 
 Learn more about Ulixee at [ulixee.org](https://ulixee.org).
 

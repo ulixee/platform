@@ -5,7 +5,7 @@ Ulixee Client is a full featured library that supports the full Ulixee SQL speci
 Below is an example of using Ulixee Client:
 
 ```js
-import Client from '@ulixee/client-playground';
+import Client from '@ulixee/client';
 
 const client = new Client('ulx://USER:PASS@HOST:PORT/DB');
 const data = await client.query('SELECT * FROM table');

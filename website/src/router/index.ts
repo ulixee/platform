@@ -17,7 +17,6 @@ const _roadmapNames = [
   'Stream',
   'ScraperReport',
   'Cloud',
-  'Sidechain',
 ];
 
 const releasedToolNames = ['Hero', 'ChromeAlive', 'Datastore', 'Cloud', 'Stream'];

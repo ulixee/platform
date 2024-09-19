@@ -9,6 +9,8 @@
     "build": "yarn generate && vue-cli-service build --mode production",
     "lint": "vue-cli-service lint",
     "watch:server": "yarn start",
+    "watch:toc": "npx onchange '../*/docs/links.yaml' -- node ./data-generator/generateToc.mjs",
+    "watch:hero-toc": "npx onchange '../../hero/docs/links.yaml' -- node ./data-generator/generateToc.mjs",
     "watch:stream": "npx onchange '../stream/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",
     "watch:datastore": "npx onchange '../datastore/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",
     "watch:hero": "npx onchange '../../hero/docs/**/*.md' -- node ./data-generator/generateDoc.mjs {{file}}",

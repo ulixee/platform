@@ -33,7 +33,7 @@
         </template>
       </div>
 
-      <div class="DocsContent flex-1">
+      <div class="DocsContent flex-1  max-w-full overflow-auto">
         <div class="mx-3 mt-5 md:mx-32">
           <div class="post mb" v-html="page.content"></div>
         </div>

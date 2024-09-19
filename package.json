@@ -5,10 +5,9 @@
   "scripts": {
     "prepare": "husky",
     "build": "yarn && yarn tsc && yarn build:docpage && cd ./build && yarn",
-    "build:desktop": "yarn workspace @ulixee/desktop build:ui",
     "build:docpage": "yarn workspace @ulixee/datastore-docpage build",
     "build:broker": "yarn workspace @ulixee/databroker-admin build",
-    "build:all": "yarn build:desktop && yarn build:broker yarn build",
+    "build:all": "yarn build:broker yarn build",
     "build:dist": "shx rm -rf build-dist && tsc -b tsconfig.dist.json && yarn copy:dist && yarn workspace @ulixee/datastore-docpage build:dist && yarn workspace @ulixee/databroker-admin build:dist",
     "copy:build": "ulx-repo-after-build && ulx-repo-adjust-paths",
     "copy:dist": "ulx-repo-after-build --dist",
@@ -72,7 +71,6 @@
   "workspaces": {
     "packages": [
       "desktop/*",
-      "desktop/main/app",
       "datastore/*",
       "datastore/plugins/*",
       "cloud/*",
