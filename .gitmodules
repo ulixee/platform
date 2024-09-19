@@ -1,4 +1,0 @@
-[submodule "hero"]
-	path = hero
-	url = git@github.com:ulixee/hero.git
-	branch = main

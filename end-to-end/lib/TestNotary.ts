@@ -42,7 +42,7 @@ export default class TestNotary {
   /**
    * Returns the localhost address of the notary (NOTE: not accessible from containers)
    */
-  public async start(mainchainUrl: string, pathToNotaryBin?: string): Promise<string> {
+  public async start(argonMainchainUrl: string, pathToNotaryBin?: string): Promise<string> {
     this.operator = new Keyring({ type: 'sr25519' }).createFromUri('//Bob');
     this.registeredPublicKey = new Keyring({ type: 'ed25519' }).createFromUri(
       '//Ferdie//notary',
@@ -94,7 +94,7 @@ export default class TestNotary {
     }
     console.log(
       "Notary >> connecting to mainchain '%s', db %s",
-      mainchainUrl,
+      argonMainchainUrl,
       `${this.#dbConnectionString}/${this.#dbName}`,
     );
 
@@ -102,7 +102,7 @@ export default class TestNotary {
       'run',
       `--db-url=${this.#dbConnectionString}/${this.#dbName}`,
       `--dev`,
-      `-t ${mainchainUrl}`,
+      `-t ${argonMainchainUrl}`,
     ];
     if (process.env.ULX_USE_DOCKER_BINS) {
       execArgs.unshift(...notaryPath.replace('docker run', 'run').split(' '));

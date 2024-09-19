@@ -18,7 +18,7 @@ export interface IClientConfig
     Pick<IQueryOptions, 'authentication' | 'affiliateId' | 'onQueryResult' | 'queryId'>
   > {
   paymentService?: IPaymentService;
-  mainchainUrl?: string;
+  argonMainchainUrl?: string;
 }
 
 export default class ClientForRemote {
@@ -63,7 +63,7 @@ export default class ClientForRemote {
         // see if this is a domain
         DataDomainStore.parse(this.host);
 
-        if (!config?.mainchainUrl)
+        if (!config?.argonMainchainUrl)
           throw new Error('No mainchain url provided to lookup this datastore host');
         this.domainLookupPromise = this.lookupDomain(uriOrObject);
       } catch (err) {
@@ -156,7 +156,7 @@ export default class ClientForRemote {
   private async lookupDomain(domainName: string): Promise<void> {
     const lookup = await DatastoreApiClient.lookupDatastoreHost(
       domainName,
-      this.config.mainchainUrl,
+      this.config.argonMainchainUrl,
     );
 
     this.datastoreId = lookup.datastoreId;

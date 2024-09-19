@@ -94,8 +94,8 @@ export default class DefaultPaymentService
     datastoreLookup?: IDatastoreHostLookup,
   ): Promise<void> {
     this.#datastoreLookup ??= datastoreLookup ?? (await this.argonReserver.datastoreLookup);
-    if (!this.#datastoreLookup && Env.mainchainUrl) {
-      const mainchainClient = await MainchainClient.connect(Env.mainchainUrl, 10e3);
+    if (!this.#datastoreLookup && Env.argonMainchainUrl) {
+      const mainchainClient = await MainchainClient.connect(Env.argonMainchainUrl, 10e3);
       this.#datastoreLookup = new DatastoreLookup(mainchainClient);
     }
     const service = await CreditReserver.lookup(

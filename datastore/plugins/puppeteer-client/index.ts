@@ -61,7 +61,7 @@ export class PuppeteerExtractorPlugin<ISchema extends IExtractorSchema>
 
   protected initializePuppeteer(): Promise<PuppeteerBrowser> {
     const options: Puppeteer.PuppeteerLaunchOptions = {
-      headless: 'new',
+      headless: true,
       ...this.runOptions,
       handleSIGTERM: true,
       handleSIGHUP: true,

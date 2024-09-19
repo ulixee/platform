@@ -15,13 +15,13 @@ clonedPackageJson.devDependencies['@ulixee/datastore-packager'] = version;
 export default async function cloneDatastore(
   url: string,
   directoryPath?: string,
-  options: { embedCredits?: { id: string; secret: string }; mainchainUrl?: string } = {},
+  options: { embedCredits?: { id: string; secret: string }; argonMainchainUrl?: string } = {},
 ): Promise<{ datastoreFilePath: string }> {
   const {
     datastoreId,
     version: datastoreVersion,
     host,
-  } = await DatastoreApiClient.lookupDatastoreHost(url, options.mainchainUrl);
+  } = await DatastoreApiClient.lookupDatastoreHost(url, options.argonMainchainUrl);
   if (url.includes('/free-credit')) {
     const credit = new URL(url).search.split(':');
     options.embedCredits = { id: credit[0], secret: credit[1] };

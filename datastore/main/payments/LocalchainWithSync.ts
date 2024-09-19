@@ -63,22 +63,22 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
   }
 
   public async load(): Promise<void> {
-    const { mainchainUrl, localchainPath } = this.localchainConfig;
+    const { argonMainchainUrl, localchainPath } = this.localchainConfig;
 
     let defaultPath = localchainPath ?? Localchain.getDefaultPath();
     if (!defaultPath.endsWith('.db')) {
       defaultPath = Path.join(defaultPath, 'primary.db');
     }
 
-    log.info(`Loading ${mainchainUrl ? 'online' : 'offline'} localchain`, {
+    log.info(`Loading ${argonMainchainUrl ? 'online' : 'offline'} localchain`, {
       localchainPath: defaultPath,
     } as any);
     const keystorePassword = this.getPassword();
 
-    if (mainchainUrl) {
+    if (argonMainchainUrl) {
       this.#localchain = await Localchain.load({
         path: localchainPath,
-        mainchainUrl,
+        mainchainUrl: argonMainchainUrl,
         keystorePassword,
       });
       this.datastoreLookup = new DatastoreLookup(await this.#localchain.mainchainClient);
@@ -104,8 +104,8 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
     this.#localchain = null;
   }
 
-  public async connectToMainchain(mainchainUrl: string, timeoutMs = 10e3): Promise<void> {
-    const mainchain = await MainchainClient.connect(mainchainUrl, timeoutMs);
+  public async connectToMainchain(argonMainchainUrl: string, timeoutMs = 10e3): Promise<void> {
+    const mainchain = await MainchainClient.connect(argonMainchainUrl, timeoutMs);
     await this.#localchain.attachMainchain(mainchain);
   }
 

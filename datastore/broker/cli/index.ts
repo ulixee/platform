@@ -51,7 +51,7 @@ export default function cliCommands(): Command {
           '--localchain-path <path>',
           'The path to the localchain data directory. You can also configure this using the .env file',
         )
-        .env('ULX_LOCALCHAIN_PATH'),
+        .env('ARGON_LOCALCHAIN_PATH'),
     )
     .allowUnknownOption(true)
     .action(async opts => {

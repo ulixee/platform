@@ -42,10 +42,6 @@ jobs:
         uses: microsoft/setup-msbuild@v2
         if: ${{ matrix.os == 'windows-latest' }}
 
-      - name: Install Hero
-        run: yarn && yarn build
-        working-directory: ./hero
-
       - name: Yarn build
         run: yarn --ignore-engines && yarn build --ignore-engines
         env:

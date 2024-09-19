@@ -10,9 +10,6 @@
     {
       "path": "specification/tsconfig.json",
     },
-    {
-      "path": "desktop/chrome-extension/tsconfig.json",
-    },
   ],
   "include": [
     "cloud",
@@ -38,8 +35,6 @@
     "**/build-dist/**/*",
     "node_modules",
     "**/node_modules",
-    "desktop/ui",
-    "desktop/chrome-extension",
     "specification",
     "hero/**",
     "datastore/docpage/src",

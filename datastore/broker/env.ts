@@ -14,24 +14,24 @@ export default {
 };
 
 function getLocalchainConfig(): ILocalchainConfig | undefined {
-  if (!env.ULX_LOCALCHAIN_PATH && !env.ULX_MAINCHAIN_URL) return;
+  if (!env.ARGON_LOCALCHAIN_PATH && !env.ARGON_MAINCHAIN_URL) return;
   let keystorePassword: Buffer | undefined;
-  if (env.ULX_LOCALCHAIN_PASSWORD) {
-    keystorePassword = Buffer.from(env.ULX_LOCALCHAIN_PASSWORD, 'utf8');
-    delete process.env.ULX_LOCALCHAIN_PASSWORD;
+  if (env.ARGON_LOCALCHAIN_PASSWORD) {
+    keystorePassword = Buffer.from(env.ARGON_LOCALCHAIN_PASSWORD, 'utf8');
+    delete process.env.ARGON_LOCALCHAIN_PASSWORD;
   }
-  if (env.ULX_LOCALCHAIN_PASSWORD_FILE)
-    env.ULX_LOCALCHAIN_PASSWORD_FILE = parseEnvPath(env.ULX_LOCALCHAIN_PASSWORD_FILE);
-  if (env.ULX_LOCALCHAIN_PATH) env.ULX_LOCALCHAIN_PATH = parseEnvPath(env.ULX_LOCALCHAIN_PATH);
+  if (env.ARGON_LOCALCHAIN_PASSWORD_FILE)
+    env.ARGON_LOCALCHAIN_PASSWORD_FILE = parseEnvPath(env.ARGON_LOCALCHAIN_PASSWORD_FILE);
+  if (env.ARGON_LOCALCHAIN_PATH) env.ARGON_LOCALCHAIN_PATH = parseEnvPath(env.ARGON_LOCALCHAIN_PATH);
 
   return <ILocalchainConfig>{
-    localchainPath: env.ULX_LOCALCHAIN_PATH,
-    mainchainUrl: env.ULX_MAINCHAIN_URL,
+    localchainPath: env.ARGON_LOCALCHAIN_PATH,
+    argonMainchainUrl: env.ARGON_MAINCHAIN_URL,
     notaryId: parseEnvInt(env.NOTARY_ID),
     keystorePassword: {
-      interactiveCli: parseEnvBool(env.ULX_LOCALCHAIN_PASSWORD_INTERACTIVE_CLI),
+      interactiveCli: parseEnvBool(env.ARGON_LOCALCHAIN_PASSWORD_INTERACTIVE_CLI),
       password: keystorePassword,
-      passwordFile: env.ULX_LOCALCHAIN_PASSWORD_FILE,
+      passwordFile: env.ARGON_LOCALCHAIN_PASSWORD_FILE,
     },
   };
 }

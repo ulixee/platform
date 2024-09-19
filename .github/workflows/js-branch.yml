@@ -25,28 +25,8 @@ jobs:
           node-version: 18
           cache: yarn
 
-      - name: Setup SSH for Git Operations
-        run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            SSH_PATH="$HOME/.ssh"
-            mkdir "$SSH_PATH"
-            echo "$SSH_PRIVATE_KEY" > "$SSH_PATH/id_rsa"
-            chmod 600 "$SSH_PATH/id_rsa"
-            ssh-keyscan github.com >> "$SSH_PATH/known_hosts"
-          else
-            SSH_PATH=~/.ssh
-            mkdir -p "$SSH_PATH"
-            echo "$SSH_PRIVATE_KEY" > "$SSH_PATH/id_rsa"
-            chmod 600 "$SSH_PATH/id_rsa"
-            ssh-keyscan github.com >> "$SSH_PATH/known_hosts"
-          fi
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.MAINCHAIN_SSH_KEY }}
-
       - name: Clone Mainchain
-        run: |
-          export GIT_SSH_COMMAND="ssh -i $SSH_PATH/id_rsa -o UserKnownHostsFile=$SSH_PATH/known_hosts"
-          git clone -b napi-bindings git@github.com:argonprotocol/mainchain.git
+        run: git clone -b napi-bindings https://github.com/argonprotocol/mainchain.git
         working-directory: ..
 
       - name: Install Mainchain
@@ -57,15 +37,22 @@ jobs:
         run: yarn tsc
         working-directory: ../mainchain/client/nodejs
 
+      - name: Clone Hero
+        run: |
+          git clone -n https://github.com/ulixee/hero.git
+          cd hero
+          (git fetch --depth 1 origin $GITHUB_REF_NAME && git checkout $GITHUB_REF_NAME) || (git fetch --depth 1 origin main && git checkout main)
+        working-directory: ..
+
       - name: Install Hero
         run: yarn build:simple
-        working-directory: ./hero
+        working-directory: ../hero
 
       - name: Set timeout
         run: yarn config set network-timeout 1000000 -g
 
       - name: Build modules
-        run: yarn && yarn build:dist
+        run: yarn install --frozen-lockfile --ignore-engines && yarn build:dist
 
       - name: Publish branch
         run: |

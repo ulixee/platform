@@ -8,7 +8,6 @@
   "workspaces": {
     "packages": [
       "desktop/*",
-      "desktop/main/app",
       "datastore/*",
       "datastore/plugins/*",
       "cloud/*",
@@ -28,10 +27,6 @@
       "**electron**",
       "**/@argonprotocol/mainchain",
       "**/desktop/**/@argonprotocol/localchain-*",
-      "**/desktop/main/app/**",
-      "**/desktop/**/@ulixee/datastore-docpage",
-      "**/desktop/**/@ulixee/databroker-admin",
-      "**/desktop/**/better-sqlite3",
       "**/electron-*",
       "**/electron-log",
       "**/electron-builder",

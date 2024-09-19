@@ -3,7 +3,7 @@
 CURRENT_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")/.." ; pwd -P );
 trap "exit" INT;
 
-declare -a dirs=("shared" "unblocked" "platform/hero" "platform");
+declare -a dirs=("platform/hero" "platform");
 
 # loop through dirs
 for dir in "${dirs[@]}"; do
@@ -44,8 +44,8 @@ for dir in "${dirs[@]}"; do
 
   wait 5;
 
-  if [[ "$dir" == "unblocked" ]]; then
-    echo "You need to approve the DRAFT release at https://github.com/ulixee/unblocked/releases/tag/$TAG";
+  if [[ "$dir" == "hero" ]]; then
+    echo "You need to approve the DRAFT release at https://github.com/ulixee/hero/releases/tag/$TAG";
     read -p "Press enter only once you've done that (npm needs the assets built)...";
   fi
 
