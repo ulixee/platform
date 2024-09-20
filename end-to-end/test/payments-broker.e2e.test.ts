@@ -183,7 +183,7 @@ async function setupDatastore(
     ULX_IDENTITY_PATH: identityPath,
     ARGON_MAINCHAIN_URL: argonMainchainUrl,
     ARGON_LOCALCHAIN_PATH: localchain.path,
-    ARGON_VOTES_ADDRESS: votesAddress,
+    ARGON_BLOCK_REWARDS_ADDRESS: votesAddress,
     ARGON_NOTARY_ID: '1',
   });
   expect(cloudAddress).toBeTruthy();

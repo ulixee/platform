@@ -2,7 +2,7 @@ import { KeystorePasswordOption } from '@argonprotocol/localchain';
 import { IEscrowAllocationStrategy } from '../payments/ArgonReserver';
 
 export default interface ILocalchainConfig {
-  argonMainchainUrl?: string;
+  mainchainUrl?: string;
   notaryId?: number;
   localchainPath?: string;
   /**
@@ -10,9 +10,9 @@ export default interface ILocalchainConfig {
    */
   escrowAllocationStrategy?: IEscrowAllocationStrategy;
   /**
-   * Must be set to enable vote creation
+   * Must be set to enable block vote creation. This is the address where block rewards will be sent.
    */
-  votesAddress?: string;
+  blockRewardsAddress?: string;
   /**
    * A password, if applicable, to the localchain
    */

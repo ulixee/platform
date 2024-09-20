@@ -14,6 +14,9 @@ import PassthroughExtractor from './lib/PassthroughExtractor';
 import PassthroughTable from './lib/PassthroughTable';
 import Extractor from './lib/Extractor';
 import Crawler from './lib/Crawler';
+import DefaultPaymentService from './payments/DefaultPaymentService';
+import LocalchainWithSync from './payments/LocalchainWithSync';
+import { IEscrowAllocationStrategy, IEscrowSource } from './payments/ArgonReserver';
 
 export * as Schema from '@ulixee/schema';
 
@@ -26,8 +29,12 @@ export {
   Extractor,
   Crawler,
   ConnectionToDatastoreCore,
+  LocalchainWithSync,
   PassthroughExtractor,
+  DefaultPaymentService,
   PassthroughTable,
+  IEscrowAllocationStrategy,
+  IEscrowSource,
   IExtractorComponents,
   IExtractorRunOptions,
   IExtractorSchema,

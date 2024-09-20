@@ -55,7 +55,7 @@ describeIntegration('Payments E2E', () => {
 
     const bobchain = await LocalchainWithSync.load({
       localchainPath: Path.join(storageDir, 'bobchain.db'),
-      argonMainchainUrl,
+      mainchainUrl: argonMainchainUrl,
       automaticallyRunSync: false,
       escrowAllocationStrategy: {
         type: 'multiplier',
@@ -120,7 +120,7 @@ describeIntegration('Payments E2E', () => {
       ULX_IDENTITY_PATH: identityPath,
       ARGON_MAINCHAIN_URL: argonMainchainUrl,
       ARGON_LOCALCHAIN_PATH: ferdiechain.path,
-      ARGON_VOTES_ADDRESS: ferdieVotesAddress,
+      ARGON_BLOCK_REWARDS_ADDRESS: ferdieVotesAddress,
       ARGON_NOTARY_ID: '1',
     });
     expect(cloudAddress).toBeTruthy();
@@ -239,7 +239,7 @@ describeIntegration('Payments E2E', () => {
 
     const bobchain = await LocalchainWithSync.load({
       localchainPath: Path.join(storageDir, 'bobchain.db'),
-      argonMainchainUrl,
+      mainchainUrl: argonMainchainUrl,
       escrowAllocationStrategy: {
         type: 'multiplier',
         queries: 2,

@@ -328,7 +328,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
         this.upstreamDatastorePaymentService = new EmbeddedPaymentService();
         if (!this.datastoreHostLookup) {
           const argonMainchainUrl =
-            this.options.localchainConfig?.argonMainchainUrl ?? Env.localchainConfig?.argonMainchainUrl;
+            this.options.localchainConfig?.mainchainUrl ?? Env.localchainConfig?.mainchainUrl;
           const mainchainClient = argonMainchainUrl
             ? await MainchainClient.connect(argonMainchainUrl, 10e3)
             : null;

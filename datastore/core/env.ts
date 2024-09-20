@@ -47,8 +47,8 @@ function getLocalchainConfig(): ILocalchainConfig | undefined {
 
   return <ILocalchainConfig>{
     localchainPath: env.ARGON_LOCALCHAIN_PATH,
-    argonMainchainUrl: env.ARGON_MAINCHAIN_URL,
-    votesAddress: parseAddress(env.ARGON_VOTES_ADDRESS, 'Votes Address'),
+    mainchainUrl: env.ARGON_MAINCHAIN_URL,
+    blockRewardsAddress: parseAddress(env.ARGON_BLOCK_REWARDS_ADDRESS, 'Block Rewards Address'),
     notaryId: parseEnvInt(env.NOTARY_ID),
     keystorePassword: {
       interactiveCli: parseEnvBool(env.ARGON_LOCALCHAIN_PASSWORD_INTERACTIVE_CLI),

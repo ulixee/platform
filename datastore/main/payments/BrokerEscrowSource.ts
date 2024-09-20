@@ -21,14 +21,14 @@ export default class BrokerEscrowSource implements IEscrowSource {
 
   private readonly connectionToCore: ConnectionToCore<IDatabrokerApis, {}>;
   private keyring = new Keyring({ type: 'sr25519', ss58Format: ADDRESS_PREFIX });
-  private loadPromise: Promise<void>;
+  private readonly loadPromise: Promise<void | Error>;
 
   constructor(
     public host: string,
     public readonly authentication: Identity,
   ) {
     this.connectionToCore = new ConnectionToCore(new HttpTransportToCore(this.host));
-    this.loadPromise = this.load().catch(() => null);
+    this.loadPromise = this.load().catch(err => err);
   }
 
   public async close(): Promise<void> {
@@ -42,7 +42,8 @@ export default class BrokerEscrowSource implements IEscrowSource {
   }
 
   public async getBalance(): Promise<bigint> {
-    await this.loadPromise;
+    const error = await this.loadPromise;
+    if (error) throw error;
     const { balance } = await this.connectionToCore.sendRequest({
       command: 'Databroker.getBalance',
       args: [{ identity: this.authentication.bech32 }],
@@ -54,7 +55,8 @@ export default class BrokerEscrowSource implements IEscrowSource {
     paymentInfo: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
     milligons: bigint,
   ): Promise<IEscrowDetails> {
-    await this.loadPromise;
+    const error = await this.loadPromise;
+    if (error) throw error;
     const nonce = nanoid(10);
     const signatureMessage = BrokerEscrowSource.createSignatureMessage(
       paymentInfo.domain,
