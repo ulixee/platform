@@ -7,8 +7,8 @@ import ArgonReserver from '@ulixee/datastore/payments/ArgonReserver';
 import * as Fs from 'fs';
 import * as Path from 'path';
 import CreditReserver from '@ulixee/datastore/payments/CreditReserver';
-import EscrowSpendTracker from '../lib/EscrowSpendTracker';
-import MockEscrowSpendTracker from './_MockEscrowSpendTracker';
+import MicropaymentChannelSpendTracker from '../lib/MicropaymentChannelSpendTracker';
+import MockMicropaymentChannelSpendTracker from './_MockMicropaymentChannelSpendTracker';
 import MockPaymentService from './_MockPaymentService';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughExtractors.test');
@@ -19,8 +19,8 @@ let client: DatastoreApiClient;
 const keyring = new Keyring({ ss58Format: 18 });
 
 Helpers.blockGlobalConfigWrites();
-const escrowSpendTrackerMock = new MockEscrowSpendTracker();
-const escrowSpendTracker = new EscrowSpendTracker(storageDir, null);
+const micropaymentChannelSpendTrackerMock = new MockMicropaymentChannelSpendTracker();
+const micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(storageDir, null);
 
 let remoteVersion: string;
 let remoteDatastoreId: string;
@@ -51,7 +51,7 @@ beforeAll(async () => {
     },
     true,
   );
-  cloudNode.datastoreCore.escrowSpendTracker = escrowSpendTracker;
+  cloudNode.datastoreCore.micropaymentChannelSpendTracker = micropaymentChannelSpendTracker;
   client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 
@@ -355,17 +355,17 @@ export default new Datastore({
     client2,
     cloudNode.datastoreCore.datastoreApiClients.get(await cloudNode.address),
   );
-  const escrows: { datastoreId: string; holdAmount: bigint; escrowId: string }[] = [];
-  escrowSpendTrackerMock.mock((id, balanceChange) => {
-    const escrowId = (
+  const channelHolds: { datastoreId: string; holdAmount: bigint; channelHoldId: string }[] = [];
+  micropaymentChannelSpendTrackerMock.mock((id, balanceChange) => {
+    const channelHoldId = (
       paymentService.paymentsByDatastoreId[id] ?? corePaymentService.paymentsByDatastoreId[id]
-    ).escrowId;
-    const escrow = paymentService.escrowsById[escrowId] ?? corePaymentService.escrowsById[escrowId];
-    escrows.push({ datastoreId: id, escrowId, holdAmount: escrow.escrowHoldAmount });
+    ).channelHoldId;
+    const channelHold = paymentService.channelHoldsById[channelHoldId] ?? corePaymentService.channelHoldsById[channelHoldId];
+    channelHolds.push({ datastoreId: id, channelHoldId, holdAmount: channelHold.channelHoldAmount });
     return {
-      id: escrowId,
-      expirationTick: escrow.tick + 100,
-      holdAmount: escrow.escrowHoldAmount,
+      id: channelHoldId,
+      expirationTick: channelHold.tick + 100,
+      holdAmount: channelHold.channelHoldAmount,
     };
   });
 
@@ -385,33 +385,33 @@ export default new Datastore({
   expect(result.outputs[0].lastRun).toBe('hop2');
   expect(result.metadata.microgons).toBe(price);
 
-  expect(escrows).toHaveLength(3);
+  expect(channelHolds).toHaveLength(3);
   // @ts-expect-error
-  const dbs = escrowSpendTracker.escrowDbsByDatastore;
+  const dbs = micropaymentChannelSpendTracker.channelHoldDbsByDatastore;
   expect(dbs.size).toBe(3);
   // @ts-expect-error
-  expect(dbs.get(sourceDatastoreId).paymentIdByEscrowId.size).toBe(1);
+  expect(dbs.get(sourceDatastoreId).paymentIdByChannelHoldId.size).toBe(1);
   expect(dbs.get(sourceDatastoreId).list()).toEqual([
     expect.objectContaining({
-      id: corePaymentService.paymentsByDatastoreId[sourceDatastoreId].escrowId,
+      id: corePaymentService.paymentsByDatastoreId[sourceDatastoreId].channelHoldId,
       allocated: 1000,
       remaining: 1000 - 6,
     }),
   ]);
   // @ts-expect-error
-  expect(dbs.get(hop1DatastoreId).paymentIdByEscrowId.size).toBe(1);
+  expect(dbs.get(hop1DatastoreId).paymentIdByChannelHoldId.size).toBe(1);
   expect(dbs.get(hop1DatastoreId).list()).toEqual([
     expect.objectContaining({
-      id: corePaymentService.paymentsByDatastoreId[hop1DatastoreId].escrowId,
+      id: corePaymentService.paymentsByDatastoreId[hop1DatastoreId].channelHoldId,
       allocated: 2000,
       remaining: 2000 - 6 - 11,
     }),
   ]);
   // @ts-expect-error
-  expect(dbs.get(hop2DatastoreId).paymentIdByEscrowId.size).toBe(1);
+  expect(dbs.get(hop2DatastoreId).paymentIdByChannelHoldId.size).toBe(1);
   expect(dbs.get(hop2DatastoreId).list()).toEqual([
     expect.objectContaining({
-      id: paymentService.paymentsByDatastoreId[hop2DatastoreId].escrowId,
+      id: paymentService.paymentsByDatastoreId[hop2DatastoreId].channelHoldId,
       allocated: 2000,
       remaining: 2000 - 6 - 11 - 3,
     }),

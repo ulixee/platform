@@ -37,7 +37,7 @@ test('it can serialize and deserialize a notarization', async () => {
     expirationTick: 100,
     notaryId: 1,
   });
-  await balanceBuilder.leaseDataDomain('example.flights', address);
+  await balanceBuilder.leaseDomain('example.flights', address);
   await balanceBuilder.sign();
 
   const json: INotarization = JSON.parse(await balanceBuilder.toJSON());

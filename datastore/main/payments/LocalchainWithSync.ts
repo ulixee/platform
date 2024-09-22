@@ -3,13 +3,13 @@ import Logger from '@ulixee/commons/lib/Logger';
 import {
   BalanceSync,
   BalanceSyncResult,
-  DataDomainStore,
+  DomainStore,
   KeystorePasswordOption,
   Localchain,
   LocalchainOverview,
   MainchainClient,
   MainchainTransferStore,
-  OpenEscrowsStore,
+  OpenChannelHoldsStore,
   Transactions,
 } from '@argonprotocol/localchain';
 import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
@@ -27,12 +27,12 @@ if (Env.defaultDataDir) {
 }
 
 export default class LocalchainWithSync extends TypedEventEmitter<{ sync: BalanceSyncResult }> {
-  public get dataDomains(): DataDomainStore {
-    return this.#localchain.dataDomains;
+  public get domains(): DomainStore {
+    return this.#localchain.domains;
   }
 
-  public get openEscrows(): OpenEscrowsStore {
-    return this.#localchain.openEscrows;
+  public get openChannelHolds(): OpenChannelHoldsStore {
+    return this.#localchain.openChannelHolds;
   }
 
   public get balanceSync(): BalanceSync {
@@ -89,7 +89,7 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
           genesisUtcTime: Env.genesisUtcTime,
           tickDurationMillis: Env.tickDurationMillis,
           ntpPoolUrl: Env.ntpPoolUrl,
-          escrowExpirationTicks: Env.escrowExpirationTicks,
+          channelHoldExpirationTicks: Env.channelHoldExpirationTicks,
         },
         keystorePassword,
       );
@@ -122,7 +122,7 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
   ): Promise<DefaultPaymentService> {
     return await DefaultPaymentService.fromLocalchain(
       this,
-      this.localchainConfig.escrowAllocationStrategy,
+      this.localchainConfig.channelHoldAllocationStrategy,
       datastoreClients,
     );
   }
@@ -160,14 +160,14 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
         });
         this.emit('sync', result);
         if (this.enableLogging) {
-          log.info('Escrow Manager Sync result', {
+          log.info('ChannelHold Manager Sync result', {
             // have to weirdly jsonify
             balanceChanges: await Promise.all(result.balanceChanges.map(gettersToObject)),
-            notarizations: await Promise.all(result.escrowNotarizations.map(gettersToObject)),
+            notarizations: await Promise.all(result.channelHoldNotarizations.map(gettersToObject)),
           } as any);
         }
       } catch (error) {
-        log.error('Error synching escrow balance changes', { error });
+        log.error('Error synching channelHold balance changes', { error });
       }
     }, Number(this.#localchain.ticker.millisToNextTick()));
   }

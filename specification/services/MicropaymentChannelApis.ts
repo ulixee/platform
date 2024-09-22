@@ -3,24 +3,24 @@ import { microgonsValidation } from '../types';
 import { datastoreIdValidation } from '../types/datastoreIdValidation';
 import { BalanceChangeSchema } from '../types/IBalanceChange';
 import { NoteSchema } from '../types/INote';
-import { escrowIdValidation, PaymentSchema } from '../types/IPayment';
+import { channelHoldIdValidation, PaymentSchema } from '../types/IPayment';
 import { IZodHandlers, IZodSchemaToApiTypes } from '../utils/IZodApi';
 
-export const EscrowServiceApiSchemas = {
-  'EscrowService.importEscrow': {
+export const MicropaymentChannelApiSchemas = {
+  'MicropaymentChannel.importChannelHold': {
     args: z.object({
       datastoreId: datastoreIdValidation,
-      escrow: BalanceChangeSchema.describe(
-        'An escrow balance change putting funds on hold for this datastore.',
+      channelHold: BalanceChangeSchema.describe(
+        'A ChannelHold balance change putting funds on hold for this datastore.',
       ).extend({
-        escrowHoldNote: NoteSchema.describe('The active escrow hold note'),
+        channelHoldNote: NoteSchema.describe('The active ChannelHold note'),
       }),
     }),
     result: z.object({
       accepted: z.boolean(),
     }),
   },
-  'EscrowService.debitPayment': {
+  'MicropaymentChannel.debitPayment': {
     args: z.object({
       datastoreId: datastoreIdValidation,
       queryId: z.string(),
@@ -30,10 +30,10 @@ export const EscrowServiceApiSchemas = {
       shouldFinalize: z.boolean(),
     }),
   },
-  'EscrowService.finalizePayment': {
+  'MicropaymentChannel.finalizePayment': {
     args: z.object({
       datastoreId: datastoreIdValidation,
-      escrowId: escrowIdValidation,
+      channelHoldId: channelHoldIdValidation,
       uuid: z.string().length(21),
       finalMicrogons: microgonsValidation,
     }),
@@ -41,10 +41,12 @@ export const EscrowServiceApiSchemas = {
   },
 };
 
-export type IEscrowServiceApiTypes = IZodSchemaToApiTypes<typeof EscrowServiceApiSchemas>;
-export type IEscrowServiceApis<TContext = any> = IZodHandlers<
-  typeof EscrowServiceApiSchemas,
+export type IMicropaymentChannelApiTypes = IZodSchemaToApiTypes<
+  typeof MicropaymentChannelApiSchemas
+>;
+export type IMicropaymentChannelApis<TContext = any> = IZodHandlers<
+  typeof MicropaymentChannelApiSchemas,
   TContext
 >;
 
-export default IEscrowServiceApiTypes;
+export default IMicropaymentChannelApiTypes;

@@ -1,3 +1,4 @@
+import { CHANNEL_HOLD_MINIMUM_SETTLEMENT } from '@argonprotocol/localchain';
 import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { readFileAsJson, safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
@@ -5,7 +6,6 @@ import Logger from '@ulixee/commons/lib/Logger';
 import Queue from '@ulixee/commons/lib/Queue';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import { toUrl } from '@ulixee/commons/lib/utils';
-import { ESCROW_MINIMUM_SETTLEMENT } from '@argonprotocol/localchain';
 import { IPayment } from '@ulixee/platform-specification';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
@@ -18,27 +18,27 @@ import DatastoreApiClients from '../lib/DatastoreApiClients';
 
 const { log } = Logger(module);
 
-export type IEscrowAllocationStrategy =
+export type IChannelHoldAllocationStrategy =
   | { type: 'default'; milligons: bigint }
   | { type: 'multiplier'; queries: number };
 
 type IPaymentDetailsByDatastoreId = { [datastoreId: string]: IPaymentDetails[] };
 
-export interface IEscrowDetails {
-  escrowId: string;
+export interface IChannelHoldDetails {
+  channelHoldId: string;
   balanceChange: IBalanceChange;
   expirationDate: Date;
 }
 
-export interface IEscrowSource {
+export interface IChannelHoldSource {
   sourceKey: string;
   datastoreLookup?: IDatastoreHostLookup;
-  createEscrow(
+  createChannelHold(
     paymentInfo: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
     milligons: bigint,
-  ): Promise<IEscrowDetails>;
-  updateEscrowSettlement(
-    escrow: IEscrowDetails,
+  ): Promise<IChannelHoldDetails>;
+  updateChannelHoldSettlement(
+    channelHold: IChannelHoldDetails,
     updatedSettlement: bigint,
   ): Promise<IBalanceChange>;
 }
@@ -56,9 +56,9 @@ export default class ArgonReserver
     [uuid: string]: { microgons: number; datastoreId: string; paymentId: string };
   } = {};
 
-  private readonly openEscrowsById: { [escrowId: string]: IEscrowDetails } = {};
+  private readonly openChannelHoldsById: { [channelHoldId: string]: IChannelHoldDetails } = {};
   private readonly reserveQueueByDatastoreId: { [url: string]: Queue } = {};
-  private readonly escrowQueue = new Queue('ESCROW QUEUE', 1);
+  private readonly channelHoldQueue = new Queue('CHANNELHOLD QUEUE', 1);
   private needsSave = false;
   private loadPromise: Promise<any>;
   private readonly saveInterval: NodeJS.Timeout;
@@ -68,17 +68,17 @@ export default class ArgonReserver
   private readonly storePath: string;
 
   constructor(
-    private escrowSource: IEscrowSource,
-    private escrowAllocationStrategy: IEscrowAllocationStrategy = {
+    private channelHoldSource: IChannelHoldSource,
+    private channelHoldAllocationStrategy: IChannelHoldAllocationStrategy = {
       type: 'multiplier',
       queries: 100,
     },
     apiClients?: DatastoreApiClients,
   ) {
     super();
-    this.storePath = Path.join(ArgonReserver.baseStorePath, `${escrowSource.sourceKey}.json`);
+    this.storePath = Path.join(ArgonReserver.baseStorePath, `${channelHoldSource.sourceKey}.json`);
     this.saveInterval = setInterval(() => this.save(), 5e3).unref();
-    this.datastoreLookup = escrowSource.datastoreLookup;
+    this.datastoreLookup = channelHoldSource.datastoreLookup;
     if (!apiClients) {
       this.apiClients = new DatastoreApiClients();
       this.closeApiClients = true;
@@ -110,12 +110,12 @@ export default class ArgonReserver
     this.needsSave = false;
     await this.loadPromise;
     await this.writeToDisk().catch(error => {
-      log.error("Error saving EscrowFundsTracker's payments", { error });
+      log.error("Error saving ChannelHoldFundsTracker's payments", { error });
     });
   }
 
-  public getEscrowDetails(escrowId: string): IEscrowDetails {
-    return this.openEscrowsById[escrowId];
+  public getChannelHoldDetails(channelHoldId: string): IChannelHoldDetails {
+    return this.openChannelHoldsById[channelHoldId];
   }
 
   public async reserve(
@@ -137,15 +137,15 @@ export default class ArgonReserver
 
       for (const paymentOption of this.paymentsByDatastoreId[datastoreId]) {
         if (paymentOption.remaining >= microgons) {
-          if (paymentOption.paymentMethod.escrow?.id) {
+          if (paymentOption.paymentMethod.channelHold?.id) {
             if (paymentOption.host !== datastoreHost) continue;
           }
           return await this.charge(paymentOption, microgons);
         }
       }
 
-      const milligons = this.calculateEscrowMilligons(datastoreId, microgons);
-      const details = await this.createEscrow(paymentInfo, milligons);
+      const milligons = this.calculateChannelHoldMilligons(datastoreId, microgons);
+      const details = await this.createChannelHold(paymentInfo, milligons);
       return await this.charge(details, microgons);
     });
   }
@@ -161,7 +161,7 @@ export default class ArgonReserver
       const details = this.paymentsByDatastoreId[payment.datastoreId].find(
         x =>
           x.paymentMethod.credits?.id === payment.paymentId ||
-          x.paymentMethod.escrow?.id === payment.paymentId,
+          x.paymentMethod.channelHold?.id === payment.paymentId,
       );
       details.remaining += microgons - finalMicrogons;
 
@@ -175,69 +175,71 @@ export default class ArgonReserver
     }
   }
 
-  public async createEscrow(
+  public async createChannelHold(
     paymentInfo: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
     milligons: bigint,
   ): Promise<IPaymentDetails> {
     const { id, host, version } = paymentInfo;
-    if (milligons < ESCROW_MINIMUM_SETTLEMENT) {
-      milligons = ESCROW_MINIMUM_SETTLEMENT;
+    if (milligons < CHANNEL_HOLD_MINIMUM_SETTLEMENT) {
+      milligons = CHANNEL_HOLD_MINIMUM_SETTLEMENT;
     }
 
-    return await this.escrowQueue.run(async () => {
-      const escrow = await this.escrowSource.createEscrow(paymentInfo, milligons);
+    return await this.channelHoldQueue.run(async () => {
+      const channelHold = await this.channelHoldSource.createChannelHold(paymentInfo, milligons);
 
       const apiClient = this.apiClients.get(host);
-      await apiClient.registerEscrow(id, escrow.balanceChange);
-      const holdAmount = escrow.balanceChange.escrowHoldNote.milligons;
-      const settlement = escrow.balanceChange.notes[0];
-      if (settlement.noteType.action !== 'escrowSettle') {
-        throw new Error('Invalid escrow balance change');
+      await apiClient.registerChannelHold(id, channelHold.balanceChange);
+      const holdAmount = channelHold.balanceChange.channelHoldNote.milligons;
+      const settlement = channelHold.balanceChange.notes[0];
+      if (settlement.noteType.action !== 'channelHoldSettle') {
+        throw new Error('Invalid channelHold balance change');
       }
 
-      const escrowId = escrow.escrowId;
+      const channelHoldId = channelHold.channelHoldId;
       const allocated = Number(holdAmount) * 1000;
       const entry: IPaymentDetails = {
         paymentMethod: {
-          escrow: {
-            id: escrowId,
-            settledSignature: Buffer.from(escrow.balanceChange.signature),
+          channelHold: {
+            id: channelHoldId,
+            settledSignature: Buffer.from(channelHold.balanceChange.signature),
             settledMilligons: settlement.milligons,
           },
         },
         id,
         version,
         remaining: allocated,
-        expirationDate: escrow.expirationDate,
+        expirationDate: channelHold.expirationDate,
         host,
         allocated,
       };
-      this.emit('createdEscrow', {
-        escrowId,
+      this.emit('createdChannelHold', {
+        channelHoldId,
         datastoreId: id,
         allocatedMilligons: holdAmount,
       });
-      this.openEscrowsById[escrowId] = escrow;
+      this.openChannelHoldsById[channelHoldId] = channelHold;
       this.paymentsByDatastoreId[id] ??= [];
       this.paymentsByDatastoreId[id].push(entry);
       return entry;
     });
   }
 
-  protected calculateEscrowMilligons(_datastoreId: string, microgons: number): bigint {
-    if (this.escrowAllocationStrategy.type === 'default') {
-      return this.escrowAllocationStrategy.milligons;
+  protected calculateChannelHoldMilligons(_datastoreId: string, microgons: number): bigint {
+    if (this.channelHoldAllocationStrategy.type === 'default') {
+      return this.channelHoldAllocationStrategy.milligons;
     }
-    if (this.escrowAllocationStrategy.type === 'multiplier') {
-      return ArgonUtils.microgonsToMilligons(microgons * this.escrowAllocationStrategy.queries);
+    if (this.channelHoldAllocationStrategy.type === 'multiplier') {
+      return ArgonUtils.microgonsToMilligons(
+        microgons * this.channelHoldAllocationStrategy.queries,
+      );
     }
     throw new Error(
-      'Unknown escrow allocation strategy. Please specify in `config.escrowAllocationStrategy.type`.',
+      'Unknown channelHold allocation strategy. Please specify in `config.channelHoldAllocationStrategy.type`.',
     );
   }
 
   private async charge(details: IPaymentDetails, microgons: number): Promise<IPayment> {
-    if (details.paymentMethod.escrow?.id) {
+    if (details.paymentMethod.channelHold?.id) {
       await this.updateSettlement(details, microgons);
     }
     details.remaining -= microgons;
@@ -251,7 +253,7 @@ export default class ArgonReserver
     this.paymentsPendingFinalization[payment.uuid] = {
       microgons,
       datastoreId: details.id,
-      paymentId: details.paymentMethod.credits?.id ?? details.paymentMethod.escrow?.id,
+      paymentId: details.paymentMethod.credits?.id ?? details.paymentMethod.channelHold?.id,
     };
     this.emit('reserved', {
       payment,
@@ -262,26 +264,29 @@ export default class ArgonReserver
   }
 
   private async updateSettlement(details: IPaymentDetails, addedMicrogons: number): Promise<void> {
-    const escrow = details.paymentMethod.escrow;
-    if (!escrow) return;
+    const channelHold = details.paymentMethod.channelHold;
+    if (!channelHold) return;
     const updatedSettlement = BigInt(
       Math.ceil((details.allocated - details.remaining + addedMicrogons) / 1000),
     );
     if (Number(updatedSettlement) * 1000 > details.allocated) {
       throw new Error('Cannot release more than the allocated amount');
     }
-    if (updatedSettlement > escrow.settledMilligons) {
-      const openEscrow = this.openEscrowsById[escrow.id];
-      if (!openEscrow) throw new Error('Escrow not found');
-      const result = await this.escrowSource.updateEscrowSettlement(openEscrow, updatedSettlement);
-      escrow.settledMilligons = result.notes[0].milligons;
-      escrow.settledSignature = result.signature;
+    if (updatedSettlement > channelHold.settledMilligons) {
+      const openChannelHold = this.openChannelHoldsById[channelHold.id];
+      if (!openChannelHold) throw new Error('ChannelHold not found');
+      const result = await this.channelHoldSource.updateChannelHoldSettlement(
+        openChannelHold,
+        updatedSettlement,
+      );
+      channelHold.settledMilligons = result.notes[0].milligons;
+      channelHold.settledSignature = result.signature;
       this.needsSave = true;
       this.emit('updateSettlement', {
-        escrowId: escrow.id,
-        settledMilligons: escrow.settledMilligons,
+        channelHoldId: channelHold.id,
+        settledMilligons: channelHold.settledMilligons,
         datastoreId: details.id,
-        remaining: BigInt(details.allocated / 1000) - escrow.settledMilligons,
+        remaining: BigInt(details.allocated / 1000) - channelHold.settledMilligons,
       });
     }
   }

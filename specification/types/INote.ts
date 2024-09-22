@@ -14,10 +14,10 @@ export const ClaimFromMainchainNote = z.object({
     .nonnegative()
     .describe('The id of this transfer to localchain'),
 });
-export const EscrowHoldNote = z.object({
-  action: z.literal('escrowHold'),
+export const ChannelHoldNote = z.object({
+  action: z.literal('channelHold'),
   recipient: addressValidation,
-  dataDomainHash: hashValidation.optional().nullish(),
+  domainHash: hashValidation.optional().nullish(),
   delegatedSigner: addressValidation.optional().nullish(),
 });
 
@@ -42,9 +42,9 @@ export const NoteSchema = z.object({
     createActionLiteral('fee'),
     createActionLiteral('tax'),
     createActionLiteral('sendToVote'),
-    EscrowHoldNote,
-    createActionLiteral('escrowSettle'),
-    createActionLiteral('escrowClaim'),
+    ChannelHoldNote,
+    createActionLiteral('channelHoldSettle'),
+    createActionLiteral('channelHoldClaim'),
   ]),
 });
 

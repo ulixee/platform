@@ -4,6 +4,7 @@ import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginC
 import IPaymentService from '@ulixee/datastore/interfaces/IPaymentService';
 import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
 import Identity from '@ulixee/platform-utils/lib/Identity';
+import IMicropaymentChannelSpendTracker from '@ulixee/datastore-core/interfaces/IMicropaymentChannelSpendTracker';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
 import DatastoreVm from '../lib/DatastoreVm';
 import StatsTracker from '../lib/StatsTracker';
@@ -11,12 +12,11 @@ import StorageEngineRegistry from '../lib/StorageEngineRegistry';
 import WorkTracker from '../lib/WorkTracker';
 import IDatastoreConnectionToClient from './IDatastoreConnectionToClient';
 import IDatastoreCoreConfigureOptions from './IDatastoreCoreConfigureOptions';
-import IEscrowSpendTracker from './IEscrowSpendTracker';
 
 export default interface IDatastoreApiContext {
   logger: IBoundLog;
   datastoreRegistry: DatastoreRegistry;
-  escrowSpendTracker: IEscrowSpendTracker;
+  micropaymentChannelSpendTracker: IMicropaymentChannelSpendTracker;
   upstreamDatastorePaymentService: IPaymentService;
   datastoreLookup: IDatastoreHostLookup;
   storageEngineRegistry?: StorageEngineRegistry;

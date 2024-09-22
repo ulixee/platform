@@ -119,7 +119,7 @@ export const DatastoreManifestSchema = z.object({
     .optional()
     .describe(
       'A data domain for this manifest. It can be looked up in the mainchain as a dns lookup for the version hosting.\n' +
-        'DATASTORE DEVELOPER NOTE: this property is used to indicate to tooling and CloudNode hosting that a domain is in effect and Escrows must match this setting, but it does not register anything in and of itself.',
+        'DATASTORE DEVELOPER NOTE: this property is used to indicate to tooling and CloudNode hosting that a domain is in effect and ChannelHolds must match this setting, but it does not register anything in and of itself.',
     ),
 });
 

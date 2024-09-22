@@ -1,7 +1,7 @@
 import {
   IDatastoreApis,
-  IEscrowApis,
-  IEscrowEvents,
+  IChannelHoldApis,
+  IChannelHoldEvents,
 } from '@ulixee/platform-specification/datastore';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
 import ITransport from '@ulixee/net/interfaces/ITransport';
@@ -13,8 +13,8 @@ interface IConnectionToCoreOptions {
 }
 
 export default class ConnectionToDatastoreCore extends ConnectionToCore<
-  IDatastoreApis & IEscrowApis,
-  IDatastoreEvents & IEscrowEvents
+  IDatastoreApis & IChannelHoldApis,
+  IDatastoreEvents & IChannelHoldEvents
 > {
   public options: IConnectionToCoreOptions;
 

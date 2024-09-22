@@ -4,7 +4,7 @@ import { microgonsValidation, milligonsValidation, multiSignatureValidation } fr
 /**
  * This will likely be changed to a specific address for payments (maybe just an extra prefix?). It's a placeholder for now.
  */
-export const escrowIdValidation = z
+export const channelHoldIdValidation = z
   .string()
   .length(62)
   .regex(
@@ -13,12 +13,12 @@ export const escrowIdValidation = z
   );
 
 export const PaymentMethodSchema = z.object({
-  escrow: z
+  channelHold: z
     .object({
-      id: escrowIdValidation,
+      id: channelHoldIdValidation,
       settledMilligons: milligonsValidation.describe('The aggregate settled milligons'),
       settledSignature: multiSignatureValidation.describe(
-        'A signature of the updated escrow with settled milligons',
+        'A signature of the updated channel hold with settled milligons',
       ),
     })
     .optional(),

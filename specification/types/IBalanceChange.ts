@@ -53,7 +53,7 @@ export const BalanceChangeSchema = z.object({
   previousBalanceProof: BalanceProofSchema.nullish().describe(
     'A balance change must provide proof of a previous balance if the change_number is non-zero',
   ),
-  escrowHoldNote: NoteSchema.nullish().describe(
+  channelHoldNote: NoteSchema.nullish().describe(
     'A hold note currently active on the account (if applicable)',
   ),
   notes: z.array(NoteSchema).max(100).describe('The applied changes'),

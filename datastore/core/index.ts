@@ -24,6 +24,8 @@ import Identity from '@ulixee/platform-utils/lib/Identity';
 import { promises as Fs } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import * as Path from 'path';
+import MicropaymentChannelSpendTracker from '@ulixee/datastore-core/lib/MicropaymentChannelSpendTracker';
+import IMicropaymentChannelSpendTracker from "@ulixee/datastore-core/interfaces/IMicropaymentChannelSpendTracker";
 import DatastoreAdmin from './endpoints/Datastore.admin';
 import DatastoreCreateStorageEngine from './endpoints/Datastore.createStorageEngine';
 import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
@@ -39,7 +41,7 @@ import DatastoreUpload from './endpoints/Datastore.upload';
 import DatastoreVersions from './endpoints/Datastore.versions';
 import DatastoresList from './endpoints/Datastores.list';
 import DocpageRoutes, { datastorePathRegex } from './endpoints/DocpageRoutes';
-import EscrowRegister from './endpoints/Escrow.register';
+import ChannelHoldRegister from './endpoints/ChannelHold.register';
 import HostedServicesEndpoints, {
   TConnectionToServicesClient,
 } from './endpoints/HostedServicesEndpoints';
@@ -47,14 +49,12 @@ import Env from './env';
 import IDatastoreApiContext from './interfaces/IDatastoreApiContext';
 import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
 import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
-import IEscrowSpendTracker from './interfaces/IEscrowSpendTracker';
 import DatastoreHostLookupClient from './lib/DatastoreHostLookupClient';
 import DatastoreRegistry, { IDatastoreManifestWithRuntime } from './lib/DatastoreRegistry';
 import { IDatastoreSourceDetails } from './lib/DatastoreRegistryDiskStore';
 import DatastoreVm from './lib/DatastoreVm';
 import { MissingRequiredSettingError } from './lib/errors';
-import EscrowSpendTracker from './lib/EscrowSpendTracker';
-import EscrowSpendTrackerClient from './lib/EscrowSpendTrackerClient';
+import MicropaymentChannelSpendTrackerClient from './lib/MicropaymentChannelSpendTrackerClient';
 import StatsTracker from './lib/StatsTracker';
 import StorageEngineRegistry from './lib/StorageEngineRegistry';
 import { translateStats } from './lib/translateDatastoreMetadata';
@@ -105,13 +105,13 @@ export default class DatastoreCore extends TypedEventEmitter<{
     DatastoreUpload,
     DatastoreQueryStorageEngine,
     DatastoreCreateStorageEngine,
-    EscrowRegister,
+    ChannelHoldRegister,
   ]);
 
   public datastoreRegistry: DatastoreRegistry;
   public statsTracker: StatsTracker;
   public storageEngineRegistry: StorageEngineRegistry;
-  public escrowSpendTracker: IEscrowSpendTracker;
+  public micropaymentChannelSpendTracker: IMicropaymentChannelSpendTracker;
   public localchain?: LocalchainWithSync;
   public upstreamDatastorePaymentService?: IPaymentService;
   public datastoreHostLookup?: IDatastoreHostLookup;
@@ -142,7 +142,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
       statsTrackerHost: Env.statsTrackerHost,
       queryHeroSessionsDir: Env.queryHeroSessionsDir,
       replayRegistryHost: Env.replayRegistryHost,
-      escrowSpendTrackingHost: Env.escrowSpendTrackingHost,
+      micropaymentChannelSpendTrackingHost: Env.micropaymentChannelSpendTrackingHost,
       paymentServiceHost: Env.paymentServiceHost,
       datastoreLookupHost: Env.datastoreLookupHost,
       localchainConfig: Env.localchainConfig,
@@ -257,8 +257,8 @@ export default class DatastoreCore extends TypedEventEmitter<{
       if (this.options.datastoreLookupHost === 'self')
         this.options.datastoreLookupHost = servicesHost;
 
-      if (this.options.escrowSpendTrackingHost === 'self')
-        this.options.escrowSpendTrackingHost = servicesHost;
+      if (this.options.micropaymentChannelSpendTrackingHost === 'self')
+        this.options.micropaymentChannelSpendTrackingHost = servicesHost;
 
       this.options.statsTrackerHost ??= servicesHost;
       this.options.datastoreRegistryHost ??= servicesHost;
@@ -320,7 +320,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
           this.datastoreApiClients,
         );
 
-        this.escrowSpendTracker = new EscrowSpendTracker(
+        this.micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(
           this.options.datastoresDir,
           this.localchain,
         );
@@ -335,11 +335,11 @@ export default class DatastoreCore extends TypedEventEmitter<{
           this.datastoreHostLookup = new DatastoreLookup(mainchainClient);
         }
 
-        const escrowConnection = createConnectionToServiceHost(
-          this.options.escrowSpendTrackingHost,
+        const channelHoldConnection = createConnectionToServiceHost(
+          this.options.micropaymentChannelSpendTrackingHost,
         );
-        if (escrowConnection) {
-          this.escrowSpendTracker = new EscrowSpendTrackerClient(escrowConnection);
+        if (channelHoldConnection) {
+          this.micropaymentChannelSpendTracker = new MicropaymentChannelSpendTrackerClient(channelHoldConnection);
         }
       }
 
@@ -515,7 +515,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
       vm: this.vm,
       datastoreApiClients: this.datastoreApiClients,
       statsTracker: this.statsTracker,
-      escrowSpendTracker: this.escrowSpendTracker,
+      micropaymentChannelSpendTracker: this.micropaymentChannelSpendTracker,
       upstreamDatastorePaymentService: this.upstreamDatastorePaymentService,
       datastoreLookup: this.datastoreHostLookup,
     };

@@ -18,7 +18,7 @@ export default {
   datastoresTmpDir: env.ULX_DATASTORE_TMP_DIR ?? Path.join(Os.tmpdir(), '.ulixee', 'datastore'),
   queryHeroSessionsDir: env.ULX_QUERY_HERO_SESSIONS_DIR,
   replayRegistryHost: env.ULX_REPLAY_REGISTRY_HOST,
-  escrowSpendTrackingHost: env.ULX_ESCROW_SPEND_TRACKING_HOST,
+  micropaymentChannelSpendTrackingHost: env.ULX_MICROPAYMENT_CHANNEL_SPEND_TRACKING_HOST,
   paymentServiceHost: env.ULX_PAYMENT_SERVICE_HOST,
   datastoreLookupHost: env.ULX_DATASTORE_LOOKUP_SERVICE_HOST,
   enableSqliteWalMode: env.ULX_ENABLE_SQLITE_WAL,

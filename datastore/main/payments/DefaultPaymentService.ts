@@ -13,10 +13,10 @@ import IPaymentService, {
 } from '../interfaces/IPaymentService';
 import DatastoreApiClients from '../lib/DatastoreApiClients';
 import DatastoreLookup from '../lib/DatastoreLookup';
-import ArgonReserver, { IEscrowAllocationStrategy } from './ArgonReserver';
-import BrokerEscrowSource from './BrokerEscrowSource';
+import ArgonReserver, { IChannelHoldAllocationStrategy } from './ArgonReserver';
+import BrokerChannelHoldSource from './BrokerChannelHoldSource';
 import CreditReserver from './CreditReserver';
-import LocalchainEscrowSource from './LocalchainEscrowSource';
+import LocalchainChannelHoldSource from './LocalchainChannelHoldSource';
 import LocalchainWithSync from './LocalchainWithSync';
 
 /**
@@ -51,7 +51,7 @@ export default class DefaultPaymentService
     this.argonReserver?.addEventEmitter(this, [
       'reserved',
       'finalized',
-      'createdEscrow',
+      'createdChannelHold',
       'updateSettlement',
     ]);
   }
@@ -152,12 +152,12 @@ export default class DefaultPaymentService
 
   public static async fromLocalchain(
     localchain: LocalchainWithSync,
-    escrowAllocationStrategy?: IEscrowAllocationStrategy,
+    channelHoldAllocationStrategy?: IChannelHoldAllocationStrategy,
     apiClients?: DatastoreApiClients,
     loadCreditsFromPath?: string | 'default',
   ): Promise<DefaultPaymentService> {
-    const escrowSource = new LocalchainEscrowSource(localchain, await localchain.address);
-    const reserver = new ArgonReserver(escrowSource, escrowAllocationStrategy, apiClients);
+    const channelHoldSource = new LocalchainChannelHoldSource(localchain, await localchain.address);
+    const reserver = new ArgonReserver(channelHoldSource, channelHoldAllocationStrategy, apiClients);
     await reserver.load();
     return new DefaultPaymentService(reserver, loadCreditsFromPath);
   }
@@ -165,7 +165,7 @@ export default class DefaultPaymentService
   public static async fromBroker(
     brokerHost: string,
     identityConfig: { pemPath: string; passphrase?: string },
-    escrowAllocationStrategy?: IEscrowAllocationStrategy,
+    channelHoldAllocationStrategy?: IChannelHoldAllocationStrategy,
     apiClients?: DatastoreApiClients,
     loadCreditsFromPath?: string | 'default',
   ): Promise<DefaultPaymentService> {
@@ -173,8 +173,8 @@ export default class DefaultPaymentService
       identityConfig.pemPath,
       identityConfig.passphrase ? { keyPassphrase: identityConfig.passphrase } : undefined,
     );
-    const escrowSource = new BrokerEscrowSource(brokerHost, identity);
-    const reserver = new ArgonReserver(escrowSource, escrowAllocationStrategy, apiClients);
+    const channelHoldSource = new BrokerChannelHoldSource(brokerHost, identity);
+    const reserver = new ArgonReserver(channelHoldSource, channelHoldAllocationStrategy, apiClients);
     await reserver.load();
     return new DefaultPaymentService(reserver, loadCreditsFromPath);
   }

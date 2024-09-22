@@ -17,11 +17,11 @@
           <div class="mb-2"><strong>Granted Balance:</strong> {{ overview.grantedBalance }}</div>
           <div class="mb-2"><strong>Organizations:</strong> {{ overview.organizations }}</div>
           <div class="mb-2"><strong>Users:</strong> {{ overview.users }}</div>
-          <div class="mb-2"><strong>Escrows:</strong> {{ overview.escrows }}</div>
-          <div class="mb-2"><strong>Open Escrows:</strong> {{ overview.openEscrows }}</div>
+          <div class="mb-2"><strong>ChannelHolds:</strong> {{ overview.channelHolds }}</div>
+          <div class="mb-2"><strong>Open ChannelHolds:</strong> {{ overview.openChannelHolds }}</div>
           <div class="mb-2">
-            <strong>Balance Pending Escrow Settlement:</strong>
-            {{ overview.balancePendingEscrowSettlement }}
+            <strong>Balance Pending ChannelHold Settlement:</strong>
+            {{ overview.balancePendingChannelHoldSettlement }}
           </div>
         </div>
       </div>

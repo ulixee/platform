@@ -1,49 +1,49 @@
 import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 
-export default class EscrowsTable {
-  private readonly insertQuery: Statement<IEscrowRecord>;
+export default class ChannelHoldsTable {
+  private readonly insertQuery: Statement<IChannelHoldRecord>;
   private readonly updateSettlementQuery: Statement<{
-    escrowId: string;
+    channelHoldId: string;
     settledMilligons: bigint;
     date: number;
   }>;
 
   constructor(private db: SqliteDatabase) {
-    db.exec(`CREATE TABLE IF NOT EXISTS Escrows (
-      escrowId TEXT NOT NULL PRIMARY KEY,
+    db.exec(`CREATE TABLE IF NOT EXISTS ChannelHolds (
+      channelHoldId TEXT NOT NULL PRIMARY KEY,
       organizationId INTEGER NOT NULL,
       createdByIdentity TEXT NOT NULL,
-      dataDomain TEXT,
+      domain TEXT,
       heldMilligons INTEGER NOT NULL,
       settledMilligons INTEGER,
       settlementDate DATETIME,
       created DATETIME NOT NULL,
       FOREIGN KEY (organizationId) REFERENCES Organizations(id)
     );`);
-    db.exec(`CREATE INDEX IF NOT EXISTS Escrows_organizationId ON Escrows (organizationId);`);
+    db.exec(`CREATE INDEX IF NOT EXISTS ChannelHolds_organizationId ON ChannelHolds (organizationId);`);
 
     this.insertQuery = db.prepare(
-      `INSERT INTO Escrows (escrowId, organizationId, createdByIdentity, dataDomain, heldMilligons, created) 
-            VALUES (:escrowId, :organizationId, :createdByIdentity, :dataDomain, :heldMilligons, :created)`,
+      `INSERT INTO ChannelHolds (channelHoldId, organizationId, createdByIdentity, domain, heldMilligons, created) 
+            VALUES (:channelHoldId, :organizationId, :createdByIdentity, :domain, :heldMilligons, :created)`,
     );
     this.updateSettlementQuery = db.prepare(
-      `UPDATE Escrows SET settledMilligons = :settledMilligons, settlementDate = :date WHERE escrowId = :escrowId 
+      `UPDATE ChannelHolds SET settledMilligons = :settledMilligons, settlementDate = :date WHERE channelHoldId = :channelHoldId 
             RETURNING organizationId, heldMilligons`,
     );
   }
 
-  public create(escrow: IEscrowRecord): void {
-    escrow.created = Date.now();
-    this.insertQuery.run(escrow);
+  public create(channelHold: IChannelHoldRecord): void {
+    channelHold.created = Date.now();
+    this.insertQuery.run(channelHold);
   }
 
   public updateSettlementReturningChange(
-    escrowId: string,
+    channelHoldId: string,
     settledMilligons: bigint,
     settlementDate: number,
   ): [organizationId: string, holdAmount: bigint, change: bigint] {
     const { organizationId, heldMilligons } = this.updateSettlementQuery.get({
-      escrowId,
+      channelHoldId,
       settledMilligons,
       date: settlementDate,
     }) as { organizationId: string; heldMilligons: bigint };
@@ -55,7 +55,7 @@ export default class EscrowsTable {
   public count(): number {
     return (
       (this.db
-        .prepare(`SELECT COUNT(*) FROM Escrows`)
+        .prepare(`SELECT COUNT(*) FROM ChannelHolds`)
         .safeIntegers(false)
         .pluck()
         .get() as number) ?? 0
@@ -65,7 +65,7 @@ export default class EscrowsTable {
   public countOpen(): number {
     return (
       (this.db
-        .prepare(`SELECT COUNT(*) FROM Escrows WHERE settlementDate IS NULL`)
+        .prepare(`SELECT COUNT(*) FROM ChannelHolds WHERE settlementDate IS NULL`)
         .safeIntegers(false)
         .pluck()
         .get() as number) ?? 0
@@ -75,18 +75,18 @@ export default class EscrowsTable {
   public pendingBalance(): bigint {
     return (
       (this.db
-        .prepare(`SELECT SUM(heldMilligons) FROM Escrows WHERE settlementDate IS NULL`)
+        .prepare(`SELECT SUM(heldMilligons) FROM ChannelHolds WHERE settlementDate IS NULL`)
         .pluck()
         .get() as bigint) ?? 0n
     );
   }
 }
 
-export interface IEscrowRecord {
-  escrowId: string;
+export interface IChannelHoldRecord {
+  channelHoldId: string;
   organizationId: string;
   createdByIdentity: string;
-  dataDomain?: string;
+  domain?: string;
   heldMilligons: bigint;
   settledMilligons?: bigint;
   settlementDate?: number;

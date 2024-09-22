@@ -16,7 +16,7 @@ import Extractor from './lib/Extractor';
 import Crawler from './lib/Crawler';
 import DefaultPaymentService from './payments/DefaultPaymentService';
 import LocalchainWithSync from './payments/LocalchainWithSync';
-import { IEscrowAllocationStrategy, IEscrowSource } from './payments/ArgonReserver';
+import { IChannelHoldAllocationStrategy, IChannelHoldSource } from './payments/ArgonReserver';
 
 export * as Schema from '@ulixee/schema';
 
@@ -33,8 +33,8 @@ export {
   PassthroughExtractor,
   DefaultPaymentService,
   PassthroughTable,
-  IEscrowAllocationStrategy,
-  IEscrowSource,
+  IChannelHoldAllocationStrategy,
+  IChannelHoldSource,
   IExtractorComponents,
   IExtractorRunOptions,
   IExtractorSchema,

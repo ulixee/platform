@@ -26,10 +26,10 @@ export const DatabrokerAdminApisSchema = {
       ),
       organizations: z.number().int().nonnegative().describe('The number of organizations'),
       users: z.number().int().nonnegative().describe('The number of users'),
-      escrows: z.number().int().nonnegative().describe('The number of escrows created'),
-      openEscrows: z.number().int().nonnegative().describe('The number of open escrows'),
-      balancePendingEscrowSettlement: milligonsValidation.describe(
-        'The balance in milligons of all escrows pending settlement',
+      channelHolds: z.number().int().nonnegative().describe('The number of channelHolds created'),
+      openChannelHolds: z.number().int().nonnegative().describe('The number of open channelHolds'),
+      balancePendingChannelHoldSettlement: milligonsValidation.describe(
+        'The balance in milligons of all channelHolds pending settlement',
       ),
     }),
   },
@@ -72,7 +72,7 @@ export const DatabrokerAdminApisSchema = {
       balance: milligonsValidation.describe(
         'The balance allocated to the organization in milligons',
       ),
-      balanceInEscrows: milligonsValidation.describe('The balance currently in active escrows'),
+      balanceInChannelHolds: milligonsValidation.describe('The balance currently in active channelHolds'),
     }),
   },
   'Organization.list': {
@@ -84,7 +84,7 @@ export const DatabrokerAdminApisSchema = {
         balance: milligonsValidation.describe(
           'The balance allocated to the organization in milligons',
         ),
-        balanceInEscrows: milligonsValidation.describe('The balance currently in active escrows'),
+        balanceInChannelHolds: milligonsValidation.describe('The balance currently in active channelHolds'),
       })
       .array(),
   },

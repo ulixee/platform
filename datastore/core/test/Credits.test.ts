@@ -12,8 +12,8 @@ import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreM
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import EscrowSpendTracker from '../lib/EscrowSpendTracker';
-import MockEscrowSpendTracker from './_MockEscrowSpendTracker';
+import MicropaymentChannelSpendTracker from '../lib/MicropaymentChannelSpendTracker';
+import MockMicropaymentChannelSpendTracker from './_MockMicropaymentChannelSpendTracker';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Credits.test');
 
@@ -25,7 +25,7 @@ jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => 
 let storageCounter = 0;
 const keyring = new Keyring({ ss58Format: 18 });
 const datastoreKeyring = keyring.createFromUri('Datastore');
-const escrowSpendTrackerMock = new MockEscrowSpendTracker();
+const micropaymentChannelSpendTrackerMock = new MockMicropaymentChannelSpendTracker();
 
 beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/output-manifest.json`)) {
@@ -46,7 +46,7 @@ beforeAll(async () => {
     },
     true,
   );
-  cloudNode.datastoreCore.escrowSpendTracker = new EscrowSpendTracker(storageDir, null);
+  cloudNode.datastoreCore.micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(storageDir, null);
   client = new DatastoreApiClient(await cloudNode.address, { consoleLogErrors: true });
   Helpers.onClose(() => client.disconnect(), true);
 });
@@ -55,7 +55,7 @@ beforeEach(() => {
   storageCounter += 1;
   ArgonReserver.baseStorePath = Path.join(storageDir, `payments-${storageCounter}`);
   CreditReserver.defaultBasePath = Path.join(storageDir, `credits-${storageCounter}`);
-  escrowSpendTrackerMock.clear();
+  micropaymentChannelSpendTrackerMock.clear();
 });
 
 afterEach(Helpers.afterEach);

@@ -15,82 +15,46 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
 
-"@argonprotocol/localchain-darwin-arm64@0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-darwin-arm64/-/localchain-darwin-arm64-0.0.2.tgz#8578629ae8de3c80f03b214e720aa7a45af665db"
-  integrity sha512-6FOTlI2qdAgngBWOoXhC856O5b82JQMkN3xE81c/4rcCz1M63RNorPdH7zKwG4zEukqdcHWJwD4FCgwHqd8fcg==
+"@argonprotocol/localchain-darwin-arm64@0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-darwin-arm64/-/localchain-darwin-arm64-0.0.6.tgz#c9f87e21488d463dd9d54d15ae134e3ee95cda5e"
+  integrity sha512-8fBG6yny/wniF757olt2JToIRAtGhhv7j9MBm4N03pzzKSWHUdgJ6Z8Cqh7g1oatwSSDCYv04SyW604oG81AMw==
 
-"@argonprotocol/localchain-darwin-arm64@0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-darwin-arm64/-/localchain-darwin-arm64-0.0.4.tgz#6d72a01d6736ae7646b81a1f1f514b94346a8c52"
-  integrity sha512-30H+ZCVPsCKguRCy/bDjhirBJpQlzUn3vu0ykcWOA2IUv9+d6Q7B1FjfumIBI6z7aDk/QSBDP9RZYyjFx0nxfA==
+"@argonprotocol/localchain-darwin-x64@0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-darwin-x64/-/localchain-darwin-x64-0.0.6.tgz#9ca8140bfa0d5a721637869d4feb2517c38a8af4"
+  integrity sha512-u2PB+Ubi5yvHQrdkjpVD8ITjsQtlqTtdE9Iy00Xg1nz44nwDJVkwSTYJQs/DYZt1cBIiOdQcmGI0eyBh+3eUJg==
 
-"@argonprotocol/localchain-darwin-x64@0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-darwin-x64/-/localchain-darwin-x64-0.0.2.tgz#c42af2c2cebe2b8a5d5e8392d2b523b127d29aef"
-  integrity sha512-S3Tu+N0RfgAk5G7rcognKSoF5vFKRulBYvIZQ3c+wINRmMoq0fHiIhJAtkOiNp5ipfwCfzynTQz4XJtoq4lo1A==
+"@argonprotocol/localchain-linux-arm64-gnu@0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-linux-arm64-gnu/-/localchain-linux-arm64-gnu-0.0.6.tgz#49dbad6e67019bf14b60d0f3ba880d2a1f23e705"
+  integrity sha512-bIXyL3l8JblWuKoB366+Skkljrh9nIwMeBZ9ueLQkNAkhWSUCVfVylXD2pWmIjCuhe3hevsh6VIqsxednvWPVw==
 
-"@argonprotocol/localchain-darwin-x64@0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-darwin-x64/-/localchain-darwin-x64-0.0.4.tgz#b878ea874910388870ff77cd17cbbad17da8effc"
-  integrity sha512-kHyK3MhL+p375lG/qlYOuzfzT/UP0j/9eqM0oylE7TqYrAg5Wpxv4I5RR2GM/w5iNvUhUKqK+fgN4OnzjQf4Cg==
+"@argonprotocol/localchain-linux-x64-gnu@0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-linux-x64-gnu/-/localchain-linux-x64-gnu-0.0.6.tgz#2d68922a9c56d73ca05fd352b73fa804b98b2f42"
+  integrity sha512-RhQhepQabeIZm26OJBFhRx9Xdt0vzMGbalAt7Cf/VIhzT2B7ixulU2e54/TZFJxJs+4k292p7NLWHY4CajwvsA==
 
-"@argonprotocol/localchain-linux-arm64-gnu@0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-linux-arm64-gnu/-/localchain-linux-arm64-gnu-0.0.2.tgz#be6dd646b162cde71ff0575a32cf774dadd2dcd3"
-  integrity sha512-ky+ZHnqJz999cIbXL2Vthu6rRQ14xlZD0JT9F6xY8byktYn4IJMCCNpocBnJyR2zRCwuugv6enqvr7vpMwTz6g==
+"@argonprotocol/localchain-win32-x64-msvc@0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-win32-x64-msvc/-/localchain-win32-x64-msvc-0.0.6.tgz#213100ac68bb0cafe3b69954eaa4c2df55cc601f"
+  integrity sha512-HB/soTGwFy2LisPJVZmnZolhq/w/wTzruelJfR0NiSA1V/rWtdDf3paAg+fi6pbSnl8FjD/l4Nu8LAcF1e6PAw==
 
-"@argonprotocol/localchain-linux-arm64-gnu@0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-linux-arm64-gnu/-/localchain-linux-arm64-gnu-0.0.4.tgz#8cda30961e0d0f52154f804cc9fe07d9792e5bd1"
-  integrity sha512-7RsjCi2YCo3vTYPh1/EBwoDMY9TJ/yLQyYIta2rolrsplELBpxTiA0alAcPWDZKxDoL5rhlhoozOpTurnEkGPw==
-
-"@argonprotocol/localchain-linux-x64-gnu@0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-linux-x64-gnu/-/localchain-linux-x64-gnu-0.0.2.tgz#92c9697502c7c1127ff3dfe897cabad56a895fa5"
-  integrity sha512-bMQidVVe4O9dDXjPUJkM1dYJQGq8d1N9rXVv0XrZuBjokZUvL2XxmE8Z/aZpMrI1axsab2U43gOz4jSS/7Ouag==
-
-"@argonprotocol/localchain-linux-x64-gnu@0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-linux-x64-gnu/-/localchain-linux-x64-gnu-0.0.4.tgz#19324fc9a2710805d5ab33dea83b00a154402feb"
-  integrity sha512-Kxn9/Glho/2Q9NyAY4bjOnTM2785edln8o+hu5SM/FVobuTMoeh+Fx5oreHQm6MVHxAdQwaZF0JQYyoc3HXQZQ==
-
-"@argonprotocol/localchain-win32-x64-msvc@0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-win32-x64-msvc/-/localchain-win32-x64-msvc-0.0.2.tgz#92a16d6b818198c4d377b9168baac4489a46d526"
-  integrity sha512-PIsMyBZ1z1D4jYuNagEfQNNSJPZRKiJC9NeuVYKFZaa/bNzdhlMYsB6Q/Kvy4k2dVxdtxiH9A4p4Qs1ELlOyuw==
-
-"@argonprotocol/localchain-win32-x64-msvc@0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain-win32-x64-msvc/-/localchain-win32-x64-msvc-0.0.4.tgz#c5f33896d9aa6ef8cd4829ac6d838a3defba4b28"
-  integrity sha512-muSwTSWUcimjAbY78QnIE/hujSLRKkf/36GQAutys1Sa2TEp688OHanFrDxPmbhJXpReFHzTJ/W/RcxWKbnVeA==
-
-"@argonprotocol/localchain@0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain/-/localchain-0.0.2.tgz#36680981ff55e6bc4daf3f11a3562f1bb0f7c81b"
-  integrity sha512-SlQH9WdjdN3/vHNx/3UKQBIDNLxSIg37cmFHyIC0j7qsDFMc4gAsoNRapwHMuL6pdFEd+SBxlEQbudBf08IFpA==
+"@argonprotocol/localchain@0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain/-/localchain-0.0.6.tgz#1b5079da4f0541120de8579e48ac9264dc1c182a"
+  integrity sha512-8wmIbI6TzXGr3ZaUPeOVjXM09SUAM4JstYWn7JNcpw64Vbf26IIiCpngpM9S6vnK7qJr9kGeFPyBYBraHjsdgA==
   optionalDependencies:
-    "@argonprotocol/localchain-darwin-arm64" "0.0.2"
-    "@argonprotocol/localchain-darwin-x64" "0.0.2"
-    "@argonprotocol/localchain-linux-arm64-gnu" "0.0.2"
-    "@argonprotocol/localchain-linux-x64-gnu" "0.0.2"
-    "@argonprotocol/localchain-win32-x64-msvc" "0.0.2"
+    "@argonprotocol/localchain-darwin-arm64" "0.0.6"
+    "@argonprotocol/localchain-darwin-x64" "0.0.6"
+    "@argonprotocol/localchain-linux-arm64-gnu" "0.0.6"
+    "@argonprotocol/localchain-linux-x64-gnu" "0.0.6"
+    "@argonprotocol/localchain-win32-x64-msvc" "0.0.6"
 
-"@argonprotocol/localchain@0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@argonprotocol/localchain/-/localchain-0.0.4.tgz#a6bc85750035a5ad3fc9a111fdfaf60930cd8ef3"
-  integrity sha512-3LbrJ0T7KxCHwavqAtHd0Gj9wdDAOkHj78U4IXKMgbM0Y6y4W12quE0+zoMi4qWKeMGlZcbZjfWBhtUo9QK5hg==
-  optionalDependencies:
-    "@argonprotocol/localchain-darwin-arm64" "0.0.4"
-    "@argonprotocol/localchain-darwin-x64" "0.0.4"
-    "@argonprotocol/localchain-linux-arm64-gnu" "0.0.4"
-    "@argonprotocol/localchain-linux-x64-gnu" "0.0.4"
-    "@argonprotocol/localchain-win32-x64-msvc" "0.0.4"
-
-"@argonprotocol/mainchain@0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@argonprotocol/mainchain/-/mainchain-0.0.4.tgz#ded7b451a9a64bc4f14d48b420a4e2d0a40cbd80"
-  integrity sha512-zTISA3G0Os/x8OXchgbf4FyVuJvx/acax2c1nvKD7We+is1Zh0DUIdgUab0uy+4mxctKdR8qoN798581JaKAHA==
+"@argonprotocol/mainchain@0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@argonprotocol/mainchain/-/mainchain-0.0.6.tgz#25896a6320fe39b231e7d8af8a160296b09524d5"
+  integrity sha512-ylyBj7JRdYRofy1t8sRfq3c6Wd8UFKr2VUTG41jxL6XaQ4c18Tiexj7qJaolOa9TipEIcFHb4vc4edCsZt9+tw==
   dependencies:
     "@polkadot/api" "^12.2.3"
     tslib "^2.6.2"
@@ -1507,7 +1471,7 @@
     rxjs "^7.8.1"
     tslib "^2.6.3"
 
-"@polkadot/keyring@^13.0.2":
+"@polkadot/keyring@^13.0.2", "@polkadot/keyring@^13.1.1":
   version "13.1.1"
   resolved "https://registry.yarnpkg.com/@polkadot/keyring/-/keyring-13.1.1.tgz#14b85d4e73ebfa8ccb0fadcdee127e102624dc11"
   integrity sha512-Wm+9gn946GIPjGzvueObLGBBS9s541HE6mvKdWGEmPFMzH93ESN931RZlOd67my5MWryiSP05h5SHTp7bSaQTA==
@@ -1630,7 +1594,7 @@
     rxjs "^7.8.1"
     tslib "^2.6.3"
 
-"@polkadot/util-crypto@13.1.1", "@polkadot/util-crypto@^13.0.2":
+"@polkadot/util-crypto@13.1.1", "@polkadot/util-crypto@^13.0.2", "@polkadot/util-crypto@^13.1.1":
   version "13.1.1"
   resolved "https://registry.yarnpkg.com/@polkadot/util-crypto/-/util-crypto-13.1.1.tgz#26960046a9bd6b3b63dc9b006c1a24dc6391b875"
   integrity sha512-FG68rrLPdfLcscEyH10vnGkakM4O2lqr71S3GDhgc9WXaS8y9jisLgMPg8jbMHiQBJ3iKYkmtPKiLBowRslj2w==

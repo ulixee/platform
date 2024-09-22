@@ -2,7 +2,7 @@ import { Keyring } from '@polkadot/keyring';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import { toUrl } from '@ulixee/commons/lib/utils';
 import { Helpers } from '@ulixee/datastore-testing';
-import BrokerEscrowSource from '@ulixee/datastore/payments/BrokerEscrowSource';
+import BrokerChannelHoldSource from '@ulixee/datastore/payments/BrokerChannelHoldSource';
 import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
 import { ADDRESS_PREFIX } from '@argonprotocol/localchain';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
@@ -23,9 +23,9 @@ beforeAll(async () => {
   const account = new Keyring().addFromUri('//Alice');
   jest.spyOn(LocalchainWithSync.prototype, 'transactions', 'get').mockImplementation(() => {
     return {
-      createEscrow: async () => {
+      createChannelHold: async () => {
         return {
-          escrow: {
+          channelHold: {
             id: 'test',
             settledAmount: 0n,
             expirationTick: 0,
@@ -35,17 +35,17 @@ beforeAll(async () => {
               accountId: account.address,
               changeNumber: 0,
               balance: 100n,
-              notes: [{ milligons: 5n, noteType: { action: 'escrowSettle' } }],
+              notes: [{ milligons: 5n, noteType: { action: 'channelHoldSettle' } }],
               signature: Buffer.from(account.sign(Buffer.from('test'), { withType: true })),
               milligons: '100',
               previousBalanceProof: null,
               accountType: 'deposit',
-              escrowHoldNote: {
+              channelHoldNote: {
                 milligons: 100n,
                 noteType: {
-                  action: 'escrowHold',
+                  action: 'channelHold',
                   recipient: account.address,
-                  dataDomainHash: sha256('test.flights'),
+                  domainHash: sha256('test.flights'),
                 },
               },
             });
@@ -62,7 +62,7 @@ beforeEach(() => {
 afterEach(Helpers.afterEach);
 afterAll(Helpers.afterAll);
 
-it('can create escrows', async () => {
+it('can create channelHolds', async () => {
   const broker = new DataBroker({ storageDir });
   Helpers.needsClosing.push(broker);
   await broker.listen();
@@ -76,9 +76,9 @@ it('can create escrows', async () => {
     ss58Format: ADDRESS_PREFIX,
   }).createFromUri('//Bob');
 
-  const client = new BrokerEscrowSource(brokerHost.href, identity);
+  const client = new BrokerChannelHoldSource(brokerHost.href, identity);
   broker.getApiContext('').datastoreWhitelist.add('test.flights');
-  const escrow = await client.createEscrow(
+  const channelHold = await client.createChannelHold(
     {
       host: '127.0.0.1',
       microgons: 50,
@@ -92,27 +92,27 @@ it('can create escrows', async () => {
     },
     100n,
   );
-  expect(escrow.escrowId).toBeTruthy();
-  expect(escrow.balanceChange.escrowHoldNote.milligons).toBe(100n);
+  expect(channelHold.channelHoldId).toBeTruthy();
+  expect(channelHold.balanceChange.channelHoldNote.milligons).toBe(100n);
 
   const db = broker.getApiContext('').db;
-  expect(db.escrows.countOpen()).toBe(1);
-  expect(db.escrows.pendingBalance()).toBe(100n);
+  expect(db.channelHolds.countOpen()).toBe(1);
+  expect(db.channelHolds.pendingBalance()).toBe(100n);
   expect(db.organizations.list()[0].balance).toBe(0n);
-  expect(db.organizations.list()[0].balanceInEscrows).toBe(100n);
+  expect(db.organizations.list()[0].balanceInChannelHolds).toBe(100n);
 
   await broker.onLocalchainSync({
-    escrowNotarizations: [
+    channelHoldNotarizations: [
       {
-        escrows: [{
-          id: escrow.escrowId,
+        channelHolds: [{
+          id: channelHold.channelHoldId,
           settledAmount: 80n,
         }],
       },
     ],
   } as any);
-  expect(db.escrows.countOpen()).toBe(0);
-  expect(db.escrows.pendingBalance()).toBe(0n);
+  expect(db.channelHolds.countOpen()).toBe(0);
+  expect(db.channelHolds.pendingBalance()).toBe(0n);
   expect(db.organizations.list()[0].balance).toBe(20n);
 });
 
@@ -143,14 +143,14 @@ test('it rejects invalid signing requests', async () => {
     domain: 'test.flights',
   };
 
-  const client = new BrokerEscrowSource(brokerHost.href, await Identity.create());
-  await expect(client.createEscrow(paymentInfo, 100n)).rejects.toThrow('Organization not found');
+  const client = new BrokerChannelHoldSource(brokerHost.href, await Identity.create());
+  await expect(client.createChannelHold(paymentInfo, 100n)).rejects.toThrow('Organization not found');
 
   jest
-    .spyOn(BrokerEscrowSource, 'createSignatureMessage')
+    .spyOn(BrokerChannelHoldSource, 'createSignatureMessage')
     .mockImplementationOnce(() => sha256('bad data'));
-  const client2 = new BrokerEscrowSource(brokerHost.href, identity);
-  await expect(client2.createEscrow(paymentInfo, 100n)).rejects.toThrow('Invalid signature');
+  const client2 = new BrokerChannelHoldSource(brokerHost.href, identity);
+  await expect(client2.createChannelHold(paymentInfo, 100n)).rejects.toThrow('Invalid signature');
 });
 
 async function registerUser(dataBroker: DataBroker, identity: Identity) {

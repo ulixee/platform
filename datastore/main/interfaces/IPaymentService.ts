@@ -14,9 +14,9 @@ export interface IPaymentEvents {
     finalMicrogons: number;
     remainingBalance: number;
   };
-  createdEscrow: { escrowId: string; datastoreId: string; allocatedMilligons: bigint };
+  createdChannelHold: { channelHoldId: string; datastoreId: string; allocatedMilligons: bigint };
   updateSettlement: {
-    escrowId: string;
+    channelHoldId: string;
     settledMilligons: bigint;
     remaining: bigint;
     datastoreId: string;

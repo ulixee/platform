@@ -1,19 +1,18 @@
 import TimedCache from '@ulixee/commons/lib/TimedCache';
 import { bindFunctions, toUrl } from '@ulixee/commons/lib/utils';
-import { DataDomain, DataTLD, ZoneRecord } from '@argonprotocol/localchain';
+import { Domain, DomainTopLevel, ZoneRecord } from '@argonprotocol/localchain';
 import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreIdValidation';
 import { semverRegex } from '@ulixee/platform-specification/types/semverValidation';
 import * as net from 'node:net';
 import IDatastoreHostLookup, { IDatastoreHost } from '../interfaces/IDatastoreHostLookup';
 
-export { DataTLD };
-
+export { DomainTopLevel };
 
 export interface IZoneRecordLookup {
-  getDataDomainZoneRecord(domainName: string, tld: DataTLD): Promise<ZoneRecord>;
+  getDomainZoneRecord(domainName: string, tld: DomainTopLevel): Promise<ZoneRecord>;
 }
 /**
- * Singleton that will track payments for each escrow for a datastore
+ * Singleton that will track payments for each channelHold for a datastore
  */
 export default class DatastoreLookup implements IDatastoreHostLookup {
   public readonly zoneRecordByDomain: {
@@ -42,10 +41,7 @@ export default class DatastoreLookup implements IDatastoreHostLookup {
           'Unable to lookup a datastore in the mainchain. Please connect a mainchainClient',
         );
       const parsed = DatastoreLookup.readDomain(domain);
-      const zone = await this.mainchainClient.getDataDomainZoneRecord(
-        parsed.domainName,
-        parsed.topLevelDomain,
-      );
+      const zone = await this.mainchainClient.getDomainZoneRecord(parsed.name, parsed.topLevel);
 
       this.zoneRecordByDomain[domain] ??= new TimedCache(24 * 60 * 60e3);
       this.zoneRecordByDomain[domain].value = {
@@ -65,15 +61,15 @@ export default class DatastoreLookup implements IDatastoreHostLookup {
     };
   }
 
-  public static readDomain(domain: string): DataDomain {
-    const [domainName, tldStr] = domain.split('.');
+  public static readDomain(domain: string): Domain {
+    const [name, tldStr] = domain.split('.');
     const tld = DatastoreLookup.parseTld(tldStr);
     if (!tld) throw new Error(`Unknown domain top level domain ${tldStr}`);
-    return { domainName, topLevelDomain: tld };
+    return { name, topLevel: tld };
   }
 
-  public static parseTld(tld: string): DataTLD {
-    return DataTLD[tld.toLowerCase()] ?? DataTLD[tld[0].toUpperCase() + tld.slice(1)];
+  public static parseTld(tld: string): DomainTopLevel {
+    return DomainTopLevel[tld.toLowerCase()] ?? DomainTopLevel[tld[0].toUpperCase() + tld.slice(1)];
   }
 
   public static parseDatastoreIpHost(url: URL): IDatastoreHost {

@@ -1,10 +1,10 @@
 import { assert } from '@ulixee/commons/lib/utils';
-import BrokerEscrowSource from '@ulixee/datastore/payments/BrokerEscrowSource';
+import BrokerChannelHoldSource from '@ulixee/datastore/payments/BrokerChannelHoldSource';
 import { BalanceChangeSchema } from '@ulixee/platform-specification/types/IBalanceChange';
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import DatabrokerApiHandler from '../lib/DatabrokerApiHandler';
 
-export default new DatabrokerApiHandler('Databroker.createEscrow', {
+export default new DatabrokerApiHandler('Databroker.createChannelHold', {
   async handler(request, context) {
     const { milligons, recipient, datastoreId, domain, delegatedSigningAddress, authentication } =
       request;
@@ -16,7 +16,7 @@ export default new DatabrokerApiHandler('Databroker.createEscrow', {
       "Sorry, this datastore domain isn't whitelisted.",
     );
 
-    const signatureMessage = BrokerEscrowSource.createSignatureMessage(
+    const signatureMessage = BrokerChannelHoldSource.createSignatureMessage(
       domain,
       datastoreId,
       identityBytes,
@@ -31,32 +31,32 @@ export default new DatabrokerApiHandler('Databroker.createEscrow', {
       assert(organizationId, 'Organization not found');
       db.organizations.debit(organizationId, milligons);
 
-      const openEscrow = await context.localchain.transactions.createEscrow(
+      const openChannelHold = await context.localchain.transactions.createChannelHold(
         milligons,
         recipient.address,
         domain,
         recipient.notaryId,
         delegatedSigningAddress,
       );
-      const escrow = await openEscrow.escrow;
-      db.escrows.create({
-        escrowId: escrow.id,
+      const channelHold = await openChannelHold.channelHold;
+      db.channelHolds.create({
+        channelHoldId: channelHold.id,
         heldMilligons: milligons,
-        dataDomain: domain,
+        domain,
         organizationId,
-        settledMilligons: escrow.settledAmount,
+        settledMilligons: channelHold.settledAmount,
         settlementDate: null,
         createdByIdentity: identity,
         created: Date.now(),
       });
       const balanceChange = await BalanceChangeSchema.parseAsync(
-        JSON.parse(await openEscrow.exportForSend()),
+        JSON.parse(await openChannelHold.exportForSend()),
       );
 
-      const expirationDate = context.localchain.timeForTick(escrow.expirationTick);
+      const expirationDate = context.localchain.timeForTick(channelHold.expirationTick);
 
       return {
-        escrowId: escrow.id,
+        channelHoldId: channelHold.id,
         balanceChange,
         expirationDate,
       };

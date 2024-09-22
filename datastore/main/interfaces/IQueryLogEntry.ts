@@ -12,7 +12,7 @@ export default interface IQueryLogEntry {
   bytes: number;
   microgons: number;
   creditId?: string;
-  escrowId?: string;
+  channelHoldId?: string;
   cloudNodeHost: string;
   cloudNodeIdentity?: string;
 }

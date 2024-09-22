@@ -237,7 +237,7 @@ export default class QueryRunner {
       version,
       datastoreId: id,
       ...metadata,
-      escrowId: payment?.escrow?.id,
+      channelHoldId: payment?.channelHold?.id,
       creditId: payment?.credits?.id,
       affiliateId,
       error: runError,

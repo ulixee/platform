@@ -1,17 +1,17 @@
-import IEscrowApiTypes, {
-  EscrowApisSchema,
-} from '@ulixee/platform-specification/datastore/EscrowApis';
+import IChannelHoldApiTypes, {
+  ChannelHoldApisSchema,
+} from '@ulixee/platform-specification/datastore/ChannelHoldApis';
 import ValidatingApiHandler from '@ulixee/platform-specification/utils/ValidatingApiHandler';
 import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 
-export default new ValidatingApiHandler('Escrow.register', EscrowApisSchema, {
+export default new ValidatingApiHandler('ChannelHold.register', ChannelHoldApisSchema, {
   async handler(
     request,
     context: IDatastoreApiContext,
-  ): Promise<IEscrowApiTypes['Escrow.register']['result']> {
+  ): Promise<IChannelHoldApiTypes['ChannelHold.register']['result']> {
     const manifest = await context.datastoreRegistry.get(request.datastoreId);
     if (!manifest) throw new Error(`Unknown datastore requested ${request.datastoreId}`);
-    await context.escrowSpendTracker.importEscrow(request, manifest);
+    await context.micropaymentChannelSpendTracker.importChannelHold(request, manifest);
     return { accepted: true };
   },
 });

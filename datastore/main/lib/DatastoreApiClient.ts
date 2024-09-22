@@ -10,13 +10,13 @@ import { IPayment } from '@ulixee/platform-specification';
 import DatastoreApiSchemas, {
   IDatastoreApis,
   IDatastoreApiTypes,
-  IEscrowApis,
-  IEscrowEvents,
+  IChannelHoldApis,
+  IChannelHoldEvents,
 } from '@ulixee/platform-specification/datastore';
 import { IDatastoreQueryResult } from '@ulixee/platform-specification/datastore/DatastoreApis';
-import IEscrowApiTypes, {
-  EscrowApisSchema,
-} from '@ulixee/platform-specification/datastore/EscrowApis';
+import IChannelHoldApiTypes, {
+  ChannelHoldApisSchema,
+} from '@ulixee/platform-specification/datastore/ChannelHoldApis';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
 import ValidationError from '@ulixee/platform-specification/utils/ValidationError';
 import Identity from '@ulixee/platform-utils/lib/Identity';
@@ -42,8 +42,8 @@ export type IDatastoreMeta = IDatastoreApiTypes['Datastore.meta']['result'];
 
 export default class DatastoreApiClient {
   public connectionToCore: ConnectionToCore<
-    IDatastoreApis & IEscrowApis,
-    IDatastoreEvents & IEscrowEvents
+    IDatastoreApis & IChannelHoldApis,
+    IDatastoreEvents & IChannelHoldEvents
   >;
 
   public host: string;
@@ -81,12 +81,12 @@ export default class DatastoreApiClient {
     });
   }
 
-  public async registerEscrow(
+  public async registerChannelHold(
     datastoreId: string,
     balanceChange: IBalanceChange,
   ): Promise<{ accepted: boolean }> {
-    const result = await this.runApi('Escrow.register', {
-      escrow: balanceChange as any,
+    const result = await this.runApi('ChannelHold.register', {
+      channelHold: balanceChange as any,
       datastoreId,
     });
     return { accepted: result.accepted };
@@ -442,11 +442,11 @@ export default class DatastoreApiClient {
     }
   }
 
-  protected async runApi<T extends keyof IEscrowApiTypes & string>(
+  protected async runApi<T extends keyof IChannelHoldApiTypes & string>(
     command: T,
-    args: IEscrowApiTypes[T]['args'],
+    args: IChannelHoldApiTypes[T]['args'],
     timeoutMs?: number,
-  ): Promise<IEscrowApiTypes[T]['result']>;
+  ): Promise<IChannelHoldApiTypes[T]['result']>;
   protected async runApi<T extends keyof IDatastoreApiTypes & string>(
     command: T,
     args: IDatastoreApiTypes[T]['args'],
@@ -455,7 +455,7 @@ export default class DatastoreApiClient {
   protected async runApi(command: any, args: any, timeoutMs?: number): Promise<any> {
     try {
       if (this.validateApiParameters) {
-        const schema = DatastoreApiSchemas[command] ?? EscrowApisSchema[command];
+        const schema = DatastoreApiSchemas[command] ?? ChannelHoldApisSchema[command];
         args = await schema.args.parseAsync(args);
       }
     } catch (error) {
@@ -488,7 +488,7 @@ export default class DatastoreApiClient {
 
   public static createExecSignatureMessage(payment: IPayment, nonce: string): Buffer {
     return sha256(
-      concatAsBuffer('Datastore.exec', payment?.credits?.id, payment?.escrow?.id, nonce),
+      concatAsBuffer('Datastore.exec', payment?.credits?.id, payment?.channelHold?.id, nonce),
     );
   }
 

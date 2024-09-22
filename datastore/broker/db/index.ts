@@ -1,14 +1,14 @@
 import Database = require('better-sqlite3');
 import { Database as SqliteDatabase } from 'better-sqlite3';
 import * as Fs from 'node:fs';
-import EscrowsTable from './EscrowsTable';
+import ChannelHoldsTable from './ChannelHoldsTable';
 import OrganizationsTable from './OrganizationsTable';
 import UsersTable from './UsersTable';
 
 export default class DatabrokerDb {
   public readonly organizations: OrganizationsTable;
   public readonly users: UsersTable;
-  public readonly escrows: EscrowsTable;
+  public readonly channelHolds: ChannelHoldsTable;
 
   private db: SqliteDatabase;
 
@@ -22,7 +22,7 @@ export default class DatabrokerDb {
 
     this.organizations = new OrganizationsTable(this.db);
     this.users = new UsersTable(this.db);
-    this.escrows = new EscrowsTable(this.db);
+    this.channelHolds = new ChannelHoldsTable(this.db);
   }
 
   public close(): void {

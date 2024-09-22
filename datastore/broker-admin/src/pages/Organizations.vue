@@ -58,7 +58,7 @@ Index.vue
               Balance
             </th>
             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
-              Balance in Escrow
+              Balance in ChannelHold
             </th>
             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
               &nbsp;
@@ -85,7 +85,7 @@ Index.vue
                 {{ toArgons(org.balance) }}
               </td>
               <td class="px-3 py-4 text-sm text-gray-500">
-                {{ toArgons(org.balanceInEscrows) }}
+                {{ toArgons(org.balanceInChannelHolds) }}
               </td>
               <td class="px-3 py-4 text-sm text-gray-500">
                 <router-link
@@ -140,7 +140,7 @@ export default Vue.defineComponent({
           name: this.name,
           balance,
         });
-        this.list.unshift({ id, name: this.name, balance, balanceInEscrows: 0n });
+        this.list.unshift({ id, name: this.name, balance, balanceInChannelHolds: 0n });
         this.name = '';
         this.balance = 0;
       } catch (error: any) {

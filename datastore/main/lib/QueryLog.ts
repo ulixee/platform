@@ -82,7 +82,7 @@ export default class QueryLog {
         date: startDate,
         affiliateId,
         creditId: payment?.credits?.id,
-        escrowId: payment?.escrow?.id,
+        channelHoldId: payment?.channelHold?.id,
         input,
         query: 'sql' in query ? query.sql : `stream(${streamQuery.name})`,
         outputs,

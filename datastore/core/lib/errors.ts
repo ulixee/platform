@@ -47,7 +47,7 @@ export class InsufficientQueryPriceError extends UlixeeError {
 
   constructor(microgonsAllocated: number, minimumMicrogonsAccepted: number) {
     super(
-      'This escrow has insufficient funding allocated for this Data query.',
+      'This channelHold has insufficient funding allocated for this Data query.',
       InsufficientQueryPriceError.code,
     );
     this.data = {
