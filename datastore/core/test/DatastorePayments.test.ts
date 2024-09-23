@@ -1,3 +1,4 @@
+import { Chain, ChainIdentity } from '@argonprotocol/localchain';
 import { Keyring } from '@polkadot/keyring';
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
@@ -25,6 +26,10 @@ const datastoreKeyring = keyring.createFromUri('Datastore');
 const micropaymentChannelSpendTrackerMock = new MockMicropaymentChannelSpendTracker();
 const micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(storageDir, null);
 let manifest: IDatastoreManifest;
+const mainchainIdentity = {
+  chain: Chain.Devnet,
+  genesisHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+} as ChainIdentity;
 
 beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/payments-manifest.json`)) {
@@ -39,10 +44,6 @@ beforeAll(async () => {
     `${__dirname}/datastores/payments-manifest.json`,
     JSON.stringify({
       version: '0.0.1',
-      payment: {
-        address: datastoreKeyring.address,
-        notaryId: 1,
-      },
       extractorsByName: {
         testPayments: {
           prices: [
@@ -82,6 +83,11 @@ beforeAll(async () => {
       },
     },
     true,
+    {
+      address: datastoreKeyring.address,
+      notaryId: 1,
+      ...mainchainIdentity,
+    },
   );
   cloudNode.datastoreCore.micropaymentChannelSpendTracker = micropaymentChannelSpendTracker;
   client = new DatastoreApiClient(await cloudNode.address, { consoleLogErrors: true });

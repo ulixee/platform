@@ -3,13 +3,13 @@ import { z } from 'zod';
 export const addressValidation = z
   .string()
   .length(48)
-  .regex(/[1-9A-HJ-NP-Za-km-z]+/); // base 58
+  .regex(/^[1-9A-HJ-NP-Za-km-z]+$/); // base 58
 
 export const identityValidation = z
   .string()
   .length(61)
   .regex(
-    /^id1[ac-hj-np-z02-9]{58}/,
+    /^id1[ac-hj-np-z02-9]{58}$/,
     'This is not a Ulixee identity (Bech32m encoded public key starting with "id1").',
   );
 

@@ -5,6 +5,7 @@ import { CanceledPromiseError } from '@ulixee/commons/interfaces/IPendingWaitEve
 import Logger from '@ulixee/commons/lib/Logger';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import Core from '@ulixee/hero-core';
+import type { IDatastorePaymentRecipient } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import * as Fs from 'fs/promises';
 import * as http from 'http';
 import { Server } from 'http';
@@ -40,6 +41,7 @@ export const needsClosing: { close: () => Promise<any> | void; onlyCloseOnFinal?
 export async function createLocalNode(
   config: ConstructorParameters<typeof CloudNode>[0],
   onlyCloseOnFinal = false,
+  paymentInfo?: IDatastorePaymentRecipient,
 ): Promise<CloudNode> {
   const datastoreConfig = config.datastoreConfiguration;
   if (datastoreConfig.datastoresDir) {
@@ -54,6 +56,9 @@ export async function createLocalNode(
 
   const cloudNode = new CloudNode(config);
   onClose(() => cloudNode.close(), onlyCloseOnFinal);
+  if (paymentInfo) {
+    cloudNode.datastoreCore.paymentInfo.resolve(paymentInfo);
+  }
   await cloudNode.listen();
   return cloudNode;
 }

@@ -88,6 +88,9 @@ export default class HostedServicesEndpoints {
         const manifest = await ctx.datastoreRegistry.get(datastoreId, version);
         return await ctx.statsTracker.getForDatastoreVersion(manifest);
       },
+      'MicropaymentChannel.getPaymentInfo': async (_args, ctx) => {
+        return await ctx.micropaymentChannelSpendTracker.getPaymentInfo();
+      },
       'MicropaymentChannel.importChannelHold': async ({ channelHold, datastoreId }, ctx) => {
         const manifest = await ctx.datastoreRegistry.get(datastoreId);
         return await ctx.micropaymentChannelSpendTracker.importChannelHold({ channelHold, datastoreId }, manifest);

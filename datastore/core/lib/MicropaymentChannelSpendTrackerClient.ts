@@ -5,8 +5,17 @@ import IMicropaymentChannelApiTypes, {
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import IMicropaymentChannelSpendTracker from '../interfaces/IMicropaymentChannelSpendTracker';
 
-export default class MicropaymentChannelSpendTrackerClient implements IMicropaymentChannelSpendTracker {
+export default class MicropaymentChannelSpendTrackerClient
+  implements IMicropaymentChannelSpendTracker
+{
   constructor(readonly serviceClient: ConnectionToCore<IMicropaymentChannelApis, {}>) {}
+
+  public getPaymentInfo(): Promise<IMicropaymentChannelApiTypes['MicropaymentChannel.getPaymentInfo']['result']> {
+    return this.serviceClient.sendRequest({
+      command: 'MicropaymentChannel.getPaymentInfo',
+      args: [],
+    });
+  }
 
   public async debit(
     data: IMicropaymentChannelApiTypes['MicropaymentChannel.debitPayment']['args'],

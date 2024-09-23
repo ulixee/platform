@@ -7,7 +7,7 @@ const OkSchema = z.object({ success: z.boolean() });
 const organizationIdValidation = z
   .string()
   .length(21)
-  .regex(/[A-Za-z0-9_-]{21}/)
+  .regex(/^[A-Za-z0-9_-]{21}$/)
   .describe('The organization id');
 
 const nameValidation = z.string().min(1).max(255).optional();

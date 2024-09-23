@@ -8,7 +8,7 @@
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.29",
     "@ulixee/datastore": "2.0.0-alpha.29",
-    "@argonprotocol/localchain": "0.0.6",
+    "@argonprotocol/localchain": "0.0.8",
     "@ulixee/net": "2.0.0-alpha.29",
     "@ulixee/schema": "2.0.0-alpha.29"
   },

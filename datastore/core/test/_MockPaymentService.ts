@@ -8,6 +8,7 @@ import { IPayment } from '@ulixee/platform-specification';
 import { AccountType } from '@ulixee/platform-specification/types/IBalanceChange';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import { nanoid } from 'nanoid';
+import { IDatastorePaymentRecipient } from '@ulixee/platform-specification/types/IDatastoreManifest';
 
 export default class MockPaymentService
   extends TypedEventEmitter<IPaymentEvents>
@@ -31,12 +32,18 @@ export default class MockPaymentService
   constructor(
     public clientAddress: KeyringPair,
     public client: DatastoreApiClient,
+    public paymentInfo?: IDatastorePaymentRecipient,
+    private name?: string,
   ) {
     super();
   }
 
   async close(): Promise<void> {
     return null;
+  }
+
+  async getPaymentInfo(): Promise<IDatastorePaymentRecipient> {
+    return this.paymentInfo;
   }
 
   async reserve(

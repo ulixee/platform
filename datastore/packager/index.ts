@@ -225,11 +225,6 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
     ]) {
       if (entity.prices?.some(x => x.basePrice > 0)) entitiesNeedingPayment.push(name);
     }
-    if (!this.manifest.payment && entitiesNeedingPayment.length) {
-      throw new Error(
-        `Datastore ${this.manifest.id} requires payment for entities (${entitiesNeedingPayment.join(', ')}), but no payment details are in the manifest.`,
-      );
-    }
 
     this.script = sourceCode;
     this.sourceMap = sourceMap;

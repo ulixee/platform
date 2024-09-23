@@ -56,7 +56,7 @@ describeIntegration('Payments E2E', () => {
     const bobchain = await LocalchainWithSync.load({
       localchainPath: Path.join(storageDir, 'bobchain.db'),
       mainchainUrl: argonMainchainUrl,
-      automaticallyRunSync: false,
+      disableAutomaticSync: true,
       channelHoldAllocationStrategy: {
         type: 'multiplier',
         queries: 2,
@@ -134,10 +134,6 @@ describeIntegration('Payments E2E', () => {
       cloudAddress,
       {
         domain,
-        payment: {
-          notaryId: 1,
-          address: ferdie.address,
-        },
       },
       identityPath,
     );
@@ -229,10 +225,6 @@ describeIntegration('Payments E2E', () => {
       cloudAddress,
       {
         version: '0.0.2',
-        payment: {
-          notaryId: 1,
-          address: ferdie.address,
-        },
       },
       identityPath,
     );

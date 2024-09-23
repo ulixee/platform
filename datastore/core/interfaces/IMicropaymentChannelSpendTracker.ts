@@ -1,7 +1,10 @@
 import IMicropaymentChannelApiTypes from '@ulixee/platform-specification/services/MicropaymentChannelApis';
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import IDatastoreManifest, {
+  IDatastorePaymentRecipient,
+} from '@ulixee/platform-specification/types/IDatastoreManifest';
 
 export default interface IMicropaymentChannelSpendTracker {
+  getPaymentInfo(): Promise<IDatastorePaymentRecipient>;
   debit(
     data: IMicropaymentChannelApiTypes['MicropaymentChannel.debitPayment']['args'],
   ): Promise<IMicropaymentChannelApiTypes['MicropaymentChannel.debitPayment']['result']>;

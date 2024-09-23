@@ -1,6 +1,6 @@
 import TimedCache from '@ulixee/commons/lib/TimedCache';
 import { bindFunctions, toUrl } from '@ulixee/commons/lib/utils';
-import { Domain, DomainTopLevel, ZoneRecord } from '@argonprotocol/localchain';
+import { ChainIdentity, Domain, DomainTopLevel, ZoneRecord } from '@argonprotocol/localchain';
 import { datastoreRegex } from '@ulixee/platform-specification/types/datastoreIdValidation';
 import { semverRegex } from '@ulixee/platform-specification/types/semverValidation';
 import * as net from 'node:net';
@@ -10,6 +10,7 @@ export { DomainTopLevel };
 
 export interface IZoneRecordLookup {
   getDomainZoneRecord(domainName: string, tld: DomainTopLevel): Promise<ZoneRecord>;
+  getChainIdentity(): Promise<ChainIdentity>;
 }
 /**
  * Singleton that will track payments for each channelHold for a datastore
@@ -18,6 +19,8 @@ export default class DatastoreLookup implements IDatastoreHostLookup {
   public readonly zoneRecordByDomain: {
     [domain: string]: TimedCache<ZoneRecord & { domain: string }>;
   } = {};
+
+  private chainIdentity: Promise<ChainIdentity>;
 
   constructor(private mainchainClient: IZoneRecordLookup) {
     bindFunctions(this);
@@ -33,7 +36,27 @@ export default class DatastoreLookup implements IDatastoreHostLookup {
     return await this.lookupDatastoreDomain(url.host, version);
   }
 
-  public async lookupDatastoreDomain(domain: string, version: string): Promise<IDatastoreHost> {
+  public async validatePayment(paymentInfo: {
+    recipient?: { address?: string; notaryId?: number };
+    domain?: string;
+  }): Promise<void> {
+    if (paymentInfo.domain && paymentInfo.recipient) {
+      const zoneRecord = await this.lookupDatastoreDomain(paymentInfo.domain, 'any');
+      if (zoneRecord) {
+        if (zoneRecord.payment.notaryId !== paymentInfo.recipient.notaryId) {
+          throw new Error('Payment notaryId does not match Domain record');
+        }
+        if (zoneRecord.payment.address !== paymentInfo.recipient.address) {
+          throw new Error('Payment address does not match Domain record');
+        }
+      }
+    }
+  }
+
+  public async lookupDatastoreDomain(
+    domain: string,
+    version: string | 'any',
+  ): Promise<IDatastoreHost> {
     let zoneRecord = this.zoneRecordByDomain[domain]?.value;
     if (!zoneRecord) {
       if (!this.mainchainClient)
@@ -43,6 +66,8 @@ export default class DatastoreLookup implements IDatastoreHostLookup {
       const parsed = DatastoreLookup.readDomain(domain);
       const zone = await this.mainchainClient.getDomainZoneRecord(parsed.name, parsed.topLevel);
 
+      if (!zone) throw new Error(`Zone record for Domain (${domain}) not found`);
+
       this.zoneRecordByDomain[domain] ??= new TimedCache(24 * 60 * 60e3);
       this.zoneRecordByDomain[domain].value = {
         ...zone,
@@ -51,13 +76,25 @@ export default class DatastoreLookup implements IDatastoreHostLookup {
       zoneRecord = this.zoneRecordByDomain[domain].value;
     }
 
-    const versionHost = zoneRecord.versions[version];
+    let versionHost = zoneRecord.versions[version];
+    if (!versionHost && version === 'any') {
+      versionHost = Object.values(zoneRecord.versions)[0];
+    }
+
     if (!versionHost) throw new Error('Version not found');
+
+    this.chainIdentity ??= this.mainchainClient.getChainIdentity();
+    const chainIdentity = await this.chainIdentity;
     return {
       datastoreId: versionHost.datastoreId,
       host: versionHost.host,
       version,
       domain,
+      payment: {
+        address: zoneRecord.paymentAddress,
+        notaryId: zoneRecord.notaryId,
+        ...chainIdentity,
+      },
     };
   }
 

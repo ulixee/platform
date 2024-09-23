@@ -8,6 +8,7 @@ import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 import { toUrl } from '@ulixee/commons/lib/utils';
 import { IPayment } from '@ulixee/platform-specification';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
+import { IDatastorePaymentRecipient } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { IPaymentMethod } from '@ulixee/platform-specification/types/IPayment';
 import { nanoid } from 'nanoid';
 import { mkdir, readdir, unlink } from 'node:fs/promises';
@@ -67,6 +68,10 @@ export default class CreditReserver
     this.storePath = Path.join(baseDir, `${credit.id}-${credit.paymentMethod.credits.id}.json`);
     this.paymentDetails = credit;
     this.saveDebounce = debounce(this.save.bind(this), 1_000, 5_000);
+  }
+
+  public async getPaymentInfo(): Promise<IDatastorePaymentRecipient | undefined> {
+    return undefined;
   }
 
   public hasBalance(microgons: number): boolean {

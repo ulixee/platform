@@ -27,7 +27,10 @@ export default class PaymentsProcessor {
     private payment: IPayment,
     private datastoreId: string,
     private datastore: Datastore,
-    readonly context: Pick<IDatastoreApiContext, 'configuration' | 'micropaymentChannelSpendTracker'>,
+    readonly context: Pick<
+      IDatastoreApiContext,
+      'configuration' | 'micropaymentChannelSpendTracker'
+    >,
   ) {}
 
   public async debit(
@@ -37,7 +40,7 @@ export default class PaymentsProcessor {
   ): Promise<boolean> {
     const price = PricingManager.computePrice(manifest, entityCalls);
     this.initialPrice = price;
-    if (price === 0 || !manifest.payment) return true;
+    if (price === 0) return true;
 
     if (!this.payment?.credits?.id && !this.payment?.channelHold?.id) {
       throw new PaymentRequiredError('This Datastore requires payment.', price);

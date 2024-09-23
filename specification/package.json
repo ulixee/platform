@@ -5,7 +5,8 @@
   "main": "./index.js",
   "license": "MIT",
   "dependencies": {
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "@argonprotocol/localchain": "0.0.8"
   },
   "devDependencies": {
     "@ulixee/net": "2.0.0-alpha.29"

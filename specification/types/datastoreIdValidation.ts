@@ -7,6 +7,6 @@ export const datastoreIdValidation = z
   .min(2)
   .max(50)
   .regex(
-    new RegExp(`^${datastoreRegex.source}`),
-    'This is not a valid datastoreId (2-20 alphanumeric characters).',
+    new RegExp(`^${datastoreRegex.source}$`),
+    'This is not a valid datastoreId (2-20 lowercase alphanumeric characters).',
   );

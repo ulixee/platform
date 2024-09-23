@@ -194,10 +194,6 @@ async function setupDatastore(
     cloudAddress,
     {
       domain,
-      payment: {
-        notaryId: 1,
-        address: domainOwner.address,
-      },
     },
     identityPath,
   );

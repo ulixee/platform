@@ -1,3 +1,4 @@
+import { Chain, ChainIdentity } from '@argonprotocol/localchain';
 import { Keyring } from '@polkadot/keyring';
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
@@ -27,6 +28,11 @@ const keyring = new Keyring({ ss58Format: 18 });
 const datastoreKeyring = keyring.createFromUri('Datastore');
 const micropaymentChannelSpendTrackerMock = new MockMicropaymentChannelSpendTracker();
 
+const mainchainIdentity = {
+  chain: Chain.Devnet,
+  genesisHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+} as ChainIdentity;
+
 beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/output-manifest.json`)) {
     Fs.unlinkSync(`${__dirname}/datastores/output-manifest.json`);
@@ -45,8 +51,16 @@ beforeAll(async () => {
       },
     },
     true,
+    {
+      address: datastoreKeyring.address,
+      notaryId: 1,
+      ...mainchainIdentity,
+    },
   );
-  cloudNode.datastoreCore.micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(storageDir, null);
+  cloudNode.datastoreCore.micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(
+    storageDir,
+    null,
+  );
   client = new DatastoreApiClient(await cloudNode.address, { consoleLogErrors: true });
   Helpers.onClose(() => client.disconnect(), true);
 });
@@ -66,10 +80,6 @@ test('should be able run a Datastore with Credits', async () => {
   Fs.writeFileSync(
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
-      payment: {
-        address: datastoreKeyring.address,
-        notaryId: 1,
-      },
       extractorsByName: {
         putout: {
           prices: [{ basePrice: 1000 }],
@@ -153,6 +163,7 @@ test('should remove an empty Credits from the local cache', async () => {
       recipient: {
         address: datastoreKeyring.address,
         notaryId: 1,
+        ...mainchainIdentity,
       },
     }),
   ).resolves.toEqual(
@@ -167,6 +178,7 @@ test('should remove an empty Credits from the local cache', async () => {
       recipient: {
         address: datastoreKeyring.address,
         notaryId: 1,
+        ...mainchainIdentity,
       },
     }),
   ).rejects.toThrow('Insufficient credits balance');
@@ -177,10 +189,6 @@ test('should be able to embed Credits in a Datastore', async () => {
   Fs.writeFileSync(
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
-      payment: {
-        address: datastoreKeyring.address,
-        notaryId: 1,
-      },
       extractorsByName: {
         putout: {
           prices: [{ basePrice: 1000 }],
@@ -232,10 +240,6 @@ test('should be able to embed Credits in a Datastore', async () => {
   Fs.writeFileSync(
     `${__dirname}/datastores/clone-output/datastore-manifest.json`,
     JSON.stringify({
-      payment: {
-        address: datastoreKeyring.address,
-        notaryId: 1,
-      },
       extractorsByName: {
         putout: {
           prices: [{ basePrice: 1000 }],

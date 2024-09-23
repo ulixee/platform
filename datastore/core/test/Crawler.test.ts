@@ -48,7 +48,7 @@ test('should be able to run a crawler', async () => {
   const crawler = new DatastorePackager(`${__dirname}/datastores/crawl.js`);
   await crawler.build();
   await client.upload(await crawler.dbx.tarGzip());
-  const affiliateId = `aff${nanoid(12)}`;
+  const affiliateId = `aff${nanoid(10)}`;
   await expect(
     client.stream(
       crawler.manifest.id,
@@ -79,7 +79,7 @@ test('should be able to query a crawler', async () => {
   const { queryLogDb, statsDb } = statsTracker.diskStore;
   queryLogDb.logTable.db.exec(`delete from ${queryLogDb.logTable.tableName}`);
   statsDb.datastoreEntities.db.exec(`delete from ${statsDb.datastoreEntities.tableName}`);
-  const affiliateId = `aff${nanoid(12)}`;
+  const affiliateId = `aff${nanoid(10)}`;
   await expect(
     client.query(
       crawler.manifest.id,

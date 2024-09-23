@@ -1,8 +1,8 @@
 import { loadEnv, parseEnvBool, parseEnvInt, parseEnvPath } from '@ulixee/commons/lib/envUtils';
+import ILocalchainConfig from '@ulixee/datastore/interfaces/ILocalchainConfig';
 import { addressValidation, identityValidation } from '@ulixee/platform-specification/types';
 import * as Os from 'os';
 import * as Path from 'path';
-import ILocalchainConfig from '@ulixee/datastore/interfaces/ILocalchainConfig';
 
 loadEnv(process.cwd());
 loadEnv(__dirname);
@@ -27,6 +27,7 @@ export default {
   datastoresMustHaveOwnAdminIdentity: parseEnvBool(env.ULX_DATASTORES_MUST_HAVE_OWN_ADMIN) ?? false,
 
   localchainConfig: getLocalchainConfig(),
+  argonMainchainUrl: env.ARGON_MAINCHAIN_URL,
 
   enableGlobalConfigs: parseEnvBool(env.ULX_ENABLE_GLOBAL_CONFIG) ?? true,
   statsTrackerHost: env.ULX_DATASTORE_STATS_HOST,
@@ -43,13 +44,14 @@ function getLocalchainConfig(): ILocalchainConfig | undefined {
   }
   if (env.ARGON_LOCALCHAIN_PASSWORD_FILE)
     env.ARGON_LOCALCHAIN_PASSWORD_FILE = parseEnvPath(env.ARGON_LOCALCHAIN_PASSWORD_FILE);
-  if (env.ARGON_LOCALCHAIN_PATH) env.ARGON_LOCALCHAIN_PATH = parseEnvPath(env.ARGON_LOCALCHAIN_PATH);
+  if (env.ARGON_LOCALCHAIN_PATH)
+    env.ARGON_LOCALCHAIN_PATH = parseEnvPath(env.ARGON_LOCALCHAIN_PATH);
 
   return <ILocalchainConfig>{
     localchainPath: env.ARGON_LOCALCHAIN_PATH,
     mainchainUrl: env.ARGON_MAINCHAIN_URL,
     blockRewardsAddress: parseAddress(env.ARGON_BLOCK_REWARDS_ADDRESS, 'Block Rewards Address'),
-    notaryId: parseEnvInt(env.NOTARY_ID),
+    notaryId: parseEnvInt(env.ARGON_NOTARY_ID),
     keystorePassword: {
       interactiveCli: parseEnvBool(env.ARGON_LOCALCHAIN_PASSWORD_INTERACTIVE_CLI),
       password: keystorePassword,
@@ -58,7 +60,7 @@ function getLocalchainConfig(): ILocalchainConfig | undefined {
   };
 }
 
-function parseAddress(address: string, type: string): string {
+export function parseAddress(address: string, type: string): string {
   if (!address) return address;
   try {
     addressValidation.parse(address);

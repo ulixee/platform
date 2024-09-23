@@ -19,7 +19,7 @@ export default interface ILocalchainConfig {
   keystorePassword?: KeystorePasswordOption;
 
   /**
-   * Should sync be run automatically, or wait for programmatic execution
+   * Should sync be run automatically, or wait for programmatic execution (default false)
    */
-  automaticallyRunSync?: boolean;
+  disableAutomaticSync?: boolean;
 }

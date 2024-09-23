@@ -12,7 +12,6 @@ import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange'
 import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import { nanoid } from 'nanoid';
 import * as Path from 'node:path';
-import IDatastoreHostLookup from '../interfaces/IDatastoreHostLookup';
 import { IPaymentDetails, IPaymentEvents, IPaymentReserver } from '../interfaces/IPaymentService';
 import DatastoreApiClients from '../lib/DatastoreApiClients';
 
@@ -32,7 +31,6 @@ export interface IChannelHoldDetails {
 
 export interface IChannelHoldSource {
   sourceKey: string;
-  datastoreLookup?: IDatastoreHostLookup;
   createChannelHold(
     paymentInfo: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
     milligons: bigint,
@@ -49,8 +47,6 @@ export default class ArgonReserver
 {
   public static baseStorePath = Path.join(getDataDirectory(), `ulixee`);
   public readonly paymentsByDatastoreId: IPaymentDetailsByDatastoreId = {};
-
-  public datastoreLookup?: IDatastoreHostLookup;
 
   private paymentsPendingFinalization: {
     [uuid: string]: { microgons: number; datastoreId: string; paymentId: string };
@@ -78,7 +74,6 @@ export default class ArgonReserver
     super();
     this.storePath = Path.join(ArgonReserver.baseStorePath, `${channelHoldSource.sourceKey}.json`);
     this.saveInterval = setInterval(() => this.save(), 5e3).unref();
-    this.datastoreLookup = channelHoldSource.datastoreLookup;
     if (!apiClients) {
       this.apiClients = new DatastoreApiClients();
       this.closeApiClients = true;

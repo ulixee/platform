@@ -1,5 +1,5 @@
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { MainchainClient } from '@argonprotocol/localchain';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { IPayment } from '@ulixee/platform-specification';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import { IPaymentMethod } from '@ulixee/platform-specification/types/IPayment';
@@ -32,8 +32,6 @@ export default class DefaultPaymentService
   private readonly argonReserver?: IPaymentReserver;
   private readonly paymentUuidToService: { [uuid: string]: WeakRef<IPaymentService> } = {};
   private readonly creditsAutoLoaded: Promise<any>;
-
-  #datastoreLookup?: IDatastoreHostLookup;
 
   constructor(
     argonReserver?: IPaymentReserver,
@@ -93,24 +91,25 @@ export default class DefaultPaymentService
     credit: IPaymentMethod['credits'],
     datastoreLookup?: IDatastoreHostLookup,
   ): Promise<void> {
-    this.#datastoreLookup ??= datastoreLookup ?? (await this.argonReserver.datastoreLookup);
-    if (!this.#datastoreLookup && Env.argonMainchainUrl) {
-      const mainchainClient = await MainchainClient.connect(Env.argonMainchainUrl, 10e3);
-      this.#datastoreLookup = new DatastoreLookup(mainchainClient);
+    let mainchainClientToClose: MainchainClient;
+    if (!datastoreLookup && Env.argonMainchainUrl) {
+      mainchainClientToClose = await MainchainClient.connect(Env.argonMainchainUrl, 10e3);
+      datastoreLookup = new DatastoreLookup(mainchainClientToClose);
     }
-    const service = await CreditReserver.lookup(
-      url,
-      credit,
-      this.#datastoreLookup,
-      this.creditsPath,
-    );
-    this.addCredit(service);
+    try {
+      const service = await CreditReserver.lookup(url, credit, datastoreLookup, this.creditsPath);
+      this.addCredit(service);
+    } finally {
+      if (mainchainClientToClose) {
+        await mainchainClientToClose.close();
+      }
+    }
   }
 
   public async reserve(
     info: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
   ): Promise<IPayment> {
-    if (!info.microgons || !info.recipient) return null;
+    if (!info.microgons) return null;
 
     await this.creditsAutoLoaded;
     let datastoreCredits = 0;
@@ -132,6 +131,11 @@ export default class DefaultPaymentService
       }
       throw new Error(
         "You don't have any valid payment methods configured. Please install any credits you have or connect a localchain.",
+      );
+    }
+    if (!info.recipient) {
+      throw new Error(
+        "This Datastore hasn't configured a payment address, so it can't receive Argons as payment.",
       );
     }
     const payment = await this.argonReserver?.reserve(info);
@@ -156,8 +160,17 @@ export default class DefaultPaymentService
     apiClients?: DatastoreApiClients,
     loadCreditsFromPath?: string | 'default',
   ): Promise<DefaultPaymentService> {
-    const channelHoldSource = new LocalchainChannelHoldSource(localchain, await localchain.address);
-    const reserver = new ArgonReserver(channelHoldSource, channelHoldAllocationStrategy, apiClients);
+    const datastoreLookup = new DatastoreLookup(await localchain.mainchainClient);
+    const channelHoldSource = new LocalchainChannelHoldSource(
+      localchain,
+      await localchain.address,
+      datastoreLookup,
+    );
+    const reserver = new ArgonReserver(
+      channelHoldSource,
+      channelHoldAllocationStrategy,
+      apiClients,
+    );
     await reserver.load();
     return new DefaultPaymentService(reserver, loadCreditsFromPath);
   }
@@ -174,7 +187,11 @@ export default class DefaultPaymentService
       identityConfig.passphrase ? { keyPassphrase: identityConfig.passphrase } : undefined,
     );
     const channelHoldSource = new BrokerChannelHoldSource(brokerHost, identity);
-    const reserver = new ArgonReserver(channelHoldSource, channelHoldAllocationStrategy, apiClients);
+    const reserver = new ArgonReserver(
+      channelHoldSource,
+      channelHoldAllocationStrategy,
+      apiClients,
+    );
     await reserver.load();
     return new DefaultPaymentService(reserver, loadCreditsFromPath);
   }

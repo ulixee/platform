@@ -8,7 +8,7 @@ export const channelHoldIdValidation = z
   .string()
   .length(62)
   .regex(
-    /^esc1[ac-hj-np-z02-9]{58}/,
+    /^esc1[ac-hj-np-z02-9]{58}$/,
     'This is not a Ulixee identity (Bech32m encoded public key starting with "esc1").',
   );
 
@@ -40,7 +40,7 @@ export const PaymentSchema = PaymentMethodSchema.extend({
   uuid: z
     .string()
     .length(21)
-    .regex(/[A-Za-z0-9_-]{21}/)
+    .regex(/^[A-Za-z0-9_-]{21}$/)
     .describe('A one time payment id.'),
   microgons: microgonsValidation,
 });

@@ -1,12 +1,9 @@
 import { z } from 'zod';
+import { AccountType } from '@argonprotocol/localchain';
 import { addressValidation, milligonsValidation, multiSignatureValidation } from './index';
 import { NoteSchema } from './INote';
 
-export enum AccountType {
-  Tax = 'tax',
-  Deposit = 'deposit',
-}
-
+export { AccountType };
 export const notaryIdValidation = z.number().int().positive();
 export const tickValidation = z
   .number()

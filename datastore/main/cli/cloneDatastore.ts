@@ -105,7 +105,7 @@ export default async function cloneDatastore(
     id: ${JSON.stringify(meta.id + 2)},
     version: "0.0.1",
     name: ${JSON.stringify(meta.name)},${description}
-    affiliateId: "aff${nanoid(12)}",
+    affiliateId: "aff${nanoid(10)}",
     remoteDatastores: {
       source: "${url}",
     },${remoteCredits}

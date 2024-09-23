@@ -4,7 +4,7 @@ import { toUrl } from '@ulixee/commons/lib/utils';
 import { Helpers } from '@ulixee/datastore-testing';
 import BrokerChannelHoldSource from '@ulixee/datastore/payments/BrokerChannelHoldSource';
 import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
-import { ADDRESS_PREFIX } from '@argonprotocol/localchain';
+import { ADDRESS_PREFIX, Chain } from '@argonprotocol/localchain';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
 import { IDatabrokerAdminApis } from '@ulixee/platform-specification/datastore';
 import Identity from '@ulixee/platform-utils/lib/Identity';
@@ -62,6 +62,11 @@ beforeEach(() => {
 afterEach(Helpers.afterEach);
 afterAll(Helpers.afterAll);
 
+const mainchainIdentity = {
+  chain: Chain.Devnet,
+  genesisHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+};
+
 it('can create channelHolds', async () => {
   const broker = new DataBroker({ storageDir });
   Helpers.needsClosing.push(broker);
@@ -85,6 +90,7 @@ it('can create channelHolds', async () => {
       recipient: {
         address: datastoreKeyPair.address,
         notaryId: 1,
+        ...mainchainIdentity,
       },
       id: 'test',
       version: '1.0.0',
@@ -104,10 +110,12 @@ it('can create channelHolds', async () => {
   await broker.onLocalchainSync({
     channelHoldNotarizations: [
       {
-        channelHolds: [{
-          id: channelHold.channelHoldId,
-          settledAmount: 80n,
-        }],
+        channelHolds: [
+          {
+            id: channelHold.channelHoldId,
+            settledAmount: 80n,
+          },
+        ],
       },
     ],
   } as any);
@@ -137,6 +145,7 @@ test('it rejects invalid signing requests', async () => {
     recipient: {
       address: datastoreKeyPair.address,
       notaryId: 1,
+      ...mainchainIdentity,
     },
     id: 'test',
     version: '1.0.0',
@@ -144,7 +153,9 @@ test('it rejects invalid signing requests', async () => {
   };
 
   const client = new BrokerChannelHoldSource(brokerHost.href, await Identity.create());
-  await expect(client.createChannelHold(paymentInfo, 100n)).rejects.toThrow('Organization not found');
+  await expect(client.createChannelHold(paymentInfo, 100n)).rejects.toThrow(
+    'Organization not found',
+  );
 
   jest
     .spyOn(BrokerChannelHoldSource, 'createSignatureMessage')

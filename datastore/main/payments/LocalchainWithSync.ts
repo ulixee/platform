@@ -1,5 +1,3 @@
-import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
-import Logger from '@ulixee/commons/lib/Logger';
 import {
   BalanceSync,
   BalanceSyncResult,
@@ -12,6 +10,10 @@ import {
   OpenChannelHoldsStore,
   Transactions,
 } from '@argonprotocol/localchain';
+import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
+import Logger from '@ulixee/commons/lib/Logger';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
+import { IDatastorePaymentRecipient } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
 import * as Path from 'node:path';
 import Env from '../env';
@@ -47,6 +49,10 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
     return this.#localchain.mainchainTransfers;
   }
 
+  public get mainchainClient(): Promise<MainchainClient> {
+    return this.#localchain.mainchainClient;
+  }
+
   public get inner(): Localchain {
     return this.#localchain;
   }
@@ -55,6 +61,7 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
   public datastoreLookup!: DatastoreLookup;
   public address!: Promise<string>;
   public enableLogging = true;
+  public paymentInfo = new Resolvable<IDatastorePaymentRecipient>();
 
   private nextTick: NodeJS.Timeout;
 
@@ -141,14 +148,25 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
   }
 
   private afterLoad(): void {
-    const { keystorePassword } = this.localchainConfig;
+    const { keystorePassword, notaryId } = this.localchainConfig;
     this.address = this.#localchain.address.catch(() => null);
     // remove password from memory
     if (Buffer.isBuffer(keystorePassword?.password)) {
       keystorePassword.password.fill(0);
       delete keystorePassword.password;
     }
-    if (this.localchainConfig.automaticallyRunSync !== false) this.scheduleNextTick();
+    void this.getAccountOverview()
+      // eslint-disable-next-line promise/always-return
+      .then(x => {
+        this.paymentInfo.resolve({
+          address: x.address,
+          ...x.mainchainIdentity,
+          notaryId,
+        });
+      })
+      .catch(this.paymentInfo.reject);
+
+    if (this.localchainConfig.disableAutomaticSync !== true) this.scheduleNextTick();
   }
 
   private scheduleNextTick(): void {

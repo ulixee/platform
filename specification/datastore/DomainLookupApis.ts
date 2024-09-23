@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { datastoreIdValidation } from '../types/datastoreIdValidation';
+import { DatastorePaymentRecipientSchema } from '../types/IDatastoreManifest';
 import { semverValidation } from '../types/semverValidation';
 import { IZodSchemaToApiTypes } from '../utils/IZodApi';
 
@@ -13,6 +14,7 @@ export const DomainLookupApiSchema = {
       version: semverValidation,
       host: z.string(),
       domain: z.string().optional(),
+      payment: DatastorePaymentRecipientSchema.optional(),
     }),
   },
 };

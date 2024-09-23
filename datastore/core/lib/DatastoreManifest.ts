@@ -7,7 +7,6 @@ import IDatastoreMetadata from '@ulixee/datastore/interfaces/IDatastoreMetadata'
 import { datastoreIdValidation } from '@ulixee/platform-specification/types/datastoreIdValidation';
 import IDatastoreManifest, {
   DatastoreManifestSchema,
-  IDatastorePaymentRecipient,
 } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import ValidationError from '@ulixee/platform-specification/utils/ValidationError';
 import { promises as Fs } from 'fs';
@@ -38,8 +37,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
   public tablesByName: IDatastoreManifest['tablesByName'] = {};
 
   public adminIdentities: string[];
-  // Payment details
-  public payment?: IDatastorePaymentRecipient;
 
   public domain?: string;
 
@@ -214,7 +211,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     } else if (this.source === 'dbx') {
       // dbx stores only the output
       json = this.toJSON();
-      await DatastoreManifest.validate(json);
+      DatastoreManifest.validate(json);
     }
 
     // don't create file if it doesn't exist already
@@ -246,7 +243,6 @@ export default class DatastoreManifest implements IDatastoreManifest {
       crawlersByName: this.crawlersByName,
       storageEngineHost: this.storageEngineHost,
       tablesByName: this.tablesByName,
-      payment: this.payment,
       domain: this.domain,
       adminIdentities: this.adminIdentities,
     };

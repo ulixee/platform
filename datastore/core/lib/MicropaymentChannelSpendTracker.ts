@@ -1,10 +1,12 @@
+import { ChannelHold, DomainStore, OpenChannelHold } from '@argonprotocol/localchain';
 import Logger from '@ulixee/commons/lib/Logger';
-import { DomainStore, ChannelHold, OpenChannelHold } from '@argonprotocol/localchain';
+import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
 import IMicropaymentChannelApiTypes from '@ulixee/platform-specification/services/MicropaymentChannelApis';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
+import IDatastoreManifest, {
+  IDatastorePaymentRecipient,
+} from '@ulixee/platform-specification/types/IDatastoreManifest';
 import serdeJson from '@ulixee/platform-utils/lib/serdeJson';
-import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
 import DatastoreChannelHoldsDb from '../db/DatastoreChannelHoldsDb';
 import IMicropaymentChannelSpendTracker from '../interfaces/IMicropaymentChannelSpendTracker';
 
@@ -15,10 +17,19 @@ export default class MicropaymentChannelSpendTracker implements IMicropaymentCha
 
   private readonly openChannelHoldsById = new Map<string, OpenChannelHold>();
 
+  private readonly preferredNotaryId: number = 1;
   constructor(
     readonly channelHoldDbDir: string,
     readonly localchain: LocalchainWithSync,
-  ) {}
+  ) {
+    if (localchain?.localchainConfig) {
+      this.preferredNotaryId = this.localchain.localchainConfig.notaryId;
+    }
+  }
+
+  public getPaymentInfo(): Promise<IDatastorePaymentRecipient> {
+    return this.localchain.paymentInfo.promise;
+  }
 
   public async close(): Promise<void> {
     return Promise.resolve();
@@ -63,24 +74,26 @@ export default class MicropaymentChannelSpendTracker implements IMicropaymentCha
           );
         }
       }
-      if (datastoreManifest.payment.notaryId !== data.channelHold.previousBalanceProof?.notaryId) {
+
+      if (
+        this.preferredNotaryId &&
+        this.preferredNotaryId !== data.channelHold.previousBalanceProof?.notaryId
+      ) {
         throw new Error(
-          `The channelHold notary (${data.channelHold.previousBalanceProof?.notaryId}) does not match the required notary (${datastoreManifest.payment.notaryId})`,
+          `The channelHold notary (${data.channelHold.previousBalanceProof?.notaryId}) does not match the required notary (${this.preferredNotaryId})`,
         );
       }
 
       const recipient = note.noteType.recipient;
 
-      if (datastoreManifest.payment.address !== recipient) {
-        throw new Error(
-          `The datastore payment address (${data.channelHold.accountId}) does not match the ChannelHold recipient (${recipient})`,
-        );
-      }
       if (!(await this.canSign(recipient))) {
-        log.warn('This channelHold is made out to a different address than your attached localchain', {
-          recipient,
-          channelHold: data.channelHold,
-        } as any);
+        log.warn(
+          'This channelHold is made out to a different address than your attached localchain',
+          {
+            recipient,
+            channelHold: data.channelHold,
+          } as any,
+        );
         throw new Error('ChannelHold recipient not localchain address');
       }
     } else {
@@ -124,7 +137,8 @@ export default class MicropaymentChannelSpendTracker implements IMicropaymentCha
     log.stats('Importing channelHold to localchain', { datastoreId, balanceChange } as any);
     const channelHoldJson = serdeJson(balanceChange);
 
-    const openChannelHold = await this.localchain.openChannelHolds.importChannelHold(channelHoldJson);
+    const openChannelHold =
+      await this.localchain.openChannelHolds.importChannelHold(channelHoldJson);
     const channelHold = await openChannelHold.channelHold;
 
     this.openChannelHoldsById.set(channelHold.id, openChannelHold);
@@ -136,7 +150,8 @@ export default class MicropaymentChannelSpendTracker implements IMicropaymentCha
   }
 
   private getDb(datastoreId: string): DatastoreChannelHoldsDb {
-    if (!datastoreId) throw new Error('No datastoreId provided to get channelHold spend tracking db.');
+    if (!datastoreId)
+      throw new Error('No datastoreId provided to get channelHold spend tracking db.');
     let db = this.channelHoldDbsByDatastore.get(datastoreId);
     if (!db) {
       db = new DatastoreChannelHoldsDb(this.channelHoldDbDir, datastoreId);

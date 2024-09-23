@@ -3,6 +3,7 @@ import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/Pa
 import IBalanceChange, {
   BalanceChangeSchema,
 } from '@ulixee/platform-specification/types/IBalanceChange';
+import DatastoreLookup from '../lib/DatastoreLookup';
 import { IChannelHoldDetails, IChannelHoldSource } from './ArgonReserver';
 import LocalchainWithSync from './LocalchainWithSync';
 
@@ -16,6 +17,7 @@ export default class LocalchainChannelHoldSource implements IChannelHoldSource {
   constructor(
     public localchain: LocalchainWithSync,
     public address: string,
+    public datastoreLookup: DatastoreLookup,
   ) {}
 
   public async getAccountOverview(): Promise<LocalchainOverview> {
@@ -27,6 +29,9 @@ export default class LocalchainChannelHoldSource implements IChannelHoldSource {
     milligons: bigint,
   ): Promise<IChannelHoldDetails> {
     const { domain } = paymentInfo;
+    if (domain) {
+      await this.datastoreLookup.validatePayment(paymentInfo);
+    }
     const openChannelHold = await this.localchain.inner.transactions.createChannelHold(
       milligons,
       paymentInfo.recipient.address!,
@@ -55,7 +60,8 @@ export default class LocalchainChannelHoldSource implements IChannelHoldSource {
     updatedSettlement: bigint,
   ): Promise<IBalanceChange> {
     const channelHoldId = channelHold.channelHoldId;
-    this.openChannelHoldsById[channelHoldId] ??= await this.localchain.openChannelHolds.get(channelHoldId);
+    this.openChannelHoldsById[channelHoldId] ??=
+      await this.localchain.openChannelHolds.get(channelHoldId);
     const openChannelHold = this.openChannelHoldsById[channelHoldId];
     const result = await openChannelHold.sign(updatedSettlement);
     const balanceChange = channelHold.balanceChange;

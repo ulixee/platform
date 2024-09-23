@@ -2,11 +2,16 @@ import { z } from 'zod';
 import { microgonsValidation } from '../types';
 import { datastoreIdValidation } from '../types/datastoreIdValidation';
 import { BalanceChangeSchema } from '../types/IBalanceChange';
+import { DatastorePaymentRecipientSchema } from '../types/IDatastoreManifest';
 import { NoteSchema } from '../types/INote';
 import { channelHoldIdValidation, PaymentSchema } from '../types/IPayment';
 import { IZodHandlers, IZodSchemaToApiTypes } from '../utils/IZodApi';
 
 export const MicropaymentChannelApiSchemas = {
+  'MicropaymentChannel.getPaymentInfo': {
+    args: z.void(),
+    result: DatastorePaymentRecipientSchema,
+  },
   'MicropaymentChannel.importChannelHold': {
     args: z.object({
       datastoreId: datastoreIdValidation,

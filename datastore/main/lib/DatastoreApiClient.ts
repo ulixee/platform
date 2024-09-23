@@ -176,14 +176,13 @@ export default class DatastoreApiClient {
     (async () => {
       const price = await this.pricing.getEntityPrice(id, version, name);
       try {
-        const paymentInfo = (await this.getMeta(id, version)).payment;
-        if (!paymentInfo || price <= 0) paymentService = null;
+        if (price <= 0) paymentService = null;
         const payment = await paymentService?.reserve({
           host,
           id,
           version,
           microgons: price,
-          recipient: paymentInfo,
+          recipient: (await this.getMeta(id, version)).payment,
           domain: options.domain,
         });
         if (payment) {
@@ -236,7 +235,7 @@ export default class DatastoreApiClient {
     const host = this.connectionToCore.transport.host;
     const paymentInfo = (await this.getMeta(id, version)).payment;
     let paymentService = options.paymentService;
-    if (!paymentInfo || price <= 0) paymentService = null;
+    if (price <= 0) paymentService = null;
 
     const payment = await paymentService?.reserve({
       id,
@@ -478,7 +477,9 @@ export default class DatastoreApiClient {
     datastoreUrl: string,
     argonMainchainUrl: string,
   ): Promise<IDatastoreHost> {
-    const mainchainClient = argonMainchainUrl ? await MainchainClient.connect(argonMainchainUrl, 10e3) : null;
+    const mainchainClient = argonMainchainUrl
+      ? await MainchainClient.connect(argonMainchainUrl, 10e3)
+      : null;
     try {
       return await new DatastoreLookup(mainchainClient).getHostInfo(datastoreUrl);
     } finally {
