@@ -4,7 +4,7 @@ import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
 import DefaultPaymentService from '@ulixee/datastore/payments/DefaultPaymentService';
 import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
-import { DataDomainStore, Localchain } from '@argonprotocol/localchain';
+import { DomainStore, Localchain } from '@argonprotocol/localchain';
 import { getClient, Keyring, KeyringPair } from '@argonprotocol/mainchain';
 import { IDatastoreMetadataResult } from '@ulixee/platform-specification/datastore/DatastoreApis';
 import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
@@ -56,8 +56,8 @@ describeIntegration('Payments E2E', () => {
     const bobchain = await LocalchainWithSync.load({
       localchainPath: Path.join(storageDir, 'bobchain.db'),
       mainchainUrl: argonMainchainUrl,
-      automaticallyRunSync: false,
-      escrowAllocationStrategy: {
+      disableAutomaticSync: true,
+      channelHoldAllocationStrategy: {
         type: 'multiplier',
         queries: 2,
       },
@@ -78,12 +78,12 @@ describeIntegration('Payments E2E', () => {
     // Hangs with the proxy url. Not sure why
     if (!process.env.ULX_USE_DOCKER_BINS) {
       const isDomainRegistered = execAndLog(
-        `npx @argonprotocol/localchain data-domains check ${domain} -m "${argonMainchainUrl}"`,
+        `npx @argonprotocol/localchain domains check ${domain} -m "${argonMainchainUrl}"`,
       );
       expect(isDomainRegistered).toContain(' No ');
       console.log('Domain registered?', isDomainRegistered);
     }
-    const dataDomainHash = DataDomainStore.getHash(domain);
+    const domainHash = DomainStore.getHash(domain);
     await Promise.all([
       ferdiechain.mainchainTransfers.sendToLocalchain(1000n, 1),
       bobchain.mainchainTransfers.sendToLocalchain(5000n, 1),
@@ -103,7 +103,7 @@ describeIntegration('Payments E2E', () => {
 
     {
       const ferdieChange = ferdiechain.beginChange();
-      await ferdieChange.leaseDataDomain(domain, await ferdiechain.address);
+      await ferdieChange.leaseDomain(domain, await ferdiechain.address);
       await ferdieChange.notarizeAndWaitForNotebook();
     }
 
@@ -134,22 +134,18 @@ describeIntegration('Payments E2E', () => {
       cloudAddress,
       {
         domain,
-        payment: {
-          notaryId: 1,
-          address: ferdie.address,
-        },
       },
       identityPath,
     );
 
     await registerZoneRecord(
       mainchainClient,
-      dataDomainHash,
+      domainHash,
       ferdie,
       decodeAddress(ferdie.address, false, 42),
       1,
       {
-        [datastoreVersion]: mainchainClient.createType('ArgonPrimitivesDataDomainVersionHost', {
+        [datastoreVersion]: mainchainClient.createType('ArgonPrimitivesDomainVersionHost', {
           datastoreId: mainchainClient.createType('Bytes', datastoreId),
           host: mainchainClient.createType('Bytes', `ws://127.0.0.1:${cloudAddress.split(':')[1]}`),
         }),
@@ -161,9 +157,9 @@ describeIntegration('Payments E2E', () => {
     const paymentService = await bobchain.createPaymentService(datastoreApiClients);
 
     const payments: DefaultPaymentService['EventTypes']['reserved'][] = [];
-    const escrows: DefaultPaymentService['EventTypes']['createdEscrow'][] = [];
+    const channelHolds: DefaultPaymentService['EventTypes']['createdChannelHold'][] = [];
     paymentService.on('reserved', payment => payments.push(payment));
-    paymentService.on('createdEscrow', e => escrows.push(e));
+    paymentService.on('createdChannelHold', e => channelHolds.push(e));
     Helpers.onClose(() => paymentService.close());
     let metadata: IDatastoreMetadataResult;
     const client = new Client(`ulx://${domain}/@v${datastoreVersion}`, {
@@ -186,13 +182,13 @@ describeIntegration('Payments E2E', () => {
       }),
     );
 
-    expect(escrows).toHaveLength(1);
-    expect(escrows[0].allocatedMilligons).toBe(1000n);
-    expect(escrows[0].datastoreId).toBe(datastoreId);
+    expect(channelHolds).toHaveLength(1);
+    expect(channelHolds[0].allocatedMilligons).toBe(1000n);
+    expect(channelHolds[0].datastoreId).toBe(datastoreId);
     expect(payments).toHaveLength(1);
     expect(payments[0].payment.microgons).toBe(500_000);
-    expect(payments[0].payment.escrow).toBeTruthy();
-    expect(payments[0].payment.escrow.settledMilligons).toBe(500n);
+    expect(payments[0].payment.channelHold).toBeTruthy();
+    expect(payments[0].payment.channelHold.settledMilligons).toBe(500n);
     expect(payments[0].remainingBalance).toBe(500_000);
 
     const balance = await bobchain.getAccountOverview();
@@ -229,10 +225,6 @@ describeIntegration('Payments E2E', () => {
       cloudAddress,
       {
         version: '0.0.2',
-        payment: {
-          notaryId: 1,
-          address: ferdie.address,
-        },
       },
       identityPath,
     );
@@ -240,7 +232,7 @@ describeIntegration('Payments E2E', () => {
     const bobchain = await LocalchainWithSync.load({
       localchainPath: Path.join(storageDir, 'bobchain.db'),
       mainchainUrl: argonMainchainUrl,
-      escrowAllocationStrategy: {
+      channelHoldAllocationStrategy: {
         type: 'multiplier',
         queries: 2,
       },
@@ -252,9 +244,9 @@ describeIntegration('Payments E2E', () => {
 
     const paymentService = await bobchain.createPaymentService(new DatastoreApiClients());
     const payments: DefaultPaymentService['EventTypes']['reserved'][] = [];
-    const escrows: DefaultPaymentService['EventTypes']['createdEscrow'][] = [];
+    const channelHolds: DefaultPaymentService['EventTypes']['createdChannelHold'][] = [];
     paymentService.on('reserved', payment => payments.push(payment));
-    paymentService.on('createdEscrow', e => escrows.push(e));
+    paymentService.on('createdChannelHold', e => channelHolds.push(e));
     let metadata: IDatastoreMetadataResult;
     const client = new Client(`ulx://${cloudAddress}/no-domain@v0.0.2`, {
       paymentService,
@@ -275,13 +267,13 @@ describeIntegration('Payments E2E', () => {
         bytes: expect.any(Number),
       }),
     );
-    expect(escrows).toHaveLength(1);
-    expect(escrows[0].allocatedMilligons).toBe(5n);
-    expect(escrows[0].datastoreId).toBe('no-domain');
+    expect(channelHolds).toHaveLength(1);
+    expect(channelHolds[0].allocatedMilligons).toBe(5n);
+    expect(channelHolds[0].datastoreId).toBe('no-domain');
     expect(payments).toHaveLength(1);
     expect(payments[0].payment.microgons).toBe(1000);
-    expect(payments[0].payment.escrow).toBeTruthy();
-    expect(payments[0].payment.escrow.settledMilligons).toBe(5n);
+    expect(payments[0].payment.channelHold).toBeTruthy();
+    expect(payments[0].payment.channelHold.settledMilligons).toBe(5n);
     expect(payments[0].remainingBalance).toBe(5_000 - 1_000);
 
     const balance = await bobchain.getAccountOverview();

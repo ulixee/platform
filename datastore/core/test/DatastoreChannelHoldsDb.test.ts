@@ -1,11 +1,11 @@
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import * as Path from 'node:path';
 import { Helpers } from '@ulixee/datastore-testing';
-import DatastoreEscrowsDb from '../db/DatastoreEscrowsDb';
+import DatastoreChannelHoldsDb from '../db/DatastoreChannelHoldsDb';
 
-const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreEscrowsDb.test');
+const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastoreChannelHoldsDb.test');
 
-const db = new DatastoreEscrowsDb(storageDir, 'test1');
+const db = new DatastoreChannelHoldsDb(storageDir, 'test1');
 
 afterEach(Helpers.afterEach);
 afterAll(async () => {
@@ -26,11 +26,11 @@ test('handles the flow of a payment', async () => {
   const result = db.debit('q1', {
     uuid: 'p1',
     microgons: 100,
-    escrow: { id: 'test1', settledMilligons: 1n, settledSignature: Buffer.from(sha256('123')) },
+    channelHold: { id: 'test1', settledMilligons: 1n, settledSignature: Buffer.from(sha256('123')) },
   });
   expect(result.shouldFinalize).toBe(true);
   // @ts-expect-error
-  const payments = db.paymentIdByEscrowId;
+  const payments = db.paymentIdByChannelHoldId;
   expect(payments.size).toBe(1);
   expect(payments.get('test1').size).toBe(1);
   expect(payments.get('test1').get('p1')).toEqual({ microgons: 100, queryId: 'q1' });
@@ -39,16 +39,16 @@ test('handles the flow of a payment', async () => {
   expect(payments.get('test1').get('p1')).toEqual({ microgons: 100, queryId: 'q1' });
 });
 
-test('rejects payments on expired escrows', async () => {
+test('rejects payments on expired channelHolds', async () => {
   db.create('test2', 1000, new Date(Date.now() - 1));
 
   expect(() => {
     db.debit('q2', {
       uuid: 'p2',
       microgons: 100,
-      escrow: { id: 'test2', settledMilligons: 1n, settledSignature: Buffer.from(sha256('123')) },
+      channelHold: { id: 'test2', settledMilligons: 1n, settledSignature: Buffer.from(sha256('123')) },
     });
-  }).toThrow('This escrow has expired.');
+  }).toThrow('This channelHold has expired.');
   expect(db.list()).toHaveLength(2);
   db.cleanup(1);
   expect(db.list()).toHaveLength(1);
@@ -61,7 +61,7 @@ test('rejects a payment with too small a settlement signature', async () => {
     db.debit('q3', {
       uuid: 'p3',
       microgons: 2000,
-      escrow: { id: 'test3', settledMilligons: 1n, settledSignature: Buffer.from(sha256('123')) },
+      channelHold: { id: 'test3', settledMilligons: 1n, settledSignature: Buffer.from(sha256('123')) },
     });
   }).toThrow(/settlement/);
 });
@@ -71,19 +71,19 @@ test('rejects a payment with too small a settlement signature within a milligon'
   db.debit('q4', {
     uuid: 'p4',
     microgons: 1900,
-    escrow: { id: 'test4', settledMilligons: 2n, settledSignature: Buffer.from(sha256('123')) },
+    channelHold: { id: 'test4', settledMilligons: 2n, settledSignature: Buffer.from(sha256('123')) },
   });
 
   db.debit('q6', {
     uuid: 'p6',
     microgons: 99,
-    escrow: { id: 'test4', settledMilligons: 2n, settledSignature: Buffer.from(sha256('123')) },
+    channelHold: { id: 'test4', settledMilligons: 2n, settledSignature: Buffer.from(sha256('123')) },
   });
   expect(() => {
     db.debit('q7', {
       uuid: 'p7',
       microgons: 2,
-      escrow: { id: 'test4', settledMilligons: 2n, settledSignature: Buffer.from(sha256('123')) },
+      channelHold: { id: 'test4', settledMilligons: 2n, settledSignature: Buffer.from(sha256('123')) },
     });
   }).toThrow('settlement');
 });

@@ -8,7 +8,7 @@
     "@ulixee/commons": "2.0.0-alpha.29",
     "@ulixee/datastore": "2.0.0-alpha.29",
     "@ulixee/datastore-docpage": "2.0.0-alpha.29",
-    "@argonprotocol/localchain": "0.0.4",
+    "@argonprotocol/localchain": "0.0.8",
     "@ulixee/net": "2.0.0-alpha.29",
     "@ulixee/platform-specification": "2.0.0-alpha.29",
     "@ulixee/platform-utils": "2.0.0-alpha.29",
@@ -21,7 +21,8 @@
   },
   "devDependencies": {
     "@jest/globals": "^27.0.6",
-    "@polkadot/keyring": "^13.0.2",
+    "@polkadot/keyring": "^13.1.1",
+    "@polkadot/util-crypto": "^13.1.1",
     "@ulixee/cloud": "2.0.0-alpha.29",
     "@ulixee/datastore-packager": "2.0.0-alpha.29",
     "@ulixee/datastore-plugins-hero-core": "2.0.0-alpha.29",
@@ -31,8 +32,5 @@
     "moment": "^2.29.4",
     "ts-node": "^10.8.1",
     "zod": "^3.17.10"
-  },
-  "peerDependencies": {
-    "@polkadot/util-crypto": "^13.0.2"
   }
 }

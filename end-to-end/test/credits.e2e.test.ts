@@ -1,9 +1,6 @@
-import { Keyring } from '@polkadot/keyring';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import DefaultPaymentService from '@ulixee/datastore/payments/DefaultPaymentService';
-import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
-import { writeFile } from 'node:fs/promises';
 import * as Path from 'node:path';
 import TestCloudNode from '../lib/TestCloudNode';
 import { execAndLog, getPlatformBuild } from '../lib/utils';
@@ -27,19 +24,11 @@ test('it can create a datastore with credits using cli', async () => {
     ULX_CLOUD_ADMIN_IDENTITIES: identityBech32.trim(),
     ULX_DATASTORE_DIR: storageDir,
     ULX_IDENTITY_PATH: identityPath,
+    // ULX_PAYMENT_ADDRESS:
   });
   expect(cloudAddress).toBeTruthy();
 
   const datastorePath = Path.join('end-to-end', 'test', 'datastore', 'credits.js');
-  await writeFile(
-    Path.join(buildDir, datastorePath.replace('.js', '-manifest.json')),
-    JSON.stringify(<Partial<IDatastoreManifest>>{
-      payment: {
-        notaryId: 1,
-        address: new Keyring().createFromUri('//Alice').address,
-      },
-    }),
-  );
   execAndLog(
     `npx @ulixee/datastore deploy --skip-docs -h ${cloudAddress} .${Path.sep}${datastorePath}`,
     {

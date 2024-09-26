@@ -1,5 +1,5 @@
+import { BalanceChangeStatus, LocalchainOverview } from '@argonprotocol/localchain';
 import ITypedEventEmitter from '@ulixee/commons/interfaces/ITypedEventEmitter';
-import { LocalchainOverview, BalanceChangeStatus } from '@argonprotocol/localchain';
 import { IPayment } from '@ulixee/platform-specification';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import { IPaymentMethod } from '@ulixee/platform-specification/types/IPayment';
@@ -14,9 +14,9 @@ export interface IPaymentEvents {
     finalMicrogons: number;
     remainingBalance: number;
   };
-  createdEscrow: { escrowId: string; datastoreId: string; allocatedMilligons: bigint };
+  createdChannelHold: { channelHoldId: string; datastoreId: string; allocatedMilligons: bigint };
   updateSettlement: {
-    escrowId: string;
+    channelHoldId: string;
     settledMilligons: bigint;
     remaining: bigint;
     datastoreId: string;
@@ -24,7 +24,6 @@ export interface IPaymentEvents {
 }
 
 export interface IPaymentReserver extends ITypedEventEmitter<IPaymentEvents> {
-  datastoreLookup?: IDatastoreHostLookup;
   reserve(info: IPaymentServiceApiTypes['PaymentService.reserve']['args']): Promise<IPayment>;
   finalize(info: IPaymentServiceApiTypes['PaymentService.finalize']['args']): Promise<void>;
   close(): Promise<void>;

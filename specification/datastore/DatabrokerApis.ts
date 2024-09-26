@@ -7,11 +7,11 @@ import {
 } from '../types';
 import { BalanceChangeSchema } from '../types/IBalanceChange';
 import { DatastorePaymentRecipientSchema } from '../types/IDatastoreManifest';
-import { escrowIdValidation } from '../types/IPayment';
+import { channelHoldIdValidation } from '../types/IPayment';
 import { IZodSchemaToApiTypes } from '../utils/IZodApi';
 
 export const DatabrokerApisSchema = {
-  'Databroker.createEscrow': {
+  'Databroker.createChannelHold': {
     args: z.object({
       recipient: DatastorePaymentRecipientSchema,
       milligons: milligonsValidation.describe('Amount to reserve'),
@@ -27,9 +27,9 @@ export const DatabrokerApisSchema = {
       }),
     }),
     result: z.object({
-      escrowId: escrowIdValidation,
+      channelHoldId: channelHoldIdValidation,
       balanceChange: BalanceChangeSchema,
-      expirationDate: z.date().describe('The date this escrow expires'),
+      expirationDate: z.date().describe('The date this channelHold expires'),
     }),
   },
   'Databroker.getBalance': {

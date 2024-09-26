@@ -58,7 +58,6 @@ test('it should generate a relative script entrypoint', async () => {
     id: packager.manifest.id,
     version: '0.0.1',
     versionTimestamp: expect.any(Number),
-    payment: undefined,
   });
   expect((await Fs.stat(`${__dirname}/assets/historyTest.dbx`)).isDirectory()).toBeTruthy();
 
@@ -167,7 +166,6 @@ test('should be able to package a multi-function Datastore', async () => {
     id: packager.manifest.id,
     version: packager.manifest.version,
     versionTimestamp: expect.any(Number),
-    payment: undefined,
   });
   expect((await Fs.stat(`${__dirname}/assets/multiExtractorTest.dbx`)).isDirectory()).toBeTruthy();
 
@@ -204,7 +202,6 @@ test('should be able to package an exported Extractor without a Datastore', asyn
     id: packager.manifest.id,
     version: packager.manifest.version,
     versionTimestamp: expect.any(Number),
-    payment: undefined,
     adminIdentities: [],
   });
   expect((await Fs.stat(`${__dirname}/assets/rawExtractorTest.dbx`)).isDirectory()).toBeTruthy();

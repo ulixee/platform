@@ -4,21 +4,21 @@ import { microgonsValidation, milligonsValidation, multiSignatureValidation } fr
 /**
  * This will likely be changed to a specific address for payments (maybe just an extra prefix?). It's a placeholder for now.
  */
-export const escrowIdValidation = z
+export const channelHoldIdValidation = z
   .string()
   .length(62)
   .regex(
-    /^esc1[ac-hj-np-z02-9]{58}/,
+    /^esc1[ac-hj-np-z02-9]{58}$/,
     'This is not a Ulixee identity (Bech32m encoded public key starting with "esc1").',
   );
 
 export const PaymentMethodSchema = z.object({
-  escrow: z
+  channelHold: z
     .object({
-      id: escrowIdValidation,
+      id: channelHoldIdValidation,
       settledMilligons: milligonsValidation.describe('The aggregate settled milligons'),
       settledSignature: multiSignatureValidation.describe(
-        'A signature of the updated escrow with settled milligons',
+        'A signature of the updated channel hold with settled milligons',
       ),
     })
     .optional(),
@@ -40,7 +40,7 @@ export const PaymentSchema = PaymentMethodSchema.extend({
   uuid: z
     .string()
     .length(21)
-    .regex(/[A-Za-z0-9_-]{21}/)
+    .regex(/^[A-Za-z0-9_-]{21}$/)
     .describe('A one time payment id.'),
   microgons: microgonsValidation,
 });

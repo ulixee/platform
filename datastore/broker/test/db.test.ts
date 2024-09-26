@@ -23,11 +23,11 @@ it('can store organization data', async () => {
   db.organizations.debit(org1, 50n);
   expect(db.organizations.totalBalance()).toBe(60n);
   expect(db.organizations.get(org1).balance).toBe(60n);
-  expect(db.organizations.get(org1).balanceInEscrows).toBe(50n);
+  expect(db.organizations.get(org1).balanceInChannelHolds).toBe(50n);
 
   db.organizations.settle(org1, 10n, 50n);
   expect(db.organizations.get(org1).balance).toBe(70n);
-  expect(db.organizations.get(org1).balanceInEscrows).toBe(0n);
+  expect(db.organizations.get(org1).balanceInChannelHolds).toBe(0n);
 
   db.organizations.updateName(org1, 'new name');
 
@@ -63,17 +63,17 @@ it('can store user data', async () => {
   expect(db.users.count()).toBe(2);
 });
 
-it('can store escrow data', async () => {
+it('can store channelHold data', async () => {
   const db = new DatabrokerDb(storageDir);
   Helpers.needsClosing.push(db);
   const org1 = db.organizations.create('org1', 10n);
   db.users.create('user1', 'name1', org1);
   db.users.create('user2', 'name2', org1);
 
-  db.escrows.create({
-    escrowId: '1',
+  db.channelHolds.create({
+    channelHoldId: '1',
     heldMilligons: 10n,
-    dataDomain: 'test',
+    domain: 'test',
     organizationId: org1,
     settledMilligons: 0n,
     settlementDate: null,
@@ -81,12 +81,12 @@ it('can store escrow data', async () => {
     created: Date.now(),
   });
 
-  expect(db.escrows.pendingBalance()).toBe(10n);
+  expect(db.channelHolds.pendingBalance()).toBe(10n);
 
-  db.escrows.create({
-    escrowId: '2',
+  db.channelHolds.create({
+    channelHoldId: '2',
     heldMilligons: 20n,
-    dataDomain: 'test',
+    domain: 'test',
     organizationId: org1,
     settledMilligons: 0n,
     settlementDate: null,
@@ -94,19 +94,19 @@ it('can store escrow data', async () => {
     created: Date.now(),
   });
 
-  expect(db.escrows.count()).toBe(2);
-  expect(db.escrows.countOpen()).toBe(2);
-  expect(db.escrows.pendingBalance()).toBe(30n);
+  expect(db.channelHolds.count()).toBe(2);
+  expect(db.channelHolds.countOpen()).toBe(2);
+  expect(db.channelHolds.pendingBalance()).toBe(30n);
 
-  const result = db.escrows.updateSettlementReturningChange('1', 5n, Date.now());
+  const result = db.channelHolds.updateSettlementReturningChange('1', 5n, Date.now());
   expect(result[0]).toBe(org1);
   expect(result[1]).toBe(10n);
-  expect(db.escrows.countOpen()).toBe(1);
-  expect(db.escrows.pendingBalance()).toBe(20n);
+  expect(db.channelHolds.countOpen()).toBe(1);
+  expect(db.channelHolds.pendingBalance()).toBe(20n);
 
-  const result2 = db.escrows.updateSettlementReturningChange('2', 20n, Date.now());
+  const result2 = db.channelHolds.updateSettlementReturningChange('2', 20n, Date.now());
   expect(result2[0]).toBe(org1);
   expect(result2[1]).toBe(20n);
-  expect(db.escrows.countOpen()).toBe(0);
-  expect(db.escrows.pendingBalance()).toBe(0n);
+  expect(db.channelHolds.countOpen()).toBe(0);
+  expect(db.channelHolds.pendingBalance()).toBe(0n);
 });

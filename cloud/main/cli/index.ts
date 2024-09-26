@@ -1,6 +1,7 @@
 import { applyEnvironmentVariables, parseEnvBool } from '@ulixee/commons/lib/envUtils';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
-import { parseIdentities } from '@ulixee/datastore-core/env';
+import { parseAddress, parseIdentities } from '@ulixee/datastore-core/env';
+import type ILocalchainConfig from '@ulixee/datastore/interfaces/ILocalchainConfig';
 import { Command } from 'commander';
 import * as Path from 'path';
 import CloudNodeEnv from '../env';
@@ -88,15 +89,16 @@ export default function cliCommands(): Command {
         )
         .argParser(parseInt)
         .default(10),
-    ).addOption(
-    program
-      .createOption(
-        '--max-concurrent-heroes-per-browser <count>',
-        'Max number of concurrent Heroes to run per Chrome instance.',
-      )
-      .argParser(parseInt)
-      .default(10),
-  )
+    )
+    .addOption(
+      program
+        .createOption(
+          '--max-concurrent-heroes-per-browser <count>',
+          'Max number of concurrent Heroes to run per Chrome instance.',
+        )
+        .argParser(parseInt)
+        .default(10),
+    )
     .addOption(
       program
         .createOption(
@@ -139,7 +141,76 @@ export default function cliCommands(): Command {
           '--datastore-wait-for-completion',
           'Wait for all in-process Datastores to complete before shutting down the Cloud node.',
         )
+        .argParser(parseEnvBool)
         .default(false),
+    )
+    .addOption(
+      program
+        .createOption(
+          '--argon-payment-address <address>',
+          'The SS58 formatted address to send payments to.',
+        )
+        .argParser(x => parseAddress(x, 'Argon Payments Address'))
+        .env('ARGON_PAYMENT_ADDRESS'),
+    )
+    .addOption(
+      program
+        .createOption(
+          '--argon-notary-id <id>',
+          'The preferred Argon notary to notarize payments with.',
+        )
+        .argParser(parseInt)
+        .env('ARGON_NOTARY_ID'),
+    )
+    .addOption(
+      program
+        .createOption(
+          '--argon-localchain-path <path>',
+          'Activate payment receipt with the given Argon Localchain.',
+        )
+        .env('ARGON_LOCALCHAIN_PATH'),
+    )
+    .addOption(
+      program
+        .createOption(
+          '--argon-mainchain-url <url>',
+          'Connect to the given Argon Mainchain rpc url.',
+        )
+        .env('ARGON_MAINCHAIN_URL'),
+    )
+    .addOption(
+      program
+        .createOption(
+          '--argon-localchain-password <password>',
+          'Localchain password provided inline (unsafe).',
+        )
+        .env('ARGON_LOCALCHAIN_PASSWORD'),
+    )
+    .addOption(
+      program
+        .createOption(
+          '--argon-localchain-password-interactive',
+          'Localchain password prompted on command line.',
+        )
+        .argParser(parseEnvBool)
+        .env('ARGON_LOCALCHAIN_PASSWORD_INTERACTIVE_CLI'),
+    )
+    .addOption(
+      program
+        .createOption(
+          '--argon-localchain-password-file <path>',
+          'Localchain password from a file path.',
+        )
+        .env('ARGON_LOCALCHAIN_PASSWORD_FILE'),
+    )
+    .addOption(
+      program
+        .createOption(
+          '--argon-block-rewards-address <address>',
+          'Activate block rewards capture with the given Argon Localchain address.',
+        )
+        .argParser(x => parseAddress(x, 'Block Rewards Address'))
+        .env('ARGON_BLOCK_REWARDS_ADDRESS'),
     )
     .allowUnknownOption(true)
     .action(async opts => {
@@ -152,13 +223,36 @@ export default function cliCommands(): Command {
         hostedServicesPort,
         hostedServicesHostname,
         env,
+        argonPaymentAddress,
+        argonNotaryId,
+        argonLocalchainPath,
+        argonMainchainUrl,
+        argonLocalchainPassword,
+        argonLocalchainPasswordInteractive,
+        argonLocalchainPasswordFile,
+        argonBlockRewardsAddress,
       } = opts;
       if (env) {
         applyEnvironmentVariables(Path.resolve(env), process.env);
       }
       if (disableChromeAlive) CloudNodeEnv.disableChromeAlive = disableChromeAlive;
 
-      const { unblockedPlugins, heroDataDir, maxConcurrentHeroes, maxConcurrentHeroesPerBrowser } = opts;
+      const { unblockedPlugins, heroDataDir, maxConcurrentHeroes, maxConcurrentHeroesPerBrowser } =
+        opts;
+      let localchainConfig: ILocalchainConfig;
+      if (argonLocalchainPath) {
+        localchainConfig = {
+          localchainPath: argonLocalchainPath,
+          mainchainUrl: argonMainchainUrl,
+          notaryId: argonNotaryId,
+          keystorePassword: {
+            password: argonLocalchainPassword ? Buffer.from(argonLocalchainPassword) : undefined,
+            interactiveCli: argonLocalchainPasswordInteractive,
+            passwordFile: argonLocalchainPasswordFile,
+          },
+          blockRewardsAddress: argonBlockRewardsAddress,
+        };
+      }
 
       const cloudNode = new CloudNode(
         filterUndefined({
@@ -186,6 +280,14 @@ export default function cliCommands(): Command {
             maxRuntimeMs: opts.maxDatastoreRuntimeMs,
             waitForDatastoreCompletionOnShutdown: opts.datastoreWaitForCompletion,
             adminIdentities: parseIdentities(opts.adminIdentities, 'Admin Identities'),
+            paymentInfo:
+              argonPaymentAddress && argonNotaryId
+                ? {
+                    address: argonPaymentAddress,
+                    notaryId: argonNotaryId,
+                  }
+                : undefined,
+            localchainConfig,
           }),
         }),
       );

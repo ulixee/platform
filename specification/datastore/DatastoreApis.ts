@@ -1,12 +1,12 @@
 import {
+  identitySignatureValidation,
   identityValidation,
   microgonsValidation,
-  identitySignatureValidation,
 } from '@ulixee/platform-specification/types';
 import { z } from 'zod';
 import { DatastoreManifestWithLatest } from '../services/DatastoreRegistryApis';
 import { datastoreIdValidation } from '../types/datastoreIdValidation';
-import { minDate } from '../types/IDatastoreManifest';
+import { DatastorePaymentRecipientSchema, minDate } from '../types/IDatastoreManifest';
 import { DatastorePricing } from '../types/IDatastorePricing';
 import { DatastoreStatsSchema } from '../types/IDatastoreStats';
 import { PaymentSchema } from '../types/IPayment';
@@ -57,7 +57,7 @@ const DatastoreQueryMetadataSchema = z.object({
     .optional(),
   affiliateId: z
     .string()
-    .regex(/aff[a-zA-Z_0-9-]{10}/)
+    .regex(/^aff[a-zA-Z_0-9-]{10}$/)
     .optional()
     .describe('A tracking id to attribute payments to source affiliates.'),
   payment: PaymentSchema.optional().describe('Payment for this request.'),
@@ -88,7 +88,9 @@ export const DatastoreApiSchemas = {
       adminIdentity: identityValidation.describe(
         'If this server is in production mode, an AdminIdentity approved on the Server or Datastore.',
       ),
-      adminSignature: identitySignatureValidation.describe('A signature from an approved AdminIdentity'),
+      adminSignature: identitySignatureValidation.describe(
+        'A signature from an approved AdminIdentity',
+      ),
     }),
     result: z.object({
       adminIdentity: identityValidation.describe('The admin identity who uploaded this Datastore.'),
@@ -176,6 +178,7 @@ export const DatastoreApiSchemas = {
         .describe(
           'A Typescript interface describing input and outputs of Datastore Extractors, and schemas of Datastore Tables',
         ),
+      payment: DatastorePaymentRecipientSchema.optional(),
     }),
   },
   'Datastore.stream': {

@@ -7,7 +7,7 @@ Index.vue
       <div class="mr-10 my-5 overflow-hidden rounded-lg shadow ring-1 ring-black ring-opacity-5 p-10 bg-white">
 
         <div class="mb-2">
-          <strong>Balance (milligons):</strong> {{ organization.balance }} available, {{ organization.balanceInEscrows }} in escrow
+          <strong>Balance (milligons):</strong> {{ organization.balance }} available, {{ organization.balanceInChannelHolds }} in channelHold
         </div>
         <div class="mb-2">
           <strong>Grant Additional Funds (milligons):</strong>
@@ -124,7 +124,7 @@ export default Vue.defineComponent({
         id: route.params.id as string,
         name: '',
         balance: 0n,
-        balanceInEscrows: 0n,
+        balanceInChannelHolds: 0n,
       }),
       list: Vue.ref<IDatabrokerAdminApiTypes['Organization.users']['result']>([]),
     };

@@ -21,22 +21,22 @@ export default class OrganizationsTable {
       name TEXT,
       totalGranted INTEGER NOT NULL,
       balance INTEGER NOT NULL,
-      balanceInEscrows INTEGER NOT NULL,
+      balanceInChannelHolds INTEGER NOT NULL,
       modified DATETIME NOT NULL,
       CHECK (balance >= 0)
     ) 
 `);
     this.insertQuery = db.prepare(
-      `INSERT INTO Organizations (id, name, balance, totalGranted, balanceInEscrows, modified) VALUES (:id, :name, :balance, :balance, 0, :modified)`,
+      `INSERT INTO Organizations (id, name, balance, totalGranted, balanceInChannelHolds, modified) VALUES (:id, :name, :balance, :balance, 0, :modified)`,
     );
     this.updateNameQuery = db.prepare(
       `UPDATE Organizations SET name = :name, modified = :modified WHERE id = :id`,
     );
     this.debitQuery = db.prepare(
-      `UPDATE Organizations SET balance = balance - :amount, balanceInEscrows = balanceInEscrows + :amount, modified = :modified WHERE id = :id`,
+      `UPDATE Organizations SET balance = balance - :amount, balanceInChannelHolds = balanceInChannelHolds + :amount, modified = :modified WHERE id = :id`,
     );
     this.settleQuery = db.prepare(
-      `UPDATE Organizations SET balance = balance + :change, balanceInEscrows = balanceInEscrows - :debitedAmount, modified = :modified WHERE id = :id`,
+      `UPDATE Organizations SET balance = balance + :change, balanceInChannelHolds = balanceInChannelHolds - :debitedAmount, modified = :modified WHERE id = :id`,
     );
     this.grantQuery = db.prepare(
       `UPDATE Organizations SET balance = balance + :amount, totalGranted = totalGranted + :amount, modified = :modified WHERE id = :id`,
@@ -50,7 +50,7 @@ export default class OrganizationsTable {
       id,
       name,
       totalGranted: balance,
-      balanceInEscrows: 0n,
+      balanceInChannelHolds: 0n,
       balance,
       modified: Date.now(),
     });
@@ -139,6 +139,6 @@ export interface IOrganizationRecord {
   name?: string;
   totalGranted: bigint;
   balance: bigint;
-  balanceInEscrows: bigint;
+  balanceInChannelHolds: bigint;
   modified: number;
 }

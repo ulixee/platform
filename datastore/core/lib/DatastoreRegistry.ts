@@ -127,7 +127,7 @@ export default class DatastoreRegistry extends TypedEventEmitter<{
 
     if (manifestWithLatest) return manifestWithLatest;
     if (throwIfNotExists) {
-      throw new DatastoreNotFoundError(`Datastore version (${version}) not found on Cloud.`, {
+      throw new DatastoreNotFoundError(`Datastore version (${id}/v${version}) not found on Cloud.`, {
         latestVersion,
         version,
       });

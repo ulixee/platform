@@ -3,7 +3,7 @@ import {
   checkForExtrinsicSuccess,
   KeyringPair,
   ArgonClient,
-  ArgonPrimitivesDataDomainVersionHost,
+  ArgonPrimitivesDomainVersionHost,
 } from '@argonprotocol/mainchain';
 import { customAlphabet } from 'nanoid';
 import { ChildProcess, execSync, spawn } from 'node:child_process';
@@ -165,26 +165,26 @@ export default class TestMainchain {
 
 export async function registerZoneRecord(
   client: ArgonClient,
-  dataDomainHash: Uint8Array,
+  domainHash: Uint8Array,
   owner: KeyringPair,
   paymentAccount: Uint8Array,
   notaryId: number,
-  versions: Record<string, ArgonPrimitivesDataDomainVersionHost>,
+  versions: Record<string, ArgonPrimitivesDomainVersionHost>,
 ): Promise<void> {
   const codecVersions = new Map();
   for (const [version, host] of Object.entries(versions)) {
     const [major, minor, patch] = version.split('.');
-    const versionCodec = client.createType('ArgonPrimitivesDataDomainSemver', {
+    const versionCodec = client.createType('ArgonPrimitivesDomainSemver', {
       major,
       minor,
       patch,
     });
-    codecVersions.set(versionCodec, client.createType('ArgonPrimitivesDataDomainVersionHost', host));
+    codecVersions.set(versionCodec, client.createType('ArgonPrimitivesDomainVersionHost', host));
   }
 
   await new Promise((resolve, reject) => {
-    return client.tx.dataDomain
-      .setZoneRecord(dataDomainHash, {
+    return client.tx.domain
+      .setZoneRecord(domainHash, {
         paymentAccount,
         notaryId,
         versions: codecVersions,

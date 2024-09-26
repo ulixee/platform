@@ -52,9 +52,9 @@ export default class AdminApiEndpoints {
           grantedBalance: ctx.db.organizations.totalGranted(),
           organizations: ctx.db.organizations.count(),
           users: ctx.db.users.count(),
-          escrows: ctx.db.escrows.count(),
-          openEscrows: ctx.db.escrows.countOpen(),
-          balancePendingEscrowSettlement: ctx.db.escrows.pendingBalance(),
+          channelHolds: ctx.db.channelHolds.count(),
+          openChannelHolds: ctx.db.channelHolds.countOpen(),
+          balancePendingChannelHoldSettlement: ctx.db.channelHolds.pendingBalance(),
         };
       },
       'User.create': async ({ name, organizationId, identity }, ctx) => {

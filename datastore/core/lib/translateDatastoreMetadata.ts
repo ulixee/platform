@@ -1,5 +1,6 @@
 import PricingManager from '@ulixee/datastore/lib/PricingManager';
 import { IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
+import { IDatastorePaymentRecipient } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import { IDatastoreStatsRecord } from '../db/DatastoreStatsTable';
 import { IDatastoreManifestWithLatest } from '../interfaces/IDatastoreRegistryStore';
 import { IDatastoreStats } from './StatsTracker';
@@ -8,6 +9,7 @@ export default async function translateDatastoreMetadata(
   datastore: IDatastoreManifestWithLatest,
   datastoreStats: IDatastoreStats,
   includeSchemaAsJson: boolean,
+  paymentInfo?: IDatastorePaymentRecipient,
 ): Promise<IDatastoreApiTypes['Datastore.meta']['result']> {
   const result: IDatastoreApiTypes['Datastore.meta']['result'] = {
     ...datastore,
@@ -15,6 +17,7 @@ export default async function translateDatastoreMetadata(
     crawlersByName: {},
     extractorsByName: {},
     tablesByName: {},
+    payment: paymentInfo,
   };
 
   for (const [name, extractor] of Object.entries(datastore.extractorsByName)) {

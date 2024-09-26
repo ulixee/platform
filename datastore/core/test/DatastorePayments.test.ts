@@ -1,3 +1,4 @@
+import { Chain, ChainIdentity } from '@argonprotocol/localchain';
 import { Keyring } from '@polkadot/keyring';
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
@@ -9,8 +10,8 @@ import CreditReserver from '@ulixee/datastore/payments/CreditReserver';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import EscrowSpendTracker from '../lib/EscrowSpendTracker';
-import MockEscrowSpendTracker from './_MockEscrowSpendTracker';
+import MicropaymentChannelSpendTracker from '../lib/MicropaymentChannelSpendTracker';
+import MockMicropaymentChannelSpendTracker from './_MockMicropaymentChannelSpendTracker';
 import MockPaymentService from './_MockPaymentService';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastorePayments.test');
@@ -22,9 +23,13 @@ jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => 
 let storageCounter = 0;
 const keyring = new Keyring({ ss58Format: 18 });
 const datastoreKeyring = keyring.createFromUri('Datastore');
-const escrowSpendTrackerMock = new MockEscrowSpendTracker();
-const escrowSpendTracker = new EscrowSpendTracker(storageDir, null);
+const micropaymentChannelSpendTrackerMock = new MockMicropaymentChannelSpendTracker();
+const micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(storageDir, null);
 let manifest: IDatastoreManifest;
+const mainchainIdentity = {
+  chain: Chain.Devnet,
+  genesisHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+} as ChainIdentity;
 
 beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/payments-manifest.json`)) {
@@ -39,10 +44,6 @@ beforeAll(async () => {
     `${__dirname}/datastores/payments-manifest.json`,
     JSON.stringify({
       version: '0.0.1',
-      payment: {
-        address: datastoreKeyring.address,
-        notaryId: 1,
-      },
       extractorsByName: {
         testPayments: {
           prices: [
@@ -82,8 +83,13 @@ beforeAll(async () => {
       },
     },
     true,
+    {
+      address: datastoreKeyring.address,
+      notaryId: 1,
+      ...mainchainIdentity,
+    },
   );
-  cloudNode.datastoreCore.escrowSpendTracker = escrowSpendTracker;
+  cloudNode.datastoreCore.micropaymentChannelSpendTracker = micropaymentChannelSpendTracker;
   client = new DatastoreApiClient(await cloudNode.address, { consoleLogErrors: true });
   await client.upload(await dbx.tarGzip());
   Helpers.onClose(() => client.disconnect(), true);
@@ -94,7 +100,7 @@ beforeEach(() => {
   ArgonReserver.baseStorePath = Path.join(storageDir, `payments-${storageCounter}`);
   CreditReserver.defaultBasePath = Path.join(storageDir, `credits-${storageCounter}`);
 
-  escrowSpendTrackerMock.clear();
+  micropaymentChannelSpendTrackerMock.clear();
 });
 
 afterEach(Helpers.afterEach);
@@ -117,13 +123,13 @@ test('should be able to run a datastore function with payments', async () => {
 
   const paymentService = new MockPaymentService(clientAddress, client);
 
-  escrowSpendTrackerMock.mock(datastoreId => {
-    const escrowId = paymentService.paymentsByDatastoreId[datastoreId].escrowId;
-    const escrow = paymentService.escrowsById[escrowId];
+  micropaymentChannelSpendTrackerMock.mock(datastoreId => {
+    const channelHoldId = paymentService.paymentsByDatastoreId[datastoreId].channelHoldId;
+    const channelHold = paymentService.channelHoldsById[channelHoldId];
     return {
-      id: escrowId,
-      expirationTick: escrow.tick + 100,
-      holdAmount: escrow.escrowHoldAmount,
+      id: channelHoldId,
+      expirationTick: channelHold.tick + 100,
+      holdAmount: channelHold.channelHoldAmount,
     };
   });
 
@@ -168,14 +174,14 @@ test('should be able to run a datastore function with payments', async () => {
     queryId: expect.any(String),
   });
   // @ts-expect-error
-  const dbs = escrowSpendTracker.escrowDbsByDatastore;
+  const dbs = micropaymentChannelSpendTracker.channelHoldDbsByDatastore;
   expect(dbs.size).toBe(1);
   // @ts-expect-error
-  expect(dbs.get(manifest.id).paymentIdByEscrowId.size).toBe(1);
+  expect(dbs.get(manifest.id).paymentIdByChannelHoldId.size).toBe(1);
   expect(dbs.get(manifest.id).list()).toEqual([
     expect.objectContaining({
       expirationDate: expect.any(Date),
-      id: paymentService.paymentsByDatastoreId[manifest.id].escrowId,
+      id: paymentService.paymentsByDatastoreId[manifest.id].channelHoldId,
       allocated: 5000,
       remaining: 5000 - 1250 - 1250,
     }),
@@ -193,13 +199,13 @@ test('can collect payments from multiple tables and functions', async () => {
 
   const paymentService = new MockPaymentService(clientAddress, client);
 
-  escrowSpendTrackerMock.mock(datastoreId => {
-    const escrowId = paymentService.paymentsByDatastoreId[datastoreId].escrowId;
-    const escrow = paymentService.escrowsById[escrowId];
+  micropaymentChannelSpendTrackerMock.mock(datastoreId => {
+    const channelHoldId = paymentService.paymentsByDatastoreId[datastoreId].channelHoldId;
+    const channelHold = paymentService.channelHoldsById[channelHoldId];
     return {
-      id: escrowId,
-      expirationTick: escrow.tick + 100,
-      holdAmount: escrow.escrowHoldAmount,
+      id: channelHoldId,
+      expirationTick: channelHold.tick + 100,
+      holdAmount: channelHold.channelHoldAmount,
     };
   });
 
@@ -219,10 +225,10 @@ test('can collect payments from multiple tables and functions', async () => {
   });
 
   // @ts-expect-error
-  const dbs = escrowSpendTracker.escrowDbsByDatastore;
+  const dbs = micropaymentChannelSpendTracker.channelHoldDbsByDatastore;
   expect(dbs.size).toBe(1);
   // @ts-expect-error
-  expect(dbs.get(manifest.id).paymentIdByEscrowId.size).toBe(2);
+  expect(dbs.get(manifest.id).paymentIdByChannelHoldId.size).toBe(2);
   expect(dbs.get(manifest.id).list()[1]).toEqual(
     expect.objectContaining({
       allocated: 5_000,
@@ -236,13 +242,13 @@ test('records a changed payment correctly', async () => {
 
   const paymentService = new MockPaymentService(clientAddress, client);
 
-  escrowSpendTrackerMock.mock(datastoreId => {
-    const escrowId = paymentService.paymentsByDatastoreId[datastoreId].escrowId;
-    const escrow = paymentService.escrowsById[escrowId];
+  micropaymentChannelSpendTrackerMock.mock(datastoreId => {
+    const channelHoldId = paymentService.paymentsByDatastoreId[datastoreId].channelHoldId;
+    const channelHold = paymentService.channelHoldsById[channelHoldId];
     return {
-      id: escrowId,
-      expirationTick: escrow.tick + 100,
-      holdAmount: escrow.escrowHoldAmount,
+      id: channelHoldId,
+      expirationTick: channelHold.tick + 100,
+      holdAmount: channelHold.channelHoldAmount,
     };
   });
 
@@ -265,14 +271,14 @@ test('records a changed payment correctly', async () => {
     queryId: expect.any(String),
   });
   // @ts-expect-error
-  const dbs = escrowSpendTracker.escrowDbsByDatastore;
+  const dbs = micropaymentChannelSpendTracker.channelHoldDbsByDatastore;
   expect(dbs.size).toBe(1);
   // @ts-expect-error
-  expect(dbs.get(manifest.id).paymentIdByEscrowId.size).toBe(3);
+  expect(dbs.get(manifest.id).paymentIdByChannelHoldId.size).toBe(3);
   expect(dbs.get(manifest.id).list()[2]).toEqual(
     expect.objectContaining({
       expirationDate: expect.any(Date),
-      id: paymentService.paymentsByDatastoreId[manifest.id].escrowId,
+      id: paymentService.paymentsByDatastoreId[manifest.id].channelHoldId,
       allocated: 5000,
       remaining: 5000,
     }),

@@ -17,7 +17,7 @@ export default interface IDatastoreCoreConfigureOptions {
   storageEngineHost: string | 'self';
   statsTrackerHost: string | 'self';
   replayRegistryHost: string | 'self';
-  escrowSpendTrackingHost: string | 'self';
+  micropaymentChannelSpendTrackingHost: string | 'self';
   paymentServiceHost: string | 'self';
   datastoreLookupHost: string | 'self';
 }

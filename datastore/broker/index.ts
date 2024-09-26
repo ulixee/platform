@@ -15,7 +15,7 @@ import * as Path from 'node:path';
 import DatabrokerDb from './db';
 import DatastoreWhitelistDb from './db/DatastoreWhitelistDb';
 import AdminApiEndpoints, { TAdminApis } from './endpoints/AdminApiEndpoints';
-import DatabrokerCreateEscrow from './endpoints/Databroker.createEscrow';
+import DatabrokerCreateChannelHold from './endpoints/Databroker.createChannelHold';
 import DatabrokerGetBalance from './endpoints/Databroker.getBalance';
 import Env from './env';
 import IDatabrokerApiContext from './interfaces/IDatabrokerApiContext';
@@ -35,7 +35,7 @@ export default class DataBroker {
   #isStarted = new Resolvable<void>();
 
   public apiRegistry = new ApiRegistry<IDatabrokerApiContext>([
-    DatabrokerCreateEscrow,
+    DatabrokerCreateChannelHold,
     DatabrokerGetBalance,
   ]);
 
@@ -110,14 +110,14 @@ export default class DataBroker {
   }
 
   public async onLocalchainSync(sync: BalanceSyncResult): Promise<void> {
-    for (const notarization of sync.escrowNotarizations) {
-      for (const escrow of await notarization.escrows) {
+    for (const notarization of sync.channelHoldNotarizations) {
+      for (const channelHold of await notarization.channelHolds) {
         try {
           this.#db.transaction(() => {
             const [organizationId, holdAmount, change] =
-              this.#db.escrows.updateSettlementReturningChange(
-                escrow.id,
-                escrow.settledAmount,
+              this.#db.channelHolds.updateSettlementReturningChange(
+                channelHold.id,
+                channelHold.settledAmount,
                 Date.now(),
               );
             this.#db.organizations.settle(organizationId, change, holdAmount);
@@ -125,8 +125,8 @@ export default class DataBroker {
         } catch (error) {
           log.error('Error updating settlement in db after finalized in localchain', {
             error,
-            escrowId: escrow.id,
-            settledAmount: escrow.settledAmount,
+            channelHoldId: channelHold.id,
+            settledAmount: channelHold.settledAmount,
           } as any);
         }
       }

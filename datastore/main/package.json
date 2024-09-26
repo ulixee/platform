@@ -40,10 +40,10 @@
     }
   },
   "dependencies": {
-    "@polkadot/keyring": "^13.0.2",
-    "@polkadot/util-crypto": "^13.0.2",
+    "@polkadot/keyring": "^13.1.1",
+    "@polkadot/util-crypto": "^13.1.1",
     "@ulixee/commons": "2.0.0-alpha.29",
-    "@argonprotocol/localchain": "0.0.4",
+    "@argonprotocol/localchain": "0.0.8",
     "@ulixee/net": "2.0.0-alpha.29",
     "@ulixee/platform-specification": "2.0.0-alpha.29",
     "@ulixee/platform-utils": "2.0.0-alpha.29",

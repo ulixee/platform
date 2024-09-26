@@ -2,7 +2,7 @@ import { decodeAddress } from '@polkadot/util-crypto';
 import Client from '@ulixee/client';
 import { Helpers } from '@ulixee/datastore-testing';
 import DefaultPaymentService from '@ulixee/datastore/payments/DefaultPaymentService';
-import { DataDomainStore, Localchain } from '@argonprotocol/localchain';
+import { DomainStore, Localchain } from '@argonprotocol/localchain';
 import { getClient, Keyring, KeyringPair } from '@argonprotocol/mainchain';
 import { IDatastoreMetadataResult } from '@ulixee/platform-specification/datastore/DatastoreApis';
 import Identity from '@ulixee/platform-utils/lib/Identity';
@@ -112,9 +112,9 @@ describeIntegration('Payments with Broker E2E', () => {
       },
     );
     const payments: DefaultPaymentService['EventTypes']['reserved'][] = [];
-    const escrows: DefaultPaymentService['EventTypes']['createdEscrow'][] = [];
+    const channelHolds: DefaultPaymentService['EventTypes']['createdChannelHold'][] = [];
     paymentService.on('reserved', payment => payments.push(payment));
-    paymentService.on('createdEscrow', e => escrows.push(e));
+    paymentService.on('createdChannelHold', e => channelHolds.push(e));
     Helpers.onClose(() => paymentService.close());
 
     let metadata: IDatastoreMetadataResult;
@@ -138,13 +138,13 @@ describeIntegration('Payments with Broker E2E', () => {
       }),
     );
 
-    expect(escrows).toHaveLength(1);
-    expect(escrows[0].allocatedMilligons).toBe(500n);
-    expect(escrows[0].datastoreId).toBe(datastoreId);
+    expect(channelHolds).toHaveLength(1);
+    expect(channelHolds[0].allocatedMilligons).toBe(500n);
+    expect(channelHolds[0].datastoreId).toBe(datastoreId);
     expect(payments).toHaveLength(1);
     expect(payments[0].payment.microgons).toBe(50_000);
-    expect(payments[0].payment.escrow).toBeTruthy();
-    expect(payments[0].payment.escrow.settledMilligons).toBe(50n);
+    expect(payments[0].payment.channelHold).toBeTruthy();
+    expect(payments[0].payment.channelHold.settledMilligons).toBe(50n);
     expect(payments[0].remainingBalance).toBe(450e3);
 
     const clientIdentity = Identity.loadFromFile(clientUserPath);
@@ -166,7 +166,7 @@ async function setupDatastore(
 
   {
     const registration = localchain.beginChange();
-    await registration.leaseDataDomain(domain, await localchain.address);
+    await registration.leaseDomain(domain, await localchain.address);
     await registration.notarizeAndWaitForNotebook();
   }
 
@@ -194,23 +194,19 @@ async function setupDatastore(
     cloudAddress,
     {
       domain,
-      payment: {
-        notaryId: 1,
-        address: domainOwner.address,
-      },
     },
     identityPath,
   );
 
-  const dataDomainHash = DataDomainStore.getHash(domain);
+  const domainHash = DomainStore.getHash(domain);
   await registerZoneRecord(
     mainchainClient,
-    dataDomainHash,
+    domainHash,
     domainOwner,
     decodeAddress(domainOwner.address, false, 42),
     1,
     {
-      [version]: mainchainClient.createType('ArgonPrimitivesDataDomainVersionHost', {
+      [version]: mainchainClient.createType('ArgonPrimitivesDomainVersionHost', {
         datastoreId: mainchainClient.createType('Bytes', datastoreId),
         host: mainchainClient.createType('Bytes', `ws://127.0.0.1:${cloudAddress.split(':')[1]}`),
       }),

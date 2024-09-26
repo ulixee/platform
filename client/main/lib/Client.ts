@@ -3,7 +3,7 @@ import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSch
 import IPaymentService from '@ulixee/datastore/interfaces/IPaymentService';
 import IQueryOptions from '@ulixee/datastore/interfaces/IQueryOptions';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
-import { DataDomainStore } from '@argonprotocol/localchain';
+import { DomainStore } from '@argonprotocol/localchain';
 import { isIP } from 'node:net';
 import { IInputFilter, IOutputSchema } from '../interfaces/IInputOutput';
 import ILocationStringOrObject from '../interfaces/ILocationStringOrObject';
@@ -61,7 +61,7 @@ export default class ClientForRemote {
     if (isDnsOrDomain && typeof uriOrObject === 'string') {
       try {
         // see if this is a domain
-        DataDomainStore.parse(this.host);
+        DomainStore.parse(this.host);
 
         if (!config?.argonMainchainUrl)
           throw new Error('No mainchain url provided to lookup this datastore host');

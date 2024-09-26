@@ -1,14 +1,14 @@
 import { KeystorePasswordOption } from '@argonprotocol/localchain';
-import { IEscrowAllocationStrategy } from '../payments/ArgonReserver';
+import { IChannelHoldAllocationStrategy } from '../payments/ArgonReserver';
 
 export default interface ILocalchainConfig {
   mainchainUrl?: string;
   notaryId?: number;
   localchainPath?: string;
   /**
-   * Strategy to use to create escrows. Defaults to a 100 query multiplier
+   * Strategy to use to create channelHolds. Defaults to a 100 query multiplier
    */
-  escrowAllocationStrategy?: IEscrowAllocationStrategy;
+  channelHoldAllocationStrategy?: IChannelHoldAllocationStrategy;
   /**
    * Must be set to enable block vote creation. This is the address where block rewards will be sent.
    */
@@ -19,7 +19,7 @@ export default interface ILocalchainConfig {
   keystorePassword?: KeystorePasswordOption;
 
   /**
-   * Should sync be run automatically, or wait for programmatic execution
+   * Should sync be run automatically, or wait for programmatic execution (default false)
    */
-  automaticallyRunSync?: boolean;
+  disableAutomaticSync?: boolean;
 }

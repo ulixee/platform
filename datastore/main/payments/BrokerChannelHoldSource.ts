@@ -1,9 +1,9 @@
+import { ADDRESS_PREFIX, BalanceChangeBuilder } from '@argonprotocol/localchain';
 import { Keyring } from '@polkadot/keyring';
 import { mnemonicGenerate } from '@polkadot/util-crypto';
 import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import { toUrl } from '@ulixee/commons/lib/utils';
-import { ADDRESS_PREFIX, BalanceChangeBuilder } from '@argonprotocol/localchain';
 import { ConnectionToCore } from '@ulixee/net';
 import HttpTransportToCore from '@ulixee/net/lib/HttpTransportToCore';
 import { IDatabrokerApis } from '@ulixee/platform-specification/datastore';
@@ -12,9 +12,9 @@ import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange'
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import serdeJson from '@ulixee/platform-utils/lib/serdeJson';
 import { nanoid } from 'nanoid';
-import { IEscrowDetails, IEscrowSource } from './ArgonReserver';
+import { IChannelHoldDetails, IChannelHoldSource } from './ArgonReserver';
 
-export default class BrokerEscrowSource implements IEscrowSource {
+export default class BrokerChannelHoldSource implements IChannelHoldSource {
   public get sourceKey(): string {
     return `broker-${this.host.split('://').pop().replaceAll(/\.:/g, '-')}`;
   }
@@ -51,14 +51,14 @@ export default class BrokerEscrowSource implements IEscrowSource {
     return balance;
   }
 
-  public async createEscrow(
+  public async createChannelHold(
     paymentInfo: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
     milligons: bigint,
-  ): Promise<IEscrowDetails> {
+  ): Promise<IChannelHoldDetails> {
     const error = await this.loadPromise;
     if (error) throw error;
     const nonce = nanoid(10);
-    const signatureMessage = BrokerEscrowSource.createSignatureMessage(
+    const signatureMessage = BrokerChannelHoldSource.createSignatureMessage(
       paymentInfo.domain,
       paymentInfo.id,
       this.authentication.publicKey,
@@ -67,7 +67,7 @@ export default class BrokerEscrowSource implements IEscrowSource {
     );
 
     return await this.connectionToCore.sendRequest({
-      command: 'Databroker.createEscrow',
+      command: 'Databroker.createChannelHold',
       args: [
         {
           domain: paymentInfo.domain,
@@ -85,18 +85,18 @@ export default class BrokerEscrowSource implements IEscrowSource {
     });
   }
 
-  public async updateEscrowSettlement(
-    escrow: IEscrowDetails,
+  public async updateChannelHoldSettlement(
+    channelHold: IChannelHoldDetails,
     updatedSettlement: bigint,
   ): Promise<IBalanceChange> {
-    escrow.balanceChange.notes[0].milligons = updatedSettlement;
-    escrow.balanceChange.balance =
-      escrow.balanceChange.escrowHoldNote.milligons - updatedSettlement;
-    const json = serdeJson(escrow.balanceChange);
+    channelHold.balanceChange.notes[0].milligons = updatedSettlement;
+    channelHold.balanceChange.balance =
+      channelHold.balanceChange.channelHoldNote.milligons - updatedSettlement;
+    const json = serdeJson(channelHold.balanceChange);
     const bytes = BalanceChangeBuilder.toSigningMessage(json);
     const signature = this.keyring.getPairs()[0].sign(bytes, { withType: true });
-    escrow.balanceChange.signature = Buffer.from(signature);
-    return escrow.balanceChange;
+    channelHold.balanceChange.signature = Buffer.from(signature);
+    return channelHold.balanceChange;
   }
 
   public static createSignatureMessage(
@@ -108,7 +108,7 @@ export default class BrokerEscrowSource implements IEscrowSource {
   ): Buffer {
     return sha256(
       concatAsBuffer(
-        'Databroker.createEscrow',
+        'Databroker.createChannelHold',
         identity,
         nonce,
         domain,

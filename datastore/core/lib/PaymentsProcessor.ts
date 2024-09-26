@@ -27,7 +27,10 @@ export default class PaymentsProcessor {
     private payment: IPayment,
     private datastoreId: string,
     private datastore: Datastore,
-    readonly context: Pick<IDatastoreApiContext, 'configuration' | 'escrowSpendTracker'>,
+    readonly context: Pick<
+      IDatastoreApiContext,
+      'configuration' | 'micropaymentChannelSpendTracker'
+    >,
   ) {}
 
   public async debit(
@@ -37,9 +40,9 @@ export default class PaymentsProcessor {
   ): Promise<boolean> {
     const price = PricingManager.computePrice(manifest, entityCalls);
     this.initialPrice = price;
-    if (price === 0 || !manifest.payment) return true;
+    if (price === 0) return true;
 
-    if (!this.payment?.credits?.id && !this.payment?.escrow?.id) {
+    if (!this.payment?.credits?.id && !this.payment?.channelHold?.id) {
       throw new PaymentRequiredError('This Datastore requires payment.', price);
     }
 
@@ -54,7 +57,7 @@ export default class PaymentsProcessor {
       await credits.debit(id, secret, price);
       this.shouldFinalize = true;
     } else {
-      const result = await this.context.escrowSpendTracker.debit({
+      const result = await this.context.micropaymentChannelSpendTracker.debit({
         datastoreId: this.datastoreId,
         queryId,
         payment: this.payment,
@@ -90,9 +93,9 @@ export default class PaymentsProcessor {
           await credits.finalize(this.payment.credits.id, diff);
         }
       } else {
-        await this.context.escrowSpendTracker.finalize({
+        await this.context.micropaymentChannelSpendTracker.finalize({
           datastoreId: this.datastoreId,
-          escrowId: this.payment.escrow.id,
+          channelHoldId: this.payment.channelHold.id,
           uuid: this.payment.uuid,
           finalMicrogons: this.talliedPrice,
         });

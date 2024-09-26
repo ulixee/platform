@@ -4,7 +4,7 @@ import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 import * as Fs from 'fs';
 import env from '../env';
 
-export default class DatastoreEscrowsDb {
+export default class DatastoreChannelHoldsDb {
   private db: SqliteDatabase;
   private readonly insertStatement: Statement<{
     id: string;
@@ -24,7 +24,7 @@ export default class DatastoreEscrowsDb {
 
   private readonly path: string;
 
-  private readonly paymentIdByEscrowId = new Map<
+  private readonly paymentIdByChannelHoldId = new Map<
     string,
     Map<string, { microgons: number; queryId: string }>
   >();
@@ -36,7 +36,7 @@ export default class DatastoreEscrowsDb {
     public datastoreId: string,
   ) {
     if (!Fs.existsSync(baseDir)) Fs.mkdirSync(baseDir, { recursive: true });
-    this.path = `${baseDir}/escrows-${datastoreId}.db`;
+    this.path = `${baseDir}/channel-holds-${datastoreId}.db`;
     this.db = new Database(this.path);
     if (env.enableSqliteWalMode) {
       this.db.unsafeMode(false);
@@ -44,7 +44,7 @@ export default class DatastoreEscrowsDb {
       this.db.pragma('synchronous = NORMAL');
     }
     this.db.exec(`
-    CREATE TABLE IF NOT EXISTS escrows (
+    CREATE TABLE IF NOT EXISTS channelHolds (
       id TEXT NOT NULL PRIMARY KEY,
       allocated INTEGER,
       remaining INTEGER,
@@ -54,16 +54,16 @@ export default class DatastoreEscrowsDb {
     );
     `);
     this.insertStatement = this.db.prepare(
-      'INSERT INTO escrows (id, allocated, remaining, expirationDate) VALUES (:id, :microgons, :microgons, :expirationDate)',
+      'INSERT INTO channelHolds (id, allocated, remaining, expirationDate) VALUES (:id, :microgons, :microgons, :expirationDate)',
     );
-    this.getStatement = this.db.prepare('SELECT * FROM escrows WHERE id = :id LIMIT 1');
-    this.debitStatement = this.db.prepare(`UPDATE escrows 
+    this.getStatement = this.db.prepare('SELECT * FROM channelHolds WHERE id = :id LIMIT 1');
+    this.debitStatement = this.db.prepare(`UPDATE channelHolds 
         SET remaining = remaining - :microgons
       WHERE id = :id
         AND remaining - :microgons >= 0 
         AND expirationDate >= :now
         AND CEIL((allocated - remaining + :microgons) / 1000) <= :settledMilligons`);
-    this.finalizeStatement = this.db.prepare(`UPDATE escrows
+    this.finalizeStatement = this.db.prepare(`UPDATE channelHolds
       SET remaining = remaining + :microgons
       WHERE id = :id
       AND remaining + :microgons <= allocated`);
@@ -71,14 +71,14 @@ export default class DatastoreEscrowsDb {
     this.interval = setInterval(this.cleanup.bind(this), 60e3).unref();
   }
 
-  create(id: string, allocatedMilligons: number, expirationDate: Date): IEscrowRecord {
+  create(id: string, allocatedMilligons: number, expirationDate: Date): IChannelHoldRecord {
     const microgons = allocatedMilligons * 1000;
     const result = this.insertStatement.run({
       id,
       microgons,
       expirationDate: expirationDate.getTime(),
     });
-    if (!result.changes || result.changes < 1) throw new Error('Could not create the escrow.');
+    if (!result.changes || result.changes < 1) throw new Error('Could not create the channelHold.');
     return {
       id,
       allocated: microgons,
@@ -87,30 +87,30 @@ export default class DatastoreEscrowsDb {
     };
   }
 
-  list(): IEscrowRecord[] {
+  list(): IChannelHoldRecord[] {
     return this.db
-      .prepare('SELECT * FROM escrows')
+      .prepare('SELECT * FROM channelHolds')
       .all()
-      .map((x: IEscrowRecord) => {
+      .map((x: IChannelHoldRecord) => {
         x.expirationDate = new Date(x.expirationDate);
         return x;
       });
   }
 
-  get(id: string): IEscrowRecord {
-    const record = this.getStatement.get({ id }) as IEscrowRecord;
-    if (!record) throw new Error('No PaymentChannelEscrow found');
+  get(id: string): IChannelHoldRecord {
+    const record = this.getStatement.get({ id }) as IChannelHoldRecord;
+    if (!record) throw new Error('No PaymentChannelChannelHold found');
     record.expirationDate = new Date(record.expirationDate);
     return record;
   }
 
   debit(queryId: string, payment: IPayment): { shouldFinalize: boolean } {
-    const escrowId = payment.escrow?.id;
-    if (!escrowId) throw new Error('No escrow payment provided. Internal code issue.');
-    if (!this.paymentIdByEscrowId.has(escrowId)) {
-      this.paymentIdByEscrowId.set(escrowId, new Map());
+    const channelHoldId = payment.channelHold?.id;
+    if (!channelHoldId) throw new Error('No channel hold id provided. Internal code issue.');
+    if (!this.paymentIdByChannelHoldId.has(channelHoldId)) {
+      this.paymentIdByChannelHoldId.set(channelHoldId, new Map());
     }
-    const existing = this.paymentIdByEscrowId.get(escrowId).get(payment.uuid);
+    const existing = this.paymentIdByChannelHoldId.get(channelHoldId).get(payment.uuid);
     if (existing) {
       if (queryId.startsWith(existing.queryId))
         return {
@@ -119,47 +119,47 @@ export default class DatastoreEscrowsDb {
       throw new Error('This payment has already been debited.');
     }
 
-    this.paymentIdByEscrowId
-      .get(escrowId)
+    this.paymentIdByChannelHoldId
+      .get(channelHoldId)
       .set(payment.uuid, { microgons: payment.microgons, queryId });
 
     const result = this.debitStatement.run({
-      id: escrowId,
+      id: channelHoldId,
       microgons: payment.microgons,
-      settledMilligons: payment.escrow.settledMilligons,
+      settledMilligons: payment.channelHold.settledMilligons,
       now: Date.now(),
     });
     if (!result.changes || result.changes < 1) {
-      const escrow = this.get(escrowId);
-      if (escrow.expirationDate < new Date()) {
-        throw new Error('This escrow has expired.');
+      const channelHold = this.get(channelHoldId);
+      if (channelHold.expirationDate < new Date()) {
+        throw new Error('This channelHold has expired.');
       }
-      if (escrow.remaining < payment.microgons) {
-        throw new Error('This escrow does not have enough remaining funds.');
+      if (channelHold.remaining < payment.microgons) {
+        throw new Error('This channelHold does not have enough remaining funds.');
       }
       if (
-        Math.ceil((escrow.allocated - escrow.remaining + payment.microgons) / 1000) >
-        Number(payment.escrow.settledMilligons)
+        Math.ceil((channelHold.allocated - channelHold.remaining + payment.microgons) / 1000) >
+        Number(payment.channelHold.settledMilligons)
       ) {
         throw new Error(
-          `This escrow needs a larger settlement to debit. Current settledMilligons=${payment.escrow.settledMilligons}, New spentMicrogons=${escrow.allocated - escrow.remaining + payment.microgons} (ceiling to nearest milligon)`,
+          `This channelHold needs a larger settlement to debit. Current settledMilligons=${payment.channelHold.settledMilligons}, New spentMicrogons=${channelHold.allocated - channelHold.remaining + payment.microgons} (ceiling to nearest milligon)`,
         );
       }
-      throw new Error('Could not debit the escrow.');
+      throw new Error('Could not debit the channelHold.');
     }
     return { shouldFinalize: true };
   }
 
-  finalize(escrowId: string, uuid: string, finalMicrogons: number): void {
-    const entry = this.paymentIdByEscrowId.get(escrowId)?.get(uuid);
-    if (!entry) throw new Error('Could not find the initial payment for the given Escrow.');
+  finalize(channelHoldId: string, uuid: string, finalMicrogons: number): void {
+    const entry = this.paymentIdByChannelHoldId.get(channelHoldId)?.get(uuid);
+    if (!entry) throw new Error('Could not find the initial payment for the given ChannelHold.');
     if (finalMicrogons < 0) throw new Error('Final payment cannot be negative.');
 
     const adjustment = entry.microgons - finalMicrogons;
     if (adjustment === 0) {
       return;
     }
-    const result = this.finalizeStatement.run({ id: escrowId, microgons: adjustment });
+    const result = this.finalizeStatement.run({ id: channelHoldId, microgons: adjustment });
     if (!result.changes || result.changes < 1) {
       throw new Error('Could not finalize the payment.');
     }
@@ -168,17 +168,17 @@ export default class DatastoreEscrowsDb {
   cleanup(cleanWithExpiredMillis = 60 * 60e3): void {
     // remove anything older than an hour
     const toDelete = this.db
-      .prepare(`SELECT id FROM escrows WHERE expirationDate < ?`)
+      .prepare(`SELECT id FROM channelHolds WHERE expirationDate < ?`)
       .pluck()
       .all(Date.now() - cleanWithExpiredMillis) as string[];
     if (!toDelete.length) return;
 
     this.db
-      .prepare(`DELETE FROM escrows WHERE id IN (${toDelete.map(() => '?').join(',')})`)
+      .prepare(`DELETE FROM channelHolds WHERE id IN (${toDelete.map(() => '?').join(',')})`)
       .run(...toDelete);
     this.db.pragma('optimize');
     for (const id of toDelete) {
-      this.paymentIdByEscrowId.delete(id);
+      this.paymentIdByChannelHoldId.delete(id);
     }
   }
 
@@ -193,7 +193,7 @@ export default class DatastoreEscrowsDb {
   }
 }
 
-export interface IEscrowRecord {
+export interface IChannelHoldRecord {
   id: string;
   allocated: number;
   remaining: number;

@@ -11,7 +11,7 @@ import DefaultPaymentService from './DefaultPaymentService';
  */
 export default class EmbeddedPaymentService extends DefaultPaymentService {
   /**
-   * Security feature to enable only specific datastores to create escrows.
+   * Security feature to enable only specific datastores to create channelHolds.
    *
    * Key is host_id
    */
@@ -53,7 +53,7 @@ export default class EmbeddedPaymentService extends DefaultPaymentService {
     const host = toUrl(info.host).host;
     if (!this.whitelistedDatastoreIds.has(`${host}_${info.id}`)) {
       throw new Error(
-        `The host ${info.host} is not whitelisted to create escrows for datastore ${info.id}`,
+        `The host ${info.host} is not whitelisted to create channelHolds for datastore ${info.id}`,
       );
     }
 

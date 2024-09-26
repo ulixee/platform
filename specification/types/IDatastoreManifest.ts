@@ -1,14 +1,17 @@
 import { addressValidation, identityValidation } from '@ulixee/platform-specification/types';
 import { z } from 'zod';
+import { Chain } from '@argonprotocol/localchain';
 import { datastoreIdValidation } from './datastoreIdValidation';
 import { DatastorePricing } from './IDatastorePricing';
 import { semverValidation } from './semverValidation';
 
 export const minDate = new Date('2022-01-01').getTime();
 export const DatastorePaymentRecipientSchema = z.object({
-  address: addressValidation
-    .optional()
-    .describe('A payment address that indicates payments are required.'),
+  chain: z.nativeEnum(Chain),
+  genesisHash: z.string().regex(/^(0[xX])?[0-9a-fA-F]{64}$/),
+  address: addressValidation.describe(
+    'A payment address microchannel payments should be made out to.',
+  ),
   notaryId: z.number(),
 });
 
@@ -29,7 +32,7 @@ export const DatastoreManifestSchema = z.object({
     .describe('A sha256 of the script contents.')
     .length(62)
     .regex(
-      /^scr1[ac-hj-np-z02-9]{58}/,
+      /^scr1[ac-hj-np-z02-9]{58}$/,
       'This is not a Datastore scriptHash (Bech32m encoded hash starting with "scr").',
     ),
   adminIdentities: identityValidation
@@ -43,7 +46,7 @@ export const DatastoreManifestSchema = z.object({
   extractorsByName: z.record(
     z
       .string()
-      .regex(/[a-z][A-Za-z0-9]+/)
+      .regex(/^[a-z][A-Za-z0-9]+$/)
       .describe('The Extractor name'),
     z.object({
       description: z.string().optional(),
@@ -71,7 +74,7 @@ export const DatastoreManifestSchema = z.object({
   crawlersByName: z.record(
     z
       .string()
-      .regex(/[a-z][A-Za-z0-9]+/)
+      .regex(/^[a-z][A-Za-z0-9]+$/)
       .describe('The Crawler name'),
     z.object({
       description: z.string().optional(),
@@ -99,7 +102,7 @@ export const DatastoreManifestSchema = z.object({
   tablesByName: z.record(
     z
       .string()
-      .regex(/[a-z][A-Za-z0-9]+/)
+      .regex(/^[a-z][A-Za-z0-9]+$/)
       .describe('The Table name'),
     z.object({
       description: z.string().optional(),
@@ -113,13 +116,12 @@ export const DatastoreManifestSchema = z.object({
         ),
     }),
   ),
-  payment: DatastorePaymentRecipientSchema.optional(),
   domain: z
     .string()
     .optional()
     .describe(
       'A data domain for this manifest. It can be looked up in the mainchain as a dns lookup for the version hosting.\n' +
-        'DATASTORE DEVELOPER NOTE: this property is used to indicate to tooling and CloudNode hosting that a domain is in effect and Escrows must match this setting, but it does not register anything in and of itself.',
+        'DATASTORE DEVELOPER NOTE: this property is used to indicate to tooling and CloudNode hosting that a domain is in effect and ChannelHolds must match this setting, but it does not register anything in and of itself.',
     ),
 });
 

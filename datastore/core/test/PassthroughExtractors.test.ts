@@ -1,14 +1,15 @@
+import { Chain, ChainIdentity } from '@argonprotocol/localchain';
 import { Keyring } from '@polkadot/keyring';
 import { CloudNode } from '@ulixee/cloud';
 import DatastorePackager from '@ulixee/datastore-packager';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import ArgonReserver from '@ulixee/datastore/payments/ArgonReserver';
+import CreditReserver from '@ulixee/datastore/payments/CreditReserver';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import CreditReserver from '@ulixee/datastore/payments/CreditReserver';
-import EscrowSpendTracker from '../lib/EscrowSpendTracker';
-import MockEscrowSpendTracker from './_MockEscrowSpendTracker';
+import MicropaymentChannelSpendTracker from '../lib/MicropaymentChannelSpendTracker';
+import MockMicropaymentChannelSpendTracker from './_MockMicropaymentChannelSpendTracker';
 import MockPaymentService from './_MockPaymentService';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughExtractors.test');
@@ -19,8 +20,13 @@ let client: DatastoreApiClient;
 const keyring = new Keyring({ ss58Format: 18 });
 
 Helpers.blockGlobalConfigWrites();
-const escrowSpendTrackerMock = new MockEscrowSpendTracker();
-const escrowSpendTracker = new EscrowSpendTracker(storageDir, null);
+const micropaymentChannelSpendTrackerMock = new MockMicropaymentChannelSpendTracker();
+const micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(storageDir, null);
+
+const mainchainIdentity = {
+  chain: Chain.Devnet,
+  genesisHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+} as ChainIdentity;
 
 let remoteVersion: string;
 let remoteDatastoreId: string;
@@ -50,8 +56,13 @@ beforeAll(async () => {
       },
     },
     true,
+    {
+      address: keyring.createFromUri('upstream').address,
+      notaryId: 1,
+      ...mainchainIdentity,
+    },
   );
-  cloudNode.datastoreCore.escrowSpendTracker = escrowSpendTracker;
+  cloudNode.datastoreCore.micropaymentChannelSpendTracker = micropaymentChannelSpendTracker;
   client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 
@@ -179,10 +190,6 @@ export default new Datastore({
   remoteDatastores: {
     source: 'ulx://${await cloudNode.address}/${remoteDatastoreId}@v${remoteVersion}',
   },
-  payment: {
-    notaryId: 1,
-    address: "${new Keyring().createFromUri('upstream').address}",
-  },
   extractors: {
     pass: new Datastore.PassthroughExtractor({
       upcharge: 400,
@@ -213,10 +220,55 @@ export default new Datastore({
 
 test('should be able to add charges from multiple extractors', async () => {
   const address1 = keyring.createFromUri('extractor1');
-  let version: string;
-  let sourceDatastoreId: string;
-  let hop1DatastoreId: string;
+  let sourceCloudAddress: string;
+  let hop1CloudAddress: string;
+  const sourceDatastoreId = 'source-store';
+  const hop1DatastoreId = 'hop1-store';
+
+  const channelHolds: { datastoreId: string; holdAmount: bigint; channelHoldId: string }[] = [];
+  const clientAddress = keyring.createFromUri('client');
+  const paymentService = new MockPaymentService(clientAddress, client, null, 'client');
+  const paymentServices: MockPaymentService[] = [paymentService];
+  let hop1Cloud: CloudNode;
+  let sourceCloudNode: CloudNode;
+
+  micropaymentChannelSpendTrackerMock.mock((id, balanceChange) => {
+    const channelHoldId = paymentServices
+      .map(x => x.paymentsByDatastoreId[id])
+      .find(Boolean).channelHoldId;
+    const channelHold = paymentServices.map(x => x.channelHoldsById[channelHoldId]).find(Boolean);
+    channelHolds.push({
+      datastoreId: id,
+      channelHoldId,
+      holdAmount: channelHold.channelHoldAmount,
+    });
+    return {
+      id: channelHoldId,
+      expirationTick: channelHold.tick + 100,
+      holdAmount: channelHold.channelHoldAmount,
+    };
+  });
+
   {
+    const sourceCloudDir = Path.join(storageDir, 'sourceCloud');
+    Fs.mkdirSync(sourceCloudDir, { recursive: true });
+    sourceCloudNode = await Helpers.createLocalNode(
+      {
+        datastoreConfiguration: {
+          datastoresDir: sourceCloudDir,
+        },
+      },
+      false,
+      {
+        address: address1.address,
+        notaryId: 1,
+        ...mainchainIdentity,
+      },
+    );
+    sourceCloudAddress = await sourceCloudNode.address;
+    sourceCloudNode.datastoreCore.micropaymentChannelSpendTracker =
+      new MicropaymentChannelSpendTracker(sourceCloudDir, null);
+
     Fs.writeFileSync(
       `${__dirname}/datastores/source.js`,
       `
@@ -224,10 +276,8 @@ const Datastore = require('@ulixee/datastore');
 const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
-  payment: {
-    address: '${address1.address}',
-    notaryId: 1,
-  },
+  id: '${sourceDatastoreId}',
+  version: '0.0.1', 
   extractors: {
     source: new Datastore.Extractor({
       basePrice: 6,
@@ -240,10 +290,9 @@ export default new Datastore({
   },
 });`,
     );
-
     const dbx = new DatastorePackager(`${__dirname}/datastores/source.js`);
     try {
-      await dbx.build({ createTemporaryVersion: true });
+      await dbx.build();
     } catch (err) {
       console.log('ERROR Uploading Manifest', err);
       throw err;
@@ -252,15 +301,49 @@ export default new Datastore({
     Helpers.onClose(() =>
       Fs.promises.rm(`${__dirname}/datastores/source.dbx`, { recursive: true }),
     );
-    await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.tarGzip());
-    version = dbx.manifest.version;
-    sourceDatastoreId = dbx.manifest.id;
-    expect(dbx.manifest.payment).toBeTruthy();
-    const price = await client.pricing.getEntityPrice(sourceDatastoreId, version, 'source');
+    const client1 = new DatastoreApiClient(await sourceCloudNode.address);
+    Helpers.onClose(() => client1.disconnect());
+    await client1.upload(await dbx.dbx.tarGzip());
+    const price = await client1.pricing.getEntityPrice(sourceDatastoreId, '0.0.1', 'source');
     expect(price).toBe(6);
   }
   const address2 = keyring.createFromUri('extractor2');
+
   {
+    const cloud2StorageDir = Path.join(storageDir, 'hop1Cloud');
+    Fs.mkdirSync(cloud2StorageDir, { recursive: true });
+    hop1Cloud = await Helpers.createLocalNode(
+      {
+        datastoreConfiguration: {
+          datastoresDir: cloud2StorageDir,
+        },
+      },
+      true,
+      {
+        address: keyring.createFromUri('extractor2').address,
+        notaryId: 1,
+        ...mainchainIdentity,
+      },
+    );
+    hop1CloudAddress = await hop1Cloud.address;
+    hop1Cloud.datastoreCore.micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(
+      cloud2StorageDir,
+      null,
+    );
+    hop1Cloud.datastoreCore.paymentInfo.resolve({
+      address: address2.address,
+      notaryId: 1,
+      ...mainchainIdentity,
+    });
+    const corePaymentService = new MockPaymentService(
+      address2,
+      new DatastoreApiClient(sourceCloudAddress),
+      null,
+      'hop1cloud',
+    );
+    paymentServices.push(corePaymentService);
+    mockUpstreamPayments(corePaymentService, hop1Cloud);
+
     Fs.writeFileSync(
       `${__dirname}/datastores/hop1.js`,
       `
@@ -268,12 +351,10 @@ const Datastore = require('@ulixee/datastore');
 const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
-  payment: {
-    address:'${address2.address}',
-    notaryId: 1,
-  },
+  id: '${hop1DatastoreId}',
+  version: '0.0.1',
   remoteDatastores: {
-    hop0: 'ulx://${await cloudNode.address}/${sourceDatastoreId}@v${version}',
+    hop0: 'ulx://${sourceCloudAddress}/${sourceDatastoreId}@v0.0.1',
   },
   extractors: {
     source2: new Datastore.PassthroughExtractor({
@@ -292,14 +373,13 @@ export default new Datastore({
     const dbx = new DatastorePackager(`${__dirname}/datastores/hop1.js`);
     Helpers.onClose(() => Fs.promises.unlink(`${__dirname}/datastores/hop1.js`));
     Helpers.onClose(() => Fs.promises.rm(`${__dirname}/datastores/hop1.dbx`, { recursive: true }));
-    await dbx.build({ createTemporaryVersion: true });
-    await new DatastoreApiClient(await cloudNode.address).upload(await dbx.dbx.tarGzip());
-    version = dbx.manifest.version;
-    hop1DatastoreId = dbx.manifest.id;
-    const price = await client.pricing.getEntityPrice(hop1DatastoreId, version, 'source2');
+    await dbx.build();
+    const client2 = new DatastoreApiClient(await hop1Cloud.address);
+    Helpers.onClose(() => client2.disconnect());
+    await client2.upload(await dbx.dbx.tarGzip());
+    const price = await client2.pricing.getEntityPrice(hop1DatastoreId, '0.0.1', 'source2');
     expect(price).toBe(6 + 11);
   }
-  const address3 = keyring.createFromUri('extractor3');
   Fs.writeFileSync(
     `${__dirname}/datastores/hop2.js`,
     `
@@ -307,12 +387,8 @@ const Datastore = require('@ulixee/datastore');
 const { boolean, string } = require('@ulixee/schema');
 
 export default new Datastore({
-  payment: {
-    address:'${address3.address}',
-    notaryId: 1,
-  },
   remoteDatastores: {
-    hop1: 'ulx://${await cloudNode.address}/${hop1DatastoreId}@v${version}',
+    hop1: 'ulx://${hop1CloudAddress}/${hop1DatastoreId}@v0.0.1',
   },
   extractors: {
     last: new Datastore.PassthroughExtractor({
@@ -348,31 +424,14 @@ export default new Datastore({
     ),
   ).resolves.toBe(price);
 
-  const clientAddress = keyring.createFromUri('client');
-  const paymentService = new MockPaymentService(clientAddress, client);
-  const client2 = keyring.createFromUri('upstream');
   const corePaymentService = new MockPaymentService(
-    client2,
-    cloudNode.datastoreCore.datastoreApiClients.get(await cloudNode.address),
+    keyring.createFromUri('upstream'),
+    new DatastoreApiClient(hop1CloudAddress),
+    null,
+    'hop2cloud',
   );
-  const escrows: { datastoreId: string; holdAmount: bigint; escrowId: string }[] = [];
-  escrowSpendTrackerMock.mock((id, balanceChange) => {
-    const escrowId = (
-      paymentService.paymentsByDatastoreId[id] ?? corePaymentService.paymentsByDatastoreId[id]
-    ).escrowId;
-    const escrow = paymentService.escrowsById[escrowId] ?? corePaymentService.escrowsById[escrowId];
-    escrows.push({ datastoreId: id, escrowId, holdAmount: escrow.escrowHoldAmount });
-    return {
-      id: escrowId,
-      expirationTick: escrow.tick + 100,
-      holdAmount: escrow.escrowHoldAmount,
-    };
-  });
-
-  cloudNode.datastoreCore.upstreamDatastorePaymentService = corePaymentService;
-  // @ts-expect-error
-  cloudNode.datastoreCore.vm.remotePaymentService =
-    cloudNode.datastoreCore.upstreamDatastorePaymentService;
+  paymentServices.push(corePaymentService);
+  mockUpstreamPayments(corePaymentService, cloudNode);
   const result = await client.query(
     lastHop.manifest.id,
     lastHop.manifest.version,
@@ -385,49 +444,74 @@ export default new Datastore({
   expect(result.outputs[0].lastRun).toBe('hop2');
   expect(result.metadata.microgons).toBe(price);
 
-  expect(escrows).toHaveLength(3);
+  expect(channelHolds).toHaveLength(3);
   // @ts-expect-error
-  const dbs = escrowSpendTracker.escrowDbsByDatastore;
-  expect(dbs.size).toBe(3);
-  // @ts-expect-error
-  expect(dbs.get(sourceDatastoreId).paymentIdByEscrowId.size).toBe(1);
+  let dbs = sourceCloudNode.datastoreCore.micropaymentChannelSpendTracker.channelHoldDbsByDatastore;
+  expect(dbs.size).toBe(1);
+
+  const paymentsByDatastoreId = {};
+  for (const service of paymentServices) {
+    Object.assign(paymentsByDatastoreId, service.paymentsByDatastoreId);
+  }
+  expect(dbs.get(sourceDatastoreId).paymentIdByChannelHoldId.size).toBe(1);
   expect(dbs.get(sourceDatastoreId).list()).toEqual([
     expect.objectContaining({
-      id: corePaymentService.paymentsByDatastoreId[sourceDatastoreId].escrowId,
+      id: paymentsByDatastoreId[sourceDatastoreId].channelHoldId,
       allocated: 1000,
       remaining: 1000 - 6,
     }),
   ]);
   // @ts-expect-error
-  expect(dbs.get(hop1DatastoreId).paymentIdByEscrowId.size).toBe(1);
+  dbs = hop1Cloud.datastoreCore.micropaymentChannelSpendTracker.channelHoldDbsByDatastore;
+  expect(dbs.size).toBe(1);
+
+  expect(dbs.get(hop1DatastoreId).paymentIdByChannelHoldId.size).toBe(1);
   expect(dbs.get(hop1DatastoreId).list()).toEqual([
     expect.objectContaining({
-      id: corePaymentService.paymentsByDatastoreId[hop1DatastoreId].escrowId,
+      id: paymentsByDatastoreId[hop1DatastoreId].channelHoldId,
       allocated: 2000,
       remaining: 2000 - 6 - 11,
     }),
   ]);
+
   // @ts-expect-error
-  expect(dbs.get(hop2DatastoreId).paymentIdByEscrowId.size).toBe(1);
+  dbs = micropaymentChannelSpendTracker.channelHoldDbsByDatastore;
+  expect(dbs.size).toBe(1);
+
+  expect(dbs.get(hop2DatastoreId).paymentIdByChannelHoldId.size).toBe(1);
   expect(dbs.get(hop2DatastoreId).list()).toEqual([
     expect.objectContaining({
-      id: paymentService.paymentsByDatastoreId[hop2DatastoreId].escrowId,
+      id: paymentsByDatastoreId[hop2DatastoreId].channelHoldId,
       allocated: 2000,
       remaining: 2000 - 6 - 11 - 3,
     }),
   ]);
 
-  const queryLog = cloudNode.datastoreCore.statsTracker.diskStore.queryLogDb.logTable
+  let queryLog = sourceCloudNode.datastoreCore.statsTracker.diskStore.queryLogDb.logTable
     .all()
     .filter(x => [sourceDatastoreId, hop1DatastoreId, hop2DatastoreId].includes(x.datastoreId));
-  expect(queryLog).toHaveLength(3);
+  expect(queryLog).toHaveLength(1);
   const queryId = result.queryId;
   expect(queryLog[0].queryId).toBe(`${queryId}.1.1`);
-  expect(queryLog[1].queryId).toBe(`${queryId}.1`);
-  expect(queryLog[2].queryId).toBe(queryId);
-  expect(queryLog.map(x => x.datastoreId)).toEqual([
-    sourceDatastoreId,
-    hop1DatastoreId,
-    hop2DatastoreId,
-  ]);
+  expect(queryLog[0].datastoreId).toBe(sourceDatastoreId);
+
+  queryLog = hop1Cloud.datastoreCore.statsTracker.diskStore.queryLogDb.logTable
+    .all()
+    .filter(x => [sourceDatastoreId, hop1DatastoreId, hop2DatastoreId].includes(x.datastoreId));
+  expect(queryLog).toHaveLength(1);
+  expect(queryLog[0].queryId).toBe(`${queryId}.1`);
+
+  queryLog = cloudNode.datastoreCore.statsTracker.diskStore.queryLogDb.logTable
+    .all()
+    .filter(x => [sourceDatastoreId, hop1DatastoreId, hop2DatastoreId].includes(x.datastoreId));
+  expect(queryLog[0].queryId).toBe(queryId);
 });
+
+function mockUpstreamPayments(
+  corePaymentService: MockPaymentService,
+  registerOnCloudNode: CloudNode,
+) {
+  registerOnCloudNode.datastoreCore.upstreamDatastorePaymentService = corePaymentService;
+  // @ts-expect-error
+  registerOnCloudNode.datastoreCore.vm.remotePaymentService = corePaymentService;
+}

@@ -9,9 +9,9 @@ import {
   IDatastoreRegistryApis,
 } from '@ulixee/platform-specification/services/DatastoreRegistryApis';
 import {
-  EscrowServiceApiSchemas,
-  IEscrowServiceApis,
-} from '@ulixee/platform-specification/services/EscrowServiceApis';
+  MicropaymentChannelApiSchemas,
+  IMicropaymentChannelApis,
+} from '@ulixee/platform-specification/services/MicropaymentChannelApis';
 import {
   IStatsTrackerApis,
   StatsTrackerApiSchemas,
@@ -24,7 +24,7 @@ import { DatastoreNotFoundError } from '../lib/errors';
 export type TServicesApis = IDatastoreRegistryApis<IDatastoreApiContext> &
   IStatsTrackerApis<IDatastoreApiContext> &
   IPaymentServiceApis<IDatastoreApiContext> &
-  IEscrowServiceApis<IDatastoreApiContext> &
+  IMicropaymentChannelApis<IDatastoreApiContext> &
   IDomainLookupApis<IDatastoreApiContext>;
 
 export type TConnectionToServicesClient = ConnectionToClient<TServicesApis, {}>;
@@ -88,15 +88,18 @@ export default class HostedServicesEndpoints {
         const manifest = await ctx.datastoreRegistry.get(datastoreId, version);
         return await ctx.statsTracker.getForDatastoreVersion(manifest);
       },
-      'EscrowService.importEscrow': async ({ escrow, datastoreId }, ctx) => {
+      'MicropaymentChannel.getPaymentInfo': async (_args, ctx) => {
+        return await ctx.micropaymentChannelSpendTracker.getPaymentInfo();
+      },
+      'MicropaymentChannel.importChannelHold': async ({ channelHold, datastoreId }, ctx) => {
         const manifest = await ctx.datastoreRegistry.get(datastoreId);
-        return await ctx.escrowSpendTracker.importEscrow({ escrow, datastoreId }, manifest);
+        return await ctx.micropaymentChannelSpendTracker.importChannelHold({ channelHold, datastoreId }, manifest);
       },
-      'EscrowService.debitPayment': async (data, ctx) => {
-        return await ctx.escrowSpendTracker.debit(data);
+      'MicropaymentChannel.debitPayment': async (data, ctx) => {
+        return await ctx.micropaymentChannelSpendTracker.debit(data);
       },
-      'EscrowService.finalizePayment': async (data, ctx) => {
-        return await ctx.escrowSpendTracker.finalize(data);
+      'MicropaymentChannel.finalizePayment': async (data, ctx) => {
+        return await ctx.micropaymentChannelSpendTracker.finalize(data);
       },
       'PaymentService.authenticate': async (_args, _ctx) => {
         throw new Error('Not implemented');
@@ -117,7 +120,7 @@ export default class HostedServicesEndpoints {
         DatastoreRegistryApiSchemas[api] ??
         StatsTrackerApiSchemas[api] ??
         PaymentServiceApisSchema[api] ??
-        EscrowServiceApiSchemas[api] ??
+        MicropaymentChannelApiSchemas[api] ??
         DomainLookupApiSchema[api];
       if (!validationSchema) throw new Error(`invalid api ${api}`);
       this.handlersByCommand[api] = validateThenRun.bind(

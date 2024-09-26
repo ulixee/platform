@@ -24,6 +24,9 @@ import Identity from '@ulixee/platform-utils/lib/Identity';
 import { promises as Fs } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import * as Path from 'path';
+import MicropaymentChannelSpendTracker from '@ulixee/datastore-core/lib/MicropaymentChannelSpendTracker';
+import IMicropaymentChannelSpendTracker from '@ulixee/datastore-core/interfaces/IMicropaymentChannelSpendTracker';
+import { IDatastorePaymentRecipient } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import DatastoreAdmin from './endpoints/Datastore.admin';
 import DatastoreCreateStorageEngine from './endpoints/Datastore.createStorageEngine';
 import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
@@ -39,7 +42,7 @@ import DatastoreUpload from './endpoints/Datastore.upload';
 import DatastoreVersions from './endpoints/Datastore.versions';
 import DatastoresList from './endpoints/Datastores.list';
 import DocpageRoutes, { datastorePathRegex } from './endpoints/DocpageRoutes';
-import EscrowRegister from './endpoints/Escrow.register';
+import ChannelHoldRegister from './endpoints/ChannelHold.register';
 import HostedServicesEndpoints, {
   TConnectionToServicesClient,
 } from './endpoints/HostedServicesEndpoints';
@@ -47,14 +50,12 @@ import Env from './env';
 import IDatastoreApiContext from './interfaces/IDatastoreApiContext';
 import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
 import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
-import IEscrowSpendTracker from './interfaces/IEscrowSpendTracker';
 import DatastoreHostLookupClient from './lib/DatastoreHostLookupClient';
 import DatastoreRegistry, { IDatastoreManifestWithRuntime } from './lib/DatastoreRegistry';
 import { IDatastoreSourceDetails } from './lib/DatastoreRegistryDiskStore';
 import DatastoreVm from './lib/DatastoreVm';
 import { MissingRequiredSettingError } from './lib/errors';
-import EscrowSpendTracker from './lib/EscrowSpendTracker';
-import EscrowSpendTrackerClient from './lib/EscrowSpendTrackerClient';
+import MicropaymentChannelSpendTrackerClient from './lib/MicropaymentChannelSpendTrackerClient';
 import StatsTracker from './lib/StatsTracker';
 import StorageEngineRegistry from './lib/StorageEngineRegistry';
 import { translateStats } from './lib/translateDatastoreMetadata';
@@ -89,6 +90,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
 
   public isClosing: Promise<void>;
   public workTracker: WorkTracker;
+  public paymentInfo = new Resolvable<IDatastorePaymentRecipient | undefined>();
 
   public apiRegistry = new ApiRegistry<IDatastoreApiContext>([
     DatastoreQuery,
@@ -105,13 +107,13 @@ export default class DatastoreCore extends TypedEventEmitter<{
     DatastoreUpload,
     DatastoreQueryStorageEngine,
     DatastoreCreateStorageEngine,
-    EscrowRegister,
+    ChannelHoldRegister,
   ]);
 
   public datastoreRegistry: DatastoreRegistry;
   public statsTracker: StatsTracker;
   public storageEngineRegistry: StorageEngineRegistry;
-  public escrowSpendTracker: IEscrowSpendTracker;
+  public micropaymentChannelSpendTracker: IMicropaymentChannelSpendTracker;
   public localchain?: LocalchainWithSync;
   public upstreamDatastorePaymentService?: IPaymentService;
   public datastoreHostLookup?: IDatastoreHostLookup;
@@ -142,7 +144,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
       statsTrackerHost: Env.statsTrackerHost,
       queryHeroSessionsDir: Env.queryHeroSessionsDir,
       replayRegistryHost: Env.replayRegistryHost,
-      escrowSpendTrackingHost: Env.escrowSpendTrackingHost,
+      micropaymentChannelSpendTrackingHost: Env.micropaymentChannelSpendTrackingHost,
       paymentServiceHost: Env.paymentServiceHost,
       datastoreLookupHost: Env.datastoreLookupHost,
       localchainConfig: Env.localchainConfig,
@@ -257,8 +259,8 @@ export default class DatastoreCore extends TypedEventEmitter<{
       if (this.options.datastoreLookupHost === 'self')
         this.options.datastoreLookupHost = servicesHost;
 
-      if (this.options.escrowSpendTrackingHost === 'self')
-        this.options.escrowSpendTrackingHost = servicesHost;
+      if (this.options.micropaymentChannelSpendTrackingHost === 'self')
+        this.options.micropaymentChannelSpendTrackingHost = servicesHost;
 
       this.options.statsTrackerHost ??= servicesHost;
       this.options.datastoreRegistryHost ??= servicesHost;
@@ -305,14 +307,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
       if (lookupConnection)
         this.datastoreHostLookup = new DatastoreHostLookupClient(lookupConnection);
 
-      const paymentServiceConnection = createConnectionToServiceHost(
-        this.options.paymentServiceHost,
-      );
-
-      if (paymentServiceConnection) {
-        const argonReserver = new RemoteReserver(paymentServiceConnection);
-        this.upstreamDatastorePaymentService = new EmbeddedPaymentService(argonReserver);
-      } else if (this.options.localchainConfig?.localchainPath) {
+      if (this.options.localchainConfig?.localchainPath) {
         this.localchain = new LocalchainWithSync(this.options.localchainConfig);
         await this.localchain.load();
 
@@ -320,30 +315,45 @@ export default class DatastoreCore extends TypedEventEmitter<{
           this.datastoreApiClients,
         );
 
-        this.escrowSpendTracker = new EscrowSpendTracker(
+        this.micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(
           this.options.datastoresDir,
           this.localchain,
         );
-      } else {
-        this.upstreamDatastorePaymentService = new EmbeddedPaymentService();
-        if (!this.datastoreHostLookup) {
-          const argonMainchainUrl =
-            this.options.localchainConfig?.mainchainUrl ?? Env.localchainConfig?.mainchainUrl;
-          const mainchainClient = argonMainchainUrl
-            ? await MainchainClient.connect(argonMainchainUrl, 10e3)
-            : null;
-          this.datastoreHostLookup = new DatastoreLookup(mainchainClient);
-        }
 
-        const escrowConnection = createConnectionToServiceHost(
-          this.options.escrowSpendTrackingHost,
+        this.paymentInfo.resolve(await this.localchain.paymentInfo);
+      } else {
+        const paymentServiceConnection = createConnectionToServiceHost(
+          this.options.paymentServiceHost,
         );
-        if (escrowConnection) {
-          this.escrowSpendTracker = new EscrowSpendTrackerClient(escrowConnection);
+        const argonReserver = paymentServiceConnection
+          ? new RemoteReserver(paymentServiceConnection)
+          : undefined;
+
+        this.upstreamDatastorePaymentService = new EmbeddedPaymentService(argonReserver);
+
+        const channelHoldConnection = createConnectionToServiceHost(
+          this.options.micropaymentChannelSpendTrackingHost,
+        );
+        if (channelHoldConnection) {
+          this.micropaymentChannelSpendTracker = new MicropaymentChannelSpendTrackerClient(
+            channelHoldConnection,
+          );
+          this.paymentInfo.resolve(await this.micropaymentChannelSpendTracker.getPaymentInfo());
         }
       }
+      if (!this.paymentInfo.isResolved) {
+        log.info(
+          "DatastoreCore.start - No Argon Payment information found. Can't charge for Datastores.",
+        );
+        this.paymentInfo.resolve(undefined);
+      }
 
-      this.datastoreHostLookup ??= this.upstreamDatastorePaymentService.datastoreLookup;
+      if (!this.datastoreHostLookup) {
+        const mainchainClient = Env.argonMainchainUrl
+          ? await MainchainClient.connect(Env.argonMainchainUrl, 10e3)
+          : undefined;
+        this.datastoreHostLookup = new DatastoreLookup(mainchainClient);
+      }
 
       this.vm = new DatastoreVm(
         this.connectionToThisCore,
@@ -509,13 +519,14 @@ export default class DatastoreCore extends TypedEventEmitter<{
       workTracker: this.workTracker,
       configuration: this.options,
       pluginCoresByName: this.pluginCoresByName,
+      paymentInfo: this.paymentInfo.promise,
       storageEngineRegistry: this.storageEngineRegistry,
       cloudNodeAddress: this.cloudNodeAddress,
       cloudNodeIdentity: this.cloudNodeIdentity,
       vm: this.vm,
       datastoreApiClients: this.datastoreApiClients,
       statsTracker: this.statsTracker,
-      escrowSpendTracker: this.escrowSpendTracker,
+      micropaymentChannelSpendTracker: this.micropaymentChannelSpendTracker,
       upstreamDatastorePaymentService: this.upstreamDatastorePaymentService,
       datastoreLookup: this.datastoreHostLookup,
     };

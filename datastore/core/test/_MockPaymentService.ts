@@ -8,6 +8,7 @@ import { IPayment } from '@ulixee/platform-specification';
 import { AccountType } from '@ulixee/platform-specification/types/IBalanceChange';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import { nanoid } from 'nanoid';
+import { IDatastorePaymentRecipient } from '@ulixee/platform-specification/types/IDatastoreManifest';
 
 export default class MockPaymentService
   extends TypedEventEmitter<IPaymentEvents>
@@ -15,13 +16,13 @@ export default class MockPaymentService
 {
   public paymentsByDatastoreId: {
     [datastoreId: string]: {
-      escrowId: string;
+      channelHoldId: string;
     };
   } = {};
 
-  public escrowsById: {
-    [escrowId: string]: {
-      escrowHoldAmount: bigint;
+  public channelHoldsById: {
+    [channelHoldId: string]: {
+      channelHoldAmount: bigint;
       tick: number;
     };
   } = {};
@@ -31,6 +32,8 @@ export default class MockPaymentService
   constructor(
     public clientAddress: KeyringPair,
     public client: DatastoreApiClient,
+    public paymentInfo?: IDatastorePaymentRecipient,
+    private name?: string,
   ) {
     super();
   }
@@ -39,20 +42,24 @@ export default class MockPaymentService
     return null;
   }
 
+  async getPaymentInfo(): Promise<IDatastorePaymentRecipient> {
+    return this.paymentInfo;
+  }
+
   async reserve(
     info: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
   ): Promise<IPayment> {
     const paymentId = nanoid();
 
-    let escrowId = this.paymentsByDatastoreId[info.id]?.escrowId;
-    if (!escrowId) {
-      escrowId = encodeBuffer(sha256(nanoid()), 'esc');
+    let channelHoldId = this.paymentsByDatastoreId[info.id]?.channelHoldId;
+    if (!channelHoldId) {
+      channelHoldId = encodeBuffer(sha256(nanoid()), 'esc');
       this.paymentsByDatastoreId[info.id] = {
-        escrowId,
+        channelHoldId,
       };
       const milligons = BigInt(Math.min(5, Math.ceil((info.microgons * 100) / 1000)));
-      this.escrowsById[escrowId] = { escrowHoldAmount: milligons, tick: 1 };
-      await this.client.registerEscrow(info.id, {
+      this.channelHoldsById[channelHoldId] = { channelHoldAmount: milligons, tick: 1 };
+      await this.client.registerChannelHold(info.id, {
         accountId: this.clientAddress.address,
         accountType: AccountType.Deposit,
         balance: 20_000n - milligons,
@@ -68,19 +75,19 @@ export default class MockPaymentService
           },
           tick: 1,
         },
-        escrowHoldNote: {
-          noteType: { action: 'escrowHold', recipient: info.recipient.address },
+        channelHoldNote: {
+          noteType: { action: 'channelHold', recipient: info.recipient.address },
           milligons,
         },
-        notes: [{ milligons: 5n, noteType: { action: 'escrowSettle' } }],
+        notes: [{ milligons: 5n, noteType: { action: 'channelHoldSettle' } }],
         changeNumber: 2,
         signature: Buffer.from(this.clientAddress.sign('siggy', { withType: true })),
       });
     }
 
     return {
-      escrow: {
-        id: escrowId,
+      channelHold: {
+        id: channelHoldId,
         settledMilligons: 5n,
         settledSignature: Buffer.from(this.clientAddress.sign('siggy', { withType: true })),
       },

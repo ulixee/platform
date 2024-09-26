@@ -1,3 +1,4 @@
+import { Chain, ChainIdentity } from '@argonprotocol/localchain';
 import { Keyring } from '@polkadot/keyring';
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
@@ -12,8 +13,8 @@ import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreM
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import EscrowSpendTracker from '../lib/EscrowSpendTracker';
-import MockEscrowSpendTracker from './_MockEscrowSpendTracker';
+import MicropaymentChannelSpendTracker from '../lib/MicropaymentChannelSpendTracker';
+import MockMicropaymentChannelSpendTracker from './_MockMicropaymentChannelSpendTracker';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Credits.test');
 
@@ -25,7 +26,12 @@ jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => 
 let storageCounter = 0;
 const keyring = new Keyring({ ss58Format: 18 });
 const datastoreKeyring = keyring.createFromUri('Datastore');
-const escrowSpendTrackerMock = new MockEscrowSpendTracker();
+const micropaymentChannelSpendTrackerMock = new MockMicropaymentChannelSpendTracker();
+
+const mainchainIdentity = {
+  chain: Chain.Devnet,
+  genesisHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+} as ChainIdentity;
 
 beforeAll(async () => {
   if (Fs.existsSync(`${__dirname}/datastores/output-manifest.json`)) {
@@ -45,8 +51,16 @@ beforeAll(async () => {
       },
     },
     true,
+    {
+      address: datastoreKeyring.address,
+      notaryId: 1,
+      ...mainchainIdentity,
+    },
   );
-  cloudNode.datastoreCore.escrowSpendTracker = new EscrowSpendTracker(storageDir, null);
+  cloudNode.datastoreCore.micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(
+    storageDir,
+    null,
+  );
   client = new DatastoreApiClient(await cloudNode.address, { consoleLogErrors: true });
   Helpers.onClose(() => client.disconnect(), true);
 });
@@ -55,7 +69,7 @@ beforeEach(() => {
   storageCounter += 1;
   ArgonReserver.baseStorePath = Path.join(storageDir, `payments-${storageCounter}`);
   CreditReserver.defaultBasePath = Path.join(storageDir, `credits-${storageCounter}`);
-  escrowSpendTrackerMock.clear();
+  micropaymentChannelSpendTrackerMock.clear();
 });
 
 afterEach(Helpers.afterEach);
@@ -66,10 +80,6 @@ test('should be able run a Datastore with Credits', async () => {
   Fs.writeFileSync(
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
-      payment: {
-        address: datastoreKeyring.address,
-        notaryId: 1,
-      },
       extractorsByName: {
         putout: {
           prices: [{ basePrice: 1000 }],
@@ -153,6 +163,7 @@ test('should remove an empty Credits from the local cache', async () => {
       recipient: {
         address: datastoreKeyring.address,
         notaryId: 1,
+        ...mainchainIdentity,
       },
     }),
   ).resolves.toEqual(
@@ -167,6 +178,7 @@ test('should remove an empty Credits from the local cache', async () => {
       recipient: {
         address: datastoreKeyring.address,
         notaryId: 1,
+        ...mainchainIdentity,
       },
     }),
   ).rejects.toThrow('Insufficient credits balance');
@@ -177,10 +189,6 @@ test('should be able to embed Credits in a Datastore', async () => {
   Fs.writeFileSync(
     `${__dirname}/datastores/output-manifest.json`,
     JSON.stringify({
-      payment: {
-        address: datastoreKeyring.address,
-        notaryId: 1,
-      },
       extractorsByName: {
         putout: {
           prices: [{ basePrice: 1000 }],
@@ -232,10 +240,6 @@ test('should be able to embed Credits in a Datastore', async () => {
   Fs.writeFileSync(
     `${__dirname}/datastores/clone-output/datastore-manifest.json`,
     JSON.stringify({
-      payment: {
-        address: datastoreKeyring.address,
-        notaryId: 1,
-      },
       extractorsByName: {
         putout: {
           prices: [{ basePrice: 1000 }],
