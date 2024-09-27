@@ -1,6 +1,7 @@
 .DocsContent {
   $borderColor: #c5d3e0;
 
+
   blockquote {
     margin: 0 0 2.0em;
     padding: 0 1.5em;
@@ -92,7 +93,7 @@
   li {
     margin-bottom: 0.6rem;
   }
-  
+
   .lead {
     font-size: 1.2rem;
   }
@@ -141,6 +142,7 @@
     padding-right: 0;
     padding-top: 0;
     margin-bottom: 1.6rem;
+    scroll-margin-top: 80px;
     color: inherit;
     font-weight: bold;
     text-rendering: optimizeLegibility;
@@ -164,6 +166,7 @@
     padding-left: 0;
     padding-right: 0;
     padding-top: 1.5rem;
+    scroll-margin-top: 80px;
     color: inherit;
     font-weight: 200;
     text-rendering: optimizeLegibility;
@@ -182,6 +185,7 @@
     padding-right: 0;
     padding-top: 1.5rem;
     margin-bottom: 1.6rem;
+    scroll-margin-top: 80px;
     color: inherit;
     font-weight: bold;
     text-rendering: optimizeLegibility;
@@ -193,6 +197,7 @@
 
   h4 {
     font-weight: bold;
+    scroll-margin-top: 80px;
   }
 
   h3 {
