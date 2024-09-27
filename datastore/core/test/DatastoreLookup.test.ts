@@ -1,7 +1,7 @@
 import DatastoreLookup from '@ulixee/datastore/lib/DatastoreLookup';
 import { DomainStore, DomainTopLevel } from '@argonprotocol/localchain';
 
-test('can properly encode a data domain', async () => {
+test('can properly encode a domain', async () => {
   expect(DomainStore.parse('Somewhere.analytics')).toEqual({
     name: 'somewhere',
     topLevel: DomainTopLevel.Analytics,

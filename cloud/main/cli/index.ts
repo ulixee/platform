@@ -147,15 +147,6 @@ export default function cliCommands(): Command {
     .addOption(
       program
         .createOption(
-          '--argon-payment-address <address>',
-          'The SS58 formatted address to send payments to.',
-        )
-        .argParser(x => parseAddress(x, 'Argon Payments Address'))
-        .env('ARGON_PAYMENT_ADDRESS'),
-    )
-    .addOption(
-      program
-        .createOption(
           '--argon-notary-id <id>',
           'The preferred Argon notary to notarize payments with.',
         )
@@ -223,7 +214,6 @@ export default function cliCommands(): Command {
         hostedServicesPort,
         hostedServicesHostname,
         env,
-        argonPaymentAddress,
         argonNotaryId,
         argonLocalchainPath,
         argonMainchainUrl,
@@ -280,13 +270,6 @@ export default function cliCommands(): Command {
             maxRuntimeMs: opts.maxDatastoreRuntimeMs,
             waitForDatastoreCompletionOnShutdown: opts.datastoreWaitForCompletion,
             adminIdentities: parseIdentities(opts.adminIdentities, 'Admin Identities'),
-            paymentInfo:
-              argonPaymentAddress && argonNotaryId
-                ? {
-                    address: argonPaymentAddress,
-                    notaryId: argonNotaryId,
-                  }
-                : undefined,
             localchainConfig,
           }),
         }),

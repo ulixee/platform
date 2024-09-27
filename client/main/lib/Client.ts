@@ -28,7 +28,7 @@ export default class ClientForRemote {
   public port: number;
   public database: string;
   /**
-   * This variable is here just to detect when we do not think this host is a data domain
+   * This variable is here just to detect when we do not think this host is a domain
    */
   public readonly isDnsHost: boolean;
 

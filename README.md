@@ -10,7 +10,7 @@ This repository is the development home to several of the tools that make it eas
 - Datastore `/datastore`. Packaged "database" containing API access to crawler functions and extractor functions.
 - Cloud `/cloud`. Run Ulixee tooling on a remote machine.
 - Stream `/stream`. Query, transform and compose Datastores running on any machine.
-- Desktop `/desktop`. Supercharge scraper script development using a Hero Replay toolset, remote Datastore viewer and Error troubleshooter.
+- Desktop `/desktop`. Supercharge scraper script development using a Hero Replay toolset, remote Datastore viewer and Error troubleshooter (repository home - https://github.com/ulixee/desktop).
 
 ## Tooling
 

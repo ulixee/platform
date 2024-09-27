@@ -118,6 +118,9 @@ async function upload(
   }
 
   try {
+    if (!Fs.existsSync(UlixeeConfig.global.directoryPath)) {
+      Fs.mkdirSync(UlixeeConfig.global.directoryPath, { recursive: true });
+    }
     const path = Path.join(UlixeeConfig.global.directoryPath, 'datastore-deployments.jsonl');
     await Fs.promises.appendFile(
       path,

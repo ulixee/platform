@@ -7,12 +7,12 @@ import { NoteSchema } from '../types/INote';
 import { channelHoldIdValidation, PaymentSchema } from '../types/IPayment';
 import { IZodHandlers, IZodSchemaToApiTypes } from '../utils/IZodApi';
 
-export const MicropaymentChannelApiSchemas = {
-  'MicropaymentChannel.getPaymentInfo': {
+export const ArgonPaymentProcessorApiSchema = {
+  'ArgonPaymentProcessor.getPaymentInfo': {
     args: z.void(),
     result: DatastorePaymentRecipientSchema,
   },
-  'MicropaymentChannel.importChannelHold': {
+  'ArgonPaymentProcessor.importChannelHold': {
     args: z.object({
       datastoreId: datastoreIdValidation,
       channelHold: BalanceChangeSchema.describe(
@@ -25,7 +25,7 @@ export const MicropaymentChannelApiSchemas = {
       accepted: z.boolean(),
     }),
   },
-  'MicropaymentChannel.debitPayment': {
+  'ArgonPaymentProcessor.debit': {
     args: z.object({
       datastoreId: datastoreIdValidation,
       queryId: z.string(),
@@ -35,7 +35,7 @@ export const MicropaymentChannelApiSchemas = {
       shouldFinalize: z.boolean(),
     }),
   },
-  'MicropaymentChannel.finalizePayment': {
+  'ArgonPaymentProcessor.finalize': {
     args: z.object({
       datastoreId: datastoreIdValidation,
       channelHoldId: channelHoldIdValidation,
@@ -46,12 +46,12 @@ export const MicropaymentChannelApiSchemas = {
   },
 };
 
-export type IMicropaymentChannelApiTypes = IZodSchemaToApiTypes<
-  typeof MicropaymentChannelApiSchemas
+export type IArgonPaymentProcessorApiTypes = IZodSchemaToApiTypes<
+  typeof ArgonPaymentProcessorApiSchema
 >;
-export type IMicropaymentChannelApis<TContext = any> = IZodHandlers<
-  typeof MicropaymentChannelApiSchemas,
+export type IArgonPaymentProcessorApis<TContext = any> = IZodHandlers<
+  typeof ArgonPaymentProcessorApiSchema,
   TContext
 >;
 
-export default IMicropaymentChannelApiTypes;
+export default IArgonPaymentProcessorApiTypes;

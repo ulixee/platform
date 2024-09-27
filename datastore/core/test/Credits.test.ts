@@ -13,8 +13,8 @@ import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreM
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import MicropaymentChannelSpendTracker from '../lib/MicropaymentChannelSpendTracker';
-import MockMicropaymentChannelSpendTracker from './_MockMicropaymentChannelSpendTracker';
+import ArgonPaymentProcessor from '../lib/ArgonPaymentProcessor';
+import MockArgonPaymentProcessor from './_MockArgonPaymentProcessor';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Credits.test');
 
@@ -26,7 +26,7 @@ jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => 
 let storageCounter = 0;
 const keyring = new Keyring({ ss58Format: 18 });
 const datastoreKeyring = keyring.createFromUri('Datastore');
-const micropaymentChannelSpendTrackerMock = new MockMicropaymentChannelSpendTracker();
+const argonPaymentProcessorMock = new MockArgonPaymentProcessor();
 
 const mainchainIdentity = {
   chain: Chain.Devnet,
@@ -57,7 +57,7 @@ beforeAll(async () => {
       ...mainchainIdentity,
     },
   );
-  cloudNode.datastoreCore.micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(
+  cloudNode.datastoreCore.argonPaymentProcessor = new ArgonPaymentProcessor(
     storageDir,
     null,
   );
@@ -69,7 +69,7 @@ beforeEach(() => {
   storageCounter += 1;
   ArgonReserver.baseStorePath = Path.join(storageDir, `payments-${storageCounter}`);
   CreditReserver.defaultBasePath = Path.join(storageDir, `credits-${storageCounter}`);
-  micropaymentChannelSpendTrackerMock.clear();
+  argonPaymentProcessorMock.clear();
 });
 
 afterEach(Helpers.afterEach);

@@ -4,7 +4,7 @@ import IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginC
 import IPaymentService from '@ulixee/datastore/interfaces/IPaymentService';
 import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
 import Identity from '@ulixee/platform-utils/lib/Identity';
-import IMicropaymentChannelSpendTracker from '@ulixee/datastore-core/interfaces/IMicropaymentChannelSpendTracker';
+import IArgonPaymentProcessor from '@ulixee/datastore-core/interfaces/IArgonPaymentProcessor';
 import { IDatastorePaymentRecipient } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
 import DatastoreVm from '../lib/DatastoreVm';
@@ -17,7 +17,7 @@ import IDatastoreCoreConfigureOptions from './IDatastoreCoreConfigureOptions';
 export default interface IDatastoreApiContext {
   logger: IBoundLog;
   datastoreRegistry: DatastoreRegistry;
-  micropaymentChannelSpendTracker: IMicropaymentChannelSpendTracker;
+  argonPaymentProcessor: IArgonPaymentProcessor;
   paymentInfo: Promise<IDatastorePaymentRecipient | undefined>;
   upstreamDatastorePaymentService: IPaymentService;
   datastoreLookup: IDatastoreHostLookup;
