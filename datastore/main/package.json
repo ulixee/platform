@@ -7,43 +7,42 @@
   "bin": "./bin/cli.js",
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "import": "./index.mjs",
-      "require": "./index.cjs",
-      "types": "./index.d.ts"
+      "require": "./index.cjs"
     },
     "./*": "./*.js",
     "./package.json": "./package.json",
     "./lib/*": {
-      "default": "./lib/*.js",
-      "types": "./lib/*.d.ts"
+      "types": "./lib/*.d.ts",
+      "require": "./lib/*.js"
     },
     "./cli/*": "./cli/*.js",
     "./storage-engines/*": {
-      "default": "./storage-engines/*.js",
-      "types": "./storage-engines/*.d.ts"
+      "types": "./storage-engines/*.d.ts",
+      "require": "./storage-engines/*.js"
     },
     "./payments/*": {
-      "default": "./payments/*.js",
-      "types": "./payments/*.d.ts"
+      "types": "./payments/*.d.ts",
+      "require": "./payments/*.js"
     },
     "./connections/*": {
-      "default": "./connections/*.js",
-      "types": "./connections/*.d.ts"
+      "types": "./connections/*.d.ts",
+      "require": "./connections/*.js"
     },
     "./types/*": {
-      "default": "./types/*.js",
-      "types": "./types/*.d.ts"
+      "types": "./types/*.d.ts",
+      "require": "./types/*.js"
     },
     "./interfaces/*": {
-      "default": "./interfaces/*.js",
-      "types": "./interfaces/*.d.ts"
+      "types": "./interfaces/*.d.ts",
+      "require": "./interfaces/*.js"
     }
   },
   "dependencies": {
-    "@polkadot/keyring": "^13.1.1",
-    "@polkadot/util-crypto": "^13.1.1",
+    "@argonprotocol/mainchain": "0.0.9",
+    "@argonprotocol/localchain": "0.0.9",
     "@ulixee/commons": "2.0.0-alpha.29",
-    "@argonprotocol/localchain": "0.0.8",
     "@ulixee/net": "2.0.0-alpha.29",
     "@ulixee/platform-specification": "2.0.0-alpha.29",
     "@ulixee/platform-utils": "2.0.0-alpha.29",
