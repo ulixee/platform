@@ -247,7 +247,7 @@ export async function startCloudViaCli(opts: any): Promise<CloudNode> {
     if (env.startsWith('~')) env = Path.resolve(os.homedir(), env.slice(1));
     applyEnvironmentVariables(Path.resolve(env), process.env);
   }
-  if (disableDesktopApis) CloudNodeEnv.disableDesktopApi = disableDesktopApis;
+  if (disableDesktopApis !== undefined) CloudNodeEnv.disableDesktopApi = disableDesktopApis;
 
   const { unblockedPlugins, heroDataDir, maxConcurrentHeroes, maxConcurrentHeroesPerBrowser } =
     opts;

@@ -6,10 +6,10 @@ import { microgonsValidation, milligonsValidation, multiSignatureValidation } fr
  */
 export const channelHoldIdValidation = z
   .string()
-  .length(62)
+  .length(63)
   .regex(
-    /^esc1[ac-hj-np-z02-9]{58}$/,
-    'This is not a Ulixee identity (Bech32m encoded public key starting with "esc1").',
+    /^chan1[ac-hj-np-z02-9]{58}$/,
+    'This is not a Ulixee identity (Bech32m encoded public key starting with "chan1").',
   );
 
 export const PaymentMethodSchema = z.object({

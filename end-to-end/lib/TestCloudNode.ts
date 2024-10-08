@@ -1,3 +1,4 @@
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { needsClosing } from '@ulixee/datastore-testing/helpers';
 import { ChildProcess, spawn } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';
@@ -8,6 +9,7 @@ import { execAndLog, getPlatformBuild } from './utils';
 export default class TestCloudNode {
   address: string;
   #childProcess: ChildProcess;
+  #events = new EventSubscriber();
   constructor(private rootDir: string = getPlatformBuild()) {
     needsClosing.push({ close: () => this.close(), onlyCloseOnFinal: true });
   }
@@ -19,7 +21,7 @@ export default class TestCloudNode {
       shell: true,
       env: {
         ...process.env,
-        ULX_DISABLE_CHROMEALIVE: 'true',
+        ULX_DISABLE_DESKTOP_APIS: 'true',
         DEBUG: 'ulx*',
         ...envArgs,
       },
@@ -34,14 +36,14 @@ export default class TestCloudNode {
         reject(err);
         isResolved = true;
       };
-      this.#childProcess.once('error', onProcessError);
-      this.#childProcess.stderr.on('data', data => {
+      const onError = this.#events.once(this.#childProcess, 'error', onProcessError);
+      this.#events.on(this.#childProcess.stderr, 'data', data => {
         console.warn('[DATASTORE CORE] >> %s', data);
-        this.#childProcess.off('error', onProcessError);
+        this.#events.off(onError);
         reject(data);
         isResolved = true;
       });
-      this.#childProcess.stdout.on('data', data => {
+      this.#events.on(this.#childProcess.stdout, 'data', data => {
         console.log('[DATASTORE CORE]', data.trim());
         if (isResolved) return;
         const match = data.match(/Ulixee Cloud listening at (.+)/);
@@ -51,10 +53,10 @@ export default class TestCloudNode {
         }
       });
     });
-    this.#childProcess.on('error', err => {
+    this.#events.on(this.#childProcess, 'error', err => {
       throw err;
     });
-    this.#childProcess.on('exit', code => {
+    this.#events.on(this.#childProcess, 'exit', code => {
       console.warn('[DATASTORE CORE] Cloud node exited with code', code);
     });
     return this.address;
@@ -62,11 +64,11 @@ export default class TestCloudNode {
 
   public async close(): Promise<void> {
     if (!this.#childProcess) return;
+    this.#events.close();
     const launchedProcess = this.#childProcess;
-    launchedProcess.stdout.destroy();
-    launchedProcess.stderr.destroy();
+    launchedProcess.kill('SIGTERM');
     launchedProcess.kill('SIGKILL');
-    launchedProcess.unref();
+    this.#childProcess = null;
   }
 }
 

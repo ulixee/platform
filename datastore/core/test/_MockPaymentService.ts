@@ -53,7 +53,7 @@ export default class MockPaymentService
 
     let channelHoldId = this.paymentsByDatastoreId[info.id]?.channelHoldId;
     if (!channelHoldId) {
-      channelHoldId = encodeBuffer(sha256(nanoid()), 'esc');
+      channelHoldId = encodeBuffer(sha256(nanoid()), 'chan');
       this.paymentsByDatastoreId[info.id] = {
         channelHoldId,
       };

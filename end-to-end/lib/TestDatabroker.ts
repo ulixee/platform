@@ -1,3 +1,4 @@
+import EventSubscriber from '@ulixee/commons/lib/EventSubscriber';
 import { needsClosing } from '@ulixee/datastore-testing/helpers';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
 import HttpTransportToCore from '@ulixee/net/lib/HttpTransportToCore';
@@ -10,6 +11,7 @@ import { getPlatformBuild } from './utils';
 export default class TestDatabroker {
   address: string;
   adminAddress: string;
+  #events = new EventSubscriber();
 
   #childProcess: ChildProcess;
   constructor(private rootDir: string = getPlatformBuild()) {
@@ -37,19 +39,18 @@ export default class TestDatabroker {
     this.#childProcess.stderr.setEncoding('utf8');
     const ports = await new Promise<[string, string]>((resolve, reject) => {
       let isResolved = false;
-      const onProcessError = (err: Error): void => {
+      const onError = this.#events.once(this.#childProcess, 'error', (err: Error): void => {
         console.warn('[DATABROKER] Error running cloud node', err);
         reject(err);
         isResolved = true;
-      };
-      this.#childProcess.once('error', onProcessError);
-      this.#childProcess.stderr.on('data', data => {
+      });
+      this.#events.on(this.#childProcess.stderr, 'data', data => {
         console.warn('[DATABROKER] >> %s', data);
-        this.#childProcess.off('error', onProcessError);
+        this.#events.off(onError);
         reject(data);
         isResolved = true;
       });
-      this.#childProcess.stdout.on('data', data => {
+      this.#events.on(this.#childProcess.stdout, 'data', data => {
         console.log('[DATABROKER]', data.trim());
         if (isResolved) return;
         const match = data.match(/Databroker listening at .*:(\d+). Admin server at: .+:(\d+)/);
@@ -61,10 +62,10 @@ export default class TestDatabroker {
     });
     this.address = `http://localhost:${ports[0]}`;
     this.adminAddress = `ws://localhost:${ports[1]}`;
-    this.#childProcess.on('error', err => {
+    this.#events.on(this.#childProcess, 'error', err => {
       throw err;
     });
-    this.#childProcess.on('exit', code => {
+    this.#events.on(this.#childProcess, 'exit', code => {
       console.warn('[DATABROKER] Server exited with code', code);
     });
     return this.address;
@@ -72,11 +73,11 @@ export default class TestDatabroker {
 
   public async close(): Promise<void> {
     if (!this.#childProcess) return;
+    this.#events.close();
     const launchedProcess = this.#childProcess;
-    launchedProcess.stdout.destroy();
-    launchedProcess.stderr.destroy();
+    launchedProcess.kill('SIGTERM');
     launchedProcess.kill('SIGKILL');
-    launchedProcess.unref();
+    this.#childProcess = null;
   }
 
   public async whitelistDomain(domain: string): Promise<void> {

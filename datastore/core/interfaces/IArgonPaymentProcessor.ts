@@ -4,7 +4,7 @@ import IDatastoreManifest, {
 import IArgonPaymentProcessorApis from '@ulixee/platform-specification/services/ArgonPaymentProcessorApis';
 
 export default interface IArgonPaymentProcessor {
-  getPaymentInfo(): Promise<IDatastorePaymentRecipient>;
+  getPaymentInfo(): Promise<IDatastorePaymentRecipient | undefined>;
   debit(
     data: IArgonPaymentProcessorApis['ArgonPaymentProcessor.debit']['args'],
   ): Promise<IArgonPaymentProcessorApis['ArgonPaymentProcessor.debit']['result']>;

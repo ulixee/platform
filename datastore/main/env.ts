@@ -12,5 +12,4 @@ export default {
   tickDurationMillis: parseEnvInt(env.ARGON_TICK_DURATION_MILLIS),
   channelHoldExpirationTicks: parseEnvInt(env.ARGON_CHANNEL_HOLD_EXPIRATION_TICKS),
   ntpPoolUrl: env.ARGON_NTP_SERVER,
-  defaultDataDir: env.ULX_DATA_DIR,
 };

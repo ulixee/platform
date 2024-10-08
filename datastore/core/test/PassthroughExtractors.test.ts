@@ -8,6 +8,7 @@ import ArgonReserver from '@ulixee/datastore/payments/ArgonReserver';
 import CreditReserver from '@ulixee/datastore/payments/CreditReserver';
 import * as Fs from 'fs';
 import * as Path from 'path';
+import IArgonPaymentProcessor from '../interfaces/IArgonPaymentProcessor';
 import MockArgonPaymentProcessor from './_MockArgonPaymentProcessor';
 import MockPaymentService from './_MockPaymentService';
 
@@ -20,6 +21,7 @@ const keyring = new Keyring({ ss58Format: 18 });
 
 Helpers.blockGlobalConfigWrites();
 const argonPaymentProcessorMock = new MockArgonPaymentProcessor();
+let argonPaymentProcessor: IArgonPaymentProcessor;
 
 const mainchainIdentity = {
   chain: Chain.Devnet,
@@ -60,6 +62,7 @@ beforeAll(async () => {
       ...mainchainIdentity,
     },
   );
+  argonPaymentProcessor = cloudNode.datastoreCore.argonPaymentProcessor;
   client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 

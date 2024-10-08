@@ -9,7 +9,7 @@ import IDatastoreHostLookup, { IDatastoreHost } from '../interfaces/IDatastoreHo
 export { DomainTopLevel };
 
 export interface IZoneRecordLookup {
-  getDomainZoneRecord(domainName: string, tld: DomainTopLevel): Promise<ZoneRecord>;
+  getDomainZoneRecord(domainName: string, tld: DomainTopLevel): Promise<ZoneRecord | null>;
   getChainIdentity(): Promise<ChainIdentity>;
 }
 /**

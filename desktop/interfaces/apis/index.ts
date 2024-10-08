@@ -74,8 +74,8 @@ export type IDesktopAppPrivateApis = {
     argonFile: IArgonFile;
     fundWithAddress?: string;
   }) => Promise<void>;
-  'Argon.transferFromMainchain': (arg: { address?: string; milligons: bigint }) => Promise<void>;
-  'Argon.transferToMainchain': (arg: { address?: string; milligons: bigint }) => Promise<void>;
+  'Argon.transferFromMainchain': (arg: { address: string; milligons: bigint }) => Promise<void>;
+  'Argon.transferToMainchain': (arg: { address: string; milligons: bigint }) => Promise<void>;
   'Argon.dropFile': (path: string) => Promise<void>;
   'Argon.showFileContextMenu': (
     args: IArgonFileMeta & {
@@ -91,9 +91,9 @@ export type IDesktopAppPrivateApis = {
     argons: number;
   }) => Promise<IArgonFileMeta>;
   'Credit.save': (arg: { credit: IArgonFile['credit'] }) => Promise<void>;
-  'Cloud.findAdminIdentity': (cloudName: string) => Promise<string>;
+  'Cloud.findAdminIdentity': (cloudName: string) => Promise<string | null>;
   'Datastore.setAdminIdentity': (datastoreId: string, adminIdentityPath: string) => Promise<string>;
-  'Datastore.findAdminIdentity': (datastoreId: string) => Promise<string>;
+  'Datastore.findAdminIdentity': (datastoreId: string) => Promise<string | null>;
   'Datastore.getInstalled': () => ILocalUserProfile['installedDatastores'];
   'Datastore.query': (args: {
     id: string;

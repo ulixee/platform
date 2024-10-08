@@ -99,14 +99,14 @@ export default class DataBroker {
   public async close(): Promise<void> {
     log.info('DataBroker closing');
     ShutdownHandler.unregister(this.close);
-    await this.#server.close();
-    await this.#adminServer.close();
-    for (const connection of this.adminApis.connections) {
-      await connection.disconnect();
-    }
-    this.#db.close();
-    this.#whitelistDb.close();
-    await this.#localchain.close();
+    await Promise.allSettled([
+      ...[...this.adminApis.connections].map(x => x.disconnect()),
+      this.#server.close(),
+      this.#adminServer.close(),
+      this.#localchain.close(),
+      this.#db.close(),
+      this.#whitelistDb.close(),
+    ]);
   }
 
   public async onLocalchainSync(sync: BalanceSyncResult): Promise<void> {

@@ -11,7 +11,7 @@ if (env.ULX_NETWORK_IDENTITY_PATH)
   env.ULX_NETWORK_IDENTITY_PATH = parseEnvPath(env.ULX_NETWORK_IDENTITY_PATH);
 
 export default {
-  disableDesktopApi: parseEnvBool(env.ULX_DISABLE_DESKTOP_APIS),
+  disableDesktopApi: parseEnvBool(env.ULX_DISABLE_DESKTOP_APIS) ?? false,
   servicesSetupHost: env.ULX_SERVICES_SETUP_HOST,
   nodeRegistryHost: env.ULX_NODE_REGISTRY_HOST,
   networkIdentity: env.ULX_NETWORK_IDENTITY_PATH

@@ -30,10 +30,6 @@ import DefaultPaymentService from './DefaultPaymentService';
 
 const { log } = Logger(module);
 
-if (Env.defaultDataDir) {
-  Localchain.setDefaultDir(Path.join(Env.defaultDataDir, 'ulixee', 'localchain'));
-}
-
 export default class LocalchainWithSync
   extends TypedEventEmitter<{ sync: BalanceSyncResult }>
   implements ILocalchainRef
@@ -158,6 +154,7 @@ export default class LocalchainWithSync
   }
 
   public async create(account?: { suri?: string; cryptoScheme?: CryptoScheme }): Promise<void> {
+    log.info('Creating localchain', { path: Localchain.getDefaultPath() } as any);
     if (account?.suri) {
       const keystorePassword = this.getPassword();
       await this.#localchain.keystore.importSuri(
@@ -174,6 +171,7 @@ export default class LocalchainWithSync
     clearTimeout(this.nextTick);
     this.datastoreLookup = null;
     await this.#localchain?.close();
+    await this.#localchain?.mainchainClient.then(x => x?.close());
     this.#localchain = null;
   }
 
@@ -263,10 +261,13 @@ export default class LocalchainWithSync
         });
         this.emit('sync', result);
         if (this.enableLogging) {
-          log.info('ChannelHold Manager Sync result', {
+          log.info('Localchain Sync result', {
             // have to weirdly jsonify
             balanceChanges: await Promise.all(result.balanceChanges.map(gettersToObject)),
-            notarizations: await Promise.all(result.channelHoldNotarizations.map(gettersToObject)),
+            channelHoldNotarizations: await Promise.all(result.channelHoldNotarizations.map(gettersToObject)),
+            mainchainTransfers: await Promise.all(result.mainchainTransfers.map(gettersToObject)),
+            channelHoldsUpdated: await Promise.all(result.channelHoldsUpdated.map(gettersToObject)),
+            blockVotes: await Promise.all(result.blockVotes.map(gettersToObject)),
           } as any);
         }
       } catch (error) {
