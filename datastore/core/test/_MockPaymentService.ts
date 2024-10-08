@@ -1,14 +1,14 @@
-import { KeyringPair } from '@polkadot/keyring/types';
+import { KeyringPair } from '@argonprotocol/mainchain';
 import { encodeBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import IPaymentService, { IPaymentEvents } from '@ulixee/datastore/interfaces/IPaymentService';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import { IPayment } from '@ulixee/platform-specification';
-import { AccountType } from '@ulixee/platform-specification/types/IBalanceChange';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
-import { nanoid } from 'nanoid';
+import { AccountType } from '@ulixee/platform-specification/types/IBalanceChange';
 import { IDatastorePaymentRecipient } from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { nanoid } from 'nanoid';
 
 export default class MockPaymentService
   extends TypedEventEmitter<IPaymentEvents>

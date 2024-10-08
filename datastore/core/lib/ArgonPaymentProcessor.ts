@@ -2,7 +2,7 @@ import { ChannelHold, DomainStore, OpenChannelHold } from '@argonprotocol/localc
 import Logger from '@ulixee/commons/lib/Logger';
 import { LocalchainWithSync } from '@ulixee/datastore';
 import IArgonPaymentProcessor from '@ulixee/datastore-core/interfaces/IArgonPaymentProcessor';
-import ILocalchainWithSync from '@ulixee/datastore/interfaces/ILocalchainWithSync';
+import ILocalchainRef from '@ulixee/datastore/interfaces/ILocalchainRef';
 import { IArgonPaymentProcessorApiTypes } from '@ulixee/platform-specification/services/ArgonPaymentProcessorApis';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
 import IDatastoreManifest, {
@@ -22,7 +22,7 @@ export default class ArgonPaymentProcessor implements IArgonPaymentProcessor {
 
   constructor(
     readonly channelHoldDbDir: string,
-    readonly localchain: ILocalchainWithSync,
+    readonly localchain: ILocalchainRef,
   ) {}
 
   public async getPaymentInfo(): Promise<IDatastorePaymentRecipient | undefined> {

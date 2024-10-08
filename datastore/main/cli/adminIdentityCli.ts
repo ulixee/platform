@@ -2,7 +2,7 @@ import UlixeeConfig from '@ulixee/commons/config/index';
 import Ed25519 from '@ulixee/platform-utils/lib/Ed25519';
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import { Command } from 'commander';
-import Fs from 'fs';
+import * as Fs from 'fs';
 import * as Path from 'path';
 
 export default function cliCommands(): Command {

@@ -1,11 +1,10 @@
-import { decodeAddress } from '@polkadot/util-crypto';
+import { decodeAddress , getClient, Keyring, KeyringPair } from '@argonprotocol/mainchain';
 import Client from '@ulixee/client';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
 import DefaultPaymentService from '@ulixee/datastore/payments/DefaultPaymentService';
 import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
 import { DomainStore, Localchain } from '@argonprotocol/localchain';
-import { getClient, Keyring, KeyringPair } from '@argonprotocol/mainchain';
 import { IDatastoreMetadataResult } from '@ulixee/platform-specification/datastore/DatastoreApis';
 import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
 import * as Path from 'node:path';
@@ -94,7 +93,7 @@ describeIntegration('Payments E2E', () => {
       await ferdiechain.balanceSync.sync({});
       await bobchain.balanceSync.sync({});
       const ferdieOverview = await ferdiechain.accountOverview();
-      const bobOverview = await bobchain.getAccountOverview();
+      const bobOverview = await bobchain.accountOverview();
       isSynched = ferdieOverview.balance === 1000n && bobOverview.balance === 5000n;
       await new Promise(resolve =>
         setTimeout(resolve, Number(ferdiechain.ticker.millisToNextTick())),
@@ -191,7 +190,7 @@ describeIntegration('Payments E2E', () => {
     expect(payments[0].payment.channelHold.settledMilligons).toBe(500n);
     expect(payments[0].remainingBalance).toBe(500_000);
 
-    const balance = await bobchain.getAccountOverview();
+    const balance = await bobchain.accountOverview();
     console.log('Balance:', await gettersToObject(balance));
     expect(balance.balance).toBe(4800n);
     expect(balance.heldBalance).toBe(1000n);
@@ -238,7 +237,7 @@ describeIntegration('Payments E2E', () => {
       },
     });
     Helpers.onClose(() => bobchain.close());
-    const wallet = await bobchain.getAccountOverview();
+    const wallet = await bobchain.accountOverview();
     // ensure wallet is loaded
     expect(wallet.balance).toBe(4800n);
 
@@ -276,7 +275,7 @@ describeIntegration('Payments E2E', () => {
     expect(payments[0].payment.channelHold.settledMilligons).toBe(5n);
     expect(payments[0].remainingBalance).toBe(5_000 - 1_000);
 
-    const balance = await bobchain.getAccountOverview();
+    const balance = await bobchain.accountOverview();
     console.log('Balance:', await gettersToObject(balance));
     expect(balance.balance).toBe(4798n);
     expect(balance.heldBalance).toBe(1005n);

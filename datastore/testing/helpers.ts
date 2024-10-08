@@ -16,6 +16,7 @@ import * as Path from 'path';
 import KoaMulter = require('@koa/multer');
 import KoaRouter = require('@koa/router');
 import Koa = require('koa');
+import ArgonPaymentProcessor from '@ulixee/datastore-core/lib/ArgonPaymentProcessor';
 
 const { log } = Logger(module);
 
@@ -57,7 +58,9 @@ export async function createLocalNode(
   const cloudNode = new CloudNode(config);
   onClose(() => cloudNode.close(), onlyCloseOnFinal);
   if (paymentInfo) {
-    cloudNode.datastoreCore.paymentInfo.resolve(paymentInfo);
+    const paymentProcessor = new ArgonPaymentProcessor(datastoreConfig.datastoresDir, null);
+    jest.spyOn(paymentProcessor, 'getPaymentInfo').mockResolvedValue(paymentInfo);
+    cloudNode.datastoreCore.argonPaymentProcessor = paymentProcessor;
   }
   await cloudNode.listen();
   return cloudNode;

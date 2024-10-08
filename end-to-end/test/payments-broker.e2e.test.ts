@@ -1,9 +1,8 @@
-import { decodeAddress } from '@polkadot/util-crypto';
+import { decodeAddress , getClient, Keyring, KeyringPair } from '@argonprotocol/mainchain';
 import Client from '@ulixee/client';
 import { Helpers } from '@ulixee/datastore-testing';
 import DefaultPaymentService from '@ulixee/datastore/payments/DefaultPaymentService';
 import { DomainStore, Localchain } from '@argonprotocol/localchain';
-import { getClient, Keyring, KeyringPair } from '@argonprotocol/mainchain';
 import { IDatastoreMetadataResult } from '@ulixee/platform-specification/datastore/DatastoreApis';
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import * as Path from 'node:path';

@@ -183,7 +183,7 @@ export async function registerZoneRecord(
   }
 
   await new Promise((resolve, reject) => {
-    return client.tx.domain
+    return client.tx.domains
       .setZoneRecord(domainHash, {
         paymentAccount,
         notaryId,

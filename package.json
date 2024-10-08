@@ -37,6 +37,7 @@
     "@commitlint/cli": "^18.6.0",
     "@commitlint/config-conventional": "^18.6.0",
     "@lerna-lite/version": "^3.9.1",
+    "@lerna-lite/publish": "^3.9.1",
     "@types/jest": "^29.5.11",
     "@types/node": "^18.19.10",
     "@ulixee/repo-tools": "^1.0.33",

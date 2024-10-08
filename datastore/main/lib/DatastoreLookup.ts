@@ -22,7 +22,10 @@ export default class DatastoreLookup implements IDatastoreHostLookup {
 
   private chainIdentity: Promise<ChainIdentity>;
 
-  constructor(private mainchainClient: IZoneRecordLookup) {
+  constructor(private mainchainClient: Promise<IZoneRecordLookup> | null) {
+    if (mainchainClient) {
+      mainchainClient.catch(() => null);
+    }
     bindFunctions(this);
   }
 
@@ -58,13 +61,14 @@ export default class DatastoreLookup implements IDatastoreHostLookup {
     version: string | 'any',
   ): Promise<IDatastoreHost> {
     let zoneRecord = this.zoneRecordByDomain[domain]?.value;
+    const mainchainClient = await this.mainchainClient;
     if (!zoneRecord) {
-      if (!this.mainchainClient)
+      if (!mainchainClient)
         throw new Error(
           'Unable to lookup a datastore in the mainchain. Please connect a mainchainClient',
         );
       const parsed = DatastoreLookup.readDomain(domain);
-      const zone = await this.mainchainClient.getDomainZoneRecord(parsed.name, parsed.topLevel);
+      const zone = await mainchainClient.getDomainZoneRecord(parsed.name, parsed.topLevel);
 
       if (!zone) throw new Error(`Zone record for Domain (${domain}) not found`);
 
@@ -83,7 +87,7 @@ export default class DatastoreLookup implements IDatastoreHostLookup {
 
     if (!versionHost) throw new Error('Version not found');
 
-    this.chainIdentity ??= this.mainchainClient.getChainIdentity();
+    this.chainIdentity ??= mainchainClient.getChainIdentity();
     const chainIdentity = await this.chainIdentity;
     return {
       datastoreId: versionHost.datastoreId,

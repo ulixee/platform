@@ -44,7 +44,7 @@ export default class AdminApiEndpoints {
         return ctx.db.users.listByOrganization(organizationId);
       },
       'System.overview': async (_, ctx) => {
-        const localchainOverview = await ctx.localchain.getAccountOverview();
+        const localchainOverview = await ctx.localchain.accountOverview();
         return {
           localchainBalance: localchainOverview.balance,
           localchainAddress: localchainOverview.address,

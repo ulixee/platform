@@ -1,23 +1,29 @@
 import {
+  AccountStore,
   BalanceSync,
   BalanceSyncResult,
+  CryptoScheme,
   DomainStore,
+  Keystore,
   KeystorePasswordOption,
   Localchain,
   LocalchainOverview,
   MainchainClient,
   MainchainTransferStore,
   OpenChannelHoldsStore,
+  TickerRef,
   Transactions,
 } from '@argonprotocol/localchain';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import { IDatastorePaymentRecipient } from '@ulixee/platform-specification/types/IDatastoreManifest';
+import { proxyWrapper } from '@ulixee/platform-utils/lib/nativeUtils';
 import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
 import * as Path from 'node:path';
 import Env from '../env';
 import ILocalchainConfig from '../interfaces/ILocalchainConfig';
+import ILocalchainRef from '../interfaces/ILocalchainRef';
 import DatastoreApiClients from '../lib/DatastoreApiClients';
 import DatastoreLookup from '../lib/DatastoreLookup';
 import DefaultPaymentService from './DefaultPaymentService';
@@ -28,7 +34,14 @@ if (Env.defaultDataDir) {
   Localchain.setDefaultDir(Path.join(Env.defaultDataDir, 'ulixee', 'localchain'));
 }
 
-export default class LocalchainWithSync extends TypedEventEmitter<{ sync: BalanceSyncResult }> {
+export default class LocalchainWithSync
+  extends TypedEventEmitter<{ sync: BalanceSyncResult }>
+  implements ILocalchainRef
+{
+  public get accounts(): AccountStore {
+    return this.#localchain.accounts;
+  }
+
   public get domains(): DomainStore {
     return this.#localchain.domains;
   }
@@ -45,6 +58,10 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
     return this.#localchain.transactions;
   }
 
+  public get ticker(): TickerRef {
+    return this.#localchain.ticker;
+  }
+
   public get mainchainTransfers(): MainchainTransferStore {
     return this.#localchain.mainchainTransfers;
   }
@@ -53,20 +70,46 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
     return this.#localchain.mainchainClient;
   }
 
+  public get keystore(): Keystore {
+    return this.#localchain.keystore;
+  }
+
   public get inner(): Localchain {
     return this.#localchain;
   }
 
+  public get name(): string {
+    return this.#localchain.name;
+  }
+
+  public get path(): string {
+    return this.#localchain.path;
+  }
+
+  public get currentTick(): number {
+    return this.#localchain.currentTick;
+  }
+
   #localchain!: Localchain;
+  public isSynching: boolean;
   public datastoreLookup!: DatastoreLookup;
   public address!: Promise<string>;
   public enableLogging = true;
   public paymentInfo = new Resolvable<IDatastorePaymentRecipient>();
+  public mainchainLoaded = new Resolvable<void>();
 
   private nextTick: NodeJS.Timeout;
 
   constructor(readonly localchainConfig: ILocalchainConfig = {}) {
     super();
+    this.localchainConfig.mainchainUrl ||= Env.argonMainchainUrl;
+    if (this.localchainConfig.localchainName && !this.localchainConfig.localchainPath) {
+      let dbName = this.localchainConfig.localchainName;
+      if (!dbName.endsWith('.db')) {
+        dbName += '.db';
+      }
+      this.localchainConfig.localchainPath = Path.join(Localchain.getDefaultDir(), dbName);
+    }
   }
 
   public async load(): Promise<void> {
@@ -82,26 +125,49 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
     } as any);
     const keystorePassword = this.getPassword();
 
+    this.#localchain = await Localchain.loadWithoutMainchain(
+      defaultPath,
+      {
+        genesisUtcTime: Env.genesisUtcTime,
+        tickDurationMillis: Env.tickDurationMillis,
+        ntpPoolUrl: Env.ntpPoolUrl,
+        channelHoldExpirationTicks: Env.channelHoldExpirationTicks,
+      },
+      keystorePassword,
+    );
+    // We wrap this (as of 10/2024) because nodejs doesn't handle async stack traces, so code
+    // appears to die in the middle of nowhere
+    this.#localchain = proxyWrapper(this.#localchain);
+
     if (mainchainUrl) {
-      this.#localchain = await Localchain.load({
-        path: localchainPath,
-        mainchainUrl,
-        keystorePassword,
-      });
-      this.datastoreLookup = new DatastoreLookup(await this.#localchain.mainchainClient);
-    } else {
-      this.#localchain = await Localchain.loadWithoutMainchain(
-        defaultPath,
-        {
-          genesisUtcTime: Env.genesisUtcTime,
-          tickDurationMillis: Env.tickDurationMillis,
-          ntpPoolUrl: Env.ntpPoolUrl,
-          channelHoldExpirationTicks: Env.channelHoldExpirationTicks,
-        },
-        keystorePassword,
-      );
+      void this.connectToMainchain(mainchainUrl)
+        .then(async () => {
+          this.datastoreLookup = new DatastoreLookup(this.#localchain.mainchainClient);
+          return null;
+        })
+        .catch(error => {
+          log.error('Error connecting to mainchain', { error });
+        });
     }
     this.afterLoad();
+  }
+
+  public async isCreated(): Promise<boolean> {
+    const accounts = await this.#localchain.accounts.list();
+    return accounts.length > 0;
+  }
+
+  public async create(account?: { suri?: string; cryptoScheme?: CryptoScheme }): Promise<void> {
+    if (account?.suri) {
+      const keystorePassword = this.getPassword();
+      await this.#localchain.keystore.importSuri(
+        account.suri,
+        account.cryptoScheme ?? CryptoScheme.Sr25519,
+        keystorePassword,
+      );
+    } else {
+      await this.#localchain.keystore.bootstrap();
+    }
   }
 
   public async close(): Promise<void> {
@@ -112,11 +178,22 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
   }
 
   public async connectToMainchain(argonMainchainUrl: string, timeoutMs = 10e3): Promise<void> {
-    const mainchain = await MainchainClient.connect(argonMainchainUrl, timeoutMs);
-    await this.#localchain.attachMainchain(mainchain);
+    try {
+      const mainchain = await MainchainClient.connect(argonMainchainUrl, timeoutMs);
+      await this.attachMainchain(mainchain);
+    } catch (error) {
+      this.mainchainLoaded.reject(error);
+      log.error('Error connecting to mainchain', { error });
+    }
   }
 
-  public async getAccountOverview(): Promise<LocalchainOverview> {
+  public async attachMainchain(mainchain: MainchainClient): Promise<void> {
+    await this.#localchain.attachMainchain(mainchain);
+    await this.#localchain.updateTicker();
+    this.mainchainLoaded.resolve();
+  }
+
+  public async accountOverview(): Promise<LocalchainOverview> {
     return await this.#localchain.accountOverview();
   }
 
@@ -127,7 +204,7 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
   public async createPaymentService(
     datastoreClients: DatastoreApiClients,
   ): Promise<DefaultPaymentService> {
-    return await DefaultPaymentService.fromLocalchain(
+    return await DefaultPaymentService.fromOpenLocalchain(
       this,
       this.localchainConfig.channelHoldAllocationStrategy,
       datastoreClients,
@@ -155,7 +232,7 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
       keystorePassword.password.fill(0);
       delete keystorePassword.password;
     }
-    void this.getAccountOverview()
+    void this.accountOverview()
       // eslint-disable-next-line promise/always-return
       .then(x => {
         this.paymentInfo.resolve({
@@ -166,13 +243,21 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
       })
       .catch(this.paymentInfo.reject);
 
-    if (this.localchainConfig.disableAutomaticSync !== true) this.scheduleNextTick();
+    this.scheduleNextTick();
   }
 
   private scheduleNextTick(): void {
     clearTimeout(this.nextTick);
+    if (this.localchainConfig.disableAutomaticSync === true) {
+      return;
+    }
+    let millisToNextTick = Number(this.#localchain.ticker.millisToNextTick());
+    if (Number.isNaN(millisToNextTick)) {
+      millisToNextTick = 1000;
+    }
     this.nextTick = setTimeout(async () => {
       try {
+        this.isSynching = true;
         const result = await this.#localchain.balanceSync.sync({
           votesAddress: this.localchainConfig.blockRewardsAddress,
         });
@@ -186,8 +271,11 @@ export default class LocalchainWithSync extends TypedEventEmitter<{ sync: Balanc
         }
       } catch (error) {
         log.error('Error synching channelHold balance changes', { error });
+      } finally {
+        this.isSynching = false;
+        this.scheduleNextTick();
       }
-    }, Number(this.#localchain.ticker.millisToNextTick()));
+    }, millisToNextTick);
   }
 
   public static async load(config?: ILocalchainConfig): Promise<LocalchainWithSync> {
