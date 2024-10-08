@@ -1,6 +1,8 @@
+import UlixeeConfig from '@ulixee/commons/config';
 import { loadEnv, parseEnvInt } from '@ulixee/commons/lib/envUtils';
 
 loadEnv(process.cwd());
+loadEnv(UlixeeConfig.global.directoryPath);
 loadEnv(__dirname);
 const env = process.env;
 

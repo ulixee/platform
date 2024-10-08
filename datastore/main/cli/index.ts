@@ -117,6 +117,7 @@ export default function datastoreCommands(): Command {
   cli
     .command('start')
     .description('Start a Datastore.')
+    .allowUnknownOption(true)
     .argument(
       '<path>',
       'The path of the entrypoint to the Datastore. Must have a default export that is a Datastore.',
@@ -142,6 +143,7 @@ export default function datastoreCommands(): Command {
         compiledSourcePath,
         outDir,
         watch,
+        extraArgs: cli.args,
       });
     });
 
