@@ -1,5 +1,5 @@
 import { Chain, ChainIdentity } from '@argonprotocol/localchain';
-import { Keyring } from '@polkadot/keyring';
+import { Keyring } from '@argonprotocol/mainchain';
 import { CloudNode } from '@ulixee/cloud';
 import DatastorePackager from '@ulixee/datastore-packager';
 import { Helpers } from '@ulixee/datastore-testing';
@@ -8,7 +8,6 @@ import ArgonReserver from '@ulixee/datastore/payments/ArgonReserver';
 import CreditReserver from '@ulixee/datastore/payments/CreditReserver';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import ArgonPaymentProcessor from '../lib/ArgonPaymentProcessor';
 import MockArgonPaymentProcessor from './_MockArgonPaymentProcessor';
 import MockPaymentService from './_MockPaymentService';
 
@@ -21,7 +20,6 @@ const keyring = new Keyring({ ss58Format: 18 });
 
 Helpers.blockGlobalConfigWrites();
 const argonPaymentProcessorMock = new MockArgonPaymentProcessor();
-const argonPaymentProcessor = new ArgonPaymentProcessor(storageDir, null);
 
 const mainchainIdentity = {
   chain: Chain.Devnet,
@@ -62,7 +60,6 @@ beforeAll(async () => {
       ...mainchainIdentity,
     },
   );
-  cloudNode.datastoreCore.argonPaymentProcessor = argonPaymentProcessor;
   client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 
@@ -266,8 +263,6 @@ test('should be able to add charges from multiple extractors', async () => {
       },
     );
     sourceCloudAddress = await sourceCloudNode.address;
-    sourceCloudNode.datastoreCore.argonPaymentProcessor =
-      new ArgonPaymentProcessor(sourceCloudDir, null);
 
     Fs.writeFileSync(
       `${__dirname}/datastores/source.js`,
@@ -326,15 +321,6 @@ export default new Datastore({
       },
     );
     hop1CloudAddress = await hop1Cloud.address;
-    hop1Cloud.datastoreCore.argonPaymentProcessor = new ArgonPaymentProcessor(
-      cloud2StorageDir,
-      null,
-    );
-    hop1Cloud.datastoreCore.paymentInfo.resolve({
-      address: address2.address,
-      notaryId: 1,
-      ...mainchainIdentity,
-    });
     const corePaymentService = new MockPaymentService(
       address2,
       new DatastoreApiClient(sourceCloudAddress),

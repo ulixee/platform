@@ -1,5 +1,5 @@
 import { Chain, ChainIdentity } from '@argonprotocol/localchain';
-import { Keyring } from '@polkadot/keyring';
+import { Keyring } from '@argonprotocol/mainchain';
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import DatastorePackager from '@ulixee/datastore-packager';
@@ -10,7 +10,6 @@ import CreditReserver from '@ulixee/datastore/payments/CreditReserver';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import ArgonPaymentProcessor from '../lib/ArgonPaymentProcessor';
 import MockArgonPaymentProcessor from './_MockArgonPaymentProcessor';
 import MockPaymentService from './_MockPaymentService';
 
@@ -24,7 +23,6 @@ let storageCounter = 0;
 const keyring = new Keyring({ ss58Format: 18 });
 const datastoreKeyring = keyring.createFromUri('Datastore');
 const argonPaymentProcessorMock = new MockArgonPaymentProcessor();
-const argonPaymentProcessor = new ArgonPaymentProcessor(storageDir, null);
 let manifest: IDatastoreManifest;
 const mainchainIdentity = {
   chain: Chain.Devnet,
@@ -89,7 +87,6 @@ beforeAll(async () => {
       ...mainchainIdentity,
     },
   );
-  cloudNode.datastoreCore.argonPaymentProcessor = argonPaymentProcessor;
   client = new DatastoreApiClient(await cloudNode.address, { consoleLogErrors: true });
   await client.upload(await dbx.tarGzip());
   Helpers.onClose(() => client.disconnect(), true);
@@ -176,7 +173,6 @@ test('should be able to run a datastore function with payments', async () => {
   // @ts-expect-error
   const dbs = argonPaymentProcessor.channelHoldDbsByDatastore;
   expect(dbs.size).toBe(1);
-  // @ts-expect-error
   expect(dbs.get(manifest.id).paymentIdByChannelHoldId.size).toBe(1);
   expect(dbs.get(manifest.id).list()).toEqual([
     expect.objectContaining({
@@ -227,7 +223,6 @@ test('can collect payments from multiple tables and functions', async () => {
   // @ts-expect-error
   const dbs = argonPaymentProcessor.channelHoldDbsByDatastore;
   expect(dbs.size).toBe(1);
-  // @ts-expect-error
   expect(dbs.get(manifest.id).paymentIdByChannelHoldId.size).toBe(2);
   expect(dbs.get(manifest.id).list()[1]).toEqual(
     expect.objectContaining({
@@ -273,7 +268,6 @@ test('records a changed payment correctly', async () => {
   // @ts-expect-error
   const dbs = argonPaymentProcessor.channelHoldDbsByDatastore;
   expect(dbs.size).toBe(1);
-  // @ts-expect-error
   expect(dbs.get(manifest.id).paymentIdByChannelHoldId.size).toBe(3);
   expect(dbs.get(manifest.id).list()[2]).toEqual(
     expect.objectContaining({
@@ -286,3 +280,4 @@ test('records a changed payment correctly', async () => {
 });
 
 test.todo('should not double charge for storage and tables');
+test.todo('queries a domain for payment if set');

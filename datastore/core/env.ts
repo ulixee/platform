@@ -19,7 +19,7 @@ export default {
   queryHeroSessionsDir: env.ULX_QUERY_HERO_SESSIONS_DIR,
   replayRegistryHost: env.ULX_REPLAY_REGISTRY_HOST,
   argonPaymentProcessorHost: env.ULX_PAYMENT_PROCESSOR_HOST,
-  outboundPaymentsServiceHost: env.ULX_OUTBOUND_PAYMENTS_SERVICE_HOST,
+  upstreamPaymentsServiceHost: env.ULX_UPSTREAM_PAYMENTS_SERVICE_HOST,
   datastoreLookupHost: env.ULX_DATASTORE_LOOKUP_SERVICE_HOST,
   enableSqliteWalMode: env.ULX_ENABLE_SQLITE_WAL,
   // list of identities who can upload to this Cloud [@ulixee/platform-utils/lib/Identity.bech32]

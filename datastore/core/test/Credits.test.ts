@@ -1,5 +1,5 @@
 import { Chain, ChainIdentity } from '@argonprotocol/localchain';
-import { Keyring } from '@polkadot/keyring';
+import { Keyring } from '@argonprotocol/mainchain';
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import DatastorePackager from '@ulixee/datastore-packager';
@@ -56,10 +56,6 @@ beforeAll(async () => {
       notaryId: 1,
       ...mainchainIdentity,
     },
-  );
-  cloudNode.datastoreCore.argonPaymentProcessor = new ArgonPaymentProcessor(
-    storageDir,
-    null,
   );
   client = new DatastoreApiClient(await cloudNode.address, { consoleLogErrors: true });
   Helpers.onClose(() => client.disconnect(), true);

@@ -18,6 +18,6 @@ export default interface IDatastoreCoreConfigureOptions {
   statsTrackerHost: string | 'self';
   replayRegistryHost: string | 'self';
   argonPaymentProcessorHost: string | 'self';
-  outboundPaymentsServiceHost: string | 'self';
+  upstreamPaymentsServiceHost: string | 'self';
   datastoreLookupHost: string | 'self';
 }

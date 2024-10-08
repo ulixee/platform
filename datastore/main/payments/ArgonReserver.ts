@@ -122,7 +122,7 @@ export default class ArgonReserver
     const datastoreId = paymentInfo.id;
     datastoreHost = toUrl(datastoreHost).host;
     await this.load();
-    this.reserveQueueByDatastoreId[datastoreId] ??= new Queue();
+    this.reserveQueueByDatastoreId[datastoreId] ??= new Queue('RESERVE QUEUE', 1);
     this.paymentsByDatastoreId[datastoreId] ??= [];
 
     return await this.reserveQueueByDatastoreId[datastoreId].run(async () => {

@@ -3,13 +3,17 @@ import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import { parseAddress, parseIdentities } from '@ulixee/datastore-core/env';
 import type ILocalchainConfig from '@ulixee/datastore/interfaces/ILocalchainConfig';
 import { Command } from 'commander';
+import * as os from 'node:os';
 import * as Path from 'path';
 import CloudNodeEnv from '../env';
 import { CloudNode } from '../index';
 
 const pkg = require('../package.json');
 
-export default function cliCommands(): Command {
+export default function cliCommands(options?: {
+  suppressLogs: boolean;
+  onStart?: (node: CloudNode) => Promise<void>;
+}): Command {
   const program = new Command().version(pkg.version);
 
   program
@@ -74,12 +78,9 @@ export default function cliCommands(): Command {
     )
     .addOption(
       program
-        .createOption(
-          '--disable-chrome-alive',
-          'Do not enable ChromeAlive! even if installed locally.',
-        )
+        .createOption('--disable-desktop-apis', 'Do not enable Ulixee Desktop apis.')
         .argParser(parseEnvBool)
-        .env('ULX_DISABLE_CHROMEALIVE'),
+        .env('ULX_DISABLE_DESKTOP_APIS'),
     )
     .addOption(
       program
@@ -164,6 +165,14 @@ export default function cliCommands(): Command {
     .addOption(
       program
         .createOption(
+          '--argon-localchain-create-if-missing',
+          'Create a new Localchain on this machine if missing.',
+        )
+        .env('ARGON_LOCALCHAIN_CREATE_IF_MISSING'),
+    )
+    .addOption(
+      program
+        .createOption(
           '--argon-mainchain-url <url>',
           'Connect to the given Argon Mainchain rpc url.',
         )
@@ -205,78 +214,89 @@ export default function cliCommands(): Command {
     )
     .allowUnknownOption(true)
     .action(async opts => {
-      console.log('Starting Ulixee Cloud with configuration:', opts);
-      const {
-        port,
-        disableChromeAlive,
-        hostname,
-        setupHost,
-        hostedServicesPort,
-        hostedServicesHostname,
-        env,
-        argonNotaryId,
-        argonLocalchainPath,
-        argonMainchainUrl,
-        argonLocalchainPassword,
-        argonLocalchainPasswordInteractive,
-        argonLocalchainPasswordFile,
-        argonBlockRewardsAddress,
-      } = opts;
-      if (env) {
-        applyEnvironmentVariables(Path.resolve(env), process.env);
-      }
-      if (disableChromeAlive) CloudNodeEnv.disableChromeAlive = disableChromeAlive;
+      if (!options?.suppressLogs) console.log('Starting Ulixee Cloud with configuration:', opts);
+      const cloudNode = await startCloudViaCli(opts);
+      if (options?.onStart) await options.onStart(cloudNode);
 
-      const { unblockedPlugins, heroDataDir, maxConcurrentHeroes, maxConcurrentHeroesPerBrowser } =
-        opts;
-      let localchainConfig: ILocalchainConfig;
-      if (argonLocalchainPath) {
-        localchainConfig = {
-          localchainPath: argonLocalchainPath,
-          mainchainUrl: argonMainchainUrl,
-          notaryId: argonNotaryId,
-          keystorePassword: {
-            password: argonLocalchainPassword ? Buffer.from(argonLocalchainPassword) : undefined,
-            interactiveCli: argonLocalchainPasswordInteractive,
-            passwordFile: argonLocalchainPasswordFile,
-          },
-          blockRewardsAddress: argonBlockRewardsAddress,
-        };
-      }
-
-      const cloudNode = new CloudNode(
-        filterUndefined({
-          port,
-          host: hostname,
-          hostedServicesServerOptions:
-            !!hostedServicesHostname || hostedServicesPort !== undefined
-              ? { port: hostedServicesPort, host: hostedServicesHostname }
-              : undefined,
-          servicesSetupHost: setupHost,
-          heroConfiguration: filterUndefined({
-            maxConcurrentClientCount: maxConcurrentHeroes,
-            maxConcurrentClientsPerBrowser: maxConcurrentHeroesPerBrowser,
-            dataDir: heroDataDir,
-            defaultUnblockedPlugins: unblockedPlugins?.map(x => {
-              // eslint-disable-next-line import/no-dynamic-require
-              const mod: any = require(x);
-              if (mod.default) return mod.default;
-              return mod;
-            }),
-          }),
-          datastoreConfiguration: filterUndefined({
-            datastoresDir: opts.datastoreStorageDir,
-            datastoresTmpDir: opts.datastoreTmpDir,
-            maxRuntimeMs: opts.maxDatastoreRuntimeMs,
-            waitForDatastoreCompletionOnShutdown: opts.datastoreWaitForCompletion,
-            adminIdentities: parseIdentities(opts.adminIdentities, 'Admin Identities'),
-            localchainConfig,
-          }),
-        }),
-      );
-      await cloudNode.listen();
-      console.log('Ulixee Cloud listening at %s', await cloudNode.address);
+      if (!options?.suppressLogs)
+        console.log('Ulixee Cloud listening at %s', await cloudNode.address);
     });
 
   return program;
+}
+
+export async function startCloudViaCli(opts: any): Promise<CloudNode> {
+  const {
+    port,
+    disableDesktopApis,
+    hostname,
+    setupHost,
+    hostedServicesPort,
+    hostedServicesHostname,
+    argonNotaryId,
+    argonLocalchainPath,
+    argonLocalchainCreateIfMissing,
+    argonMainchainUrl,
+    argonLocalchainPassword,
+    argonLocalchainPasswordInteractive,
+    argonLocalchainPasswordFile,
+    argonBlockRewardsAddress,
+  } = opts;
+  let env = opts.env;
+  if (env) {
+    if (env.startsWith('~')) env = Path.resolve(os.homedir(), env.slice(1));
+    applyEnvironmentVariables(Path.resolve(env), process.env);
+  }
+  if (disableDesktopApis) CloudNodeEnv.disableDesktopApi = disableDesktopApis;
+
+  const { unblockedPlugins, heroDataDir, maxConcurrentHeroes, maxConcurrentHeroesPerBrowser } =
+    opts;
+  let localchainConfig: ILocalchainConfig;
+  if (argonLocalchainPath || argonLocalchainCreateIfMissing) {
+    localchainConfig = {
+      localchainPath: argonLocalchainPath,
+      localchainCreateIfMissing: argonLocalchainCreateIfMissing,
+      mainchainUrl: argonMainchainUrl,
+      notaryId: argonNotaryId,
+      keystorePassword: {
+        password: argonLocalchainPassword ? Buffer.from(argonLocalchainPassword) : undefined,
+        interactiveCli: argonLocalchainPasswordInteractive,
+        passwordFile: argonLocalchainPasswordFile,
+      },
+      blockRewardsAddress: argonBlockRewardsAddress,
+    };
+  }
+
+  const cloudNode = new CloudNode(
+    filterUndefined({
+      port,
+      host: hostname,
+      hostedServicesServerOptions:
+        !!hostedServicesHostname || hostedServicesPort !== undefined
+          ? { port: hostedServicesPort, host: hostedServicesHostname }
+          : undefined,
+      servicesSetupHost: setupHost,
+      heroConfiguration: filterUndefined({
+        maxConcurrentClientCount: maxConcurrentHeroes,
+        maxConcurrentClientsPerBrowser: maxConcurrentHeroesPerBrowser,
+        dataDir: heroDataDir,
+        defaultUnblockedPlugins: unblockedPlugins?.map(x => {
+          // eslint-disable-next-line import/no-dynamic-require
+          const mod: any = require(x);
+          if (mod.default) return mod.default;
+          return mod;
+        }),
+      }),
+      datastoreConfiguration: filterUndefined({
+        datastoresDir: opts.datastoreStorageDir,
+        datastoresTmpDir: opts.datastoreTmpDir,
+        maxRuntimeMs: opts.maxDatastoreRuntimeMs,
+        waitForDatastoreCompletionOnShutdown: opts.datastoreWaitForCompletion,
+        adminIdentities: parseIdentities(opts.adminIdentities, 'Admin Identities'),
+        localchainConfig,
+      }),
+    }),
+  );
+  await cloudNode.listen();
+  return cloudNode;
 }

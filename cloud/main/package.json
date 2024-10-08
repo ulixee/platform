@@ -23,17 +23,10 @@
     "start:alive": "node -r @ulixee/desktop-core/register bin/cli.js start",
     "preversion": "node ../../build/cloud/main/scripts/gatherEnvSettings.js"
   },
-  "peerDependencies": {
-    "@ulixee/desktop-core": "2.0.0-alpha.29"
-  },
-  "peerDependenciesMeta": {
-    "@ulixee/desktop-core": {
-      "optional": true
-    }
-  },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.29",
     "@ulixee/datastore-core": "2.0.0-alpha.29",
+    "@ulixee/desktop-core": "2.0.0-alpha.29",
     "@ulixee/datastore-plugins-hero-core": "2.0.0-alpha.29",
     "@ulixee/hero-core": "2.0.0-alpha.29",
     "@ulixee/hero-interfaces": "2.0.0-alpha.29",

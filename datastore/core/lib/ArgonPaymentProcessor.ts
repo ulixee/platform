@@ -1,7 +1,8 @@
 import { ChannelHold, DomainStore, OpenChannelHold } from '@argonprotocol/localchain';
 import Logger from '@ulixee/commons/lib/Logger';
+import { LocalchainWithSync } from '@ulixee/datastore';
 import IArgonPaymentProcessor from '@ulixee/datastore-core/interfaces/IArgonPaymentProcessor';
-import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
+import ILocalchainWithSync from '@ulixee/datastore/interfaces/ILocalchainWithSync';
 import { IArgonPaymentProcessorApiTypes } from '@ulixee/platform-specification/services/ArgonPaymentProcessorApis';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
 import IDatastoreManifest, {
@@ -17,18 +18,27 @@ export default class ArgonPaymentProcessor implements IArgonPaymentProcessor {
 
   private readonly openChannelHoldsById = new Map<string, OpenChannelHold>();
 
-  private readonly preferredNotaryId: number = 1;
+  private cachedPaymentInfo?: IDatastorePaymentRecipient;
+
   constructor(
     readonly channelHoldDbDir: string,
-    readonly localchain: LocalchainWithSync,
-  ) {
-    if (localchain?.localchainConfig) {
-      this.preferredNotaryId = this.localchain.localchainConfig.notaryId;
-    }
-  }
+    readonly localchain: ILocalchainWithSync,
+  ) {}
 
-  public getPaymentInfo(): Promise<IDatastorePaymentRecipient> {
-    return this.localchain.paymentInfo.promise;
+  public async getPaymentInfo(): Promise<IDatastorePaymentRecipient | undefined> {
+    if (!this.cachedPaymentInfo) {
+      this.cachedPaymentInfo = await (this.localchain as LocalchainWithSync).paymentInfo?.promise;
+    }
+    if (!this.cachedPaymentInfo) {
+      const account = await this.localchain.accountOverview();
+      const notaryId = (await this.localchain.accounts.getDepositAccount()).notaryId;
+      this.cachedPaymentInfo = {
+        address: account.address,
+        notaryId,
+        ...account.mainchainIdentity,
+      };
+    }
+    return this.cachedPaymentInfo;
   }
 
   public async close(): Promise<void> {
@@ -75,12 +85,14 @@ export default class ArgonPaymentProcessor implements IArgonPaymentProcessor {
         }
       }
 
+      const paymentInfo = await this.getPaymentInfo();
+
       if (
-        this.preferredNotaryId &&
-        this.preferredNotaryId !== data.channelHold.previousBalanceProof?.notaryId
+        paymentInfo.notaryId &&
+        paymentInfo.notaryId !== data.channelHold.previousBalanceProof?.notaryId
       ) {
         throw new Error(
-          `The channelHold notary (${data.channelHold.previousBalanceProof?.notaryId}) does not match the required notary (${this.preferredNotaryId})`,
+          `The channelHold notary (${data.channelHold.previousBalanceProof?.notaryId}) does not match the required notary (${paymentInfo.notaryId})`,
         );
       }
 
@@ -127,7 +139,8 @@ export default class ArgonPaymentProcessor implements IArgonPaymentProcessor {
   }
 
   private timeForTick(tick: number): Date {
-    return this.localchain.timeForTick(tick);
+    const time = this.localchain.ticker.timeForTick(tick);
+    return new Date(Number(time));
   }
 
   private async importToLocalchain(
