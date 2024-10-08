@@ -55,6 +55,8 @@ export interface IDatabrokerAccount {
 
 export interface IWallet {
   accounts: LocalchainOverview[];
+  localchainForQuery: string;
+  localchainForCloudNode: string;
   formattedBalance: string;
   credits: ICredit[];
   brokerAccounts: IDatabrokerAccount[];

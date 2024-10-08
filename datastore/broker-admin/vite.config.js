@@ -8,6 +8,13 @@ const outDir = process.env.BUILD_DIR ?? 'build';
 
 export default defineConfig({
   base: '/',
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern',
+      },
+    },
+  },
   build: {
     rollupOptions: {
       input: {

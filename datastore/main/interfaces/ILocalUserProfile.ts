@@ -1,11 +1,24 @@
-import { IDatabrokerAccount } from './IPaymentService';
+export interface IDatabrokerAuthAccount {
+  host: string;
+  userIdentity: string;
+  name?: string;
+  pemPath: string;
+  pemPassword?: string;
+}
 
-export default interface ILocalUserProfile {
+interface ILocalUserProfile {
   clouds: { address: string; adminIdentityPath?: string; name: string }[];
   installedDatastores: { cloudHost: string; datastoreId: string; datastoreVersion: string }[];
   gettingStartedCompletedSteps: string[];
   datastoreAdminIdentities: { datastoreId: string; adminIdentityPath?: string }[];
   defaultAdminIdentityPath: string;
-  localchainPaths: string[];
-  databrokers: Omit<IDatabrokerAccount, 'balance'>[];
+  localchains: {
+    path: string;
+    hasPassword: boolean;
+  }[];
+  localchainForQueryName: string;
+  localchainForCloudNodeName: string;
+  databrokers: IDatabrokerAuthAccount[];
 }
+export default ILocalUserProfile;
+export { ILocalUserProfile };

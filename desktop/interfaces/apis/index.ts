@@ -1,7 +1,10 @@
-import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
+import type { LocalchainOverview } from '@argonprotocol/localchain';
+import type {
+  IDatabrokerAuthAccount,
+  ILocalUserProfile,
+} from '@ulixee/datastore/interfaces/ILocalUserProfile';
 import type { IDatabrokerAccount, IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
 import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
-import type { LocalchainOverview } from '@argonprotocol/localchain';
 import type ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
 import { IDatastoreApis, IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
@@ -131,7 +134,7 @@ export type IDesktopAppPrivateApis = {
     password?: string;
   }) => Promise<LocalchainOverview>;
   'User.addBrokerAccount': (
-    args: Omit<IDatabrokerAccount, 'balance'>,
+    args: Omit<IDatabrokerAuthAccount, 'userIdentity'>,
   ) => Promise<IDatabrokerAccount>;
 };
 

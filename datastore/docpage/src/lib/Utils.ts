@@ -23,6 +23,7 @@ export function addCommas(num: string): string {
 }
 
 export function formatCurrency(num: string | number): string {
+  if (Number.isNaN(Number(num))) return '0.00';
   return addCommas(Number(num).toFixed(5));
 }
 

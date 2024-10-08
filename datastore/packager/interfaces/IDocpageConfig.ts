@@ -1,6 +1,5 @@
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 
-type TPrices = { perQuery: number; minimum: number };
 type TSchema = IDatastoreManifest['extractorsByName'][0]['schemaAsJson'];
 
 export default interface IDocpageConfig {
@@ -20,7 +19,7 @@ export default interface IDocpageConfig {
       name: string;
       description: string;
       schema: TSchema;
-      prices: TPrices[];
+      prices: IDatastoreManifest['extractorsByName'][0]['prices'];
     };
   };
   crawlersByName: {
@@ -28,15 +27,15 @@ export default interface IDocpageConfig {
       name: string;
       description: string;
       schema: TSchema;
-      prices: TPrices[];
+      prices: IDatastoreManifest['crawlersByName'][0]['prices'];
     };
   };
   tablesByName: {
     [name: string]: {
       name: string;
       description: string;
-      schema: TSchema;
-      prices: TPrices[];
+      schema: IDatastoreManifest['tablesByName'][0]['schemaAsJson'];
+      prices: IDatastoreManifest['tablesByName'][0]['prices'];
     };
   };
 }

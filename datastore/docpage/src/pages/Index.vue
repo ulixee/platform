@@ -172,7 +172,7 @@ export default Vue.defineComponent({
       ...Object.values(crawlersByName ?? {}),
     ] as any[]) {
       for (const price of item.prices) {
-        prices.push(price.perQuery);
+        prices.push(price.basePrice);
       }
     }
     for (const [key, arg] of Object.entries(defaultExample.args)) {
@@ -199,7 +199,10 @@ export default Vue.defineComponent({
 
     const { ipAddress, port } = await serverDetailsPromise;
     const avgPricePerQuery =
-      prices.reduce((total, price) => total + price, 0) / prices.length / 1_000_000;
+      prices.length === 0
+        ? 0
+        : prices.reduce((total, price) => total + price, 0) / prices.length / 1_000_000;
+
     const createdAt = Moment(config.createdAt);
     const yesterday = Moment().subtract(1, 'day');
     const lastUsedAt = yesterday.isBefore(createdAt) ? createdAt : yesterday;
