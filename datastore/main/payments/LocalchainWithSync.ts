@@ -186,6 +186,7 @@ export default class LocalchainWithSync
   }
 
   public async attachMainchain(mainchain: MainchainClient): Promise<void> {
+    if (!this.#localchain) return;
     await this.#localchain.attachMainchain(mainchain);
     await this.#localchain.updateTicker();
     this.mainchainLoaded.resolve();
