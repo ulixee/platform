@@ -23,7 +23,7 @@ export default defineConfig({
     },
     outDir: fileURLToPath(new URL(`../../${outDir}/datastore/broker/admin-ui`, import.meta.url)),
     // needed for commonjs to be activated for @ulixee deps
-    commonjsOptions: { include: [] },
+    commonjsOptions: { include: [/.+/] },
     emptyOutDir: true,
     sourcemap: 'inline',
     target: 'es2020',
