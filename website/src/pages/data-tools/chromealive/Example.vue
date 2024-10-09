@@ -10,7 +10,7 @@
         Use NPM or Yarn to install Hero and ChromeAlive into your local project.
       </p>
 
-      <Prism language="shell">
+      <Prism language="bash">
         npm install @ulixee/hero
         npm install @ulixee/chromealive
       </Prism>

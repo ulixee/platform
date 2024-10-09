@@ -67,7 +67,7 @@
         <p>Creating a Ulixee project is the same as any other Node project — make the directory, initialize npm and install your depdencies.</p>
 
         <label>Run These Commands:</label>
-        <Prism language="shell" :useUlixeeTheme="false">
+        <Prism language="bash" :useUlixeeTheme="false">
           mkdir everyone-needs-a-hero
           cd everyone-needs-a-hero
           npm init
@@ -77,7 +77,7 @@
           <div class="text-3xl">Oh, and One More Thing</div>
           <p>If you haven't installed <router-link to="developer-desktop">Ulixee Developer Desktop</router-link> then you'll need to manually setup Ulixee Cloud:</p>
 
-          <Prism language="shell" :useUlixeeTheme="false">
+          <Prism language="bash" :useUlixeeTheme="false">
             npm install @ulixee/cloud
           </Prism>
         </div>
@@ -89,7 +89,7 @@
           Add Hero to Package.json
         </header>
 
-        <Prism language="shell" :useUlixeeTheme="false" class="w-6/12">
+        <Prism language="bash" :useUlixeeTheme="false" class="w-6/12">
           npm install @ulixee/hero
         </Prism>
       </section>
@@ -124,7 +124,7 @@
       <section class="h-screen px-24"  ref="section3">
         <header class="text-3xl">Turn On ChromeAlive</header>
 
-        <Prism language="shell" :useUlixeeTheme="false">
+        <Prism language="bash" :useUlixeeTheme="false">
           npm install @ulixee/chromealive
         </Prism>
 

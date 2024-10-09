@@ -10,7 +10,7 @@
        Install both Datastore and Hero with a single NPM/Yarn command.
       </p>
 
-      <Prism language="shell">
+      <Prism language="bash">
         npm install @ulixee/datastore-plugins-hero
       </Prism>
 

@@ -11,7 +11,7 @@
         Use NPM or Yarn to install Hero into your local project.
       </p>
 
-      <Prism language="shell">npm install @ulixee/hero</Prism>
+      <Prism language="bash">npm install @ulixee/hero</Prism>
 
       <h2 class="font-bold mt-8">Create Your First Hero Script</h2>
 

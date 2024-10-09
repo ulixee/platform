@@ -10,7 +10,7 @@
         The easiest way to start Ulixee Cloud is with our one-line NPX command -- you don't even need to install it through NPM or Yarn beforehand.
       </p>
 
-      <Prism language="shell">
+      <Prism language="bash">
         npx @ulixee/cloud start
       </Prism>
 
