@@ -62,8 +62,8 @@ The output value will include a `secret` that you should provide to the recipien
 Options below show a short and long form.
 
 - `-m, --amount <value>` The value of this Credit. Amount can postfix "c" for centagons (eg, 50c) or "m" for microgons (5000000m).
-- `-i, --identity-path <path>` A path to an Admin Identity. Necessary for actions restricting access to Admins of a Datastore. (env: ULX_IDENTITY_PATH)
-- `-p, --identity-passphrase <path>` A decryption passphrase to the Ulixee Admin Identity (only necessary if specified during key creation). (env: ULX_IDENTITY_PASSPHRASE)
+- `-i, --identity-path <path>` A path to an Admin Identity. Necessary for actions restricting access to Admins of a Datastore. (env: `ULX_IDENTITY_PATH`)
+- `-p, --identity-passphrase <path>` A decryption passphrase to the Ulixee Admin Identity (only necessary if specified during key creation). (env: `ULX_IDENTITY_PASSPHRASE`)
 
 ### Get Balance
 

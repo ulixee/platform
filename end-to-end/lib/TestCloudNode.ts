@@ -85,7 +85,7 @@ export async function uploadDatastore(
     JSON.stringify(manifest),
   );
   execAndLog(
-    `npx @ulixee/datastore deploy --skip-docs -h ${cloudAddress} .${Path.sep}${datastorePath}`,
+    `npx @ulixee/datastore deploy --skip-docs -u ${cloudAddress} .${Path.sep}${datastorePath}`,
     {
       cwd: buildDir,
       env: {

@@ -39,12 +39,13 @@ Creates a new Datastore instance.
   - key `string`. A unique name of the Table.
   - value `Table`. A [Table](./table.md) instance.
 - affiliateId `string`. An optional unique identifier to send with all remoteDatastore queries sent from this Datastore.
-- adminIdentity `string`. A bech32 encoded admin Identity. Grants access to this identity to perform signed `Datastore.admin` API calls (like managing [Credits](../advanced/credits.md)). If not included, the `adminIdentities` of your CloudNode server are the only valid admin Identities for your Datastore.
+- adminIdentities `string[]`. A list of bech32 encoded admin Identities. Grants access to this identity to perform signed `Datastore.admin` API calls (like managing [Credits](../advanced/credits.md)). If not included, the `adminIdentities` of your CloudNode server are the only valid admin Identities for your Datastore.
 - authenticateIdentity `function`. An optional function that can be used to secure access to this Datastore. More details are [here](#authenticateIdentity)
 - onCreated `function`. A function run when a datastore is installed onto a StorageEngine. This is where you can seed any records in the database. More details are [here](#on-created).
 - onVersionMigrated `function`. A function run when a datastore is installed onto a StorageEngine and there is a previous version. This is a function to perform "migrations" and copy any data from the previous version that you want. More details are [here](#on-version-migrated)
 - remoteDatastores `{ [name]: url }`. An optional key/value of remoteDatastore "names" to urls of the remoteDatastore used as part of [PassthroughExtractors](./passthrough-extractor.md).
 - remoteDatastoreEmbeddedCredits `{ [name]: ICredit }`. An optional key/value of remoteDatastore "names" to [credit](../advanced/credits.md) details (`id` and `secret`). If included, the embedded credits will be used for Payment to the remoteDatastore for consumers of this Datastore.
+- domain `string`. An optional domain name for this Datastore. This is used to allow users to connect to your Datastore using a domain name instead of an ip address with automatic version routing. More details are [here](../guides/register-a-domain.md).
 
 ```js
 import Datastore, { Extractor } from '@ulixee/datastore';

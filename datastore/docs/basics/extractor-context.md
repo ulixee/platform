@@ -56,7 +56,7 @@ List of outputs created during the given run.
 
 The payment supplied to the Datastore Core for payment. Top level keys are:
 
-- micronote `IMicronote`. A micronote created by a valid Sidechain.
+- micronote `IMicronote`. A micronote created by a valid Argon Localchain.
 - credits `{ id, secret }`. A credits object to use, issued by the Datastore.
 
 ### schema
@@ -75,7 +75,7 @@ Execute the [`crawler`](./crawler.md) and return the resulting metadata. Argumen
 
 - crawler [`Crawler`](./crawler.md) The Crawler instance to run.
 - options `object`. Parameters to run the crawler. This parameter will default all values to the context. eg, the payment, authentication and affiliateId of the caller will be defaulted to the values provided to the original function this ExtractorContext has been passed into.
-  - payment `IPayment`. Override the payment provided to this context.
+
   - authentication [authentication](#authentication). Override the authentication supplied to the calling context.
   - input [input](#input). Merge values into the calling input. If you are calling a Crawler from a Extractor, and you supply only a `maxTimeInCache` value, it will be _added_ to the input values provided to the Extractor.
   - affiliateId `string`. Override the affiliateId provided to the calling function.

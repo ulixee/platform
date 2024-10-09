@@ -7,7 +7,7 @@ You'll use different Clients depending on what you're testing (Datastore vs Tabl
 ## Client.ForDatastore
 
 ```javascript
-import Client from '@ulixee/client-playground';
+import Client from '@ulixee/client';
 import myDatastore from './myDatastore';
 
 const client = new Client.ForDatastore(myDatastore);
@@ -66,7 +66,7 @@ Trigger one of the Datastore's crawlers.
 ## Client.ForExtractor
 
 ```javascript
-import Client from '@ulixee/client-playground';
+import Client from '@ulixee/client';
 import myExtractor from './myExtractor';
 
 const client = new Client.ForExtractor(myExtractor);
@@ -100,7 +100,7 @@ Send a SQL query to the table. You can use `self` as an alias for the table name
 ## Client.ForTable
 
 ```javascript
-import Client from '@ulixee/client-playground';
+import Client from '@ulixee/client';
 import myTable from './myTable';
 
 const client = new Client.ForTable(testingTable);
@@ -137,7 +137,7 @@ Send a SQL query to the table. You can use `self` as an alias for the table name
 ## Client.ForCrawler
 
 ```javascript
-import Client from '@ulixee/client-playground';
+import Client from '@ulixee/client';
 import myCrawler from './myCrawler';
 
 const client = new Client.ForCrawler(myCrawler);

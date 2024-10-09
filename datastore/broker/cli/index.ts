@@ -23,8 +23,8 @@ export default function cliCommands(): Command {
     .addOption(
       program
         .createOption(
-          '-h, --hostname <hostname>',
-          'The hostname the public facing apis should listen on. (default: localhost)',
+          '-u, --hostname <hostname>',
+          'The hostname the public facing apis should listen on.',
         )
         .env('ULX_HOSTNAME'),
     )

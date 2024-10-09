@@ -1,6 +1,6 @@
 # Crawler
 
-A Crawler is a specialized [Functino](./extractor.md) that allows you to scrape a webpage and automatically cache results. The following is a simple example:
+A Crawler is a specialized [Function](./extractor.md) that allows you to scrape a webpage and automatically cache results. The following is a simple example:
 
 ```js
 import { Crawler, HeroExtractorPlugin } from '@ulixee/datastore-plugins-hero';
@@ -36,8 +36,9 @@ The first argument can be a single callback function matching the `run` callback
   - NOTE: Crawlers do not specify `Output`, but must return an object implementing `toCrawlerOutput(): Promise<ICrawlerOutputSchema>`. This is an object containing `version`, `sessionId` and `crawler`.
 - schema `IExtractorSchema`. Optional [schema](../advanced/extractor-schemas.md) defining the type-checked _input_ (only) parameters for the function. Output is not supported for Crawlers.
 - disableCache `boolean`. Optional parameter to disable automatic caching of results.
-- basePrice `number`. Optional price that this query costs.
+- basePrice `number`. Optional price per access. It's called "base price" because a query might join multiple data entities.
 - name `string`. Optional name for this Crawler, primarily used only if defining a Crawler outside a Datastore.
+- description `string`. Optional description for this function, primarily for documentation website
 
 The second argument is a list of zero or more plugins.
 

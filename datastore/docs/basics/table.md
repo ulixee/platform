@@ -34,7 +34,7 @@ Components contains the following properties.
 
 - schema `ISchema`. A [schema](../advanced/schema.md) defining the column definitions for the table.
 - isPublic `boolean`. Optional parameter to make a table private. This means it can only be accessed by other [Extractors](./extractor.md) and [Crawlers](./crawler.md) in the same [Datastore](./datastore.md).
-- basePrice `number`. Optional charge price per query.
+- basePrice `number`. Optional price per access. It's called "base price" because a query might join multiple data entities.
 - onCreated `function`. A function run when the Table is installed onto a StorageEngine. This is where you can seed any records in the engine. More details are [here](#on-created).
 - onVersionMigrated `function`. A function run when a Table is installed onto a StorageEngine and there is a previous version of the Table. This is a function to perform "migrations" and copy any data from the previous version that you want. More details are [here](#on-version-migrated)
 - name `string`. Optional name for this Table, primarily used only if defining a Table outside a Datastore.
@@ -112,7 +112,7 @@ export default new Datastore({
 
 ## Methods
 
-### queryInternal _ (sql, boundValues)_ {#query}
+### queryInternal _(sql, boundValues)_ {#query}
 
 Internal method to query the table. This method can be used without attaching a Table to any Datastore if you wish to test it out. Your table name can optionally be `self` in this method.
 
@@ -123,7 +123,7 @@ Internal method to query the table. This method can be used without attaching a 
 
 #### Return Promise<any>. A promise containing the results of the SQL query.
 
-### fetchInternal _ (filter)_ {#fetch}
+### fetchInternal _(filter)_ {#fetch}
 
 Internal method to fetch records from the table. This method accepts where clause "inputs" only.
 

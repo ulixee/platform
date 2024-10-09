@@ -30,7 +30,7 @@ test('it can create a datastore with credits using cli', async () => {
 
   const datastorePath = Path.join('end-to-end', 'test', 'datastore', 'credits.js');
   execAndLog(
-    `npx @ulixee/datastore deploy --skip-docs -h ${cloudAddress} .${Path.sep}${datastorePath}`,
+    `npx @ulixee/datastore deploy --skip-docs -u ${cloudAddress} .${Path.sep}${datastorePath}`,
     {
       cwd: buildDir,
       env: {

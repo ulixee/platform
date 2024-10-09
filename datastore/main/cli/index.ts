@@ -76,7 +76,7 @@ export default function datastoreCommands(): Command {
       'The path of the entrypoint to the Datastore. Must have a default export that is a Datastore.',
     )
     .option(
-      '-h, --cloud-host <host>',
+      '-u, --cloud-host <host>',
       'Upload this Datastore to the given host Cloud node. Will try to auto-connect if none specified.',
     )
     .option(
@@ -156,7 +156,7 @@ export default function datastoreCommands(): Command {
     .argument('<version>', 'The version hash of the Datastore.')
     .option('-a, --alias <name>', 'Add a shortcut name to reference this Datastore hash.')
     .option(
-      '-h, --host <host>',
+      '-u, --host <host>',
       'Connect to the given Cloud node host. Will try to automatically connect if omitted.',
     )
     .action(async (id, datastoreVersion, { alias, host }) => {

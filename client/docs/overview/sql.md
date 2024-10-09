@@ -3,7 +3,7 @@
 This Client library supports Ulixee SQL, which is a minimal subset of the ANSI SQL specification:
 
 ```javascript
-import Client from '@ulixee/client-playground';
+import Client from '@ulixee/client';
 
 const client = new Client('ulx://USERNAME:PASSWORD@DOMAIN:PORT/DATABASE');
 client.query(`SELECT * FROM developers WHERE status='founder'`).then(records => {

@@ -20,7 +20,7 @@
 
       <p class="mt-5">Or package and deploy it...</p>
       <Prism language="bash">
-        npx @ulixee/datastore deploy ./datastore.ts -h CLOUD_NODE_YOU_HAVE_ACCESS
+        npx @ulixee/datastore deploy ./datastore.ts -u CLOUD_NODE_YOU_HAVE_ACCESS
       </Prism>
     </div>
   </div>

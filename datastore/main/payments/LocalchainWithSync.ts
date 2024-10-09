@@ -262,14 +262,26 @@ export default class LocalchainWithSync
         });
         this.emit('sync', result);
         if (this.enableLogging) {
-          log.info('Localchain Sync result', {
-            // have to weirdly jsonify
-            balanceChanges: await Promise.all(result.balanceChanges.map(gettersToObject)),
-            channelHoldNotarizations: await Promise.all(result.channelHoldNotarizations.map(gettersToObject)),
-            mainchainTransfers: await Promise.all(result.mainchainTransfers.map(gettersToObject)),
-            channelHoldsUpdated: await Promise.all(result.channelHoldsUpdated.map(gettersToObject)),
-            blockVotes: await Promise.all(result.blockVotes.map(gettersToObject)),
-          } as any);
+          if (
+            result.blockVotes.length ||
+            result.balanceChanges.length ||
+            result.mainchainTransfers.length ||
+            result.channelHoldsUpdated.length ||
+            result.channelHoldNotarizations.length
+          ) {
+            log.info('Localchain Sync result', {
+              // have to weirdly jsonify
+              balanceChanges: await Promise.all(result.balanceChanges.map(gettersToObject)),
+              channelHoldNotarizations: await Promise.all(
+                result.channelHoldNotarizations.map(gettersToObject),
+              ),
+              mainchainTransfers: await Promise.all(result.mainchainTransfers.map(gettersToObject)),
+              channelHoldsUpdated: await Promise.all(
+                result.channelHoldsUpdated.map(gettersToObject),
+              ),
+              blockVotes: await Promise.all(result.blockVotes.map(gettersToObject)),
+            } as any);
+          }
         }
       } catch (error) {
         log.error('Error synching channelHold balance changes', { error });

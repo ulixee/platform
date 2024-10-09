@@ -5,7 +5,7 @@ Ulixee's NoSQL capabilities are still very minimal. You can do straightforward f
 Fetch datastore tables:
 
 ```javascript
-import Client from '@ulixee/client-playground';
+import Client from '@ulixee/client';
 
 const client = new Client('ulx://USERNAME:PASSWORD@DOMAIN:PORT/DATABASE');
 client.fetch('developers', { status: 'founders' }).then(records => {
@@ -17,7 +17,7 @@ Run datastore extractors:
 
 
 ```javascript
-import Client from '@ulixee/client-playground';
+import Client from '@ulixee/client';
 
 const client = new Client('ulx://USERNAME:PASSWORD@DOMAIN:PORT/DATABASE');
 client.run('lastCommit', { package: 'hero' }).then(records => {
@@ -29,7 +29,7 @@ Crawl datastore crawlers:
 
 
 ```javascript
-import Client from '@ulixee/client-playground';
+import Client from '@ulixee/client';
 
 const client = new Client('ulx://USERNAME:PASSWORD@DOMAIN:PORT/DATABASE');
 client.crawl('ulixee', { page: 'home' }).then(records => {

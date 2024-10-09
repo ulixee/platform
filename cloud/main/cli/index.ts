@@ -29,11 +29,16 @@ export default function cliCommands(options?: {
     )
     .addOption(
       program
-        .createOption(
-          '-h, --hostname <hostname>',
-          'The hostname the Cloud node should listen on. (default: localhost)',
-        )
+        .createOption('-u, --hostname <hostname>', 'The hostname the Cloud node should listen on.')
         .env('ULX_HOSTNAME'),
+    )
+    .addOption(
+      program
+        .createOption(
+          '--public-host <address>',
+          'The public dns name or ip the Cloud node can be addressed with (default: localhost)',
+        )
+        .env('ULX_PUBLIC_HOST'),
     )
     .addOption(
       program
@@ -47,7 +52,7 @@ export default function cliCommands(options?: {
       program
         .createOption(
           '--hosted-services-hostname <hostname>',
-          'The ip or host that Cluster Services should listed on. You should make this a private-to-your-cloud ip if possible. (default: localhost)',
+          'The ip or host that Cluster Services should listed on. You should make this a private-to-your-cloud ip if possible.',
         )
         .env('ULX_HOSTED_SERVICES_HOSTNAME'),
     )
@@ -231,6 +236,7 @@ export async function startCloudViaCli(opts: any): Promise<CloudNode> {
     disableDesktopApis,
     hostname,
     setupHost,
+    publicHost,
     hostedServicesPort,
     hostedServicesHostname,
     argonNotaryId,
@@ -271,6 +277,7 @@ export async function startCloudViaCli(opts: any): Promise<CloudNode> {
     filterUndefined({
       port,
       host: hostname,
+      publicHost,
       hostedServicesServerOptions:
         !!hostedServicesHostname || hostedServicesPort !== undefined
           ? { port: hostedServicesPort, host: hostedServicesHostname }

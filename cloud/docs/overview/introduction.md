@@ -16,9 +16,7 @@ To use Ulixee Cloud in your project, install it with npm (or your package manage
 npm i --save @ulixee/cloud
 ```
 
-When you install Cloud, it requires PeerDependencies of [`Hero`](https://ulixee.org/docs/hero) and [`Datastore`](https://ulixee.org/docs/datastore).
-
-It will also optionally use a PeerDependency `Desktop` Core (`@ulixee/desktop-core`). This tool enhances the Hero Development process.
+When you install Cloud, it installs [`Hero`](//ulixee.org/docs/hero), [`Datastore`](//ulixee.org/docs/datastore) and [`Desktop`](https://github.com/ulixee/desktop) Core (a tool to enhance the Hero Development process).
 
 ## Command Line Interface (CLI)
 
@@ -36,21 +34,22 @@ You can run the start command from the command line as `npx @ulixee/cloud start`
 
 ### Command Options:
 
-- `-p, --port <number>` The port to use. Defaults to any 1818, or any available port. (env: PORT)
-- `-h, --hostname <hostname>` The hostname the Cloud node should listen on. (default: localhost) (env: ULX_HOSTNAME)
+- `-p, --port <number>` The port to use. Defaults to any 1818, or any available port. (env: `PORT`)
+- `-u, --hostname <hostname>` The hostname the Cloud node should listen on. (env: `ULX_HOSTNAME`)
+- `--public-host <address>` The public dns name or ip the Cloud node can be addressed with (env: `ULX_PUBLIC_HOST`)
 - `--hosted-services-port <number>` Activate hosted services on this node at this port (datastore registry, node registry). Defaults to any 18181, or any available port
-  (0). (env: ULX_HOSTED_SERVICES_PORT)
+  (0). (env: `ULX_HOSTED_SERVICES_PORT`)
 - `--hosted-services-hostname <hostname>` The ip or host that Cluster Services should listed on. You should make this a private-to-your-cloud ip if possible. (default:
-  localhost) (env: ULX_HOSTED_SERVICES_HOSTNAME)
+  localhost) (env: `ULX_HOSTED_SERVICES_HOSTNAME`)
 - `--setup-host <host>` Setup services for this node with another node in your cluster. NOTE: this should be the hosted services address of your cluster
-  node. (env: ULX_SERVICES_SETUP_HOST)
+  node. (env: `ULX_SERVICES_SETUP_HOST`)
 - `--env <path>` Load environment settings from a .env file.
-- `--network-identity-path <path>` Filesystem path to your network identity keypair (env: ULX_NETWORK_IDENTITY_PATH)
-- `--admin-identities <ids...>` Comma separated list of admin identity public ids (starting with id1) (env: ULX_CLOUD_ADMIN_IDENTITIES)
+- `--network-identity-path <path>` Filesystem path to your network identity keypair (env: `ULX_NETWORK_IDENTITY_PATH`)
+- `--admin-identities <ids...>` Comma separated list of admin identity public ids (starting with id1) (env: `ULX_CLOUD_ADMIN_IDENTITIES`)
 - `--disable-chrome-alive` Do not enable ChromeAlive! even if installed locally.
 - `--max-concurrent-heroes <count>` Max number of concurrent Datastores/Heroes to run at a time. (default: 10)
 - `--max-datastore-runtime-ms <millis>` Max runtime allowed for a Datastore to complete. (default: 10 mins)
-- `-u, --unblocked-plugins <plugins...>` Register default Unblocked Plugin npm module names for all Hero instances to load.
+- `--unblocked-plugins <plugins...>` Register default Unblocked Plugin npm module names for all Hero instances to load.
 - `-d, --hero-data-dir <dir>` Override the default data directory for Hero sessions and dbs.
 - `-s, --datastore-storage-dir <dir>` Override the default storage directory where Datastores are located.
 - `-t, --datastore-tmp-dir <dir>` Override the default temp directory where uploaded Datastores are processed.

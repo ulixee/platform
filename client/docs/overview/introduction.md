@@ -1,13 +1,13 @@
 # Introduction
 
-> Ulixee Client is a main tool for querying and interacting with Datastores.
+> Ulixee Client is the main tool for querying and interacting with Datastores.
 
 Client supports both [SQL](./sql) and [NoSQL](./no-sql) capabilities. 
 
 SQL Example:
 
 ```javascript
-import Client from '@ulixee/client-playground';
+import Client from '@ulixee/client';
 
 const client = new Client('ulx://USERNAME:PASSWORD@DOMAIN:PORT/DATABASE');
 client.query(`SELECT * FROM developers WHERE status='founder'`).then(records => {
@@ -18,7 +18,7 @@ client.query(`SELECT * FROM developers WHERE status='founder'`).then(records => 
 NoSQL Example:
 
 ```javascript
-import Client from '@ulixee/client-playground';
+import Client from '@ulixee/client';
 
 const client = new Client('ulx://USERNAME:PASSWORD@DOMAIN:PORT/DATABASE');
 client.fetch('developers', { status: 'founders' }).then(records => {
@@ -29,7 +29,7 @@ client.fetch('developers', { status: 'founders' }).then(records => {
 You can also use Client with local datastores/tables/extractors/crawlers while in development mode:
 
 ```javascript
-import Client from '@ulixee/client-playground';
+import Client from '@ulixee/client';
 import { Table, string } from '@ulixee/datastore';
 
 const testingTable = new Table({

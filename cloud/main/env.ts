@@ -19,8 +19,9 @@ export default {
         keyPassphrase: env.ULX_NETWORK_IDENTITY_PASSPHRASE,
       })
     : null,
+  listenHostname: env.ULX_HOSTNAME,
   publicPort: env.ULX_PORT ?? env.PORT,
-  publicHostname: env.ULX_HOSTNAME,
+  publicHost: env.ULX_PUBLIC_HOST,
   hostedServicesPort: env.ULX_HOSTED_SERVICES_PORT,
-  hostedServicesHostname: env.ULX_HOSTED_SERVICES_HOSTNAME,
+  hostedServicesListenHostname: env.ULX_HOSTED_SERVICES_HOSTNAME,
 };

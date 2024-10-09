@@ -6,7 +6,7 @@ Datastores are packaged into a single javascript file for deployment. They inclu
 
 We provide a packaging tool out of the box to combine your Datastore and included modules into a single file. It can be run using the Datastore CLI commands or the Ulixee CLI.
 
-### <Script>.dbx folders
+### [Script].dbx folders
 
 Your Datastore will be packaged into a folder with the same name and path as your script, but with the extension `.dbx`. These files are safe to check-in to source control so other developers on your team can package and deploy the datastores without a need to re-build them. You can also ftp them onto a Cloud Node to [deploy](#deploying) them.
 
@@ -25,7 +25,7 @@ If you want to build all your `.dbx` folders so they can be deployed manually on
 1. `Configuration`. You can add a `datastoreOutDir` parameter to a Ulixee config file (`.ulixee/config.json` in the hierarchy of your project). The path should be relative to the `config.json` file.
 2. `npx @ulixee/datastore build --out-dir=<path>`. During build, you can specify an out directory.
 
-#### DBX Compliation Process
+#### DBX Compilation Process
 
 While your `.dbx` is being created, the following steps will occur:
 
@@ -34,12 +34,9 @@ While your `.dbx` is being created, the following steps will occur:
 3. Generate and seed a Storage database.
 4. Create a SHA 256 hash of the script.
 5. Load any User-defined Manifest Settings (`${entrypoint}-manifest.json`, Project level `.ulixee/datastores.json`, Global settings). Details can be found [here](#manifest)
-6. Lookup the Datastore runtime and version.
-7. Add a previous `version` to the linked versions, unless `linkedVersions` property in manifest is set to an empty list.
-8. Hash the manifest details into a `version`.
-9. If deploying, Tar.gz the script, sourcemap and manifest into a `.dbx.tgz file`
+6. If deploying, Tar.gz the script, sourcemap and manifest into a `.dbx.tgz file`
 
-#### Deploying {#deploying}
+#### Deploying
 
 You can copy `.dbx` folders (or compressed `.dbx.tgz` files) into the configured [`Datastore Storage`](./configuration.md#storage) directory of your CloudNode before boot-up, and the CloudNode will automatically unpack and install them.
 
@@ -53,43 +50,29 @@ The packager can optionally process Typescript files for you. If you have a uniq
 
 The packager can process ES Modules or CommonJS. It will output a commonjs file so that a Ulixee CloudNode can import it at runtime. The CloudNode will run your Datastore in an isolated Sandbox for each run. No memory or variables are shared between runs. ES Modules will result in more compact deployments by tree-shaking unneeded code.
 
-### Versioning
-
-Every version of your script is hashed using a SHA 256 algorithm, and encoded using Bech32m (a standard formalized by the Bitcoin working group to create file and url-safe base32 hash encodings).
-
-When you package up a new version of your Datastore, it will maintain a list of the sequence of versions. Anytime your Datastore is used on a Ulixee CloudNode, it will return the latest version hash. This helps inform users of your Datastore when they're using an out-of-date version.
-
-If you ever get out of sync with the versions that are on your CloudNode, you have two options.
-
-1. Clear or add an empty `linkedVersions` field to a [manifest]{#manifest} file.
-2. You'll also be prompted to link the CloudNode version history when you try to upload an out of date script.
-3. You can also choose the CLI prompts to start a new version history.
-
-## Manifest {#manifest}
+## Manifest
 
 When you package a Datastore, a Manifest is created with the following properties:
 
-- version `string`. The unique "hash" of your Datastore, used to version your script and refer to it in queries to remote CloudNodes. It includes all properties of the manifest excluding the version. Hashing uses Sha3-256 encoded in a base32 format called bech32m.
+- id `string`. A unique identifier for the Datastore.
+- version `string`. A user assigned version following the semver pattern.
+- name `string`. A friendly name of the Datastore.
+- description `string`. A description of the Datastore.
+- storageEndpoint `string`. The endpoint to use for storage. This is the endpoint that will be used to store and retrieve data.
+- adminIdentities `array`. An array of bech32 Admin identities that can access the Datastore Admin API.
 - versionTimestamp `number`. A unix timestamp when a version was created.
 - scriptHash `string`. A Sha3-256 hash of the rolled-up script. The encoding uses a base32 format called Bech32m so that it's file-path friendly.
-- linkedVersions `{ version: string, versionTimestamp: number }[]`. The history of linked versions with newest first. NOTE: this will be automatically maintained by the packager.
 - scriptEntrypoint `string`. The relative path to your file (from the closest package.json).
 - coreVersion `string`. The version of the Datastore Core module. Your script will be checked for compatibility with the CloudNode npm modules before it runs.
 - schemaInterface `string`. A string containing a typescript declaration interface for all extractors in this Datastore.
-- extractorsByName|crawlersByName `object`. A key value of Datastore Extractor/Crawler name to:
-  - corePlugins `string`. An object containing a list of npm packages/versions that are core Extractor plugins.
+- extractorsByName|crawlersByName|tablesByName `object`. A key value of Datastore Extractor/Crawler/Table name to:
+  - description `string`. A description of the Extractor/Crawler/Table.
+  - corePlugins `string`. An object containing a list of npm packages/versions that are core Extractor plugins (not applicable to tables).
   - prices `array`. Array of prices for each "step" in a function. The first entry is _this_ function's pricing.
-    - minimum `number`. Optional minimum microgons that must be held in a Micronote for the given function step.
-    - perQuery `number`. Optional price per query for the given Extractor (in Ulixee Sidechain microgons - 1 microgon = ~1/1,000,000 of a dollar).
+    - basePrice `number`. Optional price for the given Extractor (in Argon microgons - 1 microgon = ~1/1,000,000 of a dollar).
     - addOns `object`. Optional price add-ons. Currently only `perKb` is supported.
-    - remoteMeta `object`. Optional information about the remote Datastore Extractor being invoked (if applicable).
-- tablesByName `object`. A key value of Datastore Table name to:
-  - prices `array`. Array of prices for each "step" in a function. The first entry is _this_ function's pricing.
-    - minimum `number`. Optional minimum microgons that must be held in a Micronote for the given function step.
-    - remoteMeta `object`. Optional information about the remote Datastore Extractor being invoked (if applicable).
-- payment `object`. Optional payment information
-  - address `string`. Address to use for payments (ss58 encoded).
-  - notaryId `number`. The Notary that must be used for payments.
+    - remoteMeta `object`. Optional information about the remote Datastore Extractor being invoked (if applicable).e).
+- domain `string`. The Domain of the Datastore (must be registered in the Argon network).
 
 ### Setting values:
 
@@ -97,7 +80,7 @@ Setting any of the above properties into the manifest will be incorporated into 
 
 ### **GENERATED_LAST_VERSION**
 
-This file will be automatically generated by the CLI. The full settings from the previous version will be added as a field called `__GENERATED_LAST_VERSION__`. The `version` in this section is a good sanity check to compare versions on your local machine vs a CloudNode. By default, Ulixee CloudNodes store Datastores in the `<OS Data Directory>/ulixee/datastores` directory ([details](./configuration.md#storage)).
+This file will be automatically generated by the CLI. The full settings from the previous version will be added as a field called `__GENERATED_LAST_VERSION__`. The `version` in this section is a good sanity check to compare versions on your local machine vs a CloudNode. By default, Ulixee CloudNodes store Datastores in the `<OS Data Directory>/ulixee/datastores` directory ([details](./configuration.md#data-directory-data)).
 
 ### Setting Manifest Values
 
@@ -177,12 +160,11 @@ Your Datastore will be built and uploaded transparently. No `.dbx` or working di
 
 Options below show a short and long form.
 
-- `-h, --cloud-host <host>`. Upload this package to the given host CloudNode. Will try to auto-connect if none specified.
-- `-c, --clear-version-history` Clear out any version history for this script entrypoint (default: false)
+- `-u, --cloud-host <host>`. Upload this package to the given host CloudNode. Will try to auto-connect if none specified.
 - `-s, --compiled-source-path <path>` Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).
 - `-t, --tsconfig <path>`. A path to a TypeScript config file (if needed). Will be auto-located based on the entrypoint if it ends in ".ts"
-- `-i, --identity-path <path>`. A path to a Ulixee Identity. Necessary for signing if a CloudNode is running in `production` serverEnvironment - `NODE_ENV=production`. (env: ULX_IDENTITY_PATH)
-- `-p, --identity-passphrase <path>`. A decryption passphrase to the Ulixee identity (only necessary if specified during key creation). (env: ULX_IDENTITY_PASSPHRASE)
+- `-i, --identity-path <path>`. A path to a Ulixee Identity. Necessary for signing if a CloudNode is running in `production` serverEnvironment - `NODE_ENV=production`. (env: `ULX_IDENTITY_PATH`)
+- `-p, --identity-passphrase <path>`. A decryption passphrase to the Ulixee identity (only necessary if specified during key creation). (env: `ULX_IDENTITY_PASSPHRASE`)
 
 ### Building a .dbx.tgz
 
@@ -210,10 +192,7 @@ The build directory is automatically cleaned up after your upload.
 
 Options below show a short and long form.
 
-- `-u, --upload` `Boolean`. Upload this package to a Ulixee CloudNode after packaging. (default: false)
-- `-h, --cloud-host <host>`. Upload this package to the given CloudNode host. Will try to auto-connect if none specified.
 - `-o, --out-dir <path>` A directory path where you want packaged .dbx files to be saved
-- `-c, --clear-version-history` Clear out any version history for this script entrypoint (default: false)
 - `-s, --compiled-source-path <path>` Path to the compiled entrypoint (eg, if you have a custom typescript config, or another transpiled language).
 - `-t, --tsconfig <path>`. A path to a TypeScript config file (if needed). Will be auto-located based on the entrypoint if it ends in ".ts"
 
@@ -271,7 +250,7 @@ type InputOutputDatastoreExtractorType = ITypes[version][functionName];
 Options below show a short and long form.
 
 - `-a, --alias <name>`. Add a shortcut name to reference this Datastore hash. (eg, -a flights will let you use `ITypes['flights']['flightsDotCom']`)
-- `-h, --host <host>`. Connect to the given host CloudNode. Will try to automatically connect if omitted.
+- `-u, --host <host>`. Connect to the given host CloudNode. Will try to automatically connect if omitted.
 
 ## Datastore Core Sandboxes
 

@@ -24,7 +24,7 @@ export default class RoutableServer {
 
   public get host(): Promise<string> {
     return this.listeningPromise.promise.then(x => {
-      return `${this.hostname}:${x.port}`;
+      return `${this.publicHostname}:${x.port}`;
     });
   }
 
@@ -46,8 +46,7 @@ export default class RoutableServer {
     return pkg.version;
   }
 
-  public readonly hostname: string;
-
+  private publicHostname: string;
   private isClosing: Promise<any>;
   private sockets = new Set<Socket>();
   private listeningPromise = createPromise<AddressInfo>();
@@ -57,7 +56,7 @@ export default class RoutableServer {
 
   constructor(
     private isReadyToServe: Promise<void>,
-    hostname?: string,
+    publicHost?: string,
     addRouters?: boolean,
   ) {
     this.httpServer = new Http.Server();
@@ -67,7 +66,7 @@ export default class RoutableServer {
       this.httpServer.on('request', this.handleHttpRequest);
     }
     this.httpServer.on('connection', this.handleHttpConnection);
-    this.hostname = hostname ?? 'localhost';
+    this.publicHostname = publicHost ?? 'localhost';
     this.wsServer = new WebSocket.Server({
       server: this.httpServer,
       perMessageDeflate: { threshold: 500, serverNoContextTakeover: false },
@@ -84,6 +83,18 @@ export default class RoutableServer {
     try {
       options ??= {};
       options.port ??= 0;
+      if (options.host) {
+        if (
+          this.publicHostname === 'localhost' &&
+          options.host !== 'localhost' &&
+          options.host !== '0.0.0.0' &&
+          options.host !== '::' &&
+          options.host !== '::1' &&
+          options.host !== '127.0.0.1'
+        ) {
+          this.publicHostname = options.host;
+        }
+      }
       const addressHost = await new Promise<AddressInfo>((resolve, reject) => {
         this.httpServer.once('error', reject);
         this.httpServer

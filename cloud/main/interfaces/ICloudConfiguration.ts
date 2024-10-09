@@ -5,6 +5,7 @@ import { ListenOptions } from 'node:net';
 export default interface ICloudConfiguration extends ListenOptions, ServerOptions {
   networkIdentity?: Identity;
   nodeRegistryHost: string | 'self';
+  publicHost?: string;
   hostedServicesServerOptions?: ListenOptions & ServerOptions;
   servicesSetupHost: string;
 }

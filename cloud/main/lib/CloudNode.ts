@@ -57,12 +57,13 @@ export default class CloudNode {
     servicesSetupHost: Env.servicesSetupHost,
     networkIdentity: Env.networkIdentity,
     port: Env.publicPort ? Number(Env.publicPort) : undefined,
-    host: Env.publicHostname,
+    host: Env.listenHostname,
+    publicHost: Env.publicHost,
     hostedServicesServerOptions:
-      (Env.hostedServicesPort ?? Env.hostedServicesHostname)
+      (Env.hostedServicesPort ?? Env.hostedServicesListenHostname)
         ? {
             port: Env.hostedServicesPort ? Number(Env.hostedServicesPort) : undefined,
-            host: Env.hostedServicesHostname,
+            host: Env.hostedServicesListenHostname,
           }
         : null,
   };
@@ -287,7 +288,7 @@ export default class CloudNode {
   private async startPublicServer(): Promise<string> {
     const listenOptions = this.cloudConfiguration;
 
-    this.publicServer = new RoutableServer(this.isReady.promise, listenOptions.host);
+    this.publicServer = new RoutableServer(this.isReady.promise, listenOptions.publicHost);
     const isPortUnreserved = !listenOptions.port;
     if (isPortUnreserved && !isTestEnv) {
       if (!(await isPortInUse(1818))) listenOptions.port = 1818;
@@ -311,7 +312,7 @@ export default class CloudNode {
     const listenOptions = this.cloudConfiguration.hostedServicesServerOptions;
     if (!listenOptions) return;
 
-    this.hostedServicesServer = new RoutableServer(this.isReady.promise, listenOptions.host);
+    this.hostedServicesServer = new RoutableServer(this.isReady.promise, this.cloudConfiguration.publicHost);
     if (!listenOptions.port && !isTestEnv) {
       if (!(await isPortInUse(18181))) listenOptions.port = 18181;
     }

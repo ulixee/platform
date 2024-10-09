@@ -49,8 +49,9 @@ The first argument can be a single callback function matching the `run` callback
 
 - run `function`(context: [ExtractorContext](./extractor-context.md)): `Promise<schema['output]>`. A function that contains your script to run. The parameter is a [ExtractorContext](./extractor-context.md) that provides access to [Input](./input.md) and [Output](./output.md)
 - schema `IExtractorSchema`. Optional [schema](../advanced/extractor-schemas.md) defining the type-checked input and output parameters for the function.
-- basePrice `number`. Optional price that this query costs.
+- basePrice `number`. Optional price per access. It's called "base price" because a query might join multiple data entities.
 - name `string`. Optional name for this function, primarily used only if defining a Extractor outside a Datastore.
+- description `string`. Optional description for this function, primarily for documentation website.
 
 The second argument is a list of zero or more plugins.
 
@@ -58,10 +59,11 @@ The second argument is a list of zero or more plugins.
 
 ## Methods
 
-### runInternal _ (options)_ {#stream}
+### runInternal _(options)_ {#stream}
 
 Run the Extractor and get the resulting Outputs. The result is an AsyncIterable, so can be used to get each Output record as it is emitted. Alternatively, if you await the result, it will wait for the process to complete and return all Output records as an array. Parameter options are the `input` schema, or any values if none is defined.
 
 NOTE: this function is labeled "internal" because no context will be supplied to function from the calling context. If, for instance, you call this Extractor from inside another Extractor, you will lose payment, authentication, affiliateId, etc unless you explicitly provide them.
 
-#### Return Promise/AsyncIterable of schema['Output'] Returns an AsyncIterable streaming results one at a time, or a Promise waiting for all results. The objects are the defined Schema Output records.
+#### Return Promise/AsyncIterable of schema['Output'] 
+Returns an AsyncIterable streaming results one at a time, or a Promise waiting for all results. The objects are the defined Schema Output records.

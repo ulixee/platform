@@ -18,9 +18,7 @@ To use Cloud in your project, install it with npm (or your package manager of ch
 npm i --save @ulixee/cloud
 ```
 
-When you install Cloud, it installs [`Hero`](//ulixee.org/docs/hero) and [`Datastore`](//ulixee.org/docs/datastore).
-
-It will also optionally use a PeerDependency `Desktop` Core (`@ulixee/desktop-core`). This tool enhances the Hero Development process.
+When you install Cloud, it installs [`Hero`](//ulixee.org/docs/hero), [`Datastore`](//ulixee.org/docs/datastore) and [`Desktop`](https://github.com/ulixee/desktop) Core (a tool to enhance the Hero Development process).
 
 ## Command Line Interface (CLI)
 

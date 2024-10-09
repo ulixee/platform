@@ -10,11 +10,11 @@ A CloudNode host can be specified on creation. This would allow you to create a 
 
 A CloudNode will listen on port 1818 by default, but can be overridden on creation.
 
-### Disable ChromeAlive!
+### Disable Desktop APIs
 
-ChromeAlive! will be automatically enabled for Hero and DatastoreForHero sessions if `@ulixee/desktop-core` is installed locally.
+By default, Ulixee Cloud will activate apis to explore Hero Sessions and replay them in Ulixee Desktop. If you don't want to activate this feature, you can disable using this environment variable (also part of the cli `--disable-desktop-apis`).
 
-To disable launching ChromeAlive!, you can include `process.env.ULX_DISABLE_CHROMEALIVE='true'` at the top of your script, or set the corresponding variable in your shell environment.
+**Environment:** `ULX_DISABLE_DESKTOP_APIS=true`
 
 ### Hosted Services
 

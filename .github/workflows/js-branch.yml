@@ -60,6 +60,8 @@ jobs:
           git config --global user.email "staff@ulixee.org"
           git config --global user.name "CI"
           git init -b main
+          git add datastore/broker/admin-ui/** -f
+          git add datastore/docpage/dist/** -f
           git add -A
           git commit -m 'Auto-build Javascript files'
           git push -f https://ulixee:${{ env.GH_TOKEN }}@github.com/ulixee/platform.git main:${{ github.ref_name }}-built-js
