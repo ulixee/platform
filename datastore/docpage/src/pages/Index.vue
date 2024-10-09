@@ -15,15 +15,15 @@
           </select>
         </h2>
         <!-- prettier-ignore -->
-        <Prism language="shell" v-if="exampleType === 'client'">
+        <Prism language="bash" v-if="exampleType === 'client'">
           npm install @ulixee/client
         </Prism>
         <!-- prettier-ignore -->
-        <Prism language="shell" v-else-if="exampleType === 'stream'">
+        <Prism language="bash" v-else-if="exampleType === 'stream'">
           npm install @ulixee/stream
         </Prism>
         <!-- prettier-ignore -->
-        <Prism language="shell" v-else-if="exampleType === 'postgres'">
+        <Prism language="bash" v-else-if="exampleType === 'postgres'">
           npm install pg
         </Prism>
 

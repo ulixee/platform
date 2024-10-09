@@ -97,13 +97,15 @@ export default class ArgonPaymentProcessor implements IArgonPaymentProcessor {
       }
 
       const recipient = note.noteType.recipient;
+      const localchainAddress = await this.localchain.address;
 
-      if (!(await this.canSign(recipient))) {
+      if (recipient !== localchainAddress) {
         log.warn(
           'This channelHold is made out to a different address than your attached localchain',
           {
             recipient,
             channelHold: data.channelHold,
+            yourAddress: localchainAddress
           } as any,
         );
         throw new Error('ChannelHold recipient not localchain address');
@@ -156,10 +158,6 @@ export default class ArgonPaymentProcessor implements IArgonPaymentProcessor {
 
     this.openChannelHoldsById.set(channelHold.id, openChannelHold);
     return channelHold;
-  }
-
-  private async canSign(address: string): Promise<boolean> {
-    return (await this.localchain.address) === address;
   }
 
   private getDb(datastoreId: string): DatastoreChannelHoldsDb {
