@@ -59,7 +59,7 @@
               v-for="subtitle in page.subtitles"
               :key="subtitle.value"
             >
-              <a :href="subtitle.anchor" v-html="subtitle.value.replace(' W3C', '').split(/\s/g)[0]"></a
+              <a :href="subtitle.anchor" v-html="subtitle.value.replace(' W3C', '').split(/\s/g).join(' ')"></a
               >
             </li>
           </ul>

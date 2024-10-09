@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BalanceChangeSchema } from './IBalanceChange';
 
+export const ARGON_FILE_EXTENSION = 'argon';
 export const ArgonFileSchema = z.object({
   version: z.string(),
   credit: z

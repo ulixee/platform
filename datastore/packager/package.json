@@ -21,7 +21,7 @@
     "@ulixee/sql-engine": "2.0.0-alpha.29",
     "better-sqlite3": "^11.1.2",
     "rollup": "^4.22.0",
-    "tar": "^6.2.0",
+    "tar": "^7.4.3",
     "ws": "^8.18.0"
   },
   "devDependencies": {

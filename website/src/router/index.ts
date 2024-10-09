@@ -84,7 +84,7 @@ async function tryScrollToAnchor(hash: string, timeout = 1000, delay = 100) {
     const el = document.querySelector(hash);
     if (el) {
       const offsetTop = el.getBoundingClientRect().top;
-      const top = offsetTop + window.scrollY - 70;
+      const top = offsetTop + window.scrollY - 80;
 
       window.scrollTo({ top, behavior: 'auto' });
       break;

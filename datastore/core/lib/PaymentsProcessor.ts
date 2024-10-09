@@ -29,7 +29,7 @@ export default class PaymentsProcessor {
     private datastore: Datastore,
     readonly context: Pick<
       IDatastoreApiContext,
-      'configuration' | 'micropaymentChannelSpendTracker'
+      'configuration' | 'argonPaymentProcessor'
     >,
   ) {}
 
@@ -57,7 +57,7 @@ export default class PaymentsProcessor {
       await credits.debit(id, secret, price);
       this.shouldFinalize = true;
     } else {
-      const result = await this.context.micropaymentChannelSpendTracker.debit({
+      const result = await this.context.argonPaymentProcessor.debit({
         datastoreId: this.datastoreId,
         queryId,
         payment: this.payment,
@@ -93,7 +93,7 @@ export default class PaymentsProcessor {
           await credits.finalize(this.payment.credits.id, diff);
         }
       } else {
-        await this.context.micropaymentChannelSpendTracker.finalize({
+        await this.context.argonPaymentProcessor.finalize({
           datastoreId: this.datastoreId,
           channelHoldId: this.payment.channelHold.id,
           uuid: this.payment.uuid,

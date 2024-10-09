@@ -1,9 +1,12 @@
+import { Localchain, MainchainClient } from '@argonprotocol/localchain';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import { filterUndefined } from '@ulixee/commons/lib/objectUtils';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import TypedEventEmitter from '@ulixee/commons/lib/TypedEventEmitter';
 import { ConnectionToDatastoreCore } from '@ulixee/datastore';
+import IArgonPaymentProcessor from '@ulixee/datastore-core/interfaces/IArgonPaymentProcessor';
+import ArgonPaymentProcessor from '@ulixee/datastore-core/lib/ArgonPaymentProcessor';
 import IDatastoreHostLookup from '@ulixee/datastore/interfaces/IDatastoreHostLookup';
 import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 import IPaymentService from '@ulixee/datastore/interfaces/IPaymentService';
@@ -12,7 +15,6 @@ import DatastoreLookup from '@ulixee/datastore/lib/DatastoreLookup';
 import EmbeddedPaymentService from '@ulixee/datastore/payments/EmbeddedPaymentService';
 import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
 import RemoteReserver from '@ulixee/datastore/payments/RemoteReserver';
-import { MainchainClient } from '@argonprotocol/localchain';
 import { ConnectionToCore } from '@ulixee/net';
 import ITransport from '@ulixee/net/interfaces/ITransport';
 import ApiRegistry from '@ulixee/net/lib/ApiRegistry';
@@ -24,9 +26,7 @@ import Identity from '@ulixee/platform-utils/lib/Identity';
 import { promises as Fs } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import * as Path from 'path';
-import MicropaymentChannelSpendTracker from '@ulixee/datastore-core/lib/MicropaymentChannelSpendTracker';
-import IMicropaymentChannelSpendTracker from '@ulixee/datastore-core/interfaces/IMicropaymentChannelSpendTracker';
-import { IDatastorePaymentRecipient } from '@ulixee/platform-specification/types/IDatastoreManifest';
+import ChannelHoldRegister from './endpoints/ChannelHold.register';
 import DatastoreAdmin from './endpoints/Datastore.admin';
 import DatastoreCreateStorageEngine from './endpoints/Datastore.createStorageEngine';
 import DatastoreCreditsBalance from './endpoints/Datastore.creditsBalance';
@@ -42,7 +42,6 @@ import DatastoreUpload from './endpoints/Datastore.upload';
 import DatastoreVersions from './endpoints/Datastore.versions';
 import DatastoresList from './endpoints/Datastores.list';
 import DocpageRoutes, { datastorePathRegex } from './endpoints/DocpageRoutes';
-import ChannelHoldRegister from './endpoints/ChannelHold.register';
 import HostedServicesEndpoints, {
   TConnectionToServicesClient,
 } from './endpoints/HostedServicesEndpoints';
@@ -50,12 +49,12 @@ import Env from './env';
 import IDatastoreApiContext from './interfaces/IDatastoreApiContext';
 import IDatastoreConnectionToClient from './interfaces/IDatastoreConnectionToClient';
 import IDatastoreCoreConfigureOptions from './interfaces/IDatastoreCoreConfigureOptions';
+import ArgonPaymentProcessorClient from './lib/ArgonPaymentProcessorClient';
 import DatastoreHostLookupClient from './lib/DatastoreHostLookupClient';
 import DatastoreRegistry, { IDatastoreManifestWithRuntime } from './lib/DatastoreRegistry';
 import { IDatastoreSourceDetails } from './lib/DatastoreRegistryDiskStore';
 import DatastoreVm from './lib/DatastoreVm';
 import { MissingRequiredSettingError } from './lib/errors';
-import MicropaymentChannelSpendTrackerClient from './lib/MicropaymentChannelSpendTrackerClient';
 import StatsTracker from './lib/StatsTracker';
 import StorageEngineRegistry from './lib/StorageEngineRegistry';
 import { translateStats } from './lib/translateDatastoreMetadata';
@@ -90,7 +89,6 @@ export default class DatastoreCore extends TypedEventEmitter<{
 
   public isClosing: Promise<void>;
   public workTracker: WorkTracker;
-  public paymentInfo = new Resolvable<IDatastorePaymentRecipient | undefined>();
 
   public apiRegistry = new ApiRegistry<IDatastoreApiContext>([
     DatastoreQuery,
@@ -113,7 +111,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
   public datastoreRegistry: DatastoreRegistry;
   public statsTracker: StatsTracker;
   public storageEngineRegistry: StorageEngineRegistry;
-  public micropaymentChannelSpendTracker: IMicropaymentChannelSpendTracker;
+  public argonPaymentProcessor?: IArgonPaymentProcessor;
   public localchain?: LocalchainWithSync;
   public upstreamDatastorePaymentService?: IPaymentService;
   public datastoreHostLookup?: IDatastoreHostLookup;
@@ -144,8 +142,8 @@ export default class DatastoreCore extends TypedEventEmitter<{
       statsTrackerHost: Env.statsTrackerHost,
       queryHeroSessionsDir: Env.queryHeroSessionsDir,
       replayRegistryHost: Env.replayRegistryHost,
-      micropaymentChannelSpendTrackingHost: Env.micropaymentChannelSpendTrackingHost,
-      paymentServiceHost: Env.paymentServiceHost,
+      argonPaymentProcessorHost: Env.argonPaymentProcessorHost,
+      upstreamPaymentsServiceHost: Env.upstreamPaymentsServiceHost,
       datastoreLookupHost: Env.datastoreLookupHost,
       localchainConfig: Env.localchainConfig,
       ...(options ?? {}),
@@ -253,14 +251,14 @@ export default class DatastoreCore extends TypedEventEmitter<{
       if (this.options.replayRegistryHost === 'self')
         this.options.replayRegistryHost = servicesHost;
 
-      if (this.options.paymentServiceHost === 'self')
-        this.options.paymentServiceHost = servicesHost;
+      if (this.options.upstreamPaymentsServiceHost === 'self')
+        this.options.upstreamPaymentsServiceHost = servicesHost;
 
       if (this.options.datastoreLookupHost === 'self')
         this.options.datastoreLookupHost = servicesHost;
 
-      if (this.options.micropaymentChannelSpendTrackingHost === 'self')
-        this.options.micropaymentChannelSpendTrackingHost = servicesHost;
+      if (this.options.argonPaymentProcessorHost === 'self')
+        this.options.argonPaymentProcessorHost = servicesHost;
 
       this.options.statsTrackerHost ??= servicesHost;
       this.options.datastoreRegistryHost ??= servicesHost;
@@ -307,23 +305,29 @@ export default class DatastoreCore extends TypedEventEmitter<{
       if (lookupConnection)
         this.datastoreHostLookup = new DatastoreHostLookupClient(lookupConnection);
 
+      if (this.options.localchainConfig?.localchainCreateIfMissing) {
+        this.options.localchainConfig.localchainPath ??= Localchain.getDefaultPath();
+      }
+
       if (this.options.localchainConfig?.localchainPath) {
-        this.localchain = new LocalchainWithSync(this.options.localchainConfig);
-        await this.localchain.load();
+        this.localchain = await LocalchainWithSync.load(this.options.localchainConfig);
+        if (this.options.localchainConfig?.localchainCreateIfMissing) {
+          if (!(await this.localchain.isCreated())) {
+            await this.localchain.create();
+          }
+        }
 
         this.upstreamDatastorePaymentService = await this.localchain.createPaymentService(
           this.datastoreApiClients,
         );
 
-        this.micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(
+        this.argonPaymentProcessor = new ArgonPaymentProcessor(
           this.options.datastoresDir,
           this.localchain,
         );
-
-        this.paymentInfo.resolve(await this.localchain.paymentInfo);
       } else {
         const paymentServiceConnection = createConnectionToServiceHost(
-          this.options.paymentServiceHost,
+          this.options.upstreamPaymentsServiceHost,
         );
         const argonReserver = paymentServiceConnection
           ? new RemoteReserver(paymentServiceConnection)
@@ -332,25 +336,25 @@ export default class DatastoreCore extends TypedEventEmitter<{
         this.upstreamDatastorePaymentService = new EmbeddedPaymentService(argonReserver);
 
         const channelHoldConnection = createConnectionToServiceHost(
-          this.options.micropaymentChannelSpendTrackingHost,
+          this.options.argonPaymentProcessorHost,
         );
         if (channelHoldConnection) {
-          this.micropaymentChannelSpendTracker = new MicropaymentChannelSpendTrackerClient(
-            channelHoldConnection,
-          );
-          this.paymentInfo.resolve(await this.micropaymentChannelSpendTracker.getPaymentInfo());
+          this.argonPaymentProcessor = new ArgonPaymentProcessorClient(channelHoldConnection);
         }
       }
-      if (!this.paymentInfo.isResolved) {
-        log.info(
+
+      if (!(await this.argonPaymentProcessor?.getPaymentInfo())) {
+        log.warn(
           "DatastoreCore.start - No Argon Payment information found. Can't charge for Datastores.",
         );
-        this.paymentInfo.resolve(undefined);
       }
 
       if (!this.datastoreHostLookup) {
         const mainchainClient = Env.argonMainchainUrl
-          ? await MainchainClient.connect(Env.argonMainchainUrl, 10e3)
+          ? MainchainClient.connect(Env.argonMainchainUrl, 10e3).catch(err => {
+              log.warn('Unable to connect to mainchain client', { error: err } as any);
+              return null;
+            })
           : undefined;
         this.datastoreHostLookup = new DatastoreLookup(mainchainClient);
       }
@@ -519,14 +523,13 @@ export default class DatastoreCore extends TypedEventEmitter<{
       workTracker: this.workTracker,
       configuration: this.options,
       pluginCoresByName: this.pluginCoresByName,
-      paymentInfo: this.paymentInfo.promise,
       storageEngineRegistry: this.storageEngineRegistry,
       cloudNodeAddress: this.cloudNodeAddress,
       cloudNodeIdentity: this.cloudNodeIdentity,
       vm: this.vm,
       datastoreApiClients: this.datastoreApiClients,
       statsTracker: this.statsTracker,
-      micropaymentChannelSpendTracker: this.micropaymentChannelSpendTracker,
+      argonPaymentProcessor: this.argonPaymentProcessor,
       upstreamDatastorePaymentService: this.upstreamDatastorePaymentService,
       datastoreLookup: this.datastoreHostLookup,
     };

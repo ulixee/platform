@@ -1,34 +1,44 @@
 import { ChannelHold, DomainStore, OpenChannelHold } from '@argonprotocol/localchain';
 import Logger from '@ulixee/commons/lib/Logger';
-import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
-import IMicropaymentChannelApiTypes from '@ulixee/platform-specification/services/MicropaymentChannelApis';
+import { LocalchainWithSync } from '@ulixee/datastore';
+import IArgonPaymentProcessor from '@ulixee/datastore-core/interfaces/IArgonPaymentProcessor';
+import ILocalchainRef from '@ulixee/datastore/interfaces/ILocalchainRef';
+import { IArgonPaymentProcessorApiTypes } from '@ulixee/platform-specification/services/ArgonPaymentProcessorApis';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
 import IDatastoreManifest, {
   IDatastorePaymentRecipient,
 } from '@ulixee/platform-specification/types/IDatastoreManifest';
 import serdeJson from '@ulixee/platform-utils/lib/serdeJson';
 import DatastoreChannelHoldsDb from '../db/DatastoreChannelHoldsDb';
-import IMicropaymentChannelSpendTracker from '../interfaces/IMicropaymentChannelSpendTracker';
 
 const { log } = Logger(module);
 
-export default class MicropaymentChannelSpendTracker implements IMicropaymentChannelSpendTracker {
+export default class ArgonPaymentProcessor implements IArgonPaymentProcessor {
   private readonly channelHoldDbsByDatastore = new Map<string, DatastoreChannelHoldsDb>();
 
   private readonly openChannelHoldsById = new Map<string, OpenChannelHold>();
 
-  private readonly preferredNotaryId: number = 1;
+  private cachedPaymentInfo?: IDatastorePaymentRecipient;
+
   constructor(
     readonly channelHoldDbDir: string,
-    readonly localchain: LocalchainWithSync,
-  ) {
-    if (localchain?.localchainConfig) {
-      this.preferredNotaryId = this.localchain.localchainConfig.notaryId;
-    }
-  }
+    readonly localchain: ILocalchainRef,
+  ) {}
 
-  public getPaymentInfo(): Promise<IDatastorePaymentRecipient> {
-    return this.localchain.paymentInfo.promise;
+  public async getPaymentInfo(): Promise<IDatastorePaymentRecipient | undefined> {
+    if (!this.cachedPaymentInfo) {
+      this.cachedPaymentInfo = await (this.localchain as LocalchainWithSync).paymentInfo?.promise;
+    }
+    if (!this.cachedPaymentInfo) {
+      const account = await this.localchain.accountOverview();
+      const notaryId = (await this.localchain.accounts.getDepositAccount()).notaryId;
+      this.cachedPaymentInfo = {
+        address: account.address,
+        notaryId,
+        ...account.mainchainIdentity,
+      };
+    }
+    return this.cachedPaymentInfo;
   }
 
   public async close(): Promise<void> {
@@ -36,11 +46,11 @@ export default class MicropaymentChannelSpendTracker implements IMicropaymentCha
   }
 
   public async debit(
-    data: IMicropaymentChannelApiTypes['MicropaymentChannel.debitPayment']['args'],
-  ): Promise<IMicropaymentChannelApiTypes['MicropaymentChannel.debitPayment']['result']> {
+    data: IArgonPaymentProcessorApiTypes['ArgonPaymentProcessor.debit']['args'],
+  ): Promise<IArgonPaymentProcessorApiTypes['ArgonPaymentProcessor.debit']['result']> {
     if (!data.payment.channelHold.id) {
       throw new Error(
-        'The payment sent to the MicropaymentChannelSpendTracker does not have a ChannelHold id. This is an internal error.',
+        'The payment sent to the ArgonPaymentProcessor does not have a ChannelHold id. This is an internal error.',
       );
     }
 
@@ -53,34 +63,36 @@ export default class MicropaymentChannelSpendTracker implements IMicropaymentCha
   }
 
   public finalize(
-    data: IMicropaymentChannelApiTypes['MicropaymentChannel.finalizePayment']['args'],
-  ): Promise<IMicropaymentChannelApiTypes['MicropaymentChannel.finalizePayment']['result']> {
+    data: IArgonPaymentProcessorApiTypes['ArgonPaymentProcessor.finalize']['args'],
+  ): Promise<IArgonPaymentProcessorApiTypes['ArgonPaymentProcessor.finalize']['result']> {
     const { datastoreId, channelHoldId, uuid, finalMicrogons } = data;
     this.getDb(datastoreId).finalize(channelHoldId, uuid, finalMicrogons);
     return Promise.resolve();
   }
 
   public async importChannelHold(
-    data: IMicropaymentChannelApiTypes['MicropaymentChannel.importChannelHold']['args'],
+    data: IArgonPaymentProcessorApiTypes['ArgonPaymentProcessor.importChannelHold']['args'],
     datastoreManifest: IDatastoreManifest,
-  ): Promise<IMicropaymentChannelApiTypes['MicropaymentChannel.importChannelHold']['result']> {
+  ): Promise<IArgonPaymentProcessorApiTypes['ArgonPaymentProcessor.importChannelHold']['result']> {
     const note = data.channelHold.channelHoldNote;
     if (note.noteType.action === 'channelHold') {
       if (datastoreManifest.domain) {
         const notaryHash = DomainStore.getHash(datastoreManifest.domain);
         if (!note.noteType.domainHash.equals(notaryHash)) {
           throw new Error(
-            `The supplied ChannelHold note does not match the data domain of this Datastore ${data.datastoreId}`,
+            `The supplied ChannelHold note does not match the domain of this Datastore ${data.datastoreId}`,
           );
         }
       }
 
+      const paymentInfo = await this.getPaymentInfo();
+
       if (
-        this.preferredNotaryId &&
-        this.preferredNotaryId !== data.channelHold.previousBalanceProof?.notaryId
+        paymentInfo.notaryId &&
+        paymentInfo.notaryId !== data.channelHold.previousBalanceProof?.notaryId
       ) {
         throw new Error(
-          `The channelHold notary (${data.channelHold.previousBalanceProof?.notaryId}) does not match the required notary (${this.preferredNotaryId})`,
+          `The channelHold notary (${data.channelHold.previousBalanceProof?.notaryId}) does not match the required notary (${paymentInfo.notaryId})`,
         );
       }
 
@@ -127,7 +139,8 @@ export default class MicropaymentChannelSpendTracker implements IMicropaymentCha
   }
 
   private timeForTick(tick: number): Date {
-    return this.localchain.timeForTick(tick);
+    const time = this.localchain.ticker.timeForTick(tick);
+    return new Date(Number(time));
   }
 
   private async importToLocalchain(

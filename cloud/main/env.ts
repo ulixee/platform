@@ -1,6 +1,8 @@
+import UlixeeConfig from '@ulixee/commons/config';
 import { loadEnv, parseEnvBool, parseEnvPath } from '@ulixee/commons/lib/envUtils';
 import Identity from '@ulixee/platform-utils/lib/Identity';
 
+loadEnv(UlixeeConfig.global.directoryPath);
 loadEnv(process.cwd());
 loadEnv(__dirname);
 const env = process.env;
@@ -9,7 +11,7 @@ if (env.ULX_NETWORK_IDENTITY_PATH)
   env.ULX_NETWORK_IDENTITY_PATH = parseEnvPath(env.ULX_NETWORK_IDENTITY_PATH);
 
 export default {
-  disableChromeAlive: env.NODE_ENV === 'test' || parseEnvBool(env.ULX_DISABLE_CHROMEALIVE),
+  disableDesktopApi: parseEnvBool(env.ULX_DISABLE_DESKTOP_APIS) ?? false,
   servicesSetupHost: env.ULX_SERVICES_SETUP_HOST,
   nodeRegistryHost: env.ULX_NODE_REGISTRY_HOST,
   networkIdentity: env.ULX_NETWORK_IDENTITY_PATH

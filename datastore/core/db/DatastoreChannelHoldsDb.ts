@@ -161,7 +161,9 @@ export default class DatastoreChannelHoldsDb {
     }
     const result = this.finalizeStatement.run({ id: channelHoldId, microgons: adjustment });
     if (!result.changes || result.changes < 1) {
-      throw new Error('Could not finalize the payment.');
+      throw new Error(
+        `Could not finalize the payment. ${channelHoldId} -> adjustment: ${adjustment}`,
+      );
     }
   }
 

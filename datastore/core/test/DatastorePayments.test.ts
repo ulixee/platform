@@ -1,5 +1,5 @@
 import { Chain, ChainIdentity } from '@argonprotocol/localchain';
-import { Keyring } from '@polkadot/keyring';
+import { Keyring } from '@argonprotocol/mainchain';
 import { CloudNode } from '@ulixee/cloud';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import DatastorePackager from '@ulixee/datastore-packager';
@@ -10,8 +10,8 @@ import CreditReserver from '@ulixee/datastore/payments/CreditReserver';
 import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreManifest';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import MicropaymentChannelSpendTracker from '../lib/MicropaymentChannelSpendTracker';
-import MockMicropaymentChannelSpendTracker from './_MockMicropaymentChannelSpendTracker';
+import IArgonPaymentProcessor from '../interfaces/IArgonPaymentProcessor';
+import MockArgonPaymentProcessor from './_MockArgonPaymentProcessor';
 import MockPaymentService from './_MockPaymentService';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastorePayments.test');
@@ -23,8 +23,8 @@ jest.spyOn<any, any>(UlixeeHostsConfig.global, 'save').mockImplementation(() => 
 let storageCounter = 0;
 const keyring = new Keyring({ ss58Format: 18 });
 const datastoreKeyring = keyring.createFromUri('Datastore');
-const micropaymentChannelSpendTrackerMock = new MockMicropaymentChannelSpendTracker();
-const micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(storageDir, null);
+const argonPaymentProcessorMock = new MockArgonPaymentProcessor();
+let argonPaymentProcessor: IArgonPaymentProcessor;
 let manifest: IDatastoreManifest;
 const mainchainIdentity = {
   chain: Chain.Devnet,
@@ -89,7 +89,7 @@ beforeAll(async () => {
       ...mainchainIdentity,
     },
   );
-  cloudNode.datastoreCore.micropaymentChannelSpendTracker = micropaymentChannelSpendTracker;
+  argonPaymentProcessor = cloudNode.datastoreCore.argonPaymentProcessor;
   client = new DatastoreApiClient(await cloudNode.address, { consoleLogErrors: true });
   await client.upload(await dbx.tarGzip());
   Helpers.onClose(() => client.disconnect(), true);
@@ -100,7 +100,7 @@ beforeEach(() => {
   ArgonReserver.baseStorePath = Path.join(storageDir, `payments-${storageCounter}`);
   CreditReserver.defaultBasePath = Path.join(storageDir, `credits-${storageCounter}`);
 
-  micropaymentChannelSpendTrackerMock.clear();
+  argonPaymentProcessorMock.clear();
 });
 
 afterEach(Helpers.afterEach);
@@ -123,7 +123,7 @@ test('should be able to run a datastore function with payments', async () => {
 
   const paymentService = new MockPaymentService(clientAddress, client);
 
-  micropaymentChannelSpendTrackerMock.mock(datastoreId => {
+  argonPaymentProcessorMock.mock(datastoreId => {
     const channelHoldId = paymentService.paymentsByDatastoreId[datastoreId].channelHoldId;
     const channelHold = paymentService.channelHoldsById[channelHoldId];
     return {
@@ -174,9 +174,8 @@ test('should be able to run a datastore function with payments', async () => {
     queryId: expect.any(String),
   });
   // @ts-expect-error
-  const dbs = micropaymentChannelSpendTracker.channelHoldDbsByDatastore;
+  const dbs = argonPaymentProcessor.channelHoldDbsByDatastore;
   expect(dbs.size).toBe(1);
-  // @ts-expect-error
   expect(dbs.get(manifest.id).paymentIdByChannelHoldId.size).toBe(1);
   expect(dbs.get(manifest.id).list()).toEqual([
     expect.objectContaining({
@@ -199,7 +198,7 @@ test('can collect payments from multiple tables and functions', async () => {
 
   const paymentService = new MockPaymentService(clientAddress, client);
 
-  micropaymentChannelSpendTrackerMock.mock(datastoreId => {
+  argonPaymentProcessorMock.mock(datastoreId => {
     const channelHoldId = paymentService.paymentsByDatastoreId[datastoreId].channelHoldId;
     const channelHold = paymentService.channelHoldsById[channelHoldId];
     return {
@@ -225,9 +224,8 @@ test('can collect payments from multiple tables and functions', async () => {
   });
 
   // @ts-expect-error
-  const dbs = micropaymentChannelSpendTracker.channelHoldDbsByDatastore;
+  const dbs = argonPaymentProcessor.channelHoldDbsByDatastore;
   expect(dbs.size).toBe(1);
-  // @ts-expect-error
   expect(dbs.get(manifest.id).paymentIdByChannelHoldId.size).toBe(2);
   expect(dbs.get(manifest.id).list()[1]).toEqual(
     expect.objectContaining({
@@ -242,7 +240,7 @@ test('records a changed payment correctly', async () => {
 
   const paymentService = new MockPaymentService(clientAddress, client);
 
-  micropaymentChannelSpendTrackerMock.mock(datastoreId => {
+  argonPaymentProcessorMock.mock(datastoreId => {
     const channelHoldId = paymentService.paymentsByDatastoreId[datastoreId].channelHoldId;
     const channelHold = paymentService.channelHoldsById[channelHoldId];
     return {
@@ -271,9 +269,8 @@ test('records a changed payment correctly', async () => {
     queryId: expect.any(String),
   });
   // @ts-expect-error
-  const dbs = micropaymentChannelSpendTracker.channelHoldDbsByDatastore;
+  const dbs = argonPaymentProcessor.channelHoldDbsByDatastore;
   expect(dbs.size).toBe(1);
-  // @ts-expect-error
   expect(dbs.get(manifest.id).paymentIdByChannelHoldId.size).toBe(3);
   expect(dbs.get(manifest.id).list()[2]).toEqual(
     expect.objectContaining({
@@ -286,3 +283,4 @@ test('records a changed payment correctly', async () => {
 });
 
 test.todo('should not double charge for storage and tables');
+test.todo('queries a domain for payment if set');

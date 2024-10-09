@@ -1,11 +1,12 @@
 import { LocalchainOverview, OpenChannelHold } from '@argonprotocol/localchain';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import IBalanceChange, {
   BalanceChangeSchema,
 } from '@ulixee/platform-specification/types/IBalanceChange';
+import ILocalchainRef from '../interfaces/ILocalchainRef';
 import DatastoreLookup from '../lib/DatastoreLookup';
 import { IChannelHoldDetails, IChannelHoldSource } from './ArgonReserver';
-import LocalchainWithSync from './LocalchainWithSync';
 
 export default class LocalchainChannelHoldSource implements IChannelHoldSource {
   public get sourceKey(): string {
@@ -15,24 +16,27 @@ export default class LocalchainChannelHoldSource implements IChannelHoldSource {
   private readonly openChannelHoldsById: { [channelHoldId: string]: OpenChannelHold } = {};
 
   constructor(
-    public localchain: LocalchainWithSync,
+    public localchain: ILocalchainRef,
     public address: string,
     public datastoreLookup: DatastoreLookup,
+    public isMainchainLoaded: Resolvable<void>,
   ) {}
 
-  public async getAccountOverview(): Promise<LocalchainOverview> {
-    return await this.localchain.getAccountOverview();
+  public async accountOverview(): Promise<LocalchainOverview> {
+    return await this.localchain.accountOverview();
   }
 
   public async createChannelHold(
     paymentInfo: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
     milligons: bigint,
   ): Promise<IChannelHoldDetails> {
+    await this.isMainchainLoaded.promise;
     const { domain } = paymentInfo;
     if (domain) {
       await this.datastoreLookup.validatePayment(paymentInfo);
     }
-    const openChannelHold = await this.localchain.inner.transactions.createChannelHold(
+
+    const openChannelHold = await this.localchain.transactions.createChannelHold(
       milligons,
       paymentInfo.recipient.address!,
       domain,
@@ -45,7 +49,7 @@ export default class LocalchainChannelHoldSource implements IChannelHoldSource {
 
     const channelHold = await openChannelHold.channelHold;
     const channelHoldId = channelHold.id;
-    const expirationMillis = this.localchain.timeForTick(channelHold.expirationTick);
+    const expirationMillis = this.localchain.ticker.timeForTick(channelHold.expirationTick);
 
     this.openChannelHoldsById[channelHoldId] = openChannelHold;
     return {

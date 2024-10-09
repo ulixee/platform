@@ -1,12 +1,12 @@
 import { ChannelHold } from '@argonprotocol/localchain';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
-import MicropaymentChannelSpendTracker from '../lib/MicropaymentChannelSpendTracker';
+import ArgonPaymentProcessor from '../lib/ArgonPaymentProcessor';
 
-export default class MockMicropaymentChannelSpendTracker {
-  canSign = jest.spyOn(MicropaymentChannelSpendTracker.prototype, 'canSign' as any);
-  updateSettlement = jest.spyOn(MicropaymentChannelSpendTracker.prototype, 'updateSettlement' as any);
-  importToLocalchain = jest.spyOn(MicropaymentChannelSpendTracker.prototype, 'importToLocalchain' as any);
-  timeForTick = jest.spyOn(MicropaymentChannelSpendTracker.prototype, 'timeForTick' as any);
+export default class MockArgonPaymentProcessor {
+  canSign = jest.spyOn(ArgonPaymentProcessor.prototype, 'canSign' as any);
+  updateSettlement = jest.spyOn(ArgonPaymentProcessor.prototype, 'updateSettlement' as any);
+  importToLocalchain = jest.spyOn(ArgonPaymentProcessor.prototype, 'importToLocalchain' as any);
+  timeForTick = jest.spyOn(ArgonPaymentProcessor.prototype, 'timeForTick' as any);
 
   clear() {
     this.canSign.mockClear();

@@ -1,9 +1,8 @@
-import { decodeAddress } from '@polkadot/util-crypto';
+import { decodeAddress, getClient, Keyring, KeyringPair } from '@argonprotocol/mainchain';
 import Client from '@ulixee/client';
 import { Helpers } from '@ulixee/datastore-testing';
 import DefaultPaymentService from '@ulixee/datastore/payments/DefaultPaymentService';
 import { DomainStore, Localchain } from '@argonprotocol/localchain';
-import { getClient, Keyring, KeyringPair } from '@argonprotocol/mainchain';
 import { IDatastoreMetadataResult } from '@ulixee/platform-specification/datastore/DatastoreApis';
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import * as Path from 'node:path';
@@ -161,8 +160,6 @@ async function setupDatastore(
   votesAddress: string,
 ): Promise<void> {
   const buildDir = getPlatformBuild();
-  const mainchainClient = await getClient(argonMainchainUrl);
-  Helpers.onClose(() => mainchainClient.disconnect());
 
   {
     const registration = localchain.beginChange();
@@ -181,6 +178,7 @@ async function setupDatastore(
   const cloudAddress = await cloudNode.start({
     ULX_CLOUD_ADMIN_IDENTITIES: identityBech32,
     ULX_IDENTITY_PATH: identityPath,
+    ULX_DATASTORE_DIR: storageDir,
     ARGON_MAINCHAIN_URL: argonMainchainUrl,
     ARGON_LOCALCHAIN_PATH: localchain.path,
     ARGON_BLOCK_REWARDS_ADDRESS: votesAddress,
@@ -199,17 +197,22 @@ async function setupDatastore(
   );
 
   const domainHash = DomainStore.getHash(domain);
-  await registerZoneRecord(
-    mainchainClient,
-    domainHash,
-    domainOwner,
-    decodeAddress(domainOwner.address, false, 42),
-    1,
-    {
-      [version]: mainchainClient.createType('ArgonPrimitivesDomainVersionHost', {
-        datastoreId: mainchainClient.createType('Bytes', datastoreId),
-        host: mainchainClient.createType('Bytes', `ws://127.0.0.1:${cloudAddress.split(':')[1]}`),
-      }),
-    },
-  );
+  const mainchainClient = await getClient(argonMainchainUrl);
+  try {
+    await registerZoneRecord(
+      mainchainClient,
+      domainHash,
+      domainOwner,
+      decodeAddress(domainOwner.address, false, 42),
+      1,
+      {
+        [version]: mainchainClient.createType('ArgonPrimitivesDomainVersionHost', {
+          datastoreId: mainchainClient.createType('Bytes', datastoreId),
+          host: mainchainClient.createType('Bytes', `ws://127.0.0.1:${cloudAddress.split(':')[1]}`),
+        }),
+      },
+    );
+  } finally {
+    await mainchainClient.disconnect();
+  }
 }

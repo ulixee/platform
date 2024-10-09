@@ -1,14 +1,15 @@
-import { decodeAddress } from '@polkadot/util-crypto';
+import { DomainStore, Localchain } from '@argonprotocol/localchain';
+import { decodeAddress, getClient, Keyring, KeyringPair } from '@argonprotocol/mainchain';
 import Client from '@ulixee/client';
 import { Helpers } from '@ulixee/datastore-testing';
 import DatastoreApiClients from '@ulixee/datastore/lib/DatastoreApiClients';
 import DefaultPaymentService from '@ulixee/datastore/payments/DefaultPaymentService';
 import LocalchainWithSync from '@ulixee/datastore/payments/LocalchainWithSync';
-import { DomainStore, Localchain } from '@argonprotocol/localchain';
-import { getClient, Keyring, KeyringPair } from '@argonprotocol/mainchain';
 import { IDatastoreMetadataResult } from '@ulixee/platform-specification/datastore/DatastoreApis';
 import { gettersToObject } from '@ulixee/platform-utils/lib/objectUtils';
 import * as Path from 'node:path';
+
+import { format } from 'node:util';
 import { inspect } from 'util';
 import TestCloudNode, { uploadDatastore } from '../lib/TestCloudNode';
 import { describeIntegration } from '../lib/testHelpers';
@@ -25,6 +26,9 @@ const identityPath = Path.join(storageDir, 'DatastoreDev.pem');
 
 let ferdie: KeyringPair;
 inspect.defaultOptions.depth = 10;
+
+// this stops jest from killing the logs
+global.console.log = (...args) => process.stdout.write(`${format(...args)}\n`);
 
 describeIntegration('Payments E2E', () => {
   beforeAll(async () => {
@@ -94,7 +98,7 @@ describeIntegration('Payments E2E', () => {
       await ferdiechain.balanceSync.sync({});
       await bobchain.balanceSync.sync({});
       const ferdieOverview = await ferdiechain.accountOverview();
-      const bobOverview = await bobchain.getAccountOverview();
+      const bobOverview = await bobchain.accountOverview();
       isSynched = ferdieOverview.balance === 1000n && bobOverview.balance === 5000n;
       await new Promise(resolve =>
         setTimeout(resolve, Number(ferdiechain.ticker.millisToNextTick())),
@@ -118,10 +122,12 @@ describeIntegration('Payments E2E', () => {
     const cloudAddress = await cloudNode.start({
       ULX_CLOUD_ADMIN_IDENTITIES: identityBech32,
       ULX_IDENTITY_PATH: identityPath,
+      ULX_DATASTORE_DIR: storageDir,
       ARGON_MAINCHAIN_URL: argonMainchainUrl,
       ARGON_LOCALCHAIN_PATH: ferdiechain.path,
       ARGON_BLOCK_REWARDS_ADDRESS: ferdieVotesAddress,
       ARGON_NOTARY_ID: '1',
+      RUST_LOG: 'debug,sqlx=warn',
     });
     expect(cloudAddress).toBeTruthy();
     Helpers.onClose(() => cloudNode.close());
@@ -191,7 +197,7 @@ describeIntegration('Payments E2E', () => {
     expect(payments[0].payment.channelHold.settledMilligons).toBe(500n);
     expect(payments[0].remainingBalance).toBe(500_000);
 
-    const balance = await bobchain.getAccountOverview();
+    const balance = await bobchain.accountOverview();
     console.log('Balance:', await gettersToObject(balance));
     expect(balance.balance).toBe(4800n);
     expect(balance.heldBalance).toBe(1000n);
@@ -213,6 +219,7 @@ describeIntegration('Payments E2E', () => {
     const cloudAddress = await cloudNode.start({
       ULX_CLOUD_ADMIN_IDENTITIES: identityBech32.trim(),
       ULX_IDENTITY_PATH: identityPath,
+      ULX_DATASTORE_DIR: storageDir,
       ARGON_MAINCHAIN_URL: argonMainchainUrl,
       ARGON_LOCALCHAIN_PATH: Path.join(storageDir, 'ferdiechain.db'),
       ARGON_NOTARY_ID: '1',
@@ -238,7 +245,7 @@ describeIntegration('Payments E2E', () => {
       },
     });
     Helpers.onClose(() => bobchain.close());
-    const wallet = await bobchain.getAccountOverview();
+    const wallet = await bobchain.accountOverview();
     // ensure wallet is loaded
     expect(wallet.balance).toBe(4800n);
 
@@ -276,7 +283,7 @@ describeIntegration('Payments E2E', () => {
     expect(payments[0].payment.channelHold.settledMilligons).toBe(5n);
     expect(payments[0].remainingBalance).toBe(5_000 - 1_000);
 
-    const balance = await bobchain.getAccountOverview();
+    const balance = await bobchain.accountOverview();
     console.log('Balance:', await gettersToObject(balance));
     expect(balance.balance).toBe(4798n);
     expect(balance.heldBalance).toBe(1005n);

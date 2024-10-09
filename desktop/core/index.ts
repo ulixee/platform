@@ -51,7 +51,10 @@ export default class DesktopCore {
 
   private events = new EventSubscriber();
   private connectionToCloudCore: ConnectionToCore<ICloudApis, {}>;
-  constructor(public datastoreCore: DatastoreCore, public heroCore: HeroCore) {
+  constructor(
+    public datastoreCore: DatastoreCore,
+    public heroCore: HeroCore,
+  ) {
     this.heroSessionsSearch = new HeroSessionsSearch(heroCore);
   }
 
@@ -263,7 +266,7 @@ export default class DesktopCore {
       sessionController.bindLiveSession(heroSession);
 
       const appConnection = this.appConnectionsById.get(appConnectionId);
-      await appConnection.sendEvent({
+      appConnection.sendEvent({
         eventType: 'Session.opened',
         data: {
           heroSessionId: heroSession.id,

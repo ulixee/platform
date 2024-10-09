@@ -2,6 +2,7 @@ import UlixeeConfig from '@ulixee/commons/config/index';
 import Ed25519 from '@ulixee/platform-utils/lib/Ed25519';
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import { Command } from 'commander';
+import * as Fs from 'fs';
 import * as Path from 'path';
 
 export default function cliCommands(): Command {
@@ -60,6 +61,9 @@ export default function cliCommands(): Command {
         'identities',
         `${identity.bech32}.pem`,
       );
+      if (!Fs.existsSync(UlixeeConfig.global.directoryPath)) {
+        Fs.mkdirSync(UlixeeConfig.global.directoryPath, { recursive: true });
+      }
 
       await identity.save(filename, { passphrase, cipher: passphraseCipher });
       console.log('Saved %s to %s', identity.bech32, filename); // eslint-disable-line no-console

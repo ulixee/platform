@@ -6,7 +6,7 @@ import {
 } from '@ulixee/platform-specification/datastore/DatastoreApis';
 import DatastoreApiHandler from '../lib/DatastoreApiHandler';
 import { validateAuthentication } from '../lib/datastoreUtils';
-import PaymentsQueryHandler from '../lib/PaymentsProcessor';
+import PaymentsProcessor from '../lib/PaymentsProcessor';
 
 export default new DatastoreApiHandler('Datastore.queryStorageEngine', {
   async handler(request, context) {
@@ -32,11 +32,11 @@ export default new DatastoreApiHandler('Datastore.queryStorageEngine', {
     await validateAuthentication(datastore, payment, authentication);
 
     const sqlParser = new SqlParser(request.sql);
-    const paymentHandler = new PaymentsQueryHandler(payment, id, datastore, context);
+    const paymentsProcessor = new PaymentsProcessor(payment, id, datastore, context);
     const tableCalls = sqlParser
       .extractTableCalls()
       .filter(x => !request.virtualEntitiesByName?.[x]);
-    await paymentHandler.debit(queryId, manifestWithEntrypoint, tableCalls);
+    await paymentsProcessor.debit(queryId, manifestWithEntrypoint, tableCalls);
 
     const finalResult: IDatastoreQueryResult = {
       outputs: null,
@@ -73,9 +73,9 @@ export default new DatastoreApiHandler('Datastore.queryStorageEngine', {
         basePrice += price;
       }
 
-      paymentHandler.trackCallResult('query', basePrice, upstreamMeta);
+      paymentsProcessor.trackCallResult('query', basePrice, upstreamMeta);
       const bytes = PricingManager.getOfficialBytes(finalResult.outputs);
-      finalResult.metadata.microgons = await paymentHandler.finalize(bytes);
+      finalResult.metadata.microgons = await paymentsProcessor.finalize(bytes);
       finalResult.metadata.bytes = bytes;
     } catch (error) {
       finalResult.runError = error;

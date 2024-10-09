@@ -1,7 +1,10 @@
-import type ILocalUserProfile from '@ulixee/datastore/interfaces/ILocalUserProfile';
+import type { LocalchainOverview } from '@argonprotocol/localchain';
+import type {
+  IDatabrokerAuthAccount,
+  ILocalUserProfile,
+} from '@ulixee/datastore/interfaces/ILocalUserProfile';
 import type { IDatabrokerAccount, IWallet } from '@ulixee/datastore/interfaces/IPaymentService';
 import type IQueryLogEntry from '@ulixee/datastore/interfaces/IQueryLogEntry';
-import type { LocalchainOverview } from '@argonprotocol/localchain';
 import type ICoreResponsePayload from '@ulixee/net/interfaces/ICoreResponsePayload';
 import { IDatastoreApis, IDatastoreApiTypes } from '@ulixee/platform-specification/datastore';
 import IArgonFile from '@ulixee/platform-specification/types/IArgonFile';
@@ -71,8 +74,8 @@ export type IDesktopAppPrivateApis = {
     argonFile: IArgonFile;
     fundWithAddress?: string;
   }) => Promise<void>;
-  'Argon.transferFromMainchain': (arg: { address?: string; milligons: bigint }) => Promise<void>;
-  'Argon.transferToMainchain': (arg: { address?: string; milligons: bigint }) => Promise<void>;
+  'Argon.transferFromMainchain': (arg: { address: string; milligons: bigint }) => Promise<void>;
+  'Argon.transferToMainchain': (arg: { address: string; milligons: bigint }) => Promise<void>;
   'Argon.dropFile': (path: string) => Promise<void>;
   'Argon.showFileContextMenu': (
     args: IArgonFileMeta & {
@@ -88,9 +91,9 @@ export type IDesktopAppPrivateApis = {
     argons: number;
   }) => Promise<IArgonFileMeta>;
   'Credit.save': (arg: { credit: IArgonFile['credit'] }) => Promise<void>;
-  'Cloud.findAdminIdentity': (cloudName: string) => Promise<string>;
+  'Cloud.findAdminIdentity': (cloudName: string) => Promise<string | null>;
   'Datastore.setAdminIdentity': (datastoreId: string, adminIdentityPath: string) => Promise<string>;
-  'Datastore.findAdminIdentity': (datastoreId: string) => Promise<string>;
+  'Datastore.findAdminIdentity': (datastoreId: string) => Promise<string | null>;
   'Datastore.getInstalled': () => ILocalUserProfile['installedDatastores'];
   'Datastore.query': (args: {
     id: string;
@@ -131,7 +134,7 @@ export type IDesktopAppPrivateApis = {
     password?: string;
   }) => Promise<LocalchainOverview>;
   'User.addBrokerAccount': (
-    args: Omit<IDatabrokerAccount, 'balance'>,
+    args: Omit<IDatabrokerAuthAccount, 'userIdentity'>,
   ) => Promise<IDatabrokerAccount>;
 };
 

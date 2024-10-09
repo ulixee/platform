@@ -34,3 +34,4 @@ connect
 /website/firebase-debug.log
 .vs
 .*.sh
+/website/public/docs/

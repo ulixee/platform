@@ -4,23 +4,22 @@ import Log from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
 import { bindFunctions, isPortInUse, toUrl } from '@ulixee/commons/lib/utils';
-import Ed25519 from '@ulixee/platform-utils/lib/Ed25519';
-import Identity from '@ulixee/platform-utils/lib/Identity';
 import DatastoreCore from '@ulixee/datastore-core';
 import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
-import type DesktopCore from '@ulixee/desktop-core';
+import DesktopCore from '@ulixee/desktop-core';
 import HeroCore from '@ulixee/hero-core';
 import ICoreConfigureOptions from '@ulixee/hero-interfaces/ICoreConfigureOptions';
 import { ConnectionToCore, WsTransportToCore } from '@ulixee/net';
 import IServicesSetup from '@ulixee/platform-specification/types/IServicesSetup';
+import Ed25519 from '@ulixee/platform-utils/lib/Ed25519';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import * as Http from 'http';
 import * as Https from 'https';
 import * as Path from 'path';
-import env from '../env';
+import Env from '../env';
 import ICloudConfiguration from '../interfaces/ICloudConfiguration';
 import CoreRouter from './CoreRouter';
-import DesktopUtils from './DesktopUtils';
 import NodeRegistry from './NodeRegistry';
 import NodeTracker from './NodeTracker';
 import RoutableServer from './RoutableServer';
@@ -54,16 +53,16 @@ export default class CloudNode {
   public heroConfiguration: ICoreConfigureOptions;
 
   public cloudConfiguration: ICloudConfiguration = {
-    nodeRegistryHost: env.nodeRegistryHost,
-    servicesSetupHost: env.servicesSetupHost,
-    networkIdentity: env.networkIdentity,
-    port: env.publicPort ? Number(env.publicPort) : undefined,
-    host: env.publicHostname,
+    nodeRegistryHost: Env.nodeRegistryHost,
+    servicesSetupHost: Env.servicesSetupHost,
+    networkIdentity: Env.networkIdentity,
+    port: Env.publicPort ? Number(Env.publicPort) : undefined,
+    host: Env.publicHostname,
     hostedServicesServerOptions:
-      env.hostedServicesPort ?? env.hostedServicesHostname
+      (Env.hostedServicesPort ?? Env.hostedServicesHostname)
         ? {
-            port: env.hostedServicesPort ? Number(env.hostedServicesPort) : undefined,
-            host: env.hostedServicesHostname,
+            port: Env.hostedServicesPort ? Number(Env.hostedServicesPort) : undefined,
+            host: Env.hostedServicesHostname,
           }
         : null,
   };
@@ -264,10 +263,9 @@ export default class CloudNode {
     });
 
     /// START DESKTOP
-    if (DesktopUtils.isInstalled()) {
-      const DesktopCore = DesktopUtils.getDesktop();
+    if (!Env.disableDesktopApi) {
       this.desktopCore = new DesktopCore(this.datastoreCore, this.heroCore);
-      await this.desktopCore.activatePlugin();
+      this.desktopCore.activatePlugin();
     }
   }
 
@@ -298,7 +296,7 @@ export default class CloudNode {
     // if we're dealing with local or no configuration, set the local version host
     if (isLocalhost(address) && isPortUnreserved && !isTestEnv) {
       // publish port with the version
-      await UlixeeHostsConfig.global.setVersionHost(this.version, `localhost:${port}`);
+      UlixeeHostsConfig.global.setVersionHost(this.version, `localhost:${port}`);
       this.didReservePort = true;
       ShutdownHandler.register(this.clearReservedPort, true);
     }

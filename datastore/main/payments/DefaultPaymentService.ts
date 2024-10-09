@@ -5,7 +5,9 @@ import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/Pa
 import { IPaymentMethod } from '@ulixee/platform-specification/types/IPayment';
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import Env from '../env';
+import { LocalchainWithSync } from '../index';
 import IDatastoreHostLookup from '../interfaces/IDatastoreHostLookup';
+import ILocalchainConfig from '../interfaces/ILocalchainConfig';
 import IPaymentService, {
   ICredit,
   IPaymentEvents,
@@ -17,7 +19,6 @@ import ArgonReserver, { IChannelHoldAllocationStrategy } from './ArgonReserver';
 import BrokerChannelHoldSource from './BrokerChannelHoldSource';
 import CreditReserver from './CreditReserver';
 import LocalchainChannelHoldSource from './LocalchainChannelHoldSource';
-import LocalchainWithSync from './LocalchainWithSync';
 
 /**
  * A PaymentService that activates credits and includes an optional ArgonReserver
@@ -91,9 +92,9 @@ export default class DefaultPaymentService
     credit: IPaymentMethod['credits'],
     datastoreLookup?: IDatastoreHostLookup,
   ): Promise<void> {
-    let mainchainClientToClose: MainchainClient;
+    let mainchainClientToClose: Promise<MainchainClient>;
     if (!datastoreLookup && Env.argonMainchainUrl) {
-      mainchainClientToClose = await MainchainClient.connect(Env.argonMainchainUrl, 10e3);
+      mainchainClientToClose = MainchainClient.connect(Env.argonMainchainUrl, 10e3);
       datastoreLookup = new DatastoreLookup(mainchainClientToClose);
     }
     try {
@@ -101,7 +102,7 @@ export default class DefaultPaymentService
       this.addCredit(service);
     } finally {
       if (mainchainClientToClose) {
-        await mainchainClientToClose.close();
+        await mainchainClientToClose.then(x => x.close());
       }
     }
   }
@@ -138,6 +139,7 @@ export default class DefaultPaymentService
         "This Datastore hasn't configured a payment address, so it can't receive Argons as payment.",
       );
     }
+
     const payment = await this.argonReserver?.reserve(info);
     if (payment) {
       this.paymentUuidToService[payment.uuid] = new WeakRef(this.argonReserver);
@@ -155,16 +157,32 @@ export default class DefaultPaymentService
   }
 
   public static async fromLocalchain(
+    config: ILocalchainConfig,
+    channelHoldAllocationStrategy?: IChannelHoldAllocationStrategy,
+    apiClients?: DatastoreApiClients,
+    loadCreditsFromPath?: string | 'default',
+  ): Promise<DefaultPaymentService> {
+    const localchain = await LocalchainWithSync.load(config);
+    return await DefaultPaymentService.fromOpenLocalchain(
+      localchain,
+      channelHoldAllocationStrategy,
+      apiClients,
+      loadCreditsFromPath,
+    );
+  }
+
+  public static async fromOpenLocalchain(
     localchain: LocalchainWithSync,
     channelHoldAllocationStrategy?: IChannelHoldAllocationStrategy,
     apiClients?: DatastoreApiClients,
     loadCreditsFromPath?: string | 'default',
   ): Promise<DefaultPaymentService> {
-    const datastoreLookup = new DatastoreLookup(await localchain.mainchainClient);
+    const datastoreLookup = new DatastoreLookup(localchain.mainchainClient);
     const channelHoldSource = new LocalchainChannelHoldSource(
       localchain,
       await localchain.address,
       datastoreLookup,
+      localchain.mainchainLoaded,
     );
     const reserver = new ArgonReserver(
       channelHoldSource,
@@ -177,15 +195,18 @@ export default class DefaultPaymentService
 
   public static async fromBroker(
     brokerHost: string,
-    identityConfig: { pemPath: string; passphrase?: string },
+    identityConfig: { pemPath: string; passphrase?: string } | { pem: string },
     channelHoldAllocationStrategy?: IChannelHoldAllocationStrategy,
     apiClients?: DatastoreApiClients,
     loadCreditsFromPath?: string | 'default',
   ): Promise<DefaultPaymentService> {
-    const identity = Identity.loadFromFile(
-      identityConfig.pemPath,
-      identityConfig.passphrase ? { keyPassphrase: identityConfig.passphrase } : undefined,
-    );
+    const identity =
+      'pemPath' in identityConfig
+        ? Identity.loadFromFile(
+            identityConfig.pemPath,
+            identityConfig.passphrase ? { keyPassphrase: identityConfig.passphrase } : undefined,
+          )
+        : Identity.loadFromPem(identityConfig.pem);
     const channelHoldSource = new BrokerChannelHoldSource(brokerHost, identity);
     const reserver = new ArgonReserver(
       channelHoldSource,

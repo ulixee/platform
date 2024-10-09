@@ -3,7 +3,7 @@ import MainLayout from './layouts/MainLayout.vue';
 import InlineSvg from 'vue-inline-svg';
 import App from './App.vue'
 import router from './router'
-import Prism from 'prismjs';
+import * as Prism from 'prismjs';
 import 'prismjs/plugins/normalize-whitespace/prism-normalize-whitespace.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 

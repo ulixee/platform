@@ -1,4 +1,4 @@
-import { Keyring } from '@polkadot/keyring';
+import { Keyring } from '@argonprotocol/mainchain';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import { toUrl } from '@ulixee/commons/lib/utils';
 import { Helpers } from '@ulixee/datastore-testing';

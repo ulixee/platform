@@ -237,39 +237,45 @@ export default class DatastoreApiClient {
     let paymentService = options.paymentService;
     if (price <= 0) paymentService = null;
 
-    const payment = await paymentService?.reserve({
-      id,
-      version,
-      host,
-      microgons: price,
-      recipient: paymentInfo,
-      domain: options.domain,
-    });
     const query = {
       id,
       queryId,
       version,
       sql,
       boundValues: options.boundValues ?? [],
-      payment,
+      payment: null,
       authentication: options.authentication,
       affiliateId: options.affiliateId,
     };
 
     const hostIdentity = null; // TODO: exchange identity
+    try {
+      query.payment = await paymentService?.reserve({
+        id,
+        version,
+        host,
+        microgons: price,
+        recipient: paymentInfo,
+        domain: options.domain,
+      });
+    } catch (error) {
+      this.queryLog?.log(query, startDate, null, null, host, hostIdentity, error);
+      throw error;
+    }
+
     let result: IDatastoreQueryResult;
     try {
       result = await this.runApi('Datastore.query', query);
     } catch (error) {
       // this will only happen if the query is rejected by the server or before getting there. We need to rollback payment
-      if (payment) await paymentService?.finalize({ ...payment, finalMicrogons: 0 });
+      if (query.payment) await paymentService?.finalize({ ...query.payment, finalMicrogons: 0 });
       this.queryLog?.log(query, startDate, null, null, host, hostIdentity, error);
       throw error;
     }
     if (options.onQueryResult) await options.onQueryResult(result);
-    if (payment)
+    if (query.payment)
       await paymentService?.finalize({
-        ...payment,
+        ...query.payment,
         finalMicrogons: result.metadata.microgons,
       });
 
@@ -478,12 +484,14 @@ export default class DatastoreApiClient {
     argonMainchainUrl: string,
   ): Promise<IDatastoreHost> {
     const mainchainClient = argonMainchainUrl
-      ? await MainchainClient.connect(argonMainchainUrl, 10e3)
+      ? MainchainClient.connect(argonMainchainUrl, 10e3)
       : null;
     try {
       return await new DatastoreLookup(mainchainClient).getHostInfo(datastoreUrl);
     } finally {
-      await mainchainClient?.close();
+      if (mainchainClient) {
+        await mainchainClient.then(x => x.close());
+      }
     }
   }
 

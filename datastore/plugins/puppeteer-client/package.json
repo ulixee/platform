@@ -4,9 +4,9 @@
   "description": "The Datastore Puppeteer Plugin.",
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "import": "./index.mjs",
-      "require": "./index.cjs",
-      "types": "./index.d.ts"
+      "require": "./index.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -14,7 +14,7 @@
     "@ulixee/commons": "2.0.0-alpha.29",
     "@ulixee/datastore": "2.0.0-alpha.29",
     "@ulixee/schema": "2.0.0-alpha.29",
-    "puppeteer": "^23.4.0"
+    "puppeteer": "^23.5.1"
   },
   "devDependencies": {
     "@ulixee/datastore-testing": "2.0.0-alpha.29"

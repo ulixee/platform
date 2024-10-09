@@ -8,6 +8,13 @@ const outDir = process.env.BUILD_DIR ?? 'build';
 const isDevelopment = !['production', 'test'].includes(process.env.NODE_ENV);
 
 export default defineConfig({
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern',
+      },
+    },
+  },
   base: isDevelopment ? undefined : './',
   build: {
     rollupOptions: {
@@ -17,7 +24,7 @@ export default defineConfig({
     },
     outDir: fileURLToPath(new URL(`../../${outDir}/datastore/docpage/dist`, import.meta.url)),
     // needed for commonjs to be activated for @ulixee deps
-    commonjsOptions: { include: [] },
+    commonjsOptions: { include: [/prismjs/] },
     emptyOutDir: true,
     sourcemap: 'inline',
   },
@@ -31,8 +38,8 @@ export default defineConfig({
     }),
     svgLoader({
       svgoConfig: {
-        multipass: true
-      }
+        multipass: true,
+      },
     }),
     prismjs({
       languages: ['javascript', 'typescript', 'shell'],

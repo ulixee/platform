@@ -1,4 +1,4 @@
-import { Keyring } from '@polkadot/keyring';
+import { Keyring } from '@argonprotocol/mainchain';
 import { Helpers } from '@ulixee/datastore-testing';
 import { CryptoScheme, Localchain } from '@argonprotocol/localchain';
 import { AccountType } from '@ulixee/platform-specification/types/IBalanceChange';

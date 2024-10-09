@@ -1,13 +1,14 @@
-import { CloudNode } from '@ulixee/cloud';
+import CloudCliCommands from '@ulixee/cloud/cli';
 import UlixeeConfig from '@ulixee/commons/config';
 import UlixeeHostsConfig from '@ulixee/commons/config/hosts';
 import { existsAsync } from '@ulixee/commons/lib/fileUtils';
+import Resolvable from '@ulixee/commons/lib/Resolvable';
 import ShutdownHandler from '@ulixee/commons/lib/ShutdownHandler';
-import Identity from '@ulixee/platform-utils/lib/Identity';
 import IDatastoreDeployLogEntry from '@ulixee/datastore-core/interfaces/IDatastoreDeployLogEntry';
 import DatastoreManifest from '@ulixee/datastore-core/lib/DatastoreManifest';
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
 import LocalUserProfile from '@ulixee/datastore/lib/LocalUserProfile';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import { execSync } from 'child_process';
 import * as Fs from 'fs';
 import * as Path from 'path';
@@ -118,6 +119,9 @@ async function upload(
   }
 
   try {
+    if (!Fs.existsSync(UlixeeConfig.global.directoryPath)) {
+      Fs.mkdirSync(UlixeeConfig.global.directoryPath, { recursive: true });
+    }
     const path = Path.join(UlixeeConfig.global.directoryPath, 'datastore-deployments.jsonl');
     await Fs.promises.appendFile(
       path,
@@ -142,6 +146,7 @@ export async function startDatastore(
     compiledSourcePath?: string;
     watch?: boolean;
     showDocs?: boolean;
+    extraArgs: string[];
   },
 ): Promise<void> {
   const packager = new DatastorePackager(path, options?.outDir, true);
@@ -160,8 +165,14 @@ export async function startDatastore(
   }
 
   if (!host) {
-    const cloudNode = new CloudNode();
-    await cloudNode.listen();
+    const resolvable = new Resolvable<void>();
+    CloudCliCommands({
+      suppressLogs: true,
+      async onStart() {
+        resolvable.resolve();
+      },
+    }).parse(['start', ...options.extraArgs]);
+    await resolvable.promise;
     host = UlixeeHostsConfig.global.getVersionHost(version);
   }
   if (!host.includes('://')) host = `ulx://${host}`;

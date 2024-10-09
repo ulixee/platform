@@ -5,13 +5,13 @@ import { IDomainLookupApis, IPaymentServiceApis } from '@ulixee/platform-specifi
 import { DomainLookupApiSchema } from '@ulixee/platform-specification/datastore/DomainLookupApis';
 import { PaymentServiceApisSchema } from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import {
+  ArgonPaymentProcessorApiSchema,
+  IArgonPaymentProcessorApis,
+} from '@ulixee/platform-specification/services/ArgonPaymentProcessorApis';
+import {
   DatastoreRegistryApiSchemas,
   IDatastoreRegistryApis,
 } from '@ulixee/platform-specification/services/DatastoreRegistryApis';
-import {
-  MicropaymentChannelApiSchemas,
-  IMicropaymentChannelApis,
-} from '@ulixee/platform-specification/services/MicropaymentChannelApis';
 import {
   IStatsTrackerApis,
   StatsTrackerApiSchemas,
@@ -24,7 +24,7 @@ import { DatastoreNotFoundError } from '../lib/errors';
 export type TServicesApis = IDatastoreRegistryApis<IDatastoreApiContext> &
   IStatsTrackerApis<IDatastoreApiContext> &
   IPaymentServiceApis<IDatastoreApiContext> &
-  IMicropaymentChannelApis<IDatastoreApiContext> &
+  IArgonPaymentProcessorApis<IDatastoreApiContext> &
   IDomainLookupApis<IDatastoreApiContext>;
 
 export type TConnectionToServicesClient = ConnectionToClient<TServicesApis, {}>;
@@ -88,19 +88,23 @@ export default class HostedServicesEndpoints {
         const manifest = await ctx.datastoreRegistry.get(datastoreId, version);
         return await ctx.statsTracker.getForDatastoreVersion(manifest);
       },
-      'MicropaymentChannel.getPaymentInfo': async (_args, ctx) => {
-        return await ctx.micropaymentChannelSpendTracker.getPaymentInfo();
+      'ArgonPaymentProcessor.getPaymentInfo': async (_args, ctx) => {
+        return await ctx.argonPaymentProcessor.getPaymentInfo();
       },
-      'MicropaymentChannel.importChannelHold': async ({ channelHold, datastoreId }, ctx) => {
+      'ArgonPaymentProcessor.importChannelHold': async ({ channelHold, datastoreId }, ctx) => {
         const manifest = await ctx.datastoreRegistry.get(datastoreId);
-        return await ctx.micropaymentChannelSpendTracker.importChannelHold({ channelHold, datastoreId }, manifest);
+        return await ctx.argonPaymentProcessor.importChannelHold(
+          { channelHold, datastoreId },
+          manifest,
+        );
       },
-      'MicropaymentChannel.debitPayment': async (data, ctx) => {
-        return await ctx.micropaymentChannelSpendTracker.debit(data);
+      'ArgonPaymentProcessor.debit': async (data, ctx) => {
+        return await ctx.argonPaymentProcessor.debit(data);
       },
-      'MicropaymentChannel.finalizePayment': async (data, ctx) => {
-        return await ctx.micropaymentChannelSpendTracker.finalize(data);
+      'ArgonPaymentProcessor.finalize': async (data, ctx) => {
+        return await ctx.argonPaymentProcessor.finalize(data);
       },
+      // upstream payments
       'PaymentService.authenticate': async (_args, _ctx) => {
         throw new Error('Not implemented');
       },
@@ -120,7 +124,7 @@ export default class HostedServicesEndpoints {
         DatastoreRegistryApiSchemas[api] ??
         StatsTrackerApiSchemas[api] ??
         PaymentServiceApisSchema[api] ??
-        MicropaymentChannelApiSchemas[api] ??
+        ArgonPaymentProcessorApiSchema[api] ??
         DomainLookupApiSchema[api];
       if (!validationSchema) throw new Error(`invalid api ${api}`);
       this.handlersByCommand[api] = validateThenRun.bind(

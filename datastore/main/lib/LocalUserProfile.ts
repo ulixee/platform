@@ -1,17 +1,20 @@
 import { getDataDirectory } from '@ulixee/commons/lib/dirUtils';
 import { safeOverwriteFile } from '@ulixee/commons/lib/fileUtils';
-import Identity from '@ulixee/platform-utils/lib/Identity';
 import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
-import { existsSync } from 'fs';
+import Identity from '@ulixee/platform-utils/lib/Identity';
 import * as Fs from 'fs';
+import { existsSync } from 'fs';
 import * as Path from 'path';
 import ILocalUserProfile from '../interfaces/ILocalUserProfile';
 
-export default class LocalUserProfile {
+export default class LocalUserProfile implements ILocalUserProfile {
   public static path = Path.join(getDataDirectory(), 'ulixee', 'user-profile.json');
   public clouds: (ILocalUserProfile['clouds'][0] & { adminIdentity?: string })[] = [];
-  public databrokers:ILocalUserProfile['databrokers'] = [];
-  public localchainPaths: string[] = [];
+  public databrokers: ILocalUserProfile['databrokers'] = [];
+  public localchains: ILocalUserProfile['localchains'] = [];
+  public localchainForQueryName = 'primary';
+  public localchainForCloudNodeName: string;
+
   public installedDatastores: ILocalUserProfile['installedDatastores'] = [];
   public datastoreAdminIdentities: (ILocalUserProfile['datastoreAdminIdentities'][0] & {
     adminIdentity?: string;
@@ -142,8 +145,10 @@ export default class LocalUserProfile {
         adminIdentityPath: x.adminIdentityPath,
         datastoreId: x.datastoreId,
       })),
-      localchainPaths: this.localchainPaths,
+      localchains: this.localchains,
       databrokers: this.databrokers,
+      localchainForQueryName: this.localchainForQueryName,
+      localchainForCloudNodeName: this.localchainForCloudNodeName,
     };
   }
 
@@ -163,7 +168,7 @@ export default class LocalUserProfile {
       this.datastoreAdminIdentities ??= [];
       this.gettingStartedCompletedSteps ??= [];
       this.installedDatastores ??= [];
-      this.localchainPaths ??= [];
+      this.localchains ??= [];
       this.databrokers ??= [];
     } catch {}
   }

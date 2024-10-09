@@ -4,17 +4,17 @@
   "description": "The Ulixee Cloud is an out-of-the box tool to host and deploy Ulixee Datastores and Hero scripts. It allows you to easily create a paid API service.",
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "import": "./index.mjs",
-      "require": "./index.cjs",
-      "types": "./index.d.ts"
+      "require": "./index.cjs"
     },
     "./paths": {
-      "require": "./paths.js",
-      "types": "./paths.d.ts"
+      "types": "./paths.d.ts",
+      "require": "./paths.js"
     },
     "./cli": {
-      "default": "./cli.cjs",
-      "types": "./cli.d.ts"
+      "types": "./cli/index.d.ts",
+      "require": "./cli/index.js"
     }
   },
   "bin": "./bin/cli.js",
@@ -23,17 +23,10 @@
     "start:alive": "node -r @ulixee/desktop-core/register bin/cli.js start",
     "preversion": "node ../../build/cloud/main/scripts/gatherEnvSettings.js"
   },
-  "peerDependencies": {
-    "@ulixee/desktop-core": "2.0.0-alpha.29"
-  },
-  "peerDependenciesMeta": {
-    "@ulixee/desktop-core": {
-      "optional": true
-    }
-  },
   "dependencies": {
     "@ulixee/commons": "2.0.0-alpha.29",
     "@ulixee/datastore-core": "2.0.0-alpha.29",
+    "@ulixee/desktop-core": "2.0.0-alpha.29",
     "@ulixee/datastore-plugins-hero-core": "2.0.0-alpha.29",
     "@ulixee/hero-core": "2.0.0-alpha.29",
     "@ulixee/hero-interfaces": "2.0.0-alpha.29",

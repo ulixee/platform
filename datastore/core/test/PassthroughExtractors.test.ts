@@ -1,5 +1,5 @@
 import { Chain, ChainIdentity } from '@argonprotocol/localchain';
-import { Keyring } from '@polkadot/keyring';
+import { Keyring } from '@argonprotocol/mainchain';
 import { CloudNode } from '@ulixee/cloud';
 import DatastorePackager from '@ulixee/datastore-packager';
 import { Helpers } from '@ulixee/datastore-testing';
@@ -8,8 +8,8 @@ import ArgonReserver from '@ulixee/datastore/payments/ArgonReserver';
 import CreditReserver from '@ulixee/datastore/payments/CreditReserver';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import MicropaymentChannelSpendTracker from '../lib/MicropaymentChannelSpendTracker';
-import MockMicropaymentChannelSpendTracker from './_MockMicropaymentChannelSpendTracker';
+import IArgonPaymentProcessor from '../interfaces/IArgonPaymentProcessor';
+import MockArgonPaymentProcessor from './_MockArgonPaymentProcessor';
 import MockPaymentService from './_MockPaymentService';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'PassthroughExtractors.test');
@@ -20,8 +20,8 @@ let client: DatastoreApiClient;
 const keyring = new Keyring({ ss58Format: 18 });
 
 Helpers.blockGlobalConfigWrites();
-const micropaymentChannelSpendTrackerMock = new MockMicropaymentChannelSpendTracker();
-const micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(storageDir, null);
+const argonPaymentProcessorMock = new MockArgonPaymentProcessor();
+let argonPaymentProcessor: IArgonPaymentProcessor;
 
 const mainchainIdentity = {
   chain: Chain.Devnet,
@@ -62,7 +62,7 @@ beforeAll(async () => {
       ...mainchainIdentity,
     },
   );
-  cloudNode.datastoreCore.micropaymentChannelSpendTracker = micropaymentChannelSpendTracker;
+  argonPaymentProcessor = cloudNode.datastoreCore.argonPaymentProcessor;
   client = new DatastoreApiClient(await cloudNode.address);
   Helpers.onClose(() => client.disconnect(), true);
 
@@ -232,7 +232,7 @@ test('should be able to add charges from multiple extractors', async () => {
   let hop1Cloud: CloudNode;
   let sourceCloudNode: CloudNode;
 
-  micropaymentChannelSpendTrackerMock.mock((id, balanceChange) => {
+  argonPaymentProcessorMock.mock((id, balanceChange) => {
     const channelHoldId = paymentServices
       .map(x => x.paymentsByDatastoreId[id])
       .find(Boolean).channelHoldId;
@@ -266,8 +266,6 @@ test('should be able to add charges from multiple extractors', async () => {
       },
     );
     sourceCloudAddress = await sourceCloudNode.address;
-    sourceCloudNode.datastoreCore.micropaymentChannelSpendTracker =
-      new MicropaymentChannelSpendTracker(sourceCloudDir, null);
 
     Fs.writeFileSync(
       `${__dirname}/datastores/source.js`,
@@ -326,15 +324,6 @@ export default new Datastore({
       },
     );
     hop1CloudAddress = await hop1Cloud.address;
-    hop1Cloud.datastoreCore.micropaymentChannelSpendTracker = new MicropaymentChannelSpendTracker(
-      cloud2StorageDir,
-      null,
-    );
-    hop1Cloud.datastoreCore.paymentInfo.resolve({
-      address: address2.address,
-      notaryId: 1,
-      ...mainchainIdentity,
-    });
     const corePaymentService = new MockPaymentService(
       address2,
       new DatastoreApiClient(sourceCloudAddress),
@@ -446,7 +435,7 @@ export default new Datastore({
 
   expect(channelHolds).toHaveLength(3);
   // @ts-expect-error
-  let dbs = sourceCloudNode.datastoreCore.micropaymentChannelSpendTracker.channelHoldDbsByDatastore;
+  let dbs = sourceCloudNode.datastoreCore.argonPaymentProcessor.channelHoldDbsByDatastore;
   expect(dbs.size).toBe(1);
 
   const paymentsByDatastoreId = {};
@@ -462,7 +451,7 @@ export default new Datastore({
     }),
   ]);
   // @ts-expect-error
-  dbs = hop1Cloud.datastoreCore.micropaymentChannelSpendTracker.channelHoldDbsByDatastore;
+  dbs = hop1Cloud.datastoreCore.argonPaymentProcessor.channelHoldDbsByDatastore;
   expect(dbs.size).toBe(1);
 
   expect(dbs.get(hop1DatastoreId).paymentIdByChannelHoldId.size).toBe(1);
@@ -475,7 +464,7 @@ export default new Datastore({
   ]);
 
   // @ts-expect-error
-  dbs = micropaymentChannelSpendTracker.channelHoldDbsByDatastore;
+  dbs = argonPaymentProcessor.channelHoldDbsByDatastore;
   expect(dbs.size).toBe(1);
 
   expect(dbs.get(hop2DatastoreId).paymentIdByChannelHoldId.size).toBe(1);

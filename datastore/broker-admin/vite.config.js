@@ -8,6 +8,13 @@ const outDir = process.env.BUILD_DIR ?? 'build';
 
 export default defineConfig({
   base: '/',
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern',
+      },
+    },
+  },
   build: {
     rollupOptions: {
       input: {
@@ -16,7 +23,7 @@ export default defineConfig({
     },
     outDir: fileURLToPath(new URL(`../../${outDir}/datastore/broker/admin-ui`, import.meta.url)),
     // needed for commonjs to be activated for @ulixee deps
-    commonjsOptions: { include: [] },
+    commonjsOptions: { include: [/.+/] },
     emptyOutDir: true,
     sourcemap: 'inline',
     target: 'es2020',

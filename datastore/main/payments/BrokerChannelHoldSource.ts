@@ -1,6 +1,5 @@
 import { ADDRESS_PREFIX, BalanceChangeBuilder } from '@argonprotocol/localchain';
-import { Keyring } from '@polkadot/keyring';
-import { mnemonicGenerate } from '@polkadot/util-crypto';
+import { Keyring, mnemonicGenerate } from '@argonprotocol/mainchain';
 import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
 import { toUrl } from '@ulixee/commons/lib/utils';
