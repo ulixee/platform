@@ -8,6 +8,7 @@ import HttpTransportToCore from '@ulixee/net/lib/HttpTransportToCore';
 import { IDatabrokerApis } from '@ulixee/platform-specification/datastore';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
+import { IPaymentMethod } from '@ulixee/platform-specification/types/IPayment';
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import serdeJson from '@ulixee/platform-utils/lib/serdeJson';
 import { nanoid } from 'nanoid';
@@ -21,6 +22,7 @@ export default class BrokerChannelHoldSource implements IChannelHoldSource {
   private readonly connectionToCore: ConnectionToCore<IDatabrokerApis, {}>;
   private keyring = new Keyring({ type: 'sr25519', ss58Format: ADDRESS_PREFIX });
   private readonly loadPromise: Promise<void | Error>;
+  private balanceChangeByChannelHoldId: { [channelHoldId: string]: IBalanceChange } = {};
 
   constructor(
     public host: string,
@@ -65,7 +67,7 @@ export default class BrokerChannelHoldSource implements IChannelHoldSource {
       nonce,
     );
 
-    return await this.connectionToCore.sendRequest({
+    const holdDetails = await this.connectionToCore.sendRequest({
       command: 'Databroker.createChannelHold',
       args: [
         {
@@ -82,20 +84,25 @@ export default class BrokerChannelHoldSource implements IChannelHoldSource {
         },
       ],
     });
+    this.balanceChangeByChannelHoldId[holdDetails.channelHoldId] = holdDetails.balanceChange;
+    return holdDetails;
   }
 
   public async updateChannelHoldSettlement(
-    channelHold: IChannelHoldDetails,
+    channelHold: IPaymentMethod['channelHold'],
     updatedSettlement: bigint,
-  ): Promise<IBalanceChange> {
-    channelHold.balanceChange.notes[0].milligons = updatedSettlement;
-    channelHold.balanceChange.balance =
-      channelHold.balanceChange.channelHoldNote.milligons - updatedSettlement;
-    const json = serdeJson(channelHold.balanceChange);
+  ): Promise<void> {
+    const balanceChange = this.balanceChangeByChannelHoldId[channelHold.id];
+
+    // TODO: add a way to retrieve the balance change from the broker
+    if (!balanceChange)
+      throw new Error(`No balance change found for channel hold ${channelHold.id}`);
+    balanceChange.notes[0].milligons = updatedSettlement;
+    balanceChange.balance = balanceChange.channelHoldNote.milligons - updatedSettlement;
+    const json = serdeJson(balanceChange);
     const bytes = BalanceChangeBuilder.toSigningMessage(json);
     const signature = this.keyring.getPairs()[0].sign(bytes, { withType: true });
-    channelHold.balanceChange.signature = Buffer.from(signature);
-    return channelHold.balanceChange;
+    balanceChange.signature = Buffer.from(signature);
   }
 
   public static createSignatureMessage(

@@ -9,6 +9,7 @@ import { toUrl } from '@ulixee/commons/lib/utils';
 import { IPayment } from '@ulixee/platform-specification';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
+import { IPaymentMethod } from '@ulixee/platform-specification/types/IPayment';
 import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import { nanoid } from 'nanoid';
 import * as Path from 'node:path';
@@ -36,9 +37,9 @@ export interface IChannelHoldSource {
     milligons: bigint,
   ): Promise<IChannelHoldDetails>;
   updateChannelHoldSettlement(
-    channelHold: IChannelHoldDetails,
+    channelHold: IPaymentMethod['channelHold'],
     updatedSettlement: bigint,
-  ): Promise<IBalanceChange>;
+  ): Promise<void>;
 }
 
 export default class ArgonReserver
@@ -52,7 +53,6 @@ export default class ArgonReserver
     [uuid: string]: { microgons: number; datastoreId: string; paymentId: string };
   } = {};
 
-  private readonly openChannelHoldsById: { [channelHoldId: string]: IChannelHoldDetails } = {};
   private readonly reserveQueueByDatastoreId: { [url: string]: Queue } = {};
   private readonly channelHoldQueue = new Queue('CHANNELHOLD QUEUE', 1);
   private needsSave = false;
@@ -109,10 +109,6 @@ export default class ArgonReserver
     });
   }
 
-  public getChannelHoldDetails(channelHoldId: string): IChannelHoldDetails {
-    return this.openChannelHoldsById[channelHoldId];
-  }
-
   public async reserve(
     paymentInfo: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
   ): Promise<IPayment> {
@@ -133,7 +129,11 @@ export default class ArgonReserver
       for (const paymentOption of this.paymentsByDatastoreId[datastoreId]) {
         if (paymentOption.remaining >= microgons) {
           if (paymentOption.paymentMethod.channelHold?.id) {
-            if (paymentOption.host !== datastoreHost) continue;
+            if (
+              paymentOption.host !== datastoreHost &&
+              !paymentOption.host.includes(`//${datastoreHost}`)
+            )
+              continue;
           }
           return await this.charge(paymentOption, microgons);
         }
@@ -212,7 +212,6 @@ export default class ArgonReserver
         datastoreId: id,
         allocatedMilligons: holdAmount,
       });
-      this.openChannelHoldsById[channelHoldId] = channelHold;
       this.paymentsByDatastoreId[id] ??= [];
       this.paymentsByDatastoreId[id].push(entry);
       return entry;
@@ -268,14 +267,7 @@ export default class ArgonReserver
       throw new Error('Cannot release more than the allocated amount');
     }
     if (updatedSettlement > channelHold.settledMilligons) {
-      const openChannelHold = this.openChannelHoldsById[channelHold.id];
-      if (!openChannelHold) throw new Error('ChannelHold not found');
-      const result = await this.channelHoldSource.updateChannelHoldSettlement(
-        openChannelHold,
-        updatedSettlement,
-      );
-      channelHold.settledMilligons = result.notes[0].milligons;
-      channelHold.settledSignature = result.signature;
+      await this.channelHoldSource.updateChannelHoldSettlement(channelHold, updatedSettlement);
       this.needsSave = true;
       this.emit('updateSettlement', {
         channelHoldId: channelHold.id,

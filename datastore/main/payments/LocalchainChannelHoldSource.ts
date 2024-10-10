@@ -78,18 +78,16 @@ export default class LocalchainChannelHoldSource implements IChannelHoldSource {
   }
 
   public async updateChannelHoldSettlement(
-    channelHold: IChannelHoldDetails,
+    channelHold: IPaymentMethod['channelHold'],
     updatedSettlement: bigint,
-  ): Promise<IBalanceChange> {
-    const channelHoldId = channelHold.channelHoldId;
+  ): Promise<void> {
+    const channelHoldId = channelHold.id;
     this.openChannelHoldsById[channelHoldId] ??=
       await this.localchain.openChannelHolds.get(channelHoldId);
     const openChannelHold = this.openChannelHoldsById[channelHoldId];
     const result = await openChannelHold.sign(updatedSettlement);
-    const balanceChange = channelHold.balanceChange;
-    balanceChange.signature = Buffer.from(result.signature);
-    balanceChange.notes[0].milligons = result.milligons;
-    balanceChange.balance = balanceChange.channelHoldNote!.milligons - result.milligons;
-    return balanceChange;
+    const channelHoldDetails = await openChannelHold.channelHold;
+    channelHold.settledMilligons = channelHoldDetails.settledAmount;
+    channelHold.settledSignature = Buffer.from(result.signature);
   }
 }
