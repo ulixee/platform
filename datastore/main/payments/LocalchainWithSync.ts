@@ -152,12 +152,45 @@ export default class LocalchainWithSync
     this.afterLoad();
   }
 
-  public async isCreated(): Promise<boolean> {
-    const accounts = await this.#localchain.accounts.list();
-    return accounts.length > 0;
+  public async bindToExportedAccount(accountJson: KeyringPair$Json, passphrase?: string): Promise<void> {
+    const keyring = new Keyring();
+    const pair = keyring.addFromJson(accountJson);
+    pair.decodePkcs8(passphrase);
+    await this.#localchain.keystore.useExternal(
+      pair.address,
+      async (address, signatureMessage) => {
+        let hasPair = true;
+        try {
+          keyring.getPair(address);
+        } catch (e) {
+          hasPair = false;
+        }
+        if (!hasPair) {
+          const accounts = await this.#localchain.accounts.list(true);
+          const account = accounts.find(x => x.address === address);
+          if (!account) {
+            throw new Error(`Account not found for address: ${address}`);
+          }
+          const derived = pair.derive(account.hdPath);
+          keyring.addPair(derived);
+        }
+        return keyring.getPair(address)?.sign(signatureMessage, { withType: true });
+      },
+      async hdPath => {
+        const derived = pair.derive(hdPath);
+        keyring.addPair(derived);
+        return derived.address;
+      },
+    );
   }
 
-  public async create(account?: { suri?: string; cryptoScheme?: CryptoScheme }): Promise<void> {
+  public async createIfMissing(account?: {
+    suri?: string;
+    cryptoScheme?: CryptoScheme;
+  }): Promise<void> {
+    const accounts = await this.#localchain.accounts.list();
+    if (accounts.length) return;
+
     log.info('Creating localchain', { path: Localchain.getDefaultPath() } as any);
     if (account?.suri) {
       const keystorePassword = this.getPassword();
