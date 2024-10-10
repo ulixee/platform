@@ -1,5 +1,5 @@
 import UlixeeConfig from '@ulixee/commons/config';
-import { loadEnv, parseEnvInt } from '@ulixee/commons/lib/envUtils';
+import { loadEnv, parseEnvBool, parseEnvInt } from '@ulixee/commons/lib/envUtils';
 
 loadEnv(process.cwd());
 loadEnv(UlixeeConfig.global.directoryPath);
@@ -12,4 +12,5 @@ export default {
   tickDurationMillis: parseEnvInt(env.ARGON_TICK_DURATION_MILLIS),
   channelHoldExpirationTicks: parseEnvInt(env.ARGON_CHANNEL_HOLD_EXPIRATION_TICKS),
   ntpPoolUrl: env.ARGON_NTP_SERVER,
+  allowMinimumAffordableChannelHold: parseEnvBool(env.ALLOW_MIN_AFFORDABLE_CHANNEL_HOLD),
 };

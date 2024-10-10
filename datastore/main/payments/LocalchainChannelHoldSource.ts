@@ -1,9 +1,13 @@
-import { LocalchainOverview, OpenChannelHold } from '@argonprotocol/localchain';
+import {
+  CHANNEL_HOLD_MINIMUM_SETTLEMENT,
+  LocalchainOverview,
+  OpenChannelHold,
+} from '@argonprotocol/localchain';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
-import IBalanceChange, {
-  BalanceChangeSchema,
-} from '@ulixee/platform-specification/types/IBalanceChange';
+import { BalanceChangeSchema } from '@ulixee/platform-specification/types/IBalanceChange';
+import { IPaymentMethod } from '@ulixee/platform-specification/types/IPayment';
+import Env from '../env';
 import ILocalchainRef from '../interfaces/ILocalchainRef';
 import DatastoreLookup from '../lib/DatastoreLookup';
 import { IChannelHoldDetails, IChannelHoldSource } from './ArgonReserver';
@@ -34,6 +38,20 @@ export default class LocalchainChannelHoldSource implements IChannelHoldSource {
     const { domain } = paymentInfo;
     if (domain) {
       await this.datastoreLookup.validatePayment(paymentInfo);
+    }
+
+    if (Env.allowMinimumAffordableChannelHold) {
+      const accountOverview = await this.localchain.accountOverview();
+      const availableBalance = accountOverview.balance - accountOverview.heldBalance;
+      if (availableBalance < milligons) {
+        if (availableBalance > CHANNEL_HOLD_MINIMUM_SETTLEMENT) {
+          milligons = availableBalance- 200n;
+        } else {
+          throw new Error(
+            `Insufficient balance to fund a channel hold for ${milligons} milligons. (Balance=${availableBalance}m)`,
+          );
+        }
+      }
     }
 
     const openChannelHold = await this.localchain.transactions.createChannelHold(

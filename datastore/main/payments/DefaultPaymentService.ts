@@ -165,7 +165,7 @@ export default class DefaultPaymentService
     const localchain = await LocalchainWithSync.load(config);
     return await DefaultPaymentService.fromOpenLocalchain(
       localchain,
-      channelHoldAllocationStrategy,
+      channelHoldAllocationStrategy ?? config.channelHoldAllocationStrategy,
       apiClients,
       loadCreditsFromPath,
     );
@@ -186,7 +186,7 @@ export default class DefaultPaymentService
     );
     const reserver = new ArgonReserver(
       channelHoldSource,
-      channelHoldAllocationStrategy,
+      channelHoldAllocationStrategy ?? localchain.localchainConfig.channelHoldAllocationStrategy,
       apiClients,
     );
     await reserver.load();

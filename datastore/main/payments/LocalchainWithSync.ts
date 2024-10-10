@@ -14,6 +14,8 @@ import {
   TickerRef,
   Transactions,
 } from '@argonprotocol/localchain';
+import { Keyring } from '@argonprotocol/mainchain';
+import type { KeyringPair$Json } from '@polkadot/keyring/types';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
@@ -96,7 +98,9 @@ export default class LocalchainWithSync
 
   private nextTick: NodeJS.Timeout;
 
-  constructor(readonly localchainConfig: ILocalchainConfig = {}) {
+  constructor(
+    readonly localchainConfig: Omit<ILocalchainConfig, 'localchainCreateIfMissing'> = {},
+  ) {
     super();
     this.localchainConfig.mainchainUrl ||= Env.argonMainchainUrl;
     if (this.localchainConfig.localchainName && !this.localchainConfig.localchainPath) {
@@ -203,11 +207,7 @@ export default class LocalchainWithSync
   public async createPaymentService(
     datastoreClients: DatastoreApiClients,
   ): Promise<DefaultPaymentService> {
-    return await DefaultPaymentService.fromOpenLocalchain(
-      this,
-      this.localchainConfig.channelHoldAllocationStrategy,
-      datastoreClients,
-    );
+    return await DefaultPaymentService.fromOpenLocalchain(this, undefined, datastoreClients);
   }
 
   private getPassword(): KeystorePasswordOption | undefined {
@@ -292,7 +292,9 @@ export default class LocalchainWithSync
     }, millisToNextTick);
   }
 
-  public static async load(config?: ILocalchainConfig): Promise<LocalchainWithSync> {
+  public static async load(
+    config?: Omit<ILocalchainConfig, 'localchainCreateIfMissing'>,
+  ): Promise<LocalchainWithSync> {
     const localchain = new LocalchainWithSync(config);
     await localchain.load();
     return localchain;
