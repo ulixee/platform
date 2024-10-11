@@ -18,18 +18,10 @@
     - Input
     - Output
 
-- title: Guides
-  items:
-    - Create a Localchain
-    - Register a Data Domain
-    - Setup Datastore Payments
-    - Close Argon Blocks
-
 - title: Advanced
   items:
     - Extractor Schemas
     - Schema
-    - Payments
     - Databrokers
     - Credits
     - Plugins
@@ -37,7 +29,6 @@
     - Storage Engines
     - Hero Plugin
     - Puppeteer Plugin
-
 
 - title: Help
   items:
