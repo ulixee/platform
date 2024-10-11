@@ -14,8 +14,7 @@ import {
   TickerRef,
   Transactions,
 } from '@argonprotocol/localchain';
-import { Keyring } from '@argonprotocol/mainchain';
-import type { KeyringPair$Json } from '@polkadot/keyring/types';
+import { Keyring, KeyringPair$Json } from '@argonprotocol/mainchain';
 import { TypedEventEmitter } from '@ulixee/commons/lib/eventUtils';
 import Logger from '@ulixee/commons/lib/Logger';
 import Resolvable from '@ulixee/commons/lib/Resolvable';
@@ -152,7 +151,10 @@ export default class LocalchainWithSync
     this.afterLoad();
   }
 
-  public async bindToExportedAccount(accountJson: KeyringPair$Json, passphrase?: string): Promise<void> {
+  public async bindToExportedAccount(
+    accountJson: KeyringPair$Json,
+    passphrase?: string,
+  ): Promise<void> {
     const keyring = new Keyring();
     const pair = keyring.addFromJson(accountJson);
     pair.decodePkcs8(passphrase);
