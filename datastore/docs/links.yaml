@@ -14,9 +14,18 @@
     - Crawler
     - Passthrough Extractor
     - Cloning
+    - Payments
     - Extractor Context
     - Input
     - Output
+
+- title: Guides
+  items:
+    - Using Localchain
+    - Register a Domain
+    - Setup Datastore Payments
+    - Close Argon Blocks
+    - Querying Datastores
 
 - title: Advanced
   items:
