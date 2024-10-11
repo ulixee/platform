@@ -3,14 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-# [2.0.0-alpha.29](https://github.com/ulixee/platform/compare/v2.0.0-alpha.28...v2.0.0-alpha.29) (2024-07-16)
+# [2.0.0-alpha.30](https://github.com/ulixee/platform/compare/v2.0.0-alpha.29...v2.0.0-alpha.30) (2024-10-11)
 
+### Bug Fixes
+
+* **datastore:** tests broken from argon updates ([827064c](https://github.com/ulixee/platform/commit/827064c9290b75d15920b66634b2902fabb3fcfa))
+* **packager:** allow full cloud cli commands ([4fdbcbf](https://github.com/ulixee/platform/commit/4fdbcbfb6e9150641021bec34e7b8fab124c0218))
+
+### Features
+
+* **cloud:** add a public host option ([e748965](https://github.com/ulixee/platform/commit/e748965b5f14cc74016fb59ac24cd76995f6131a))
+* **cloud:** generate localchain if needed ([965be3f](https://github.com/ulixee/platform/commit/965be3f2e313bff7da0f2d32c8d3fc6d28528011))
+* **datastore:** allow funding smaller channels ([8186657](https://github.com/ulixee/platform/commit/818665771b700535f648aa3be8d6885847d247e1))
+* **datastore:** allow importing an argon account ([e9d5d54](https://github.com/ulixee/platform/commit/e9d5d542ca479345f683a3569ba6e73255d0aab4))
+* **datastore:** fix reboot recovery of channels ([891fc0d](https://github.com/ulixee/platform/commit/891fc0d4b18b6cf3b896647dceb427876aeaaad2))
+* **datastore:** track query/cloud localchain ([b2f12d0](https://github.com/ulixee/platform/commit/b2f12d00e91f90d58d6c5adbbf10ca140afe06de))
+* remove payment info from manifest ([b4a9ad5](https://github.com/ulixee/platform/commit/b4a9ad57289c4c94ac0ee0860c2cf0f89aaabab4))
+* **website:** watch mode ([4741798](https://github.com/ulixee/platform/commit/4741798fdfd47a4fcdfc22f79836796efcb5b9f6))
+
+# [2.0.0-alpha.29](https://github.com/ulixee/platform/compare/v2.0.0-alpha.28...v2.0.0-alpha.29) (2024-07-16)
 
 ### Bug Fixes
 
 * **end-to-end:** use docker for e2e tests ([3f243de](https://github.com/ulixee/platform/commit/3f243deb40d2b1cc86048d171d574b3690a29395))
 * **github:** databroker tests broken ([801f62c](https://github.com/ulixee/platform/commit/801f62cad9e16e441cbea7fe3660098ade31ef34))
-
 
 ### Features
 
@@ -21,25 +37,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 * **desktop:** update wallet ux ([3b9fbfb](https://github.com/ulixee/platform/commit/3b9fbfba9c91bec72b3dbc4b88b83eb39992d617))
 * integrate argon payments to desktop ([b8a7ffd](https://github.com/ulixee/platform/commit/b8a7ffd651d88160afbfe7906c09e2eac06a345d))
 
-
-
-
-
 # [2.0.0-alpha.28](https://github.com/ulixee/platform/compare/v2.0.0-alpha.27...v2.0.0-alpha.28) (2024-03-11)
 
 **Note:** Version bump only for package @ulixee/datastore
 
-
-
-
-
 # [2.0.0-alpha.27](https://github.com/ulixee/platform/compare/v2.0.0-alpha.26...v2.0.0-alpha.27) (2024-03-01)
 
 **Note:** Version bump only for package @ulixee/datastore
-
-
-
-
 
 # [2.0.0-alpha.26](https://github.com/ulixee/platform/compare/v2.0.0-alpha.25...v2.0.0-alpha.26) (2024-02-02)
 

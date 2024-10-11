@@ -1,14 +1,14 @@
 {
   "name": "@ulixee/platform-specification",
-  "version": "2.0.0-alpha.29",
+  "version": "2.0.0-alpha.30",
   "description": "",
   "main": "./index.js",
   "license": "MIT",
   "dependencies": {
-    "zod": "^3.22.4",
-    "@argonprotocol/localchain": "0.0.13"
+    "@argonprotocol/localchain": "0.0.14",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@ulixee/net": "2.0.0-alpha.29"
+    "@ulixee/net": "2.0.0-alpha.30"
   }
 }

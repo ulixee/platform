@@ -1,9 +1,9 @@
 {
   "name": "@ulixee/cloud-examples",
-  "version": "2.0.0-alpha.29",
+  "version": "2.0.0-alpha.30",
   "private": true,
   "dependencies": {
-    "@ulixee/cloud": "2.0.0-alpha.29",
-    "@ulixee/hero": "2.0.0-alpha.29"
+    "@ulixee/cloud": "2.0.0-alpha.30",
+    "@ulixee/hero": "2.0.0-alpha.30"
   }
 }
