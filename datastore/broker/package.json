@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/databroker",
-  "version": "2.0.0-alpha.29",
+  "version": "2.0.0-alpha.30",
   "main": "index.js",
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
@@ -17,14 +17,14 @@
     }
   },
   "dependencies": {
-    "@ulixee/cloud": "2.0.0-alpha.29",
-    "@ulixee/commons": "2.0.0-alpha.29",
-    "@ulixee/datastore": "2.0.0-alpha.29",
     "@argonprotocol/localchain": "0.0.14",
     "@argonprotocol/mainchain": "0.0.14",
-    "@ulixee/net": "2.0.0-alpha.29",
-    "@ulixee/platform-specification": "2.0.0-alpha.29",
-    "@ulixee/platform-utils": "2.0.0-alpha.29",
+    "@ulixee/cloud": "2.0.0-alpha.30",
+    "@ulixee/commons": "2.0.0-alpha.30",
+    "@ulixee/datastore": "2.0.0-alpha.30",
+    "@ulixee/net": "2.0.0-alpha.30",
+    "@ulixee/platform-specification": "2.0.0-alpha.30",
+    "@ulixee/platform-utils": "2.0.0-alpha.30",
     "better-sqlite3": "^11.1.2",
     "commander": "^9.5.0",
     "moment": "^2.29.4",
@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
-    "@ulixee/datastore-packager": "2.0.0-alpha.29",
-    "@ulixee/datastore-testing": "2.0.0-alpha.29"
+    "@ulixee/datastore-packager": "2.0.0-alpha.30",
+    "@ulixee/datastore-testing": "2.0.0-alpha.30"
   }
 }

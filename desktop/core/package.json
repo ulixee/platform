@@ -1,34 +1,35 @@
 {
   "name": "@ulixee/desktop-core",
-  "version": "2.0.0-alpha.29",
+  "version": "2.0.0-alpha.30",
   "main": "index.js",
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.29",
-    "@ulixee/datastore": "2.0.0-alpha.29",
-    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.29",
-    "@ulixee/default-browser-emulator": "2.0.0-alpha.29",
-    "@ulixee/desktop-interfaces": "2.0.0-alpha.29",
-    "@ulixee/hero": "2.0.0-alpha.29",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.29",
-    "@ulixee/hero-plugin-utils": "2.0.0-alpha.29",
-    "@ulixee/hero-timetravel": "2.0.0-alpha.29",
-    "@ulixee/net": "2.0.0-alpha.29",
-    "@ulixee/platform-specification": "2.0.0-alpha.29",
-    "@ulixee/unblocked-agent": "2.0.0-alpha.29",
-    "@ulixee/unblocked-specification": "2.0.0-alpha.29",
+    "@ulixee/commons": "2.0.0-alpha.30",
+    "@ulixee/datastore": "2.0.0-alpha.30",
+    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.30",
+    "@ulixee/default-browser-emulator": "2.0.0-alpha.30",
+    "@ulixee/desktop-interfaces": "2.0.0-alpha.30",
+    "@ulixee/hero": "2.0.0-alpha.30",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.30",
+    "@ulixee/hero-plugin-utils": "2.0.0-alpha.30",
+    "@ulixee/hero-timetravel": "2.0.0-alpha.30",
+    "@ulixee/net": "2.0.0-alpha.30",
+    "@ulixee/platform-specification": "2.0.0-alpha.30",
+    "@ulixee/unblocked-agent": "2.0.0-alpha.30",
+    "@ulixee/unblocked-specification": "2.0.0-alpha.30",
     "fuse.js": "^6.5.3",
     "nanoid": "^3.3.6",
     "ws": "^8.18.0"
   },
   "peerDependencies": {
-    "@ulixee/datastore-core": "2.0.0-alpha.29",
-    "@ulixee/hero-core": "2.0.0-alpha.29"
+    "@ulixee/datastore-core": "2.0.0-alpha.30",
+    "@ulixee/hero-core": "2.0.0-alpha.30"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.154",
-    "@ulixee/datastore-testing": "2.0.0-alpha.29",
+    "@ulixee/datastore-core": "2.0.0-alpha.30",
+    "@ulixee/datastore-testing": "2.0.0-alpha.30",
     "linkedom": "^0.14.11"
   }
 }

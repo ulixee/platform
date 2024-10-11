@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/datastore",
-  "version": "2.0.0-alpha.29",
+  "version": "2.0.0-alpha.30",
   "main": "index.js",
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
@@ -40,22 +40,22 @@
     }
   },
   "dependencies": {
-    "@argonprotocol/mainchain": "0.0.14",
     "@argonprotocol/localchain": "0.0.14",
-    "@ulixee/commons": "2.0.0-alpha.29",
-    "@ulixee/net": "2.0.0-alpha.29",
-    "@ulixee/platform-specification": "2.0.0-alpha.29",
-    "@ulixee/platform-utils": "2.0.0-alpha.29",
-    "@ulixee/schema": "2.0.0-alpha.29",
-    "@ulixee/sql-ast": "2.0.0-alpha.29",
-    "@ulixee/sql-engine": "2.0.0-alpha.29",
+    "@argonprotocol/mainchain": "0.0.14",
+    "@ulixee/commons": "2.0.0-alpha.30",
+    "@ulixee/net": "2.0.0-alpha.30",
+    "@ulixee/platform-specification": "2.0.0-alpha.30",
+    "@ulixee/platform-utils": "2.0.0-alpha.30",
+    "@ulixee/schema": "2.0.0-alpha.30",
+    "@ulixee/sql-ast": "2.0.0-alpha.30",
+    "@ulixee/sql-engine": "2.0.0-alpha.30",
     "better-sqlite3": "^11.1.2",
     "commander": "^9.5.0",
     "moment": "^2.29.4",
     "nanoid": "^3.3.6"
   },
   "devDependencies": {
-    "@ulixee/datastore-packager": "2.0.0-alpha.29",
-    "@ulixee/datastore-testing": "2.0.0-alpha.29"
+    "@ulixee/datastore-packager": "2.0.0-alpha.30",
+    "@ulixee/datastore-testing": "2.0.0-alpha.30"
   }
 }
