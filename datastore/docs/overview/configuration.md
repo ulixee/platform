@@ -31,7 +31,7 @@ ULX_DATASTORE_LOOKUP_SERVICE_HOST=# Datastore Lookup Service Host
 
 ### Argon Payment Configuration
 
-Your Argon Localchain configuration should be setup only on a Payment Services Host. Received payments will be sent to this Localchain. In order to properly claim them, you should ensure to follow the [payment setup guide](../advanced/payments.md).
+Your Argon Localchain configuration should be setup only on a Payment Services Host. Received payments will be sent to this Localchain. In order to properly claim them, you should ensure to follow the [payment setup guide](../basics/payments.md).
 
 #### Using the Cloud Node Cli
 
@@ -39,9 +39,10 @@ Your Argon Localchain configuration should be setup only on a Payment Services H
 $ npx @ulixee/cloud start \
     --argon-localchain-path /path/to/localchain \
     --argon-mainchain-url wss://rpc.testnet.argonprotocol.org
-    --argon-localchain-password-interactive \
-    
+    --argon-localchain-password-interactive 
 ```
+
+> Try the command `npx @ulixee/cloud start --help` for more options.
 
 OR you can tell the Cloud Node to boot up a Localchain for you:
 

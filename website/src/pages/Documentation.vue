@@ -14,8 +14,7 @@
                 <router-link
                   :class="{ isSelected: isSelected(itm.link) }"
                   class="block whitespace-nowrap"
-                  :to="itm.link"
-                >
+                  :to="itm.link">
                   {{ itm.title }}
                 </router-link>
               </template>
@@ -24,8 +23,7 @@
               <router-link
                 :class="{ isSelected: isSelected(item.link) }"
                 class="block whitespace-nowrap"
-                :to="item.link"
-              >
+                :to="item.link">
                 {{ item.title }}
               </router-link>
             </template>
@@ -33,9 +31,9 @@
         </template>
       </div>
 
-      <div class="DocsContent flex-1  max-w-full overflow-auto">
+      <div class="DocsContent flex-1 max-w-full overflow-auto">
         <div class="mx-3 mt-5 md:mx-32">
-          <div class="post mb" v-html="page.content"></div>
+          <div class="post mb" v-html="page.content" :ref="content"></div>
         </div>
         <!-- p
           a.github-edit-link(:href="editLink" target="_blank")
@@ -51,16 +49,16 @@
       </div>
 
       <div class="RIGHTBAR hidden md:block">
-        <template v-if="page.subtitles.length && page.subtitles[0].depth === 2">
+        <template v-if="page.subtitles?.length && page.subtitles[0].depth === 2">
           <h3 class="mb-2 font-bold">On this page</h3>
           <ul class="u" v-if="page.subtitles.length">
             <li
               :class="'depth-' + subtitle.depth"
               v-for="subtitle in page.subtitles"
-              :key="subtitle.value"
-            >
-              <a :href="subtitle.anchor" v-html="subtitle.value.replace(' W3C', '').split(/\s/g).join(' ')"></a
-              >
+              :key="subtitle.value">
+              <a
+                :href="subtitle.anchor"
+                v-html="subtitle.value.replace(' W3C', '').split(/\s/g).join(' ')"></a>
             </li>
           </ul>
         </template>
@@ -99,15 +97,34 @@ export default Vue.defineComponent<any>({
     return {
       links,
       page,
+      content: Vue.ref<HTMLElement>(),
       toolName,
     };
   },
   mounted() {
     Prism.highlightAll();
+    const pageElement = document.querySelector('.post');
+
+    // Add a click event listener for images within the '.page' element
+    pageElement?.addEventListener('click', this.handleImageClick);
+  },
+  beforeUnmount() {
+    // Clean up the event listener to avoid memory leaks
+    const pageElement = document.querySelector('.post');
+    pageElement?.removeEventListener('click', this.handleImageClick);
   },
   methods: {
     isSelected(path: string) {
       return this.$route.path === path || path === `${this.$route.path}/overview/introduction`;
+    },
+    handleImageClick(event: any) {
+      if (event.target.tagName === 'IMG') {
+        if (event.target.classList.contains('fullscreen-image')) {
+          event.target.classList.remove('fullscreen-image');
+        } else {
+          event.target.classList.add('fullscreen-image');
+        }
+      }
     },
   },
   computed: {
@@ -176,6 +193,26 @@ export default Vue.defineComponent<any>({
     &.isSelected {
       @apply text-ulixee-normal border-ulixee-normal border-l-4 pl-2;
     }
+  }
+}
+
+.post {
+  img {
+    height: auto;
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out; /* Smooth transition */
+  }
+
+  .fullscreen-image {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw; /* Full viewport width */
+    height: 100vh; /* Full viewport height */
+    object-fit: contain;
+    z-index: 9999;
+    cursor: zoom-out;
+    background-color: rgba(0, 0, 0, 0.8);
   }
 }
 
