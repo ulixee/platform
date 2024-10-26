@@ -207,8 +207,8 @@ async function setupDatastore(
       1,
       {
         [version]: mainchainClient.createType('ArgonPrimitivesDomainVersionHost', {
-          datastoreId: mainchainClient.createType('Bytes', datastoreId),
-          host: mainchainClient.createType('Bytes', `ws://127.0.0.1:${cloudAddress.split(':')[1]}`),
+          datastoreId,
+          host: `ws://127.0.0.1:${cloudAddress.split(':')[1]}`,
         }),
       },
     );

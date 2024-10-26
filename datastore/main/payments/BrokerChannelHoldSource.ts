@@ -103,6 +103,8 @@ export default class BrokerChannelHoldSource implements IChannelHoldSource {
     const bytes = BalanceChangeBuilder.toSigningMessage(json);
     const signature = this.keyring.getPairs()[0].sign(bytes, { withType: true });
     balanceChange.signature = Buffer.from(signature);
+    channelHold.settledSignature = balanceChange.signature;
+    channelHold.settledMilligons = updatedSettlement;
   }
 
   public static createSignatureMessage(

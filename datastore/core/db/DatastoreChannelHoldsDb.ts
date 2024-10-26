@@ -137,12 +137,12 @@ export default class DatastoreChannelHoldsDb {
       if (channelHold.remaining < payment.microgons) {
         throw new Error('This channelHold does not have enough remaining funds.');
       }
-      if (
-        Math.ceil((channelHold.allocated - channelHold.remaining + payment.microgons) / 1000) >
-        Number(payment.channelHold.settledMilligons)
-      ) {
+      const neededMilligons = Math.ceil(
+        (channelHold.allocated - channelHold.remaining + payment.microgons) / 1000,
+      );
+      if (neededMilligons > Number(payment.channelHold.settledMilligons)) {
         throw new Error(
-          `This channelHold needs a larger settlement to debit. Current settledMilligons=${payment.channelHold.settledMilligons}, New spentMicrogons=${channelHold.allocated - channelHold.remaining + payment.microgons} (ceiling to nearest milligon)`,
+          `This channelHold needs a larger settlement to debit. Current settledMilligons=${payment.channelHold.settledMilligons}, New spentMicrogons=${neededMilligons} (ceiling to nearest milligon)`,
         );
       }
       throw new Error('Could not debit the channelHold.');
@@ -162,7 +162,7 @@ export default class DatastoreChannelHoldsDb {
     const result = this.finalizeStatement.run({ id: channelHoldId, microgons: adjustment });
     if (!result.changes || result.changes < 1) {
       throw new Error(
-        `Could not finalize the payment. ${channelHoldId} -> adjustment: ${adjustment}`,
+        `Could not finalize the payment. ${channelHoldId} -> adjustment: ${adjustment} (entry: ${entry.microgons}, final: ${finalMicrogons})`,
       );
     }
   }

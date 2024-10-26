@@ -100,29 +100,34 @@ export default class TestDatabroker {
     Helpers.onClose(() => adminConnection.disconnect());
     await adminConnection.connect();
     await new Promise(setImmediate);
-    console.log('connected');
-    const { id } = await adminConnection.sendRequest({
-      command: 'Organization.create',
-      args: [
-        {
-          name: 'Test Organization',
-          balance: amount,
-        },
-      ],
-    }, 10e3);
+    const { id } = await adminConnection.sendRequest(
+      {
+        command: 'Organization.create',
+        args: [
+          {
+            name: 'Test Organization',
+            balance: amount,
+          },
+        ],
+      },
+      10e3,
+    );
 
     const identity = Identity.loadFromFile(identityPath).bech32;
 
     console.log('[DATABROKER] Registering user', identity);
-    await adminConnection.sendRequest({
-      command: 'User.create',
-      args: [
-        {
-          identity,
-          organizationId: id,
-        },
-      ],
-    }, 10e3);
+    await adminConnection.sendRequest(
+      {
+        command: 'User.create',
+        args: [
+          {
+            identity,
+            organizationId: id,
+          },
+        ],
+      },
+      10e3,
+    );
     console.log('[DATABROKER] Registered user', identity);
     await adminConnection.disconnect();
   }
