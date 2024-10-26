@@ -133,7 +133,7 @@ export default class SessionResourcesWatch extends TypedEventEmitter<{
       }
     } catch {}
 
-    await this.searchIndexByTabId[tabId].add({
+    this.searchIndexByTabId[tabId].add({
       id: resource.id,
       body: formattedBody,
       url: resource.url,

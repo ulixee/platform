@@ -10,6 +10,8 @@ export async function waitForSynchedBalance(
     const overview = await localchain.accountOverview();
 
     if (overview.balance === balance) return;
-    await new Promise(resolve => setTimeout(resolve, Number(localchain.ticker.millisToNextTick())));
+    await new Promise(resolve =>
+      setTimeout(resolve, Number(localchain.ticker.millisToNextTick()) + 50),
+    );
   }
 }

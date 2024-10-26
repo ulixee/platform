@@ -113,7 +113,8 @@ export default class TestMainchain {
         console.log('Main >> %s', line);
         const match = line.match(/Running JSON-RPC server: addr=([\d.:]+)/);
         if (match) {
-          resolve(match[1].split(':').pop());
+          const ipv4 = match[1].split(',').at(0);
+          resolve(ipv4.split(':').pop());
         }
       });
       this.#interfaces.push(int2);
