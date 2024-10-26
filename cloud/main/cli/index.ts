@@ -83,6 +83,15 @@ export default function cliCommands(options?: {
     )
     .addOption(
       program
+        .createOption(
+          '--disable-session-persistence',
+          'Disable persisting session databases long-term. NOTE: will still persist for the duration of the session.',
+        )
+        .argParser(parseEnvBool)
+        .env('ULX_DISABLE_SESSION_PERSISTENCE'),
+    )
+    .addOption(
+      program
         .createOption('--disable-desktop-apis', 'Do not enable Ulixee Desktop apis.')
         .argParser(parseEnvBool)
         .env('ULX_DISABLE_DESKTOP_APIS'),
@@ -234,6 +243,7 @@ export async function startCloudViaCli(opts: any): Promise<CloudNode> {
   const {
     port,
     disableDesktopApis,
+    disableSessionPersistence,
     hostname,
     setupHost,
     publicHost,
@@ -253,7 +263,6 @@ export async function startCloudViaCli(opts: any): Promise<CloudNode> {
     if (env.startsWith('~')) env = Path.resolve(os.homedir(), env.slice(1));
     applyEnvironmentVariables(Path.resolve(env), process.env);
   }
-  if (disableDesktopApis !== undefined) CloudNodeEnv.disableDesktopApi = disableDesktopApis;
 
   const { unblockedPlugins, heroDataDir, maxConcurrentHeroes, maxConcurrentHeroesPerBrowser } =
     opts;
@@ -278,6 +287,7 @@ export async function startCloudViaCli(opts: any): Promise<CloudNode> {
       port,
       host: hostname,
       publicHost,
+      disableDesktopCore: disableDesktopApis,
       hostedServicesServerOptions:
         !!hostedServicesHostname || hostedServicesPort !== undefined
           ? { port: hostedServicesPort, host: hostedServicesHostname }
@@ -286,6 +296,7 @@ export async function startCloudViaCli(opts: any): Promise<CloudNode> {
       heroConfiguration: filterUndefined({
         maxConcurrentClientCount: maxConcurrentHeroes,
         maxConcurrentClientsPerBrowser: maxConcurrentHeroesPerBrowser,
+        disableSessionPersistence,
         dataDir: heroDataDir,
         defaultUnblockedPlugins: unblockedPlugins?.map(x => {
           // eslint-disable-next-line import/no-dynamic-require

@@ -8,4 +8,5 @@ export default interface ICloudConfiguration extends ListenOptions, ServerOption
   publicHost?: string;
   hostedServicesServerOptions?: ListenOptions & ServerOptions;
   servicesSetupHost: string;
+  disableDesktopCore?: boolean;
 }

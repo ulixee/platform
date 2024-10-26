@@ -107,9 +107,9 @@ test('should get hero sessions from the registry', async () => {
   await expect(getPlugin(storageNode).replayRegistry.ids()).resolves.toHaveLength(3);
 }, 60e3);
 
-test("allows you to delete hero sessions if desktop is enabled", async () => {
+test('allows you to delete hero sessions if desktop is enabled', async () => {
   const childNode = await Helpers.createLocalNode({
-    enableDesktopCore: true,
+    disableDesktopCore: false,
     datastoreConfiguration: {
       datastoresDir: Path.join(datastoresDir, 'delete'),
       queryHeroSessionsDir: Path.join(datastoresDir, 'delete', 'query'),

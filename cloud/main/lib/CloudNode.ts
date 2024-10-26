@@ -59,6 +59,7 @@ export default class CloudNode {
     port: Env.publicPort ? Number(Env.publicPort) : undefined,
     host: Env.listenHostname,
     publicHost: Env.publicHost,
+    disableDesktopCore: Env.disableDesktopApi,
     hostedServicesServerOptions:
       (Env.hostedServicesPort ?? Env.hostedServicesListenHostname)
         ? {
@@ -264,7 +265,7 @@ export default class CloudNode {
     });
 
     /// START DESKTOP
-    if (!Env.disableDesktopApi) {
+    if (this.cloudConfiguration.disableDesktopCore !== true) {
       this.desktopCore = new DesktopCore(this.datastoreCore, this.heroCore);
       this.desktopCore.activatePlugin();
     }
@@ -312,7 +313,10 @@ export default class CloudNode {
     const listenOptions = this.cloudConfiguration.hostedServicesServerOptions;
     if (!listenOptions) return;
 
-    this.hostedServicesServer = new RoutableServer(this.isReady.promise, this.cloudConfiguration.publicHost);
+    this.hostedServicesServer = new RoutableServer(
+      this.isReady.promise,
+      this.cloudConfiguration.publicHost,
+    );
     if (!listenOptions.port && !isTestEnv) {
       if (!(await isPortInUse(18181))) listenOptions.port = 18181;
     }
