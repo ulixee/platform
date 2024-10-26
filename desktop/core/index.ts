@@ -72,7 +72,7 @@ export default class DesktopCore {
   ): void {
     addWsRoute(/\/desktop-devtools\?id=.+/, this.addAppDevtoolsWebsocket.bind(this), false);
     addWsRoute(/\/desktop(\?.+)?/, this.addDesktopConnection.bind(this));
-    addWsRoute(/\/chromealive\/.+/, this.addChromeAliveConnection.bind(this));
+    addWsRoute(/\/chromealive\/.+\?id=.+/, this.addChromeAliveConnection.bind(this));
   }
 
   public addAppDevtoolsWebsocket(ws: WebSocket, request: IncomingMessage): void {
@@ -88,13 +88,14 @@ export default class DesktopCore {
     transport: ITransport,
     request: IncomingMessage,
   ): Promise<IConnectionToClient<IChromeAliveSessionApis, IChromeAliveSessionEvents>> {
-    const chromeAliveMatch = request.url.match(/\/chromealive\/([0-9a-zA-Z-_]{6,}).*/);
+    const chromeAliveMatch = request.url.match(/\/chromealive\/([0-9a-zA-Z-_]{6,})\?id=(.+)/);
     if (chromeAliveMatch) {
       const heroSessionId = chromeAliveMatch[1];
+      const connectionId = chromeAliveMatch[2];
       const controller = this.sessionControllersById.get(heroSessionId);
 
       if (controller) return controller.addConnection(transport, request) as any;
-      return await this.loadSessionController(heroSessionId, transport, request);
+      return await this.loadSessionController(heroSessionId, transport, request, connectionId);
     }
   }
 
@@ -261,6 +262,7 @@ export default class DesktopCore {
       const { sessionController, appConnectionId } = this.createSessionController(
         heroSession.db,
         heroSession.options,
+        heroSession.options.desktopConnectionId,
       );
       if (!sessionController) return;
       sessionController.bindLiveSession(heroSession);
@@ -283,8 +285,12 @@ export default class DesktopCore {
   private createSessionController(
     db: SessionDb,
     options: ISessionCreateOptions,
+    appConnectionId: string | undefined,
   ): { sessionController: SessionController; appConnectionId: string } {
-    const appConnectionId = options.desktopConnectionId ?? 'local';
+    // default to the only connection iff only one exists
+    if (!appConnectionId && this.appConnectionsById.size === 1) {
+      appConnectionId = this.appConnectionsById.keys().next().value;
+    }
     if (!this.appDevtoolsConnectionsById.has(appConnectionId)) {
       console.warn('showChromeAlive requested for Hero, but no Desktops available');
       return { sessionController: null, appConnectionId };
@@ -359,6 +365,7 @@ export default class DesktopCore {
     heroSessionId: string,
     transport: ITransport,
     request: IncomingMessage,
+    appConnectionId: string,
   ): Promise<IConnectionToClient<any, any>> {
     const requestUrl = new URL(request.url, 'http://localhost');
     const customDbPath = requestUrl.searchParams.get('path');
@@ -377,7 +384,7 @@ export default class DesktopCore {
       execArgv: dbSession.scriptExecArgv,
       execPath: dbSession.scriptExecPath,
     };
-    const { sessionController } = this.createSessionController(db, options);
+    const { sessionController } = this.createSessionController(db, options, appConnectionId);
     const apiConnection = sessionController.addConnection(transport, request);
 
     sessionController.loadFromDb().catch(error => {
