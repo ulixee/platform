@@ -5,7 +5,10 @@ import { Helpers } from '@ulixee/datastore-testing';
 import { ITestKoaServer } from '@ulixee/datastore-testing/helpers';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import DatastoreApiClient from '@ulixee/datastore/lib/DatastoreApiClient';
+import Hero, { ConnectionToHeroCore } from '@ulixee/hero';
+import { TransportBridge } from '@ulixee/net';
 import * as Fs from 'fs';
+import { existsSync } from 'fs';
 import * as Path from 'path';
 import DatastoreForHeroPluginCore from '../index';
 
@@ -102,6 +105,42 @@ test('should get hero sessions from the registry', async () => {
   await getPlugin(childNode2).replayRegistry.flush();
 
   await expect(getPlugin(storageNode).replayRegistry.ids()).resolves.toHaveLength(3);
+}, 60e3);
+
+test("allows you to delete hero sessions if desktop is enabled", async () => {
+  const childNode = await Helpers.createLocalNode({
+    enableDesktopCore: true,
+    datastoreConfiguration: {
+      datastoresDir: Path.join(datastoresDir, 'delete'),
+      queryHeroSessionsDir: Path.join(datastoresDir, 'delete', 'query'),
+    },
+    heroConfiguration: {
+      dataDir: Path.join(datastoresDir, 'delete', 'hero'),
+    },
+  });
+
+  const bridge = new TransportBridge();
+  const connectionToCore = new ConnectionToHeroCore(bridge.transportToCore);
+  childNode.heroCore.addConnection(bridge.transportToClient);
+
+  const hero = new Hero({
+    connectionToCore,
+    sessionPersistence: false,
+  });
+  const meta = await hero.meta;
+  Helpers.needsClosing.push(hero);
+  expect(await childNode.heroCore.sessionRegistry.ids()).toHaveLength(1);
+  const session = await childNode.heroCore.sessionRegistry.get(meta.sessionId);
+  expect(childNode.desktopCore.sessionControllersById.size).toBe(0);
+
+  await hero.goto(server.baseUrl);
+  await hero.waitForLoad('AllContentLoaded');
+  await hero.close();
+
+  await expect(childNode.heroCore.sessionRegistry.get(meta.sessionId)).resolves.toBe(undefined);
+  expect(await childNode.heroCore.sessionRegistry.ids()).toHaveLength(0);
+  expect(childNode.desktopCore.sessionControllersById.size).toBe(0);
+  expect(existsSync(session.path)).toBe(false);
 }, 60e3);
 
 function getPlugin(node: CloudNode): DatastoreForHeroPluginCore {

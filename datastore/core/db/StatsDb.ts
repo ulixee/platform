@@ -26,6 +26,7 @@ export default class StatsDb {
 
   public close(): void {
     if (this.db) {
+      this.db.pragma('wal_checkpoint(TRUNCATE)');
       this.db.close();
     }
     this.db = null;

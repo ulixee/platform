@@ -27,6 +27,7 @@ domain TEXT NOT NULL PRIMARY KEY
 
   public close(): void {
     if (this.db) {
+      this.db.pragma('wal_checkpoint(TRUNCATE)');
       this.db.close();
     }
     this.db = null;

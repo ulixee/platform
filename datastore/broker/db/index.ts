@@ -18,7 +18,7 @@ export default class DatabrokerDb {
     this.db.unsafeMode(false);
     this.db.defaultSafeIntegers(true);
     this.db.pragma('journal_mode = WAL');
-    this.db.pragma('synchronous = NORMAL');
+    this.db.pragma('synchronous = FULL');
 
     this.organizations = new OrganizationsTable(this.db);
     this.users = new UsersTable(this.db);
@@ -27,6 +27,7 @@ export default class DatabrokerDb {
 
   public close(): void {
     if (this.db) {
+      this.db.pragma('wal_checkpoint(TRUNCATE)');
       this.db.close();
     }
     this.db = null;

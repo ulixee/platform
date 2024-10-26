@@ -19,10 +19,14 @@ export default class SqliteStorageEngine extends AbstractStorageEngine {
     super();
     const opts = {}; // { verbose: console.log }
     this.#db = new Database(storagePath, opts);
+    this.#db.unsafeMode(false);
+    this.#db.pragma('journal_mode = WAL');
+    this.#db.pragma('synchronous = FULL');
     this.path = storagePath;
   }
 
   public override async close(): Promise<void> {
+    this.#db.pragma('wal_checkpoint(TRUNCATE)');
     this.#db.close();
   }
 

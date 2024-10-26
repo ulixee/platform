@@ -41,7 +41,7 @@ export default class DatastoreChannelHoldsDb {
     if (env.enableSqliteWalMode) {
       this.db.unsafeMode(false);
       this.db.pragma('journal_mode = WAL');
-      this.db.pragma('synchronous = NORMAL');
+      this.db.pragma('synchronous = FULL');
     }
     this.db.exec(`
     CREATE TABLE IF NOT EXISTS channelHolds (

@@ -15,14 +15,15 @@ export default class DatastoresDb {
     if (env.enableSqliteWalMode) {
       this.db.unsafeMode(false);
       this.db.pragma('journal_mode = WAL');
-      this.db.pragma('synchronous = NORMAL');
+      this.db.pragma('synchronous = FULL');
     }
 
     this.versions = new DatastoreVersionsTable(this.db);
   }
 
   public close(): void {
-    if (this.db) {
+    if (this.db?.open) {
+      this.db.pragma('wal_checkpoint(TRUNCATE)');
       this.db.close();
     }
     this.db = null;

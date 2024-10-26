@@ -23,7 +23,8 @@ export default class QueryLogDb {
 
   public close(): void {
     if (this.db?.open) {
-      this.db?.close();
+      this.db.pragma('wal_checkpoint(TRUNCATE)');
+      this.db.close();
     }
     this.db = null;
   }

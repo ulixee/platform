@@ -130,11 +130,13 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
   private async processSession(
     sessionId: string,
     customPath?: string,
-  ): Promise<IHeroSessionsListResult> {
-    const sessionDb = await this.heroCore.sessionRegistry.retain(sessionId, customPath);
+  ): Promise<IHeroSessionsListResult | undefined> {
+    const sessionDb = await this.heroCore.sessionRegistry.get(sessionId, customPath);
+    if (!sessionDb.isOpen) return;
     const session = sessionDb?.session?.get();
     // might not be loaded yet
     if (!session) return;
+
     try {
       const { id, createSessionOptions, startDate, closeDate, scriptEntrypoint } = session;
       const outputChanges = sessionDb.output.all();
@@ -229,6 +231,7 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
 
   private async onHeroSessionClosed(entry: IHeroSessionsListResult): Promise<void> {
     const update = await this.processSession(entry.heroSessionId, entry.dbPath);
+    if (!update) return;
     Object.assign(entry, update);
     entry.endTime ??= new Date();
     entry.state = 'complete';
@@ -239,6 +242,7 @@ export default class HeroSessionsSearch extends TypedEventEmitter<{
 
   private async onHeroSessionKeptAlive(entry: IHeroSessionsListResult): Promise<void> {
     const update = await this.processSession(entry.heroSessionId, entry.dbPath);
+    if (!update) return;
     entry.state = 'kept-alive';
     Object.assign(entry, update);
     this.emit('update', [entry]);
