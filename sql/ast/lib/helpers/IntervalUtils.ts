@@ -34,7 +34,6 @@ export function buildInterval(orig: string, vals: 'invalid' | K): IInterval {
   return ret;
 }
 
-
 /** Returns a normalized copy of the given interval */
 export function normalizeInterval(value: IInterval): IInterval {
   const ret = { ...value };
@@ -43,9 +42,7 @@ export function normalizeInterval(value: IInterval): IInterval {
   for (let i = 0; i < types.length; i++) {
     const [k, mul] = types[i];
     const v = ret[k] ?? 0;
-    const int = v >= 0
-      ? Math.floor(v)
-      : Math.ceil(v);
+    const int = v >= 0 ? Math.floor(v) : Math.ceil(v);
     if (!v || int === v) {
       continue;
     }
@@ -63,10 +60,11 @@ export function normalizeInterval(value: IInterval): IInterval {
   }
 
   // normalize time
-  let t = (ret.hours ?? 0) * 3600
-    + (ret.minutes ?? 0) * 60
-    + (ret.seconds ?? 0)
-    + (ret.milliseconds ?? 0) / 1000;
+  let t =
+    (ret.hours ?? 0) * 3600 +
+    (ret.minutes ?? 0) * 60 +
+    (ret.seconds ?? 0) +
+    (ret.milliseconds ?? 0) / 1000;
   let sign = 1;
   if (t < 0) {
     sign = -1;
@@ -111,7 +109,7 @@ export function normalizeInterval(value: IInterval): IInterval {
 }
 
 /** Interval value to postgres string representation  */
-export function intervalToString(value: IInterval): String {
+export function intervalToString(value: IInterval): string {
   value = normalizeInterval(value);
   const ret: string[] = [];
   if (value.years) {
@@ -124,11 +122,9 @@ export function intervalToString(value: IInterval): String {
     ret.push(value.days === 1 ? '1 day' : `${value.days} days`);
   }
   if (value.hours || value.minutes || value.seconds || value.milliseconds) {
-
     let time = `${num(value.hours ?? 0)}:${num(value.minutes ?? 0)}:${num(value.seconds ?? 0)}`;
     if (value.milliseconds) {
       time += (value.milliseconds / 1000).toString().substr(1);
-
     }
     if (neg(value.hours) || neg(value.minutes) || neg(value.seconds) || neg(value.milliseconds)) {
       time = `-${time}`;

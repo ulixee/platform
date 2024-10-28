@@ -103,7 +103,7 @@ export default class ExtractorContext<
   public run(extractorOrTable, options): any {
     const finalOptions = this.getMergedOptions(options);
     if (extractorOrTable instanceof Extractor) {
-      return extractorOrTable.runInternal(finalOptions, this.#callbacks) as any;
+      return extractorOrTable.runInternal(finalOptions, this.#callbacks);
     }
     return extractorOrTable.fetchInternal(options, this.#callbacks);
   }
@@ -123,9 +123,17 @@ export default class ExtractorContext<
   private getMergedOptions<T extends IExtractorRunOptions<any>>(options: T): T {
     const finalOptions = { ...this.#extractorInternal.options, ...options };
     finalOptions.trackMetadata = options.trackMetadata;
-    if (options.input && typeof options.input === 'object') {
+    if (
+      options.input &&
+      typeof options.input === 'object' &&
+      this.#extractorInternal.input &&
+      typeof this.#extractorInternal.input === 'object'
+    ) {
       // merge input
-      finalOptions.input = { ...this.#extractorInternal.input, ...options.input };
+      finalOptions.input = {
+        ...this.#extractorInternal.input,
+        ...options.input,
+      };
     }
     return finalOptions;
   }

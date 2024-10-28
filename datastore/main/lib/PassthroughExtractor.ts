@@ -65,7 +65,7 @@ export default class PassthroughExtractor<
     this.basePrice = components.upcharge ?? 0;
     assert(components.remoteExtractor, 'A remote extractor name is required');
     assert(components.remoteExtractor.includes('.'), 'A remote function source is required');
-    this.passThroughComponents = components as any;
+    this.passThroughComponents = components;
     const [source, remoteExtractor] = components.remoteExtractor.split('.');
     this.remoteExtractor = remoteExtractor;
     this.remoteSource = source;

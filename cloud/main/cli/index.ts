@@ -5,7 +5,6 @@ import type ILocalchainConfig from '@ulixee/datastore/interfaces/ILocalchainConf
 import { Command } from 'commander';
 import * as os from 'node:os';
 import * as Path from 'path';
-import CloudNodeEnv from '../env';
 import { CloudNode } from '../index';
 
 const pkg = require('../package.json');

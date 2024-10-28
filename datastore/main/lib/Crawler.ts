@@ -16,8 +16,9 @@ import DatastoreInternal from './DatastoreInternal';
 export default class Crawler<
   TDisableCache extends boolean = false,
   TProvidedSchema extends IExtractorSchema<unknown, never> = IExtractorSchema<unknown, never>,
-  TFinalInput extends ISchemaRecordType<any> = TDisableCache extends true
-    ? TProvidedSchema['input']
+  TFinalInput extends ISchemaRecordType<any> &
+    typeof CrawlerInputSchema = TDisableCache extends true
+    ? typeof CrawlerInputSchema & TProvidedSchema['input']
     : TProvidedSchema extends { input: Record<string, ISchemaAny> }
       ? typeof CrawlerInputSchema & TProvidedSchema['input']
       : typeof CrawlerInputSchema & Record<string, ISchemaAny>,
@@ -112,7 +113,7 @@ export default class Crawler<
       schema,
       ...rest
     } = context as IExtractorContext<TSchema>;
-    const cached = await this.findCached(input as TContext['input']);
+    const cached = await this.findCached(input);
     if (cached) {
       Output.emit(cached as any);
       return;
@@ -121,7 +122,7 @@ export default class Crawler<
     const result = await originalRun({ input, schema, ...rest } as any);
     const output = await result.toCrawlerOutput();
     Output.emit(output as any);
-    await this.saveToCache(input as TContext['input'], output);
+    await this.saveToCache(input, output);
   }
 
   protected async saveToCache(
@@ -173,6 +174,7 @@ export default class Crawler<
 
 addGlobalInstance(Crawler);
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const CrawlerInputSchema = {
   maxTimeInCache: number({
     min: 0,

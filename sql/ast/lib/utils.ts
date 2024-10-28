@@ -1,4 +1,4 @@
-import INil from "../interfaces/INil";
+import INil from '../interfaces/INil';
 
 export type Optional<T> = { [key in keyof T]?: T[key] };
 
@@ -13,7 +13,7 @@ export type ReplaceReturnType<T, TNewReturn> = T extends (...a: any) => any
 
 export class NotSupported extends Error {
   constructor(what?: string) {
-    super(`Not supported${(what ? `: ${what}` : '')}`);
+    super(`Not supported${what ? `: ${what}` : ''}`);
   }
 
   static never(value: never, msg?: string): NotSupported {
@@ -27,7 +27,11 @@ export class NotSupported extends Error {
  * - It will remove all null-ish entries
  * - It will return the original array if nothing has changed
  */
-export function arrayNilMap<T extends Object>(this: void, collection: T[] | INil, mapper: (v: T) => T | INil): T[] | INil {
+export function arrayNilMap<T extends object>(
+  this: void,
+  collection: T[] | INil,
+  mapper: (v: T) => T | INil,
+): T[] | INil {
   if (!collection?.length) {
     return collection;
   }
@@ -72,20 +76,21 @@ export function assignChanged<T>(orig: T, assign: PartialNil<T>): T {
   if (!changed) {
     return orig;
   }
-  return trimNullish({
-    ...orig,
-    ...assign,
-  }, 0);
+  return trimNullish(
+    {
+      ...orig,
+      ...assign,
+    },
+    0,
+  );
 }
 
 export function trimNullish<T>(value: T, depth = 5): T {
-  if (depth < 0)
-    return value;
+  if (depth < 0) return value;
   if (value instanceof Array) {
     value.forEach(x => trimNullish(x, depth - 1));
   }
-  if (typeof value !== 'object' || value instanceof Date)
-    return value;
+  if (typeof value !== 'object' || value instanceof Date) return value;
 
   if (!value) {
     return value;
@@ -93,10 +98,8 @@ export function trimNullish<T>(value: T, depth = 5): T {
 
   for (const k of Object.keys(value)) {
     const val = (value as any)[k];
-    if (val === undefined || val === null)
-      delete (value as any)[k];
-    else
-      trimNullish(val, depth - 1);
+    if (val === undefined || val === null) delete (value as any)[k];
+    else trimNullish(val, depth - 1);
   }
   return value;
 }

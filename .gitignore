@@ -23,6 +23,7 @@ tsconfig.tsbuildinfo
 
 **/dist
 /.eslintcache
+!.eslintignore
 connect
 /datastore/examples/*.ts
 !/datastore/examples/basic.ts

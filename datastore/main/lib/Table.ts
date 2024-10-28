@@ -74,7 +74,11 @@ export default class Table<
 
   public async insertInternal(...records: TSchemaType[]): Promise<void> {
     const engine = this.datastoreInternal.storageEngine;
-    const inserts = SqlGenerator.createInsertsFromRecords(this.name, this.schema, ...records);
+    const inserts = SqlGenerator.createInsertsFromRecords(
+      this.name,
+      this.schema,
+      ...(records as any),
+    );
     for (const { sql, boundValues } of inserts) {
       await engine.query(sql, boundValues);
     }
