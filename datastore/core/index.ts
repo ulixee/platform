@@ -439,20 +439,21 @@ export default class DatastoreCore extends TypedEventEmitter<{
     try {
       await this.workTracker?.stop(this.options.waitForDatastoreCompletionOnShutdown);
 
-      for (const plugin of Object.values(this.pluginCoresByName)) {
-        if (plugin.onCoreClose) await plugin.onCoreClose();
-      }
-      this.pluginCoresByName = {};
-
       for (const connection of this.connections) {
         await connection.disconnect();
       }
       this.connections.clear();
-      await this.datastoreRegistry?.close();
-      await this.storageEngineRegistry?.close();
 
-      await this.datastoreApiClients?.close();
-      await this.statsTracker?.close();
+      await Promise.allSettled([
+        ...Object.values(this.pluginCoresByName).map(x => x.onCoreClose?.()),
+        this.datastoreRegistry?.close(),
+        this.storageEngineRegistry?.close(),
+        this.localchain?.close(),
+        this.upstreamDatastorePaymentService?.close(),
+        this.datastoreApiClients?.close(),
+        this.statsTracker?.close(),
+      ]);
+      this.pluginCoresByName = {};
 
       closingPromise.resolve();
     } catch (error) {
