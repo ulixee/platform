@@ -9,7 +9,7 @@ export const tickValidation = z
   .number()
   .int()
   .nonnegative()
-  .describe('The system tick (one per minute starting at the time of genesis)');
+  .describe('The system tick (one per minute starting at the unix epoch)');
 export const notebookNumberValidation = z
   .number()
   .int()
@@ -54,7 +54,9 @@ export const BalanceChangeSchema = z.object({
     'A hold note currently active on the account (if applicable)',
   ),
   notes: z.array(NoteSchema).max(100).describe('The applied changes'),
-  signature: multiSignatureValidation.describe("The account's signature of the balance change hash"),
+  signature: multiSignatureValidation.describe(
+    "The account's signature of the balance change hash",
+  ),
 });
 
 export const BalanceChangesSchema = BalanceChangeSchema.array();

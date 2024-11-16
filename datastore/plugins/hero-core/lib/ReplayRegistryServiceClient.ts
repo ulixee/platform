@@ -16,6 +16,15 @@ export default class ReplayRegistryServiceClient {
     });
   }
 
+  public async delete(
+    sessionId: string,
+  ): Promise<IReplayRegistryApiTypes['ReplayRegistry.delete']['result']> {
+    return await this.client.sendRequest({
+      command: 'ReplayRegistry.delete',
+      args: [{ sessionId }],
+    });
+  }
+
   public async get(
     sessionId: string,
   ): Promise<IReplayRegistryApiTypes['ReplayRegistry.get']['result']> {

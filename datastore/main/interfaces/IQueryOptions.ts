@@ -6,6 +6,11 @@ import {
 export default interface IQueryOptions extends IDatastoreQueryMetadata {
   domain?: string;
   onQueryResult?: (result: IDatastoreQueryResult) => Promise<any> | void;
+  onCacheUpdated?: (
+    sessionId: string,
+    crawler: string,
+    status: 'cached' | 'evicted',
+  ) => Promise<void> | void;
 }
 
 export type IQueryOptionsWithoutId = Partial<Omit<IQueryOptions, 'payment'>>;

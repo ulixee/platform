@@ -28,6 +28,14 @@ export default class ReplayRegistryDiskStore {
     }
   }
 
+  public async delete(
+    sessionId: string,
+  ): Promise<IReplayRegistryApiTypes['ReplayRegistry.delete']['result']> {
+    const path = Path.join(this.storageDir, `${sessionId}.db.gz`);
+    const didFail = await Fs.promises.unlink(path).catch(() => true);
+    return { success: !didFail };
+  }
+
   public async store(
     sessionId: string,
     db: Buffer,

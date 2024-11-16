@@ -23,6 +23,11 @@ export default interface IExtractorContext<TSchema extends IExtractorSchema> {
   readonly onQueryResult?: (result: IDatastoreQueryResult) => Promise<any> | void;
   readonly queryId: string;
   readonly authentication: IDatastoreApiTypes['Datastore.query']['args']['authentication'];
+  readonly onCacheUpdated?: (
+    sessionId: string,
+    crawler: string,
+    action: 'cached' | 'evicted',
+  ) => Promise<void> | void;
 
   readonly payment: IPayment;
   crawl<T extends Crawler>(crawler: T, options?: T['runArgsType']): Promise<ICrawlerOutputSchema>;

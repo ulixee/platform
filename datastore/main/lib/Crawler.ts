@@ -111,6 +111,7 @@ export default class Crawler<
       datastoreMetadata: _d,
       input,
       schema,
+      onCacheUpdated,
       ...rest
     } = context as IExtractorContext<TSchema>;
     const cached = await this.findCached(input);
@@ -121,17 +122,26 @@ export default class Crawler<
 
     const result = await originalRun({ input, schema, ...rest } as any);
     const output = await result.toCrawlerOutput();
+    await this.saveToCache(input, output, onCacheUpdated);
     Output.emit(output as any);
-    await this.saveToCache(input, output);
   }
 
   protected async saveToCache(
     input: TContext['input'],
     output: ICrawlerOutputSchema,
-  ): Promise<void> {
-    if (this.crawlerComponents.disableCache || !output.sessionId) return null;
+    onCacheUpdated?: TContext['onCacheUpdated'],
+  ): Promise<{ didCache?: boolean; replacedSessionId?: string }> {
+    if (this.crawlerComponents.disableCache || !output.sessionId) return {};
     const serializedInput = this.getSerializedInput(input);
-    await this.cache.queryInternal('DELETE FROM self WHERE input=$1', [serializedInput]);
+    const previousResult = await this.cache.queryInternal(
+      'DELETE FROM self WHERE input=$1 RETURNING sessionId',
+      [serializedInput],
+    );
+
+    const deletedSessionId = previousResult?.[0]?.sessionId;
+    if (onCacheUpdated && deletedSessionId) {
+      await onCacheUpdated(deletedSessionId, output.crawler, 'evicted');
+    }
 
     const data = {
       input: serializedInput,
@@ -140,12 +150,15 @@ export default class Crawler<
     };
 
     const fields = Object.keys(data);
-    const fieldKeys = fields.map((_, i) => `$${i + 1}`);
 
+    const fieldKeys = fields.map((_, i) => `$${i + 1}`);
     await this.cache.queryInternal(
       `INSERT INTO self (${fields.join(', ')}) VALUES (${fieldKeys.join(', ')})`,
       Object.values(data),
     );
+    if (onCacheUpdated) {
+      await onCacheUpdated(output.sessionId, output.crawler, 'cached');
+    }
   }
 
   protected async findCached(input: TContext['input']): Promise<ICrawlerOutputSchema> {

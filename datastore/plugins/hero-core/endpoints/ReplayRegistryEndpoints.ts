@@ -17,6 +17,9 @@ export default class ReplayRegistryEndpoints {
         await ctx.replayRegistry.replayStorageRegistry.store(sessionId, db);
         return { success: true };
       },
+      'ReplayRegistry.delete': async ({ sessionId }, ctx) => {
+        return await ctx.replayRegistry.replayStorageRegistry.delete(sessionId);
+      },
       'ReplayRegistry.get': async ({ sessionId }, ctx) => {
         const result = await ctx.replayRegistry.replayStorageRegistry.get(sessionId);
         if (result) return { db: await result.db };

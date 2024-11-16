@@ -89,7 +89,7 @@ export default class SqliteStorageEngine extends AbstractStorageEngine {
     const parsedSql = sqlParser.toSql();
     if (sqlParser.isInsert() || sqlParser.isDelete() || sqlParser.isUpdate()) {
       if (sqlParser.hasReturn() === true) {
-        return this.#db.prepare(parsedSql).get(valueMap) as any;
+        return this.#db.prepare(parsedSql).all(valueMap) as any;
       }
 
       const result = this.#db.prepare(parsedSql).run(valueMap);

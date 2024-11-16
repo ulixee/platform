@@ -73,6 +73,10 @@ export default class SqlParser {
         hasReturning = t.returning?.length > 0;
         return t;
       },
+      delete(t) {
+        hasReturning = t.returning?.length > 0;
+        return t;
+      },
     }));
     visitor.statement(this.ast);
     return hasReturning;

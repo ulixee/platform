@@ -19,7 +19,7 @@ export default class ReplayRegistry
 
   public readonly replayStorageRegistry?: ReplayRegistryDiskStore;
   private readonly serviceClient?: ReplayRegistryServiceClient;
-  private readonly storePromises = new Set<Promise<any>>();
+  private readonly storePromises = new Map<string, Promise<any>[]>();
 
   private defaultSessionRegistry: DefaultSessionRegistry;
 
@@ -46,7 +46,7 @@ export default class ReplayRegistry
   }
 
   public async flush(): Promise<void> {
-    const storage = [...this.storePromises];
+    const storage = [...this.storePromises.values()];
     this.storePromises.clear();
     await Promise.allSettled(storage);
   }
@@ -56,7 +56,9 @@ export default class ReplayRegistry
   }
 
   public async retain(sessionId: string, customPath?: string): Promise<SessionDb> {
-    const record = await this.defaultSessionRegistry.retain(sessionId, customPath).catch(() => null);
+    const record = await this.defaultSessionRegistry
+      .retain(sessionId, customPath)
+      .catch(() => null);
     if (record) return record;
 
     for (const store of [this.replayStorageRegistry, this.serviceClient]) {
@@ -94,17 +96,44 @@ export default class ReplayRegistry
   }
 
   public async close(sessionId: string, isDeleteRequested: boolean): Promise<void> {
-    const timestamp = Date.now();
-    const entry = await this.defaultSessionRegistry.get(sessionId);
-    const sessionRecord = entry?.session.get();
+    if (this.storePromises.has(sessionId)) {
+      await Promise.allSettled(this.storePromises.get(sessionId));
+      this.storePromises.delete(sessionId);
+    }
     await this.defaultSessionRegistry.close(sessionId, isDeleteRequested);
+  }
 
-    if (sessionRecord.scriptRuntime === 'datastore') {
-      this.enqueue(this.store(sessionId, timestamp, entry.path));
+  public async delete(sessionId: string): Promise<void> {
+    if (this.storePromises.has(sessionId)) {
+      await Promise.allSettled(this.storePromises.get(sessionId));
+      this.storePromises.delete(sessionId);
+    }
+    await this.defaultSessionRegistry.close(sessionId, true);
+    if (this.serviceClient) {
+      await this.serviceClient.delete(sessionId);
+    } else {
+      await this.replayStorageRegistry.delete(sessionId);
     }
   }
 
-  private async store(sessionId: string, timestamp: number, path: string): Promise<void> {
+  public async store(sessionId: string): Promise<void> {
+    if (!this.storePromises.has(sessionId)) {
+      this.storePromises.set(sessionId, []);
+    }
+    this.storePromises
+      .get(sessionId)
+      .push(
+        this.storeInternal(sessionId).catch(e => console.warn(`Error storing cached session`, e)),
+      );
+  }
+
+  private async storeInternal(sessionId: string): Promise<void> {
+    const entry = await this.defaultSessionRegistry.get(sessionId);
+    if (!entry?.session) throw new Error(`Session not able to be retained: ${sessionId}`);
+
+    const path = entry.path;
+    const timestamp = Date.now();
+
     const db = await ReplayRegistryDiskStore.getCompressedDb(path);
     if (this.serviceClient) {
       await this.serviceClient.store({
@@ -115,10 +144,5 @@ export default class ReplayRegistry
     } else {
       await this.replayStorageRegistry.store(sessionId, db);
     }
-  }
-
-  private enqueue(promise: Promise<any>): void {
-    this.storePromises.add(promise);
-    void promise.then(() => this.storePromises.delete(promise)).catch(console.error);
   }
 }

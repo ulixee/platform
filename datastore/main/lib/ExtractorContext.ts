@@ -59,6 +59,14 @@ export default class ExtractorContext<
     return this.#extractorInternal.options.onQueryResult;
   }
 
+  public get onCacheUpdated(): (
+    sessionId: string,
+    crawler: string,
+    action: 'cached' | 'evicted',
+  ) => Promise<void> | void {
+    return this.#extractorInternal.options.onCacheUpdated;
+  }
+
   #extractorInternal: ExtractorInternal<ISchema>;
   #datastoreInternal: DatastoreInternal;
   #callbacks: IQueryInternalCallbacks;

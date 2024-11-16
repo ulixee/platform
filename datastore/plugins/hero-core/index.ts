@@ -1,6 +1,7 @@
 import IDatastoreCoreConfigureOptions from '@ulixee/datastore-core/interfaces/IDatastoreCoreConfigureOptions';
 import { IHeroExtractorRunOptions } from '@ulixee/datastore-plugins-hero';
 import type IExtractorPluginCore from '@ulixee/datastore/interfaces/IExtractorPluginCore';
+import type { ICacheUpdates } from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 import { ConnectionToHeroCore } from '@ulixee/hero';
 import HeroCore from '@ulixee/hero-core';
 import { ConnectionToClient, ConnectionToCore } from '@ulixee/net';
@@ -9,6 +10,7 @@ import { nanoid } from 'nanoid';
 import * as Path from 'path';
 import ReplayRegistryEndpoints from './endpoints/ReplayRegistryEndpoints';
 import ReplayRegistry from './lib/ReplayRegistry';
+import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSchema';
 
 const pkg = require('@ulixee/datastore-plugins-hero/package.json');
 
@@ -83,6 +85,25 @@ export default class DatastoreForHeroPluginCore implements IExtractorPluginCore 
     };
     options.sessionId = `query-${options.queryId}-${nanoid(3)}`;
     options.connectionToCore = this.connectionToCore;
+  }
+
+  public async afterRunExtractor(
+    _options: IHeroExtractorRunOptions<any>,
+    _output: unknown,
+    cacheUpdates: ICacheUpdates,
+  ): Promise<void> {
+    if (!cacheUpdates) return;
+    const actions = [];
+    for (const [sessionId, { action, crawler }] of Object.entries(cacheUpdates)) {
+      if (crawler !== 'Hero') continue;
+      if (action === 'evicted') {
+        actions.push(this.replayRegistry.delete(sessionId));
+      }
+      if (action === 'cached') {
+        actions.push(this.replayRegistry.store(sessionId));
+      }
+    }
+    await Promise.allSettled(actions);
   }
 
   public registerHostedServices(connectionToClient: ConnectionToClient<any, any>): void {

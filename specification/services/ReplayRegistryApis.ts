@@ -12,6 +12,14 @@ export const ReplayRegistryApiSchemas = {
       success: z.boolean(),
     }),
   },
+  'ReplayRegistry.delete': {
+    args: z.object({
+      sessionId: z.string(),
+    }),
+    result: z.object({
+      success: z.boolean(),
+    }),
+  },
   'ReplayRegistry.get': {
     args: z.object({
       sessionId: z.string(),

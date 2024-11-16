@@ -286,7 +286,7 @@ export default class LocalchainWithSync
       return;
     }
     let millisToNextTick = Number(this.#localchain.ticker.millisToNextTick());
-    if (Number.isNaN(millisToNextTick)) {
+    if (Number.isNaN(millisToNextTick) || millisToNextTick < 0) {
       millisToNextTick = 1000;
     }
     this.nextTick = setTimeout(async () => {
@@ -324,7 +324,7 @@ export default class LocalchainWithSync
         this.isSynching = false;
         this.scheduleNextTick();
       }
-    }, millisToNextTick);
+    }, millisToNextTick).unref();
   }
 
   public static async load(

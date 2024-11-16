@@ -76,13 +76,14 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     if (credit.remainingCredits < amount)
       throw new Error('This Credit has insufficient balance remaining to create a payment.');
 
-    const result = (await this.queryInternal(
+    const results = await this.queryInternal(
       'UPDATE self SET remainingCredits = remainingCredits - $2 ' +
         'WHERE id = $1 AND (remainingCredits - $2) >= 0 ' +
         'RETURNING remainingCredits',
       [id, amount],
-    )) as any;
+    );
 
+    const result = results?.[0];
     if (result === undefined) throw new Error('Could not create a payment from the given Credits.');
     return result.remainingCredits;
   }

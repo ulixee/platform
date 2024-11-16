@@ -12,6 +12,7 @@ import IDatastoreApiContext from '../interfaces/IDatastoreApiContext';
 import { IDatastoreManifestWithRuntime } from './DatastoreRegistry';
 import { validateAuthentication, validateFunctionCoreVersions } from './datastoreUtils';
 import PaymentsProcessor from './PaymentsProcessor';
+import { ICacheUpdates } from '@ulixee/datastore/interfaces/IExtractorPluginCore';
 
 export default class QueryRunner {
   public startTime = Date.now();
@@ -150,6 +151,11 @@ export default class QueryRunner {
       }
     }
 
+    const cacheOutputs: ICacheUpdates = {};
+    options.onCacheUpdated = (sessionId, crawler, action) => {
+      cacheOutputs[sessionId] = { crawler, action };
+    };
+
     try {
       outputs = await this.context.workTracker.trackRun(run(options));
       // release the hold
@@ -161,6 +167,14 @@ export default class QueryRunner {
       );
     } catch (error) {
       runError = error;
+    }
+
+    for (const plugin of Object.values(pluginCoresByName)) {
+      if (plugin.afterRunExtractor)
+        await plugin.afterRunExtractor(options, outputs, cacheOutputs, {
+          scriptEntrypoint: this.datastoreManifest.runtimePath,
+          functionName: name,
+        });
     }
 
     await this.context.statsTracker.recordEntityStats({

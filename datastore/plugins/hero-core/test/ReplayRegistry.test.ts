@@ -37,6 +37,10 @@ test('should get hero sessions from the registry', async () => {
   const heroPluginCore = getPlugin(storageNode);
   const storageStoreSpy = jest.spyOn(heroPluginCore.replayRegistry.replayStorageRegistry, 'store');
   const storageGetSpy = jest.spyOn(heroPluginCore.replayRegistry.replayStorageRegistry, 'get');
+  const storageDeleteSpy = jest.spyOn(
+    heroPluginCore.replayRegistry.replayStorageRegistry,
+    'delete',
+  );
 
   const childNode = await Helpers.createLocalNode({
     datastoreConfiguration: {
@@ -101,10 +105,31 @@ test('should get hero sessions from the registry', async () => {
     ),
   ).resolves.toBeTruthy();
   expect(storageGetSpy).toHaveBeenCalledTimes(1);
+  expect(storageStoreSpy).toHaveBeenCalledTimes(1);
 
   await getPlugin(childNode2).replayRegistry.flush();
 
-  await expect(getPlugin(storageNode).replayRegistry.ids()).resolves.toHaveLength(3);
+  // should only cache the actual crawl
+  await expect(getPlugin(storageNode).replayRegistry.ids()).resolves.toHaveLength(1);
+  expect(storageDeleteSpy).toHaveBeenCalledTimes(0);
+  const oldSessionId = (await getPlugin(storageNode).replayRegistry.ids())[0];
+
+  // now if we run with max time in cache 0, it should run the crawl again and evict the old one
+  await expect(
+    client2.query(
+      packager.manifest.id,
+      packager.manifest.version,
+      'select * from getTitle(url => $1, maxTimeInCache => 0)',
+      {
+        boundValues: [server.baseUrl],
+      },
+    ),
+  ).resolves.toBeTruthy();
+  expect(storageDeleteSpy).toHaveBeenCalledTimes(1);
+  expect(storageStoreSpy).toHaveBeenCalledTimes(2);
+  await expect(getPlugin(storageNode).replayRegistry.ids()).resolves.toHaveLength(1);
+  const newSessionId = (await getPlugin(storageNode).replayRegistry.ids())[0];
+  expect(newSessionId).not.toBe(oldSessionId);
 }, 60e3);
 
 test('allows you to delete hero sessions if desktop is enabled', async () => {
