@@ -190,7 +190,7 @@ export default class DatastoreApiClient {
         }
 
         const result = await this.runApi('Datastore.stream', query).catch(async err => {
-          await paymentService?.finalize({ ...payment, finalMicrogons: 0 });
+          await paymentService?.finalize({ ...payment, finalMicrogons: 0n });
           throw err;
         });
         await paymentService?.finalize({
@@ -382,9 +382,9 @@ export default class DatastoreApiClient {
   public async createCredits(
     id: string,
     version: string,
-    microgons: number,
+    microgons: number | bigint,
     adminIdentity: Identity,
-  ): Promise<{ id: string; remainingCredits: number; secret: string }> {
+  ): Promise<{ id: string; remainingCredits: bigint; secret: string }> {
     return await this.administer<ReturnType<CreditsTable['create']>>(
       id,
       version,
@@ -394,7 +394,7 @@ export default class DatastoreApiClient {
         ownerName: CreditsTable.tableName,
         functionName: 'create',
       },
-      [microgons],
+      [BigInt(microgons)],
     );
   }
 

@@ -12,6 +12,7 @@ import ValidationError from '@ulixee/platform-specification/utils/ValidationErro
 import { promises as Fs } from 'fs';
 import * as Path from 'path';
 import env from '../env';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 
 type IDatastoreSources = [
   global: DatastoreManifest,
@@ -130,7 +131,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
       this.extractorsByName[funcName] = {
         description: funcMeta.description,
         corePlugins: funcMeta.corePlugins ?? {},
-        prices: funcMeta.prices ?? [{ basePrice: 0 }],
+        prices: funcMeta.prices ?? [{ basePrice: 0n }],
         schemaAsJson: funcMeta.schemaAsJson,
       };
     }
@@ -138,14 +139,14 @@ export default class DatastoreManifest implements IDatastoreManifest {
       this.crawlersByName[funcName] = {
         description: funcMeta.description,
         corePlugins: funcMeta.corePlugins ?? {},
-        prices: funcMeta.prices ?? [{ basePrice: 0 }],
+        prices: funcMeta.prices ?? [{ basePrice: 0n }],
         schemaAsJson: funcMeta.schemaAsJson,
       };
     }
     for (const [tableName, tableMeta] of Object.entries(tablesByName)) {
       this.tablesByName[tableName] = {
         description: tableMeta.description,
-        prices: tableMeta.prices ?? [{ basePrice: 0 }],
+        prices: tableMeta.prices ?? [{ basePrice: 0n }],
         schemaAsJson: tableMeta.schemaAsJson,
       };
     }
@@ -295,7 +296,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
             }
             this.extractorsByName[name].prices ??= [];
             for (const price of this.extractorsByName[name].prices) {
-              price.basePrice ??= 0;
+              price.basePrice ??= 0n;
             }
           }
         }
@@ -308,7 +309,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
             }
             this.crawlersByName[name].prices ??= [];
             for (const price of this.crawlersByName[name].prices) {
-              price.basePrice ??= 0;
+              price.basePrice ??= 0n;
             }
           }
         }
@@ -321,7 +322,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
             }
             this.tablesByName[name].prices ??= [];
             for (const price of this.tablesByName[name].prices) {
-              price.basePrice ??= 0;
+              price.basePrice ??= 0n;
             }
           }
         }
@@ -392,7 +393,7 @@ export default class DatastoreManifest implements IDatastoreManifest {
     if (!(await existsAsync(Path.dirname(path)))) {
       await Fs.mkdir(Path.dirname(path), { recursive: true });
     }
-    await safeOverwriteFile(path, JSON.stringify(json, null, 2));
+    await safeOverwriteFile(path, TypeSerializer.stringify(json, { format: true }));
   }
 }
 

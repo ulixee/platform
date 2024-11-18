@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { datastoreIdValidation } from './datastoreIdValidation';
 import { semverValidation } from './semverValidation';
+import { microgonsValidation } from './index';
 
 export const DatastorePricing = z.object({
-  basePrice: z.number().int().nonnegative().describe('Base price per query.'),
+  basePrice: microgonsValidation.describe('Base price per query.'),
   addOns: z
     .object({
       perKb: z

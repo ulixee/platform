@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { addressValidation, hashValidation, milligonsValidation } from './index';
+import { addressValidation, hashValidation, microgonsValidation } from './index';
 
 export const SendNote = z.object({
   action: z.literal('send'),
@@ -8,11 +8,7 @@ export const SendNote = z.object({
 
 export const ClaimFromMainchainNote = z.object({
   action: z.literal('claimFromMainchain'),
-  transferId: z
-    .number()
-    .int()
-    .nonnegative()
-    .describe('The id of this transfer to localchain'),
+  transferId: z.number().int().nonnegative().describe('The id of this transfer to localchain'),
 });
 export const ChannelHoldNote = z.object({
   action: z.literal('channelHold'),
@@ -32,7 +28,7 @@ function createActionLiteral<T extends string>(
 export const LeaseDomain = createActionLiteral('LeaseDomain');
 
 export const NoteSchema = z.object({
-  milligons: milligonsValidation,
+  microgons: microgonsValidation,
   noteType: z.discriminatedUnion('action', [
     createActionLiteral('sendToMainchain'),
     ClaimFromMainchainNote,

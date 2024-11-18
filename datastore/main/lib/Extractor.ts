@@ -45,7 +45,7 @@ export default class Extractor<
   public pluginClasses: IExtractorPluginConstructor<TSchema>[] = [];
   public successCount = 0;
   public errorCount = 0;
-  public basePrice = 0;
+  public basePrice = 0n;
 
   public get schema(): TSchema {
     return this.components.schema;
@@ -93,7 +93,7 @@ export default class Extractor<
       const plugin = new Plugin(this.components);
       this.corePlugins[plugin.name] = plugin.version;
     }
-    this.basePrice = this.components.basePrice ?? 0;
+    this.basePrice = BigInt(this.components.basePrice ?? 0);
   }
 
   public runInternal(

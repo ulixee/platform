@@ -5,7 +5,7 @@
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@argonprotocol/localchain": "0.0.17",
+    "@argonprotocol/localchain": "0.0.19",
     "@ulixee/commons": "2.0.0-alpha.30",
     "@ulixee/datastore": "2.0.0-alpha.30",
     "@ulixee/datastore-docpage": "2.0.0-alpha.30",
@@ -20,7 +20,7 @@
     "tar": "^7.4.3"
   },
   "devDependencies": {
-    "@argonprotocol/mainchain": "0.0.17",
+    "@argonprotocol/mainchain": "0.0.19",
     "@jest/globals": "^27.0.6",
     "@ulixee/cloud": "2.0.0-alpha.30",
     "@ulixee/datastore-packager": "2.0.0-alpha.30",

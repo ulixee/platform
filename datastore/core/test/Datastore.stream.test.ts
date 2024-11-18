@@ -45,21 +45,18 @@ test('should be able to stream a datastore extractor', async () => {
   await client.upload(await packager.dbx.tarGzip());
   let counter = 0;
   const outputs = [];
-  const result = client.stream(
-    packager.manifest.id,
-    packager.manifest.version,
-    'streamer',
-    {},
+  const result = client.stream(packager.manifest.id, packager.manifest.version, 'streamer', {});
+  await expect(result.resultMetadata).resolves.toEqual(
+    expect.objectContaining({
+      metadata: {
+        milliseconds: expect.any(Number),
+        bytes: expect.any(Number),
+        microgons: 0n,
+      },
+      latestVersion: expect.any(String),
+      queryId: expect.any(String),
+    }),
   );
-  await expect(result.resultMetadata).resolves.toEqual(expect.objectContaining({
-    metadata: {
-      milliseconds: expect.any(Number),
-      bytes: expect.any(Number),
-      microgons: 0,
-    },
-    latestVersion: expect.any(String),
-    queryId: expect.any(String),
-  }));
   for await (const record of result) {
     counter += 1;
     outputs.push(record);
@@ -80,17 +77,14 @@ test('should be able to stream a datastore table', async () => {
   await client.upload(await packager.dbx.tarGzip());
   let counter = 0;
   const outputs = [];
-  const result = client.stream(
-    packager.manifest.id,
-    packager.manifest.version,
-    'streamTable',
-    { success: false },
-  );
+  const result = client.stream(packager.manifest.id, packager.manifest.version, 'streamTable', {
+    success: false,
+  });
   await expect(result.resultMetadata).resolves.toEqual({
     metadata: {
       milliseconds: expect.any(Number),
       bytes: expect.any(Number),
-      microgons: 0,
+      microgons: 0n,
     },
     latestVersion: expect.any(String),
     queryId: expect.any(String),

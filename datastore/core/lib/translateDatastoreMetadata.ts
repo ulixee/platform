@@ -70,12 +70,12 @@ export function translateStats(
   return {
     queries: stats.runs ?? 0,
     errors: stats.errors ?? 0,
-    totalSpend: stats.totalSpend ?? 0,
-    totalCreditSpend: stats.totalCreditSpend ?? 0,
+    totalSpend: stats.totalSpend ?? 0n,
+    totalCreditSpend: stats.totalCreditSpend ?? 0n,
     averageMilliseconds: stats.averageMilliseconds ?? 0,
     maxMilliseconds: stats.maxMilliseconds ?? 0,
-    averageTotalPricePerQuery: stats.averagePrice ?? 0,
-    maxPricePerQuery: stats.maxPrice ?? 0,
+    averageTotalPricePerQuery: stats.averagePrice ?? 0n,
+    maxPricePerQuery: stats.maxPrice ?? 0n,
     averageBytesPerQuery: stats.averageBytes ?? 0,
     maxBytesPerQuery: stats.maxBytes ?? 0,
   };

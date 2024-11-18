@@ -55,7 +55,7 @@ export default class CreditReserver
   private queue = new Queue();
 
   private paymentsPendingFinalization: {
-    [uuid: string]: { microgons: number; datastoreId: string };
+    [uuid: string]: { microgons: bigint; datastoreId: string };
   } = {};
 
   constructor(
@@ -74,14 +74,14 @@ export default class CreditReserver
     return undefined;
   }
 
-  public hasBalance(microgons: number): boolean {
+  public hasBalance(microgons: bigint): boolean {
     return this.paymentDetails.remaining >= microgons;
   }
 
   public async reserve(
     paymentInfo: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
   ): Promise<IPayment> {
-    const microgons = paymentInfo.microgons ?? 0;
+    const microgons = paymentInfo.microgons ?? 0n;
     if (paymentInfo.id !== this.paymentDetails.id) throw new Error('Datastore id does not match');
 
     return await this.queue.run(async () => {
@@ -192,7 +192,7 @@ export default class CreditReserver
     datastoreId: string,
     datastoreVersion: string,
     host: string,
-    credits: { id: string; secret: string; remainingCredits: number },
+    credits: { id: string; secret: string; remainingCredits: bigint },
     creditsDir = CreditReserver.defaultBasePath,
   ): Promise<CreditReserver> {
     const service = new CreditReserver(
@@ -255,7 +255,7 @@ export default class CreditReserver
 
   public static async storeCreditFromUrl(
     url: string,
-    microgons: number,
+    microgons: bigint,
     datastoreLookup?: IDatastoreHostLookup,
   ): Promise<CreditReserver> {
     const datastoreURL = toUrl(url);

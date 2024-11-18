@@ -7,6 +7,7 @@ import * as Fs from 'fs/promises';
 import * as Path from 'path';
 import * as Tar from 'tar';
 import IDocpageConfig from '../interfaces/IDocpageConfig';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 
 export default class Dbx {
   public manifest: DatastoreManifest;
@@ -108,7 +109,7 @@ export default class Dbx {
       }, {}),
     };
 
-    await Fs.writeFile(Path.join(this.path, 'docpage.json'), JSON.stringify(config));
+    await Fs.writeFile(Path.join(this.path, 'docpage.json'), TypeSerializer.stringify(config));
   }
 
   public async tarGzip(): Promise<Buffer> {

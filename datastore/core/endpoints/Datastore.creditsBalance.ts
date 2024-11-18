@@ -7,10 +7,7 @@ export default new DatastoreApiHandler('Datastore.creditsBalance', {
     request,
     context,
   ): Promise<IDatastoreApiTypes['Datastore.creditsBalance']['result']> {
-    const datastoreVersion = await context.datastoreRegistry.get(
-      request.id,
-      request.version,
-    );
+    const datastoreVersion = await context.datastoreRegistry.get(request.id, request.version);
     const storage = context.storageEngineRegistry.get(datastoreVersion, {
       id: request.id,
       version: request.version,
@@ -22,6 +19,9 @@ export default new DatastoreApiHandler('Datastore.creditsBalance', {
       datastoreVersion,
     );
     const credits = await datastore.tables[CreditsTable.tableName].get(request.creditId);
-    return { balance: credits?.remainingCredits ?? 0, issuedCredits: credits?.issuedCredits ?? 0 };
+    return {
+      balance: credits?.remainingCredits ?? 0n,
+      issuedCredits: credits?.issuedCredits ?? 0n,
+    };
   },
 });

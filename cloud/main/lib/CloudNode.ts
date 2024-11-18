@@ -133,12 +133,12 @@ export default class CloudNode {
       this.getInstalledDatastorePlugins(),
     );
 
+    this.shouldShutdownOnSignals = shouldShutdownOnSignals ?? true;
     this.heroConfiguration = heroConfiguration ?? {};
     this.heroConfiguration.shouldShutdownOnSignals ??= this.shouldShutdownOnSignals;
     this.heroCore = new HeroCore(this.heroConfiguration);
 
-    this.shouldShutdownOnSignals = shouldShutdownOnSignals;
-    if (this.shouldShutdownOnSignals === true) ShutdownHandler.disableSignals = true;
+    if (!this.shouldShutdownOnSignals) ShutdownHandler.disableSignals = true;
     ShutdownHandler.register(this.close);
   }
 

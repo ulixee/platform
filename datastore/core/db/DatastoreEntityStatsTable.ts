@@ -47,13 +47,13 @@ export default class DatastoreEntityStatsTable extends SqliteTable<IDatastoreEnt
     datastoreId: string,
     version: string,
     name: string,
-    price: number,
+    price: bigint,
     bytes: number,
     milliseconds: number,
-    creditsUsed: number,
+    creditsUsed: bigint,
     isError: boolean,
   ): void {
-    const microgons = Number(price) ?? 0;
+    const microgons = price ?? 0n;
 
     const stats = this.getByVersion(datastoreId, version, name);
     this.addToStats(stats, isError, microgons, milliseconds, bytes, creditsUsed);
@@ -87,15 +87,17 @@ export default class DatastoreEntityStatsTable extends SqliteTable<IDatastoreEnt
     name: string,
   ): IDatastoreEntityStatsRecord {
     DatastoreEntityStatsTable.byIdVersionAndName[`${datastoreId}_${version}_${name}`] ??=
-      (this.getByVersionQuery.get(datastoreId, version, name) as IDatastoreEntityStatsRecord) ??
-      this.emptyStats(name, datastoreId, version);
+      this.process(
+        this.getByVersionQuery.get(datastoreId, version, name) ??
+          this.emptyStats(name, datastoreId, version),
+      );
     return DatastoreEntityStatsTable.byIdVersionAndName[`${datastoreId}_${version}_${name}`];
   }
 
   public getByDatastore(datastoreId: string, name: string): IDatastoreEntityStatsRecord {
-    DatastoreEntityStatsTable.byIdAndName[`${datastoreId}_${name}`] ??=
-      (this.getQuery.get(datastoreId, name) as IDatastoreEntityStatsRecord) ??
-      this.emptyStats(name, datastoreId);
+    DatastoreEntityStatsTable.byIdAndName[`${datastoreId}_${name}`] ??= this.process(
+      this.getQuery.get(datastoreId, name) ?? this.emptyStats(name, datastoreId),
+    );
     return DatastoreEntityStatsTable.byIdAndName[`${datastoreId}_${name}`];
   }
 
@@ -114,31 +116,40 @@ export default class DatastoreEntityStatsTable extends SqliteTable<IDatastoreEnt
       averageBytes: 0,
       maxBytes: 0,
       minBytes: Number.MAX_SAFE_INTEGER,
-      averagePrice: 0,
-      maxPrice: 0,
-      minPrice: Number.MAX_SAFE_INTEGER,
+      averagePrice: 0n,
+      maxPrice: 0n,
+      minPrice: BigInt(Number.MAX_SAFE_INTEGER),
       averageMilliseconds: 0,
       maxMilliseconds: 0,
       minMilliseconds: 0,
-      totalSpend: 0,
-      totalCreditSpend: 0,
+      totalSpend: 0n,
+      totalCreditSpend: 0n,
     };
+  }
+
+  private process(record: IDatastoreEntityStatsRecord): IDatastoreEntityStatsRecord {
+    record.averagePrice = BigInt(record.averagePrice);
+    record.maxPrice = BigInt(record.maxPrice);
+    record.minPrice = BigInt(record.minPrice);
+    record.totalSpend = BigInt(record.totalSpend);
+    record.totalCreditSpend = BigInt(record.totalCreditSpend);
+    return record;
   }
 
   private addToStats(
     stats: IDatastoreEntityStatsRecord,
     isError: boolean,
-    price: number,
+    price: bigint,
     milliseconds: number,
     bytes: number,
-    creditsUsed: number,
+    creditsUsed: bigint,
   ): void {
     stats.runs += 1;
     if (isError) stats.errors += 1;
     stats.lastRunTimestamp = Date.now();
-    stats.maxPrice = Math.max(stats.maxPrice, price);
-    stats.minPrice = Math.min(stats.minPrice, price);
-    stats.averagePrice = calculateNewAverage(stats.averagePrice, price, stats.runs);
+    if (price > stats.maxPrice) stats.maxPrice = price;
+    if (price < stats.minPrice) stats.minPrice = price;
+    stats.averagePrice = calculateNewAverageBigInt(stats.averagePrice, price, stats.runs);
     stats.maxMilliseconds = Math.max(stats.maxMilliseconds, milliseconds);
     stats.minMilliseconds = Math.min(stats.minMilliseconds, milliseconds);
     stats.averageMilliseconds = calculateNewAverage(
@@ -153,10 +164,18 @@ export default class DatastoreEntityStatsTable extends SqliteTable<IDatastoreEnt
     if (creditsUsed) stats.totalCreditSpend += creditsUsed;
   }
 }
-
 function calculateNewAverage(oldAverage: number, value: number, newTotalValues: number): number {
   if (newTotalValues === 1) return value;
   return Math.round(oldAverage + (value - oldAverage) / newTotalValues);
+}
+
+export function calculateNewAverageBigInt(
+  oldAverage: bigint,
+  value: bigint,
+  newTotalValues: number,
+): bigint {
+  if (newTotalValues === 1) return value;
+  return oldAverage + (value - oldAverage) / BigInt(newTotalValues);
 }
 
 export interface IDatastoreEntityStatsRecord {
@@ -169,12 +188,12 @@ export interface IDatastoreEntityStatsRecord {
   averageBytes: number;
   maxBytes: number;
   minBytes: number;
-  averagePrice: number;
-  maxPrice: number;
-  minPrice: number;
+  averagePrice: bigint;
+  maxPrice: bigint;
+  minPrice: bigint;
   averageMilliseconds: number;
   maxMilliseconds: number;
   minMilliseconds: number;
-  totalSpend: number;
-  totalCreditSpend: number;
+  totalSpend: bigint;
+  totalCreditSpend: bigint;
 }

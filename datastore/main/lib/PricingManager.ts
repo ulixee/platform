@@ -7,7 +7,7 @@ import DatastoreApiClient from './DatastoreApiClient';
 export default class PricingManager {
   constructor(readonly apiClient: DatastoreApiClient) {}
 
-  public async getEntityPrice(datastoreId: string, version: string, name: string): Promise<number> {
+  public async getEntityPrice(datastoreId: string, version: string, name: string): Promise<bigint> {
     const manifest = await this.apiClient.getMeta(datastoreId, version);
     const details =
       manifest.crawlersByName[name] ??
@@ -16,23 +16,23 @@ export default class PricingManager {
     return details?.netBasePrice;
   }
 
-  public async getQueryPrice(datastoreId: string, version: string, sql: string): Promise<number> {
+  public async getQueryPrice(datastoreId: string, version: string, sql: string): Promise<bigint> {
     const manifest = await this.apiClient.getMeta(datastoreId, version);
     const sqlParser = new SqlParser(sql);
     const entities = sqlParser.extractCalls();
-    let price = 0;
+    let price = 0n;
     for (const call of entities) {
       const details =
         manifest.crawlersByName[call] ??
         manifest.extractorsByName[call] ??
         manifest.tablesByName[call];
-      price += details?.netBasePrice ?? 0;
+      price += details?.netBasePrice ?? 0n;
     }
     return price;
   }
 
-  public static computePrice(manifest: IDatastoreManifest, entityCalls: string[]): number {
-    let price = 0;
+  public static computePrice(manifest: IDatastoreManifest, entityCalls: string[]): bigint {
+    let price = 0n;
 
     for (const call of entityCalls) {
       const entity =
@@ -46,10 +46,10 @@ export default class PricingManager {
     return price;
   }
 
-  public static getNetBasePrice(prices: IDatastorePricing[]): number {
-    let basePrice = 0;
+  public static getNetBasePrice(prices: IDatastorePricing[]): bigint {
+    let basePrice = 0n;
     for (const price of prices) {
-      if (Number.isInteger(price.basePrice)) basePrice += price.basePrice;
+      if (!!price.basePrice) basePrice += BigInt(price.basePrice);
     }
     return basePrice;
   }

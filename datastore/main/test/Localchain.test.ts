@@ -1,6 +1,6 @@
 import { Keyring } from '@argonprotocol/mainchain';
 import { Helpers } from '@ulixee/datastore-testing';
-import { CryptoScheme, Localchain } from '@argonprotocol/localchain';
+import { CryptoScheme, DOMAIN_LEASE_COST, Localchain } from '@argonprotocol/localchain';
 import { AccountType } from '@ulixee/platform-specification/types/IBalanceChange';
 import INotarization, {
   NotarizationSchema,
@@ -42,7 +42,7 @@ test('it can serialize and deserialize a notarization', async () => {
 
   const json: INotarization = JSON.parse(await balanceBuilder.toJSON());
   expect(json.balanceChanges.find(x => x.accountType === AccountType.Deposit).balance).toBe(
-    (2n ** 120n - 1000n).toString(),
+    (2n ** 120n - DOMAIN_LEASE_COST).toString(),
   );
   await NotarizationSchema.parseAsync(json).catch(err => {
     throw ValidationError.fromZodValidation(`The balance change had some errors`, err);

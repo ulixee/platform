@@ -17,8 +17,8 @@
     }
   },
   "dependencies": {
-    "@argonprotocol/localchain": "0.0.17",
-    "@argonprotocol/mainchain": "0.0.17",
+    "@argonprotocol/localchain": "0.0.19",
+    "@argonprotocol/mainchain": "0.0.19",
     "@ulixee/cloud": "2.0.0-alpha.30",
     "@ulixee/commons": "2.0.0-alpha.30",
     "@ulixee/datastore": "2.0.0-alpha.30",

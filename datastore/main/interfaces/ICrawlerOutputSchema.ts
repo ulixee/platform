@@ -1,4 +1,4 @@
-import { boolean, object, string } from '@ulixee/schema';
+import { string } from '@ulixee/schema';
 
 export const CrawlerOutputSchema = {
   crawler: string({ description: 'The type of crawler output that has been produced.' }),

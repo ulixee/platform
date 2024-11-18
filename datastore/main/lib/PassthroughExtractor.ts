@@ -16,7 +16,7 @@ export interface IPassthroughExtractorComponents<
     IDatastoreExecRelayArgs = IExtractorContext<TSchema> & IDatastoreExecRelayArgs,
 > {
   remoteExtractor: `${keyof TRemoteSources & string}.${TExtractorName}`;
-  upcharge?: number;
+  upcharge?: bigint | number;
   onRequest?: (context: TContext) => Promise<any>;
   onResponse?: (
     context: TContext & { stream: AsyncIterable<ExtractSchemaType<TSchema['output']>> },
@@ -62,7 +62,7 @@ export default class PassthroughExtractor<
   ) {
     super({ ...components } as any, ...plugins);
     this.components.run = this.run.bind(this);
-    this.basePrice = components.upcharge ?? 0;
+    this.basePrice = BigInt(components.upcharge ?? 0);
     assert(components.remoteExtractor, 'A remote extractor name is required');
     assert(components.remoteExtractor.includes('.'), 'A remote function source is required');
     this.passThroughComponents = components;

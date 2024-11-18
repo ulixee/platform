@@ -7,6 +7,7 @@ import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreM
 import Axios from 'axios';
 import * as Fs from 'fs';
 import * as Path from 'path';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Datastore.docpage.test');
 
@@ -59,9 +60,7 @@ test('should be able to load datastore documentation', async () => {
 
 test('should be able to load datastore documentation with a credit hash', async () => {
   const address = await cloudNode.address;
-  const res = await Axios.get(
-    `http://${address}/${manifest.id}@v${manifest.version}?crd2342342`,
-  );
+  const res = await Axios.get(`http://${address}/${manifest.id}@v${manifest.version}?crd2342342`);
   expect(res.data.includes('<title>Ulixee</title>')).toBe(true);
   const config = await Axios.get(
     `http://${address}/${manifest.id}@v${manifest.version}/docpage.json`,
@@ -70,18 +69,18 @@ test('should be able to load datastore documentation with a credit hash', async 
 });
 
 test('should be able to get a credit balance', async () => {
-  const credits = await client.createCredits(manifest.id, manifest.version, 1002, adminIdentity);
+  const credits = await client.createCredits(manifest.id, manifest.version, 1002n, adminIdentity);
 
   await expect(
     Axios.get(
       `http://${await cloudNode.address}/${manifest.id}@v${manifest.version}/free-credit?${
         credits.id
       }:${credits.secret}`,
-      { responseType: 'json', headers: { accept: 'application/json' } },
-    ).then(x => x.data),
+      { responseType: 'text', headers: { accept: 'application/json' } },
+    ).then(x => TypeSerializer.parse(x.data)),
   ).resolves.toEqual({
-    balance: 1002,
-    issuedCredits: 1002,
+    balance: 1002n,
+    issuedCredits: 1002n,
   });
 });
 

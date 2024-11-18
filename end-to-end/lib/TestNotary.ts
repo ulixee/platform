@@ -1,7 +1,12 @@
 import { customAlphabet } from 'nanoid';
 import { Client } from 'pg';
 import * as child_process from 'node:child_process';
-import { checkForExtrinsicSuccess, Keyring, KeyringPair, ArgonClient } from '@argonprotocol/mainchain';
+import {
+  checkForExtrinsicSuccess,
+  Keyring,
+  KeyringPair,
+  ArgonClient,
+} from '@argonprotocol/mainchain';
 import * as fs from 'node:fs';
 import * as readline from 'node:readline';
 import * as process from 'node:process';
@@ -102,6 +107,7 @@ export default class TestNotary {
       'run',
       `--db-url=${this.#dbConnectionString}/${this.#dbName}`,
       `--dev`,
+      `--operator-address=${this.operator.address}`,
       `-t ${argonMainchainUrl}`,
     ];
     if (process.env.ULX_USE_DOCKER_BINS) {

@@ -49,7 +49,7 @@ test('it should generate a relative script entrypoint', async () => {
     tablesByName: {},
     extractorsByName: expect.objectContaining({
       default: {
-        prices: [{ basePrice: 0 }],
+        prices: [{ basePrice: 0n }],
         corePlugins: {
           '@ulixee/datastore-plugins-hero': require('../package.json').version,
         },
@@ -151,14 +151,14 @@ test('should be able to package a multi-function Datastore', async () => {
 }`,
     extractorsByName: expect.objectContaining({
       extractorWithInput: {
-        prices: [{ basePrice: 0 }],
+        prices: [{ basePrice: 0n }],
         corePlugins: {
           '@ulixee/datastore-plugins-hero': require('../package.json').version,
         },
         schemaAsJson: { input: { url: { format: 'url', typeName: 'string' } } },
       },
       extractorWithOutput: {
-        prices: [{ basePrice: 0 }],
+        prices: [{ basePrice: 0n }],
         corePlugins: {},
         schemaAsJson: { output: { title: { typeName: 'string' }, html: { typeName: 'string' } } },
       },
@@ -190,7 +190,7 @@ test('should be able to package an exported Extractor without a Datastore', asyn
 }`,
     extractorsByName: expect.objectContaining({
       default: {
-        prices: [{ basePrice: 0 }],
+        prices: [{ basePrice: 0n }],
         corePlugins: {
           '@ulixee/datastore-plugins-hero': require('../package.json').version,
         },

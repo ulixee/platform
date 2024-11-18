@@ -127,7 +127,6 @@ export default class LocalchainWithSync
     this.#localchain = await Localchain.loadWithoutMainchain(
       defaultPath,
       {
-        genesisUtcTime: Env.genesisUtcTime,
         tickDurationMillis: Env.tickDurationMillis,
         ntpPoolUrl: Env.ntpPoolUrl,
         channelHoldExpirationTicks: Env.channelHoldExpirationTicks,

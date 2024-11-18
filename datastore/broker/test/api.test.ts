@@ -34,14 +34,14 @@ beforeAll(async () => {
             return serdeJson(<IBalanceChange>{
               accountId: account.address,
               changeNumber: 0,
-              balance: 100n,
-              notes: [{ milligons: 5n, noteType: { action: 'channelHoldSettle' } }],
+              balance: 100000n,
+              notes: [{ microgons: 5000n, noteType: { action: 'channelHoldSettle' } }],
               signature: Buffer.from(account.sign(Buffer.from('test'), { withType: true })),
-              milligons: '100',
+              microgons: '100',
               previousBalanceProof: null,
               accountType: 'deposit',
               channelHoldNote: {
-                milligons: 100n,
+                microgons: 100000n,
                 noteType: {
                   action: 'channelHold',
                   recipient: account.address,
@@ -86,7 +86,7 @@ it('can create channelHolds', async () => {
   const channelHold = await client.createChannelHold(
     {
       host: '127.0.0.1',
-      microgons: 50,
+      microgons: 100_000n,
       recipient: {
         address: datastoreKeyPair.address,
         notaryId: 1,
@@ -96,16 +96,16 @@ it('can create channelHolds', async () => {
       version: '1.0.0',
       domain: 'test.flights',
     },
-    100n,
+    100_000n,
   );
   expect(channelHold.channelHoldId).toBeTruthy();
-  expect(channelHold.balanceChange.channelHoldNote.milligons).toBe(100n);
+  expect(channelHold.balanceChange.channelHoldNote.microgons).toBe(100_000n);
 
   const db = broker.getApiContext('').db;
   expect(db.channelHolds.countOpen()).toBe(1);
-  expect(db.channelHolds.pendingBalance()).toBe(100n);
+  expect(db.channelHolds.pendingBalance()).toBe(100_000n);
   expect(db.organizations.list()[0].balance).toBe(0n);
-  expect(db.organizations.list()[0].balanceInChannelHolds).toBe(100n);
+  expect(db.organizations.list()[0].balanceInChannelHolds).toBe(100_000n);
 
   await broker.onLocalchainSync({
     channelHoldNotarizations: [
@@ -121,7 +121,7 @@ it('can create channelHolds', async () => {
   } as any);
   expect(db.channelHolds.countOpen()).toBe(0);
   expect(db.channelHolds.pendingBalance()).toBe(0n);
-  expect(db.organizations.list()[0].balance).toBe(20n);
+  expect(db.organizations.list()[0].balance).toBe(99920n);
 });
 
 test('it rejects invalid signing requests', async () => {
@@ -141,7 +141,7 @@ test('it rejects invalid signing requests', async () => {
 
   const paymentInfo = {
     host: '127.0.0.1',
-    microgons: 50,
+    microgons: 50n,
     recipient: {
       address: datastoreKeyPair.address,
       notaryId: 1,
@@ -176,7 +176,7 @@ async function registerUser(dataBroker: DataBroker, identity: Identity) {
     args: [
       {
         name: 'test',
-        balance: 100n,
+        balance: 100_000n,
       },
     ],
   });

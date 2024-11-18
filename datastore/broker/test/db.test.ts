@@ -72,10 +72,10 @@ it('can store channelHold data', async () => {
 
   db.channelHolds.create({
     channelHoldId: '1',
-    heldMilligons: 10n,
+    heldMicrogons: 10n,
     domain: 'test',
     organizationId: org1,
-    settledMilligons: 0n,
+    settledMicrogons: 0n,
     settlementDate: null,
     createdByIdentity: 'user1',
     created: Date.now(),
@@ -85,10 +85,10 @@ it('can store channelHold data', async () => {
 
   db.channelHolds.create({
     channelHoldId: '2',
-    heldMilligons: 20n,
+    heldMicrogons: 20n,
     domain: 'test',
     organizationId: org1,
-    settledMilligons: 0n,
+    settledMicrogons: 0n,
     settlementDate: null,
     createdByIdentity: 'user2',
     created: Date.now(),

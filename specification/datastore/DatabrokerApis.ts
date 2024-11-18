@@ -3,7 +3,7 @@ import {
   addressValidation,
   identitySignatureValidation,
   identityValidation,
-  milligonsValidation,
+  microgonsValidation,
 } from '../types';
 import { BalanceChangeSchema } from '../types/IBalanceChange';
 import { DatastorePaymentRecipientSchema } from '../types/IDatastoreManifest';
@@ -14,7 +14,7 @@ export const DatabrokerApisSchema = {
   'Databroker.createChannelHold': {
     args: z.object({
       recipient: DatastorePaymentRecipientSchema,
-      milligons: milligonsValidation.describe('Amount to reserve'),
+      microgons: microgonsValidation.describe('Amount to reserve'),
       domain: z.string().optional().describe('The datastore domain if applicable'),
       datastoreId: z.string().describe('The datastore id'),
       delegatedSigningAddress: addressValidation.describe(
@@ -37,7 +37,7 @@ export const DatabrokerApisSchema = {
       identity: identityValidation.describe('The user identity making this request'),
     }),
     result: z.object({
-      balance: milligonsValidation.describe('The balance in milligons'),
+      balance: microgonsValidation.describe('The balance in microgons'),
     }),
   },
 };

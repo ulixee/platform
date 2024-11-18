@@ -19,7 +19,6 @@ module.exports = async () => {
     certManager.close();
 
     if (process.env.ULX_DATA_DIR) {
-      process.env.ARGON_GENESIS_UTC_TIME = Date.now().toString();
       Localchain.setDefaultDir(Path.join(process.env.ULX_DATA_DIR, 'argon', 'localchain'));
     }
   } catch (err) {

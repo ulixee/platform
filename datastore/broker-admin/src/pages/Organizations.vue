@@ -7,28 +7,30 @@ Index.vue
         <div
           class="overflow-hidden rounded-lg shadow ring-1 ring-black ring-opacity-5 p-10 bg-white">
           <h4 class="text-reg font-bold mb-4">Add an organization</h4>
-          <form @submit.prevent="add" class="min-w-full max-w-full overflow-hidden">
+          <form class="min-w-full max-w-full overflow-hidden" @submit.prevent="add">
             <input
+              id="name"
               v-model="name"
               class="shadow appearance-none border rounded my-2 w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="name"
               type="text"
               placeholder="Name" />
 
             <label for="balance" class="my-2 block text-reg font-medium leading-6 text-gray-900"
-              >Milligons to Grant</label
+              >Microgons to Grant</label
             >
             <input
+              id="balance"
               v-model="balance"
               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="balance"
               type="number"
-              placeholder="Milligons to Grant" />
+              placeholder="Microgons to Grant" />
             <p v-if="errorMessage" class="px-1 py-2 text-sm font-semibold text-red-500">
               {{ errorMessage }}
             </p>
             <ul v-if="errorMessage" class="list-disc text-small list-inside">
-              <li v-for="error in errorDetails" :key="error">{{ error }}</li>
+              <li v-for="error in errorDetails" :key="error">
+                {{ error }}
+              </li>
             </ul>
             <button
               class="col-span-6 mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md bg-fuchsia-700 py-2.5 px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800">
@@ -40,7 +42,7 @@ Index.vue
       <div
         class="mx-10 my-5 overflow-hidden rounded-lg shadow ring-1 ring-black ring-opacity-5 p-10 bg-white">
         <div class="mb-2">
-          <strong>Localchain Balance (milligons):</strong> {{ overview.localchainBalance }}
+          <strong>Localchain Balance (microgons):</strong> {{ overview.localchainBalance }}
         </div>
         <div class="mb-2">
           <strong>Available Org Balances:</strong> {{ overview.totalOrganizationBalance }}
@@ -149,7 +151,7 @@ export default Vue.defineComponent({
       }
     },
     toArgons(amount: bigint) {
-      return ArgonUtils.format(amount, 'milligons', 'argons');
+      return ArgonUtils.format(amount, 'microgons', 'argons');
     },
   },
 });

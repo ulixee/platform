@@ -43,7 +43,7 @@ export default new DatastoreApiHandler('Datastore.queryStorageEngine', {
       latestVersion: manifestWithEntrypoint.latestVersion,
       metadata: {
         bytes: 0,
-        microgons: 0,
+        microgons: 0n,
         milliseconds: 0,
       },
       runError: null,
@@ -67,9 +67,11 @@ export default new DatastoreApiHandler('Datastore.queryStorageEngine', {
         request.virtualEntitiesByName,
       );
 
-      let basePrice = 0;
+      let basePrice = 0n;
       for (const call of tableCalls) {
-        const price = manifestWithEntrypoint.tablesByName[call]?.prices?.[0]?.basePrice ?? 0;
+        const price = BigInt(
+          manifestWithEntrypoint.tablesByName[call]?.prices?.[0]?.basePrice ?? 0,
+        );
         basePrice += price;
       }
 

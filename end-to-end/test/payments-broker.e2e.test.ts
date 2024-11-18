@@ -31,7 +31,7 @@ inspect.defaultOptions.depth = 10;
 describeIntegration('Payments with Broker E2E', () => {
   beforeAll(async () => {
     const mainchain = new TestMainchain();
-    argonMainchainUrl = await mainchain.launch();
+    argonMainchainUrl = await mainchain.launch(1);
     const notary = new TestNotary();
     await notary.start(argonMainchainUrl);
 
@@ -76,13 +76,13 @@ describeIntegration('Payments with Broker E2E', () => {
     const ferdieVotesAddress = ferdie.derive('//votes').address;
 
     await Promise.all([
-      ferdiechain.mainchainTransfers.sendToLocalchain(1000n, 1),
-      brokerchain.mainchainTransfers.sendToLocalchain(5000n, 1),
+      ferdiechain.mainchainTransfers.sendToLocalchain(1_000_000n, 1),
+      brokerchain.mainchainTransfers.sendToLocalchain(5_000_000n, 1),
     ]);
 
     await Promise.all([
-      waitForSynchedBalance(ferdiechain, 1000n),
-      waitForSynchedBalance(brokerchain, 5000n),
+      waitForSynchedBalance(ferdiechain, 1_000_000n),
+      waitForSynchedBalance(brokerchain, 5_000_000n),
     ]);
 
     const domain = 'broker.communication';
@@ -98,7 +98,7 @@ describeIntegration('Payments with Broker E2E', () => {
     );
 
     execAndLog(`npx @ulixee/datastore admin-identity create --filename="${clientUserPath}"`);
-    await broker.registerUser(clientUserPath, 1000n);
+    await broker.registerUser(clientUserPath, 1_000_000n);
     await broker.whitelistDomain(domain);
     const paymentService = await DefaultPaymentService.fromBroker(
       brokerAddress,
@@ -107,7 +107,7 @@ describeIntegration('Payments with Broker E2E', () => {
       },
       {
         type: 'default',
-        milligons: 500n,
+        microgons: 500_000n,
       },
     );
     const payments: DefaultPaymentService['EventTypes']['reserved'][] = [];
@@ -131,23 +131,23 @@ describeIntegration('Payments with Broker E2E', () => {
     expect(result).toEqual([{ success: true, input: { test: 1 } }]);
     expect(metadata).toEqual(
       expect.objectContaining({
-        microgons: 50_000,
+        microgons: 50_000n,
         milliseconds: expect.any(Number),
         bytes: expect.any(Number),
       }),
     );
 
     expect(channelHolds).toHaveLength(1);
-    expect(channelHolds[0].allocatedMilligons).toBe(500n);
+    expect(channelHolds[0].allocatedMicrogons).toBe(500_000n);
     expect(channelHolds[0].datastoreId).toBe(datastoreId);
     expect(payments).toHaveLength(1);
-    expect(payments[0].payment.microgons).toBe(50_000);
+    expect(payments[0].payment.microgons).toBe(50_000n);
     expect(payments[0].payment.channelHold).toBeTruthy();
-    expect(payments[0].payment.channelHold.settledMilligons).toBe(50n);
-    expect(payments[0].remainingBalance).toBe(450e3);
+    expect(payments[0].payment.channelHold.settledMicrogons).toBe(50_000n);
+    expect(payments[0].remainingBalance).toBe(450_000n);
 
     const clientIdentity = Identity.loadFromFile(clientUserPath);
-    await expect(broker.getBalance(clientIdentity.bech32)).resolves.toBe(500n);
+    await expect(broker.getBalance(clientIdentity.bech32)).resolves.toBe(500_000n);
   }, 300e3);
 });
 

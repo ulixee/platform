@@ -10,7 +10,6 @@ import { IPayment } from '@ulixee/platform-specification';
 import IPaymentServiceApiTypes from '@ulixee/platform-specification/datastore/PaymentServiceApis';
 import IBalanceChange from '@ulixee/platform-specification/types/IBalanceChange';
 import { IPaymentMethod } from '@ulixee/platform-specification/types/IPayment';
-import ArgonUtils from '@ulixee/platform-utils/lib/ArgonUtils';
 import { nanoid } from 'nanoid';
 import * as Path from 'node:path';
 import { IPaymentDetails, IPaymentEvents, IPaymentReserver } from '../interfaces/IPaymentService';
@@ -19,7 +18,7 @@ import DatastoreApiClients from '../lib/DatastoreApiClients';
 const { log } = Logger(module);
 
 export type IChannelHoldAllocationStrategy =
-  | { type: 'default'; milligons: bigint }
+  | { type: 'default'; microgons: bigint }
   | { type: 'multiplier'; queries: number };
 
 type IPaymentDetailsByDatastoreId = { [datastoreId: string]: IPaymentDetails[] };
@@ -34,7 +33,7 @@ export interface IChannelHoldSource {
   sourceKey: string;
   createChannelHold(
     paymentInfo: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
-    milligons: bigint,
+    microgons: bigint,
   ): Promise<IChannelHoldDetails>;
   updateChannelHoldSettlement(
     channelHold: IPaymentMethod['channelHold'],
@@ -46,11 +45,12 @@ export default class ArgonReserver
   extends TypedEventEmitter<IPaymentEvents>
   implements IPaymentReserver
 {
+  public static settlementThreshold = 1000n;
   public static baseStorePath = Path.join(getDataDirectory(), `ulixee`);
   public readonly paymentsByDatastoreId: IPaymentDetailsByDatastoreId = {};
 
   private paymentsPendingFinalization: {
-    [uuid: string]: { microgons: number; datastoreId: string; paymentId: string };
+    [uuid: string]: { microgons: bigint; datastoreId: string; paymentId: string };
   } = {};
 
   private readonly reserveQueueByDatastoreId: { [url: string]: Queue } = {};
@@ -112,7 +112,7 @@ export default class ArgonReserver
   public async reserve(
     paymentInfo: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
   ): Promise<IPayment> {
-    const microgons = paymentInfo.microgons ?? 0;
+    const microgons = paymentInfo.microgons ?? 0n;
     if (!microgons || !paymentInfo.recipient) return null;
     let datastoreHost = paymentInfo.host;
     const datastoreId = paymentInfo.id;
@@ -139,8 +139,8 @@ export default class ArgonReserver
         }
       }
 
-      const milligons = this.calculateChannelHoldMilligons(datastoreId, microgons);
-      const details = await this.createChannelHold(paymentInfo, milligons);
+      const holdAmount = this.calculateChannelHoldAmount(datastoreId, microgons);
+      const details = await this.createChannelHold(paymentInfo, holdAmount);
       return await this.charge(details, microgons);
     });
   }
@@ -172,32 +172,32 @@ export default class ArgonReserver
 
   public async createChannelHold(
     paymentInfo: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
-    milligons: bigint,
+    microgons: bigint,
   ): Promise<IPaymentDetails> {
     const { id, host, version } = paymentInfo;
-    if (milligons < CHANNEL_HOLD_MINIMUM_SETTLEMENT) {
-      milligons = CHANNEL_HOLD_MINIMUM_SETTLEMENT;
+    if (microgons < CHANNEL_HOLD_MINIMUM_SETTLEMENT) {
+      microgons = CHANNEL_HOLD_MINIMUM_SETTLEMENT;
     }
 
     return await this.channelHoldQueue.run(async () => {
-      const channelHold = await this.channelHoldSource.createChannelHold(paymentInfo, milligons);
+      const channelHold = await this.channelHoldSource.createChannelHold(paymentInfo, microgons);
 
       const apiClient = this.apiClients.get(host);
       await apiClient.registerChannelHold(id, channelHold.balanceChange);
-      const holdAmount = channelHold.balanceChange.channelHoldNote.milligons;
+      const holdAmount = channelHold.balanceChange.channelHoldNote.microgons;
       const settlement = channelHold.balanceChange.notes[0];
       if (settlement.noteType.action !== 'channelHoldSettle') {
         throw new Error('Invalid channelHold balance change');
       }
 
       const channelHoldId = channelHold.channelHoldId;
-      const allocated = Number(holdAmount) * 1000;
+      const allocated = holdAmount;
       const entry: IPaymentDetails = {
         paymentMethod: {
           channelHold: {
             id: channelHoldId,
             settledSignature: Buffer.from(channelHold.balanceChange.signature),
-            settledMilligons: settlement.milligons,
+            settledMicrogons: settlement.microgons,
           },
         },
         id,
@@ -210,7 +210,7 @@ export default class ArgonReserver
       this.emit('createdChannelHold', {
         channelHoldId,
         datastoreId: id,
-        allocatedMilligons: holdAmount,
+        allocatedMicrogons: holdAmount,
       });
       this.paymentsByDatastoreId[id] ??= [];
       this.paymentsByDatastoreId[id].push(entry);
@@ -218,21 +218,19 @@ export default class ArgonReserver
     });
   }
 
-  protected calculateChannelHoldMilligons(_datastoreId: string, microgons: number): bigint {
+  protected calculateChannelHoldAmount(_datastoreId: string, microgons: bigint): bigint {
     if (this.channelHoldAllocationStrategy.type === 'default') {
-      return this.channelHoldAllocationStrategy.milligons;
+      return this.channelHoldAllocationStrategy.microgons;
     }
     if (this.channelHoldAllocationStrategy.type === 'multiplier') {
-      return ArgonUtils.microgonsToMilligons(
-        microgons * this.channelHoldAllocationStrategy.queries,
-      );
+      return microgons * BigInt(this.channelHoldAllocationStrategy.queries);
     }
     throw new Error(
       'Unknown channelHold allocation strategy. Please specify in `config.channelHoldAllocationStrategy.type`.',
     );
   }
 
-  private async charge(details: IPaymentDetails, microgons: number): Promise<IPayment> {
+  private async charge(details: IPaymentDetails, microgons: bigint): Promise<IPayment> {
     if (details.paymentMethod.channelHold?.id) {
       await this.updateSettlement(details, microgons);
     }
@@ -257,23 +255,25 @@ export default class ArgonReserver
     return payment;
   }
 
-  private async updateSettlement(details: IPaymentDetails, addedMicrogons: number): Promise<void> {
+  private async updateSettlement(details: IPaymentDetails, addedMicrogons: bigint): Promise<void> {
     const channelHold = details.paymentMethod.channelHold;
     if (!channelHold) return;
-    const updatedSettlement = BigInt(
-      Math.ceil((details.allocated - details.remaining + addedMicrogons) / 1000),
-    );
-    if (Number(updatedSettlement) * 1000 > details.allocated) {
+    // settle in increments of 1000 microgons
+    const updatedSettlement =
+      ((details.allocated - details.remaining + addedMicrogons + 999n) /
+        ArgonReserver.settlementThreshold) *
+      ArgonReserver.settlementThreshold;
+    if (updatedSettlement > details.allocated) {
       throw new Error('Cannot release more than the allocated amount');
     }
-    if (updatedSettlement > channelHold.settledMilligons) {
+    if (updatedSettlement > channelHold.settledMicrogons) {
       await this.channelHoldSource.updateChannelHoldSettlement(channelHold, updatedSettlement);
       this.needsSave = true;
       this.emit('updateSettlement', {
         channelHoldId: channelHold.id,
-        settledMilligons: channelHold.settledMilligons,
+        settledMicrogons: channelHold.settledMicrogons,
         datastoreId: details.id,
-        remaining: BigInt(details.allocated / 1000) - channelHold.settledMilligons,
+        remaining: details.allocated - channelHold.settledMicrogons,
       });
     }
   }

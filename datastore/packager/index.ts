@@ -125,7 +125,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
           corePlugins,
           prices: [
             {
-              basePrice: basePrice ?? 0,
+              basePrice: BigInt(basePrice ?? 0),
             },
           ],
           schemaAsJson: schema,
@@ -160,7 +160,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
           corePlugins,
           prices: [
             {
-              basePrice: basePrice ?? 0,
+              basePrice: BigInt(basePrice ?? 0),
             },
           ],
           schemaAsJson: schema,
@@ -189,7 +189,7 @@ export default class DatastorePackager extends TypedEventEmitter<{ build: void }
         tablesByName[name] = {
           description,
           schemaAsJson: schema,
-          prices: [{ basePrice: tableMeta.basePrice ?? 0 }],
+          prices: [{ basePrice: BigInt(tableMeta.basePrice ?? 0) }],
         };
 
         // lookup upstream pricing

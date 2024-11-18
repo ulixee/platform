@@ -3,7 +3,7 @@
 CURRENT_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")/.." ; pwd -P );
 trap "exit" INT;
 
-declare -a dirs=("platform/hero" "platform");
+declare -a dirs=("hero" "platform");
 
 # loop through dirs
 for dir in "${dirs[@]}"; do
@@ -57,8 +57,3 @@ for dir in "${dirs[@]}"; do
      echo "You need to approve the DRAFT release at https://github.com/ulixee/platform/releases/tag/$TAG";
   fi
 done
-
-
-cd "$CURRENT_DIR/platform/website";
-yarn build && yarn deploy;
-

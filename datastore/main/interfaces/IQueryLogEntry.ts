@@ -10,7 +10,7 @@ export default interface IQueryLogEntry {
   error?: Error;
   milliseconds: number;
   bytes: number;
-  microgons: number;
+  microgons: bigint;
   creditId?: string;
   channelHoldId?: string;
   cloudNodeHost: string;

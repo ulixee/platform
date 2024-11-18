@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { addressValidation, identityValidation, milligonsValidation } from '../types';
+import { addressValidation, identityValidation, microgonsValidation } from '../types';
 import { IZodSchemaToApiTypes } from '../utils/IZodApi';
 
 const OkSchema = z.object({ success: z.boolean() });
@@ -16,27 +16,27 @@ export const DatabrokerAdminApisSchema = {
   'System.overview': {
     args: z.object({}),
     result: z.object({
-      localchainBalance: milligonsValidation.describe('The balance in milligons'),
+      localchainBalance: microgonsValidation.describe('The balance in microgons'),
       localchainAddress: addressValidation.describe('The localchain address'),
-      totalOrganizationBalance: milligonsValidation.describe(
-        'The active balance at organizations in milligons',
+      totalOrganizationBalance: microgonsValidation.describe(
+        'The active balance at organizations in microgons',
       ),
-      grantedBalance: milligonsValidation.describe(
-        'The overall amount granted to organizations historically in milligons',
+      grantedBalance: microgonsValidation.describe(
+        'The overall amount granted to organizations historically in microgons',
       ),
       organizations: z.number().int().nonnegative().describe('The number of organizations'),
       users: z.number().int().nonnegative().describe('The number of users'),
       channelHolds: z.number().int().nonnegative().describe('The number of channelHolds created'),
       openChannelHolds: z.number().int().nonnegative().describe('The number of open channelHolds'),
-      balancePendingChannelHoldSettlement: milligonsValidation.describe(
-        'The balance in milligons of all channelHolds pending settlement',
+      balancePendingChannelHoldSettlement: microgonsValidation.describe(
+        'The balance in microgons of all channelHolds pending settlement',
       ),
     }),
   },
   'Organization.create': {
     args: z.object({
       name: nameValidation,
-      balance: milligonsValidation.describe('The initial balance to allocate to this organization'),
+      balance: microgonsValidation.describe('The initial balance to allocate to this organization'),
     }),
     result: z.object({
       id: organizationIdValidation,
@@ -52,7 +52,7 @@ export const DatabrokerAdminApisSchema = {
   'Organization.grant': {
     args: z.object({
       organizationId: organizationIdValidation,
-      amount: milligonsValidation.describe('The amount to grant to the organization in milligons'),
+      amount: microgonsValidation.describe('The amount to grant to the organization in microgons'),
     }),
     result: OkSchema,
   },
@@ -69,10 +69,12 @@ export const DatabrokerAdminApisSchema = {
     result: z.object({
       id: organizationIdValidation,
       name: nameValidation,
-      balance: milligonsValidation.describe(
-        'The balance allocated to the organization in milligons',
+      balance: microgonsValidation.describe(
+        'The balance allocated to the organization in microgons',
       ),
-      balanceInChannelHolds: milligonsValidation.describe('The balance currently in active channelHolds'),
+      balanceInChannelHolds: microgonsValidation.describe(
+        'The balance currently in active channelHolds',
+      ),
     }),
   },
   'Organization.list': {
@@ -81,10 +83,12 @@ export const DatabrokerAdminApisSchema = {
       .object({
         id: organizationIdValidation,
         name: nameValidation,
-        balance: milligonsValidation.describe(
-          'The balance allocated to the organization in milligons',
+        balance: microgonsValidation.describe(
+          'The balance allocated to the organization in microgons',
         ),
-        balanceInChannelHolds: milligonsValidation.describe('The balance currently in active channelHolds'),
+        balanceInChannelHolds: microgonsValidation.describe(
+          'The balance currently in active channelHolds',
+        ),
       })
       .array(),
   },

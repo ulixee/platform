@@ -8,7 +8,6 @@ const env = process.env;
 
 export default {
   argonMainchainUrl: env.ARGON_MAINCHAIN_URL,
-  genesisUtcTime: parseEnvInt(env.ARGON_GENESIS_UTC_TIME),
   tickDurationMillis: parseEnvInt(env.ARGON_TICK_DURATION_MILLIS),
   channelHoldExpirationTicks: parseEnvInt(env.ARGON_CHANNEL_HOLD_EXPIRATION_TICKS),
   ntpPoolUrl: env.ARGON_NTP_SERVER,

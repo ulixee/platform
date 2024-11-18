@@ -57,14 +57,17 @@ export default class MockPaymentService
       this.paymentsByDatastoreId[info.id] = {
         channelHoldId,
       };
-      const milligons = BigInt(Math.min(5, Math.ceil((info.microgons * 100) / 1000)));
-      this.channelHoldsById[channelHoldId] = { channelHoldAmount: milligons, tick: 1 };
+      let microgons = info.microgons * 100n;
+      if (microgons < 5_000n) {
+        microgons = 5_000n;
+      }
+      this.channelHoldsById[channelHoldId] = { channelHoldAmount: microgons, tick: 1 };
       await this.client.registerChannelHold(info.id, {
         accountId: this.clientAddress.address,
         accountType: AccountType.Deposit,
-        balance: 20_000n - milligons,
+        balance: 20_000_000n - microgons,
         previousBalanceProof: {
-          balance: 20_000n,
+          balance: 20_000_000n,
           notaryId: info.recipient.notaryId,
           accountOrigin: { notebookNumber: 1, accountUid: 1 },
           notebookNumber: 1,
@@ -77,18 +80,22 @@ export default class MockPaymentService
         },
         channelHoldNote: {
           noteType: { action: 'channelHold', recipient: info.recipient.address },
-          milligons,
+          microgons,
         },
-        notes: [{ milligons: 5n, noteType: { action: 'channelHoldSettle' } }],
+        notes: [{ microgons: 5000n, noteType: { action: 'channelHoldSettle' } }],
         changeNumber: 2,
         signature: Buffer.from(this.clientAddress.sign('siggy', { withType: true })),
       });
     }
 
+    let settle = 5000n;
+    if (info.microgons > settle) {
+      settle = BigInt(Math.ceil(Number(info.microgons) / 1000) * 1000);
+    }
     return {
       channelHold: {
         id: channelHoldId,
-        settledMilligons: 5n,
+        settledMicrogons: settle,
         settledSignature: Buffer.from(this.clientAddress.sign('siggy', { withType: true })),
       },
       microgons: info.microgons,

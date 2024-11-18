@@ -46,9 +46,7 @@ export default class StatsTrackerDiskStore extends TypedEventEmitter<{
       statsByEntityName[name] = {
         name,
         type: type as any,
-        stats: translateStats(
-          this.statsDb.datastoreEntities.getByVersion(id, version, name),
-        ),
+        stats: translateStats(this.statsDb.datastoreEntities.getByVersion(id, version, name)),
       };
     }
 
@@ -95,7 +93,7 @@ export default class StatsTrackerDiskStore extends TypedEventEmitter<{
       details.microgons,
       details.bytes,
       details.milliseconds,
-      details.didUseCredits ? details.microgons : 0,
+      details.didUseCredits ? details.microgons : 0n,
       !!details.error,
     );
   }
@@ -107,7 +105,7 @@ export default class StatsTrackerDiskStore extends TypedEventEmitter<{
       details.microgons,
       details.bytes,
       details.milliseconds,
-      details.creditId ? details.microgons : 0,
+      details.creditId ? details.microgons : 0n,
       !!details.error,
     );
     this.emit('stats', datastoreStats);

@@ -2,27 +2,31 @@ Index.vue
 <template>
   <Navbar />
   <div class="px-20">
-    <h1 class="mt-5 text-2xl font-bold mb-4">Organizations -> {{ organization.name }}</h1>
+    <h1 class="mt-5 text-2xl font-bold mb-4">
+      Organizations -> {{ organization.name }}
+    </h1>
     <div class="flex flex-row">
       <div class="mr-10 my-5 overflow-hidden rounded-lg shadow ring-1 ring-black ring-opacity-5 p-10 bg-white">
-
         <div class="mb-2">
-          <strong>Balance (milligons):</strong> {{ organization.balance }} available, {{ organization.balanceInChannelHolds }} in channelHold
+          <strong>Balance (microgons):</strong> {{ organization.balance }} available, {{ organization.balanceInChannelHolds }} in channelHold
         </div>
         <div class="mb-2">
-          <strong>Grant Additional Funds (milligons):</strong>
-          <form @submit.prevent="grant" class="min-w-full max-w-full overflow-hidden">
+          <strong>Grant Additional Funds (microgons):</strong>
+          <form class="min-w-full max-w-full overflow-hidden" @submit.prevent="grant">
             <input
-              v-model="grantMilligons"
-              class="shadow appearance-none border rounded w-full my-2 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               id="balance"
+              v-model="grantMicrogons"
+              class="shadow appearance-none border rounded w-full my-2 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               type="number"
-              placeholder="Milligons to grant" />
+              placeholder="Microgons to grant"
+            >
             <p v-if="errorMessage" class="px-1 py-2 text-sm font-semibold text-red-500">
               {{ errorMessage }}
             </p>
             <ul v-if="errorMessage" class="list-disc text-small list-inside">
-              <li v-for="error in errorDetails" :key="error">{{ error }}</li>
+              <li v-for="error in errorDetails" :key="error">
+                {{ error }}
+              </li>
             </ul>
             <button class="col-span-6 mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md bg-fuchsia-700 py-2.5 px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800">
               Grant
@@ -32,23 +36,27 @@ Index.vue
       </div>
       <div class="py-5">
         <div class="overflow-hidden rounded-lg shadow ring-1 ring-black ring-opacity-5 p-10 bg-white">
-          <form @submit.prevent="add" class="min-w-full max-w-full overflow-hidden">
+          <form class="min-w-full max-w-full overflow-hidden" @submit.prevent="add">
             <input
+              id="name"
               v-model="name"
               class="shadow appearance-none border rounded w-full my-2 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="name"
               type="text"
-              placeholder="Name" />
+              placeholder="Name"
+            >
             <input
+              id="identity"
               v-model="identity"
               class="shadow appearance-none border rounded w-full my-2 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="identity"
               type="text"
-              placeholder="Identity (eg, id1..)" />
+              placeholder="Identity (eg, id1..)"
+            >
             <p v-if="errorMessage" class="px-1 py-2 text-sm font-semibold text-red-500">
               {{ errorMessage }}
-              <ul class='list-disc text-small list-inside'>
-                <li v-for="error in errorDetails" :key="error">{{ error }}</li>
+              <ul class="list-disc text-small list-inside">
+                <li v-for="error in errorDetails" :key="error">
+                  {{ error }}
+                </li>
               </ul>
             </p>
             <button class="col-span-6 mt-3 inline-flex w-full items-center gap-x-1.5 rounded-md bg-fuchsia-700 py-2.5 px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-fuchsia-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-800">
@@ -65,7 +73,9 @@ Index.vue
             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
               Identity
             </th>
-            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">Name</th>
+            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
+              Name
+            </th>
             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">
               &nbsp;
             </th>
@@ -75,7 +85,8 @@ Index.vue
           <tr v-if="!list.length" class="text-sm leading-loose hover:bg-gray-100/50">
             <td
               colspan="3"
-              class="whitespace-nowrap py-4 pl-4 pr-3 font-light text-gray-600 sm:pl-6">
+              class="whitespace-nowrap py-4 pl-4 pr-3 font-light text-gray-600 sm:pl-6"
+            >
               No users found
             </td>
           </tr>
@@ -88,9 +99,10 @@ Index.vue
                 {{ user.name }}
               </td>
               <td class="px-3 py-4 text-sm text-gray-500">
-                <a @click.prevent="remove(user.identity)" class="text-red-500 cursor-pointer"
-                  >Remove</a
-                >
+                <a
+                  class="text-red-500 cursor-pointer"
+                  @click.prevent="remove(user.identity)"
+                >Remove</a>
               </td>
             </tr>
           </template>
@@ -117,7 +129,7 @@ export default Vue.defineComponent({
     return {
       name: Vue.ref(''),
       identity: Vue.ref(''),
-      grantMilligons: Vue.ref(0n),
+      grantMicrogons: Vue.ref(0n),
       errorMessage: Vue.ref(''),
       errorDetails: Vue.ref<string[]>([]),
       organization: Vue.ref<IDatabrokerAdminApiTypes['Organization.get']['result']>({
@@ -163,14 +175,14 @@ export default Vue.defineComponent({
         this.errorMessage = '';
         await client.send('Organization.grant', {
           organizationId: this.$route.params.id as string,
-          amount: this.grantMilligons,
+          amount: this.grantMicrogons,
         });
       } catch (error: any) {
         this.errorMessage = error.message;
         this.errorDetails = error.errors ?? [];
         return;
       }
-      this.grantMilligons = 0n;
+      this.grantMicrogons = 0n;
       await this.fetchAll();
     },
     async remove(identity: string) {

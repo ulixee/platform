@@ -192,7 +192,7 @@ export default new Datastore({
   },
   extractors: {
     pass: new Datastore.PassthroughExtractor({
-      upcharge: 400,
+      upcharge: 400_000,
       remoteExtractor: 'source.remote',
       async onResponse({ stream, Output }) {
         for await (const output of stream) {
@@ -211,10 +211,10 @@ export default new Datastore({
   await client.upload(await passthrough.dbx.tarGzip());
 
   const meta = await client.getMeta(passthrough.manifest.id, passthrough.manifest.version);
-  expect(meta.extractorsByName.pass.netBasePrice).toBe(400);
+  expect(meta.extractorsByName.pass.netBasePrice).toBe(400_000n);
   expect(meta.extractorsByName.pass.priceBreakdown).toEqual([
-    { basePrice: 400 },
-    { basePrice: 0, remoteMeta: expect.any(Object) },
+    { basePrice: 400_000n },
+    { basePrice: 0n, remoteMeta: expect.any(Object) },
   ]);
 });
 
@@ -278,7 +278,7 @@ export default new Datastore({
   version: '0.0.1', 
   extractors: {
     source: new Datastore.Extractor({
-      basePrice: 6,
+      basePrice: 6_000,
       run({ input, Output }) {
         const output = new Output();
         output.calls = 1;
@@ -303,7 +303,7 @@ export default new Datastore({
     Helpers.onClose(() => client1.disconnect());
     await client1.upload(await dbx.dbx.tarGzip());
     const price = await client1.pricing.getEntityPrice(sourceDatastoreId, '0.0.1', 'source');
-    expect(price).toBe(6);
+    expect(price).toBe(6_000n);
   }
   const address2 = keyring.createFromUri('extractor2');
 
@@ -347,7 +347,7 @@ export default new Datastore({
   },
   extractors: {
     source2: new Datastore.PassthroughExtractor({
-      upcharge: 11,
+      upcharge: 11_000,
       remoteExtractor: 'hop0.source',
       async onResponse({ stream, Output }) {
         for await (const output of stream) {
@@ -367,7 +367,7 @@ export default new Datastore({
     Helpers.onClose(() => client2.disconnect());
     await client2.upload(await dbx.dbx.tarGzip());
     const price = await client2.pricing.getEntityPrice(hop1DatastoreId, '0.0.1', 'source2');
-    expect(price).toBe(6 + 11);
+    expect(price).toBe(6_000n + 11_000n);
   }
   Fs.writeFileSync(
     `${__dirname}/datastores/hop2.js`,
@@ -381,7 +381,7 @@ export default new Datastore({
   },
   extractors: {
     last: new Datastore.PassthroughExtractor({
-      upcharge: 3,
+      upcharge: 3_000,
       remoteExtractor: 'hop1.source2',
       async onResponse({ stream, Output }) {
         for await (const output of stream) {
@@ -403,7 +403,7 @@ export default new Datastore({
     lastHop.manifest.version,
     'last',
   );
-  expect(price).toBe(3 + 6 + 11);
+  expect(price).toBe(3_000n + 6_000n + 11_000n);
 
   await expect(
     client.pricing.getQueryPrice(
@@ -446,8 +446,8 @@ export default new Datastore({
   expect(dbs.get(sourceDatastoreId).list()).toEqual([
     expect.objectContaining({
       id: paymentsByDatastoreId[sourceDatastoreId].channelHoldId,
-      allocated: 1000,
-      remaining: 1000 - 6,
+      allocated: 100n * 6_000n,
+      remaining: 100n * 6_000n - 6_000n,
     }),
   ]);
   // @ts-expect-error
@@ -458,8 +458,8 @@ export default new Datastore({
   expect(dbs.get(hop1DatastoreId).list()).toEqual([
     expect.objectContaining({
       id: paymentsByDatastoreId[hop1DatastoreId].channelHoldId,
-      allocated: 2000,
-      remaining: 2000 - 6 - 11,
+      allocated: 100n * (11_000n + 6_000n),
+      remaining: 100n * (11_000n + 6_000n) - 6_000n - 11_000n,
     }),
   ]);
 
@@ -471,8 +471,8 @@ export default new Datastore({
   expect(dbs.get(hop2DatastoreId).list()).toEqual([
     expect.objectContaining({
       id: paymentsByDatastoreId[hop2DatastoreId].channelHoldId,
-      allocated: 2000,
-      remaining: 2000 - 6 - 11 - 3,
+      allocated: 100n * (11_000n + 6_000n + 3_000n),
+      remaining: 100n * (11_000n + 6_000n + 3_000n) - 6_000n - 11_000n - 3_000n,
     }),
   ]);
 

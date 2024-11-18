@@ -14,39 +14,47 @@ afterAll(async () => {
 });
 
 test('handles the flow of a payment', async () => {
-  db.create('test1', 1000, new Date(Date.now() + 1000));
+  db.create('test1', 1000n, new Date(Date.now() + 1000));
   expect(db.list()).toHaveLength(1);
   expect(db.get('test1')).toEqual({
     id: 'test1',
-    allocated: 1000 * 1000,
-    remaining: 1000 * 1000,
+    allocated: 1000n,
+    remaining: 1000n,
     expirationDate: expect.any(Date),
   });
 
   const result = db.debit('q1', {
     uuid: 'p1',
-    microgons: 100,
-    channelHold: { id: 'test1', settledMilligons: 1n, settledSignature: Buffer.from(sha256('123')) },
+    microgons: 100n,
+    channelHold: {
+      id: 'test1',
+      settledMicrogons: 1000n,
+      settledSignature: Buffer.from(sha256('123')),
+    },
   });
   expect(result.shouldFinalize).toBe(true);
   // @ts-expect-error
   const payments = db.paymentIdByChannelHoldId;
   expect(payments.size).toBe(1);
   expect(payments.get('test1').size).toBe(1);
-  expect(payments.get('test1').get('p1')).toEqual({ microgons: 100, queryId: 'q1' });
+  expect(payments.get('test1').get('p1')).toEqual({ microgons: 100n, queryId: 'q1' });
 
-  db.finalize('test1', 'p1', 100);
-  expect(payments.get('test1').get('p1')).toEqual({ microgons: 100, queryId: 'q1' });
+  db.finalize('test1', 'p1', 100n);
+  expect(payments.get('test1').get('p1')).toEqual({ microgons: 100n, queryId: 'q1' });
 });
 
 test('rejects payments on expired channelHolds', async () => {
-  db.create('test2', 1000, new Date(Date.now() - 1));
+  db.create('test2', 1000n, new Date(Date.now() - 1));
 
   expect(() => {
     db.debit('q2', {
       uuid: 'p2',
-      microgons: 100,
-      channelHold: { id: 'test2', settledMilligons: 1n, settledSignature: Buffer.from(sha256('123')) },
+      microgons: 100n,
+      channelHold: {
+        id: 'test2',
+        settledMicrogons: 1n,
+        settledSignature: Buffer.from(sha256('123')),
+      },
     });
   }).toThrow('This channelHold has expired.');
   expect(db.list()).toHaveLength(2);
@@ -55,35 +63,51 @@ test('rejects payments on expired channelHolds', async () => {
 });
 
 test('rejects a payment with too small a settlement signature', async () => {
-  db.create('test3', 5000, new Date(Date.now() + 100_000));
+  db.create('test3', 5000n, new Date(Date.now() + 100_000));
 
   expect(() => {
     db.debit('q3', {
       uuid: 'p3',
-      microgons: 2000,
-      channelHold: { id: 'test3', settledMilligons: 1n, settledSignature: Buffer.from(sha256('123')) },
+      microgons: 2000n,
+      channelHold: {
+        id: 'test3',
+        settledMicrogons: 1n,
+        settledSignature: Buffer.from(sha256('123')),
+      },
     });
   }).toThrow(/settlement/);
 });
 
 test('rejects a payment with too small a settlement signature within a milligon', async () => {
-  db.create('test4', 5, new Date(Date.now() + 100_000));
+  db.create('test4', 5_000n, new Date(Date.now() + 100_000));
   db.debit('q4', {
     uuid: 'p4',
-    microgons: 1900,
-    channelHold: { id: 'test4', settledMilligons: 2n, settledSignature: Buffer.from(sha256('123')) },
+    microgons: 1900n,
+    channelHold: {
+      id: 'test4',
+      settledMicrogons: 2000n,
+      settledSignature: Buffer.from(sha256('123')),
+    },
   });
 
   db.debit('q6', {
     uuid: 'p6',
-    microgons: 99,
-    channelHold: { id: 'test4', settledMilligons: 2n, settledSignature: Buffer.from(sha256('123')) },
+    microgons: 99n,
+    channelHold: {
+      id: 'test4',
+      settledMicrogons: 2000n,
+      settledSignature: Buffer.from(sha256('123')),
+    },
   });
   expect(() => {
     db.debit('q7', {
       uuid: 'p7',
-      microgons: 2,
-      channelHold: { id: 'test4', settledMilligons: 2n, settledSignature: Buffer.from(sha256('123')) },
+      microgons: 2n,
+      channelHold: {
+        id: 'test4',
+        settledMicrogons: 2000n,
+        settledSignature: Buffer.from(sha256('123')),
+      },
     });
   }).toThrow('settlement');
 });

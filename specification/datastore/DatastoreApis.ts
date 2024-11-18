@@ -128,7 +128,7 @@ export const DatastoreApiSchemas = {
     }),
     result: z.object({
       issuedCredits: microgonsValidation.describe('Total credit microgons issued in microgons.'),
-      count: microgonsValidation.describe('Total credits issued in microgons.'),
+      count: z.number().describe('Total credits issued.'),
     }),
   },
   'Datastore.admin': {
