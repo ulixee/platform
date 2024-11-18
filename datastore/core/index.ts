@@ -550,7 +550,7 @@ export default class DatastoreCore extends TypedEventEmitter<{
        To perform admin activities (like issuing Credits for a Datastore), you should 
                  save and use this Identity from your local system:
 
- npx @ulixee/platform-utils save-identity --privateKey=${key.toString('base64')}
+ npx @ulixee/datastore admin-identity save --privateKey=${key.toString('base64')}
 
 --------------------------------------------------------------------------------------------
        

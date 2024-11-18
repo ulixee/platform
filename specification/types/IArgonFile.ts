@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BalanceChangeSchema } from './IBalanceChange';
+import { microgonsValidation } from './index';
 
 export const ARGON_FILE_EXTENSION = 'argon';
 export const ArgonFileSchema = z.object({
@@ -7,7 +8,7 @@ export const ArgonFileSchema = z.object({
   credit: z
     .object({
       datastoreUrl: z.string().url('The connection string to the datastore'),
-      microgons: z.number().int().positive().describe('The granted number of microgons.'),
+      microgons: microgonsValidation.describe('The granted number of microgons.'),
     })
     .optional()
     .nullish(),

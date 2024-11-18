@@ -382,7 +382,7 @@ export default class CloudNode {
        To create a long-term network identity, you should save and use this Identity 
                           from your local system:
 
- npx @ulixee/platform-utils save-identity --privateKey=${key.toString('base64')} --filename="${path}"
+ npx @ulixee/datastore admin-identity save --privateKey=${key.toString('base64')} --filename="${path}"
 
 --------------------------------------------------------------------------------------------
        

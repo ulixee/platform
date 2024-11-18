@@ -15,7 +15,7 @@ To embed credits, you can configure the [remoteDatastoreEmbeddedCredits](../basi
 Ulixee Payments (in this case, Credits) come in the following denominations:
 
 - _Argon_: ~1 USD adjusted for inflation.
-- _Milligon_: ~1 thousand of a USD adjusted for inflation ($0.001). Usually the denomination used when creating a Credit.
+- _Milligon_: ~1 thousand of a USD adjusted for inflation ($0.001). 
 - _Microgon_: ~1 millionth of a USD adjusted for inflation ($0.000_001). This is the denomination used by a query (eg, [Extractor.basePrice](../basics/extractor.md).
 
 ### Payment Flows and Internal Structure
@@ -35,7 +35,7 @@ The `ulx_credits` table tracks every credit id to the balance of credits "on hol
 
 To use Credits, you need to have a valid `admin` Identity installed on either the Datastore or your [CloudNode](../overview/configuration.md).
 
-An identity is an Ed25519 key with a recognized encoding for the Ulixee Platform. To create a new Identity, you can run: `npx @ulixee/platform-utils identity`. Run with `-h` to get options on how to store the resulting PEM file.
+An identity is an Ed25519 key with a recognized encoding for the Ulixee Platform. To create a new Identity, you can run: `npx @ulixee/datastore admin-identity create`. Run with `-h` to get options on how to store the resulting PEM file.
 
 ## Command Line Interface (CLI) {#cli}
 
