@@ -1,0 +1,51 @@
+{
+  "content": "<h1 id=\"databrokers\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#databrokers\">#</a>Databrokers</h1>\n<blockquote>\n<p>Databrokers allow you to handle the management of Argon Localchain payment for your team or customers. Instead of each team member needing to manage their own Argon wallet, they can use a shared Databroker to access the data they need.</p>\n</blockquote>\n<h2 id=\"how-it-works\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#how-it-works\">#</a>How it works</h2>\n<p>Databrokers whitelist users and Datastore domains and allocate funds to the users (how you allocate funds is up to you). This can be done through an admin interface or by directly interacting with the Databroker API.</p>\n<p>When a user requests data from a Datastore, the Databroker will automatically create a <a href=\"#channelHolds\">ChannelHold</a> for the user and Datastore with \"delegated signing\" activated. Delegated signing means the <a href=\"#client-usage\">Client</a> library will generate a signing key (a Schnorrkel x25519 private key), and will send the <a href=\"https://docs.substrate.io/reference/glossary/#ss58-address-format\">Address</a> as part of the request to the Databroker. It's now up to the Delegated Signing key to sign settlements for the ChannelHold.</p>\n<h2 id=\"client-usage\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#client-usage\">#</a>Client Usage</h2>\n<p>The client usage is through the normal Ulixee <a href=\"https://ulixee.org/docs/client\">Client</a> library. Assuming you have a Databroker account and identity registered, your code will look like this:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-typescript\">import { Client } from '@ulixee/client';\n\nconst argonMainchainUrl = 'wss://rpc.testnet.argonprotocol.org';\nconst brokerAddress = 'wss://broker.testnet.ulixee.org';\nconst domain = 'UsCPI.Stats/v1.0.0';\nconst paymentService = await DefaultPaymentService.fromBroker(brokerAddress, {\n  pemPath: 'path to your Identity pem file',\n});\nconst client = new Client(`ulx://${domain}`, {\n  paymentService,\n  argonMainchainUrl,\n});\nclient.query(`SELECT * FROM publishingSchedule`).then(records => {\n  console.log(records);\n});\n</code></pre>\n<h2 id=\"server-installation\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#server-installation\">#</a>Server Installation</h2>\n<p>Databrokers are built to run as a CLI. A Datastore doesn't need to do anything special to support Databrokers. The Databroker CLI will automatically handle the Argon Localchain payment and data access at a client level.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">npm install @ulixee/databroker\n</code></pre>\n<h2 id=\"server-usage\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#server-usage\">#</a>Server Usage</h2>\n<p>You can start a Databroker using the CLI. There's an optional admin interface that allows you to easily manage users, organizations, and channelHolds. You can see an example of hiding this behind a reverse proxy <a href=\"https://github.com/ulixee/ulixee/blob/main/datastore/broker/nginx.conf\" target=_blank>here</a>.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">$ @ulixee/databroker start --port 8080 --hostname localhost --admin-port 8081 \\\n  --storage-dir /path/to/storage --localchain-path /path/to/localchain\n</code></pre>\n<h3 id=\"options\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#options\">#</a>Options</h3>\n<ul>\n<li><strong>-p, --port <number></strong> The port to use. Defaults to any 1814, or any available port. (env: <code>ULX_DATABROKER_PORT</code>)</li>\n<li><strong>-u, --hostname <hostname></strong> The hostname the public facing apis should listen on. (env: <code>ULX_HOSTNAME</code>)</li>\n<li><strong>--admin-port <number></strong> The port to start an admin server (datastore registry, node registry). Defaults to 18171, or any available port (0). (env:\nULX_DATABROKER_ADMIN_PORT)</li>\n<li><strong>--storage-dir &#x3C;dir></strong> Override the default storage directory where the Databroker databases are located. (env: <code>ULX_DATABROKER_DIR</code>)</li>\n<li><strong>--env <path></strong> Load environment settings from a .env file.</li>\n<li><strong>--localchain-path <path></strong> The path to the localchain data directory. You can also configure this using the .env file (env: <code>ARGON_LOCALCHAIN_PATH</code>)</li>\n</ul>\n<h2 id=\"internal-structure\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#internal-structure\">#</a>Internal Structure</h2>\n<p>Databrokers track information in a SQLite database. The database contains the following tables:</p>\n<h3 id=\"organizations\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#organizations\">#</a>Organizations</h3>\n<p>Databrokers can create one or more Organizations. Each organization has a unique ID and a name. Organizations can have one or more users.</p>\n<h3 id=\"users\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#users\">#</a>Users</h3>\n<p>Users are members of an organization with a name and an Identity (a bech32 encoded Ed25519 key). Users will use this identity to sign requests to the Databroker.</p>\n<h3 id=\"channelholds\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#channelholds\">#</a>ChannelHolds</h3>\n<p>Argon micropayments are made through a ChannelHold, which is a pre-allocation of funds with updating settlements each time you pass a new threshold (1 milligon).</p>",
+  "title": "Databrokers",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "How it works",
+      "anchor": "#how-it-works"
+    },
+    {
+      "depth": 2,
+      "value": "Client Usage",
+      "anchor": "#client-usage"
+    },
+    {
+      "depth": 2,
+      "value": "Server Installation",
+      "anchor": "#server-installation"
+    },
+    {
+      "depth": 2,
+      "value": "Server Usage",
+      "anchor": "#server-usage"
+    },
+    {
+      "depth": 3,
+      "value": "Options",
+      "anchor": "#options"
+    },
+    {
+      "depth": 2,
+      "value": "Internal Structure",
+      "anchor": "#internal-structure"
+    },
+    {
+      "depth": 3,
+      "value": "Organizations",
+      "anchor": "#organizations"
+    },
+    {
+      "depth": 3,
+      "value": "Users",
+      "anchor": "#users"
+    },
+    {
+      "depth": 3,
+      "value": "ChannelHolds",
+      "anchor": "#channelholds"
+    }
+  ]
+}

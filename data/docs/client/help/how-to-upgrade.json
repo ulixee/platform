@@ -1,5 +1,5 @@
 {
-  "content": "<h1 id=\"how-to-upgrade\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#how-to-upgrade\">#</a>How to upgrade</h1>\n<p>Follow <strong>one</strong> of these steps to upgrade Client to latest version.</p>\n<ul>\n<li>With <strong>yarn</strong> run <code>yarn upgrade @ulixee/client --latest</code></li>\n<li>With <strong>npm</strong> run <code>npm install @ulixee/client@latest</code></li>\n</ul>\n<h3 id=\"problems-after-upgrading\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#problems-after-upgrading\">#</a>Problems after upgrading</h3>\n<p>If you have problems after upgrading, <a href=\"https://github.com/ulixee/platform/issues\">let us know</a>.</p>",
+  "content": "<h1 id=\"how-to-upgrade\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#how-to-upgrade\">#</a>How to upgrade</h1>\n<p>Run this to upgrade Ulixee Client to latest version.</p>\n<ul>\n<li><code>npm install @ulixee/client@latest</code></li>\n</ul>\n<h3 id=\"problems-after-upgrading\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#problems-after-upgrading\">#</a>Problems after upgrading</h3>\n<p>If you have problems after upgrading, <a href=\"https://github.com/ulixee/platform/issues\">let us know</a>.</p>",
   "title": "How to upgrade",
   "subtitles": [
     {

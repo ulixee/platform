@@ -1,7 +1,12 @@
 {
-  "content": "<h1 id=\"hosted-services\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hosted-services\">#</a>Hosted Services</h1>\n<blockquote>\n<p>Hosted Services centralize the storage of Datastores, Statistics and Hero Replays for a cluster of DatastoreCores.</p>\n</blockquote>\n<h2 id=\"statsregistry\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#statsregistry\">#</a>StatsRegistry</h2>\n<p>This service centralizes the logging and tracking of statistics for Datastore Queries and individual Entities (crawlers, extractors and tables).</p>\n<h2 id=\"datastoreregistry\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#datastoreregistry\">#</a>DatastoreRegistry</h2>\n<p>This service centralizes the storage of Datastores so they can be used across a cluster of servers. A single server will serve as the cluster repository, and the other nodes will cache Datastores, but use this as the end location.</p>",
+  "content": "<h1 id=\"hosted-services\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hosted-services\">#</a>Hosted Services</h1>\n<blockquote>\n<p>Hosted Services centralize the storage of Datastores, Statistics and Hero Replays for a cluster of DatastoreCores.</p>\n</blockquote>\n<p>The following is a list of the services and their descriptions. Many of these services can also be configured using the <code>npx @ulixee/cloud start</code> command.</p>\n<h2 id=\"setup-host\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#setup-host\">#</a>Setup Host</h2>\n<p>This is the address of a node in your cluster that has the services setup. This is used to configure the services for any non-leader nodes.</p>\n<p><strong>Environment Variable:</strong> <code>ULX_SERVICES_SETUP_HOST</code></p>\n<h2 id=\"statsregistry\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#statsregistry\">#</a>StatsRegistry</h2>\n<p>This service centralizes the logging and tracking of statistics for Datastore Queries and individual Entities (crawlers, extractors and tables).</p>\n<p><strong>Environment Variable:</strong> <code>ULX_DATASTORE_STATS_HOST</code></p>\n<h2 id=\"datastoreregistry\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#datastoreregistry\">#</a>DatastoreRegistry</h2>\n<p>This service centralizes the storage of Datastores so they can be used across a cluster of servers. A single server will serve as the cluster repository, and the other nodes will cache Datastores, but use this as the end location.</p>\n<p><strong>Environment Variable:</strong> <code>ULX_DATASTORE_REGISTRY_HOST</code></p>\n<h2 id=\"datastorelookupservice\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#datastorelookupservice\">#</a>DatastoreLookupService</h2>\n<p>This service centralizes the lookup of Datastore Domains. There's a time and effort cost to lookup a Datastore, so this service caches the lookup results.</p>\n<p><strong>Environment Variable:</strong> <code>ULX_DATASTORE_LOOKUP_SERVICE_HOST</code></p>\n<h2 id=\"storageengine\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#storageengine\">#</a>StorageEngine</h2>\n<p>This service centralizes the storage of Datastore's underlying SQLite databases so they can be used across a cluster of servers. A single server will serve as the cluster repository, and the other nodes will forward requests to this server.</p>\n<p><strong>Environment Variable:</strong> <code>ULX_STORAGE_ENGINE_HOST</code></p>\n<h2 id=\"replayregistry\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#replayregistry\">#</a>ReplayRegistry</h2>\n<p>This service centralizes the storage of Hero Replays so they can be used across a cluster of servers. Hero Replays serve as the underlying data for cached Crawlers, so must be preserved until the cache expires.</p>\n<p><strong>Environment Variable:</strong> <code>ULX_REPLAY_REGISTRY_HOST</code></p>\n<h1 id=\"hosted-services-for-argon-payments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#hosted-services-for-argon-payments\">#</a>Hosted Services for Argon Payments</h1>\n<h2 id=\"paymentprocessorservice\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#paymentprocessorservice\">#</a>PaymentProcessorService</h2>\n<p>This service centralizes the verification and finalizing of the Micropayment Channel payments created by datastore consumers. It's used to ensure that channelHolds are properly settled and that clients cannot double-spend across multiple nodes. This service requires a disk-local Localchain instance to claim the channelHolds.</p>\n<p><strong>Environment Variable:</strong> <code>ULX_PAYMENT_PROCESSOR_HOST</code></p>\n<p>If accepting payments, you must either set this or configurations for a Localchain path.</p>\n<h2 id=\"upstreampaymentsservice\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#upstreampaymentsservice\">#</a>UpstreamPaymentsService</h2>\n<p>This service is necessary if your Datastore clones another Datastore that requires payments. This payment service will be used to pay for embedded requests to upstream Datastores. A cluster can share a single payment service to reduce complexity. It can also re-use the Localchain used to accept ChannelHold Payments.</p>\n<p><strong>Environment Variable:</strong> <code>ULX_UPSTREAM_PAYMENTS_SERVICE_HOST</code></p>",
   "title": "Hosted Services",
   "subtitles": [
+    {
+      "depth": 2,
+      "value": "Setup Host",
+      "anchor": "#setup-host"
+    },
     {
       "depth": 2,
       "value": "StatsRegistry",
@@ -11,6 +16,31 @@
       "depth": 2,
       "value": "DatastoreRegistry",
       "anchor": "#datastoreregistry"
+    },
+    {
+      "depth": 2,
+      "value": "DatastoreLookupService",
+      "anchor": "#datastorelookupservice"
+    },
+    {
+      "depth": 2,
+      "value": "StorageEngine",
+      "anchor": "#storageengine"
+    },
+    {
+      "depth": 2,
+      "value": "ReplayRegistry",
+      "anchor": "#replayregistry"
+    },
+    {
+      "depth": 2,
+      "value": "PaymentProcessorService",
+      "anchor": "#paymentprocessorservice"
+    },
+    {
+      "depth": 2,
+      "value": "UpstreamPaymentsService",
+      "anchor": "#upstreampaymentsservice"
     }
   ]
 }

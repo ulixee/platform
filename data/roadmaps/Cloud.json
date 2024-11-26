@@ -1,0 +1,76 @@
+{
+  "intro": [
+    "The current 2.0-alpha runs local Datastores and Hero instances, and allows remote Hero instances to be run over Websockets.",
+    "The initial “Cloud” service will be deployed as a network of hosted Rigs (there will be multiple Rigs?)"
+  ],
+  "minorReleases": {
+    "2.0": {
+      "heading": "Run On Localhost",
+      "version": "2.0"
+    },
+    "2.1": {
+      "heading": "First Remote Deployment",
+      "version": "2.1",
+      "description": "We need capabilities to deploy, remove and run remote Datastores.\n[x] Endpoint uploading and installing a Datastore\n[x] Endpoint for running a local-on-the-service datastore using the Packaged Datastore hash\n[x] Docker that runs on Cloud"
+    },
+    "2.2": {
+      "heading": "Support Payment Wall",
+      "version": "2.2",
+      "description": "Long-term this will hold the code for creating, submitting, and tracking blocks on the chain. Short-term this will have a single latestBlock endpoint that returns the latest generated block.\nThis adds support for Datastores that want to add a payment. It will require Extractor queries to contain a payment token, validate that payment tokens are from a trusted source before processing, and upon successful completion of the query, the Server will settle the transaction with the Sidechain.\n[x] Sidechain verification\n[x] Mainchain Module\n[x] Payments Module"
+    },
+    "2.3": {
+      "heading": "First Network Cluster",
+      "version": "2.3",
+      "description": "CloudNode should be able to operate as a load balancer for a series of other servers. You might also ask a server what other servers were available in the network. Each could operate as a load balancer and knew workloads of its cluster members so it could properly distribute new tasks. Some nodes may also operate as a “rig” and provide a set of services such as providing a public IP and connecting into the decentralized network.",
+      "items": [
+        [
+          "Load Balancing of Cluster"
+        ],
+        [
+          "CloudNode Registration"
+        ]
+      ]
+    },
+    "2.4": {
+      "heading": "Services and Management",
+      "version": "2.4",
+      "description": "The CloudNode ecosystem needs to support a few services for IP Rotation and Catpcha solving. We want to have a plugin infrastructure where developers can choose their own, but we will also provide some defaults.\nWe need APIs to get statistics on how often different Datastores have been hit, and how accurate the data has been.",
+      "items": [
+        [
+          "External Service - IP Proxy Service"
+        ],
+        [
+          "External Service - Catpcha Breaker Service"
+        ],
+        [
+          "CloudNode Management - Endpoint Statistics"
+        ],
+        [
+          "CloudNode Management - SessionDB Retrieval"
+        ]
+      ]
+    }
+  },
+  "unversionedFeatures": {
+    "Deployment Scripting": {
+      "heading": "Deployment Scripting",
+      "description": "We want to consider supporting one or more infrastructure scripting languages as well.",
+      "items": [
+        [
+          "Chef"
+        ],
+        [
+          "Terraform"
+        ]
+      ]
+    },
+    "P2P Modules": {
+      "heading": "P2P Modules",
+      "description": "Rigs have network services so that Cloud Nodes can be simple Datastore extractors.\nP2P Storage Lookup/Index\nP2P Network Lookups"
+    },
+    "Deploy to Multiple Clouds": {
+      "heading": "Deploy to Multiple Clouds",
+      "description": "We want to provide one click deployment options for CloudNode across various platforms.\nAWS Lambda\nGoogle Cloud Functions\nDigital Ocean\nHeroku\nKubernetes"
+    }
+  }
+}

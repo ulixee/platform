@@ -1,5 +1,5 @@
 {
-  "content": "<h1 id=\"stream-client\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#stream-client\">#</a>Stream Client</h1>\n<p>Ulixee Client is a full featured library that supports the full Ulixee SQL specification.</p>\n<p>Below is an example of using Ulixee Client:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import Client from '@ulixee/client-playground';\n\nconst client = new Client('ulx://USER:PASS@HOST:PORT/DB');\nconst data = await client.query('SELECT * FROM table');\n</code></pre>\n<p>You can find more information on <a href=\"/docs/client\">Ulixee Client's documentation</a>.</p>",
+  "content": "<h1 id=\"stream-client\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#stream-client\">#</a>Stream Client</h1>\n<p>Ulixee Client is a full featured library that supports the full Ulixee SQL specification.</p>\n<p>Below is an example of using Ulixee Client:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-js\">import Client from '@ulixee/client';\n\nconst client = new Client('ulx://USER:PASS@HOST:PORT/DB');\nconst data = await client.query('SELECT * FROM table');\n</code></pre>\n<p>You can find more information on <a href=\"/docs/client\">Ulixee Client's documentation</a>.</p>",
   "title": "Stream Client",
   "subtitles": []
 }

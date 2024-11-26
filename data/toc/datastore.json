@@ -3,9 +3,10 @@
     "title": "Overview",
     "items": [
       "Introduction",
-      "Configuration",
       "Concepts",
-      "Deployment"
+      "Configuration",
+      "Deployment",
+      "Relationship with Argon"
     ]
   },
   {
@@ -27,8 +28,10 @@
     "items": [
       "Extractor Schemas",
       "Schema",
+      "Databrokers",
       "Credits",
       "Plugins",
+      "Hosted Services",
       "Storage Engines",
       "Hero Plugin",
       "Puppeteer Plugin"
