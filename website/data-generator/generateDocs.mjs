@@ -10,7 +10,7 @@ const rootDir = Path.resolve(__dirname, '../../');
 
 {
   const mdDocsRootPath = `${rootDir}/client/docs`;
-  walkDirectory(mdDocsRootPath, async filePath => {
+  await walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'client');
   });
   ensureIndexFile(mdDocsRootPath, 'client');
@@ -18,7 +18,7 @@ const rootDir = Path.resolve(__dirname, '../../');
 
 {
   const mdDocsRootPath = `${rootDir}/../hero/docs`;
-  walkDirectory(mdDocsRootPath, async filePath => {
+  await walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'hero');
   });
   ensureIndexFile(mdDocsRootPath, 'hero');
@@ -26,7 +26,7 @@ const rootDir = Path.resolve(__dirname, '../../');
 
 {
   const mdDocsRootPath = `${rootDir}/datastore/docs`;
-  walkDirectory(mdDocsRootPath, async filePath => {
+  await walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'datastore');
   });
   ensureIndexFile(mdDocsRootPath, 'datastore');
@@ -34,7 +34,7 @@ const rootDir = Path.resolve(__dirname, '../../');
 
 {
   const mdDocsRootPath = `${rootDir}/sql/docs`;
-  walkDirectory(mdDocsRootPath, async filePath => {
+  await walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'sql');
   });
   ensureIndexFile(mdDocsRootPath, 'sql');
@@ -42,7 +42,7 @@ const rootDir = Path.resolve(__dirname, '../../');
 
 {
   const mdDocsRootPath = `${rootDir}/cloud/docs`;
-  walkDirectory(mdDocsRootPath, async filePath => {
+  await walkDirectory(mdDocsRootPath, async filePath => {
     await saveToWebsite(mdDocsRootPath, filePath, 'cloud');
   });
   ensureIndexFile(mdDocsRootPath, 'cloud');

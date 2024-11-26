@@ -15,6 +15,7 @@ export function ensureIndexFile(originalBasePath, toolKey, relativeWebsiteDir) {
     `public/data/docs/${relativeWebsiteDir}/overview/introduction.json`,
   );
   const copyToPath = Path.join(websiteDir, `public/data/docs/${relativeWebsiteDir}/index.json`);
+  console.log(`Ensuring index.json for ${toolKey} at ${copyToPath}`);
   if (!Fs.existsSync(copyFromPath)) return;
   Fs.copyFileSync(copyFromPath, copyToPath);
 }
@@ -50,17 +51,20 @@ export async function saveToWebsite(mdDocsRootPath, absoluteFilePath, toolKey) {
   console.log(`SAVED ${toolKey}/${jsonRelativePath}`);
 }
 
-export function walkDirectory(directory, onFileFn) {
+export async function walkDirectory(directory, onFileFn) {
   const fileNames = Fs.readdirSync(directory);
   for (const fileName of fileNames) {
     const filePath = `${directory}/${fileName}`;
     const isDirectory = Fs.statSync(filePath).isDirectory();
     if (isDirectory) {
-      process.nextTick(() => {
-        walkDirectory(filePath, onFileFn);
+      await new Promise(resolve => {
+        process.nextTick(async () => {
+          await walkDirectory(filePath, onFileFn);
+          resolve();
+        });
       });
     } else if (fileName.match(/\.md$/) || fileName.match(/\.png$/) || fileName.match(/\.jpg$/)) {
-      onFileFn(filePath);
+      await onFileFn(filePath);
     }
   }
 }
