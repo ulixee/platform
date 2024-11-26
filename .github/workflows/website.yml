@@ -11,8 +11,14 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-        with:
-          submodules: 'true'
+
+      - name: Clone Hero
+        run: |
+          git clone -n --recurse-submodules https://github.com/ulixee/hero.git
+          cd hero
+          (git fetch --depth 1 origin $GITHUB_REF_NAME && git checkout $GITHUB_REF_NAME) || (git fetch --depth 1 origin main && git checkout main)
+          git submodule update --init --recursive --depth 1
+        working-directory: ..
 
       - name: Create Node Environment
         uses: actions/setup-node@v4
