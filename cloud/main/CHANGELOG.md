@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.31](https://github.com/ulixee/platform/compare/v2.0.0-alpha.30...v2.0.0-alpha.31) (2024-12-07)
+
+### Bug Fixes
+
+* **datastore:** admin-identity docs ([a1eacdd](https://github.com/ulixee/platform/commit/a1eacdd5778a8e347a03f4652667bf3eaaf7b9ef))
+
+### Features
+
+* add disable desktop apis to cli ([56772f4](https://github.com/ulixee/platform/commit/56772f4ad55f329d9b63022a497e13113dde47ce))
+* all argons in microgons now ([3b0e93a](https://github.com/ulixee/platform/commit/3b0e93aa60c92c5f0aaacadb123771b454816047))
+
 # [2.0.0-alpha.30](https://github.com/ulixee/platform/compare/v2.0.0-alpha.29...v2.0.0-alpha.30) (2024-10-11)
 
 ### Bug Fixes

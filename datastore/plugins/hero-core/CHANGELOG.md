@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.31](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.30...v2.0.0-alpha.31) (2024-12-07)
+
+### Bug Fixes
+
+* **datastore:** only store cached replays ([56a00b0](https://github.com/ulixee/ulixee/commit/56a00b029d261f2d41d22b3edbd4bc6c28f1333c))
+* **desktop:** allow cleanup of session dbs ([42f3264](https://github.com/ulixee/ulixee/commit/42f32641c6891e582f8fa588a3731b259bdfca69))
+
+### Features
+
+* add disable desktop apis to cli ([56772f4](https://github.com/ulixee/ulixee/commit/56772f4ad55f329d9b63022a497e13113dde47ce))
+* all argons in microgons now ([3b0e93a](https://github.com/ulixee/ulixee/commit/3b0e93aa60c92c5f0aaacadb123771b454816047))
+
 # [2.0.0-alpha.30](https://github.com/ulixee/ulixee/compare/v2.0.0-alpha.29...v2.0.0-alpha.30) (2024-10-11)
 
 **Note:** Version bump only for package @ulixee/datastore-plugins-hero-core
