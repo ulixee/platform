@@ -33,6 +33,9 @@ jobs:
           yarn build
           cp dist/index.html dist/404.html
 
+      - name: Add Website cname
+        run: echo "ulixee.org" > website/dist/CNAME
+
       - name: Deploy
         uses: s0/git-publish-subdir-action@develop
         env:

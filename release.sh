@@ -31,18 +31,11 @@ for dir in "${dirs[@]}"; do
     git tag -f "$TAG";
   fi
 
-  # if platform, create a release branch before push
-  if [[ "$dir" == "platform" ]]; then
-    echo "Creating release branch for $dir... $(pwd)";
-    git checkout -b release;
-    git push origin release --tags;
-    echo "You need to create a DRAFT release at https://github.com/ulixee/platform/releases/new";
-    read -p "Press enter only once you've once all assets are built here...";
-  else
-    git push origin main --tags  --no-verify;
-  fi
+  git push origin main --tags  --no-verify;
 
   wait 5;
+
+  # TODO: add desktop publishing (create a new branch with a tag and push it - will create new assets)
 
   if [[ "$dir" == "hero" ]]; then
     echo "You need to approve the DRAFT release at https://github.com/ulixee/hero/releases/tag/$TAG";
