@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.31](https://github.com/ulixee/platform/compare/v2.0.0-alpha.30...v2.0.0-alpha.31) (2024-12-07)
+
+### Bug Fixes
+
+* **datastore:** admin-identity docs ([a1eacdd](https://github.com/ulixee/platform/commit/a1eacdd5778a8e347a03f4652667bf3eaaf7b9ef))
+* **datastore:** broker not updating settlement ([efbf866](https://github.com/ulixee/platform/commit/efbf86622a074e6fd20d9c930aed7c532e2bf975))
+* **datastore:** close localchain on exit ([60d7f33](https://github.com/ulixee/platform/commit/60d7f3331f4edc583ed5cc4000b8e5343353f3f4))
+* **datastore:** only store cached replays ([56a00b0](https://github.com/ulixee/platform/commit/56a00b029d261f2d41d22b3edbd4bc6c28f1333c))
+* **desktop:** allow cleanup of session dbs ([42f3264](https://github.com/ulixee/platform/commit/42f32641c6891e582f8fa588a3731b259bdfca69))
+
+### Features
+
+* all argons in microgons now ([3b0e93a](https://github.com/ulixee/platform/commit/3b0e93aa60c92c5f0aaacadb123771b454816047))
+
 # [2.0.0-alpha.30](https://github.com/ulixee/platform/compare/v2.0.0-alpha.29...v2.0.0-alpha.30) (2024-10-11)
 
 ### Bug Fixes

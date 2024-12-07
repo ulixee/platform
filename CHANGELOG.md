@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.31](https://github.com/ulixee/platform/compare/v2.0.0-alpha.30...v2.0.0-alpha.31) (2024-12-07)
+
+### Bug Fixes
+
+* **datastore:** admin-identity docs ([a1eacdd](https://github.com/ulixee/platform/commit/a1eacdd5778a8e347a03f4652667bf3eaaf7b9ef))
+* **datastore:** broker not updating settlement ([efbf866](https://github.com/ulixee/platform/commit/efbf86622a074e6fd20d9c930aed7c532e2bf975))
+* **datastore:** close localchain on exit ([60d7f33](https://github.com/ulixee/platform/commit/60d7f3331f4edc583ed5cc4000b8e5343353f3f4))
+* **datastore:** only store cached replays ([56a00b0](https://github.com/ulixee/platform/commit/56a00b029d261f2d41d22b3edbd4bc6c28f1333c))
+* **desktop:** add id to all connections ([afed957](https://github.com/ulixee/platform/commit/afed9571c43e0b6fa1b80777a00a9c93c2e21a03))
+* **desktop:** allow cleanup of session dbs ([42f3264](https://github.com/ulixee/platform/commit/42f32641c6891e582f8fa588a3731b259bdfca69))
+* **tests:** run in band for linux platform ([19b8dcd](https://github.com/ulixee/platform/commit/19b8dcddb67957be7c0c5786dfa313770be9b4f2))
+* website publishing ([aea9d99](https://github.com/ulixee/platform/commit/aea9d9950b4f8e3d15977b683a37c0bdee1c0820))
+
+### Features
+
+* add disable desktop apis to cli ([56772f4](https://github.com/ulixee/platform/commit/56772f4ad55f329d9b63022a497e13113dde47ce))
+* all argons in microgons now ([3b0e93a](https://github.com/ulixee/platform/commit/3b0e93aa60c92c5f0aaacadb123771b454816047))
+
 # [2.0.0-alpha.30](https://github.com/ulixee/platform/compare/v2.0.0-alpha.29...v2.0.0-alpha.30) (2024-10-11)
 
 ### Bug Fixes

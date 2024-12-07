@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/datastore-docpage",
-  "version": "2.0.0-alpha.30",
+  "version": "2.0.0-alpha.31",
   "scripts": {
     "serve": "vite",
     "watch": "vite build -w",
@@ -49,7 +49,7 @@
     "vue-router": "^4.4.4"
   },
   "devDependencies": {
-    "@ulixee/datastore-packager": "2.0.0-alpha.30",
+    "@ulixee/datastore-packager": "2.0.0-alpha.31",
     "@vitejs/plugin-vue": "^5.0.5",
     "typescript": "^5.6.2",
     "vite": "^5.3.1",

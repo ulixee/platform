@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.31](https://github.com/ulixee/platform/compare/v2.0.0-alpha.30...v2.0.0-alpha.31) (2024-12-07)
+
+### Bug Fixes
+
+* **desktop:** add id to all connections ([afed957](https://github.com/ulixee/platform/commit/afed9571c43e0b6fa1b80777a00a9c93c2e21a03))
+* **desktop:** allow cleanup of session dbs ([42f3264](https://github.com/ulixee/platform/commit/42f32641c6891e582f8fa588a3731b259bdfca69))
+
 # [2.0.0-alpha.30](https://github.com/ulixee/platform/compare/v2.0.0-alpha.29...v2.0.0-alpha.30) (2024-10-11)
 
 **Note:** Version bump only for package @ulixee/desktop-core
