@@ -3,8 +3,8 @@
   "private": true,
   "version": "2.0.0-alpha.30",
   "dependencies": {
-    "@argonprotocol/localchain": "0.0.19",
-    "@argonprotocol/mainchain": "0.0.19",
+    "@argonprotocol/localchain": "0.0.20",
+    "@argonprotocol/mainchain": "0.0.20",
     "@types/http-proxy": "^1.17.14",
     "@ulixee/client": "2.0.0-alpha.30",
     "@ulixee/cloud": "2.0.0-alpha.30",

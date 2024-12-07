@@ -40,8 +40,8 @@
     }
   },
   "dependencies": {
-    "@argonprotocol/localchain": "0.0.19",
-    "@argonprotocol/mainchain": "0.0.19",
+    "@argonprotocol/localchain": "0.0.20",
+    "@argonprotocol/mainchain": "0.0.20",
     "@ulixee/commons": "2.0.0-alpha.30",
     "@ulixee/net": "2.0.0-alpha.30",
     "@ulixee/platform-specification": "2.0.0-alpha.30",

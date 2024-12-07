@@ -15,46 +15,46 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
 
-"@argonprotocol/localchain-darwin-arm64@0.0.19":
-  version "0.0.19"
-  resolved "https://registry.npmjs.org/@argonprotocol/localchain-darwin-arm64/-/localchain-darwin-arm64-0.0.19.tgz#e58a336b8adca11016d1b3e72b83821eba7abc46"
-  integrity sha512-Q2luEMHFdikZPfqXTNy6ijDm/gDK8gdPZVd/94p4PhqLmt/LiVG1Mkh9WdfcKmR1Pqw36KcqPu4SkFmf1gr+9w==
+"@argonprotocol/localchain-darwin-arm64@0.0.20":
+  version "0.0.20"
+  resolved "https://registry.npmjs.org/@argonprotocol/localchain-darwin-arm64/-/localchain-darwin-arm64-0.0.20.tgz#6f9110ee222f19b62153e867554068a5b6b438b4"
+  integrity sha512-frucSgon3KncYJfUxlrge087Ztri3hbXPk6Erqf1aY0bB/4okysaj4cZD7gq03waCziH+491abZLdMA/Sxqidw==
 
-"@argonprotocol/localchain-darwin-x64@0.0.19":
-  version "0.0.19"
-  resolved "https://registry.npmjs.org/@argonprotocol/localchain-darwin-x64/-/localchain-darwin-x64-0.0.19.tgz#0b569795ad63afcde61826b3514143d19358ada8"
-  integrity sha512-feHXOoD+TWh+NU33Jo8Brj3c02wervYmw3vLJaG1tNbmhzPRSW61GqbzfyQHRc+dRUUud2wQ8yBtLI6DGN14Qg==
+"@argonprotocol/localchain-darwin-x64@0.0.20":
+  version "0.0.20"
+  resolved "https://registry.npmjs.org/@argonprotocol/localchain-darwin-x64/-/localchain-darwin-x64-0.0.20.tgz#73636b357f50e3f5a8e1c67809cff175ad7c383f"
+  integrity sha512-l0UHm7kMeWxJs4DMLYxUebqezoFxvRvMKpdo0SdWBwxWJTaJJA0RLM3jLfC3gMw/FS6fpCIO4byQauoUo8JKIQ==
 
-"@argonprotocol/localchain-linux-arm64-gnu@0.0.19":
-  version "0.0.19"
-  resolved "https://registry.npmjs.org/@argonprotocol/localchain-linux-arm64-gnu/-/localchain-linux-arm64-gnu-0.0.19.tgz#a108403cb41ec7385b9ef3899d4079378ff9cbc2"
-  integrity sha512-TONv+Qt9KNV0FEcLKlVQOhpuvPhFATAUvRQeiDzZuevw6kIm6a59GoI9JraifG5lJn5B4sSRqVEWl8bU1aokyw==
+"@argonprotocol/localchain-linux-arm64-gnu@0.0.20":
+  version "0.0.20"
+  resolved "https://registry.npmjs.org/@argonprotocol/localchain-linux-arm64-gnu/-/localchain-linux-arm64-gnu-0.0.20.tgz#fba95e08357dfd5619a61e43ac41cb9ae11bc2c0"
+  integrity sha512-CRuB0x30lp3XmPnO0JUyUSo/UkiQAtkoe5cw75Rwht67k6l4XIi1DX2jUF454H34aS6doUZC1svrUOzSunYE6Q==
 
-"@argonprotocol/localchain-linux-x64-gnu@0.0.19":
-  version "0.0.19"
-  resolved "https://registry.npmjs.org/@argonprotocol/localchain-linux-x64-gnu/-/localchain-linux-x64-gnu-0.0.19.tgz#17fc597b5b6894d6750ec4bdecbf32a885ef3547"
-  integrity sha512-MSAyarAkY37+BPRQifu1VKV6EK+TTkTK7H58/JP8NEOBanhgr4MecZK8KPi2eQiovR/0YJjBuQs3CQcT9rGq/A==
+"@argonprotocol/localchain-linux-x64-gnu@0.0.20":
+  version "0.0.20"
+  resolved "https://registry.npmjs.org/@argonprotocol/localchain-linux-x64-gnu/-/localchain-linux-x64-gnu-0.0.20.tgz#56f2cc4868d447c2e85e0ef877f8dee2fc2ddeca"
+  integrity sha512-A1YDTHVo7WmxE2QlU31s7CEd+6QBUJ35VmwutUDvZT1XQ9rRrhimt6VqXxlDYnLszSc0bOn6IO0U8i8ZLo5GzA==
 
-"@argonprotocol/localchain-win32-x64-msvc@0.0.19":
-  version "0.0.19"
-  resolved "https://registry.npmjs.org/@argonprotocol/localchain-win32-x64-msvc/-/localchain-win32-x64-msvc-0.0.19.tgz#934ad35c7effeccaad088f1ed6ee66302d6b4a0f"
-  integrity sha512-wDzZdF8NMZCMIsjzv6GIOx56nXWvFP46n7haL/r3KQmRZ5jAR5zIyBh90P7TCfDjbdCulqhmn3bxyWsjGM9KRw==
+"@argonprotocol/localchain-win32-x64-msvc@0.0.20":
+  version "0.0.20"
+  resolved "https://registry.npmjs.org/@argonprotocol/localchain-win32-x64-msvc/-/localchain-win32-x64-msvc-0.0.20.tgz#47ef8a6e1df88484a5978d61b0f4ff3fa56b2526"
+  integrity sha512-nVprDglrYjQ0B/gZ6PPl56Ev8pmmF7OxbfaS3PTc2I5rjWQWfYZAJKWj9gkfRNkHu3p/I/kQx9A0GSZqQfhcjw==
 
-"@argonprotocol/localchain@0.0.19":
-  version "0.0.19"
-  resolved "https://registry.npmjs.org/@argonprotocol/localchain/-/localchain-0.0.19.tgz#b73f232073af6fc81ea0c48a3c01da3ac3e1b39b"
-  integrity sha512-6M5x2+W2OD9ZFj9bGkCF7Z7LSdJiB+s7hH1Nc3Lbx7TNaopZP1+8y8VWcIY8hoP5YE7jeiO3Bmd28JOzem+5mA==
+"@argonprotocol/localchain@0.0.20":
+  version "0.0.20"
+  resolved "https://registry.npmjs.org/@argonprotocol/localchain/-/localchain-0.0.20.tgz#ae0a36ba8c955db44abe2503b7502035d77ea5da"
+  integrity sha512-QfPbesmFYDfI/Cce4TW1LY4tCvhlXQv5Aybu7v2Lfw+HL+WVq0l0+Lq5wVCwp16jbc+aqeaIr4MPG8geKUWhKw==
   optionalDependencies:
-    "@argonprotocol/localchain-darwin-arm64" "0.0.19"
-    "@argonprotocol/localchain-darwin-x64" "0.0.19"
-    "@argonprotocol/localchain-linux-arm64-gnu" "0.0.19"
-    "@argonprotocol/localchain-linux-x64-gnu" "0.0.19"
-    "@argonprotocol/localchain-win32-x64-msvc" "0.0.19"
+    "@argonprotocol/localchain-darwin-arm64" "0.0.20"
+    "@argonprotocol/localchain-darwin-x64" "0.0.20"
+    "@argonprotocol/localchain-linux-arm64-gnu" "0.0.20"
+    "@argonprotocol/localchain-linux-x64-gnu" "0.0.20"
+    "@argonprotocol/localchain-win32-x64-msvc" "0.0.20"
 
-"@argonprotocol/mainchain@0.0.19":
-  version "0.0.19"
-  resolved "https://registry.npmjs.org/@argonprotocol/mainchain/-/mainchain-0.0.19.tgz#cc1c7e239920aac0cbdafbbbeaaa3396d34e2fc9"
-  integrity sha512-fSifOZZyoc3pnFR4MAghDjp3lDhcLho+/2ZdgEuo1tjm9UmU3t/zN/viJIP4wvVn3+cK01r40VG+wwDuk127HA==
+"@argonprotocol/mainchain@0.0.20":
+  version "0.0.20"
+  resolved "https://registry.npmjs.org/@argonprotocol/mainchain/-/mainchain-0.0.20.tgz#d388a0f7f237c5985ce84c02d0a1621a0aa5311c"
+  integrity sha512-7SOUd3cXB2nEtYOYU25Nvk+XDawqoWxMci15YQn8wIb9aVGilgl+G7Bfd7lwLm9VJax/owcPJ21uu9lGhVjWrA==
   dependencies:
     "@polkadot/api" "^14.3.1"
     "@polkadot/keyring" "^13.2.3"
