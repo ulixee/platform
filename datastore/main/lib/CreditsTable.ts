@@ -1,6 +1,6 @@
 import { concatAsBuffer } from '@ulixee/commons/lib/bufferUtils';
 import { sha256 } from '@ulixee/commons/lib/hashUtils';
-import { buffer, ExtractSchemaType, number, string } from '@ulixee/schema';
+import { bigint, buffer, ExtractSchemaType, string } from '@ulixee/schema';
 import { customAlphabet, nanoid } from 'nanoid';
 import Table from './Table';
 
@@ -26,15 +26,16 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
   }
 
   async create(
-    microgons: number,
+    microgons: bigint,
     secret?: string,
-  ): Promise<{ id: string; secret: string; remainingCredits: number }> {
+  ): Promise<{ id: string; secret: string; remainingCredits: bigint }> {
     const upstreamBalance = await this.getUpstreamCreditLimit();
     if (upstreamBalance !== undefined) {
-      const allocated = (await this.queryInternal<{ total: number }>(
+      const allocated = (await this.queryInternal<{ total: bigint }>(
         'SELECT SUM(issuedCredits) as total FROM self',
       )) as any;
-      if (allocated.total + microgons > upstreamBalance) {
+      const allocatedTotal = BigInt(allocated?.total ?? 0);
+      if (allocatedTotal + microgons > upstreamBalance) {
         throw new Error(
           `This credit amount would exceed the balance of the embedded Credits, which would make use of the Credits unstable. Please increase the limit of the credits.`,
         );
@@ -59,14 +60,14 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
     return credit;
   }
 
-  async summary(): Promise<{ count: number; microgons: number }> {
-    const [result] = await this.queryInternal<{ count: number; microgons: number }[]>(
+  async summary(): Promise<{ count: number; microgons: bigint }> {
+    const [result] = await this.queryInternal<{ count: number; microgons: bigint }[]>(
       'SELECT COUNT(1) as count, SUM(issuedCredits) as microgons FROM self',
     );
     return result;
   }
 
-  async debit(id: string, secret: string, amount: number): Promise<number> {
+  async debit(id: string, secret: string, amount: bigint): Promise<bigint> {
     const [credit] = await this.queryInternal('SELECT * FROM self WHERE id=$1', [id]);
     if (!credit) throw new Error('This is an invalid Credit.');
 
@@ -85,20 +86,20 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
 
     const result = results?.[0];
     if (result === undefined) throw new Error('Could not create a payment from the given Credits.');
-    return result.remainingCredits;
+    return BigInt(result.remainingCredits ?? 0);
   }
 
-  async finalize(id: string, refund: number): Promise<void> {
+  async finalize(id: string, refund: bigint): Promise<void> {
     await this.queryInternal(
       'UPDATE self SET remainingCredits = remainingCredits + $2 WHERE id = $1',
       [id, refund],
     );
   }
 
-  private async getUpstreamCreditLimit(): Promise<number | undefined> {
+  private async getUpstreamCreditLimit(): Promise<bigint | undefined> {
     const embeddedCredits = this.datastoreInternal.metadata.remoteDatastoreEmbeddedCredits ?? {};
     if (!Object.keys(embeddedCredits).length) return undefined;
-    let issuedCredits = 0;
+    let issuedCredits = 0n;
     for (const [source, credit] of Object.entries(embeddedCredits)) {
       try {
         const { client, datastoreHost } = await this.datastoreInternal.getRemoteApiClient(source);
@@ -107,7 +108,7 @@ export default class CreditsTable extends Table<typeof CreditsSchema> {
           datastoreHost.version,
           credit.id,
         );
-        if (Number.isInteger(balance.issuedCredits)) issuedCredits += balance.issuedCredits;
+        if (!!balance.issuedCredits) issuedCredits += balance.issuedCredits;
       } catch (err) {}
     }
     return issuedCredits;
@@ -118,7 +119,7 @@ export const CreditsSchema = {
   id: string({ regexp: /^crd[A-Za-z0-9_]{8}$/ }),
   salt: string({ length: 16 }),
   secretHash: buffer(),
-  issuedCredits: number(),
-  remainingCredits: number(),
+  issuedCredits: bigint(),
+  remainingCredits: bigint(),
 };
 type ICredit = ExtractSchemaType<typeof CreditsSchema>;

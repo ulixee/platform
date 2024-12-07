@@ -3,30 +3,31 @@ import { IPayment } from '@ulixee/platform-specification';
 import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
 import * as Fs from 'fs';
 import env from '../env';
+import ArgonReserver from '@ulixee/datastore/payments/ArgonReserver';
 
 export default class DatastoreChannelHoldsDb {
   private db: SqliteDatabase;
   private readonly insertStatement: Statement<{
     id: string;
-    microgons: number;
+    microgons: bigint;
     expirationDate: number;
   }>;
 
   private readonly getStatement: Statement<{ id: string }>;
   private readonly debitStatement: Statement<{
     id: string;
-    microgons: number;
-    settledMilligons: bigint;
+    microgons: bigint;
+    settledMicrogons: bigint;
     now: number;
   }>;
 
-  private readonly finalizeStatement: Statement<{ id: string; microgons: number }>;
+  private readonly finalizeStatement: Statement<{ id: string; microgons: bigint }>;
 
   private readonly path: string;
 
   private readonly paymentIdByChannelHoldId = new Map<
     string,
-    Map<string, { microgons: number; queryId: string }>
+    Map<string, { microgons: bigint; queryId: string }>
   >();
 
   private interval: NodeJS.Timeout;
@@ -62,7 +63,7 @@ export default class DatastoreChannelHoldsDb {
       WHERE id = :id
         AND remaining - :microgons >= 0 
         AND expirationDate >= :now
-        AND CEIL((allocated - remaining + :microgons) / 1000) <= :settledMilligons`);
+        AND ((allocated - remaining + :microgons + 999) / 1000) <= (:settledMicrogons / 1000)`);
     this.finalizeStatement = this.db.prepare(`UPDATE channelHolds
       SET remaining = remaining + :microgons
       WHERE id = :id
@@ -71,8 +72,8 @@ export default class DatastoreChannelHoldsDb {
     this.interval = setInterval(this.cleanup.bind(this), 60e3).unref();
   }
 
-  create(id: string, allocatedMilligons: number, expirationDate: Date): IChannelHoldRecord {
-    const microgons = allocatedMilligons * 1000;
+  create(id: string, allocatedMicrogons: bigint, expirationDate: Date): IChannelHoldRecord {
+    const microgons = allocatedMicrogons;
     const result = this.insertStatement.run({
       id,
       microgons,
@@ -93,6 +94,8 @@ export default class DatastoreChannelHoldsDb {
       .all()
       .map((x: IChannelHoldRecord) => {
         x.expirationDate = new Date(x.expirationDate);
+        x.allocated = BigInt(x.allocated);
+        x.remaining = BigInt(x.remaining);
         return x;
       });
   }
@@ -101,6 +104,8 @@ export default class DatastoreChannelHoldsDb {
     const record = this.getStatement.get({ id }) as IChannelHoldRecord;
     if (!record) throw new Error('No PaymentChannelChannelHold found');
     record.expirationDate = new Date(record.expirationDate);
+    record.allocated = BigInt(record.allocated);
+    record.remaining = BigInt(record.remaining);
     return record;
   }
 
@@ -126,7 +131,7 @@ export default class DatastoreChannelHoldsDb {
     const result = this.debitStatement.run({
       id: channelHoldId,
       microgons: payment.microgons,
-      settledMilligons: payment.channelHold.settledMilligons,
+      settledMicrogons: payment.channelHold.settledMicrogons,
       now: Date.now(),
     });
     if (!result.changes || result.changes < 1) {
@@ -137,12 +142,13 @@ export default class DatastoreChannelHoldsDb {
       if (channelHold.remaining < payment.microgons) {
         throw new Error('This channelHold does not have enough remaining funds.');
       }
-      const neededMilligons = Math.ceil(
-        (channelHold.allocated - channelHold.remaining + payment.microgons) / 1000,
-      );
-      if (neededMilligons > Number(payment.channelHold.settledMilligons)) {
+      const neededSettlement =
+        (channelHold.allocated - channelHold.remaining + payment.microgons + 999n) /
+        ArgonReserver.settlementThreshold;
+      const neededSettlementMicrogons = neededSettlement * ArgonReserver.settlementThreshold;
+      if (neededSettlementMicrogons > payment.channelHold.settledMicrogons) {
         throw new Error(
-          `This channelHold needs a larger settlement to debit. Current settledMilligons=${payment.channelHold.settledMilligons}, New spentMicrogons=${neededMilligons} (ceiling to nearest milligon)`,
+          `This channelHold needs a larger settlement to debit. Current settledMicrogons=${payment.channelHold.settledMicrogons}, Needed settledMicrogons=${neededSettlementMicrogons} (settled in milligon)`,
         );
       }
       throw new Error('Could not debit the channelHold.');
@@ -150,13 +156,13 @@ export default class DatastoreChannelHoldsDb {
     return { shouldFinalize: true };
   }
 
-  finalize(channelHoldId: string, uuid: string, finalMicrogons: number): void {
+  finalize(channelHoldId: string, uuid: string, finalMicrogons: bigint): void {
     const entry = this.paymentIdByChannelHoldId.get(channelHoldId)?.get(uuid);
     if (!entry) throw new Error('Could not find the initial payment for the given ChannelHold.');
     if (finalMicrogons < 0) throw new Error('Final payment cannot be negative.');
 
     const adjustment = entry.microgons - finalMicrogons;
-    if (adjustment === 0) {
+    if (adjustment === 0n) {
       return;
     }
     const result = this.finalizeStatement.run({ id: channelHoldId, microgons: adjustment });
@@ -197,7 +203,7 @@ export default class DatastoreChannelHoldsDb {
 
 export interface IChannelHoldRecord {
   id: string;
-  allocated: number;
-  remaining: number;
+  allocated: bigint;
+  remaining: bigint;
   expirationDate: Date;
 }

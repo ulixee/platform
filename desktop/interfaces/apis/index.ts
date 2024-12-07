@@ -61,12 +61,12 @@ export type IArgonFileMeta = { file: IArgonFile; name: string; rawJson: string }
 
 export type IDesktopAppPrivateApis = {
   'Argon.send': (arg: {
-    milligons: bigint;
+    microgons: bigint;
     toAddress?: string;
     fromAddress?: string;
   }) => Promise<IArgonFileMeta>;
   'Argon.request': (arg: {
-    milligons: bigint;
+    microgons: bigint;
     sendToMyAddress?: string;
   }) => Promise<IArgonFileMeta>;
   'Argon.importSend': (arg: { argonFile: IArgonFile; claimWithAddress?: string }) => Promise<void>;
@@ -74,8 +74,8 @@ export type IDesktopAppPrivateApis = {
     argonFile: IArgonFile;
     fundWithAddress?: string;
   }) => Promise<void>;
-  'Argon.transferFromMainchain': (arg: { address: string; milligons: bigint }) => Promise<void>;
-  'Argon.transferToMainchain': (arg: { address: string; milligons: bigint }) => Promise<void>;
+  'Argon.transferFromMainchain': (arg: { address: string; microgons: bigint }) => Promise<void>;
+  'Argon.transferToMainchain': (arg: { address: string; microgons: bigint }) => Promise<void>;
   'Argon.dropFile': (path: string) => Promise<void>;
   'Argon.showFileContextMenu': (
     args: IArgonFileMeta & {

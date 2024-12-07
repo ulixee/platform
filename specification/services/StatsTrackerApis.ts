@@ -46,7 +46,7 @@ export const StatsTrackerApiSchemas = {
       entityName: z.string().optional(),
       error: z.instanceof(Error).optional(),
       bytes: z.number().int(),
-      microgons: z.number().int().nonnegative(),
+      microgons: z.bigint().nonnegative(),
       milliseconds: z.number().int(),
       didUseCredits: z.boolean(),
     }),
@@ -78,7 +78,7 @@ export const StatsTrackerApiSchemas = {
         .optional()
         .describe('Any hero session ids used for this query'),
       bytes: z.number().int(),
-      microgons: z.number().int().nonnegative(),
+      microgons: z.bigint().nonnegative(),
       milliseconds: z.number().int(),
     }),
     result: z.object({

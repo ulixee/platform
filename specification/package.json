@@ -5,7 +5,7 @@
   "main": "./index.js",
   "license": "MIT",
   "dependencies": {
-    "@argonprotocol/localchain": "0.0.17",
+    "@argonprotocol/localchain": "0.0.20",
     "zod": "^3.22.4"
   },
   "devDependencies": {

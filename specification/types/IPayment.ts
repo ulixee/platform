@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { microgonsValidation, milligonsValidation, multiSignatureValidation } from './index';
+import { microgonsValidation, multiSignatureValidation } from './index';
 
 /**
  * This will likely be changed to a specific address for payments (maybe just an extra prefix?). It's a placeholder for now.
@@ -16,9 +16,9 @@ export const PaymentMethodSchema = z.object({
   channelHold: z
     .object({
       id: channelHoldIdValidation,
-      settledMilligons: milligonsValidation.describe('The aggregate settled milligons'),
+      settledMicrogons: microgonsValidation.describe('The aggregate settled microgons'),
       settledSignature: multiSignatureValidation.describe(
-        'A signature of the updated channel hold with settled milligons',
+        'A signature of the updated channel hold with settled microgons',
       ),
     })
     .optional(),

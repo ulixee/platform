@@ -1,5 +1,6 @@
 import SqliteTable from '@ulixee/commons/lib/SqliteTable';
 import { Database as SqliteDatabase, Statement } from 'better-sqlite3';
+import { calculateNewAverageBigInt } from './DatastoreEntityStatsTable';
 
 export default class DatastoreStatsTable extends SqliteTable<IDatastoreStatsRecord> {
   private static byVersion: { [datastore_version: string]: IDatastoreStatsRecord } = {};
@@ -41,13 +42,13 @@ export default class DatastoreStatsTable extends SqliteTable<IDatastoreStatsReco
   public record(
     datastoreId: string,
     version: string,
-    price: number,
+    price: bigint,
     bytes: number,
     milliseconds: number,
-    creditsUsed: number,
+    creditsUsed: bigint,
     isError: boolean,
   ): { versionStats: IDatastoreStatsRecord; datastoreStats: IDatastoreStatsRecord } {
-    price ??= 0;
+    price ??= 0n;
 
     const versionStats = this.getByVersion(datastoreId, version);
     this.addToStats(versionStats, isError, price, milliseconds, bytes, creditsUsed);
@@ -77,16 +78,26 @@ export default class DatastoreStatsTable extends SqliteTable<IDatastoreStatsReco
   }
 
   public getByVersion(datastoreId: string, version: string): IDatastoreStatsRecord {
-    DatastoreStatsTable.byVersion[`${datastoreId}_${version}`] ??=
-      (this.getByVersionQuery.get(datastoreId, version) as IDatastoreStatsRecord) ??
-      this.emptyStats(datastoreId, version);
+    DatastoreStatsTable.byVersion[`${datastoreId}_${version}`] ??= this.process(
+      this.getByVersionQuery.get(datastoreId, version) ?? this.emptyStats(datastoreId, version),
+    );
     return DatastoreStatsTable.byVersion[`${datastoreId}_${version}`];
   }
 
   public get(datastoreId: string): IDatastoreStatsRecord {
-    DatastoreStatsTable.byDatastore[datastoreId] ??=
-      (this.getQuery.get(datastoreId) as IDatastoreStatsRecord) ?? this.emptyStats(datastoreId);
+    DatastoreStatsTable.byDatastore[datastoreId] ??= this.process(
+      this.getQuery.get(datastoreId) ?? this.emptyStats(datastoreId),
+    );
     return DatastoreStatsTable.byDatastore[datastoreId];
+  }
+
+  private process(record: IDatastoreStatsRecord): IDatastoreStatsRecord {
+    record.averagePrice = BigInt(record.averagePrice);
+    record.maxPrice = BigInt(record.maxPrice);
+    record.minPrice = BigInt(record.minPrice);
+    record.totalSpend = BigInt(record.totalSpend);
+    record.totalCreditSpend = BigInt(record.totalCreditSpend);
+    return record;
   }
 
   private emptyStats(datastoreId: string, version?: string): IDatastoreStatsRecord {
@@ -99,31 +110,31 @@ export default class DatastoreStatsTable extends SqliteTable<IDatastoreStatsReco
       averageBytes: 0,
       maxBytes: 0,
       minBytes: Number.MAX_SAFE_INTEGER,
-      averagePrice: 0,
-      maxPrice: 0,
-      minPrice: Number.MAX_SAFE_INTEGER,
+      averagePrice: 0n,
+      maxPrice: 0n,
+      minPrice: BigInt(Number.MAX_SAFE_INTEGER),
       averageMilliseconds: 0,
       maxMilliseconds: 0,
       minMilliseconds: 0,
-      totalSpend: 0,
-      totalCreditSpend: 0,
+      totalSpend: 0n,
+      totalCreditSpend: 0n,
     };
   }
 
   private addToStats(
     stats: IDatastoreStatsRecord,
     isError: boolean,
-    price: number,
+    price: bigint,
     milliseconds: number,
     bytes: number,
-    creditsUsed: number,
+    creditsUsed: bigint,
   ): void {
     stats.runs += 1;
     if (isError) stats.errors += 1;
     stats.lastRunTimestamp = Date.now();
-    stats.maxPrice = Math.max(stats.maxPrice, price);
-    stats.minPrice = Math.min(stats.minPrice, price);
-    stats.averagePrice = calculateNewAverage(stats.averagePrice, price, stats.runs);
+    if (price > stats.maxPrice) stats.maxPrice = price;
+    if (price < stats.minPrice) stats.minPrice = price;
+    stats.averagePrice = calculateNewAverageBigInt(stats.averagePrice, price, stats.runs);
     stats.maxMilliseconds = Math.max(stats.maxMilliseconds, milliseconds);
     stats.averageMilliseconds = calculateNewAverage(
       stats.averageMilliseconds,
@@ -152,12 +163,12 @@ export interface IDatastoreStatsRecord {
   averageBytes: number;
   maxBytes: number;
   minBytes: number;
-  averagePrice: number;
-  maxPrice: number;
-  minPrice: number;
+  averagePrice: bigint;
+  maxPrice: bigint;
+  minPrice: bigint;
   averageMilliseconds: number;
   maxMilliseconds: number;
   minMilliseconds: number;
-  totalSpend: number;
-  totalCreditSpend: number;
+  totalSpend: bigint;
+  totalCreditSpend: bigint;
 }

@@ -127,7 +127,6 @@ export default class LocalchainWithSync
     this.#localchain = await Localchain.loadWithoutMainchain(
       defaultPath,
       {
-        genesisUtcTime: Env.genesisUtcTime,
         tickDurationMillis: Env.tickDurationMillis,
         ntpPoolUrl: Env.ntpPoolUrl,
         channelHoldExpirationTicks: Env.channelHoldExpirationTicks,
@@ -139,14 +138,17 @@ export default class LocalchainWithSync
     this.#localchain = proxyWrapper(this.#localchain);
 
     if (mainchainUrl) {
-      void this.connectToMainchain(mainchainUrl)
-        .then(async () => {
-          this.datastoreLookup = new DatastoreLookup(this.#localchain.mainchainClient);
-          return null;
-        })
-        .catch(error => {
-          log.error('Error connecting to mainchain', { error });
-        });
+      await Promise.race([
+        new Promise(resolve => setTimeout(resolve, 2e3)),
+        this.connectToMainchain(mainchainUrl)
+          .then(async () => {
+            this.datastoreLookup = new DatastoreLookup(this.#localchain.mainchainClient);
+            return null;
+          })
+          .catch(error => {
+            log.error('Error connecting to mainchain', { error });
+          }),
+      ]);
     }
     this.afterLoad();
   }

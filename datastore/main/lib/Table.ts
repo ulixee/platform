@@ -23,8 +23,8 @@ export default class Table<
 
   protected readonly components: ITableComponents<TSchema>;
 
-  public get basePrice(): number {
-    return this.components.basePrice ?? 0;
+  public get basePrice(): bigint {
+    return BigInt(this.components.basePrice ?? 0);
   }
 
   public get isPublic(): boolean {

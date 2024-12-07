@@ -10,7 +10,6 @@ import { nanoid } from 'nanoid';
 import * as Path from 'path';
 import ReplayRegistryEndpoints from './endpoints/ReplayRegistryEndpoints';
 import ReplayRegistry from './lib/ReplayRegistry';
-import ICrawlerOutputSchema from '@ulixee/datastore/interfaces/ICrawlerOutputSchema';
 
 const pkg = require('@ulixee/datastore-plugins-hero/package.json');
 

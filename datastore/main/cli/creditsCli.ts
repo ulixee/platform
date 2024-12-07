@@ -38,9 +38,7 @@ export default function creditsCli(): Command {
     .option('-m, --argon-mainchain-url <url>', 'The mainchain url to use.')
     .addOption(identityPrivateKeyPassphraseOption)
     .action(async (url, { identityPath, identityPassphrase, argons, argonMainchainUrl }) => {
-      const microgons = ArgonUtils.milligonsToMicrogons(
-        parseFloat(argons) * Number(ArgonUtils.MilligonsPerArgon),
-      );
+      const microgons = BigInt(parseFloat(argons)) * ArgonUtils.MicrogonsPerArgon;
       const identity = Identity.loadFromFile(identityPath, { keyPassphrase: identityPassphrase });
       const { datastoreId, version, host } = await DatastoreApiClient.lookupDatastoreHost(
         url,
@@ -65,7 +63,11 @@ export default function creditsCli(): Command {
     .description('Save to a local wallet.')
     .argument('<url>', 'The url of the Credit.')
     .option('-m, --argon-mainchain-url [url]', 'The mainchain url to use.')
-    .option('-d, --credit-dir [path]', 'The directory to store credits in.', CreditPaymentManager.defaultBasePath)
+    .option(
+      '-d, --credit-dir [path]',
+      'The directory to store credits in.',
+      CreditPaymentManager.defaultBasePath,
+    )
     .action(async (url, { creditDir, argonMainchainUrl }) => {
       const { datastoreId, version, host } = await DatastoreApiClient.lookupDatastoreHost(
         url,

@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { BalanceChangeSchema } from './IBalanceChange';
-import { addressValidation, hashValidation, milligonsValidation, multiSignatureValidation } from './index';
+import {
+  addressValidation,
+  hashValidation,
+  microgonsValidation,
+  multiSignatureValidation,
+} from './index';
 
 export const DomainSchema = z.tuple([
   hashValidation.describe('The domain hash'),
@@ -11,9 +16,11 @@ export const BlockVoteSchema = z.object({
   accountId: addressValidation,
   blockHash: hashValidation.describe('The block hash being voted on. Must be in last 2 ticks.'),
   index: z.number().int().nonnegative().describe('An index to provide noise to the vote hash'),
-  power: milligonsValidation.describe('The tax applied (and thus multiplier) of this vote'),
+  power: microgonsValidation.describe('The tax applied (and thus multiplier) of this vote'),
   signature: multiSignatureValidation.describe('The signature of the vote hash'),
-  blockRewardsAccountId: addressValidation.describe("The account that will receive the block rewards if this vote wins"),
+  blockRewardsAccountId: addressValidation.describe(
+    'The account that will receive the block rewards if this vote wins',
+  ),
 });
 
 export const NotarizationSchema = z.object({

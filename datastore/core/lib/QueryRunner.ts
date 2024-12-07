@@ -13,6 +13,9 @@ import { IDatastoreManifestWithRuntime } from './DatastoreRegistry';
 import { validateAuthentication, validateFunctionCoreVersions } from './datastoreUtils';
 import PaymentsProcessor from './PaymentsProcessor';
 import { ICacheUpdates } from '@ulixee/datastore/interfaces/IExtractorPluginCore';
+import Logger from '@ulixee/commons/lib/Logger';
+
+const { log } = Logger(module);
 
 export default class QueryRunner {
   public startTime = Date.now();
@@ -105,7 +108,7 @@ export default class QueryRunner {
     };
     const pricing = this.getCallPricing(name);
     const result = await this.context.workTracker.trackRun(run(options));
-    this.paymentsProcessor.trackCallResult(name, pricing[0]?.basePrice ?? 0, upstreamMeta);
+    this.paymentsProcessor.trackCallResult(name, BigInt(pricing[0]?.basePrice ?? 0), upstreamMeta);
     return result;
   }
 
@@ -136,7 +139,7 @@ export default class QueryRunner {
     let runError: Error;
     let outputs: TOutput;
     let bytes = 0;
-    let microgons = 0;
+    let microgons = 0n;
 
     const pricing = this.getCallPricing(name);
 
@@ -162,7 +165,7 @@ export default class QueryRunner {
       bytes = PricingManager.getOfficialBytes(outputs);
       microgons = this.paymentsProcessor.trackCallResult(
         name,
-        pricing[0]?.basePrice ?? 0,
+        BigInt(pricing[0]?.basePrice) ?? 0n,
         upstreamMeta,
       );
     } catch (error) {
@@ -213,10 +216,18 @@ export default class QueryRunner {
 
     for (const tableCall of this.localMachineTableCalls) {
       const pricing = this.getCallPricing(tableCall) ?? [];
-      const price = pricing[0]?.basePrice ?? 0;
+      const price = BigInt(pricing[0]?.basePrice ?? 0);
       this.paymentsProcessor.trackCallResult(tableCall, price);
     }
-    const microgons = await this.paymentsProcessor.finalize(bytes);
+    let microgons = 0n;
+    try {
+      microgons = await this.paymentsProcessor.finalize(bytes);
+    } catch (error) {
+      if (!runError) runError = error;
+      else {
+        log.error('Error finalizing payment', { error, sessionId: this.queryDetails.queryId });
+      }
+    }
 
     const metadata = {
       bytes,

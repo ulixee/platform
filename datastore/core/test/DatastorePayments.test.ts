@@ -13,6 +13,7 @@ import * as Path from 'path';
 import IArgonPaymentProcessor from '../interfaces/IArgonPaymentProcessor';
 import MockArgonPaymentProcessor from './_MockArgonPaymentProcessor';
 import MockPaymentService from './_MockPaymentService';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'DatastorePayments.test');
 
@@ -42,13 +43,13 @@ beforeAll(async () => {
 
   Fs.writeFileSync(
     `${__dirname}/datastores/payments-manifest.json`,
-    JSON.stringify({
+    TypeSerializer.stringify({
       version: '0.0.1',
       extractorsByName: {
         testPayments: {
           prices: [
             {
-              basePrice: 1250,
+              basePrice: 1250n,
             },
           ],
         },
@@ -57,14 +58,14 @@ beforeAll(async () => {
         titleNames: {
           prices: [
             {
-              basePrice: 100,
+              basePrice: 100n,
             },
           ],
         },
         successTitles: {
           prices: [
             {
-              basePrice: 150,
+              basePrice: 150n,
             },
           ],
         },
@@ -107,10 +108,10 @@ afterEach(Helpers.afterEach);
 afterAll(Helpers.afterAll);
 
 test('should be able to run a datastore function with payments', async () => {
-  expect(manifest.extractorsByName.testPayments.prices[0].basePrice).toBe(1250);
+  expect(manifest.extractorsByName.testPayments.prices[0].basePrice).toBe(1250n);
 
   const price = await client.pricing.getEntityPrice(manifest.id, manifest.version, 'testPayments');
-  expect(price).toBe(1250);
+  expect(price).toBe(1250n);
 
   await expect(
     client.query(manifest.id, manifest.version, 'SELECT * FROM testPayments()'),
@@ -140,7 +141,7 @@ test('should be able to run a datastore function with payments', async () => {
   ).resolves.toEqual({
     outputs: [{ success: true }],
     metadata: {
-      microgons: 1250,
+      microgons: 1250n,
       bytes: expect.any(Number),
       milliseconds: expect.any(Number),
     },
@@ -152,9 +153,9 @@ test('should be able to run a datastore function with payments', async () => {
   const entry = await statsTracker.getForDatastoreVersion(manifest);
   expect(entry.stats.queries).toBe(3);
   expect(entry.stats.errors).toBe(2);
-  expect(entry.stats.maxPricePerQuery).toBe(1250);
+  expect(entry.stats.maxPricePerQuery).toBe(1250n);
   expect(entry.statsByEntityName.testPayments.stats.queries).toBe(1);
-  expect(entry.statsByEntityName.testPayments.stats.maxPricePerQuery).toBe(1250);
+  expect(entry.statsByEntityName.testPayments.stats.maxPricePerQuery).toBe(1250n);
 
   const streamed = client.stream(
     manifest.id,
@@ -166,7 +167,7 @@ test('should be able to run a datastore function with payments', async () => {
   await expect(streamed.resultMetadata).resolves.toEqual({
     outputs: [{ success: true }],
     metadata: {
-      microgons: 1250,
+      microgons: 1250n,
       bytes: expect.any(Number),
       milliseconds: expect.any(Number),
     },
@@ -181,8 +182,8 @@ test('should be able to run a datastore function with payments', async () => {
     expect.objectContaining({
       expirationDate: expect.any(Date),
       id: paymentService.paymentsByDatastoreId[manifest.id].channelHoldId,
-      allocated: 5000,
-      remaining: 5000 - 1250 - 1250,
+      allocated: 1250n * 100n,
+      remaining: 1250n * 100n - 1250n - 1250n,
     }),
   ]);
 });
@@ -192,7 +193,7 @@ test('can collect payments from multiple tables and functions', async () => {
         join successTitles s on s.title = t.title 
         where s.success = (select success from testPayments())`;
   const price = await client.pricing.getQueryPrice(manifest.id, manifest.version, sql);
-  expect(price).toBe(1250 + 150 + 100);
+  expect(price).toBe(1250n + 150n + 100n);
 
   const clientAddress = keyring.createFromUri('client');
 
@@ -215,7 +216,7 @@ test('can collect payments from multiple tables and functions', async () => {
   ).resolves.toEqual({
     outputs: [{ name: 'Blake' }],
     metadata: {
-      microgons: 1250 + 150 + 100,
+      microgons: 1250n + 150n + 100n,
       bytes: expect.any(Number),
       milliseconds: expect.any(Number),
     },
@@ -229,8 +230,8 @@ test('can collect payments from multiple tables and functions', async () => {
   expect(dbs.get(manifest.id).paymentIdByChannelHoldId.size).toBe(2);
   expect(dbs.get(manifest.id).list()[1]).toEqual(
     expect.objectContaining({
-      allocated: 5_000,
-      remaining: 5_000 - (1250 + 150 + 100),
+      allocated: (1250n + 150n + 100n) * 100n,
+      remaining: (1250n + 150n + 100n) * 100n - (1250n + 150n + 100n),
     }),
   );
 });
@@ -261,7 +262,7 @@ test('records a changed payment correctly', async () => {
     outputs: undefined,
     runError: expect.any(Error),
     metadata: {
-      microgons: 0,
+      microgons: 0n,
       bytes: expect.any(Number),
       milliseconds: expect.any(Number),
     },
@@ -276,8 +277,8 @@ test('records a changed payment correctly', async () => {
     expect.objectContaining({
       expirationDate: expect.any(Date),
       id: paymentService.paymentsByDatastoreId[manifest.id].channelHoldId,
-      allocated: 5000,
-      remaining: 5000,
+      allocated: 1250n * 100n,
+      remaining: 1250n * 100n,
     }),
   );
 });

@@ -75,8 +75,9 @@ export default class TestDatabroker {
     if (!this.#childProcess) return;
     this.#events.close();
     const launchedProcess = this.#childProcess;
-    launchedProcess.kill('SIGTERM');
-    launchedProcess.kill('SIGKILL');
+    launchedProcess.stderr.destroy();
+    launchedProcess.stdout.destroy();
+    launchedProcess.kill();
     this.#childProcess = null;
   }
 

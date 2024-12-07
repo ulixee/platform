@@ -4,7 +4,7 @@ export default class ChannelHoldsTable {
   private readonly insertQuery: Statement<IChannelHoldRecord>;
   private readonly updateSettlementQuery: Statement<{
     channelHoldId: string;
-    settledMilligons: bigint;
+    settledMicrogons: bigint;
     date: number;
   }>;
 
@@ -14,21 +14,23 @@ export default class ChannelHoldsTable {
       organizationId INTEGER NOT NULL,
       createdByIdentity TEXT NOT NULL,
       domain TEXT,
-      heldMilligons INTEGER NOT NULL,
-      settledMilligons INTEGER,
+      heldMicrogons INTEGER NOT NULL,
+      settledMicrogons INTEGER,
       settlementDate DATETIME,
       created DATETIME NOT NULL,
       FOREIGN KEY (organizationId) REFERENCES Organizations(id)
     );`);
-    db.exec(`CREATE INDEX IF NOT EXISTS ChannelHolds_organizationId ON ChannelHolds (organizationId);`);
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS ChannelHolds_organizationId ON ChannelHolds (organizationId);`,
+    );
 
     this.insertQuery = db.prepare(
-      `INSERT INTO ChannelHolds (channelHoldId, organizationId, createdByIdentity, domain, heldMilligons, created) 
-            VALUES (:channelHoldId, :organizationId, :createdByIdentity, :domain, :heldMilligons, :created)`,
+      `INSERT INTO ChannelHolds (channelHoldId, organizationId, createdByIdentity, domain, heldMicrogons, created) 
+            VALUES (:channelHoldId, :organizationId, :createdByIdentity, :domain, :heldMicrogons, :created)`,
     );
     this.updateSettlementQuery = db.prepare(
-      `UPDATE ChannelHolds SET settledMilligons = :settledMilligons, settlementDate = :date WHERE channelHoldId = :channelHoldId 
-            RETURNING organizationId, heldMilligons`,
+      `UPDATE ChannelHolds SET settledMicrogons = :settledMicrogons, settlementDate = :date WHERE channelHoldId = :channelHoldId 
+            RETURNING organizationId, heldMicrogons`,
     );
   }
 
@@ -39,16 +41,16 @@ export default class ChannelHoldsTable {
 
   public updateSettlementReturningChange(
     channelHoldId: string,
-    settledMilligons: bigint,
+    settledMicrogons: bigint,
     settlementDate: number,
   ): [organizationId: string, holdAmount: bigint, change: bigint] {
-    const { organizationId, heldMilligons } = this.updateSettlementQuery.get({
+    const { organizationId, heldMicrogons } = this.updateSettlementQuery.get({
       channelHoldId,
-      settledMilligons,
+      settledMicrogons,
       date: settlementDate,
-    }) as { organizationId: string; heldMilligons: bigint };
-    const change = heldMilligons - settledMilligons;
-    return [organizationId, heldMilligons, change];
+    }) as { organizationId: string; heldMicrogons: bigint };
+    const change = heldMicrogons - settledMicrogons;
+    return [organizationId, heldMicrogons, change];
   }
 
   /// ADMIN APIS
@@ -75,7 +77,7 @@ export default class ChannelHoldsTable {
   public pendingBalance(): bigint {
     return (
       (this.db
-        .prepare(`SELECT SUM(heldMilligons) FROM ChannelHolds WHERE settlementDate IS NULL`)
+        .prepare(`SELECT SUM(heldMicrogons) FROM ChannelHolds WHERE settlementDate IS NULL`)
         .pluck()
         .get() as bigint) ?? 0n
     );
@@ -87,8 +89,8 @@ export interface IChannelHoldRecord {
   organizationId: string;
   createdByIdentity: string;
   domain?: string;
-  heldMilligons: bigint;
-  settledMilligons?: bigint;
+  heldMicrogons: bigint;
+  settledMicrogons?: bigint;
   settlementDate?: number;
   created: number;
 }

@@ -18,8 +18,8 @@ import { InsufficientQueryPriceError, PaymentRequiredError } from './errors';
  *
  */
 export default class PaymentsProcessor {
-  public initialPrice = 0;
-  public talliedPrice = 0;
+  public initialPrice = 0n;
+  public talliedPrice = 0n;
 
   private shouldFinalize = true;
 
@@ -27,10 +27,7 @@ export default class PaymentsProcessor {
     private payment: IPayment,
     private datastoreId: string,
     private datastore: Datastore,
-    readonly context: Pick<
-      IDatastoreApiContext,
-      'configuration' | 'argonPaymentProcessor'
-    >,
+    readonly context: Pick<IDatastoreApiContext, 'configuration' | 'argonPaymentProcessor'>,
   ) {}
 
   public async debit(
@@ -40,14 +37,14 @@ export default class PaymentsProcessor {
   ): Promise<boolean> {
     const price = PricingManager.computePrice(manifest, entityCalls);
     this.initialPrice = price;
-    if (price === 0) return true;
+    if (price === 0n) return true;
 
     if (!this.payment?.credits?.id && !this.payment?.channelHold?.id) {
-      throw new PaymentRequiredError('This Datastore requires payment.', price);
+      throw new PaymentRequiredError('This Datastore requires payment.', Number(price));
     }
 
     if (price !== this.payment.microgons) {
-      throw new InsufficientQueryPriceError(this.payment.microgons, price);
+      throw new InsufficientQueryPriceError(Number(this.payment.microgons), Number(price));
     }
 
     if (this.payment.credits) {
@@ -69,12 +66,12 @@ export default class PaymentsProcessor {
 
   public trackCallResult(
     _call: string,
-    microgons: number,
+    microgons: bigint,
     upstreamResult?: IDatastoreMetadataResult,
-  ): number {
-    let amount = microgons ?? 0;
+  ): bigint {
+    let amount = microgons ?? 0n;
 
-    if (upstreamResult) amount += upstreamResult.microgons ?? 0;
+    if (upstreamResult) amount += upstreamResult.microgons ?? 0n;
     this.talliedPrice += amount;
 
     return amount;
@@ -84,11 +81,11 @@ export default class PaymentsProcessor {
     this.talliedPrice += result.microgons;
   }
 
-  public async finalize(_bytes: number): Promise<number> {
+  public async finalize(_bytes: number): Promise<bigint> {
     if (this.shouldFinalize && this.payment) {
       if (this.payment.credits) {
         const diff = this.initialPrice - this.talliedPrice;
-        if (diff !== 0) {
+        if (diff !== 0n) {
           const credits = this.datastore.tables[CreditsTable.tableName];
           await credits.finalize(this.payment.credits.id, diff);
         }

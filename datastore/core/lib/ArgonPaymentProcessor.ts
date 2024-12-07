@@ -56,7 +56,7 @@ export default class ArgonPaymentProcessor implements IArgonPaymentProcessor {
 
     await this.updateSettlement(
       data.payment.channelHold.id,
-      data.payment.channelHold.settledMilligons,
+      data.payment.channelHold.settledMicrogons,
       data.payment.channelHold.settledSignature,
     );
     return this.getDb(data.datastoreId).debit(data.queryId, data.payment);
@@ -117,7 +117,7 @@ export default class ArgonPaymentProcessor implements IArgonPaymentProcessor {
     const channelHold = await this.importToLocalchain(data.datastoreId, data.channelHold);
     this.getDb(data.datastoreId).create(
       channelHold.id,
-      Number(channelHold.holdAmount),
+      channelHold.holdAmount,
       this.timeForTick(channelHold.expirationTick),
     );
 
@@ -126,7 +126,7 @@ export default class ArgonPaymentProcessor implements IArgonPaymentProcessor {
 
   private async updateSettlement(
     channelHoldId: string,
-    settledMilligons: bigint,
+    settledMicrogons: bigint,
     settledSignature: Buffer,
   ): Promise<void> {
     let channelHold = this.openChannelHoldsById.get(channelHoldId);
@@ -135,8 +135,8 @@ export default class ArgonPaymentProcessor implements IArgonPaymentProcessor {
       this.openChannelHoldsById.set(channelHoldId, channelHold);
     }
     const internal = await channelHold.channelHold;
-    if (settledMilligons > internal.settledAmount) {
-      await channelHold.recordUpdatedSettlement(settledMilligons, settledSignature);
+    if (settledMicrogons > internal.settledAmount) {
+      await channelHold.recordUpdatedSettlement(settledMicrogons, settledSignature);
     }
   }
 

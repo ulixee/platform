@@ -13,8 +13,8 @@ import IDatastoreManifest from '@ulixee/platform-specification/types/IDatastoreM
 import Identity from '@ulixee/platform-utils/lib/Identity';
 import * as Fs from 'fs';
 import * as Path from 'path';
-import ArgonPaymentProcessor from '../lib/ArgonPaymentProcessor';
 import MockArgonPaymentProcessor from './_MockArgonPaymentProcessor';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 
 const storageDir = Path.resolve(process.env.ULX_DATA_DIR ?? '.', 'Credits.test');
 
@@ -75,10 +75,10 @@ test('should be able run a Datastore with Credits', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/output.js`);
   Fs.writeFileSync(
     `${__dirname}/datastores/output-manifest.json`,
-    JSON.stringify({
+    TypeSerializer.stringify({
       extractorsByName: {
         putout: {
-          prices: [{ basePrice: 1000 }],
+          prices: [{ basePrice: 1000n }],
         },
       },
       adminIdentities: [adminIdentity.bech32],
@@ -94,10 +94,10 @@ test('should be able run a Datastore with Credits', async () => {
     client.query(manifest.id, manifest.version, 'SELECT * FROM putout()', {}),
   ).rejects.toThrow('requires payment');
 
-  const credits = await client.createCredits(manifest.id, manifest.version, 1001, adminIdentity);
+  const credits = await client.createCredits(manifest.id, manifest.version, 1001n, adminIdentity);
   expect(credits).toEqual({
     id: expect.any(String),
-    remainingCredits: 1001,
+    remainingCredits: 1001n,
     secret: expect.any(String),
   });
 
@@ -118,7 +118,7 @@ test('should be able run a Datastore with Credits', async () => {
   ).resolves.toEqual({
     outputs: [{ success: true }],
     metadata: {
-      microgons: 1000,
+      microgons: 1000n,
       bytes: expect.any(Number),
       milliseconds: expect.any(Number),
     },
@@ -129,8 +129,8 @@ test('should be able run a Datastore with Credits', async () => {
   await expect(
     client.getCreditsBalance(manifest.id, manifest.version, credits.id),
   ).resolves.toEqual({
-    balance: 1,
-    issuedCredits: 1001,
+    balance: 1n,
+    issuedCredits: 1001n,
   });
 
   await expect(
@@ -142,7 +142,7 @@ test('should be able run a Datastore with Credits', async () => {
 
 test('should remove an empty Credits from the local cache', async () => {
   const manifest = { id: '1', version: '1.1.1' };
-  const credits = { id: 'crd1', secret: 'hash', remainingCredits: 1250 };
+  const credits = { id: 'crd1', secret: 'hash', remainingCredits: 1250n };
   const paymentService = await CreditReserver.storeCredit(
     manifest.id,
     manifest.version,
@@ -155,7 +155,7 @@ test('should remove an empty Credits from the local cache', async () => {
       id: manifest.id,
       host: client.connectionToCore.transport.host,
       version: manifest.version,
-      microgons: 1250,
+      microgons: 1250n,
       recipient: {
         address: datastoreKeyring.address,
         notaryId: 1,
@@ -170,7 +170,7 @@ test('should remove an empty Credits from the local cache', async () => {
       id: manifest.id,
       host: client.connectionToCore.transport.host,
       version: manifest.version,
-      microgons: 1,
+      microgons: 1n,
       recipient: {
         address: datastoreKeyring.address,
         notaryId: 1,
@@ -184,10 +184,10 @@ test('should be able to embed Credits in a Datastore', async () => {
   const packager = new DatastorePackager(`${__dirname}/datastores/output.js`);
   Fs.writeFileSync(
     `${__dirname}/datastores/output-manifest.json`,
-    JSON.stringify({
+    TypeSerializer.stringify({
       extractorsByName: {
         putout: {
-          prices: [{ basePrice: 1000 }],
+          prices: [{ basePrice: 1000n }],
         },
       },
       adminIdentities: [adminIdentity.bech32],
@@ -224,8 +224,8 @@ test('should be able to embed Credits in a Datastore', async () => {
   await expect(
     client.getCreditsBalance(manifest.id, manifest.version, credits.id),
   ).resolves.toEqual({
-    balance: 1001,
-    issuedCredits: 2001,
+    balance: 1001n,
+    issuedCredits: 2001n,
   });
 
   await cloneDatastore(
@@ -235,10 +235,10 @@ test('should be able to embed Credits in a Datastore', async () => {
   );
   Fs.writeFileSync(
     `${__dirname}/datastores/clone-output/datastore-manifest.json`,
-    JSON.stringify({
+    TypeSerializer.stringify({
       extractorsByName: {
         putout: {
-          prices: [{ basePrice: 1000 }],
+          prices: [{ basePrice: 1000n }],
         },
       },
       adminIdentities: [adminIdentity.bech32],
@@ -253,7 +253,7 @@ test('should be able to embed Credits in a Datastore', async () => {
     const credits2 = await client.createCredits(
       manifest2.id,
       manifest2.version,
-      1002,
+      1002n,
       adminIdentity,
     );
     const credit2Service = await CreditReserver.storeCredit(
@@ -279,14 +279,14 @@ test('should be able to embed Credits in a Datastore', async () => {
     await expect(
       client.getCreditsBalance(manifest.id, manifest.version, credits.id),
     ).resolves.toEqual({
-      balance: 1,
-      issuedCredits: 2001,
+      balance: 1n,
+      issuedCredits: 2001n,
     });
     await expect(
       client.getCreditsBalance(manifest2.id, manifest2.version, credits2.id),
     ).resolves.toEqual({
-      balance: 2,
-      issuedCredits: 1002,
+      balance: 2n,
+      issuedCredits: 1002n,
     });
   }
 

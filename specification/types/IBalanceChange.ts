@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AccountType } from '@argonprotocol/localchain';
-import { addressValidation, milligonsValidation, multiSignatureValidation } from './index';
+import { addressValidation, microgonsValidation, multiSignatureValidation } from './index';
 import { NoteSchema } from './INote';
 
 export { AccountType };
@@ -33,7 +33,7 @@ export const BalanceProofSchema = z.object({
   notaryId: notaryIdValidation.describe('The notary where this proof was provided'),
   notebookNumber: notebookNumberValidation,
   tick: tickValidation,
-  balance: milligonsValidation.describe('The previous balance'),
+  balance: microgonsValidation.describe('The previous balance'),
   accountOrigin: AccountOriginSchema,
   notebookProof: MerkleProofSchema.nullish().describe(
     'The proof that this balance change can be found in the published accountChangesRoot for the given notebook',
@@ -46,7 +46,7 @@ export const BalanceChangeSchema = z.object({
   accountId: addressValidation,
   accountType: AccountTypeSchema,
   changeNumber: z.number().int().nonnegative(),
-  balance: milligonsValidation.describe('The new balance of the account'),
+  balance: microgonsValidation.describe('The new balance of the account'),
   previousBalanceProof: BalanceProofSchema.nullish().describe(
     'A balance change must provide proof of a previous balance if the change_number is non-zero',
   ),

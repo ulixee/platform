@@ -43,14 +43,14 @@ export default class QueryLogTable extends SqliteTable<IQueryLogRecord> {
     error: Error,
     channelHoldId: string,
     creditId: string,
-    microgons: number,
+    microgons: bigint,
     bytes: number,
     milliseconds: number,
     heroSessionIds: string[],
     cloudNodeHost: string,
     cloudNodeIdentity: string,
   ): void {
-    microgons ??= 0;
+    microgons ??= 0n;
 
     this.insertNow([
       queryId,

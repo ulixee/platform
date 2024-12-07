@@ -10,8 +10,11 @@ export default class TestCloudNode {
   address: string;
   #childProcess: ChildProcess;
   #events = new EventSubscriber();
-  constructor(private rootDir: string = getPlatformBuild()) {
-    needsClosing.push({ close: () => this.close(), onlyCloseOnFinal: true });
+  constructor(
+    private rootDir: string = getPlatformBuild(),
+    onlyCloseOnFinal = true,
+  ) {
+    needsClosing.push({ close: () => this.close(), onlyCloseOnFinal });
   }
 
   public async start(envArgs: Record<string, string>): Promise<string> {
@@ -66,8 +69,9 @@ export default class TestCloudNode {
     if (!this.#childProcess) return;
     this.#events.close();
     const launchedProcess = this.#childProcess;
-    launchedProcess.kill('SIGTERM');
-    launchedProcess.kill('SIGKILL');
+    launchedProcess.stderr.destroy();
+    launchedProcess.stdout.destroy();
+    launchedProcess.kill();
     this.#childProcess = null;
   }
 }

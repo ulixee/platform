@@ -12,6 +12,7 @@ import ILocalchainRef from '../interfaces/ILocalchainRef';
 import DatastoreLookup from '../lib/DatastoreLookup';
 import { IChannelHoldDetails, IChannelHoldSource } from './ArgonReserver';
 
+const BASE_TRANSFER_FEE = 200_000n;
 export default class LocalchainChannelHoldSource implements IChannelHoldSource {
   public get sourceKey(): string {
     return `localchain-${this.address}`;
@@ -32,7 +33,7 @@ export default class LocalchainChannelHoldSource implements IChannelHoldSource {
 
   public async createChannelHold(
     paymentInfo: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
-    milligons: bigint,
+    microgons: bigint,
   ): Promise<IChannelHoldDetails> {
     await this.isMainchainLoaded.promise;
     const { domain } = paymentInfo;
@@ -43,19 +44,19 @@ export default class LocalchainChannelHoldSource implements IChannelHoldSource {
     if (Env.allowMinimumAffordableChannelHold) {
       const accountOverview = await this.localchain.accountOverview();
       const availableBalance = accountOverview.balance - accountOverview.heldBalance;
-      if (availableBalance < milligons) {
+      if (availableBalance < microgons) {
         if (availableBalance > CHANNEL_HOLD_MINIMUM_SETTLEMENT) {
-          milligons = availableBalance- 200n;
+          microgons = availableBalance - BASE_TRANSFER_FEE;
         } else {
           throw new Error(
-            `Insufficient balance to fund a channel hold for ${milligons} milligons. (Balance=${availableBalance}m)`,
+            `Insufficient balance to fund a channel hold for ${microgons} microgons. (Balance=${availableBalance}m)`,
           );
         }
       }
     }
 
     const openChannelHold = await this.localchain.transactions.createChannelHold(
-      milligons,
+      microgons,
       paymentInfo.recipient.address!,
       domain,
       paymentInfo.recipient.notaryId,
@@ -87,7 +88,7 @@ export default class LocalchainChannelHoldSource implements IChannelHoldSource {
     const openChannelHold = this.openChannelHoldsById[channelHoldId];
     const result = await openChannelHold.sign(updatedSettlement);
     const channelHoldDetails = await openChannelHold.channelHold;
-    channelHold.settledMilligons = channelHoldDetails.settledAmount;
+    channelHold.settledMicrogons = channelHoldDetails.settledAmount;
     channelHold.settledSignature = Buffer.from(result.signature);
   }
 }

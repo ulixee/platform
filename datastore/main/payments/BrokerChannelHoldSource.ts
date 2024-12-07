@@ -54,7 +54,7 @@ export default class BrokerChannelHoldSource implements IChannelHoldSource {
 
   public async createChannelHold(
     paymentInfo: IPaymentServiceApiTypes['PaymentService.reserve']['args'],
-    milligons: bigint,
+    microgons: bigint,
   ): Promise<IChannelHoldDetails> {
     const error = await this.loadPromise;
     if (error) throw error;
@@ -63,7 +63,7 @@ export default class BrokerChannelHoldSource implements IChannelHoldSource {
       paymentInfo.domain,
       paymentInfo.id,
       this.authentication.publicKey,
-      milligons,
+      microgons,
       nonce,
     );
 
@@ -74,7 +74,7 @@ export default class BrokerChannelHoldSource implements IChannelHoldSource {
           domain: paymentInfo.domain,
           datastoreId: paymentInfo.id,
           recipient: paymentInfo.recipient,
-          milligons,
+          microgons,
           delegatedSigningAddress: this.keyring.pairs[0].address,
           authentication: {
             identity: this.authentication.bech32,
@@ -97,21 +97,21 @@ export default class BrokerChannelHoldSource implements IChannelHoldSource {
     // TODO: add a way to retrieve the balance change from the broker
     if (!balanceChange)
       throw new Error(`No balance change found for channel hold ${channelHold.id}`);
-    balanceChange.notes[0].milligons = updatedSettlement;
-    balanceChange.balance = balanceChange.channelHoldNote.milligons - updatedSettlement;
+    balanceChange.notes[0].microgons = updatedSettlement;
+    balanceChange.balance = balanceChange.previousBalanceProof.balance - updatedSettlement;
     const json = serdeJson(balanceChange);
     const bytes = BalanceChangeBuilder.toSigningMessage(json);
     const signature = this.keyring.getPairs()[0].sign(bytes, { withType: true });
     balanceChange.signature = Buffer.from(signature);
     channelHold.settledSignature = balanceChange.signature;
-    channelHold.settledMilligons = updatedSettlement;
+    channelHold.settledMicrogons = updatedSettlement;
   }
 
   public static createSignatureMessage(
     domain: string | null,
     datastoreId: string,
     identity: Buffer,
-    milligons: bigint,
+    microgons: bigint,
     nonce: string,
   ): Buffer {
     return sha256(
@@ -121,7 +121,7 @@ export default class BrokerChannelHoldSource implements IChannelHoldSource {
         nonce,
         domain,
         datastoreId,
-        milligons.toString(),
+        microgons.toString(),
       ),
     );
   }

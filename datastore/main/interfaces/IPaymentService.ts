@@ -7,17 +7,17 @@ import IDatastoreHostLookup from './IDatastoreHostLookup';
 import IDatastoreMetadata from './IDatastoreMetadata';
 
 export interface IPaymentEvents {
-  reserved: { datastoreId: string; payment: IPayment; remainingBalance: number };
+  reserved: { datastoreId: string; payment: IPayment; remainingBalance: bigint };
   finalized: {
     paymentUuid: string;
-    initialMicrogons: number;
-    finalMicrogons: number;
-    remainingBalance: number;
+    initialMicrogons: bigint;
+    finalMicrogons: bigint;
+    remainingBalance: bigint;
   };
-  createdChannelHold: { channelHoldId: string; datastoreId: string; allocatedMilligons: bigint };
+  createdChannelHold: { channelHoldId: string; datastoreId: string; allocatedMicrogons: bigint };
   updateSettlement: {
     channelHoldId: string;
-    settledMilligons: bigint;
+    settledMicrogons: bigint;
     remaining: bigint;
     datastoreId: string;
   };
@@ -65,8 +65,8 @@ export interface IWallet {
 export interface ICredit {
   datastoreId: string;
   datastoreVersion: string;
-  allocated: number;
-  remaining: number;
+  allocated: bigint;
+  remaining: bigint;
   creditsId: string;
   host: string;
 }
@@ -76,7 +76,7 @@ export interface IPaymentDetails {
   version: string;
   host: string;
   paymentMethod: IPaymentMethod;
-  allocated: number;
-  remaining: number;
+  allocated: bigint;
+  remaining: bigint;
   expirationDate?: Date;
 }

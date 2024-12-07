@@ -7,7 +7,7 @@ export async function wrapAsyncCall<
   Args extends Z[Fn] extends (...args: infer A) => any ? A : never,
 >(owner: Z, name: Fn, ...args: Args): Promise<T> {
   try {
-    const result = await (owner[name] as Function).call(owner, ...args);
+    const result = await (owner[name] as any).call(owner, ...args);
     return proxyIfNeeded(result);
   } catch (error) {
     const stack = new Error('').stack.slice(8).split(/\r?\n/g).slice(1).join('\n');

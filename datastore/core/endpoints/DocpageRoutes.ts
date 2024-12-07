@@ -6,6 +6,7 @@ import { createReadStream } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import createStaticFileHandler from '@ulixee/platform-utils/lib/staticServe';
 import DatastoreRegistry from '../lib/DatastoreRegistry';
+import TypeSerializer from '@ulixee/commons/lib/TypeSerializer';
 
 export const datastorePathRegex = new RegExp(
   `/(${datastoreRegex.source})@v(${semverRegex.source})(/(.+)?)?`,
@@ -48,7 +49,7 @@ export default class DocpageRoutes {
     const result = await this.getCredits({ id: datastoreId, version, creditId });
 
     res.writeHead(200, { 'content-type': 'application/json' });
-    res.end(JSON.stringify(result));
+    res.end(TypeSerializer.stringify(result));
     return true;
   }
 

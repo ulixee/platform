@@ -6,7 +6,7 @@ import DatabrokerApiHandler from '../lib/DatabrokerApiHandler';
 
 export default new DatabrokerApiHandler('Databroker.createChannelHold', {
   async handler(request, context) {
-    const { milligons, recipient, datastoreId, domain, delegatedSigningAddress, authentication } =
+    const { microgons, recipient, datastoreId, domain, delegatedSigningAddress, authentication } =
       request;
     const { identity, signature, nonce } = authentication;
     const identityBytes = Identity.getBytes(identity);
@@ -20,7 +20,7 @@ export default new DatabrokerApiHandler('Databroker.createChannelHold', {
       domain,
       datastoreId,
       identityBytes,
-      milligons,
+      microgons,
       nonce,
     );
     assert(Identity.verify(identity, signatureMessage, signature), 'Invalid signature');
@@ -29,10 +29,10 @@ export default new DatabrokerApiHandler('Databroker.createChannelHold', {
     return await db.transaction(async () => {
       const organizationId = db.users.getOrganizationId(identity);
       assert(organizationId, 'Organization not found');
-      db.organizations.debit(organizationId, milligons);
+      db.organizations.debit(organizationId, microgons);
 
       const openChannelHold = await context.localchain.transactions.createChannelHold(
-        milligons,
+        microgons,
         recipient.address,
         domain,
         recipient.notaryId,
@@ -41,10 +41,10 @@ export default new DatabrokerApiHandler('Databroker.createChannelHold', {
       const channelHold = await openChannelHold.channelHold;
       db.channelHolds.create({
         channelHoldId: channelHold.id,
-        heldMilligons: milligons,
+        heldMicrogons: microgons,
         domain,
         organizationId,
-        settledMilligons: channelHold.settledAmount,
+        settledMicrogons: channelHold.settledAmount,
         settlementDate: null,
         createdByIdentity: identity,
         created: Date.now(),

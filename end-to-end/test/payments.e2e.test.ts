@@ -16,6 +16,7 @@ import { describeIntegration } from '../lib/testHelpers';
 import TestMainchain, { activateNotary, registerZoneRecord } from '../lib/TestMainchain';
 import TestNotary from '../lib/TestNotary';
 import { execAndLog, getPlatformBuild } from '../lib/utils';
+import { mkdir } from 'node:fs/promises';
 
 afterEach(Helpers.afterEach);
 afterAll(Helpers.afterAll);
@@ -33,9 +34,10 @@ global.console.log = (...args) => process.stdout.write(`${format(...args)}\n`);
 describeIntegration('Payments E2E', () => {
   beforeAll(async () => {
     const mainchain = new TestMainchain();
-    argonMainchainUrl = await mainchain.launch();
+    argonMainchainUrl = await mainchain.launch(1);
     const notary = new TestNotary();
     await notary.start(argonMainchainUrl);
+    await mkdir(storageDir, { recursive: true });
 
     ferdie = new Keyring({ type: 'sr25519' }).createFromUri('//Ferdie');
     const sudo = new Keyring({ type: 'sr25519' }).createFromUri('//Alice');
@@ -89,8 +91,8 @@ describeIntegration('Payments E2E', () => {
     }
     const domainHash = DomainStore.getHash(domain);
     await Promise.all([
-      ferdiechain.mainchainTransfers.sendToLocalchain(1000n, 1),
-      bobchain.mainchainTransfers.sendToLocalchain(5000n, 1),
+      ferdiechain.mainchainTransfers.sendToLocalchain(1_000_000n, 1),
+      bobchain.mainchainTransfers.sendToLocalchain(5_000_000n, 1),
     ]);
 
     let isSynched = false;
@@ -99,7 +101,7 @@ describeIntegration('Payments E2E', () => {
       await bobchain.balanceSync.sync({});
       const ferdieOverview = await ferdiechain.accountOverview();
       const bobOverview = await bobchain.accountOverview();
-      isSynched = ferdieOverview.balance === 1000n && bobOverview.balance === 5000n;
+      isSynched = ferdieOverview.balance === 1_000_000n && bobOverview.balance === 5_000_000n;
       await new Promise(resolve =>
         setTimeout(resolve, Number(ferdiechain.ticker.millisToNextTick())),
       );
@@ -118,7 +120,7 @@ describeIntegration('Payments E2E', () => {
       .shift()
       .trim();
     expect(identityBech32).toContain('id1');
-    const cloudNode = new TestCloudNode(buildDir);
+    const cloudNode = new TestCloudNode(buildDir, false);
     const cloudAddress = await cloudNode.start({
       ULX_CLOUD_ADMIN_IDENTITIES: identityBech32,
       ULX_IDENTITY_PATH: identityPath,
@@ -182,25 +184,25 @@ describeIntegration('Payments E2E', () => {
     expect(result).toEqual([{ success: true, input: { test: 1 } }]);
     expect(metadata).toEqual(
       expect.objectContaining({
-        microgons: 500_000,
+        microgons: 500_000n,
         milliseconds: expect.any(Number),
         bytes: expect.any(Number),
       }),
     );
 
     expect(channelHolds).toHaveLength(1);
-    expect(channelHolds[0].allocatedMilligons).toBe(1000n);
+    expect(channelHolds[0].allocatedMicrogons).toBe(1_000_000n);
     expect(channelHolds[0].datastoreId).toBe(datastoreId);
     expect(payments).toHaveLength(1);
-    expect(payments[0].payment.microgons).toBe(500_000);
+    expect(payments[0].payment.microgons).toBe(500_000n);
     expect(payments[0].payment.channelHold).toBeTruthy();
-    expect(payments[0].payment.channelHold.settledMilligons).toBe(500n);
-    expect(payments[0].remainingBalance).toBe(500_000);
+    expect(payments[0].payment.channelHold.settledMicrogons).toBe(500_000n);
+    expect(payments[0].remainingBalance).toBe(500_000n);
 
     const balance = await bobchain.accountOverview();
     console.log('Balance:', await gettersToObject(balance));
-    expect(balance.balance).toBe(4800n);
-    expect(balance.heldBalance).toBe(1000n);
+    expect(balance.balance).toBe(4_800_000n);
+    expect(balance.heldBalance).toBe(1_000_000n);
   }, 300e3);
 
   test('it can do end to end payments with no domain', async () => {
@@ -214,8 +216,7 @@ describeIntegration('Payments E2E', () => {
       .trim();
     expect(identityBech32).toContain('id1');
 
-    const cloudNode = new TestCloudNode(buildDir);
-    Helpers.onClose(() => cloudNode.close());
+    const cloudNode = new TestCloudNode(buildDir, false);
     const cloudAddress = await cloudNode.start({
       ULX_CLOUD_ADMIN_IDENTITIES: identityBech32.trim(),
       ULX_IDENTITY_PATH: identityPath,
@@ -247,7 +248,7 @@ describeIntegration('Payments E2E', () => {
     Helpers.onClose(() => bobchain.close());
     const wallet = await bobchain.accountOverview();
     // ensure wallet is loaded
-    expect(wallet.balance).toBe(4800n);
+    expect(wallet.balance).toBe(4_800_000n);
 
     const paymentService = await bobchain.createPaymentService(new DatastoreApiClients());
     const payments: DefaultPaymentService['EventTypes']['reserved'][] = [];
@@ -269,23 +270,24 @@ describeIntegration('Payments E2E', () => {
     expect(result).toEqual([{ noDomain: true }]);
     expect(metadata).toEqual(
       expect.objectContaining({
-        microgons: 1_000,
+        microgons: 1_000n,
         milliseconds: expect.any(Number),
         bytes: expect.any(Number),
       }),
     );
     expect(channelHolds).toHaveLength(1);
-    expect(channelHolds[0].allocatedMilligons).toBe(5n);
+    expect(channelHolds[0].allocatedMicrogons).toBe(5_000n);
     expect(channelHolds[0].datastoreId).toBe('no-domain');
     expect(payments).toHaveLength(1);
-    expect(payments[0].payment.microgons).toBe(1000);
+    expect(payments[0].payment.microgons).toBe(1_000n);
     expect(payments[0].payment.channelHold).toBeTruthy();
-    expect(payments[0].payment.channelHold.settledMilligons).toBe(5n);
-    expect(payments[0].remainingBalance).toBe(5_000 - 1_000);
+    expect(payments[0].payment.channelHold.settledMicrogons).toBe(5_000n);
+    expect(payments[0].remainingBalance).toBe(5_000n - 1_000n);
 
     const balance = await bobchain.accountOverview();
     console.log('Balance:', await gettersToObject(balance));
-    expect(balance.balance).toBe(4798n);
-    expect(balance.heldBalance).toBe(1005n);
+    // only sending 205_000 to jump account, means we'll only pay 20% on the amount
+    expect(balance.balance).toBe(4_800_000n - BigInt(205_000 * 0.2));
+    expect(balance.heldBalance).toBe(1_005_000n);
   });
 });

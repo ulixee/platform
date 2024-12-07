@@ -30,7 +30,7 @@ export const multiSignatureValidation = z.preprocess(
   }),
 );
 
-export const milligonsValidation = z.preprocess(x => {
+export const microgonsValidation = z.preprocess(x => {
   if (typeof x === 'string') {
     if (x.endsWith('n')) x = x.slice(0, -1);
     return BigInt(x as string);
@@ -38,8 +38,6 @@ export const milligonsValidation = z.preprocess(x => {
   if (typeof x === 'number') return BigInt(x);
   return x;
 }, z.bigint().gte(0n));
-
-export const microgonsValidation = z.number().nonnegative();
 
 export function bufferPreprocess(x: string | Uint8Array | Buffer): Buffer {
   if (typeof x === 'string') {
