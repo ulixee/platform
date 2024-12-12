@@ -1,0 +1,51 @@
+{
+  "content": "<h1 id=\"setup-datastore-payments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#setup-datastore-payments\">#</a>Setup Datastore Payments</h1>\n<blockquote>\n<p>Datastore payments can be as easy as setting a price for your Datastore and adding a flag to your CloudNode configuration. This guide will walk you through the steps to setup your Datastore with payments.</p>\n</blockquote>\n<h3 id=\"background\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#background\">#</a>Background</h3>\n<p>There are a lot of concepts around payments described <a href=\"/docs/datastore/basics/payments#concepts\">here</a>. These might be helpful to understand before you setup your Datastore with payments.</p>\n<h2 id=\"1-install-cloudnode\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#1-install-cloudnode\">#</a>1. Install CloudNode</h2>\n<p>When you install Ulixee Cloud, it will install a few dependencies:</p>\n<ul>\n<li><code>@ulixee/cloud</code> - The main package for running a CloudNode</li>\n<li><code>@argonprotocol/localchain</code> - A package for interacting with the Argon Localchain, which is used for payments.</li>\n<li><code>@ulixee/datastore</code> - The main package for running a Datastore</li>\n<li><code>@ulixee/datastore-plugins-hero</code> - A package for running Hero-wrapped Datastore</li>\n</ul>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">npm install @ulixee/cloud\n</code></pre>\n<h2 id=\"2-setup-your-localchain\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#2-setup-your-localchain\">#</a>2. Setup your Localchain</h2>\n<p>The easy way to start your Localchain is to simple add the following command to your ulixee start script:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">npx @ulixee/cloud start --argon-localchain-create-if-missing\n</code></pre>\n<p>When you do this, a Localchain named \"primary\" will be created for you in the default <a href=\"https://github.com/argonprotocol/mainchain/tree/main/docs/localchain.md#command-line-interface\">location</a>.</p>\n<blockquote>\n<p>A Localchain can only be used by a single process at a time. If you're running multiple Datastores, you might find it useful to use the <code>--argon-localchain-path</code> parameter to place the Localchain in a folder local to your project.</p>\n</blockquote>\n<p>You can choose to add more features to your Localchain setup like a password, a type of public key signing, or a different location. Details are available in the <a href=\"/docs/datastore/overview/configuration#argon-payment-configuration\">Cloud configuration settings</a>.</p>\n<h2 id=\"3-optional-determine-your-argon-block-rewards-address\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#3-optional-determine-your-argon-block-rewards-address\">#</a>3. Optional: Determine your Argon Block Rewards Address</h2>\n<p>Datastores can earn up to 25% of the block rewards from the Argon mainchain. This includes Argons that you can buy data with, as well as ownership tokens that grant you rights to mine in the network. You can set this address in your CloudNode configuration (env var: <code>ARGON_BLOCK_REWARDS_ADDRESS</code>), or with a cli command to your <code>@ulixee/cloud</code> start command.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">npx @ulixee/cloud start \\\n  --argon-block-rewards-address=5DfXFKuCXHuyzdpo1ih3yizabyAC47frbbCidKjFsw3ucs8C\n</code></pre>\n<p>You can learn more about creating an account <a href=\"/docs/datastore/guides/using-localchain#create-an-account\">here</a>.</p>\n<h2 id=\"4-configure-your-datastore\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#4-configure-your-datastore\">#</a>4. Configure your Datastore</h2>\n<h3 id=\"add-a-price\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#add-a-price\">#</a>Add a Price</h3>\n<p>Datastore pricing is set in \"Microgons\", which are one millionth of an Argon (or said differently, 1/1000 of a penny). You can set a price for your Datastore by adding a <code>basePrice</code> to the entities in your Datastore.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-typescript\">import Datastore, { Extractor } from '@ulixee/datastore';\n\nconst datastore = new Datastore({\n  name: 'HelloWorld',\n  extractors: {\n    // Add a price of 1 milligon (a penny)\n    basic: new Extractor({\n      basePrice: 1_000,\n      async run({ Output }) {\n        for (const line of ['hello', 'world']) {\n          Output.emit({\n            line,\n          });\n        }\n      },\n    }),\n  },\n});\n\nexport default datastore;\n</code></pre>\n<h3 id=\"optional-add-a-domain\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#optional-add-a-domain\">#</a>Optional: Add a Domain</h3>\n<p>You can add a domain to your Localchain to help users lookup the ip hosting AND payment information in the same place. This can be very useful for using public hosting (there will be public Datastore hosting services in the near future). You can learn more about adding a domain <a href=\"/docs/datastore/guides/register-a-domain\">here</a>.</p>\n<h2 id=\"5-deploy-your-datastore\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#5-deploy-your-datastore\">#</a>5. Deploy your Datastore</h2>\n<p>Now you can deploy your Datastore to the CloudNode from step 1/2. You will need port 1818 available publicly by default on that server.</p>\n<p>To deploy your datastore, from the location of your Datastore project, run (assuming your file is called <code>datastore.ts</code>):</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">npx @ulixee/cloud deploy ./datastore.ts \\\n  --cloud-host &#x3C;your-host>:1818\n</code></pre>\n<br/>\n<blockquote>\n<p>Note: you can secure admin activities like these by supplying <a href=\"/docs/datastore/overview/configuration#admin\"><code>Admin Identities</code></a> to your CloudNode.</p>\n</blockquote>\n<h2 id=\"6-test-querying-with-payments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#6-test-querying-with-payments\">#</a>6. Test Querying with Payments</h2>\n<p>Ok, you're all set!</p>\n<p>Now you can test out using the <code>@ulixee/client</code> with payments enabled. Read how to do that <a href=\"/docs/datastore/guides/querying-datastores\">here</a>.</p>",
+  "title": "Setup Datastore Payments",
+  "subtitles": [
+    {
+      "depth": 3,
+      "value": "Background",
+      "anchor": "#background"
+    },
+    {
+      "depth": 2,
+      "value": "1. Install CloudNode",
+      "anchor": "#1-install-cloudnode"
+    },
+    {
+      "depth": 2,
+      "value": "2. Setup your Localchain",
+      "anchor": "#2-setup-your-localchain"
+    },
+    {
+      "depth": 2,
+      "value": "3. Optional: Determine your Argon Block Rewards Address",
+      "anchor": "#3-optional-determine-your-argon-block-rewards-address"
+    },
+    {
+      "depth": 2,
+      "value": "4. Configure your Datastore",
+      "anchor": "#4-configure-your-datastore"
+    },
+    {
+      "depth": 3,
+      "value": "Add a Price",
+      "anchor": "#add-a-price"
+    },
+    {
+      "depth": 3,
+      "value": "Optional: Add a Domain",
+      "anchor": "#optional-add-a-domain"
+    },
+    {
+      "depth": 2,
+      "value": "5. Deploy your Datastore",
+      "anchor": "#5-deploy-your-datastore"
+    },
+    {
+      "depth": 2,
+      "value": "6. Test Querying with Payments",
+      "anchor": "#6-test-querying-with-payments"
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "content": "<h1 id=\"using-the-argon-localchain\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#using-the-argon-localchain\">#</a>Using the Argon Localchain</h1>\n<p>When you create an <a href=\"https://github.com/argonprotocol/mainchain\">Argon</a> account, you'll be able to use that account to access both a \"Mainchain\", which is like a traditional decentralized blockchain, but you'll also get a \"Localchain\" account. A Localchain is like a personal blockchain where your computer will hold the balance of the account and you can send \"Notes\" to other users, which represent fund transfers.</p>\n<p>NOTE: the commands in the Argon github page are about the rust based localchain, but you can interact with the Localchain in nodejs directly using the <code>@argonprotocol/localchain</code> module, as well as the <a href=\"https://github.com/ulixee/desktop\">Ulixee Desktop</a> app, which has a more visual interface.</p>\n<h3 id=\"argon-is-in-testnet\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#argon-is-in-testnet\">#</a>Argon is in Testnet</h3>\n<p>The Argon is currently in a Testnet phase. The tokens are purely for experimental purposes and hold no value. The network is not secure and is not meant for production use. The Testnet will be reset periodically, and all tokens will be lost.</p>\n<p>Follow along with the Argon project <a href=\"https://github.com/argonprotocol/mainchain\">here</a>.</p>\n<h2 id=\"core-concepts\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#core-concepts\">#</a>Core Concepts</h2>\n<p>You can read about the core concepts of a Localchain <a href=\"https://github.com/argonprotocol/mainchain/tree/main/docs/localchain.md\">here</a>.</p>\n<p>Within Ulixee, the \"Localchain\" represents the primary way that you'll interact with the Argon network.</p>\n<h3 id=\"dual-chain-accounts\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#dual-chain-accounts\">#</a>Dual Chain Accounts</h3>\n<p>A single address or \"account\" can be used on both the Mainchain and Localchain. The Mainchain is a public blockchain that is used to store the state of the network, and focuses on keeping the Argon price stable. The Localchain is a personal blockchain that allows for direct, fast p2p payments.</p>\n<h3 id=\"notaries\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#notaries\">#</a>Notaries</h3>\n<p>A notary is a rollup service that will verify and then aggregate your personal blockchain transactions into a single transaction on the Mainchain called a \"Notebook\". The Mainchain works with an agreed time-state called \"ticks\", and Notebooks must be submitted in order for each tick. Once your \"balance change\" is in a notebook, it's considered final - there's no fee or acceptance process for a notebook beyond it having all valid transactions per network rules.</p>\n<h3 id=\"localchain-internals\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#localchain-internals\">#</a>Localchain Internals</h3>\n<p>If you want to explore whats in your Localchain, you'll find a folder in the <a href=\"/docs/datastore/overview/configuration#data\"><code>Data</code></a> directory of your operating system where a SQLite database is created per Localchain account. In nodejs, you can use the <code>npx @argonprotocol/localchain</code> cli to interact with your Localchain.</p>\n<h3 id=\"datastore-payments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#datastore-payments\">#</a>Datastore Payments</h3>\n<p>You can create a Localchain account for your CloudNodes. Your Localchain can be considered a \"hot wallet\" - the funds on that machine are locked by any passphrase you put on there, but they are not as secure as a \"cold wallet\" (like a hardware wallet). You likely want to periodically transfer funds from your Localchain to a Localchain not connected to your public cloud. See below for how to <a href=\"#export-localchain-funds\">transfer out funds</a>.</p>\n<p>Localchains allow for micropayments down to one millionth of an Argon (which is ~ one millionth of a penny). This allows for a very fine-grained payment system that can be used to pay for things like queries, storage, and other services. Learn more <a href=\"/docs/datastore/basics/payments\">here</a>.</p>\n<h3 id=\"datastore-query-payments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#datastore-query-payments\">#</a>Datastore Query Payments</h3>\n<p>A consumer of a Datastore will use <a href=\"/docs/datastore/basics/payments\">Localchain Argons</a> or a <a href=\"/docs/datastore/advanced/databrokers\">Databroker</a> to pay for queries. Queries can be paid for one by one without any form of long-term account, and your funds will be valid on every Datastore. That allows us to do things like <a href=\"/docs/datastore/basics/cloning\">Cloning</a>, which ensures everyone receives payment for their work.</p>\n<h3 id=\"databrokers\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#databrokers\">#</a>Databrokers</h3>\n<p>Databrokers allow a user to take advantage of the simplicity of Argon payments without worrying about keeping a Localchain account funded. They're like an API service you might put your credit card into. In the Testnet, you can use the Ulixee Foundation's Databroker for free. In the future, you'll be able to use other Databrokers for a fee. Find out more <a href=\"/docs/datastore/advanced/databrokers\">here</a>.</p>\n<h3 id=\"domains\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#domains\">#</a>Domains</h3>\n<p>Localchains are able to lease \"Domains\" in Argon, which allow a Datastore author to communicate version hosting and payment information to users. More <a href=\"/docs/datastore/guides/register-a-domain\">here</a>.</p>\n<h2 id=\"create-an-account\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#create-an-account\">#</a>Create an Account</h2>\n<p>You need to first create an Argon Account. Follow the directions <a href=\"https://github.com/argonprotocol/mainchain/blob/main/docs/account-setup.md\">here</a>. You should have a seed phrase and an account address once you're done.</p>\n<p>The Argon docs show you how to create a Localchain account with the cli:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">$ npx @argonprotocol/localchain accounts create --name=\"alice\" \\\n  --suri=\"bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice\" \\\n  --key-password=\"password\" \n  --mainchain-url=\"wss://rpc.testnet.argonprotocol.org\"\n</code></pre>\n<p>You can also create an account in Ulixee Desktop in the \"Wallet tab\":</p>\n<blockquote>\n<p><img src=\"../images/desktop-wallet.png\" alt=\"Ulixee Desktop Wallet\"></p>\n</blockquote>\n<h2 id=\"create-a-seed-phrase\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#create-a-seed-phrase\">#</a>Create a Seed Phrase</h2>\n<p>You can create a seed phrase using a lot of tooling online that generate 12-24 word mnemonic phrases. You can also use the <a href=\"https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frpc.testnet.argonprotocol.org#/accounts\">Polkadot.js Developer Console</a> to create an account and get a seed phrase if you have enabled <code>Allow local in-browser account storage</code> in the Settings tab. Or you can create mnemonic phrases manually using the <a href=\"https://polkadot.js.org/docs/util-crypto/examples/create-mnemonic/\">@polkadot/util-crypto</a> library.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-typescript\">const {\n  mnemonicGenerate,\n} = require('@polkadot/util-crypto');\n\nasync function main () {\n  const mnemonicAlice = mnemonicGenerate();\n\n  console.log(`Generated mnemonic: ${mnemonicAlice}`);\n}\n\nmain().catch(console.error).finally(() => process.exit());\n</code></pre>\n<h2 id=\"transfer-in-funds\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#transfer-in-funds\">#</a>Transfer In Funds</h2>\n<p>Once you've created an account on the Mainchain and a corresponding Localchain account, you can transfer funds into your Localchain account. You can do this using the <code>@argonprotocol/localchain</code> cli:</p>\n<blockquote>\n<p>NOTE: This will take a few minutes to process, as it requires the block that includes your transaction to be finalized on the Mainchain. Mainchain blocks close once a minute, but finalization occurs as a consensus outside of that process. It can vary from a few seconds to several minutes.</p>\n</blockquote>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">$ npx @argonprotocol/localchain accounts from-mainchain 5.0 \\\n  --name=\"Blake\" \\\n  --mainchain-url=\"wss://rpc.testnet.argonprotocol.org\"\n</code></pre>\n<p>Or using the Ulixee Desktop Wallet:\n<img src=\"../images/desktop-transfer-from-mainchain.png\" alt=\"desktop-transfer-from-mainchain.png\">\n<img src=\"../images/desktop-transfer-from-mainchain2.png\" alt=\"desktop-transfer-from-mainchain2.png\"></p>\n<h2 id=\"person-to-person-payments\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#person-to-person-payments\">#</a>Person-to-Person Payments</h2>\n<p>If you need to reload your Localchain (named <code>BlakeDatastore</code>) because it's paying for Data queries, or embedded in a Datastore to pay for data from Cloned Datastores, you can move funds to your account from a Localchain on another machine.</p>\n<p>Assuming you have a Localchain account on your local machine called <code>Funds</code>, you'll create a signed half of a balance change to send to <code>BlakeDatastore</code> (whose address is <code>5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY</code>):</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">$ npx @argonprotocol/localchain transactions send \\\n  50 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY \\ \n  --name=\"Funds\" \\ \n  --mainchain-url=\"wss://rpc.testnet.argonprotocol.org\"\n</code></pre>\n<p>This will output a file that you'll upload to the <code>BlakeDatastore</code> machine to complete the transaction. On your remote machine, you'll run:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">$ npx @argonprotocol/localchain transactions receive &#x3C;path-to-file> \\\n  --name=\"BlakeDatastore\" \\ \n  --mainchain-url=\"wss://rpc.testnet.argonprotocol.org\"\n</code></pre>\n<h2 id=\"export-localchain-funds\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#export-localchain-funds\">#</a>Export Localchain Funds</h2>\n<p>If you want to export funds from your the <code>BlakeDatastore</code> Localchain to a more secure Localchain, you can inverse the process above, generating a signed balance change request on <code>BlakeDatastore</code> and then sending it to your more secure machine.</p>\n<p>From <code>BlakeDatastore</code>:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">$ npx @argonprotocol/localchain transactions send 50 \\ \n  5Gsecureaddress... \\\n  --name=\"BlakeDatastore\" \\\n  --mainchain-url=\"wss://rpc.testnet.argonprotocol.org\"\n</code></pre>\n<p>Then you would FTP this file back to your secure machine, and run:</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-bash\">$ npx @argonprotocol/localchain transactions receive \\\n  &#x3C;path-to-file> \\\n  --name=\"SecureMachine\" \\\n  --mainchain-url=\"wss://rpc.testnet.argonprotocol.org\"\n</code></pre>",
+  "title": "Using the Argon Localchain",
+  "subtitles": [
+    {
+      "depth": 3,
+      "value": "Argon is in Testnet",
+      "anchor": "#argon-is-in-testnet"
+    },
+    {
+      "depth": 2,
+      "value": "Core Concepts",
+      "anchor": "#core-concepts"
+    },
+    {
+      "depth": 3,
+      "value": "Dual Chain Accounts",
+      "anchor": "#dual-chain-accounts"
+    },
+    {
+      "depth": 3,
+      "value": "Notaries",
+      "anchor": "#notaries"
+    },
+    {
+      "depth": 3,
+      "value": "Localchain Internals",
+      "anchor": "#localchain-internals"
+    },
+    {
+      "depth": 3,
+      "value": "Datastore Payments",
+      "anchor": "#datastore-payments"
+    },
+    {
+      "depth": 3,
+      "value": "Datastore Query Payments",
+      "anchor": "#datastore-query-payments"
+    },
+    {
+      "depth": 3,
+      "value": "Databrokers",
+      "anchor": "#databrokers"
+    },
+    {
+      "depth": 3,
+      "value": "Domains",
+      "anchor": "#domains"
+    },
+    {
+      "depth": 2,
+      "value": "Create an Account",
+      "anchor": "#create-an-account"
+    },
+    {
+      "depth": 2,
+      "value": "Create a Seed Phrase",
+      "anchor": "#create-a-seed-phrase"
+    },
+    {
+      "depth": 2,
+      "value": "Transfer In Funds",
+      "anchor": "#transfer-in-funds"
+    },
+    {
+      "depth": 2,
+      "value": "Person-to-Person Payments",
+      "anchor": "#person-to-person-payments"
+    },
+    {
+      "depth": 2,
+      "value": "Export Localchain Funds",
+      "anchor": "#export-localchain-funds"
+    }
+  ]
+}

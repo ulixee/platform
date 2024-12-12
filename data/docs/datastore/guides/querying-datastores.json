@@ -1,0 +1,26 @@
+{
+  "content": "<h1 id=\"querying-datastores\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#querying-datastores\">#</a>Querying Datastores</h1>\n<p>The primary way you'll interact with Datastores is the <code>@ulixee/client</code> library. The client library allows you to use an addressing system to lookup datastores by version and id, and then run queries against them using SQL. You can learn the details of the client library <a href=\"/docs/client\">here</a>.</p>\n<h2 id=\"using-a-localchain\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#using-a-localchain\">#</a>Using a Localchain</h2>\n<p>Datastores that require payment use the <a href=\"https://argonprotocol.org\">Argon currency</a>. You can learn more about the Argon <a href=\"/docs/datastore/guides/using-localchain\">here</a>. You can directly use a Localchain account to pay for queries, as shown below. In this example, a Datastore with a <code>domain</code> of <code>Meals.Health</code> is queried for all recipes that are <code>paleo</code>. Version <code>0.0.1</code> of the Datastore is used.</p>\n<p>This payment services is using all default settings, which will use the <code>primary</code> Localchain on the machine installed into the default location. It will attempt to create <a href=\"/docs/datastore/basics/payments#micropayment-channelholds\">Channel Holds</a> for 100 queries at a time - if the price is 1 milligon per query, this will load 100 milligons into the Channel Hold. You can choose different \"Channel Hold\" strategies by passing in a different <code>channelHoldAllocationStrategy</code> object.</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-typescript\">import { Client, DefaultPaymentService } from '@ulixee/client';\n\n(async () => {\n  const client = new Client(`ulx://Meals.Health/v0.0.1`, {\n    paymentService: await DefaultPaymentService.fromLocalchain(),\n  });\n  const results = await client.query(\n    `SELECT * from recipes where diet = 'paleo`,\n  );\n\n  console.log(results);\n\n  await client.disconnect();\n})().catch(console.error);\n</code></pre>\n<h3 id=\"acquire-testnet-argons\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#acquire-testnet-argons\">#</a>Acquire Testnet Argons</h3>\n<p>If you want to test out a Datastore using the Argon testnet, you can request them using the Discord Faucet. Find directions <a href=\"https://github.com/argonprotocol/mainchain/blob/main/docs/account-setup.md#requesting-testnet-funds\">here</a>.</p>\n<h2 id=\"using-the-testnet-databroker\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#using-the-testnet-databroker\">#</a>Using the Testnet Databroker</h2>\n<blockquote>\n<p>Under construction.</p>\n</blockquote>\n<p>An easier way to query Datastores is to use the Ulixee Foundation's Databroker. The Databroker allows you to run queries against any Datastore on the Testnet without needing to manage a Localchain account. The Databroker will automatically pay for your queries using the Ulixee Foundation's Localchain account. You'll need to register on the Databroker Admin Panel to get an API key (see next step).</p>\n<pre class=\"ulixeeTheme\"><code class=\"language-typescript\">import { Client, DefaultPaymentService } from '@ulixee/client';\n\n(async () => {\n  const client = new Client(`ulx://Meals.Health/v0.0.1`, {\n    paymentService: await DefaultPaymentService.fromBroker(\n      'wss://databroker.testnet.ulixee.org',\n      {\n        pemPath: 'path to your Identity pem file',\n      },\n    ),\n  });\n  const results = await client.query(\n    `SELECT * from recipes where diet = 'paleo`,\n  );\n\n  console.log(results);\n\n  await client.disconnect();\n})().catch(console.error);\n</code></pre>\n<h3 id=\"register-on-the-databroker-admin-panel\"><a aria-hidden=\"true\" tabindex=\"-1\" href=\"#register-on-the-databroker-admin-panel\">#</a>Register on the Databroker Admin Panel</h3>\n<p>Normally, the admin panel for a Databroker is locked down to the owner of the Datastore. However, the Ulixee Foundation has opened up the Databroker for the Testnet to allow anyone to register and run queries. You can register for the Databroker <a href=\"https://databroker.testnet.ulixee.org:18171/admin\">here</a>.</p>",
+  "title": "Querying Datastores",
+  "subtitles": [
+    {
+      "depth": 2,
+      "value": "Using a Localchain",
+      "anchor": "#using-a-localchain"
+    },
+    {
+      "depth": 3,
+      "value": "Acquire Testnet Argons",
+      "anchor": "#acquire-testnet-argons"
+    },
+    {
+      "depth": 2,
+      "value": "Using the Testnet Databroker",
+      "anchor": "#using-the-testnet-databroker"
+    },
+    {
+      "depth": 3,
+      "value": "Register on the Databroker Admin Panel",
+      "anchor": "#register-on-the-databroker-admin-panel"
+    }
+  ]
+}
