@@ -12,7 +12,7 @@ To embed credits, you can configure the [remoteDatastoreEmbeddedCredits](../basi
 
 ## Denominations
 
-Ulixee Payments (in this case, Credits) come in the following denominations:
+Argon Payments (in this case, Credits) come in the following denominations:
 
 - _Argon_: ~1 USD adjusted for inflation.
 - _Milligon_: ~1 thousand of a USD adjusted for inflation ($0.001). 

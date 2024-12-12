@@ -1,27 +1,38 @@
 # Introduction
 
-> Datastores are deployable "databases" that have extractors and tables, support native payment, and can be cloned and expanded as you see fit. Datastore Extractors contain data retrieval functions, like Hero scraper scripts, with structured input and output. Deploying a Datastore provides you with a structured Data API that can be privately consumed, or sold "out of the box".
+> Datastores are structured, deployable "micro-databases" that combine private data sources, live-extracted web data and static metadata. Out of the box, they support charging per query using the [Argon](https://argonprotocol.org) currency. Best of all, any published Datastores can be stacked on top of each other using our "cloning" process.
 
-## What is a Datastore?
+## Core Features
 
-Datastores create databases of specialized data structures - for instance, a Travel database, or a Jobs database. They're a combination of static metadata tables, dynamically retrieved web data and cached aggregated data that make up a data category. They support payment out of the box, so a client can pay per query without any setup or contracts. Datastores also support PostgreSQL natively (including payment), so can be tested out and integrated across programming languages.
+- **Structured APIs:** Datastores create "constantly refreshing" databases of specialized data structures - for instance, a Travel database, or a Jobs database. They're a combination of static metadata tables, filtered views of internal data-sources, and dynamically retrieved web data.
+- **Out of Box Payments:** Datastore costs can be completely customized for each published data entity: whether per Kilobyte of information, per extraction, or per query. You can get started very simply though - no need to setup a bank account or create customer contracts. Payments are made on a single query basis using the [Argon](https://argonprotocol.org), a fiat-independent stablecoin that you can export to your native currency whenever you choose.
+- **Smart Caching:** Datastores automatically cache extracted data so you can reuse more complex data extraction across multiple client queries. You can also choose to allow the query-er to define how fresh the data should be.
+- **Postgres Compatibility:** Datastores also support PostgreSQL natively (including payment), so can be tested out and integrated across programming languages.
 
-## Datastore Extractors
+## Payments
 
-Datastore Extractors create structure -- boundaries -- around a single "scrape", which make your scripts are far easier to test, re-try, scale and compose. It allows us to do things like:
+Datastores are designed to be monetized, but it's your choice. If you set a price per query, the user will be prompted to pay using Argon. Learn more about setting up payments in the [Datastore Payments](../basics/payments.md) guide.
 
-- Restart a script during development as you change it.
+## Structured Data
+
+Datastores are designed to be structured, so you can easily query them using the Ulixee Desktop or the [@ulixee/client](https://ulixee.org/docs/client) library. Users will get a type-checked response using SQL and Typescript definitions.
+
+They are built around these core data entities:
+
+1. **Extractors:** Functions that take input and return output [more](../basics/extractor.md).
+2. **Crawlers:** Web crawlers that load pages in a format that can be re-used and cached [more](../basics/crawler.md).
+3. **Tables:** Database tables that can be queried and joined with your extractors [more](../basics/table.md).
+4. **Cron Jobs:** Scheduled tasks that can run trigger Extractors or Crawlers to refresh data (**FUTURE FEATURE**).
+
+## Enhanced Developer Experience
+
+The structure of Datastores allows us to enhance the developer experience of building and testing scraping scripts using the [Hero](https://ulixee.org/docs/hero) scraping browser. It allows us to do things like:
+
+- Automatically rerun a script during development as you change it.
+- Timetravel through the script to see the exact state of the browser at any point.
 - Rotate inputs to try out a variety of IPs, parameters, and more to make sure you can handle edge cases.
 - Test the extraction of 100s of different potential results pages and ensure your Output follows the same structure.
 - Spawn new Extractors from the current one if you need to parallelize following links.
-
-## Datastore Crawlers
-
-Datastore Crawlers allow you to write specialized Extractors that only output a "cached" scrape. It comes with built-in caching, so you can automatically re-use results that have been recently recorded.
-
-## Datastore Tables
-
-Datastore Tables allow you to manage and deploy database tables as part of your "api". This can be useful to enhance your functions with metadata or cached data.
 
 ## Installation
 
