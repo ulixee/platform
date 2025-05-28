@@ -44,7 +44,7 @@ for dir in "${dirs[@]}"; do
 
   cd "./build-dist";
   echo "Publishing $dir... $(pwd)";
-  lerna publish from-package;
+  npx lerna publish from-package;
 
   if [[ "$dir" == "platform" ]]; then
      echo "You need to approve the DRAFT release at https://github.com/ulixee/platform/releases/tag/$TAG";
