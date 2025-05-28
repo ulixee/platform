@@ -1,2 +1,0 @@
-"use strict";(self["webpackChunk_ulixee_website"]=self["webpackChunk_ulixee_website"]||[]).push([[352],{352:(e,u,n)=>{function s(e,u){return null}n.r(u),n.d(u,{default:()=>i});var t=n(3744);const l={},r=(0,t.Z)(l,[["render",s]]),i=r}}]);
-//# sourceMappingURL=352.1ad3a9d5.js.map
