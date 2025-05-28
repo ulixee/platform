@@ -16,16 +16,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check README
-        uses: becheran/mlc@v0.15.4
+        uses: becheran/mlc@v0.21.0
         with:
-          args: ./README.md
+          args: ./README.md -i "https://ulixee.org/*"
 
       - name: Check Datastore Docs
-        uses: becheran/mlc@v0.15.4
+        uses: becheran/mlc@v0.21.0
         with:
-          args: ./datastore/docs
+          args: ./datastore/docs -i "https://ulixee.org/*"
 
       - name: Check Cloud Docs
-        uses: becheran/mlc@v0.15.4
+        uses: becheran/mlc@v0.21.0
         with:
-          args: ./cloud/docs
+          args: ./cloud/docs -i "https://ulixee.org/*"

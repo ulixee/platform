@@ -39,7 +39,6 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-
     steps:
       - name: /etc/hosts
         run: |
@@ -57,10 +56,32 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.24'
 
       - name: Install pcap
         run: sudo apt-get install -y libpcap-dev
+
+      - name: Run MinIO container
+        run: |
+          mkdir -p /tmp/minio-data
+          docker run -d \
+            -e MINIO_ACCESS_KEY=minioadmin \
+            -e MINIO_SECRET_KEY=minioadmin \
+            -v /tmp/minio-data:/data \
+            -p 9000:9000 \
+            --name minio \
+            minio/minio server /data
+
+      - name: Wait for MinIO to start
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:9000/minio/health/live; then
+              echo "MinIO is up"
+              break
+            fi
+            echo "Waiting for MinIO to start..."
+            sleep 2
+          done
 
       - name: Clone Mainchain
         run: |
@@ -114,6 +135,7 @@ jobs:
           ADD_DOCKER_HOST: true
           ULX_USE_DOCKER_BINS: 1
           CI: true
+          AWS_S3_ENDPOINT: http://host.docker.internal:9000
 
       - name: 'Tar files'
         if: ${{ failure() }}
@@ -126,6 +148,10 @@ jobs:
           name: test-dbs-${{matrix.os}}-${{ matrix.node-version }}
           path: test-dbs.tar
           retention-days: 1
+      - name: Cleanup docker
+        run: |
+          docker stop minio
+          docker rm minio
   test:
     name: Test Node.js ${{ matrix.node-version }} on ${{ matrix.os }}
     timeout-minutes: 30
@@ -150,7 +176,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.24'
 
       - uses: actions/setup-python@v5
         if: ${{ matrix.os != 'windows-latest' }}

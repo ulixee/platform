@@ -5,7 +5,7 @@
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@argonprotocol/localchain": "0.0.20",
+    "@argonprotocol/localchain": "1.1.0",
     "@ulixee/commons": "2.0.0-alpha.31",
     "@ulixee/datastore": "2.0.0-alpha.31",
     "@ulixee/datastore-docpage": "2.0.0-alpha.31",
@@ -16,11 +16,11 @@
     "@ulixee/sql-ast": "2.0.0-alpha.31",
     "@ulixee/sql-engine": "2.0.0-alpha.31",
     "better-sqlite3": "^11.1.2",
-    "nanoid": "^3.3.6",
+    "nanoid": "^3.3.11",
     "tar": "^7.4.3"
   },
   "devDependencies": {
-    "@argonprotocol/mainchain": "0.0.20",
+    "@argonprotocol/mainchain": "1.1.0",
     "@jest/globals": "^27.0.6",
     "@ulixee/cloud": "2.0.0-alpha.31",
     "@ulixee/datastore-packager": "2.0.0-alpha.31",

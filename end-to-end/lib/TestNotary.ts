@@ -110,6 +110,9 @@ export default class TestNotary {
       `--operator-address=${this.operator.address}`,
       `-t ${argonMainchainUrl}`,
     ];
+    if (process.env.AWS_S3_ENDPOINT) {
+      execArgs.push(`--archive-endpoint=${process.env.AWS_S3_ENDPOINT}`);
+    }
     if (process.env.ULX_USE_DOCKER_BINS) {
       execArgs.unshift(...notaryPath.replace('docker run', 'run').split(' '));
       execArgs.push('-b=0.0.0.0:9925');
