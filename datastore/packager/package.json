@@ -1,6 +1,6 @@
 {
   "name": "@ulixee/datastore-packager",
-  "version": "2.0.0-alpha.31",
+  "version": "2.0.0-alpha.32",
   "description": "Packager for creating Datastore bundles that can be consumed by a Ulixee Cloud",
   "dependencies": {
     "@rollup/plugin-commonjs": "^26.0.1",
@@ -9,23 +9,23 @@
     "@rollup/plugin-replace": "^5.0.7",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^11.1.6",
-    "@ulixee/cloud": "2.0.0-alpha.31",
-    "@ulixee/commons": "2.0.0-alpha.31",
-    "@ulixee/datastore": "2.0.0-alpha.31",
-    "@ulixee/datastore-core": "2.0.0-alpha.31",
-    "@ulixee/datastore-docpage": "2.0.0-alpha.31",
-    "@ulixee/net": "2.0.0-alpha.31",
-    "@ulixee/platform-specification": "2.0.0-alpha.31",
-    "@ulixee/platform-utils": "2.0.0-alpha.31",
-    "@ulixee/schema": "2.0.0-alpha.31",
-    "@ulixee/sql-engine": "2.0.0-alpha.31",
+    "@ulixee/cloud": "2.0.0-alpha.32",
+    "@ulixee/commons": "2.0.0-alpha.32",
+    "@ulixee/datastore": "2.0.0-alpha.32",
+    "@ulixee/datastore-core": "2.0.0-alpha.32",
+    "@ulixee/datastore-docpage": "2.0.0-alpha.32",
+    "@ulixee/net": "2.0.0-alpha.32",
+    "@ulixee/platform-specification": "2.0.0-alpha.32",
+    "@ulixee/platform-utils": "2.0.0-alpha.32",
+    "@ulixee/schema": "2.0.0-alpha.32",
+    "@ulixee/sql-engine": "2.0.0-alpha.32",
     "better-sqlite3": "^11.1.2",
     "rollup": "^4.22.0",
     "tar": "^7.4.3",
     "ws": "^8.18.0"
   },
   "devDependencies": {
-    "@ulixee/datastore-testing": "2.0.0-alpha.31",
+    "@ulixee/datastore-testing": "2.0.0-alpha.32",
     "lodash-es": "^4.17.21",
     "typescript": "^5.6.2"
   }

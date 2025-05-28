@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-alpha.32](https://github.com/ulixee/platform/compare/v2.0.0-alpha.31...v2.0.0-alpha.32) (2025-05-28)
+
+### Bug Fixes
+
+* **website:** cname not being added on publish ([2a0a1e6](https://github.com/ulixee/platform/commit/2a0a1e60a9b2b30b194c049d24324bbf7dce8e07))
+
+### Features
+
+* update documentation for payments ([8acd837](https://github.com/ulixee/platform/commit/8acd837e43e658e0566e811a71b6086237e682ca))
+
 # [2.0.0-alpha.31](https://github.com/ulixee/platform/compare/v2.0.0-alpha.30...v2.0.0-alpha.31) (2024-12-07)
 
 ### Bug Fixes
