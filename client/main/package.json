@@ -1,0 +1,27 @@
+{
+  "name": "@ulixee/client",
+  "version": "2.0.0-alpha.32",
+  "homepage": "https://ulixee.org",
+  "repository": "git@github.com:ulixee/platform.git",
+  "bugs": {
+    "url": "https://github.com/ulixee/platform/issues"
+  },
+  "license": "MIT",
+  "author": "Ulixee",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "index.js",
+  "types": "index.d.ts",
+  "dependencies": {
+    "@argonprotocol/localchain": "1.1.0",
+    "@ulixee/commons": "2.0.0-alpha.32",
+    "@ulixee/datastore": "2.0.0-alpha.32",
+    "@ulixee/net": "2.0.0-alpha.32",
+    "@ulixee/schema": "2.0.0-alpha.32"
+  },
+  "scripts": {}
+}
