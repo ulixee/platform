@@ -1,14 +1,14 @@
 {
   "name": "@ulixee/sql-engine",
-  "version": "2.0.0-alpha.32",
+  "version": "2.0.0-alpha.33",
   "main": "index.js",
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.32",
-    "@ulixee/datastore": "2.0.0-alpha.32",
-    "@ulixee/schema": "2.0.0-alpha.32",
-    "@ulixee/sql-ast": "2.0.0-alpha.32",
-    "@ulixee/sql-engine": "2.0.0-alpha.32"
+    "@ulixee/commons": "2.0.0-alpha.33",
+    "@ulixee/datastore": "2.0.0-alpha.33",
+    "@ulixee/schema": "2.0.0-alpha.33",
+    "@ulixee/sql-ast": "2.0.0-alpha.33",
+    "@ulixee/sql-engine": "2.0.0-alpha.33"
   }
 }

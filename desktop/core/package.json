@@ -1,35 +1,35 @@
 {
   "name": "@ulixee/desktop-core",
-  "version": "2.0.0-alpha.32",
+  "version": "2.0.0-alpha.33",
   "main": "index.js",
   "repository": "git@github.com:ulixee/platform.git",
   "license": "MIT",
   "dependencies": {
-    "@ulixee/commons": "2.0.0-alpha.32",
-    "@ulixee/datastore": "2.0.0-alpha.32",
-    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.32",
-    "@ulixee/default-browser-emulator": "2.0.0-alpha.32",
-    "@ulixee/desktop-interfaces": "2.0.0-alpha.32",
-    "@ulixee/hero": "2.0.0-alpha.32",
-    "@ulixee/hero-interfaces": "2.0.0-alpha.32",
-    "@ulixee/hero-plugin-utils": "2.0.0-alpha.32",
-    "@ulixee/hero-timetravel": "2.0.0-alpha.32",
-    "@ulixee/net": "2.0.0-alpha.32",
-    "@ulixee/platform-specification": "2.0.0-alpha.32",
-    "@ulixee/unblocked-agent": "2.0.0-alpha.32",
-    "@ulixee/unblocked-specification": "2.0.0-alpha.32",
+    "@ulixee/commons": "2.0.0-alpha.33",
+    "@ulixee/datastore": "2.0.0-alpha.33",
+    "@ulixee/datastore-plugins-hero": "2.0.0-alpha.33",
+    "@ulixee/default-browser-emulator": "2.0.0-alpha.33",
+    "@ulixee/desktop-interfaces": "2.0.0-alpha.33",
+    "@ulixee/hero": "2.0.0-alpha.33",
+    "@ulixee/hero-interfaces": "2.0.0-alpha.33",
+    "@ulixee/hero-plugin-utils": "2.0.0-alpha.33",
+    "@ulixee/hero-timetravel": "2.0.0-alpha.33",
+    "@ulixee/net": "2.0.0-alpha.33",
+    "@ulixee/platform-specification": "2.0.0-alpha.33",
+    "@ulixee/unblocked-agent": "2.0.0-alpha.33",
+    "@ulixee/unblocked-specification": "2.0.0-alpha.33",
     "fuse.js": "^6.5.3",
     "nanoid": "^3.3.11",
     "ws": "^8.18.0"
   },
   "peerDependencies": {
-    "@ulixee/datastore-core": "2.0.0-alpha.32",
-    "@ulixee/hero-core": "2.0.0-alpha.32"
+    "@ulixee/datastore-core": "2.0.0-alpha.33",
+    "@ulixee/hero-core": "2.0.0-alpha.33"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.154",
-    "@ulixee/datastore-core": "2.0.0-alpha.32",
-    "@ulixee/datastore-testing": "2.0.0-alpha.32",
+    "@ulixee/datastore-core": "2.0.0-alpha.33",
+    "@ulixee/datastore-testing": "2.0.0-alpha.33",
     "linkedom": "^0.14.11"
   }
 }

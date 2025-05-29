@@ -15,57 +15,51 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
 
-"@argonprotocol/localchain-darwin-arm64@1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/@argonprotocol/localchain-darwin-arm64/-/localchain-darwin-arm64-1.1.0.tgz#a1945a0a4389a7aa54f4758a41fb71be3d8e5223"
-  integrity sha512-QFT36dSD7eHjJ3fdqoYwrL7FN/wWnoY47ZaEBgTFcShLyJtmXiRr+0CBRdawqLGpTxeghqUecI7DyGf/XsjfwA==
+"@argonprotocol/localchain-darwin-arm64@1.0.18":
+  version "1.0.18"
+  resolved "https://registry.npmjs.org/@argonprotocol/localchain-darwin-arm64/-/localchain-darwin-arm64-1.0.18.tgz#3db93c2271173d0531be926431a8d800945c8b93"
+  integrity sha512-P18uEeqR5KvwCXYfyPI8tROSNsFnlJPQTAAkBTqtfj4bffFVIV7h9ZTpV7igts1PAam1CGq3zY34bLieX8uXSg==
 
-"@argonprotocol/localchain-darwin-x64@1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/@argonprotocol/localchain-darwin-x64/-/localchain-darwin-x64-1.1.0.tgz#185dead8f4576de7ff72ca0fa94da3ec4028243d"
-  integrity sha512-/hQ9i7/g4O8GJA1kfbne4TtgSe4L8CSncWxObP5fgLthx09jBTx+hkKtuH8auhnCRmPIpu7j0mvbzm0AR1EXUA==
+"@argonprotocol/localchain-darwin-x64@1.0.18":
+  version "1.0.18"
+  resolved "https://registry.npmjs.org/@argonprotocol/localchain-darwin-x64/-/localchain-darwin-x64-1.0.18.tgz#1a6ef0075894532adffc6e0f97bd2747183acb89"
+  integrity sha512-rxQPJ1kMki953FeP54Hxn+jIH/eXEDoteiWtBkAKAgr7BFpRVKI2bbKo1vfaZQGUsLILe7brZ+obaiXtGjOC8g==
 
-"@argonprotocol/localchain-linux-arm64-gnu@1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/@argonprotocol/localchain-linux-arm64-gnu/-/localchain-linux-arm64-gnu-1.1.0.tgz#b8badba38f87cd2d443f5049303c557bb8f8a192"
-  integrity sha512-/mB5r6vgr01TtF3GaY9+uPEtsOI4ZRIAmgXruSii3wrzlW+aabznAJl71aiTGevfhcvWPeuQ1wdM9y/tL14rkQ==
+"@argonprotocol/localchain-linux-arm64-gnu@1.0.18":
+  version "1.0.18"
+  resolved "https://registry.npmjs.org/@argonprotocol/localchain-linux-arm64-gnu/-/localchain-linux-arm64-gnu-1.0.18.tgz#6b3b03ed2c692d4f9b5b68a4e0d42f84b260f55f"
+  integrity sha512-LpuKVClCLpsLneMuThvJX2KOu9ANBkctplX+p6SGwkTbNk/cgbYYp39L4b72qSt4kUtDp2qxrxSs03G9eq/3kg==
 
-"@argonprotocol/localchain-linux-x64-gnu@1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/@argonprotocol/localchain-linux-x64-gnu/-/localchain-linux-x64-gnu-1.1.0.tgz#821eb72e8e60dbcaf13b01f58a3060379af5e455"
-  integrity sha512-dkHTpFcWRUPzLKoGMCHb6T79G88MQTkf+/UxfYChmcihH56KtyJUZlt0vbS9jGpqaTFL7PX+/Itb8UeVuiWDYg==
+"@argonprotocol/localchain-linux-x64-gnu@1.0.18":
+  version "1.0.18"
+  resolved "https://registry.npmjs.org/@argonprotocol/localchain-linux-x64-gnu/-/localchain-linux-x64-gnu-1.0.18.tgz#8d6b9ce911a51692efeac171acf6ec9b3cd01d39"
+  integrity sha512-IX/Wlz5a0Iwb4heQrXKK5/kX9Be85sthAaQYac5U9qM1WqKVmsUiqK3EeTMay491ymNFwy3kRKtZQ7C1yRPU3g==
 
-"@argonprotocol/localchain-win32-x64-msvc@1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/@argonprotocol/localchain-win32-x64-msvc/-/localchain-win32-x64-msvc-1.1.0.tgz#84e4ababd64559ccb91e46eabadc85e62d0b8fd0"
-  integrity sha512-JgsbRs1Y+/rP4jL8IejUmYzOr+QQe9ZIOVDwWUzMA8mVEe5ORaS2JmhR1lgbfUHQRSDJ6w68BjTn/vwZ2t9X5w==
+"@argonprotocol/localchain-win32-x64-msvc@1.0.18":
+  version "1.0.18"
+  resolved "https://registry.npmjs.org/@argonprotocol/localchain-win32-x64-msvc/-/localchain-win32-x64-msvc-1.0.18.tgz#5bb85b8c05ee5633de688083b97c4761d5b9f0af"
+  integrity sha512-YDoiUhlOW6HM3ToRQEkk6IUzoSe9OEsXP0XaMzlbdSLBtbbKyeNqisgvRT6dEV5leFX9gv1bVn/l9USOprCMGA==
 
-"@argonprotocol/localchain@1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/@argonprotocol/localchain/-/localchain-1.1.0.tgz#47ed679fc0fde2464875552e729dfcabd0d7ab7a"
-  integrity sha512-o05j/Kj4+Vos80CDU8gCggHtqg5m3sGTAX81U62rCDPGbwCu4AFJ3sQuzlmxuieLbqQAbY9g61KO2CUnu0nUnA==
+"@argonprotocol/localchain@~1.0":
+  version "1.0.18"
+  resolved "https://registry.npmjs.org/@argonprotocol/localchain/-/localchain-1.0.18.tgz#bc97fd3f3075c27633e29a610b76e05886ae55e3"
+  integrity sha512-lfC7MFrNP8YNJZa44XHeHlQSTfUEyXl3CH8/qLLDmos68IpvM07Rsr+lsWvaQ4qHmg59euzMPBdC23CRWTXlAg==
   optionalDependencies:
-    "@argonprotocol/localchain-darwin-arm64" "1.1.0"
-    "@argonprotocol/localchain-darwin-x64" "1.1.0"
-    "@argonprotocol/localchain-linux-arm64-gnu" "1.1.0"
-    "@argonprotocol/localchain-linux-x64-gnu" "1.1.0"
-    "@argonprotocol/localchain-win32-x64-msvc" "1.1.0"
+    "@argonprotocol/localchain-darwin-arm64" "1.0.18"
+    "@argonprotocol/localchain-darwin-x64" "1.0.18"
+    "@argonprotocol/localchain-linux-arm64-gnu" "1.0.18"
+    "@argonprotocol/localchain-linux-x64-gnu" "1.0.18"
+    "@argonprotocol/localchain-win32-x64-msvc" "1.0.18"
 
-"@argonprotocol/mainchain@1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/@argonprotocol/mainchain/-/mainchain-1.1.0.tgz#40291c3d35b2bdb8e28f9a6f04823cda8edf21a4"
-  integrity sha512-raXZR1cffiNgvZzxWGyC4kJN+djXjP/0nKjSTrCFEjb3yuCAJBG/xZ98LgViVntqTTgauu/dtrXOHQZvQDkpmQ==
+"@argonprotocol/mainchain@~1.0":
+  version "1.0.18"
+  resolved "https://registry.npmjs.org/@argonprotocol/mainchain/-/mainchain-1.0.18.tgz#776e24eb84bbda28c9bb45453957dc4f4b2d1fdc"
+  integrity sha512-U1v+iJICxcXNh55IHsqg3egWy+FLU2g9fjY9VJI6u0ouGjnC+FYqGKNmwrCsI025JWNbZaj4dpViVz3MZfgVaA==
   dependencies:
     "@polkadot/api" "^15.8.1"
     "@polkadot/keyring" "^13.4.3"
     "@polkadot/util-crypto" "^13.4.3"
-    bignumber.js "^9.1.2"
-    console-table-printer "^2.12.1"
-    nanoevents "^9.1.0"
-  optionalDependencies:
-    "@commander-js/extra-typings" "^13.1.0"
-    commander "^13.1.0"
-    dotenv "^16.4.7"
+    tslib "^2.6.2"
 
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.12.13", "@babel/code-frame@^7.21.4", "@babel/code-frame@^7.22.13", "@babel/code-frame@^7.24.7":
   version "7.24.7"
@@ -396,11 +390,6 @@
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@blakeembrey/template/-/template-1.2.0.tgz#acd948eb29334e882019e8876b42ff6da1dcf528"
   integrity sha512-w/63nURdkRPpg3AXbNr7lPv6HgOuVDyefTumiXsbXxtIwcuk5EXayWR5OpSwDjsQPgaYsfUSedMduaNOjAYY8A==
-
-"@commander-js/extra-typings@^13.1.0":
-  version "13.1.0"
-  resolved "https://registry.npmjs.org/@commander-js/extra-typings/-/extra-typings-13.1.0.tgz#026e29b04401c92fc4307223fbaadf1ff3e5551e"
-  integrity sha512-q5P52BYb1hwVWE6dtID7VvuJWrlfbCv4klj7BjUUOqMz4jbSZD4C9fJ9lRjL2jnBGTg+gDDlaXN51rkWcLk4fg==
 
 "@commitlint/cli@^18.6.0":
   version "18.6.1"
@@ -4308,11 +4297,6 @@ big.js@^5.2.2:
   resolved "https://registry.yarnpkg.com/big.js/-/big.js-5.2.2.tgz#65f0af382f578bcdc742bd9c281e9cb2d7768328"
   integrity sha512-vyL2OymJxmarO8gxMr0mhChsO9QGwhynfuu4+MHTAW6czfq9humCB7rKpUjDd9YUiDPU4mzpyupFSvOClAwbmQ==
 
-bignumber.js@^9.1.2:
-  version "9.3.0"
-  resolved "https://registry.npmjs.org/bignumber.js/-/bignumber.js-9.3.0.tgz#bdba7e2a4c1a2eba08290e8dcad4f36393c92acd"
-  integrity sha512-EM7aMFTXbptt/wZdMlBv2t8IViwQL+h6SLHosp8Yf0dqJMTnY6iL32opnAB6kAdL0SZPuvcAzFr31o0c/R3/RA==
-
 bin-links@^4.0.4:
   version "4.0.4"
   resolved "https://registry.yarnpkg.com/bin-links/-/bin-links-4.0.4.tgz#c3565832b8e287c85f109a02a17027d152a58a63"
@@ -4769,11 +4753,6 @@ comma-separated-tokens@^2.0.0:
   resolved "https://registry.yarnpkg.com/comma-separated-tokens/-/comma-separated-tokens-2.0.3.tgz#4e89c9458acb61bc8fef19f4529973b2392839ee"
   integrity sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==
 
-commander@^13.1.0:
-  version "13.1.0"
-  resolved "https://registry.npmjs.org/commander/-/commander-13.1.0.tgz#776167db68c78f38dcce1f9b8d7b8b9a488abf46"
-  integrity sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==
-
 commander@^2.19.0, commander@^2.20.0:
   version "2.20.3"
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.20.3.tgz#fd485e84c03eb4881c20722ba48035e8531aeb33"
@@ -4873,13 +4852,6 @@ console-control-strings@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/console-control-strings/-/console-control-strings-1.1.0.tgz#3d7cf4464db6446ea644bf4b39507f9851008e8e"
   integrity sha512-ty/fTekppD2fIwRvnZAVdeOiGd1c7YXEixbgJTNzqcxJWKQnjJ/V1bNEEE6hygpM3WjwHFUVK6HTjWSzV4a8sQ==
-
-console-table-printer@^2.12.1:
-  version "2.14.0"
-  resolved "https://registry.npmjs.org/console-table-printer/-/console-table-printer-2.14.0.tgz#4c2874933348aaa685f468a51234fafecbb9f97b"
-  integrity sha512-zrY29NkhSoY9SxEynJVWk6zuuI2tGnlS00+Jx+EWkp6QTsyj8W/Zc20awiqVvPj73oP5kX6w5uDW9rle5IznYw==
-  dependencies:
-    simple-wcswidth "^1.0.1"
 
 content-disposition@~0.5.2:
   version "0.5.4"
@@ -5462,11 +5434,6 @@ dotenv@^16.4.5:
   version "16.4.5"
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.4.5.tgz#cdd3b3b604cb327e286b4762e13502f717cb099f"
   integrity sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==
-
-dotenv@^16.4.7:
-  version "16.5.0"
-  resolved "https://registry.npmjs.org/dotenv/-/dotenv-16.5.0.tgz#092b49f25f808f020050051d1ff258e404c78692"
-  integrity sha512-m/C+AwOAr9/W1UOIZUo232ejMNnJAJtYQjUbHoNTBNTJSvqzzDh7vnrei3o3r3m9blf6ZoDkvcw0VmozNRFJxg==
 
 duplexer@^0.1.1, duplexer@~0.1.1:
   version "0.1.2"
@@ -9468,11 +9435,6 @@ mz@^2.7.0:
     object-assign "^4.0.1"
     thenify-all "^1.0.0"
 
-nanoevents@^9.1.0:
-  version "9.1.0"
-  resolved "https://registry.npmjs.org/nanoevents/-/nanoevents-9.1.0.tgz#76c8c86ed54a26131ada5a0a1c5682f48690dbb7"
-  integrity sha512-Jd0fILWG44a9luj8v5kED4WI+zfkkgwKyRQKItTtlPfEsh7Lznfi1kr8/iZ+XAIss4Qq5GqRB0qtWbaz9ceO/A==
-
 nanoid@^3.3.11:
   version "3.3.11"
   resolved "https://registry.npmjs.org/nanoid/-/nanoid-3.3.11.tgz#4f4f112cefbe303202f2199838128936266d185b"
@@ -11261,11 +11223,6 @@ simple-socks@^2.1.0:
   dependencies:
     "@babel/runtime-corejs3" "^7.16.8"
     binary "^0.3.0"
-
-simple-wcswidth@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.npmjs.org/simple-wcswidth/-/simple-wcswidth-1.0.1.tgz#8ab18ac0ae342f9d9b629604e54d2aa1ecb018b2"
-  integrity sha512-xMO/8eNREtaROt7tJvWJqHBDTMFN4eiQ5I4JRMuilwfnFcV5W9u7RUkueNkdw0jPqGMX36iCywelS5yilTuOxg==
 
 sisteransi@^1.0.5:
   version "1.0.5"
