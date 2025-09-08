@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18, 20]
+        node-version: [20, 22]
 
     runs-on: ubuntu-latest
 
@@ -83,20 +83,6 @@ jobs:
             sleep 2
           done
 
-      - name: Clone Mainchain
-        run: |
-          git clone --depth 1 -b napi-bindings https://github.com/argonprotocol/mainchain.git
-          cp mainchain/localchain/npm/**/*.node mainchain/localchain
-        working-directory: ..
-
-      - name: Install mainchain
-        run: yarn
-        working-directory: ../mainchain
-
-      - name: Install Mainchain client
-        run: yarn tsc
-        working-directory: ../mainchain/client/nodejs
-
       - name: Clone Hero
         run: |
           git clone -n --recurse-submodules https://github.com/ulixee/hero.git
@@ -116,10 +102,6 @@ jobs:
         run: yarn build
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
-
-      - name: Redo mainchain deps
-        run: yarn
-        working-directory: ../mainchain/client/nodejs
 
       - name: Linux - Apt Install Chrome(s)
         working-directory: ./build
@@ -160,7 +142,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest]
-        node-version: [18, 20]
+        node-version: [20, 22]
 
     runs-on: ${{ matrix.os }}
 
@@ -203,21 +185,6 @@ jobs:
           sudo rm -rf /Users/runner/Library/Developer/Xcode/iOS DeviceSupport
           sudo rm -rf /Users/runner/Library/Developer/Xcode/watchOS DeviceSupport
 
-      - name: Clone Mainchain
-        shell: bash
-        run: |
-          git clone -b napi-bindings https://github.com/argonprotocol/mainchain.git
-          cp mainchain/localchain/npm/**/*.node mainchain/localchain
-        working-directory: ..
-
-      - name: Install mainchain
-        run: yarn
-        working-directory: ../mainchain
-
-      - name: Install Mainchain client
-        run: yarn tsc
-        working-directory: ../mainchain/client/nodejs
-
       - name: Clone Hero
         run: |
           git clone -n --recurse-submodules https://github.com/ulixee/hero.git
@@ -239,10 +206,6 @@ jobs:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
           ULX_MITM_REBUILD_SOCKET: 0
           NODE_OPTIONS: --max_old_space_size=4096
-
-      - name: Redo mainchain deps
-        run: yarn
-        working-directory: ../mainchain/client/nodejs
 
       - name: Run tests
         run: yarn test --testTimeout=60000 --maxWorkers=2

@@ -1,10 +1,5 @@
 import { Helpers } from '@ulixee/datastore-testing';
-import {
-  checkForExtrinsicSuccess,
-  KeyringPair,
-  ArgonClient,
-  ArgonPrimitivesDomainVersionHost,
-} from '@argonprotocol/mainchain';
+import { ArgonClient, checkForExtrinsicSuccess, KeyringPair } from '@argonprotocol/mainchain';
 import { customAlphabet } from 'nanoid';
 import { ChildProcess, execSync, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -170,7 +165,7 @@ export async function registerZoneRecord(
   owner: KeyringPair,
   paymentAccount: Uint8Array,
   notaryId: number,
-  versions: Record<string, ArgonPrimitivesDomainVersionHost>,
+  versions: Record<string, { datastoreId: string; host: string }>,
 ): Promise<void> {
   const codecVersions = new Map();
   for (const [version, host] of Object.entries(versions)) {

@@ -153,10 +153,10 @@ describeIntegration('Payments E2E', () => {
       decodeAddress(ferdie.address, false, 42),
       1,
       {
-        [datastoreVersion]: mainchainClient.createType('ArgonPrimitivesDomainVersionHost', {
-          datastoreId: mainchainClient.createType('Bytes', datastoreId),
-          host: mainchainClient.createType('Bytes', `ws://127.0.0.1:${cloudAddress.split(':')[1]}`),
-        }),
+        [datastoreVersion]: {
+          datastoreId,
+          host: `ws://127.0.0.1:${cloudAddress.split(':')[1]}`,
+        },
       },
     );
 

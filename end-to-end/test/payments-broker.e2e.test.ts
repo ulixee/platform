@@ -206,10 +206,10 @@ async function setupDatastore(
       decodeAddress(domainOwner.address, false, 42),
       1,
       {
-        [version]: mainchainClient.createType('ArgonPrimitivesDomainVersionHost', {
+        [version]: {
           datastoreId,
           host: `ws://127.0.0.1:${cloudAddress.split(':')[1]}`,
-        }),
+        },
       },
     );
   } finally {
