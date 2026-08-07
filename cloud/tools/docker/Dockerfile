@@ -6,11 +6,14 @@ LABEL org.opencontainers.image.source=https://github.com/ulixee/platform
 LABEL org.opencontainers.image.description="The open data platform. This image packages Ulixee Cloud, Hero and the last 2 Chrome versions."
 LABEL org.opencontainers.image.licenses=MIT
 
-# fonts
-RUN echo "deb http://deb.debian.org/debian/ buster main contrib non-free" >> /etc/apt/sources.list \
+# Fonts + Chrome/Xvfb runtime deps. Current node:*-slim images are Debian
+# bookworm (DEB822 sources). Enable contrib/non-free for mscorefonts;
+# fonts-wqy-zenhei replaces the removed ttf-wqy-zenhei package.
+# Multi-arch: this Dockerfile is built for linux/amd64 and linux/arm64.
+RUN sed -i 's/Components: main$/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources \
     && echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections \
     && apt-get update \
-    && apt-get install -y \
+    && apt-get install -y --no-install-recommends \
         fonts-arphic-ukai \
         fonts-arphic-uming \
         fonts-ipafont-mincho \
@@ -18,12 +21,13 @@ RUN echo "deb http://deb.debian.org/debian/ buster main contrib non-free" >> /et
         fonts-kacst \
         fonts-ipafont-gothic \
         fonts-unfonts-core \
-        ttf-wqy-zenhei \
+        fonts-wqy-zenhei \
         ttf-mscorefonts-installer \
         fonts-freefont-ttf \
         xvfb \
         git \
         curl \
+        ca-certificates \
     && apt-get clean \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
@@ -54,5 +58,5 @@ RUN cd /app/ulixee && yarn init -yp \
 # Add below to run as unprivileged user. It's not included by default, but you can use docker run `--user ulixee`.
 # USER ulixee
 
-CMD npx @ulixee/cloud start
+CMD ["npx", "@ulixee/cloud", "start"]
 # To run this docker, please see ./run.sh
