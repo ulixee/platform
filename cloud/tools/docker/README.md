@@ -16,6 +16,21 @@ sudo usermod -aG docker $USER
 reboot
 ```
 
+## Platforms
+
+Published images are multi-arch manifests for:
+
+| Platform | Chrome |
+| --- | --- |
+| `linux/amd64` | Supported (existing Ulixee Chrome packages) |
+| `linux/arm64` | Supported once Hero/Cloud use a Chrome major with Google `linux-arm64` debs (Chrome **151+**, publicly released 2026-07-30) and matching [`ulixee/chrome-versions`](https://github.com/ulixee/chrome-versions) `linux_arm64` release assets |
+
+Local multi-arch build example:
+
+```bash
+DOCKER_PLATFORMS=linux/amd64,linux/arm64 ./build.sh
+```
+
 ## Pull Docker image from Github Container Registry
 ```bash
 docker pull ghcr.io/ulixee/ulixee-cloud:latest

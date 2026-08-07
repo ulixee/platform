@@ -11,8 +11,24 @@ else
   ADD_TO_INSTALL="yarn add @ulixee/chrome-$ADD_CHROME_VERSION-0"
 fi
 
+# Optional: DOCKER_PLATFORMS=linux/amd64,linux/arm64 for multi-arch (requires buildx + QEMU).
+# linux/arm64 needs Chrome majors with Google arm64 debs (151+) and chrome-versions
+# linux_arm64 release assets (see ulixee/chrome-versions).
+PLATFORMS="${DOCKER_PLATFORMS:-}"
 
-docker build -t ulixee-cloud:$VERSION -t ulixee-cloud:latest \
-  --build-arg ADD_TO_INSTALL="$ADD_TO_INSTALL" \
-  --build-arg VERSION="$VERSION" \
-  .
+if [ -n "$PLATFORMS" ]; then
+  echo "Building multi-arch image for: $PLATFORMS"
+  # Note: docker buildx cannot --load a multi-platform image into the local
+  # daemon. This verifies the build; use CI / --push for registry manifests.
+  docker buildx build \
+    --platform "$PLATFORMS" \
+    -t ulixee-cloud:$VERSION -t ulixee-cloud:latest \
+    --build-arg ADD_TO_INSTALL="$ADD_TO_INSTALL" \
+    --build-arg VERSION="$VERSION" \
+    .
+else
+  docker build -t ulixee-cloud:$VERSION -t ulixee-cloud:latest \
+    --build-arg ADD_TO_INSTALL="$ADD_TO_INSTALL" \
+    --build-arg VERSION="$VERSION" \
+    .
+fi

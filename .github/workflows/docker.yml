@@ -9,9 +9,15 @@ jobs:
   release:
     name: Build latest docker release
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     env:
       GITHUB_URL: https://github.com/${{ github.repository }}
       IMAGE: ulixee/ulixee-cloud
+      # linux/arm64 needs Google Chrome arm64 debs (Chrome 151+, public since
+      # 2026-07-30) and matching ulixee/chrome-versions linux_arm64 assets.
+      DOCKER_PLATFORMS: linux/amd64,linux/arm64
 
     steps:
       - uses: actions/checkout@v4
@@ -35,30 +41,47 @@ jobs:
           PREVIOUS_CHROME_VERSION=$((CHROME_VERSION - 1))
 
           echo "ADD_CHROME_VERSION=$PREVIOUS_CHROME_VERSION" >> $GITHUB_ENV
+          echo "Primary Chrome package: ${CHROME_PACKAGE} (also installing chrome-${PREVIOUS_CHROME_VERSION}-0)"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Image
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push multi-arch image
         shell: bash
         working-directory: cloud/tools/docker
+        env:
+          DOCKER_BUILDKIT: 1
         run: |
           export BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          echo "Building Docker image: ${VERSION}"
+          echo "Building multi-arch Docker image: ${VERSION} (${DOCKER_PLATFORMS})"
 
-          docker build \
+          docker buildx build \
+            --platform "${DOCKER_PLATFORMS}" \
             --progress auto \
-            --cache-from ghcr.io/${IMAGE}:latest \
-            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --push \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
             \
             --build-arg BUILD_DATE=${BUILD_DATE} \
             --build-arg GITHUB_SHA=${GITHUB_SHA} \
-            --build-arg ADD_TO_INSTALL="yarn add "@ulixee/chrome-$ADD_CHROME_VERSION-0"" \
+            --build-arg ADD_TO_INSTALL="yarn add @ulixee/chrome-${ADD_CHROME_VERSION}-0" \
             --build-arg VERSION=${VERSION} \
             \
             --tag ghcr.io/${IMAGE}:v${VERSION} \
@@ -74,15 +97,3 @@ jobs:
             --label org.opencontainers.image.source=${GITHUB_URL} \
             --label org.opencontainers.image.revision=${GITHUB_SHA} \
             .
-
-      - name: Push Image to GHCR
-        run: docker push -a ghcr.io/${IMAGE}
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Push Image to Dockerhub
-        run: docker push -a docker.io/${IMAGE}
