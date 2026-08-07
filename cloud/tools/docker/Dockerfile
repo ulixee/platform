@@ -1,4 +1,6 @@
-FROM node:18-slim
+# Node 24 LTS (Krypton). Node 18 is EOL and blocks dependents from upgrading
+# packages that require Node >=20 (e.g. sharp@0.35+ for libvips CVE fixes).
+FROM node:24-slim
 
 ARG ADD_TO_INSTALL=true
 ARG VERSION
@@ -6,11 +8,15 @@ LABEL org.opencontainers.image.source=https://github.com/ulixee/platform
 LABEL org.opencontainers.image.description="The open data platform. This image packages Ulixee Cloud, Hero and the last 2 Chrome versions."
 LABEL org.opencontainers.image.licenses=MIT
 
-# fonts
-RUN echo "deb http://deb.debian.org/debian/ buster main contrib non-free" >> /etc/apt/sources.list \
+# Fonts + Chrome/Xvfb runtime deps. node:24-slim is Debian bookworm (DEB822
+# sources); enable contrib/non-free for ttf-mscorefonts-installer. fonts-wqy-zenhei
+# replaces the removed ttf-wqy-zenhei package from older Debian.
+# python3/make/g++ are needed to compile native modules (e.g. better-sqlite3)
+# when prebuilds are not yet published for this Node major.
+RUN sed -i 's/Components: main$/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources \
     && echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections \
     && apt-get update \
-    && apt-get install -y \
+    && apt-get install -y --no-install-recommends \
         fonts-arphic-ukai \
         fonts-arphic-uming \
         fonts-ipafont-mincho \
@@ -18,12 +24,16 @@ RUN echo "deb http://deb.debian.org/debian/ buster main contrib non-free" >> /et
         fonts-kacst \
         fonts-ipafont-gothic \
         fonts-unfonts-core \
-        ttf-wqy-zenhei \
+        fonts-wqy-zenhei \
         ttf-mscorefonts-installer \
         fonts-freefont-ttf \
         xvfb \
         git \
         curl \
+        ca-certificates \
+        python3 \
+        make \
+        g++ \
     && apt-get clean \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
