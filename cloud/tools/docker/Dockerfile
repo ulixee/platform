@@ -64,5 +64,5 @@ RUN cd /app/ulixee && yarn init -yp \
 # Add below to run as unprivileged user. It's not included by default, but you can use docker run `--user ulixee`.
 # USER ulixee
 
-CMD npx @ulixee/cloud start
+CMD ["npx", "@ulixee/cloud", "start"]
 # To run this docker, please see ./run.sh
